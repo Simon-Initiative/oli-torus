@@ -3,7 +3,6 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
 
   alias OliWeb.Common.InstructorDashboardPagedTable
 
-  alias Oli.Delivery.Sections
   alias OliWeb.Common.{Params, SearchInput}
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Delivery.ActivityHelpers
@@ -33,9 +32,6 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
   def update(assigns, socket) do
     params = decode_params(assigns.params)
 
-    {container_count, units_and_modules} =
-      Sections.get_units_and_modules_containers(assigns.section.slug)
-
     {total_count, rows} = apply_filters(assigns.assessments, params)
 
     {:ok, table_model} =
@@ -60,7 +56,7 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
        scripts: assigns.scripts,
        activity_types_map: assigns.activity_types_map,
        preview_rendered: nil,
-       units_and_modules: build_units_and_modules(container_count, units_and_modules),
+       units_and_modules_options: assigns.units_and_modules_options,
        table_model: table_model,
        total_count: total_count
      )}
@@ -93,18 +89,21 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
                 phx-change="change_container"
                 phx-target={@myself}
               >
-                <div :if={length(@units_and_modules) > 0} class="inline-flex flex-col gap-1 mr-2">
+                <div
+                  :if={length(@units_and_modules_options) > 0}
+                  class="inline-flex flex-col gap-1 mr-2"
+                >
                   <small class="torus-small uppercase">
                     Container
                   </small>
                   <select class="torus-select" name="container_id">
                     <option value={nil}>All</option>
                     <option
-                      :for={container <- @units_and_modules}
-                      selected={assigns.params.container_id == container.id}
-                      value={container.id}
+                      :for={container <- @units_and_modules_options}
+                      selected={assigns.params.container_id == container.resource_id}
+                      value={container.resource_id}
                     >
-                      <%= container.type %> <%= container.numbering_index %>: <%= container.title %>
+                      <%= if(container.numbering_level == 1, do: "Unit", else: "Module") %> <%= container.numbering_index %>: <%= container.title %>
                     </option>
                   </select>
                 </div>
@@ -208,7 +207,7 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
 
   def handle_event(
         "paged_table_selection_change",
-        %{"id" => selected_assessment_id},
+        %{"id" => selected_assessment_resource_id},
         socket
       ) do
     details_enabled = Application.get_env(:oli, :instructor_dashboard_details, true)
@@ -223,7 +222,7 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
 
       current_assessment =
         Enum.find(socket.assigns.assessments, fn assessment ->
-          assessment.id == String.to_integer(selected_assessment_id)
+          assessment.resource_id == String.to_integer(selected_assessment_resource_id)
         end)
 
       page_revision =
@@ -246,7 +245,7 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
          current_assessment: current_assessment,
          activities: activities
        )
-       |> assign_selected_assessment(current_assessment.id)
+       |> assign_selected_assessment(current_assessment.resource_id)
        |> case do
          %{assigns: %{scripts_loaded: true}} = socket ->
            socket
@@ -267,7 +266,9 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
         socket
       ) do
     {:noreply,
-     push_patch(socket,
+     socket
+     |> assign(activities: nil, current_assessment: nil)
+     |> push_patch(
        to:
          route_to(
            socket,
@@ -345,12 +346,15 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
 
   def handle_event("change_container", %{"container_id" => container_id} = _params, socket) do
     {:noreply,
-     push_patch(socket,
+     socket
+     |> assign(activities: nil, current_assessment: nil)
+     |> push_patch(
        to:
          route_to(
            socket,
            update_params(socket.assigns.params, %{
-             container_id: container_id
+             container_id: container_id,
+             offset: 0
            })
          )
      )}
@@ -359,7 +363,7 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
   defp apply_filters(assessments, params) do
     assessments =
       assessments
-      |> maybe_filter_by_container_id(params.container_id)
+      |> maybe_filter_by_container_resource_id(params.container_id)
       |> maybe_filter_by_text(params.text_search)
       |> sort_by(params.sort_by, params.sort_order)
 
@@ -378,10 +382,10 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
     end)
   end
 
-  defp maybe_filter_by_container_id(assessments, nil), do: assessments
-  defp maybe_filter_by_container_id(assessments, ""), do: assessments
+  defp maybe_filter_by_container_resource_id(assessments, nil), do: assessments
+  defp maybe_filter_by_container_resource_id(assessments, ""), do: assessments
 
-  defp maybe_filter_by_container_id(assessments, container_id) do
+  defp maybe_filter_by_container_resource_id(assessments, container_id) do
     Enum.filter(assessments, fn assessment ->
       assessment.container_id == container_id
     end)
@@ -484,8 +488,8 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
     )
   end
 
-  defp assign_selected_assessment(socket, selected_assessment_id)
-       when selected_assessment_id in ["", nil] do
+  defp assign_selected_assessment(socket, selected_assessment_resource_id)
+       when selected_assessment_resource_id in ["", nil] do
     case socket.assigns.table_model.rows do
       [] ->
         socket
@@ -495,29 +499,12 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
     end
   end
 
-  defp assign_selected_assessment(socket, selected_assessment_id) do
+  defp assign_selected_assessment(socket, selected_assessment_resource_id) do
     table_model =
       Map.merge(socket.assigns.table_model, %{
-        selected: "#{selected_assessment_id}"
+        selected: "#{selected_assessment_resource_id}"
       })
 
     assign(socket, table_model: table_model)
-  end
-
-  defp build_units_and_modules(container_count, modules_and_units) do
-    if container_count == 0 do
-      []
-    else
-      Enum.map(modules_and_units, fn container ->
-        type =
-          case container.numbering_level do
-            1 -> "Unit"
-            2 -> "Module"
-            3 -> "Section"
-          end
-
-        Map.merge(container, %{type: type})
-      end)
-    end
   end
 end

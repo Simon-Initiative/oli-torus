@@ -3,6 +3,7 @@ import { CreationContext, JanusAbsolutePositioned, JanusCustomCss } from '../typ
 
 export interface ImageModel extends JanusAbsolutePositioned, JanusCustomCss {
   src: string;
+  imageSrc: string;
   alt: string;
   scaleContent: boolean;
   lockAspectRatio: boolean;
@@ -12,6 +13,10 @@ export interface ImageModel extends JanusAbsolutePositioned, JanusCustomCss {
 export const schema: JSONSchema7Object = {
   customCssClass: {
     title: 'Custom CSS Class',
+    type: 'string',
+  },
+  imageSrc: {
+    title: 'Image Source',
     type: 'string',
   },
   src: {
@@ -38,6 +43,10 @@ export const schema: JSONSchema7Object = {
 };
 
 export const simpleSchema: JSONSchema7Object = {
+  imageSrc: {
+    title: 'Image Source',
+    type: 'string',
+  },
   src: {
     title: 'Source',
     type: 'string',
@@ -81,6 +90,7 @@ export const createSchema = (context?: CreationContext): Partial<ImageModel> => 
   return {
     customCssClass: '',
     src,
+    imageSrc: src,
     alt: 'an image',
     scaleContent: true,
     lockAspectRatio: true,

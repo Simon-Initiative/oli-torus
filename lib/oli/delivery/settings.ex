@@ -238,7 +238,9 @@ defmodule Oli.Delivery.Settings do
     |> Repo.update()
   end
 
-  def was_late?(_, %Combined{late_submit: :disallow}, _now), do: false
+  def was_late?(%ResourceAttempt{}, %Combined{late_submit: :disallow}, _now), do: false
+
+  def was_late?(%ResourceAttempt{}, %Combined{scheduling_type: :read_by}, _now), do: false
 
   def was_late?(
         %ResourceAttempt{} = resource_attempt,
@@ -327,9 +329,12 @@ defmodule Oli.Delivery.Settings do
 
         # both an end date and a time limit, use the earlier of the two
         {end_date, time_limit} ->
-          if end_date < DateTime.add(resource_attempt.inserted_at, time_limit, :minute),
-            do: end_date,
-            else: DateTime.add(resource_attempt.inserted_at, time_limit, :minute)
+          if DateTime.compare(
+               end_date,
+               DateTime.add(resource_attempt.inserted_at, time_limit, :minute)
+             ) == :lt,
+             do: end_date,
+             else: DateTime.add(resource_attempt.inserted_at, time_limit, :minute)
       end
 
     case deadline do

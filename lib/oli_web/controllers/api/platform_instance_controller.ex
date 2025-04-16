@@ -1,5 +1,4 @@
 defmodule OliWeb.Api.PlatformInstanceController do
-  alias Oli.Accounts.Author
   use OliWeb, :controller
 
   alias Lti_1p3.Platform.LoginHint

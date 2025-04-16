@@ -1547,6 +1547,48 @@ defmodule OliWeb.Icons do
     """
   end
 
+  def expand(assigns) do
+    ~H"""
+    <svg width="9" height="19" viewBox="0 0 9 19" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M1 4.49996L4.49996 1L7.99992 4.49996"
+        stroke="#0062F2"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+      <path
+        d="M8 14L4.50004 17.5L1.00008 14"
+        stroke="#0062F2"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </svg>
+    """
+  end
+
+  def collapse(assigns) do
+    ~H"""
+    <svg width="9" height="19" viewBox="0 0 9 19" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M8 1.00004L4.50004 4.5L1.00008 1.00004"
+        stroke="#0062F2"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+      <path
+        d="M1 17.6411L4.49996 14.1411L7.99991 17.6411"
+        stroke="#0062F2"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </svg>
+    """
+  end
+
   ########## Student Delivery Icons (end) ##########
 
   ########## Instructor Navigation Bar Icons (start) ##########
@@ -1753,6 +1795,27 @@ defmodule OliWeb.Icons do
           <rect width="20" height="20" fill="white" />
         </clipPath>
       </defs>
+    </svg>
+    """
+  end
+
+  attr :class, :string, default: "fill-[#FF8787]"
+
+  def asterisk(assigns) do
+    ~H"""
+    <svg
+      width="13"
+      height="13"
+      viewBox="0 0 13 13"
+      fill="currentColor"
+      class={@class}
+      xmlns="http://www.w3.org/2000/svg"
+      role="asterisk icon"
+    >
+      <path
+        opacity="0.9"
+        d="M8.20654 0.0561523L7.69385 4.95239L12.6157 3.5553L13.0002 6.2854L8.3988 6.69556L11.3853 10.6818L8.89868 12.0276L6.73254 7.73376L4.79712 12.0148L2.20801 10.6818L5.16882 6.69556L0.593018 6.27258L1.02881 3.5553L5.86096 4.95239L5.34827 0.0561523H8.20654Z"
+      />
     </svg>
     """
   end

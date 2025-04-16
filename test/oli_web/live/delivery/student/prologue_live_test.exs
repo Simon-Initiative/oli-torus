@@ -1148,12 +1148,13 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       refute has_element?(view, "#page_time_limit_term", "<li id=\"page_time_limit_term\">")
     end
 
-    test "page terms render a late submit message", ctx do
+    test "page terms render a time limit late submit message only for a due by page",
+         ctx do
       %{conn: conn, user: user, section: section, page_2: page_2} = ctx
 
       enroll_and_mark_visited(user, section)
 
-      params = %{late_submit: :allow, time_limit: 10}
+      params = %{late_submit: :allow, time_limit: 10, scheduling_type: :due_by}
 
       get_and_update_section_resource(section.id, page_2.resource_id, params)
 
@@ -1161,6 +1162,37 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
 
       assert view |> element("#page_submit_term") |> render() =~
                "<li id=\"page_submit_term\">\n  If you exceed this time, it will be marked late.\n</li>"
+
+      params = %{late_submit: :allow, time_limit: 10, scheduling_type: :read_by}
+
+      get_and_update_section_resource(section.id, page_2.resource_id, params)
+
+      {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
+
+      refute view |> has_element?("#page_submit_term")
+    end
+
+    test "page terms render a late submit due date message only for pages with due date", ctx do
+      %{conn: conn, user: user, section: section, page_2: page_2} = ctx
+
+      enroll_and_mark_visited(user, section)
+
+      params = %{late_submit: :allow, time_limit: 0, scheduling_type: :due_by}
+
+      get_and_update_section_resource(section.id, page_2.resource_id, params)
+
+      {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
+
+      assert view |> element("#page_submit_term") |> render() =~
+               "<li id=\"page_submit_term\">\n  If you submit after the due date, it will be marked late.\n</li>"
+
+      params = %{late_submit: :allow, time_limit: 0, scheduling_type: :read_by}
+
+      get_and_update_section_resource(section.id, page_2.resource_id, params)
+
+      {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
+
+      refute view |> has_element?("#page_submit_term")
     end
 
     test "page terms render no message when late submit is disallowed", ctx do

@@ -5,8 +5,8 @@ interface FlowchartTopToolbarProps {}
 export const FlowchartTopToolbar: React.FC<FlowchartTopToolbarProps> = () => {
   return (
     <div className="top-toolbar">
-      <div className="left-header">Basic</div>
-      <div className="right-header">Screen with choices component</div>
+      <div className="left-header">Static Screens</div>
+      <div className="right-header">Interactive Screens</div>
 
       <ToolbarItem label="Instructional screen" screenType="blank_screen" />
 

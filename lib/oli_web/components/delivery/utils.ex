@@ -152,6 +152,68 @@ defmodule OliWeb.Components.Delivery.Utils do
     end
   end
 
+  attr :on_expand, Phoenix.LiveView.JS,
+    default: JS.dispatch("click", to: "button[aria-expanded='false'][data-bs-toggle='collapse']")
+
+  attr :on_collapse, Phoenix.LiveView.JS,
+    default: JS.dispatch("click", to: "button[aria-expanded='true'][data-bs-toggle='collapse']")
+
+  def toggle_expand_button(assigns) do
+    ~H"""
+    <div class="flex items-center justify-start w-32 px-2 text-sm font-bold text-[#0080FF] dark:text-[#0062F2]">
+      <button
+        id="expand_all_button"
+        phx-click={@on_expand |> JS.hide() |> JS.show(to: "#collapse_all_button", display: "flex")}
+        class="flex space-x-3"
+      >
+        <Icons.expand />
+        <span>Expand All</span>
+      </button>
+
+      <button
+        id="collapse_all_button"
+        phx-click={@on_collapse |> JS.hide() |> JS.show(to: "#expand_all_button", display: "flex")}
+        class="hidden space-x-3"
+      >
+        <Icons.collapse />
+        <span>Collapse All</span>
+      </button>
+    </div>
+    """
+  end
+
+  attr :search_term, :string, default: ""
+  attr :on_search, :string, default: "search"
+  attr :on_change, :string, default: "search"
+  attr :on_clear_search, :string, default: "clear_search"
+  attr :rest, :global, include: ~w(class)
+
+  def search_box(assigns) do
+    ~H"""
+    <form class={["flex flex-row", @rest[:class]]} phx-submit={@on_search} phx-change={@on_change}>
+      <div class="flex-1 relative">
+        <i class="fa-solid fa-search absolute left-4 top-4 text-gray-400 pointer-events-none text-lg">
+        </i>
+        <input
+          type="text"
+          name="search_term"
+          value={@search_term}
+          class="w-full border border-gray-400 dark:border-gray-700 rounded-lg px-12 py-3"
+          phx-debounce="500"
+        />
+        <button
+          :if={@search_term not in ["", nil]}
+          type="button"
+          class="absolute right-0 top-0 bottom-0 py-3 px-4"
+          phx-click={@on_clear_search}
+        >
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+    </form>
+    """
+  end
+
   attr(:current_user, User)
 
   def user_icon(%{current_user: _} = assigns) do

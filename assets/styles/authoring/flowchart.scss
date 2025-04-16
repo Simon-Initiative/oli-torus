@@ -134,7 +134,7 @@ $hover: #dce7f9;
     display: grid;
     padding-top: 15px;
     padding-bottom: 3px;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     grid-template-rows: 0.2fr repeat(2, 1fr);
     grid-column-gap: 0px;
     grid-row-gap: 0px;
@@ -158,7 +158,7 @@ $hover: #dce7f9;
       grid-area: 1 / 1 / 2 / 2;
     }
     .right-header {
-      grid-area: 1 / 2 / 2 / 5;
+      grid-area: 1 / 2 / 2 / 6;
     }
 
     .toolbar-option {

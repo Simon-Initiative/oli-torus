@@ -132,11 +132,21 @@ defmodule OliWeb.Delivery.Student.AssignmentsLiveTest do
       insert(:section,
         base_project: project,
         title: "The best course ever!",
-        analytics_version: :v2
+        analytics_version: :v2,
+        certificate_enabled: true
       )
 
     {:ok, section} = Sections.create_section_resources(section, publication)
     {:ok, _} = Sections.rebuild_contained_pages(section)
+
+    certificate =
+      insert(:certificate, %{
+        section: section,
+        assessments_apply_to: :custom,
+        custom_assessments: [page_1_revision.resource_id],
+        min_percentage_for_completion: 50,
+        min_percentage_for_distinction: 80
+      })
 
     %{
       section: section,
@@ -148,7 +158,8 @@ defmodule OliWeb.Delivery.Student.AssignmentsLiveTest do
       module_2: module_2_revision,
       unit_1: unit_1_revision,
       unit_2: unit_2_revision,
-      root_container: container_revision
+      root_container: container_revision,
+      certificate: certificate
     }
   end
 
@@ -361,11 +372,13 @@ defmodule OliWeb.Delivery.Student.AssignmentsLiveTest do
 
       {:ok, view, _html} = live(conn, live_view_assignments_live_route(section.slug))
 
+      # page 1 is required for the certificate, so we see it's asterisk icon
+
       assert element(
                view,
                "div[role='assignment detail'][id='assignment_#{page_1.resource_id}'] div[role='page icon'] svg"
              )
-             |> render() =~ "flag icon"
+             |> render() =~ "asterisk icon"
 
       # page 2 is completed, so we see it's checked icon
       assert element(
@@ -429,6 +442,71 @@ defmodule OliWeb.Delivery.Student.AssignmentsLiveTest do
       {:ok, view, _html} = live(conn, live_view_assignments_live_route(section.slug))
 
       assert has_element?(view, "span", "There are no assignments")
+    end
+
+    test "can see certificate data when the section has a certificate", %{
+      conn: conn,
+      section: section,
+      certificate: certificate
+    } do
+      {:ok, view, _html} = live(conn, live_view_assignments_live_route(section.slug))
+
+      assert has_element?(view, "#certificate_requirements", "This is a Certificate Course")
+
+      assert has_element?(
+               view,
+               "#certificate_requirements span",
+               "#{trunc(certificate.min_percentage_for_completion)}%"
+             )
+
+      assert has_element?(
+               view,
+               "#certificate_requirements span",
+               "#{trunc(certificate.min_percentage_for_distinction)}%"
+             )
+    end
+
+    test "filters required assignments for certificate", %{
+      conn: conn,
+      section: section,
+      page_1: page_1,
+      page_2: page_2,
+      page_3: page_3,
+      page_4: page_4
+    } do
+      {:ok, view, _html} = live(conn, live_view_assignments_live_route(section.slug))
+
+      # assert all pages are displayed
+      for page <- [page_1, page_2, page_3, page_4] do
+        assert has_element?(
+                 view,
+                 "div[role='assignment detail'][id='assignment_#{page.resource_id}']"
+               )
+      end
+
+      # open filter
+      view
+      |> element("button[phx-click=\"toggle_filter_open\"]")
+      |> render_click()
+
+      # select only required assignments
+      view
+      |> element("#select_required_option")
+      |> render_click()
+
+      # non-required pages are hidden
+      for page <- [page_2, page_3, page_4] do
+        refute has_element?(
+                 view,
+                 "div[role='assignment detail'][id='assignment_#{page.resource_id}']"
+               )
+      end
+
+      # required page 1 is still displayed
+      assert has_element?(
+               view,
+               "div[role='assignment detail'][id='assignment_#{page_1.resource_id}']"
+             )
     end
   end
 end

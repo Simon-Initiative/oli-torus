@@ -79,7 +79,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         selected_view: @default_selected_view,
         show_completed?: true
       )
-      |> stream_configure(:units, dom_id: &"units-#{&1["uuid"]}")
+      |> stream_configure(:units, dom_id: &"node-#{&1["uuid"]}")
       |> stream_configure(:unit_resource_ids, dom_id: &"unit_resource_ids-#{&1["uuid"]}")
       |> stream(:unit_resource_ids, [])
       |> slim_assigns()
@@ -106,32 +106,54 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         _uri,
         socket
       ) do
-    full_hierarchy = get_or_compute_full_hierarchy(socket.assigns.section)
-
-    units =
-      full_hierarchy["children"]
-      |> Enum.map(fn unit ->
-        unit
-        |> mark_visited_and_completed_pages(
-          socket.assigns.student_visited_pages,
-          socket.assigns.student_raw_avg_score_per_page_id,
-          socket.assigns.student_progress_per_resource_id
-        )
-      end)
-
     send(self(), :gc)
 
     with selected_view <- get_selected_view(params),
-         resource_id <- params["target_resource_id"] do
+         resource_id <- params["target_resource_id"],
+         search_term <- params["search_term"] do
+      full_hierarchy =
+        get_or_compute_full_hierarchy(socket.assigns.section, selected_view, search_term)
+
+      units =
+        full_hierarchy["children"]
+        |> Enum.map(fn unit ->
+          unit
+          |> mark_visited_and_completed_pages(
+            socket.assigns.student_visited_pages,
+            socket.assigns.student_raw_avg_score_per_page_id,
+            socket.assigns.student_progress_per_resource_id
+          )
+        end)
+
       {:noreply,
        socket
        |> assign_contained_scheduling_types(full_hierarchy)
        |> maybe_assign_selected_view(selected_view)
        |> stream(:units, units, reset: true)
        |> maybe_scroll_to_target_resource(resource_id, full_hierarchy, selected_view)
-       |> enable_gallery_slider_buttons(units)}
+       |> maybe_expand_containers(selected_view, search_term)
+       |> assign(params: params)
+       |> enable_gallery_slider_buttons(units)
+       |> assign(outline_view_id: UUID.uuid4())}
     end
   end
+
+  _docp = """
+  When searching for a resource, this function is responsible for expanding the containers
+  that contain a child that matches the search term.
+  It only applies to the outline view and if there is a search term.
+  """
+
+  defp maybe_expand_containers(socket, :outline, search_term) when search_term not in ["", nil] do
+    socket
+    |> push_event("js-exec", %{
+      to: "#student_learn",
+      attr: "data-show-matches-with-search-term"
+    })
+  end
+
+  defp maybe_expand_containers(socket, _view, _search_term),
+    do: socket
 
   defp assign_contained_scheduling_types(socket, full_hierarchy) do
     assign(socket,
@@ -145,28 +167,66 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   The target can be a unit, a module, a page contained at a unit level, at a module level, or a page contained in a module.
   """
 
-  defp scroll_to_target_resource(socket, resource_id, _full_hierarchy, :outline) do
-    case Sections.get_section_resource_with_resource_type(
-           socket.assigns.section.slug,
-           resource_id
-         ) do
-      %{resource_type_id: resource_type_id, numbering_level: numbering_level} ->
-        resource_type =
-          case {resource_type_id, numbering_level} do
-            {@container_resource_type_id, 1} -> "unit"
-            {@container_resource_type_id, 2} -> "module"
-            {@container_resource_type_id, 3} -> "section"
-            {@page_resource_type_id, 1} -> "top_level_page"
-            {@page_resource_type_id, _} -> "page"
-          end
+  defp scroll_to_target_resource(socket, resource_id, full_hierarchy, :outline) do
+    section_slug = socket.assigns.section.slug
 
-        push_event(socket, "scroll-y-to-target", %{
-          id: "#{resource_type}_#{resource_id}",
-          offset: 25,
-          pulse: true,
-          pulse_delay: 500
-        })
+    %{resource_type_id: resource_type_id, numbering_level: numbering_level} =
+      Sections.get_section_resource_with_resource_type(section_slug, resource_id)
 
+    case {resource_type_id, numbering_level} do
+      # Case: Top Level Page
+      {@page_resource_type_id, 1} ->
+        push_scroll_event_for_outline(socket, "top_level_page_#{resource_id}")
+
+      # Case: Unit > Page
+      {@page_resource_type_id, 2} ->
+        unit_resource_id =
+          Hierarchy.find_parent_in_hierarchy(
+            full_hierarchy,
+            fn node -> node["resource_id"] == String.to_integer(resource_id) end
+          )["resource_id"]
+
+        socket
+        |> push_event("expand-containers", %{ids: [unit_resource_id]})
+        |> push_scroll_event_for_outline("page_#{resource_id}")
+
+      # Case: Unit > Module > << Any Nested Page >>
+      {@page_resource_type_id, numbering_level} when numbering_level > 2 ->
+        module_resource_id =
+          Hierarchy.find_module_ancestor(
+            full_hierarchy,
+            String.to_integer(resource_id),
+            @container_resource_type_id
+          )["resource_id"]
+
+        unit_resource_id =
+          Hierarchy.find_parent_in_hierarchy(
+            full_hierarchy,
+            fn node -> node["resource_id"] == module_resource_id end
+          )["resource_id"]
+
+        socket
+        |> push_event("expand-containers", %{ids: [unit_resource_id, module_resource_id]})
+        |> push_scroll_event_for_outline("page_#{resource_id}")
+
+      # Case: Unit
+      {@container_resource_type_id, 1} ->
+        socket
+        |> push_scroll_event_for_outline("unit_#{resource_id}_outline")
+
+      # Case: Module
+      {@container_resource_type_id, 2} ->
+        unit_resource_id =
+          Hierarchy.find_parent_in_hierarchy(
+            full_hierarchy,
+            fn node -> node["resource_id"] == String.to_integer(resource_id) end
+          )["resource_id"]
+
+        socket
+        |> push_event("expand-containers", %{ids: [unit_resource_id]})
+        |> push_scroll_event_for_outline("module_#{resource_id}_outline")
+
+      # Case: Catch-all
       _ ->
         socket
     end
@@ -304,6 +364,43 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     end
   end
 
+  defp push_scroll_event_for_outline(socket, identifier) do
+    push_event(socket, "scroll-y-to-target", %{
+      role: identifier,
+      offset: 125,
+      pulse: true,
+      pulse_delay: 500
+    })
+  end
+
+  def handle_event("search", %{"search_term" => search_term}, socket) do
+    params =
+      if search_term not in ["", nil] do
+        Map.merge(socket.assigns.params, %{"search_term" => search_term})
+      else
+        Map.drop(socket.assigns.params, ["search_term"])
+      end
+      |> Map.drop(["target_resource_id"])
+
+    {:noreply,
+     push_patch(socket,
+       to: ~p"/sections/#{socket.assigns.section.slug}/learn?#{params}"
+     )
+     # This event is used to expand the containers that contain a child that matches the search term
+     |> push_event("js-exec", %{
+       to: "#student_learn",
+       attr: "data-show-matches-with-search-term"
+     })}
+  end
+
+  def handle_event("clear_search", _params, socket) do
+    {:noreply,
+     push_patch(socket,
+       to:
+         ~p"/sections/#{socket.assigns.section.slug}/learn?#{Map.drop(socket.assigns.params, ["search_term", "target_resource_id"])}"
+     )}
+  end
+
   def handle_event(
         "play_video",
         %{
@@ -315,7 +412,13 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         socket
       ) do
     resource_id = String.to_integer(resource_id)
-    full_hierarchy = get_or_compute_full_hierarchy(socket.assigns.section)
+
+    full_hierarchy =
+      get_or_compute_full_hierarchy(
+        socket.assigns.section,
+        socket.assigns.selected_view,
+        socket.assigns.params["search_term"]
+      )
 
     selected_unit =
       if String.to_existing_atom(is_intro_video) do
@@ -453,7 +556,12 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   def handle_event("card_keydown", _, socket), do: {:noreply, socket}
 
   def handle_event("toggle_completed_visibility", _, socket) do
-    full_hierarchy = get_or_compute_full_hierarchy(socket.assigns.section)
+    full_hierarchy =
+      get_or_compute_full_hierarchy(
+        socket.assigns.section,
+        socket.assigns.selected_view,
+        socket.assigns.params["search_term"]
+      )
 
     socket =
       socket
@@ -525,7 +633,13 @@ defmodule OliWeb.Delivery.Student.LearnLive do
        ) do
     unit_resource_id = String.to_integer(unit_resource_id)
     module_resource_id = String.to_integer(module_resource_id)
-    full_hierarchy = get_or_compute_full_hierarchy(socket.assigns.section)
+
+    full_hierarchy =
+      get_or_compute_full_hierarchy(
+        socket.assigns.section,
+        socket.assigns.selected_view,
+        socket.assigns.params["search_term"]
+      )
 
     selected_unit =
       Hierarchy.find_parent_in_hierarchy(
@@ -700,7 +814,12 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     send(self(), :gc)
 
     units =
-      get_or_compute_full_hierarchy(section)["children"]
+      get_or_compute_full_hierarchy(
+        section,
+        socket.assigns.selected_view,
+        socket.assigns.params["search_term"]
+      )
+      |> Map.get("children")
       |> Enum.map(fn unit ->
         unit
         |> mark_visited_and_completed_pages(
@@ -758,13 +877,35 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     %{section: %{id: _section_id}} = assigns
 
     ~H"""
-    <div id="student_learn" class="lg:container lg:mx-auto p-3 md:p-[25px]" phx-hook="Scroller">
+    <div
+      id="student_learn"
+      data-show-matches-with-search-term={
+        reset_toggle_buttons()
+        |> JS.dispatch("click",
+          to:
+            "button[aria-expanded='false'][data-bs-toggle='collapse'][data-child_matches_search_term]"
+        )
+      }
+      class="lg:container lg:mx-auto p-3 md:p-[25px]"
+      phx-hook="Scroller"
+    >
       <.video_player />
-      <div class="flex justify-between p-3 md:p-[25px] sticky top-12 z-40 bg-delivery-body dark:bg-delivery-body-dark">
+      <div class="flex justify-between items-center h-16 p-3 md:p-[25px] sticky top-14 z-40 bg-delivery-body dark:bg-delivery-body-dark">
         <DeliveryUtils.toggle_visibility_button
           target_selector="div[data-completed='true']"
           class="dark:text-[#bab8bf] text-sm font-medium hover:text-black dark:hover:text-white"
         />
+        <div class="flex items-center gap-2 px-3">
+          <DeliveryUtils.search_box
+            search_term={@params["search_term"]}
+            on_search="search"
+            on_change="search"
+            on_clear_search={JS.push("clear_search") |> reset_toggle_buttons()}
+            class="w-64"
+          />
+
+          <DeliveryUtils.toggle_expand_button />
+        </div>
 
         <.live_component
           id="view_selector"
@@ -773,9 +914,24 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         />
       </div>
 
-      <div id="outline_rows" phx-update="stream" class="flex flex-col">
+      <div
+        id={"outline_rows-#{@outline_view_id}"}
+        phx-update="replace"
+        class="flex flex-col"
+        phx-hook="ExpandContainers"
+      >
+        <div
+          :if={@streams.units.inserts == [] and @params["search_term"] not in ["", nil]}
+          class="p-6"
+          role="no search results warning"
+        >
+          There are no results for the search term
+          <span class="font-bold italic"><%= @params["search_term"] %></span>
+        </div>
+
         <.outline_row
-          :for={{_, row} <- @streams.units}
+          :for={{node_id, row} <- @streams.units}
+          id={node_id}
           row={row}
           section={@section}
           type={child_type(row)}
@@ -792,6 +948,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             )
           }
           ctx={@ctx}
+          search_term={@params["search_term"]}
         />
       </div>
     </div>
@@ -802,7 +959,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     ~H"""
     <div id="student_learn" class="lg:container lg:mx-auto p-3 md:p-[25px]" phx-hook="Scroller">
       <.video_player />
-      <div class="flex justify-between p-3 md:p-[25px] sticky top-12 z-40 bg-delivery-body dark:bg-delivery-body-dark">
+      <div class="flex justify-between items-center h-16 p-3 md:p-[25px] sticky top-14 z-40 bg-delivery-body dark:bg-delivery-body-dark">
         <DeliveryUtils.toggle_visibility_button
           class="dark:text-[#bab8bf] text-sm font-medium hover:text-black dark:hover:text-white"
           target_selector={completed_resources_css_selector()}
@@ -1235,6 +1392,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   attr :contained_scheduling_types, :map
   attr :ctx, :map
+  attr :search_term, :string
   attr :page_metrics, :map
   attr :progress, :integer
   attr :row, :map
@@ -1244,13 +1402,16 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :student_id, :integer
   attr :student_raw_avg_score_per_page_id, :map
   attr :type, :atom
+  attr :id, :string
 
   def outline_row(%{type: :unit} = assigns) do
     ~H"""
     <div
-      id={"unit_#{@row["resource_id"]}_outline"}
+      id={@id}
+      role={"unit_#{@row["resource_id"]}_outline"}
       data-completed={"#{@progress == 100}"}
       class="flex flex-col"
+      phx-update="replace"
     >
       <div class="accordion my-2" id="accordionExample">
         <div class="card py-4 bg-white/20 dark:bg-[#0d0c0e] shadow-none">
@@ -1262,8 +1423,11 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               <%= "#{String.upcase(Sections.get_container_label_and_numbering(1, @row["numbering"]["index"], @section.customizations))}" %>
             </h6>
             <div class="flex justify-between items-center mt-3 mb-1">
-              <div class="grow shrink basis-0 dark:text-white md:text-2xl font-semibold font-['Open Sans'] md:leading-loose">
-                <%= @row["title"] %>
+              <div
+                role="unit title"
+                class="search-result grow shrink basis-0 dark:text-white md:text-2xl font-semibold font-['Open Sans'] md:leading-loose"
+              >
+                <%= Phoenix.HTML.raw(highlight_search_term(@row["title"], @search_term)) %>
               </div>
               <div class="flex flex-row gap-x-2">
                 <%= if @progress == 100 do %>
@@ -1299,6 +1463,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                   phx-value-id={@row["resource_id"]}
                   data-bs-toggle="collapse"
                   data-bs-target={"#collapse-#{@row["resource_id"]}"}
+                  data-child_matches_search_term={@row["child_matches_search_term"]}
                   aria-expanded="false"
                   aria-controls={"collapse-#{@row["resource_id"]}"}
                 >
@@ -1317,11 +1482,13 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             id={"collapse-#{@row["resource_id"]}"}
             class="collapse"
             aria-labelledby={"header-#{@row["resource_id"]}"}
+            phx-update="replace"
           >
             <div class="card-body">
               <div class="flex flex-col mt-6">
                 <.outline_row
                   :for={row <- @row["children"]}
+                  id={"node-#{row["uuid"]}"}
                   section={@section}
                   row={row}
                   type={child_type(row)}
@@ -1335,6 +1502,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                   ctx={@ctx}
                   page_metrics={@page_metrics}
                   contained_scheduling_types={@contained_scheduling_types}
+                  search_term={@search_term}
                 />
               </div>
             </div>
@@ -1348,19 +1516,23 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   def outline_row(%{type: :top_level_page} = assigns) do
     ~H"""
     <div
-      id={"top_level_page_#{@row["resource_id"]}"}
+      id={@id}
+      role={"top_level_page_#{@row["resource_id"]}"}
       data-completed={"#{@row["completed"]}"}
       class="flex flex-col"
+      phx-update="replace"
     >
       <div class="px-6" role={"row_#{@row["numbering"]["index"]}"}>
         <div class="flex flex-col">
           <.outline_row
             section={@section}
             row={@row}
+            id={"node-#{@row["uuid"]}"}
             type={:page}
             student_progress_per_resource_id={@student_progress_per_resource_id}
             student_raw_avg_score_per_page_id={@student_raw_avg_score_per_page_id}
             student_id={@student_id}
+            search_term={@search_term}
             ctx={@ctx}
           />
         </div>
@@ -1372,26 +1544,30 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   def outline_row(%{type: :section} = assigns) do
     ~H"""
     <div
-      id={"#{@type}_#{@row["resource_id"]}_outline"}
+      id={@id}
+      role={"#{@type}_#{@row["resource_id"]}_outline"}
       data-completed={"#{@row["completed"]}"}
       class="flex flex-col"
+      phx-update="replace"
     >
       <div class={[
         left_indentation(@row["numbering"]["level"], :outline),
         "w-full pl-16 py-2.5 justify-start items-center gap-5 flex rounded-lg"
       ]}>
-        <span class="opacity-60 dark:text-white text-base font-semibold font-['Open Sans']">
-          <%= @row["title"] %>
+        <span class="search-result opacity-60 dark:text-white text-base font-semibold font-['Open Sans']">
+          <%= Phoenix.HTML.raw(highlight_search_term(@row["title"], @search_term)) %>
         </span>
       </div>
       <.outline_row
         :for={row <- @row["children"]}
+        id={"node-#{row["uuid"]}"}
         section={@section}
         row={row}
         type={child_type(row)}
         student_progress_per_resource_id={@student_progress_per_resource_id}
         student_raw_avg_score_per_page_id={@student_raw_avg_score_per_page_id}
         student_id={@student_id}
+        search_term={@search_term}
         ctx={@ctx}
       />
     </div>
@@ -1415,9 +1591,11 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
     ~H"""
     <div
-      id={"#{@type}_#{@row["resource_id"]}_outline"}
+      id={@id}
+      role={"#{@type}_#{@row["resource_id"]}_outline"}
       data-completed={"#{@row["completed"]}"}
       class="flex flex-col"
+      phx-update="replace"
     >
       <div class="accordion my-2" id="accordionExample">
         <div class="card bg-white/20 dark:bg-[#0d0c0e] py-4 pr-0 shadow-none">
@@ -1429,8 +1607,11 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               <%= "#{String.upcase(Sections.get_container_label_and_numbering(@row["numbering"]["level"], @row["numbering"]["index"], @section.customizations))}" %>
             </h6>
             <div class="flex justify-between items-center h-8 mt-3 mb-1">
-              <div class="grow shrink basis-0 dark:text-white md:text-2xl font-semibold font-['Open Sans'] md:leading-loose">
-                <%= @row["title"] %>
+              <div
+                role="module title"
+                class="search-result grow shrink basis-0 dark:text-white md:text-2xl font-semibold font-['Open Sans'] md:leading-loose"
+              >
+                <%= Phoenix.HTML.raw(highlight_search_term(@row["title"], @search_term)) %>
               </div>
             </div>
             <div class="flex justify-between items-center h-6 mb-3">
@@ -1462,6 +1643,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                   phx-value-id={@row["resource_id"]}
                   data-bs-toggle="collapse"
                   data-bs-target={"#collapse-#{@row["resource_id"]}"}
+                  data-child_matches_search_term={@row["child_matches_search_term"]}
                   aria-expanded="false"
                   aria-controls={"collapse-#{@row["resource_id"]}"}
                 >
@@ -1517,6 +1699,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                   :for={{grouped_scheduling_type, grouped_due_date} <- @page_due_dates}
                   class="flex flex-col w-full"
                   id={"pages_grouped_by_#{grouped_scheduling_type}_#{grouped_due_date}"}
+                  phx-update="replace"
                 >
                   <% grouped_pages =
                     Enum.filter(@row["children"], fn row ->
@@ -1541,6 +1724,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                   </div>
                   <.outline_row
                     :for={row <- grouped_pages}
+                    id={"node-#{row["uuid"]}"}
                     section={@section}
                     row={row}
                     type={child_type(row)}
@@ -1552,6 +1736,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                     student_end_date_exceptions_per_resource_id={
                       @student_end_date_exceptions_per_resource_id
                     }
+                    search_term={@search_term}
                     ctx={@ctx}
                   />
                 </div>
@@ -1588,9 +1773,11 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   def outline_row(%{type: :page} = assigns) do
     ~H"""
     <div
-      id={"page_#{@row["resource_id"]}"}
+      id={@id}
+      role={"page_#{@row["resource_id"]}"}
       data-completed={"#{@row["completed"]}"}
       class={"flex flex-col #{if @row["numbering"]["level"] == 2, do: "pl-4"}"}
+      phx-update="replace"
     >
       <button
         role={"page #{@row["numbering"]["index"]} details"}
@@ -1635,13 +1822,13 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 role="page title"
                 class={
                   [
-                    "text-left dark:text-white opacity-90 text-base",
+                    "search-result text-left dark:text-white opacity-90 text-base",
                     # Opacity is set if the item is visited, but not necessarily completed
                     if(@row["visited"], do: "opacity-60")
                   ]
                 }
               >
-                <%= "#{@row["title"]}" %>
+                <%= Phoenix.HTML.raw(highlight_search_term(@row["title"], @search_term)) %>
               </span>
 
               <Student.duration_in_minutes
@@ -1966,7 +2153,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 if(@was_visited, do: "opacity-60")
               ]
             }>
-              <%= "#{@title}" %>
+              <%= @title %>
             </span>
 
             <Student.duration_in_minutes duration_minutes={@duration_minutes} graded={@graded} />
@@ -2993,7 +3180,21 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     )
   end
 
-  def get_or_compute_full_hierarchy(section) do
+  _docp = """
+  This function returns the full hierarchy for a section.
+  If the hierarchy is not in the cache, it computes it and stores it in the cache.
+
+  For the outline view, it also filters the hierarchy by the search term (if any)
+  """
+
+  def get_or_compute_full_hierarchy(section, :outline, search_term) do
+    SectionCache.get_or_compute(section.slug, :full_hierarchy, fn ->
+      Hierarchy.full_hierarchy(section)
+    end)
+    |> Hierarchy.filter_hierarchy_by_search_term(search_term)
+  end
+
+  def get_or_compute_full_hierarchy(section, _seleted_view, _search_term) do
     SectionCache.get_or_compute(section.slug, :full_hierarchy, fn ->
       Hierarchy.full_hierarchy(section)
     end)
@@ -3107,4 +3308,34 @@ defmodule OliWeb.Delivery.Student.LearnLive do
          total_pages_count: total_pages_count
        }),
        do: completed_pages_count == total_pages_count
+
+  # Helper to highlight search term in resource title
+  defp highlight_search_term(title, nil), do: escape_html(title)
+  defp highlight_search_term(title, ""), do: escape_html(title)
+
+  defp highlight_search_term(title, search_term) do
+    pattern = Regex.escape(search_term)
+    # case insensitive match
+    regex = ~r/#{pattern}/i
+
+    title
+    |> escape_html()
+    |> String.replace(regex, "<em>\\0</em>")
+  end
+
+  defp escape_html(text) do
+    text
+    |> Phoenix.HTML.html_escape()
+    |> Phoenix.HTML.safe_to_string()
+  end
+
+  _docp = """
+  This function resets the toggle buttons to their default state ('Hide Completed' and 'Expand All')
+  """
+
+  defp reset_toggle_buttons(js \\ %JS{}) do
+    js
+    |> JS.dispatch("click", to: "#collapse_all_button")
+    |> JS.dispatch("click", to: "#show_completed_button")
+  end
 end

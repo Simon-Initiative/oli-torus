@@ -7,7 +7,7 @@
   "dockerComposeFile": ["docker-compose.yml"],
   "workspaceFolder": "/workspace/oli-torus",
   "service": "app",
-  "initializeCommand": "cp oli.example.env oli.env",
+  "initializeCommand": "sh .devcontainer/scripts/init.sh",
 
   // Features to add to the dev container. More info: https://containers.dev/features.
   // "features": {},

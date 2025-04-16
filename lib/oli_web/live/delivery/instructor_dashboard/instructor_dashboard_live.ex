@@ -171,6 +171,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       |> assign_new(:activity_types_map, fn %{activities: activities} ->
         Enum.reduce(activities, %{}, fn e, m -> Map.put(m, e.id, e) end)
       end)
+      |> assign_new(:units_and_modules_options, fn ->
+        Helpers.build_units_and_modules_options(socket.assigns.section.id)
+      end)
 
     {:noreply, socket}
   end
@@ -626,6 +629,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         students={@students}
         scripts={@scripts}
         activity_types_map={@activity_types_map}
+        units_and_modules_options={@units_and_modules_options}
         view={@view}
         ctx={@ctx}
       />
