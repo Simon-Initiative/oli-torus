@@ -248,6 +248,7 @@ const SliderText: React.FC<PartComponentProps<SliderTextModel>> = (props) => {
         <div className="slider-wrapper">
           <input
             ref={sliderRef}
+            disabled={!isSliderEnabled}
             type="range"
             id={internalId}
             min={minimum}
@@ -272,7 +273,7 @@ const SliderText: React.FC<PartComponentProps<SliderTextModel>> = (props) => {
                   style={{ left: `${percent}%` }}
                   onClick={() => handleTickClick(index)}
                 >
-                  <div className="tick-mark" />
+                  {showTicks && <div className="tick-mark" />}
                   {showValueLabels && <div className="tick-label">{label}</div>}
                 </div>
               );

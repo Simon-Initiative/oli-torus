@@ -49,7 +49,7 @@ const SliderTextAuthor: React.FC<AuthorPartComponentProps<SliderTextModel>> = (p
             className="slider-track"
           />
 
-          <div className="tick-container" style={{ display: showTicks ? 'block' : 'none' }}>
+          <div className="tick-container">
             {sliderOptionLabels?.map((label, index) => {
               const percent = (index / (sliderOptionLabels.length - 1)) * 100;
               let alignClass = 'tick-center';
@@ -63,7 +63,7 @@ const SliderTextAuthor: React.FC<AuthorPartComponentProps<SliderTextModel>> = (p
                   style={{ left: `${percent}%` }}
                   onClick={() => handleTickClick(index)}
                 >
-                  <div className="tick-mark" />
+                  {showTicks && <div className="tick-mark" />}
                   {showValueLabels && <div className="tick-label">{label}</div>}
                 </div>
               );
