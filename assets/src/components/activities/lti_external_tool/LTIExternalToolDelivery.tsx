@@ -40,7 +40,7 @@ const LTIExternalTool: React.FC = () => {
           </div>
         </div>
       ) : (
-        <Alert variant="error">No client_id set</Alert>
+        <Alert variant="error">Failed to load LTI activity</Alert>
       ),
   });
 };
