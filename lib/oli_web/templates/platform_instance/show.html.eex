@@ -45,7 +45,7 @@
 
     <li>
       <strong>Deployment ID:</strong>
-      <%= @deployment.deployment_id %>
+      <%= if assigns[:deployment], do: assigns[:deployment].deployment_id, else: "No deployment" %>
     </li>
   </ul>
 

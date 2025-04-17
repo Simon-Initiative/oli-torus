@@ -25,7 +25,7 @@ defmodule OliWeb.PlatformInstanceController do
         |> put_flash(:info, "Platform instance created successfully.")
         |> redirect(to: Routes.platform_instance_path(conn, :show, platform_instance))
 
-      {:error, {:error, %Ecto.Changeset{} = changeset}} ->
+      {:error, %Ecto.Changeset{} = changeset} ->
         render(conn, "new.html", changeset: changeset)
     end
   end
