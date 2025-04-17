@@ -837,7 +837,7 @@ defmodule OliWeb.Router do
   scope "/lti", OliWeb do
     pipe_through([:api])
 
-    # LTI platform access tokens
+    # LTI platform services access tokens
     post("/auth/token", LtiController, :auth_token)
   end
 

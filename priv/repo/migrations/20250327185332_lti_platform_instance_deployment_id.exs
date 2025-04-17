@@ -29,7 +29,7 @@ defmodule Oli.Repo.Migrations.LtiExternalTools do
     # Add unique index to ensure that only one deployment exists for an activity registration
     create unique_index(:lti_external_tool_activity_deployments, :activity_registration_id)
 
-    # In order to support the activity_registratoin-based lti deployment approach, we must relax
+    # In order to support the activity registration based lti deployment approach, we must relax
     # some of the existing unique constraints on the activity_registrations table
     drop unique_index(:activity_registrations, [:delivery_element],
            name: :index_delivery_element_registrations
