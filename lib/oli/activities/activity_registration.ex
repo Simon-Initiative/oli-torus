@@ -18,7 +18,8 @@ defmodule Oli.Activities.ActivityRegistration do
     field :variables, {:array, :string}, default: []
     field :generates_report, :boolean, default: false
 
-    # Optionally, this activity registration can be associated with an LTI deployment
+    # Optionally, this activity registration can be associated with an LTI deployment.
+    # If an LTI deployment is associated, the activity is considered an LTI activity.
     has_one :lti_external_tool_activity_deployment,
             Oli.Lti.PlatformExternalTools.LtiExternalToolActivityDeployment
 
