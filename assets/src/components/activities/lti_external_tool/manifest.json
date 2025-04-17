@@ -11,11 +11,5 @@
   "authoring": {
     "element": "lti-external-tool-authoring",
     "entry": "./authoring-entry.ts"
-  },
-  "schemaPruning": {
-    "type": "keys",
-    "keys": [
-      "feedback"
-    ]
   }
 }

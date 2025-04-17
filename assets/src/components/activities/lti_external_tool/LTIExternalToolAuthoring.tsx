@@ -15,10 +15,9 @@ import { LTIExternalToolSchema } from './schema';
 const store = configureStore();
 
 const LTIExternalTool: React.FC = () => {
-  const { model, projectSlug, authoringContext, activityId } =
-    useAuthoringElementContext<LTIExternalToolSchema>();
+  const { model, projectSlug, activityId } = useAuthoringElementContext<LTIExternalToolSchema>();
 
-  let activityIdStr = activityId ? `${activityId}` : undefined;
+  const activityIdStr = activityId ? `${activityId}` : undefined;
 
   const ltiToolDetailsLoader = useLoader(
     () =>

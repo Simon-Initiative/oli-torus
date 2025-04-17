@@ -22,7 +22,6 @@ import { AlternativeOutlineItem, AlternativesOutlineItem } from './AlternativesE
 import { ContentBreakOutlineItem } from './ContentBreak';
 import { ContentOutlineItem } from './ContentEditor';
 import styles from './ContentOutline.modules.scss';
-import { LTIExternalToolOutlineItem } from './LtiExternalToolEditor';
 import { OutlineItemError, UnknownItem } from './OutlineItem';
 import { PurposeGroupOutlineItem } from './PurposeGroupEditor';
 import { SurveyOutlineItem } from './SurveyEditor';
@@ -345,9 +344,6 @@ const OutlineItem = ({
           <AlternativeOutlineItem {...props} contentItem={contentItem} />
         </ResourceGroupItem>
       );
-
-    case 'lti-external-tool':
-      return <LTIExternalToolOutlineItem {...props} contentItem={contentItem} />;
 
     default:
       return <UnknownItem />;

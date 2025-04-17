@@ -1,5 +1,3 @@
-import { Ok, ServerError, makeRequest } from './common';
-
 export type LTIExternalToolDetails = {
   name: string;
   launch_params: {
