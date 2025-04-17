@@ -37,7 +37,8 @@ defmodule OliWeb.Components.Delivery.Dialogue do
             <div class="grow shrink basis-0 self-stretch flex-col justify-start items-start gap-3 inline-flex">
               <div
                 id={"message_#{@index}_content"}
-                class="self-stretch dark:text-white text-sm font-normal font-['Open Sans'] tracking-tight"
+                class="chat-message self-stretch dark:text-white text-sm font-normal font-['Open Sans'] tracking-tight"
+                phx-hook="EvaluateMathJaxExpressions"
               >
                 <%= raw(@content) %>
               </div>

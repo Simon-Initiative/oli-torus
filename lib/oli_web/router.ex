@@ -711,7 +711,7 @@ defmodule OliWeb.Router do
     delete("/", SchedulingController, :clear)
   end
 
-  # AI trigger point endpoints
+  # AI activation point endpoints
   scope "/api/v1/triggers/:section_slug", OliWeb.Api do
     pipe_through([:api, :require_section, :delivery_protected])
 

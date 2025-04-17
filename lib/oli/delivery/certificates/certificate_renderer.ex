@@ -40,6 +40,13 @@ defmodule Oli.Delivery.Certificates.CertificateRenderer do
       font-family: Arial, sans-serif;
       background-color: white;
     }
+
+    .signature {
+      margin: 0;
+      font-family: 'Alex Brush', 'Segoe Script', 'Brush Script MT', 'Lucida Handwriting', cursive;
+      font-weight: bold;
+      font-size: 20px;
+    }
   </style>
   <body>
     <div class="frame-container">
@@ -56,7 +63,7 @@ defmodule Oli.Delivery.Certificates.CertificateRenderer do
             <div style="display: flex; justify-content: space-around;">
               <%= for {admin_name, admin_description} <- @administrators do %>
                 <div>
-                  <p style="margin: 0; font-weight: bold; font-family: 'Alex Brush', cursive; font-size: 20px;">
+                  <p class="signature">
                     <%= admin_name %>
                   </p>
                   <p style="margin: 0; font-size: small;"><%= admin_description %></p>

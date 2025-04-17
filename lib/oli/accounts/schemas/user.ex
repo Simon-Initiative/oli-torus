@@ -121,6 +121,7 @@ defmodule Oli.Accounts.User do
     user
     |> cast(attrs, [
       :email,
+      :sub,
       :password,
       :given_name,
       :family_name,
@@ -132,6 +133,7 @@ defmodule Oli.Accounts.User do
     |> validate_password(opts)
     |> put_change(:independent_learner, true)
     |> maybe_name_from_given_and_family()
+    |> maybe_generate_unique_sub()
   end
 
   defp validate_email(changeset, opts) do
@@ -181,6 +183,15 @@ defmodule Oli.Accounts.User do
         name: :users_email_independent_learner_index,
         message: "Email has already been taken by another independent learner"
       )
+    else
+      changeset
+    end
+  end
+
+  def maybe_generate_unique_sub(changeset) do
+    if changeset.valid? && is_nil(get_field(changeset, :sub)) do
+      sub = UUID.uuid4()
+      put_change(changeset, :sub, sub)
     else
       changeset
     end
@@ -509,6 +520,7 @@ defmodule Oli.Accounts.User do
     |> cast(attrs, [:email])
     |> validate_required([:email])
     |> validate_email(opts)
+    |> maybe_generate_unique_sub()
   end
 
   def invite_changeset(user, attrs, opts) do

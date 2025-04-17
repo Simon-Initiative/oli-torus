@@ -668,7 +668,7 @@ defmodule OliWeb.Sections.OverviewView do
 
     socket =
       socket
-      |> put_flash(:info, "Assistant settings updated successfully")
+      |> put_flash(:info, "AI assistant settings updated successfully")
 
     {:noreply, assign(socket, section: section)}
   end
@@ -682,7 +682,7 @@ defmodule OliWeb.Sections.OverviewView do
 
     socket =
       socket
-      |> put_flash(:info, "Assistant trigger settings updated successfully")
+      |> put_flash(:info, "AI assistant activation settings updated successfully")
 
     {:noreply, assign(socket, section: section)}
   end
@@ -747,7 +747,7 @@ defmodule OliWeb.Sections.OverviewView do
         />
       </div>
       <div class="flex py-2 mb-2">
-        <div>Enable Assistant Triggers</div>
+        <div>Enable AI Activation Points</div>
         <.toggle_switch
           class="ml-4"
           checked={@section.triggers_enabled}
