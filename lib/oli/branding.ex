@@ -248,9 +248,13 @@ defmodule Oli.Branding do
 
   defp ensure_preloaded(section, associations) do
     Logger.warning(
-      "The section association #{Kernel.inspect(associations)} has not been preloaded for branding. " <>
+      "The section association #{inspect(associations)} has not been preloaded for branding. " <>
         "The association will be loaded now but may result in performance issues."
     )
+
+    if Mix.env() == :test do
+      raise "Branding associations must be preloaded"
+    end
 
     section
     |> Repo.preload(associations)

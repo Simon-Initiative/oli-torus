@@ -113,6 +113,9 @@ defmodule Oli.BrandingTest do
           lti_1p3_deployment_id: deployment.id
         })
 
+      section =
+        Repo.preload(section, [:brand, lti_1p3_deployment: [institution: [:default_brand]]])
+
       oaf_section =
         section_fixture(%{
           context_id: UUID.uuid4(),
@@ -120,6 +123,9 @@ defmodule Oli.BrandingTest do
           open_and_free: true,
           registration_open: true
         })
+
+      oaf_section =
+        Repo.preload(oaf_section, [:brand, lti_1p3_deployment: [institution: [:default_brand]]])
 
       %{
         section: section,
@@ -147,6 +153,8 @@ defmodule Oli.BrandingTest do
         |> Institution.changeset(%{default_brand_id: institution_brand.id})
         |> Repo.update()
 
+      section = Oli.Delivery.Sections.get_section_by_slug(section.slug)
+
       assert Branding.brand_name(section) == "Institution Brand"
 
       # create section brand
@@ -156,6 +164,8 @@ defmodule Oli.BrandingTest do
         section
         |> Oli.Delivery.Sections.Section.changeset(%{brand_id: section_brand.id})
         |> Repo.update()
+
+      section = Oli.Delivery.Sections.get_section_by_slug(section.slug)
 
       assert Branding.brand_name(section) == "Section Brand"
 
@@ -167,6 +177,8 @@ defmodule Oli.BrandingTest do
         |> Oli.Delivery.Sections.Section.changeset(%{brand_id: oaf_brand.id})
         |> Repo.update()
 
+      oaf_section = Oli.Delivery.Sections.get_section_by_slug(oaf_section.slug)
+
       assert Branding.brand_name(oaf_section) == "Open and Free Brand"
     end
 
@@ -176,6 +188,8 @@ defmodule Oli.BrandingTest do
 
       {:ok, section} =
         Oli.Delivery.Sections.update_section(section, %{brand_id: section_brand.id})
+
+      section = Oli.Delivery.Sections.get_section_by_slug(section.slug)
 
       assert Branding.brand_logo_path(section) == "/some_logo"
     end
@@ -187,6 +201,8 @@ defmodule Oli.BrandingTest do
       {:ok, section} =
         Oli.Delivery.Sections.update_section(section, %{brand_id: section_brand.id})
 
+      section = Oli.Delivery.Sections.get_section_by_slug(section.slug)
+
       assert Branding.brand_logo_path_dark(section) == "/some_logo_dark"
     end
 
@@ -197,6 +213,8 @@ defmodule Oli.BrandingTest do
       {:ok, section} =
         Oli.Delivery.Sections.update_section(section, %{brand_id: section_brand.id})
 
+      section = Oli.Delivery.Sections.get_section_by_slug(section.slug)
+
       assert Branding.brand_logo_url(section) == "#{Oli.Utils.get_base_url()}/some_logo"
     end
 
@@ -206,6 +224,8 @@ defmodule Oli.BrandingTest do
 
       {:ok, section} =
         Oli.Delivery.Sections.update_section(section, %{brand_id: section_brand.id})
+
+      section = Oli.Delivery.Sections.get_section_by_slug(section.slug)
 
       assert Branding.brand_logo_url_dark(section) == "#{Oli.Utils.get_base_url()}/some_logo_dark"
     end
@@ -229,6 +249,8 @@ defmodule Oli.BrandingTest do
 
       {:ok, section} =
         Oli.Delivery.Sections.update_section(section, %{brand_id: section_brand.id})
+
+      section = Oli.Delivery.Sections.get_section_by_slug(section.slug)
 
       assert Branding.favicons("icon.png", section) == "/some_favicons/icon.png"
     end

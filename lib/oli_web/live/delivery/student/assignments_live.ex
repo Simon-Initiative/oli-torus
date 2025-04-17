@@ -19,6 +19,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
          :customizations,
          :title,
          :brand,
+         :lti_1p3_deployment,
          :contains_discussions,
          :contains_explorations,
          :contains_deliberate_practice

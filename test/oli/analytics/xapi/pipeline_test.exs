@@ -52,6 +52,7 @@ defmodule Oli.Analytics.XAPI.PipelineTest do
       assert body == "fail"
     end
 
+    @tag :flaky
     @tag :skip
     test "test that a single batcher honors batch keys", map do
       bundle1a = make_bundle("1", map.upload_directory)
