@@ -5,7 +5,7 @@ import { SliderTextModel } from './schema';
 
 const SliderTextAuthor: React.FC<AuthorPartComponentProps<SliderTextModel>> = (props) => {
   const { id, model } = props;
-  const { showLabel, minimum, label, sliderOptionLabels } = model;
+  const { showLabel, minimum, label, sliderOptionLabels, showValueLabels, showTicks } = model;
 
   const styles: CSSProperties = {
     width: '100%',
@@ -49,7 +49,7 @@ const SliderTextAuthor: React.FC<AuthorPartComponentProps<SliderTextModel>> = (p
             className="slider-track"
           />
 
-          <div className="tick-container">
+          <div className="tick-container" style={{ display: showTicks ? 'block' : 'none' }}>
             {sliderOptionLabels?.map((label, index) => {
               const percent = (index / (sliderOptionLabels.length - 1)) * 100;
               let alignClass = 'tick-center';
@@ -64,7 +64,7 @@ const SliderTextAuthor: React.FC<AuthorPartComponentProps<SliderTextModel>> = (p
                   onClick={() => handleTickClick(index)}
                 >
                   <div className="tick-mark" />
-                  <div className="tick-label">{label}</div>
+                  {showValueLabels && <div className="tick-label">{label}</div>}
                 </div>
               );
             })}

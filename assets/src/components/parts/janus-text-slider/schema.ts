@@ -13,9 +13,16 @@ export interface SliderTextModel extends JanusAbsolutePositioned, JanusCustomCss
   snapInterval: number;
   enabled: boolean;
   sliderOptionLabels: string[];
+  showTicks: boolean;
 }
 
 export const simpleSchema: JSONSchema7Object = {
+  showLabel: {
+    title: 'Show Label',
+    type: 'boolean',
+    description: 'specifies whether label is visible',
+    default: true,
+  },
   label: {
     title: 'Question Prompt',
     type: 'string',
@@ -25,7 +32,10 @@ export const simpleSchema: JSONSchema7Object = {
     title: 'Show visual labels',
     type: 'boolean',
   },
-
+  showTicks: {
+    title: 'Show Ticks',
+    type: 'boolean',
+  },
   minimum: {
     title: 'Min',
     type: 'number',
@@ -110,6 +120,14 @@ export const schema: JSONSchema7Object = {
     minItems: 2,
     maxItems: 5, // 👈 Limits to 5 items max
   },
+  showValueLabels: {
+    title: 'Show Value Labels',
+    type: 'boolean',
+  },
+  showTicks: {
+    title: 'Show Ticks',
+    type: 'boolean',
+  },
   minimum: {
     title: 'Min',
     type: 'number',
@@ -166,4 +184,5 @@ export const createSchema = (): Partial<SliderTextModel> => ({
   maximum: 3,
   snapInterval: 1,
   label: 'Text Slider',
+  showTicks: true,
 });

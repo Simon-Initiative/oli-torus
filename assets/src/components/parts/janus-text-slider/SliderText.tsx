@@ -178,7 +178,16 @@ const SliderText: React.FC<PartComponentProps<SliderTextModel>> = (props) => {
     };
   }, [props.notify]);
 
-  const { width, height, label, minimum = 0, showLabel, sliderOptionLabels } = model;
+  const {
+    width,
+    height,
+    label,
+    minimum = 0,
+    showLabel,
+    sliderOptionLabels,
+    showTicks,
+    showValueLabels,
+  } = model;
 
   useEffect(() => {
     const styleChanges: any = {};
@@ -249,7 +258,7 @@ const SliderText: React.FC<PartComponentProps<SliderTextModel>> = (props) => {
             className="slider-track"
           />
 
-          <div className="tick-container">
+          <div className="tick-container" style={{ display: showTicks ? 'block' : 'none' }}>
             {sliderOptionLabels?.map((label, index) => {
               const percent = (index / (sliderOptionLabels.length - 1)) * 100;
               let alignClass = 'tick-center';
@@ -264,7 +273,7 @@ const SliderText: React.FC<PartComponentProps<SliderTextModel>> = (props) => {
                   onClick={() => handleTickClick(index)}
                 >
                   <div className="tick-mark" />
-                  <div className="tick-label">{label}</div>
+                  {showValueLabels && <div className="tick-label">{label}</div>}
                 </div>
               );
             })}

@@ -1,39 +1,38 @@
-$sliderTrackColor: rgb(230, 230, 230);
-$sliderThumbColor: rgb(41, 41, 255);
-$sliderThumbBoxShadowColor: rgba(0, 0, 0, 1);
-$sliderThumbHoverColor: rgba(41, 41, 255, 0.4);
-$sliderShowCurrentValueLableBackgroundColor: #03a9f4;
-$sliderShowCurrentValueLableFontColor: #fff;
+// Variables
+$slider-track-color: rgb(230, 230, 230);
+$slider-thumb-color: rgb(41, 41, 255);
+$slider-thumb-shadow-color: rgba(0, 0, 0, 1);
+$slider-thumb-hover-overlay: rgba(41, 41, 255, 0.4);
+$slider-tooltip-bg: #03a9f4;
+$slider-tooltip-color: #fff;
 
-@mixin track {
+// Mixins
+@mixin slider-track {
   width: 100%;
   height: 4px;
   cursor: pointer;
-  animate: 0.2s;
-  background: $sliderTrackColor;
+  background: $slider-track-color;
   border-radius: 25px;
+  transition: background 0.2s;
 }
-@mixin trackHover {
-  background: rgb(230, 230, 230);
-}
-@mixin trackFocus {
-  background: rgb(230, 230, 230);
-}
-@mixin thumb {
+
+@mixin slider-thumb {
   height: 20px;
   width: 20px;
   border-radius: 50%;
-  background: $sliderThumbColor !important;
-  box-shadow: 0 0 4px 0 $sliderThumbBoxShadowColor;
+  background: $slider-thumb-color !important;
+  box-shadow: 0 0 4px 0 $slider-thumb-shadow-color;
   cursor: pointer;
   -webkit-appearance: none;
   margin-top: -6px;
 }
-@mixin thumbHover {
-  box-shadow: 0 0 0 4px $sliderThumbHoverColor;
+
+@mixin slider-thumb-hover {
+  box-shadow: 0 0 0 4px $slider-thumb-hover-overlay;
   transform: scale(1.4);
 }
 
+// Container Styles
 .text-slider-container {
   display: flex;
   flex-direction: column;
@@ -56,13 +55,13 @@ $sliderShowCurrentValueLableFontColor: #fff;
   width: 100%;
 }
 
+// Tick Marks
 .tick-container {
   position: absolute;
-  top: 100%; /* Pushes it right below the slider */
+  top: 100%;
   left: 0;
   right: 0;
-  margin-top: 0px; /* Add a little space if needed */
-  height: auto; /* Optional: let height grow based on content */
+  margin-top: 0px;
 }
 
 .tick {
@@ -71,20 +70,20 @@ $sliderShowCurrentValueLableFontColor: #fff;
   flex-direction: column;
   align-items: center;
   cursor: pointer;
-}
 
-.tick-center {
-  transform: translateX(-50%);
-}
+  &.tick-center {
+    transform: translateX(-50%);
+  }
 
-.tick-left {
-  transform: translateX(0%);
-  align-items: flex-start;
-}
+  &.tick-left {
+    transform: translateX(0%);
+    align-items: flex-start;
+  }
 
-.tick-right {
-  transform: translateX(-100%);
-  align-items: flex-end;
+  &.tick-right {
+    transform: translateX(-100%);
+    align-items: flex-end;
+  }
 }
 
 .tick-mark {
@@ -99,83 +98,66 @@ $sliderShowCurrentValueLableFontColor: #fff;
   white-space: nowrap;
 }
 
+// Input Slider
 input[type='range'] {
   margin: 5px 0;
 
   &::-webkit-slider-runnable-track {
-    @include track;
+    @include slider-track;
   }
   &::-moz-range-track {
-    @include track;
+    @include slider-track;
   }
+
   &::-webkit-slider-thumb {
-    @include thumb;
+    @include slider-thumb;
   }
   &::-moz-range-thumb {
-    @include thumb;
+    @include slider-thumb;
   }
+
   &:hover {
-    &::-moz-range-thumb {
-      @include thumbHover;
-    }
     &::-webkit-slider-thumb {
-      @include thumbHover;
+      @include slider-thumb-hover;
     }
-    &::-moz-range-track {
-      @include trackHover;
-    }
-    &::-webkit-slider-runnable-track {
-      @include trackHover;
+    &::-moz-range-thumb {
+      @include slider-thumb-hover;
     }
   }
+
   &:focus {
     outline: none;
 
-    &::-webkit-slider-runnable-track {
-      @include trackFocus;
-    }
+    &::-webkit-slider-runnable-track,
     &::-moz-range-track {
-      @include trackFocus;
+      background: $slider-track-color;
     }
   }
+
   &:disabled {
-    &::-webkit-slider-runnable-track {
-      @include track;
-      opacity: 0.75;
-    }
+    &::-webkit-slider-runnable-track,
     &::-moz-range-track {
-      @include track;
+      @include slider-track;
       opacity: 0.75;
     }
-    &::-webkit-slider-thumb {
-      @include thumb;
-      opacity: 0.75;
-    }
+
+    &::-webkit-slider-thumb,
     &::-moz-range-thumb {
-      @include thumb;
+      @include slider-thumb;
       opacity: 0.75;
     }
+
     &:hover {
+      &::-webkit-slider-thumb,
       &::-moz-range-thumb {
-        @include thumbHover;
-        box-shadow: 0 0 4px 0 $sliderThumbBoxShadowColor;
+        box-shadow: 0 0 4px 0 $slider-thumb-shadow-color;
         transform: scale(1);
         cursor: default;
       }
-      &::-webkit-slider-thumb {
-        @include thumbHover;
-        box-shadow: 0 0 4px 0 $sliderThumbBoxShadowColor;
-        transform: scale(1);
-        cursor: default;
-      }
+
+      &::-webkit-slider-runnable-track,
       &::-moz-range-track {
-        @include trackHover;
-        background: $sliderTrackColor;
-        cursor: default;
-      }
-      &::-webkit-slider-runnable-track {
-        @include trackHover;
-        background: $sliderTrackColor;
+        background: $slider-track-color;
         cursor: default;
       }
     }
