@@ -1,4 +1,4 @@
-defmodule OliWeb.Api.PlatformInstanceController do
+defmodule OliWeb.Api.LtiController do
   use OliWeb, :controller
 
   alias Lti_1p3.Platform.LoginHint

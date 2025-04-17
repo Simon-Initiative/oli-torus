@@ -12,12 +12,12 @@ export type LTIExternalToolDetails = {
 };
 
 export function getLtiExternalToolDetails(
-  projectOrCourse: 'project' | 'course',
+  projectOrCourse: 'projects' | 'sections',
   slug: string,
   activityId: string,
 ): Promise<LTIExternalToolDetails> {
   return fetch(`/api/v1/lti/${projectOrCourse}/${slug}/launch_details/${activityId}`, {
-    method: 'POST',
+    method: 'GET',
   }).then((response) => {
     if (!response.ok) return Promise.reject(new Error('Failed to fetch external tool details'));
 

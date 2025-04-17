@@ -23,7 +23,7 @@ const LTIExternalTool: React.FC = () => {
   const ltiToolDetailsLoader = useLoader(
     () =>
       activityIdStr
-        ? getLtiExternalToolDetails('project', projectSlug, activityIdStr)
+        ? getLtiExternalToolDetails('projects', projectSlug, activityIdStr)
         : Promise.resolve(null),
     [activityIdStr],
   );

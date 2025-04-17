@@ -19,7 +19,7 @@ const LTIExternalTool: React.FC = () => {
   const ltiToolDetailsLoader = useLoader(
     () =>
       state.activityId
-        ? getLtiExternalToolDetails('course', context.sectionSlug, `${state.activityId}`)
+        ? getLtiExternalToolDetails('sections', context.sectionSlug, `${state.activityId}`)
         : Promise.resolve(null),
     [state.activityId],
   );

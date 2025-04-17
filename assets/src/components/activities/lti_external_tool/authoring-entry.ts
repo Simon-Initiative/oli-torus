@@ -26,7 +26,7 @@ export { LTIExternalToolAuthoring } from './LTIExternalToolAuthoring';
 const manifest: Manifest = require('./manifest.json');
 
 function createFn(content: CreationContext): Promise<LTIExternalToolSchema> {
-  return Promise.resolve({ clientId: '', authoring: { openInNewTab: false } });
+  return Promise.resolve({ openInNewTab: false, authoring: { parts: [] } });
 }
 
 registerCreationFunc(manifest, createFn);

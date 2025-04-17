@@ -7,6 +7,8 @@ defmodule Oli.Lti.PlatformExternalTools do
   alias Oli.Repo
 
   alias Oli.Lti.PlatformExternalTools.LtiExternalToolActivityDeployment
+  alias Oli.Lti.PlatformInstances
+  alias Oli.Activities
 
   @doc """
   Lists all lti external tool deployments.
@@ -41,6 +43,31 @@ defmodule Oli.Lti.PlatformExternalTools do
     %LtiExternalToolActivityDeployment{}
     |> LtiExternalToolActivityDeployment.changeset(attrs)
     |> Repo.insert()
+  end
+
+  @doc """
+  Creates a lti external tool platform instance, deployment and registers the activity.
+  """
+  def register_lti_external_tool_activity(platform_instance_params) do
+    Repo.transaction(fn ->
+      with {:ok, platform_instance} <-
+             PlatformInstances.create_platform_instance(platform_instance_params),
+           {:ok, activity_registration} <-
+             Activities.register_lti_external_tool_activity(
+               platform_instance_params["name"],
+               platform_instance_params["name"],
+               platform_instance_params["description"]
+             ),
+           {:ok, deployment} <-
+             create_lti_external_tool_activity_deployment(%{
+               platform_instance_id: platform_instance.id,
+               activity_registration_id: activity_registration.id
+             }) do
+        {platform_instance, activity_registration, deployment}
+      else
+        {:error, error} -> Repo.rollback(error)
+      end
+    end)
   end
 
   @doc """
