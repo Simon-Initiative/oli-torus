@@ -29,6 +29,7 @@ export const toolbarIcons: Record<string, React.FC<{ fill?: string; stroke?: str
   janus_slider: SliderIcon,
   janus_multi_line_text: MultilineIcon,
   janus_hub_spoke: HubSpokeIcon,
+  janus_text_slider: SliderIcon,
 };
 
 export const toolbarTooltips: Record<string, string> = {
@@ -46,4 +47,5 @@ export const toolbarTooltips: Record<string, string> = {
   janus_slider: 'Slider',
   janus_multi_line_text: 'Multiline text input',
   janus_hub_spoke: 'Hub and Spoke',
+  janus_text_slider: 'Text Slider',
 };

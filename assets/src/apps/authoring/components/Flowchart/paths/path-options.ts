@@ -31,6 +31,7 @@ export const getAvailablePaths = (screen: IActivity): AllPaths[] => {
     case 'input-text':
       return createInputTextPathOptions(screen.content?.partsLayout.find(isInputText));
     case 'slider':
+    case 'text-slider':
       return createSliderPathOptions(screen.content?.partsLayout.find(isSlider));
     case 'input-number':
       return createInputNumberPathOptions(screen.content?.partsLayout.find(isInputNumber));
@@ -141,6 +142,7 @@ export type QuestionType =
   | 'multi-line-text'
   | 'input-text'
   | 'slider'
+  | 'text-slider'
   | 'input-number'
   | 'dropdown'
   | 'hub-spoke'
@@ -153,6 +155,7 @@ const questionMapping: Record<string, QuestionType> = {
   'janus-input-number': 'input-number',
   'janus-dropdown': 'dropdown',
   'janus-slider': 'slider',
+  'janus-text-slider': 'text-slider',
   'janus-hub-spoke': 'hub-spoke',
 };
 
@@ -165,6 +168,7 @@ export enum QuestionTypeMapping {
   HUB_SPOKE = 'hub_spoke',
   DROPDOWN = 'Dropdown',
   SLIDER = 'Slider',
+  TEXT_SLIDER = 'text-slider',
 }
 export const questionTypeLabels: Record<QuestionType, string> = {
   'multiple-choice': 'Multiple Choice',
@@ -175,6 +179,7 @@ export const questionTypeLabels: Record<QuestionType, string> = {
   'hub-spoke': 'Hub and Spoke',
   dropdown: 'Dropdown',
   slider: 'Slider',
+  'text-slider': 'Text Slider',
   none: 'No question',
 };
 

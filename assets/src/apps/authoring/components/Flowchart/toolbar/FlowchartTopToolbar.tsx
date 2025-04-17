@@ -15,10 +15,12 @@ export const FlowchartTopToolbar: React.FC<FlowchartTopToolbarProps> = () => {
       <ToolbarItem label="Multiline text input" screenType="multiline_text" />
       <ToolbarItem label="Slider" screenType="slider" />
 
-      {<ToolbarItem label="Hub and spoke" screenType="hub_spoke" />}
+      <ToolbarItem label="Text Slider" screenType="text_slider" />
 
       {/* <ToolbarItem label="End screen" border={true} screenType="end_screen"  /> */}
       <div />
+
+      <ToolbarItem label="Hub and spoke" screenType="hub_spoke" />
       <ToolbarItem label="Number input" screenType="number_input" />
       <ToolbarItem label="Text input" screenType="text_input" />
       <ToolbarItem label="Dropdown" screenType="dropdown" />

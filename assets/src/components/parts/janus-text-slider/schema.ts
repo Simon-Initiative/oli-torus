@@ -28,6 +28,13 @@ export const simpleSchema: JSONSchema7Object = {
     type: 'string',
     description: 'text label for the slider',
   },
+  sliderOptionLabels: {
+    title: 'Text for slider options',
+    type: 'array',
+    items: {
+      type: 'string',
+    },
+  },
   showValueLabels: {
     title: 'Show visual labels',
     type: 'boolean',
@@ -72,6 +79,10 @@ export const simpleSchema: JSONSchema7Object = {
 export const simpleUISchema = {
   'ui:ObjectFieldTemplate': CustomFieldTemplate,
   answer: correctOrRange.uiSchema,
+  sliderOptionLabels: {
+    'ui:widget': 'SliderOptionsTextEditor',
+    classNames: 'col-span-12 SliderOptionsText',
+  },
   minimum: {
     classNames: 'col-span-6 read-only',
     readOnly: true,
@@ -117,8 +128,6 @@ export const schema: JSONSchema7Object = {
     items: {
       type: 'string',
     },
-    minItems: 2,
-    maxItems: 5, // 👈 Limits to 5 items max
   },
   showValueLabels: {
     title: 'Show Value Labels',

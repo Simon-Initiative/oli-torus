@@ -74,6 +74,7 @@ const questionComponents: string[] = [
   'janus_slider',
   'janus_multi_line_text',
   'janus_hub_spoke',
+  'janus_text_slider',
 ];
 
 const ToolbarOption: React.FC<{

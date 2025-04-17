@@ -154,6 +154,7 @@ export const _generateRules = (
     case 'input-text':
       return generateTextInputRules(screen, sequence, defaultDestination);
     case 'slider':
+    case 'text-slider':
       return generateSliderRules(screen, sequence, defaultDestination);
     case 'input-number':
       return generateNumberInputRules(screen, sequence, defaultDestination);
