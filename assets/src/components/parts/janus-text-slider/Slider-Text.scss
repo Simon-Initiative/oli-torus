@@ -1,3 +1,39 @@
+$sliderTrackColor: rgb(230, 230, 230);
+$sliderThumbColor: rgb(41, 41, 255);
+$sliderThumbBoxShadowColor: rgba(0, 0, 0, 1);
+$sliderThumbHoverColor: rgba(41, 41, 255, 0.4);
+$sliderShowCurrentValueLableBackgroundColor: #03a9f4;
+$sliderShowCurrentValueLableFontColor: #fff;
+
+@mixin track {
+  width: 100%;
+  height: 4px;
+  cursor: pointer;
+  animate: 0.2s;
+  background: $sliderTrackColor;
+  border-radius: 25px;
+}
+@mixin trackHover {
+  background: rgb(230, 230, 230);
+}
+@mixin trackFocus {
+  background: rgb(230, 230, 230);
+}
+@mixin thumb {
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  background: $sliderThumbColor !important;
+  box-shadow: 0 0 4px 0 $sliderThumbBoxShadowColor;
+  cursor: pointer;
+  -webkit-appearance: none;
+  margin-top: -6px;
+}
+@mixin thumbHover {
+  box-shadow: 0 0 0 4px $sliderThumbHoverColor;
+  transform: scale(1.4);
+}
+
 .text-slider-container {
   display: flex;
   flex-direction: column;
@@ -5,106 +41,143 @@
   width: 100%;
   padding: 10px;
 }
+
 .text-slider-title {
   font-size: 1.3em;
   font-weight: 600;
 }
+
 .slider-wrapper {
   position: relative;
   width: 100%;
 }
-.slider-tooltip::after {
-  content: '';
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  margin-left: -5px;
-  border-width: 5px;
-  border-style: solid;
-  border-color: #03a9f4 transparent transparent transparent; /* updated */
-}
+
 .slider-track {
   width: 100%;
-  appearance: none;
-  height: 6px;
-  border-radius: 4px;
-  background: #e0e0e0;
-  outline: none;
-  margin-bottom: 40px;
 }
+
 .tick-container {
   position: absolute;
-  top: 6px;
+  top: 100%; /* Pushes it right below the slider */
   left: 0;
   right: 0;
-  display: flex;
-  justify-content: space-between;
+  margin-top: 0px; /* Add a little space if needed */
+  height: auto; /* Optional: let height grow based on content */
 }
+
 .tick {
+  position: absolute;
   display: flex;
   flex-direction: column;
   align-items: center;
   cursor: pointer;
 }
+
+.tick-center {
+  transform: translateX(-50%);
+}
+
+.tick-left {
+  transform: translateX(0%);
+  align-items: flex-start;
+}
+
+.tick-right {
+  transform: translateX(-100%);
+  align-items: flex-end;
+}
+
 .tick-mark {
   width: 1px;
-  height: 10px;
+  height: 6px;
   background: #333;
 }
+
 .tick-label {
   margin-top: 8px;
   font-size: 0.9em;
   white-space: nowrap;
 }
-.slider-track::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  height: 24px;
-  width: 24px;
-  border-radius: 50%;
-  background-color: #03a9f4 !important; /* updated */
-  border: none;
-  cursor: pointer;
-  box-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
-  margin-top: -8px;
-}
-.slider-track::-moz-range-thumb {
-  height: 24px;
-  width: 24px;
-  border-radius: 50%;
-  background-color: #03a9f4 !important; /* updated */
-  border: none;
-  cursor: pointer;
-  box-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
-}
-/* Tooltip styles */
-.slider-tooltip {
-  position: absolute;
-  transform: translateX(-50%);
-  bottom: 35px;
-  background-color: #03a9f4 !important; /* updated */
-  color: white;
-  padding: 4px 8px;
-  border-radius: 6px;
-  font-size: 12px;
-  white-space: nowrap;
-  font-weight: bold;
-}
-.slider-tooltip::after {
-  content: '';
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  margin-left: -5px;
-  border-width: 5px;
-  border-style: solid;
-  border-color: #03a9f4 transparent transparent transparent; /* updated */
-}
-.slider-track::-ms-thumb {
-  height: 24px;
-  width: 24px;
-  border-radius: 50%;
-  background-color: #03a9f4 !important;
-  border: none;
-  cursor: pointer;
+
+input[type='range'] {
+  margin: 5px 0;
+
+  &::-webkit-slider-runnable-track {
+    @include track;
+  }
+  &::-moz-range-track {
+    @include track;
+  }
+  &::-webkit-slider-thumb {
+    @include thumb;
+  }
+  &::-moz-range-thumb {
+    @include thumb;
+  }
+  &:hover {
+    &::-moz-range-thumb {
+      @include thumbHover;
+    }
+    &::-webkit-slider-thumb {
+      @include thumbHover;
+    }
+    &::-moz-range-track {
+      @include trackHover;
+    }
+    &::-webkit-slider-runnable-track {
+      @include trackHover;
+    }
+  }
+  &:focus {
+    outline: none;
+
+    &::-webkit-slider-runnable-track {
+      @include trackFocus;
+    }
+    &::-moz-range-track {
+      @include trackFocus;
+    }
+  }
+  &:disabled {
+    &::-webkit-slider-runnable-track {
+      @include track;
+      opacity: 0.75;
+    }
+    &::-moz-range-track {
+      @include track;
+      opacity: 0.75;
+    }
+    &::-webkit-slider-thumb {
+      @include thumb;
+      opacity: 0.75;
+    }
+    &::-moz-range-thumb {
+      @include thumb;
+      opacity: 0.75;
+    }
+    &:hover {
+      &::-moz-range-thumb {
+        @include thumbHover;
+        box-shadow: 0 0 4px 0 $sliderThumbBoxShadowColor;
+        transform: scale(1);
+        cursor: default;
+      }
+      &::-webkit-slider-thumb {
+        @include thumbHover;
+        box-shadow: 0 0 4px 0 $sliderThumbBoxShadowColor;
+        transform: scale(1);
+        cursor: default;
+      }
+      &::-moz-range-track {
+        @include trackHover;
+        background: $sliderTrackColor;
+        cursor: default;
+      }
+      &::-webkit-slider-runnable-track {
+        @include trackHover;
+        background: $sliderTrackColor;
+        cursor: default;
+      }
+    }
+  }
 }
