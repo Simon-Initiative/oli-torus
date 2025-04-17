@@ -13,9 +13,9 @@ export const FlowchartTopToolbar: React.FC<FlowchartTopToolbarProps> = () => {
       {/* <ToolbarItem label="Welcome screen" border={true} screenType="welcome_screen"  /> */}
       <ToolbarItem label="Multiple choice" screenType="multiple_choice" />
       <ToolbarItem label="Multiline text input" screenType="multiline_text" />
-      <ToolbarItem label="Slider" screenType="slider" />
+      <ToolbarItem label="Slider (Numeric)" screenType="slider" />
 
-      <ToolbarItem label="Text Slider" screenType="text_slider" />
+      <ToolbarItem label="Slider (Text)" screenType="text_slider" />
 
       {/* <ToolbarItem label="End screen" border={true} screenType="end_screen"  /> */}
       <div />

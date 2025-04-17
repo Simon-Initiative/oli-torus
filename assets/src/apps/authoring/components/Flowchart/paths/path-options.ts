@@ -178,8 +178,8 @@ export const questionTypeLabels: Record<QuestionType, string> = {
   'input-number': 'Number Input',
   'hub-spoke': 'Hub and Spoke',
   dropdown: 'Dropdown',
-  slider: 'Slider',
-  'text-slider': 'Text Slider',
+  slider: 'Slider (Numeric)',
+  'text-slider': 'Slider (Text)',
   none: 'No question',
 };
 
