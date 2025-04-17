@@ -4,19 +4,15 @@ import CustomFieldTemplate from '../../../apps/authoring/components/PropertyEdit
 import { correctOrRange, numericAdvancedFeedback } from '../parts-schemas';
 import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
-export interface SliderModel extends JanusAbsolutePositioned, JanusCustomCss {
+export interface SliderTextModel extends JanusAbsolutePositioned, JanusCustomCss {
   showLabel: boolean;
   label: string;
-  showDataTip: boolean;
   showValueLabels: boolean;
-  showTicks: boolean;
-  invertScale: boolean;
   minimum: number;
   maximum: number;
   snapInterval: number;
   enabled: boolean;
   sliderOptionLabels: string[];
-  numberOfTextLabels: number;
 }
 
 export const simpleSchema: JSONSchema7Object = {
@@ -24,10 +20,6 @@ export const simpleSchema: JSONSchema7Object = {
     title: 'Question Prompt',
     type: 'string',
     description: 'text label for the slider',
-  },
-  showDataTip: {
-    title: 'Show Data tip',
-    type: 'boolean',
   },
   showValueLabels: {
     title: 'Show visual labels',
@@ -98,10 +90,6 @@ export const simpleUISchema = {
 };
 
 export const schema: JSONSchema7Object = {
-  customCssClass: {
-    title: 'Custom CSS Class',
-    type: 'string',
-  },
   showLabel: {
     title: 'Show Label',
     type: 'boolean',
@@ -112,12 +100,6 @@ export const schema: JSONSchema7Object = {
     title: 'Label',
     type: 'string',
     description: 'text label for the slider',
-  },
-  numberOfTextLabels: {
-    title: 'Number of text labels',
-    type: 'number',
-    enum: [2, 3, 4, 5],
-    default: 3,
   },
   sliderOptionLabels: {
     title: 'Text for slider options',
@@ -173,18 +155,13 @@ export const adaptivitySchema = {
   enabled: CapiVariableTypes.BOOLEAN,
 };
 
-export const createSchema = (): Partial<SliderModel> => ({
+export const createSchema = (): Partial<SliderTextModel> => ({
   width: 487,
   height: 80,
   enabled: true,
-  customCssClass: '',
   showLabel: true,
-  showDataTip: true,
   showValueLabels: true,
-  showTicks: true,
-  showThumbByDefault: true,
   sliderOptionLabels: ['Label 1', 'Label 2', 'Label 3'],
-  invertScale: false,
   minimum: 0,
   maximum: 3,
   snapInterval: 1,

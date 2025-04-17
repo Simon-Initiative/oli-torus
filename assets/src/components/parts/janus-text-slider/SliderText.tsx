@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import React, { CSSProperties, ChangeEvent, useCallback, useEffect, useRef, useState } from 'react';
+import React, { CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
@@ -8,17 +8,14 @@ import {
 import { contexts } from '../../../types/applicationContext';
 import { PartComponentProps } from '../types/parts';
 import './Slider-Text.scss';
-import { SliderModel } from './schema';
+import { SliderTextModel } from './schema';
 
-const SliderText: React.FC<PartComponentProps<SliderModel>> = (props) => {
+const SliderText: React.FC<PartComponentProps<SliderTextModel>> = (props) => {
   const [_state, setState] = useState<unknown>([]);
-  const [model, setModel] = useState<Partial<SliderModel>>({});
+  const [model, setModel] = useState<Partial<SliderTextModel>>({});
   const [ready, setReady] = useState<boolean>(false);
 
   const id: string = props.id;
-  const [inputInnerWidth, setInputInnerWidth] = useState<number>(0);
-  const [spanInnerWidth, setSpanInnerWidth] = useState<number>(0);
-
   const [sliderValue, setSliderValue] = useState(0);
   const [isSliderEnabled, setIsSliderEnabled] = useState(true);
   const [_cssClass, setCssClass] = useState('');
@@ -74,7 +71,6 @@ const SliderText: React.FC<PartComponentProps<SliderModel>> = (props) => {
     if (sCssClass !== undefined) {
       setCssClass(sCssClass);
     }
-    //Instead of hardcoding REVIEW, we can make it an global interface and then importa that here.
     if (initResult.context.mode === contexts.REVIEW) {
       setIsSliderEnabled(false);
     }
@@ -182,23 +178,7 @@ const SliderText: React.FC<PartComponentProps<SliderModel>> = (props) => {
     };
   }, [props.notify]);
 
-  const {
-    _x,
-    _y,
-    z,
-    width,
-    height,
-    _customCssClass,
-    label,
-    maximum = 1,
-    minimum = 0,
-    snapInterval,
-    showDataTip,
-    showValueLabels,
-    showLabel,
-    showTicks,
-    invertScale,
-  } = model;
+  const { width, height, label, minimum = 0, showLabel, sliderOptionLabels } = model;
 
   useEffect(() => {
     const styleChanges: any = {};
@@ -213,37 +193,9 @@ const SliderText: React.FC<PartComponentProps<SliderModel>> = (props) => {
   }, [width, height]);
   const styles: CSSProperties = {
     width: '100%',
-    flexDirection: model.showLabel ? 'column' : 'row',
+    flexDirection: showLabel ? 'column' : 'row',
   };
-  const inputStyles: CSSProperties = {
-    width: '100%',
-    height: `3px`,
-    zIndex: z,
-    direction: invertScale ? 'rtl' : 'ltr',
-  };
-  const divStyles: CSSProperties = {
-    width: '100%',
-    display: `flex`,
-    flexDirection: 'row',
-    alignItems: 'center',
-  };
-  const inputWidth = inputInnerWidth;
-  const thumbWidth = spanInnerWidth;
-  const thumbHalfWidth = thumbWidth / 2;
-  const thumbPosition =
-    ((Number(sliderValue) - minimum) / (maximum - minimum)) *
-    (inputWidth - thumbWidth + thumbHalfWidth);
-  const thumbMargin = thumbHalfWidth * -1 + thumbHalfWidth / 2;
-  const getTickOptions = () => {
-    if (snapInterval) {
-      const options = [];
-      const numberOfTicks = (maximum - minimum) / snapInterval;
-      for (let i = 0; i <= numberOfTicks; i++) {
-        options.push(<option key={i} value={i * snapInterval}></option>);
-      }
-      return options;
-    }
-  };
+
   const saveState = ({ sliderVal, userModified }: { sliderVal: number; userModified: boolean }) => {
     props.onSave({
       id: `${id}`,
@@ -262,25 +214,18 @@ const SliderText: React.FC<PartComponentProps<SliderModel>> = (props) => {
     });
   };
 
-  const handleSliderChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const sliderVal = parseFloat(e.target.value);
-    setSliderValue(sliderVal);
-    saveState({ sliderVal, userModified: true });
+  const sliderRef = useRef<HTMLInputElement>(null);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const sliderValue = Number(e.target.value);
+    setSliderValue(sliderValue);
+    saveState({ sliderVal: sliderValue, userModified: true });
   };
-  const inputTargetRef = useRef<HTMLInputElement>(null);
-  useEffect(() => {
-    if (inputTargetRef && inputTargetRef.current) {
-      setInputInnerWidth(inputTargetRef?.current?.offsetWidth);
-    }
-  });
 
-  const divTargetRef = useRef<HTMLSpanElement>(null);
-  useEffect(() => {
-    if (divTargetRef && divTargetRef.current) {
-      setSpanInnerWidth(divTargetRef?.current?.offsetWidth);
-    }
-  });
-
+  const handleTickClick = (index: number) => {
+    saveState({ sliderVal: index, userModified: true });
+    setSliderValue(index);
+  };
   const internalId = `${id}__slider`;
 
   return ready ? (
@@ -290,48 +235,30 @@ const SliderText: React.FC<PartComponentProps<SliderModel>> = (props) => {
           {label}
         </label>
       )}
-      <div className="sliderInner">
-        <div className="rangeWrap">
-          <div style={divStyles}>
-            {showDataTip && (
-              <div className="rangeValue" id={`rangeV-${internalId}`}>
-                <span
-                  ref={divTargetRef}
-                  id={`slider-thumb-${internalId}`}
-                  style={{
-                    left: `${invertScale ? undefined : thumbPosition}px`,
-                    marginLeft: `${invertScale ? undefined : thumbMargin}px`,
-                    right: `${invertScale ? thumbPosition : undefined}px`,
-                    marginRight: `${invertScale ? thumbMargin : undefined}px`,
-                  }}
-                >
-                  {sliderValue}
-                </span>
+      <div className="sliderInner" style={!showLabel ? { width: '100%' } : {}}>
+        <div className="slider-wrapper">
+          <input
+            ref={sliderRef}
+            type="range"
+            id={internalId}
+            min={minimum}
+            max={sliderOptionLabels?.length ? sliderOptionLabels?.length - 1 : 3}
+            step={1}
+            value={sliderValue}
+            onChange={handleChange}
+            className="slider-track"
+          />
+
+          <div className="tick-container">
+            {sliderOptionLabels?.map((label, index) => (
+              <div key={index} className="tick" onClick={() => handleTickClick(index)}>
+                <div className="tick-mark" />
+                <div className="tick-label">{label}</div>
               </div>
-            )}
-            <input
-              ref={inputTargetRef}
-              disabled={!isSliderEnabled}
-              style={inputStyles}
-              min={minimum}
-              max={maximum}
-              type={'range'}
-              value={sliderValue}
-              step={snapInterval}
-              id={internalId}
-              onChange={handleSliderChange}
-              list={showTicks ? `datalist${internalId}` : ''}
-            />
-            {showTicks && (
-              <datalist style={{ display: 'none' }} id={`datalist${internalId}`}>
-                {getTickOptions()}
-              </datalist>
-            )}
+            ))}
           </div>
         </div>
       </div>
-
-      {showValueLabels && <label htmlFor={internalId}>{invertScale ? minimum : maximum}</label>}
     </div>
   ) : null;
 };
