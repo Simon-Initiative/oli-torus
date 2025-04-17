@@ -44,8 +44,8 @@ defmodule OliWeb.Users.Invitations.UsersInviteViewTest do
 
     context_role =
       case role do
-        "student" -> Lti_1p3.Tool.ContextRoles.get_role(:context_learner)
-        "instructor" -> Lti_1p3.Tool.ContextRoles.get_role(:context_instructor)
+        "student" -> Lti_1p3.Roles.ContextRoles.get_role(:context_learner)
+        "instructor" -> Lti_1p3.Roles.ContextRoles.get_role(:context_instructor)
       end
 
     {:ok, enrollment} =

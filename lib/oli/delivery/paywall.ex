@@ -14,7 +14,7 @@ defmodule Oli.Delivery.Paywall do
   alias Oli.Delivery.Sections.Blueprint
   alias Oli.Institutions.Institution
   alias Oli.Delivery.Paywall.AccessSummary
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
 
   @maximum_batch_size 500
 

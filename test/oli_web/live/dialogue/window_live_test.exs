@@ -5,7 +5,7 @@ defmodule OliWeb.Dialogue.WindowLiveTest do
   import Oli.Factory
   import Phoenix.LiveViewTest
 
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
   alias Oli.Resources.ResourceType
   alias Oli.Delivery.Sections
 

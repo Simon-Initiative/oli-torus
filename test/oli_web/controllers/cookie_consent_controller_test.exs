@@ -3,7 +3,7 @@ defmodule OliWeb.CookieConsentControllerTest do
 
   alias Oli.Delivery.Sections
   alias Oli.Seeder
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
 
   describe "cookie_consent controller " do
     setup [:setup_session]

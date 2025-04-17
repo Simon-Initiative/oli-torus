@@ -38,7 +38,7 @@ defmodule OliWeb.Api.TriggerPointControllerTest do
       Oli.Delivery.Sections.enroll(
         map.user1.id,
         map.section.id,
-        [Lti_1p3.Tool.ContextRoles.get_role(:context_learner)],
+        [Lti_1p3.Roles.ContextRoles.get_role(:context_learner)],
         :enrolled
       )
 
@@ -69,7 +69,7 @@ defmodule OliWeb.Api.TriggerPointControllerTest do
       Oli.Delivery.Sections.enroll(
         map.user1.id,
         map.section.id,
-        [Lti_1p3.Tool.ContextRoles.get_role(:context_learner)],
+        [Lti_1p3.Roles.ContextRoles.get_role(:context_learner)],
         :enrolled
       )
 

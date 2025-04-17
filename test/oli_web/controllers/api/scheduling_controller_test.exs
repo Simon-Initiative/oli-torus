@@ -156,7 +156,7 @@ defmodule OliWeb.SchedulingControllerTest do
       |> Sections.create_section_resources(initial_pub)
 
     Sections.enroll(map.teacher.id, section.id, [
-      Lti_1p3.Tool.ContextRoles.get_role(:context_instructor)
+      Lti_1p3.Roles.ContextRoles.get_role(:context_instructor)
     ])
 
     map = Map.put(map, :section, section)

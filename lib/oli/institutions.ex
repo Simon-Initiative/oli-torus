@@ -42,7 +42,7 @@ defmodule Oli.Institutions do
     do: Repo.get!(Institution, id) |> Repo.preload([:deployments, :default_brand])
 
   def get_students_by_institution(institution_id, text_search, limit, offset) do
-    student_role_id = Lti_1p3.Tool.ContextRoles.get_role(:context_learner).id
+    student_role_id = Lti_1p3.Roles.ContextRoles.get_role(:context_learner).id
 
     filter_by_text =
       if text_search in ["", nil] do

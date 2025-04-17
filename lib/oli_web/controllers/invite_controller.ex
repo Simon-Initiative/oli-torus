@@ -1,7 +1,7 @@
 defmodule OliWeb.InviteController do
   use OliWeb, :controller
 
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
   alias Oli.Repo
   alias Oli.Accounts
   alias Oli.Accounts.AuthorToken

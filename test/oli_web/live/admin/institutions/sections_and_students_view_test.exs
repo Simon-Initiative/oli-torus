@@ -5,7 +5,7 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsViewTest do
   import Phoenix.LiveViewTest
   import Oli.Factory
 
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
   alias Oli.Delivery.Sections
 
   defp live_view_sections_and_students_live(institution_id, selected_tab) do

@@ -9,8 +9,8 @@ defmodule Oli.AccountsTest do
   alias Oli.Groups
   alias Oli.Groups.CommunityAccount
   alias Oli.Delivery.Sections
-  alias Lti_1p3.Tool.ContextRoles
-  alias Lti_1p3.Tool.PlatformRoles
+  alias Lti_1p3.Roles.ContextRoles
+  alias Lti_1p3.Roles.PlatformRoles
   alias Oli.Accounts.SystemRole
 
   describe "authors" do
@@ -277,19 +277,19 @@ defmodule Oli.AccountsTest do
       assert user.platform_roles == []
 
       updated_roles = [
-        Lti_1p3.Tool.PlatformRoles.get_role(:system_administrator),
-        Lti_1p3.Tool.PlatformRoles.get_role(:institution_instructor)
+        Lti_1p3.Roles.PlatformRoles.get_role(:system_administrator),
+        Lti_1p3.Roles.PlatformRoles.get_role(:institution_instructor)
       ]
 
       {:ok, _user} = Accounts.update_user_platform_roles(user, updated_roles)
 
       user = Accounts.get_user!(user.id, preload: [:platform_roles])
 
-      assert Lti_1p3.Tool.PlatformRoles.has_roles?(
+      assert Lti_1p3.Roles.PlatformRoles.has_roles?(
                user,
                [
-                 Lti_1p3.Tool.PlatformRoles.get_role(:system_administrator),
-                 Lti_1p3.Tool.PlatformRoles.get_role(:institution_instructor)
+                 Lti_1p3.Roles.PlatformRoles.get_role(:system_administrator),
+                 Lti_1p3.Roles.PlatformRoles.get_role(:institution_instructor)
                ],
                :all
              )
@@ -465,7 +465,7 @@ defmodule Oli.AccountsTest do
 
       {:ok, enrollment} =
         Sections.enroll(user.id, section.id, [
-          Lti_1p3.Tool.ContextRoles.get_role(:context_learner)
+          Lti_1p3.Roles.ContextRoles.get_role(:context_learner)
         ])
 
       user_role_id = Sections.get_user_role_from_enrollment(enrollment)
@@ -635,18 +635,18 @@ defmodule Oli.AccountsTest do
       section = insert(:section)
 
       Sections.enroll(user.id, section.id, [
-        Lti_1p3.Tool.ContextRoles.get_role(:context_learner)
+        Lti_1p3.Roles.ContextRoles.get_role(:context_learner)
       ])
 
       Accounts.update_user_platform_roles(user, [
-        Lti_1p3.Tool.PlatformRoles.get_role(:institution_instructor),
-        Lti_1p3.Tool.PlatformRoles.get_role(:institution_student)
+        Lti_1p3.Roles.PlatformRoles.get_role(:institution_instructor),
+        Lti_1p3.Roles.PlatformRoles.get_role(:institution_student)
       ])
 
       user_roles = Accounts.user_roles(user.id) |> Enum.map(& &1.uri)
-      assert Lti_1p3.Tool.ContextRoles.get_role(:context_learner).uri in user_roles
-      assert Lti_1p3.Tool.PlatformRoles.get_role(:institution_instructor).uri in user_roles
-      assert Lti_1p3.Tool.PlatformRoles.get_role(:institution_student).uri in user_roles
+      assert Lti_1p3.Roles.ContextRoles.get_role(:context_learner).uri in user_roles
+      assert Lti_1p3.Roles.PlatformRoles.get_role(:institution_instructor).uri in user_roles
+      assert Lti_1p3.Roles.PlatformRoles.get_role(:institution_student).uri in user_roles
     end
   end
 

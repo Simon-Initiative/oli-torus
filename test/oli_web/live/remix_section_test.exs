@@ -7,7 +7,7 @@ defmodule OliWeb.RemixSectionLiveTest do
   import Ecto.Query, warn: false
 
   alias Oli.Seeder
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
   alias Oli.Delivery.Sections
   alias Oli.Accounts
 
@@ -1104,7 +1104,7 @@ defmodule OliWeb.RemixSectionLiveTest do
       Accounts.update_user_platform_roles(
         user_fixture(%{can_create_sections: true, independent_learner: true}),
         [
-          Lti_1p3.Tool.PlatformRoles.get_role(:institution_instructor)
+          Lti_1p3.Roles.PlatformRoles.get_role(:institution_instructor)
         ]
       )
 

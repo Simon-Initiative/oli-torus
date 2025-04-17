@@ -3,7 +3,7 @@
     <h3 class="truncate">
       <%= if Map.has_key?(@conn.assigns, :breadcrumbs) and length(@breadcrumbs) > 0,
         do: hd(Enum.reverse(@breadcrumbs)).short_title,
-        else: @title %>
+        else: assigns[:title] %>
     </h3>
     <div class="flex-1"></div>
     <div>

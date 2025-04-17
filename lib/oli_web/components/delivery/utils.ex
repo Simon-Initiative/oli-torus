@@ -13,8 +13,8 @@ defmodule OliWeb.Components.Delivery.Utils do
   alias Oli.Accounts.{User, Author, SystemRole}
   alias OliWeb.Icons
   alias Phoenix.LiveView.JS
-  alias Lti_1p3.Tool.ContextRoles
-  alias Lti_1p3.Tool.PlatformRoles
+  alias Lti_1p3.Roles.ContextRoles
+  alias Lti_1p3.Roles.PlatformRoles
 
   import Oli.Utils, only: [identity: 1]
 

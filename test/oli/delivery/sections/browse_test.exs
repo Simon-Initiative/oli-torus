@@ -5,7 +5,7 @@ defmodule Oli.Delivery.Sections.BrowseTest do
   alias Oli.Delivery.Sections.{Browse, BrowseOptions}
   alias Oli.Institutions.Institution
   alias Oli.Repo.{Paging, Sorting}
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
 
   import Ecto.Query, warn: false
   import Oli.Factory

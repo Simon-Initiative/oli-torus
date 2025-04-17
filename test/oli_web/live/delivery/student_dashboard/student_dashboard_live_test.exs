@@ -5,7 +5,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLiveTest do
   import Oli.Factory
   import Phoenix.LiveViewTest
 
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
   alias Oli.Delivery.Sections
 
   defp live_view_students_dashboard_route(

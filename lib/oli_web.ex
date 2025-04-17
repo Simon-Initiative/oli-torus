@@ -22,9 +22,9 @@ defmodule OliWeb do
   def controller do
     quote do
       use Phoenix.Controller, layouts: [html: {OliWeb.LayoutView, :app}], namespace: OliWeb
+      use Gettext, backend: OliWeb.Gettext
 
       import Plug.Conn
-      import OliWeb.Gettext
       import Phoenix.LiveView.Controller
 
       alias OliWeb.Router.Helpers, as: Routes
@@ -119,7 +119,7 @@ defmodule OliWeb do
   def channel do
     quote do
       use Phoenix.Channel
-      import OliWeb.Gettext
+      use Gettext, backend: OliWeb.Gettext
     end
   end
 
@@ -128,6 +128,8 @@ defmodule OliWeb do
       # Use all HTML functionality (forms, tags, etc)
       use Phoenix.HTML
 
+      use Gettext, backend: OliWeb.Gettext
+
       # Import LiveView helpers (live_render, live_component, live_patch, etc)
       import Phoenix.LiveView.Helpers
 
@@ -135,7 +137,6 @@ defmodule OliWeb do
       import Phoenix.View
 
       import OliWeb.ErrorHelpers
-      import OliWeb.Gettext
 
       import OliWeb.ViewHelpers
       import OliWeb.Common.FormatDateTime

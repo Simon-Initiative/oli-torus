@@ -10,7 +10,7 @@ defmodule Oli.Delivery.Sections.AssessmentSettingsTest do
   alias Oli.Delivery.Sections.SectionResource
   alias Oli.Delivery.Sections.SectionResourceDepot
   alias Oli.Repo
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
 
   describe "do_update" do
     setup [:setup_data]

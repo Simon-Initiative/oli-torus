@@ -1,11 +1,12 @@
 defmodule OliWeb.LtiControllerTest do
   use OliWeb.ConnCase
 
-  alias Lti_1p3.Platform.{LoginHint, LoginHints, PlatformInstance}
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Platform.{LoginHint, LoginHints}
+  alias Lti_1p3.Roles.ContextRoles
   alias Oli.Institutions
   alias Oli.Delivery.Sections
   alias Oli.Accounts.User
+  alias Oli.Lti.PlatformExternalTools
 
   import Mox
   import Oli.Factory
@@ -389,21 +390,28 @@ defmodule OliWeb.LtiControllerTest do
 
     test "authorize_redirect get successful for user", %{conn: conn} do
       user = user_fixture()
-      {:ok, %LoginHint{value: login_hint}} = LoginHints.create_login_hint(user.id)
+
+      {:ok, %LoginHint{value: login_hint}} =
+        LoginHints.create_login_hint(user.id, %{
+          "section" => "some_section",
+          "resource_id" => "some_resource_id"
+        })
+
       target_link_uri = "some-valid-url"
       nonce = "some-nonce"
       client_id = "some-client-id"
       state = "some-state"
       lti_message_hint = "some-lti-message-hint"
 
-      {:ok, %PlatformInstance{}} =
-        Lti_1p3.Platform.create_platform_instance(%PlatformInstance{
-          name: "some-platform",
-          target_link_uri: target_link_uri,
-          client_id: client_id,
-          login_url: "some-login-url",
-          keyset_url: "some-keyset-url",
-          redirect_uris: "some-valid-url"
+      {:ok, {_, _, _}} =
+        PlatformExternalTools.register_lti_external_tool_activity(%{
+          "name" => "some-platform",
+          "description" => "some-description",
+          "target_link_uri" => "target_link_uri",
+          "client_id" => "some-client-id",
+          "login_url" => "some-login-url",
+          "keyset_url" => "some-keyset-url",
+          "redirect_uris" => "some-valid-url"
         })
 
       params = %{
@@ -431,21 +439,28 @@ defmodule OliWeb.LtiControllerTest do
 
     test "authorize_redirect get successful for author", %{conn: conn} do
       author = author_fixture()
-      {:ok, %LoginHint{value: login_hint}} = LoginHints.create_login_hint(author.id, "author")
+
+      {:ok, %LoginHint{value: login_hint}} =
+        LoginHints.create_login_hint(author.id, %{
+          "project" => "some_project",
+          "resource_id" => "some_resource_id"
+        })
+
       target_link_uri = "some-valid-url"
       nonce = "some-nonce"
       client_id = "some-client-id"
       state = "some-state"
       lti_message_hint = "some-lti-message-hint"
 
-      {:ok, %PlatformInstance{}} =
-        Lti_1p3.Platform.create_platform_instance(%PlatformInstance{
-          name: "some-platform",
-          target_link_uri: target_link_uri,
-          client_id: client_id,
-          login_url: "some-login-url",
-          keyset_url: "some-keyset-url",
-          redirect_uris: "some-valid-url"
+      {:ok, {_, _, _}} =
+        PlatformExternalTools.register_lti_external_tool_activity(%{
+          "name" => "some-platform",
+          "description" => "some-description",
+          "target_link_uri" => "target_link_uri",
+          "client_id" => "some-client-id",
+          "login_url" => "some-login-url",
+          "keyset_url" => "some-keyset-url",
+          "redirect_uris" => "some-valid-url"
         })
 
       params = %{

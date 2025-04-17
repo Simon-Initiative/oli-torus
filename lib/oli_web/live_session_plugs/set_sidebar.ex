@@ -11,12 +11,12 @@ defmodule OliWeb.LiveSessionPlugs.SetSidebar do
   alias OliWeb.Common.SessionContext
 
   @platform_student_roles [
-    Lti_1p3.Tool.PlatformRoles.get_role(:institution_student),
-    Lti_1p3.Tool.PlatformRoles.get_role(:institution_learner)
+    Lti_1p3.Roles.PlatformRoles.get_role(:institution_student),
+    Lti_1p3.Roles.PlatformRoles.get_role(:institution_learner)
   ]
 
   @context_student_roles [
-    Lti_1p3.Tool.ContextRoles.get_role(:context_learner)
+    Lti_1p3.Roles.ContextRoles.get_role(:context_learner)
   ]
 
   def on_mount(:default, :not_mounted_at_router, _session, socket) do

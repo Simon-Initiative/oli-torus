@@ -7,7 +7,7 @@ defmodule OliWeb.Sections.EditLiveTest do
 
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
 
   defp live_view_edit_route(section_slug) do
     ~p"/sections/#{section_slug}/edit"

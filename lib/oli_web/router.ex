@@ -373,7 +373,6 @@ defmodule OliWeb.Router do
     pipe_through([:api])
 
     get("/api/v1/legacy_support", LegacySupportController, :index)
-    post("/access_tokens", LtiController, :access_tokens)
 
     post("/help/create", HelpController, :create)
     post("/consent/cookie", CookieConsentController, :persist_cookies)
@@ -834,18 +833,20 @@ defmodule OliWeb.Router do
     post("/ecl", Api.ECLController, :eval)
   end
 
-  scope "/api/v1/lti", OliWeb, as: :api do
-    pipe_through([:api, :authoring_protected])
+  # LTI routes
+  scope "/lti", OliWeb do
+    pipe_through([:api])
 
-    resources("/platforms", Api.PlatformInstanceController)
+    # LTI platform services access tokens
+    post("/auth/token", LtiController, :auth_token)
   end
 
-  # LTI routes
   scope "/lti", OliWeb do
     pipe_through([:lti, :www_url_form, :delivery])
 
     post("/login", LtiController, :login)
     get("/login", LtiController, :login)
+
     post("/launch", LtiController, :launch)
     post("/test", LtiController, :test)
 
@@ -1428,6 +1429,26 @@ defmodule OliWeb.Router do
     get("/:activity_attempt_guid", Api.AttemptController, :get_activity_attempt)
   end
 
+  scope "/api/v1/lti/projects/:project_slug", OliWeb, as: :api do
+    pipe_through([:api, :authoring_protected])
+
+    get(
+      "/launch_details/:activity_id",
+      Api.LtiController,
+      :launch_details
+    )
+  end
+
+  scope "/api/v1/lti/sections/:section_slug", OliWeb, as: :api do
+    pipe_through([:api, :require_section, :delivery_protected])
+
+    get(
+      "/launch_details/:activity_id",
+      Api.LtiController,
+      :launch_details
+    )
+  end
+
   ### Invitations (to sections or projects)
 
   scope "/", OliWeb do
@@ -1466,7 +1487,16 @@ defmodule OliWeb.Router do
     live("/select_project", Delivery.NewCourse, :lms_instructor, as: :select_source)
   end
 
+  ### Admin Dashboard / LTI Platform Management
+
+  scope "/admin", OliWeb do
+    pipe_through([:browser, :authoring_protected, :require_authenticated_system_admin, :workspace])
+
+    resources("/platform_instances", PlatformInstanceController)
+  end
+
   ### Admin Dashboard / Telemetry
+
   scope "/admin", OliWeb do
     pipe_through([:browser, :authoring_protected, :require_authenticated_system_admin])
 
@@ -1478,8 +1508,6 @@ defmodule OliWeb.Router do
         broadway: {BroadwayDashboard, pipelines: [Oli.Analytics.XAPI.UploadPipeline]}
       ]
     )
-
-    resources("/platform_instances", PlatformInstanceController)
   end
 
   ### Admin Portal / Management

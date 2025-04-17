@@ -8,7 +8,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
   alias Oli.Delivery.Sections
   alias Oli.Resources.ResourceType
   alias OliWeb.Delivery.Student.Home.Components.ScheduleComponent
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
 
   defp enroll_as_student(%{user: user, section: section} = context) do
     Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])

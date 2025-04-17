@@ -107,7 +107,7 @@ defmodule OliWeb.CollaborationLiveTest do
     Sections.update_section_resource(sr, %{collab_space_config: collab_space_config})
 
     Sections.enroll(user.id, section.id, [
-      Lti_1p3.Tool.ContextRoles.get_role(:context_learner)
+      Lti_1p3.Roles.ContextRoles.get_role(:context_learner)
     ])
 
     first_post = insert(:post, section: section, resource: page_resource_cs, user: user)

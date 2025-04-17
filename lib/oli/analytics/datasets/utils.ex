@@ -1,7 +1,7 @@
 defmodule Oli.Analytics.Datasets.Utils do
   alias Oli.Repo
   import Ecto.Query
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
 
   @student_role ContextRoles.get_role(:context_learner).id
 

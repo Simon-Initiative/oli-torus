@@ -14,7 +14,7 @@ defmodule Oli.Conversation do
   """
   def get_students_with_conversation_count(section_id) do
     learner_context_role_id =
-      Lti_1p3.Tool.ContextRoles.get_role(:context_learner).id
+      Lti_1p3.Roles.ContextRoles.get_role(:context_learner).id
 
     from(u in Oli.Accounts.User,
       join: e in assoc(u, :enrollments),

@@ -5,7 +5,7 @@ defmodule Oli.Accounts.UserBrowseTest do
   alias Oli.Repo.{Paging, Sorting}
   alias Oli.Accounts
   alias Oli.Accounts.{UserBrowseOptions}
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
   import Ecto.Query, warn: false
 
   def browse(offset, field, direction, text_search, include) do

@@ -2,7 +2,7 @@ defmodule Oli.Delivery.Page.PageContextTest do
   use Oli.DataCase
 
   alias Oli.Delivery.Page.PageContext
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
   alias Oli.Delivery.Sections
 
   describe "page context" do

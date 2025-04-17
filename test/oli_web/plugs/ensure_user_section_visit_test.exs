@@ -4,7 +4,7 @@ defmodule OliWeb.Plugs.EnsureUserSectionVisitTest do
 
   alias OliWeb.Plugs.EnsureUserSectionVisit
   alias Oli.Delivery.Sections
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
 
   describe "ensure_user_section_visit/2" do
     setup %{conn: conn} do

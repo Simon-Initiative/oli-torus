@@ -5,7 +5,7 @@ defmodule OliWeb.Workspaces.StudentTest do
   import Phoenix.LiveViewTest
   import Oli.Factory
 
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
   alias Oli.Delivery.Sections
   alias Oli.Accounts
 

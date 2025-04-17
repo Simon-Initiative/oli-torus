@@ -1,7 +1,7 @@
 defmodule Oli.Delivery.Attempts.WasLateTest do
   use Oli.DataCase
 
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
   alias Oli.Delivery.Attempts.Core
   alias Oli.Delivery.Attempts.PageLifecycle
   alias Oli.Delivery.Attempts.PageLifecycle.AttemptState

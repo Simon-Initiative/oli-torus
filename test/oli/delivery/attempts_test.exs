@@ -10,7 +10,7 @@ defmodule Oli.Delivery.AttemptsTest do
   alias Oli.Activities.Model.{Part, Feedback}
   alias Oli.Delivery.Page.PageContext
   alias Oli.Delivery.Attempts.Core.{ClientEvaluation, StudentInput, ActivityAttempt}
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
   alias Oli.Delivery.Sections
 
   import Oli.Factory

@@ -18,6 +18,7 @@ export interface AuthoringElementProps<T extends ActivityModelSchema> {
   projectSlug: ProjectSlug;
   authoringContext?: any;
   notify?: EventEmitter;
+  activityId?: number;
 }
 
 /**

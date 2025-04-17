@@ -7,10 +7,10 @@ defmodule OliWeb.Users.UsersDetailViewTest do
 
   alias Oli.Seeder
   alias Oli.Accounts
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
   alias Oli.Delivery.Sections
 
-  @role_institution_instructor Lti_1p3.Tool.PlatformRoles.get_role(:institution_instructor)
+  @role_institution_instructor Lti_1p3.Roles.PlatformRoles.get_role(:institution_instructor)
 
   describe "user details live test" do
     setup [:setup_session]
@@ -573,7 +573,7 @@ defmodule OliWeb.Users.UsersDetailViewTest do
       Accounts.update_user_platform_roles(
         user_fixture(%{can_create_sections: true, independent_learner: true}),
         [
-          Lti_1p3.Tool.PlatformRoles.get_role(:institution_instructor)
+          Lti_1p3.Roles.PlatformRoles.get_role(:institution_instructor)
         ]
       )
 
@@ -581,7 +581,7 @@ defmodule OliWeb.Users.UsersDetailViewTest do
       Accounts.update_user_platform_roles(
         user_fixture(%{independent_learner: true}),
         [
-          Lti_1p3.Tool.PlatformRoles.get_role(:institution_student)
+          Lti_1p3.Roles.PlatformRoles.get_role(:institution_student)
         ]
       )
 
@@ -589,7 +589,7 @@ defmodule OliWeb.Users.UsersDetailViewTest do
       Accounts.update_user_platform_roles(
         user_fixture(%{independent_learner: false}),
         [
-          Lti_1p3.Tool.PlatformRoles.get_role(:institution_student)
+          Lti_1p3.Roles.PlatformRoles.get_role(:institution_student)
         ]
       )
 

@@ -4,7 +4,7 @@ defmodule OliWeb.DeliveryControllerTest do
   alias Oli.Accounts
   alias Oli.Publishing
   alias Oli.Seeder
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
   alias Oli.Delivery.Sections
 
   import Mox

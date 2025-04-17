@@ -5,6 +5,7 @@ defmodule OliWeb.LtiController do
   import Oli.Utils
 
   alias Oli.Accounts
+  alias Oli.Accounts.SystemRole
   alias Oli.Delivery.Sections
   alias Oli.Institutions
   alias Oli.Institutions.PendingRegistration
@@ -14,10 +15,11 @@ defmodule OliWeb.LtiController do
   alias OliWeb.Common.Utils
   alias OliWeb.UserAuth
   alias Oli.Lti.LtiParams
-  alias Lti_1p3.Tool.ContextRoles
-  alias Lti_1p3.Tool.PlatformRoles
+  alias Lti_1p3.Roles.ContextRoles
+  alias Lti_1p3.Roles.PlatformRoles
   alias Lti_1p3.Tool.Services.AGS
   alias Lti_1p3.Tool.Services.NRPS
+  alias Oli.Lti.PlatformInstances
 
   require Logger
 
@@ -80,7 +82,7 @@ defmodule OliWeb.LtiController do
     session_state = Plug.Conn.get_session(conn, "state")
 
     case Lti_1p3.Tool.LaunchValidation.validate(params, session_state) do
-      {:ok, lti_params, _cache_key} ->
+      {:ok, lti_params} ->
         render(conn, "lti_test.html", lti_params: lti_params)
 
       {:error, %{reason: _reason, msg: msg}} ->
@@ -95,26 +97,123 @@ defmodule OliWeb.LtiController do
           reason: "The current user must be the same user initiating the LTI request"
         )
 
-      %Lti_1p3.Platform.LoginHint{context: context} ->
-        current_user =
+      %Lti_1p3.Platform.LoginHint{context: context, session_user_id: session_user_id} ->
+        {user, resource_id, roles} =
           case context do
-            "author" ->
-              conn.assigns[:current_author]
+            "admin" ->
+              with author <- Accounts.get_author!(session_user_id),
+                   true <- Accounts.has_admin_role?(author, SystemRole.role_id().system_admin) do
+                roles = [
+                  Lti_1p3.Roles.PlatformRoles.get_role(:system_administrator),
+                  Lti_1p3.Roles.PlatformRoles.get_role(:institution_administrator),
+                  Lti_1p3.Roles.ContextRoles.get_role(:context_content_developer)
+                ]
+
+                {%Accounts.User{
+                   id: author.id,
+                   sub: "admin",
+                   email: author.email,
+                   email_verified: true,
+                   name: author.name,
+                   given_name: author.given_name,
+                   family_name: author.family_name,
+                   middle_name: "",
+                   nickname: "",
+                   preferred_username: "",
+                   profile: "",
+                   picture: author.picture,
+                   website: "",
+                   gender: "",
+                   birthdate: "",
+                   zoneinfo: "",
+                   locale: "",
+                   phone_number: "",
+                   phone_number_verified: "",
+                   address: ""
+                 }, nil, roles}
+              else
+                _ ->
+                  Logger.error("Author with id #{session_user_id} is not an admin")
+
+                  throw("Author is not an admin")
+              end
+
+            %{"project" => _project, "resource_id" => resource_id} ->
+              author = Accounts.get_author!(session_user_id)
+
+              roles = [
+                Lti_1p3.Roles.ContextRoles.get_role(:context_content_developer)
+              ]
+
+              {%Accounts.User{
+                 id: author.id,
+                 sub: "admin",
+                 email: author.email,
+                 email_verified: true,
+                 name: author.name,
+                 given_name: author.given_name,
+                 family_name: author.family_name,
+                 middle_name: "",
+                 nickname: "",
+                 preferred_username: "",
+                 profile: "",
+                 picture: author.picture,
+                 website: "",
+                 gender: "",
+                 birthdate: "",
+                 zoneinfo: "",
+                 locale: "",
+                 phone_number: "",
+                 phone_number_verified: "",
+                 address: ""
+               }, resource_id, roles}
+
+            %{"section" => section_slug, "resource_id" => resource_id} ->
+              user = conn.assigns[:current_user]
+
+              context_roles = Lti_1p3.Roles.Lti_1p3_User.get_context_roles(user, section_slug)
+
+              platform_roles =
+                Lti_1p3.Roles.Lti_1p3_User.get_platform_roles(user)
+
+              {user, resource_id, context_roles ++ platform_roles}
 
             _ ->
-              conn.assigns[:current_user]
+              Logger.error("Unsupported context value in login hint: #{Kernel.inspect(context)}")
+
+              throw("Unsupported context value in login hint")
           end
 
         issuer = Oli.Utils.get_base_url()
-        # TODO: add multiple deployment support
-        # for now, just use a single deployment with a static deployment_id
-        deployment_id = "1"
+
+        client_id = params["client_id"]
+
+        platform_instance =
+          PlatformInstances.get_platform_instance_by_client_id(client_id)
+
+        deployment =
+          Oli.Lti.PlatformExternalTools.get_lti_external_tool_activity_deployment_by(
+            platform_instance_id: platform_instance.id
+          )
+
+        resource_link = %{
+          id: resource_id
+        }
+
+        claims = [
+          Lti_1p3.Claims.DeploymentId.deployment_id(deployment.deployment_id),
+          Lti_1p3.Claims.MessageType.message_type(:lti_resource_link_request),
+          Lti_1p3.Claims.Version.version("1.3.0"),
+          Lti_1p3.Claims.ResourceLink.resource_link(resource_link),
+          Lti_1p3.Claims.TargetLinkUri.target_link_uri(platform_instance.target_link_uri),
+          Lti_1p3.Claims.Roles.roles(roles)
+        ]
 
         case Lti_1p3.Platform.AuthorizationRedirect.authorize_redirect(
                params,
-               current_user,
+               user,
                issuer,
-               deployment_id
+               claims
              ) do
           {:ok, redirect_uri, state, id_token} ->
             conn
@@ -228,7 +327,7 @@ defmodule OliWeb.LtiController do
     |> json(Lti_1p3.get_all_public_keys())
   end
 
-  def access_tokens(conn, _params) do
+  def auth_token(conn, _params) do
     conn
     |> put_status(:not_implemented)
     |> json(%{

@@ -2,7 +2,7 @@ defmodule OliWeb.DeliveryController do
   use OliWeb, :controller
   use OliWeb, :verified_routes
 
-  alias Lti_1p3.Tool.{PlatformRoles, ContextRoles}
+  alias Lti_1p3.Roles.{PlatformRoles, ContextRoles}
   alias Oli.Accounts
   alias Oli.Accounts.{User}
   alias Oli.Analytics.DataTables.DataTable

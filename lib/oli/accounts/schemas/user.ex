@@ -558,7 +558,7 @@ defmodule Oli.Accounts.User do
 end
 
 # define implementations required for LTI 1.3 library integration
-defimpl Lti_1p3.Tool.Lti_1p3_User, for: Oli.Accounts.User do
+defimpl Lti_1p3.Roles.Lti_1p3_User, for: Oli.Accounts.User do
   import Ecto.Query, warn: false
   alias Oli.Repo
   alias Oli.Delivery.Sections.Section

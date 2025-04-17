@@ -10,7 +10,7 @@ defmodule OliWeb.PublishLiveTest do
   alias Oli.Resources.ResourceType
   alias OliWeb.Common.Utils
 
-  @instructor_context_role_id Lti_1p3.Tool.ContextRoles.get_role(:context_instructor).id
+  @instructor_context_role_id Lti_1p3.Roles.ContextRoles.get_role(:context_instructor).id
 
   defp live_view_publish_route(project_slug),
     do: ~p"/authoring/project/#{project_slug}/publish"

@@ -19,7 +19,7 @@ defmodule OliWeb.Delivery.NewCourse do
   alias OliWeb.Common.Stepper.Step
   alias OliWeb.Components.Common
   alias OliWeb.Delivery.NewCourse.{CourseDetails, NameCourse, SelectSource}
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
   alias Oli.Lti.LtiParams
 
   alias Phoenix.LiveView.JS

@@ -5,7 +5,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ContentTabTest do
   import Oli.Factory
   import Phoenix.LiveViewTest
 
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Attempts.Core
 

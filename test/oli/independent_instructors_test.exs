@@ -13,7 +13,7 @@ defmodule Oli.IndependentLearnersTest do
         Accounts.update_user_platform_roles(
           user_fixture(%{can_create_sections: true, independent_learner: true}),
           [
-            Lti_1p3.Tool.PlatformRoles.get_role(:institution_instructor)
+            Lti_1p3.Roles.PlatformRoles.get_role(:institution_instructor)
           ]
         )
 
@@ -33,10 +33,10 @@ defmodule Oli.IndependentLearnersTest do
       assert Sections.is_independent_instructor?(user)
       refute Sections.is_independent_instructor?(independent_learner)
 
-      assert Lti_1p3.Tool.PlatformRoles.has_roles?(
+      assert Lti_1p3.Roles.PlatformRoles.has_roles?(
                user,
                [
-                 Lti_1p3.Tool.PlatformRoles.get_role(:institution_instructor)
+                 Lti_1p3.Roles.PlatformRoles.get_role(:institution_instructor)
                ],
                :all
              )

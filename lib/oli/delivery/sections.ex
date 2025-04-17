@@ -27,7 +27,7 @@ defmodule Oli.Delivery.Sections do
     MinimalHierarchy
   }
 
-  alias Lti_1p3.Tool.ContextRole
+  alias Lti_1p3.Roles.ContextRole
   alias Lti_1p3.DataProviders.EctoProvider
   alias Oli.Lti.Tool.{Deployment, Registration}
   alias Oli.Lti.LtiParams
@@ -44,8 +44,8 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Publishing.PublishedResource
   alias Oli.Publishing.Publications.{PublicationDiff}
   alias Oli.Accounts.User
-  alias Lti_1p3.Tool.ContextRoles
-  alias Lti_1p3.Tool.PlatformRoles
+  alias Lti_1p3.Roles.ContextRoles
+  alias Lti_1p3.Roles.PlatformRoles
   alias Oli.Delivery.Updates.Broadcaster
   alias Oli.Delivery.Sections.EnrollmentBrowseOptions
   alias Oli.Delivery.Sections.PostProcessing

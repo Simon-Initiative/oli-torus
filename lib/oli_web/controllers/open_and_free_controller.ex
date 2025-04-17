@@ -7,7 +7,7 @@ defmodule OliWeb.OpenAndFreeController do
   alias Oli.Delivery.Sections.Section
   alias Oli.Authoring.Course
   alias OliWeb.Common.{FormatDateTime}
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
 
   alias OliWeb.Router.Helpers, as: Routes
 

@@ -5,7 +5,7 @@ defmodule OliWeb.ProgressLiveTest do
   import Phoenix.LiveViewTest
   import Oli.Factory
 
-  alias Lti_1p3.Tool.{ContextRoles, PlatformRoles}
+  alias Lti_1p3.Roles.{ContextRoles, PlatformRoles}
   alias Oli.Accounts
   alias Oli.Delivery.Sections
 
