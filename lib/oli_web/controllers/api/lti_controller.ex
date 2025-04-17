@@ -19,7 +19,10 @@ defmodule OliWeb.Api.LtiController do
       user = conn.assigns[:current_user]
 
       {:ok, %LoginHint{value: login_hint}} =
-        LoginHints.create_login_hint(user.id, "section:#{section_slug}")
+        LoginHints.create_login_hint(user.id, %{
+          "section" => section_slug,
+          "resource_id" => activity_id
+        })
 
       json(conn, %{
         name: platform_instance.name,
@@ -50,7 +53,10 @@ defmodule OliWeb.Api.LtiController do
       author = conn.assigns[:current_author]
 
       {:ok, %LoginHint{value: login_hint}} =
-        LoginHints.create_login_hint(author.id, "project:#{project_slug}")
+        LoginHints.create_login_hint(author.id, %{
+          "project" => project_slug,
+          "resource_id" => activity_id
+        })
 
       json(conn, %{
         name: platform_instance.name,

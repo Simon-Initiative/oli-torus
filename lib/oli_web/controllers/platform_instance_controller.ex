@@ -34,7 +34,9 @@ defmodule OliWeb.PlatformInstanceController do
     platform_instance = PlatformInstances.get_platform_instance!(id)
 
     author = conn.assigns[:current_author]
-    {:ok, %LoginHint{value: login_hint}} = LoginHints.create_login_hint(author.id, "author")
+
+    {:ok, %LoginHint{value: login_hint}} =
+      LoginHints.create_login_hint(author.id, "admin")
 
     launch_params = %{
       iss: Oli.Utils.get_base_url(),

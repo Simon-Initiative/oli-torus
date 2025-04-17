@@ -392,7 +392,10 @@ defmodule OliWeb.LtiControllerTest do
       user = user_fixture()
 
       {:ok, %LoginHint{value: login_hint}} =
-        LoginHints.create_login_hint(user.id, "section:some_section")
+        LoginHints.create_login_hint(user.id, %{
+          "section" => "some_section",
+          "resource_id" => "some_resource_id"
+        })
 
       target_link_uri = "some-valid-url"
       nonce = "some-nonce"
@@ -438,7 +441,10 @@ defmodule OliWeb.LtiControllerTest do
       author = author_fixture()
 
       {:ok, %LoginHint{value: login_hint}} =
-        LoginHints.create_login_hint(author.id, "project:some_project")
+        LoginHints.create_login_hint(author.id, %{
+          "project" => "some_project",
+          "resource_id" => "some_resource_id"
+        })
 
       target_link_uri = "some-valid-url"
       nonce = "some-nonce"

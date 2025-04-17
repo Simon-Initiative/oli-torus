@@ -5,6 +5,7 @@ defmodule OliWeb.LtiController do
   import Oli.Utils
 
   alias Oli.Accounts
+  alias Oli.Accounts.SystemRole
   alias Oli.Delivery.Sections
   alias Oli.Institutions
   alias Oli.Institutions.PendingRegistration
@@ -97,15 +98,50 @@ defmodule OliWeb.LtiController do
         )
 
       %Lti_1p3.Platform.LoginHint{context: context, session_user_id: session_user_id} ->
-        {user, roles} =
+        {user, resource_id, roles} =
           case context do
-            "project:" <> _ ->
+            "admin" ->
+              with author <- Accounts.get_author!(session_user_id),
+                   true <- Accounts.has_admin_role?(author, SystemRole.role_id().system_admin) do
+                roles = [
+                  Lti_1p3.Roles.PlatformRoles.get_role(:system_administrator),
+                  Lti_1p3.Roles.PlatformRoles.get_role(:institution_administrator),
+                  Lti_1p3.Roles.ContextRoles.get_role(:context_content_developer)
+                ]
+
+                {%Accounts.User{
+                   id: author.id,
+                   sub: "admin",
+                   email: author.email,
+                   email_verified: true,
+                   name: author.name,
+                   given_name: author.given_name,
+                   family_name: author.family_name,
+                   middle_name: "",
+                   nickname: "",
+                   preferred_username: "",
+                   profile: "",
+                   picture: author.picture,
+                   website: "",
+                   gender: "",
+                   birthdate: "",
+                   zoneinfo: "",
+                   locale: "",
+                   phone_number: "",
+                   phone_number_verified: "",
+                   address: ""
+                 }, nil, roles}
+              else
+                _ ->
+                  Logger.error("Author with id #{session_user_id} is not an admin")
+
+                  throw("Author is not an admin")
+              end
+
+            %{"project" => _project, "resource_id" => resource_id} ->
               author = Accounts.get_author!(session_user_id)
 
-              # TODO: stub a user for the author
               roles = [
-                Lti_1p3.Roles.PlatformRoles.get_role(:system_administrator),
-                Lti_1p3.Roles.PlatformRoles.get_role(:institution_administrator),
                 Lti_1p3.Roles.ContextRoles.get_role(:context_content_developer)
               ]
 
@@ -130,9 +166,9 @@ defmodule OliWeb.LtiController do
                  phone_number: "",
                  phone_number_verified: "",
                  address: ""
-               }, roles}
+               }, resource_id, roles}
 
-            "section:" <> section_slug ->
+            %{"section" => section_slug, "resource_id" => resource_id} ->
               user = conn.assigns[:current_user]
 
               context_roles = Lti_1p3.Roles.Lti_1p3_User.get_context_roles(user, section_slug)
@@ -140,10 +176,12 @@ defmodule OliWeb.LtiController do
               platform_roles =
                 Lti_1p3.Roles.Lti_1p3_User.get_platform_roles(user)
 
-              {user, context_roles ++ platform_roles}
+              {user, resource_id, context_roles ++ platform_roles}
 
             _ ->
-              throw("Invalid context")
+              Logger.error("Unsupported context value in login hint: #{Kernel.inspect(context)}")
+
+              throw("Unsupported context value in login hint")
           end
 
         issuer = Oli.Utils.get_base_url()
@@ -158,9 +196,8 @@ defmodule OliWeb.LtiController do
             platform_instance_id: platform_instance.id
           )
 
-        # TODO use the actual resource link of the resource being launched
         resource_link = %{
-          id: "12345"
+          id: resource_id
         }
 
         claims = [
