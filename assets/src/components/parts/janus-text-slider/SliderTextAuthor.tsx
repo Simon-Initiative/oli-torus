@@ -1,10 +1,11 @@
 import React, { CSSProperties, useEffect, useRef, useState } from 'react';
 import { AuthorPartComponentProps } from 'components/parts/types/parts';
+import { clone } from 'utils/common';
 import './Slider-Text.scss';
 import { SliderTextModel } from './schema';
 
 const SliderTextAuthor: React.FC<AuthorPartComponentProps<SliderTextModel>> = (props) => {
-  const { id, model } = props;
+  const { id, model, onSaveConfigure } = props;
   const { showLabel, minimum, label, sliderOptionLabels, showValueLabels, showTicks } = model;
 
   const styles: CSSProperties = {
@@ -26,6 +27,13 @@ const SliderTextAuthor: React.FC<AuthorPartComponentProps<SliderTextModel>> = (p
     // all activities *must* emit onReady
     props.onReady({ id: `${props.id}` });
   }, []);
+
+  useEffect(() => {
+    const modelClone = clone(model);
+    modelClone.maximum = sliderOptionLabels.length;
+    //we need to save the maximum so that the custom property is updated with adjusted values
+    onSaveConfigure({ id, snapshot: modelClone });
+  }, [sliderOptionLabels]);
 
   const internalId = `${id}__slider`;
   return (
