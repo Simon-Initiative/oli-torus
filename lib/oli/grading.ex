@@ -270,24 +270,82 @@ defmodule Oli.Grading do
     |> max(1.0)
   end
 
-  def determine_page_out_of(_section_slug, %Revision{content: %{"model" => model}}) do
-    Enum.reduce(model, 0, fn e, count ->
+  def determine_page_out_of(section_slug, %Revision{content: content}) do
+    Oli.Resources.PageContent.flat_filter(
+      content,
+      &(&1["type"] == "activity-reference" || &1["type"] == "selection")
+    )
+    |> Enum.reduce(0, fn e, total_out_of ->
       case e["type"] do
         "activity-reference" ->
-          count + 1
+          activity =
+            DeliveryResolver.from_resource_id(
+              section_slug,
+              e["activity_id"]
+            )
+
+          total_out_of + determine_activity_out_of(activity)
 
         "selection" ->
           case Selection.parse(e) do
-            {:ok, %Selection{count: selection_count}} -> selection_count + count
-            _ -> count
+            {:ok, %Selection{count: selection_count}} ->
+              selection_count + total_out_of
+
+            _ ->
+              total_out_of
           end
 
         _ ->
-          count
+          total_out_of
       end
     end)
     |> max(1.0)
   end
+
+  defp determine_activity_out_of(%Revision{content: content}) do
+    content["authoring"]["parts"]
+    |> Enum.reduce(0, fn part, total_out_of ->
+      case part["outOf"] do
+        nil ->
+          total_out_of + determine_responses_max_score(part["responses"])
+
+        out_of ->
+          total_out_of + out_of
+      end
+    end)
+  end
+
+  defp determine_responses_max_score(responses) do
+    Enum.reduce(responses, 0, fn response, max_score ->
+      case response["score"] do
+        nil ->
+          max_score
+
+        score ->
+          max(max_score, score)
+      end
+    end)
+  end
+
+  # def determine_page_out_of(_section_slug, %Revision{content: %{"model" => model}}) do
+  #   # Oli.Resources.PageContent.flat_filter
+  #   Enum.reduce(model, 0, fn e, count ->
+  #     case e["type"] do
+  #       "activity-reference" ->
+  #         count + 1
+
+  #       "selection" ->
+  #         case Selection.parse(e) do
+  #           {:ok, %Selection{count: selection_count}} -> selection_count + count
+  #           _ -> count
+  #         end
+
+  #       _ ->
+  #         count
+  #     end
+  #   end)
+  #   |> max(1.0)
+  # end
 
   # reads the "custom / totalScore" nested key in a robust manner, with a default
   # value of 1.0.

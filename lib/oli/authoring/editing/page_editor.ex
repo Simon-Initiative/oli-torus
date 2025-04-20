@@ -95,11 +95,77 @@ defmodule Oli.Authoring.Editing.PageEditor do
           Broadcaster.broadcast_revision(r, project_slug)
         end)
 
+        act_refs = determine_page_out_of(project_slug, revision)
+
+        IO.inspect(
+          act_refs,
+          label: "activity references"
+        )
+
+        # IO.inspect(determine_page_out_of(project_slug, revision), label: "page out of")
         {:ok, revision}
 
       e ->
         e
     end
+  end
+
+  def determine_page_out_of(project_slug, %Revision{content: content}) do
+    Oli.Resources.PageContent.flat_filter(
+      content,
+      &(&1["type"] == "activity-reference" || &1["type"] == "selection")
+    )
+    |> Enum.reduce(0, fn e, total_out_of ->
+      case e["type"] do
+        "activity-reference" ->
+          activity =
+            AuthoringResolver.from_resource_id(
+              project_slug,
+              e["activity_id"]
+            )
+
+          total_out_of + determine_activity_out_of(activity)
+
+        "selection" ->
+          case Oli.Activities.Realizer.Selection.parse(e) do
+            {:ok, %Oli.Activities.Realizer.Selection{count: selection_count}} ->
+              selection_count + total_out_of
+
+            _ ->
+              total_out_of
+          end
+
+        _ ->
+          total_out_of
+      end
+    end)
+    |> max(1.0)
+  end
+
+  defp determine_activity_out_of(%Revision{content: content}) do
+    content["authoring"]["parts"]
+    |> Enum.reduce(0, fn part, total_out_of ->
+      total_out_of + determine_responses_max_score(part["responses"])
+      # case part["outOf"] do
+      #   nil ->
+      #     total_out_of + determine_responses_max_score(part["responses"])
+
+      #   out_of ->
+      #     total_out_of + out_of
+      # end
+    end)
+  end
+
+  defp determine_responses_max_score(responses) do
+    Enum.reduce(responses, 0, fn response, max_score ->
+      case response["score"] do
+        nil ->
+          max_score
+
+        score ->
+          max(max_score, score)
+      end
+    end)
   end
 
   defp possibly_release_lock(previous, project, publication, resource, author, update) do
