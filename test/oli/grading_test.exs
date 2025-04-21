@@ -64,6 +64,19 @@ defmodule Oli.GradingTest do
           :activity
         )
 
+      %{resource: resource, revision: _revision} =
+        Seeder.create_activity(
+          %{
+            scope: :banked,
+            objectives: %{"1" => [1]},
+            title: "5",
+            content: %{model: %{stem: "this is the question"}}
+          },
+          map.publication,
+          map.project,
+          map.author
+        )
+
       page2_changes = %{
         "content" => %{
           "model" => [
@@ -74,6 +87,14 @@ defmodule Oli.GradingTest do
             %{
               "type" => "activity-reference",
               "activity_id" => Map.get(map, :activity).revision.resource_id
+            },
+            %{
+              "id" => resource.id,
+              "type" => "selection",
+              "count" => 1,
+              "logic" => %{
+                "conditions" => nil
+              }
             }
           ]
         }
@@ -207,7 +228,7 @@ defmodule Oli.GradingTest do
            section: section,
            revision2: revision2
          } do
-      assert Grading.determine_page_out_of(section.slug, revision2) == 10
+      assert Grading.determine_page_out_of(section.slug, revision2) == 11
     end
 
     test "returns valid gradebook for section", %{
