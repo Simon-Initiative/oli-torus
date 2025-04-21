@@ -32,7 +32,7 @@ export const SliderOptionsTextEditor: React.FC<Props> = ({ id, value, onChange, 
   );
 
   const onAddOption = useCallback(() => {
-    const newValue = [...value, 'Option-' + value.length];
+    const newValue = [...value, 'Option-' + value.length + 1];
     onChange(newValue);
     setTimeout(() => onBlur(id, newValue), 0);
   }, [id, onBlur, onChange, value]);
