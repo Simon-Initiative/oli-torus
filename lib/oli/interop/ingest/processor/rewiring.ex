@@ -62,7 +62,13 @@ defmodule Oli.Interop.Ingest.Processing.Rewiring do
         case e do
           %{"type" => "selection", "logic" => logic} = ref ->
             case logic do
-              %{"conditions" => %{"children" => [%{"fact" => "tags", "value" => originals, "operator" => operator}]}} ->
+              %{
+                "conditions" => %{
+                  "children" => [
+                    %{"fact" => "tags", "value" => originals, "operator" => operator}
+                  ]
+                }
+              } ->
                 Enum.reduce(originals, {[], {:ok, []}}, fn o, {ids, {status, invalid_ids}} ->
                   case retrieve(tag_map, o) do
                     nil ->
