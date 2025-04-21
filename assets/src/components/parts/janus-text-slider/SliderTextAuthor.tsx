@@ -1,4 +1,5 @@
 import React, { CSSProperties, useEffect, useRef, useState } from 'react';
+import isEqual from 'lodash/isEqual';
 import { AuthorPartComponentProps } from 'components/parts/types/parts';
 import { clone } from 'utils/common';
 import './Slider-Text.scss';
@@ -28,12 +29,16 @@ const SliderTextAuthor: React.FC<AuthorPartComponentProps<SliderTextModel>> = (p
     props.onReady({ id: `${props.id}` });
   }, []);
 
+  const prevSliderOptionLabelsRef = useRef<string[]>([]);
+
   useEffect(() => {
-    const modelClone = clone(model);
-    modelClone.maximum = sliderOptionLabels.length;
-    //we need to save the maximum so that the custom property is updated with adjusted values
-    onSaveConfigure({ id, snapshot: modelClone });
-  }, [sliderOptionLabels]);
+    if (!isEqual(prevSliderOptionLabelsRef.current, sliderOptionLabels)) {
+      const modelClone = clone(model);
+      modelClone.maximum = sliderOptionLabels.length;
+      onSaveConfigure({ id, snapshot: modelClone });
+      prevSliderOptionLabelsRef.current = sliderOptionLabels;
+    }
+  }, [sliderOptionLabels, model, id, onSaveConfigure]);
 
   const internalId = `${id}__slider`;
   return (
@@ -72,7 +77,13 @@ const SliderTextAuthor: React.FC<AuthorPartComponentProps<SliderTextModel>> = (p
                   onClick={() => handleTickClick(index)}
                 >
                   {showTicks && <div className="tick-mark" />}
-                  {showValueLabels && <div className="tick-label">{label}</div>}
+                  {showValueLabels ? (
+                    <div className="tick-label">{label}</div>
+                  ) : (
+                    (index == 0 || index == sliderOptionLabels.length - 1) && (
+                      <div className="tick-label">{label}</div>
+                    )
+                  )}
                 </div>
               );
             })}
