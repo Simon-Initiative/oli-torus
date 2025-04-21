@@ -1,5 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { useDispatch } from 'react-redux';
+import { setCurrentPartPropertyFocus } from 'apps/authoring/store/parts/slice';
 import { ScreenDeleteIcon } from '../../Flowchart/chart-components/ScreenDeleteIcon';
 
 interface Props {
@@ -77,6 +79,7 @@ const OptionsEditor: React.FC<{
   onDelete: () => void;
   options: string[];
 }> = ({ sliderText, onChange, onDelete, options }) => {
+  const dispatch = useDispatch();
   const [currentOptionLabel, setCurrentOptionLabel] = useState(sliderText);
   return (
     <div className="flex mb-2">
@@ -88,6 +91,12 @@ const OptionsEditor: React.FC<{
           onChange={(e) => {
             setCurrentOptionLabel(e.target.value);
             onChange(e.target.value);
+          }}
+          onBlur={() => {
+            dispatch(setCurrentPartPropertyFocus({ focus: true }));
+          }}
+          onFocus={() => {
+            dispatch(setCurrentPartPropertyFocus({ focus: false }));
           }}
         ></input>
       </div>
