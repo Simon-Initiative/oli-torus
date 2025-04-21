@@ -305,13 +305,7 @@ defmodule Oli.Grading do
   defp determine_activity_out_of(%Revision{content: content}) do
     content["authoring"]["parts"]
     |> Enum.reduce(0, fn part, total_out_of ->
-      case part["outOf"] do
-        nil ->
-          total_out_of + determine_responses_max_score(part["responses"])
-
-        out_of ->
-          total_out_of + out_of
-      end
+      total_out_of + determine_responses_max_score(part["responses"])
     end)
   end
 
@@ -326,26 +320,6 @@ defmodule Oli.Grading do
       end
     end)
   end
-
-  # def determine_page_out_of(_section_slug, %Revision{content: %{"model" => model}}) do
-  #   # Oli.Resources.PageContent.flat_filter
-  #   Enum.reduce(model, 0, fn e, count ->
-  #     case e["type"] do
-  #       "activity-reference" ->
-  #         count + 1
-
-  #       "selection" ->
-  #         case Selection.parse(e) do
-  #           {:ok, %Selection{count: selection_count}} -> selection_count + count
-  #           _ -> count
-  #         end
-
-  #       _ ->
-  #         count
-  #     end
-  #   end)
-  #   |> max(1.0)
-  # end
 
   # reads the "custom / totalScore" nested key in a robust manner, with a default
   # value of 1.0.

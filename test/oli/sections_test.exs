@@ -1067,6 +1067,7 @@ defmodule Oli.SectionsTest do
         "objectives" => %{"attached" => [Map.get(map, :o1).resource.id]}
       }
 
+      IO.inspect(page1)
       Seeder.revise_page(page1_changes, page1, revision1, working_pub)
 
       # publish changes
@@ -1077,6 +1078,9 @@ defmodule Oli.SectionsTest do
       assert latest_publication.edition == 0
       assert latest_publication.major == 1
       assert latest_publication.minor == 1
+
+      available_updates = Oli.Delivery.Sections.check_for_available_publication_updates(section)
+      IO.inspect(available_updates, label: "available_updates")
 
       # apply the new publication update to the section
       Oli.Delivery.Sections.Updates.apply_publication_update(section, latest_publication.id)
