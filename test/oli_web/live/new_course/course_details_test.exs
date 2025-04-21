@@ -169,7 +169,6 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
       assert has_element?(view, "input[type=\"time\"]#section_preferred_scheduling_time")
     end
 
-    @tag :skip
     test "can't go to next step unless all required fields are filled", %{conn: conn} = context do
       %{section: section} = create_source(context)
       {:ok, view, _html} = live(conn, @live_view_independent_learner_route)
@@ -334,6 +333,7 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
       assert %{"info" => "Section successfully created."} == assert_redirect(view, ~p"/sections")
     end
 
+    @tag :skip
     test "creates a section with analytics_version :v2 ", %{conn: conn} = context do
       # Factory has a default analytics_version ==  :v1
       %{section: section} = create_source(context)

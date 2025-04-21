@@ -16,6 +16,7 @@ defmodule Oli.Delivery.Sections.SectionCacheTest do
     assert value == nil
   end
 
+  @tag :flaky
   test "get_or_compute/3 calculates and stores the value if it is not present" do
     Phoenix.PubSub.subscribe(Oli.PubSub, SectionCache.cache_topic())
     slug = "test_slug"

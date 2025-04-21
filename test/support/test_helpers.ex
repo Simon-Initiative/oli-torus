@@ -3646,7 +3646,7 @@ defmodule Oli.TestHelpers do
 
   defp wait_while_helper(f, interval, timeout, start) do
     if :os.system_time(:millisecond) - start > timeout do
-      throw("Timeout waiting for condition to be true. Timeout: #{timeout} ms.")
+      ExUnit.Assertions.flunk("Timeout waiting for condition to be true. Timeout: #{timeout} ms.")
     else
       case f.() do
         true ->

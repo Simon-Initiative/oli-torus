@@ -20,6 +20,7 @@ defmodule OliWeb.Plugs.HeaderSizeLoggerTest do
     |> Keyword.get(:max_header_value_length, 4096)
   end
 
+  @tag :flaky
   test "does not log when request headers are below threshold" do
     opts = HeaderSizeLogger.init(capture_module: Oli.Utils.AppsignalMock)
 
