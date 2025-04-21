@@ -282,11 +282,27 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
         </span>
       </div>
       <div :if={@assignment.raw_avg_score} class="ml-auto h-12 flex flex-col justify-between">
-        <span class="h-6 ml-auto text-[#757682] dark:text-[#eeebf5]/75 text-xs font-semibold leading-3 whitespace-nowrap">
-          Attempt <%= @assignment.attempts %> of <%= max_attempts(@assignment.max_attempts) %>
-        </span>
+        <%= if @assignment.score_as_you_go do %>
+          <span class="h-6 ml-auto text-[#757682] dark:text-[#eeebf5]/75 text-xs font-semibold leading-3 whitespace-nowrap">
+            Score as you go
+          </span>
+        <% else %>
+          <span class="h-6 ml-auto text-[#757682] dark:text-[#eeebf5]/75 text-xs font-semibold leading-3 whitespace-nowrap">
+            Attempt <%= @assignment.attempts %> of <%= max_attempts(@assignment.max_attempts) %>
+          </span>
+        <% end %>
         <div class="flex ml-auto gap-1.5 text-[#218358] dark:text-[#39e581]">
-          <div class="w-4 h-4"><Icons.star /></div>
+
+          <div class="w-4 h-4">
+
+            <%= if @assignment.score_as_you_go and @assignment.can_start do %>
+              <Icons.score_as_you_go />
+            <% else %>
+              <Icons.star />
+            <% end %>
+
+          </div>
+
           <span class="flex gap-1 text-base font-bold leading-none whitespace-nowrap">
             <%= Utils.parse_score(@assignment.raw_avg_score.score) %> / <%= Utils.parse_score(
               @assignment.raw_avg_score.out_of
@@ -334,6 +350,13 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
         title: assignment.title,
         numbering_index: assignment.numbering_index,
         scheduling_type: effective_settings.scheduling_type,
+        score_as_you_go: !effective_settings.batch_scoring,
+        can_start:
+          case {assignment.scheduling_type, effective_settings.end_date, effective_settings.late_start} do
+            {_, nil, _} -> true
+            {:due_by, end_date, :disallow} -> !DateTime.compare(DateTime.utc_now(), end_date) == :gt
+            _ -> true
+          end,
         end_date: effective_settings.end_date,
         purpose: assignment.purpose,
         progress: progress_per_page_id[assignment.resource_id],

@@ -13,6 +13,8 @@ defmodule OliWeb.Components.Delivery.Schedule do
   attr(:schedule_ranges, :any, required: true)
   attr(:section_slug, :string, required: true)
   attr(:is_active, :boolean, default: true)
+
+  attr(:resource_accesses_by_resource_id, :map, default: %{})
   attr(:is_current_week, :boolean, default: false)
   attr(:show_border, :boolean, default: true)
   attr(:historical_graded_attempt_summary, HistoricalGradedAttemptSummary)
@@ -106,17 +108,21 @@ defmodule OliWeb.Components.Delivery.Schedule do
                                 ) %>
                           </div>
                         </div>
-                        <div :if={graded} class="flex flex-col justify-center">
-                          <Student.attempts_dropdown
-                            ctx={@ctx}
-                            section_slug={@section_slug}
-                            page_revision_slug={resource.revision_slug}
-                            attempt_summary={@historical_graded_attempt_summary}
-                            attempts_count={resource_attempt_count}
-                            effective_settings={effective_settings}
-                          />
-                          <Student.score_summary raw_avg_score={raw_avg_score} />
-                        </div>
+
+                        <%= if graded do %>
+                          <div class="flex flex-col justify-center">
+                            <Student.attempts_dropdown
+                              ctx={@ctx}
+                              resource_access={Map.get(@resource_accesses_by_resource_id, resource.resource_id)}
+                              section_slug={@section_slug}
+                              page_revision_slug={resource.revision_slug}
+                              attempt_summary={@historical_graded_attempt_summary}
+                              attempts_count={resource_attempt_count}
+                              effective_settings={effective_settings}
+                            />
+                            <Student.score_summary raw_avg_score={raw_avg_score} />
+                          </div>
+                        <% end %>
                       </div>
                     </div>
                   <% end %>

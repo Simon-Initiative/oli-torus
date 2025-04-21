@@ -4,6 +4,7 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
   alias OliWeb.Common.SessionContext
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Scheduling
+  alias Oli.Delivery.Attempts.Core
   alias OliWeb.Components.Delivery.{Schedule, Utils}
   alias Oli.Delivery.{Attempts, Settings}
   alias Oli.Delivery.Attempts.{HistoricalGradedAttemptSummary}
@@ -32,12 +33,19 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
       current_week = Utils.week_number(section.start_date, current_datetime)
       current_month = current_datetime.month
 
+      resource_accesses_by_resource_id =
+        Core.get_graded_resource_access_for_context(section.id, [current_user_id])
+        |> Enum.reduce(%{}, fn access, acc ->
+          Map.put(acc, access.resource_id, access)
+        end)
+
       async_scroll_to_current_week(self())
 
       {:ok,
        assign(socket,
          active_tab: :schedule,
          loaded: true,
+         resource_accesses_by_resource_id: resource_accesses_by_resource_id,
          schedule: schedule,
          section_slug: section.slug,
          current_week: current_week,
@@ -138,6 +146,9 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
                   is_current_week={
                     is_current_week?(week, @current_week) &&
                       is_current_month?(month, @current_month)
+                  }
+                  resource_accesses_by_resource_id={
+                    @resource_accesses_by_resource_id
                   }
                   schedule_ranges={schedule_ranges}
                   section_slug={@section_slug}

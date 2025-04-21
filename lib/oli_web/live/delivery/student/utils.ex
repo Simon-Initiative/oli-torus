@@ -190,13 +190,51 @@ defmodule OliWeb.Delivery.Student.Utils do
         <li id="page_due_terms">
           <.page_due_term effective_settings={@effective_settings} ctx={@ctx} />
         </li>
-        <li :if={@effective_settings.end_date != nil} id="page_scoring_terms">
+        <li :if={!@effective_settings.batch_scoring} id="score_as_you_go_term">
+          <%= score_as_you_go(@effective_settings) %>
+        </li>
+        <li id="page_scoring_terms">
           <%= page_scoring_term(@effective_settings.scoring_strategy_id) %>
+        </li>
+        <li :if={!@effective_settings.batch_scoring} id="question_attempts">
+          <%= question_attempts(@effective_settings.max_attempts) %>
         </li>
         <.time_limit_term effective_settings={@effective_settings} />
         <.submit_term effective_settings={@effective_settings} />
       </ul>
     </div>
+    """
+  end
+
+  defp score_as_you_go(assigns) do
+    ~H"""
+    <li id="page_time_limit_term">
+      <strong>Score as you go:</strong> your score is updated as you complete questions on this page.
+    </li>
+    """
+  end
+
+  defp question_attempts(%{effective_settings: %{max_attempts: 0}} = assigns) do
+    ~H"""
+    <li>
+      You can attempt each question <strong>unlimited</strong> times.
+    </li>
+    """
+  end
+
+  defp question_attempts(%{effective_settings: %{max_attempts: 1}} = assigns) do
+    ~H"""
+    <li>
+      You can attempt each question <strong>1</strong> time.
+    </li>
+    """
+  end
+
+  defp question_attempts(assigns) do
+    ~H"""
+    <li>
+      You can attempt each question <strong>#{@effective_settings.max_attempts}</strong> times.
+    </li>
     """
   end
 
