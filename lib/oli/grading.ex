@@ -271,33 +271,36 @@ defmodule Oli.Grading do
   end
 
   def determine_page_out_of(section_slug, %Revision{content: content}) do
-    Oli.Resources.PageContent.flat_filter(
-      content,
-      &(&1["type"] == "activity-reference" || &1["type"] == "selection")
+    {total_out, activity_ids} =
+      Oli.Resources.PageContent.flat_filter(
+        content,
+        &(&1["type"] == "activity-reference" || &1["type"] == "selection")
+      )
+      |> Enum.reduce({0, []}, fn e, {total_out_of, activity_ids} ->
+        case e["type"] do
+          "activity-reference" ->
+            {total_out_of, activity_ids ++ [e["activity_id"]]}
+
+          "selection" ->
+            case Selection.parse(e) do
+              {:ok, %Selection{count: selection_count}} ->
+                {selection_count + total_out_of, activity_ids}
+
+              _ ->
+                {total_out_of, activity_ids}
+            end
+
+          _ ->
+            {total_out_of, activity_ids}
+        end
+      end)
+
+    DeliveryResolver.from_resource_id(
+      section_slug,
+      activity_ids
     )
-    |> Enum.reduce(0, fn e, total_out_of ->
-      case e["type"] do
-        "activity-reference" ->
-          activity =
-            DeliveryResolver.from_resource_id(
-              section_slug,
-              e["activity_id"]
-            )
-
-          total_out_of + determine_activity_out_of(activity)
-
-        "selection" ->
-          case Selection.parse(e) do
-            {:ok, %Selection{count: selection_count}} ->
-              selection_count + total_out_of
-
-            _ ->
-              total_out_of
-          end
-
-        _ ->
-          total_out_of
-      end
+    |> Enum.reduce(total_out, fn activity, total_out_of ->
+      total_out_of + determine_activity_out_of(activity)
     end)
     |> max(1.0)
   end
