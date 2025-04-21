@@ -1148,7 +1148,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       refute has_element?(view, "#page_time_limit_term", "<li id=\"page_time_limit_term\">")
     end
 
-    test "page terms render a time limit late submit message only for a due by page",
+    test "page terms render a time limit late submit in both due_by and read_by scheduling types",
          ctx do
       %{conn: conn, user: user, section: section, page_2: page_2} = ctx
 
@@ -1169,7 +1169,8 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
 
       {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
 
-      refute view |> has_element?("#page_submit_term")
+      assert view |> element("#page_submit_term") |> render() =~
+               "<li id=\"page_submit_term\">\n  If you exceed this time, it will be marked late.\n</li>"
     end
 
     test "page terms render a late submit due date message only for pages with due date", ctx do
