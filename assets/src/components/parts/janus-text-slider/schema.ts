@@ -192,6 +192,6 @@ export const createSchema = (): Partial<SliderTextModel> => ({
   minimum: 0,
   maximum: 3,
   snapInterval: 1,
-  label: 'Text Slider',
+  label: 'Slider (Text)',
   showTicks: true,
 });
