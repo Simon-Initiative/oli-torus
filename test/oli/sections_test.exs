@@ -1078,8 +1078,6 @@ defmodule Oli.SectionsTest do
       assert latest_publication.major == 1
       assert latest_publication.minor == 1
 
-      available_updates = Oli.Delivery.Sections.check_for_available_publication_updates(section)
-
       # apply the new publication update to the section
       Oli.Delivery.Sections.Updates.apply_publication_update(section, latest_publication.id)
 

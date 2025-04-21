@@ -202,7 +202,7 @@ defmodule Oli.GradingTest do
       assert Grading.determine_page_out_of(section.slug, r) == 1.0
     end
 
-    test "determine_page_out_of/2 correctly determines max out of for non-adaptive pages",  
+    test "determine_page_out_of/2 correctly determines max out of for non-adaptive pages",
          %{
            section: section,
            revision2: revision2
