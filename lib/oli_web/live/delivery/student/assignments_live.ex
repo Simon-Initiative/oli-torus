@@ -21,7 +21,8 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
          :brand,
          :contains_discussions,
          :contains_explorations,
-         :contains_deliberate_practice
+         :contains_deliberate_practice,
+         :open_and_free
        ], %Section{}},
     current_user: {[:id, :name, :email, :sub], %User{}}
   }
