@@ -240,7 +240,22 @@ defmodule Oli.Delivery.Settings do
 
   def was_late?(%ResourceAttempt{}, %Combined{late_submit: :disallow}, _now), do: false
 
-  def was_late?(%ResourceAttempt{}, %Combined{scheduling_type: :read_by}, _now), do: false
+  def was_late?(
+        %ResourceAttempt{} = resource_attempt,
+        %Combined{scheduling_type: :read_by, late_submit: :allow, time_limit: time_limit} =
+          effective_settings,
+        now
+      ) do
+    if time_limit in [0, nil, ""] do
+      false
+    else
+      effective_deadline =
+        DateTime.add(resource_attempt.inserted_at, time_limit, :minute)
+        |> DateTime.add(effective_settings.grace_period, :minute)
+
+      DateTime.compare(now, effective_deadline) == :gt
+    end
+  end
 
   def was_late?(
         %ResourceAttempt{} = resource_attempt,
