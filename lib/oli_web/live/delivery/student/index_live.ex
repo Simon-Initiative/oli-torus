@@ -173,7 +173,13 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     />
     <div id="home-view" class="bg-stone-950 dark:text-white" phx-hook="Countdown">
       <div class="flex flex-col md:flex-row p-3 md:p-8 justify-start items-start gap-6">
-        <div class="flex flex-col-reverse md:flex-col w-full md:w-2/5 md:h-48 justify-start items-start gap-6">
+        <div class={[
+          if(@section.agenda,
+            do:
+              "flex flex-col-reverse md:flex-col w-full md:w-2/5 md:h-48 justify-start items-start gap-6",
+            else: "flex w-full gap-6"
+          )
+        ]}>
           <.assignments
             upcoming_assignments={@upcoming_assignments}
             latest_assignments={@latest_assignments}
@@ -716,7 +722,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     ~H"""
     <div
       role="my assignments"
-      class="w-full h-fit p-6 bg-white shadow dark:bg-[#1C1A20] dark:bg-opacity-100 rounded-2xl justify-start items-start gap-32 inline-flex"
+      class="w-full p-6 bg-white shadow dark:bg-[#1C1A20] dark:bg-opacity-100 rounded-2xl justify-start items-start gap-32 inline-flex"
     >
       <div class="w-full flex-col justify-start items-start gap-5 flex grow">
         <div class="w-full xl:w-48 overflow-hidden justify-start items-start gap-2.5 flex">
