@@ -62,7 +62,13 @@ defmodule Oli.Interop.Ingest.Processing.Rewiring do
         case e do
           %{"type" => "selection", "logic" => logic} = ref ->
             case logic do
-              %{"conditions" => %{"children" => [%{"fact" => "tags", "value" => originals}]}} ->
+              %{
+                "conditions" => %{
+                  "children" => [
+                    %{"fact" => "tags", "value" => originals, "operator" => operator}
+                  ]
+                }
+              } ->
                 Enum.reduce(originals, {[], {:ok, []}}, fn o, {ids, {status, invalid_ids}} ->
                   case retrieve(tag_map, o) do
                     nil ->
@@ -74,7 +80,7 @@ defmodule Oli.Interop.Ingest.Processing.Rewiring do
                 end)
                 |> case do
                   {ids, {:ok, _}} ->
-                    children = [%{"fact" => "tags", "value" => ids, "operator" => "equals"}]
+                    children = [%{"fact" => "tags", "value" => ids, "operator" => operator}]
                     conditions = Map.put(logic["conditions"], "children", children)
                     logic = Map.put(logic, "conditions", conditions)
 
@@ -84,7 +90,7 @@ defmodule Oli.Interop.Ingest.Processing.Rewiring do
                     {ref, {status, invalid_ids ++ invalid_refs}}
                 end
 
-              %{"conditions" => %{"fact" => "tags", "value" => originals}} ->
+              %{"conditions" => %{"fact" => "tags", "value" => originals, "operator" => operator}} ->
                 Enum.reduce(originals, {[], {:ok, []}}, fn o, {ids, {status, invalid_ids}} ->
                   case retrieve(tag_map, o) do
                     nil ->
@@ -96,7 +102,7 @@ defmodule Oli.Interop.Ingest.Processing.Rewiring do
                 end)
                 |> case do
                   {ids, {:ok, _}} ->
-                    updated = %{"fact" => "tags", "value" => ids, "operator" => "equals"}
+                    updated = %{"fact" => "tags", "value" => ids, "operator" => operator}
                     logic = Map.put(logic, "conditions", updated)
 
                     {Map.put(ref, "logic", logic), {status, invalid_refs}}
