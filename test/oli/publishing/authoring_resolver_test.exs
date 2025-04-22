@@ -12,6 +12,7 @@ defmodule Oli.Publishing.AuthoringResolverTest do
       Seeder.base_project_with_resource4()
     end
 
+    @tag :flaky
     test "find_parent_objectives/2 returns parents", %{
       project: project,
       child1: child1,

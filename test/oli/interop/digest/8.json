@@ -1,0 +1,66 @@
+{
+  "id": "8",
+  "type": "Page",
+  "title": "Quiz 1",
+  "objectives": [],
+  "tags": [],
+  "content": {
+    "bibrefs": [],
+    "model": [
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "text": "some text is here"
+              }
+            ],
+            "id": "264605230",
+            "type": "p"
+          }
+        ],
+        "editor": "slate",
+        "id": "1545186178",
+        "textDirection": "ltr",
+        "type": "content"
+      }
+    ],
+    "version": "0.1.0"
+  },
+  "originalFile": "",
+  "unresolvedReferences": [],
+  "isGraded": true,
+  "purpose": "deliberate_practice",
+  "relatesTo": [
+    "5",
+    "4"
+  ],
+  "collabSpace": null,
+  "introContent": {
+    "children": [
+      {
+        "children": [
+          {
+            "text": "New assessment introduction content"
+          }
+        ],
+        "id": "209754125",
+        "type": "p"
+      }
+    ],
+    "type": "p"
+  },
+  "introVideo": null,
+  "posterImage": "https://torus-media-dev.s3.amazonaws.com/poster_images/example_course/6f9621ae-06da-4824-848c-ac6e82d4c08b.jpg",
+  "scoringStrategyId": 3,
+  "explanationStrategy": {
+    "type": "after_max_resource_attempts_exhausted",
+    "set_num_attempts": null
+  },
+  "maxAttempts": 4,
+  "recommendedAttempts": 5,
+  "durationMinutes": 90,
+  "fullProgressPct": 100,
+  "retakeMode": "targeted",
+  "assessmentMode": "one_at_a_time"
+}

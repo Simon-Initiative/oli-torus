@@ -10,7 +10,7 @@ import * as ContentModel from 'data/content/model/elements/types';
 export const insertTrigger = createButtonCommandDesc({
   icon: <img src="/images/icons/icon-AI.svg" className="inline mr-1" />,
   category: 'General',
-  description: 'DOT Trigger',
+  description: 'DOT Activation Point',
   execute: (_context, editor) => {
     const at = editor.selection;
     if (!at) return;
@@ -55,17 +55,16 @@ export const TriggerEditorCore = ({
       <div className="flex justify-between">
         <h4>
           <img src="/images/icons/icon-AI.svg" className="inline mr-1" />
-          DOT AI Group Trigger Point
+          DOT AI Activation Point
         </h4>
         {showDelete ? <DeleteButton onClick={() => onDelete()} editMode={true} /> : null}
       </div>
       <p className="mt-2">
-        Customize a prompt for our AI assistant, DOT, to follow the student clicks this trigger
-        button.
+        Customize a prompt for our AI assistant, DOT, to follow the student clicks this button.
       </p>
 
       <h6 className="mt-2">
-        <strong>Trigger</strong>
+        <strong>Activation Point</strong>
       </h6>
 
       {instructions}

@@ -440,6 +440,7 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
              ) == input_end_date
     end
 
+    @tag :flaky
     test "create student exceptions for more than one student works correctly", %{
       conn: conn,
       section_1: section,

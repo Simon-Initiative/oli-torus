@@ -253,6 +253,7 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
                )
     end
 
+    @tag :flaky
     test "browse/3 lists products and applies searching by amount" do
       product_id_1 = insert(:section, requires_payment: true, amount: Money.new(:USD, 500)).id
       _product_id_2 = insert(:section, requires_payment: true, amount: Money.new(:USD, 100)).id

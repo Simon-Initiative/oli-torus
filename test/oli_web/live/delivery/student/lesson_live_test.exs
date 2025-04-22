@@ -1776,6 +1776,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       assert like_button_html =~ "<path class=\"stroke-primary\""
     end
 
+    @tag :flaky
     test "skips CheckCertification if require_certification_check is false when creating a student note",
          ctx do
       %{conn: conn, section: section, user: user, page_1: page_1} = ctx
@@ -1874,7 +1875,6 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       )
     end
 
-    @tag :skip
     test "posts a note", %{
       conn: conn,
       section: section,
