@@ -5,6 +5,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
   alias OliWeb.Sections.AssessmentSettings.Tooltips
   alias Phoenix.LiveView.JS
 
+
   use Phoenix.Component
 
   def new(
