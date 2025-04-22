@@ -76,13 +76,18 @@ defmodule Oli.LoggerTruncator do
   end
 
   defp sanitize_msg(msg, max_length) when is_map(msg) do
-    msg
-    # truncate to first 50 keys if needed
-    |> Enum.take(50)
-    |> Enum.map(fn {k, v} ->
-      {k, sanitize_msg(v, max_length)}
-    end)
-    |> Enum.into(%{})
+    try do
+      msg
+      # truncate to first 50 keys if needed
+      |> Enum.take(50)
+      |> Enum.map(fn {k, v} ->
+        {k, sanitize_msg(v, max_length)}
+      end)
+      |> Enum.into(%{})
+    rescue
+      # Log an error message if something goes wrong
+      _error -> %{msg: "[TRUNCATED]"}
+    end
   end
 
   defp sanitize_msg(other, _) do
@@ -90,10 +95,15 @@ defmodule Oli.LoggerTruncator do
   end
 
   defp truncate_if_needed(msg, max_length) when is_binary(msg) do
-    if byte_size(msg) > max_length do
-      String.slice(msg, 0, max_length) <> @truncate_msg
-    else
-      msg
+    try do
+      if byte_size(msg) > max_length do
+        String.slice(msg, 0, max_length) <> @truncate_msg
+      else
+        msg
+      end
+    rescue
+      # If an error occurs during truncation, return a truncated message.
+      _error -> "[TRUNCATED]"
     end
   end
 end
