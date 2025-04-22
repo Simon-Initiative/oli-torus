@@ -4,7 +4,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
   alias OliWeb.Common.FormatDateTime
   alias OliWeb.Sections.AssessmentSettings.Tooltips
   alias Phoenix.LiveView.JS
-
+  alias OliWeb.Icons
 
   use Phoenix.Component
 
@@ -154,6 +154,17 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
         edit_password_id: edit_password_id
       }
     )
+  end
+
+  def render_assessment_column(assigns, %{batch_scoring: false} = assessment, _) do
+    assigns = Map.merge(assigns, %{name: assessment.name})
+
+    ~H"""
+    <div class="pr-4">
+      <Icons.score_as_you_go/>
+      <%= @name %>
+    </div>
+    """
   end
 
   def render_assessment_column(assigns, assessment, _) do
