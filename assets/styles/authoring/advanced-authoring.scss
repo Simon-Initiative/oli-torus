@@ -286,6 +286,16 @@ $font-family-sans-serif: var(--font-sans);
           .collapse.show {
             margin-top: 10px;
           }
+          .read-only .form-control {
+            background-color: #e9ecef; /* light gray like disabled */
+            color: #6c757d; /* muted text */
+            border: 1px solid #ced4da;
+            cursor: not-allowed;
+          }
+          .read-only .form-control:focus {
+            outline: none;
+            box-shadow: none;
+          }
         }
       }
     }
