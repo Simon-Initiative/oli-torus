@@ -30,16 +30,6 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
       has_scheduled_resources? = Scheduling.has_scheduled_resources?(section.id)
 
-      grouped_agenda_resources =
-        if has_scheduled_resources?,
-          do:
-            Sections.get_schedule_for_current_and_next_week(
-              section,
-              combined_settings,
-              current_user_id
-            ),
-          else: Sections.get_not_scheduled_agenda(section, combined_settings, current_user_id)
-
       nearest_upcoming_lesson =
         Appsignal.instrument("IndexLive: nearest_upcoming_lesson", fn ->
           section
@@ -96,7 +86,13 @@ defmodule OliWeb.Delivery.Student.IndexLive do
         assign(socket,
           active_tab: :index,
           loaded: true,
-          grouped_agenda_resources: grouped_agenda_resources,
+          grouped_agenda_resources:
+            Utils.grouped_agenda_resources(
+              section,
+              combined_settings,
+              current_user_id,
+              has_scheduled_resources?
+            ),
           section_slug: section.slug,
           section_start_date: section.start_date,
           historical_graded_attempt_summary: nil,
