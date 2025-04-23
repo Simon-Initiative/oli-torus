@@ -55,7 +55,7 @@ const ExpertHeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
       <nav
         className={`aa-header-nav mt-8 top-panel overflow-hidden${
           isVisible ? ' open' : ''
-        } d-flex aa-panel-section-title-bar ${!sidebarExpanded ? '' : 'ml-[135px]'}`}
+        }  aa-panel-section-title-bar ${!sidebarExpanded ? '' : 'ml-[135px]'}`}
         style={{
           alignItems: 'center',
           left: panelState['left'] ? '335px' : '65px', // 335 = PANEL_SIDE_WIDTH + 65px (torus sidebar width)
@@ -63,14 +63,10 @@ const ExpertHeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
         }}
       >
         <div className="btn-toolbar" role="toolbar">
-          <div className="btn-group pl-3 align-items-center" role="group" aria-label="Third group">
+          <div className="btn-group pl-3" role="group" aria-label="Third group">
             <UndoRedoToolbar />
-          </div>
-          <div className="btn-group px-3 border-right align-items-center" role="group">
             <AddComponentToolbar authoringContainer={props.authoringContainer} />
             <ComponentSearchContextMenu authoringContainer={props.authoringContainer} />
-          </div>
-          <div className="btn-group pl-3 align-items-center" role="group" aria-label="Third group">
             <OverlayTrigger
               placement="bottom"
               delay={{ show: 150, hide: 150 }}
