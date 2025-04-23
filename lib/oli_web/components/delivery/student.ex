@@ -144,6 +144,7 @@ defmodule OliWeb.Components.Delivery.Student do
   attr(:effective_settings, :map)
   attr(:ctx, OliWeb.Common.SessionContext)
   attr(:section_slug, :string)
+  attr(:raw_avg_score, :map)
   attr(:page_revision_slug, :string)
 
 

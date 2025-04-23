@@ -917,7 +917,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     <.countdown {assigns} />
     <div class="flex pb-20 flex-col w-full items-center gap-15 flex-1 overflow-auto">
       <div class="flex flex-col items-center w-full">
-        <.scored_page_banner />
+        <.scored_page_banner {assigns} />
         <div class="flex-1 w-full max-w-[1040px] px-[80px] pt-20 pb-10 flex-col justify-start items-center gap-10 inline-flex">
           <.page_header
             page_context={@page_context}
@@ -962,7 +962,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     <.countdown {assigns} />
     <div class="flex pb-20 flex-col w-full items-center gap-15 flex-1 overflow-auto">
       <div class="flex flex-col items-center w-full">
-        <.scored_page_banner />
+        <.scored_page_banner {assigns} />
         <div class="flex-1 w-full max-w-[1040px] px-[80px] pt-20 pb-10 flex-col justify-start items-center gap-10 inline-flex">
           <.page_header
             page_context={@page_context}
@@ -1116,6 +1116,21 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
           <%= render_slot(@point_markers) %>
         </div>
+      </div>
+    </div>
+    """
+  end
+
+  def scored_page_banner(%{page_context: %{effective_settings: %{batch_scoring: false}}} = assigns) do
+    ~H"""
+    <div class="w-full lg:px-20 px-40 py-9 bg-orange-500 bg-opacity-10 flex flex-col justify-center items-center gap-2.5">
+      <div class="px-3 py-1.5 rounded justify-start items-start gap-2.5 flex">
+        <div class="dark:text-white text-sm font-bold uppercase tracking-wider">
+          Score as you go Activity
+        </div>
+      </div>
+      <div class="max-w-[880px] w-full mx-auto opacity-90 dark:text-white text-sm font-normal leading-6">
+        You can start or stop at any time, and your progress will be saved. Your score is updated as you complete questions on this page.
       </div>
     </div>
     """
