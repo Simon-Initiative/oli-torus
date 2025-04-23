@@ -153,11 +153,13 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
               <%= if @current_assessment.container_label do %>
                 <h4 class="torus-h4 whitespace-nowrap"><%= @current_assessment.container_label %></h4>
 
-                <%= if !@current_assessment.batch_scoring do %>
-                  <Icons.score_as_you_go/>
-                <% end %>
+                <div class="flex flex-row items-center">
+                  <%= if !@current_assessment.batch_scoring do %>
+                    <Icons.score_as_you_go/>
+                  <% end %>
 
-                <span class="text-lg"><%= @current_assessment.title %></span>
+                  <span class="text-lg ml-1"><%= @current_assessment.title %></span>
+                </div>
               <% else %>
                 <h4 class="torus-h4 whitespace-nowrap"><%= @current_assessment.title %></h4>
               <% end %>

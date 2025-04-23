@@ -78,6 +78,7 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
       <.schedule
         ctx={@ctx}
         schedule={@schedule}
+        resource_accesses_by_resource_id={@resource_accesses_by_resource_id}
         section_slug={@section_slug}
         current_week={@current_week}
         current_month={@current_month}
@@ -113,6 +114,7 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
   attr(:ctx, SessionContext, required: true)
   attr(:schedule, :any, required: true)
   attr(:section_slug, :string, required: true)
+  attr(:resource_accesses_by_resource_id, :any, required: true)
   attr(:current_week, :integer, required: true)
   attr(:current_month, :integer, required: true)
   attr(:historical_graded_attempt_summary, HistoricalGradedAttemptSummary)

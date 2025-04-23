@@ -974,7 +974,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
           <div id="page_content" class="content w-full" phx-update="ignore" role="page content">
             <%= raw(@html) %>
-            <.submit_button batch_scoring={@batch_scoring} />
+            <.submit_button batch_scoring={@page_context.effective_settings.batch_scoring} />
             <.references ctx={@ctx} bib_app_params={@bib_app_params} />
           </div>
         </div>
@@ -1011,7 +1011,10 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
   attr :batch_scoring, :boolean, default: false
 
-  def submit_button(%{batch_scoring: false}), do: nil
+  def submit_button(%{batch_scoring: false} = assigns) do
+    ~H"""
+    """
+  end
 
   def submit_button(assigns) do
     ~H"""

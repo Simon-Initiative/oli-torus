@@ -120,7 +120,11 @@ defmodule OliWeb.Components.Delivery.Schedule do
                               attempts_count={resource_attempt_count}
                               effective_settings={effective_settings}
                             />
-                            <Student.score_summary raw_avg_score={raw_avg_score} />
+                            <%= if effective_settings.batch_scoring do %>
+                              <Student.score_summary raw_avg_score={raw_avg_score} />
+                            <% else %>
+                              <Student.score_as_you_go_summary raw_avg_score={raw_avg_score} />
+                            <% end %>
                           </div>
                         <% end %>
                       </div>
@@ -197,7 +201,11 @@ defmodule OliWeb.Components.Delivery.Schedule do
                           attempts_count={resource_attempt_count}
                           effective_settings={effective_settings}
                         />
-                        <Student.score_summary raw_avg_score={raw_avg_score} />
+                        <%= if effective_settings.batch_scoring do %>
+                          <Student.score_summary raw_avg_score={raw_avg_score} />
+                        <% else %>
+                          <Student.score_as_you_go_summary raw_avg_score={raw_avg_score} />
+                        <% end %>
                       </div>
                     </div>
                   </div>
