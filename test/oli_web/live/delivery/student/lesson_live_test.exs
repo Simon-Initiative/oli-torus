@@ -719,6 +719,28 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       assert element(view, "#header_logo_button") |> render() =~ "www.logo.com"
     end
 
+    test "see default brand logo if the section is not open and free", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_1: page_1
+    } do
+      {:ok, section} =
+        Sections.update_section(section, %{open_and_free: false, lti_1p3_deployment_id: nil})
+
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
+      ensure_content_is_visible(view)
+
+      # assert that the section has a brand
+      assert is_struct(section.brand, Oli.Branding.Brand)
+
+      # assert that the default logo is shown because the section is not open and free even if the brand is set
+      assert element(view, "#header_logo_button") |> render() =~ "/images/oli_torus_logo.png"
+    end
+
     test "can access when enrolled to course", %{
       conn: conn,
       user: user,
