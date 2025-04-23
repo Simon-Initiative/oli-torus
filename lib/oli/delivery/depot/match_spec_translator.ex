@@ -157,6 +157,12 @@ defmodule Oli.Delivery.Depot.MatchSpecTranslator do
     end
   end
 
+  # Special case for inequality: map :!= into ETS guard /=
+  # see https://www.erlang.org/doc/apps/erts/match_spec.html for more details
+  defp handle_cond(type, {_f, {:!=, value}}, _, {m, c, v}) do
+    {m, [{:"/=", field(v), encode(value, type)} | c], v}
+  end
+
   # Handles the cases where we have {operator, value} tuples, and the
   # operators are from a set that we can translate directly to ETS match spec operators
   # (which are :==, :!=, :<, :>, :<=, :>=)
