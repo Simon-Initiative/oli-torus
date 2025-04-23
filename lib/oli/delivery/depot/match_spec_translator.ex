@@ -180,7 +180,10 @@ defmodule Oli.Delivery.Depot.MatchSpecTranslator do
   defp field(v), do: :"$#{v}"
 
   defp encode(value, :utc_datetime) do
-    DateTime.to_unix(value, :millisecond)
+    case value do
+      nil -> nil
+      datetime -> DateTime.to_unix(datetime, :millisecond)
+    end
   end
 
   defp encode(value, _), do: value
