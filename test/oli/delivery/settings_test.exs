@@ -62,7 +62,7 @@ defmodule Oli.Delivery.SettingsTest do
     refute Settings.was_late?(ra, settings, DateTime.add(ra.inserted_at, 20, :minute))
   end
 
-  test "was_late/2 never returns true when scheduling type is :read_by" do
+  test "was_late/2 returns true for :read_by pages when there is a time limit + allow late submit, and student submits late" do
     ra = %ResourceAttempt{
       inserted_at: ~U[2020-01-15 00:00:00Z]
     }
@@ -70,6 +70,15 @@ defmodule Oli.Delivery.SettingsTest do
     settings = %Combined{
       late_submit: :allow,
       time_limit: 1,
+      scheduling_type: :read_by,
+      end_date: ~U[2020-01-12 00:00:00Z]
+    }
+
+    assert Settings.was_late?(ra, settings, DateTime.add(ra.inserted_at, 20, :minute))
+
+    settings = %Combined{
+      late_submit: :allow,
+      time_limit: 0,
       scheduling_type: :read_by,
       end_date: ~U[2020-01-12 00:00:00Z]
     }
