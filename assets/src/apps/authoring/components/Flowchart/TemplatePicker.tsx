@@ -18,6 +18,7 @@ export const screenFilter = [
   'multiple_choice',
   'multiline_text',
   'slider',
+  'text_slider',
   'number_input',
   'text_input',
   'dropdown',

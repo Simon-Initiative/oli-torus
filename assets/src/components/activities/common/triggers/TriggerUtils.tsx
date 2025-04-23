@@ -56,7 +56,7 @@ export const describeTrigger = (t: ActivityTrigger, part: Part, maxchars: number
 
     case 'explanation':
       const explanation = part.explanation!.content;
-      return addContent('Student triggers explanation', explanation);
+      return addContent('Student activates explanation', explanation);
 
     case 'hint':
       const hint = part.hints[t.ref_id - 1].content;
@@ -65,10 +65,10 @@ export const describeTrigger = (t: ActivityTrigger, part: Part, maxchars: number
     case 'targeted_feedback':
       const response = part.responses.find((r) => r.id == t.ref_id);
       const feedback = response?.feedback.content;
-      return addContent('Student triggers targeted feedback', feedback);
+      return addContent('Student activates targeted feedback', feedback);
 
     default:
-      console.error('unrecognized activity trigger type');
+      console.error('unrecognized activation point type');
       return '[unknown]';
   }
 };

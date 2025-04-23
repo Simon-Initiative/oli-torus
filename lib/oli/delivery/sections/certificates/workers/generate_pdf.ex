@@ -25,7 +25,12 @@ defmodule Oli.Delivery.Sections.Certificates.Workers.GeneratePdf do
       {:ok, granted_certificate} ->
         if send_email do
           granted_certificate =
-            Repo.preload(granted_certificate, [:user, certificate: [:section]])
+            Repo.preload(granted_certificate, [
+              :user,
+              certificate: [
+                section: [:brand, lti_1p3_deployment: [institution: [:default_brand]]]
+              ]
+            ])
 
           section = granted_certificate.certificate.section
 

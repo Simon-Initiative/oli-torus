@@ -257,13 +257,7 @@ defmodule OliWeb.Delivery.Student.Utils do
   end
 
   defp submit_term(
-         %{
-           effective_settings: %{
-             late_submit: :allow,
-             time_limit: time_limit,
-             scheduling_type: :due_by
-           }
-         } = assigns
+         %{effective_settings: %{late_submit: :allow, time_limit: time_limit}} = assigns
        )
        when time_limit not in ["nil", 0] do
     ~H"""

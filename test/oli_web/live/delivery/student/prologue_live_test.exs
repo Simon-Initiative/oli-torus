@@ -512,6 +512,27 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       assert element(view, "#header_logo_button") |> render() =~ "www.logo.com"
     end
 
+    test "see default brand logo if the section is not open and free", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_1: page_1
+    } do
+      {:ok, section} =
+        Sections.update_section(section, %{open_and_free: false, lti_1p3_deployment_id: nil})
+
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_1.slug))
+
+      # assert that the section has a brand
+      assert is_struct(section.brand, Oli.Branding.Brand)
+
+      # assert that the default logo is shown because the section is not open and free even if the brand is set
+      assert element(view, "#header_logo_button") |> render() =~ "/images/oli_torus_logo.png"
+    end
+
     test "can see prologue on graded pages with no attempt in progress", %{
       conn: conn,
       user: user,
@@ -1148,7 +1169,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       refute has_element?(view, "#page_time_limit_term", "<li id=\"page_time_limit_term\">")
     end
 
-    test "page terms render a time limit late submit message only for a due by page",
+    test "page terms render a time limit late submit in both due_by and read_by scheduling types",
          ctx do
       %{conn: conn, user: user, section: section, page_2: page_2} = ctx
 
@@ -1169,7 +1190,8 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
 
       {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
 
-      refute view |> has_element?("#page_submit_term")
+      assert view |> element("#page_submit_term") |> render() =~
+               "<li id=\"page_submit_term\">\n  If you exceed this time, it will be marked late.\n</li>"
     end
 
     test "page terms render a late submit due date message only for pages with due date", ctx do

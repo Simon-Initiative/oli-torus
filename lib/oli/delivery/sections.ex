@@ -4927,7 +4927,7 @@ defmodule Oli.Delivery.Sections do
       case Map.has_key?(parent_map, objective.resource_id) do
         # this is a top-level objective
         false ->
-          {_, _, correct, total} =
+          {correct, total, _, _} =
             Map.get(proficiency_per_learning_objective, objective.resource_id, {0, 0, 0, 0})
 
           objective =
@@ -4941,14 +4941,14 @@ defmodule Oli.Delivery.Sections do
               student_proficiency_subobj: ""
             })
 
-          {_, _, parent_correct, parent_total} =
+          {parent_correct, parent_total, _, _} =
             Map.get(top_level_aggregation, objective.resource_id, {0, 0, 0, 0})
 
           sub_objectives =
             Enum.map(objective.children, fn child ->
               sub_objective = Map.get(lookup_map, child)
 
-              {_, _, correct, total} =
+              {correct, total, _, _} =
                 Map.get(
                   proficiency_per_learning_objective,
                   sub_objective.resource_id,

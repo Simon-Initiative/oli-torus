@@ -32,7 +32,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   # this is an optimization to reduce the memory footprint of the liveview process
   @required_keys_per_assign %{
     section:
-      {[:id, :slug, :title, :brand, :lti_1p3_deployment, :customizations], %Sections.Section{}},
+      {[:id, :slug, :title, :brand, :lti_1p3_deployment, :customizations, :open_and_free],
+       %Sections.Section{}},
     current_user: {[:id, :name, :email, :sub], %User{}}
   }
 

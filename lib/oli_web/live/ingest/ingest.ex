@@ -68,7 +68,7 @@ defmodule OliWeb.Admin.Ingest do
            ) do
       {:noreply,
        redirect(socket,
-         to: ~s"workspaces/course_author/#{project.slug}/overview"
+         to: ~p"/workspaces/course_author/#{project.slug}/overview"
        )}
     else
       error ->
