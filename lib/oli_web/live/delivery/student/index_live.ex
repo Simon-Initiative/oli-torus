@@ -22,13 +22,12 @@ defmodule OliWeb.Delivery.Student.IndexLive do
       section = socket.assigns[:section]
       current_user_id = socket.assigns[:current_user].id
       certificate_enabled = section.certificate_enabled
+      has_scheduled_resources? = socket.assigns[:has_scheduled_resources?]
 
       combined_settings =
         Appsignal.instrument("IndexLive: combined_settings", fn ->
           Settings.get_combined_settings_for_all_resources(section.id, current_user_id)
         end)
-
-      has_scheduled_resources? = Scheduling.has_scheduled_resources?(section.id)
 
       nearest_upcoming_lesson =
         Appsignal.instrument("IndexLive: nearest_upcoming_lesson", fn ->
