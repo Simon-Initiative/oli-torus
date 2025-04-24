@@ -4,7 +4,6 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   import OliWeb.Components.Delivery.Layouts
 
   alias Oli.Delivery.{Attempts, Certificates, Hierarchy, Metrics, Sections, Settings}
-  alias Oli.Delivery.Sections.Scheduling
   alias Oli.Delivery.Sections.SectionCache
   alias Oli.Publishing.DeliveryResolver
   alias OliWeb.Common.FormatDateTime
@@ -95,6 +94,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
           section_slug: section.slug,
           section_start_date: section.start_date,
           historical_graded_attempt_summary: nil,
+          has_scheduled_resources?: has_scheduled_resources?,
           has_visited_section:
             Sections.has_visited_section(section, socket.assigns[:current_user],
               enrollment_state: false
@@ -203,6 +203,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
           <.agenda
             section_slug={@section_slug}
             grouped_agenda_resources={@grouped_agenda_resources}
+            has_scheduled_resources?={@has_scheduled_resources?}
             section_start_date={@section_start_date}
             ctx={@ctx}
           />
@@ -238,7 +239,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
       <div
         :if={!is_nil(@suggested_page)}
-        class="flex flex-col w-full px-3 md:px-9 absolute flex-col justify-center items-start gap-2 md:gap-6"
+        class="flex flex-col w-full px-3 md:px-9 absolute justify-center items-start gap-2 md:gap-6"
       >
         <h3 class="text-white text-lg md:text-2xl font-bold leading-loose tracking-tight">
           Continue Learning
@@ -1016,6 +1017,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             Upcoming Agenda
           </div>
           <.link
+            :if={@has_scheduled_resources?}
             href={
               Utils.schedule_live_path(
                 @section_slug,
