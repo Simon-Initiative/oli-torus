@@ -398,7 +398,6 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
           Enum.map(raw_attempts, fn a ->
             Map.delete(a, :lifecycle_state)
             |> Map.delete(:score)
-            |> Map.delete(:out_of)
             |> Map.delete(:date_submitted)
             |> Map.delete(:date_evaluated)
           end)

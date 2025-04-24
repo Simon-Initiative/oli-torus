@@ -113,6 +113,9 @@ defmodule Oli.Delivery.ActivityProvider do
       errors: errors
     } = fulfill(model, source, user, section_slug, constraining_attempt_prototypes)
 
+    IO.inspect(prototypes)
+
+
     prototypes_with_revisions = resolve_activity_ids(source.section_slug, prototypes, resolver)
     |> Enum.map(fn p -> set_out_of(p) end)
 
@@ -250,7 +253,7 @@ defmodule Oli.Delivery.ActivityProvider do
               new_prototypes =
                 Enum.reverse(result.rows)
                 |> Enum.map(fn r -> revision_to_prototype(r, group_id, survey_id, id) end)
-                |> Enum.map(fn p -> Map.put(p, :out_of, points_per_activity) end)
+                |> Enum.map(fn p -> Map.put(p, :out_of, points_per_activity / 1.0) end)
 
               fulfillment_state
               |> Map.put(:prototypes, new_prototypes ++ fulfillment_state.prototypes)
@@ -265,7 +268,7 @@ defmodule Oli.Delivery.ActivityProvider do
                 Enum.map(result.rows, fn r ->
                   revision_to_prototype(r, group_id, survey_id, id)
                 end)
-                |> Enum.map(fn p -> Map.put(p, :out_of, points_per_activity) end)
+                |> Enum.map(fn p -> Map.put(p, :out_of, points_per_activity / 1.0) end)
 
               fulfillment_state
               |> Map.put(:prototypes, new_prototypes ++ fulfillment_state.prototypes)
@@ -392,7 +395,7 @@ defmodule Oli.Delivery.ActivityProvider do
   # For prototypes that do not have an out_of value set, set it from
   # sum of the max score for all parts from that activity
   defp set_out_of(%AttemptPrototype{out_of: nil, revision: revision} = p) do
-    %{p | out_of: Oli.Grading.determine_activity_out_of(revision)}
+    %{p | out_of: Oli.Grading.determine_activity_out_of(revision) / 1.0}
   end
 
   defp set_out_of(p), do: p
