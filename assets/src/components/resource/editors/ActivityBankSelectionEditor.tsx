@@ -41,6 +41,22 @@ export const ActivityBankSelectionEditor = (props: ActivityBankSelectionEditorPr
     onEdit(Object.assign({}, contentItem, { count }));
   };
 
+  const onEditPoints = (points: string) => {
+    let pointsPerActivity;
+
+    try {
+      pointsPerActivity = parseInt(points, 10);
+    } catch (e) {
+      pointsPerActivity = 1;
+    }
+
+    if (isNaN(pointsPerActivity) || pointsPerActivity <= 0) {
+      pointsPerActivity = 1;
+    }
+
+    onEdit(Object.assign({}, contentItem, { pointsPerActivity }));
+  };
+
   const onEditLogic = (logic: Bank.Logic) => {
     if (
       logic.conditions !== null &&
@@ -99,6 +115,8 @@ export const ActivityBankSelectionEditor = (props: ActivityBankSelectionEditorPr
     }
   };
 
+  const pointsValue = contentItem.pointsPerActivity === undefined ? 1 : contentItem.pointsPerActivity;
+
   return (
     <div id={contentItem.id} className="activity-bank-selection">
       <div className="label mb-3">Activity Bank Selection</div>
@@ -111,6 +129,18 @@ export const ActivityBankSelectionEditor = (props: ActivityBankSelectionEditorPr
             editMode={editMode}
             value={contentItem.count.toString()}
             label="Number of activities"
+          />
+        </div>
+      </div>
+      <div className="d-flex justify-items-start mb-4">
+        <div className="mr-3">Points per question:</div>
+        <div className="count-input">
+          <TextInput
+            onEdit={onEditPoints}
+            type="number"
+            editMode={editMode}
+            value={pointsValue.toString()}
+            label="Points per question"
           />
         </div>
       </div>

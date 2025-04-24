@@ -283,8 +283,8 @@ defmodule Oli.Grading do
 
           "selection" ->
             case Selection.parse(e) do
-              {:ok, %Selection{count: selection_count}} ->
-                {selection_count + total_out_of, activity_ids}
+              {:ok, %Selection{count: selection_count, points_per_activity: points_per_activity}} ->
+                {(selection_count * points_per_activity) + total_out_of, activity_ids}
 
               _ ->
                 {total_out_of, activity_ids}
@@ -305,15 +305,28 @@ defmodule Oli.Grading do
     |> max(1.0)
   end
 
-  defp determine_activity_out_of(%Revision{content: content}) do
-    content["authoring"]["parts"]
-    |> Enum.reduce(0, fn part, total_out_of ->
-      total_out_of + determine_responses_max_score(part["responses"])
-    end)
+  def determine_activity_out_of(%Revision{content: content}) do
+
+    case content["authoring"] do
+      nil ->
+        1.0
+
+      %{"parts" => parts} ->
+        case parts do
+          nil ->
+            1.0
+          p ->
+            Enum.reduce(p, 0.0, fn part, total_out_of ->
+              total_out_of + determine_responses_max_score(part["responses"])
+            end)
+        end
+    end
+
   end
 
+  defp determine_responses_max_score(nil), do: 1.0
   defp determine_responses_max_score(responses) do
-    Enum.reduce(responses, 0, fn response, max_score ->
+    Enum.reduce(responses, 0.0, fn response, max_score ->
       case response["score"] do
         nil ->
           max_score

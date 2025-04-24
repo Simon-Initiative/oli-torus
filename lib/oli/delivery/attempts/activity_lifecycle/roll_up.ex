@@ -114,6 +114,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
     # details about the page they are on
     %{
       activity_attempt_id: activity_attempt_id,
+      activity_out_of: activity_out_of,
       activity_id: activity_id,
       resource_attempt_id: resource_attempt_id,
       resource_access_id: resource_access_id,
@@ -132,6 +133,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
 
     %Result{score: score, out_of: out_of} =
       Scoring.calculate_score(activity_scoring_strategy_id, part_attempts)
+      |> scale_to(activity_out_of)
 
     case score_as_you_go? do
 
@@ -147,7 +149,6 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
           a.resource_id == activity_id and a.attempt_guid != activity_attempt_guid
         end)
 
-
         all_attempts = [%{score: score, out_of: out_of, date_evaluated: now} | other_attempts_for_this_activity]
 
         %Result{score: aggregate_score, out_of: aggregate_out_of} =
@@ -162,7 +163,15 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
 
         all_aggregate_attempts = [%{aggregate_score: aggregate_score, aggregate_out_of: aggregate_out_of, date_evaluated: now} | attempts_for_other_activities]
         |> Enum.map(fn a ->
-          %{score: a.aggregate_score, out_of: a.aggregate_out_of, date_evaluated: a.date_evaluated}
+
+          # If the aggregate out of is nil, this signifies that the activity has not been evaluated yet
+          # so we need to use the original score and out_of values, because the original out_of will
+          # at least have the "preset" out_of value for the activity
+          case a.aggregate_out_of do
+            nil -> %{score: a.score, out_of: a.out_of, date_evaluated: a.date_evaluated}
+            _ -> %{score: a.aggregate_score, out_of: a.aggregate_out_of, date_evaluated: a.date_evaluated}
+          end
+
         end)
 
         total_scoring_strategy_id = Oli.Resources.ScoringStrategy.get_id_by_type("total")
@@ -280,6 +289,19 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
     )
   end
 
+  # Scales a result to the range of 0.. activity's out_of value
+  defp scale_to(%Result{score: score, out_of: out_of}, activity_out_of) do
+    case activity_out_of do
+      nil -> %Result{score: score, out_of: out_of}
+      _ ->
+        case out_of do
+          nil -> %Result{score: 0.0, out_of: activity_out_of}
+          0 -> %Result{score: 0.0, out_of: activity_out_of}
+          _ -> %Result{score: score / out_of * activity_out_of, out_of: activity_out_of}
+        end
+    end
+  end
+
   defp initiate_grade_passback(section_id, resource_access_id) do
     Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker.create(
       section_id,
@@ -366,6 +388,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
       where: a.attempt_guid == ^activity_attempt_guid,
       select: %{
         activity_attempt_id: a.id,
+        activity_out_of: a.out_of,
         resource_attempt_id: ra.id,
         activity_id: a.resource_id,
         resource_access_id: ra.resource_access_id,

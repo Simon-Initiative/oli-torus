@@ -300,6 +300,7 @@ export interface ActivityBankSelection {
   id: string;
   logic: Bank.Logic;
   count: number;
+  pointsPerActivity?: number;
   children: undefined;
 }
 

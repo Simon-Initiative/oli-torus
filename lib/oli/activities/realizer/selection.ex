@@ -4,8 +4,8 @@ defmodule Oli.Activities.Realizer.Selection do
   """
 
   @derive Jason.Encoder
-  @enforce_keys [:id, :count, :logic, :purpose, :type]
-  defstruct [:id, :count, :logic, :purpose, :type]
+  @enforce_keys [:id, :count, :points_per_activity, :logic, :purpose, :type]
+  defstruct [:id, :count, :points_per_activity, :logic, :purpose, :type]
 
   alias Oli.Activities.Realizer.Logic
   alias Oli.Activities.Realizer.Selection
@@ -19,6 +19,7 @@ defmodule Oli.Activities.Realizer.Selection do
   @type t() :: %__MODULE__{
           id: String.t(),
           count: integer(),
+          points_per_activity: integer(),
           logic: %Logic{},
           purpose: String.t(),
           type: String.t()
@@ -28,8 +29,9 @@ defmodule Oli.Activities.Realizer.Selection do
     case Logic.parse(logic) do
       {:ok, logic} ->
         purpose = Map.get(json, "purpose", "none")
+        points_per_activity = Map.get(json, "points_per_activity", 1)
 
-        {:ok, %Selection{id: id, count: count, logic: logic, purpose: purpose, type: "selection"}}
+        {:ok, %Selection{id: id, count: count, points_per_activity: points_per_activity, logic: logic, purpose: purpose, type: "selection"}}
 
       e ->
         e
