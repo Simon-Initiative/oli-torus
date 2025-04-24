@@ -1582,6 +1582,9 @@ defmodule OliWeb.Router do
       resources("/registrations", RegistrationController, except: [:index]) do
         resources("/deployments", DeploymentController, except: [:index, :show])
       end
+
+      # External tools
+      live("/external_tools", Admin.ExternalToolsView)
     end
 
     # System admin

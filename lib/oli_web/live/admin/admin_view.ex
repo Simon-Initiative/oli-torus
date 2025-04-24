@@ -62,6 +62,11 @@ defmodule OliWeb.Admin.AdminView do
                 Manage LTI 1.3 Registrations
               </a>
             </li>
+            <li>
+              <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.ExternalToolsView)}>
+                Manage LTI 1.3 External Tools
+              </a>
+            </li>
           </ul>
         </Group.render>
       <% end %>
