@@ -146,6 +146,11 @@ defmodule OliWeb.AdminLiveTest do
                view,
                "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.RegistrationsView)}\"]"
              )
+
+      assert has_element?(
+               view,
+               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.ExternalToolsView)}\"]"
+             )
     end
 
     test "loads content management links correctly", %{conn: conn} do
@@ -266,6 +271,12 @@ defmodule OliWeb.AdminLiveTest do
                view,
                "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.RegistrationsView)}\"]",
                "Manage LTI 1.3 Registrations"
+             )
+
+      assert has_element?(
+               view,
+               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.ExternalToolsView)}\"]",
+               "Manage LTI 1.3 External Tools"
              )
     end
 
@@ -404,6 +415,12 @@ defmodule OliWeb.AdminLiveTest do
                view,
                "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.RegistrationsView)}\"]",
                "Manage LTI 1.3 Registrations"
+             )
+
+      refute has_element?(
+               view,
+               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.ExternalToolsView)}\"]",
+               "Manage LTI 1.3 External Tools"
              )
     end
 
