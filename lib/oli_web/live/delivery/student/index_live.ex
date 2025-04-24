@@ -1006,6 +1006,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   attr(:section_slug, :string, required: true)
   attr(:section_start_date, :string, required: true)
   attr(:grouped_agenda_resources, :map, required: true)
+  attr(:has_scheduled_resources?, :boolean, required: true)
   attr(:ctx, :map, required: true)
 
   defp agenda(assigns) do

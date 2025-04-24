@@ -35,7 +35,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     })
   end
 
-  defp create_elixir_project(_) do
+  defp create_elixir_project(_, add_schedule? \\ true) do
     author = insert(:author)
     project = insert(:project, authors: [author])
 
@@ -475,51 +475,53 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     {:ok, _} = Sections.rebuild_contained_pages(section)
     {:ok, _} = Sections.rebuild_contained_objectives(section)
 
-    # schedule start and end date for unit 1 section_resource
-    Sections.get_section_resource(section.id, unit_1_revision.resource_id)
-    |> Sections.update_section_resource(%{
-      start_date: ~U[2023-10-31 20:00:00Z],
-      end_date: ~U[2023-12-31 20:00:00Z]
-    })
+    if add_schedule? do
+      # schedule start and end date for unit 1 section_resource
+      Sections.get_section_resource(section.id, unit_1_revision.resource_id)
+      |> Sections.update_section_resource(%{
+        start_date: ~U[2023-10-31 20:00:00Z],
+        end_date: ~U[2023-12-31 20:00:00Z]
+      })
 
-    # schedule start and end date for module 1 section_resource
-    Sections.get_section_resource(section.id, module_1_revision.resource_id)
-    |> Sections.update_section_resource(%{
-      start_date: ~U[2023-11-01 20:00:00Z],
-      end_date: ~U[2023-11-15 20:00:00Z]
-    })
+      # schedule start and end date for module 1 section_resource
+      Sections.get_section_resource(section.id, module_1_revision.resource_id)
+      |> Sections.update_section_resource(%{
+        start_date: ~U[2023-11-01 20:00:00Z],
+        end_date: ~U[2023-11-15 20:00:00Z]
+      })
 
-    # schedule start and end date for page 4 section_resource
-    Sections.get_section_resource(section.id, page_4_revision.resource_id)
-    |> Sections.update_section_resource(%{
-      start_date: ~U[2023-11-02 20:00:00Z],
-      end_date: ~U[2023-11-03 20:00:00Z]
-    })
+      # schedule start and end date for page 4 section_resource
+      Sections.get_section_resource(section.id, page_4_revision.resource_id)
+      |> Sections.update_section_resource(%{
+        start_date: ~U[2023-11-02 20:00:00Z],
+        end_date: ~U[2023-11-03 20:00:00Z]
+      })
 
-    # schedule start and end date for page 11 and 12 section_resource
-    Sections.get_section_resource(section.id, page_11_revision.resource_id)
-    |> Sections.update_section_resource(%{
-      start_date: ~U[2023-11-02 20:00:00Z],
-      end_date: ~U[2023-11-03 20:00:00Z]
-    })
+      # schedule start and end date for page 11 and 12 section_resource
+      Sections.get_section_resource(section.id, page_11_revision.resource_id)
+      |> Sections.update_section_resource(%{
+        start_date: ~U[2023-11-02 20:00:00Z],
+        end_date: ~U[2023-11-03 20:00:00Z]
+      })
 
-    Sections.get_section_resource(section.id, page_12_revision.resource_id)
-    |> Sections.update_section_resource(%{
-      scheduling_type: :due_by,
-      start_date: ~U[2023-11-02 20:00:00Z],
-      end_date: ~U[2023-11-03 20:00:00Z]
-    })
+      Sections.get_section_resource(section.id, page_12_revision.resource_id)
+      |> Sections.update_section_resource(%{
+        scheduling_type: :due_by,
+        start_date: ~U[2023-11-02 20:00:00Z],
+        end_date: ~U[2023-11-03 20:00:00Z]
+      })
 
-    # set page 15 to in class activity and page 14 to due by
-    Sections.get_section_resource(section.id, page_15_revision.resource_id)
-    |> Sections.update_section_resource(%{
-      scheduling_type: :inclass_activity
-    })
+      # set page 15 to in class activity and page 14 to due by
+      Sections.get_section_resource(section.id, page_15_revision.resource_id)
+      |> Sections.update_section_resource(%{
+        scheduling_type: :inclass_activity
+      })
 
-    Sections.get_section_resource(section.id, page_14_revision.resource_id)
-    |> Sections.update_section_resource(%{
-      scheduling_type: :due_by
-    })
+      Sections.get_section_resource(section.id, page_14_revision.resource_id)
+      |> Sections.update_section_resource(%{
+        scheduling_type: :due_by
+      })
+    end
 
     %{
       author: author,
@@ -2637,6 +2639,35 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
                view,
                ~s{a[href="/sections/#{section.slug}/discussions?sidebar_expanded=true"]},
                "Discussions"
+             )
+    end
+
+    test "renders the Schedule link considering the section's scheduled_resources",
+         %{conn: conn, section: section, user: user} do
+      # a section with schedule should have the Schedule link
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
+
+      assert has_element?(
+               view,
+               ~s{a[href="/sections/#{section.slug}/student_schedule?sidebar_expanded=true"]},
+               "Schedule"
+             )
+
+      # a section without schedule should not have the Schedule link
+      %{section: section_without_schedule} = create_elixir_project(%{}, false)
+
+      Sections.enroll(user.id, section_without_schedule.id, [
+        ContextRoles.get_role(:context_learner)
+      ])
+
+      Sections.mark_section_visited_for_student(section_without_schedule, user)
+
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section_without_schedule.slug))
+
+      refute has_element?(
+               view,
+               ~s{a[href="/sections/#{section_without_schedule.slug}/student_schedule?sidebar_expanded=true"]},
+               "Schedule"
              )
     end
 
