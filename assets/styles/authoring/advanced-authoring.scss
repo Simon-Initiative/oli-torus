@@ -152,36 +152,7 @@ $font-family-sans-serif: var(--font-sans);
       z-index: 3;
     }
   }
-  .aa-header-nav {
-    z-index: 51;
-    padding: 0 16px;
-    justify-content: center;
-    padding: 0;
 
-    .btn-link {
-      &:disabled {
-        opacity: 0.75;
-      }
-      &:hover {
-        opacity: 1;
-
-        img {
-          filter: grayscale(100%) sepia(100%) hue-rotate(-184deg) brightness(190%) saturate(299%);
-        }
-      }
-    }
-    .btn-toolbar {
-      display: flex;
-      flex-direction: row;
-      flex-wrap: initial;
-      transform: scale(0.7);
-
-      .btn-group {
-        display: flex;
-        flex-direction: row;
-      }
-    }
-  }
   .aa-panel-side-toggle {
     position: fixed;
     z-index: 50;
@@ -943,5 +914,45 @@ $font-family-sans-serif: var(--font-sans);
 .toast-body {
   .list-group-item {
     margin: 5px;
+  }
+}
+
+// Responsive behavior
+@media (min-width: 1110px) and (max-width: 1421px) {
+  .aa-header-nav {
+    height: 93px !important;
+    img,
+    i {
+      transform: scale(0.8);
+    }
+  }
+}
+
+@media (min-width: 990px) and (max-width: 1110px) {
+  .aa-header-nav {
+    height: 134px !important;
+    img,
+    i {
+      transform: scale(0.8);
+    }
+  }
+}
+
+@media (max-width: 990px) {
+  .aa-header-nav {
+    height: 214px !important;
+    img,
+    i {
+      transform: scale(0.7);
+    }
+  }
+}
+
+/* For screens wider than 1422px */
+@media (min-width: 1422px) {
+  .aa-header-nav {
+    .btn-group {
+      transform: scale(0.7);
+    }
   }
 }

@@ -316,7 +316,12 @@ export const DiagnosticsTrigger: React.FC<DiagnosticsTriggerProps> = ({ onClick 
         <button className="px-2 btn btn-link" onClick={onClick} style={{ position: 'relative' }}>
           <i
             className="fa fa-wrench"
-            style={{ fontSize: 32, color: '#333', verticalAlign: 'middle' }}
+            style={{
+              fontSize: 24,
+              color: '#333',
+              verticalAlign: 'text-bottom',
+              paddingBottom: '4px',
+            }}
           />
           {results > 0 && (
             <Badge
