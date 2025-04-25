@@ -1360,33 +1360,39 @@ defmodule Oli.Delivery.Metrics do
   end
 
   @doc """
-  Retrieves proficiency data for a specific learning objective, aggregated by user.
-  Returns a map with each key being a student_id and the value being the proficiency.
+  Retrieves proficiency data for a list of learning objectives, aggregated by objective_id and user_id.
+  Returns a map where each key is an objective_id, and the value is another map where each key is a student_id and the value is the proficiency.
 
   ## Examples
 
-      iex> proficiency_per_student_for_objective(1, 42)
-      # Query result with raw proficiency data for objective 42 in section 1
-      # => %{123 => "Low", 456 => "Medium", "789" => "Not enough data"}
+      iex> proficiency_per_student_for_objective(1, [42, 43], student_id: 123)
+      # Query result with raw proficiency data for objectives 42 and 43 in section 1
+      # => %{42 => %{123 => "Low", 456 => "Medium", 789 => "Not enough data"}, 43 => %{123 => "High"}}
   """
-  @spec proficiency_per_student_for_objective(section_id :: integer, objective_id :: integer) ::
-          %{
-            integer => String.t()
-          }
-  def proficiency_per_student_for_objective(section_id, objective_id) do
+  @spec proficiency_per_student_for_objective(
+          section_id :: integer,
+          objective_ids :: list(integer),
+          opts :: Keyword.t()
+        ) :: %{integer => %{integer => String.t()}}
+  def proficiency_per_student_for_objective(section_id, objective_ids, opts \\ []) do
     objective_type_id = Oli.Resources.ResourceType.id_for_objective()
+
+    maybe_filter_by_student_id =
+      if opts[:student_id],
+        do: dynamic([s], s.user_id == ^opts[:student_id]),
+        else: dynamic([s], s.user_id != -1)
 
     query =
       from(summary in Oli.Analytics.Summary.ResourceSummary,
         where:
           summary.section_id == ^section_id and
             summary.project_id == -1 and
-            summary.user_id != -1 and
             summary.resource_type_id == ^objective_type_id and
-            summary.resource_id == ^objective_id,
-        group_by: summary.user_id,
+            summary.resource_id in ^objective_ids,
+        where: ^maybe_filter_by_student_id,
+        group_by: [summary.user_id, summary.resource_id],
         select:
-          {summary.user_id,
+          {summary.user_id, summary.resource_id,
            fragment(
              """
              (
@@ -1403,8 +1409,12 @@ defmodule Oli.Delivery.Metrics do
       )
 
     Repo.all(query)
-    |> Enum.into(%{}, fn {student_id, proficiency, num_first_attempts} ->
-      {student_id, proficiency_range(proficiency, num_first_attempts)}
+    |> Enum.reduce(%{}, fn {student_id, resource_id, proficiency, num_first_attempts}, acc ->
+      res =
+        Map.get(acc, resource_id, %{})
+        |> Map.put(student_id, proficiency_range(proficiency, num_first_attempts))
+
+      Map.put(acc, resource_id, res)
     end)
   end
 end
