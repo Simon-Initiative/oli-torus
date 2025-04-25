@@ -23,6 +23,9 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   alias OliWeb.Delivery.Student.Lesson.Components.OutlineComponent
   alias Oli.Delivery.{Hierarchy, Metrics, Sections, Settings}
   alias Oli.Delivery.Sections.SectionCache
+  alias OliWeb.Delivery.Student.Utils
+  alias OliWeb.Icons
+
 
   require Logger
 
@@ -147,6 +150,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
             false
         end
 
+      Oli.Delivery.ScoreAsYouGoNotifications.subscribe(resource_attempt.id)
+
       socket =
         socket
         |> emit_page_viewed_event()
@@ -162,7 +167,9 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           time_limit: page_context.effective_settings.time_limit,
           grace_period: page_context.effective_settings.grace_period,
           attempt_start_time: resource_attempt.inserted_at |> to_epoch,
-          review_mode: page_context.review_mode
+          review_mode: page_context.review_mode,
+          current_score: resource_attempt.score,
+          current_out_of: resource_attempt.out_of
         )
         |> slim_assigns()
         |> assign(attempt_expired_auto_submit: attempt_expired_auto_submit)
@@ -222,6 +229,9 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   def mount(_params, _session, socket) do
     {:ok, socket}
   end
+
+  defp format_score(nil), do: "--"
+  defp format_score(v), do: Utils.parse_score(v)
 
   def handle_event("survey_scripts_loaded", %{"error" => _}, socket) do
     {:noreply, assign(socket, error: true)}
@@ -690,6 +700,10 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     end
   end
 
+  def handle_info({:score_changed, {score, out_of}}, socket) do
+    {:noreply, assign(socket, current_score: score, current_out_of: out_of)}
+  end
+
   def handle_info({:disable_question_inputs, question_id}, socket) do
     {:noreply, push_event(socket, "disable_question_inputs", %{"question_id" => question_id})}
   end
@@ -928,6 +942,12 @@ defmodule OliWeb.Delivery.Student.LessonLive do
             container_label={Utils.get_container_label(@current_page["id"], @section)}
           />
 
+          <.score_header
+            batch_scoring={@page_context.effective_settings.batch_scoring}
+            current_score={@current_score}
+            current_out_of={@current_out_of}
+          />
+
           <div :if={@questions != []} class="relative min-h-[500px] justify-center">
             <.live_component
               id="one_at_a_time_questions"
@@ -973,6 +993,12 @@ defmodule OliWeb.Delivery.Student.LessonLive do
             container_label={Utils.get_container_label(@current_page["id"], @section)}
           />
 
+          <.score_header
+            batch_scoring={@page_context.effective_settings.batch_scoring}
+            current_score={@current_score}
+            current_out_of={@current_out_of}
+          />
+
           <div id="page_content" class="content w-full" phx-update="ignore" role="page content">
             <%= raw(@html) %>
             <.submit_button batch_scoring={@page_context.effective_settings.batch_scoring} />
@@ -1008,6 +1034,42 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     ~H"""
     <div></div>
     """
+  end
+
+  attr :batch_scoring, :boolean, default: false
+  attr :current_score, :float
+  attr :current_out_of, :float
+
+  def score_header(%{batch_scoring: false} = assigns) do
+    ~H"""
+    <div class="flex justify-end w-full">
+      <div class="flex items-center gap-2.5">
+        <span class="font-sans text-sm font-normal leading-none">
+          Overall Page Score: <Icons.score_as_you_go /> <.score score={@current_score} out_of={@current_out_of}/>
+        </span>
+      </div>
+    </div>
+    """
+  end
+
+  def score_header(assigns) do
+    ~H"""
+    """
+  end
+
+  attr :score, :float
+  attr :out_of, :float
+
+  def score(%{score: nil} = assigns) do
+     ~H"""
+     <strong class="text-black dark-text-white"><%= format_score(@score) %> / <%= format_score(@out_of) %></strong>
+     """
+  end
+
+  def score(assigns) do
+    ~H"""
+     <strong class="text-[#0FB863]"><%= format_score(@score) %> / <%= format_score(@out_of) %></strong>
+     """
   end
 
   attr :batch_scoring, :boolean, default: false

@@ -178,12 +178,15 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
         %Result{score: page_score, out_of: page_out_of} = Scoring.calculate_score(total_scoring_strategy_id, all_aggregate_attempts)
 
         with {1, _} <- update_resource_access(resource_access_id, %{score: page_score, out_of: page_out_of}, now),
-          {1, _} <- update_resource_attempt(resource_attempt_id, %{score: page_score, out_of: page_score}, now),
+          {1, _} <- update_resource_attempt(resource_attempt_id, %{score: page_score, out_of: page_out_of}, now),
           {1, _} <- update_activity_attempt(activity_attempt_id, %{score: score, out_of: out_of, aggregate_score: aggregate_score, aggregate_out_of: aggregate_out_of}, now) do
 
           if grade_passback_enabled and graded do
             initiate_grade_passback(section_id, resource_access_id)
           end
+
+          # Notify the client of the score change
+          Oli.Delivery.ScoreAsYouGoNotifications.score_changed(resource_attempt_id, {page_score, page_out_of})
 
           :ok
 
