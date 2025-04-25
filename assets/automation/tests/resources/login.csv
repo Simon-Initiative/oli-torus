@@ -1,0 +1,4 @@
+"escenary","role","pageTitle","roleVerify","welcomeTextVerify","email","password","headerVerify"
+"1.1 - Sign into an authoring account with valid details","author","OLI Torus","Course Author","Welcome to OLI Torus","test.argos.auth@gmail.com","CES2025!!!!!!","Course Author"
+"1.2 - Sign in as a student with valid details","student","OLI Torus","Student","Welcome to OLI Torus","test.argos.s@gmail.com","CES2025!!!!!!","Victoria Student"
+"1.3 - Sign in as an instructor with valid details","instructor","Sign in","Instructor","Welcome to OLI Torus","test.argos.ins@gmail.com","CES2025!!!!!!","Instructor Dashboard"
