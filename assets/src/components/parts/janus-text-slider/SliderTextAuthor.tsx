@@ -34,7 +34,8 @@ const SliderTextAuthor: React.FC<AuthorPartComponentProps<SliderTextModel>> = (p
   useEffect(() => {
     if (!isEqual(prevSliderOptionLabelsRef.current?.length, sliderOptionLabels?.length)) {
       const modelClone = clone(model);
-      modelClone.maximum = sliderOptionLabels.length;
+      //The max range will be the total text items - 1.
+      modelClone.maximum = sliderOptionLabels?.length - 1;
       onSaveConfigure({ id, snapshot: modelClone });
       prevSliderOptionLabelsRef.current = sliderOptionLabels;
     }
