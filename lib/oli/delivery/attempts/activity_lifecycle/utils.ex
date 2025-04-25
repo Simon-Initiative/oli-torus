@@ -48,11 +48,9 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Utils do
        ) do
     activity_model = select_model(activity_attempt)
 
-    {:ok, %Model{parts: parts}} = Model.parse(activity_model)
-
     evaluations =
       case Model.parse(activity_model) do
-        {:ok, %Model{rules: []}} ->
+        {:ok, %Model{parts: parts, rules: []}} ->
           # We need to tie the attempt_guid from the part_inputs to the attempt_guid
           # from the %PartAttempt, and then the part id from the %PartAttempt to the
           # part id in the parsed model.
@@ -93,5 +91,28 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Utils do
 
     {:ok, evaluations}
   end
+
+
+  # Determines the scaling factor to score and out_of to be applied at
+  # the part attempt level.
+  defp determine_scale_factor(parts, activity_out_of) do
+
+    total = Enum.map(parts, fn p ->
+      Enum.reduce(p.responses, 0, fn r, max -> max(max, r.score) end)
+    end)
+    |> Enum.reduce(0, fn v, acc -> acc + v end)
+
+    case activity_out_of do
+      nil -> 1.0
+      _ ->
+        case total do
+          nil -> 1.0
+          0 -> 1.0
+          _ -> activity_out_of / total
+        end
+    end
+  end
+
+
 
 end
