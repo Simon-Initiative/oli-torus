@@ -4835,7 +4835,17 @@ defmodule Oli.Delivery.Sections do
   top level objectives, they appear with their proficiency for only those activities that
   directly attached to them.
   """
-  def get_objectives_and_subobjectives(%Section{slug: section_slug} = section, student_id \\ nil) do
+  def get_objectives_and_subobjectives(%Section{slug: section_slug} = section, opts \\ []) do
+    student_id =
+      if opts[:student_id],
+        do: opts[:student_id],
+        else: nil
+
+    exclude_sub_objectives =
+      if opts[:exclude_sub_objectives],
+        do: true,
+        else: false
+
     # get the minimal fields for all objectives from the database
     objective_id = Oli.Resources.ResourceType.id_for_objective()
 
@@ -4882,11 +4892,6 @@ defmodule Oli.Delivery.Sections do
           proficiency_mode: proficiency_mode
         )
       end)
-
-    IO.inspect(
-      proficiency_dist_for_objectives,
-      label: "Proficiency Distribution for Objectives"
-    )
 
     objective_to_container_ids_map =
       from(co in ContainedObjective)
@@ -4942,30 +4947,39 @@ defmodule Oli.Delivery.Sections do
               student_proficiency_subobj: ""
             })
 
-          sub_objectives =
-            Enum.map(objective.children, fn child ->
-              sub_objective = Map.get(lookup_map, child)
+          case exclude_sub_objectives do
+            false ->
+              # this is a top-level objective, so we need to include its subobjectives
+              # in the result set as well
+              sub_objectives =
+                Enum.map(objective.children, fn child ->
+                  sub_objective = Map.get(lookup_map, child)
 
-              {student_proficiency_subobj, student_proficiency_subobj_dist} =
-                case Map.get(proficiency_dist_for_objectives, sub_objective.resource_id) do
-                  nil -> {"Not enough data", %{}}
-                  prof -> {prof[:proficiency_mode], prof[:proficiency_dist]}
-                end
+                  {student_proficiency_subobj, student_proficiency_subobj_dist} =
+                    case Map.get(proficiency_dist_for_objectives, sub_objective.resource_id) do
+                      nil -> {"Not enough data", %{}}
+                      prof -> {prof[:proficiency_mode], prof[:proficiency_dist]}
+                    end
 
-              Map.merge(sub_objective, %{
-                section_id: section.id,
-                objective: objective.title,
-                objective_resource_id: objective.resource_id,
-                student_proficiency_obj: student_proficiency_obj,
-                student_proficiency_obj_dist: student_proficiency_obj_dist,
-                subobjective: sub_objective.title,
-                subobjective_resource_id: sub_objective.resource_id,
-                student_proficiency_subobj: student_proficiency_subobj,
-                student_proficiency_subobj_dist: student_proficiency_subobj_dist
-              })
-            end)
+                  Map.merge(sub_objective, %{
+                    section_id: section.id,
+                    objective: objective.title,
+                    objective_resource_id: objective.resource_id,
+                    student_proficiency_obj: student_proficiency_obj,
+                    student_proficiency_obj_dist: student_proficiency_obj_dist,
+                    subobjective: sub_objective.title,
+                    subobjective_resource_id: sub_objective.resource_id,
+                    student_proficiency_subobj: student_proficiency_subobj,
+                    student_proficiency_subobj_dist: student_proficiency_subobj_dist
+                  })
+                end)
 
-          [objective | sub_objectives] ++ all
+              [objective | sub_objectives] ++ all
+
+            true ->
+              # this is a top-level objective, so we just return it
+              [objective] ++ all
+          end
 
         # this is a subobjective, we do nothing as it will be handled in the context of its parent(s)
         _ ->
