@@ -1,3 +1,4 @@
+
 defmodule Oli.Delivery.Evaluation.Evaluator do
   alias Oli.Delivery.Evaluation.{EvaluationContext}
   alias Oli.Delivery.Evaluation.Actions.{SubmissionAction, FeedbackAction}
@@ -8,11 +9,13 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
 
   @doc """
   Evaluates a student input for a given activity part.  In a successful
-  evaluation, returns the feedback and a scoring result.
+  evaluation, returns the feedback and a scoring result.  The third parameter
+  scale_factor allows for the part score and out_of to be scaled into a smaller
+  or larger range.
   """
   def evaluate(%Part{grading_approach: :manual, id: part_id}, %EvaluationContext{
         part_attempt_guid: attempt_guid
-      }) do
+      }, _) do
     {:ok,
      %SubmissionAction{
        type: "SubmissionAction",
@@ -21,7 +24,7 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
      }}
   end
 
-  def evaluate(%Part{} = part, %EvaluationContext{} = context) do
+  def evaluate(%Part{} = part, %EvaluationContext{} = context, scale_factor) do
     relevant_triggers_by_type = Triggers.relevant_triggers_by_type(part)
 
     case Enum.reduce(part.responses, {context, nil, 0, 0}, &consider_response/2) do
@@ -29,8 +32,8 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
         {:ok,
          %FeedbackAction{
            type: "FeedbackAction",
-           score: score,
-           out_of: out_of,
+           score: score * scale_factor,
+           out_of: out_of * scale_factor,
            feedback: feedback,
            attempt_guid: context.part_attempt_guid,
            error: nil,
@@ -62,7 +65,7 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
          %FeedbackAction{
            type: "FeedbackAction",
            score: 0,
-           out_of: adjusted_out_of,
+           out_of: adjusted_out_of * scale_factor,
            feedback: Feedback.from_text("Incorrect"),
            attempt_guid: context.part_attempt_guid,
            error: nil,

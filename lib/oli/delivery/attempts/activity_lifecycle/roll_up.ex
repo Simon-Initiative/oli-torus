@@ -114,7 +114,6 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
     # details about the page they are on
     %{
       activity_attempt_id: activity_attempt_id,
-      activity_out_of: activity_out_of,
       activity_id: activity_id,
       resource_attempt_id: resource_attempt_id,
       resource_access_id: resource_access_id,
@@ -133,7 +132,6 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
 
     %Result{score: score, out_of: out_of} =
       Scoring.calculate_score(activity_scoring_strategy_id, part_attempts)
-      |> scale_to(activity_out_of)
 
     case score_as_you_go? do
 
@@ -290,19 +288,6 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
         end
       end
     )
-  end
-
-  # Scales a result to the range of 0.. activity's out_of value
-  defp scale_to(%Result{score: score, out_of: out_of}, activity_out_of) do
-    case activity_out_of do
-      nil -> %Result{score: score, out_of: out_of}
-      _ ->
-        case out_of do
-          nil -> %Result{score: 0.0, out_of: activity_out_of}
-          0 -> %Result{score: 0.0, out_of: activity_out_of}
-          _ -> %Result{score: score / out_of * activity_out_of, out_of: activity_out_of}
-        end
-    end
   end
 
   defp initiate_grade_passback(section_id, resource_access_id) do

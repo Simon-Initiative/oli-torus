@@ -65,7 +65,12 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
     case create_resource_attempt(%{
            content: transformed_content,
            errors: errors,
-           out_of: Enum.reduce(prototypes, 0.0, fn p, acc -> acc + p.out_of end),
+           out_of: Enum.reduce(prototypes, 0.0, fn p, acc ->
+            case p.out_of do
+              nil -> acc
+              _ -> p.out_of + acc
+            end
+           end),
            attempt_guid: UUID.uuid4(),
            resource_access_id: resource_access_id,
            attempt_number: next_attempt_number,

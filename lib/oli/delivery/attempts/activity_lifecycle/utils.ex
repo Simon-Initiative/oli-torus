@@ -40,7 +40,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Utils do
   def do_evaluate_submissions(
          %ActivityAttempt{
            resource_attempt: resource_attempt,
-           attempt_number: attempt_number
+           attempt_number: attempt_number,
+           out_of: activity_out_of
          } = activity_attempt,
          part_inputs,
          part_attempts,
@@ -55,6 +56,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Utils do
           # from the %PartAttempt, and then the part id from the %PartAttempt to the
           # part id in the parsed model.
           part_map = Enum.reduce(parts, %{}, fn p, m -> Map.put(m, p.id, p) end)
+
+          scale_factor = determine_scale_factor(parts, activity_out_of)
 
           attempt_map =
             Enum.reduce(part_attempts, %{}, fn p, m -> Map.put(m, p.attempt_guid, p) end)
@@ -74,7 +77,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Utils do
               input: input.input
             }
 
-            Standard.perform(attempt_guid, context, part)
+            Standard.perform(attempt_guid, context, part, scale_factor)
             |> Explanation.maybe_set_feedback_action_explanation(%ExplanationContext{
               part: part,
               part_attempt: attempt,

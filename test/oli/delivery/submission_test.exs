@@ -976,7 +976,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
 
       # No matching response should mark the answer as incorrect with out_of
       # being the highest score of any response considered.
-      {:ok, [%{feedback: %{id: _id}, score: 0, out_of: 10}]} =
+      {:ok, [%{feedback: %{id: _id}, score: 0, out_of: 10.0}]} =
         Evaluate.evaluate_from_input(
           section.slug,
           activity_attempt.attempt_guid,
