@@ -11,7 +11,7 @@
     <%= csrf_meta_tag() %>
 
     <Phoenix.Component.live_title>
-      <%= assigns[:page_title] || assigns[:title] || brand_name() %>
+      <%= assigns[:page_title] || assigns[:title] || Oli.VendorProperties.product_short_name() %>
     </Phoenix.Component.live_title>
 
     <link
