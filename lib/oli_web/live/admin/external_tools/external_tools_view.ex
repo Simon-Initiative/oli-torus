@@ -13,7 +13,7 @@ defmodule OliWeb.Admin.ExternalToolsView do
     previous ++
       [
         Breadcrumb.new(%{
-          full_title: "LTI 1.3 External Tools",
+          full_title: "Manage LTI 1.3 External Tools",
           link: Routes.live_path(OliWeb.Endpoint, __MODULE__)
         })
       ]
