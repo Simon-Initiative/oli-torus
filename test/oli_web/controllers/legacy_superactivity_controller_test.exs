@@ -5,7 +5,7 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
   alias Oli.Seeder
 
   alias Oli.Delivery.Attempts.Core, as: Attempts
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
   alias Oli.Activities
 
   alias OliWeb.Router.Helpers, as: Routes

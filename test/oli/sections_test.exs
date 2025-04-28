@@ -8,7 +8,7 @@ defmodule Oli.SectionsTest do
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections.SectionResource
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
   alias Oli.Publishing
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Delivery.Hierarchy

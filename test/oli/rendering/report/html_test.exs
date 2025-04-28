@@ -2,7 +2,7 @@ defmodule Oli.Content.Report.HtmlTest do
   use Oli.DataCase
 
   alias Oli.Activities.Model.{Part}
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
 
   alias Oli.Delivery.Sections
   alias Oli.Rendering.Context

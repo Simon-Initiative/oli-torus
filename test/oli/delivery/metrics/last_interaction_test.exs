@@ -5,7 +5,7 @@ defmodule Oli.Delivery.Metrics.LastInteractionTest do
 
   alias Oli.Delivery.Metrics
   alias Oli.Delivery.Sections
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
   alias Oli.Resources.ResourceType
 
   defp set_interaction(section, resource, user, timestamp) do

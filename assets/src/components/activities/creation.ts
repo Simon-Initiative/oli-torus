@@ -20,7 +20,7 @@ export function registerCreationFunc(manifest: Manifest, fn: creationFn) {
     window.oliCreationFuncs = {};
   }
 
-  window.oliCreationFuncs[manifest.id] = fn;
+  window.oliCreationFuncs[manifest.authoring.element] = fn;
 }
 
 export function invokeCreationFunc(

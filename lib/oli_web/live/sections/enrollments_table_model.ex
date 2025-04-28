@@ -10,7 +10,7 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
   alias OliWeb.Common.Utils
   alias OliWeb.Common.FormatDateTime
   alias OliWeb.Delivery.InstructorDashboard.HTMLComponents
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
 
   use Phoenix.Component
 

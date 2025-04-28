@@ -7,7 +7,7 @@ defmodule Oli.Plugs.MaybeGatedResourceTest do
   alias Oli.Delivery.Gating
   alias Oli.Seeder
   alias Oli.Delivery.Attempts.Core
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
 
   def insert_resource_attempt(resource_access, revision_id, attrs) do
     Core.create_resource_attempt(

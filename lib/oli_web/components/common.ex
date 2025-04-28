@@ -1,7 +1,7 @@
 defmodule OliWeb.Components.Common do
   use Phoenix.Component
 
-  import OliWeb.Gettext
+  use Gettext, backend: OliWeb.Gettext
 
   alias OliWeb.Common.{FormatDateTime, React}
   alias Phoenix.LiveView.JS

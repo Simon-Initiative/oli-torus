@@ -7,7 +7,7 @@ defmodule Oli.Delivery.Metrics.ProgressTest do
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Attempts.Core
   alias Oli.Delivery.Attempts.Core.ResourceAccess
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
 
   defp set_progress(section_id, resource_id, user_id, progress, revision) do
     {:ok, resource_access} =
