@@ -872,10 +872,11 @@ defmodule Oli.Delivery.Metrics do
         where:
           summary.section_id == ^section_id and
             summary.project_id == -1 and
-            summary.user_id == -1 and
+            summary.user_id != -1 and
             summary.resource_type_id == ^page_type_id,
         select: {
           summary.resource_id,
+          summary.user_id,
           summary.num_first_attempts_correct,
           summary.num_first_attempts,
           summary.num_correct,
@@ -884,7 +885,21 @@ defmodule Oli.Delivery.Metrics do
       )
 
     Repo.all(query)
-    |> bucket_into_container_totals(contained_pages)
+    |> Enum.reduce(%{}, fn {resource_id, user_id, num_first_attempts_correct, num_first_attempts,
+                            num_correct, num_attempts},
+                           acc ->
+      res =
+        Map.get(acc, resource_id, %{})
+        |> Map.put(user_id, {
+          num_first_attempts_correct,
+          num_first_attempts,
+          num_correct,
+          num_attempts
+        })
+
+      Map.put(acc, resource_id, res)
+    end)
+    |> bucket_into_container_mode(contained_pages)
   end
 
   @doc """
@@ -1304,6 +1319,82 @@ defmodule Oli.Delivery.Metrics do
     end)
   end
 
+  # Given a map of page data, and a list of ContainedPage records,
+  # return a map of container ids where the keys are the container and the values are
+  # the level of proficiency for that container.
+  # The proficiency is calculated by finding the mode, wi
+  defp bucket_into_container_mode(page_data, contained_pages) do
+    contained_pages
+    |> Enum.reduce(
+      %{},
+      fn %ContainedPage{
+           container_id: container_id,
+           page_id: page_id
+         },
+         map ->
+        case container_id do
+          nil ->
+            map
+
+          _ ->
+            container_users =
+              Map.get(page_data, page_id, %{})
+              |> Enum.reduce(
+                Map.get(map, container_id, %{}),
+                fn {user_id,
+                    {num_first_attempts_correct, num_first_attempts, num_correct, num_attempts}},
+                   acc ->
+                  if Map.has_key?(acc, user_id) do
+                    {old_num_first_attempts_correct, old_num_first_attempts, old_num_correct,
+                     old_num_attempts} = Map.get(acc, user_id)
+
+                    Map.put(acc, user_id, {
+                      old_num_first_attempts_correct + num_first_attempts_correct,
+                      old_num_first_attempts + num_first_attempts,
+                      old_num_correct + num_correct,
+                      old_num_attempts + num_attempts
+                    })
+                  else
+                    Map.put(acc, user_id, {
+                      num_first_attempts_correct,
+                      num_first_attempts,
+                      num_correct,
+                      num_attempts
+                    })
+                  end
+                end
+              )
+
+            Map.put(map, container_id, container_users)
+        end
+      end
+    )
+    |> Enum.reduce(%{}, fn {container_id, container_users}, acc1 ->
+      proficiency =
+        container_users
+        |> Enum.reduce(%{}, fn {user_id,
+                                {num_first_attempts_correct, num_first_attempts, _num_correct,
+                                 num_attempts}},
+                               acc ->
+          proficiency =
+            case num_attempts do
+              num_attempts when num_attempts in [+0.0, -0.0] ->
+                nil
+
+              _ ->
+                (1 * num_first_attempts_correct +
+                   0.2 * (num_first_attempts - num_first_attempts_correct)) /
+                  num_first_attempts
+            end
+
+          Map.put(acc, user_id, proficiency_range(proficiency, num_attempts))
+        end)
+
+      Map.put(acc1, container_id, proficiency)
+    end)
+    |> proficiency_mode()
+  end
+
   # Given a list of {page_id, first_attempt_correct, first_attempt_total, total_correct, total} tuples, and a list of
   # ContainedPage records, return a map of container ids to a tuple of correct and total values,
   # where the container totals are the sum of the page totals for all pages contained in that container.
@@ -1415,6 +1506,24 @@ defmodule Oli.Delivery.Metrics do
         |> Map.put(student_id, proficiency_range(proficiency, num_first_attempts))
 
       Map.put(acc, resource_id, res)
+    end)
+  end
+
+  defp proficiency_mode(proficiencies_for_resources) do
+    proficiencies_for_resources
+    |> Enum.reduce(%{}, fn {resource_id, proficiency}, acc ->
+      if %{} == proficiency do
+        Map.put(acc, resource_id, "Not enough data")
+      else
+        proficiency_mode =
+          proficiency
+          |> Enum.map(fn {_user_id, proficiency} -> proficiency end)
+          |> Enum.frequencies_by(fn proficiency -> proficiency end)
+          |> Enum.max_by(fn {_key, value} -> value end)
+          |> elem(0)
+
+        Map.put(acc, resource_id, proficiency_mode)
+      end
     end)
   end
 end

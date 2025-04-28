@@ -125,7 +125,7 @@ defmodule Oli.Analytics.Summary.MetricsV2Test do
 
       results = Metrics.proficiency_per_container(section, contained_pages)
       assert Map.keys(results) |> Enum.count() == 2
-      assert %{2 => "Low", 3 => "Medium"} = results
+      assert %{2 => "Low", 3 => "High"} = results
 
       results = Metrics.proficiency_per_student_across(section)
       assert Map.keys(results) |> Enum.count() == 2
