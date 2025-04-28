@@ -430,6 +430,22 @@ defmodule Oli.Delivery.PaywallTest do
       assert {:ok, Money.new(:USD, 80)} == Paywall.section_cost_from_product(paid, institution)
     end
 
+    test "section_cost_from_product/2 returns nil amount when paywall is bypassed",
+         %{
+           paid: paid,
+           institution: institution
+         } do
+      {:ok, _} =
+        Paywall.create_discount(%{
+          institution_id: institution.id,
+          section_id: nil,
+          type: :fixed_amount,
+          bypass_paywall: true
+        })
+
+      assert {:ok, nil} == Paywall.section_cost_from_product(paid, institution)
+    end
+
     percentage_discounts = [
       %{discount: 50, expected: 50},
       %{discount: 20, expected: 80},
