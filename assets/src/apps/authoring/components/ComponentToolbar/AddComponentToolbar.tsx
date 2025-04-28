@@ -171,7 +171,9 @@ const AddComponentToolbar: React.FC<{
             delay={{ show: 150, hide: 150 }}
             overlay={
               <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
-                Paste Component
+                <strong>{part.title}</strong>
+                <br />
+                <em>{part.description}</em>
               </Tooltip>
             }
           >
