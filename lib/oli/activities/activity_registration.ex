@@ -18,6 +18,11 @@ defmodule Oli.Activities.ActivityRegistration do
     field :variables, {:array, :string}, default: []
     field :generates_report, :boolean, default: false
 
+    # Optionally, this activity registration can be associated with an LTI deployment.
+    # If an LTI deployment is associated, the activity is considered an LTI activity.
+    has_one :lti_external_tool_activity_deployment,
+            Oli.Lti.PlatformExternalTools.LtiExternalToolActivityDeployment
+
     many_to_many :projects, Oli.Authoring.Course.Project,
       join_through: Oli.Activities.ActivityRegistrationProject
 
@@ -55,9 +60,5 @@ defmodule Oli.Activities.ActivityRegistration do
       :authoring_script
     ])
     |> unique_constraint(:slug)
-    |> unique_constraint(:authoring_element)
-    |> unique_constraint(:delivery_element)
-    |> unique_constraint(:delivery_script)
-    |> unique_constraint(:authoring_script)
   end
 end

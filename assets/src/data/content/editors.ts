@@ -1,9 +1,7 @@
-import React from 'react';
-
 export type EditorDesc = {
   slug: string;
-  deliveryElement: string | React.FunctionComponent;
-  authoringElement: string | React.FunctionComponent;
+  deliveryElement: string;
+  authoringElement: string;
   icon: string;
   description: string;
   friendlyName: string;

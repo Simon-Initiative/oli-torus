@@ -4,7 +4,7 @@ defmodule Oli.Delivery.Paywall.Providers.StripeTest do
   import Ecto.Query, warn: false
   import Mox
 
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
   alias Oli.Publishing
   alias Oli.Delivery.{Paywall, Sections}
   alias Oli.Delivery.Paywall.Providers.Stripe

@@ -62,7 +62,7 @@ const addActivity = (
 ) => {
   let model: ActivityModelSchema;
 
-  invokeCreationFunc(editorDesc.slug, resourceContext)
+  invokeCreationFunc(editorDesc.authoringElement, resourceContext)
     .then((createdModel) => {
       model = createdModel;
 
@@ -78,7 +78,8 @@ const addActivity = (
 
       // For every part that we find in the model, we attach the selected
       // objectives to it
-      const objectives = model.authoring.parts
+      const parts = model.authoring.parts || [];
+      const objectives = parts
         .map((p: any) => p.id)
         .reduce((p: any, id: string) => {
           p[id] = [];

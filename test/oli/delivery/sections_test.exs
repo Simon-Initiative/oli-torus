@@ -20,7 +20,7 @@ defmodule Oli.Delivery.SectionsTest do
 
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Resources.ResourceType
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
 
   defp set_progress(
          section_id,
@@ -2384,21 +2384,21 @@ defmodule Oli.Delivery.SectionsTest do
       section_3 = insert(:section, title: "LiveView", open_and_free: true, status: :archived)
 
       Sections.enroll(user.id, section_1.id, [
-        Lti_1p3.Tool.ContextRoles.get_role(:context_instructor)
+        Lti_1p3.Roles.ContextRoles.get_role(:context_instructor)
       ])
 
       Sections.enroll(user.id, section_2.id, [
-        Lti_1p3.Tool.ContextRoles.get_role(:context_learner)
+        Lti_1p3.Roles.ContextRoles.get_role(:context_learner)
       ])
 
       Sections.enroll(user.id, section_3.id, [
-        Lti_1p3.Tool.ContextRoles.get_role(:context_learner)
+        Lti_1p3.Roles.ContextRoles.get_role(:context_learner)
       ])
 
       sections =
         Sections.get_open_and_free_active_sections_by_roles(user.id, [
-          Lti_1p3.Tool.ContextRoles.get_role(:context_learner),
-          Lti_1p3.Tool.ContextRoles.get_role(:context_instructor)
+          Lti_1p3.Roles.ContextRoles.get_role(:context_learner),
+          Lti_1p3.Roles.ContextRoles.get_role(:context_instructor)
         ])
 
       assert length(sections) == 2

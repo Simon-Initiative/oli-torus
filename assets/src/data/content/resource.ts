@@ -81,6 +81,8 @@ export const getResourceContentName = (content: ResourceContent): string => {
       return 'Page Break';
     case 'selection':
       return 'Selection';
+    default:
+      return 'Unknown';
   }
 };
 

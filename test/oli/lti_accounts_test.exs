@@ -3,7 +3,7 @@ defmodule Oli.LtiAccountsTest do
 
   alias Oli.Accounts
   alias Oli.Accounts.User
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
 
   def make_user(institution_id) do
     %{

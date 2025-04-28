@@ -12,7 +12,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
   alias Oli.Delivery.Page.PageContext
   alias Oli.Delivery.Attempts.PageLifecycle.FinalizationSummary
   alias Oli.Delivery.Sections
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
 
   defp setup_concurrent_activity(_) do
     content = %{
