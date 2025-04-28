@@ -1322,7 +1322,8 @@ defmodule Oli.Delivery.Metrics do
   # Given a map of page data, and a list of ContainedPage records,
   # return a map of container ids where the keys are the container and the values are
   # the level of proficiency for that container.
-  # The proficiency is calculated by finding the mode, wi
+  # The proficiency is calculated by finding the mode where the highest number of
+  # users fall into a proficiency range for that container.
   defp bucket_into_container_mode(page_data, contained_pages) do
     contained_pages
     |> Enum.reduce(
