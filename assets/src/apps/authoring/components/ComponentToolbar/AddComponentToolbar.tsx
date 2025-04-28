@@ -115,7 +115,7 @@ const AddComponentToolbar: React.FC<{
     setPartsMenuTarget(event.target);
   };
   const handlePartPasteClick = () => {
-    //When a part is pasted, offset the new part component by 20px from the original part
+    // When a part is pasted, offset the new part component by 20px from the original part
     const pasteOffset = 20;
     let newPartData = {
       id: `${copiedPart.type}-${guid()}`,
