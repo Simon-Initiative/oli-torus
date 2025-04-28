@@ -347,7 +347,8 @@ defmodule Oli.Resources do
           collab_space_config: previous_revision.collab_space_config,
           purpose: previous_revision.purpose,
           relates_to: previous_revision.relates_to,
-          full_progress_pct: previous_revision.full_progress_pct
+          full_progress_pct: previous_revision.full_progress_pct,
+          activity_refs: previous_revision.activity_refs
         },
         convert_strings_to_atoms(attrs)
       )

@@ -660,7 +660,21 @@ defmodule Oli.Authoring.Editing.PageEditor do
 
   # Applies the update to the revision
   defp update_revision({revision, activity_revisions}, update, _) do
-    {:ok, updated} = Oli.Resources.update_revision(revision, update)
+    # Extract activity references from content if present
+    update_with_activity_refs =
+      case Map.get(update, "content") do
+        nil ->
+          update
+
+        content ->
+          activity_ids =
+            Oli.Authoring.Editing.Utils.activity_references(content)
+            |> MapSet.to_list()
+
+          Map.put(update, "activity_refs", activity_ids)
+      end
+
+    {:ok, updated} = Oli.Resources.update_revision(revision, update_with_activity_refs)
     {updated, activity_revisions}
   end
 end
