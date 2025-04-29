@@ -1342,27 +1342,16 @@ defmodule Oli.Delivery.Metrics do
               Map.get(page_data, page_id, %{})
               |> Enum.reduce(
                 Map.get(map, container_id, %{}),
-                fn {user_id,
-                    {num_first_attempts_correct, num_first_attempts, num_correct, num_attempts}},
-                   acc ->
-                  if Map.has_key?(acc, user_id) do
-                    {old_num_first_attempts_correct, old_num_first_attempts, old_num_correct,
-                     old_num_attempts} = Map.get(acc, user_id)
-
-                    Map.put(acc, user_id, {
-                      old_num_first_attempts_correct + num_first_attempts_correct,
-                      old_num_first_attempts + num_first_attempts,
-                      old_num_correct + num_correct,
-                      old_num_attempts + num_attempts
-                    })
-                  else
-                    Map.put(acc, user_id, {
-                      num_first_attempts_correct,
-                      num_first_attempts,
-                      num_correct,
-                      num_attempts
-                    })
-                  end
+                fn {user_id, stats}, acc ->
+                  Map.update(acc, user_id, stats, fn {old_correct, old_total, old_correct_all,
+                                                      old_total_all} ->
+                    {
+                      old_correct + elem(stats, 0),
+                      old_total + elem(stats, 1),
+                      old_correct_all + elem(stats, 2),
+                      old_total_all + elem(stats, 3)
+                    }
+                  end)
                 end
               )
 
