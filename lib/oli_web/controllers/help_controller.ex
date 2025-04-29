@@ -8,14 +8,12 @@ defmodule OliWeb.HelpController do
   alias Oli.Help.HelpContent
 
   def create(conn, params) do
+    dispatcher = Application.fetch_env!(:oli, :help)[:dispatcher]
+
     with {:ok, true} <- validate_recapture(Map.get(params, "g-recaptcha-response", "")),
          {:ok, content_params} <- additional_help_context(conn, Map.get(params, "help")),
          {:ok, help_content} <- HelpContent.parse(content_params),
-         {:ok, _} <-
-           Oli.Help.Dispatcher.dispatch(
-             Application.fetch_env!(:oli, :help)[:dispatcher],
-             help_content
-           ) do
+         {:ok, _} <- Oli.Help.Dispatcher.dispatch(dispatcher, help_content) do
       json(conn, %{
         "result" => "success",
         "info" => "Your help request has been successfully submitted"

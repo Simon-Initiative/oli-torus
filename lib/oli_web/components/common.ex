@@ -345,11 +345,18 @@ defmodule OliWeb.Components.Common do
 
     ~H"""
     <div class={@group_class} phx-feedback-for={@name}>
+      <.label :if={@label && @label_position == :top} class={@label_class} for={@id}>
+        <%= @label %>
+      </.label>
       <select id={@id} name={@name} class={@input_class} multiple={@multiple} {@rest}>
         <option :if={@prompt} value=""><%= @prompt %></option>
         <%= Phoenix.HTML.Form.options_for_select(@options, @value) %>
       </select>
-      <.label :if={@label} for={@id} class={@label_class}>
+      <.label
+        :if={@label && (@label_position == :bottom || @label_position == :responsive)}
+        class={@label_class}
+        for={@id}
+      >
         <%= @label %>
       </.label>
       <.error :for={msg <- @errors}><%= msg %></.error>
@@ -1224,6 +1231,25 @@ defmodule OliWeb.Components.Common do
           <%= render_slot(action, f) %>
         </div>
       </.form>
+    </div>
+    """
+  end
+
+  attr :recaptcha_error, :string, required: true
+  attr :class, :string, default: "w-80 mx-auto"
+
+  def render_recaptcha(assigns) do
+    ~H"""
+    <div class={@class}>
+      <div
+        id="recaptcha"
+        phx-hook="Recaptcha"
+        data-sitekey={Application.fetch_env!(:oli, :recaptcha)[:site_key]}
+        data-theme="dark"
+        phx-update="ignore"
+      >
+      </div>
+      <.error :if={@recaptcha_error}><%= @recaptcha_error %></.error>
     </div>
     """
   end

@@ -1,0 +1,272 @@
+defmodule OliWeb.TechSupportLive do
+  use OliWeb, :live_view
+
+  @modal_id "tech-support-modal"
+  @base_url Oli.Utils.get_base_url()
+
+  @impl true
+  def mount(_params, session, socket) do
+    form = Oli.Help.HelpRequest.changeset() |> to_form(as: :help)
+    socket = assign(socket, form: form)
+    socket = assign(socket, modal_id: @modal_id)
+    socket = assign(socket, recaptcha_error: false)
+    socket = assign(socket, :session, session)
+
+    socket = assign(socket, uploaded_files: [])
+
+    socket =
+      allow_upload(socket, :attached_screenshots,
+        accept: ~w(.jpg .jpeg .png),
+        max_entries: 3,
+        auto_upload: true,
+        max_file_size: 1_000_000
+      )
+
+    {:ok, socket, layout: false}
+  end
+
+  @impl true
+  def render(assigns) do
+    ~H"""
+    <div class="z-[99]">
+      <button
+        id="trigger-tech-support-modal"
+        class="hidden"
+        phx-click={OliWeb.Components.Modal.show_modal(@modal_id)}
+        data-hide_modal={OliWeb.Components.Modal.hide_modal(@modal_id)}
+      />
+      <OliWeb.Components.Modal.modal
+        id={@modal_id}
+        class="w-8/12 modal-dialog modal-lg relative w-auto pointer-events-none"
+      >
+        <:title>Tech Support</:title>
+        <a href="#">Find answers quickly in the Torus knowledge base.</a>
+        <div class="w-auto">
+          <.form
+            id="tech-support-modal-form"
+            for={@form}
+            phx-submit="submit"
+            phx-change="validate"
+            phx-hook="SubmitTechSupportForm"
+          >
+            <.input
+              label="Subject:"
+              label_position={:top}
+              type="select"
+              options={subject_options()}
+              field={@form[:subject]}
+              required
+              class="mb-3 w-full dark:placeholder:text-zinc-300 pl-6 dark:bg-stone-900 rounded-md border dark:border-zinc-300 dark:text-zinc-300 leading-snug"
+            />
+            <.input
+              label="Questions or Comments:"
+              field={@form[:message]}
+              type="textarea"
+              class="w-full dark:placeholder:text-zinc-300 pl-6 dark:bg-stone-900 rounded-md border dark:border-zinc-300 dark:text-zinc-300 leading-snug"
+              required
+              rows="10"
+            />
+
+            <%!--  --%>
+            <div class="hint">
+              <p>
+                Add up to <%= @uploads.attached_screenshots.max_entries %> screenshots
+                (max <%= trunc(@uploads.attached_screenshots.max_file_size / 1_000_000) %> MB each)
+              </p>
+              <p>
+                Please show full browser window including address bar.
+              </p>
+            </div>
+
+            <div class="drop" phx-drop-target={@uploads.attached_screenshots.ref}>
+              <.live_file_input upload={@uploads.attached_screenshots} /> or drag and drop here
+            </div>
+
+            <.error :for={err <- upload_errors(@uploads.attached_screenshots)}>
+              <%= Phoenix.Naming.humanize(err) %>
+            </.error>
+
+            <div :for={entry <- @uploads.attached_screenshots.entries} class="entry">
+              <.live_img_preview entry={entry} />
+
+              <div class="progress">
+                <div class="value">
+                  <%= entry.progress %>%
+                </div>
+                <div class="bar">
+                  <span style={"width: #{entry.progress}%"}></span>
+                </div>
+                <.error :for={err <- upload_errors(@uploads.attached_screenshots, entry)}>
+                  <%= Phoenix.Naming.humanize(err) %>
+                </.error>
+              </div>
+
+              <a phx-click="cancel" phx-value-ref={entry.ref}>
+                &times;
+              </a>
+            </div>
+            <%!--  --%>
+
+            <div class="w-full flex flex-row justify-between">
+              <.render_recaptcha recaptcha_error={@recaptcha_error} class="w-80" />
+
+              <div class="flex">
+                <.button
+                  type="link"
+                  variant={:link}
+                  phx-click={OliWeb.Components.Modal.hide_modal(@modal_id)}
+                >
+                  Cancel
+                </.button>
+                <.button type="submit" class="btn btn-primary h-fit m-auto">Send Request</.button>
+              </div>
+            </div>
+          </.form>
+        </div>
+      </OliWeb.Components.Modal.modal>
+    </div>
+    """
+  end
+
+  def handle_event("cancel", %{"ref" => ref}, socket) do
+    {:noreply, cancel_upload(socket, :attached_screenshots, ref)}
+  end
+
+  @impl true
+  def handle_event("validate", %{"help" => help} = _params, socket) do
+    socket.assigns.uploaded_files |> IO.inspect(label: "--- uploaded_files 1")
+    changeset = Oli.Help.HelpRequest.changeset(help) |> Map.put(:action, :validate)
+    form = to_form(changeset, as: :help)
+    socket = assign(socket, :form, form)
+    socket.assigns.uploaded_files |> IO.inspect(label: "--- uploaded_files 2")
+    {:noreply, socket}
+  end
+
+  def handle_event("submit", %{"help" => help} = params, socket) do
+    changeset = Oli.Help.HelpRequest.changeset(help) |> Map.put(:action, :validate)
+    form = to_form(changeset, as: :help)
+
+    with {:success, true} <- Oli.Recaptcha.verify(params["g-recaptcha-response"]) do
+      #### Begins Upload screenshots
+
+      bucket_name = Application.fetch_env!(:oli, :s3_media_bucket_name)
+      random_string = Oli.Utils.random_string(16)
+
+      uploaded_screenshots =
+        consume_uploaded_entries(socket, :attached_screenshots, fn %{path: content}, entry ->
+          image_file_name = "#{entry.uuid}.#{ext(entry)}"
+          upload_path = Path.join(["screenshoots", random_string, image_file_name])
+
+          Oli.Utils.S3Storage.upload_file(bucket_name, upload_path, content)
+        end)
+
+      #### Ends Upload screenshots
+
+      form = Oli.Help.HelpRequest.changeset() |> to_form(as: :help)
+      socket = assign(socket, form: form)
+
+      socket = push_hide_modal_js_event(socket)
+
+      session = socket.assigns.session
+
+      params =
+        Map.update!(params, "help", fn help ->
+          help
+          |> Map.put(:course_data, get_course_data(session))
+          |> Map.put(:user_type, get_user_type(session))
+          |> Map.put(:full_name, get_full_name(session))
+          |> Map.put(:email, get_email(session))
+          |> Map.put(:student_report_url, get_student_report_url(session))
+          |> Map.put(:user_account_url, get_user_account_url(session))
+          |> Map.put(:screenshots, uploaded_screenshots)
+        end)
+
+      socket = assign(socket, recaptcha_error: false)
+      {:noreply, push_event(socket, "run_tech_support_hook", params)}
+    else
+      {:success, false} ->
+        # socket.assigns |> IO.inspect(label: "--- SOC_ASG")
+        # IO.puts("--- FAILED")
+        socket = assign(socket, recaptcha_error: "reCAPTCHA failed, please try again")
+        socket = assign(socket, form: form)
+        {:noreply, socket}
+    end
+  end
+
+  def handle_event("form_response", _params, socket) do
+    {:noreply, socket}
+  end
+
+  defp push_hide_modal_js_event(socket) do
+    push_event(socket, "js-exec", %{
+      to: "#trigger-tech-support-modal",
+      attr: "data-hide_modal"
+    })
+  end
+
+  # defp assign_form(socket, %Ecto.Changeset{} = changeset) do
+  #   assign(socket, :form, to_form(changeset))
+  # end
+
+  defp subject_options() do
+    initial_option = [{nil, "Select from the list of topics provided."}]
+    list_subject = Oli.Help.HelpContent.list_subjects() |> Enum.into([])
+    all = initial_option ++ list_subject
+    Enum.map(all, fn {k, v} -> {v, k} end)
+  end
+
+  defp ext(entry) do
+    [ext | _] = MIME.extensions(entry.client_type)
+    ext
+  end
+
+  defp get_user_type(session) do
+    case session["current_user"] do
+      %Oli.Accounts.Author{} -> "Author"
+      %Oli.Accounts.User{can_create_sections: true} -> "Instructor"
+      %Oli.Accounts.User{} -> "Student"
+      _ -> "Unknown"
+    end
+  end
+
+  defp get_course_data(session) do
+    if section = session["section"] do
+      section = Oli.Repo.preload(section, [:institution, :publisher])
+      institution_name = section.institution && section.institution.name
+
+      section
+      |> Map.take([:title, :start_date, :end_date])
+      |> Map.merge(%{
+        institution_name: institution_name,
+        course_management_url: "#{@base_url}/sections/#{section.slug}/manage"
+      })
+    end
+  end
+
+  defp get_full_name(session) do
+    if current_user = session["current_user"] do
+      OliWeb.Common.Utils.name(current_user)
+    end
+  end
+
+  defp get_email(session) do
+    if current_user = session["current_user"] do
+      current_user.email
+    end
+  end
+
+  defp get_student_report_url(session) do
+    section = session["section"]
+    current_user = session["current_user"]
+
+    if section && current_user do
+      "#{@base_url}/sections/#{section.slug}/student_dashboard/#{current_user.id}/content"
+    end
+  end
+
+  defp get_user_account_url(session) do
+    if current_user = session["current_user"] do
+      "#{@base_url}/admin/users/#{current_user.id}"
+    end
+  end
+end
