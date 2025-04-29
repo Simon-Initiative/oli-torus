@@ -74,13 +74,15 @@ defmodule Oli.Delivery do
     Repo.transaction(fn ->
       blueprint = Oli.Delivery.Sections.get_section!(product_id)
 
-      # calculate a cost, if an error, fallback to the amount in the blueprint
+      # calculate a cost, if an error, fallback to the amount in the blueprint.
+      # if the amount returned is nil, it means the paywall is bypassed
       # TODO: we may need to move this to AFTER a remix if the cost calculation factors
       # in the percentage project usage
-      amount =
+      {amount, requires_payment} =
         case Oli.Delivery.Paywall.section_cost_from_product(blueprint, institution) do
-          {:ok, amount} -> amount
-          _ -> blueprint.amount
+          {:ok, nil} -> {blueprint.amount, false}
+          {:ok, amount} -> {amount, blueprint.requires_payment}
+          _ -> {blueprint.amount, blueprint.requires_payment}
         end
 
       project = Oli.Repo.get(Oli.Authoring.Course.Project, blueprint.base_project_id)
@@ -98,6 +100,7 @@ defmodule Oli.Delivery do
               blueprint_id: blueprint.id,
               has_experiments: project.has_experiments,
               amount: amount,
+              requires_payment: requires_payment,
               pay_by_institution: blueprint.pay_by_institution,
               grade_passback_enabled: AGS.grade_passback_enabled?(lti_params),
               line_items_service_url: AGS.get_line_items_url(lti_params, registration),

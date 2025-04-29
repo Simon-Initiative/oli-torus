@@ -294,6 +294,9 @@ defmodule Oli.Delivery.Paywall do
       [] ->
         {:ok, amount}
 
+      [%Discount{bypass_paywall: true}] ->
+        {:ok, nil}
+
       [%Discount{type: :percentage, percentage: percentage}] ->
         {:ok, discount_amount} =
           amount
