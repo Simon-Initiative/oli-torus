@@ -5407,4 +5407,60 @@ defmodule Oli.Delivery.Sections do
     )
     |> Repo.exists?()
   end
+
+  @doc """
+  Given a section, return a map where the keys are LTI activity resource IDs and the values are lists of section resources that reference those activities.
+  """
+  def get_section_resources_with_lti_activities(%Section{} = section) do
+    # Step 1: Find all LTI activity registrations
+    lti_activity_registrations =
+      from(ar in Oli.Activities.ActivityRegistration,
+        join: d in assoc(ar, :lti_external_tool_activity_deployment),
+        select: ar.id
+      )
+      |> Repo.all()
+
+    # Step 2: Find all section resources in this section that are LTI activities
+    lti_activity_section_resources =
+      from(sr in SectionResource,
+        join: r in Oli.Resources.Revision,
+        on: sr.revision_id == r.id,
+        where: sr.section_id == ^section.id and r.activity_type_id in ^lti_activity_registrations,
+        select: {r.resource_id, sr}
+      )
+      |> Repo.all()
+
+    # Step 3: Get IDs of all LTI activities in this section
+    lti_activity_ids = Enum.map(lti_activity_section_resources, fn {id, _} -> id end)
+
+    # Step 4: Find all page section resources that reference these LTI activities
+    page_section_resources_with_lti =
+      from(sr in SectionResource,
+        join: r in Oli.Resources.Revision,
+        on: sr.revision_id == r.id,
+        join: rt in Oli.Resources.ResourceType,
+        on: r.resource_type_id == rt.id,
+        where:
+          sr.section_id == ^section.id and rt.type == "page" and
+            fragment("? && ?", r.activity_refs, ^lti_activity_ids),
+        select: {sr, r}
+      )
+      |> Repo.all()
+
+    # Step 5: Group the results by LTI activity ID
+    page_section_resources_with_lti
+    |> Enum.reduce(%{}, fn {section_resource, revision}, acc ->
+      # Find which LTI activities this page references
+      referenced_lti_activities =
+        Enum.filter(revision.activity_refs, fn ref_id ->
+          ref_id in lti_activity_ids
+        end)
+
+      # Add this section resource to each referenced LTI activity's list
+      Enum.reduce(referenced_lti_activities, acc, fn lti_id, inner_acc ->
+        existing = Map.get(inner_acc, lti_id, [])
+        Map.put(inner_acc, lti_id, [section_resource | existing])
+      end)
+    end)
+  end
 end
