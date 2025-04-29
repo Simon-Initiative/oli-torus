@@ -125,7 +125,7 @@ defmodule Oli.Analytics.Summary.MetricsV2Test do
 
       results = Metrics.proficiency_per_container(section, contained_pages)
       assert Map.keys(results) |> Enum.count() == 2
-      assert %{2 => "Low", 3 => "Medium"} = results
+      assert %{2 => "Low", 3 => "High"} = results
 
       results = Metrics.proficiency_per_student_across(section)
       assert Map.keys(results) |> Enum.count() == 2
@@ -234,16 +234,21 @@ defmodule Oli.Analytics.Summary.MetricsV2Test do
       ]
       |> Enum.each(fn v -> add_resource_summary(v) end)
 
-      proficiencies_objective1 = Metrics.proficiency_per_student_for_objective(section.id, id)
-      proficiencies_objective2 = Metrics.proficiency_per_student_for_objective(section.id, id2)
-      proficiencies_objective3 = Metrics.proficiency_per_student_for_objective(section.id, id3)
+      proficiencies_objective1 =
+        Map.get(Metrics.proficiency_per_student_for_objective(section.id, [id]), id)
 
-      assert proficiencies_objective1[user1.id] == "Low"
-      assert proficiencies_objective1[user2.id] == "Not enough data"
-      assert proficiencies_objective2[user1.id] == "Medium"
-      assert proficiencies_objective2[user2.id] == "Medium"
-      assert proficiencies_objective3[user1.id] == "High"
-      refute proficiencies_objective3[user2.id]
+      proficiencies_objective2 =
+        Map.get(Metrics.proficiency_per_student_for_objective(section.id, [id2]), id2)
+
+      proficiencies_objective3 =
+        Map.get(Metrics.proficiency_per_student_for_objective(section.id, [id3]), id3)
+
+      assert Map.get(proficiencies_objective1, user1.id) == "Low"
+      assert Map.get(proficiencies_objective1, user2.id) == "Not enough data"
+      assert Map.get(proficiencies_objective2, user1.id) == "Medium"
+      assert Map.get(proficiencies_objective2, user2.id) == "Medium"
+      assert Map.get(proficiencies_objective3, user1.id) == "High"
+      refute Map.get(proficiencies_objective3, user2.id)
     end
   end
 end

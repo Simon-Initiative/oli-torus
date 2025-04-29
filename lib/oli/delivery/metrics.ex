@@ -872,10 +872,11 @@ defmodule Oli.Delivery.Metrics do
         where:
           summary.section_id == ^section_id and
             summary.project_id == -1 and
-            summary.user_id == -1 and
+            summary.user_id != -1 and
             summary.resource_type_id == ^page_type_id,
         select: {
           summary.resource_id,
+          summary.user_id,
           summary.num_first_attempts_correct,
           summary.num_first_attempts,
           summary.num_correct,
@@ -884,7 +885,21 @@ defmodule Oli.Delivery.Metrics do
       )
 
     Repo.all(query)
-    |> bucket_into_container_totals(contained_pages)
+    |> Enum.reduce(%{}, fn {resource_id, user_id, num_first_attempts_correct, num_first_attempts,
+                            num_correct, num_attempts},
+                           acc ->
+      res =
+        Map.get(acc, resource_id, %{})
+        |> Map.put(user_id, {
+          num_first_attempts_correct,
+          num_first_attempts,
+          num_correct,
+          num_attempts
+        })
+
+      Map.put(acc, resource_id, res)
+    end)
+    |> bucket_into_container_mode(contained_pages)
   end
 
   @doc """
@@ -1304,6 +1319,72 @@ defmodule Oli.Delivery.Metrics do
     end)
   end
 
+  # Given a map of page data, and a list of ContainedPage records,
+  # return a map of container ids where the keys are the container and the values are
+  # the level of proficiency for that container.
+  # The proficiency is calculated by finding the mode where the highest number of
+  # users fall into a proficiency range for that container.
+  defp bucket_into_container_mode(page_data, contained_pages) do
+    contained_pages
+    |> Enum.reduce(
+      %{},
+      fn %ContainedPage{
+           container_id: container_id,
+           page_id: page_id
+         },
+         map ->
+        case container_id do
+          nil ->
+            map
+
+          _ ->
+            container_users =
+              Map.get(page_data, page_id, %{})
+              |> Enum.reduce(
+                Map.get(map, container_id, %{}),
+                fn {user_id, stats}, acc ->
+                  Map.update(acc, user_id, stats, fn {old_correct, old_total, old_correct_all,
+                                                      old_total_all} ->
+                    {
+                      old_correct + elem(stats, 0),
+                      old_total + elem(stats, 1),
+                      old_correct_all + elem(stats, 2),
+                      old_total_all + elem(stats, 3)
+                    }
+                  end)
+                end
+              )
+
+            Map.put(map, container_id, container_users)
+        end
+      end
+    )
+    |> Enum.reduce(%{}, fn {container_id, container_users}, acc1 ->
+      proficiency =
+        container_users
+        |> Enum.reduce(%{}, fn {user_id,
+                                {num_first_attempts_correct, num_first_attempts, _num_correct,
+                                 num_attempts}},
+                               acc ->
+          proficiency =
+            case num_attempts do
+              num_attempts when num_attempts in [+0.0, -0.0] ->
+                nil
+
+              _ ->
+                (1 * num_first_attempts_correct +
+                   0.2 * (num_first_attempts - num_first_attempts_correct)) /
+                  num_first_attempts
+            end
+
+          Map.put(acc, user_id, proficiency_range(proficiency, num_attempts))
+        end)
+
+      Map.put(acc1, container_id, proficiency)
+    end)
+    |> proficiency_mode()
+  end
+
   # Given a list of {page_id, first_attempt_correct, first_attempt_total, total_correct, total} tuples, and a list of
   # ContainedPage records, return a map of container ids to a tuple of correct and total values,
   # where the container totals are the sum of the page totals for all pages contained in that container.
@@ -1360,33 +1441,39 @@ defmodule Oli.Delivery.Metrics do
   end
 
   @doc """
-  Retrieves proficiency data for a specific learning objective, aggregated by user.
-  Returns a map with each key being a student_id and the value being the proficiency.
+  Retrieves proficiency data for a list of learning objectives, aggregated by objective_id and user_id.
+  Returns a map where each key is an objective_id, and the value is another map where each key is a student_id and the value is the proficiency.
 
   ## Examples
 
-      iex> proficiency_per_student_for_objective(1, 42)
-      # Query result with raw proficiency data for objective 42 in section 1
-      # => %{123 => "Low", 456 => "Medium", "789" => "Not enough data"}
+      iex> proficiency_per_student_for_objective(1, [42, 43], student_id: 123)
+      # Query result with raw proficiency data for objectives 42 and 43 in section 1
+      # => %{42 => %{123 => "Low", 456 => "Medium", 789 => "Not enough data"}, 43 => %{123 => "High"}}
   """
-  @spec proficiency_per_student_for_objective(section_id :: integer, objective_id :: integer) ::
-          %{
-            integer => String.t()
-          }
-  def proficiency_per_student_for_objective(section_id, objective_id) do
+  @spec proficiency_per_student_for_objective(
+          section_id :: integer,
+          objective_ids :: list(integer),
+          opts :: Keyword.t()
+        ) :: %{integer => %{integer => String.t()}}
+  def proficiency_per_student_for_objective(section_id, objective_ids, opts \\ []) do
     objective_type_id = Oli.Resources.ResourceType.id_for_objective()
+
+    maybe_filter_by_student_id =
+      if opts[:student_id],
+        do: dynamic([s], s.user_id == ^opts[:student_id]),
+        else: dynamic([s], s.user_id != -1)
 
     query =
       from(summary in Oli.Analytics.Summary.ResourceSummary,
         where:
           summary.section_id == ^section_id and
             summary.project_id == -1 and
-            summary.user_id != -1 and
             summary.resource_type_id == ^objective_type_id and
-            summary.resource_id == ^objective_id,
-        group_by: summary.user_id,
+            summary.resource_id in ^objective_ids,
+        where: ^maybe_filter_by_student_id,
+        group_by: [summary.user_id, summary.resource_id],
         select:
-          {summary.user_id,
+          {summary.user_id, summary.resource_id,
            fragment(
              """
              (
@@ -1403,8 +1490,30 @@ defmodule Oli.Delivery.Metrics do
       )
 
     Repo.all(query)
-    |> Enum.into(%{}, fn {student_id, proficiency, num_first_attempts} ->
-      {student_id, proficiency_range(proficiency, num_first_attempts)}
+    |> Enum.reduce(%{}, fn {student_id, resource_id, proficiency, num_first_attempts}, acc ->
+      res =
+        Map.get(acc, resource_id, %{})
+        |> Map.put(student_id, proficiency_range(proficiency, num_first_attempts))
+
+      Map.put(acc, resource_id, res)
+    end)
+  end
+
+  defp proficiency_mode(proficiencies_for_resources) do
+    proficiencies_for_resources
+    |> Enum.reduce(%{}, fn {resource_id, proficiency}, acc ->
+      if %{} == proficiency do
+        Map.put(acc, resource_id, "Not enough data")
+      else
+        proficiency_mode =
+          proficiency
+          |> Enum.map(fn {_user_id, proficiency} -> proficiency end)
+          |> Enum.frequencies_by(fn proficiency -> proficiency end)
+          |> Enum.max_by(fn {_key, value} -> value end)
+          |> elem(0)
+
+        Map.put(acc, resource_id, proficiency_mode)
+      end
     end)
   end
 end
