@@ -2,7 +2,7 @@ defmodule OliWeb.DeliveryRetrieveTest do
   use OliWeb.ConnCase
 
   alias Oli.Seeder
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
 
   setup [:setup_session]
 

@@ -12,7 +12,7 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
   @default_params %{text_search: "", sidebar_expanded: true}
 
   @context_instructor_roles [
-    Lti_1p3.Tool.ContextRoles.get_role(:context_instructor)
+    Lti_1p3.Roles.ContextRoles.get_role(:context_instructor)
   ]
 
   @impl Phoenix.LiveView

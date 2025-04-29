@@ -3,7 +3,7 @@ defmodule Oli.AutomationSetup do
   Sets up data in a torus instance that is meant be used with automated e2e tests to
   enable testing of content in remote torus instances.
   """
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
 
   alias Oli.Repo
   alias Oli.Authoring.Course.Project

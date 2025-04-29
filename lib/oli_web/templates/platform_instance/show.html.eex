@@ -43,6 +43,10 @@
       <%= @platform_instance.custom_params %>
     </li>
 
+    <li>
+      <strong>Deployment ID:</strong>
+      <%= if assigns[:deployment], do: assigns[:deployment].deployment_id, else: "No deployment" %>
+    </li>
   </ul>
 
   <span><%= link "Edit", to: Routes.platform_instance_path(@conn, :edit, @platform_instance) %></span>

@@ -59,6 +59,30 @@ defmodule Oli.Activities do
     end
   end
 
+  def register_lti_external_tool_activity(title, petite_label, description) do
+    attrs = %{
+      slug: Oli.Utils.Slug.slugify(title),
+      title: title,
+      petite_label: petite_label,
+      icon: "plug",
+      description: description,
+      delivery_element: "lti-external-tool-delivery",
+      authoring_element: "lti-external-tool-authoring",
+      delivery_script: "lti_external_tool_delivery.js",
+      authoring_script: "lti_external_tool_authoring.js",
+      allow_client_evaluation: false,
+      generates_report: false,
+      globally_available: false,
+      globally_visible: true,
+      variables: []
+    }
+
+    case get_registration_by_slug(attrs.slug) do
+      nil -> create_registration(attrs)
+      registration -> update_registration(registration, attrs)
+    end
+  end
+
   defp build_path(path) do
     Application.app_dir(:oli, path)
   end

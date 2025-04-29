@@ -8,7 +8,7 @@ defmodule OliWeb.LaunchController do
   alias Oli.Delivery.Sections.Section
   alias Oli.Publishing.DeliveryResolver
   alias Lti_1p3.DataProviders.EctoProvider.Marshaler
-  alias Lti_1p3.Tool.{PlatformRoles, ContextRoles}
+  alias Lti_1p3.Roles.{PlatformRoles, ContextRoles}
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.UserAuth
 
