@@ -37,8 +37,9 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
         latest_resource_attempt: latest_resource_attempt,
         page_revision: page_revision,
         section_slug: section_slug,
+        effective_settings: effective_settings,
         user: user
-      }) do
+      } = visit_context) do
     # There is no "active" attempt if there has never been an attempt or if the latest
     # attempt has been finalized or submitted
     if is_nil(latest_resource_attempt) or
@@ -59,17 +60,45 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
           resource_attempts: graded_attempts
         }}}
     else
-      # Unlike ungraded pages, for graded pages we do not throw away attempts and create anew in the case
-      # where the resource revision has changed.  Instead we return back the existing attempt tree and force
-      # the page renderer to resolve this discrepancy by indicating the "revised" state.
 
-      {:ok, attempt_state} =
-        AttemptState.fetch_attempt_state(latest_resource_attempt, page_revision)
+      # Se if we are in score as you go mode, and the page revision has changed since the start of this
+      # current attempt.  In this case, we need to start a new attempt to pick up the new page revision.
+      if page_revision.id !== latest_resource_attempt.revision_id and !effective_settings.batch_scoring do
 
-      if page_revision.id !== latest_resource_attempt.revision_id do
-        {:ok, {:revised, attempt_state}}
+        # We have to mark the current attempt as :evaluated so that we can start a new one
+        now = DateTime.utc_now()
+        Core.update_resource_attempt(latest_resource_attempt, %{
+          lifecycle_state: :evaluated,
+          date_submitted: now,
+          date_evaluated: now
+        })
+
+        case start(visit_context) do
+          {:ok, %AttemptState{} = %{resource_attempt: new_attempt} = attempt_state} ->
+
+            # Now after the new attempt has been created, we update it to pull forward the score and out_of
+            # from the previous attempt
+            {:ok, resource_attempt} = Core.update_resource_attempt(new_attempt, %{
+              score: latest_resource_attempt.score,
+              out_of: latest_resource_attempt.out_of
+            })
+
+            attempt_state = %{attempt_state | resource_attempt: resource_attempt}
+
+            {:ok, {:in_progress, attempt_state}}
+
+          error ->
+            error
+        end
       else
-        {:ok, {:in_progress, attempt_state}}
+        {:ok, attempt_state} =
+          AttemptState.fetch_attempt_state(latest_resource_attempt, page_revision)
+
+        if page_revision.id !== latest_resource_attempt.revision_id do
+          {:ok, {:revised, attempt_state}}
+        else
+          {:ok, {:in_progress, attempt_state}}
+        end
       end
     end
   end
@@ -392,5 +421,14 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
       out_of: out_of,
       date_evaluated: DateTime.utc_now()
     })
+  end
+
+  # There isn't a previous attempt
+  defp needs_new_attempt?(nil, _), do: true
+  # The previous attempt is evaluated
+  defp needs_new_attempt?(%{lifecycle_state: :evaluated}, _), do: true
+  # The previous attempt's page revision differs from the current page revision
+  defp needs_new_attempt?(%{revision_id: revision_id}, %{id: id}) do
+    revision_id != id
   end
 end

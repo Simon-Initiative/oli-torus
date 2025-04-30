@@ -176,6 +176,7 @@ defmodule Oli.Rendering.Activity.Html do
       %{
         graded: graded,
         batchScoring: effective_settings && effective_settings.batch_scoring,
+        oneAtATime: effective_settings && effective_settings.assessment_mode == :one_at_a_time,
         maxAttempts: effective_settings && effective_settings.max_attempts,
         scoringStrategyId: effective_settings && effective_settings.scoring_strategy_id,
         ordinal: ordinal,

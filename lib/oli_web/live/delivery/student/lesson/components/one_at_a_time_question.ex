@@ -419,5 +419,6 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
 
   defp parse_points(1), do: "1 point"
   defp parse_points(1.0), do: "1 point"
-  defp parse_points(points), do: "#{points} points"
+  defp parse_points(points) when is_integer(points), do: "#{points} points"
+  defp parse_points(points), do: "#{Float.round(points, 2)} points"
 end

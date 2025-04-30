@@ -1593,6 +1593,17 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     activity_part_points_mapper =
       build_activity_part_points_mapper(socket.assigns.page_context.activities)
 
+    scale_to_out_of = fn part_points, out_of ->
+      total = Enum.reduce(part_points, 0, fn {_, points}, acc -> acc + points end)
+      scale_factor = case out_of do
+        nil -> 1.0
+        _ -> out_of / total
+      end
+      Enum.reduce(part_points, %{}, fn {part_id, points}, acc ->
+        Map.put(acc, part_id, points * scale_factor)
+      end)
+    end
+
     questions =
       socket.assigns.html
       |> List.flatten()
@@ -1604,6 +1615,9 @@ defmodule OliWeb.Delivery.Student.LessonLive do
             |> Floki.attribute("state")
             |> hd()
             |> Jason.decode!()
+
+
+          IO.inspect(state)
 
           context =
             element
@@ -1623,7 +1637,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
                answered: !Enum.any?(state["parts"], fn part -> part["response"] in ["", nil] end),
                submitted:
                  !Enum.any?(state["parts"], fn part -> part["dateSubmitted"] in ["", nil] end),
-               part_points: activity_part_points_mapper[state["activityId"]],
+               part_points: activity_part_points_mapper[state["activityId"]] |> scale_to_out_of.(state["outOf"]),
                out_of: state["outOf"]
              }
              | activities
