@@ -154,13 +154,6 @@
     </script>
   </head>
   <body class="min-h-screen flex flex-col bg-delivery-body text-delivery-body-color dark:bg-delivery-body-dark dark:text-delivery-body-color-dark">
-    <%= live_render(@conn, OliWeb.TechSupportLive,
-      session: %{
-        "section" => Map.get(@conn.assigns, :section),
-        "current_user" => Map.get(@conn.assigns, :current_user)
-      },
-      container: {:div, [style: "z-index: 90"]}
-    ) %>
     <input type="hidden" id="layout-id" data-layout-id="delivery" />
 
     <%= live_render(@conn, OliWeb.SystemMessageLive.ShowView) %>
@@ -170,6 +163,11 @@
     <%= react_component("Components.ModalDisplay") %>
 
     <%= render(OliWeb.SharedView, "_help.html", conn: @conn) %>
+    <%= live_render(@conn, OliWeb.TechSupportLive,
+      session: %{
+        "section" => Map.get(@conn.assigns, :section),
+        "current_user" => Map.get(@conn.assigns, :current_user)
+      }
+    ) %>
   </body>
 </html>
-<%!-- container: {:div, [style: "z-index: 99"]} --%>
