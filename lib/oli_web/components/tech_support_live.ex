@@ -8,6 +8,7 @@ defmodule OliWeb.TechSupportLive do
   def mount(_params, session, socket) do
     socket =
       socket
+      |> assign(:knowledgebase_url, Oli.VendorProperties.knowledgebase_url())
       |> assign_form(Oli.Help.HelpRequest.changeset())
       |> assign(modal_id: @modal_id)
       |> assign(recaptcha_error: false)
@@ -37,7 +38,7 @@ defmodule OliWeb.TechSupportLive do
     />
     <OliWeb.Components.Modal.modal id={@modal_id} class="w-8/12">
       <:title>Tech Support</:title>
-      <a href="#">Find answers quickly in the Torus knowledge base.</a>
+      <a href={@knowledgebase_url}>Find answers quickly in the Torus knowledge base.</a>
       <div class="w-auto">
         <.form
           id="tech-support-modal-form"
@@ -127,8 +128,15 @@ defmodule OliWeb.TechSupportLive do
   end
 
   @impl true
-  def handle_event("validate", %{"help" => help} = _params, socket) do
+  def handle_event("validate", %{"help" => help} = params, socket) do
     changeset = Oli.Help.HelpRequest.changeset(help) |> Map.put(:action, :validate)
+
+    socket =
+      case Oli.Recaptcha.verify(params["g-recaptcha-response"]) do
+        {:success, true} -> assign(socket, recaptcha_error: false)
+        {:success, false} -> assign(socket, recaptcha_error: "reCAPTCHA failed, please try again")
+      end
+
     {:noreply, assign_form(socket, changeset)}
   end
 
