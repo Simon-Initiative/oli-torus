@@ -10,6 +10,8 @@ defmodule Oli.Delivery.Metrics do
   alias Oli.Delivery.Attempts.Core
   alias Oli.Resources.Revision
 
+  alias Oli.Delivery.Sections
+
   alias Oli.Delivery.Sections.{
     ContainedPage,
     Enrollment,
@@ -862,7 +864,7 @@ defmodule Oli.Delivery.Metrics do
     }
   """
   def proficiency_per_container(
-        %Section{id: section_id, analytics_version: _both},
+        %Section{id: section_id, slug: slug, analytics_version: _both},
         contained_pages
       ) do
     page_type_id = Oli.Resources.ResourceType.id_for_page()
@@ -899,7 +901,7 @@ defmodule Oli.Delivery.Metrics do
 
       Map.put(acc, resource_id, res)
     end)
-    |> bucket_into_container_mode(contained_pages)
+    |> bucket_into_container_mode(contained_pages, slug)
   end
 
   @doc """
@@ -1324,7 +1326,12 @@ defmodule Oli.Delivery.Metrics do
   # the level of proficiency for that container.
   # The proficiency is calculated by finding the mode where the highest number of
   # users fall into a proficiency range for that container.
-  defp bucket_into_container_mode(page_data, contained_pages) do
+  defp bucket_into_container_mode(page_data, contained_pages, section_slug) do
+    student_ids =
+      Sections.enrolled_students(section_slug)
+      |> Enum.reject(fn s -> s.user_role_id != 4 end)
+      |> Enum.map(fn s -> s.id end)
+
     contained_pages
     |> Enum.reduce(
       %{},
@@ -1354,6 +1361,13 @@ defmodule Oli.Delivery.Metrics do
                   end)
                 end
               )
+
+            container_users =
+              student_ids
+              |> Enum.reject(&Map.has_key?(container_users, &1))
+              |> Enum.reduce(container_users, fn user_id, acc ->
+                Map.put(acc, user_id, {0.0, 0.0, 0.0, 0.0})
+              end)
 
             Map.put(map, container_id, container_users)
         end
@@ -1509,7 +1523,19 @@ defmodule Oli.Delivery.Metrics do
           proficiency
           |> Enum.map(fn {_user_id, proficiency} -> proficiency end)
           |> Enum.frequencies_by(fn proficiency -> proficiency end)
-          |> Enum.max_by(fn {_key, value} -> value end)
+          |> Enum.map(fn {key, value} ->
+            ordinal =
+              case String.downcase(key) do
+                "low" -> 0
+                "medium" -> 1
+                "high" -> 2
+                _ -> 3
+              end
+
+            {key, value, ordinal}
+          end)
+          |> Enum.sort_by(fn {_key, _value, ordinal} -> ordinal end)
+          |> Enum.max_by(fn {_key, value, _ordinal} -> value end)
           |> elem(0)
 
         Map.put(acc, resource_id, proficiency_mode)

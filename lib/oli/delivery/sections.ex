@@ -4875,16 +4875,40 @@ defmodule Oli.Delivery.Sections do
           )
       end
 
+    student_ids =
+      Sections.enrolled_students(section_slug)
+      |> Enum.reject(fn s -> s.user_role_id != 4 end)
+      |> Enum.map(fn s -> s.id end)
+
     proficiency_dist_for_objectives =
       proficiencies_for_objectives
       |> Enum.reduce(%{}, fn {objective_id, student_proficiency}, acc ->
+        student_proficiency =
+          student_ids
+          |> Enum.reject(&Map.has_key?(student_proficiency, &1))
+          |> Enum.reduce(student_proficiency, fn user_id, acc ->
+            Map.put(acc, user_id, "Not enough data")
+          end)
+
         proficiency_dist =
           student_proficiency
           |> Enum.frequencies_by(fn {_student_id, proficiency} -> proficiency end)
 
         proficiency_mode =
           proficiency_dist
-          |> Enum.max_by(fn {_key, value} -> value end)
+          |> Enum.map(fn {key, value} ->
+            ordinal =
+              case String.downcase(key) do
+                "low" -> 0
+                "medium" -> 1
+                "high" -> 2
+                _ -> 3
+              end
+
+            {key, value, ordinal}
+          end)
+          |> Enum.sort_by(fn {_key, _value, ordinal} -> ordinal end)
+          |> Enum.max_by(fn {_key, value, _ordinal} -> value end)
           |> elem(0)
 
         Map.put(acc, objective_id,
