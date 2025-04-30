@@ -1615,6 +1615,7 @@ defmodule OliWeb.Router do
 
       # External tools
       live("/external_tools", Admin.ExternalTools.ExternalToolsView)
+      live("/external_tools/new", Admin.NewExternalToolView)
     end
 
     # System admin
