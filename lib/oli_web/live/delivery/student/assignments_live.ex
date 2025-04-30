@@ -294,15 +294,12 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
           </span>
         <% end %>
         <div class="flex ml-auto gap-1.5 text-[#218358] dark:text-[#39e581]">
-
           <div class="w-4 h-4">
-
             <%= if @assignment.score_as_you_go and @assignment.can_start do %>
               <Icons.score_as_you_go />
             <% else %>
               <Icons.star />
             <% end %>
-
           </div>
 
           <span class="flex gap-1 text-base font-bold leading-none whitespace-nowrap">
@@ -354,10 +351,16 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
         scheduling_type: effective_settings.scheduling_type,
         score_as_you_go: !effective_settings.batch_scoring,
         can_start:
-          case {assignment.scheduling_type, effective_settings.end_date, effective_settings.late_start} do
-            {_, nil, _} -> true
-            {:due_by, end_date, :disallow} -> !DateTime.compare(DateTime.utc_now(), end_date) == :gt
-            _ -> true
+          case {assignment.scheduling_type, effective_settings.end_date,
+                effective_settings.late_start} do
+            {_, nil, _} ->
+              true
+
+            {:due_by, end_date, :disallow} ->
+              !DateTime.compare(DateTime.utc_now(), end_date) == :gt
+
+            _ ->
+              true
           end,
         end_date: effective_settings.end_date,
         purpose: assignment.purpose,

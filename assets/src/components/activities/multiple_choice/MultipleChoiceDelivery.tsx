@@ -16,8 +16,8 @@ import {
   listenForParentSurveyReset,
   listenForParentSurveySubmit,
   listenForReviewAttemptChange,
-  resetAndSubmitActivity,
   resetAction,
+  resetAndSubmitActivity,
   setSelection,
   submit,
 } from 'data/activities/DeliveryState';
@@ -25,11 +25,11 @@ import { initialPartInputs, isCorrect } from 'data/activities/utils';
 import { configureStore } from 'state/store';
 import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
 import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
+import { ScoreAsYouGoHeader } from '../common/ScoreAsYouGoHeader';
+import { ScoreAsYouGoSubmitReset } from '../common/ScoreAsYouGoSubmitReset';
 import { castPartId } from '../common/utils';
 import * as ActivityTypes from '../types';
 import { MCSchema } from './schema';
-import { ScoreAsYouGoSubmitReset } from '../common/ScoreAsYouGoSubmitReset';
-import { ScoreAsYouGoHeader } from '../common/ScoreAsYouGoHeader';
 
 // Used instead of the real 'onSaveActivity' to bypass saving state to the server when we are just
 // about to submit that state with a submission. This saves a network call that isn't necessary and avoids
@@ -121,7 +121,10 @@ export const MultipleChoiceComponent: React.FC = () => {
           isEvaluated={isEvaluated(uiState) && context.graded}
           context={writerContext}
         />
-        <ScoreAsYouGoSubmitReset onSubmit={() => dispatch(submit(onSubmitActivity))} onReset={() => dispatch(resetAction(onResetActivity, undefined))} />
+        <ScoreAsYouGoSubmitReset
+          onSubmit={() => dispatch(submit(onSubmitActivity))}
+          onReset={() => dispatch(resetAction(onResetActivity, undefined))}
+        />
         <HintsDeliveryConnected
           partId={castPartId(activityState.parts[0].partId)}
           resetPartInputs={{ [activityState.parts[0].partId]: [] }}

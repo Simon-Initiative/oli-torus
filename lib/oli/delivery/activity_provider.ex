@@ -113,8 +113,9 @@ defmodule Oli.Delivery.ActivityProvider do
       errors: errors
     } = fulfill(model, source, user, section_slug, constraining_attempt_prototypes)
 
-    prototypes_with_revisions = resolve_activity_ids(source.section_slug, prototypes, resolver)
-    |> Enum.map(fn p -> set_out_of(p) end)
+    prototypes_with_revisions =
+      resolve_activity_ids(source.section_slug, prototypes, resolver)
+      |> Enum.map(fn p -> set_out_of(p) end)
 
     bib_revisions =
       BibUtils.assemble_bib_entries(

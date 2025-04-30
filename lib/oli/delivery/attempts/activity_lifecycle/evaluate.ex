@@ -1,5 +1,4 @@
 defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
-
   @moduledoc """
   Provides core functionality for **Activity Evaluation** within the delivery system.
 
@@ -70,7 +69,6 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
 
   This module is part of the delivery engine responsible for executing and managing student workflows across different activity types.
   """
-
 
   import Oli.Delivery.Attempts.Core
   import Oli.Delivery.Attempts.ActivityLifecycle.Persistence
@@ -197,17 +195,24 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
   """
   @spec evaluate_from_input(String.t(), String.t(), [map()], String.t()) ::
           {:ok, [map()]} | {:error, any}
-  def evaluate_from_input(section_slug, activity_attempt_guid, part_inputs, datashop_session_id, part_attempts \\ nil) do
+  def evaluate_from_input(
+        section_slug,
+        activity_attempt_guid,
+        part_inputs,
+        datashop_session_id,
+        part_attempts \\ nil
+      ) do
     Repo.transaction(fn ->
-
-      part_attempts = case part_attempts do
-        nil -> get_latest_part_attempts(activity_attempt_guid)
-        _ -> part_attempts
-      end
+      part_attempts =
+        case part_attempts do
+          nil -> get_latest_part_attempts(activity_attempt_guid)
+          _ -> part_attempts
+        end
 
       part_inputs = filter_already_evaluated(part_inputs, part_attempts)
 
-      roll_up_fn = RollUp.determine_activity_rollup_fn(activity_attempt_guid, part_inputs, part_attempts)
+      roll_up_fn =
+        RollUp.determine_activity_rollup_fn(activity_attempt_guid, part_inputs, part_attempts)
 
       result =
         case evaluate_submissions(activity_attempt_guid, part_inputs, part_attempts)
@@ -223,8 +228,6 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
     |> Snapshots.maybe_create_snapshot(part_inputs, section_slug)
     |> LogWorker.maybe_schedule(activity_attempt_guid, section_slug)
   end
-
-
 
   @doc """
   Processes a set of client evaluations for some number of parts for the given
@@ -244,13 +247,12 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
   On failure returns `{:error, error}`
   """
   def apply_client_evaluation(
-    section_slug,
-    activity_attempt_guid,
-    client_evaluations,
-    datashop_session_id,
-    opts \\ []
-  ) do
-
+        section_slug,
+        activity_attempt_guid,
+        client_evaluations,
+        datashop_session_id,
+        opts \\ []
+      ) do
     part_attempts_input = Keyword.get(opts, :part_attempts_input, nil)
     use_fixed_score = Keyword.get(opts, :use_fixed_score, nil)
     no_roll_up = Keyword.get(opts, :no_roll_up, false)
@@ -268,10 +270,10 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
         %{attempt_guid: attempt_guid, input: input}
       end)
 
-    %Oli.Activities.ActivityRegistration{allow_client_evaluation: allow_client_evaluation} = Oli.Activities.get_registration_by_slug(activity_registration_slug)
+    %Oli.Activities.ActivityRegistration{allow_client_evaluation: allow_client_evaluation} =
+      Oli.Activities.get_registration_by_slug(activity_registration_slug)
 
     if not enforce_client_side_eval or allow_client_evaluation do
-
       Repo.transaction(fn ->
         part_attempts = part_attempts_input || get_latest_part_attempts(activity_attempt_guid)
         part_inputs = filter_already_evaluated(part_inputs, part_attempts)
@@ -293,7 +295,12 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
           end
 
         # Override the rollup function if no_roll_up is set
-        roll_up_fn = if no_roll_up do fn result -> result end else roll_up_fn end
+        roll_up_fn =
+          if no_roll_up do
+            fn result -> result end
+          else
+            roll_up_fn
+          end
 
         result =
           persist_client_evaluations(
@@ -310,12 +317,10 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
       end)
       |> Snapshots.maybe_create_snapshot(part_inputs, section_slug)
       |> LogWorker.maybe_schedule(activity_attempt_guid, section_slug)
-
     else
       {:error, "Activity type does not allow client evaluation"}
     end
   end
-
 
   @doc """
   Processes a preview mode or test evaluation.
@@ -361,7 +366,6 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
     {:ok, evaluations}
   end
 
-
   defp submit_active_part_attempts(part_attempts) do
     now = Timex.now()
 
@@ -373,17 +377,17 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
   end
 
   defp evaluate_from_rules(
-        section_slug,
-        resource_attempt,
-        activity_attempt_guid,
-        part_inputs,
-        scoringContext,
-        rules,
-        activitiesRequiredForEvaluation,
-        variablesRequiredForEvaluation,
-        datashop_session_id,
-        part_attempts
-      ) do
+         section_slug,
+         resource_attempt,
+         activity_attempt_guid,
+         part_inputs,
+         scoringContext,
+         rules,
+         activitiesRequiredForEvaluation,
+         variablesRequiredForEvaluation,
+         datashop_session_id,
+         part_attempts
+       ) do
     state =
       case variablesRequiredForEvaluation do
         nil ->
@@ -444,7 +448,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
                  activity_attempt_guid,
                  client_evaluations,
                  datashop_session_id,
-                 [part_attempts: part_attempts, use_fixed_score: {score, out_of}]
+                 part_attempts: part_attempts,
+                 use_fixed_score: {score, out_of}
                ) do
             {:ok, _} ->
               Oli.Delivery.Attempts.PageLifecycle.Broadcaster.broadcast_attempt_updated(
@@ -660,5 +665,4 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
 
     do_evaluate_submissions(activity_attempt, part_inputs, part_attempts)
   end
-
 end

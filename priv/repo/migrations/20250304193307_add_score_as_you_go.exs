@@ -2,7 +2,6 @@ defmodule Oli.Repo.Migrations.AddScoreAsYouGo do
   use Ecto.Migration
 
   def up do
-
     alter table(:revisions) do
       add :batch_scoring, :boolean, default: true
       add :replacement_strategy, :binary, default: "none"
@@ -23,7 +22,6 @@ defmodule Oli.Repo.Migrations.AddScoreAsYouGo do
       add :aggregate_score, :float
       remove :cleanup
     end
-
   end
 
   def down do
@@ -47,6 +45,5 @@ defmodule Oli.Repo.Migrations.AddScoreAsYouGo do
       remove :aggregate_score
       add :cleanup, :integer, default: -1
     end
-
   end
 end

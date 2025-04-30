@@ -113,7 +113,9 @@ defmodule OliWeb.Components.Delivery.Schedule do
                           <div class="flex flex-col justify-center">
                             <Student.attempts_dropdown
                               ctx={@ctx}
-                              resource_access={Map.get(@resource_accesses_by_resource_id, resource.resource_id)}
+                              resource_access={
+                                Map.get(@resource_accesses_by_resource_id, resource.resource_id)
+                              }
                               section_slug={@section_slug}
                               page_revision_slug={resource.revision_slug}
                               attempt_summary={@historical_graded_attempt_summary}

@@ -22,8 +22,7 @@ defmodule Oli.Delivery.Attempts.Core.ActivityAttempt do
     field(:transformed_model, :map, default: nil)
     field(:group_id, :string, default: nil)
     field(:survey_id, :string, default: nil)
-    field(:selection_id, :string, default: nil)\
-
+    field(:selection_id, :string, default: nil)
     belongs_to(:resource, Oli.Resources.Resource)
     belongs_to(:revision, Oli.Resources.Revision)
     belongs_to(:resource_attempt, Oli.Delivery.Attempts.Core.ResourceAttempt)

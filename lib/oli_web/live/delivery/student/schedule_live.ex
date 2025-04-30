@@ -149,9 +149,7 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
                     is_current_week?(week, @current_week) &&
                       is_current_month?(month, @current_month)
                   }
-                  resource_accesses_by_resource_id={
-                    @resource_accesses_by_resource_id
-                  }
+                  resource_accesses_by_resource_id={@resource_accesses_by_resource_id}
                   schedule_ranges={schedule_ranges}
                   section_slug={@section_slug}
                   historical_graded_attempt_summary={@historical_graded_attempt_summary}

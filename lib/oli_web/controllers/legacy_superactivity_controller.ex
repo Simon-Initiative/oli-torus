@@ -446,7 +446,7 @@ defmodule OliWeb.LegacySuperactivityController do
            context.activity_attempt.attempt_guid,
            client_evaluations,
            context.datashop_session_id,
-           [no_roll_up: true]
+           no_roll_up: true
          ) do
       {:ok, _evaluations} ->
         attempt_history(

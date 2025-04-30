@@ -90,15 +90,19 @@ function closeModal(id: string) {
   document.getElementById(id)?.classList.add('hidden');
 }
 
-const confirmAction = (title: string, message: string, okCallback: () => void, cancelCallback: () => void, okLabel = 'Ok') => {
-
-  const modalTitle = document.getElementById('modalTitle')
-  const modalBody = document.getElementById('modalMessage')
-  const modalOkButton = document.getElementById('modalOk')
-  const modalCancelButton = document.getElementById('modalCancel')
+const confirmAction = (
+  title: string,
+  message: string,
+  okCallback: () => void,
+  cancelCallback: () => void,
+  okLabel = 'Ok',
+) => {
+  const modalTitle = document.getElementById('modalTitle');
+  const modalBody = document.getElementById('modalMessage');
+  const modalOkButton = document.getElementById('modalOk');
+  const modalCancelButton = document.getElementById('modalCancel');
 
   if (modalTitle && modalBody && modalOkButton && modalCancelButton) {
-
     modalTitle.innerHTML = title;
     modalBody.innerHTML = message;
     modalOkButton.innerHTML = okLabel;
@@ -113,8 +117,7 @@ const confirmAction = (title: string, message: string, okCallback: () => void, c
 
     openModal('modalConfirm');
   }
-
-}
+};
 
 // Global functions and objects:
 window.OLI = {
@@ -216,7 +219,6 @@ window.addEventListener('mouseout', (e: any) => {
     liveSocket.execJS(e.target, e.target.getAttribute('xphx-mouseout'));
   }
 });
-
 
 declare global {
   interface Window {

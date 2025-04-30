@@ -95,7 +95,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
                 <Icons.finish_quiz_flag />
               </button>
             <% else %>
-              <div/>
+              <div />
             <% end %>
           </div>
           <div class="mb-3">

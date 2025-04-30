@@ -1,5 +1,4 @@
 defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
-
   @moduledoc """
   Handles **rollup operations** after part-level evaluations to ensure proper propagation of scores
   from part attempts up through activity attempts, resource attempts, and resource accesses.
@@ -72,10 +71,10 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
   this function may also roll up the results to the resource attempt and resource access.
   """
   def determine_activity_rollup_fn(
-         activity_attempt_guid,
-         part_inputs,
-         part_attempts
-       ) do
+        activity_attempt_guid,
+        part_inputs,
+        part_attempts
+      ) do
     evaluated_fn = fn result ->
       rollup_evaluated(activity_attempt_guid)
       result
@@ -91,8 +90,10 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
     case determine_activity_rollup_state(part_inputs, part_attempts) do
       :evaluated ->
         evaluated_fn
+
       :submitted ->
         submitted_fn
+
       :no_op ->
         no_op_fn
     end
@@ -107,7 +108,6 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
   This function makes at most two read queries to the database.
   """
   def rollup_evaluated(activity_attempt_guid) do
-
     # First query: retrieve the latest part attempts
     part_attempts = get_latest_part_attempts(activity_attempt_guid)
 
@@ -137,20 +137,22 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
     IO.inspect(score_as_you_go?, label: "score_as_you_go?")
 
     case score_as_you_go? do
-
       # Third query: retrieve portions of all of the activity attempts for this
       # activity on this page - and the latest attempts for other
       # activities on this page
       true ->
-
-        relevant_activity_attempts = get_relevant_activity_attempts(resource_attempt_id, activity_id)
+        relevant_activity_attempts =
+          get_relevant_activity_attempts(resource_attempt_id, activity_id)
 
         # Here we calculate the "aggregate" score for this activity across all of its attempts
-        other_attempts_for_this_activity = Enum.filter(relevant_activity_attempts, fn a ->
-          a.resource_id == activity_id and a.attempt_guid != activity_attempt_guid
-        end)
+        other_attempts_for_this_activity =
+          Enum.filter(relevant_activity_attempts, fn a ->
+            a.resource_id == activity_id and a.attempt_guid != activity_attempt_guid
+          end)
 
-        all_attempts = [%{score: score, out_of: out_of, date_evaluated: now} | other_attempts_for_this_activity]
+        all_attempts = [
+          %{score: score, out_of: out_of, date_evaluated: now} | other_attempts_for_this_activity
+        ]
 
         %Result{score: aggregate_score, out_of: aggregate_out_of} =
           Scoring.calculate_score(page_scoring_strategy_id, all_attempts)
@@ -158,52 +160,88 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
         # Now we calculate page attempt score - across the aggregate scores of all other
         # activities on this page and the one that we just calculated
 
-        attempts_for_other_activities = Enum.filter(relevant_activity_attempts, fn a ->
-          a.resource_id != activity_id
-        end)
+        attempts_for_other_activities =
+          Enum.filter(relevant_activity_attempts, fn a ->
+            a.resource_id != activity_id
+          end)
 
-        all_aggregate_attempts = [%{aggregate_score: aggregate_score, aggregate_out_of: aggregate_out_of, date_evaluated: now} | attempts_for_other_activities]
-        |> Enum.map(fn a ->
+        all_aggregate_attempts =
+          [
+            %{
+              aggregate_score: aggregate_score,
+              aggregate_out_of: aggregate_out_of,
+              date_evaluated: now
+            }
+            | attempts_for_other_activities
+          ]
+          |> Enum.map(fn a ->
+            # If the aggregate out of is nil, this signifies that the activity has not been evaluated yet
+            # so we need to use the original score and out_of values, because the original out_of will
+            # at least have the "preset" out_of value for the activity
+            case a.aggregate_out_of do
+              nil ->
+                %{score: a.score, out_of: a.out_of, date_evaluated: a.date_evaluated}
 
-          # If the aggregate out of is nil, this signifies that the activity has not been evaluated yet
-          # so we need to use the original score and out_of values, because the original out_of will
-          # at least have the "preset" out_of value for the activity
-          case a.aggregate_out_of do
-            nil -> %{score: a.score, out_of: a.out_of, date_evaluated: a.date_evaluated}
-            _ -> %{score: a.aggregate_score, out_of: a.aggregate_out_of, date_evaluated: a.date_evaluated}
-          end
-
-        end)
+              _ ->
+                %{
+                  score: a.aggregate_score,
+                  out_of: a.aggregate_out_of,
+                  date_evaluated: a.date_evaluated
+                }
+            end
+          end)
 
         total_scoring_strategy_id = Oli.Resources.ScoringStrategy.get_id_by_type("total")
-        %Result{score: page_score, out_of: page_out_of} = Scoring.calculate_score(total_scoring_strategy_id, all_aggregate_attempts)
 
-        with {1, _} <- update_resource_access(resource_access_id, %{score: page_score, out_of: page_out_of}, now),
-          {1, _} <- update_resource_attempt(resource_attempt_id, %{score: page_score, out_of: page_out_of}, now),
-          {1, _} <- update_activity_attempt(activity_attempt_id, %{score: score, out_of: out_of, aggregate_score: aggregate_score, aggregate_out_of: aggregate_out_of}, now) do
+        %Result{score: page_score, out_of: page_out_of} =
+          Scoring.calculate_score(total_scoring_strategy_id, all_aggregate_attempts)
 
+        with {1, _} <-
+               update_resource_access(
+                 resource_access_id,
+                 %{score: page_score, out_of: page_out_of},
+                 now
+               ),
+             {1, _} <-
+               update_resource_attempt(
+                 resource_attempt_id,
+                 %{score: page_score, out_of: page_out_of},
+                 now
+               ),
+             {1, _} <-
+               update_activity_attempt(
+                 activity_attempt_id,
+                 %{
+                   score: score,
+                   out_of: out_of,
+                   aggregate_score: aggregate_score,
+                   aggregate_out_of: aggregate_out_of
+                 },
+                 now
+               ) do
           if grade_passback_enabled and graded do
             initiate_grade_passback(section_id, resource_access_id)
           end
 
           # Notify the client of the score change
-          Oli.Delivery.ScoreAsYouGoNotifications.question_answered(resource_attempt_id, activity_attempt_guid, {page_score, page_out_of})
+          Oli.Delivery.ScoreAsYouGoNotifications.question_answered(
+            resource_attempt_id,
+            activity_attempt_guid,
+            {page_score, page_out_of}
+          )
 
           :ok
-
         else
           e ->
             :error
         end
 
       false ->
-
         case update_activity_attempt(activity_attempt_id, %{score: score, out_of: out_of}, now) do
           {1, _} -> :ok
           _ -> :error
         end
     end
-
   end
 
   @doc """
@@ -302,7 +340,11 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
     )
   end
 
-  defp update_part_attempts_for_activity(activity_attempt, datashop_session_id, effective_settings) do
+  defp update_part_attempts_for_activity(
+         activity_attempt,
+         datashop_session_id,
+         effective_settings
+       ) do
     part_attempts = get_latest_part_attempts(activity_attempt.attempt_guid)
 
     part_inputs =
@@ -328,9 +370,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
     end
   end
 
-
   defp update_resource_access(resource_access_id, attrs, now) do
-
     attrs = Map.merge(attrs, %{updated_at: now})
     keyword_list = attrs |> Map.to_list()
 
@@ -339,11 +379,9 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
       update: [set: ^keyword_list]
     )
     |> Repo.update_all([])
-
   end
 
   defp update_resource_attempt(resource_attempt_id, attrs, now) do
-
     attrs = Map.merge(attrs, %{updated_at: now})
     keyword_list = attrs |> Map.to_list()
 
@@ -355,8 +393,13 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
   end
 
   defp update_activity_attempt(activity_attempt_id, attrs, now) do
-
-    attrs = Map.merge(attrs, %{lifecycle_state: :evaluated, date_evaluated: now, date_submitted: now, updated_at: now})
+    attrs =
+      Map.merge(attrs, %{
+        lifecycle_state: :evaluated,
+        date_evaluated: now,
+        date_submitted: now,
+        updated_at: now
+      })
 
     keyword_list = attrs |> Map.to_list()
 
@@ -365,19 +408,23 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
       update: [set: ^keyword_list]
     )
     |> Repo.update_all([])
-
   end
 
   defp get_attempts_and_page_details(activity_attempt_guid) do
-
     from(
       a in ActivityAttempt,
-      join: ra in ResourceAttempt, on: a.resource_attempt_id == ra.id,
-      join: rev in Revision, on: rev.id == a.revision_id,
-      join: rev2 in Revision, on: rev2.id == ra.revision_id,
-      join: r in ResourceAccess, on: r.id == ra.resource_access_id,
-      join: s in Section, on: s.id == r.section_id,
-      join: sr in SectionResource, on: sr.resource_id == rev2.resource_id and sr.section_id == s.id,
+      join: ra in ResourceAttempt,
+      on: a.resource_attempt_id == ra.id,
+      join: rev in Revision,
+      on: rev.id == a.revision_id,
+      join: rev2 in Revision,
+      on: rev2.id == ra.revision_id,
+      join: r in ResourceAccess,
+      on: r.id == ra.resource_access_id,
+      join: s in Section,
+      on: s.id == r.section_id,
+      join: sr in SectionResource,
+      on: sr.resource_id == rev2.resource_id and sr.section_id == s.id,
       where: a.attempt_guid == ^activity_attempt_guid,
       select: %{
         activity_attempt_id: a.id,
@@ -397,14 +444,15 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
   end
 
   defp get_relevant_activity_attempts(resource_attempt_id, current_activity_id) do
-
     Repo.all(
       from(aa in ActivityAttempt,
         left_join: aa2 in ActivityAttempt,
         on:
           aa.resource_attempt_id == aa2.resource_attempt_id and aa.resource_id == aa2.resource_id and
             aa.id < aa2.id,
-        where: aa.resource_attempt_id == ^resource_attempt_id and (is_nil(aa2) or aa.resource_id == ^current_activity_id),
+        where:
+          aa.resource_attempt_id == ^resource_attempt_id and
+            (is_nil(aa2) or aa.resource_id == ^current_activity_id),
         select: %{
           attempt_guid: aa.attempt_guid,
           resource_id: aa.resource_id,
@@ -416,9 +464,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
         }
       )
     )
-
   end
-
 
   defp determine_activity_rollup_attrs(part_inputs, part_attempts, activity_attempt) do
     case determine_activity_rollup_state(part_inputs, part_attempts) do
@@ -495,5 +541,4 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
       {_, _, _} -> :no_op
     end
   end
-
 end

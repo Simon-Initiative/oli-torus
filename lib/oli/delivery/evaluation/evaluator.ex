@@ -1,4 +1,3 @@
-
 defmodule Oli.Delivery.Evaluation.Evaluator do
   alias Oli.Delivery.Evaluation.{EvaluationContext}
   alias Oli.Delivery.Evaluation.Actions.{SubmissionAction, FeedbackAction}
@@ -13,9 +12,13 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
   scale_factor allows for the part score and out_of to be scaled into a smaller
   or larger range.
   """
-  def evaluate(%Part{grading_approach: :manual, id: part_id}, %EvaluationContext{
-        part_attempt_guid: attempt_guid
-      }, _) do
+  def evaluate(
+        %Part{grading_approach: :manual, id: part_id},
+        %EvaluationContext{
+          part_attempt_guid: attempt_guid
+        },
+        _
+      ) do
     {:ok,
      %SubmissionAction{
        type: "SubmissionAction",

@@ -65,12 +65,13 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
     case create_resource_attempt(%{
            content: transformed_content,
            errors: errors,
-           out_of: Enum.reduce(prototypes, 0.0, fn p, acc ->
-            case p.out_of do
-              nil -> acc
-              _ -> p.out_of + acc
-            end
-           end),
+           out_of:
+             Enum.reduce(prototypes, 0.0, fn p, acc ->
+               case p.out_of do
+                 nil -> acc
+                 _ -> p.out_of + acc
+               end
+             end),
            attempt_guid: UUID.uuid4(),
            resource_access_id: resource_access_id,
            attempt_number: next_attempt_number,
@@ -104,7 +105,6 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
          latest_resource_attempt: latest_resource_attempt,
          page_revision: %Revision{graded: graded} = page_revision
        }) do
-
     migrate_all_fn = fn ->
       get_migratable_activity_attempts(latest_resource_attempt.id)
       |> Enum.map(fn attempt ->
@@ -122,12 +122,10 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
     # 2. Page revisions have NOT changed, graded page and targeted retake mode is enabled
     # 2. Revisions changed in a score as you go graded page
     case {revisions_changed, graded, retake_mode, batch_scoring} do
-
       {true, false, _, _} ->
         migrate_all_fn.()
 
       {false, true, :targeted, _} ->
-
         get_correct_attempts(latest_resource_attempt.id)
         |> Enum.map(fn attempt ->
           Oli.Delivery.ActivityProvider.AttemptPrototype.from_attempt(attempt)
@@ -138,9 +136,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
 
       _ ->
         []
-
     end
-
   end
 
   defp construct_attempt_prototypes(_), do: []

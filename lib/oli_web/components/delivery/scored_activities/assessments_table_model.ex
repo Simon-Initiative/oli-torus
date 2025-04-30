@@ -72,7 +72,7 @@ defmodule OliWeb.Delivery.ScoredActivities.AssessmentsTableModel do
         title: assessment.title,
         container_label: assessment.container_label,
         id: assessment.id,
-        score_as_you_go: !assessment.batch_scoring,
+        score_as_you_go: !assessment.batch_scoring
       })
 
     ~H"""
@@ -87,7 +87,7 @@ defmodule OliWeb.Delivery.ScoredActivities.AssessmentsTableModel do
         phx-value-id={@id}
       >
         <%= if @score_as_you_go do %>
-          <Icons.score_as_you_go/>
+          <Icons.score_as_you_go />
         <% end %>
         <%= @title %>
       </a>

@@ -250,8 +250,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
       Enum.any?(parsed_model.transformations, fn t -> t.operation == :variable_substitution end)
 
     cond do
-
-       # The replacement strategy is dynamic and this is a dynamic question
+      # The replacement strategy is dynamic and this is a dynamic question
       effective_settings.replacement_strategy == :dynamic and contains_dynamic_transform? ->
         transform.(current_revision)
 

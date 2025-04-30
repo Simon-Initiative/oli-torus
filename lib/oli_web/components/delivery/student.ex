@@ -53,18 +53,40 @@ defmodule OliWeb.Components.Delivery.Student do
 
   def attempts_dropdown(assigns) do
     assigns = assign(assigns, :id, "page-#{assigns[:page_revision_slug]}-attempts")
-    assigns = case assigns[:effective_settings].batch_scoring do
-      true -> assign(assigns, :label, "Attempts #{assigns[:attempts_count]}/#{max_attempts(assigns[:effective_settings])}")
-      false -> assign(assigns, :label, "Score as you go")
-    end
-    assigns = case {assigns[:effective_settings].batch_scoring, assigns[:resource_access]} do
-      {true, _} -> assign(assigns, :raw_avg_score, %{score: nil, out_of: nil})
-      {false, nil} -> assign(assigns, :raw_avg_score, %{score: nil, out_of: nil})
-      {false, resource_access} -> case resource_access.score do
-        nil -> assign(assigns, :raw_avg_score, %{score: nil, out_of: nil})
-        _ -> assign(assigns, :raw_avg_score, %{score: resource_access.score, out_of: resource_access.out_of})
+
+    assigns =
+      case assigns[:effective_settings].batch_scoring do
+        true ->
+          assign(
+            assigns,
+            :label,
+            "Attempts #{assigns[:attempts_count]}/#{max_attempts(assigns[:effective_settings])}"
+          )
+
+        false ->
+          assign(assigns, :label, "Score as you go")
       end
-    end
+
+    assigns =
+      case {assigns[:effective_settings].batch_scoring, assigns[:resource_access]} do
+        {true, _} ->
+          assign(assigns, :raw_avg_score, %{score: nil, out_of: nil})
+
+        {false, nil} ->
+          assign(assigns, :raw_avg_score, %{score: nil, out_of: nil})
+
+        {false, resource_access} ->
+          case resource_access.score do
+            nil ->
+              assign(assigns, :raw_avg_score, %{score: nil, out_of: nil})
+
+            _ ->
+              assign(assigns, :raw_avg_score, %{
+                score: resource_access.score,
+                out_of: resource_access.out_of
+              })
+          end
+      end
 
     ~H"""
     <div class="self-stretch justify-start items-start gap-6 inline-flex relative mb-1">
@@ -86,7 +108,10 @@ defmodule OliWeb.Components.Delivery.Student do
           !@attempt_summary || @attempt_summary.page_revision_slug != @page_revision_slug
         } />
         <.attempts_summary
-          :if={(@attempt_summary != nil && @attempt_summary.page_revision_slug == @page_revision_slug) or @label == "Score as you go"}
+          :if={
+            (@attempt_summary != nil && @attempt_summary.page_revision_slug == @page_revision_slug) or
+              @label == "Score as you go"
+          }
           ctx={@ctx}
           attempt_summary={@attempt_summary}
           raw_avg_score={@raw_avg_score}
@@ -147,7 +172,6 @@ defmodule OliWeb.Components.Delivery.Student do
   attr(:raw_avg_score, :map)
   attr(:page_revision_slug, :string)
 
-
   defp attempts_summary(%{effective_settings: %{batch_scoring: false}} = assigns) do
     ~H"""
     <div
@@ -196,7 +220,6 @@ defmodule OliWeb.Components.Delivery.Student do
     </div>
     """
   end
-
 
   defp attempts_summary(assigns) do
     ~H"""

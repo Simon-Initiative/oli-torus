@@ -27,7 +27,6 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   alias OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion
   alias OliWeb.Icons
 
-
   require Logger
 
   on_mount {OliWeb.LiveSessionPlugs.InitPage, :init_context_state}
@@ -702,10 +701,12 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     end
   end
 
-  def handle_info({:question_answered, %{score: score, out_of: out_of, activity_attempt_guid: attempt_guid}}, socket) do
-
+  def handle_info(
+        {:question_answered,
+         %{score: score, out_of: out_of, activity_attempt_guid: attempt_guid}},
+        socket
+      ) do
     case socket.assigns[:questions] do
-
       nil ->
         {:noreply, assign(socket, current_score: score, current_out_of: out_of)}
 
@@ -714,7 +715,11 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           Enum.map(socket.assigns.questions, fn
             %{selected: true} = selected_question ->
               Map.merge(selected_question, %{
-                state: OneAtATimeQuestion.get_updated_state(attempt_guid, socket.assigns.effective_settings),
+                state:
+                  OneAtATimeQuestion.get_updated_state(
+                    attempt_guid,
+                    socket.assigns.effective_settings
+                  ),
                 submitted: true
               })
 
@@ -722,10 +727,9 @@ defmodule OliWeb.Delivery.Student.LessonLive do
               not_selected_question
           end)
 
-        {:noreply, assign(socket, current_score: score, current_out_of: out_of, questions: questions)}
-
+        {:noreply,
+         assign(socket, current_score: score, current_out_of: out_of, questions: questions)}
     end
-
   end
 
   def handle_info({:disable_question_inputs, question_id}, socket) do
@@ -1069,7 +1073,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     <div class="flex justify-end w-full">
       <div class="flex items-center gap-2.5">
         <span class="font-sans text-sm font-normal leading-none">
-          Overall Page Score: <Icons.score_as_you_go /> <.score score={@current_score} out_of={@current_out_of}/>
+          Overall Page Score: <Icons.score_as_you_go />
+          <.score score={@current_score} out_of={@current_out_of} />
         </span>
       </div>
     </div>
@@ -1085,15 +1090,17 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   attr :out_of, :float
 
   def score(%{score: nil} = assigns) do
-     ~H"""
-     <strong class="text-black dark-text-white"><%= format_score(@score) %> / <%= format_score(@out_of) %></strong>
-     """
+    ~H"""
+    <strong class="text-black dark-text-white">
+      <%= format_score(@score) %> / <%= format_score(@out_of) %>
+    </strong>
+    """
   end
 
   def score(assigns) do
     ~H"""
-     <strong class="text-[#0FB863]"><%= format_score(@score) %> / <%= format_score(@out_of) %></strong>
-     """
+    <strong class="text-[#0FB863]"><%= format_score(@score) %> / <%= format_score(@out_of) %></strong>
+    """
   end
 
   attr :batch_scoring, :boolean, default: false
@@ -1120,14 +1127,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
             viewBox="0 0 24 24"
             stroke="currentColor"
           >
-            <circle
-              class="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              stroke-width="4"
-            >
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
             </circle>
             <path
               class="opacity-75"
@@ -1208,7 +1208,9 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     """
   end
 
-  def scored_page_banner(%{page_context: %{effective_settings: %{batch_scoring: false}}} = assigns) do
+  def scored_page_banner(
+        %{page_context: %{effective_settings: %{batch_scoring: false}}} = assigns
+      ) do
     ~H"""
     <div class="w-full lg:px-20 px-40 py-9 bg-orange-500 bg-opacity-10 flex flex-col justify-center items-center gap-2.5">
       <div class="px-3 py-1.5 rounded justify-start items-start gap-2.5 flex">
@@ -1595,10 +1597,13 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
     scale_to_out_of = fn part_points, out_of ->
       total = Enum.reduce(part_points, 0, fn {_, points}, acc -> acc + points end)
-      scale_factor = case out_of do
-        nil -> 1.0
-        _ -> out_of / total
-      end
+
+      scale_factor =
+        case out_of do
+          nil -> 1.0
+          _ -> out_of / total
+        end
+
       Enum.reduce(part_points, %{}, fn {part_id, points}, acc ->
         Map.put(acc, part_id, points * scale_factor)
       end)
@@ -1615,7 +1620,6 @@ defmodule OliWeb.Delivery.Student.LessonLive do
             |> Floki.attribute("state")
             |> hd()
             |> Jason.decode!()
-
 
           IO.inspect(state)
 
@@ -1637,7 +1641,9 @@ defmodule OliWeb.Delivery.Student.LessonLive do
                answered: !Enum.any?(state["parts"], fn part -> part["response"] in ["", nil] end),
                submitted:
                  !Enum.any?(state["parts"], fn part -> part["dateSubmitted"] in ["", nil] end),
-               part_points: activity_part_points_mapper[state["activityId"]] |> scale_to_out_of.(state["outOf"]),
+               part_points:
+                 activity_part_points_mapper[state["activityId"]]
+                 |> scale_to_out_of.(state["outOf"]),
                out_of: state["outOf"]
              }
              | activities

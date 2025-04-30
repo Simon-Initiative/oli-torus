@@ -24,20 +24,19 @@ import {
   resetAction,
   resetAndSavePart,
   resetAndSubmitPart,
+  submit,
   submitPart,
-  submit
 } from 'data/activities/DeliveryState';
 import { getByUnsafe } from 'data/activities/model/utils';
 import { safelySelectStringInputs } from 'data/activities/utils';
 import { defaultWriterContext } from 'data/content/writers/context';
 import { configureStore } from 'state/store';
 import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
+import { ScoreAsYouGoHeader } from '../common/ScoreAsYouGoHeader';
+import { ScoreAsYouGoSubmitReset } from '../common/ScoreAsYouGoSubmitReset';
 import { SubmitResetConnected } from '../common/delivery/SubmitReset';
 import { initializePersistence } from '../common/delivery/persistence';
 import { getOrderedPartIds } from './utils';
-import { ScoreAsYouGoSubmitReset } from '../common/ScoreAsYouGoSubmitReset';
-import { ScoreAsYouGoHeader } from '../common/ScoreAsYouGoHeader';
-
 
 export const MultiInputComponent: React.FC = () => {
   const {
@@ -335,7 +334,10 @@ export const MultiInputComponent: React.FC = () => {
           />
         )}
 
-        <ScoreAsYouGoSubmitReset onSubmit={() => dispatch(submit(onSubmitActivity))} onReset={() => dispatch(resetAction(onResetActivity, undefined))} />
+        <ScoreAsYouGoSubmitReset
+          onSubmit={() => dispatch(submit(onSubmitActivity))}
+          onReset={() => dispatch(resetAction(onResetActivity, undefined))}
+        />
 
         {hintsShown.map((partId) => (
           <HintsDeliveryConnected

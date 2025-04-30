@@ -865,10 +865,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   defp lesson_details(%{lesson: %{graded: true, batch_score: false}} = assigns) do
     ~H"""
     <div role="details" class="pt-2 pb-1 px-1 flex self-stretch justify-between gap-5">
-
-      <div
-        class="justify-between items-end gap-2.5 flex ml-auto"
-      >
+      <div class="justify-between items-end gap-2.5 flex ml-auto">
         <div>Score as you go</div>
         <div class="text-green-700 dark:text-green-500 flex justify-end items-center gap-1">
           <div class="w-4 h-4 relative"><Icons.score_as_you_go /></div>
@@ -903,7 +900,6 @@ defmodule OliWeb.Delivery.Student.IndexLive do
           <%= effective_lesson_expiration_date(@lesson) |> Utils.format_time_remaining() %>
         </div>
       </div>
-
     </div>
     """
   end

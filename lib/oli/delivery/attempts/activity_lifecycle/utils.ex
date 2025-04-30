@@ -1,5 +1,4 @@
 defmodule Oli.Delivery.Attempts.ActivityLifecycle.Utils do
-
   alias Oli.Delivery.Attempts.Core.{ActivityAttempt}
   alias Oli.Activities.Model
   alias Oli.Delivery.Evaluation.{EvaluationContext, Standard}
@@ -22,13 +21,12 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Utils do
     end)
   end
 
-
   def do_evaluate_submissions(
-         activity_attempt,
-         part_inputs,
-         part_attempts,
-         effective_settings \\ nil
-       )
+        activity_attempt,
+        part_inputs,
+        part_attempts,
+        effective_settings \\ nil
+      )
 
   def do_evaluate_submissions(activity_attempt, part_inputs, part_attempts, nil) do
     effective_settings =
@@ -38,15 +36,15 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Utils do
   end
 
   def do_evaluate_submissions(
-         %ActivityAttempt{
-           resource_attempt: resource_attempt,
-           attempt_number: attempt_number,
-           out_of: activity_out_of
-         } = activity_attempt,
-         part_inputs,
-         part_attempts,
-         effective_settings
-       ) do
+        %ActivityAttempt{
+          resource_attempt: resource_attempt,
+          attempt_number: attempt_number,
+          out_of: activity_out_of
+        } = activity_attempt,
+        part_inputs,
+        part_attempts,
+        effective_settings
+      ) do
     activity_model = select_model(activity_attempt)
 
     evaluations =
@@ -95,18 +93,19 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Utils do
     {:ok, evaluations}
   end
 
-
   # Determines the scaling factor to score and out_of to be applied at
   # the part attempt level.
   defp determine_scale_factor(parts, activity_out_of) do
-
-    total = Enum.map(parts, fn p ->
-      Enum.reduce(p.responses, 0, fn r, max -> max(max, r.score) end)
-    end)
-    |> Enum.reduce(0, fn v, acc -> acc + v end)
+    total =
+      Enum.map(parts, fn p ->
+        Enum.reduce(p.responses, 0, fn r, max -> max(max, r.score) end)
+      end)
+      |> Enum.reduce(0, fn v, acc -> acc + v end)
 
     case activity_out_of do
-      nil -> 1.0
+      nil ->
+        1.0
+
       _ ->
         case total do
           nil -> 1.0
@@ -115,7 +114,4 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Utils do
         end
     end
   end
-
-
-
 end

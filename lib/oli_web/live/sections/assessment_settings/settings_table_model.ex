@@ -161,7 +161,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
 
     ~H"""
     <div class="pr-4">
-      <Icons.score_as_you_go/>
+      <Icons.score_as_you_go />
       <%= @name %>
     </div>
     """
@@ -461,7 +461,6 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
     </div>
     """
   end
-
 
   def render_batch_scoring(assigns, assessment, _) do
     assigns =

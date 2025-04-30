@@ -155,7 +155,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
 
                 <div class="flex flex-row items-center">
                   <%= if !@current_assessment.batch_scoring do %>
-                    <Icons.score_as_you_go/>
+                    <Icons.score_as_you_go />
                   <% end %>
 
                   <span class="text-lg ml-1"><%= @current_assessment.title %></span>

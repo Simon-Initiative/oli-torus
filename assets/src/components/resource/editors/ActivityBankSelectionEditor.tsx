@@ -115,7 +115,8 @@ export const ActivityBankSelectionEditor = (props: ActivityBankSelectionEditorPr
     }
   };
 
-  const pointsValue = contentItem.pointsPerActivity === undefined ? 1 : contentItem.pointsPerActivity;
+  const pointsValue =
+    contentItem.pointsPerActivity === undefined ? 1 : contentItem.pointsPerActivity;
 
   return (
     <div id={contentItem.id} className="activity-bank-selection">

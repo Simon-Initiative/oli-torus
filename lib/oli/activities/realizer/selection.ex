@@ -31,7 +31,15 @@ defmodule Oli.Activities.Realizer.Selection do
         purpose = Map.get(json, "purpose", "none")
         points_per_activity = Map.get(json, "pointsPerActivity", 1)
 
-        {:ok, %Selection{id: id, count: count, points_per_activity: points_per_activity, logic: logic, purpose: purpose, type: "selection"}}
+        {:ok,
+         %Selection{
+           id: id,
+           count: count,
+           points_per_activity: points_per_activity,
+           logic: logic,
+           purpose: purpose,
+           type: "selection"
+         }}
 
       e ->
         e

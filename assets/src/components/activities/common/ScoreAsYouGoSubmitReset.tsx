@@ -31,44 +31,47 @@ function buildConfirmMessage(uiState: ActivityDeliveryState): string {
   `;
 }
 
-export const ScoreAsYouGoSubmitReset: React.FC<Props> = ({
-  onSubmit,
-  onReset,
-}) => {
+export const ScoreAsYouGoSubmitReset: React.FC<Props> = ({ onSubmit, onReset }) => {
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   const { attemptState } = uiState;
 
   if (uiState.activityContext.graded) {
-
     if (isEvaluated(uiState)) {
-
       if (!uiState.activityContext.batchScoring) {
-
         return (
           <div className="mt-3 flex justify-between">
             <button
               onClick={() => {
-                window.OLI.confirmAction("Reset Confirmation", buildConfirmMessage(uiState), () => onReset(), () => {}, "Reset");
+                window.OLI.confirmAction(
+                  'Reset Confirmation',
+                  buildConfirmMessage(uiState),
+                  () => onReset(),
+                  () => {},
+                  'Reset',
+                );
               }}
             >
-              <span className="text-red-700"><i className="fa-solid fa-rotate-right mr-2"></i>Reset Question</span>
+              <span className="text-red-700">
+                <i className="fa-solid fa-rotate-right mr-2"></i>Reset Question
+              </span>
             </button>
             <div className="text-green-500 dark:text-green-300">
-              <span><ScoreAsYouGoIcon/> Points: </span>
+              <span>
+                <ScoreAsYouGoIcon /> Points:{' '}
+              </span>
               <span>{attemptState.score?.toFixed(2) + ' / ' + attemptState.outOf}</span>
             </div>
-
           </div>
         );
-
       }
-
     } else if (!uiState.activityContext.batchScoring || uiState.activityContext.oneAtATime) {
-
       return (
         <div className="flex justify-center">
           <button
-            disabled={uiState.activityContext.maxAttempts > 0 && attemptState.attemptNumber >= uiState.activityContext.maxAttempts}
+            disabled={
+              uiState.activityContext.maxAttempts > 0 &&
+              attemptState.attemptNumber >= uiState.activityContext.maxAttempts
+            }
             className="btn btn-primary"
             onClick={() => onSubmit()}
           >
@@ -76,9 +79,7 @@ export const ScoreAsYouGoSubmitReset: React.FC<Props> = ({
           </button>
         </div>
       );
-
     }
-
   }
 
   return null;

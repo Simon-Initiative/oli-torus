@@ -33,13 +33,15 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
 
   @impl Lifecycle
   @decorate transaction_event("Graded.visit")
-  def visit(%VisitContext{
-        latest_resource_attempt: latest_resource_attempt,
-        page_revision: page_revision,
-        section_slug: section_slug,
-        effective_settings: effective_settings,
-        user: user
-      } = visit_context) do
+  def visit(
+        %VisitContext{
+          latest_resource_attempt: latest_resource_attempt,
+          page_revision: page_revision,
+          section_slug: section_slug,
+          effective_settings: effective_settings,
+          user: user
+        } = visit_context
+      ) do
     # There is no "active" attempt if there has never been an attempt or if the latest
     # attempt has been finalized or submitted
     if is_nil(latest_resource_attempt) or
@@ -60,13 +62,13 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
           resource_attempts: graded_attempts
         }}}
     else
-
       # Se if we are in score as you go mode, and the page revision has changed since the start of this
       # current attempt.  In this case, we need to start a new attempt to pick up the new page revision.
-      if page_revision.id !== latest_resource_attempt.revision_id and !effective_settings.batch_scoring do
-
+      if page_revision.id !== latest_resource_attempt.revision_id and
+           !effective_settings.batch_scoring do
         # We have to mark the current attempt as :evaluated so that we can start a new one
         now = DateTime.utc_now()
+
         Core.update_resource_attempt(latest_resource_attempt, %{
           lifecycle_state: :evaluated,
           date_submitted: now,
@@ -75,13 +77,13 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
 
         case start(visit_context) do
           {:ok, %AttemptState{} = %{resource_attempt: new_attempt} = attempt_state} ->
-
             # Now after the new attempt has been created, we update it to pull forward the score and out_of
             # from the previous attempt
-            {:ok, resource_attempt} = Core.update_resource_attempt(new_attempt, %{
-              score: latest_resource_attempt.score,
-              out_of: latest_resource_attempt.out_of
-            })
+            {:ok, resource_attempt} =
+              Core.update_resource_attempt(new_attempt, %{
+                score: latest_resource_attempt.score,
+                out_of: latest_resource_attempt.out_of
+              })
 
             attempt_state = %{attempt_state | resource_attempt: resource_attempt}
 
