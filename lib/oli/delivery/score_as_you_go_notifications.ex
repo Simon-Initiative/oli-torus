@@ -19,17 +19,17 @@ defmodule Oli.Delivery.ScoreAsYouGoNotifications do
     Logger.info("Subscribing to score as you go messages for topic #{topic}")
   end
 
-  def score_changed(resource_attempt_id, {score, out_of}) do
+  def question_answered(resource_attempt_id, activity_attempt_guid, {score, out_of}) do
 
     topic = build_topic(resource_attempt_id)
 
     PubSub.broadcast(
       Oli.PubSub,
       topic,
-      {:score_changed, {score, out_of}}
+      {:question_answered, %{score: score, out_of: out_of, activity_attempt_guid: activity_attempt_guid}}
     )
 
-    Logger.info("Broadcasting score changed {#{score}, #{out_of}} for topic #{topic}")
+    Logger.info("Broadcasting question answered {#{score}, #{out_of}} for topic #{topic}")
   end
 
   defp build_topic(resource_attempt_id) do

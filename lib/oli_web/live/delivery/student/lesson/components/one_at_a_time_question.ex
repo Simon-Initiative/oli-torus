@@ -33,10 +33,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
     <div id={@id}>
       <% selected_question = Enum.find(@questions, & &1.selected) %>
       <% total_questions = Enum.count(@questions) %>
-      <% selected_question_points =
-        Enum.reduce(selected_question.part_points, 0, fn {_id, points}, acum ->
-          points + acum
-        end) %>
+      <% selected_question_points = selected_question.out_of %>
       <% selected_question_parts_count = map_size(selected_question.part_points) %>
       <% submitted_questions = Enum.count(@questions, & &1.submitted) %>
       <% unattempted_questions = total_questions - submitted_questions %>
@@ -87,15 +84,19 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
                 selected_question_points
               ) %>
             </div>
-            <button
-              phx-click={Modal.show_modal("finish_quiz_confirmation_modal")}
-              class="flex items-center gap-2"
-            >
-              <div class="opacity-90 text-right text-[#0080ff] text-base font-bold leading-normal">
-                Finish Attempt
-              </div>
-              <Icons.finish_quiz_flag />
-            </button>
+            <%= if @effective_settings.batch_scoring do %>
+              <button
+                phx-click={Modal.show_modal("finish_quiz_confirmation_modal")}
+                class="flex items-center gap-2"
+              >
+                <div class="opacity-90 text-right text-[#0080ff] text-base font-bold leading-normal">
+                  Finish Attempt
+                </div>
+                <Icons.finish_quiz_flag />
+              </button>
+            <% else %>
+              <div/>
+            <% end %>
           </div>
           <div class="mb-3">
             <Common.progress_bar
@@ -132,7 +133,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
                     if(!question.selected, do: "hidden")
                   ]}
                   phx-hook="DisableSubmitted"
-                  data-submitted={"#{question.submitted}"}
+                  data-submitted={"#{question.submitted and @effective_settings.batch_scoring}"}
                 >
                   <%= raw(question.raw_content) %>
                 </div>
@@ -157,49 +158,6 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
                   <span class="text-[#353740] ml-1 dark:text-white">
                     <%= parse_points(points) %>
                   </span>
-                </div>
-              </div>
-            </div>
-            <div class="flex justify-center w-full min-h-[84px] items-center">
-              <button
-                :if={!selected_question.submitted}
-                phx-click="submit_selected_question"
-                phx-target={@myself}
-                phx-value-attempt_guid={selected_question.state["attemptGuid"]}
-                phx-value-question_id={"question_#{selected_question.number}"}
-                disabled={!selected_question.answered}
-                class={[
-                  "h-[30px] px-5 py-2.5 rounded-md shadow justify-center items-center gap-2.5 inline-flex opacity-90 text-right text-base text-white leading-normal whitespace-nowrap",
-                  if(selected_question.answered,
-                    do: "bg-[#0062f2] font-semibold",
-                    else: "bg-[#9d9d9d] font-semibold "
-                  )
-                ]}
-              >
-                Submit Response
-              </button>
-              <div :if={selected_question.submitted} class="activity w-full p-2 px-10">
-                <div role="question points feedback" class="flex justify-end mb-2.5">
-                  <span class="text-[#8e8e8e] text-xs font-normal leading-[18px] dark:text-white/80">
-                    Points:
-                  </span>
-                  <span class="ml-1 text-[#5e5e5e] text-xs font-semibold leading-[18px] dark:text-white">
-                    <%= question_points(selected_question) %> / <%= total_question_points(
-                      selected_question
-                    ) %>
-                  </span>
-                </div>
-                <div role="question feedback" class="activity-content">
-                  <%= OliWeb.Common.React.component(
-                    @ctx,
-                    "Components.Evaluation",
-                    %{
-                      attemptState: selected_question.state,
-                      context: selected_question.context
-                    },
-                    id: "activity_evaluation_for_question_#{selected_question.number}",
-                    container: [class: "flex flex-col w-full"]
-                  ) %>
                 </div>
               </div>
             </div>
@@ -239,7 +197,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
           </button>
 
           <button
-            :if={selected_question.number == total_questions}
+            :if={selected_question.number == total_questions and @effective_settings.batch_scoring}
             phx-click={Modal.show_modal("finish_quiz_confirmation_modal")}
             class="w-[130px] h-[30px] px-5 py-2.5 bg-[#0062f2] rounded-md shadow justify-center items-center gap-2.5 inline-flex opacity-90 text-right text-white text-sm font-semibold leading-[14px] whitespace-nowrap"
           >
@@ -302,57 +260,6 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
 
   def handle_event("activity_saved", params, socket) do
     {:noreply, update_activity(socket, params)}
-  end
-
-  def handle_event(
-        "submit_selected_question",
-        %{"attempt_guid" => attempt_guid, "question_id" => question_id},
-        socket
-      ) do
-    ## evaluate the activity attempt
-
-    part_attempts = Oli.Delivery.Attempts.Core.get_latest_part_attempts(attempt_guid)
-
-    part_inputs =
-      part_attempts
-      |> Enum.map(fn pa ->
-        {input, files} =
-          if pa.response,
-            do: {Map.get(pa.response, "input"), Map.get(pa.response, "files", [])},
-            else: {nil, nil}
-
-        %{
-          attempt_guid: pa.attempt_guid,
-          input: %StudentInput{input: input, files: files}
-        }
-      end)
-
-    Oli.Delivery.Attempts.ActivityLifecycle.Evaluate.evaluate_from_input(
-      socket.assigns.section_slug,
-      attempt_guid,
-      part_inputs,
-      socket.assigns.datashop_session_id,
-      part_attempts
-    )
-
-    ## and update it's state in the assigns (to render the feedback in the UI)
-
-    questions =
-      Enum.map(socket.assigns.questions, fn
-        %{selected: true} = selected_question ->
-          Map.merge(selected_question, %{
-            state: get_updated_state(attempt_guid, socket.assigns.effective_settings),
-            submitted: true
-          })
-
-        not_selected_question ->
-          not_selected_question
-      end)
-
-    # Send a message to self to push the event after render
-    send(self(), {:disable_question_inputs, question_id})
-
-    {:noreply, assign(socket, questions: questions)}
   end
 
   def handle_event(
@@ -446,7 +353,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
     }
   end
 
-  defp get_updated_state(attempt_guid, effective_settings) do
+  def get_updated_state(attempt_guid, effective_settings) do
     {:ok, [attempt]} = Oli.Delivery.Attempts.Core.get_activity_attempts([attempt_guid])
     model = Oli.Delivery.Attempts.Core.select_model(attempt)
 
@@ -511,5 +418,6 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
   end
 
   defp parse_points(1), do: "1 point"
+  defp parse_points(1.0), do: "1 point"
   defp parse_points(points), do: "#{points} points"
 end

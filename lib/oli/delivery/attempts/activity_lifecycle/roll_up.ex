@@ -64,6 +64,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
   alias Oli.Delivery.Attempts.Scoring
   alias Oli.Resources.Revision
   alias Oli.Delivery.Sections.Section
+  alias Oli.Delivery.Sections.SectionResource
 
   @doc """
   Returns a function that when executed, will properly roll up the evaluated
@@ -133,6 +134,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
     %Result{score: score, out_of: out_of} =
       Scoring.calculate_score(activity_scoring_strategy_id, part_attempts)
 
+    IO.inspect(score_as_you_go?, label: "score_as_you_go?")
+
     case score_as_you_go? do
 
       # Third query: retrieve portions of all of the activity attempts for this
@@ -184,12 +187,13 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
           end
 
           # Notify the client of the score change
-          Oli.Delivery.ScoreAsYouGoNotifications.score_changed(resource_attempt_id, {page_score, page_out_of})
+          Oli.Delivery.ScoreAsYouGoNotifications.question_answered(resource_attempt_id, activity_attempt_guid, {page_score, page_out_of})
 
           :ok
 
         else
-          _ -> :error
+          e ->
+            :error
         end
 
       false ->
@@ -373,6 +377,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
       join: rev2 in Revision, on: rev2.id == ra.revision_id,
       join: r in ResourceAccess, on: r.id == ra.resource_access_id,
       join: s in Section, on: s.id == r.section_id,
+      join: sr in SectionResource, on: sr.resource_id == rev2.resource_id and sr.section_id == s.id,
       where: a.attempt_guid == ^activity_attempt_guid,
       select: %{
         activity_attempt_id: a.id,
@@ -382,8 +387,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
         resource_access_id: ra.resource_access_id,
         activity_scoring_strategy_id: rev.scoring_strategy_id,
         graded: rev2.graded,
-        page_scoring_strategy_id: rev2.scoring_strategy_id,
-        batch_scoring: rev2.batch_scoring,
+        page_scoring_strategy_id: sr.scoring_strategy_id,
+        batch_scoring: sr.batch_scoring,
         grade_passback_enabled: s.grade_passback_enabled,
         section_id: s.id
       }

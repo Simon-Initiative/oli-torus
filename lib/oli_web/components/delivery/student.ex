@@ -35,7 +35,7 @@ defmodule OliWeb.Components.Delivery.Student do
     <div role="score summary" class="flex gap-[6px] ml-auto">
       <Icons.score_as_you_go />
       <span class="text-[12px] leading-[16px] tracking-[0.02px] text-[#0CAF61] dark:text-[#12E56A] font-semibold whitespace-nowrap">
-        <%= Utils.parse_score(@raw_avg_score[:score]) %> / <%= Utils.parse_score(
+        <%= Utils.format_score(@raw_avg_score[:score]) %> / <%= Utils.format_score(
           @raw_avg_score[:out_of]
         ) %>
       </span>
@@ -168,7 +168,7 @@ defmodule OliWeb.Components.Delivery.Student do
         <div>
           <Icons.score_as_you_go />
           <span class="text-[12px] leading-[16px] tracking-[0.02px] text-[#0CAF61] dark:text-[#12E56A] font-semibold whitespace-nowrap">
-            <%= Utils.parse_score(@raw_avg_score[:score]) %> / <%= Utils.parse_score(
+            <%= Utils.format_score(@raw_avg_score[:score]) %> / <%= Utils.format_score(
               @raw_avg_score[:out_of]
             ) %>
           </span>

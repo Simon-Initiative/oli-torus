@@ -24,6 +24,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   alias Oli.Delivery.{Hierarchy, Metrics, Sections, Settings}
   alias Oli.Delivery.Sections.SectionCache
   alias OliWeb.Delivery.Student.Utils
+  alias OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion
   alias OliWeb.Icons
 
 
@@ -169,7 +170,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           attempt_start_time: resource_attempt.inserted_at |> to_epoch,
           review_mode: page_context.review_mode,
           current_score: resource_attempt.score,
-          current_out_of: resource_attempt.out_of
+          current_out_of: resource_attempt.out_of,
+          effective_settings: page_context.effective_settings
         )
         |> slim_assigns()
         |> assign(attempt_expired_auto_submit: attempt_expired_auto_submit)
@@ -700,8 +702,30 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     end
   end
 
-  def handle_info({:score_changed, {score, out_of}}, socket) do
-    {:noreply, assign(socket, current_score: score, current_out_of: out_of)}
+  def handle_info({:question_answered, %{score: score, out_of: out_of, activity_attempt_guid: attempt_guid}}, socket) do
+
+    case socket.assigns[:questions] do
+
+      nil ->
+        {:noreply, assign(socket, current_score: score, current_out_of: out_of)}
+
+      questions ->
+        questions =
+          Enum.map(socket.assigns.questions, fn
+            %{selected: true} = selected_question ->
+              Map.merge(selected_question, %{
+                state: OneAtATimeQuestion.get_updated_state(attempt_guid, socket.assigns.effective_settings),
+                submitted: true
+              })
+
+            not_selected_question ->
+              not_selected_question
+          end)
+
+        {:noreply, assign(socket, current_score: score, current_out_of: out_of, questions: questions)}
+
+    end
+
   end
 
   def handle_info({:disable_question_inputs, question_id}, socket) do
@@ -1599,7 +1623,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
                answered: !Enum.any?(state["parts"], fn part -> part["response"] in ["", nil] end),
                submitted:
                  !Enum.any?(state["parts"], fn part -> part["dateSubmitted"] in ["", nil] end),
-               part_points: activity_part_points_mapper[state["activityId"]]
+               part_points: activity_part_points_mapper[state["activityId"]],
+               out_of: state["outOf"]
              }
              | activities
            ]}

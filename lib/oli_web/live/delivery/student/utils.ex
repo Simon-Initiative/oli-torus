@@ -833,6 +833,9 @@ defmodule OliWeb.Delivery.Student.Utils do
     end
   end
 
+  def format_score(nil), do: "--"
+  def format_score(v), do: parse_score(v)
+
   @doc """
   Evaluates if an attempt is expired based on the attempt state and the time limit, late submission policy, and end date.
   An attempt can expire if its state is :active and either has a time limit and/or disallows late submissions.
