@@ -169,24 +169,24 @@ defmodule Oli.Delivery.Depot do
   """
   def exists?(%DepotDesc{} = depot_desc, table_id, filters) when is_list(filters) do
     groups =
-      if Keyword.keyword?(filters) do
-        # AND-case
-        [filters]
-      else
-        if Enum.all?(filters, &Keyword.keyword?(&1)) do
+      cond do
+        Keyword.keyword?(filters) ->
+          # AND-case
+          [filters]
+
+        Enum.all?(filters, &Keyword.keyword?(&1)) ->
           # OR-case
           filters
-        else
+
+        true ->
           raise ArgumentError,
                 "exists?/3 expects a keyword list or a list of keyword lists, got: #{inspect(filters)}"
-        end
       end
 
     # Translate each group into an ETS match spec
     specs =
       Enum.map(groups, fn conds ->
-        conditions = Enum.map(conds, fn {field, value} -> {field, value} end)
-        {mh, gs, _} = MatchSpecTranslator.translate(depot_desc, conditions)
+        {mh, gs, _} = MatchSpecTranslator.translate(depot_desc, conds)
         {mh, gs, [true]}
       end)
 
