@@ -41,7 +41,7 @@ defmodule OliWeb.Admin.NewExternalToolView do
       </div>
       <.form
         :let={f}
-        id="tool-upload-form"
+        id="tool_form"
         for={@form}
         class="flex flex-col gap-y-8 mt-12"
         phx-submit="create_tool"
@@ -229,7 +229,7 @@ defmodule OliWeb.Admin.NewExternalToolView do
     }
 
     ~H"""
-    <div class={"#{@bg_class} px-6 py-4 rounded-md relative mb-8"}>
+    <div id="flash" class={"#{@bg_class} px-6 py-4 rounded-md relative mb-8"}>
       <div class="flex items-start justify-between gap-4">
         <div class="flex items-center gap-2 font-semibold">
           <%= case @type do %>
