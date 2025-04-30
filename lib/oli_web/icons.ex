@@ -160,6 +160,7 @@ defmodule OliWeb.Icons do
 
   attr :progress, :float, default: 1.0, doc: "1.0 == 100% progress"
   attr :role, :string, default: "check icon"
+  attr :stroke_class, :string, default: "dark:stroke-[#12E56A] stroke-[#0CAF61]"
 
   def check(assigns) do
     ~H"""
@@ -175,7 +176,7 @@ defmodule OliWeb.Icons do
         stroke-width="2"
         stroke-linecap="round"
         stroke-linejoin="round"
-        class="icon icon-tabler icons-tabler-outline icon-tabler-check stroke-[#0CAF61] dark:stroke-[#12E56A]"
+        class={"icon icon-tabler icons-tabler-outline icon-tabler-check #{@stroke_class}"}
       >
         <path stroke="none" d="M0 0h24v24H0z" fill="none" />
         <path d="M5 12l5 5l10 -10" />
@@ -1816,6 +1817,27 @@ defmodule OliWeb.Icons do
         opacity="0.9"
         d="M8.20654 0.0561523L7.69385 4.95239L12.6157 3.5553L13.0002 6.2854L8.3988 6.69556L11.3853 10.6818L8.89868 12.0276L6.73254 7.73376L4.79712 12.0148L2.20801 10.6818L5.16882 6.69556L0.593018 6.27258L1.02881 3.5553L5.86096 4.95239L5.34827 0.0561523H8.20654Z"
       />
+    </svg>
+    """
+  end
+
+  def alert(assigns) do
+    ~H"""
+    <svg width="17" height="16" viewBox="0 0 17 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <g clip-path="url(#clip0_315_6133)">
+        <path
+          d="M8.47688 5.99882V8.66549M8.47688 10.6655H8.48271M7.38555 2.39282L1.98154 11.4155C1.87014 11.6084 1.81119 11.8271 1.81055 12.0499C1.80991 12.2727 1.86761 12.4918 1.97791 12.6853C2.08821 12.8789 2.24725 13.0402 2.43924 13.1532C2.63122 13.2662 2.84945 13.327 3.07221 13.3295H13.8815C14.1042 13.3269 14.3223 13.2661 14.5142 13.1531C14.7061 13.0402 14.8651 12.8789 14.9754 12.6855C15.0856 12.492 15.1434 12.2731 15.1428 12.0504C15.1423 11.8277 15.0835 11.6091 14.9722 11.4162L9.56821 2.39216C9.45452 2.20449 9.29435 2.04932 9.10318 1.94162C8.91201 1.83392 8.6963 1.77734 8.47688 1.77734C8.25746 1.77734 8.04175 1.83392 7.85058 1.94162C7.65941 2.04932 7.49924 2.20516 7.38555 2.39282Z"
+          stroke="#CE2C31"
+          stroke-width="1.25"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </g>
+      <defs>
+        <clipPath id="clip0_315_6133">
+          <rect width="16" height="16" fill="white" transform="translate(0.476807)" />
+        </clipPath>
+      </defs>
     </svg>
     """
   end
