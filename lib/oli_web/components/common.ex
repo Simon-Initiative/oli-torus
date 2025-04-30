@@ -1239,8 +1239,6 @@ defmodule OliWeb.Components.Common do
   attr :class, :string, default: "w-80 mx-auto"
 
   def render_recaptcha(assigns) do
-    assigns.recaptcha_error |> IO.inspect(label: "--- recaptcha_error")
-
     ~H"""
     <div class={@class}>
       <div
