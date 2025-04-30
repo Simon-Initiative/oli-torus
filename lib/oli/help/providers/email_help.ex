@@ -16,14 +16,14 @@ defmodule Oli.Help.Providers.EmailHelp do
   end
 
   defp build_help_message(contents) do
-    message = "
+    message = """
     #{get_general_data(contents)}
     #{get_user_account_data(contents)}
     #{get_course_data(contents)}
     #{get_browser_data(contents)}
     #{get_capabilities_data(contents)}
     #{get_screenshots_data(contents)}
-    "
+    """
 
     message
     |> String.replace("\r", "")
@@ -40,7 +40,7 @@ defmodule Oli.Help.Providers.EmailHelp do
         """
       end
 
-    if contents.screenshots do
+    if Enum.any?(contents.screenshots) do
       """
       SCREENSHOTS
       #{screenshots}
