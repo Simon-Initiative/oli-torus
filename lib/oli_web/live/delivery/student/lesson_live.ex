@@ -710,7 +710,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       nil ->
         {:noreply, assign(socket, current_score: score, current_out_of: out_of)}
 
-      questions ->
+      _ ->
         questions =
           Enum.map(socket.assigns.questions, fn
             %{selected: true} = selected_question ->

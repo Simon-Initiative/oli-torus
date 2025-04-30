@@ -260,6 +260,8 @@ defmodule Oli.Delivery.Sections.Updates do
           inserted_at: {:placeholder, :timestamp},
           updated_at: {:placeholder, :timestamp},
           collab_space_config: r.collab_space_config,
+          batch_scoring: r.batch_scoring,
+          replacement_strategy: r.replacement_strategy,
           max_attempts:
             if is_nil(r.max_attempts) do
               0

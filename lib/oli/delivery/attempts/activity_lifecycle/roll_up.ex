@@ -232,7 +232,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
 
           :ok
         else
-          e ->
+          _ ->
             :error
         end
 

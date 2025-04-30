@@ -9,7 +9,6 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
   alias Oli.Delivery.Attempts.PageLifecycle
   alias Oli.Delivery.Attempts.PageLifecycle.FinalizationSummary
   alias Oli.Delivery.Sections
-  alias Oli.Delivery.Attempts.Core.StudentInput
 
   alias OliWeb.Components.Common
   alias OliWeb.Components.Modal
@@ -390,22 +389,6 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
     ~H"""
     <Icons.close class="stroke-red-500 dark:stroke-white" />
     """
-  end
-
-  defp question_points(selected_question) do
-    Enum.reduce(selected_question.state["parts"], 0.0, fn part, acum ->
-      part["score"] + acum
-    end)
-  end
-
-  defp total_question_points(selected_question) do
-    Enum.reduce(
-      selected_question.part_points,
-      0.0,
-      fn {_id, points}, acum ->
-        points + acum
-      end
-    )
   end
 
   defp get_progress([] = _questions), do: 0.5

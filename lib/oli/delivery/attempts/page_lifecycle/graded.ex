@@ -425,12 +425,4 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
     })
   end
 
-  # There isn't a previous attempt
-  defp needs_new_attempt?(nil, _), do: true
-  # The previous attempt is evaluated
-  defp needs_new_attempt?(%{lifecycle_state: :evaluated}, _), do: true
-  # The previous attempt's page revision differs from the current page revision
-  defp needs_new_attempt?(%{revision_id: revision_id}, %{id: id}) do
-    revision_id != id
-  end
 end
