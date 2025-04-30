@@ -2,7 +2,7 @@ defmodule OliWeb.Admin.NewExternalToolView do
   use OliWeb, :live_view
 
   alias Lti_1p3.DataProviders.EctoProvider.PlatformInstance
-  alias Oli.Lti.PlatformInstances
+  alias Oli.Lti.{PlatformInstances, PlatformExternalTools}
   alias OliWeb.Common.Breadcrumb
   alias OliWeb.Icons
 
@@ -163,33 +163,9 @@ defmodule OliWeb.Admin.NewExternalToolView do
     {:noreply, assign(socket, form: to_form(changeset, as: :tool_form))}
   end
 
-  # def handle_event("create_tool", %{"tool_form" => params}, socket) do
-  #   case PlatformInstances.create_platform_instance(params) do
-  #     {:ok, _tool} ->
-  #       new_changeset = PlatformInstances.change_platform_instance(%PlatformInstance{})
-
-  #       {:noreply,
-  #        socket
-  #        |> assign(form: to_form(new_changeset, as: :tool_form))
-  #        |> assign(:custom_flash, %{
-  #          type: :success,
-  #          message: "You have successfully added an LTI 1.3 External Tool at the system level."
-  #        })}
-
-  #     {:error, %Ecto.Changeset{} = changeset} ->
-  #       {:noreply,
-  #        socket
-  #        |> assign(form: to_form(changeset, as: :tool_form))
-  #        |> assign(:custom_flash, %{
-  #          type: :error,
-  #          message: "One or more of the required fields is missing; please check your input."
-  #        })}
-  #   end
-  # end
-
   def handle_event("create_tool", %{"tool_form" => params}, socket) do
     try do
-      case PlatformInstances.create_platform_instance(params) do
+      case PlatformExternalTools.register_lti_external_tool_activity(params) do
         {:ok, _tool} ->
           new_changeset = PlatformInstances.change_platform_instance(%PlatformInstance{})
 
@@ -211,7 +187,7 @@ defmodule OliWeb.Admin.NewExternalToolView do
            })}
       end
     rescue
-      e in Ecto.ConstraintError ->
+      _e in Ecto.ConstraintError ->
         changeset =
           %PlatformInstance{}
           |> PlatformInstances.change_platform_instance(params)
@@ -256,7 +232,7 @@ defmodule OliWeb.Admin.NewExternalToolView do
           <%= case @type do %>
             <% :success -> %>
               <Icons.check stroke_class={"stroke-[#{@text_color}]"} />
-            <% type when type in [:error, :duplicate] -> %>
+            <% t when t in [:error, :duplicate] -> %>
               <Icons.alert />
           <% end %>
           <span class={"text-[#{@text_color}] text-base font-semibold"}>
