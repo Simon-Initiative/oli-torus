@@ -1328,9 +1328,7 @@ defmodule Oli.Delivery.Metrics do
   # users fall into a proficiency range for that container.
   defp bucket_into_container_mode(page_data, contained_pages, section_slug) do
     student_ids =
-      Sections.enrolled_students(section_slug)
-      |> Enum.reject(fn s -> s.user_role_id != 4 end)
-      |> Enum.map(fn s -> s.id end)
+      Sections.enrolled_student_ids(section_slug)
 
     contained_pages
     |> Enum.reduce(

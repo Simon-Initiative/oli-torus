@@ -62,6 +62,7 @@ defmodule Oli.Delivery.Sections do
   require Logger
 
   @instructor_context_role_id ContextRoles.get_role(:context_instructor).id
+  @student_role_id ContextRoles.get_role(:context_learner).id
 
   def enrolled_students(section_slug) do
     section = get_section_by_slug(section_slug)
@@ -93,6 +94,17 @@ defmodule Oli.Delivery.Sections do
         payment_date: if(!is_nil(payment), do: payment.application_date, else: nil)
       })
     end)
+  end
+
+  def enrolled_student_ids(section_slug) do
+    from(e in Enrollment,
+      join: s in assoc(e, :section),
+      join: ecr in assoc(e, :context_roles),
+      join: u in assoc(e, :user),
+      where: s.slug == ^section_slug and e.status == :enrolled and ecr.id == @student_role_id,
+      select: u.id
+    )
+    |> Repo.all()
   end
 
   @doc """
@@ -4876,9 +4888,7 @@ defmodule Oli.Delivery.Sections do
       end
 
     student_ids =
-      Sections.enrolled_students(section_slug)
-      |> Enum.reject(fn s -> s.user_role_id != 4 end)
-      |> Enum.map(fn s -> s.id end)
+      Sections.enrolled_student_ids(section_slug)
 
     proficiency_dist_for_objectives =
       proficiencies_for_objectives
