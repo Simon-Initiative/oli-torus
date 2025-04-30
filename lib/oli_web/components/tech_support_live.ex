@@ -26,6 +26,9 @@ defmodule OliWeb.TechSupportLive do
   @impl true
   def render(assigns) do
     ~H"""
+    <div class="mx-auto z-50 top-0 absolute right-0">
+      <.flash_group flash={@flash} />
+    </div>
     <button
       id="trigger-tech-support-modal"
       class="hidden"
@@ -151,7 +154,14 @@ defmodule OliWeb.TechSupportLive do
     end
   end
 
+  def handle_event("form_response", %{"info" => info}, socket) do
+    socket = put_flash(socket, :info, info)
+    {:noreply, socket}
+  end
+
   def handle_event("form_response", _params, socket) do
+    message = "We are unable to forward your help request at the moment"
+    socket = put_flash(socket, :error, message)
     {:noreply, socket}
   end
 
