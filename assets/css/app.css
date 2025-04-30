@@ -232,10 +232,10 @@ Not supports in Firefox and IE */
 /* File Uploads */
 
 #tech-support-modal form .hint {
-  @apply my-4 text-slate-600 text-sm;
+  @apply my-4 text-black/70 text-sm dark:text-gray-400 dark:stroke-[#B8B4BF];
 }
 #tech-support-modal form .drop {
-  @apply flex items-baseline justify-around space-x-1 my-2 p-4 border-2 border-dashed border-slate-300 rounded-md text-center text-slate-600;
+  @apply flex items-baseline justify-around space-x-1 my-2 p-4 border-2 border-dashed border-slate-300 rounded-md text-center text-black/70 text-sm dark:text-gray-400 dark:stroke-[#B8B4BF];
 }
 #tech-support-modal form .drop label {
   @apply cursor-pointer font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500;
