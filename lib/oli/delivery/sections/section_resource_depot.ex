@@ -189,6 +189,22 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
   end
 
   @doc """
+  Returns true if the section has any scheduled resources.
+  """
+  def has_scheduled_resources?(section_id) do
+    depot_coordinator().init_if_necessary(@depot_desc, section_id, __MODULE__)
+
+    Depot.exists?(
+      @depot_desc,
+      section_id,
+      [
+        [start_date: {:!=, nil}],
+        [end_date: {:!=, nil}]
+      ]
+    )
+  end
+
+  @doc """
   Returns a list of SectionResource records filtered by type ids for a given section.
   """
   def get_section_resources_by_type_ids(section_id, type_ids) do
