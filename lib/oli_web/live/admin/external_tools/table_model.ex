@@ -58,7 +58,7 @@ defmodule OliWeb.Admin.ExternalTools.TableModel do
         else: "text-[#CE2C31] dark:text-[#FF8787]"
       )
     ]}>
-      <%= String.capitalize(Atom.to_string(row.status)) %>
+      <%= String.capitalize(Atom.to_string(@status)) %>
     </span>
     """
   end
