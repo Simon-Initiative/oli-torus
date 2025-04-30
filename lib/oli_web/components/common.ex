@@ -1239,6 +1239,8 @@ defmodule OliWeb.Components.Common do
   attr :class, :string, default: "w-80 mx-auto"
 
   def render_recaptcha(assigns) do
+    assigns.recaptcha_error |> IO.inspect(label: "--- recaptcha_error")
+
     ~H"""
     <div class={@class}>
       <div
@@ -1251,6 +1253,32 @@ defmodule OliWeb.Components.Common do
       </div>
       <.error :if={@recaptcha_error}><%= @recaptcha_error %></.error>
     </div>
+    """
+  end
+
+  attr :id, :string, required: true
+  attr :class, :string, default: ""
+  attr :show_text, :boolean, default: true
+
+  def tech_support_button(assigns) do
+    ~H"""
+    <button
+      id={@id}
+      phx-click={JS.dispatch("click", to: "#trigger-tech-support-modal")}
+      class={[
+        "w-auto mr-auto h-11 px-3 py-3 flex-col justify-center items-start inline-flex text-black/70 hover:text-black/90 dark:text-gray-400 hover:dark:text-white stroke-black/70 hover:stroke-black/90 dark:stroke-[#B8B4BF] hover:dark:stroke-white",
+        @class
+      ]}
+    >
+      <div class="justify-start items-end gap-3 inline-flex">
+        <div class="w-5 h-5 flex items-center justify-center">
+          <OliWeb.Icons.support class="" />
+        </div>
+        <div :if={@show_text} class="text-sm font-medium tracking-tight">
+          Support
+        </div>
+      </div>
+    </button>
     """
   end
 end

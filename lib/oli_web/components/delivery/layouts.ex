@@ -204,7 +204,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
           />
         </div>
         <div class="p-2 flex-col justify-center items-center gap-4 inline-flex">
-          <.tech_support_button id="tech-support" sidebar_expanded={@sidebar_expanded} />
+          <.tech_support_button id="tech_support_sidebar_nav" show_text={@sidebar_expanded} />
           <.exit_course_button
             :if={is_independent_learner?(@ctx.user)}
             sidebar_expanded={@sidebar_expanded}
@@ -392,7 +392,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
           />
         </div>
         <div class="p-2 flex-col justify-center items-center gap-4 inline-flex h-[var(--footer-buttons-height)]">
-          <.tech_support_button id="tech-support" sidebar_expanded={@sidebar_expanded} />
+          <.tech_support_button id="tech_support_workspace_sidebar_nav" show_text={@sidebar_expanded} />
           <.exit_workspace_button
             :if={@resource_slug}
             sidebar_expanded={@sidebar_expanded}
@@ -778,49 +778,6 @@ defmodule OliWeb.Components.Delivery.Layouts do
       class="hidden dark:inline-block h-9 object-cover object-left"
       alt="logo dark"
     />
-    """
-  end
-
-  attr(:id, :string)
-  attr(:class, :string, default: "")
-  attr(:sidebar_expanded, :boolean, default: true)
-
-  def tech_support_button(assigns) do
-    ~H"""
-    <button phx-click={JS.dispatch("click", to: "#trigger-tech-support-modal")}>Click me!</button>
-    <%!-- <button
-      phx-click={OliWeb.Components.Modal.show_modal("tech-support-modal")}
-      class={[
-        "w-auto mr-auto h-11 px-3 py-3 flex-col justify-center items-start inline-flex text-black/70 hover:text-black/90 dark:text-gray-400 hover:dark:text-white stroke-black/70 hover:stroke-black/90 dark:stroke-[#B8B4BF] hover:dark:stroke-white",
-        @class
-      ]}
-    >
-      <div class="justify-start items-end gap-3 inline-flex">
-        <div class="w-5 h-5 flex items-center justify-center">
-          <Icons.support class="" />
-        </div>
-        <div :if={@sidebar_expanded} class="text-sm font-medium tracking-tight">
-          Support
-        </div>
-      </div>
-    </button> --%>
-    <button
-      id={@id}
-      onclick="window.showHelpModal();"
-      class={[
-        "w-auto mr-auto h-11 px-3 py-3 flex-col justify-center items-start inline-flex text-black/70 hover:text-black/90 dark:text-gray-400 hover:dark:text-white stroke-black/70 hover:stroke-black/90 dark:stroke-[#B8B4BF] hover:dark:stroke-white",
-        @class
-      ]}
-    >
-      <div class="justify-start items-end gap-3 inline-flex">
-        <div class="w-5 h-5 flex items-center justify-center">
-          <Icons.support class="" />
-        </div>
-        <div :if={@sidebar_expanded} class="text-sm font-medium tracking-tight">
-          Support
-        </div>
-      </div>
-    </button>
     """
   end
 
