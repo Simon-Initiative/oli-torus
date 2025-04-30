@@ -5,6 +5,7 @@ defmodule OliWeb.Sections.AssessmentSettings.Tooltips do
   def for(:due_date), do: "The due date and time for the assessment"
   def for(:max_attempts), do: "The maximum number of times a student can attempt the assessment"
   def for(:time_limit), do: "A time limit, in minutes, that the student has for each attempt"
+  def for(:replacement_strategy), do: "How the system will handle multiple attempts per question"
 
   def for(:late_policy),
     do:

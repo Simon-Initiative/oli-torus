@@ -2731,6 +2731,8 @@ defmodule Oli.Delivery.Sections do
         project_id: publication.project_id,
         scoring_strategy_id: revision.scoring_strategy_id,
         assessment_mode: revision.assessment_mode,
+        batch_scoring: revision.batch_scoring,
+        replacement_strategy: revision.replacement_strategy,
         section_id: section.id
       }
       |> SectionResource.to_map()

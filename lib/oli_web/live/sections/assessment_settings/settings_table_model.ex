@@ -104,6 +104,13 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
         tooltip: Tooltips.for(:batch_scoring)
       },
       %ColumnSpec{
+        name: :replacement_strategy,
+        label: "REPLACEMENT",
+        render_fn: &render_replacement/3,
+        th_class: "whitespace-nowrap",
+        tooltip: Tooltips.for(:replacement_strategy)
+      },
+      %ColumnSpec{
         name: :feedback_mode,
         label: "VIEW FEEDBACK",
         render_fn: &render_view_feedback_column/3,
@@ -290,6 +297,31 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
         value={:disallow_late_start_and_late_submit}
       >
         Disallow late start and late submit
+      </option>
+    </select>
+    """
+  end
+
+  def render_replacement(assigns, assessment, _) do
+    assigns =
+      Map.merge(assigns, %{
+        replacement_strategy: assessment.replacement_strategy,
+        id: assessment.resource_id
+      })
+
+    ~H"""
+    <select class="torus-select pr-32" name={"replacement_strategy-#{@id}"}>
+      <option
+        selected={@replacement_strategy == :none}
+        value={:none}
+      >
+        All questions remain the same for all attempts
+      </option>
+      <option
+        selected={@replacement_strategy == :dynamic}
+        value={:dynamic}
+      >
+        Dynamic questions regenerate a new question
       </option>
     </select>
     """
