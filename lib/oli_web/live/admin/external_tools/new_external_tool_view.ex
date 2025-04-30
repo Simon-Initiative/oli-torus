@@ -160,7 +160,10 @@ defmodule OliWeb.Admin.NewExternalToolView do
       |> PlatformInstances.change_platform_instance(params)
       |> Map.put(:action, :validate)
 
-    {:noreply, assign(socket, form: to_form(changeset, as: :tool_form))}
+    {:noreply,
+     socket
+     |> assign(form: to_form(changeset, as: :tool_form))
+     |> assign(:custom_flash, nil)}
   end
 
   def handle_event("create_tool", %{"tool_form" => params}, socket) do
