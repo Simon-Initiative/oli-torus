@@ -1,6 +1,6 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
-import { ActivityDeliveryState, isEvaluated } from 'data/activities/DeliveryState';
+import { ActivityDeliveryState } from 'data/activities/DeliveryState';
 
 interface Props {}
 export const ScoreAsYouGoHeader: React.FC<Props> = ({}) => {
