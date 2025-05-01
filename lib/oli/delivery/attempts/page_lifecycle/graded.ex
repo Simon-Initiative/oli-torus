@@ -424,5 +424,4 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
       date_evaluated: DateTime.utc_now()
     })
   end
-
 end

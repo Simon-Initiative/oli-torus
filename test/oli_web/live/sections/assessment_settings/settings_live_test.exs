@@ -433,6 +433,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
             :retake_mode,
             :assessment_mode,
             :batch_scoring,
+            :replacement_strategy,
             :feedback_mode,
             :review_submission,
             :password,

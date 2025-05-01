@@ -32,7 +32,8 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
     <div id={@id}>
       <% selected_question = Enum.find(@questions, & &1.selected) %>
       <% total_questions = Enum.count(@questions) %>
-      <% selected_question_points = selected_question.out_of %>
+      <% selected_question_points =
+        Map.get(selected_question, :out_of, Map.get(selected_question, "outOf")) %>
       <% selected_question_parts_count = map_size(selected_question.part_points) %>
       <% submitted_questions = Enum.count(@questions, & &1.submitted) %>
       <% unattempted_questions = total_questions - submitted_questions %>
@@ -389,6 +390,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
     if submitted_questions == 0, do: 0.5, else: submitted_questions / total_questions * 100
   end
 
+  defp parse_points(points) when is_nil(points), do: "0 points"
   defp parse_points(1), do: "1 point"
   defp parse_points(1.0), do: "1 point"
   defp parse_points(points) when is_integer(points), do: "#{points} points"

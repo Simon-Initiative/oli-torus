@@ -311,16 +311,10 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
 
     ~H"""
     <select class="torus-select pr-32" name={"replacement_strategy-#{@id}"}>
-      <option
-        selected={@replacement_strategy == :none}
-        value={:none}
-      >
+      <option selected={@replacement_strategy == :none} value={:none}>
         All questions remain the same for all attempts
       </option>
-      <option
-        selected={@replacement_strategy == :dynamic}
-        value={:dynamic}
-      >
+      <option selected={@replacement_strategy == :dynamic} value={:dynamic}>
         Dynamic questions regenerate a new question
       </option>
     </select>

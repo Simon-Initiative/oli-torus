@@ -142,7 +142,6 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
         relevant_activity_attempts =
           get_relevant_activity_attempts(resource_attempt_id)
 
-
         # Here we calculate the "aggregate" score for this activity across all of its attempts
         other_attempts_for_this_activity =
           Enum.filter(relevant_activity_attempts, fn a ->
@@ -450,8 +449,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
   defp get_relevant_activity_attempts(resource_attempt_id) do
     Repo.all(
       from(aa in ActivityAttempt,
-        where:
-          aa.resource_attempt_id == ^resource_attempt_id,
+        where: aa.resource_attempt_id == ^resource_attempt_id,
         select: %{
           attempt_guid: aa.attempt_guid,
           resource_id: aa.resource_id,

@@ -676,7 +676,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
 
       assert attempt_state.dateEvaluated == nil
       assert attempt_state.score == nil
-      assert attempt_state.outOf == nil
+      assert attempt_state.outOf == 10.0
       assert length(attempt_state.parts) == 1
       assert hd(attempt_state.parts).response == nil
       assert attempt_state.hasMoreAttempts == false

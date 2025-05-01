@@ -679,7 +679,6 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   end
 
   def handle_event("select_question", %{"question_number" => question_number}, socket) do
-
     questions =
       socket.assigns.questions
       |> Enum.map(fn question ->
@@ -722,7 +721,6 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         {:noreply, assign(socket, current_score: score, current_out_of: out_of)}
 
       _ ->
-
         questions =
           Enum.map(socket.assigns.questions, fn
             %{selected: true} = selected_question ->
@@ -1102,7 +1100,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
   def score(%{score: nil} = assigns) do
     ~H"""
-    Overall Page Score: <Icons.score_as_you_go color="text-black dark:text-white"/>
+    Overall Page Score: <Icons.score_as_you_go color="text-black dark:text-white" />
     <strong class="text-black dark:text-white">
       <%= format_score(@score) %> / <%= format_score(@out_of) %>
     </strong>
