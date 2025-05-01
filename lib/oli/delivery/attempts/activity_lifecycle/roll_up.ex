@@ -134,15 +134,14 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
     %Result{score: score, out_of: out_of} =
       Scoring.calculate_score(activity_scoring_strategy_id, part_attempts)
 
-    IO.inspect(score_as_you_go?, label: "score_as_you_go?")
-
     case score_as_you_go? do
       # Third query: retrieve portions of all of the activity attempts for this
       # activity on this page - and the latest attempts for other
       # activities on this page
       true ->
         relevant_activity_attempts =
-          get_relevant_activity_attempts(resource_attempt_id, activity_id)
+          get_relevant_activity_attempts(resource_attempt_id)
+
 
         # Here we calculate the "aggregate" score for this activity across all of its attempts
         other_attempts_for_this_activity =
@@ -164,6 +163,11 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
           Enum.filter(relevant_activity_attempts, fn a ->
             a.resource_id != activity_id
           end)
+          |> Enum.group_by(fn a -> a.resource_id end)
+          |> Enum.map(fn {_, attempts} ->
+            Enum.max_by(attempts, fn a -> a.attempt_number end)
+          end)
+          |> List.flatten()
 
         all_aggregate_attempts =
           [
@@ -443,16 +447,11 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
     |> Repo.one()
   end
 
-  defp get_relevant_activity_attempts(resource_attempt_id, current_activity_id) do
+  defp get_relevant_activity_attempts(resource_attempt_id) do
     Repo.all(
       from(aa in ActivityAttempt,
-        left_join: aa2 in ActivityAttempt,
-        on:
-          aa.resource_attempt_id == aa2.resource_attempt_id and aa.resource_id == aa2.resource_id and
-            aa.id < aa2.id,
         where:
-          aa.resource_attempt_id == ^resource_attempt_id and
-            (is_nil(aa2) or aa.resource_id == ^current_activity_id),
+          aa.resource_attempt_id == ^resource_attempt_id,
         select: %{
           attempt_guid: aa.attempt_guid,
           resource_id: aa.resource_id,
@@ -460,7 +459,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
           out_of: aa.out_of,
           aggregate_score: aa.aggregate_score,
           aggregate_out_of: aa.aggregate_out_of,
-          date_evaluated: aa.date_evaluated
+          date_evaluated: aa.date_evaluated,
+          attempt_number: aa.attempt_number
         }
       )
     )

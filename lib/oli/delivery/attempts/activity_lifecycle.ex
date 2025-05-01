@@ -152,7 +152,9 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
                      revision_id: revision.id,
                      resource_attempt_id: activity_attempt.resource_attempt_id,
                      survey_id: survey_id,
-                     out_of: activity_attempt.out_of
+                     out_of: activity_attempt.out_of,
+                     aggregate_score: activity_attempt.aggregate_score,
+                     aggregate_out_of: activity_attempt.aggregate_out_of
                    }) do
               # simulate preloading of the revision
               new_activity_attempt = Map.put(new_activity_attempt, :revision, revision)

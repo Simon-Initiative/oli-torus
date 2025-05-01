@@ -678,6 +678,17 @@ defmodule OliWeb.Delivery.Student.LessonLive do
      )}
   end
 
+  def handle_event("select_question", %{"question_number" => question_number}, socket) do
+
+    questions =
+      socket.assigns.questions
+      |> Enum.map(fn question ->
+        Map.put(question, :selected, question.number == question_number)
+      end)
+
+    {:noreply, assign(socket, questions: questions)}
+  end
+
   def handle_event(
         "set_delete_post_id",
         %{"post-id" => post_id, "visibility" => visibility},
@@ -711,6 +722,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         {:noreply, assign(socket, current_score: score, current_out_of: out_of)}
 
       _ ->
+
         questions =
           Enum.map(socket.assigns.questions, fn
             %{selected: true} = selected_question ->
@@ -1070,7 +1082,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
   def score_header(%{batch_scoring: false} = assigns) do
     ~H"""
-    <div class="sticky top-14 z-50 flex justify-end w-full px-4 py-2">
+    <div class="sticky top-14 z-2000 flex justify-end w-full px-4 py-2">
       <div class="flex items-center gap-2.5">
         <span class="font-sans text-sm font-normal leading-none">
           <.score score={@current_score} out_of={@current_out_of} />
@@ -1090,8 +1102,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
   def score(%{score: nil} = assigns) do
     ~H"""
-    Overall Page Score: <Icons.score_as_you_go color="text-black dark-text-white"/>
-    <strong class="text-black dark-text-white">
+    Overall Page Score: <Icons.score_as_you_go color="text-black dark:text-white"/>
+    <strong class="text-black dark:text-white">
       <%= format_score(@score) %> / <%= format_score(@out_of) %>
     </strong>
     """

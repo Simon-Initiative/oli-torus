@@ -15,7 +15,7 @@ defmodule OliWeb.Icons do
     """
   end
 
-  attr :color, :string, default: "#0FB863"
+  attr :color, :string, default: "text-[#0FB863]"
 
   def score_as_you_go(%{available: false} = assigns) do
     star(assigns)

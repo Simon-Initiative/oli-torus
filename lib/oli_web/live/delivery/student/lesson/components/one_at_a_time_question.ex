@@ -215,7 +215,6 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
         :for={question <- @questions}
         id={"question_#{question.number}_button"}
         phx-click={select_question(question.number)}
-        phx-target={@myself}
         disabled={question.selected}
         phx-value-id={question.number}
         class={[
@@ -245,16 +244,6 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
     |> JS.push("select_question", value: %{question_number: question_number})
     |> JS.hide(to: "div[role='one at a time question']")
     |> JS.show(to: "#question_#{question_number}")
-  end
-
-  def handle_event("select_question", %{"question_number" => question_number}, socket) do
-    questions =
-      socket.assigns.questions
-      |> Enum.map(fn question ->
-        Map.put(question, :selected, question.number == question_number)
-      end)
-
-    {:noreply, assign(socket, questions: questions)}
   end
 
   def handle_event("activity_saved", params, socket) do
