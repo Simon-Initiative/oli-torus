@@ -958,7 +958,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       ) do
     ~H"""
     <.countdown {assigns} />
-    <div class="flex pb-20 flex-col w-full items-center gap-15 flex-1 overflow-auto">
+    <div class="flex pb-20 flex-col w-full items-center gap-15 flex-1">
       <div class="flex flex-col items-center w-full">
         <.scored_page_banner {assigns} />
         <div class="flex-1 w-full max-w-[1040px] px-[80px] pt-20 pb-10 flex-col justify-start items-center gap-10 inline-flex">
@@ -1009,7 +1009,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     # For graded page with attempt in progress the activity scripts and activity_bridge script are needed as soon as the page loads.
     ~H"""
     <.countdown {assigns} />
-    <div class="flex pb-20 flex-col w-full items-center gap-15 flex-1 overflow-auto">
+    <div class="flex pb-20 flex-col w-full items-center gap-15 flex-1">
       <div class="flex flex-col items-center w-full">
         <.scored_page_banner {assigns} />
         <div class="flex-1 w-full max-w-[1040px] px-[80px] pt-20 pb-10 flex-col justify-start items-center gap-10 inline-flex">
@@ -1070,10 +1070,9 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
   def score_header(%{batch_scoring: false} = assigns) do
     ~H"""
-    <div class="flex justify-end w-full">
+    <div class="sticky top-14 z-50 flex justify-end w-full px-4 py-2">
       <div class="flex items-center gap-2.5">
         <span class="font-sans text-sm font-normal leading-none">
-          Overall Page Score: <Icons.score_as_you_go />
           <.score score={@current_score} out_of={@current_out_of} />
         </span>
       </div>
@@ -1091,6 +1090,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
   def score(%{score: nil} = assigns) do
     ~H"""
+    Overall Page Score: <Icons.score_as_you_go color="text-black dark-text-white"/>
     <strong class="text-black dark-text-white">
       <%= format_score(@score) %> / <%= format_score(@out_of) %>
     </strong>
@@ -1099,6 +1099,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
   def score(assigns) do
     ~H"""
+    Overall Page Score: <Icons.score_as_you_go color="text-[#0FB863]" />
     <strong class="text-[#0FB863]"><%= format_score(@score) %> / <%= format_score(@out_of) %></strong>
     """
   end
