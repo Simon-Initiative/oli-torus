@@ -62,6 +62,7 @@ defmodule Oli.Delivery.Sections do
   require Logger
 
   @instructor_context_role_id ContextRoles.get_role(:context_instructor).id
+  @student_role_id ContextRoles.get_role(:context_learner).id
 
   def enrolled_students(section_slug) do
     section = get_section_by_slug(section_slug)
@@ -93,6 +94,17 @@ defmodule Oli.Delivery.Sections do
         payment_date: if(!is_nil(payment), do: payment.application_date, else: nil)
       })
     end)
+  end
+
+  def enrolled_student_ids(section_slug) do
+    from(e in Enrollment,
+      join: s in assoc(e, :section),
+      join: ecr in assoc(e, :context_roles),
+      join: u in assoc(e, :user),
+      where: s.slug == ^section_slug and e.status == :enrolled and ecr.id == @student_role_id,
+      select: u.id
+    )
+    |> Repo.all()
   end
 
   @doc """
@@ -4875,16 +4887,38 @@ defmodule Oli.Delivery.Sections do
           )
       end
 
+    student_ids =
+      Sections.enrolled_student_ids(section_slug)
+
     proficiency_dist_for_objectives =
       proficiencies_for_objectives
       |> Enum.reduce(%{}, fn {objective_id, student_proficiency}, acc ->
+        student_proficiency =
+          student_ids
+          |> Enum.reject(&Map.has_key?(student_proficiency, &1))
+          |> Enum.reduce(student_proficiency, fn user_id, acc ->
+            Map.put(acc, user_id, "Not enough data")
+          end)
+
         proficiency_dist =
           student_proficiency
           |> Enum.frequencies_by(fn {_student_id, proficiency} -> proficiency end)
 
         proficiency_mode =
           proficiency_dist
-          |> Enum.max_by(fn {_key, value} -> value end)
+          |> Enum.map(fn {key, value} ->
+            ordinal =
+              case String.downcase(key) do
+                "low" -> 0
+                "medium" -> 1
+                "high" -> 2
+                _ -> 3
+              end
+
+            {key, value, ordinal}
+          end)
+          |> Enum.sort_by(fn {_key, _value, ordinal} -> ordinal end)
+          |> Enum.max_by(fn {_key, value, _ordinal} -> value end)
           |> elem(0)
 
         Map.put(acc, objective_id,
