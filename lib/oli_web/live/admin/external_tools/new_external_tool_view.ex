@@ -1,4 +1,4 @@
-defmodule OliWeb.Admin.NewExternalToolView do
+defmodule OliWeb.Admin.ExternalTools.NewExternalToolView do
   use OliWeb, :live_view
 
   alias Lti_1p3.DataProviders.EctoProvider.PlatformInstance
@@ -34,7 +34,7 @@ defmodule OliWeb.Admin.NewExternalToolView do
       <%= render_custom_flash(@custom_flash) %>
       <div class="w-[1247px] inline-flex flex-col justify-start items-start gap-3">
         <div class="self-stretch flex flex-col justify-start items-start">
-          <div class="justify-center text-color-blue-24 text-2xl font-normal font-['Open_Sans'] leading-9">
+          <div class="justify-center text-color-blue-24 text-2xl font-normal leading-9">
             Add New LTI 1.3 External Tool
           </div>
         </div>

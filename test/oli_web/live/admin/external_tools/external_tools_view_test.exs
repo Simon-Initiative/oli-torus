@@ -194,13 +194,6 @@ defmodule OliWeb.Admin.ExternalTools.ExternalToolsViewTest do
       assert has_element?(view, "td", "Platform Two")
     end
   end
-end
-
-defmodule OliWeb.Admin.ExternalToolsViewTest do
-  use OliWeb.ConnCase, async: true
-  import Phoenix.LiveViewTest
-  import Oli.Factory
-  import Oli.TestHelpers
 
   describe "new external tool" do
     setup [:admin_conn]

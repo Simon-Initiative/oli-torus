@@ -97,7 +97,7 @@ defmodule OliWeb.Admin.ExternalTools.ExternalToolsView do
             path_class="stroke-white"
           />
         </div>
-        <div class="text-center justify-center text-white text-sm font-semibold font-['Open_Sans'] leading-none">
+        <div class="text-center justify-center text-white text-sm font-semibold leading-none">
           Add Tool
         </div>
       </.link>
