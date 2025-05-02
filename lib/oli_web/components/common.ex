@@ -1279,4 +1279,16 @@ defmodule OliWeb.Components.Common do
     </button>
     """
   end
+
+  attr :id, :string, required: true
+  attr :class, :string, default: ""
+  slot :inner_block, required: true
+
+  def tech_support_link(assigns) do
+    ~H"""
+    <span id={@id} phx-click={JS.dispatch("click", to: "#trigger-tech-support-modal")} class={@class}>
+      <%= render_slot(@inner_block) %>
+    </span>
+    """
+  end
 end

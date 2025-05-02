@@ -91,13 +91,12 @@
               Visit our FAQs document
             </a>
             for help enrolling or setting up your Torus student account. If you require further assistance, please
-            <a
-              onclick="window.showHelpModal();"
-              class="text-[#4CA6FF] text-base font-bold font-['Inter'] hover:text-[#4CA6FF]"
+            <.tech_support_link
+              id="tech_support_sign_in_page"
+              class="text-[#4CA6FF] text-base font-bold font-['Inter'] hover:text-[#4CA6FF] cursor-pointer"
             >
               contact our support team.
-            </a>
-            <%= OliWeb.Components.Common.tech_support_button(%{id: "tech_support_guess_menu"}) %>
+            </.tech_support_link>
             <%= live_render(@conn, OliWeb.TechSupportLive,
               session: %{
                 "section" => Map.get(@conn.assigns, :section),
