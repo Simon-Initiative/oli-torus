@@ -44,9 +44,6 @@ defmodule OliWeb.Admin.ExternalTools.TableModel do
     )
   end
 
-  def sort_tool_name_column(sort_order, _sort_spec),
-    do: {fn r -> String.downcase(r.name) end, sort_order}
-
   def render_status_column(assigns, row, _) do
     assigns = Map.merge(assigns, %{status: row.status})
 

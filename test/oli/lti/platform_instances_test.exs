@@ -226,7 +226,7 @@ defmodule Oli.Lti.PlatformInstancesTest do
         )
 
       assert length(results) == 1
-      assert hd(results).name == platform_3.name
+      assert hd(results).description == platform_3.description
     end
 
     test "browse respects pagination", %{platform_1: platform_1, platform_2: platform_2} do
