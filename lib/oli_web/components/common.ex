@@ -1245,7 +1245,7 @@ defmodule OliWeb.Components.Common do
         id="recaptcha"
         phx-hook="Recaptcha"
         data-sitekey={Application.fetch_env!(:oli, :recaptcha)[:site_key]}
-        data-theme="dark"
+        data-theme="light"
         phx-update="ignore"
       >
       </div>
