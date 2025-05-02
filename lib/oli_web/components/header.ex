@@ -112,15 +112,12 @@ defmodule OliWeb.Components.Header do
         <.sign_in_button href="/authors/log_in" request_path={assigns.conn.request_path}>
           For Course Authors
         </.sign_in_button>
-        <.button
-          id="support-button"
-          href="#"
+        <.tech_support_link
+          id="tech_support_navbar_sign_in_page"
           class="pt-[12px] text-high-24 hover:text-high-24 hover:underline hover:underline-offset-8"
-          onclick="window.showHelpModal();"
-          phx-click={JS.dispatch("maybe_add_underline_classes", to: "#help-modal")}
         >
           Support
-        </.button>
+        </.tech_support_link>
       </div>
     </nav>
     """
