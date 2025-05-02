@@ -1038,14 +1038,6 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
     end
   end
 
-  defp not_score_as_you_go(form, revision) do
-    if !is_nil(form.source.changes[:batch_scoring]) do
-      form.source.changes[:batch_scoring]
-    else
-      revision.batch_scoring
-    end
-  end
-
   defp get_selected_related_resources(revision, project_hierarchy) do
     related_resources = revision.relates_to
     flatten_project_hierarchy = flatten_project_hierarchy(project_hierarchy)
