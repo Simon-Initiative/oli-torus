@@ -18,7 +18,7 @@ export const ScoreAsYouGoHeader: React.FC<Props> = ({}) => {
         {attempts}
       </div>
     ) : (
-      <div></div>
+      <div>&nbsp;</div>
     );
 
   return (
