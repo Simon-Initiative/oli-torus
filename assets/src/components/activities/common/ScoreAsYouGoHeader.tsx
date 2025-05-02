@@ -3,7 +3,7 @@ import { useSelector } from 'react-redux';
 import { ActivityDeliveryState } from 'data/activities/DeliveryState';
 
 interface Props {}
-export const ScoreAsYouGoHeader: React.FC<Props> = ({}) => {
+export const ScoreAsYouGoHeader: React.FC<Props> = () => {
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   const { attemptState } = uiState;
 
