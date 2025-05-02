@@ -38,7 +38,7 @@ defmodule OliWeb.TechSupportLive do
       phx-click={OliWeb.Components.Modal.show_modal(@modal_id)}
       data-hide_modal={OliWeb.Components.Modal.hide_modal(@modal_id)}
     />
-    <OliWeb.Components.Modal.modal id={@modal_id} class="w-8/12">
+    <OliWeb.Components.Modal.modal id={@modal_id} class="md:w-8/12">
       <:title>Tech Support</:title>
       <a href={@knowledgebase_url}>Find answers quickly in the Torus knowledge base.</a>
       <div class="w-auto">
@@ -103,7 +103,10 @@ defmodule OliWeb.TechSupportLive do
           </div>
 
           <div class="drop" phx-drop-target={@uploads.attached_screenshots.ref}>
-            <.live_file_input upload={@uploads.attached_screenshots} /> or drag and drop here
+            <.live_file_input upload={@uploads.attached_screenshots} />
+            <div>
+              or drag and drop here
+            </div>
           </div>
 
           <.error :for={err <- upload_errors(@uploads.attached_screenshots)}>
@@ -130,10 +133,10 @@ defmodule OliWeb.TechSupportLive do
             </a>
           </div>
 
-          <div class="w-full flex flex-row justify-between">
-            <.render_recaptcha recaptcha_error={@recaptcha_error} class="w-80" />
+          <div class="w-full flex md:flex-row flex-col gap-2 md:justify-between">
+            <.render_recaptcha recaptcha_error={@recaptcha_error} class="md:m-0 m-auto" />
 
-            <div class="flex">
+            <div class="flex justify-around md:justify-between">
               <.button
                 type="link"
                 variant={:link}
@@ -141,7 +144,7 @@ defmodule OliWeb.TechSupportLive do
               >
                 Cancel
               </.button>
-              <.button type="submit" class="btn btn-primary h-fit m-auto">Send Request</.button>
+              <.button type="submit" class="btn btn-primary h-fit md:m-auto">Send Request</.button>
             </div>
           </div>
         </.form>
