@@ -53,6 +53,7 @@ defmodule OliWeb.TechSupportLive do
             type="select"
             options={subject_options()}
             field={@form[:subject]}
+            prompt="Select from the list of topics provided"
             required
             class="mb-3 w-full dark:placeholder:text-zinc-300 pl-6 dark:bg-stone-900 rounded-md border dark:border-zinc-300 dark:text-zinc-300 leading-snug"
           />
@@ -214,10 +215,7 @@ defmodule OliWeb.TechSupportLive do
   end
 
   defp subject_options() do
-    initial_option = [{nil, "Select from the list of topics provided."}]
-    list_subject = Oli.Help.HelpContent.list_subjects() |> Enum.into([])
-    all = initial_option ++ list_subject
-    Enum.map(all, fn {k, v} -> {v, k} end)
+    Enum.map(Oli.Help.HelpContent.list_subjects(), fn {k, v} -> {v, k} end)
   end
 
   defp ext(entry) do
