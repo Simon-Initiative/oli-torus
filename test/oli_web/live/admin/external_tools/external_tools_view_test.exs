@@ -1,4 +1,4 @@
-defmodule OliWeb.Admin.ExternalToolsViewTest do
+defmodule OliWeb.Admin.ExternalTools.ExternalToolsViewTest do
   use OliWeb.ConnCase, async: true
   import Phoenix.LiveViewTest
   import Oli.Factory

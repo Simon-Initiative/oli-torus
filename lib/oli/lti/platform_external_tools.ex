@@ -6,9 +6,12 @@ defmodule Oli.Lti.PlatformExternalTools do
   import Ecto.Query, warn: false
   alias Oli.Repo
 
+  alias Oli.Activities
   alias Oli.Lti.PlatformExternalTools.LtiExternalToolActivityDeployment
   alias Oli.Lti.PlatformInstances
-  alias Oli.Activities
+  alias Oli.Lti.PlatformExternalTools.BrowseOptions
+  alias Oli.Repo.{Paging, Sorting}
+  alias Lti_1p3.DataProviders.EctoProvider.PlatformInstance
 
   @doc """
   Lists all lti external tool deployments.
@@ -99,5 +102,73 @@ defmodule Oli.Lti.PlatformExternalTools do
         attrs \\ %{}
       ) do
     LtiExternalToolActivityDeployment.changeset(lti_external_tool_activity_deployment, attrs)
+  end
+
+  @doc """
+  Browse platform external tools with support for pagination, sorting, text search and status filter.
+
+  ## Examples
+
+      iex> browse_platform_external_tools(%Paging{}, %Sorting{}, %BrowseOptions{})
+      {[%PlatformInstance{}, ...], total_count}
+
+  """
+  def browse_platform_external_tools(
+        %Paging{limit: limit, offset: offset},
+        %Sorting{field: field, direction: direction},
+        %BrowseOptions{} = options
+      ) do
+    filter_by_text =
+      if options.text_search == "" or is_nil(options.text_search) do
+        true
+      else
+        text_search = String.trim(options.text_search)
+
+        dynamic(
+          [p],
+          ilike(p.name, ^"%#{text_search}%") or
+            ilike(p.description, ^"%#{text_search}%")
+        )
+      end
+
+    filter_by_status =
+      if options.include_disabled do
+        true
+      else
+        dynamic([p, lad], lad.status == :enabled)
+      end
+
+    # TODO: calculate usage_count (we need https://eliterate.atlassian.net/browse/MER-4469)
+    query =
+      from p in PlatformInstance,
+        join: lad in LtiExternalToolActivityDeployment,
+        on: lad.platform_instance_id == p.id,
+        where: ^filter_by_text,
+        where: ^filter_by_status,
+        limit: ^limit,
+        offset: ^offset,
+        select: %{
+          id: p.id,
+          name: p.name,
+          description: p.description,
+          inserted_at: p.inserted_at,
+          usage_count: fragment("NULL AS usage_count"),
+          status: lad.status,
+          total_count: fragment("count(*) OVER()")
+        }
+
+    query =
+      case field do
+        field when field in [:name, :description, :inserted_at] ->
+          order_by(query, [p], {^direction, field(p, ^field)})
+
+        :usage_count ->
+          order_by(query, [p, lad], {^direction, fragment("usage_count")})
+
+        :status ->
+          order_by(query, [_p, lad], {^direction, lad.status})
+      end
+
+    Repo.all(query)
   end
 end

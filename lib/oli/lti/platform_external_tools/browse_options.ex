@@ -1,6 +1,6 @@
-defmodule Oli.Lti.PlatformInstances.BrowseOptions do
+defmodule Oli.Lti.PlatformExternalTools.BrowseOptions do
   @moduledoc """
-  Options for browsing platform instances.
+  Options for browsing platform external tools.
   """
 
   defstruct [:text_search, :include_disabled]

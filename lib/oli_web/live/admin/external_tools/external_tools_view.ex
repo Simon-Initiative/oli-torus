@@ -1,10 +1,10 @@
-defmodule OliWeb.Admin.ExternalToolsView do
+defmodule OliWeb.Admin.ExternalTools.ExternalToolsView do
   use OliWeb, :live_view
 
   import OliWeb.Common.Params
   import OliWeb.DelegatedEvents
 
-  alias Oli.Lti.PlatformInstances
+  alias Oli.Lti.PlatformExternalTools
   alias Oli.Repo.{Paging, Sorting}
   alias OliWeb.Admin.ExternalTools.TableModel
   alias OliWeb.Common.{Breadcrumb, Check, PagedTable, TextSearch}
@@ -14,7 +14,7 @@ defmodule OliWeb.Admin.ExternalToolsView do
   @limit 25
   @sort_by :name
   @sort_order :asc
-  @default_options %PlatformInstances.BrowseOptions{text_search: "", include_disabled: true}
+  @default_options %PlatformExternalTools.BrowseOptions{text_search: "", include_disabled: true}
 
   on_mount OliWeb.LiveSessionPlugs.SetCtx
 
@@ -35,7 +35,7 @@ defmodule OliWeb.Admin.ExternalToolsView do
 
   def mount(_, _session, socket) do
     tools =
-      PlatformInstances.browse_platform_instances(
+      PlatformExternalTools.browse_platform_external_tools(
         %Paging{offset: 0, limit: @limit},
         %Sorting{field: @sort_by, direction: @sort_order},
         @default_options
@@ -65,13 +65,13 @@ defmodule OliWeb.Admin.ExternalToolsView do
 
     offset = get_int_param(params, "offset", 0)
 
-    options = %PlatformInstances.BrowseOptions{
+    options = %PlatformExternalTools.BrowseOptions{
       text_search: get_param(params, "text_search", ""),
       include_disabled: get_boolean_param(params, "include_disabled", true)
     }
 
     tools =
-      PlatformInstances.browse_platform_instances(
+      PlatformExternalTools.browse_platform_external_tools(
         %Paging{offset: offset, limit: @limit},
         %Sorting{direction: table_model.sort_order, field: table_model.sort_by_spec.name},
         options
