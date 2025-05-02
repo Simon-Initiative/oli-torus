@@ -41,6 +41,10 @@ export const ScoreAsYouGoSubmitReset: React.FC<Props> = ({ onSubmit, onReset }) 
         return (
           <div className="mt-3 flex justify-between">
             <button
+              disabled={
+                uiState.activityContext.maxAttempts > 0 &&
+                attemptState.attemptNumber >= uiState.activityContext.maxAttempts
+              }
               onClick={() => {
                 window.OLI.confirmAction(
                   'Reset Confirmation',
@@ -70,7 +74,7 @@ export const ScoreAsYouGoSubmitReset: React.FC<Props> = ({ onSubmit, onReset }) 
           <button
             disabled={
               uiState.activityContext.maxAttempts > 0 &&
-              attemptState.attemptNumber >= uiState.activityContext.maxAttempts
+              attemptState.attemptNumber > uiState.activityContext.maxAttempts
             }
             className="btn btn-primary"
             onClick={() => onSubmit()}

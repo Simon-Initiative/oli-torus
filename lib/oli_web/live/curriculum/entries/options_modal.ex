@@ -376,7 +376,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
                   options={[{"Score at the end", "true"}, {"Score as you go", "false"}]}
                 />
                 <small id="scoring_type_description" class="form-text text-muted">
-                  Score as you go will update the grade book after each question is answered.
+                  Score as you go updates the grade book after each question is answered, and allows multiple attempts per question.
                 </small>
               </div>
 
@@ -388,7 +388,6 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
                   name="revision[replacement_strategy]"
                   aria-describedby="replacement_policy_description"
                   placeholder="Replacement Policy"
-                  disabled={not_score_as_you_go(@form, @revision)}
                   class="form-control custom-select"
                   field={@form[:replacement_strategy]}
                   options={[
@@ -514,7 +513,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
               field={@form[:scoring_strategy_id]}
               options={
                 Enum.map(
-                  ScoringStrategy.get_types(),
+                  ScoringStrategy.get_types() |> Enum.filter(fn %{type: type} -> type != "total" end),
                   &{Oli.Utils.snake_case_to_friendly(&1[:type]), &1[:id]}
                 )
               }

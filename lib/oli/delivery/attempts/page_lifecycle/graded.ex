@@ -77,12 +77,13 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
 
         case start(visit_context) do
           {:ok, %AttemptState{} = %{resource_attempt: new_attempt} = attempt_state} ->
-            # Now after the new attempt has been created, we update it to pull forward the score and out_of
-            # from the previous attempt
+            # Now after the new attempt has been created, we update it to pull forward the score
+            # from the previous attempt.  We keep the new out_of value as this allows the
+            # system to properly handle the case where the out_of value changes across revisions (e.g.
+            # if activities are )
             {:ok, resource_attempt} =
               Core.update_resource_attempt(new_attempt, %{
-                score: latest_resource_attempt.score,
-                out_of: latest_resource_attempt.out_of
+                score: latest_resource_attempt.score
               })
 
             attempt_state = %{attempt_state | resource_attempt: resource_attempt}
