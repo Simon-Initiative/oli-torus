@@ -6,6 +6,8 @@ defmodule OliWeb.TechSupportLive do
 
   @impl true
   def mount(_params, session, socket) do
+    socket = assign(socket, requires_sender_data: session["requires_sender_data"] || false)
+
     socket =
       socket
       |> assign(:knowledgebase_url, Oli.VendorProperties.knowledgebase_url())
@@ -47,6 +49,30 @@ defmodule OliWeb.TechSupportLive do
           phx-change="validate"
           phx-hook="SubmitTechSupportForm"
         >
+          <.input
+            type="checkbox"
+            field={@form[:requires_sender_data]}
+            value="true"
+            checked={@requires_sender_data}
+            class="hidden"
+          />
+          <.input
+            :if={@requires_sender_data}
+            label="Name"
+            type="text"
+            field={@form[:name]}
+            class="mb-3 w-full dark:placeholder:text-zinc-300 pl-6 dark:bg-stone-900 rounded-md border dark:border-zinc-300 dark:text-zinc-300 leading-snug"
+            minlength="3"
+            required
+          />
+          <.input
+            :if={@requires_sender_data}
+            label="Email"
+            type="email"
+            field={@form[:email_address]}
+            class="mb-3 w-full dark:placeholder:text-zinc-300 pl-6 dark:bg-stone-900 rounded-md border dark:border-zinc-300 dark:text-zinc-300 leading-snug"
+            required
+          />
           <.input
             label="Subject:"
             label_position={:top}

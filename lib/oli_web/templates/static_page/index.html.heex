@@ -97,6 +97,14 @@
             >
               contact our support team.
             </a>
+            <%= OliWeb.Components.Common.tech_support_button(%{id: "tech_support_guess_menu"}) %>
+            <%= live_render(@conn, OliWeb.TechSupportLive,
+              session: %{
+                "section" => Map.get(@conn.assigns, :section),
+                "current_user" => Map.get(@conn.assigns, :current_user),
+                "requires_sender_data" => true
+              }
+            ) %>
           </p>
         </div>
       </div>

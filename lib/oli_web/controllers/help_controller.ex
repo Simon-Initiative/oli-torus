@@ -10,6 +10,11 @@ defmodule OliWeb.HelpController do
   def create(conn, params) do
     dispatcher = Application.fetch_env!(:oli, :help)[:dispatcher]
 
+    params =
+      params
+      |> put_in(["help", "email"], params["help"]["email"] || params["help"]["email_address"])
+      |> put_in(["help", "full_name"], params["help"]["full_name"] || params["help"]["name"])
+
     with {:ok, true} <- validate_recapture(Map.get(params, "g-recaptcha-response", "")),
          {:ok, content_params} <- additional_help_context(conn, Map.get(params, "help")),
          {:ok, help_content} <- HelpContent.parse(content_params),
