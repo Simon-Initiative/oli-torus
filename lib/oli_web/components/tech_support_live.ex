@@ -61,6 +61,7 @@ defmodule OliWeb.TechSupportLive do
             label="Name"
             type="text"
             field={@form[:name]}
+            placeholder="Enter Name"
             class="mb-3 w-full dark:placeholder:text-zinc-300 pl-6 dark:bg-stone-900 rounded-md border dark:border-zinc-300 dark:text-zinc-300 leading-snug"
             minlength="3"
             required
@@ -70,6 +71,7 @@ defmodule OliWeb.TechSupportLive do
             label="Email"
             type="email"
             field={@form[:email_address]}
+            placeholder="Enter Email"
             class="mb-3 w-full dark:placeholder:text-zinc-300 pl-6 dark:bg-stone-900 rounded-md border dark:border-zinc-300 dark:text-zinc-300 leading-snug"
             required
           />
