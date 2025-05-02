@@ -9564,6 +9564,11 @@ table.table-striped tbody tr:nth-child(even) {
   color: rgb(163 163 163 / var(--tw-text-opacity));
 }
 
+.text-\[\#CE2C31\] {
+  --tw-text-opacity: 1;
+  color: rgb(206 44 49 / var(--tw-text-opacity));
+}
+
 .text-\[\#EC8CFF\] {
   --tw-text-opacity: 1;
   color: rgb(236 140 255 / var(--tw-text-opacity));
@@ -10092,6 +10097,12 @@ table.table-striped tbody tr:nth-child(even) {
   box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
 }
 
+.shadow-\[0px_2px_4px_0px_rgba\(0\2c 52\2c 99\2c 0\.10\)\] {
+  --tw-shadow: 0px 2px 4px 0px rgba(0,52,99,0.10);
+  --tw-shadow-colored: 0px 2px 4px 0px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+
 .shadow-inner {
   --tw-shadow: inset 0 2px 4px 0 rgb(0 0 0 / 0.05);
   --tw-shadow-colored: inset 0 2px 4px 0 var(--tw-shadow-color);
@@ -10156,6 +10167,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .outline-\[3px\] {
   outline-width: 3px;
+}
+
+.outline-offset-\[-1px\] {
+  outline-offset: -1px;
 }
 
 .outline-blue-400 {
@@ -15656,6 +15671,11 @@ Not supports in Firefox and IE */
   color: rgb(221 221 221 / var(--tw-text-opacity));
 }
 
+.dark .dark\:text-\[\#FF8787\] {
+  --tw-text-opacity: 1;
+  color: rgb(255 135 135 / var(--tw-text-opacity));
+}
+
 .dark .dark\:text-\[\#bab8bf\] {
   --tw-text-opacity: 1;
   color: rgb(186 184 191 / var(--tw-text-opacity));
@@ -17199,6 +17219,10 @@ Not supports in Firefox and IE */
 
   .lg\:w-\[720px\] {
     width: 720px;
+  }
+
+  .lg\:\!max-w-\[33\%\] {
+    max-width: 33% !important;
   }
 
   .lg\:flex-row {
