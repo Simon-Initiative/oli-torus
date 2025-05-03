@@ -750,17 +750,4 @@ defmodule Oli.Factory do
 
   defp anonymous_build_list(count, entity_name, attrs \\ %{}),
     do: fn -> build_list(count, entity_name, attrs) end
-
-  def platform_instance_factory() do
-    %Lti_1p3.DataProviders.EctoProvider.PlatformInstance{
-      name: sequence("Platform Instance"),
-      description: sequence("Platform Instance Description"),
-      client_id: sequence("client_id"),
-      custom_params: "some custom_params",
-      keyset_url: "some keyset_url",
-      login_url: "some login_url",
-      redirect_uris: "some redirect_uris",
-      target_link_uri: "some target_link_uri"
-    }
-  end
 end
