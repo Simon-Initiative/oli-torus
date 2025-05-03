@@ -85,7 +85,13 @@ defmodule OliWeb.Admin.ExternalTools.ExternalToolsView do
 
   def render(assigns) do
     ~H"""
-    <div class="flex flex-row items-center justify-end mx-4 mt-4">
+    <div class="flex flex-row items-center justify-between mt-4">
+      <TextSearch.render
+        id="text-search"
+        class="lg:!max-w-[33%] w-full"
+        text={@options.text_search}
+        event_target={nil}
+      />
       <.link
         id="button-new-tool"
         href={~p"/admin/external_tools/new"}
@@ -103,13 +109,6 @@ defmodule OliWeb.Admin.ExternalTools.ExternalToolsView do
       </.link>
     </div>
     <div>
-      <TextSearch.render
-        id="text-search"
-        class="lg:!max-w-[33%]"
-        text={@options.text_search}
-        event_target={nil}
-      />
-
       <Check.render class="mr-4" checked={@options.include_disabled} click="include_disabled">
         Show tools that have been disabled
       </Check.render>
