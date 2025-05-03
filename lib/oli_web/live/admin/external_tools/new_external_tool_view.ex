@@ -2,7 +2,7 @@ defmodule OliWeb.Admin.ExternalTools.NewExternalToolView do
   use OliWeb, :live_view
 
   alias Lti_1p3.DataProviders.EctoProvider.PlatformInstance
-  alias Oli.Lti.{PlatformInstances, PlatformExternalTools}
+  alias Oli.Lti.PlatformExternalTools
   alias OliWeb.Common.Breadcrumb
   alias OliWeb.Icons
 
@@ -17,8 +17,7 @@ defmodule OliWeb.Admin.ExternalTools.NewExternalToolView do
   end
 
   def mount(_, _session, socket) do
-    changeset =
-      PlatformInstances.change_platform_instance(%PlatformInstance{})
+    changeset = PlatformExternalTools.change_platform_instance(%PlatformInstance{})
 
     {:ok,
      assign(socket,
@@ -157,7 +156,7 @@ defmodule OliWeb.Admin.ExternalTools.NewExternalToolView do
   def handle_event("validate", %{"tool_form" => params}, socket) do
     changeset =
       %PlatformInstance{}
-      |> PlatformInstances.change_platform_instance(params)
+      |> PlatformExternalTools.change_platform_instance(params)
       |> Map.put(:action, :validate)
 
     {:noreply,
@@ -167,41 +166,35 @@ defmodule OliWeb.Admin.ExternalTools.NewExternalToolView do
   end
 
   def handle_event("create_tool", %{"tool_form" => params}, socket) do
-    try do
-      case PlatformExternalTools.register_lti_external_tool_activity(params) do
-        {:ok, _tool} ->
-          new_changeset = PlatformInstances.change_platform_instance(%PlatformInstance{})
+    case PlatformExternalTools.register_lti_external_tool_activity(params) do
+      {:ok, _tool} ->
+        new_changeset = PlatformExternalTools.change_platform_instance(%PlatformInstance{})
 
-          {:noreply,
-           socket
-           |> assign(form: to_form(new_changeset, as: :tool_form))
-           |> assign(:custom_flash, %{
-             type: :success,
-             message: "You have successfully added an LTI 1.3 External Tool at the system level."
-           })}
+        {:noreply,
+         socket
+         |> assign(form: to_form(new_changeset, as: :tool_form))
+         |> assign(:custom_flash, %{
+           type: :success,
+           message: "You have successfully added an LTI 1.3 External Tool at the system level."
+         })}
 
-        {:error, %Ecto.Changeset{} = changeset} ->
-          {:noreply,
-           socket
-           |> assign(form: to_form(changeset, as: :tool_form))
-           |> assign(:custom_flash, %{
-             type: :error,
-             message: "One or more of the required fields is missing; please check your input."
-           })}
-      end
-    rescue
-      _e in Ecto.ConstraintError ->
-        changeset =
-          %PlatformInstance{}
-          |> PlatformInstances.change_platform_instance(params)
-          |> Ecto.Changeset.add_error(:client_id, "This client ID is already taken")
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {flash_type, flash_message} =
+          if Enum.any?(changeset.errors, fn
+               {:client_id, {"has already been taken", _}} -> true
+               _ -> false
+             end) do
+            {:duplicate, "The client ID already exists and must be unique."}
+          else
+            {:error, "One or more of the required fields is missing; please check your input."}
+          end
 
         {:noreply,
          socket
          |> assign(form: to_form(changeset, as: :tool_form))
          |> assign(:custom_flash, %{
-           type: :duplicate,
-           message: "The client ID already exists and must be unique."
+           type: flash_type,
+           message: flash_message
          })}
     end
   end

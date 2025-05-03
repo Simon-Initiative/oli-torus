@@ -4,11 +4,11 @@ defmodule Oli.Lti.PlatformExternalTools do
   """
 
   import Ecto.Query, warn: false
+  import Ecto.Changeset
   alias Oli.Repo
 
   alias Oli.Activities
   alias Oli.Lti.PlatformExternalTools.LtiExternalToolActivityDeployment
-  alias Oli.Lti.PlatformInstances
   alias Oli.Lti.PlatformExternalTools.BrowseOptions
   alias Oli.Repo.{Paging, Sorting}
   alias Lti_1p3.DataProviders.EctoProvider.PlatformInstance
@@ -54,7 +54,7 @@ defmodule Oli.Lti.PlatformExternalTools do
   def register_lti_external_tool_activity(platform_instance_params) do
     Repo.transaction(fn ->
       with {:ok, platform_instance} <-
-             PlatformInstances.create_platform_instance(platform_instance_params),
+             create_platform_instance(platform_instance_params),
            {:ok, activity_registration} <-
              Activities.register_lti_external_tool_activity(
                platform_instance_params["name"],
@@ -170,5 +170,37 @@ defmodule Oli.Lti.PlatformExternalTools do
       end
 
     Repo.all(query)
+  end
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for tracking platform_instance changes.
+
+  ## Examples
+
+      iex> change_platform_instance(platform_instance)
+      %Ecto.Changeset{data: %PlatformInstance{}}
+
+  """
+  def change_platform_instance(%PlatformInstance{} = platform_instance, attrs \\ %{}) do
+    PlatformInstance.changeset(platform_instance, attrs)
+    |> unique_constraint(:client_id)
+  end
+
+  @doc """
+  Creates a platform_instance.
+
+  ## Examples
+
+      iex> create_platform_instance(%{field: value})
+      {:ok, %PlatformInstance{}}
+
+      iex> create_platform_instance(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def create_platform_instance(attrs \\ %{}) do
+    %PlatformInstance{}
+    |> change_platform_instance(attrs)
+    |> Repo.insert()
   end
 end
