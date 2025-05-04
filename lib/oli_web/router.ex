@@ -1234,23 +1234,6 @@ defmodule OliWeb.Router do
       end
     end
 
-    scope "/lesson/:revision_slug/attempt/:attempt_guid/review" do
-      live_session :delivery_lesson_review,
-        root_layout: {OliWeb.LayoutView, :delivery},
-        layout: {OliWeb.Layouts, :student_delivery_lesson},
-        on_mount: [
-          {OliWeb.UserAuth, :ensure_authenticated},
-          OliWeb.LiveSessionPlugs.SetCtx,
-          OliWeb.LiveSessionPlugs.SetSection,
-          OliWeb.LiveSessionPlugs.SetBrand,
-          OliWeb.LiveSessionPlugs.SetPreviewMode,
-          OliWeb.LiveSessionPlugs.RequireEnrollment,
-          OliWeb.LiveSessionPlugs.SetPaywallSummary
-        ] do
-        live("/", Delivery.Student.ReviewLive)
-      end
-    end
-
     scope "/lesson/:revision_slug" do
       live_session :delivery_lesson,
         root_layout: {OliWeb.LayoutView, :delivery},
@@ -1268,6 +1251,23 @@ defmodule OliWeb.Router do
           OliWeb.LiveSessionPlugs.SetPaywallSummary
         ] do
         live("/", Delivery.Student.LessonLive)
+      end
+    end
+
+    scope "/lesson/:revision_slug/attempt/:attempt_guid/review" do
+      live_session :delivery_lesson_review,
+        root_layout: {OliWeb.LayoutView, :delivery},
+        layout: {OliWeb.Layouts, :student_delivery_lesson},
+        on_mount: [
+          {OliWeb.UserAuth, :ensure_authenticated},
+          OliWeb.LiveSessionPlugs.SetCtx,
+          OliWeb.LiveSessionPlugs.SetSection,
+          OliWeb.LiveSessionPlugs.SetBrand,
+          OliWeb.LiveSessionPlugs.SetPreviewMode,
+          OliWeb.LiveSessionPlugs.RequireEnrollment,
+          OliWeb.LiveSessionPlugs.SetPaywallSummary
+        ] do
+        live("/", Delivery.Student.ReviewLive)
       end
     end
 
