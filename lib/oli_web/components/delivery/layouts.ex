@@ -1161,6 +1161,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
     section_id |> SectionResourceDepot.graded_pages(hidden: false) |> Enum.any?()
   end
 
+  defp maybe_add_icon(_, nil), do: nil
   defp maybe_add_icon(page, pages_progress) do
     page_id = String.to_integer(page["id"])
     progress = Map.get(pages_progress, page_id)

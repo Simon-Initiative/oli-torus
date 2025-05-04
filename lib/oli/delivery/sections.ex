@@ -63,6 +63,56 @@ defmodule Oli.Delivery.Sections do
 
   @instructor_context_role_id ContextRoles.get_role(:context_instructor).id
 
+  def fetch_hidden_instructor(section_id) do
+    case from(e in Enrollment,
+      join: ecr in EnrollmentContextRole,
+      on: ecr.enrollment_id == e.id,
+      join: u in assoc(e, :user),
+      where: e.section_id == ^section_id
+        and u.hidden == true and ecr.context_role_id == ^@instructor_context_role_id,
+      select: u
+    ) |> Repo.all() do
+
+      [] -> create_hidden_instructor(section_id)
+
+      [user | _rest] ->
+
+        token = Oli.Accounts.generate_user_session_token(user)
+        {:ok, user, token}
+    end
+  end
+
+  def create_hidden_instructor(section_id) do
+
+    Repo.transaction(fn ->
+
+      # Create a new user with the hidden flag set to true
+      {:ok, user} = Repo.insert(%User{
+        hidden: true,
+        sub: UUID.uuid4(),
+        name: "Admin",
+        given_name: "Admin",
+        family_name: "User",
+        email_confirmed_at: DateTime.utc_now() |> DateTime.truncate(:second),
+        email_verified: true,
+        age_verified: true
+      })
+
+      # Create a new enrollment for the user in the section
+      {:ok, _enrollment} =
+        Oli.Delivery.Sections.enroll(user.id, section_id, [ContextRoles.get_role(:context_instructor)], :enrolled)
+
+      token = Oli.Accounts.generate_user_session_token(user)
+
+      # Return the created user
+      {user, token}
+
+    end)
+
+
+  end
+
+
   def enrolled_students(section_slug) do
     section = get_section_by_slug(section_slug)
 

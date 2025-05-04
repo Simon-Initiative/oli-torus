@@ -82,12 +82,14 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
             socket
         end
 
-      pages_progress =
-        Metrics.progress_for_pages(
+      pages_progress = case assigns.ctx.user do
+        nil -> nil
+        _ -> Metrics.progress_for_pages(
           assigns.section.id,
           assigns.ctx.user.id,
           [previous["id"], next["id"]]
         )
+      end
 
       {:cont,
        assign(socket,

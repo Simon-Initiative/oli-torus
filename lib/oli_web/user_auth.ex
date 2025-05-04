@@ -320,6 +320,26 @@ defmodule OliWeb.UserAuth do
     end
   end
 
+  def auto_enroll_admin(conn, _opts) do
+    if conn.assigns[:current_user] == nil and conn.assigns[:is_admin] and conn.assigns[:section] != nil do
+
+      case Oli.Delivery.Sections.fetch_hidden_instructor(conn.assigns[:section].id) do
+
+        {:ok, user, token} ->
+
+          # reset the user and the SessionContext, push the token into the session
+          conn
+          |> assign(:current_user, user)
+          |> assign(:ctx, OliWeb.Common.SessionContext.init(conn))
+          |> put_token_in_session(token)
+
+        _ -> conn
+      end
+    else
+      conn
+    end
+  end
+
   @doc """
   Used for routes that require the user to be authenticated.
 
@@ -331,6 +351,7 @@ defmodule OliWeb.UserAuth do
     # loaded into the assigns by the AuthorAuth module. This should be the case since both
     # :fetch_current_author and :fetch_current_user are called in that exact order in the router
     # base :browser, :api and :lti pipelines.
+
     if conn.assigns[:current_user] || conn.assigns[:is_admin] do
       conn
       |> require_confirmed_email()
