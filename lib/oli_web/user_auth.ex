@@ -321,22 +321,20 @@ defmodule OliWeb.UserAuth do
   end
 
   def auto_enroll_admin(conn, _opts) do
-
     # If we only have an admin user logged in, and the section is not nil, we will
     # auto-enroll a new (hidden) instructor account into this section.
-    if conn.assigns[:current_user] == nil and conn.assigns[:is_admin] and conn.assigns[:section] != nil do
-
+    if conn.assigns[:current_user] == nil and conn.assigns[:is_admin] and
+         conn.assigns[:section] != nil do
       case Oli.Delivery.Sections.fetch_hidden_instructor(conn.assigns[:section].id) do
-
         {:ok, {user, token}} ->
-
           # reset the user and the SessionContext, push the token into the session
           conn
           |> assign(:current_user, user)
           |> assign(:ctx, OliWeb.Common.SessionContext.init(conn))
           |> put_token_in_session(token)
 
-        _ -> conn
+        _ ->
+          conn
       end
     else
       conn

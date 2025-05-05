@@ -1,5 +1,4 @@
 defmodule Oli.Delivery.HiddenInstructorTest do
-
   use OliWeb.ConnCase
 
   alias Oli.Seeder
@@ -16,7 +15,6 @@ defmodule Oli.Delivery.HiddenInstructorTest do
          %{
            section: section
          } do
-
       # Verify that no enrollments exist
       assert [] = Oli.Repo.all(Enrollment)
 
@@ -50,7 +48,5 @@ defmodule Oli.Delivery.HiddenInstructorTest do
       assert user2.id == user.id
       refute token2 == token
     end
-
   end
-
 end
