@@ -308,7 +308,8 @@ defmodule OliWeb.PageDeliveryController do
             display_curriculum_item_numbering: section.display_curriculum_item_numbering,
             bib_app_params: %{
               bibReferences: []
-            }
+            },
+            has_scheduled_resources?: SectionResourceDepot.has_scheduled_resources?(section.id)
           )
 
         # Any attempt to render a valid revision that is not container or page gets an error
