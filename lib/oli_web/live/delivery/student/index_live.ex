@@ -255,7 +255,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
                   Module <%= @suggested_page.module_index %>
                 </div>
               </div>
-              <div class="grow shrink basis-0 h-5 justify-start items-center gap-1 flex">
+              <div :if={@suggested_page.end_date} class="grow shrink basis-0 h-5 justify-start items-center gap-1 flex">
                 <div class="text-right text-white text-sm font-bold">Due:</div>
                 <div class="text-right text-white text-sm font-bold">
                   <%= format_date(
@@ -1044,8 +1044,6 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     </div>
     """
   end
-
-  defp format_date(nil, _context, _format), do: "Not yet scheduled"
 
   defp format_date(due_date, context, format) do
     FormatDateTime.to_formatted_datetime(due_date, context, format)
