@@ -78,7 +78,7 @@ defmodule Oli.Delivery.Sections do
       [user | _rest] ->
 
         token = Oli.Accounts.generate_user_session_token(user)
-        {:ok, user, token}
+        {:ok, {user, token}}
     end
   end
 
@@ -104,7 +104,7 @@ defmodule Oli.Delivery.Sections do
 
       token = Oli.Accounts.generate_user_session_token(user)
 
-      # Return the created user
+      # Return the created user and session token
       {user, token}
 
     end)
