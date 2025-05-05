@@ -6,9 +6,12 @@
         else: @title %>
     </h3>
     <div class="flex-1"></div>
-    <div>
-      <%= render(OliWeb.SharedView, "_help_button.html", conn: @conn) %>
-    </div>
+    <.tech_support_link
+      id="tech_support_all_sections_top_navbar"
+      class="btn btn-light btn-sm inline-flex items-center"
+    >
+      Tech Support
+    </.tech_support_link>
     <div>
       <Components.Delivery.UserAccount.menu
         id="user-account-menu"
