@@ -9,7 +9,7 @@ defmodule OliWeb.Admin.ExternalTools.ExternalToolsView do
   alias OliWeb.Admin.ExternalTools.TableModel
   alias OliWeb.Common.{Breadcrumb, Check, PagedTable, TextSearch}
   alias OliWeb.Common.Table.SortableTableModel
-  alias OliWeb.Router.Helpers, as: Routes
+  alias OliWeb.Icons
 
   @limit 25
   @sort_by :name
@@ -19,16 +19,10 @@ defmodule OliWeb.Admin.ExternalTools.ExternalToolsView do
   on_mount OliWeb.LiveSessionPlugs.SetCtx
 
   defp set_breadcrumbs() do
-    OliWeb.Admin.AdminView.breadcrumb()
-    |> breadcrumb()
-  end
-
-  def breadcrumb(previous) do
-    previous ++
+    OliWeb.Admin.AdminView.breadcrumb() ++
       [
         Breadcrumb.new(%{
-          full_title: "Manage LTI 1.3 External Tools",
-          link: Routes.live_path(OliWeb.Endpoint, __MODULE__)
+          full_title: "Manage LTI 1.3 External Tools"
         })
       ]
   end
@@ -91,14 +85,30 @@ defmodule OliWeb.Admin.ExternalTools.ExternalToolsView do
 
   def render(assigns) do
     ~H"""
-    <div>
+    <div class="flex flex-row items-center justify-between mt-4">
       <TextSearch.render
         id="text-search"
-        class="lg:!max-w-[33%]"
+        class="lg:!max-w-[33%] w-full"
         text={@options.text_search}
         event_target={nil}
       />
-
+      <.link
+        id="button-new-tool"
+        href={~p"/admin/external_tools/new"}
+        class="h-8 w-32 px-5 py-3 hover:no-underline rounded-md justify-center items-center gap-2 inline-flex bg-[#0062F2] hover:bg-[#0075EB] dark:bg-[#0062F2] dark:hover:bg-[#0D70FF]"
+      >
+        <div class="w-3 h-5 relative">
+          <Icons.plus
+            class="w-5 h-5 left-[-8px] top-0 absolute font-semibold"
+            path_class="stroke-white"
+          />
+        </div>
+        <div class="text-center justify-center text-white text-sm font-semibold leading-none">
+          Add Tool
+        </div>
+      </.link>
+    </div>
+    <div>
       <Check.render class="mr-4" checked={@options.include_disabled} click="include_disabled">
         Show tools that have been disabled
       </Check.render>
