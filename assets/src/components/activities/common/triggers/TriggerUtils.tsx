@@ -17,9 +17,17 @@ export const getPossibleTriggers = (model: HasParts, partId: string): ActivityTr
 
   const triggers = [makeTrigger('correct_answer'), makeTrigger('incorrect_answer')];
   const hint_triggers = part.hints.filter(nonBlank).map((_h, i) => makeHintTrigger(i + 1));
-  const targeted_triggers = findTargetedResponses(model, partId).map((r: any) =>
-    makeTargetedTrigger(r.id),
-  );
+
+  let targeted_triggers = [] as ActivityTrigger[];
+
+  try {
+    targeted_triggers = findTargetedResponses(model, partId).map((r: any) =>
+      makeTargetedTrigger(r.id),
+    ) as ActivityTrigger[];
+  } catch (e) {
+    console.log(e);
+  }
+
   const explanation_triggers =
     part.explanation && nonBlank(part.explanation) ? [makeTrigger('explanation')] : [];
 

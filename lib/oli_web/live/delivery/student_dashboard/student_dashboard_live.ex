@@ -53,7 +53,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
           objectives:
             Sections.get_objectives_and_subobjectives(
               socket.assigns.section,
-              socket.assigns.student.id
+              student_id: socket.assigns.student.id
             ),
           filter_options:
             Sections.get_units_and_modules_from_a_section(socket.assigns.section.slug)

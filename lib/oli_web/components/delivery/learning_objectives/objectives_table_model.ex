@@ -123,20 +123,18 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
 
   defp custom_render(
          assigns,
-         %{section_id: section_id, resource_id: objective_id},
+         %{
+           resource_id: objective_id,
+           student_proficiency_obj_dist: student_proficiency_obj_dist
+         },
          %ColumnSpec{
            name: :student_proficiency_distribution
          }
        ) do
-    proficiency_distribution =
-      section_id
-      |> Oli.Delivery.Metrics.proficiency_per_student_for_objective(objective_id)
-      |> Enum.frequencies_by(fn {_student_id, proficiency} -> proficiency end)
-
     assigns =
       Map.merge(assigns, %{
         objective_id: objective_id,
-        proficiency_distribution: proficiency_distribution
+        proficiency_distribution: student_proficiency_obj_dist
       })
 
     ~H"""
