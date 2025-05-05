@@ -245,11 +245,6 @@ defmodule OliWeb.Delivery.Student.Utils do
   attr :effective_settings, Oli.Delivery.Settings.Combined
   attr :ctx, SessionContext
 
-  defp page_due_term(%{effective_settings: %{end_date: nil}} = assigns) do
-    ~H"""
-    """
-  end
-
   defp page_due_term(%{effective_settings: %{end_date: end_date}} = assigns) do
     verb_form =
       case DateTime.compare(DateTime.utc_now(), end_date) do
