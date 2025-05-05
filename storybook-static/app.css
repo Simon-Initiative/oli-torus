@@ -4459,6 +4459,11 @@ table.table-striped tbody tr:nth-child(even) {
   margin-right: 2.5rem;
 }
 
+.mx-12 {
+  margin-left: 3rem;
+  margin-right: 3rem;
+}
+
 .mx-2 {
   margin-left: 0.5rem;
   margin-right: 0.5rem;
@@ -5690,6 +5695,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .w-\[1170px\] {
   width: 1170px;
+}
+
+.w-\[1247px\] {
+  width: 1247px;
 }
 
 .w-\[124px\] {
@@ -7610,6 +7619,11 @@ table.table-striped tbody tr:nth-child(even) {
   background-color: rgb(230 233 242 / var(--tw-bg-opacity));
 }
 
+.bg-\[\#F2F9FF\] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(242 249 255 / var(--tw-bg-opacity));
+}
+
 .bg-\[\#F3F4F8\] {
   --tw-bg-opacity: 1;
   background-color: rgb(243 244 248 / var(--tw-bg-opacity));
@@ -7618,6 +7632,11 @@ table.table-striped tbody tr:nth-child(even) {
 .bg-\[\#F4CFFF\] {
   --tw-bg-opacity: 1;
   background-color: rgb(244 207 255 / var(--tw-bg-opacity));
+}
+
+.bg-\[\#FEEBED\] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(254 235 237 / var(--tw-bg-opacity));
 }
 
 .bg-\[\#ced9f2\] {
@@ -8342,6 +8361,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .stroke-\[\#7C40FF\] {
   stroke: #7C40FF;
+}
+
+.stroke-\[\#\{\@text_color\}\] {
+  stroke: #{@text color};
 }
 
 .stroke-black {
@@ -9275,6 +9298,10 @@ table.table-striped tbody tr:nth-child(even) {
   line-height: 2rem;
 }
 
+.leading-9 {
+  line-height: 2.25rem;
+}
+
 .leading-\[14px\] {
   line-height: 14px;
 }
@@ -9444,6 +9471,11 @@ table.table-striped tbody tr:nth-child(even) {
   color: rgb(0 108 217 / var(--tw-text-opacity));
 }
 
+.text-\[\#006cd9\] {
+  --tw-text-opacity: 1;
+  color: rgb(0 108 217 / var(--tw-text-opacity));
+}
+
 .text-\[\#00808f\] {
   --tw-text-opacity: 1;
   color: rgb(0 128 143 / var(--tw-text-opacity));
@@ -9606,6 +9638,10 @@ table.table-striped tbody tr:nth-child(even) {
 .text-\[\#ff8787\] {
   --tw-text-opacity: 1;
   color: rgb(255 135 135 / var(--tw-text-opacity));
+}
+
+.text-\[\#\{\@text_color\}\] {
+  color: #{@text color};
 }
 
 .text-\[18xl\] {
@@ -13625,6 +13661,14 @@ Not supports in Firefox and IE */
       max-width: 1536px;
     }
   }
+}
+
+.placeholder\:pl-6::-moz-placeholder {
+  padding-left: 1.5rem;
+}
+
+.placeholder\:pl-6::placeholder {
+  padding-left: 1.5rem;
 }
 
 .before\:absolute::before {
