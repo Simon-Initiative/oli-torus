@@ -1109,15 +1109,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               <h3 class="text-[26px] leading-[32px] tracking-[0.02px] font-normal dark:text-[#DDD]">
                 <%= @unit["title"] %>
               </h3>
-              <div class="flex items-center gap-3" role="schedule_details">
+              <div :if={@unit["section_resource"].end_date not in [nil, "Not yet scheduled"]} class="flex items-center gap-3" role="schedule_details">
                 <div class="text-[14px] leading-[32px] tracking-[0.02px] font-semibold">
                   <span class="text-gray-400 opacity-80 dark:text-[#696974] dark:opacity-100 mr-1">
-                    <%= if @unit["section_resource"].end_date in [nil, "Not yet scheduled"],
-                      do: "Due by:",
-                      else:
-                        Utils.container_label_for_scheduling_type(
-                          Map.get(@contained_scheduling_types, @unit["resource_id"])
-                        ) %>
+                    <%= Utils.container_label_for_scheduling_type(Map.get(@contained_scheduling_types, @unit["resource_id"])) %>
                   </span>
                   <span class="whitespace-nowrap">
                     <%= format_date(
@@ -1255,7 +1250,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 "title"
               ] %>
             </h2>
-            <span class="opacity-50 dark:text-white text-xs font-normal">
+            <span :if={selected_module["section_resource"].end_date not in [nil, "Not yet scheduled"]} class="opacity-50 dark:text-white text-xs font-normal">
               <%= Utils.container_label_for_scheduling_type(
                 Map.get(@contained_scheduling_types, selected_module["resource_id"])
               ) %><%= format_date(
@@ -1923,7 +1918,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         class="flex flex-col w-full"
         id={"pages_grouped_by_#{grouped_scheduling_type}_#{grouped_due_date}"}
       >
-        <div class="h-[19px] mb-5">
+        <div :if={grouped_due_date != "Not yet scheduled"} class="h-[19px] mb-5">
           <span class="dark:text-white text-sm font-bold">
             <%= "#{Utils.label_for_scheduling_type(grouped_scheduling_type)}#{format_date(grouped_due_date, @ctx, "{WDshort} {Mshort} {D}, {YYYY}")}" %>
           </span>
