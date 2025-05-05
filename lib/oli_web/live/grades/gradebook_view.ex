@@ -21,8 +21,8 @@ defmodule OliWeb.Grades.GradebookView do
       ]
   end
 
-  def mount(%{"section_slug" => section_slug}, session, socket) do
-    case Mount.for(section_slug, session) do
+  def mount(%{"section_slug" => section_slug}, _session, socket) do
+    case Mount.for(section_slug, socket) do
       {:error, e} ->
         Mount.handle_error(socket, {:error, e})
 

@@ -39,9 +39,9 @@ defmodule OliWeb.Sections.Assistant.StudentConversationsLive do
       ]
   end
 
-  def mount(%{"section_slug" => section_slug}, session, socket) do
+  def mount(%{"section_slug" => section_slug}, _session, socket) do
     # only allow admins to access this page for now
-    case Mount.for(section_slug, session) do
+    case Mount.for(section_slug, socket) do
       {:error, e} ->
         Mount.handle_error(socket, {:error, e})
 

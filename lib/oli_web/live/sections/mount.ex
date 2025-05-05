@@ -10,32 +10,32 @@ defmodule OliWeb.Sections.Mount do
       is_section_instructor_or_admin?: 2
     ]
 
-  def for(section_slug, session) do
-    user_id = Map.get(session, "current_user_id")
-    author_id = Map.get(session, "current_author_id")
+  def for(section_slug, socket) do
+    current_author = socket.assigns[:current_author]
+    current_user = socket.assigns[:current_user]
 
     case Sections.get_section_by_slug(section_slug) do
       nil ->
         {:error, :not_found}
 
       %Oli.Delivery.Sections.Section{type: :blueprint} = section ->
-        case ensure_author_of(section, author_id) do
-          {:error, _} -> ensure_admin(section, author_id)
+        case ensure_author_of(section, current_author) do
+          {:error, _} -> ensure_admin(section, current_author)
           result -> result
         end
 
       section ->
-        case {user_id, author_id} do
-          {nil, author_id} ->
-            ensure_admin(section, author_id)
+        case {current_user, current_author} do
+          {nil, author} ->
+            ensure_admin(section, author)
 
-          {user_id, nil} ->
-            ensure_instructor(section, user_id)
+          {user, nil} ->
+            ensure_instructor(section, user)
 
-          {user_id, author_id} ->
+          {user, author} ->
             # prioritize system admin over instructor
-            case ensure_admin(section, author_id) do
-              {:error, _} -> ensure_instructor(section, user_id)
+            case ensure_admin(section, author) do
+              {:error, _} -> ensure_instructor(section, user)
               e -> e
             end
         end
@@ -44,10 +44,8 @@ defmodule OliWeb.Sections.Mount do
 
   defp ensure_author_of(_, nil), do: {:error, :unauthorized}
 
-  defp ensure_author_of(section, author_id) do
-    author = Oli.Accounts.get_author!(author_id)
-
-    case Oli.Delivery.Sections.Blueprint.is_author_of_blueprint?(section.slug, author_id) do
+  defp ensure_author_of(section, author) do
+    case Oli.Delivery.Sections.Blueprint.is_author_of_blueprint?(section.slug, author.id) do
       true -> {:author, author, section}
       _ -> {:error, :unauthorized}
     end
@@ -55,20 +53,16 @@ defmodule OliWeb.Sections.Mount do
 
   defp ensure_admin(_, nil), do: {:error, :unauthorized}
 
-  defp ensure_admin(section, author_id) do
-    author = Oli.Accounts.get_author!(author_id)
-
+  defp ensure_admin(section, author) do
     case Accounts.is_admin?(author) do
       true -> {:admin, author, section}
       _ -> {:error, :unauthorized}
     end
   end
 
-  defp ensure_instructor(section, user_id) do
-    current_user = Accounts.get_user!(user_id, preload: [:platform_roles, :author])
-
-    if is_section_instructor_or_admin?(section.slug, current_user) do
-      {:user, current_user, section}
+  defp ensure_instructor(section, user) do
+    if is_section_instructor_or_admin?(section.slug, user) do
+      {:user, user, section}
     else
       {:error, :unauthorized}
     end

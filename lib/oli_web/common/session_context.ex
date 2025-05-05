@@ -98,4 +98,39 @@ defmodule OliWeb.Common.SessionContext do
       is_liveview: true
     }
   end
+
+  @doc """
+  Returns the current author from the session context.
+  """
+  def get_author(%__MODULE__{author: author}) do
+    author
+  end
+
+  @doc """
+  Returns the current user from the session context.
+  """
+  def get_user(%__MODULE__{user: user}) do
+    user
+  end
+
+  @doc """
+  Returns the browser timezone from the session context.
+  """
+  def get_browser_timezone(%__MODULE__{browser_timezone: browser_timezone}) do
+    browser_timezone
+  end
+
+  @doc """
+  Returns the local timezone from the session context.
+  """
+  def get_local_tz(%__MODULE__{local_tz: local_tz}) do
+    local_tz
+  end
+
+  @doc """
+  Returns true if the current session context is in a LiveView, false otherwise.
+  """
+  def is_liveview?(%__MODULE__{is_liveview: is_liveview}) do
+    is_liveview
+  end
 end

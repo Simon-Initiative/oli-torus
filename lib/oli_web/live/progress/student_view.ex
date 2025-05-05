@@ -28,7 +28,7 @@ defmodule OliWeb.Progress.StudentView do
 
   def mount(
         %{"section_slug" => section_slug, "user_id" => user_id},
-        session,
+        _session,
         socket
       ) do
     case get_user(user_id) do
@@ -38,7 +38,7 @@ defmodule OliWeb.Progress.StudentView do
       {:ok, user} ->
         ctx = socket.assigns.ctx
 
-        case Mount.for(section_slug, session) do
+        case Mount.for(section_slug, socket) do
           {:error, e} ->
             Mount.handle_error(socket, {:error, e})
 
