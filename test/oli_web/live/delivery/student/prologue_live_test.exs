@@ -1099,7 +1099,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
                "/sections/#{section.slug}/learn?target_resource_id=#{graded_adaptive_page_revision.resource_id}"
     end
 
-    test "page terms are shown correctly when page is not yet scheduled",
+    test "no page due terms are shown when page is not yet scheduled",
          %{
            conn: conn,
            user: user,
@@ -1110,8 +1110,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
 
       {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_5.slug))
 
-      assert view |> element("#page_terms") |> render() =~
-               "This assignment is <b>not yet scheduled.</b>"
+      refute has_element?(view, "#page_due_terms")
     end
 
     test "page terms render the due date when is set", ctx do

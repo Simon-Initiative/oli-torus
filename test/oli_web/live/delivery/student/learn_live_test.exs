@@ -1543,10 +1543,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
                "Read by: \n              </span><span class=\"whitespace-nowrap\">\n                Sun, Dec 31, 2023 (8:00pm)"
 
       # unit 2 has not been scheduled by instructor, so there must not be a schedule details data
-      assert view
-             |> element(~s{div[role="unit_2"] div[role="schedule_details"]})
-             |> render() =~
-               "Due by:\n              </span><span class=\"whitespace-nowrap\">\n                Not yet scheduled"
+      refute has_element?(view, ~s{div[role="unit_2"] div[role="schedule_details"]})
     end
 
     @tag :flaky
@@ -1714,11 +1711,10 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
              )
              |> render() =~ "Top Level Page"
 
-      assert view
-             |> element(
+      refute has_element?(
+               view,
                ~s{div[id="top_level_page_#{top_level_page.resource_id}"] div[role="schedule_details"]}
              )
-             |> render() =~ "Not yet scheduled"
 
       assert view
              |> element(~s{div[id="page_#{top_level_page.resource_id}"][role="resource card 1"]})
