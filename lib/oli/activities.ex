@@ -11,6 +11,7 @@ defmodule Oli.Activities do
   alias Oli.Authoring.Course
   alias Oli.Activities.ActivityRegistrationProject
   alias Oli.Activities.ActivityMapEntry
+  alias Oli.Lti.PlatformExternalTools.LtiExternalToolActivityDeployment
   import Oli.Utils
   require Logger
 
@@ -249,7 +250,7 @@ defmodule Oli.Activities do
       Enum.reduce(project.activity_registrations, MapSet.new(), fn a, m -> MapSet.put(m, a.id) end)
 
     activities_enabled =
-      list_activity_registrations()
+      list_activity_registrations_with_deployment_id()
       |> Enum.filter(fn a -> a.globally_visible || is_admin? end)
       |> Enum.reduce([], fn a, m ->
         enabled_for_project =
@@ -267,7 +268,8 @@ defmodule Oli.Activities do
               title: a.title,
               global: a.globally_available,
               petite_label: a.petite_label,
-              enabled: enabled_for_project
+              enabled: enabled_for_project,
+              deployment_id: a.deployment_id
             }
           ]
       end)
@@ -278,7 +280,7 @@ defmodule Oli.Activities do
   def advanced_activities(project, is_admin? \\ true) do
     activities_for_project(project, is_admin?)
     |> Enum.filter(&(!&1.global))
-    |> Enum.sort_by(& &1.title)
+    |> Enum.sort_by(fn a -> {a.deployment_id, a.title} end)
   end
 
   # TODO only get needed for section... hide authoring sometimes
@@ -341,6 +343,26 @@ defmodule Oli.Activities do
   """
   def list_activity_registrations do
     Repo.all(ActivityRegistration)
+  end
+
+  @doc """
+  Returns the list of activity_registrations with their deployment ids.
+
+  ## Examples
+
+      iex> list_activity_registrations()
+      [%ActivityRegistration{}, ...]
+
+  """
+  def list_activity_registrations_with_deployment_id do
+    fields = ActivityRegistration.__schema__(:fields)
+
+    from(ar in ActivityRegistration,
+      left_join: d in LtiExternalToolActivityDeployment,
+      on: d.activity_registration_id == ar.id,
+      select: merge(map(ar, ^fields), %{deployment_id: d.deployment_id})
+    )
+    |> Repo.all()
   end
 
   @doc """
