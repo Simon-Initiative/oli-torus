@@ -219,8 +219,7 @@ defmodule Oli.Delivery.Page.PageContext do
               true
             )
 
-          {:error, e} ->
-            IO.inspect(e)
+          {:error, _} ->
             {:error, [], %{}}
         end
       end)
