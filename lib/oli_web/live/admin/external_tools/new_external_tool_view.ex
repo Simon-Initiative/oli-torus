@@ -10,7 +10,7 @@ defmodule OliWeb.Admin.ExternalTools.NewExternalToolView do
     OliWeb.Admin.AdminView.breadcrumb() ++
       [
         Breadcrumb.new(%{
-          full_title: "Manage LTI 1.3 External Tool",
+          full_title: "Manage LTI 1.3 External Tools",
           link: ~p"/admin/external_tools"
         })
       ] ++ [Breadcrumb.new(%{full_title: "Add New LTI 1.3 External Tool"})]

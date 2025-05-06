@@ -8,8 +8,8 @@ defmodule Oli.Lti.PlatformExternalTools do
   alias Oli.Repo
 
   alias Oli.Activities
-  alias Oli.Lti.PlatformExternalTools.LtiExternalToolActivityDeployment
-  alias Oli.Lti.PlatformExternalTools.BrowseOptions
+  alias Oli.Activities.ActivityRegistration
+  alias Oli.Lti.PlatformExternalTools.{BrowseOptions, LtiExternalToolActivityDeployment}
   alias Oli.Repo.{Paging, Sorting}
   alias Lti_1p3.DataProviders.EctoProvider.PlatformInstance
 
@@ -74,15 +74,50 @@ defmodule Oli.Lti.PlatformExternalTools do
   end
 
   @doc """
-  Updates a lti external tool deployment.
+  Updates a LTI external tool activity.
+
+  ## Examples
+
+      iex> update_lti_external_tool_activity(1, %{field: new_value})
+      {:ok, %{platform_instance: %PlatformInstance{}, activity_registration: %ActivityRegistration{}}}
+
+      iex> update_lti_external_tool_activity(456, %{field: bad_value})
+      {:error, :updated_platform_instance, %Ecto.Changeset{}, %{}}
+
   """
-  def update_lti_external_tool_activity_deployment(
-        %LtiExternalToolActivityDeployment{} = lti_external_tool_activity_deployment,
-        attrs
-      ) do
-    lti_external_tool_activity_deployment
-    |> LtiExternalToolActivityDeployment.changeset(attrs)
-    |> Repo.update()
+  @spec update_lti_external_tool_activity(
+          integer(),
+          map()
+        ) :: {:ok, map()} | {:error, atom(), Ecto.Changeset.t(), map()}
+  def update_lti_external_tool_activity(platform_instance_id, attrs) do
+    Ecto.Multi.new()
+    |> Ecto.Multi.one(:platform_instance, fn _ ->
+      from(p in PlatformInstance, where: p.id == ^platform_instance_id)
+    end)
+    |> Ecto.Multi.update(:updated_platform_instance, fn %{platform_instance: platform_instance} ->
+      change_platform_instance(platform_instance, attrs)
+    end)
+    |> Ecto.Multi.one(:activity_registration, fn _ ->
+      from(
+        a in ActivityRegistration,
+        join: etad in LtiExternalToolActivityDeployment,
+        on: etad.activity_registration_id == a.id,
+        where: etad.platform_instance_id == ^platform_instance_id
+      )
+    end)
+    |> Ecto.Multi.update(:updated_activity_registration, fn %{
+                                                              activity_registration:
+                                                                activity_registration
+                                                            } ->
+      activity_attrs = %{
+        title: attrs["name"],
+        petite_label: attrs["name"],
+        description: attrs["description"]
+      }
+
+      ActivityRegistration.changeset(activity_registration, activity_attrs)
+    end)
+    |> Repo.transaction()
   end
 
   @doc """
@@ -202,5 +237,22 @@ defmodule Oli.Lti.PlatformExternalTools do
     %PlatformInstance{}
     |> change_platform_instance(attrs)
     |> Repo.insert()
+  end
+
+  @doc """
+  Gets a single platform_instance by ID.
+  Returns `nil` if the PlatformInstance does not exist.
+
+  ## Examples
+
+      iex> get_platform_instance(id)
+      %PlatformInstance{}
+
+      iex> get_platform_instance(456)
+      ** (Ecto.NoResultsError)
+  """
+  @spec get_platform_instance(integer()) :: %PlatformInstance{}
+  def get_platform_instance(platform_instance_id) do
+    Repo.get(PlatformInstance, platform_instance_id)
   end
 end
