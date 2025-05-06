@@ -437,7 +437,7 @@ if config_env() == :prod do
       {
         Oban.Plugins.Cron,
         crontab: [
-          # {"*/2 * * * *", OliWeb.DatasetStatusPoller, queue: :default}
+          {"*/2 * * * *", OliWeb.DatasetStatusPoller, queue: :default}
         ]
       }
     ],
