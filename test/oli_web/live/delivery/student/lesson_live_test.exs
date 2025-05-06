@@ -669,6 +669,63 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
     end
   end
 
+  defp verify_access_as(conn, system_role_id, section, page) do
+    # Create a new authoring account and make it an admin
+    author = insert(:author)
+
+    {:ok, updated_author} = Oli.Accounts.update_author(author, %{system_role_id: system_role_id})
+
+    conn = log_in_author(conn, updated_author)
+
+    {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page.slug))
+
+    ensure_content_is_visible(view)
+
+    assert has_element?(view, "span", "The best course ever!")
+  end
+
+  describe "authors" do
+    setup [:setup_tags, :create_elixir_project]
+
+    test "can access via hidden instructor when content admin", %{
+      conn: conn,
+      section: section,
+      page_1: page
+    } do
+      verify_access_as(conn, Oli.Accounts.SystemRole.role_id().content_admin, section, page)
+    end
+
+    test "can access via hidden instructor when account admin", %{
+      conn: conn,
+      section: section,
+      page_1: page
+    } do
+      verify_access_as(conn, Oli.Accounts.SystemRole.role_id().account_admin, section, page)
+    end
+
+    test "can access via hidden instructor when system admin", %{
+      conn: conn,
+      section: section,
+      page_1: page
+    } do
+      verify_access_as(conn, Oli.Accounts.SystemRole.role_id().system_admin, section, page)
+    end
+
+    test "cannot access when regular author", %{
+      conn: conn,
+      section: section,
+      page_1: page_1
+    } do
+      author = insert(:author)
+      conn = log_in_author(conn, author)
+
+      {:error,
+       {:redirect,
+        %{to: "/users/log_in", flash: %{"error" => "You must log in to access this page."}}}} =
+        live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
+    end
+  end
+
   describe "student" do
     setup [:setup_tags, :user_conn, :create_elixir_project]
 
