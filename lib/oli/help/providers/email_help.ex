@@ -16,14 +16,13 @@ defmodule Oli.Help.Providers.EmailHelp do
   end
 
   defp build_help_message(contents) do
-    message = """
-    #{get_general_data(contents)}
-    #{get_user_account_data(contents)}
-    #{get_course_data(contents)}
-    #{get_browser_data(contents)}
-    #{get_capabilities_data(contents)}
-    #{get_screenshots_data(contents)}
-    """
+    message =
+      get_general_data(contents) <>
+        get_user_account_data(contents) <>
+        get_course_data(contents) <>
+        get_browser_data(contents) <>
+        get_capabilities_data(contents) <>
+        get_screenshots_data(contents)
 
     message
     |> String.replace("\r", "")
@@ -54,6 +53,7 @@ defmodule Oli.Help.Providers.EmailHelp do
     """
     CAPABILITIES
     Cookies Enabled: #{contents.cookies_enabled}
+    <br>
     """
   end
 
@@ -68,6 +68,7 @@ defmodule Oli.Help.Providers.EmailHelp do
     Browser Size: #{contents.browser_size}
     Operating System: #{contents.operating_system}
     Browser Plugins: #{contents.browser_plugins}
+    <br>
     """
   end
 
@@ -78,9 +79,11 @@ defmodule Oli.Help.Providers.EmailHelp do
     On #{contents.timestamp}, #{contents.full_name} &lt; #{contents.email} &gt; wrote: <br><br>
     #{contents.message}
     <br><br>----------------------------------------------
+    <br>
     Timestamp: #{contents.timestamp}
     Ip Address: #{contents.ip_address}
     Location: #{location}
+    <br>
     """
   end
 
@@ -94,13 +97,19 @@ defmodule Oli.Help.Providers.EmailHelp do
         contents.account_name
       end
 
-    "USER ACCOUNT
+    if String.trim(account_name <> contents.account_email <> contents.account_created) != "" do
+      """
+      USER ACCOUNT
       Name: #{account_name}
       Email: #{contents.account_email}
       User Type: #{contents.user_type}
       User Account URL: #{user_account_url}
       Created: #{contents.account_created}
-      "
+      <br>
+      """
+    else
+      ""
+    end
   end
 
   defp get_course_data(contents) do
@@ -112,6 +121,7 @@ defmodule Oli.Help.Providers.EmailHelp do
       End Date: #{contents.course_data["end_date"] || ""}
       Course Managment URL: "<a href=\"#{contents.course_data["course_management_url"]}\">#{contents.course_data["course_management_url"]}</a>"
       Institution: #{if contents.course_data["institution_name"], do: contents.course_data["institution_name"], else: ""}
+      <br>
       """
     else
       ""
