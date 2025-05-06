@@ -176,6 +176,7 @@ defmodule OliWeb.Delivery.Student.Utils do
   attr :effective_settings, Oli.Delivery.Settings.Combined
   attr :ctx, SessionContext
   attr :is_adaptive, :boolean
+  attr :has_scheduled_resources?, :boolean
 
   def page_terms(assigns) do
     ~H"""
@@ -187,7 +188,7 @@ defmodule OliWeb.Delivery.Student.Utils do
         TERMS
       </span>
       <ul class="list-disc ml-6">
-        <li :if={@effective_settings.end_date} id="page_due_terms">
+        <li :if={@has_scheduled_resources?} id="page_due_terms">
           <.page_due_term effective_settings={@effective_settings} ctx={@ctx} />
         </li>
         <li :if={@effective_settings.end_date != nil} id="page_scoring_terms">
@@ -244,6 +245,12 @@ defmodule OliWeb.Delivery.Student.Utils do
 
   attr :effective_settings, Oli.Delivery.Settings.Combined
   attr :ctx, SessionContext
+
+  defp page_due_term(%{effective_settings: %{end_date: nil}} = assigns) do
+    ~H"""
+    This assignment is <b>not yet scheduled.</b>
+    """
+  end
 
   defp page_due_term(%{effective_settings: %{end_date: end_date}} = assigns) do
     verb_form =
@@ -724,14 +731,14 @@ defmodule OliWeb.Delivery.Student.Utils do
 
   ## Returns:
   - A string indicating the number of days until or since the resource end date, such as "Due Today", "1 day left", or "Past Due by X days".
-  - "" if the provided end date is nil.
+  - "Not yet scheduled" if the provided end date is nil.
 
   ## Examples:
       iex> days_difference(~U[2024-05-12T00:00:00Z], :read_by, %SessionContext{local_tz: "America/Montevideo"})
       "1 day left"
   """
 
-  def days_difference(nil, _scheduling_type, _context), do: ""
+  def days_difference(nil, _scheduling_type, _context), do: "Not yet scheduled"
 
   def days_difference(resource_end_date, scheduling_type, context) do
     {localized_end_date, today} =
