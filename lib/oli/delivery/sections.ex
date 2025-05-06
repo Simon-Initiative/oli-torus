@@ -5420,34 +5420,31 @@ defmodule Oli.Delivery.Sections do
       )
       |> Repo.all()
 
-    # Step 2: Find all section resources in this section that are LTI activities
-    lti_activity_section_resources =
+    # Step 2: Get IDs of all section resources in this section that are LTI activities
+    lti_activity_ids =
       from(sr in SectionResource,
-        join: r in Oli.Resources.Revision,
+        join: r in Revision,
         on: sr.revision_id == r.id,
         where: sr.section_id == ^section.id and r.activity_type_id in ^lti_activity_registrations,
-        select: {r.resource_id, sr}
+        select: r.resource_id
       )
       |> Repo.all()
 
-    # Step 3: Get IDs of all LTI activities in this section
-    lti_activity_ids = Enum.map(lti_activity_section_resources, fn {id, _} -> id end)
+    # Step 3: Find all page section resources that reference these LTI activities
+    page_type_id = ResourceType.id_for_page()
 
-    # Step 4: Find all page section resources that reference these LTI activities
     page_section_resources_with_lti =
       from(sr in SectionResource,
-        join: r in Oli.Resources.Revision,
+        join: r in Revision,
         on: sr.revision_id == r.id,
-        join: rt in Oli.Resources.ResourceType,
-        on: r.resource_type_id == rt.id,
         where:
-          sr.section_id == ^section.id and rt.type == "page" and
+          sr.section_id == ^section.id and r.resource_type_id == ^page_type_id and
             fragment("? && ?", r.activity_refs, ^lti_activity_ids),
         select: {sr, r}
       )
       |> Repo.all()
 
-    # Step 5: Group the results by LTI activity ID
+    # Step 4: Group the results by LTI activity ID
     page_section_resources_with_lti
     |> Enum.reduce(%{}, fn {section_resource, revision}, acc ->
       # Find which LTI activities this page references
