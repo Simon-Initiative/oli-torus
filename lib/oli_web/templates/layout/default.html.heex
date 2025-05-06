@@ -13,12 +13,5 @@
     </main>
 
     <%= if !assigns[:hide_footer], do: OliWeb.Components.Footer.login_footer(%{}) %>
-    <%= live_render(@conn, OliWeb.TechSupportLive,
-      session: %{
-        "section" => Map.get(@conn.assigns, :section),
-        "current_user" => Map.get(@conn.assigns, :current_user),
-        "requires_sender_data" => true
-      }
-    ) %>
   </div>
 <% end %>

@@ -97,13 +97,6 @@
             >
               contact our support team.
             </.tech_support_link>
-            <%= live_render(@conn, OliWeb.TechSupportLive,
-              session: %{
-                "section" => Map.get(@conn.assigns, :section),
-                "current_user" => Map.get(@conn.assigns, :current_user),
-                "requires_sender_data" => true
-              }
-            ) %>
           </p>
         </div>
       </div>
