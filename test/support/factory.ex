@@ -724,7 +724,7 @@ defmodule Oli.Factory do
 
   def platform_instance_factory() do
     %Lti_1p3.DataProviders.EctoProvider.PlatformInstance{
-      id: System.unique_integer([:positive])
+      id: System.unique_integer([:positive]),
       name: sequence("Platform Instance"),
       description: sequence("Platform Instance Description"),
       client_id: sequence("client_id"),
@@ -740,7 +740,7 @@ defmodule Oli.Factory do
     %Oli.Lti.PlatformExternalTools.LtiExternalToolActivityDeployment{
       deployment_id: Ecto.UUID.generate(),
       activity_registration: build(:activity_registration),
-      platform_instance: build(:platform_instance)
+      platform_instance: build(:platform_instance),
       status: :enabled
     }
   end
