@@ -4,6 +4,7 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
   alias Lti_1p3.DataProviders.EctoProvider.PlatformInstance
   alias Oli.Lti.{PlatformInstances, PlatformExternalTools}
   alias OliWeb.Common.Breadcrumb
+  alias OliWeb.Admin.ExternalTools.Form
   alias OliWeb.Icons
 
   defp set_breadcrumbs() do
@@ -51,126 +52,7 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
           </.button>
         </div>
       </div>
-      <.form
-        :let={f}
-        id="tool_form"
-        for={@form}
-        class="flex flex-col gap-y-8 mt-6"
-        phx-submit="update_tool"
-        phx-change="validate"
-      >
-        <fieldset class="m-0 p-0 border-0 space-y-4" disabled={!@edit_mode}>
-          <.input
-            class="form-control h-11 placeholder:pl-6"
-            field={f[:name]}
-            type="text"
-            label="Tool Name"
-            label_class="mb-2"
-            placeholder="Type here..."
-            additional_text={~H'<span class="text-red-500">(*Required)</span>'}
-            required
-          />
-          <.input
-            class="form-control mt-2 placeholder:pl-6"
-            group_class=""
-            field={f[:description]}
-            type="textarea"
-            data-grow="true"
-            autocomplete="off"
-            rows="3"
-            label="Tool Description"
-            placeholder="Type here..."
-          />
-          <.input
-            class="form-control h-11 placeholder:pl-6"
-            field={f[:target_link_uri]}
-            type="text"
-            label="Target Link URI"
-            label_class="mb-2"
-            placeholder="Type here..."
-            additional_text={~H'<span class="text-red-500">(*Required)</span>'}
-            required
-          />
-          <.input
-            class="form-control h-11 placeholder:pl-6"
-            field={f[:client_id]}
-            type="text"
-            label="Tool Client ID"
-            label_class="mb-2"
-            placeholder="Type here..."
-            additional_text={~H'<span class="text-red-500">(*Required)</span>'}
-            required
-          />
-          <.input
-            class="form-control h-11 placeholder:pl-6"
-            field={f[:login_url]}
-            type="text"
-            label="Login URL"
-            label_class="mb-2"
-            placeholder="Type here..."
-            additional_text={~H'<span class="text-red-500">(*Required)</span>'}
-            required
-          />
-          <.input
-            class="form-control h-11 placeholder:pl-6"
-            field={f[:keyset_url]}
-            type="text"
-            label="Keyset URL"
-            label_class="mb-2"
-            placeholder="Type here..."
-            additional_text={~H'<span class="text-red-500">(*Required)</span>'}
-            required
-          />
-          <.input
-            class="form-control mt-2 placeholder:pl-6"
-            group_class=""
-            field={f[:redirect_uris]}
-            type="textarea"
-            data-grow="true"
-            autocomplete="off"
-            rows="3"
-            label="Redirect URIs"
-            label_class="mb-2"
-            placeholder="Type here..."
-            additional_text={~H'<span class="text-red-500">(*Required)</span>'}
-            required
-          />
-          <.input
-            class="form-control mt-2 placeholder:pl-6"
-            group_class=""
-            field={f[:custom_params]}
-            type="textarea"
-            data-grow="true"
-            autocomplete="off"
-            rows="3"
-            label="Custom Params"
-            label_class="mb-2"
-            placeholder="Type here..."
-          />
-        </fieldset>
-
-        <div :if={@edit_mode} class="flex justify-end gap-2 my-8">
-          <.button
-            phx-click="toggle_edit_mode"
-            type="button"
-            class="px-6 !py-2 bg-white text-[#006cd9] border border-blue-500 rounded-md
-                   hover:bg-[#006cd9] hover:text-white
-                   dark:bg-gray-800 dark:text-[#197adc] dark:border-[#197adc]
-                   dark:hover:bg-[#0056ad] dark:hover:text-white dark:hover:border-[#0056ad]"
-          >
-            Cancel
-          </.button>
-          <.button
-            type="submit"
-            disabled={@form.source.changes == %{}}
-            class="px-6 py-2 bg-[#006cd9] hover:bg-[#0075EB] text-white rounded-md
-                   disabled:cursor-not-allowed disabled:bg-gray-300
-                   dark:disabled:bg-gray-700 dark:disabled:text-gray-400"
-          >
-            Save
-          </.button>
-        </div>
-      </.form>
+      <Form.tool_form form={@form} action={:update} edit_mode={@edit_mode} />
     </div>
     """
   end
@@ -192,12 +74,13 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
            socket.assigns.platform_instance.id,
            params
          ) do
-      {:ok, %{platform_instance: platform_instance}} ->
+      {:ok, %{updated_platform_instance: platform_instance}} ->
         new_changeset = PlatformExternalTools.change_platform_instance(platform_instance)
 
         {:noreply,
          socket
          |> assign(form: to_form(new_changeset, as: :tool_form))
+         |> assign(edit_mode: false)
          |> assign(:custom_flash, %{
            type: :success,
            message: "You have successfully updated the LTI 1.3 External Tool."

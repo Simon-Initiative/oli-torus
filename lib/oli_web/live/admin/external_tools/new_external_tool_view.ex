@@ -4,6 +4,7 @@ defmodule OliWeb.Admin.ExternalTools.NewExternalToolView do
   alias Lti_1p3.DataProviders.EctoProvider.PlatformInstance
   alias Oli.Lti.PlatformExternalTools
   alias OliWeb.Common.Breadcrumb
+  alias OliWeb.Admin.ExternalTools.Form
   alias OliWeb.Icons
 
   defp set_breadcrumbs() do
@@ -38,117 +39,7 @@ defmodule OliWeb.Admin.ExternalTools.NewExternalToolView do
           </div>
         </div>
       </div>
-      <.form
-        :let={f}
-        id="tool_form"
-        for={@form}
-        class="flex flex-col gap-y-8 mt-12"
-        phx-submit="create_tool"
-        phx-change="validate"
-      >
-        <.input
-          class="form-control h-11 placeholder:pl-6"
-          field={f[:name]}
-          type="text"
-          label="Tool Name"
-          label_class="mb-2"
-          placeholder="Type here..."
-          additional_text={~H'<span class="text-red-500">(*Required)</span>'}
-          required
-        />
-        <.input
-          class="form-control mt-2 placeholder:pl-6"
-          group_class=""
-          field={f[:description]}
-          type="textarea"
-          data-grow="true"
-          autocomplete="off"
-          rows="3"
-          label="Tool Description"
-          placeholder="Type here..."
-        />
-        <.input
-          class="form-control h-11 placeholder:pl-6"
-          field={f[:target_link_uri]}
-          type="text"
-          label="Target Link URI"
-          label_class="mb-2"
-          placeholder="Type here..."
-          additional_text={~H'<span class="text-red-500">(*Required)</span>'}
-          required
-        />
-        <.input
-          class="form-control h-11 placeholder:pl-6"
-          field={f[:client_id]}
-          type="text"
-          label="Tool Client ID"
-          label_class="mb-2"
-          placeholder="Type here..."
-          additional_text={~H'<span class="text-red-500">(*Required)</span>'}
-          required
-        />
-        <.input
-          class="form-control h-11 placeholder:pl-6"
-          field={f[:login_url]}
-          type="text"
-          label="Login URL"
-          label_class="mb-2"
-          placeholder="Type here..."
-          additional_text={~H'<span class="text-red-500">(*Required)</span>'}
-          required
-        />
-        <.input
-          class="form-control h-11 placeholder:pl-6"
-          field={f[:keyset_url]}
-          type="text"
-          label="Keyset URL"
-          label_class="mb-2"
-          placeholder="Type here..."
-          additional_text={~H'<span class="text-red-500">(*Required)</span>'}
-          required
-        />
-        <.input
-          class="form-control mt-2 placeholder:pl-6"
-          group_class=""
-          field={f[:redirect_uris]}
-          type="textarea"
-          data-grow="true"
-          autocomplete="off"
-          rows="3"
-          label="Redirect URIs"
-          label_class="mb-2"
-          placeholder="Type here..."
-          additional_text={~H'<span class="text-red-500">(*Required)</span>'}
-          required
-        />
-        <.input
-          class="form-control mt-2 placeholder:pl-6"
-          group_class=""
-          field={f[:custom_params]}
-          type="textarea"
-          data-grow="true"
-          autocomplete="off"
-          rows="3"
-          label="Custom Params"
-          label_class="mb-2"
-          placeholder="Type here..."
-        />
-
-        <div class="flex justify-end gap-2 my-8">
-          <.button
-            href={~p"/admin/external_tools"}
-            class="px-6 py-2 bg-white text-[#006cd9] border border-blue-500 rounded-md"
-          >
-            Cancel
-          </.button>
-          <.button
-            type="submit"
-            class="px-6 py-2 bg-[#0062F2] hover:bg-[#0075EB] text-white rounded-md"
-          >
-            Add Tool
-          </.button>
-        </div>
-      </.form>
+      <Form.tool_form form={@form} action={:create} />
     </div>
     """
   end
@@ -227,7 +118,7 @@ defmodule OliWeb.Admin.ExternalTools.NewExternalToolView do
         <div class="flex items-center gap-2 font-semibold">
           <%= case @type do %>
             <% :success -> %>
-              <Icons.check stroke_class={"stroke-[#{@text_color}]"} />
+              <Icons.check stroke_class="stroke-blue-600" />
             <% t when t in [:error, :duplicate] -> %>
               <Icons.alert />
           <% end %>
