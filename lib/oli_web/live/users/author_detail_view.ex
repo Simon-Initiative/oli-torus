@@ -138,6 +138,13 @@ defmodule OliWeb.Users.AuthorsDetailView do
                 }
               />
             </div>
+            <div
+              :if={!is_nil(@author.deleted_at)}
+              class="p-4 my-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400"
+              role="alert"
+            >
+              This author account has been deleted.
+            </div>
             <%= unless @disabled_edit do %>
               <.button
                 variant={:primary}
@@ -348,7 +355,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
       ) do
     author = Accounts.get_author!(id)
 
-    case Accounts.delete_author(author) do
+    case Accounts.soft_delete_author(author) do
       {:ok, _} ->
         {:noreply,
          socket

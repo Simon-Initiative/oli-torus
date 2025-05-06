@@ -283,9 +283,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
               <%= error_tag(f, :collaborator_emails) %>
               <%= hidden_input(f, :authors,
                 value:
-                  @collaborators.accepted
-                  |> Enum.map(fn author_projects -> author_projects.author.email end)
-                  |> Enum.join(", ")
+                  case @collaborators do
+                    %{accepted: accepted} ->
+                      Enum.map(accepted, fn author_projects -> author_projects.author.email end)
+                      |> Enum.join(", ")
+
+                    _ ->
+                      ""
+                  end
               ) %>
               <div class="input-group-append">
                 <%= submit("Send Invite",

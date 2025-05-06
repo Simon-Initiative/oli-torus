@@ -145,6 +145,7 @@ defmodule Oli.Accounts do
       Author
       |> join(:left, [u], e in Oli.Authoring.Authors.AuthorProject, on: u.id == e.author_id)
       |> where(^filter_by_text)
+      |> where([u], is_nil(u.deleted_at))
       |> limit(^limit)
       |> offset(^offset)
       |> group_by([u, _], u.id)
@@ -670,7 +671,7 @@ defmodule Oli.Accounts do
       author in Author,
       left_join: community_account in CommunityAccount,
       on: community_account.author_id == author.id and community_account.is_admin == true,
-      where: author.id == ^id,
+      where: author.id == ^id and is_nil(author.deleted_at),
       group_by: author.id,
       select: author,
       select_merge: %{
@@ -690,6 +691,15 @@ defmodule Oli.Accounts do
   """
   def delete_author(%Author{} = author) do
     Repo.delete(author)
+  end
+
+  @doc """
+  Soft deletes an author by setting the deleted_at field to the current time.
+  """
+  def soft_delete_author(%Author{} = author) do
+    author
+    |> Author.soft_delete_changeset()
+    |> Repo.update()
   end
 
   @doc """
@@ -873,7 +883,8 @@ defmodule Oli.Accounts do
         on: assoc.author_id == author.id,
         where:
           assoc.project_id in ^project.id and
-            (is_nil(author.invitation_token) or not is_nil(author.invitation_accepted_at)),
+            (is_nil(author.invitation_token) or not is_nil(author.invitation_accepted_at)) and
+            is_nil(author.deleted_at),
         select: count(author)
       )
     )
@@ -886,7 +897,7 @@ defmodule Oli.Accounts do
         on: ap.author_id == author.id,
         join: project in Project,
         on: ap.project_id == project.id,
-        where: ap.project_id in ^project_ids,
+        where: ap.project_id in ^project_ids and is_nil(author.deleted_at),
         select: %{
           author: author,
           author_project_status: ap.status,

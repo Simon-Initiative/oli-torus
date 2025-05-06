@@ -19,7 +19,9 @@ defmodule Oli.Accounts.Author do
     field :given_name, :string
     field :family_name, :string
     field :picture, :string
+
     field :locked_at, :utc_datetime
+    field :deleted_at, :utc_datetime
 
     has_many :user_identities,
              Oli.AssentAuth.AuthorIdentity,
@@ -335,6 +337,17 @@ defmodule Oli.Accounts.Author do
     else
       Ecto.Changeset.change(changeset, locked_at: nil)
     end
+  end
+
+  @doc """
+  Creates a changeset that is used to soft delete an author account
+  """
+  def soft_delete_changeset(author_or_changeset) do
+    changeset = Ecto.Changeset.change(author_or_changeset)
+
+    deleted_at = DateTime.truncate(DateTime.utc_now(), :second)
+
+    Ecto.Changeset.change(changeset, deleted_at: deleted_at)
   end
 
   defp default_system_role(changeset) do
