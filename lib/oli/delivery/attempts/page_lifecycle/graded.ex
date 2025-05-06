@@ -129,7 +129,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
     case Oli.Delivery.Settings.check_end_date(effective_settings) do
       {:allowed} ->
         case {effective_settings.max_attempts > length(resource_attempts) or
-                effective_settings.max_attempts == 0,
+                effective_settings.max_attempts == 0 or !effective_settings.batch_scoring,
               has_any_active_attempts?(resource_attempts)} do
           {true, false} ->
             {:ok, resource_attempt} = Hierarchy.create(context)

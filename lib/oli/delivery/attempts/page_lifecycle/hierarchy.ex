@@ -108,7 +108,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
     migrate_all_fn = fn ->
       get_migratable_activity_attempts(latest_resource_attempt.id)
       |> Enum.map(fn attempt ->
-        Oli.Delivery.ActivityProvider.AttemptPrototype.from_attempt(attempt)
+        Oli.Delivery.ActivityProvider.AttemptPrototype.from_attempt(attempt, true)
       end)
     end
 
@@ -233,7 +233,6 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
   defp bulk_create_activity_attempts(raw_attempts, now, resource_attempt_id) do
     placeholders = %{
       now: now,
-      attempt_number: 1,
       resource_attempt_id: resource_attempt_id
     }
 
@@ -450,13 +449,21 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
            survey_id: survey_id,
            selection_id: selection_id,
            score: score,
-           out_of: out_of
+           out_of: out_of,
+           aggregate_score: aggregate_score,
+           aggregate_out_of: aggregate_out_of,
+           attempt_number: attempt_number
          } = prototype
        ) do
     %{
       resource_attempt_id: {:placeholder, :resource_attempt_id},
       attempt_guid: UUID.uuid4(),
-      attempt_number: {:placeholder, :attempt_number},
+      attempt_number:
+        if is_nil(attempt_number) do
+          1
+        else
+          attempt_number
+        end,
       revision_id: id,
       resource_id: resource_id,
       transformed_model: transformed_model,
@@ -471,6 +478,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
       date_evaluated: prototype.date_evaluated,
       score: score,
       out_of: out_of,
+      aggregate_score: aggregate_score,
+      aggregate_out_of: aggregate_out_of,
       group_id: group_id,
       survey_id: survey_id,
       selection_id: selection_id,
