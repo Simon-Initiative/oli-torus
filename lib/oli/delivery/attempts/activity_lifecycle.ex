@@ -145,7 +145,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
                  {:ok, new_activity_attempt} <-
                    create_activity_attempt(%{
                      attempt_guid: UUID.uuid4(),
-                     attempt_number: attempt_count + 1,
+                     attempt_number: activity_attempt.attempt_number + 1,
                      transformed_model: model_to_store,
                      resource_id: activity_attempt.resource_id,
                      group_id: activity_attempt.group_id,
