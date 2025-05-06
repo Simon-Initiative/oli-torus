@@ -126,6 +126,7 @@ defmodule OliWeb.Router do
 
     plug(OliWeb.Plugs.MaybeSkipEmailVerification)
 
+    plug(:auto_enroll_admin)
     plug(:require_authenticated_user)
 
     plug(Oli.Plugs.RemoveXFrameOptions)
@@ -1126,6 +1127,7 @@ defmodule OliWeb.Router do
           {OliWeb.UserAuth, :ensure_authenticated},
           OliWeb.LiveSessionPlugs.SetCtx,
           OliWeb.LiveSessionPlugs.SetSection,
+          OliWeb.LiveSessionPlugs.SetScheduledResourcesFlag,
           OliWeb.LiveSessionPlugs.SetRequireCertificationCheck,
           OliWeb.LiveSessionPlugs.SetBrand,
           OliWeb.LiveSessionPlugs.SetPreviewMode,
@@ -1156,6 +1158,7 @@ defmodule OliWeb.Router do
           {OliWeb.UserAuth, :ensure_authenticated},
           OliWeb.LiveSessionPlugs.SetCtx,
           OliWeb.LiveSessionPlugs.SetSection,
+          OliWeb.LiveSessionPlugs.SetScheduledResourcesFlag,
           OliWeb.LiveSessionPlugs.SetBrand,
           OliWeb.LiveSessionPlugs.SetPreviewMode,
           OliWeb.LiveSessionPlugs.SetSidebar,
@@ -1612,7 +1615,8 @@ defmodule OliWeb.Router do
       end
 
       # External tools
-      live("/external_tools", Admin.ExternalToolsView)
+      live("/external_tools", Admin.ExternalTools.ExternalToolsView)
+      live("/external_tools/new", Admin.ExternalTools.NewExternalToolView)
     end
 
     # System admin

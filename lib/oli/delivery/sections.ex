@@ -62,6 +62,64 @@ defmodule Oli.Delivery.Sections do
   require Logger
 
   @instructor_context_role_id ContextRoles.get_role(:context_instructor).id
+  @student_role_id ContextRoles.get_role(:context_learner).id
+
+  @doc """
+  Fetches the hidden instructor for a given section. If no hidden instructor exists,
+  it creates one.  The "hidden" instructor is a special user account that is used to
+  allow admins to access delivery routes.
+  """
+  def fetch_hidden_instructor(section_id) do
+    case from(e in Enrollment,
+           join: ecr in EnrollmentContextRole,
+           on: ecr.enrollment_id == e.id,
+           join: u in assoc(e, :user),
+           where:
+             e.section_id == ^section_id and
+               u.hidden == true and ecr.context_role_id == ^@instructor_context_role_id,
+           select: u
+         )
+         |> Repo.all() do
+      [] ->
+        create_hidden_instructor(section_id)
+
+      [user | _rest] ->
+        token = Oli.Accounts.generate_user_session_token(user)
+        {:ok, {user, token}}
+    end
+  end
+
+  # Creates a hidden instructor account for a given section.
+  defp create_hidden_instructor(section_id) do
+    Repo.transaction(fn ->
+      # Create a new user with the hidden flag set to true
+      {:ok, user} =
+        Repo.insert(%User{
+          hidden: true,
+          sub: UUID.uuid4(),
+          name: "Admin",
+          given_name: "Admin",
+          family_name: "User",
+          email_confirmed_at: DateTime.utc_now() |> DateTime.truncate(:second),
+          email_verified: true,
+          age_verified: true
+        })
+
+      # Create a new enrollment for the user in the section
+      {:ok, _enrollment} =
+        Oli.Delivery.Sections.enroll(
+          user.id,
+          section_id,
+          [ContextRoles.get_role(:context_instructor)],
+          :enrolled
+        )
+
+      token = Oli.Accounts.generate_user_session_token(user)
+
+      # Return the created user and session token
+      {user, token}
+    end)
+  end
 
   def enrolled_students(section_slug) do
     section = get_section_by_slug(section_slug)
@@ -93,6 +151,17 @@ defmodule Oli.Delivery.Sections do
         payment_date: if(!is_nil(payment), do: payment.application_date, else: nil)
       })
     end)
+  end
+
+  def enrolled_student_ids(section_slug) do
+    from(e in Enrollment,
+      join: s in assoc(e, :section),
+      join: ecr in assoc(e, :context_roles),
+      join: u in assoc(e, :user),
+      where: s.slug == ^section_slug and e.status == :enrolled and ecr.id == @student_role_id,
+      select: u.id
+    )
+    |> Repo.all()
   end
 
   @doc """
@@ -4822,10 +4891,12 @@ defmodule Oli.Delivery.Sections do
   %{
     objective: "Parent Objective Title"
     objective_resource_id: 231,
-    student_proficiency_obj: "High"
+    student_proficiency_obj: "High",
+    student_proficiency_obj_dist: %{"High" => 1, "Low" => 1},
     subobjective: "Subobjective Title",
     subobjective_resource_id: 388,
-    student_proficiency_subobj: "Low"
+    student_proficiency_subobj: "Low",
+    student_proficiency_subobj_dist: %{"High" => 1, "Low" => 2},
   }
 
   For objectives that are subobjectives, the objective is shown as the `subobjective` like the
@@ -4833,22 +4904,16 @@ defmodule Oli.Delivery.Sections do
   top level objectives, they appear with their proficiency for only those activities that
   directly attached to them.
   """
-  def get_objectives_and_subobjectives(%Section{slug: section_slug} = section, student_id \\ nil) do
-    calc = fn count, total ->
-      case total do
-        0 -> nil
-        _ -> count / total
-      end
-    end
+  def get_objectives_and_subobjectives(%Section{slug: section_slug} = section, opts \\ []) do
+    student_id =
+      if opts[:student_id],
+        do: opts[:student_id],
+        else: nil
 
-    proficiency_per_learning_objective =
-      case student_id do
-        nil ->
-          Metrics.raw_proficiency_per_learning_objective(section.id)
-
-        student_id ->
-          Metrics.raw_proficiency_per_learning_objective(section.id, student_id: student_id)
-      end
+    exclude_sub_objectives =
+      if opts[:exclude_sub_objectives],
+        do: true,
+        else: false
 
     # get the minimal fields for all objectives from the database
     objective_id = Oli.Resources.ResourceType.id_for_objective()
@@ -4863,6 +4928,61 @@ defmodule Oli.Delivery.Sections do
         children: rev.children
       })
       |> Repo.all()
+
+    id_list =
+      objectives
+      |> Enum.map(& &1.resource_id)
+
+    proficiencies_for_objectives =
+      case student_id do
+        nil ->
+          Metrics.proficiency_per_student_for_objective(section.id, id_list)
+
+        student_id ->
+          Metrics.proficiency_per_student_for_objective(section.id, id_list,
+            student_id: student_id
+          )
+      end
+
+    student_ids =
+      Sections.enrolled_student_ids(section_slug)
+
+    proficiency_dist_for_objectives =
+      proficiencies_for_objectives
+      |> Enum.reduce(%{}, fn {objective_id, student_proficiency}, acc ->
+        student_proficiency =
+          student_ids
+          |> Enum.reject(&Map.has_key?(student_proficiency, &1))
+          |> Enum.reduce(student_proficiency, fn user_id, acc ->
+            Map.put(acc, user_id, "Not enough data")
+          end)
+
+        proficiency_dist =
+          student_proficiency
+          |> Enum.frequencies_by(fn {_student_id, proficiency} -> proficiency end)
+
+        proficiency_mode =
+          proficiency_dist
+          |> Enum.map(fn {key, value} ->
+            ordinal =
+              case String.downcase(key) do
+                "low" -> 0
+                "medium" -> 1
+                "high" -> 2
+                _ -> 3
+              end
+
+            {key, value, ordinal}
+          end)
+          |> Enum.sort_by(fn {_key, _value, ordinal} -> ordinal end)
+          |> Enum.max_by(fn {_key, value, _ordinal} -> value end)
+          |> elem(0)
+
+        Map.put(acc, objective_id,
+          proficiency_dist: proficiency_dist,
+          proficiency_mode: proficiency_mode
+        )
+      end)
 
     objective_to_container_ids_map =
       from(co in ContainedObjective)
@@ -4893,32 +5013,6 @@ defmodule Oli.Delivery.Sections do
         end)
       end)
 
-    top_level_objectives =
-      Enum.filter(objectives, fn obj ->
-        !Map.has_key?(parent_map, obj.resource_id)
-      end)
-
-    # Now calculate the aggregate proficiency for each top level objective
-    top_level_aggregation =
-      Enum.reduce(top_level_objectives, %{}, fn obj, map ->
-        aggregation =
-          Enum.reduce(obj.children, {0, 0, 0, 0}, fn child,
-                                                     {first_attempts_correct, first_attempts,
-                                                      correct, attempts} ->
-            {child_first_attempts_correct, child_first_attempts, child_correct, child_attempts} =
-              Map.get(proficiency_per_learning_objective, child, {0, 0, 0, 0})
-
-            {
-              first_attempts_correct + child_first_attempts_correct,
-              first_attempts + child_first_attempts,
-              correct + child_correct,
-              attempts + child_attempts
-            }
-          end)
-
-        Map.put(map, obj.resource_id, aggregation)
-      end)
-
     # Now make a pass over top level objectives, and for each one, pull in its subobjectives.
     # We have to take this approach to account for the fact that a sub objective can have
     # multiple parents.
@@ -4926,48 +5020,57 @@ defmodule Oli.Delivery.Sections do
       case Map.has_key?(parent_map, objective.resource_id) do
         # this is a top-level objective
         false ->
-          {correct, total, _, _} =
-            Map.get(proficiency_per_learning_objective, objective.resource_id, {0, 0, 0, 0})
+          {student_proficiency_obj, student_proficiency_obj_dist} =
+            case Map.get(proficiency_dist_for_objectives, objective.resource_id) do
+              nil -> {"Not enough data", %{}}
+              prof -> {prof[:proficiency_mode], prof[:proficiency_dist]}
+            end
 
           objective =
             Map.merge(objective, %{
               section_id: section.id,
               objective: objective.title,
               objective_resource_id: objective.resource_id,
-              student_proficiency_obj: Metrics.proficiency_range(calc.(correct, total), total),
+              student_proficiency_obj: student_proficiency_obj,
+              student_proficiency_obj_dist: student_proficiency_obj_dist,
               subobjective: "",
               subobjective_resource_id: nil,
               student_proficiency_subobj: ""
             })
 
-          {parent_correct, parent_total, _, _} =
-            Map.get(top_level_aggregation, objective.resource_id, {0, 0, 0, 0})
+          case exclude_sub_objectives do
+            false ->
+              # this is a top-level objective, so we need to include its subobjectives
+              # in the result set as well
+              sub_objectives =
+                Enum.map(objective.children, fn child ->
+                  sub_objective = Map.get(lookup_map, child)
 
-          sub_objectives =
-            Enum.map(objective.children, fn child ->
-              sub_objective = Map.get(lookup_map, child)
+                  {student_proficiency_subobj, student_proficiency_subobj_dist} =
+                    case Map.get(proficiency_dist_for_objectives, sub_objective.resource_id) do
+                      nil -> {"Not enough data", %{}}
+                      prof -> {prof[:proficiency_mode], prof[:proficiency_dist]}
+                    end
 
-              {correct, total, _, _} =
-                Map.get(
-                  proficiency_per_learning_objective,
-                  sub_objective.resource_id,
-                  {0, 0, 0, 0}
-                )
+                  Map.merge(sub_objective, %{
+                    section_id: section.id,
+                    objective: objective.title,
+                    objective_resource_id: objective.resource_id,
+                    student_proficiency_obj: student_proficiency_obj,
+                    student_proficiency_obj_dist: student_proficiency_obj_dist,
+                    subobjective: sub_objective.title,
+                    subobjective_resource_id: sub_objective.resource_id,
+                    student_proficiency_subobj: student_proficiency_subobj,
+                    student_proficiency_subobj_dist: student_proficiency_subobj_dist
+                  })
+                end)
 
-              Map.merge(sub_objective, %{
-                section_id: section.id,
-                objective: objective.title,
-                objective_resource_id: objective.resource_id,
-                student_proficiency_obj:
-                  Metrics.proficiency_range(calc.(parent_correct, parent_total), parent_total),
-                subobjective: sub_objective.title,
-                subobjective_resource_id: sub_objective.resource_id,
-                student_proficiency_subobj:
-                  Metrics.proficiency_range(calc.(correct, total), total)
-              })
-            end)
+              [objective | sub_objectives] ++ all
 
-          [objective | sub_objectives] ++ all
+            true ->
+              # this is a top-level objective, so we just return it
+              [objective] ++ all
+          end
 
         # this is a subobjective, we do nothing as it will be handled in the context of its parent(s)
         _ ->

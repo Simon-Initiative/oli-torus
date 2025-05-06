@@ -383,14 +383,14 @@ defmodule OliWeb.DeliveryController do
       section ->
         contents =
           Sections.get_objectives_and_subobjectives(section)
-          |> Enum.map(
-            &%{
-              objective: &1.objective,
-              subojective: &1.subobjective,
-              student_proficiency_obj: &1.student_proficiency_obj,
-              student_proficiency_subobj: &1.student_proficiency_subobj
+          |> Enum.map(fn objective ->
+            %{
+              objective: objective.objective,
+              subobjective: objective.subobjective,
+              student_proficiency_obj: objective.student_proficiency_obj,
+              student_proficiency_subobj: objective.student_proficiency_subobj
             }
-          )
+          end)
           |> DataTable.new()
           |> DataTable.headers([
             :objective,

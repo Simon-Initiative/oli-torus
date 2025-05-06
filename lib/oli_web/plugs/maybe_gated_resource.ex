@@ -9,6 +9,7 @@ defmodule Oli.Plugs.MaybeGatedResource do
   alias Oli.Resources.Revision
   alias Oli.Delivery.Gating
   alias Oli.Delivery.Attempts.Core
+  alias Oli.Delivery.Sections.SectionResourceDepot
 
   def init(opts), do: opts
 
@@ -97,7 +98,8 @@ defmodule Oli.Plugs.MaybeGatedResource do
       container_link_url: &Routes.page_delivery_path(conn, :container, section.slug, &1),
       bib_app_params: %{
         bibReferences: []
-      }
+      },
+      has_scheduled_resources?: SectionResourceDepot.has_scheduled_resources?(section.id)
     )
     |> halt()
   end

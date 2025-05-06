@@ -25,6 +25,11 @@ defmodule OliWeb.Products.Payments.Discounts.TableModel do
           sort_fn: &__MODULE__.sort_value_column/2
         },
         %ColumnSpec{
+          name: :bypass_paywall,
+          label: "Paywall Turned Off",
+          render_fn: &__MODULE__.render_bypass_paywall_column/3
+        },
+        %ColumnSpec{
           name: :inserted_at,
           label: "Created",
           render_fn: &OliWeb.Common.Table.Common.render_date/3
@@ -42,6 +47,9 @@ defmodule OliWeb.Products.Payments.Discounts.TableModel do
       }
     )
   end
+
+  def render_bypass_paywall_column(_assigns, %{bypass_paywall: true}, _), do: "Yes"
+  def render_bypass_paywall_column(_assigns, _, _), do: "No"
 
   def render_institution_column(_assigns, item, _), do: item.institution.name
 

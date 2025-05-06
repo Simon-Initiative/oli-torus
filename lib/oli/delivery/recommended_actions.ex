@@ -3,7 +3,14 @@ defmodule Oli.Delivery.RecommendedActions do
 
   alias Oli.Delivery.Attempts.Core.ResourceAttempt
   alias Oli.Delivery.Attempts.Core.ResourceAccess
-  alias Oli.Delivery.Sections.{Section, SectionResource, SectionsProjectsPublications}
+
+  alias Oli.Delivery.Sections.{
+    Section,
+    SectionResource,
+    SectionResourceDepot,
+    SectionsProjectsPublications
+  }
+
   alias Oli.Delivery.Attempts.Core.ActivityAttempt
   alias Oli.Repo
   alias Oli.Resources.Revision
@@ -21,14 +28,7 @@ defmodule Oli.Delivery.RecommendedActions do
   end
 
   def section_has_scheduled_resources?(section_id) do
-    section_resource_query()
-    |> where(
-      [sr],
-      sr.section_id == ^section_id and (not is_nil(sr.start_date) or not is_nil(sr.end_date))
-    )
-    |> select([sr], sr.id)
-    |> limit(1)
-    |> Repo.exists?()
+    SectionResourceDepot.has_scheduled_resources?(section_id)
   end
 
   def section_scoring_pending_activities_count(section_id) do

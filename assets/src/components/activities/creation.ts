@@ -24,16 +24,16 @@ export function registerCreationFunc(manifest: Manifest, fn: creationFn) {
 }
 
 export function invokeCreationFunc(
-  id: string,
+  authoringElement: string,
   context: ResourceContext,
 ): Promise<ActivityModelSchema> {
   if (window.oliCreationFuncs !== undefined) {
-    const fn = window.oliCreationFuncs[id];
+    const fn = window.oliCreationFuncs[authoringElement];
     if (typeof fn === 'function') {
       return fn.apply(undefined, [context]);
     }
   }
-  return Promise.reject('could not invoke creation function for ' + id);
+  return Promise.reject('could not invoke creation function for ' + authoringElement);
 }
 
 declare global {

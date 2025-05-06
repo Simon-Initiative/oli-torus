@@ -1,8 +1,6 @@
 defmodule OliWeb.PageDeliveryControllerTest do
   use OliWeb.ConnCase
 
-  @moduletag :skip
-
   import Mox
   import Oli.Factory
   import Oli.Utils.Seeder.Utils
@@ -237,6 +235,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert html_response(conn, 200) =~ section.title
     end
 
+    @tag :skip
     test "shows the related exploration pages for a given page", %{
       conn: conn,
       user: user,
@@ -254,6 +253,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert html_response(conn, 200) =~ section.title
     end
 
+    @tag :skip
     test "shows a 'no exploration pages' message when the page doesn't have any related exploration pages",
          %{
            conn: conn,
@@ -271,6 +271,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert html_response(conn, 200) =~ section.title
     end
 
+    @tag :skip
     test "handles student adaptive page access by an enrolled student", %{
       conn: conn,
       map: %{adaptive_page_revision: revision},
@@ -380,6 +381,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert html_response(conn, 200) =~ section.title
     end
 
+    @tag :skip
     @tag isolation: "serializable"
     test "shows the prologue page on an assessment", %{
       user: user,
@@ -551,6 +553,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker.get_jobs() |> length() == 1
     end
 
+    @tag :skip
     @tag isolation: "serializable"
     test "requires correct password to start an attempt", %{
       user: user,
@@ -623,6 +626,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert html_response(conn, 200) =~ "Submit Answers"
     end
 
+    @tag :skip
     test "renders custom license in footer for started page", %{
       conn: conn,
       user: user,
@@ -650,6 +654,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
              |> Floki.text() =~ "This is a custom license"
     end
 
+    @tag :skip
     test "renders :none license case in footer for started page", %{
       conn: conn,
       user: user,
@@ -677,6 +682,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
              |> Floki.text() =~ "Non-CC / Copyrighted / Other"
     end
 
+    @tag :skip
     test "renders custom license in footer for a not_started page -- prologue", %{
       conn: conn,
       user: user,
@@ -704,6 +710,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
              |> Floki.text() =~ "This is a custom license"
     end
 
+    @tag :skip
     test "renders creative commons license in footer for a not_started page -- prologue", %{
       conn: conn,
       user: user,
@@ -740,6 +747,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert Floki.find(license, "img") |> Floki.attribute("src") == ["/images/cc_logos/by.svg"]
     end
 
+    @tag :skip
     # This tests the edge case for when a student goes to a page that is available to start and the instructor changes the start date
     # to a future date simultaneously and before the student refreshes the page.
     # The student should be redirected back to the page and see a message that the page is not yet available when trying to start an attempt.
@@ -785,6 +793,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
                "This assessment is not yet available. It will be available on #{FormatDateTime.date(tomorrow, conn: conn, precision: :minutes)}."
     end
 
+    @tag :skip
     @tag isolation: "serializable"
     test "shows 'Start Attempt' button when start date has passed", %{
       user: user,
@@ -828,6 +837,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert html_response(conn, 200) =~ "Submit Answers"
     end
 
+    @tag :skip
     test "does not show 'Start Attempt' button when start date has not passed yet", %{
       user: user,
       conn: conn,
@@ -850,6 +860,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       refute html_response =~ "Start Attempt"
     end
 
+    @tag :skip
     @tag isolation: "serializable"
     test "changing a page from graded to ungraded allows the graded attempt to continue", %{
       map: map,
@@ -963,6 +974,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       refute html_response(conn, 200) =~ "Submit Answers"
     end
 
+    @tag :skip
     @tag isolation: "serializable"
     test "changing a page from ungraded to graded shows the prologue even with an ungraded attempt present",
          %{
@@ -1066,6 +1078,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert html_response(conn, 200) =~ "Submit Answers"
     end
 
+    @tag :skip
     @tag isolation: "serializable"
     test "multiple requests to start attempt only results in single active attempt record", %{
       user: user,
@@ -1130,6 +1143,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
                Core.get_resource_attempt_history(page_revision.resource_id, section.slug, user.id)
     end
 
+    @tag :skip
     @tag isolation: "serializable"
     test "page with content breaks renders pagination controls", %{
       map: map,
@@ -1202,6 +1216,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert html_response(conn, 200) =~ ~s|<div data-react-class="Components.PaginationControls"|
     end
 
+    @tag :skip
     @tag isolation: "serializable"
     test "page renders learning objectives in ungraded pages but not graded, except for review mode",
          %{
@@ -1251,6 +1266,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert html_response(conn, 200) =~ "objective one"
     end
 
+    @tag :skip
     test "render student's upcoming activities if any exists", %{
       conn: conn,
       user: user
@@ -1296,6 +1312,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       refute html_response(conn, 200) =~ "A graded container?"
     end
 
+    @tag :skip
     test "shows page index based navigation", %{
       conn: conn,
       revision: revision,
@@ -1312,6 +1329,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert html_response(conn, 200) =~ "id=\"bottom_page_navigator\""
     end
 
+    @tag :skip
     @tag isolation: "serializable"
     test "timer will be shown it if revision is graded", %{
       conn: conn,
@@ -1363,6 +1381,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert html_response(conn, 404) =~ "The section you are trying to view does not exist"
     end
 
+    @tag :skip
     test "shows 'Where you left off' card when student has visited a page before", %{
       conn: conn,
       user: user,
@@ -1530,6 +1549,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert html_response(conn, 302) =~ Routes.delivery_path(conn, :show_enroll, section.slug)
     end
 
+    @tag :skip
     test "handles independent learner user access after author and another user have been deleted",
          %{
            conn: conn,
@@ -1630,6 +1650,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
   describe "displaying unit numbers" do
     setup [:setup_tags, :base_project_with_curriculum]
 
+    @tag :skip
     test "does not display unit numbers if setting is set to false", %{
       conn: conn,
       project: project,
@@ -1672,6 +1693,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert response =~ "Unit: The first unit"
     end
 
+    @tag :skip
     test "does display unit numbers if setting is set to true", %{
       conn: conn,
       project: project,
@@ -1940,6 +1962,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
   end
 
   describe "preview redirects to student view when is enrolled" do
+    @describetag :skip
     setup [:setup_lti_session, :section_with_assessment, :enroll_as_student]
 
     test "index preview redirects ok", %{
@@ -1955,6 +1978,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert html_response(conn, 200) =~ "Course Content"
     end
 
+    @tag :skip
     test "index preview redirects ok when section slug ends with 'preview'", %{
       conn: conn,
       section: section
@@ -1985,6 +2009,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
                Routes.page_delivery_path(conn, :container, section.slug, unit_one_revision)
     end
 
+    @tag :skip
     test "page preview redirects ok", %{
       conn: conn,
       section: section,
@@ -2128,6 +2153,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
   describe "exploration" do
     setup [:project_section_revisions]
 
+    @tag :skip
     test "student can access if is enrolled in the section", %{conn: conn, section: section} do
       user = insert(:user)
       enroll_as_student(%{section: section, user: user})
@@ -2153,6 +2179,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert html_response(conn, 200)
     end
 
+    @tag :skip
     test "user logged in as system admin can access to exploration preview", %{
       conn: conn,
       section: section
@@ -2179,6 +2206,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
                "You are being <a href=\"/sections/#{section.slug}/enroll\">redirected</a>."
     end
 
+    @tag :skip
     test "page renders a list of exploration pages", %{
       conn: conn,
       section: section,
@@ -2196,6 +2224,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert html_response(conn, 200) =~ "Your Exploration Activities"
     end
 
+    @tag :skip
     test "page renders a message when there are no exploration pages available", %{
       conn: conn
     } do
@@ -2289,6 +2318,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert html_response(conn, 200)
     end
 
+    @tag :skip
     test "user logged in as system admin can access to discussion preview", %{
       conn: conn,
       section: section
@@ -2300,6 +2330,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert html_response(conn, 200) =~ "Your Latest Discussion Activity"
     end
 
+    @tag :skip
     test "page renders a list of posts of current user", %{
       conn: conn,
       section: section,
@@ -2322,6 +2353,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       end
     end
 
+    @tag :skip
     test "page renders a list of posts of all users", %{
       conn: conn,
       section: section,
@@ -2344,6 +2376,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       end
     end
 
+    @tag :skip
     test "page renders a message when there are no posts to show", %{
       conn: conn
     } do
@@ -2369,6 +2402,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
   describe "assignments" do
     setup [:section_with_gating_conditions]
 
+    @tag :skip
     test "student can access if is enrolled in the section", %{conn: conn, section: section} do
       user = insert(:user)
       enroll_as_student(%{section: section, user: user})
@@ -2386,6 +2420,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
                "Find all your assignments, quizzes and activities associated with graded material."
     end
 
+    @tag :skip
     test "user logged in as system admin can access to assignments preview", %{
       conn: conn,
       section: section
@@ -2400,6 +2435,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
                "Find all your assignments, quizzes and activities associated with graded material."
     end
 
+    @tag :skip
     test "related activities get rendered", %{conn: conn, section: section} do
       user = insert(:user)
       enroll_as_student(%{section: section, user: user})

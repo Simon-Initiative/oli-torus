@@ -944,6 +944,50 @@ defmodule OliWeb.Delivery.Student.Utils do
   def is_adaptive_page(%Oli.Resources.Revision{content: %{"advancedDelivery" => true}}), do: true
   def is_adaptive_page(_), do: false
 
+  @doc """
+  Returns the grouped agenda resources for a section and user considering if the section is scheduled or not.
+  - If it is scheduled, returns the schedule for the current week and the next week.
+  - If it is not scheduled, returns the first incomplete chunk of the agenda.
+  Each chunk is a list of 6 container groups, ordered by the order they appear in the curriculum.
+  Incomplete chunk means that at least one container group has a progress != 100.0
+  """
+  def grouped_agenda_resources(
+        section,
+        combined_settings,
+        current_user_id,
+        true = _has_scheduled_resources?
+      ) do
+    Sections.get_schedule_for_current_and_next_week(
+      section,
+      combined_settings,
+      current_user_id
+    )
+  end
+
+  def grouped_agenda_resources(
+        section,
+        combined_settings,
+        current_user_id,
+        false = _has_scheduled_resources?
+      ) do
+    %{{nil, nil} => sorted_container_groups} =
+      Sections.get_not_scheduled_agenda(section, combined_settings, current_user_id)
+
+    %{{nil, nil} => get_first_incomplete_chunk(sorted_container_groups)}
+  end
+
+  defp get_first_incomplete_chunk(sorted_container_groups, chunk_size \\ 6) do
+    # returns the first chunk that has a group with progress != 100.0
+    # if all chunks have groups with progress == 100.0, returns an empty list
+    # this is used to determine which chunk to display in the agenda when the section is not scheduled
+
+    sorted_container_groups
+    |> Enum.chunk_every(chunk_size)
+    |> Enum.find([], fn chunk ->
+      Enum.any?(chunk, fn group -> group.progress != 100.0 end)
+    end)
+  end
+
   defp build_page_link_params(section_slug, page, request_path, selected_view) do
     current_page_path =
       lesson_live_path(section_slug, page.slug,

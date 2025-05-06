@@ -14,12 +14,15 @@ defmodule Oli.Lti.PlatformExternalTools.LtiExternalToolActivityDeployment do
                Lti_1p3.DataProviders.EctoProvider.PlatformInstance,
                foreign_key: :platform_instance_id
 
+    field :status, Ecto.Enum, values: [:enabled, :disabled], default: :enabled
+
     timestamps(type: :utc_datetime)
   end
 
   def changeset(lti_external_tool_deployment, attrs \\ %{}) do
     lti_external_tool_deployment
-    |> cast(attrs, [:activity_registration_id, :platform_instance_id])
+    |> cast(attrs, [:activity_registration_id, :platform_instance_id, :status])
     |> validate_required([:activity_registration_id, :platform_instance_id])
+    |> validate_inclusion(:status, Ecto.Enum.values(__MODULE__, :status))
   end
 end
