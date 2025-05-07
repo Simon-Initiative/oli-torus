@@ -13,7 +13,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InitialAssigns do
   end
 
   def on_mount(:default, %{"section_slug" => section_slug}, session, socket) do
-    case Mount.for(section_slug, session) do
+    case Mount.for(section_slug, socket) do
       {:error, error} ->
         {:halt, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, error))}
 

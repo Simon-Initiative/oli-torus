@@ -23,8 +23,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
   on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
   on_mount OliWeb.LiveSessionPlugs.SetCtx
 
-  def mount(%{"product_id" => product_slug}, session, socket) do
-    case Mount.for(product_slug, session) do
+  def mount(%{"product_id" => product_slug}, _session, socket) do
+    case Mount.for(product_slug, socket) do
       {:error, e} ->
         Mount.handle_error(socket, {:error, e})
 

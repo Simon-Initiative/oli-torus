@@ -9,10 +9,10 @@ defmodule OliWeb.Sections.GatingAndScheduling.Edit do
 
   def mount(
         %{"id" => gating_condition_id, "section_slug" => section_slug},
-        session,
+        _session,
         socket
       ) do
-    case Mount.for(section_slug, session) do
+    case Mount.for(section_slug, socket) do
       {:error, e} ->
         Mount.handle_error(socket, {:error, e})
 

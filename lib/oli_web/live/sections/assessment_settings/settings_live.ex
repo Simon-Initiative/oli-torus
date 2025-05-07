@@ -9,8 +9,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
   alias OliWeb.Sections.Mount
 
   @impl true
-  def mount(%{"section_slug" => section_slug} = _params, session, socket) do
-    case Mount.for(section_slug, session) do
+  def mount(%{"section_slug" => section_slug} = _params, _session, socket) do
+    case Mount.for(section_slug, socket) do
       {:error, error} ->
         {:ok, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, error))}
 
