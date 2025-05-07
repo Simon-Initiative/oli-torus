@@ -8331,6 +8331,10 @@ table.table-striped tbody tr:nth-child(even) {
   stroke: #0CAF61;
 }
 
+.stroke-\[\#1b67b2\] {
+  stroke: #1b67b2;
+}
+
 .stroke-\[\#333333\] {
   stroke: #333333;
 }
@@ -8361,10 +8365,6 @@ table.table-striped tbody tr:nth-child(even) {
 
 .stroke-\[\#7C40FF\] {
   stroke: #7C40FF;
-}
-
-.stroke-\[\#\{\@text_color\}\] {
-  stroke: #{@text color};
 }
 
 .stroke-black {
