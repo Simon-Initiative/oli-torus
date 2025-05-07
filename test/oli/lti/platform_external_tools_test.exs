@@ -1,6 +1,8 @@
 defmodule Oli.Lti.PlatformExternalToolsTest do
   use Oli.DataCase
 
+  import Oli.Factory
+
   alias Oli.Lti.PlatformExternalTools
   alias Oli.Lti.PlatformExternalTools.BrowseOptions
   alias Oli.Repo.{Paging, Sorting}
@@ -174,6 +176,102 @@ defmodule Oli.Lti.PlatformExternalToolsTest do
         )
 
       assert Enum.map(results, & &1.status) == [:disabled, :enabled, :enabled]
+    end
+  end
+
+  describe "update_lti_external_tool_activity/2" do
+    setup do
+      institution = insert(:institution)
+
+      {:ok, {pi, ar, _}} =
+        Oli.Lti.PlatformExternalTools.register_lti_external_tool_activity(%{
+          "name" => "Original Tool",
+          "description" => "A test tool",
+          "target_link_uri" => "https://example.com/launch",
+          "client_id" => "abc-123",
+          "login_url" => "https://example.com/login",
+          "keyset_url" => "https://example.com/keyset",
+          "redirect_uris" => "https://example.com/redirect",
+          "institution_id" => institution.id
+        })
+
+      %{institution: institution, platform_instance: pi, activity_registration: ar}
+    end
+
+    test "successfully updates the tool", %{platform_instance: pi} do
+      attrs = %{
+        "name" => "Updated Tool Name",
+        "description" => "Updated description"
+      }
+
+      assert {:ok, result} =
+               Oli.Lti.PlatformExternalTools.update_lti_external_tool_activity(pi.id, attrs)
+
+      assert result.updated_platform_instance.name == "Updated Tool Name"
+      assert result.updated_activity_registration.description == "Updated description"
+    end
+
+    test "fails when platform_instance is not found" do
+      attrs = %{"name" => "Any", "description" => "Some"}
+
+      assert {:error, :platform_instance, {:not_found}, %{}} ==
+               Oli.Lti.PlatformExternalTools.update_lti_external_tool_activity(-1, attrs)
+    end
+
+    test "fails updating platform_instance due to missing required field", %{
+      platform_instance: pi
+    } do
+      attrs = %{
+        "description" => "Only description, name is missing",
+        "name" => nil
+        # name is missing
+      }
+
+      assert {:error, :updated_platform_instance, changeset, _} =
+               Oli.Lti.PlatformExternalTools.update_lti_external_tool_activity(pi.id, attrs)
+
+      assert changeset.errors[:name]
+    end
+
+    test "fails when activity_registration is not found", %{platform_instance: pi} do
+      Repo.delete_all(from(d in Oli.Lti.PlatformExternalTools.LtiExternalToolActivityDeployment))
+
+      attrs = %{
+        "name" => "New name",
+        "description" => "New description"
+      }
+
+      assert {:error, :activity_registration, {:not_found}, %{}} =
+               Oli.Lti.PlatformExternalTools.update_lti_external_tool_activity(pi.id, attrs)
+    end
+
+    test "fails updating activity_registration due to missing description", %{
+      platform_instance: pi
+    } do
+      attrs = %{
+        "name" => "Valid name"
+        # description is missing
+      }
+
+      assert {:error, :updated_activity_registration, %Ecto.Changeset{} = changeset, _} =
+               Oli.Lti.PlatformExternalTools.update_lti_external_tool_activity(pi.id, attrs)
+
+      assert changeset.errors[:description]
+    end
+  end
+
+  describe "get_platform_instance/1" do
+    test "returns a platform_instance when found" do
+      pi = insert(:platform_instance)
+
+      result = Oli.Lti.PlatformExternalTools.get_platform_instance(pi.id)
+
+      assert result.id == pi.id
+      assert result.client_id == pi.client_id
+    end
+
+    test "returns nil when no platform_instance is found" do
+      refute Oli.Lti.PlatformExternalTools.get_platform_instance(-1)
     end
   end
 end

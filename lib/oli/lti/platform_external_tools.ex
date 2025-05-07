@@ -5,8 +5,9 @@ defmodule Oli.Lti.PlatformExternalTools do
 
   import Ecto.Query, warn: false
   import Ecto.Changeset
-  alias Oli.Repo
+  import Oli.Utils, only: [trap_nil: 1]
 
+  alias Oli.Repo
   alias Oli.Activities
   alias Oli.Activities.ActivityRegistration
   alias Oli.Lti.PlatformExternalTools.{BrowseOptions, LtiExternalToolActivityDeployment}
@@ -91,19 +92,23 @@ defmodule Oli.Lti.PlatformExternalTools do
         ) :: {:ok, map()} | {:error, atom(), Ecto.Changeset.t(), map()}
   def update_lti_external_tool_activity(platform_instance_id, attrs) do
     Ecto.Multi.new()
-    |> Ecto.Multi.one(:platform_instance, fn _ ->
-      from(p in PlatformInstance, where: p.id == ^platform_instance_id)
+    |> Ecto.Multi.run(:platform_instance, fn _, _ ->
+      platform_instance_id
+      |> get_platform_instance()
+      |> trap_nil()
     end)
     |> Ecto.Multi.update(:updated_platform_instance, fn %{platform_instance: platform_instance} ->
       change_platform_instance(platform_instance, attrs)
     end)
-    |> Ecto.Multi.one(:activity_registration, fn _ ->
+    |> Ecto.Multi.run(:activity_registration, fn repo, _ ->
       from(
         a in ActivityRegistration,
         join: etad in LtiExternalToolActivityDeployment,
         on: etad.activity_registration_id == a.id,
         where: etad.platform_instance_id == ^platform_instance_id
       )
+      |> repo.one()
+      |> trap_nil()
     end)
     |> Ecto.Multi.update(:updated_activity_registration, fn %{
                                                               activity_registration:
@@ -249,7 +254,7 @@ defmodule Oli.Lti.PlatformExternalTools do
       %PlatformInstance{}
 
       iex> get_platform_instance(456)
-      ** (Ecto.NoResultsError)
+      nil
   """
   @spec get_platform_instance(integer()) :: %PlatformInstance{}
   def get_platform_instance(platform_instance_id) do

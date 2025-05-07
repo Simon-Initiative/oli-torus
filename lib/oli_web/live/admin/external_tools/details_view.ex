@@ -18,17 +18,25 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
   end
 
   def mount(%{"platform_instance_id" => platform_instance_id}, _session, socket) do
-    platform_instance = PlatformExternalTools.get_platform_instance(platform_instance_id)
-    changeset = PlatformExternalTools.change_platform_instance(platform_instance)
+    case PlatformExternalTools.get_platform_instance(platform_instance_id) do
+      nil ->
+        {:ok,
+         socket
+         |> put_flash(:error, "The LTI Tool you are trying to view does not exist.")
+         |> redirect(to: ~p"/admin/external_tools")}
 
-    {:ok,
-     assign(socket,
-       breadcrumbs: set_breadcrumbs(),
-       form: to_form(changeset, as: :tool_form),
-       platform_instance: platform_instance,
-       custom_flash: nil,
-       edit_mode: false
-     )}
+      platform_instance ->
+        changeset = PlatformExternalTools.change_platform_instance(platform_instance)
+
+        {:ok,
+         assign(socket,
+           breadcrumbs: set_breadcrumbs(),
+           form: to_form(changeset, as: :tool_form),
+           platform_instance: platform_instance,
+           custom_flash: nil,
+           edit_mode: false
+         )}
+    end
   end
 
   def render(assigns) do
@@ -86,7 +94,7 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
            message: "You have successfully updated the LTI 1.3 External Tool."
          })}
 
-      {:error, _, changeset, _} ->
+      {:error, _, %Ecto.Changeset{} = changeset, _} ->
         {flash_type, flash_message} =
           if Enum.any?(changeset.errors, fn
                {:client_id, {"has already been taken", _}} -> true
@@ -103,6 +111,14 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
          |> assign(:custom_flash, %{
            type: flash_type,
            message: flash_message
+         })}
+
+      {:error, _, {:not_found}, _} ->
+        {:noreply,
+         socket
+         |> assign(:custom_flash, %{
+           type: :not_found,
+           message: "This platform instance no longer exists or couldn’t be found."
          })}
     end
   end
@@ -125,6 +141,7 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
         :success -> {"bg-[#F2F9FF]", "#1b67b2", "Success!"}
         :error -> {"bg-[#FEEBED]", "#ce2c31", "Missing Fields"}
         :duplicate -> {"bg-[#FEEBED]", "#ce2c31", "ID Already Exists"}
+        :not_found -> {"bg-[#FEEBED]", "#ce2c31", "Record Not Found"}
       end
 
     assigns = %{
@@ -142,7 +159,7 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
           <%= case @type do %>
             <% :success -> %>
               <Icons.check stroke_class="stroke-blue-600" />
-            <% t when t in [:error, :duplicate] -> %>
+            <% t when t in [:error, :duplicate, :not_found] -> %>
               <Icons.alert />
           <% end %>
           <span class={"text-[#{@text_color}] text-base font-semibold"}>
