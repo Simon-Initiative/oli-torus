@@ -1543,6 +1543,25 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
                "Read by: \n              </span><span class=\"whitespace-nowrap\">\n                Sun, Dec 31, 2023 (8:00pm)"
 
       # unit 2 has not been scheduled by instructor, so there must not be a schedule details data
+      assert view
+             |> element(~s{div[role="unit_2"] div[role="schedule_details"]})
+             |> render() =~
+               "Due by:\n              </span><span class=\"whitespace-nowrap\">\n                Not yet scheduled"
+    end
+
+    test "can not see the 'Not yet scheduled' label when the instructor has not set a schedule",
+         %{conn: conn, user: user} do
+      %{section: section_without_schedule} = create_elixir_project(%{}, false)
+
+      Sections.enroll(user.id, section_without_schedule.id, [
+        ContextRoles.get_role(:context_learner)
+      ])
+
+      Sections.mark_section_visited_for_student(section_without_schedule, user)
+
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section_without_schedule.slug))
+
+      refute has_element?(view, ~s{div[role="unit_1"] div[role="schedule_details"]})
       refute has_element?(view, ~s{div[role="unit_2"] div[role="schedule_details"]})
     end
 
@@ -1711,10 +1730,11 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
              )
              |> render() =~ "Top Level Page"
 
-      refute has_element?(
-               view,
+      assert view
+             |> element(
                ~s{div[id="top_level_page_#{top_level_page.resource_id}"] div[role="schedule_details"]}
              )
+             |> render() =~ "Not yet scheduled"
 
       assert view
              |> element(~s{div[id="page_#{top_level_page.resource_id}"][role="resource card 1"]})
@@ -2475,6 +2495,63 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert render(section_1_element) =~ "Why Elixir?"
       assert render(subsection_1_element) =~ "Erlang as a motivation"
       assert render(subsection_1_element) =~ "ml-[40px]"
+    end
+
+    test "can see scheduling details when course has scheduled resources", %{
+      conn: conn,
+      section: section,
+      unit_1: unit_1,
+      module_1: module_1,
+      unit_2: unit_2
+    } do
+      {:ok, view, _html} =
+        live(conn, Utils.learn_live_path(section.slug, selected_view: :outline))
+
+      assert view
+             |> element(~s{div[role="unit #{unit_1.resource_id} scheduling details"]})
+             |> render() =~ "Sun, Dec 31, 2023 (8:00pm)"
+
+      assert view
+             |> element(~s{div[role="unit #{unit_2.resource_id} scheduling details"]})
+             |> render() =~ "Not yet scheduled"
+
+      assert view
+             |> element(~s{div[role="module #{module_1.resource_id} scheduling details"]})
+             |> render() =~ "Wed, Nov 15, 2023 (8:00pm)"
+
+      assert view
+             |> element(
+               ~s{button[role="page 4 details"] div[role="due date and score"] span[role="page due date"]}
+             )
+             |> render() =~ "Read by: Fri Nov 3, 2023"
+    end
+
+    test "does not see scheduling details when course has no scheduled resources", %{
+      conn: conn,
+      user: user
+    } do
+      %{section: section_without_schedule, unit_1: unit_1, unit_2: unit_2, module_1: module_1} =
+        create_elixir_project(%{}, false)
+
+      enroll_as_student(%{user: user, section: section_without_schedule})
+      mark_section_visited(%{user: user, section: section_without_schedule})
+
+      {:ok, view, _html} =
+        live(conn, Utils.learn_live_path(section_without_schedule.slug, selected_view: :outline))
+
+      refute view
+             |> has_element?(~s{div[role="unit #{unit_1.resource_id} scheduling details"]})
+
+      refute view
+             |> has_element?(~s{div[role="unit #{unit_2.resource_id} scheduling details"]})
+
+      refute view
+             |> has_element?(~s{div[role="module #{module_1.resource_id} scheduling details"]})
+
+      refute view
+             |> has_element?(
+               ~s{button[role="page 4 details"] div[role="due date and score"] span[role="page due date"]}
+             )
     end
   end
 

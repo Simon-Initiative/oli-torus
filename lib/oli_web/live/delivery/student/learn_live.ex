@@ -1443,7 +1443,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               </div>
             </div>
             <div class="flex justify-between items-center mb-3 w-full">
-              <div :if={@has_scheduled_resources?} class="dark:text-[#eeebf5]/75 text-sm font-semibold font-['Open Sans'] leading-none">
+              <div :if={@has_scheduled_resources?} role={"unit #{@row["resource_id"]} scheduling details"} class="dark:text-[#eeebf5]/75 text-sm font-semibold font-['Open Sans'] leading-none">
                 <%= if @row["section_resource"].end_date in [nil, "Not yet scheduled"],
                   do: "Due by:",
                   else:
@@ -1623,7 +1623,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               </div>
             </div>
             <div class="flex justify-between items-center h-6 mb-3 w-full">
-              <div :if={@has_scheduled_resources?} class="dark:text-[#eeebf5]/75 text-sm font-semibold font-['Open Sans'] leading-none">
+              <div :if={@has_scheduled_resources?} role={"module #{@row["resource_id"]} scheduling details"} class="dark:text-[#eeebf5]/75 text-sm font-semibold font-['Open Sans'] leading-none">
                 <%= if @row["section_resource"].end_date in [nil, "Not yet scheduled"],
                   do: "Due by:",
                   else:
@@ -1846,7 +1846,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               />
             </div>
             <div :if={@row["graded"]} role="due date and score" class="flex">
-              <span :if={@has_scheduled_resources?} class="opacity-60 text-[13px] font-normal font-['Open Sans'] !font-normal opacity-60 dark:text-white">
+              <span :if={@has_scheduled_resources?} role="page due date" class="opacity-60 text-[13px] font-normal font-['Open Sans'] !font-normal opacity-60 dark:text-white">
                 <%= Utils.label_for_scheduling_type(@row["section_resource"].scheduling_type) %><%= format_date(
                   @row["section_resource"].end_date,
                   @ctx,

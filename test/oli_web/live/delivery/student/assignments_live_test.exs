@@ -15,7 +15,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLiveTest do
     ~p"/sections/#{section_slug}/assignments"
   end
 
-  defp create_elixir_project(_) do
+  defp create_elixir_project(_, add_schedule? \\ true) do
     author = insert(:author)
     project = insert(:project, authors: [author])
 
@@ -138,6 +138,29 @@ defmodule OliWeb.Delivery.Student.AssignmentsLiveTest do
 
     {:ok, section} = Sections.create_section_resources(section, publication)
     {:ok, _} = Sections.rebuild_contained_pages(section)
+
+    if add_schedule? do
+      Sections.get_section_resource(section.id, page_1_revision.resource_id)
+      |> Sections.update_section_resource(%{
+        scheduling_type: :due_by,
+        start_date: ~U[2023-11-02 20:00:00Z],
+        end_date: ~U[2023-11-03 20:00:00Z]
+      })
+
+      Sections.get_section_resource(section.id, page_2_revision.resource_id)
+      |> Sections.update_section_resource(%{
+        scheduling_type: :due_by,
+        start_date: ~U[2023-11-04 20:00:00Z],
+        end_date: ~U[2023-11-05 20:00:00Z]
+      })
+
+      Sections.get_section_resource(section.id, page_3_revision.resource_id)
+      |> Sections.update_section_resource(%{
+        scheduling_type: :due_by,
+        start_date: ~U[2023-11-06 20:00:00Z],
+        end_date: ~U[2023-11-07 20:00:00Z]
+      })
+    end
 
     certificate =
       insert(:certificate, %{
@@ -507,6 +530,66 @@ defmodule OliWeb.Delivery.Student.AssignmentsLiveTest do
                view,
                "div[role='assignment detail'][id='assignment_#{page_1.resource_id}']"
              )
+    end
+
+    test "can see schedule details when course has scheduled resources", %{
+      conn: conn,
+      section: section,
+      page_1: page_1,
+      page_2: page_2,
+      page_3: page_3,
+      page_4: page_4
+    } do
+      {:ok, view, _html} = live(conn, live_view_assignments_live_route(section.slug))
+
+      assert view
+             |> element(
+               ~s{div[role="assignment detail"][id="assignment_#{page_1.resource_id}"] span[role="assignment schedule details"]}
+             )
+             |> render() =~ "Due by:  Fri Nov 3, 2023"
+
+      assert view
+             |> element(
+               ~s{div[role="assignment detail"][id="assignment_#{page_2.resource_id}"] span[role="assignment schedule details"]}
+             )
+             |> render() =~ "Due by:  Sun Nov 5, 2023"
+
+      assert view
+             |> element(
+               ~s{div[role="assignment detail"][id="assignment_#{page_3.resource_id}"] span[role="assignment schedule details"]}
+             )
+             |> render() =~ "Due by:  Tue Nov 7, 2023"
+
+      assert view
+             |> element(
+               ~s{div[role="assignment detail"][id="assignment_#{page_4.resource_id}"] span[role="assignment schedule details"]}
+             )
+             |> render() =~ "Read by:  Not yet scheduled"
+    end
+
+    test "can not see schedule details when course has no scheduled resources", %{
+      conn: conn,
+      user: user
+    } do
+      %{
+        section: section_without_schedule,
+        page_1: page_1,
+        page_2: page_2,
+        page_3: page_3,
+        page_4: page_4
+      } = create_elixir_project(%{}, false)
+
+      enroll_and_visit_section(%{user: user, section: section_without_schedule})
+
+      {:ok, view, _html} =
+        live(conn, live_view_assignments_live_route(section_without_schedule.slug))
+
+      Enum.each([page_1, page_2, page_3, page_4], fn page ->
+        refute has_element?(
+                 view,
+                 ~s{div[role="assignment detail"][id="assignment_#{page.resource_id}"] span[role="assignment schedule details"]}
+               )
+      end)
     end
   end
 end
