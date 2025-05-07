@@ -279,7 +279,11 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
         >
           <%= @assignment.title %>
         </.link>
-        <span :if={@has_scheduled_resources?} role="assignment schedule details" class="text-[#757682] dark:text-[#eeebf5]/75 text-xs font-semibold leading-3 whitespace-nowrap truncate">
+        <span
+          :if={@has_scheduled_resources?}
+          role="assignment schedule details"
+          class="text-[#757682] dark:text-[#eeebf5]/75 text-xs font-semibold leading-3 whitespace-nowrap truncate"
+        >
           <%= Utils.label_for_scheduling_type(@assignment.scheduling_type) %> <%= FormatDateTime.to_formatted_datetime(
             @assignment.end_date,
             @ctx,

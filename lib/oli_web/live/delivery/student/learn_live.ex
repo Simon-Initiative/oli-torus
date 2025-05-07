@@ -1045,7 +1045,11 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               <h3 class="text-[26px] leading-[32px] tracking-[0.02px] font-normal dark:text-[#DDD]">
                 <%= @unit["title"] %>
               </h3>
-              <div :if={@has_scheduled_resources?} class="ml-auto flex items-center gap-3" role="schedule_details">
+              <div
+                :if={@has_scheduled_resources?}
+                class="ml-auto flex items-center gap-3"
+                role="schedule_details"
+              >
                 <div class="text-[14px] leading-[32px] tracking-[0.02px] font-semibold">
                   <span class="text-gray-400 opacity-80 dark:text-[#696974] dark:opacity-100 mr-1">
                     <%= Utils.label_for_scheduling_type(@unit["section_resource"].scheduling_type) %>
@@ -1112,7 +1116,11 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               <h3 class="text-[26px] leading-[32px] tracking-[0.02px] font-normal dark:text-[#DDD]">
                 <%= @unit["title"] %>
               </h3>
-              <div :if={@has_scheduled_resources?} class="flex items-center gap-3" role="schedule_details">
+              <div
+                :if={@has_scheduled_resources?}
+                class="flex items-center gap-3"
+                role="schedule_details"
+              >
                 <div class="text-[14px] leading-[32px] tracking-[0.02px] font-semibold">
                   <span class="text-gray-400 opacity-80 dark:text-[#696974] dark:opacity-100 mr-1">
                     <%= if @unit["section_resource"].end_date in [nil, "Not yet scheduled"],
@@ -1258,7 +1266,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 "title"
               ] %>
             </h2>
-            <span :if={@has_scheduled_resources?} class="opacity-50 dark:text-white text-xs font-normal">
+            <span
+              :if={@has_scheduled_resources?}
+              class="opacity-50 dark:text-white text-xs font-normal"
+            >
               <%= Utils.container_label_for_scheduling_type(
                 Map.get(@contained_scheduling_types, selected_module["resource_id"])
               ) %><%= format_date(
@@ -1443,7 +1454,11 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               </div>
             </div>
             <div class="flex justify-between items-center mb-3 w-full">
-              <div :if={@has_scheduled_resources?} role={"unit #{@row["resource_id"]} scheduling details"} class="dark:text-[#eeebf5]/75 text-sm font-semibold font-['Open Sans'] leading-none">
+              <div
+                :if={@has_scheduled_resources?}
+                role={"unit #{@row["resource_id"]} scheduling details"}
+                class="dark:text-[#eeebf5]/75 text-sm font-semibold font-['Open Sans'] leading-none"
+              >
                 <%= if @row["section_resource"].end_date in [nil, "Not yet scheduled"],
                   do: "Due by:",
                   else:
@@ -1623,7 +1638,11 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               </div>
             </div>
             <div class="flex justify-between items-center h-6 mb-3 w-full">
-              <div :if={@has_scheduled_resources?} role={"module #{@row["resource_id"]} scheduling details"} class="dark:text-[#eeebf5]/75 text-sm font-semibold font-['Open Sans'] leading-none">
+              <div
+                :if={@has_scheduled_resources?}
+                role={"module #{@row["resource_id"]} scheduling details"}
+                class="dark:text-[#eeebf5]/75 text-sm font-semibold font-['Open Sans'] leading-none"
+              >
                 <%= if @row["section_resource"].end_date in [nil, "Not yet scheduled"],
                   do: "Due by:",
                   else:
@@ -1726,7 +1745,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                     data-completed={"#{Enum.all?(grouped_pages, fn p -> p["completed"] end)}"}
                     class="h-[19px] mb-5"
                   >
-                    <span :if={@has_scheduled_resources?} class="dark:text-white text-sm font-bold font-['Open Sans']">
+                    <span
+                      :if={@has_scheduled_resources?}
+                      class="dark:text-white text-sm font-bold font-['Open Sans']"
+                    >
                       <%= "#{Utils.label_for_scheduling_type(grouped_scheduling_type)}#{format_date(grouped_due_date, @ctx, "{WDshort} {Mshort} {D}, {YYYY}")}" %>
                     </span>
                   </div>
@@ -1846,7 +1868,11 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               />
             </div>
             <div :if={@row["graded"]} role="due date and score" class="flex">
-              <span :if={@has_scheduled_resources?} role="page due date" class="opacity-60 text-[13px] font-normal font-['Open Sans'] !font-normal opacity-60 dark:text-white">
+              <span
+                :if={@has_scheduled_resources?}
+                role="page due date"
+                class="opacity-60 text-[13px] font-normal font-['Open Sans'] !font-normal opacity-60 dark:text-white"
+              >
                 <%= Utils.label_for_scheduling_type(@row["section_resource"].scheduling_type) %><%= format_date(
                   @row["section_resource"].end_date,
                   @ctx,
@@ -2172,7 +2198,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             <Student.duration_in_minutes duration_minutes={@duration_minutes} graded={@graded} />
           </div>
           <div :if={@graded} role="due date and score" class="flex">
-            <span :if={@has_scheduled_resources?} class="opacity-60 text-[13px] font-normal !font-normal opacity-60 dark:text-white">
+            <span
+              :if={@has_scheduled_resources?}
+              class="opacity-60 text-[13px] font-normal !font-normal opacity-60 dark:text-white"
+            >
               <%= Utils.label_for_scheduling_type(@parent_scheduling_type) %><%= format_date(
                 @due_date,
                 @ctx,

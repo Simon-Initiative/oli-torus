@@ -257,7 +257,10 @@ defmodule OliWeb.Delivery.Student.IndexLive do
                   Module <%= @suggested_page.module_index %>
                 </div>
               </div>
-              <div :if={@has_scheduled_resources?} class="grow shrink basis-0 h-5 justify-start items-center gap-1 flex">
+              <div
+                :if={@has_scheduled_resources?}
+                class="grow shrink basis-0 h-5 justify-start items-center gap-1 flex"
+              >
                 <div class="text-right text-white text-sm font-bold">Due:</div>
                 <div class="text-right text-white text-sm font-bold">
                   <%= format_date(
