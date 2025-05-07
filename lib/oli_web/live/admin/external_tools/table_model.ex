@@ -85,7 +85,7 @@ defmodule OliWeb.Admin.ExternalTools.TableModel do
 
     ~H"""
     <.link
-      navigate={~p"/admin/external_tools/#{@platform_instance_id}/details"}
+      href={~p"/admin/external_tools/#{@platform_instance_id}/details"}
       class="w-20 text-center text-sm font-semibold leading-none h-7 rounded-lg shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] outline outline-1 outline-offset-[-1px] inline-flex justify-center items-center"
     >
       Details
