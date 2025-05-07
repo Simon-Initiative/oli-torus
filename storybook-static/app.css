@@ -7507,6 +7507,11 @@ table.table-striped tbody tr:nth-child(even) {
   background-color: rgb(0 98 242 / var(--tw-bg-opacity));
 }
 
+.bg-\[\#006cd9\] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(0 108 217 / var(--tw-bg-opacity));
+}
+
 .bg-\[\#0080FF\] {
   --tw-bg-opacity: 1;
   background-color: rgb(0 128 255 / var(--tw-bg-opacity));
@@ -8383,6 +8388,10 @@ table.table-striped tbody tr:nth-child(even) {
   stroke: rgb(0 0 0 / 0.9);
 }
 
+.stroke-blue-600 {
+  stroke: #275CAF;
+}
+
 .stroke-gray-300 {
   stroke: #d4d4d4;
 }
@@ -8493,6 +8502,11 @@ table.table-striped tbody tr:nth-child(even) {
 .\!py-0 {
   padding-top: 0px !important;
   padding-bottom: 0px !important;
+}
+
+.\!py-1 {
+  padding-top: 0.25rem !important;
+  padding-bottom: 0.25rem !important;
 }
 
 .\!py-2 {
@@ -14029,6 +14043,11 @@ Not supports in Firefox and IE */
   background-color: rgb(0 82 203 / var(--tw-bg-opacity));
 }
 
+.hover\:bg-\[\#006cd9\]:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(0 108 217 / var(--tw-bg-opacity));
+}
+
 .hover\:bg-\[\#0075EB\]:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(0 117 235 / var(--tw-bg-opacity));
@@ -14808,6 +14827,11 @@ Not supports in Firefox and IE */
   background-color: rgb(245 245 245 / var(--tw-bg-opacity));
 }
 
+.disabled\:bg-gray-300:disabled {
+  --tw-bg-opacity: 1;
+  background-color: rgb(212 212 212 / var(--tw-bg-opacity));
+}
+
 .disabled\:bg-neutral-100:disabled {
   --tw-bg-opacity: 1;
   background-color: rgb(245 245 245 / var(--tw-bg-opacity));
@@ -15059,6 +15083,11 @@ Not supports in Firefox and IE */
 .dark .dark\:border-\[\#0F0D0F\] {
   --tw-border-opacity: 1;
   border-color: rgb(15 13 15 / var(--tw-border-opacity));
+}
+
+.dark .dark\:border-\[\#197adc\] {
+  --tw-border-opacity: 1;
+  border-color: rgb(25 122 220 / var(--tw-border-opacity));
 }
 
 .dark .dark\:border-\[\#2a282d\] {
@@ -15665,6 +15694,11 @@ Not supports in Firefox and IE */
   color: rgb(18 229 106 / var(--tw-text-opacity));
 }
 
+.dark .dark\:text-\[\#197adc\] {
+  --tw-text-opacity: 1;
+  color: rgb(25 122 220 / var(--tw-text-opacity));
+}
+
 .dark .dark\:text-\[\#3399FF\] {
   --tw-text-opacity: 1;
   color: rgb(51 153 255 / var(--tw-text-opacity));
@@ -16037,6 +16071,11 @@ Not supports in Firefox and IE */
   background-color: rgb(115 115 115 / var(--tw-bg-opacity));
 }
 
+.dark .dark\:hover\:border-\[\#0056ad\]:hover {
+  --tw-border-opacity: 1;
+  border-color: rgb(0 86 173 / var(--tw-border-opacity));
+}
+
 .dark .dark\:hover\:border-white\/\[0\.02\]:hover {
   border-color: rgb(255 255 255 / 0.02);
 }
@@ -16064,6 +16103,11 @@ Not supports in Firefox and IE */
 .dark .dark\:hover\:\!bg-gray-900:hover {
   --tw-bg-opacity: 1 !important;
   background-color: rgb(23 23 23 / var(--tw-bg-opacity)) !important;
+}
+
+.dark .dark\:hover\:bg-\[\#0056ad\]:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(0 86 173 / var(--tw-bg-opacity));
 }
 
 .dark .dark\:hover\:bg-\[\#0D70FF\]:hover {
@@ -16420,9 +16464,19 @@ Not supports in Firefox and IE */
   color: rgb(249 190 89 / var(--tw-text-opacity));
 }
 
+.dark .dark\:disabled\:bg-gray-700:disabled {
+  --tw-bg-opacity: 1;
+  background-color: rgb(64 64 64 / var(--tw-bg-opacity));
+}
+
 .dark .dark\:disabled\:bg-primary-800:disabled {
   --tw-bg-opacity: 1;
   background-color: rgb(19 44 83 / var(--tw-bg-opacity));
+}
+
+.dark .dark\:disabled\:text-gray-400:disabled {
+  --tw-text-opacity: 1;
+  color: rgb(163 163 163 / var(--tw-text-opacity));
 }
 
 .dark .dark\:disabled\:hover\:bg-primary-800:hover:disabled {
