@@ -25,7 +25,8 @@ defmodule Oli.Resources.Revision do
              :poster_image,
              :intro_content,
              :duration_minutes,
-             :id
+             :id,
+             :activity_refs
            ]}
   schema "revisions" do
     #
@@ -47,6 +48,7 @@ defmodule Oli.Resources.Revision do
     field :content, :map, default: %{}
     field :children, {:array, :id}, default: []
     field :tags, {:array, :id}, default: []
+    field :activity_refs, {:array, :id}, default: []
     field :objectives, :map, default: %{}
     field :graded, :boolean, default: false
     field :duration_minutes, :integer, default: nil
@@ -129,7 +131,8 @@ defmodule Oli.Resources.Revision do
       :activity_type_id,
       :purpose,
       :relates_to,
-      :full_progress_pct
+      :full_progress_pct,
+      :activity_refs
     ])
     |> cast_embed(:legacy)
     |> cast_embed(:explanation_strategy)

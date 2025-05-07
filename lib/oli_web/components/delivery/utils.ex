@@ -186,7 +186,7 @@ defmodule OliWeb.Components.Delivery.Utils do
   attr :on_search, :string, default: "search"
   attr :on_change, :string, default: "search"
   attr :on_clear_search, :string, default: "clear_search"
-  attr :rest, :global, include: ~w(class)
+  attr :rest, :global, include: ~w(class placeholder)
 
   def search_box(assigns) do
     ~H"""
@@ -198,6 +198,7 @@ defmodule OliWeb.Components.Delivery.Utils do
           type="text"
           name="search_term"
           value={@search_term}
+          placeholder={@rest[:placeholder]}
           class="w-full border border-gray-400 dark:border-gray-700 rounded-lg px-12 py-3"
           phx-debounce="500"
         />

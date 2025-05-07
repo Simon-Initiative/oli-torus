@@ -1,4 +1,5 @@
 import { Maybe } from 'tsmonad';
+import * as MultiRule from 'components/activities/response_multi/rules';
 import {
   ChoiceId,
   ChoiceIdsToResponseId,
@@ -6,13 +7,7 @@ import {
   Response,
   makeResponse,
 } from 'components/activities/types';
-import {
-  containsRule,
-  eqRule,
-  equalsRule,
-  matchRule,
-  ruleValue,
-} from 'data/activities/model/rules';
+import { containsRule, eqRule, equalsRule, matchRule } from 'data/activities/model/rules';
 import { getByUnsafe, getPartById } from 'data/activities/model/utils';
 
 export const Responses = {
@@ -84,11 +79,12 @@ export const getCorrectResponse = (model: HasParts, partId: string) => {
 export const getIncorrectResponse = (model: HasParts, partId: string) => {
   return Maybe.maybe(
     getResponsesByPartId(model, partId).find((r) => {
-      const rule: string = matchRule('.*');
-      const incorrectValue: string = ruleValue(rule);
-      const valueToCheck: string = ruleValue(r.rule);
-
-      return valueToCheck === incorrectValue;
+      return (
+        r.score === 0 &&
+        (r.rule === matchRule('.*') ||
+          // Allow for special rule form used by ResponseMulti
+          (r.rule.startsWith('input_ref') && MultiRule.ruleIsCatchAll(r.rule)))
+      );
     }),
   ).valueOrThrow(new Error('Could not find incorrect response'));
 };

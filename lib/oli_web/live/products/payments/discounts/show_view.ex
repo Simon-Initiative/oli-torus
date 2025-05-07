@@ -173,7 +173,8 @@ defmodule OliWeb.Products.Payments.Discounts.ShowView do
         ),
       percentage: params["percentage"],
       amount: params["amount"],
-      type: params["type"]
+      type: params["type"],
+      bypass_paywall: params["bypass_paywall"] == "true"
     }
 
     case Paywall.create_or_update_discount(attrs) do
@@ -217,9 +218,18 @@ defmodule OliWeb.Products.Payments.Discounts.ShowView do
       params
       |> Map.put(
         "percentage",
-        if(params["type"] == "percentage", do: params["percentage"], else: nil)
+        if(params["type"] == "percentage" and params["bypass_paywall"] != "true",
+          do: params["percentage"],
+          else: nil
+        )
       )
-      |> Map.put("amount", if(params["type"] == "fixed_amount", do: params["amount"], else: nil))
+      |> Map.put(
+        "amount",
+        if(params["type"] == "fixed_amount" and params["bypass_paywall"] != "true",
+          do: params["amount"],
+          else: nil
+        )
+      )
 
     {:noreply,
      assign(socket,

@@ -166,4 +166,54 @@ defmodule Oli.Delivery.DepotTest do
     assert 2 = Depot.count(@desc, 1, graded: false)
     assert 2 = Depot.count(@desc, 1, title: "Some repeated title")
   end
+
+  test "exists?" do
+    # Create a table with a few records
+    Depot.create_table(@desc, 1)
+
+    # r({id, section_id, title, graded, created})
+    now = DateTime.utc_now()
+
+    Depot.update_all(@desc, [
+      r({1, 1, "one", true, now}),
+      r({2, 1, nil, false, now}),
+      r({3, 1, "three", true, nil}),
+      r({4, 1, "four", false, now})
+    ])
+
+    # Test AND semantics (single keyword list)
+    assert Depot.exists?(@desc, 1, graded: true)
+    assert Depot.exists?(@desc, 1, title: {:!=, nil}, graded: true)
+    refute Depot.exists?(@desc, 1, title: nil, graded: true)
+    assert Depot.exists?(@desc, 1, title: nil, graded: false)
+    assert Depot.exists?(@desc, 1, created: {:!=, nil}, graded: false)
+    refute Depot.exists?(@desc, 1, created: nil, graded: false)
+
+    # Test OR semantics (list of keyword lists)
+    assert Depot.exists?(@desc, 1, [
+             [title: "one"],
+             [title: "four"]
+           ])
+
+    assert Depot.exists?(@desc, 1, [
+             [title: nil, graded: false],
+             [created: nil, graded: true]
+           ])
+
+    refute Depot.exists?(@desc, 1, [
+             [title: "nonexistent"],
+             [title: nil, graded: true]
+           ])
+
+    # Complex AND/OR combination
+    assert Depot.exists?(@desc, 1, [
+             [title: {:!=, nil}, graded: true],
+             [title: nil, graded: false]
+           ])
+
+    # Test with invalid filter format
+    assert_raise ArgumentError, fn ->
+      Depot.exists?(@desc, 1, ["not a keyword list"])
+    end
+  end
 end

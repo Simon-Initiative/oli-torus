@@ -157,6 +157,12 @@ defmodule Oli.Delivery.Depot.MatchSpecTranslator do
     end
   end
 
+  # Special case for inequality: map :!= into ETS guard /=
+  # see https://www.erlang.org/doc/apps/erts/match_spec.html for more details
+  defp handle_cond(type, {_f, {:!=, value}}, _, {m, c, v}) do
+    {m, [{:"/=", field(v), encode(value, type)} | c], v}
+  end
+
   # Handles the cases where we have {operator, value} tuples, and the
   # operators are from a set that we can translate directly to ETS match spec operators
   # (which are :==, :!=, :<, :>, :<=, :>=)
@@ -180,7 +186,10 @@ defmodule Oli.Delivery.Depot.MatchSpecTranslator do
   defp field(v), do: :"$#{v}"
 
   defp encode(value, :utc_datetime) do
-    DateTime.to_unix(value, :millisecond)
+    case value do
+      nil -> nil
+      datetime -> DateTime.to_unix(datetime, :millisecond)
+    end
   end
 
   defp encode(value, _), do: value

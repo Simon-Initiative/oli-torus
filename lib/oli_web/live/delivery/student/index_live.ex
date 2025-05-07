@@ -4,7 +4,6 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   import OliWeb.Components.Delivery.Layouts
 
   alias Oli.Delivery.{Attempts, Certificates, Hierarchy, Metrics, Sections, Settings}
-  alias Oli.Delivery.Sections.Scheduling
   alias Oli.Delivery.Sections.SectionCache
   alias Oli.Publishing.DeliveryResolver
   alias OliWeb.Common.FormatDateTime
@@ -22,23 +21,12 @@ defmodule OliWeb.Delivery.Student.IndexLive do
       section = socket.assigns[:section]
       current_user_id = socket.assigns[:current_user].id
       certificate_enabled = section.certificate_enabled
+      has_scheduled_resources? = socket.assigns[:has_scheduled_resources?]
 
       combined_settings =
         Appsignal.instrument("IndexLive: combined_settings", fn ->
           Settings.get_combined_settings_for_all_resources(section.id, current_user_id)
         end)
-
-      has_scheduled_resources? = Scheduling.has_scheduled_resources?(section.id)
-
-      grouped_agenda_resources =
-        if has_scheduled_resources?,
-          do:
-            Sections.get_schedule_for_current_and_next_week(
-              section,
-              combined_settings,
-              current_user_id
-            ),
-          else: Sections.get_not_scheduled_agenda(section, combined_settings, current_user_id)
 
       nearest_upcoming_lesson =
         Appsignal.instrument("IndexLive: nearest_upcoming_lesson", fn ->
@@ -96,10 +84,17 @@ defmodule OliWeb.Delivery.Student.IndexLive do
         assign(socket,
           active_tab: :index,
           loaded: true,
-          grouped_agenda_resources: grouped_agenda_resources,
+          grouped_agenda_resources:
+            Utils.grouped_agenda_resources(
+              section,
+              combined_settings,
+              current_user_id,
+              has_scheduled_resources?
+            ),
           section_slug: section.slug,
           section_start_date: section.start_date,
           historical_graded_attempt_summary: nil,
+          has_scheduled_resources?: has_scheduled_resources?,
           has_visited_section:
             Sections.has_visited_section(section, socket.assigns[:current_user],
               enrollment_state: false
@@ -173,7 +168,13 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     />
     <div id="home-view" class="bg-stone-950 dark:text-white" phx-hook="Countdown">
       <div class="flex flex-col md:flex-row p-3 md:p-8 justify-start items-start gap-6">
-        <div class="flex flex-col-reverse md:flex-col w-full md:w-2/5 md:h-48 justify-start items-start gap-6">
+        <div class={[
+          if(@section.agenda,
+            do:
+              "flex flex-col-reverse md:flex-col w-full md:w-2/5 md:h-48 justify-start items-start gap-6",
+            else: "flex w-full gap-6"
+          )
+        ]}>
           <.assignments
             upcoming_assignments={@upcoming_assignments}
             latest_assignments={@latest_assignments}
@@ -202,6 +203,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
           <.agenda
             section_slug={@section_slug}
             grouped_agenda_resources={@grouped_agenda_resources}
+            has_scheduled_resources?={@has_scheduled_resources?}
             section_start_date={@section_start_date}
             ctx={@ctx}
           />
@@ -237,7 +239,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
       <div
         :if={!is_nil(@suggested_page)}
-        class="flex flex-col w-full px-3 md:px-9 absolute flex-col justify-center items-start gap-2 md:gap-6"
+        class="flex flex-col w-full px-3 md:px-9 absolute justify-center items-start gap-2 md:gap-6"
       >
         <h3 class="text-white text-lg md:text-2xl font-bold leading-loose tracking-tight">
           Continue Learning
@@ -716,7 +718,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     ~H"""
     <div
       role="my assignments"
-      class="w-full h-fit p-6 bg-white shadow dark:bg-[#1C1A20] dark:bg-opacity-100 rounded-2xl justify-start items-start gap-32 inline-flex"
+      class="w-full p-6 bg-white shadow dark:bg-[#1C1A20] dark:bg-opacity-100 rounded-2xl justify-start items-start gap-32 inline-flex"
     >
       <div class="w-full flex-col justify-start items-start gap-5 flex grow">
         <div class="w-full xl:w-48 overflow-hidden justify-start items-start gap-2.5 flex">
@@ -1004,6 +1006,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   attr(:section_slug, :string, required: true)
   attr(:section_start_date, :string, required: true)
   attr(:grouped_agenda_resources, :map, required: true)
+  attr(:has_scheduled_resources?, :boolean, required: true)
   attr(:ctx, :map, required: true)
 
   defp agenda(assigns) do
@@ -1015,6 +1018,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             Upcoming Agenda
           </div>
           <.link
+            :if={@has_scheduled_resources?}
             href={
               Utils.schedule_live_path(
                 @section_slug,

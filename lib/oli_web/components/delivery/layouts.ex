@@ -142,6 +142,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr(:notes_enabled, :boolean, default: false)
   attr(:discussions_enabled, :boolean, default: false)
   attr(:preview_mode, :boolean)
+  attr(:has_scheduled_resources?, :boolean, required: true)
   attr :notification_badges, :map, default: %{}
 
   def sidebar_nav(assigns) do
@@ -201,6 +202,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
             notes_enabled={@notes_enabled}
             discussions_enabled={@discussions_enabled}
             notification_badges={@notification_badges}
+            has_scheduled_resources?={@has_scheduled_resources?}
           />
         </div>
         <div class="p-2 flex-col justify-center items-center gap-4 inline-flex">
@@ -245,6 +247,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
           preview_mode={@preview_mode}
           notes_enabled={@notes_enabled}
           discussions_enabled={@discussions_enabled}
+          has_scheduled_resources?={@has_scheduled_resources?}
         />
       </nav>
     </div>
@@ -498,6 +501,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr(:sidebar_expanded, :boolean, default: true)
   attr(:notes_enabled, :boolean, default: true)
   attr(:discussions_enabled, :boolean, default: true)
+  attr(:has_scheduled_resources?, :boolean, default: false)
   attr(:notification_badges, :map, default: %{})
 
   def sidebar_links(assigns) do
@@ -524,6 +528,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
       </.nav_link>
 
       <.nav_link
+        :if={@has_scheduled_resources?}
         id="schedule_nav_link"
         href={path_for(:schedule, @section, @preview_mode, @sidebar_expanded)}
         is_active={@active_tab == :schedule}

@@ -112,6 +112,7 @@ defmodule OliWeb.Sections.OverviewView do
         text_search: nil
       }
     )
+    |> Enum.filter(fn u -> !u.hidden end)
   end
 
   attr(:user, :any)

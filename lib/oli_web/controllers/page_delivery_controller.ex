@@ -12,6 +12,7 @@ defmodule OliWeb.PageDeliveryController do
   alias Oli.Delivery.{Paywall, PreviousNextIndex, Sections, Settings}
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
+  alias Oli.Delivery.Sections.SectionResourceDepot
   alias Oli.Delivery.Paywall.Discount
   alias Oli.Publishing.DeliveryResolver, as: Resolver
   alias Oli.Grading
@@ -81,7 +82,8 @@ defmodule OliWeb.PageDeliveryController do
               latest_visited_page: Sections.get_latest_visited_page(section_slug, user.id),
               scheduled_dates:
                 Sections.get_resources_scheduled_dates_for_student(section_slug, user.id),
-              context: context
+              context: context,
+              has_scheduled_resources?: SectionResourceDepot.has_scheduled_resources?(section.id)
             )
           end
       end
@@ -306,7 +308,8 @@ defmodule OliWeb.PageDeliveryController do
             display_curriculum_item_numbering: section.display_curriculum_item_numbering,
             bib_app_params: %{
               bibReferences: []
-            }
+            },
+            has_scheduled_resources?: SectionResourceDepot.has_scheduled_resources?(section.id)
           )
 
         # Any attempt to render a valid revision that is not container or page gets an error
@@ -473,7 +476,8 @@ defmodule OliWeb.PageDeliveryController do
       resource_slug: context.page.slug,
       bib_app_params: %{
         bibReferences: context.bib_revisions
-      }
+      },
+      has_scheduled_resources?: SectionResourceDepot.has_scheduled_resources?(section.id)
     })
   end
 
@@ -686,7 +690,8 @@ defmodule OliWeb.PageDeliveryController do
         end_date: effective_settings.end_date,
         auto_submit: effective_settings.late_submit == :disallow,
         # TODO: implement reading time estimation
-        est_reading_time: nil
+        est_reading_time: nil,
+        has_scheduled_resources?: SectionResourceDepot.has_scheduled_resources?(section.id)
       }
     )
   end
@@ -848,7 +853,8 @@ defmodule OliWeb.PageDeliveryController do
       latest_visited_page: Sections.get_latest_visited_page(section_slug, current_user.id),
       scheduled_dates:
         Sections.get_resources_scheduled_dates_for_student(section_slug, current_user.id),
-      context: conn.assigns[:ctx]
+      context: conn.assigns[:ctx],
+      has_scheduled_resources?: SectionResourceDepot.has_scheduled_resources?(section.id)
     )
   end
 
@@ -987,7 +993,9 @@ defmodule OliWeb.PageDeliveryController do
                 },
                 collab_space_config: effective_settings.collab_space_config,
                 is_instructor: true,
-                is_student: false
+                is_student: false,
+                has_scheduled_resources?:
+                  SectionResourceDepot.has_scheduled_resources?(section.id)
               }
             )
 
@@ -1157,7 +1165,8 @@ defmodule OliWeb.PageDeliveryController do
         },
         collab_space_config: effective_settings.collab_space_config,
         is_instructor: true,
-        is_student: false
+        is_student: false,
+        has_scheduled_resources?: SectionResourceDepot.has_scheduled_resources?(section.id)
       }
     )
   end

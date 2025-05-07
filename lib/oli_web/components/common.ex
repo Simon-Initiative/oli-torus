@@ -303,6 +303,8 @@ defmodule OliWeb.Components.Common do
 
   attr(:label_position, :atom, default: :top, values: [:top, :bottom, :responsive])
   attr(:error_position, :atom, default: :bottom, values: [:top, :bottom])
+  attr(:additional_text, :string, default: nil)
+  attr(:group_class, :string, default: "contents")
 
   slot(:inner_block)
 
@@ -359,8 +361,11 @@ defmodule OliWeb.Components.Common do
 
   def input(%{type: "textarea"} = assigns) do
     ~H"""
-    <div class="contents" phx-feedback-for={@name}>
+    <div class={@group_class} phx-feedback-for={@name}>
       <.label :if={@label} for={@id}><%= @label %></.label>
+      <%= if @additional_text do %>
+        <%= @additional_text %>
+      <% end %>
       <textarea
         id={@id}
         name={@name}
@@ -484,6 +489,9 @@ defmodule OliWeb.Components.Common do
     <div class={@group_class} phx-feedback-for={@name}>
       <.label :if={@label && @label_position == :top} class={@label_class} for={@id}>
         <%= @label %>
+        <%= if @additional_text do %>
+          <%= @additional_text %>
+        <% end %>
       </.label>
       <.error :for={msg <- @errors} :if={@error_position == :top}><%= msg %></.error>
       <input
@@ -501,6 +509,9 @@ defmodule OliWeb.Components.Common do
         for={@id}
       >
         <%= @label %>
+        <%= if @additional_text do %>
+          <%= @additional_text %>
+        <% end %>
       </.label>
       <.error :for={msg <- @errors} :if={@error_position == :bottom}><%= msg %></.error>
     </div>
@@ -529,7 +540,7 @@ defmodule OliWeb.Components.Common do
       if assigns[:variant] == "outlined" do
         {"form-label-group", "control-label pointer-events-none", ["form-control" | input_class]}
       else
-        {"flex flex-col", "", input_class}
+        {"flex flex-col", assigns.label_class || "", input_class}
       end
 
     assign(assigns, group_class: group_class, label_class: label_class, input_class: input_class)
