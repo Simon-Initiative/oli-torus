@@ -43,6 +43,8 @@ defmodule Oli.Accounts.User do
     field :can_create_sections, :boolean, default: false
     field :age_verified, :boolean
 
+    field :hidden, :boolean, default: false
+
     has_many :user_identities,
              Oli.AssentAuth.UserIdentity,
              on_delete: :delete_all,
@@ -290,7 +292,8 @@ defmodule Oli.Accounts.User do
       :locale,
       :phone_number,
       :phone_number_verified,
-      :address
+      :address,
+      :hidden
     ])
     |> cast(%{user_identities: [user_identity]}, [])
     |> cast_assoc(:user_identities)
@@ -322,7 +325,8 @@ defmodule Oli.Accounts.User do
       :locale,
       :phone_number,
       :address,
-      :research_opt_out
+      :research_opt_out,
+      :hidden
     ])
     |> cast_embed(:preferences)
     |> validate_required([:given_name, :family_name])
@@ -363,7 +367,8 @@ defmodule Oli.Accounts.User do
       :state,
       :can_create_sections,
       :age_verified,
-      :lti_institution_id
+      :lti_institution_id,
+      :hidden
     ])
     |> cast_embed(:preferences)
     |> validate_email_if(&is_independent_learner_and_not_guest/1)
@@ -412,7 +417,8 @@ defmodule Oli.Accounts.User do
       :locked_at,
       :email_confirmed_at,
       :can_create_sections,
-      :age_verified
+      :age_verified,
+      :hidden
     ])
     |> cast_embed(:preferences)
     |> maybe_name_from_given_and_family()
@@ -454,7 +460,8 @@ defmodule Oli.Accounts.User do
       :locked_at,
       :email_confirmed_at,
       :can_create_sections,
-      :age_verified
+      :age_verified,
+      :hidden
     ])
     |> validate_required_if([:email], &is_independent_learner_and_not_guest/1)
     |> validate_acceptance_if(

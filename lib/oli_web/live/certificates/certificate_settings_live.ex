@@ -15,27 +15,29 @@ defmodule OliWeb.Certificates.CertificatesSettingsLive do
   alias OliWeb.Common.Params
   alias OliWeb.Sections.Mount
 
+  on_mount {OliWeb.AuthorAuth, :mount_current_author}
+  on_mount {OliWeb.UserAuth, :mount_current_user}
   on_mount OliWeb.LiveSessionPlugs.SetCtx
   on_mount OliWeb.LiveSessionPlugs.SetRouteName
   on_mount OliWeb.LiveSessionPlugs.SetUri
 
-  def mount(params, session, socket) do
+  def mount(params, _session, socket) do
     slug = params["product_id"] || params["section_slug"]
     socket = assigns_for(socket, :page)
 
-    case Mount.for(slug, session) do
+    case Mount.for(slug, socket) do
       {:error, e} ->
         Mount.handle_error(socket, {:error, e})
 
       {_, _, section} ->
         certificate = Certificates.get_certificate_by(%{section_id: section.id})
 
-        socket
-        |> assign(section: section)
-        |> assign(section_changeset: Section.changeset(section))
-        |> assign(certificate: certificate)
+        {:ok,
+         socket
+         |> assign(section: section)
+         |> assign(section_changeset: Section.changeset(section))
+         |> assign(certificate: certificate)}
     end
-    |> ok_wrapper()
   end
 
   def handle_params(params, url, socket) do

@@ -48,7 +48,7 @@ defmodule OliWeb.Sections.OverviewView do
         _ -> Map.get(params, "section_slug")
       end
 
-    case Mount.for(section_slug, session) do
+    case Mount.for(section_slug, socket) do
       {:error, e} ->
         Mount.handle_error(socket, {:error, e})
 
@@ -112,6 +112,7 @@ defmodule OliWeb.Sections.OverviewView do
         text_search: nil
       }
     )
+    |> Enum.filter(fn u -> !u.hidden end)
   end
 
   attr(:user, :any)

@@ -28,10 +28,10 @@ defmodule OliWeb.Products.DetailsView do
 
   def mount(
         %{"product_id" => product_slug},
-        session,
+        _session,
         socket
       ) do
-    case Mount.for(product_slug, session) do
+    case Mount.for(product_slug, socket) do
       {:error, e} ->
         Mount.handle_error(socket, {:error, e})
 

@@ -126,6 +126,7 @@ defmodule OliWeb.Router do
 
     plug(OliWeb.Plugs.MaybeSkipEmailVerification)
 
+    plug(:auto_enroll_admin)
     plug(:require_authenticated_user)
 
     plug(Oli.Plugs.RemoveXFrameOptions)

@@ -85,7 +85,7 @@ defmodule OliWeb.Sections.GatingAndScheduling do
 
   def mount(
         %{"section_slug" => section_slug} = params,
-        session,
+        _session,
         socket
       ) do
     {parent_gate, title} =
@@ -98,7 +98,7 @@ defmodule OliWeb.Sections.GatingAndScheduling do
           {Gating.get_gating_condition!(int_id), "Student Exceptions"}
       end
 
-    case Mount.for(section_slug, session) do
+    case Mount.for(section_slug, socket) do
       {:error, e} ->
         Mount.handle_error(socket, {:error, e})
 

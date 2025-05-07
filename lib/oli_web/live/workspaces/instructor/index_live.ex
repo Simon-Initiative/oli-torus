@@ -99,6 +99,54 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
             To use this workspace please logout and sign in with an instructor account
           </h3>
         </div>
+
+        <div class="flex flex-col gap-4">
+          <h3 class="w-full text-xl dark:text-white">
+            <%= if !is_nil(@current_user) do %>
+              You are currently logged in with a delivery account:
+              <div class="bg-gray-300 dark:bg-gray-700 rounded-lg p-4 text-sm">
+                <table>
+                  <tr>
+                    <th class="text-left">Name</th>
+                    <td><%= @current_user.name %></td>
+                  </tr>
+                  <tr>
+                    <th class="text-left">Given Name</th>
+                    <td><%= @current_user.given_name %></td>
+                  </tr>
+                  <tr>
+                    <th class="text-left">Family Name</th>
+                    <td><%= @current_user.family_name %></td>
+                  </tr>
+                  <tr>
+                    <th class="text-left">Email</th>
+                    <td><%= @current_user.email %></td>
+                  </tr>
+                  <tr>
+                    <th class="text-left">Guest?</th>
+                    <td><%= @current_user.guest %></td>
+                  </tr>
+                  <tr>
+                    <th class="text-left">Hidden?</th>
+                    <td><%= @current_user.hidden %></td>
+                  </tr>
+                  <tr>
+                    <th class="text-left">Direct Delivery?</th>
+                    <td><%= @current_user.independent_learner %></td>
+                  </tr>
+                </table>
+              </div>
+
+              <p>
+                <%= link to: ~p"/users/log_out", method: :delete do %>
+                  Sign out of this delivery account.
+                <% end %>
+              </p>
+            <% else %>
+              You are not logged in with any delivery account.
+            <% end %>
+          </h3>
+        </div>
       </div>
     </div>
     """
