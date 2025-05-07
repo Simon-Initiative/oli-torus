@@ -227,7 +227,7 @@ defmodule OliWeb.Admin.ExternalTools.NewExternalToolView do
         <div class="flex items-center gap-2 font-semibold">
           <%= case @type do %>
             <% :success -> %>
-              <Icons.check stroke_class={"stroke-[#{@text_color}]"} />
+              <Icons.check stroke_class="stroke-[#1b67b2]" />
             <% t when t in [:error, :duplicate] -> %>
               <Icons.alert />
           <% end %>
