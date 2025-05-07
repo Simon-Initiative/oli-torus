@@ -107,7 +107,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
     ~H"""
     <div
       role="hero banner"
-      class="w-full bg-cover bg-center bg-no-repeat h-[160px] h-[247px]"
+      class="w-full bg-cover bg-center bg-no-repeat h-[160px] md:h-[247px]"
       style="background-image: url('/images/gradients/assignments-bg.png');"
     >
       <div class="h-[160px] md:h-[247px] bg-gradient-to-r from-[#e4e4ea] dark:from-[#0a0b11] to-transparent">
