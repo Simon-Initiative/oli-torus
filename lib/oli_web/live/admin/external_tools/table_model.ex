@@ -81,9 +81,11 @@ defmodule OliWeb.Admin.ExternalTools.TableModel do
   end
 
   def render_actions_column(assigns, row, _) do
+    assigns = Map.merge(assigns, %{platform_instance_id: row.id})
+
     ~H"""
     <.link
-      navigate={~p"/admin/external_tools/#{row.id}/details"}
+      navigate={~p"/admin/external_tools/#{@platform_instance_id}/details"}
       class="w-20 text-center text-sm font-semibold leading-none h-7 rounded-lg shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] outline outline-1 outline-offset-[-1px] inline-flex justify-center items-center"
     >
       Details
