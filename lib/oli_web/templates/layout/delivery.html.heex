@@ -160,34 +160,6 @@
 
     <%= Map.get(assigns, :inner_layout) || @inner_content %>
 
-    <div
-      id="modalConfirm"
-      class="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50 hidden"
-    >
-      <!-- Modal Content -->
-      <div class="bg-white rounded-lg shadow-lg p-6 w-5/6 flex flex-col">
-        <div class="flex-none">
-          <h4 id="modalTitle"></h4>
-          <hr />
-        </div>
-        <div id="modalMessage" class="flex-1 mt-4"></div>
-        <!-- Buttons -->
-        <div class="flex justify-end space-x-2 mt-4">
-          <button
-            id="modalCancel"
-            class="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400"
-          >
-            Cancel
-          </button>
-          <button
-            id="modalOk"
-            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-          >
-            OK
-          </button>
-        </div>
-      </div>
-    </div>
     <%= react_component("Components.ModalDisplay") %>
 
     <%= render(OliWeb.SharedView, "_help.html", conn: @conn) %>

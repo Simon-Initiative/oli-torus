@@ -62,8 +62,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
           resource_attempts: graded_attempts
         }}}
     else
-      # Se if we are in score as you go mode, and the page revision has changed since the start of this
-      # current attempt.  In this case, we need to start a new attempt to pick up the new page revision.
+      # In the case that we are in score as you go mode, and the page revision has changed since the start of this
+      # current attempt, we need to start a new attempt to pick up the new page revision.
       if page_revision.id !== latest_resource_attempt.revision_id and
            !effective_settings.batch_scoring do
         # We have to mark the current attempt as :evaluated so that we can start a new one

@@ -1632,8 +1632,6 @@ defmodule OliWeb.Delivery.Student.LessonLive do
             |> hd()
             |> Jason.decode!()
 
-          IO.inspect(state)
-
           context =
             element
             |> Floki.parse_fragment!()

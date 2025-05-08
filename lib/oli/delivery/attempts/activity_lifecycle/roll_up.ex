@@ -105,7 +105,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
 
   The returned function takes zero arguments, and returns either :ok or :error.
 
-  This function makes at most two read queries to the database.
+  This function makes at most three read queries to the database.
   """
   def rollup_evaluated(activity_attempt_guid) do
     # First query: retrieve the latest part attempts

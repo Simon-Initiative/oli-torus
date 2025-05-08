@@ -1,5 +1,7 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
+import { Modal, ModalSize } from 'components/modal/Modal';
+import { modalActions } from 'actions/modal';
 import { ActivityDeliveryState, isEvaluated } from 'data/activities/DeliveryState';
 import { ScoreAsYouGoIcon } from './utils';
 
@@ -8,7 +10,27 @@ interface Props {
   onReset: () => void;
 }
 
-function buildConfirmMessage(uiState: ActivityDeliveryState): string {
+interface ModalProps {
+  onDone: () => void;
+  onCancel: () => void;
+  message: any;
+}
+export const ResetModal = ({ onDone, onCancel, message }: ModalProps) => {
+  return (
+    <Modal
+      title="Reset Question"
+      size={ModalSize.MEDIUM}
+      okLabel="Ok"
+      cancelLabel="Cancel"
+      onCancel={() => onCancel()}
+      onOk={() => onDone()}
+    >
+      {message}
+    </Modal>
+  );
+};
+
+function buildConfirmMessage(uiState: ActivityDeliveryState): any {
   const { activityContext } = uiState;
 
   let scoringDesc = 'average';
@@ -24,11 +46,19 @@ function buildConfirmMessage(uiState: ActivityDeliveryState): string {
       break;
   }
 
-  return `<p>Are you sure you want to reset <strong>Question #${activityContext.ordinal}</strong>?
-  If you choose to reset this question, <strong>a new question may be generated</strong>.
-  Your overall score on this question will be the <strong>${scoringDesc} of all attempts</strong> of all your attempts. </p>
-  <p class="mt-3">If you do not answer the question after resetting, your score could be affected</p>
-  `;
+  return (
+    <div>
+      <p>
+        Are you sure you want to reset <strong>Question #{activityContext.ordinal}</strong>? If you
+        choose to reset this question, <strong>a new question may be generated</strong>. Your
+        overall score on this question will be the <strong>{scoringDesc} of all attempts</strong> of
+        all your attempts.
+      </p>
+      <p className="mt-3">
+        If you do not answer the question after resetting, your score could be affected
+      </p>
+    </div>
+  );
 }
 
 export const ScoreAsYouGoSubmitReset: React.FC<Props> = ({ onSubmit, onReset }) => {
@@ -46,12 +76,17 @@ export const ScoreAsYouGoSubmitReset: React.FC<Props> = ({ onSubmit, onReset }) 
                 attemptState.attemptNumber >= uiState.activityContext.maxAttempts
               }
               onClick={() => {
-                window.OLI.confirmAction(
-                  'Reset Confirmation',
-                  buildConfirmMessage(uiState),
-                  () => onReset(),
-                  () => {},
-                  'Reset',
+                window.oliDispatch(
+                  modalActions.display(
+                    <ResetModal
+                      onDone={() => {
+                        window.oliDispatch(modalActions.dismiss());
+                        onReset();
+                      }}
+                      onCancel={() => window.oliDispatch(modalActions.dismiss())}
+                      message={buildConfirmMessage(uiState)}
+                    />,
+                  ),
                 );
               }}
             >
