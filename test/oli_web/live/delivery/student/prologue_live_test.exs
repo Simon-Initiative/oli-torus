@@ -74,7 +74,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
     end
   end
 
-  defp create_elixir_project(_) do
+  defp create_elixir_project(_, add_schedule? \\ true) do
     author = insert(:author)
     project = insert(:project, authors: [author])
 
@@ -368,21 +368,23 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
     {:ok, section} = Sections.create_section_resources(section, publication)
     {:ok, _} = Sections.rebuild_contained_pages(section)
 
-    # schedule start and end date for unit 1 section resource
-    Sections.get_section_resource(section.id, unit_1_revision.resource_id)
-    |> Sections.update_section_resource(%{
-      start_date: ~U[2023-10-31 20:00:00Z],
-      end_date: ~U[2023-12-31 20:00:00Z]
-    })
+    if add_schedule? do
+      # schedule start and end date for unit 1 section resource
+      Sections.get_section_resource(section.id, unit_1_revision.resource_id)
+      |> Sections.update_section_resource(%{
+        start_date: ~U[2023-10-31 20:00:00Z],
+        end_date: ~U[2023-12-31 20:00:00Z]
+      })
 
-    # schedule start and end date for page 2 section resource
-    Sections.get_section_resource(section.id, page_2_revision.resource_id)
-    |> Sections.update_section_resource(%{
-      start_date: ~U[2023-11-10 20:00:00Z],
-      end_date: ~U[2023-11-14 20:00:00Z],
-      late_submit: :disallow,
-      scheduling_type: :due_by
-    })
+      # schedule start and end date for page 2 section resource
+      Sections.get_section_resource(section.id, page_2_revision.resource_id)
+      |> Sections.update_section_resource(%{
+        start_date: ~U[2023-11-10 20:00:00Z],
+        end_date: ~U[2023-11-14 20:00:00Z],
+        late_submit: :disallow,
+        scheduling_type: :due_by
+      })
+    end
 
     # enable collaboration spaces for all pages in the section
     {_total_page_count, _section_resources} =
@@ -1099,7 +1101,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
                "/sections/#{section.slug}/learn?target_resource_id=#{graded_adaptive_page_revision.resource_id}"
     end
 
-    test "page terms are shown correctly when page is not yet scheduled",
+    test "page due terms are shown when page is not yet scheduled (but course has scheduled resources)",
          %{
            conn: conn,
            user: user,
@@ -1110,8 +1112,23 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
 
       {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_5.slug))
 
-      assert view |> element("#page_terms") |> render() =~
+      assert view |> element("#page_due_terms") |> render() =~
                "This assignment is <b>not yet scheduled.</b>"
+    end
+
+    test "page due terms are not shown when course has no scheduled resources",
+         %{
+           conn: conn,
+           user: user
+         } do
+      %{section: section_without_schedule, page_5: page_5} = create_elixir_project(%{}, false)
+
+      enroll_and_mark_visited(user, section_without_schedule)
+
+      {:ok, view, _html} =
+        live(conn, Utils.prologue_live_path(section_without_schedule.slug, page_5.slug))
+
+      refute has_element?(view, "#page_due_terms")
     end
 
     test "page terms render the due date when is set", ctx do

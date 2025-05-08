@@ -287,7 +287,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
 
       <div class="pr-2 pl-1 self-end">
         <div class="flex items-end gap-1">
-          <div class="text-right dark:text-white text-opacity-90 text-xs font-semibold">
+          <div class="text-right dark:text-white text-opacity-90 text-xs font-semibold h-5">
             <%= if @completed do %>
               Completed
             <% else %>

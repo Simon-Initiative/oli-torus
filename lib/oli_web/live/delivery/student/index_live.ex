@@ -165,6 +165,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
       has_visited_section={@has_visited_section}
       suggested_page={@last_open_and_unfinished_page || @nearest_upcoming_lesson}
       unfinished_lesson={!is_nil(@last_open_and_unfinished_page)}
+      has_scheduled_resources?={@has_scheduled_resources?}
     />
     <div id="home-view" class="bg-stone-950 dark:text-white" phx-hook="Countdown">
       <div class="flex flex-col md:flex-row p-3 md:p-8 justify-start items-start gap-6">
@@ -219,6 +220,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   attr(:has_visited_section, :boolean, required: true)
   attr(:suggested_page, :map)
   attr(:unfinished_lesson, :boolean, required: true)
+  attr(:has_scheduled_resources?, :boolean, required: true)
 
   defp header_banner(%{has_visited_section: true} = assigns) do
     ~H"""
@@ -255,7 +257,10 @@ defmodule OliWeb.Delivery.Student.IndexLive do
                   Module <%= @suggested_page.module_index %>
                 </div>
               </div>
-              <div class="grow shrink basis-0 h-5 justify-start items-center gap-1 flex">
+              <div
+                :if={@has_scheduled_resources?}
+                class="grow shrink basis-0 h-5 justify-start items-center gap-1 flex"
+              >
                 <div class="text-right text-white text-sm font-bold">Due:</div>
                 <div class="text-right text-white text-sm font-bold">
                   <%= format_date(

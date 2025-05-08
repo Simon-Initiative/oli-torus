@@ -176,6 +176,7 @@ defmodule OliWeb.Delivery.Student.Utils do
   attr :effective_settings, Oli.Delivery.Settings.Combined
   attr :ctx, SessionContext
   attr :is_adaptive, :boolean
+  attr :has_scheduled_resources?, :boolean
 
   def page_terms(assigns) do
     ~H"""
@@ -187,7 +188,7 @@ defmodule OliWeb.Delivery.Student.Utils do
         TERMS
       </span>
       <ul class="list-disc ml-6">
-        <li id="page_due_terms">
+        <li :if={@has_scheduled_resources?} id="page_due_terms">
           <.page_due_term effective_settings={@effective_settings} ctx={@ctx} />
         </li>
         <li :if={@effective_settings.end_date != nil} id="page_scoring_terms">

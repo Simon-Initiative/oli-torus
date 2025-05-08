@@ -92,6 +92,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
       <.filter_dropdown :if={@certificate} filter={@filter} filter_expanded={@filter_expanded} />
 
       <.assignments_agenda
+        has_scheduled_resources?={@has_scheduled_resources?}
         assignments={@assignments}
         ctx={@ctx}
         section_slug={@section.slug}
@@ -106,7 +107,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
     ~H"""
     <div
       role="hero banner"
-      class="w-full bg-cover bg-center bg-no-repeat h-[160px] h-[247px]"
+      class="w-full bg-cover bg-center bg-no-repeat h-[160px] md:h-[247px]"
       style="background-image: url('/images/gradients/assignments-bg.png');"
     >
       <div class="h-[160px] md:h-[247px] bg-gradient-to-r from-[#e4e4ea] dark:from-[#0a0b11] to-transparent">
@@ -178,6 +179,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
   attr :section_slug, :string, required: true
   attr :certificate, :map, required: true
   attr :filter, :atom, required: true
+  attr :has_scheduled_resources?, :boolean, required: true
 
   def assignments_agenda(assigns) do
     ~H"""
@@ -214,6 +216,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
             )
           }
           required={assignment_required_for_certificate(assignment, @certificate)}
+          has_scheduled_resources?={@has_scheduled_resources?}
         />
         <span :if={@assignments == []}>There are no assignments</span>
       </div>
@@ -248,6 +251,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
     doc: "Whether the assignment is required for the certificate"
 
   attr :filter, :atom, required: true
+  attr :has_scheduled_resources?, :boolean, required: true
 
   def assignment(assigns) do
     ~H"""
@@ -275,7 +279,11 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
         >
           <%= @assignment.title %>
         </.link>
-        <span class="text-[#757682] dark:text-[#eeebf5]/75 text-xs font-semibold leading-3 whitespace-nowrap truncate">
+        <span
+          :if={@has_scheduled_resources?}
+          role="assignment schedule details"
+          class="text-[#757682] dark:text-[#eeebf5]/75 text-xs font-semibold leading-3 whitespace-nowrap truncate"
+        >
           <%= Utils.label_for_scheduling_type(@assignment.scheduling_type) %> <%= FormatDateTime.to_formatted_datetime(
             @assignment.end_date,
             @ctx,
