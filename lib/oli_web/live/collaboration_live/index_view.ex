@@ -38,11 +38,11 @@ defmodule OliWeb.CollaborationLive.IndexView do
       ]
   end
 
-  def mount(params, session, socket) do
+  def mount(params, _session, socket) do
     ctx = socket.assigns.ctx
     section_slug = params["section_slug"]
 
-    case Mount.for(section_slug, session) do
+    case Mount.for(section_slug, socket) do
       {:error, e} ->
         Mount.handle_error(socket, {:error, e})
 

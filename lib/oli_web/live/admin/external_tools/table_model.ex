@@ -1,5 +1,6 @@
 defmodule OliWeb.Admin.ExternalTools.TableModel do
   use Phoenix.Component
+  use OliWeb, :verified_routes
 
   alias OliWeb.Common.FormatDateTime
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
@@ -79,11 +80,12 @@ defmodule OliWeb.Admin.ExternalTools.TableModel do
     """
   end
 
-  def render_actions_column(assigns, _row, _) do
-    # TODO: link this to the details page (https://eliterate.atlassian.net/browse/MER-4400)
+  def render_actions_column(assigns, row, _) do
+    assigns = Map.merge(assigns, %{platform_instance_id: row.id})
+
     ~H"""
     <.link
-      navigate="#"
+      href={~p"/admin/external_tools/#{@platform_instance_id}/details"}
       class="w-20 text-center text-sm font-semibold leading-none h-7 rounded-lg shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] outline outline-1 outline-offset-[-1px] inline-flex justify-center items-center"
     >
       Details
