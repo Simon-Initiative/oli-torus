@@ -34,7 +34,16 @@ defmodule Oli.Delivery.Page.PageContextTest do
           %{title: "one", objectives: %{"1" => [o]}, content: content},
           :a1
         )
-        |> Seeder.add_activity(%{title: "two", content: %{"stem" => "3"}}, :a2)
+        |> Seeder.add_activity(
+          %{
+            title: "two",
+            content: %{
+              "stem" => "3",
+              "authoring" => %{"parts" => [%{"id" => "1", "responses" => []}]}
+            }
+          },
+          :a2
+        )
         |> Seeder.add_user(%{}, :user1)
 
       attrs = %{

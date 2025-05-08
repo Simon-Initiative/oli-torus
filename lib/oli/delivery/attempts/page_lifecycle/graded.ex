@@ -16,7 +16,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
   alias Oli.Delivery.Settings
   alias Oli.Delivery.Settings.Combined
   alias Oli.Delivery.Attempts.Scoring
-  alias Oli.Delivery.Attempts.ActivityLifecycle.{Evaluate, Persistence}
+  alias Oli.Delivery.Attempts.ActivityLifecycle.{Persistence}
   alias Oli.Delivery.Evaluation.Result
   alias Oli.Delivery.Attempts.PageLifecycle.Common
   alias Oli.Delivery.Attempts.Core.{ResourceAttempt, ResourceAccess}
@@ -33,12 +33,15 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
 
   @impl Lifecycle
   @decorate transaction_event("Graded.visit")
-  def visit(%VisitContext{
-        latest_resource_attempt: latest_resource_attempt,
-        page_revision: page_revision,
-        section_slug: section_slug,
-        user: user
-      }) do
+  def visit(
+        %VisitContext{
+          latest_resource_attempt: latest_resource_attempt,
+          page_revision: page_revision,
+          section_slug: section_slug,
+          effective_settings: effective_settings,
+          user: user
+        } = visit_context
+      ) do
     # There is no "active" attempt if there has never been an attempt or if the latest
     # attempt has been finalized or submitted
     if is_nil(latest_resource_attempt) or
@@ -59,17 +62,46 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
           resource_attempts: graded_attempts
         }}}
     else
-      # Unlike ungraded pages, for graded pages we do not throw away attempts and create anew in the case
-      # where the resource revision has changed.  Instead we return back the existing attempt tree and force
-      # the page renderer to resolve this discrepancy by indicating the "revised" state.
+      # In the case that we are in score as you go mode, and the page revision has changed since the start of this
+      # current attempt, we need to start a new attempt to pick up the new page revision.
+      if page_revision.id !== latest_resource_attempt.revision_id and
+           !effective_settings.batch_scoring do
+        # We have to mark the current attempt as :evaluated so that we can start a new one
+        now = DateTime.utc_now()
 
-      {:ok, attempt_state} =
-        AttemptState.fetch_attempt_state(latest_resource_attempt, page_revision)
+        Core.update_resource_attempt(latest_resource_attempt, %{
+          lifecycle_state: :evaluated,
+          date_submitted: now,
+          date_evaluated: now
+        })
 
-      if page_revision.id !== latest_resource_attempt.revision_id do
-        {:ok, {:revised, attempt_state}}
+        case start(visit_context) do
+          {:ok, %AttemptState{} = %{resource_attempt: new_attempt} = attempt_state} ->
+            # Now after the new attempt has been created, we update it to pull forward the score
+            # from the previous attempt.  We keep the new out_of value as this allows the
+            # system to properly handle the case where the out_of value changes across revisions (e.g.
+            # if activities are )
+            {:ok, resource_attempt} =
+              Core.update_resource_attempt(new_attempt, %{
+                score: latest_resource_attempt.score
+              })
+
+            attempt_state = %{attempt_state | resource_attempt: resource_attempt}
+
+            {:ok, {:in_progress, attempt_state}}
+
+          error ->
+            error
+        end
       else
-        {:ok, {:in_progress, attempt_state}}
+        {:ok, attempt_state} =
+          AttemptState.fetch_attempt_state(latest_resource_attempt, page_revision)
+
+        if page_revision.id !== latest_resource_attempt.revision_id do
+          {:ok, {:revised, attempt_state}}
+        else
+          {:ok, {:in_progress, attempt_state}}
+        end
       end
     end
   end
@@ -97,7 +129,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
     case Oli.Delivery.Settings.check_end_date(effective_settings) do
       {:allowed} ->
         case {effective_settings.max_attempts > length(resource_attempts) or
-                effective_settings.max_attempts == 0,
+                effective_settings.max_attempts == 0 or !effective_settings.batch_scoring,
               has_any_active_attempts?(resource_attempts)} do
           {true, false} ->
             {:ok, resource_attempt} = Hierarchy.create(context)
@@ -217,7 +249,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
 
       _ ->
         with {_, activity_attempt_values, activity_attempt_params, part_attempt_guids} <-
-               Evaluate.update_part_attempts_and_get_activity_attempts(
+               Oli.Delivery.Attempts.ActivityLifecycle.RollUp.rollup_all(
                  resource_attempt,
                  datashop_session_id,
                  effective_settings

@@ -12,11 +12,14 @@ import {
   listenForReviewAttemptChange,
   resetAction,
   setSelection,
+  submit,
 } from 'data/activities/DeliveryState';
 import { initialPartInputs } from 'data/activities/utils';
 import { configureStore } from 'state/store';
 import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
 import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
+import { ScoreAsYouGoHeader } from '../common/ScoreAsYouGoHeader';
+import { ScoreAsYouGoSubmitReset } from '../common/ScoreAsYouGoSubmitReset';
 import { SubmitResetConnected } from '../common/delivery/SubmitReset';
 import { EvaluationConnected } from '../common/delivery/evaluation/EvaluationConnected';
 import { GradedPointsConnected } from '../common/delivery/graded_points/GradedPointsConnected';
@@ -68,9 +71,22 @@ const LikertComponent: React.FC = () => {
     dispatch(setSelection(itemId, choiceId, onSaveActivity, 'single'));
   };
 
+  const submitReset =
+    !uiState.activityContext.graded || uiState.activityContext.batchScoring ? (
+      <SubmitResetConnected
+        onReset={() => dispatch(resetAction(onResetActivity, emptySelectionMap))}
+      />
+    ) : (
+      <ScoreAsYouGoSubmitReset
+        onSubmit={() => dispatch(submit(onSubmitActivity))}
+        onReset={() => dispatch(resetAction(onResetActivity, undefined))}
+      />
+    );
+
   return (
     <div className="activity multiple-choice-activity">
       <div className="activity-content">
+        <ScoreAsYouGoHeader />
         <StemDelivery stem={(uiState.model as LikertModelSchema).stem} context={writerContext} />
         <LikertTable
           model={uiState.model as LikertModelSchema}
@@ -81,9 +97,7 @@ const LikertComponent: React.FC = () => {
         />
         <GradedPointsConnected />
 
-        <SubmitResetConnected
-          onReset={() => dispatch(resetAction(onResetActivity, emptySelectionMap))}
-        />
+        {submitReset}
 
         <HintsDeliveryConnected
           partId={castPartId(activityState.parts[0].partId)}

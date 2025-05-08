@@ -176,6 +176,9 @@ defmodule Oli.Delivery.Settings do
       start_date: combine_field(:start_date, section_resource, student_exception),
       end_date: combine_field(:end_date, section_resource, student_exception),
       max_attempts: max_attempts,
+      batch_scoring: combine_field(:batch_scoring, section_resource, student_exception),
+      replacement_strategy:
+        combine_field(:replacement_strategy, section_resource, student_exception),
       retake_mode: combine_field(:retake_mode, section_resource, student_exception),
       assessment_mode: combine_field(:assessment_mode, section_resource, student_exception),
       late_submit: combine_field(:late_submit, section_resource, student_exception),

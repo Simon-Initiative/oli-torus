@@ -13,7 +13,11 @@ export const GradedPointsConnected: React.FC = () => {
   return (
     <GradedPoints
       shouldShow={
-        showFeedback == true && uiState.attemptState.score !== null && graded && surveyId === null
+        showFeedback == true &&
+        uiState.attemptState.score !== null &&
+        graded &&
+        surveyId === null &&
+        uiState.activityContext.batchScoring
       }
       icon={isCorrect(uiState.attemptState) ? <Checkmark /> : <Cross />}
       attemptState={uiState.attemptState}

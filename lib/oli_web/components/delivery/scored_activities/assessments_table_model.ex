@@ -4,6 +4,7 @@ defmodule OliWeb.Delivery.ScoredActivities.AssessmentsTableModel do
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Common.FormatDateTime
   alias Phoenix.LiveView.JS
+  alias OliWeb.Icons
 
   def new(assessments, ctx, target) do
     column_specs = [
@@ -70,7 +71,8 @@ defmodule OliWeb.Delivery.ScoredActivities.AssessmentsTableModel do
       Map.merge(assigns, %{
         title: assessment.title,
         container_label: assessment.container_label,
-        id: assessment.id
+        id: assessment.id,
+        score_as_you_go: !assessment.batch_scoring
       })
 
     ~H"""
@@ -84,6 +86,9 @@ defmodule OliWeb.Delivery.ScoredActivities.AssessmentsTableModel do
         phx-click={JS.push("paged_table_selection_change", target: @target)}
         phx-value-id={@id}
       >
+        <%= if @score_as_you_go do %>
+          <Icons.score_as_you_go />
+        <% end %>
         <%= @title %>
       </a>
     </div>

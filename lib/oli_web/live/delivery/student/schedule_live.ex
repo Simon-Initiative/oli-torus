@@ -4,6 +4,7 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
   alias OliWeb.Common.SessionContext
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Scheduling
+  alias Oli.Delivery.Attempts.Core
   alias OliWeb.Components.Delivery.{Schedule, Utils}
   alias Oli.Delivery.{Attempts, Settings}
   alias Oli.Delivery.Attempts.{HistoricalGradedAttemptSummary}
@@ -32,12 +33,19 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
       current_week = Utils.week_number(section.start_date, current_datetime)
       current_month = current_datetime.month
 
+      resource_accesses_by_resource_id =
+        Core.get_graded_resource_access_for_context(section.id, [current_user_id])
+        |> Enum.reduce(%{}, fn access, acc ->
+          Map.put(acc, access.resource_id, access)
+        end)
+
       async_scroll_to_current_week(self())
 
       {:ok,
        assign(socket,
          active_tab: :schedule,
          loaded: true,
+         resource_accesses_by_resource_id: resource_accesses_by_resource_id,
          schedule: schedule,
          section_slug: section.slug,
          current_week: current_week,
@@ -70,6 +78,7 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
       <.schedule
         ctx={@ctx}
         schedule={@schedule}
+        resource_accesses_by_resource_id={@resource_accesses_by_resource_id}
         section_slug={@section_slug}
         current_week={@current_week}
         current_month={@current_month}
@@ -105,6 +114,7 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
   attr(:ctx, SessionContext, required: true)
   attr(:schedule, :any, required: true)
   attr(:section_slug, :string, required: true)
+  attr(:resource_accesses_by_resource_id, :any, required: true)
   attr(:current_week, :integer, required: true)
   attr(:current_month, :integer, required: true)
   attr(:historical_graded_attempt_summary, HistoricalGradedAttemptSummary)
@@ -139,6 +149,7 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
                     is_current_week?(week, @current_week) &&
                       is_current_month?(month, @current_month)
                   }
+                  resource_accesses_by_resource_id={@resource_accesses_by_resource_id}
                   schedule_ranges={schedule_ranges}
                   section_slug={@section_slug}
                   historical_graded_attempt_summary={@historical_graded_attempt_summary}

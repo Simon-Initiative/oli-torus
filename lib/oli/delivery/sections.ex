@@ -2800,6 +2800,8 @@ defmodule Oli.Delivery.Sections do
         project_id: publication.project_id,
         scoring_strategy_id: revision.scoring_strategy_id,
         assessment_mode: revision.assessment_mode,
+        batch_scoring: revision.batch_scoring,
+        replacement_strategy: revision.replacement_strategy,
         section_id: section.id
       }
       |> SectionResource.to_map()
@@ -4729,7 +4731,8 @@ defmodule Oli.Delivery.Sections do
         numbering_index: sr.numbering_index,
         start_date: coalesce(se.start_date, sr.start_date),
         end_date: coalesce(se.end_date, sr.end_date),
-        scheduling_type: sr.scheduling_type
+        scheduling_type: sr.scheduling_type,
+        batch_scoring: sr.batch_scoring
       }
     )
     |> where(^graded_filter)

@@ -10,7 +10,6 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Attempts.ManualGrading.BrowseOptions
   alias Oli.Resources.Revision
-  alias Oli.Delivery.Attempts.ActivityLifecycle.Evaluate
   alias Oli.Delivery.Attempts.Core
 
   alias Oli.Delivery.Attempts.Core.{
@@ -245,53 +244,70 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
         activity_attempt,
         score_feedbacks_map
       ) do
+    part_attempts = Core.get_latest_part_attempts(activity_attempt.attempt_guid)
+    datashop_session_id = hd(part_attempts).datashop_session_id
+    client_evaluations = to_client_evaluations(part_attempts, score_feedbacks_map)
+
     graded = activity_attempt.graded
     resource_attempt_guid = activity_attempt.resource_attempt_guid
 
-    Oli.Repo.transaction(fn _ ->
-      with {:ok, finalized_part_attempts} <-
-             finalize_part_attempts(activity_attempt, score_feedbacks_map),
-           {:ok, _} <-
-             Evaluate.rollup_part_attempt_evaluations(activity_attempt.attempt_guid),
-           :ok <-
-             finalized_part_attempts
-             |> to_attempt_guid()
-             |> queue_or_create_snapshot(section_slug),
-           {:ok, _} <- maybe_finalize_resource_attempt(section, graded, resource_attempt_guid) do
-        finalized_part_attempts
-      else
-        e ->
-          Repo.rollback(e)
+    # We need to set the grading approach to automatic for all part attempts
+    # so that the rollup will have an opportunity to update the activity attempt
+    # to :evaluated - otherwise it will remain in :submitted
+    mocked_part_attempts =
+      Enum.map(part_attempts, fn part_attempt ->
+        Map.put(part_attempt, :grading_approach, :automatic)
+      end)
+
+    Oli.Repo.transaction(fn ->
+      case Oli.Delivery.Attempts.ActivityLifecycle.Evaluate.apply_client_evaluation(
+             section_slug,
+             activity_attempt.attempt_guid,
+             client_evaluations,
+             datashop_session_id,
+             enforce_client_side_eval: false,
+             part_attempts_input: mocked_part_attempts
+           ) do
+        {:ok, _} ->
+          maybe_finalize_resource_attempt(section, graded, resource_attempt_guid)
+
+        {:error, error} ->
+          Repo.rollback(error)
       end
     end)
   end
 
-  defp finalize_part_attempts(activity_attempt, score_feedbacks_map) do
-    part_attempts = Core.get_latest_part_attempts(activity_attempt.attempt_guid)
-
-    now = DateTime.utc_now()
-
+  # This function takes a list of part attempts and a map of score feedbacks from the UI
+  # and converts them to a list of client evaluations that can be used to
+  # to evaluate these part attempts via Evaluate.apply_client_evaluation/5
+  defp to_client_evaluations(part_attempts, score_feedbacks_map) do
     Enum.filter(part_attempts, fn pa ->
       pa.grading_approach == :manual and pa.lifecycle_state == :submitted
     end)
-    |> Enum.reduce_while({:ok, []}, fn pa, {:ok, updated} ->
+    |> Enum.map(fn pa ->
       case Map.get(score_feedbacks_map, pa.attempt_guid) do
         %{score: score, out_of: out_of, feedback: feedback} ->
-          case Core.update_part_attempt(pa, %{
-                 lifecycle_state: :evaluated,
-                 date_evaluated: now,
-                 score: score,
-                 out_of: out_of,
-                 feedback: %{content: wrap_in_paragraphs(feedback)}
-               }) do
-            {:ok, updated_part_attempt} -> {:cont, {:ok, [updated_part_attempt | updated]}}
-            e -> {:halt, e}
-          end
+          input =
+            case Map.get(pa, :response) do
+              %{input: input} -> input
+              nil -> %{}
+            end
+
+          %{
+            attempt_guid: pa.attempt_guid,
+            client_evaluation: %Oli.Delivery.Attempts.Core.ClientEvaluation{
+              input: input,
+              feedback: %{content: wrap_in_paragraphs(feedback)},
+              score: score,
+              out_of: out_of
+            }
+          }
 
         _ ->
-          {:halt, {:error, "scoring feedback not found for attempt #{pa.attempt_guid}"}}
+          nil
       end
     end)
+    |> Enum.filter(fn client_eval -> client_eval != nil end)
   end
 
   defp maybe_finalize_resource_attempt(_, false, resource_attempt_guid),
@@ -359,21 +375,10 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
     other
   end
 
-  defp to_attempt_guid(part_attempts) do
-    Enum.map(part_attempts, fn pa -> pa.attempt_guid end)
-  end
-
   defp wrap_in_paragraphs(text) do
     String.split(text, "\n")
     |> Enum.map(fn text ->
       %{type: "p", children: [%{text: text}]}
     end)
-  end
-
-  defp queue_or_create_snapshot(part_attempt_guids, section_slug) do
-    case Oli.Delivery.Snapshots.queue_or_create_snapshot(part_attempt_guids, section_slug) do
-      {:ok, _job} -> :ok
-      other -> other
-    end
   end
 end
