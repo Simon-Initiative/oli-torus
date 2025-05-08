@@ -327,7 +327,8 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
           ctx: session_context,
           grouped_agenda_resources: grouped_agenda_resources,
           section_start_date: section.start_date,
-          section_slug: section.slug
+          section_slug: section.slug,
+          has_scheduled_resources?: true
         })
 
       ## Displays current week
@@ -407,7 +408,8 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
           ctx: session_context,
           grouped_agenda_resources: grouped_agenda_resources,
           section_start_date: section.start_date,
-          section_slug: section.slug
+          section_slug: section.slug,
+          has_scheduled_resources?: true
         })
 
       # Practice 2 is completed
@@ -440,7 +442,8 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
           ctx: session_context,
           grouped_agenda_resources: grouped_agenda_resources,
           section_start_date: section.start_date,
-          section_slug: section.slug
+          section_slug: section.slug,
+          has_scheduled_resources?: true
         })
 
       # Graded 1 is completed and displays attempts info
@@ -472,7 +475,8 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
           ctx: session_context,
           grouped_agenda_resources: grouped_agenda_resources,
           section_start_date: section.start_date,
-          section_slug: section.slug
+          section_slug: section.slug,
+          has_scheduled_resources?: true
         })
 
       lcd
@@ -498,6 +502,27 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
                "Graded 2"
              )
     end
+
+    test "does render the schedule details label", %{
+      conn: conn,
+      section: section,
+      user: user,
+      session_context: session_context
+    } do
+      stub_current_time(~U[2024-05-07 20:00:00Z])
+      grouped_agenda_resources = Utils.grouped_agenda_resources(section, nil, user.id, true)
+
+      {:ok, lcd, _html} =
+        live_component_isolated(conn, ScheduleComponent, %{
+          ctx: session_context,
+          grouped_agenda_resources: grouped_agenda_resources,
+          section_start_date: section.start_date,
+          section_slug: section.slug,
+          has_scheduled_resources?: true
+        })
+
+      assert has_element?(lcd, ~s{span[role="schedule details"]})
+    end
   end
 
   describe "live component without schedule" do
@@ -517,7 +542,8 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
           ctx: session_context,
           grouped_agenda_resources: grouped_agenda_resources,
           section_start_date: section.start_date,
-          section_slug: section.slug
+          section_slug: section.slug,
+          has_scheduled_resources?: false
         })
 
       ## Does not display current week (no schedule)
@@ -534,6 +560,27 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
       Enum.each(5..11, fn x ->
         refute render(lcd) =~ "Unit #{x}"
       end)
+    end
+
+    test "does not render the schedule details ('Not yet scheduled' label)", %{
+      conn: conn,
+      section: section,
+      user: user,
+      session_context: session_context
+    } do
+      # no schedule
+      grouped_agenda_resources = Utils.grouped_agenda_resources(section, nil, user.id, false)
+
+      {:ok, lcd, _html} =
+        live_component_isolated(conn, ScheduleComponent, %{
+          ctx: session_context,
+          grouped_agenda_resources: grouped_agenda_resources,
+          section_start_date: section.start_date,
+          section_slug: section.slug,
+          has_scheduled_resources?: false
+        })
+
+      refute has_element?(lcd, ~s{span[role="schedule details"]})
     end
   end
 end

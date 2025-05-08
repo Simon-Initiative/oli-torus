@@ -1087,6 +1087,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
           grouped_agenda_resources={@grouped_agenda_resources}
           section_start_date={@section_start_date}
           section_slug={@section_slug}
+          has_scheduled_resources?={@has_scheduled_resources?}
         />
       </div>
     </div>
