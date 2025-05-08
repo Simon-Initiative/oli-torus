@@ -14,7 +14,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
   alias Oli.Resources.Collaboration
   alias OliWeb.Common.Utils
   alias OliWeb.Components.{Common, Overview}
-  alias OliWeb.Components.Project.AsyncExporter
+  alias OliWeb.Components.Project.{AdvancedActivityItem, AsyncExporter}
   alias OliWeb.Projects.{RequiredSurvey, TransferPaymentCodes}
 
   @impl Phoenix.LiveView
@@ -312,11 +312,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
         title="Advanced Activities"
         description="Enable advanced activity types for your project to include in your curriculum."
       >
-        <%= render_many(@activities_enabled, OliWeb.ProjectView, "_tr_activities_available.html", %{
-          conn: @socket,
-          as: :activity_enabled,
-          project: @project
-        }) %>
+        <%= for activity_enabled <- @activities_enabled do %>
+          <AdvancedActivityItem.render activity_enabled={activity_enabled} project={@project} />
+        <% end %>
       </Overview.section>
 
       <%= live_render(@socket, OliWeb.Projects.VisibilityLive,
