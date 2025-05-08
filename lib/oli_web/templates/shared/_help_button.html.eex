@@ -1,4 +1,0 @@
-<!-- Button trigger modal -->
-<button type="button" class="btn btn-xs btn-light inline-flex items-center help-btn m-1 whitespace-nowrap" onclick="window.showHelpModal();">
-  <span>Tech Support</span>
-</button>

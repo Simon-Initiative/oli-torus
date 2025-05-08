@@ -131,6 +131,7 @@
 
         .email-container {
             padding: 20px 10px;
+            text-align: left;
         }
 
         /* What it does: Removes right gutter in Gmail iOS app: https://github.com/TedGoas/Cerberus/issues/89  */

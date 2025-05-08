@@ -11,7 +11,6 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   alias OliWeb.Common.SessionContext
   alias OliWeb.Common.React
   alias OliWeb.Components.Timezone
-  alias OliWeb.Icons
 
   attr(:id, :string, required: true)
   attr(:ctx, SessionContext)
@@ -217,7 +216,9 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     <.menu_divider />
     <.menu_item_timezone_selector id={"#{@id}-tz-selector"} ctx={@ctx} />
     <.menu_divider />
-    <.menu_item_support_button :if={@show_support_link} />
+    <.menu_item :if={@show_support_link}>
+      <%= OliWeb.Components.Common.tech_support_button(%{id: "tech_support_author_menu"}) %>
+    </.menu_item>
     <.menu_item_link href={~p"/authors/log_out"} method={:delete}>
       Sign out
     </.menu_item_link>
@@ -248,7 +249,9 @@ defmodule OliWeb.Components.Delivery.UserAccount do
       :if={Accounts.can_manage_linked_account?(@ctx.user)}
       user={@ctx.user}
     />
-    <.menu_item_support_button :if={@show_support_link} />
+    <.menu_item :if={@show_support_link}>
+      <%= OliWeb.Components.Common.tech_support_button(%{id: "tech_support_user_menu"}) %>
+    </.menu_item>
     <.menu_item_link href={~p"/users/log_out"} method={:delete}>
       Sign out
     </.menu_item_link>
@@ -271,7 +274,9 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     </.menu_item_link>
     <.menu_divider />
     <.maybe_research_consent_link ctx={@ctx} />
-    <.menu_item_support_button :if={@show_support_link} />
+    <.menu_item :if={@show_support_link}>
+      <%= OliWeb.Components.Common.tech_support_button(%{id: "tech_support_guess_menu"}) %>
+    </.menu_item>
     <.menu_item_link href={~p"/users/log_out"} method={:delete}>
       Leave Guest account
     </.menu_item_link>
@@ -484,17 +489,6 @@ defmodule OliWeb.Components.Delivery.UserAccount do
       </.menu_item_link>
       <.menu_divider />
     <% end %>
-    """
-  end
-
-  defp menu_item_support_button(assigns) do
-    ~H"""
-    <.menu_item>
-      <.menu_item_button onclick="window.showHelpModal();">
-        <Icons.support />
-        <span class="ml-2 text-sm font-medium tracking-tight">Support</span>
-      </.menu_item_button>
-    </.menu_item>
     """
   end
 

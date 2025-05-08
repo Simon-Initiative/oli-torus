@@ -150,7 +150,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
   def header(assigns) do
     ~H"""
     <div class="w-full bg-delivery-instructor-dashboard-header text-white border-b border-slate-600">
-      <div class="container mx-auto py-2 flex flex-row justify-between">
+      <div class="container mx-auto py-2 flex flex-row justify-between items-center">
         <div class="flex-1 flex items-center">
           <a
             class="navbar-brand dark torus-logo shrink-0 my-1 mr-auto"
@@ -159,28 +159,25 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
             <%= brand_logo(Map.merge(assigns, %{class: "d-inline-block align-top mr-2"})) %>
           </a>
         </div>
-        <%= if @preview_mode do %>
-          <UserAccount.preview_user_menu ctx={@ctx} />
-        <% else %>
-          <UserAccount.menu id="user-account-menu" ctx={@ctx} is_admin={@is_admin} section={@section} />
-        <% end %>
-        <div class="flex items-center border-l border-slate-300">
-          <button
-            aria-label="Request Help"
-            class="
-                btn
-                rounded
-                ml-4
-                no-underline
-                text-slate-100
-                hover:no-underline
-                hover:bg-delivery-instructor-dashboard-header-700
-                active:bg-delivery-instructor-dashboard-header-600
-              "
-            onclick="window.showHelpModal();"
+        <div class="p-3">
+          <%= if @preview_mode do %>
+            <UserAccount.preview_user_menu ctx={@ctx} />
+          <% else %>
+            <UserAccount.menu
+              id="user-account-menu"
+              ctx={@ctx}
+              is_admin={@is_admin}
+              section={@section}
+            />
+          <% end %>
+        </div>
+        <div class="flex items-center border-l border-slate-300 my-2">
+          <.tech_support_link
+            id="tech_support_top_navbar_student_reports"
+            class="btn rounded ml-4 no-underline text-slate-100 hover:no-underline hover:bg-delivery-instructor-dashboard-header-700 active:bg-delivery-instructor-dashboard-header-600"
           >
             <i class="fa-regular fa-circle-question fa-lg"></i>
-          </button>
+          </.tech_support_link>
         </div>
       </div>
     </div>

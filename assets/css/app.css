@@ -228,3 +228,46 @@ Not supports in Firefox and IE */
     scrollbar-color: #524d59 #2f2c33;
   }
 }
+
+/* File Uploads */
+
+#tech-support-modal form .hint {
+  @apply my-4 text-black/70 text-sm dark:text-gray-400 dark:stroke-[#B8B4BF];
+}
+#tech-support-modal form .drop {
+  @apply flex items-baseline justify-around space-x-1 my-2 p-4 border-2 border-dashed border-slate-300 rounded-md text-center text-black/70 text-sm dark:text-gray-400 dark:stroke-[#B8B4BF] flex flex-col md:flex-row;
+}
+#tech-support-modal form .drop label {
+  @apply cursor-pointer font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500;
+}
+#tech-support-modal form .drop p {
+  @apply text-sm text-slate-500 flex justify-start items-center w-full h-[40px] md:h-full;
+}
+#tech-support-modal form .drop img {
+  @apply mx-auto h-12 w-12;
+}
+#tech-support-modal form .entry {
+  @apply my-6 flex items-center justify-start space-x-6;
+}
+#tech-support-modal form .entry img {
+  @apply w-32;
+}
+#tech-support-modal form .entry .progress {
+  @apply w-full;
+}
+#tech-support-modal form .entry .progress .value {
+  @apply text-left mb-2 text-xs font-semibold inline-block text-indigo-600;
+}
+#tech-support-modal form .entry .progress .bar {
+  @apply flex h-2 overflow-hidden text-base bg-indigo-200 rounded-lg mb-4;
+}
+#tech-support-modal form .entry .progress .bar > span {
+  @apply shadow-md bg-indigo-500;
+  transition: width 1s ease;
+}
+#tech-support-modal form .entry a {
+  @apply text-3xl font-bold text-slate-700 hover:text-red-700 cursor-pointer;
+}
+#tech-support-modal form .error {
+  @apply block text-rose-600 my-2 text-sm leading-6;
+}

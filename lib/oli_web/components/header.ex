@@ -7,7 +7,6 @@ defmodule OliWeb.Components.Header do
   import OliWeb.Components.Delivery.Utils
 
   alias OliWeb.Components.Delivery.UserAccount
-  alias OliWeb.Components.Delivery.Buttons
   alias OliWeb.Breadcrumb.BreadcrumbTrailLive
   alias OliWeb.Common.SessionContext
 
@@ -36,7 +35,12 @@ defmodule OliWeb.Components.Header do
 
         <%= if not is_preview_mode?(assigns) do %>
           <div class="inline-flex items-center mr-2">
-            <Buttons.help_button />
+            <.tech_support_link
+              id="tech_support_enroll_top_navbar"
+              class="btn btn-light btn-sm inline-flex items-center"
+            >
+              Tech Support
+            </.tech_support_link>
           </div>
         <% end %>
 
@@ -112,15 +116,12 @@ defmodule OliWeb.Components.Header do
         <.sign_in_button href="/authors/log_in" request_path={assigns.conn.request_path}>
           For Course Authors
         </.sign_in_button>
-        <.button
-          id="support-button"
-          href="#"
+        <.tech_support_link
+          id="tech_support_navbar_sign_in"
           class="pt-[12px] text-high-24 hover:text-high-24 hover:underline hover:underline-offset-8"
-          onclick="window.showHelpModal();"
-          phx-click={JS.dispatch("maybe_add_underline_classes", to: "#help-modal")}
         >
           Support
-        </.button>
+        </.tech_support_link>
       </div>
     </nav>
     """

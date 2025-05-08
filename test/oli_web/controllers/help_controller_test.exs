@@ -24,12 +24,30 @@ defmodule OliWeb.HelpControllerTest do
           conn,
           Routes.help_path(conn, :create),
           help: %{
-            location: "https://localhost/project/philosophy",
-            cookies_enabled: "true",
             full_name: "Help Me",
             email: "help@example.edu",
             subject: "help_login",
-            message: "Lorem Ipsum is simply dummy text of the printing and typesetting industry."
+            message: "Lorem Ipsum is simply dummy text of the printing and typesetting industry.",
+            timestamp: "timestamp",
+            ip_address: "ip_address",
+            location: "https://localhost/project/philosophy",
+            user_agent: "user_agent",
+            agent_accept: "agent_accept",
+            agent_language: "agent_language",
+            cookies_enabled: true,
+            account_email: "account_email",
+            account_name: "account_name",
+            account_created: "account_created",
+            screen_size: "screen_size",
+            browser_size: "browser_size",
+            browser_plugins: "browser_plugins",
+            user_type: "user_type",
+            operating_system: "operating_system",
+            browser_info: "browser_info",
+            course_data: nil,
+            student_report_url: "student_report_url",
+            user_account_url: "user_account_url",
+            screenshots: []
           },
           "g-recaptcha-response": "any"
         )

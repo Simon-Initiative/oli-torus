@@ -223,22 +223,12 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
         </div>
 
         <div class="flex items-center border-l border-slate-300 my-2">
-          <button
-            aria-label="Request Help"
-            class="
-                btn
-                rounded
-                ml-4
-                no-underline
-                text-slate-100
-                hover:no-underline
-                hover:bg-delivery-instructor-dashboard-header-700
-                active:bg-delivery-instructor-dashboard-header-600
-              "
-            onclick="window.showHelpModal();"
+          <.tech_support_link
+            id="tech_support_top_navbar"
+            class="btn rounded ml-4 no-underline text-slate-100 hover:no-underline hover:bg-delivery-instructor-dashboard-header-700 active:bg-delivery-instructor-dashboard-header-600"
           >
             <i class="fa-regular fa-circle-question fa-lg"></i>
-          </button>
+          </.tech_support_link>
         </div>
       </div>
     </div>

@@ -14,7 +14,17 @@ defmodule Oli.Help.HelpContent do
     :account_email,
     :account_name,
     :account_role,
-    :account_created
+    :account_created,
+    :screen_size,
+    :browser_size,
+    :browser_plugins,
+    :user_type,
+    :operating_system,
+    :browser_info,
+    :course_data,
+    :student_report_url,
+    :user_account_url,
+    :screenshots
   ]
 
   @subjects %{
@@ -57,7 +67,17 @@ defmodule Oli.Help.HelpContent do
         "cookies_enabled" => cookies_enabled,
         "account_email" => account_email,
         "account_name" => account_name,
-        "account_created" => account_created
+        "account_created" => account_created,
+        "screen_size" => screen_size,
+        "browser_size" => browser_size,
+        "browser_plugins" => browser_plugins,
+        "user_type" => user_type,
+        "operating_system" => operating_system,
+        "browser_info" => browser_info,
+        "course_data" => course_data,
+        "student_report_url" => student_report_url,
+        "user_account_url" => user_account_url,
+        "screenshots" => screenshots
       }) do
     help_content = %Oli.Help.HelpContent{
       full_name: full_name,
@@ -73,7 +93,17 @@ defmodule Oli.Help.HelpContent do
       cookies_enabled: cookies_enabled,
       account_email: account_email,
       account_name: account_name,
-      account_created: account_created
+      account_created: account_created,
+      screen_size: screen_size,
+      browser_size: browser_size,
+      browser_plugins: browser_plugins,
+      user_type: user_type,
+      operating_system: operating_system,
+      browser_info: browser_info,
+      course_data: course_data,
+      student_report_url: student_report_url,
+      user_account_url: user_account_url,
+      screenshots: screenshots
     }
 
     {:ok, help_content}

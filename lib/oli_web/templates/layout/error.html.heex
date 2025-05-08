@@ -18,7 +18,5 @@
   </head>
   <body class="min-h-screen flex flex-col bg-delivery-body text-delivery-body-color dark:bg-delivery-body-dark dark:text-delivery-body-color-dark">
     <%= Map.get(assigns, :inner_layout) || @inner_content %>
-
-    <%= render(OliWeb.SharedView, "_help.html", conn: @conn) %>
   </body>
 </html>

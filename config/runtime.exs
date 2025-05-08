@@ -240,6 +240,7 @@ if config_env() == :prod do
   """
 
   config :oli, :vendor_property,
+    knowledgebase_url: System.get_env("KNOWLEDGEBASE_URL", "#"),
     workspace_logo:
       System.get_env("VENDOR_PROPERTY_WORKSPACE_LOGO", "/branding/prod/oli_torus_icon.png"),
     product_full_name:

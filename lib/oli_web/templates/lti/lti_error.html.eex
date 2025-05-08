@@ -1,7 +1,0 @@
-<h3 class="my-3">Something Went Wrong</h3>
-
-<p>Reason: <span class="text-danger"><%= @reason %></span></p>
-
-<p>If you need help configuring your LTI connection, please <a href="javascript:" onclick="showHelpModal();">contact support</a></p>
-
-<%= render OliWeb.SharedView, "_help.html", conn: @conn %>

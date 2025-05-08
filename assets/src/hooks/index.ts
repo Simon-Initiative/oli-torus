@@ -39,6 +39,7 @@ import { SelectListener } from './select_listener';
 import { ShowTeaser } from './show_teaser';
 import { SliderScroll } from './slider_scroll';
 import { SubmitForm } from './submit_form';
+import { SubmitTechSupportForm } from './submit_tech_support_form';
 import { SystemMessage } from './system_message';
 import { TextInputListener } from './text_input_listener';
 import { TextareaListener } from './textarea_listener';
@@ -103,4 +104,5 @@ export const Hooks = {
   Recaptcha,
   OnMountAndUpdate,
   FixedNavigationBar,
+  SubmitTechSupportForm,
 };
