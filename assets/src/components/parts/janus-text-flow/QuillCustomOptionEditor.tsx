@@ -61,7 +61,7 @@ export const QuillCustomOptionEditor: React.FC<QuillCustomOptionEditorProps> = (
           <Modal
             show={showImageSelectorDailog}
             onHide={handleImageDailogClose}
-            style={{ top: '250px' }}
+            style={{ top: '225px' }}
           >
             <Modal.Header closeButton={true} className="px-8 pb-0">
               <h3 className="modal-title font-bold">

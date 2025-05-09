@@ -20,13 +20,9 @@ const Editor: React.FC<any> = React.memo(({ html, tree, portal, optionType }) =>
     showcustomoptioncontrol?: boolean;
     customoptiontype?: 'dropdown' | 'input';
   } = {};
-  if (tree) {
-    quillProps.tree = '[]';
-  }
+  quillProps.tree = '[]';
   quillProps.showcustomoptioncontrol = true;
   quillProps.customoptiontype = optionType;
-  quillProps.html = 'html';
-
   console.log('E RERENDER', { html, tree, portal, quillProps });
   const E = () => (
     <div style={{ padding: 20 }}>{React.createElement(quillEditorTagName, quillProps)}</div>
