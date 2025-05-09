@@ -28,15 +28,65 @@ defmodule OliWeb.Components.Delivery.Student do
     """
   end
 
+  attr(:raw_avg_score, :map)
+
+  def score_as_you_go_summary(assigns) do
+    ~H"""
+    <div role="score summary" class="flex gap-[6px] ml-auto">
+      <Icons.score_as_you_go />
+      <span class="text-[12px] leading-[16px] tracking-[0.02px] text-[#0CAF61] dark:text-[#12E56A] font-semibold whitespace-nowrap">
+        <%= Utils.format_score(@raw_avg_score[:score]) %> / <%= Utils.format_score(
+          @raw_avg_score[:out_of]
+        ) %>
+      </span>
+    </div>
+    """
+  end
+
   attr(:ctx, OliWeb.Common.SessionContext)
   attr(:section_slug, :string)
   attr(:page_revision_slug, :string)
   attr(:attempts_count, :integer)
+  attr(:resource_access, :any, default: nil)
   attr(:attempt_summary, HistoricalGradedAttemptSummary)
   attr(:effective_settings, :map)
 
   def attempts_dropdown(assigns) do
     assigns = assign(assigns, :id, "page-#{assigns[:page_revision_slug]}-attempts")
+
+    assigns =
+      case assigns[:effective_settings].batch_scoring do
+        true ->
+          assign(
+            assigns,
+            :label,
+            "Attempts #{assigns[:attempts_count]}/#{max_attempts(assigns[:effective_settings])}"
+          )
+
+        false ->
+          assign(assigns, :label, "Score as you go")
+      end
+
+    assigns =
+      case {assigns[:effective_settings].batch_scoring, assigns[:resource_access]} do
+        {true, _} ->
+          assign(assigns, :raw_avg_score, %{score: nil, out_of: nil})
+
+        {false, nil} ->
+          assign(assigns, :raw_avg_score, %{score: nil, out_of: nil})
+
+        {false, resource_access} ->
+          case resource_access.score do
+            nil ->
+              assign(assigns, :raw_avg_score, %{score: nil, out_of: nil})
+
+            _ ->
+              assign(assigns, :raw_avg_score, %{
+                score: resource_access.score,
+                out_of: resource_access.out_of
+              })
+          end
+      end
 
     ~H"""
     <div class="self-stretch justify-start items-start gap-6 inline-flex relative mb-1">
@@ -46,17 +96,25 @@ defmodule OliWeb.Components.Delivery.Student do
         phx-click={show_attempts_dropdown("##{@id}-dropdown", @page_revision_slug)}
         phx-value-hide-target={"##{@id}-dropdown"}
       >
-        Attempts <%= @attempts_count %>/<%= max_attempts(@effective_settings) %>
-        <span><i class="fa-solid fa-caret-down"></i></span>
+        <div class="flex flex-row gap-1">
+          <div>
+            <%= @label %>
+            <span><i class="fa-solid fa-caret-down"></i></span>
+          </div>
+        </div>
       </button>
       <.dropdown_menu id={"#{@id}-dropdown"}>
         <Common.loading_spinner :if={
           !@attempt_summary || @attempt_summary.page_revision_slug != @page_revision_slug
         } />
         <.attempts_summary
-          :if={@attempt_summary && @attempt_summary.page_revision_slug == @page_revision_slug}
+          :if={
+            (@attempt_summary != nil && @attempt_summary.page_revision_slug == @page_revision_slug) or
+              @label == "Score as you go"
+          }
           ctx={@ctx}
           attempt_summary={@attempt_summary}
+          raw_avg_score={@raw_avg_score}
           section_slug={@section_slug}
           effective_settings={@effective_settings}
           page_revision_slug={@page_revision_slug}
@@ -111,7 +169,41 @@ defmodule OliWeb.Components.Delivery.Student do
   attr(:effective_settings, :map)
   attr(:ctx, OliWeb.Common.SessionContext)
   attr(:section_slug, :string)
+  attr(:raw_avg_score, :map)
   attr(:page_revision_slug, :string)
+
+  defp attempts_summary(%{effective_settings: %{batch_scoring: false}} = assigns) do
+    ~H"""
+    <div
+      id="attempts_summary"
+      class="flex flex-col gap-3"
+      phx-click-away={hide_attempts_dropdown("#page-#{@page_revision_slug}-attempts-dropdown")}
+    >
+      <div class="flex flex-row justify-between p-2">
+        <div class="text-sm uppercase">
+          Score Information
+        </div>
+        <button phx-click={hide_attempts_dropdown("#page-#{@page_revision_slug}-attempts-dropdown")}>
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="flex flex-row p-2 justify-start vertical-align">
+        <div class="mr-2"><strong>SCORE AS YOU GO</strong></div>
+        <div>
+          <Icons.score_as_you_go />
+          <span class="text-[12px] leading-[16px] tracking-[0.02px] text-[#0CAF61] dark:text-[#12E56A] font-semibold whitespace-nowrap">
+            <%= Utils.format_score(@raw_avg_score[:score]) %> / <%= Utils.format_score(
+              @raw_avg_score[:out_of]
+            ) %>
+          </span>
+        </div>
+      </div>
+      <div class="flex flex-col p-2">
+        <div>Your score is updated as you complete questions on this page.</div>
+      </div>
+    </div>
+    """
+  end
 
   defp attempts_summary(
          %{attempt_summary: %HistoricalGradedAttemptSummary{historical_attempts: []}} = assigns

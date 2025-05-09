@@ -5,9 +5,10 @@ defmodule Oli.Delivery.Evaluation.Standard do
   def perform(
         attempt_guid,
         %EvaluationContext{} = evaluation_context,
-        %Part{} = part
+        %Part{} = part,
+        scale_factor
       ) do
-    case Oli.Delivery.Evaluation.Evaluator.evaluate(part, evaluation_context) do
+    case Oli.Delivery.Evaluation.Evaluator.evaluate(part, evaluation_context, scale_factor) do
       {:error, e} ->
         {:error,
          %Oli.Delivery.Evaluation.Actions.FeedbackAction{

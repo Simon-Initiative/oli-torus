@@ -19,6 +19,8 @@ import { configureStore } from 'state/store';
 import guid from 'utils/guid';
 import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
 import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
+import { ScoreAsYouGoHeader } from '../common/ScoreAsYouGoHeader';
+import { ScoreAsYouGoSubmitReset } from '../common/ScoreAsYouGoSubmitReset';
 import { SubmitResetConnected } from '../common/delivery/SubmitReset';
 import { EvaluationConnected } from '../common/delivery/evaluation/EvaluationConnected';
 import { GradedPointsConnected } from '../common/delivery/graded_points/GradedPointsConnected';
@@ -140,9 +142,24 @@ const ImageHotspotComponent: React.FC = () => {
     if (!disabled) onSelect(partId, hs.id);
   };
 
+  const submitReset =
+    !uiState.activityContext.graded || uiState.activityContext.batchScoring ? (
+      model.multiple && (
+        <SubmitResetConnected
+          onReset={() => dispatch(resetAction(onResetActivity, { [partId]: [] }))}
+        />
+      )
+    ) : (
+      <ScoreAsYouGoSubmitReset
+        onSubmit={() => dispatch(submit(onSubmitActivity))}
+        onReset={() => dispatch(resetAction(onResetActivity, undefined))}
+      />
+    );
+
   return (
     <div className="activity multiple-choice-activity">
       <div className="activity-content">
+        <ScoreAsYouGoHeader />
         <StemDelivery
           stem={(uiState.model as ImageHotspotModelSchema).stem}
           context={writerContext}
@@ -187,11 +204,7 @@ const ImageHotspotComponent: React.FC = () => {
         <GradedPointsConnected />
 
         {/* single selection like MCQ: no submit button. multiple like CATA */}
-        {model.multiple && (
-          <SubmitResetConnected
-            onReset={() => dispatch(resetAction(onResetActivity, { [partId]: [] }))}
-          />
-        )}
+        {submitReset}
 
         <HintsDeliveryConnected partId={castPartId(activityState.parts[0].partId)} />
         <EvaluationConnected />

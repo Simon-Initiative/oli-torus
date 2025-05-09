@@ -154,7 +154,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
       Metrics.avg_score_across_for_pages(section, page_ids, student_ids)
 
     attempts_across_for_pages =
-      Metrics.attempts_across_for_pages(section, page_ids, student_ids)
+      Metrics.attempts_across_for_pages(section, page_ids, student_ids, false)
 
     resources
     |> Enum.map(fn r ->

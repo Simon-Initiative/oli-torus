@@ -165,7 +165,8 @@ defmodule Oli.Rendering.Activity.Html do
          %ActivitySummary{
            state: state,
            graded: graded,
-           variables: variables
+           variables: variables,
+           ordinal: ordinal
          },
          bib_params,
          model_json
@@ -173,6 +174,11 @@ defmodule Oli.Rendering.Activity.Html do
     activity_context =
       %{
         graded: graded,
+        batchScoring: effective_settings && effective_settings.batch_scoring,
+        oneAtATime: effective_settings && effective_settings.assessment_mode == :one_at_a_time,
+        maxAttempts: effective_settings && effective_settings.max_attempts,
+        scoringStrategyId: effective_settings && effective_settings.scoring_strategy_id,
+        ordinal: ordinal,
         userId: user.id,
         sectionSlug: context.section_slug,
         projectSlug: context.project_slug,
@@ -207,17 +213,8 @@ defmodule Oli.Rendering.Activity.Html do
     ]
   end
 
-  defp possibly_wrap_with_numbering(activity_html, %ActivitySummary{ordinal: nil}),
+  defp possibly_wrap_with_numbering(activity_html, %ActivitySummary{ordinal: _}),
     do: activity_html
-
-  defp possibly_wrap_with_numbering(activity_html, %ActivitySummary{ordinal: ordinal}) do
-    [
-      "<div class=\"activity-numbering\">",
-      "Question ##{ordinal}",
-      "</div>",
-      activity_html
-    ]
-  end
 
   defp possibly_wrap_in_purpose(activity_html, activity) do
     case activity["purpose"] do

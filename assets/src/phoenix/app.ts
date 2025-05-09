@@ -82,11 +82,49 @@ function mount(Component: any, element: HTMLElement, context: any = {}) {
   ReactDOM.render(React.createElement(Component, context), element);
 }
 
+function openModal(id: string) {
+  document.getElementById(id)?.classList.remove('hidden');
+}
+
+function closeModal(id: string) {
+  document.getElementById(id)?.classList.add('hidden');
+}
+
+const confirmAction = (
+  title: string,
+  message: string,
+  okCallback: () => void,
+  cancelCallback: () => void,
+  okLabel = 'Ok',
+) => {
+  const modalTitle = document.getElementById('modalTitle');
+  const modalBody = document.getElementById('modalMessage');
+  const modalOkButton = document.getElementById('modalOk');
+  const modalCancelButton = document.getElementById('modalCancel');
+
+  if (modalTitle && modalBody && modalOkButton && modalCancelButton) {
+    modalTitle.innerHTML = title;
+    modalBody.innerHTML = message;
+    modalOkButton.innerHTML = okLabel;
+    modalOkButton.onclick = () => {
+      closeModal('modalConfirm');
+      okCallback();
+    };
+    modalCancelButton.onclick = () => {
+      closeModal('modalConfirm');
+      cancelCallback();
+    };
+
+    openModal('modalConfirm');
+  }
+};
+
 // Global functions and objects:
 window.OLI = {
   initActivityBridge,
   initPreviewActivityBridge,
   showModal,
+  confirmAction,
   enableSubmitWhenTitleMatches,
   selectCookieConsent,
   selectCookiePreferences,
@@ -190,6 +228,7 @@ declare global {
       initActivityBridge: typeof initActivityBridge;
       initPreviewActivityBridge: typeof initPreviewActivityBridge;
       showModal: typeof showModal;
+      confirmAction: typeof confirmAction;
       enableSubmitWhenTitleMatches: typeof enableSubmitWhenTitleMatches;
       selectCookieConsent: typeof selectCookieConsent;
       selectCookiePreferences: typeof selectCookiePreferences;

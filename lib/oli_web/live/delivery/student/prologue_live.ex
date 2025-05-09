@@ -111,6 +111,7 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
           effective_settings={@page_context.effective_settings}
           ctx={@ctx}
           is_adaptive={is_adaptive_page(@page_context.page)}
+          has_scheduled_resources?={@has_scheduled_resources?}
         />
         <.attempts_summary
           page_context={@page_context}

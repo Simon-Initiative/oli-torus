@@ -22,98 +22,91 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
       %ColumnSpec{
         name: :student,
         label: "STUDENT",
-        render_fn: &__MODULE__.render_student_column/3,
+        render_fn: &render_student_column/3,
         th_class: "pl-10 !sticky left-0 bg-white dark:bg-neutral-800 z-10",
         td_class: "sticky left-0 bg-white dark:bg-neutral-800 z-10 whitespace-nowrap"
       },
       %ColumnSpec{
         name: :available_date,
         label: "AVAILABLE DATE",
-        render_fn: &__MODULE__.render_available_date_column/3,
+        render_fn: &render_available_date_column/3,
         th_class: "whitespace-nowrap",
         tooltip: Tooltips.for(:available_date)
       },
       %ColumnSpec{
         name: :due_date,
         label: "DUE DATE",
-        render_fn: &__MODULE__.render_due_date_column/3,
+        render_fn: &render_due_date_column/3,
         th_class: "whitespace-nowrap",
         tooltip: Tooltips.for(:due_date)
       },
       %ColumnSpec{
         name: :max_attempts,
         label: "# ATTEMPTS",
-        render_fn: &__MODULE__.render_attempts_column/3,
+        render_fn: &render_attempts_column/3,
         th_class: "whitespace-nowrap",
         tooltip: Tooltips.for(:max_attempts)
       },
       %ColumnSpec{
         name: :time_limit,
         label: "TIME LIMIT",
-        render_fn: &__MODULE__.render_time_limit_column/3,
+        render_fn: &render_time_limit_column/3,
         th_class: "whitespace-nowrap",
         tooltip: Tooltips.for(:time_limit)
       },
       %ColumnSpec{
-        name: :late_submit,
-        label: "LATE SUBMIT",
-        render_fn: &__MODULE__.render_late_submit_column/3,
+        name: :late_policy,
+        label: "LATE POLICY",
+        render_fn: &render_late_policy_column/3,
         th_class: "whitespace-nowrap",
-        tooltip: Tooltips.for(:late_submit)
-      },
-      %ColumnSpec{
-        name: :late_start,
-        label: "LATE START",
-        render_fn: &__MODULE__.render_late_start_column/3,
-        th_class: "whitespace-nowrap",
-        tooltip: Tooltips.for(:late_start)
+        tooltip: Tooltips.for(:late_policy)
       },
       %ColumnSpec{
         name: :scoring_strategy_id,
         label: "SCORING",
-        render_fn: &__MODULE__.render_scoring_column/3,
+        render_fn: &render_scoring_column/3,
         th_class: "whitespace-nowrap",
         tooltip: Tooltips.for(:scoring_strategy_id)
       },
       %ColumnSpec{
         name: :grace_period,
         label: "GRACE PERIOD",
-        render_fn: &__MODULE__.render_grace_period_column/3,
+        render_fn: &render_grace_period_column/3,
         th_class: "whitespace-nowrap",
         tooltip: Tooltips.for(:grace_period)
       },
       %ColumnSpec{
         name: :retake_mode,
         label: "RETAKE MODE",
-        render_fn: &__MODULE__.render_retake_mode_column/3,
+        render_fn: &render_retake_mode_column/3,
         th_class: "whitespace-nowrap",
         tooltip: Tooltips.for(:retake_mode)
       },
       %ColumnSpec{
         name: :assessment_mode,
         label: "PRESENTATION",
-        render_fn: &__MODULE__.render_assessment_mode_column/3,
+        render_fn: &render_assessment_mode_column/3,
         th_class: "whitespace-nowrap",
         tooltip: Tooltips.for(:assessment_mode)
       },
       %ColumnSpec{
         name: :feedback_mode,
         label: "VIEW FEEDBACK",
-        render_fn: &__MODULE__.render_view_feedback_column/3,
+        render_fn: &render_view_feedback_column/3,
         th_class: "whitespace-nowrap",
         tooltip: Tooltips.for(:feedback_mode)
       },
       %ColumnSpec{
         name: :review_submission,
         label: "VIEW ANSWERS",
-        render_fn: &__MODULE__.render_view_answers_column/3,
+        render_fn: &render_view_answers_column/3,
         th_class: "whitespace-nowrap",
         tooltip: Tooltips.for(:review_submission)
       },
       %ColumnSpec{
         name: :password,
         label: "PASSWORD",
-        render_fn: &__MODULE__.render_password_column/3,
+        render_fn: &render_password_column/3,
         th_class: "pt-3 whitespace-nowrap",
         sortable: false,
         tooltip: Tooltips.for(:password)
@@ -264,39 +257,35 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
     """
   end
 
-  def render_late_submit_column(assigns, student_exception, _) do
+  def render_late_policy_column(assigns, student_exception, _) do
     assigns =
       Map.merge(assigns, %{
+        late_start: student_exception.late_start,
         late_submit: student_exception.late_submit,
         id: student_exception.user_id
       })
 
     ~H"""
-    <div class={data_class(@selected_assessment.late_submit, @late_submit)}>
-      <select class="torus-select pr-32" name={"late_submit-#{@id}"}>
-        <option disabled selected={@late_submit == nil} hidden value="">-</option>
-        <option selected={@late_submit == :allow} value={:allow}>Allow</option>
-        <option selected={@late_submit == :disallow} value={:disallow}>Disallow</option>
-      </select>
-    </div>
-    """
-  end
-
-  def render_late_start_column(assigns, student_exception, _) do
-    assigns =
-      Map.merge(assigns, %{
-        late_start: student_exception.late_start,
-        id: student_exception.user_id
-      })
-
-    ~H"""
-    <div class={data_class(@selected_assessment.late_start, @late_start)}>
-      <select class="torus-select pr-32" name={"late_start-#{@id}"}>
-        <option disabled selected={@late_start == nil} hidden value="">-</option>
-        <option selected={@late_start == :allow} value={:allow}>Allow</option>
-        <option selected={@late_start == :disallow} value={:disallow}>Disallow</option>
-      </select>
-    </div>
+    <select class="torus-select pr-32" name={"late_policy-#{@id}"}>
+      <option
+        selected={@late_start == :allow && @late_submit == :allow}
+        value={:allow_late_start_and_late_submit}
+      >
+        Allow late start and late submit
+      </option>
+      <option
+        selected={@late_start == :disallow && @late_submit == :allow}
+        value={:allow_late_submit_but_not_late_start}
+      >
+        Allow late submit but not late start
+      </option>
+      <option
+        selected={@late_start == :disallow && @late_submit == :disallow}
+        value={:disallow_late_start_and_late_submit}
+      >
+        Disallow late start and late submit
+      </option>
+    </select>
     """
   end
 

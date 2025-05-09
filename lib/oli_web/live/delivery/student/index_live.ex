@@ -165,6 +165,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
       has_visited_section={@has_visited_section}
       suggested_page={@last_open_and_unfinished_page || @nearest_upcoming_lesson}
       unfinished_lesson={!is_nil(@last_open_and_unfinished_page)}
+      has_scheduled_resources?={@has_scheduled_resources?}
     />
     <div id="home-view" class="bg-stone-950 dark:text-white" phx-hook="Countdown">
       <div class="flex flex-col md:flex-row p-3 md:p-8 justify-start items-start gap-6">
@@ -219,6 +220,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   attr(:has_visited_section, :boolean, required: true)
   attr(:suggested_page, :map)
   attr(:unfinished_lesson, :boolean, required: true)
+  attr(:has_scheduled_resources?, :boolean, required: true)
 
   defp header_banner(%{has_visited_section: true} = assigns) do
     ~H"""
@@ -255,7 +257,10 @@ defmodule OliWeb.Delivery.Student.IndexLive do
                   Module <%= @suggested_page.module_index %>
                 </div>
               </div>
-              <div class="grow shrink basis-0 h-5 justify-start items-center gap-1 flex">
+              <div
+                :if={@has_scheduled_resources?}
+                class="grow shrink basis-0 h-5 justify-start items-center gap-1 flex"
+              >
                 <div class="text-right text-white text-sm font-bold">Due:</div>
                 <div class="text-right text-white text-sm font-bold">
                   <%= format_date(
@@ -862,6 +867,49 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   attr :upcoming, :boolean, required: true
   attr :completed, :boolean, required: true
   attr :ctx, :map, required: true
+
+  # Non-completed graded page (assignment)
+  defp lesson_details(%{lesson: %{graded: true, batch_score: false}} = assigns) do
+    ~H"""
+    <div role="details" class="pt-2 pb-1 px-1 flex self-stretch justify-between gap-5">
+      <div class="justify-between items-end gap-2.5 flex ml-auto">
+        <div>Score as you go</div>
+        <div class="text-green-700 dark:text-green-500 flex justify-end items-center gap-1">
+          <div class="w-4 h-4 relative"><Icons.score_as_you_go /></div>
+          <div role="score" class="text-sm font-semibold tracking-tight">
+            <%= Utils.parse_score(@lesson.score) %>
+          </div>
+          <div class="text-sm font-semibold tracking-widest">
+            /
+          </div>
+          <div role="out_of" class="text-sm font-semibold tracking-tight">
+            <%= Utils.parse_score(@lesson.out_of) %>
+          </div>
+        </div>
+      </div>
+      <div
+        :if={lesson_expires?(@lesson)}
+        class="w-fit h-4 pl-1 justify-center items-start gap-1 inline-flex"
+      >
+        <div class="opacity-50 text-black dark:text-white text-xs font-normal">
+          Time Remaining:
+        </div>
+        <div
+          role="countdown"
+          class={[
+            if(@lesson.purpose == :application,
+              do: "text-exploration dark:text-exploration-dark",
+              else: "text-checkpoint dark:text-checkpoint-dark"
+            ),
+            "text-xs font-normal"
+          ]}
+        >
+          <%= effective_lesson_expiration_date(@lesson) |> Utils.format_time_remaining() %>
+        </div>
+      </div>
+    </div>
+    """
+  end
 
   defp lesson_details(%{upcoming: true} = assigns) do
     ~H"""

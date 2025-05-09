@@ -176,6 +176,7 @@ defmodule OliWeb.Delivery.Student.Utils do
   attr :effective_settings, Oli.Delivery.Settings.Combined
   attr :ctx, SessionContext
   attr :is_adaptive, :boolean
+  attr :has_scheduled_resources?, :boolean
 
   def page_terms(assigns) do
     ~H"""
@@ -187,16 +188,46 @@ defmodule OliWeb.Delivery.Student.Utils do
         TERMS
       </span>
       <ul class="list-disc ml-6">
-        <li id="page_due_terms">
+        <li :if={@has_scheduled_resources?} id="page_due_terms">
           <.page_due_term effective_settings={@effective_settings} ctx={@ctx} />
         </li>
-        <li :if={@effective_settings.end_date != nil} id="page_scoring_terms">
+        <li :if={!@effective_settings.batch_scoring} id="score_as_you_go_term">
+          <%= score_as_you_go(@effective_settings) %>
+        </li>
+        <li id="page_scoring_terms">
           <%= page_scoring_term(@effective_settings.scoring_strategy_id) %>
+        </li>
+        <li :if={!@effective_settings.batch_scoring} id="question_attempts">
+          <%= question_attempts(@effective_settings) %>
         </li>
         <.time_limit_term effective_settings={@effective_settings} />
         <.submit_term effective_settings={@effective_settings} />
       </ul>
     </div>
+    """
+  end
+
+  defp score_as_you_go(assigns) do
+    ~H"""
+    <strong>Score as you go:</strong> your score is updated as you complete questions on this page.
+    """
+  end
+
+  defp question_attempts(%{max_attempts: 0} = assigns) do
+    ~H"""
+    You can attempt each question <strong>unlimited</strong> times.
+    """
+  end
+
+  defp question_attempts(%{max_attempts: 1} = assigns) do
+    ~H"""
+    You can attempt each question <strong>1</strong> time.
+    """
+  end
+
+  defp question_attempts(assigns) do
+    ~H"""
+    You can attempt each question <strong><%= @max_attempts %></strong> times.
     """
   end
 
@@ -802,6 +833,9 @@ defmodule OliWeb.Delivery.Student.Utils do
       score
     end
   end
+
+  def format_score(nil), do: "--"
+  def format_score(v), do: parse_score(v)
 
   @doc """
   Evaluates if an attempt is expired based on the attempt state and the time limit, late submission policy, and end date.

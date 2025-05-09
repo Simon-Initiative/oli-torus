@@ -19,6 +19,7 @@ defmodule Oli.Activities.SelectionTest do
   def selection(count, expressions, operator \\ :all) do
     %Selection{
       count: count,
+      points_per_activity: 1.0,
       logic: %Logic{
         conditions: %Clause{
           operator: operator,
