@@ -972,7 +972,7 @@ defmodule OliWeb.Delivery.Student.Utils do
   def blocking_gates_warning(assigns) do
     # TODO: update the support modal with the one that will be implemented on https://github.com/Simon-Initiative/oli-torus/pull/5584
     ~H"""
-    <div class="container">
+    <div id="blocking_gates_warning" class="container">
       <div class="grid grid-cols-12">
         <div class="col-span-12 text-center pt-4">
           <p><i class="far fa-hand-paper" aria-hidden="true" style="font-size: 64px"></i></p>
