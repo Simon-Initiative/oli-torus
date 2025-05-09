@@ -88,10 +88,6 @@ defmodule OliWeb.Router do
     plug(:put_root_layout, {OliWeb.LayoutView, :delivery})
   end
 
-  pipeline :maybe_gated_resource do
-    plug(Oli.Plugs.MaybeGatedResource)
-  end
-
   pipeline :require_section do
     plug(Oli.Plugs.RequireSection)
   end
@@ -1208,7 +1204,6 @@ defmodule OliWeb.Router do
       :delivery,
       :redirect_by_attempt_state,
       :delivery_protected,
-      :maybe_gated_resource,
       :enforce_paywall,
       :require_enrollment,
       :ensure_user_section_visit,
