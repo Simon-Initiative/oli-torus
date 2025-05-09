@@ -967,6 +967,42 @@ defmodule OliWeb.Delivery.Student.Utils do
     """
   end
 
+  attr :attempt_message, :any
+
+  def blocking_gates_warning(assigns) do
+    # TODO: update the support modal with the one that will be implemented on https://github.com/Simon-Initiative/oli-torus/pull/5584
+    ~H"""
+    <div class="container">
+      <div class="grid grid-cols-12">
+        <div class="col-span-12 text-center pt-4">
+          <p><i class="far fa-hand-paper" aria-hidden="true" style="font-size: 64px"></i></p>
+          <h2 class="mt-4 mb-4">This Resource is Gated</h2>
+          <p>
+            You are trying to access a resource that is gated by the following condition<%= if Enum.count(
+                                                                                                 @attempt_message
+                                                                                               ) >
+                                                                                                 1,
+                                                                                               do:
+                                                                                                 "s",
+                                                                                               else:
+                                                                                                 "" %>:
+            <ul style="list-style-position: inside">
+              <li :for={reason <- @attempt_message}><%= reason %></li>
+            </ul>
+          </p>
+
+          <p class="mt-4">
+            If you think this is an error or would like more information, please <a
+              href="javascript:"
+              onclick="showHelpModal();"
+            >contact support</a>.
+          </p>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
   def coalesce(first, second) do
     case {first, second} do
       {nil, nil} -> nil
