@@ -155,6 +155,13 @@ export const QuillCustomOptionEditor: React.FC<QuillCustomOptionEditorProps> = (
               >
                 <i className="fa-solid fa-plus"></i> Add item
               </button>
+              <button
+                className="btn btn-default"
+                style={{ border: '1px solid gray' }}
+                onClick={handleImageDailogClose}
+              >
+                Cancel
+              </button>
             </Modal.Footer>
           </Modal>
         </>
