@@ -14,9 +14,16 @@ export interface FIBModel extends JanusAbsolutePositioned, JanusCustomCss {
   caseSensitiveAnswers: boolean;
   content: any;
   elements: any;
+  optionType?: string;
 }
 
 export const schema: JSONSchema7Object = {
+  optionType: {
+    title: 'FIB Type',
+    type: 'string',
+    enum: ['Drop Down', 'Input'],
+    default: 'Drop Down',
+  },
   cssClasses: {
     title: 'CSS Classes',
     type: 'string',
@@ -100,10 +107,14 @@ export const schema: JSONSchema7Object = {
 
 export const uiSchema = {};
 
+export const getCapabilities = () => ({
+  configure: true,
+});
+
 export const adaptivitySchema = ({ currentModel }: { currentModel: any }) => {
   const adaptivitySchema: Record<string, unknown> = {};
   const elementData: Record<string, unknown>[] = currentModel?.custom?.elements;
-
+  adaptivitySchema.optionType = CapiVariableTypes.STRING;
   adaptivitySchema.attempted = CapiVariableTypes.BOOLEAN;
   adaptivitySchema.correct = CapiVariableTypes.BOOLEAN;
   adaptivitySchema.customCss = CapiVariableTypes.STRING;
@@ -129,4 +140,5 @@ export const createSchema = (): Partial<FIBModel> => ({
   showCorrect: false,
   alternateCorrectDelimiter: '',
   caseSensitiveAnswers: false,
+  optionType: 'Drop Down',
 });

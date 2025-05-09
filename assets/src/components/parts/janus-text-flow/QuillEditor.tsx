@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef } from 'react';
 import ReactQuill, { Quill } from 'react-quill';
 import Delta from 'quill-delta';
 import register from '../customElementWrapper';
+import { QuillCustomOptionEditor, QuillCustomOptionProps } from './QuillCustomOptionEditor';
 import { QuillImageUploader } from './QuillImageUploader';
 import { convertJanusToQuill, convertQuillToJanus } from './quill-utils';
 
@@ -13,6 +14,8 @@ interface QuillEditorProps {
   onCancel: () => void;
   showSaveCancelButtons?: boolean;
   showimagecontrol?: boolean;
+  showcustomoptioncontrol?: boolean;
+  customoptiontype?: 'Drop Down' | 'Input';
 }
 
 const supportedFonts = ['Initial', 'Arial', 'Times New Roman', 'Sans Serif'];
@@ -21,6 +24,8 @@ const supportedFonts = ['Initial', 'Arial', 'Times New Roman', 'Sans Serif'];
 const getFontName = (font: string) => {
   return font.toLowerCase().replace(/\s/g, '-');
 };
+Quill.import('ui/icons')['customDropDownOption'] = '<i class="fa-solid fa-square-caret-down"></i>';
+Quill.import('ui/icons')['customInputOption'] = '<i class="fa-solid fa-i-cursor"></i>';
 
 const FontAttributor = Quill.import('attributors/class/font');
 FontAttributor.whitelist = supportedFonts.map(getFontName);
@@ -112,12 +117,17 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
   onSave,
   onCancel,
   showimagecontrol = false,
+  showcustomoptioncontrol = false,
+  customoptiontype = 'Drop Down',
 }) => {
+  console.log({ showcustomoptioncontrol, showimagecontrol });
   const quill: any = useRef();
   const [contents, setContents] = React.useState<any>(tree);
   const [delta, setDelta] = React.useState<any>(convertJanusToQuill(tree));
   const [currentQuillRange, setCurrentQuillRange] = React.useState<number>(0);
   const [showImageSelectorDailog, setShowImageSelectorDailog] = React.useState<boolean>(false);
+  const [showCustomOptionSelectorDailog, setShowCustomOptionSelectorDailog] =
+    React.useState<boolean>(false);
   const customHandlers = {
     adaptivity: function (value: string) {
       const range = this.quill.getSelection();
@@ -138,6 +148,14 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
       setShowImageSelectorDailog(true);
       setCurrentQuillRange(this.quill.getSelection()?.index || 0);
     },
+    customInputOption: function (value: string) {
+      setShowCustomOptionSelectorDailog(true);
+      setCurrentQuillRange(this.quill.getSelection()?.index || 0);
+    },
+    customDropDownOption: function (value: string) {
+      setShowCustomOptionSelectorDailog(true);
+      setCurrentQuillRange(this.quill.getSelection()?.index || 0);
+    },
   };
   const handleImageDetailsSave = (imageURL: string, imageAltText: string) => {
     setShowImageSelectorDailog(false);
@@ -153,8 +171,21 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
     }
   };
 
+  const handleCustomOptionEditorSave = (Options: Array<QuillCustomOptionProps>) => {
+    setShowCustomOptionSelectorDailog(false);
+    if (quill?.current) {
+      if (Options?.length) {
+        console.log({ Options });
+      }
+    }
+  };
+
   const handleImageUploaderDailogClose = () => {
     setShowImageSelectorDailog(false);
+  };
+
+  const handleCustomOptionEditorDailogClose = () => {
+    setShowCustomOptionSelectorDailog(false);
   };
   /*  console.log('[QuillEditor]', { tree, html }); */
 
@@ -241,6 +272,11 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
           ['link', 'adaptivity'],
           ['clean'], // remove formatting button
           showimagecontrol ? ['image'] : [],
+          showcustomoptioncontrol
+            ? customoptiontype == 'Drop Down'
+              ? ['customDropDownOption']
+              : ['customInputOption']
+            : [],
         ],
         handlers: customHandlers,
       },
@@ -283,6 +319,14 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
           handleImageDailogClose={handleImageUploaderDailogClose}
         ></QuillImageUploader>
       }
+      {
+        <QuillCustomOptionEditor
+          showImageSelectorDailog={showCustomOptionSelectorDailog}
+          handleImageDetailsSave={handleCustomOptionEditorSave}
+          handleImageDailogClose={handleCustomOptionEditorDailogClose}
+          optionType={customoptiontype}
+        ></QuillCustomOptionEditor>
+      }
     </React.Fragment>
   );
 };
@@ -291,18 +335,23 @@ export const tagName = 'tf-quill-editor';
 
 export const registerEditor = () => {
   if (!customElements.get(tagName)) {
-    register(QuillEditor, tagName, ['tree', 'html', 'showimagecontrol'], {
-      shadow: false, // shadow dom breaks the quill toolbar
-      customEvents: {
-        onChange: `${tagName}-change`,
-        onSave: `${tagName}-save`,
-        onCancel: `${tagName}-cancel`,
-      },
-      attrs: {
-        tree: {
-          json: true,
+    register(
+      QuillEditor,
+      tagName,
+      ['tree', 'html', 'showimagecontrol', 'showCustomOptionControl'],
+      {
+        shadow: false, // shadow dom breaks the quill toolbar
+        customEvents: {
+          onChange: `${tagName}-change`,
+          onSave: `${tagName}-save`,
+          onCancel: `${tagName}-cancel`,
+        },
+        attrs: {
+          tree: {
+            json: true,
+          },
         },
       },
-    });
+    );
   }
 };
