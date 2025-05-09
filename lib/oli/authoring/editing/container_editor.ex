@@ -407,16 +407,12 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
       with {:ok, created_revision} <- add_new(container, new_page_attrs, author, project),
            {:ok, model_duplicated_activities} <-
              deep_copy_activities(
-               original_page.content["model"],
+               original_page.content,
                project.slug,
                author
              ),
-           new_content <- %{
-             original_page.content
-             | "model" => Enum.reverse(model_duplicated_activities)
-           },
            {:ok, updated_revision} <-
-             Resources.update_revision(created_revision, %{content: new_content}) do
+             Resources.update_revision(created_revision, %{content: model_duplicated_activities}) do
         updated_revision
       else
         {:error, e} -> Repo.rollback(e)
@@ -425,12 +421,30 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
   end
 
   def deep_copy_activities(model, project_slug, author) do
-    Enum.reduce_while(model, {:ok, []}, fn activity, {:ok, acc} ->
-      case deep_copy_activity(activity, project_slug, author) do
-        {:ok, new_activity} -> {:cont, {:ok, [new_activity | acc]}}
-        {:error, _} = err -> {:halt, err}
-      end
-    end)
+    {mapped, result} =
+      Oli.Resources.PageContent.map_reduce(model, {:ok}, fn e, {status}, _tr_context ->
+        case e do
+          %{"type" => "activity-reference"} = ref ->
+            case deep_copy_activity(ref, project_slug, author) do
+              {:ok, updated_activity_reference} ->
+                {updated_activity_reference, {status}}
+
+              {:error, _} ->
+                {ref, {:error}}
+            end
+
+          other ->
+            {other, {status}}
+        end
+      end)
+
+    case result do
+      {:ok} ->
+        {:ok, mapped}
+
+      {:error} ->
+        {:error, :failed_to_duplicate_activities}
+    end
   end
 
   def deep_copy_activity(%{"type" => "activity-reference"} = item, project_slug, author) do
