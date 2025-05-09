@@ -6,6 +6,7 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
   alias Oli.Delivery.{Metrics, PreviousNextIndex, Settings}
   alias Oli.Delivery.Page.{PageContext, PrologueContext}
   alias OliWeb.Router.Helpers, as: Routes
+  alias OliWeb.Common.FormatDateTime
 
   def on_mount(:set_prologue_context, %{"revision_slug" => revision_slug}, _session, socket) do
     %{section: section, current_user: current_user} = socket.assigns
@@ -274,12 +275,12 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
 
     attempts_taken = length(resource_attempts)
 
-    # The Oli.Plugs.MaybeGatedResource plug sets the blocking_gates assign if there is a blocking
-    # gate that prevents this learning from starting another attempt of this resource
-    # TODO: get this blocking_gates from the conn and handle attempt_message for this case
-
-    # blocking_gates = Map.get(conn.assigns, :blocking_gates, [])
-    blocking_gates = []
+    blocking_gates =
+      Oli.Delivery.Gating.blocked_by(
+        socket.assigns.section,
+        socket.assigns.current_user,
+        page_context.page.resource_id
+      )
 
     new_attempt_allowed =
       Settings.new_attempt_allowed(
@@ -290,8 +291,10 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
 
     attempt_message =
       case {new_attempt_allowed, page_context.effective_settings.max_attempts} do
-        # {{:blocking_gates}, _max_attempts} ->
-        #  Oli.Delivery.Gating.details(blocking_gates, format_datetime: format_datetime_fn(conn))
+        {{:blocking_gates}, _max_attempts} ->
+          Oli.Delivery.Gating.details(blocking_gates,
+            format_datetime: format_datetime_fn(socket.assigns.ctx)
+          )
 
         {{:no_attempts_remaining}, max_attempts} ->
           "You have no attempts remaining out of #{max_attempts} total attempt#{plural(max_attempts)}."
@@ -315,8 +318,15 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
       page_context: %{page_context | historical_attempts: resource_attempts},
       allow_attempt?: new_attempt_allowed == {:allowed},
       attempt_message: attempt_message,
-      view: :prologue
+      view: :prologue,
+      show_blocking_gates?: blocking_gates != []
     )
+  end
+
+  defp format_datetime_fn(ctx) do
+    fn datetime ->
+      FormatDateTime.date(datetime, ctx: ctx, precision: :minutes)
+    end
   end
 
   _docp = """

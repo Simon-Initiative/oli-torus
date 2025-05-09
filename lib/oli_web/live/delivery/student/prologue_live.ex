@@ -107,13 +107,17 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
         />
         <div class="self-stretch h-[0px] opacity-80 dark:opacity-20 bg-white border border-gray-200 mt-3 mb-10">
         </div>
+
+        <.blocking_gates_warning :if={@show_blocking_gates?} attempt_message={@attempt_message} />
         <.page_terms
+          :if={!@show_blocking_gates?}
           effective_settings={@page_context.effective_settings}
           ctx={@ctx}
           is_adaptive={is_adaptive_page(@page_context.page)}
           has_scheduled_resources?={@has_scheduled_resources?}
         />
         <.attempts_summary
+          :if={!@show_blocking_gates?}
           page_context={@page_context}
           attempt_message={@attempt_message}
           ctx={@ctx}
@@ -122,6 +126,42 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
           section_slug={@section.slug}
           request_path={@request_path}
         />
+      </div>
+    </div>
+    """
+  end
+
+  attr :attempt_message, :any
+
+  def blocking_gates_warning(assigns) do
+    # TODO: update the support modal with the one that will be implemented on https://github.com/Simon-Initiative/oli-torus/pull/5584
+    ~H"""
+    <div class="container">
+      <div class="grid grid-cols-12">
+        <div class="col-span-12 text-center pt-4">
+          <p><i class="far fa-hand-paper" aria-hidden="true" style="font-size: 64px"></i></p>
+          <h2 class="mt-4 mb-4">This Resource is Gated</h2>
+          <p>
+            You are trying to access a resource that is gated by the following condition<%= if Enum.count(
+                                                                                                 @attempt_message
+                                                                                               ) >
+                                                                                                 1,
+                                                                                               do:
+                                                                                                 "s",
+                                                                                               else:
+                                                                                                 "" %>:
+            <ul style="list-style-position: inside">
+              <li :for={reason <- @attempt_message}><%= reason %></li>
+            </ul>
+          </p>
+
+          <p class="mt-4">
+            If you think this is an error or would like more information, please <a
+              href="javascript:"
+              onclick="showHelpModal();"
+            >contact support</a>.
+          </p>
+        </div>
       </div>
     </div>
     """
