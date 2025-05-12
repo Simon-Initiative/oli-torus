@@ -13,6 +13,7 @@ defmodule Oli.Activities.ActivityMapEntry do
     :slug,
     :globallyAvailable,
     :variables,
+    :isLtiActivity,
     enabledForProject: false
   ]
 
@@ -26,7 +27,8 @@ defmodule Oli.Activities.ActivityMapEntry do
         authoring_element: authoring_element,
         delivery_element: delivery_element,
         globally_available: globally_available,
-        variables: variables
+        variables: variables,
+        deployment_id: deployment_id
       }) do
     %Oli.Activities.ActivityMapEntry{
       id: id,
@@ -39,7 +41,8 @@ defmodule Oli.Activities.ActivityMapEntry do
       deliveryElement: delivery_element,
       globallyAvailable: globally_available,
       enabledForProject: globally_available,
-      variables: Oli.Delivery.Page.ActivityContext.build_variables_map(variables, petite_label)
+      variables: Oli.Delivery.Page.ActivityContext.build_variables_map(variables, petite_label),
+      isLtiActivity: !is_nil(deployment_id)
     }
   end
 end
