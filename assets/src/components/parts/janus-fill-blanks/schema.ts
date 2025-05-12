@@ -134,6 +134,8 @@ export const adaptivitySchema = ({ currentModel }: { currentModel: any }) => {
 };
 
 export const createSchema = (): Partial<FIBModel> => ({
+  width: 170,
+  height: 90,
   cssClasses: '',
   customCss: '',
   showHints: false,
@@ -141,4 +143,30 @@ export const createSchema = (): Partial<FIBModel> => ({
   alternateCorrectDelimiter: '',
   caseSensitiveAnswers: false,
   optionType: 'Drop Down',
+  content: [
+    {
+      dropdown: 'blank1',
+      insert: '',
+    },
+    {
+      insert: ' sample text',
+    },
+  ],
+  elements: [
+    {
+      alternateCorrect: '',
+      correct: 'low',
+      key: 'blank1',
+      options: [
+        {
+          key: 'low',
+          value: 'Low',
+        },
+        {
+          key: 'high',
+          value: 'High',
+        },
+      ],
+    },
+  ],
 });

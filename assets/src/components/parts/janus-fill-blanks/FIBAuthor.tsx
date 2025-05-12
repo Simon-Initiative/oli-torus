@@ -6,9 +6,14 @@ import {
   NotificationType,
   subscribeToNotification,
 } from 'apps/delivery/components/NotificationContext';
-import { parseBoolean } from 'utils/common';
+import { clone, parseBoolean } from 'utils/common';
 import { registerEditor } from '../janus-text-flow/QuillEditor';
 import { tagName as quillEditorTagName } from '../janus-text-flow/QuillEditor';
+import {
+  convertFIBContetToQuillFormat,
+  convertQuillToFIBContetFormat,
+  parseQuillToTorusFIB,
+} from './FIBUtils';
 import { FIBModel } from './schema';
 
 // eslint-disable-next-line react/display-name
@@ -20,10 +25,9 @@ const Editor: React.FC<any> = React.memo(({ html, tree, portal, optionType }) =>
     showcustomoptioncontrol?: boolean;
     customoptiontype?: 'dropdown' | 'input';
   } = {};
-  quillProps.tree = '[]';
+  quillProps.tree = JSON.stringify(tree);
   quillProps.showcustomoptioncontrol = true;
   quillProps.customoptiontype = optionType;
-  console.log('E RERENDER', { html, tree, portal, quillProps });
   const E = () => (
     <div style={{ padding: 20 }}>{React.createElement(quillEditorTagName, quillProps)}</div>
   );
@@ -32,33 +36,61 @@ const Editor: React.FC<any> = React.memo(({ html, tree, portal, optionType }) =>
 });
 
 const FIBAuthor: React.FC<AuthorPartComponentProps<FIBModel>> = (props) => {
-  const { configuremode, id, model, onConfigure } = props;
+  const { configuremode, id, onConfigure, onSaveConfigure } = props;
+  const [model, setModel] = useState<any>(props.model);
   const [ready, setReady] = useState<boolean>(false);
+  const [updatedContent, setUpdatedContent] = useState<any>([]);
   const [inConfigureMode, setInConfigureMode] = useState<boolean>(parseBoolean(configuremode));
+  const [textNodes, setTextNodes] = useState<any[]>([]);
+  const [finalContent, setFinalContent] = useState<any>([]);
   const { content, elements, customCss, optionType } = model;
 
-  console.log({ optionType });
   const styles: CSSProperties = {
     borderRadius: '5px',
     fontFamily: 'revert',
   };
 
   useEffect(() => {
-    console.log({ configuremode });
     setInConfigureMode(parseBoolean(configuremode));
   }, [configuremode]);
+
+  useEffect(() => {
+    setModel(props.model);
+  }, [props.model]);
+
+  useEffect(() => {
+    const collectedText = convertQuillToFIBContetFormat(textNodes);
+    const finalcontent = parseQuillToTorusFIB(collectedText);
+
+    setFinalContent(finalcontent);
+  }, [textNodes]);
 
   const initialize = useCallback(async (pModel) => {
     setReady(true);
   }, []);
 
   useEffect(() => {
-    // all activities *must* emit onReady
+    const convertedText = convertFIBContetToQuillFormat(content, elements);
+    setUpdatedContent(convertedText);
 
+    setFinalContent({ content, elements });
+  }, [content, elements]);
+
+  useEffect(() => {
+    // all activities *must* emit onReady
     registerEditor();
     initialize(model);
     props.onReady({ id: `${props.id}` });
   }, []);
+
+  const handleNotificationSave = useCallback(async () => {
+    const modelClone = clone(model);
+    modelClone.content = finalContent.content;
+    modelClone.elements = finalContent.elements;
+    await onSaveConfigure({ id, snapshot: modelClone });
+
+    setInConfigureMode(false);
+  }, [model, finalContent]);
 
   useEffect(() => {
     if (!props.notify) {
@@ -71,7 +103,6 @@ const FIBAuthor: React.FC<AuthorPartComponentProps<FIBModel>> = (props) => {
     ];
     const notifications = notificationsHandled.map((notificationType: NotificationType) => {
       const handler = (payload: any) => {
-        console.log(`${notificationType.toString()} notification event [PopupAuthor]`, payload);
         if (!payload) {
           // if we don't have anything, we won't even have an id to know who it's for
           // for these events we need something, it's not for *all* of them
@@ -93,7 +124,7 @@ const FIBAuthor: React.FC<AuthorPartComponentProps<FIBModel>> = (props) => {
             {
               const { id: partId } = payload;
               if (partId === id) {
-                //handleNotificationSave();
+                handleNotificationSave();
               }
             }
             break;
@@ -115,20 +146,20 @@ const FIBAuthor: React.FC<AuthorPartComponentProps<FIBModel>> = (props) => {
         unsub();
       });
     };
-  }, [props.notify, inConfigureMode]);
+  }, [props.notify, inConfigureMode, finalContent]);
 
   useEffect(() => {
-    console.log({ inConfigureMode });
-    const handleEditorSave = (e: any) => {};
+    const handleEditorSave = (e: any) => {
+      if (!inConfigureMode) {
+        return;
+      }
+    };
 
     const handleEditorCancel = () => {
-      console.log({ inConfigureMode });
       if (!inConfigureMode) {
         return;
       } // not mine
-      // console.log('TF EDITOR CANCEL');
       setInConfigureMode(false);
-      //onCancelConfigure({ id });
     };
 
     const handleEditorChange = (e: any) => {
@@ -136,8 +167,7 @@ const FIBAuthor: React.FC<AuthorPartComponentProps<FIBModel>> = (props) => {
         return;
       } // not mine
       const { payload } = e.detail;
-      console.log({ payload });
-      //setTextNodes(payload.value);
+      setTextNodes(payload.value);
     };
 
     if (inConfigureMode) {
@@ -158,12 +188,12 @@ const FIBAuthor: React.FC<AuthorPartComponentProps<FIBModel>> = (props) => {
     // timeout to give modal a moment to load
     setTimeout(() => {
       const el = document.getElementById(props.portal);
-      console.log('portal changed', { el, p: props.portal });
       if (el) {
         setPortalEl(el);
       }
     }, 10);
-  }, [inConfigureMode, props.portal]);
+  }, [inConfigureMode, finalContent, props.portal]);
+
   const contentList = content?.map(
     (contentItem: { [x: string]: any; insert: any; dropdown: any }) => {
       if (!elements?.length) return;
@@ -182,7 +212,6 @@ const FIBAuthor: React.FC<AuthorPartComponentProps<FIBModel>> = (props) => {
           const optionsList = insertEl.options.map(
             ({ value: text, key: id }: { value: any; key: any }) => ({ id, text }),
           );
-
           insertList.push(
             <span className="dropdown-blot" tabIndex={-1}>
               <span className="dropdown-container" tabIndex={-1}>
@@ -208,7 +237,6 @@ const FIBAuthor: React.FC<AuthorPartComponentProps<FIBModel>> = (props) => {
         });
         if (insertEl) {
           const answerStatus = 'incorrect';
-
           insertList.push(
             <span className="text-input-blot">
               <span className={`text-input-container ${answerStatus}`} tabIndex={-1}>
@@ -229,7 +257,7 @@ const FIBAuthor: React.FC<AuthorPartComponentProps<FIBModel>> = (props) => {
   return (
     <React.Fragment>
       {inConfigureMode && portalEl && (
-        <Editor type={1} html="" tree={contentList} portal={portalEl} optionType={optionType} />
+        <Editor type={1} html="" tree={updatedContent} portal={portalEl} optionType={optionType} />
       )}
       <div data-janus-type={tagName} style={styles} className={`fib-container`}>
         <style type="text/css">{`${customCss}`};</style>

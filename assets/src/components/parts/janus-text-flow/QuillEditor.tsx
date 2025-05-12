@@ -120,7 +120,6 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
   showcustomoptioncontrol = false,
   customoptiontype = 'Drop Down',
 }) => {
-  console.log({ showcustomoptioncontrol, showimagecontrol });
   const quill: any = useRef();
   const [contents, setContents] = React.useState<any>(tree);
   const [delta, setDelta] = React.useState<any>(convertJanusToQuill(tree));
@@ -213,7 +212,13 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
     [onChange],
   );
   const toolbarContainerDefault = showcustomoptioncontrol
-    ? [customoptiontype == 'Drop Down' ? ['customDropDownOption'] : ['customInputOption']]
+    ? [
+        ['bold', 'italic', 'underline', 'strike'], // toggled buttons
+        [{ script: 'sub' }, { script: 'super' }], // superscript/subscript
+        [{ indent: '-1' }, { indent: '+1' }], // outdent/indent
+        ['clean'], // remove formatting button
+        customoptiontype == 'Drop Down' ? ['customDropDownOption'] : ['customInputOption'],
+      ]
     : [
         ['bold', 'italic', 'underline', 'strike'], // toggled buttons
         ['blockquote' /* , 'code-block' */],
