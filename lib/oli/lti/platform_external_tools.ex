@@ -178,11 +178,21 @@ defmodule Oli.Lti.PlatformExternalTools do
         dynamic([p, lad], lad.status == :enabled)
       end
 
-    # TODO: calculate usage_count (we need https://eliterate.atlassian.net/browse/MER-4469)
+    usage_counts_query =
+      from ar in ActivityRegistration,
+        join: letad in LtiExternalToolActivityDeployment,
+        on: letad.activity_registration_id == ar.id,
+        join: pi in PlatformInstance,
+        on: pi.id == letad.platform_instance_id,
+        group_by: pi.id,
+        select: %{platform_instance_id: pi.id, usage_count: count(ar.id, :distinct)}
+
     query =
       from p in PlatformInstance,
         join: lad in LtiExternalToolActivityDeployment,
         on: lad.platform_instance_id == p.id,
+        left_join: uc in subquery(usage_counts_query),
+        on: uc.platform_instance_id == p.id,
         where: ^filter_by_text,
         where: ^filter_by_status,
         limit: ^limit,
@@ -192,7 +202,7 @@ defmodule Oli.Lti.PlatformExternalTools do
           name: p.name,
           description: p.description,
           inserted_at: p.inserted_at,
-          usage_count: fragment("NULL AS usage_count"),
+          usage_count: coalesce(uc.usage_count, 0),
           status: lad.status,
           total_count: fragment("count(*) OVER()")
         }

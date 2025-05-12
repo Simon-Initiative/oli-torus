@@ -5566,4 +5566,40 @@ defmodule Oli.Delivery.Sections do
       end)
     end)
   end
+
+  def get_sections_with_lti_activities_for_platform_instance_id(platform_instance_id) do
+    # Step 1: Find all LTI activity registrations for the given platform instance ID
+    lti_activity_registrations =
+      from(ar in Oli.Activities.ActivityRegistration,
+        join: d in assoc(ar, :lti_external_tool_activity_deployment),
+        where: d.platform_instance_id == ^platform_instance_id,
+        select: ar.id
+      )
+      |> Repo.all()
+
+    # Step 2: Get IDs of all section resources that are LTI activities
+    lti_activity_ids =
+      from(sr in SectionResource,
+        join: r in Revision,
+        on: sr.revision_id == r.id,
+        where: r.activity_type_id in ^lti_activity_registrations,
+        select: r.resource_id
+      )
+      |> Repo.all()
+
+    # Step 3: Find all sections that reference these LTI activities
+    page_type_id = ResourceType.id_for_page()
+
+    from(sr in SectionResource,
+      join: r in Revision,
+      on: sr.revision_id == r.id,
+      join: s in Section,
+      on: sr.section_id == s.id,
+      where:
+        r.resource_type_id == ^page_type_id and
+          fragment("? && ?", r.activity_refs, ^lti_activity_ids),
+      select: s
+    )
+    |> Repo.all()
+  end
 end
