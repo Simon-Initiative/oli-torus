@@ -88,6 +88,10 @@ defmodule OliWeb.Router do
     plug(:put_root_layout, {OliWeb.LayoutView, :delivery})
   end
 
+  pipeline :maybe_gated_resource do
+    plug(Oli.Plugs.MaybeGatedResource)
+  end
+
   pipeline :require_section do
     plug(Oli.Plugs.RequireSection)
   end
@@ -1269,6 +1273,8 @@ defmodule OliWeb.Router do
     end
 
     scope "/adaptive_lesson/:revision_slug" do
+      pipe_through([:maybe_gated_resource])
+
       get("/", PageDeliveryController, :page_fullscreen)
 
       get(
