@@ -9,6 +9,7 @@ export interface AuthoringElementState<T> {
   projectSlug: string;
   editMode: boolean;
   authoringContext: any;
+  onEdit: (model: T) => void;
   onRequestMedia: (request: MediaItemRequest) => Promise<string | boolean>;
   dispatch: (action: (model: T, post: PostUndoable) => any) => T;
   model: T;
@@ -56,6 +57,7 @@ export const AuthoringElementProvider: React.FC<AuthoringElementProps<ActivityMo
       value={{
         projectSlug,
         editMode,
+        onEdit,
         dispatch,
         model,
         onRequestMedia,

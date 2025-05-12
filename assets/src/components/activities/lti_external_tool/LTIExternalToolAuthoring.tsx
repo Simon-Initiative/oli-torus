@@ -9,13 +9,15 @@ import { getLtiExternalToolDetails } from 'data/persistence/lti_platform';
 import { configureStore } from 'state/store';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
+import { AuthoringCheckbox } from '../common/authoring/AuthoringCheckbox';
 import * as ActivityTypes from '../types';
 import { LTIExternalToolSchema } from './schema';
 
 const store = configureStore();
 
 const LTIExternalTool: React.FC = () => {
-  const { model, projectSlug, activityId } = useAuthoringElementContext<LTIExternalToolSchema>();
+  const { model, projectSlug, activityId, onEdit } =
+    useAuthoringElementContext<LTIExternalToolSchema>();
 
   const activityIdStr = activityId ? `${activityId}` : undefined;
 
@@ -37,9 +39,24 @@ const LTIExternalTool: React.FC = () => {
         <div className="activity lti-external-tool-activity">
           <div className="activity-content">
             <LTIExternalToolFrame
+              name={ltiToolDetails.name}
               launchParams={ltiToolDetails.launch_params}
               resourceId={resourceId}
+              openInNewTab={model.openInNewTab}
             />
+
+            <div>
+              <AuthoringCheckbox
+                label="Launch tool in new window"
+                id="launchInNewWindow"
+                value={model.openInNewTab}
+                onChange={(value) => onEdit({ ...model, openInNewTab: value })}
+                editMode={true}
+              />
+            </div>
+            <div className="text-gray-500 my-4">
+              Reminder: Editing an external tool may affect published courses.
+            </div>
           </div>
         </div>
       ) : (
