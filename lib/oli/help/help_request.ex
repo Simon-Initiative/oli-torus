@@ -3,6 +3,8 @@ defmodule Oli.Help.HelpRequest do
   import Ecto.Changeset
   import Oli.Utils
 
+  @derive Jason.Encoder
+  @primary_key false
   embedded_schema do
     field :name, :string
     field :email_address, :string
