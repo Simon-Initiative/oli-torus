@@ -8,13 +8,9 @@ defmodule OliWeb.Admin.ExternalTools.UsageViewTest do
     setup [:admin_conn]
 
     setup do
-      section = insert(:section)
-      platform = insert(:platform_instance)
-
-      lti_deployment =
-        insert(:lti_external_tool_activity_deployment,
-          platform_instance: platform
-        )
+      section = insert(:section, type: :enrollable, title: "AAA")
+      section2 = insert(:section, type: :enrollable, title: "ZZZ")
+      lti_deployment = insert(:lti_external_tool_activity_deployment)
 
       activity_registration =
         insert(:activity_registration,
@@ -28,12 +24,17 @@ defmodule OliWeb.Admin.ExternalTools.UsageViewTest do
 
       lti_activity_resource = lti_activity_revision.resource
 
-      lti_section_resource =
-        insert(:section_resource,
-          section: section,
-          resource_id: lti_activity_resource.id,
-          revision_id: lti_activity_revision.id
-        )
+      insert(:section_resource,
+        section: section,
+        resource_id: lti_activity_resource.id,
+        revision_id: lti_activity_revision.id
+      )
+
+      insert(:section_resource,
+        section: section2,
+        resource_id: lti_activity_resource.id,
+        revision_id: lti_activity_revision.id
+      )
 
       page_revision =
         insert(:revision,
@@ -41,19 +42,22 @@ defmodule OliWeb.Admin.ExternalTools.UsageViewTest do
           activity_refs: [lti_activity_resource.id]
         )
 
-      page_section_resource =
-        insert(:section_resource,
-          section: section,
-          resource_id: page_revision.resource_id,
-          revision_id: page_revision.id
-        )
+      insert(:section_resource,
+        section: section,
+        resource_id: page_revision.resource_id,
+        revision_id: page_revision.id
+      )
+
+      insert(:section_resource,
+        section: section2,
+        resource_id: page_revision.resource_id,
+        revision_id: page_revision.id
+      )
 
       %{
         section: section,
-        platform: platform,
-        lti_activity_resource: lti_activity_resource,
-        lti_section_resource: lti_section_resource,
-        page_section_resource: page_section_resource
+        section2: section2,
+        platform: lti_deployment.platform_instance
       }
     end
 
@@ -81,23 +85,41 @@ defmodule OliWeb.Admin.ExternalTools.UsageViewTest do
     test "renders table for valid platform_instance", %{
       conn: conn,
       platform: platform,
-      section: section
+      section: section,
+      section2: section2
     } do
       {:ok, view, html} = live(conn, ~p"/admin/external_tools/#{platform.id}/usage")
 
       assert html =~ "Usage Count: Course Sections"
-      open_browser(view)
       assert has_element?(view, "table")
       assert has_element?(view, "td", section.title)
+      assert has_element?(view, "td", section2.title)
+
+      assert has_element?(view, "th", "Title")
+      assert has_element?(view, "th", "Type")
+      assert has_element?(view, "th", "# Enrolled")
+      assert has_element?(view, "th", "Cost")
+      assert has_element?(view, "th", "Start")
+      assert has_element?(view, "th", "End")
+      assert has_element?(view, "th", "Status")
+      assert has_element?(view, "th", "Base Project/Product")
+      assert has_element?(view, "th", "Instructors")
+      assert has_element?(view, "th", "Institution")
     end
 
     test "pagination and sorting updates table", %{conn: conn, platform: platform} do
-      insert_list(3, :section)
-
       {:ok, view, _html} =
-        live(conn, ~p"/admin/external_tools/#{platform.id}/usage?sort_by=title&sort_order=asc")
+        live(conn, ~p"/admin/external_tools/#{platform.id}/usage?sort_by=title&sort_order=desc")
 
-      assert has_element?(view, "table")
+      titles =
+        view
+        |> render()
+        |> Floki.parse_document!()
+        |> Floki.find("table tbody tr td:nth-child(1)")
+        |> Enum.map(&Floki.text/1)
+        |> Enum.map(&String.trim/1)
+
+      assert titles == ~w(ZZZ AAA)
     end
   end
 end
