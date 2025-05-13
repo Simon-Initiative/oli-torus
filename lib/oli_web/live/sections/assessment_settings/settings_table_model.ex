@@ -430,9 +430,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
         navigate={
           Routes.live_path(
             OliWeb.Endpoint,
-            OliWeb.Sections.AssessmentSettings.SettingsLive,
+            OliWeb.Sections.AssessmentSettings.StudentExceptionsLive,
             @section_slug,
-            :student_exceptions,
             @id
           )
         }

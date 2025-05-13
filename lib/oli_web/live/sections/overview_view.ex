@@ -204,7 +204,7 @@ defmodule OliWeb.Sections.OverviewView do
               href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.ScheduleView, @section.slug)}
               class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
             >
-              Scheduling
+              Scheduling and Assessment Settings
             </a>
           </li>
           <li>
@@ -272,22 +272,7 @@ defmodule OliWeb.Sections.OverviewView do
               Browse Collaborative Spaces
             </a>
           </li>
-          <li>
-            <a
-              href={
-                Routes.live_path(
-                  OliWeb.Endpoint,
-                  OliWeb.Sections.AssessmentSettings.SettingsLive,
-                  @section.slug,
-                  :settings,
-                  :all
-                )
-              }
-              class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
-            >
-              Assessment Settings
-            </a>
-          </li>
+
           <li>
             <button
               type="button"
