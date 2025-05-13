@@ -1,17 +1,21 @@
 defmodule OliWeb.TechSupportLive do
   use OliWeb, :live_view
+  alias Oli.Help.HelpContent
+  alias Oli.Help.HelpRequest
+  alias OliWeb.Components.Modal
 
   @modal_id "tech-support-modal"
   @base_url Oli.Utils.get_base_url()
 
   @impl true
   def mount(_params, session, socket) do
-    socket = assign(socket, requires_sender_data: session["requires_sender_data"] || false)
+    requires_sender_data = !Enum.any?(Map.take(session, ["current_user_id", "current_author_id"]))
+    socket = assign(socket, requires_sender_data: requires_sender_data)
 
     socket =
       socket
       |> assign(:knowledgebase_url, Oli.VendorProperties.knowledgebase_url())
-      |> assign_form(Oli.Help.HelpRequest.changeset())
+      |> assign_form(HelpRequest.changeset())
       |> assign(modal_id: @modal_id)
       |> assign(recaptcha_error: false)
       |> assign(:session, session)
@@ -35,10 +39,10 @@ defmodule OliWeb.TechSupportLive do
     <button
       id="trigger-tech-support-modal"
       class="hidden"
-      phx-click={OliWeb.Components.Modal.show_modal(@modal_id)}
-      data-hide_modal={OliWeb.Components.Modal.hide_modal(@modal_id)}
+      phx-click={Modal.show_modal(@modal_id)}
+      data-hide_modal={Modal.hide_modal(@modal_id)}
     />
-    <OliWeb.Components.Modal.modal id={@modal_id} class="md:w-8/12">
+    <Modal.modal id={@modal_id} class="md:w-8/12">
       <:title>Tech Support</:title>
       <a href={@knowledgebase_url}>Find answers quickly in the Torus knowledge base.</a>
       <div class="w-auto">
@@ -135,23 +139,21 @@ defmodule OliWeb.TechSupportLive do
             </a>
           </div>
 
-          <div class="w-full flex md:flex-row flex-col gap-2 md:justify-between">
+          <div class="w-full flex flex-col lg:flex-row gap-2 md:justify-between">
             <.render_recaptcha recaptcha_error={@recaptcha_error} class="md:m-0 m-auto" />
 
-            <div class="flex justify-around md:justify-between">
-              <.button
-                type="link"
-                variant={:link}
-                phx-click={OliWeb.Components.Modal.hide_modal(@modal_id)}
-              >
+            <div class="flex w-full justify-around lg:justify-end items-center">
+              <.button type="link" variant={:link} phx-click={Modal.hide_modal(@modal_id)}>
                 Cancel
               </.button>
-              <.button type="submit" class="btn btn-primary h-fit md:m-auto">Send Request</.button>
+              <.button type="submit" class="btn btn-primary h-fit">
+                Send Request
+              </.button>
             </div>
           </div>
         </.form>
       </div>
-    </OliWeb.Components.Modal.modal>
+    </Modal.modal>
     """
   end
 
@@ -160,29 +162,22 @@ defmodule OliWeb.TechSupportLive do
   end
 
   @impl true
-  def handle_event("validate", %{"help" => help} = params, socket) do
-    changeset = Oli.Help.HelpRequest.changeset(help) |> Map.put(:action, :validate)
-
-    socket =
-      case Oli.Recaptcha.verify(params["g-recaptcha-response"]) do
-        {:success, true} -> assign(socket, recaptcha_error: false)
-        {:success, false} -> assign(socket, recaptcha_error: "reCAPTCHA failed, please try again")
-      end
-
+  def handle_event("validate", %{"help" => help}, socket) do
+    changeset = HelpRequest.changeset(help)
     {:noreply, assign_form(socket, changeset)}
   end
 
   def handle_event("submit", %{"help" => help} = params, socket) do
     with {:success, true} <- Oli.Recaptcha.verify(params["g-recaptcha-response"]),
-         %{valid?: true} <- Oli.Help.HelpRequest.changeset(help) |> Map.put(:action, :validate) do
-      params = add_metadata(socket, params)
+         %{valid?: true} = changeset <- HelpRequest.changeset(help) |> Map.put(:action, :validate) do
+      params = add_metadata(socket, params, changeset)
 
       socket =
         socket
         |> push_hide_modal_js_event()
         |> push_event("run_tech_support_hook", params)
         |> assign(recaptcha_error: false)
-        |> assign_form(Oli.Help.HelpRequest.changeset())
+        |> assign_form(HelpRequest.changeset())
 
       {:noreply, socket}
     else
@@ -205,21 +200,27 @@ defmodule OliWeb.TechSupportLive do
     {:noreply, socket}
   end
 
-  defp add_metadata(socket, params) do
+  defp add_metadata(socket, params, changeset) do
     session = socket.assigns.session
     uploaded_screenshots = consume_uploaded_screenshots(socket)
 
     params
     |> Map.update!("help", fn help ->
       help
+      |> Map.put(:requester_data, get_requester_data(session, changeset))
       |> Map.put(:course_data, get_course_data(session))
-      |> Map.put(:user_type, get_user_type(session))
-      |> Map.put(:full_name, get_full_name(session))
-      |> Map.put(:email, get_email(session))
-      |> Map.put(:student_report_url, get_student_report_url(session))
-      |> Map.put(:user_account_url, get_user_account_url(session))
       |> Map.put(:screenshots, uploaded_screenshots)
     end)
+  end
+
+  defp get_requester_data(session, changeset) do
+    %{
+      requester_name: get_full_name(session) || Ecto.Changeset.get_field(changeset, :name),
+      requester_email: get_email(session) || Ecto.Changeset.get_field(changeset, :email_address),
+      requester_type: get_user_type(session),
+      requester_account_url: get_user_account_url(session),
+      student_report_url: get_student_report_url(session)
+    }
   end
 
   defp consume_uploaded_screenshots(socket) do
@@ -246,7 +247,7 @@ defmodule OliWeb.TechSupportLive do
   end
 
   defp subject_options() do
-    Enum.map(Oli.Help.HelpContent.list_subjects(), fn {k, v} -> {v, k} end)
+    Enum.map(HelpContent.list_subjects(), fn {k, v} -> {v, k} end)
   end
 
   defp ext(entry) do
@@ -255,7 +256,7 @@ defmodule OliWeb.TechSupportLive do
   end
 
   defp get_user_type(session) do
-    case session["current_user"] do
+    case session["user"] do
       %Oli.Accounts.Author{} -> "Author"
       %Oli.Accounts.User{can_create_sections: true} -> "Instructor"
       %Oli.Accounts.User{} -> "Student"
@@ -278,29 +279,35 @@ defmodule OliWeb.TechSupportLive do
   end
 
   defp get_full_name(session) do
-    if current_user = session["current_user"] do
-      OliWeb.Common.Utils.name(current_user)
+    if user = session["user"] do
+      OliWeb.Common.Utils.name(user)
     end
   end
 
   defp get_email(session) do
-    if current_user = session["current_user"] do
-      current_user.email
+    if user = session["user"] do
+      user.email
     end
   end
 
   defp get_student_report_url(session) do
-    section = session["section"]
-    current_user = session["current_user"]
+    if session["current_user_id"] do
+      section = session["section"]
+      user = session["user"]
 
-    if section && current_user do
-      "#{@base_url}/sections/#{section.slug}/student_dashboard/#{current_user.id}/content"
+      if section && user do
+        "#{@base_url}/sections/#{section.slug}/student_dashboard/#{user.id}/content"
+      end
     end
   end
 
   defp get_user_account_url(session) do
-    if current_user = session["current_user"] do
-      "#{@base_url}/admin/users/#{current_user.id}"
+    if user = session["user"] do
+      if session["current_user_id"] do
+        "#{@base_url}/admin/users/#{user.id}"
+      else
+        "#{@base_url}/admin/authors/#{user.id}"
+      end
     end
   end
 end
