@@ -159,8 +159,7 @@
     <%= live_render(@conn, OliWeb.TechSupportLive,
       session: %{
         "section" => Map.get(@conn.assigns, :section),
-        "current_user" => Map.get(@conn.assigns, :current_user),
-        "requires_sender_data" => true
+        "user" => Map.get(@conn.assigns, :current_user) || Map.get(@conn.assigns, :current_author)
       }
     ) %>
   </body>

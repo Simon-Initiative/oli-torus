@@ -10,9 +10,3 @@
     </OliWeb.Components.Common.tech_support_link>
   </a>
 </p>
-<%= live_render(@conn, OliWeb.TechSupportLive,
-  session: %{
-    "section" => Map.get(@conn.assigns, :section),
-    "current_user" => Map.get(@conn.assigns, :current_user)
-  }
-) %>
