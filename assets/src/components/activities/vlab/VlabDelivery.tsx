@@ -19,12 +19,15 @@ import {
   listenForParentSurveySubmit,
   listenForReviewAttemptChange,
   resetAction,
+  submit,
 } from 'data/activities/DeliveryState';
 import { getByUnsafe } from 'data/activities/model/utils';
 import { safelySelectStringInputs } from 'data/activities/utils';
 import { defaultWriterContext } from 'data/content/writers/context';
 import { configureStore } from 'state/store';
 import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
+import { ScoreAsYouGoHeader } from '../common/ScoreAsYouGoHeader';
+import { ScoreAsYouGoSubmitReset } from '../common/ScoreAsYouGoSubmitReset';
 import { SubmitResetConnected } from '../common/delivery/SubmitReset';
 
 export const VlabComponent: React.FC = () => {
@@ -229,9 +232,23 @@ export const VlabComponent: React.FC = () => {
     },
   });
 
+  const submitReset =
+    !uiState.activityContext.graded || uiState.activityContext.batchScoring ? (
+      <SubmitResetConnected
+        onReset={() => dispatch(resetAction(onResetActivity, emptyPartInputs))}
+        submitDisabled={false}
+      />
+    ) : (
+      <ScoreAsYouGoSubmitReset
+        onSubmit={() => dispatch(submit(onSubmitActivity))}
+        onReset={() => dispatch(resetAction(onResetActivity, undefined))}
+      />
+    );
+
   return (
     <div className="activity mc-activity">
       <div className="activity-content">
+        <ScoreAsYouGoHeader />
         <iframe
           id={'vlab_' + (uiState.model as VlabSchema).stem.id}
           className="vlab-holder"
@@ -245,10 +262,7 @@ export const VlabComponent: React.FC = () => {
         />
         <GradedPointsConnected />
 
-        <SubmitResetConnected
-          onReset={() => dispatch(resetAction(onResetActivity, emptyPartInputs))}
-          submitDisabled={false}
-        />
+        {submitReset}
 
         {hintsShown.map((partId) => (
           <HintsDeliveryConnected

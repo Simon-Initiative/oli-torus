@@ -96,7 +96,7 @@ defmodule Oli.Delivery.Evaluation.ExplanationTest do
                       ]
                     }
                   },
-                  out_of: 10,
+                  out_of: 10.0,
                   part_id: "1",
                   score: 0,
                   show_page: nil,
@@ -168,7 +168,7 @@ defmodule Oli.Delivery.Evaluation.ExplanationTest do
                        ]
                      }
                    },
-                   out_of: 10,
+                   out_of: 10.0,
                    part_id: "1",
                    score: 0,
                    show_page: nil,
@@ -283,7 +283,7 @@ defmodule Oli.Delivery.Evaluation.ExplanationTest do
                       ]
                     }
                   },
-                  out_of: 10,
+                  out_of: 10.0,
                   part_id: "1",
                   score: 0,
                   show_page: nil,
@@ -345,7 +345,7 @@ defmodule Oli.Delivery.Evaluation.ExplanationTest do
                       ]
                     }
                   },
-                  out_of: 10,
+                  out_of: 10.0,
                   part_id: "1",
                   score: 0,
                   show_page: nil,
@@ -395,7 +395,7 @@ defmodule Oli.Delivery.Evaluation.ExplanationTest do
                       ]
                     }
                   },
-                  out_of: 10,
+                  out_of: 10.0,
                   part_id: "1",
                   score: 0,
                   show_page: nil,
@@ -460,7 +460,7 @@ defmodule Oli.Delivery.Evaluation.ExplanationTest do
                       ]
                     }
                   },
-                  out_of: 10,
+                  out_of: 10.0,
                   part_id: "1",
                   score: 0,
                   show_page: nil,
@@ -510,7 +510,7 @@ defmodule Oli.Delivery.Evaluation.ExplanationTest do
                       ]
                     }
                   },
-                  out_of: 10,
+                  out_of: 10.0,
                   part_id: "1",
                   score: 0,
                   show_page: nil,

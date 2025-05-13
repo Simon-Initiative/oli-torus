@@ -69,7 +69,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
       },
       %ColumnSpec{
         name: :scoring_strategy_id,
-        label: "SCORING",
+        label: "SCORING STRATEGY",
         render_fn: &render_scoring_column/3,
         th_class: "whitespace-nowrap",
         tooltip: Tooltips.for(:scoring_strategy_id)
@@ -94,6 +94,20 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
         render_fn: &render_assessment_mode_column/3,
         th_class: "whitespace-nowrap",
         tooltip: Tooltips.for(:assessment_mode)
+      },
+      %ColumnSpec{
+        name: :batch_scoring,
+        label: "SCORING MODE",
+        render_fn: &render_batch_scoring/3,
+        th_class: "whitespace-nowrap",
+        tooltip: Tooltips.for(:batch_scoring)
+      },
+      %ColumnSpec{
+        name: :replacement_strategy,
+        label: "REPLACEMENT",
+        render_fn: &render_replacement/3,
+        th_class: "whitespace-nowrap",
+        tooltip: Tooltips.for(:replacement_strategy)
       },
       %ColumnSpec{
         name: :feedback_mode,
@@ -276,6 +290,25 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
     """
   end
 
+  def render_replacement(assigns, assessment, _) do
+    assigns =
+      Map.merge(assigns, %{
+        replacement_strategy: assessment.replacement_strategy,
+        id: assessment.resource_id
+      })
+
+    ~H"""
+    <select class="torus-select pr-32" name={"replacement_strategy-#{@id}"}>
+      <option selected={@replacement_strategy == :none} value={:none}>
+        All questions remain the same for all attempts
+      </option>
+      <option selected={@replacement_strategy == :dynamic} value={:dynamic}>
+        Dynamic questions regenerate a new question
+      </option>
+    </select>
+    """
+  end
+
   def render_scoring_column(assigns, assessment, _) do
     assigns =
       Map.merge(assigns, %{
@@ -439,6 +472,21 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
         <%= @exceptions_count %>
       </.link>
     </div>
+    """
+  end
+
+  def render_batch_scoring(assigns, assessment, _) do
+    assigns =
+      Map.merge(assigns, %{
+        batch_scoring: assessment.batch_scoring,
+        id: assessment.resource_id
+      })
+
+    ~H"""
+    <select class="torus-select pr-32" name={"batch_scoring-#{@id}"}>
+      <option selected={@batch_scoring} value="true">Batch</option>
+      <option selected={!@batch_scoring} value="false">Score as you go</option>
+    </select>
     """
   end
 

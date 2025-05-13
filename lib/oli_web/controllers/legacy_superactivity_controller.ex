@@ -400,20 +400,13 @@ defmodule OliWeb.LegacySuperactivityController do
 
         Repo.transaction(fn ->
           if length(client_evaluations) > 0 do
-            ActivityEvaluation.apply_super_activity_evaluation(
+            ActivityEvaluation.apply_client_evaluation(
               context.section.slug,
               context.activity_attempt.attempt_guid,
               client_evaluations,
               context.datashop_session_id
             )
           end
-
-          rest =
-            ActivityEvaluation.rollup_part_attempt_evaluations(
-              context.activity_attempt.attempt_guid
-            )
-
-          rest
         end)
 
       _ ->
@@ -448,11 +441,12 @@ defmodule OliWeb.LegacySuperactivityController do
       create_evaluation(context, score, out_of, part_attempt)
     ]
 
-    case ActivityEvaluation.apply_super_activity_evaluation(
+    case ActivityEvaluation.apply_client_evaluation(
            context.section.slug,
            context.activity_attempt.attempt_guid,
            client_evaluations,
-           context.datashop_session_id
+           context.datashop_session_id,
+           no_roll_up: true
          ) do
       {:ok, _evaluations} ->
         attempt_history(

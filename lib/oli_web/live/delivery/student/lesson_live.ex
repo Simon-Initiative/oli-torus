@@ -23,6 +23,9 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   alias OliWeb.Delivery.Student.Lesson.Components.OutlineComponent
   alias Oli.Delivery.{Hierarchy, Metrics, Sections, Settings}
   alias Oli.Delivery.Sections.SectionCache
+  alias OliWeb.Delivery.Student.Utils
+  alias OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion
+  alias OliWeb.Icons
 
   require Logger
 
@@ -132,6 +135,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         |> to_epoch()
 
       auto_submit = page_context.effective_settings.late_submit == :disallow
+      batch_scoring = page_context.effective_settings.batch_scoring
 
       now = DateTime.utc_now() |> to_epoch
 
@@ -146,6 +150,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
             false
         end
 
+      Oli.Delivery.ScoreAsYouGoNotifications.subscribe(resource_attempt.id)
+
       socket =
         socket
         |> emit_page_viewed_event()
@@ -157,10 +163,14 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           attempt_guid: hd(page_context.resource_attempts).attempt_guid,
           effective_end_time: effective_end_time,
           auto_submit: auto_submit,
+          batch_scoring: batch_scoring,
           time_limit: page_context.effective_settings.time_limit,
           grace_period: page_context.effective_settings.grace_period,
           attempt_start_time: resource_attempt.inserted_at |> to_epoch,
-          review_mode: page_context.review_mode
+          review_mode: page_context.review_mode,
+          current_score: resource_attempt.score,
+          current_out_of: resource_attempt.out_of,
+          effective_settings: page_context.effective_settings
         )
         |> slim_assigns()
         |> assign(attempt_expired_auto_submit: attempt_expired_auto_submit)
@@ -220,6 +230,9 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   def mount(_params, _session, socket) do
     {:ok, socket}
   end
+
+  defp format_score(nil), do: "--"
+  defp format_score(v), do: Utils.parse_score(v)
 
   def handle_event("survey_scripts_loaded", %{"error" => _}, socket) do
     {:noreply, assign(socket, error: true)}
@@ -665,6 +678,16 @@ defmodule OliWeb.Delivery.Student.LessonLive do
      )}
   end
 
+  def handle_event("select_question", %{"question_number" => question_number}, socket) do
+    questions =
+      socket.assigns.questions
+      |> Enum.map(fn question ->
+        Map.put(question, :selected, question.number == question_number)
+      end)
+
+    {:noreply, assign(socket, questions: questions)}
+  end
+
   def handle_event(
         "set_delete_post_id",
         %{"post-id" => post_id, "visibility" => visibility},
@@ -685,6 +708,37 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
       {:error, _} ->
         {:noreply, put_flash(socket, :error, "Failed to delete note")}
+    end
+  end
+
+  def handle_info(
+        {:question_answered,
+         %{score: score, out_of: out_of, activity_attempt_guid: attempt_guid}},
+        socket
+      ) do
+    case socket.assigns[:questions] do
+      nil ->
+        {:noreply, assign(socket, current_score: score, current_out_of: out_of)}
+
+      _ ->
+        questions =
+          Enum.map(socket.assigns.questions, fn
+            %{selected: true} = selected_question ->
+              Map.merge(selected_question, %{
+                state:
+                  OneAtATimeQuestion.get_updated_state(
+                    attempt_guid,
+                    socket.assigns.effective_settings
+                  ),
+                submitted: true
+              })
+
+            not_selected_question ->
+              not_selected_question
+          end)
+
+        {:noreply,
+         assign(socket, current_score: score, current_out_of: out_of, questions: questions)}
     end
   end
 
@@ -914,9 +968,9 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       ) do
     ~H"""
     <.countdown {assigns} />
-    <div class="flex pb-20 flex-col w-full items-center gap-15 flex-1 overflow-auto">
+    <div class="flex pb-20 flex-col w-full items-center gap-15 flex-1">
       <div class="flex flex-col items-center w-full">
-        <.scored_page_banner />
+        <.scored_page_banner {assigns} />
         <div class="flex-1 w-full max-w-[1040px] px-[80px] pt-20 pb-10 flex-col justify-start items-center gap-10 inline-flex">
           <.page_header
             page_context={@page_context}
@@ -924,6 +978,12 @@ defmodule OliWeb.Delivery.Student.LessonLive do
             objectives={@objectives}
             index={@current_page["index"]}
             container_label={Utils.get_container_label(@current_page["id"], @section)}
+          />
+
+          <.score_header
+            batch_scoring={@page_context.effective_settings.batch_scoring}
+            current_score={@current_score}
+            current_out_of={@current_out_of}
           />
 
           <div :if={@questions != []} class="relative min-h-[500px] justify-center">
@@ -959,9 +1019,9 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     # For graded page with attempt in progress the activity scripts and activity_bridge script are needed as soon as the page loads.
     ~H"""
     <.countdown {assigns} />
-    <div class="flex pb-20 flex-col w-full items-center gap-15 flex-1 overflow-auto">
+    <div class="flex pb-20 flex-col w-full items-center gap-15 flex-1">
       <div class="flex flex-col items-center w-full">
-        <.scored_page_banner />
+        <.scored_page_banner {assigns} />
         <div class="flex-1 w-full max-w-[1040px] px-[80px] pt-20 pb-10 flex-col justify-start items-center gap-10 inline-flex">
           <.page_header
             page_context={@page_context}
@@ -971,42 +1031,15 @@ defmodule OliWeb.Delivery.Student.LessonLive do
             container_label={Utils.get_container_label(@current_page["id"], @section)}
           />
 
+          <.score_header
+            batch_scoring={@page_context.effective_settings.batch_scoring}
+            current_score={@current_score}
+            current_out_of={@current_out_of}
+          />
+
           <div id="page_content" class="content w-full" phx-update="ignore" role="page content">
             <%= raw(@html) %>
-            <div class="flex w-full justify-center">
-              <button
-                id="submit_answers"
-                phx-hook="DelayedSubmit"
-                class="cursor-pointer px-5 py-2.5 hover:bg-opacity-40 bg-blue-600 rounded-[3px] shadow justify-center items-center gap-2.5 inline-flex text-white text-sm font-normal font-['Open Sans'] leading-tight"
-              >
-                <span class="button-text">Submit Answers</span>
-                <span class="spinner hidden ml-2 animate-spin">
-                  <svg
-                    class="w-5 h-5 text-white"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <circle
-                      class="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      stroke-width="4"
-                    >
-                    </circle>
-                    <path
-                      class="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                    >
-                    </path>
-                  </svg>
-                </span>
-              </button>
-            </div>
+            <.submit_button batch_scoring={@page_context.effective_settings.batch_scoring} />
             <.references ctx={@ctx} bib_app_params={@bib_app_params} />
           </div>
         </div>
@@ -1038,6 +1071,85 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   def render(assigns) do
     ~H"""
     <div></div>
+    """
+  end
+
+  attr :batch_scoring, :boolean, default: false
+  attr :current_score, :float
+  attr :current_out_of, :float
+
+  def score_header(%{batch_scoring: false} = assigns) do
+    ~H"""
+    <div class="sticky top-14 z-2000 flex justify-end w-full px-4 py-2">
+      <div class="flex items-center gap-2.5">
+        <span class="font-sans text-sm font-normal leading-none">
+          <.score score={@current_score} out_of={@current_out_of} />
+        </span>
+      </div>
+    </div>
+    """
+  end
+
+  def score_header(assigns) do
+    ~H"""
+    """
+  end
+
+  attr :score, :float
+  attr :out_of, :float
+
+  def score(%{score: nil} = assigns) do
+    ~H"""
+    Overall Page Score: <Icons.score_as_you_go color="text-black dark:text-white" />
+    <strong class="text-black dark:text-white">
+      <%= format_score(@score) %> / <%= format_score(@out_of) %>
+    </strong>
+    """
+  end
+
+  def score(assigns) do
+    ~H"""
+    Overall Page Score: <Icons.score_as_you_go color="text-[#0FB863]" />
+    <strong class="text-[#0FB863]"><%= format_score(@score) %> / <%= format_score(@out_of) %></strong>
+    """
+  end
+
+  attr :batch_scoring, :boolean, default: false
+
+  def submit_button(%{batch_scoring: false} = assigns) do
+    ~H"""
+    """
+  end
+
+  def submit_button(assigns) do
+    ~H"""
+    <div class="flex w-full justify-center">
+      <button
+        id="submit_answers"
+        phx-hook="DelayedSubmit"
+        class="cursor-pointer px-5 py-2.5 hover:bg-opacity-40 bg-blue-600 rounded-[3px] shadow justify-center items-center gap-2.5 inline-flex text-white text-sm font-normal font-['Open Sans'] leading-tight"
+      >
+        <span class="button-text">Submit Answers</span>
+        <span class="spinner hidden ml-2 animate-spin">
+          <svg
+            class="w-5 h-5 text-white"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+            </circle>
+            <path
+              class="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+            >
+            </path>
+          </svg>
+        </span>
+      </button>
+    </div>
     """
   end
 
@@ -1102,6 +1214,23 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
           <%= render_slot(@point_markers) %>
         </div>
+      </div>
+    </div>
+    """
+  end
+
+  def scored_page_banner(
+        %{page_context: %{effective_settings: %{batch_scoring: false}}} = assigns
+      ) do
+    ~H"""
+    <div class="w-full lg:px-20 px-40 py-9 bg-orange-500 bg-opacity-10 flex flex-col justify-center items-center gap-2.5">
+      <div class="px-3 py-1.5 rounded justify-start items-start gap-2.5 flex">
+        <div class="dark:text-white text-sm font-bold uppercase tracking-wider">
+          Score as you go Activity
+        </div>
+      </div>
+      <div class="max-w-[880px] w-full mx-auto opacity-90 dark:text-white text-sm font-normal leading-6">
+        You can start or stop at any time, and your progress will be saved. Your score is updated as you complete questions on this page.
       </div>
     </div>
     """
@@ -1477,6 +1606,20 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     activity_part_points_mapper =
       build_activity_part_points_mapper(socket.assigns.page_context.activities)
 
+    scale_to_out_of = fn part_points, out_of ->
+      total = Enum.reduce(part_points, 0, fn {_, points}, acc -> acc + points end)
+
+      scale_factor =
+        case out_of do
+          nil -> 1.0
+          _ -> out_of / total
+        end
+
+      Enum.reduce(part_points, %{}, fn {part_id, points}, acc ->
+        Map.put(acc, part_id, points * scale_factor)
+      end)
+    end
+
     questions =
       socket.assigns.html
       |> List.flatten()
@@ -1507,7 +1650,10 @@ defmodule OliWeb.Delivery.Student.LessonLive do
                answered: !Enum.any?(state["parts"], fn part -> part["response"] in ["", nil] end),
                submitted:
                  !Enum.any?(state["parts"], fn part -> part["dateSubmitted"] in ["", nil] end),
-               part_points: activity_part_points_mapper[state["activityId"]]
+               part_points:
+                 activity_part_points_mapper[state["activityId"]]
+                 |> scale_to_out_of.(state["outOf"]),
+               out_of: state["outOf"]
              }
              | activities
            ]}

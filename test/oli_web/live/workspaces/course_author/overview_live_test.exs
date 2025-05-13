@@ -4,7 +4,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
   import Phoenix.LiveViewTest
   import Oli.Factory
 
+  alias Oli.Activities
   alias Oli.Authoring.Course
+  alias Oli.Lti.PlatformExternalTools
 
   defp live_view_route(project_slug, params \\ %{}),
     do: ~p"/workspaces/course_author/#{project_slug}/overview?#{params}"
@@ -203,6 +205,61 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
       |> render_change(%{})
 
       refute Course.get_project!(project.id).allow_transfer_payment_codes
+    end
+
+    test "advanced activities are shown correctly", %{conn: conn, author: author} do
+      project = create_project_with_author(author)
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      assert has_element?(view, "h4", "Advanced Activities")
+
+      Activities.advanced_activities(project)
+      |> Enum.each(fn activity ->
+        assert has_element?(view, "div", activity.title)
+      end)
+    end
+
+    test "external tools activities are shown correctly", %{conn: conn, author: author} do
+      project = create_project_with_author(author)
+
+      external_tool_1_params = %{
+        "name" => "External Too Test 1",
+        "description" => "External Tool Description",
+        "client_id" => "new_tool_client_id_1",
+        "target_link_uri" => "https://example.com/launch",
+        "login_url" => "https://example.com/login",
+        "keyset_url" => "https://example.com/jwks",
+        "redirect_uris" => "https://example.com/redirect",
+        "custom_params" => "param1=value1&param2=value2"
+      }
+
+      external_tool_2_params = %{
+        "name" => "External Tool Test 2",
+        "description" => "External Tool Description",
+        "client_id" => "new_tool_client_id_2",
+        "target_link_uri" => "https://example.com/launch",
+        "login_url" => "https://example.com/login",
+        "keyset_url" => "https://example.com/jwks",
+        "redirect_uris" => "https://example.com/redirect",
+        "custom_params" => "param1=value1&param2=value2"
+      }
+
+      {:ok, {_platform_instance_1, activity_registration_1, deployment_1}} =
+        PlatformExternalTools.register_lti_external_tool_activity(external_tool_1_params)
+
+      {:ok, {_platform_instance_2, activity_registration_2, deployment_2}} =
+        PlatformExternalTools.register_lti_external_tool_activity(external_tool_2_params)
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      assert has_element?(view, "h4", "Advanced Activities")
+
+      assert has_element?(view, "div", activity_registration_1.title)
+      assert has_element?(view, "span", deployment_1.deployment_id)
+
+      assert has_element?(view, "div", activity_registration_2.title)
+      assert has_element?(view, "span", deployment_2.deployment_id)
     end
 
     defp create_project_with_author(author) do

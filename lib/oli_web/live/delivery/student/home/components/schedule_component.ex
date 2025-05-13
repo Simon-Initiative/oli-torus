@@ -28,6 +28,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
   attr(:section_start_date, :string, required: true)
   attr(:section_slug, :string, required: true)
   attr(:expanded_items, :list, default: [])
+  attr(:has_scheduled_resources?, :boolean, required: true)
 
   def render(assigns) do
     ~H"""
@@ -58,6 +59,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
                 section_slug={@section_slug}
                 expanded={item.id in @expanded_items}
                 target={@myself}
+                has_scheduled_resources?={@has_scheduled_resources?}
               />
             </div>
           </div>
@@ -73,6 +75,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
   attr :section_slug, :string, required: true
   attr :target, :any, required: true
   attr :expanded, :boolean, default: false
+  attr :has_scheduled_resources?, :boolean, required: true
 
   defp schedule_item(%{item: item} = assigns) when length(item.resources) > 1 do
     ~H"""
@@ -117,6 +120,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
         expanded={@expanded}
         target={@target}
         section_slug={@section_slug}
+        has_scheduled_resources?={@has_scheduled_resources?}
       />
     </div>
     """
@@ -174,6 +178,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
           ctx={@ctx}
           target={@target}
           section_slug={@section_slug}
+          has_scheduled_resources?={@has_scheduled_resources?}
         />
       </div>
     </.link>
@@ -202,7 +207,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
   attr :target, :any, required: true
   attr :expanded, :boolean, default: false
   attr :section_slug, :string, required: true
-
+  attr :has_scheduled_resources?, :boolean, required: true
   # Graded pages with existing attempts for simple schedule items
   defp schedule_item_details(
          %{
@@ -287,10 +292,9 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
 
       <div class="pr-2 pl-1 self-end">
         <div class="flex items-end gap-1">
-          <div class="text-right dark:text-white text-opacity-90 text-xs font-semibold">
-            <%= if @completed do %>
-              Completed
-            <% else %>
+          <div class="text-right dark:text-white text-opacity-90 text-xs font-semibold h-5">
+            <span :if={@completed}>Completed</span>
+            <span :if={!@completed and @has_scheduled_resources?} role="schedule details">
               <%= if is_nil(hd(@resources).effective_settings),
                 do:
                   Utils.days_difference(
@@ -302,7 +306,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
                   Utils.coalesce(hd(@resources).effective_settings.end_date, hd(@resources).end_date)
                   |> Utils.coalesce(hd(@resources).effective_settings.start_date)
                   |> Utils.days_difference(grouped_scheduling_type(@resources), @ctx) %>
-            <% end %>
+            </span>
           </div>
           <Icons.check :if={@completed} progress={1.0} />
         </div>

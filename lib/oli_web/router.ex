@@ -1223,6 +1223,7 @@ defmodule OliWeb.Router do
           {OliWeb.UserAuth, :ensure_authenticated},
           OliWeb.LiveSessionPlugs.SetCtx,
           OliWeb.LiveSessionPlugs.SetSection,
+          OliWeb.LiveSessionPlugs.SetScheduledResourcesFlag,
           {OliWeb.LiveSessionPlugs.InitPage, :set_prologue_context},
           OliWeb.LiveSessionPlugs.SetBrand,
           OliWeb.LiveSessionPlugs.SetPreviewMode,
@@ -1262,6 +1263,7 @@ defmodule OliWeb.Router do
           {OliWeb.UserAuth, :ensure_authenticated},
           OliWeb.LiveSessionPlugs.SetCtx,
           OliWeb.LiveSessionPlugs.SetSection,
+          OliWeb.LiveSessionPlugs.SetScheduledResourcesFlag,
           OliWeb.LiveSessionPlugs.SetBrand,
           OliWeb.LiveSessionPlugs.SetPreviewMode,
           OliWeb.LiveSessionPlugs.RequireEnrollment,
@@ -1634,6 +1636,7 @@ defmodule OliWeb.Router do
       # External tools
       live("/external_tools", Admin.ExternalTools.ExternalToolsView)
       live("/external_tools/new", Admin.ExternalTools.NewExternalToolView)
+      live("/external_tools/:platform_instance_id/details", Admin.ExternalTools.DetailsView)
     end
 
     # System admin

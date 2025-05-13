@@ -16,6 +16,7 @@ import {
   listenForParentSurveyReset,
   listenForParentSurveySubmit,
   listenForReviewAttemptChange,
+  resetAction,
   resetAndSubmitActivity,
   setSelection,
   submit,
@@ -24,6 +25,8 @@ import { initialPartInputs, isCorrect } from 'data/activities/utils';
 import { configureStore } from 'state/store';
 import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
 import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
+import { ScoreAsYouGoHeader } from '../common/ScoreAsYouGoHeader';
+import { ScoreAsYouGoSubmitReset } from '../common/ScoreAsYouGoSubmitReset';
 import { castPartId } from '../common/utils';
 import * as ActivityTypes from '../types';
 import { MCSchema } from './schema';
@@ -98,6 +101,7 @@ export const MultipleChoiceComponent: React.FC = () => {
   return (
     <div className="activity mc-activity">
       <div className="activity-content">
+        <ScoreAsYouGoHeader />
         <StemDeliveryConnected />
         <GradedPointsConnected />
         <ChoicesDelivery
@@ -116,6 +120,10 @@ export const MultipleChoiceComponent: React.FC = () => {
           onSelect={(id) => saveOrSubmit(id)}
           isEvaluated={isEvaluated(uiState) && context.graded}
           context={writerContext}
+        />
+        <ScoreAsYouGoSubmitReset
+          onSubmit={() => dispatch(submit(onSubmitActivity))}
+          onReset={() => dispatch(resetAction(onResetActivity, undefined))}
         />
         <HintsDeliveryConnected
           partId={castPartId(activityState.parts[0].partId)}

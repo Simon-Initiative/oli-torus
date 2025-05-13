@@ -124,7 +124,7 @@ defmodule Oli.Delivery.TestModeTest do
               [
                 # Finding no matching response marks the answer as incorrect
                 # with out_of being the highest of any response considered
-                %FeedbackAction{part_id: "1", score: 0, out_of: 10, feedback: _},
+                %FeedbackAction{part_id: "1", score: 0, out_of: 10.0, feedback: _},
                 %SubmissionAction{part_id: "2"}
               ]} = Evaluate.evaluate_from_preview(content, part_inputs)
     end

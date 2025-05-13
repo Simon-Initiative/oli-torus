@@ -21,6 +21,11 @@ describe('check all that apply delivery', () => {
       activitySlug: 'activity-slug',
       state: Object.assign(defaultActivityState(model), { hasMoreHints: false }),
       context: {
+        batchScoring: true,
+        oneAtATime: false,
+        ordinal: 1,
+        maxAttempts: 1,
+        scoringStrategyId: 1,
         graded: false,
         surveyId: null,
         groupId: null,
