@@ -3,7 +3,7 @@ defmodule Oli.Help.HelpRequest do
   import Ecto.Changeset
   import Oli.Utils
 
-  schema "help" do
+  embedded_schema do
     field :name, :string
     field :email_address, :string
     field :subject, :string
