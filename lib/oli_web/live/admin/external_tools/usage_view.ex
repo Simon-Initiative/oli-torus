@@ -113,7 +113,7 @@ defmodule OliWeb.Admin.ExternalTools.UsageView do
   defp browse_sections(platform_instance_id, paging, sorting) do
     section_ids =
       platform_instance_id
-      |> Sections.get_sections_with_lti_activities_for_platform_instance_id()
+      |> PlatformExternalTools.get_sections_with_lti_activities_for_platform_instance_id()
       |> Enum.map(fn section -> section.id end)
 
     Sections.Browse.browse_sections_query(paging, sorting, @default_options)
