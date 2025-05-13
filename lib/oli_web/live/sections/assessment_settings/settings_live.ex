@@ -46,23 +46,9 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
     end
   end
 
-  defp set_breadcrumbs(type, section) do
-    OliWeb.Sections.OverviewView.set_breadcrumbs(type, section)
-    |> breadcrumb(section)
-  end
-
-  def breadcrumb(previous, section) do
-    previous ++
-      [
-        Breadcrumb.new(%{
-          full_title: "Assessment Settings",
-          link: Routes.live_path(OliWeb.Endpoint, __MODULE__, section.slug, "all")
-        })
-      ]
-  end
-
   @impl Phoenix.LiveView
   def handle_params(params, _, socket) do
+    IO.inspect(params, label: "handle_params")
     socket = assign(socket, params: params, update_sort_order: true)
     {:noreply, socket}
   end

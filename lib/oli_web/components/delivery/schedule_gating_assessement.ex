@@ -10,8 +10,6 @@ defmodule OliWeb.Components.Delivery.ScheduleGatingAssessment do
         active_tab: determine_tab(assigns[:uri])
       )
 
-    IO.inspect(assigns, label: "ScheduleGatingAssessment")
-
     ~H"""
     <div class="w-full px-6 py-4">
       <div class="flex">
