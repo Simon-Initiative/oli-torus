@@ -48,30 +48,28 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsLive do
 
   @impl true
   def handle_params(%{"assessment_id" => assessment_id} = params, _, socket) do
-    case assessment_id do
-      "all" ->
-        first_assessment_id =
-          if socket.assigns.assessments == [],
-            do: :all,
-            else: hd(socket.assigns.assessments).resource_id
+    socket =
+      case {assessment_id, socket.assigns.assessments} do
+      {"all", []} ->
+        assign(socket, params: params, update_sort_order: true)
 
-        {:noreply,
-         push_patch(socket,
-           to:
-             Routes.live_path(
-               socket,
-               __MODULE__,
-               socket.assigns.section.slug,
-               first_assessment_id
-             )
-         )}
+      {"all", [first_assessment | _]} ->
+        push_patch(socket,
+        to:
+          Routes.live_path(
+          socket,
+          __MODULE__,
+          socket.assigns.section.slug,
+          first_assessment.resource_id
+          )
+        )
 
       _ ->
-        socket =
-          assign(socket, params: params, update_sort_order: true)
+        assign(socket, params: params, update_sort_order: true)
+      end
 
-        {:noreply, socket}
-    end
+    {:noreply, socket}
+
   end
 
   @impl true
