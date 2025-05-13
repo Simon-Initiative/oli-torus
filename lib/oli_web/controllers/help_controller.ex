@@ -10,13 +10,9 @@ defmodule OliWeb.HelpController do
   def create(conn, params) do
     dispatcher = Application.fetch_env!(:oli, :help)[:dispatcher]
 
-    params =
-      params
-      |> put_in(["help", "email"], params["help"]["email"] || params["help"]["email_address"])
-      |> put_in(["help", "full_name"], params["help"]["full_name"] || params["help"]["name"])
-
     with {:ok, true} <- validate_recapture(Map.get(params, "g-recaptcha-response", "")),
          {:ok, content_params} <- additional_help_context(conn, Map.get(params, "help")),
+         {:ok, content_params} <- validate_requester_data(content_params),
          {:ok, help_content} <- HelpContent.parse(content_params),
          {:ok, _} <- Oli.Help.Dispatcher.dispatch(dispatcher, help_content) do
       json(conn, %{
@@ -27,6 +23,13 @@ defmodule OliWeb.HelpController do
       {:error, message} ->
         Logger.error("Error when processing help message #{inspect(message)}")
         error(conn, 500, "We are unable to forward your help request at the moment")
+    end
+  end
+
+  defp validate_requester_data(content_params) do
+    case Oli.Help.RequesterData.parse(content_params["requester_data"]) do
+      {:ok, requester_data} -> {:ok, Map.put(content_params, "requester_data", requester_data)}
+      error -> error
     end
   end
 
@@ -51,15 +54,13 @@ defmodule OliWeb.HelpController do
       |> Tuple.to_list()
       |> Enum.join(".")
 
-    datetime = Timex.now(Timex.Timezone.local())
-
     content_params =
       Map.merge(
         params,
         %{
           "user_agent" => user_agent,
           "ip_address" => remote_ip,
-          "timestamp" => DateTime.to_string(datetime),
+          "timestamp" => get_system_local_time(),
           "agent_accept" => accept,
           "agent_language" => accept_language,
           "account_email" => " ",
@@ -68,7 +69,7 @@ defmodule OliWeb.HelpController do
         }
       )
 
-    current_user = conn.assigns[:current_user]
+    current_user = conn.assigns[:current_user] || conn.assigns[:current_author]
 
     if current_user do
       # :TODO: find a way to reliably get roles in both authoring and delivery contexts
@@ -100,6 +101,12 @@ defmodule OliWeb.HelpController do
     else
       {:ok, content_params}
     end
+  end
+
+  defp get_system_local_time() do
+    {{year, month, day}, {hour, minute, second}} = :calendar.local_time()
+    naive_datetime = NaiveDateTime.from_erl!({{year, month, day}, {hour, minute, second}})
+    NaiveDateTime.to_string(naive_datetime)
   end
 
   defp error(conn, code, reason) do
