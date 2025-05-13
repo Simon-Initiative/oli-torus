@@ -59,7 +59,7 @@ defmodule OliWeb.Admin.ExternalTools.Form do
           class="form-control h-11 placeholder:pl-6"
           field={f[:client_id]}
           type="text"
-          label="Tool Client ID"
+          label="Client ID"
           label_class="mb-2"
           placeholder="Type here..."
           additional_text={~H'<span class="text-red-500">(*Required)</span>'}
