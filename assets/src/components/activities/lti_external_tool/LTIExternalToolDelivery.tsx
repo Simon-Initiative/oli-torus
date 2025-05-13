@@ -34,6 +34,7 @@ const LTIExternalTool: React.FC = () => {
         <div className="activity lti-external-tool-activity">
           <div className="activity-content">
             <LTIExternalToolFrame
+              name={ltiToolDetails.name}
               launchParams={ltiToolDetails.launch_params}
               resourceId={resourceId}
             />
