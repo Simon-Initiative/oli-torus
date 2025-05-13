@@ -48,7 +48,6 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
 
   @impl Phoenix.LiveView
   def handle_params(params, _, socket) do
-    IO.inspect(params, label: "handle_params")
     socket = assign(socket, params: params, update_sort_order: true)
     {:noreply, socket}
   end
