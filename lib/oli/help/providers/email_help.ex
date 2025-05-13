@@ -2,15 +2,17 @@ defmodule Oli.Help.Providers.EmailHelp do
   @behaviour Oli.Help.Dispatcher
 
   alias Oli.Help.HelpContent
+  alias Oli.Help.RequesterData
 
   @impl Oli.Help.Dispatcher
-  def dispatch(%HelpContent{} = contents) do
+  def dispatch(%HelpContent{requester_data: %RequesterData{} = requester_data} = contents) do
     help_desk_email = System.get_env("HELP_DESK_EMAIL", "test@example.edu")
     subject = HelpContent.get_subject(contents.subject)
     message = %{message: build_help_message(contents)}
+    requester_email = requester_data.requester_email
 
     email =
-      Oli.Email.help_desk_email(contents.email, help_desk_email, subject, :help_email, message)
+      Oli.Email.help_desk_email(requester_email, help_desk_email, subject, :help_email, message)
 
     Oli.Mailer.deliver(email)
   end
@@ -73,10 +75,12 @@ defmodule Oli.Help.Providers.EmailHelp do
   end
 
   defp get_general_data(contents) do
+    requester_name = contents.requester_data.requester_name
+    requester_email = contents.requester_data.requester_email
     location = "<a href=\"#{contents.location}\">#{contents.location}</a>"
 
     """
-    On #{contents.timestamp}, #{contents.full_name} &lt; #{contents.email} &gt; wrote: <br><br>
+    On #{contents.timestamp}, #{requester_name} &lt; #{requester_email} &gt; wrote: <br><br>
     #{contents.message}
     <br><br>----------------------------------------------
     <br>
@@ -88,21 +92,27 @@ defmodule Oli.Help.Providers.EmailHelp do
   end
 
   defp get_user_account_data(contents) do
-    user_account_url = "<a href=\"#{contents.user_account_url}\">#{contents.user_account_url}</a>"
+    if String.trim(contents.account_created) != "" do
+      requester_name = contents.requester_data.requester_name
+      requester_email = contents.requester_data.requester_email
+      requester_type = contents.requester_data.requester_type
+      student_report_url = contents.requester_data.student_report_url
+      requester_account_url = contents.requester_data.requester_account_url
 
-    account_name =
-      if contents.user_type == "Student" do
-        "<a href=\"#{contents.student_report_url}\">#{contents.account_name}</a>"
-      else
-        contents.account_name
-      end
+      user_account_url = "<a href=\"#{requester_account_url}\">#{requester_account_url}</a>"
 
-    if String.trim(account_name <> contents.account_email <> contents.account_created) != "" do
+      account_name =
+        if requester_type == "Student" do
+          "<a href=\"#{student_report_url}\">#{requester_name}</a>"
+        else
+          requester_name
+        end
+
       """
       USER ACCOUNT
       Name: #{account_name}
-      Email: #{contents.account_email}
-      User Type: #{contents.user_type}
+      Email: #{requester_email}
+      User Type: #{requester_type}
       User Account URL: #{user_account_url}
       Created: #{contents.account_created}
       <br>
