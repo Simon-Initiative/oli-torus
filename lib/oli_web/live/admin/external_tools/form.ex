@@ -118,6 +118,7 @@ defmodule OliWeb.Admin.ExternalTools.Form do
           <% :update -> %>
             <.button
               type="button"
+              role="cancel_edit"
               phx-click="toggle_edit_mode"
               class="px-6 !py-2 bg-white text-[#006cd9] border border-blue-500 rounded-md
                    hover:bg-[#006cd9] hover:text-white
