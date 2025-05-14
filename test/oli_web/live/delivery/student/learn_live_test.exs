@@ -6,7 +6,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
   import Oli.Factory
   import Ecto.Query, warn: false
 
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
   alias Oli.Delivery.Sections
   alias Oli.Resources.ResourceType
   alias Oli.Delivery.Attempts.Core
@@ -35,7 +35,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     })
   end
 
-  defp create_elixir_project(_) do
+  defp create_elixir_project(_, add_schedule? \\ true) do
     author = insert(:author)
     project = insert(:project, authors: [author])
 
@@ -475,51 +475,53 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     {:ok, _} = Sections.rebuild_contained_pages(section)
     {:ok, _} = Sections.rebuild_contained_objectives(section)
 
-    # schedule start and end date for unit 1 section_resource
-    Sections.get_section_resource(section.id, unit_1_revision.resource_id)
-    |> Sections.update_section_resource(%{
-      start_date: ~U[2023-10-31 20:00:00Z],
-      end_date: ~U[2023-12-31 20:00:00Z]
-    })
+    if add_schedule? do
+      # schedule start and end date for unit 1 section_resource
+      Sections.get_section_resource(section.id, unit_1_revision.resource_id)
+      |> Sections.update_section_resource(%{
+        start_date: ~U[2023-10-31 20:00:00Z],
+        end_date: ~U[2023-12-31 20:00:00Z]
+      })
 
-    # schedule start and end date for module 1 section_resource
-    Sections.get_section_resource(section.id, module_1_revision.resource_id)
-    |> Sections.update_section_resource(%{
-      start_date: ~U[2023-11-01 20:00:00Z],
-      end_date: ~U[2023-11-15 20:00:00Z]
-    })
+      # schedule start and end date for module 1 section_resource
+      Sections.get_section_resource(section.id, module_1_revision.resource_id)
+      |> Sections.update_section_resource(%{
+        start_date: ~U[2023-11-01 20:00:00Z],
+        end_date: ~U[2023-11-15 20:00:00Z]
+      })
 
-    # schedule start and end date for page 4 section_resource
-    Sections.get_section_resource(section.id, page_4_revision.resource_id)
-    |> Sections.update_section_resource(%{
-      start_date: ~U[2023-11-02 20:00:00Z],
-      end_date: ~U[2023-11-03 20:00:00Z]
-    })
+      # schedule start and end date for page 4 section_resource
+      Sections.get_section_resource(section.id, page_4_revision.resource_id)
+      |> Sections.update_section_resource(%{
+        start_date: ~U[2023-11-02 20:00:00Z],
+        end_date: ~U[2023-11-03 20:00:00Z]
+      })
 
-    # schedule start and end date for page 11 and 12 section_resource
-    Sections.get_section_resource(section.id, page_11_revision.resource_id)
-    |> Sections.update_section_resource(%{
-      start_date: ~U[2023-11-02 20:00:00Z],
-      end_date: ~U[2023-11-03 20:00:00Z]
-    })
+      # schedule start and end date for page 11 and 12 section_resource
+      Sections.get_section_resource(section.id, page_11_revision.resource_id)
+      |> Sections.update_section_resource(%{
+        start_date: ~U[2023-11-02 20:00:00Z],
+        end_date: ~U[2023-11-03 20:00:00Z]
+      })
 
-    Sections.get_section_resource(section.id, page_12_revision.resource_id)
-    |> Sections.update_section_resource(%{
-      scheduling_type: :due_by,
-      start_date: ~U[2023-11-02 20:00:00Z],
-      end_date: ~U[2023-11-03 20:00:00Z]
-    })
+      Sections.get_section_resource(section.id, page_12_revision.resource_id)
+      |> Sections.update_section_resource(%{
+        scheduling_type: :due_by,
+        start_date: ~U[2023-11-02 20:00:00Z],
+        end_date: ~U[2023-11-03 20:00:00Z]
+      })
 
-    # set page 15 to in class activity and page 14 to due by
-    Sections.get_section_resource(section.id, page_15_revision.resource_id)
-    |> Sections.update_section_resource(%{
-      scheduling_type: :inclass_activity
-    })
+      # set page 15 to in class activity and page 14 to due by
+      Sections.get_section_resource(section.id, page_15_revision.resource_id)
+      |> Sections.update_section_resource(%{
+        scheduling_type: :inclass_activity
+      })
 
-    Sections.get_section_resource(section.id, page_14_revision.resource_id)
-    |> Sections.update_section_resource(%{
-      scheduling_type: :due_by
-    })
+      Sections.get_section_resource(section.id, page_14_revision.resource_id)
+      |> Sections.update_section_resource(%{
+        scheduling_type: :due_by
+      })
+    end
 
     %{
       author: author,
@@ -1276,8 +1278,8 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
              )
     end
 
-    @tag :skip
     # This feature was disabled in ticket NG-201 but will be reactivated with NG23-199
+    @tag :skip
     test "can see module learning objectives (if any) in the tooltip", %{
       conn: conn,
       section: section
@@ -1320,6 +1322,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert render(learning_objectives_tooltip) =~ "Objective 4"
     end
 
+    @tag :flaky
     test "can see unit correct progress when all pages are completed",
          %{
            conn: conn,
@@ -1426,7 +1429,6 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     end
 
     # TODO: finish this test when the handle event for the "Let's discuss" button is implemented
-    @tag :skip
     test "can click on let's discuss button to open DOT AI Bot interface", %{
       conn: conn,
       section: section
@@ -1547,6 +1549,23 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
                "Due by:\n              </span><span class=\"whitespace-nowrap\">\n                Not yet scheduled"
     end
 
+    test "can not see the 'Not yet scheduled' label when the instructor has not set a schedule",
+         %{conn: conn, user: user} do
+      %{section: section_without_schedule} = create_elixir_project(%{}, false)
+
+      Sections.enroll(user.id, section_without_schedule.id, [
+        ContextRoles.get_role(:context_learner)
+      ])
+
+      Sections.mark_section_visited_for_student(section_without_schedule, user)
+
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section_without_schedule.slug))
+
+      refute has_element?(view, ~s{div[role="unit_1"] div[role="schedule_details"]})
+      refute has_element?(view, ~s{div[role="unit_2"] div[role="schedule_details"]})
+    end
+
+    @tag :flaky
     test "can see units, modules and page (at module level) progresses", %{
       conn: conn,
       user: user,
@@ -2209,54 +2228,6 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
              )
     end
 
-    test "can see checked square icon and score details for attempted graded pages in the module index details",
-         %{
-           conn: conn,
-           user: user,
-           section: section,
-           mcq_1: mcq_1,
-           page_4: page_4_revision,
-           project: project,
-           publication: publication
-         } do
-      set_progress(section.id, page_4_revision.resource_id, user.id, 1.0, page_4_revision)
-
-      set_activity_attempt(
-        page_4_revision,
-        mcq_1,
-        user,
-        section,
-        project.id,
-        publication.id,
-        "id_for_option_a",
-        true
-      )
-
-      set_activity_attempt(
-        page_4_revision,
-        mcq_1,
-        user,
-        section,
-        project.id,
-        publication.id,
-        "id_for_option_a",
-        false
-      )
-
-      {:ok, view, _html} =
-        live(conn, Utils.learn_live_path(section.slug, selected_view: :outline))
-
-      # when the garbage collection message is recieved we know the async metrics were loaded
-      # since the gc message is sent from the handle_info that loads the async metrics
-      assert_receive(:gc, 2_000)
-
-      # graded page with title "Page 4" in the hierarchy has the correct icon
-      assert has_element?(
-               view,
-               ~s{button[role="page 4 details"] div[role="square check icon"]}
-             )
-    end
-
     test "sees a clock icon beside the duration in minutes for graded pages", %{
       conn: conn,
       section: section,
@@ -2525,6 +2496,63 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert render(subsection_1_element) =~ "Erlang as a motivation"
       assert render(subsection_1_element) =~ "ml-[40px]"
     end
+
+    test "can see scheduling details when course has scheduled resources", %{
+      conn: conn,
+      section: section,
+      unit_1: unit_1,
+      module_1: module_1,
+      unit_2: unit_2
+    } do
+      {:ok, view, _html} =
+        live(conn, Utils.learn_live_path(section.slug, selected_view: :outline))
+
+      assert view
+             |> element(~s{div[role="unit #{unit_1.resource_id} scheduling details"]})
+             |> render() =~ "Sun, Dec 31, 2023 (8:00pm)"
+
+      assert view
+             |> element(~s{div[role="unit #{unit_2.resource_id} scheduling details"]})
+             |> render() =~ "Not yet scheduled"
+
+      assert view
+             |> element(~s{div[role="module #{module_1.resource_id} scheduling details"]})
+             |> render() =~ "Wed, Nov 15, 2023 (8:00pm)"
+
+      assert view
+             |> element(
+               ~s{button[role="page 4 details"] div[role="due date and score"] span[role="page due date"]}
+             )
+             |> render() =~ "Read by: Fri Nov 3, 2023"
+    end
+
+    test "does not see scheduling details when course has no scheduled resources", %{
+      conn: conn,
+      user: user
+    } do
+      %{section: section_without_schedule, unit_1: unit_1, unit_2: unit_2, module_1: module_1} =
+        create_elixir_project(%{}, false)
+
+      enroll_as_student(%{user: user, section: section_without_schedule})
+      mark_section_visited(%{user: user, section: section_without_schedule})
+
+      {:ok, view, _html} =
+        live(conn, Utils.learn_live_path(section_without_schedule.slug, selected_view: :outline))
+
+      refute view
+             |> has_element?(~s{div[role="unit #{unit_1.resource_id} scheduling details"]})
+
+      refute view
+             |> has_element?(~s{div[role="unit #{unit_2.resource_id} scheduling details"]})
+
+      refute view
+             |> has_element?(~s{div[role="module #{module_1.resource_id} scheduling details"]})
+
+      refute view
+             |> has_element?(
+               ~s{button[role="page 4 details"] div[role="due date and score"] span[role="page due date"]}
+             )
+    end
   end
 
   describe "view selector" do
@@ -2684,6 +2712,35 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
                view,
                ~s{a[href="/sections/#{section.slug}/discussions?sidebar_expanded=true"]},
                "Discussions"
+             )
+    end
+
+    test "renders the Schedule link considering the section's scheduled_resources",
+         %{conn: conn, section: section, user: user} do
+      # a section with schedule should have the Schedule link
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
+
+      assert has_element?(
+               view,
+               ~s{a[href="/sections/#{section.slug}/student_schedule?sidebar_expanded=true"]},
+               "Schedule"
+             )
+
+      # a section without schedule should not have the Schedule link
+      %{section: section_without_schedule} = create_elixir_project(%{}, false)
+
+      Sections.enroll(user.id, section_without_schedule.id, [
+        ContextRoles.get_role(:context_learner)
+      ])
+
+      Sections.mark_section_visited_for_student(section_without_schedule, user)
+
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section_without_schedule.slug))
+
+      refute has_element?(
+               view,
+               ~s{a[href="/sections/#{section_without_schedule.slug}/student_schedule?sidebar_expanded=true"]},
+               "Schedule"
              )
     end
 

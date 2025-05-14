@@ -1,7 +1,7 @@
 defmodule Oli.ActivitiesTest do
   use Oli.DataCase
-  alias Oli.Activities
   import ExUnit.Assertions
+  alias Oli.Activities
 
   setup [:author_project_fixture]
 

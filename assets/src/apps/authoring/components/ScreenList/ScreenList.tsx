@@ -20,6 +20,7 @@ import { BlankScreenIcon } from '../Flowchart/screen-icons/BlankScreenIcon';
 import { ScreenValidationColors, screenTypeToIcon } from '../Flowchart/screen-icons/screen-icons';
 import { ScreenTypes } from '../Flowchart/screens/screen-factories';
 import { getFirstScreenInSequence, sortScreens } from '../Flowchart/screens/screen-utils';
+import { validateScreen } from '../Flowchart/screens/screen-validation';
 import { InfoIcon } from '../Flowchart/sidebar/InfoIcon';
 import ConfirmDelete from '../Modal/DeleteConfirmationModal';
 import { AddScreenModal } from './AddScreenModal';
@@ -204,7 +205,11 @@ export const ScreenList: React.FC<Props> = ({ onFlowchartMode }) => {
               onContextMenu={onScreenRightClick(activity.resourceId!)}
             >
               <ScreenIcon
-                fill={ScreenValidationColors.VALIDATED}
+                fill={
+                  validateScreen(activity, activities, sequence)?.length === 0
+                    ? ScreenValidationColors.VALIDATED
+                    : ScreenValidationColors.NOT_VALIDATED
+                }
                 screenType={activity.authoring?.flowchart?.screenType || 'blank_screen'}
               />
               {activity.title || 'untitled screen'}

@@ -2,7 +2,7 @@ defmodule Oli.Delivery.Page.PageContextTest do
   use Oli.DataCase
 
   alias Oli.Delivery.Page.PageContext
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
   alias Oli.Delivery.Sections
 
   describe "page context" do
@@ -34,7 +34,16 @@ defmodule Oli.Delivery.Page.PageContextTest do
           %{title: "one", objectives: %{"1" => [o]}, content: content},
           :a1
         )
-        |> Seeder.add_activity(%{title: "two", content: %{"stem" => "3"}}, :a2)
+        |> Seeder.add_activity(
+          %{
+            title: "two",
+            content: %{
+              "stem" => "3",
+              "authoring" => %{"parts" => [%{"id" => "1", "responses" => []}]}
+            }
+          },
+          :a2
+        )
         |> Seeder.add_user(%{}, :user1)
 
       attrs = %{

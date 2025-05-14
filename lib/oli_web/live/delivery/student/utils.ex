@@ -176,6 +176,7 @@ defmodule OliWeb.Delivery.Student.Utils do
   attr :effective_settings, Oli.Delivery.Settings.Combined
   attr :ctx, SessionContext
   attr :is_adaptive, :boolean
+  attr :has_scheduled_resources?, :boolean
 
   def page_terms(assigns) do
     ~H"""
@@ -187,16 +188,46 @@ defmodule OliWeb.Delivery.Student.Utils do
         TERMS
       </span>
       <ul class="list-disc ml-6">
-        <li id="page_due_terms">
+        <li :if={@has_scheduled_resources?} id="page_due_terms">
           <.page_due_term effective_settings={@effective_settings} ctx={@ctx} />
         </li>
-        <li :if={@effective_settings.end_date != nil} id="page_scoring_terms">
+        <li :if={!@effective_settings.batch_scoring} id="score_as_you_go_term">
+          <%= score_as_you_go(@effective_settings) %>
+        </li>
+        <li id="page_scoring_terms">
           <%= page_scoring_term(@effective_settings.scoring_strategy_id) %>
+        </li>
+        <li :if={!@effective_settings.batch_scoring} id="question_attempts">
+          <%= question_attempts(@effective_settings) %>
         </li>
         <.time_limit_term effective_settings={@effective_settings} />
         <.submit_term effective_settings={@effective_settings} />
       </ul>
     </div>
+    """
+  end
+
+  defp score_as_you_go(assigns) do
+    ~H"""
+    <strong>Score as you go:</strong> your score is updated as you complete questions on this page.
+    """
+  end
+
+  defp question_attempts(%{max_attempts: 0} = assigns) do
+    ~H"""
+    You can attempt each question <strong>unlimited</strong> times.
+    """
+  end
+
+  defp question_attempts(%{max_attempts: 1} = assigns) do
+    ~H"""
+    You can attempt each question <strong>1</strong> time.
+    """
+  end
+
+  defp question_attempts(assigns) do
+    ~H"""
+    You can attempt each question <strong><%= @max_attempts %></strong> times.
     """
   end
 
@@ -227,13 +258,7 @@ defmodule OliWeb.Delivery.Student.Utils do
   end
 
   defp submit_term(
-         %{
-           effective_settings: %{
-             late_submit: :allow,
-             time_limit: time_limit,
-             scheduling_type: :due_by
-           }
-         } = assigns
+         %{effective_settings: %{late_submit: :allow, time_limit: time_limit}} = assigns
        )
        when time_limit not in ["nil", 0] do
     ~H"""
@@ -809,6 +834,9 @@ defmodule OliWeb.Delivery.Student.Utils do
     end
   end
 
+  def format_score(nil), do: "--"
+  def format_score(v), do: parse_score(v)
+
   @doc """
   Evaluates if an attempt is expired based on the attempt state and the time limit, late submission policy, and end date.
   An attempt can expire if its state is :active and either has a time limit and/or disallows late submissions.
@@ -939,6 +967,42 @@ defmodule OliWeb.Delivery.Student.Utils do
     """
   end
 
+  attr :attempt_message, :any
+
+  def blocking_gates_warning(assigns) do
+    # TODO: update the support modal with the one that will be implemented on https://github.com/Simon-Initiative/oli-torus/pull/5584
+    ~H"""
+    <div id="blocking_gates_warning" class="container">
+      <div class="grid grid-cols-12">
+        <div class="col-span-12 text-center pt-4">
+          <p><i class="far fa-hand-paper" aria-hidden="true" style="font-size: 64px"></i></p>
+          <h2 class="mt-4 mb-4">This Resource is Gated</h2>
+          <p>
+            You are trying to access a resource that is gated by the following condition<%= if Enum.count(
+                                                                                                 @attempt_message
+                                                                                               ) >
+                                                                                                 1,
+                                                                                               do:
+                                                                                                 "s",
+                                                                                               else:
+                                                                                                 "" %>:
+            <ul style="list-style-position: inside">
+              <li :for={reason <- @attempt_message}><%= reason %></li>
+            </ul>
+          </p>
+
+          <p class="mt-4">
+            If you think this is an error or would like more information, please <a
+              href="javascript:"
+              onclick="showHelpModal();"
+            >contact support</a>.
+          </p>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
   def coalesce(first, second) do
     case {first, second} do
       {nil, nil} -> nil
@@ -949,6 +1013,50 @@ defmodule OliWeb.Delivery.Student.Utils do
 
   def is_adaptive_page(%Oli.Resources.Revision{content: %{"advancedDelivery" => true}}), do: true
   def is_adaptive_page(_), do: false
+
+  @doc """
+  Returns the grouped agenda resources for a section and user considering if the section is scheduled or not.
+  - If it is scheduled, returns the schedule for the current week and the next week.
+  - If it is not scheduled, returns the first incomplete chunk of the agenda.
+  Each chunk is a list of 6 container groups, ordered by the order they appear in the curriculum.
+  Incomplete chunk means that at least one container group has a progress != 100.0
+  """
+  def grouped_agenda_resources(
+        section,
+        combined_settings,
+        current_user_id,
+        true = _has_scheduled_resources?
+      ) do
+    Sections.get_schedule_for_current_and_next_week(
+      section,
+      combined_settings,
+      current_user_id
+    )
+  end
+
+  def grouped_agenda_resources(
+        section,
+        combined_settings,
+        current_user_id,
+        false = _has_scheduled_resources?
+      ) do
+    %{{nil, nil} => sorted_container_groups} =
+      Sections.get_not_scheduled_agenda(section, combined_settings, current_user_id)
+
+    %{{nil, nil} => get_first_incomplete_chunk(sorted_container_groups)}
+  end
+
+  defp get_first_incomplete_chunk(sorted_container_groups, chunk_size \\ 6) do
+    # returns the first chunk that has a group with progress != 100.0
+    # if all chunks have groups with progress == 100.0, returns an empty list
+    # this is used to determine which chunk to display in the agenda when the section is not scheduled
+
+    sorted_container_groups
+    |> Enum.chunk_every(chunk_size)
+    |> Enum.find([], fn chunk ->
+      Enum.any?(chunk, fn group -> group.progress != 100.0 end)
+    end)
+  end
 
   defp build_page_link_params(section_slug, page, request_path, selected_view) do
     current_page_path =

@@ -4,7 +4,7 @@ defmodule Oli.Delivery.PaywallTest do
   import Ecto.Query, warn: false
   import Oli.Factory
 
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
   alias Oli.Delivery.{Sections, Paywall}
   alias Oli.Delivery.Paywall.{AccessSummary, Payment, Discount}
   alias Oli.Publishing
@@ -428,6 +428,22 @@ defmodule Oli.Delivery.PaywallTest do
       })
 
       assert {:ok, Money.new(:USD, 80)} == Paywall.section_cost_from_product(paid, institution)
+    end
+
+    test "section_cost_from_product/2 returns nil amount when paywall is bypassed",
+         %{
+           paid: paid,
+           institution: institution
+         } do
+      {:ok, _} =
+        Paywall.create_discount(%{
+          institution_id: institution.id,
+          section_id: nil,
+          type: :fixed_amount,
+          bypass_paywall: true
+        })
+
+      assert {:ok, nil} == Paywall.section_cost_from_product(paid, institution)
     end
 
     percentage_discounts = [

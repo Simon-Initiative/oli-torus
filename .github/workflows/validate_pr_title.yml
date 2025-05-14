@@ -18,7 +18,7 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const titlePattern = /^(\[BUG FIX\]|\[ENHANCEMENT\]|\[FEATURE\]|\[CHORE\]|\[PERFORMANCE\]) (\[MER-\d{3}\]|\[MER-\d{4}\]|\[NG23-\d{2}\]|\[NG23-\d{3}\]|\[NG23-\d{4}\]) .+$/;
+            const titlePattern = /^(\[BUG FIX\]|\[ENHANCEMENT\]|\[FEATURE\]|\[CHORE\]|\[PERFORMANCE\]) (\[MER-\d{3}\]|\[MER-\d{4}\]|\[TQA-\d{1}\]|\[TQA-\d{2}\]|\[TQA-\d{3}\]|\[TQA-\d{4}\]) .+$/;
             const title = context.payload.pull_request.title;
             if (!titlePattern.test(title)) {
               core.setFailed("Pull Request title does not match the required format '[CHANGE-TYPE] [TICKET-REFERENCE] Description'.");

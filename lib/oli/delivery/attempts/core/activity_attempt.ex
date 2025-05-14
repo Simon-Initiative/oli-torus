@@ -16,13 +16,13 @@ defmodule Oli.Delivery.Attempts.Core.ActivityAttempt do
     field(:scoreable, :boolean, default: true)
     field(:score, :float)
     field(:out_of, :float)
+    field(:aggregate_score, :float, default: nil)
+    field(:aggregate_out_of, :float, default: nil)
     field(:custom_scores, :map)
     field(:transformed_model, :map, default: nil)
     field(:group_id, :string, default: nil)
     field(:survey_id, :string, default: nil)
     field(:selection_id, :string, default: nil)
-    field(:cleanup, :integer, default: -1)
-
     belongs_to(:resource, Oli.Resources.Resource)
     belongs_to(:revision, Oli.Resources.Revision)
     belongs_to(:resource_attempt, Oli.Delivery.Attempts.Core.ResourceAttempt)
@@ -50,13 +50,14 @@ defmodule Oli.Delivery.Attempts.Core.ActivityAttempt do
       :attempt_number,
       :score,
       :out_of,
+      :aggregate_score,
+      :aggregate_out_of,
       :custom_scores,
       :lifecycle_state,
       :date_evaluated,
       :date_submitted,
       :scoreable,
       :transformed_model,
-      :cleanup,
       :resource_attempt_id,
       :resource_id,
       :revision_id,

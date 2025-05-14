@@ -5,7 +5,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
   import Oli.Factory
   import Phoenix.LiveViewTest
 
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
   alias Oli.Activities
   alias Oli.Analytics.Common.Pipeline
   alias Oli.Analytics.Summary

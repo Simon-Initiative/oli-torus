@@ -176,6 +176,9 @@ defmodule Oli.Delivery.Settings do
       start_date: combine_field(:start_date, section_resource, student_exception),
       end_date: combine_field(:end_date, section_resource, student_exception),
       max_attempts: max_attempts,
+      batch_scoring: combine_field(:batch_scoring, section_resource, student_exception),
+      replacement_strategy:
+        combine_field(:replacement_strategy, section_resource, student_exception),
       retake_mode: combine_field(:retake_mode, section_resource, student_exception),
       assessment_mode: combine_field(:assessment_mode, section_resource, student_exception),
       late_submit: combine_field(:late_submit, section_resource, student_exception),
@@ -238,7 +241,24 @@ defmodule Oli.Delivery.Settings do
     |> Repo.update()
   end
 
-  def was_late?(_, %Combined{late_submit: :disallow}, _now), do: false
+  def was_late?(%ResourceAttempt{}, %Combined{late_submit: :disallow}, _now), do: false
+
+  def was_late?(
+        %ResourceAttempt{} = resource_attempt,
+        %Combined{scheduling_type: :read_by, late_submit: :allow, time_limit: time_limit} =
+          effective_settings,
+        now
+      ) do
+    if time_limit in [0, nil, ""] do
+      false
+    else
+      effective_deadline =
+        DateTime.add(resource_attempt.inserted_at, time_limit, :minute)
+        |> DateTime.add(effective_settings.grace_period, :minute)
+
+      DateTime.compare(now, effective_deadline) == :gt
+    end
+  end
 
   def was_late?(
         %ResourceAttempt{} = resource_attempt,

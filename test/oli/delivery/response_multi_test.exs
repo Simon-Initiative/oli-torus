@@ -151,7 +151,7 @@ defmodule Oli.Delivery.ResponseMultiTest do
               [
                 # Finding no matching response marks the answer as incorrect
                 # with out_of being the highest of any response considered
-                %FeedbackAction{part_id: "651271558", score: 0, out_of: 1, feedback: _}
+                %FeedbackAction{part_id: "651271558", score: +0.0, out_of: 1.0, feedback: _}
               ]} = Evaluate.evaluate_from_preview(content, part_inputs)
     end
   end

@@ -1,6 +1,10 @@
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { selectIsLegacyTheme, selectPreviewMode } from 'apps/delivery/store/features/page/slice';
+import {
+  selectIsGraded,
+  selectIsLegacyTheme,
+  selectPreviewMode,
+} from 'apps/delivery/store/features/page/slice';
 import TimeAgo from '../../../../../components/common/TimeAgo';
 import { selectCurrentActivityId } from '../../../store/features/activities/slice';
 import { setHistoryNavigationTriggered } from '../../../store/features/adaptivity/slice';
@@ -16,6 +20,7 @@ interface HistoryPanelProps {
 const HistoryPanel: React.FC<HistoryPanelProps> = ({ items, onMinimize, onRestart }) => {
   const dispatch = useDispatch();
   const currentActivityId = useSelector(selectCurrentActivityId);
+  const graded = useSelector(selectIsGraded);
   // TODO: we need to track this as a separate ID
   const currentHistoryActiveActivityId = currentActivityId;
 
@@ -110,7 +115,10 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ items, onMinimize, onRestar
             <button onClick={onRestart} className="theme-history__restart">
               <span>
                 <div className="theme-history__restart-icon" />
-                <span className="theme-history__restart-label">Restart Lesson</span>
+                <span className="theme-history__restart-label">
+                  {' '}
+                  {graded ? 'Submit Attempt' : 'Restart Lesson'}
+                </span>
               </span>
             </button>
           </div>

@@ -149,6 +149,7 @@ export const validatePathSet = (
     case 'input-text':
     case 'check-all-that-apply':
     case 'slider':
+    case 'text-slider':
     case 'input-number':
       return validateCorrectOrIncorrectQuestion(paths);
 

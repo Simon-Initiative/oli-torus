@@ -6,7 +6,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ActionsTabTest do
   import Phoenix.LiveViewTest
   import Ecto.Query, only: [where: 3, limit: 2]
 
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Enrollment
   alias Oli.Delivery.Paywall

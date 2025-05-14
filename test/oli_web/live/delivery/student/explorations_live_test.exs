@@ -6,7 +6,7 @@ defmodule OliWeb.Delivery.Student.ExplorationsLiveTest do
   import Oli.Factory
   import Ecto.Query, warn: false
 
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
   alias Oli.Delivery.Sections
   alias Oli.Resources.ResourceType
 

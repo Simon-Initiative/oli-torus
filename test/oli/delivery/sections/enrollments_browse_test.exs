@@ -6,7 +6,7 @@ defmodule Oli.Delivery.Sections.EnrollmentsBrowseTest do
   alias Oli.Delivery.Sections
   alias Oli.Repo.{Paging, Sorting}
   alias Oli.Delivery.Sections.{EnrollmentBrowseOptions}
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
 
   def browse(section, offset, field, direction, text_search, is_student, is_instructor) do
     Sections.browse_enrollments(

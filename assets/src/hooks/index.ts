@@ -4,6 +4,7 @@ import { BeforeUnloadListener } from './before_unload';
 import { CheckboxListener } from './checkbox_listener';
 import { ClickOutside } from './click_outside';
 import { ClickExecJS, HoverAway } from './click_variations';
+import { ConditionalToggle } from './conditional_toggle';
 import { CopyListener } from './copy_listener';
 import { Countdown } from './countdown';
 import { CountdownTimer } from './countdown_timer';
@@ -105,4 +106,5 @@ export const Hooks = {
   OnMountAndUpdate,
   FixedNavigationBar,
   SubmitTechSupportForm,
+  ConditionalToggle,
 };

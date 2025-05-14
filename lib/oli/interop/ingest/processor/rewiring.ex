@@ -13,24 +13,28 @@ defmodule Oli.Interop.Ingest.Processing.Rewiring do
 
   @spec rewire_activity_references(map(), any) :: map()
   def rewire_activity_references(content, activity_map) do
-    {mapped, _} =
-      PageContent.map_reduce(content, {:ok, []}, fn e, {status, invalid_refs}, _tr_context ->
-        case e do
-          %{"type" => "activity-reference", "activity_id" => original} = ref ->
-            case retrieve(activity_map, original) do
-              nil ->
-                {ref, {:error, [original | invalid_refs]}}
+    PageContent.map_reduce(content, {:ok, []}, fn e, {status, invalid_refs}, _tr_context ->
+      case e do
+        %{"type" => "activity-reference", "activity_id" => original} = ref ->
+          case retrieve(activity_map, original) do
+            nil ->
+              {ref, {:error, [original | invalid_refs]}}
 
-              retrieved ->
-                {Map.put(ref, "activity_id", retrieved), {status, invalid_refs}}
-            end
+            retrieved ->
+              {Map.put(ref, "activity_id", retrieved), {status, invalid_refs}}
+          end
 
-          other ->
-            {other, {status, invalid_refs}}
-        end
-      end)
+        other ->
+          {other, {status, invalid_refs}}
+      end
+    end)
+    |> case do
+      {mapped, {:ok, _}} ->
+        mapped
 
-    mapped
+      {_mapped, {:error, invalid_refs}} ->
+        {:error, {:rewire_activity_references, invalid_refs}}
+    end
   end
 
   @spec rewire_report_activity_references(map(), any) :: map()
@@ -62,7 +66,13 @@ defmodule Oli.Interop.Ingest.Processing.Rewiring do
         case e do
           %{"type" => "selection", "logic" => logic} = ref ->
             case logic do
-              %{"conditions" => %{"children" => [%{"fact" => "tags", "value" => originals}]}} ->
+              %{
+                "conditions" => %{
+                  "children" => [
+                    %{"fact" => "tags", "value" => originals, "operator" => operator}
+                  ]
+                }
+              } ->
                 Enum.reduce(originals, {[], {:ok, []}}, fn o, {ids, {status, invalid_ids}} ->
                   case retrieve(tag_map, o) do
                     nil ->
@@ -74,7 +84,7 @@ defmodule Oli.Interop.Ingest.Processing.Rewiring do
                 end)
                 |> case do
                   {ids, {:ok, _}} ->
-                    children = [%{"fact" => "tags", "value" => ids, "operator" => "equals"}]
+                    children = [%{"fact" => "tags", "value" => ids, "operator" => operator}]
                     conditions = Map.put(logic["conditions"], "children", children)
                     logic = Map.put(logic, "conditions", conditions)
 
@@ -84,7 +94,7 @@ defmodule Oli.Interop.Ingest.Processing.Rewiring do
                     {ref, {status, invalid_ids ++ invalid_refs}}
                 end
 
-              %{"conditions" => %{"fact" => "tags", "value" => originals}} ->
+              %{"conditions" => %{"fact" => "tags", "value" => originals, "operator" => operator}} ->
                 Enum.reduce(originals, {[], {:ok, []}}, fn o, {ids, {status, invalid_ids}} ->
                   case retrieve(tag_map, o) do
                     nil ->
@@ -96,7 +106,7 @@ defmodule Oli.Interop.Ingest.Processing.Rewiring do
                 end)
                 |> case do
                   {ids, {:ok, _}} ->
-                    updated = %{"fact" => "tags", "value" => ids, "operator" => "equals"}
+                    updated = %{"fact" => "tags", "value" => ids, "operator" => operator}
                     logic = Map.put(logic, "conditions", updated)
 
                     {Map.put(ref, "logic", logic), {status, invalid_refs}}

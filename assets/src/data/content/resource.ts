@@ -81,6 +81,8 @@ export const getResourceContentName = (content: ResourceContent): string => {
       return 'Page Break';
     case 'selection':
       return 'Selection';
+    default:
+      return 'Unknown';
   }
 };
 
@@ -300,6 +302,7 @@ export interface ActivityBankSelection {
   id: string;
   logic: Bank.Logic;
   count: number;
+  pointsPerActivity?: number;
   children: undefined;
 }
 

@@ -7,7 +7,7 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLiveTest do
 
   alias OliWeb.Common.FormatDateTime
   alias OliWeb.Delivery.StudentDashboard.CourseContentLive
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Attempts.Core
   alias Oli.Delivery.Sections.SectionResource

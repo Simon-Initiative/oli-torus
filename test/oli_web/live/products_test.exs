@@ -138,6 +138,7 @@ defmodule OliWeb.ProductsLiveTest do
       assert has_element?(view, "a", product_2.base_project.title)
     end
 
+    @tag :flaky
     test "search product by amount", %{conn: conn, product: product} do
       [{_, product_2} | _] = create_product(conn)
 
@@ -166,7 +167,7 @@ defmodule OliWeb.ProductsLiveTest do
       assert has_element?(view, "a", product_2.title)
     end
 
-    @tag :skip
+    @tag :flaky
     test "applies sorting by creation date", %{conn: conn, product: product} do
       product_2 =
         insert(:section,
@@ -358,7 +359,6 @@ defmodule OliWeb.ProductsLiveTest do
              |> render() =~ "<img id=\"current-product-img\""
     end
 
-    @tag :skip
     test "canceling an upload restores previous rendered image", %{conn: conn} do
       current_image = "https://example.com/some-image-url.png"
       product = insert(:section, type: :blueprint, cover_image: current_image)

@@ -1,7 +1,7 @@
 defmodule OliWeb.Components.Common do
   use Phoenix.Component
 
-  import OliWeb.Gettext
+  use Gettext, backend: OliWeb.Gettext
 
   alias OliWeb.Common.{FormatDateTime, React}
   alias Phoenix.LiveView.JS
@@ -303,6 +303,8 @@ defmodule OliWeb.Components.Common do
 
   attr(:label_position, :atom, default: :top, values: [:top, :bottom, :responsive])
   attr(:error_position, :atom, default: :bottom, values: [:top, :bottom])
+  attr(:additional_text, :string, default: nil)
+  attr(:group_class, :string, default: "contents")
 
   slot(:inner_block)
 
@@ -366,8 +368,11 @@ defmodule OliWeb.Components.Common do
 
   def input(%{type: "textarea"} = assigns) do
     ~H"""
-    <div class="contents" phx-feedback-for={@name}>
+    <div class={@group_class} phx-feedback-for={@name}>
       <.label :if={@label} for={@id}><%= @label %></.label>
+      <%= if @additional_text do %>
+        <%= @additional_text %>
+      <% end %>
       <textarea
         id={@id}
         name={@name}
@@ -491,6 +496,9 @@ defmodule OliWeb.Components.Common do
     <div class={@group_class} phx-feedback-for={@name}>
       <.label :if={@label && @label_position == :top} class={@label_class} for={@id}>
         <%= @label %>
+        <%= if @additional_text do %>
+          <%= @additional_text %>
+        <% end %>
       </.label>
       <.error :for={msg <- @errors} :if={@error_position == :top}><%= msg %></.error>
       <input
@@ -508,6 +516,9 @@ defmodule OliWeb.Components.Common do
         for={@id}
       >
         <%= @label %>
+        <%= if @additional_text do %>
+          <%= @additional_text %>
+        <% end %>
       </.label>
       <.error :for={msg <- @errors} :if={@error_position == :bottom}><%= msg %></.error>
     </div>
@@ -536,7 +547,7 @@ defmodule OliWeb.Components.Common do
       if assigns[:variant] == "outlined" do
         {"form-label-group", "control-label pointer-events-none", ["form-control" | input_class]}
       else
-        {"flex flex-col", "", input_class}
+        {"flex flex-col", assigns.label_class || "", input_class}
       end
 
     assign(assigns, group_class: group_class, label_class: label_class, input_class: input_class)
@@ -1123,15 +1134,30 @@ defmodule OliWeb.Components.Common do
   attr :name, :string, default: nil
   attr :checked, :boolean, default: false
   attr :phx_target, :any, default: nil
+  attr :with_confirmation, :boolean, default: false
   attr :rest, :global, include: ~w(class disabled role)
 
   def toggle_switch(assigns) do
     ~H"""
     <div {@rest}>
-      <form phx-change={@on_toggle} phx-target={@phx_target}>
+      <form id="toggle_switch_form" phx-change={@on_toggle} phx-target={@phx_target}>
         <label class="inline-flex items-center cursor-pointer">
-          <input type="checkbox" name={@name} class="sr-only peer" checked={@checked} />
-          <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary">
+          <input
+            id="toggle_switch_checkbox"
+            type="checkbox"
+            name={@name}
+            class="sr-only peer"
+            checked={@checked}
+            phx-hook={if @with_confirmation, do: "ConditionalToggle"}
+            data-checked={"#{@checked}"}
+          />
+          <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4
+                      peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full
+                      peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full
+                      peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px]
+                      after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5
+                      after:w-5 after:transition-transform dark:border-gray-600 peer-checked:bg-primary
+                      after:duration-300 after:ease-in-out transition-colors duration-300 ease-in-out">
           </div>
           <%= case @label do %>
             <% nil -> %>

@@ -18,7 +18,7 @@ defmodule Oli.TestHelpers do
   alias Oli.PartComponents
   alias Oli.Publishing
   alias OliWeb.Common.SessionContext
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
   alias Oli.Delivery.Gating.GatingConditionData
   alias Oli.Resources.ResourceType
   alias Oli.Delivery.Attempts.PageLifecycle
@@ -326,7 +326,7 @@ defmodule Oli.TestHelpers do
     {:ok, instructor} =
       Accounts.update_user_platform_roles(
         instructor,
-        [Lti_1p3.Tool.PlatformRoles.get_role(:institution_instructor)]
+        [Lti_1p3.Roles.PlatformRoles.get_role(:institution_instructor)]
       )
 
     conn =
@@ -3646,7 +3646,7 @@ defmodule Oli.TestHelpers do
 
   defp wait_while_helper(f, interval, timeout, start) do
     if :os.system_time(:millisecond) - start > timeout do
-      throw("Timeout waiting for condition to be true. Timeout: #{timeout} ms.")
+      ExUnit.Assertions.flunk("Timeout waiting for condition to be true. Timeout: #{timeout} ms.")
     else
       case f.() do
         true ->

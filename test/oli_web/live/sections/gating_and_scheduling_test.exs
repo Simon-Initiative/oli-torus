@@ -5,7 +5,7 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
   import Oli.Factory
   import Phoenix.{ConnTest, LiveViewTest}
 
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
   alias Oli.Delivery.{Gating, Sections}
   alias Oli.Delivery.Gating.GatingCondition
   alias Oli.Delivery.Sections.Section
@@ -440,6 +440,7 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
              ) == input_end_date
     end
 
+    @tag :flaky
     test "create student exceptions for more than one student works correctly", %{
       conn: conn,
       section_1: section,

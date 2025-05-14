@@ -16,6 +16,7 @@ import {
 import { configureStore } from 'state/store';
 import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
 import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
+import { ScoreAsYouGoHeader } from '../common/ScoreAsYouGoHeader';
 import { Manifest } from '../types';
 import { LogicLabModelSchema, getLabServer, isLabMessage } from './LogicLabModelSchema';
 
@@ -192,14 +193,17 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
         </div>
       )}
       {loading === 'loaded' && (
-        <iframe
-          title={`LogicLab Activity ${model.context?.title}`}
-          src={baseUrl}
-          allow="fullscreen"
-          height="800"
-          width="100%"
-          data-activity-mode={mode}
-        ></iframe>
+        <div>
+          <ScoreAsYouGoHeader />
+          <iframe
+            title={`LogicLab Activity ${model.context?.title}`}
+            src={baseUrl}
+            allow="fullscreen"
+            height="800"
+            width="100%"
+            data-activity-mode={mode}
+          ></iframe>
+        </div>
       )}
     </>
   );

@@ -14,7 +14,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
   alias Oli.Resources.Collaboration
   alias OliWeb.Common.Utils
   alias OliWeb.Components.{Common, Overview}
-  alias OliWeb.Components.Project.AsyncExporter
+  alias OliWeb.Components.Project.{AdvancedActivityItem, AsyncExporter}
   alias OliWeb.Projects.{RequiredSurvey, TransferPaymentCodes}
 
   @impl Phoenix.LiveView
@@ -312,11 +312,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
         title="Advanced Activities"
         description="Enable advanced activity types for your project to include in your curriculum."
       >
-        <%= render_many(@activities_enabled, OliWeb.ProjectView, "_tr_activities_available.html", %{
-          conn: @socket,
-          as: :activity_enabled,
-          project: @project
-        }) %>
+        <%= for activity_enabled <- @activities_enabled do %>
+          <AdvancedActivityItem.render activity_enabled={activity_enabled} project={@project} />
+        <% end %>
       </Overview.section>
 
       <%= live_render(@socket, OliWeb.Projects.VisibilityLive,
@@ -325,8 +323,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
       ) %>
 
       <Overview.section
-        title="AI Triggers"
-        description="Enable AI triggers for your project to include in your curriculum."
+        title="AI Activation Points"
+        description="Enable AI activation points for your project to include in your curriculum."
       >
         <%= render_ai_triggers(assigns) %>
       </Overview.section>
@@ -474,24 +472,24 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
     <div class="flex items-center">
       <div>
         <p class="mt-3">
-          When AI Trigger Points are enabled as an authoring feature, authors can insert a trigger point at the page level, group level, paragraph level, or question level.
+          When AI Activation Points are enabled as an authoring feature, authors can insert an activation point at the page level, group level, paragraph level, or question level.
         </p>
 
         <p class="mt-3">
-          AI Trigger Points are currently <strong>disabled</strong> for this project.
+          AI Activation Points are currently <strong>disabled</strong> for this project.
         </p>
 
-        <%= button("Enable AI Triggers",
+        <%= button("Enable AI Activation Points",
           to: Routes.project_path(@socket, :enable_triggers, @project),
           method: :post,
           class:
             "text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline pr-3 py-2",
           data_confirm:
-            "The AI Trigger Points authoring feature cannot be disabled once it is enabled. Do you want to proceed with enabling AI Trigger Points??"
+            "The AI Activation Points authoring feature cannot be disabled once it is enabled. Do you want to proceed with enabling AI Activation Points??"
         ) %>
 
         <p class="mt-3">
-          Note: AI Trigger Points will only work for course sections that have DOT AI enabled.  This must be enabled section by section by a system administrator.
+          Note: AI Activation Points will only work for course sections that have DOT AI enabled.  This must be enabled section by section by a system administrator.
         </p>
       </div>
     </div>
@@ -503,13 +501,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
     <div class="flex items-center">
       <div>
         <p class="mt-3">
-          When AI Trigger Points are enabled as an authoring feature, authors can insert a trigger point at the page level, group level, paragraph level, or question level.
+          When AI Activation Points are enabled as an authoring feature, authors can insert an activation point at the page level, group level, paragraph level, or question level.
         </p>
 
-        <p class="mt-3">AI Trigger Points are currently <strong>enabled</strong> for this project.</p>
+        <p class="mt-3">
+          AI Activation Points are currently <strong>enabled</strong> for this project.
+        </p>
 
         <p class="mt-3">
-          Note: AI Trigger Points will only work for course sections that have DOT AI enabled.  This must be enabled section by section by a system administrator.
+          Note: AI Activation Points will only work for course sections that have DOT AI enabled.  This must be enabled section by section by a system administrator.
         </p>
       </div>
     </div>

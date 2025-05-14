@@ -7,7 +7,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
   alias Oli.Delivery.{Settings, Sections}
   alias Oli.Delivery
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
   alias Oli.Resources.ResourceType
   alias Oli.Publishing.DeliveryResolver
 
@@ -432,6 +432,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
             :grace_period,
             :retake_mode,
             :assessment_mode,
+            :batch_scoring,
+            :replacement_strategy,
             :feedback_mode,
             :review_submission,
             :password,
@@ -445,8 +447,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
             :due_date,
             :max_attempts,
             :time_limit,
-            :late_submit,
-            :late_start,
+            :late_policy,
             :scoring_strategy_id,
             :grace_period,
             :retake_mode,
@@ -2055,18 +2056,18 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       [student_exception_1] = table_as_list_of_maps(view, :student_exceptions)
 
-      assert student_exception_1.late_submit == "-"
+      assert student_exception_1.scoring_strategy_id == "-"
 
       view
       |> form(~s{form[for="student_exceptions_table"]})
       |> render_change(%{
-        "_target" => ["late_submit-#{student_1.id}"],
-        "late_submit-#{student_1.id}" => "disallow"
+        "_target" => ["scoring_strategy_id-#{student_1.id}"],
+        "scoring_strategy_id-#{student_1.id}" => "2"
       })
 
       [updated_student_exception_1] = table_as_list_of_maps(view, :student_exceptions)
 
-      assert updated_student_exception_1.late_submit == "Disallow"
+      assert updated_student_exception_1.scoring_strategy_id == "Best"
       assert student_exception_1.student == updated_student_exception_1.student
     end
 
@@ -2101,8 +2102,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       view
       |> form(~s{form[for="student_exceptions_table"]})
       |> render_change(%{
-        "_target" => ["late_submit-#{student_1.id}"],
-        "late_submit-#{student_1.id}" => "disallow"
+        "_target" => ["scoring_strategy_id-#{student_1.id}"],
+        "scoring_strategy_id-#{student_1.id}" => "1"
       })
 
       assert has_element?(
@@ -2115,8 +2116,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       view
       |> form(~s{form[for="student_exceptions_table"]})
       |> render_change(%{
-        "_target" => ["late_submit-#{student_2.id}"],
-        "late_submit-#{student_2.id}" => "disallow"
+        "_target" => ["scoring_strategy_id-#{student_2.id}"],
+        "scoring_strategy_id-#{student_2.id}" => "2"
       })
 
       assert has_element?(
@@ -2619,6 +2620,72 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
                "table.instructor_dashboard_table > tbody > tr:nth-child(4) > td > div",
                "#{student_1.name}"
              )
+    end
+
+    test "late policy setting is set correctly", %{
+      conn: conn,
+      section: section,
+      page_1: page_1,
+      student_1: student_1
+    } do
+      set_student_exception(section, page_1.resource, student_1)
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_overview_route(
+            section.slug,
+            "student_exceptions",
+            page_1.resource.id
+          )
+        )
+
+      [student_exception_1] = table_as_list_of_maps(view, :student_exceptions)
+
+      assert student_exception_1.late_policy == ""
+
+      # set late start and late submit allowed
+      view
+      |> form(~s{form[for="student_exceptions_table"]})
+      |> render_change(%{
+        "_target" => ["late_policy-#{student_1.id}"],
+        "late_policy-#{student_1.id}" => "allow_late_start_and_late_submit"
+      })
+
+      [updated_student_exception_1] = table_as_list_of_maps(view, :student_exceptions)
+
+      assert updated_student_exception_1.late_policy == "Allow late start and late submit"
+
+      # verify that values are stored correctly
+      exception =
+        Delivery.get_delivery_setting_by(%{
+          resource_id: page_1.resource.id,
+          user_id: student_1.id
+        })
+
+      assert exception.late_start == :allow
+      assert exception.late_submit == :allow
+
+      # set late start and late submit disallowed
+      view
+      |> form(~s{form[for="student_exceptions_table"]})
+      |> render_change(%{
+        "_target" => ["late_policy-#{student_1.id}"],
+        "late_policy-#{student_1.id}" => "disallow_late_start_and_late_submit"
+      })
+
+      [updated_student_exception_2] = table_as_list_of_maps(view, :student_exceptions)
+      assert updated_student_exception_2.late_policy == "Disallow late start and late submit"
+
+      # Verify that values are stored correctly
+      exception =
+        Delivery.get_delivery_setting_by(%{
+          resource_id: page_1.resource.id,
+          user_id: student_1.id
+        })
+
+      assert exception.late_start == :disallow
+      assert exception.late_submit == :disallow
     end
   end
 end

@@ -312,6 +312,10 @@ defmodule Oli.Utils do
   def get_base_url() do
     url_config = Application.fetch_env!(:oli, OliWeb.Endpoint)[:url]
 
+    scheme = Keyword.get(url_config, :scheme, "http") |> String.downcase()
+
+    host = Keyword.get(url_config, :host, "localhost")
+
     port =
       case Keyword.get(url_config, :port, 80) do
         80 -> ""
@@ -319,7 +323,7 @@ defmodule Oli.Utils do
         p -> ":#{p}"
       end
 
-    "https://#{Keyword.get(url_config, :host, "localhost")}#{port}"
+    "#{scheme}://#{host}#{port}"
   end
 
   @doc """

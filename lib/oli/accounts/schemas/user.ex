@@ -43,6 +43,8 @@ defmodule Oli.Accounts.User do
     field :can_create_sections, :boolean, default: false
     field :age_verified, :boolean
 
+    field :hidden, :boolean, default: false
+
     has_many :user_identities,
              Oli.AssentAuth.UserIdentity,
              on_delete: :delete_all,
@@ -121,6 +123,7 @@ defmodule Oli.Accounts.User do
     user
     |> cast(attrs, [
       :email,
+      :sub,
       :password,
       :given_name,
       :family_name,
@@ -132,6 +135,7 @@ defmodule Oli.Accounts.User do
     |> validate_password(opts)
     |> put_change(:independent_learner, true)
     |> maybe_name_from_given_and_family()
+    |> maybe_generate_unique_sub()
   end
 
   defp validate_email(changeset, opts) do
@@ -181,6 +185,15 @@ defmodule Oli.Accounts.User do
         name: :users_email_independent_learner_index,
         message: "Email has already been taken by another independent learner"
       )
+    else
+      changeset
+    end
+  end
+
+  def maybe_generate_unique_sub(changeset) do
+    if changeset.valid? && is_nil(get_field(changeset, :sub)) do
+      sub = UUID.uuid4()
+      put_change(changeset, :sub, sub)
     else
       changeset
     end
@@ -279,7 +292,8 @@ defmodule Oli.Accounts.User do
       :locale,
       :phone_number,
       :phone_number_verified,
-      :address
+      :address,
+      :hidden
     ])
     |> cast(%{user_identities: [user_identity]}, [])
     |> cast_assoc(:user_identities)
@@ -311,7 +325,8 @@ defmodule Oli.Accounts.User do
       :locale,
       :phone_number,
       :address,
-      :research_opt_out
+      :research_opt_out,
+      :hidden
     ])
     |> cast_embed(:preferences)
     |> validate_required([:given_name, :family_name])
@@ -352,7 +367,8 @@ defmodule Oli.Accounts.User do
       :state,
       :can_create_sections,
       :age_verified,
-      :lti_institution_id
+      :lti_institution_id,
+      :hidden
     ])
     |> cast_embed(:preferences)
     |> validate_email_if(&is_independent_learner_and_not_guest/1)
@@ -401,7 +417,8 @@ defmodule Oli.Accounts.User do
       :locked_at,
       :email_confirmed_at,
       :can_create_sections,
-      :age_verified
+      :age_verified,
+      :hidden
     ])
     |> cast_embed(:preferences)
     |> maybe_name_from_given_and_family()
@@ -443,7 +460,8 @@ defmodule Oli.Accounts.User do
       :locked_at,
       :email_confirmed_at,
       :can_create_sections,
-      :age_verified
+      :age_verified,
+      :hidden
     ])
     |> validate_required_if([:email], &is_independent_learner_and_not_guest/1)
     |> validate_acceptance_if(
@@ -509,6 +527,7 @@ defmodule Oli.Accounts.User do
     |> cast(attrs, [:email])
     |> validate_required([:email])
     |> validate_email(opts)
+    |> maybe_generate_unique_sub()
   end
 
   def invite_changeset(user, attrs, opts) do
@@ -546,7 +565,7 @@ defmodule Oli.Accounts.User do
 end
 
 # define implementations required for LTI 1.3 library integration
-defimpl Lti_1p3.Tool.Lti_1p3_User, for: Oli.Accounts.User do
+defimpl Lti_1p3.Roles.Lti_1p3_User, for: Oli.Accounts.User do
   import Ecto.Query, warn: false
   alias Oli.Repo
   alias Oli.Delivery.Sections.Section

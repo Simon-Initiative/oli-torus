@@ -33,8 +33,6 @@ $hover: #dce7f9;
   display: flex;
   flex-direction: row;
 
-
-
   &.storybook {
     position: relative !important;
     bottom: unset;
@@ -675,16 +673,16 @@ $hover: #dce7f9;
   .aa-stage {
     position: fixed;
     z-index: 9;
-    top: 210px;
-    left: 335px;
+    top: 156px;
+    left: 180px;
     right: 270px;
     bottom: 0;
     overflow: scroll;
     background-color: #f3f5f8;
 
     .aa-stage-pan {
-      width: 2000px;
-      height: 1000px;
+      width: auto;
+      height: auto;
       backface-visibility: 'visible';
       background: none;
       background-color: #f3f5f8;

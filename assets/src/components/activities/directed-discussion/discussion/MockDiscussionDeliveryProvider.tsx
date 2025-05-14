@@ -33,6 +33,11 @@ export const MockDiscussionDeliveryProvider: React.FC<{
       }}
       mode="preview"
       context={{
+        batchScoring: true,
+        oneAtATime: false,
+        ordinal: 1,
+        maxAttempts: 1,
+        scoringStrategyId: 1,
         graded: false,
         resourceId: activityId,
         bibParams: {},

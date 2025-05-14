@@ -30,36 +30,46 @@ defmodule OliWeb.Products.Payments.Discounts.Form do
         </div>
       <% end %>
 
+      <% bypass_paywall? = @form[:bypass_paywall].value in [true, "true"] %>
+
       <div class="form-group">
         <.input
           type="select"
           field={@form[:type]}
           label="Type"
-          class="form-control"
+          class={"form-control #{if(bypass_paywall?, do: "cursor-not-allowed", else: "")}"}
           options={[Percentage: "percentage", "Fixed price": "fixed_amount"]}
         />
       </div>
 
       <div class="form-group">
+        <% price_disabled? =
+          @form[:type].value in [:percentage, "percentage"] or bypass_paywall? %>
         <.input
           field={@form[:amount]}
           label="Price"
-          class="form-control"
-          disabled={@form[:type].value in [:percentage, "percentage"]}
+          class={"form-control #{if(price_disabled?, do: "cursor-not-allowed", else: "")}"}
+          disabled={price_disabled?}
         />
       </div>
 
       <div class="form-group">
+        <% percentage_disabled? =
+          @form[:type].value in [:fixed_amount, "fixed_amount"] or bypass_paywall? %>
         <.input
           type="number"
           field={@form[:percentage]}
           label="Percentage"
-          class="form-control"
-          min={0}
-          max={100}
+          class={"form-control #{if(percentage_disabled?, do: "cursor-not-allowed", else: "")}"}
+          min={0.1}
+          max={99.9}
           step={0.1}
-          disabled={@form[:type].value in [:fixed_amount, "fixed_amount"]}
+          disabled={percentage_disabled?}
         />
+      </div>
+
+      <div class="form-group">
+        <.input field={@form[:bypass_paywall]} type="checkbox" label="Turn Off Paywall Entirely" />
       </div>
 
       <button type="submit" class="form-button btn btn-md btn-primary btn-block mt-3">Save</button>

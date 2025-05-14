@@ -25,7 +25,8 @@ defmodule Oli.Resources.Revision do
              :poster_image,
              :intro_content,
              :duration_minutes,
-             :id
+             :id,
+             :activity_refs
            ]}
   schema "revisions" do
     #
@@ -47,8 +48,11 @@ defmodule Oli.Resources.Revision do
     field :content, :map, default: %{}
     field :children, {:array, :id}, default: []
     field :tags, {:array, :id}, default: []
+    field :activity_refs, {:array, :id}, default: []
     field :objectives, :map, default: %{}
     field :graded, :boolean, default: false
+    field :batch_scoring, :boolean, default: true
+    field :replacement_strategy, Ecto.Enum, values: [:none, :dynamic], default: :none
     field :duration_minutes, :integer, default: nil
     field :intro_content, :map, default: %{}
     field :intro_video, :string, default: nil
@@ -114,6 +118,8 @@ defmodule Oli.Resources.Revision do
       :tags,
       :objectives,
       :graded,
+      :batch_scoring,
+      :replacement_strategy,
       :duration_minutes,
       :intro_content,
       :intro_video,
@@ -129,7 +135,8 @@ defmodule Oli.Resources.Revision do
       :activity_type_id,
       :purpose,
       :relates_to,
-      :full_progress_pct
+      :full_progress_pct,
+      :activity_refs
     ])
     |> cast_embed(:legacy)
     |> cast_embed(:explanation_strategy)

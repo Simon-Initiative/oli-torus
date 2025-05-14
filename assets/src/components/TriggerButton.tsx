@@ -32,12 +32,18 @@ export const TriggerButton: React.FC<{
     <div className="flex justify-center">
       <button
         disabled={disabled}
-        className={`px-2 py-1 text-sm text-white ${
-          disabled ? '' : 'active:scale-95 transition-transform'
+        className={`px-3 py-3 text-base text-white ${
+          disabled
+            ? 'opacity-50 cursor-not-allowed'
+            : 'hover:bg-gray-300 hover:scale-105 active:scale-95 transition-transform duration-150 cursor-pointer'
         } rounded`}
         onClick={onClick}
       >
-        <img src="/images/icons/icon-AI.svg" className="inline mr-1" />
+        <img
+          src="/images/icons/icon-AI.svg"
+          style={{ marginBottom: 0 }}
+          className="block w-6 h-6 m-0 p-0"
+        />
       </button>
     </div>
   );

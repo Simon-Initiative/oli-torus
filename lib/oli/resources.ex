@@ -324,6 +324,8 @@ defmodule Oli.Resources do
           title: previous_revision.title,
           graded: previous_revision.graded,
           duration_minutes: previous_revision.duration_minutes,
+          batch_scoring: previous_revision.batch_scoring,
+          replacement_strategy: previous_revision.replacement_strategy,
           intro_content: previous_revision.intro_content,
           intro_video: previous_revision.intro_video,
           poster_image: previous_revision.poster_image,
@@ -347,7 +349,8 @@ defmodule Oli.Resources do
           collab_space_config: previous_revision.collab_space_config,
           purpose: previous_revision.purpose,
           relates_to: previous_revision.relates_to,
-          full_progress_pct: previous_revision.full_progress_pct
+          full_progress_pct: previous_revision.full_progress_pct,
+          activity_refs: previous_revision.activity_refs
         },
         convert_strings_to_atoms(attrs)
       )

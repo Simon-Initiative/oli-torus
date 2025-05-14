@@ -13,8 +13,8 @@ defmodule OliWeb.Components.Delivery.Utils do
   alias Oli.Accounts.{User, Author, SystemRole}
   alias OliWeb.Icons
   alias Phoenix.LiveView.JS
-  alias Lti_1p3.Tool.ContextRoles
-  alias Lti_1p3.Tool.PlatformRoles
+  alias Lti_1p3.Roles.ContextRoles
+  alias Lti_1p3.Roles.PlatformRoles
 
   import Oli.Utils, only: [identity: 1]
 
@@ -186,7 +186,7 @@ defmodule OliWeb.Components.Delivery.Utils do
   attr :on_search, :string, default: "search"
   attr :on_change, :string, default: "search"
   attr :on_clear_search, :string, default: "clear_search"
-  attr :rest, :global, include: ~w(class)
+  attr :rest, :global, include: ~w(class placeholder)
 
   def search_box(assigns) do
     ~H"""
@@ -198,6 +198,7 @@ defmodule OliWeb.Components.Delivery.Utils do
           type="text"
           name="search_term"
           value={@search_term}
+          placeholder={@rest[:placeholder]}
           class="w-full border border-gray-400 dark:border-gray-700 rounded-lg px-12 py-3"
           phx-debounce="500"
         />

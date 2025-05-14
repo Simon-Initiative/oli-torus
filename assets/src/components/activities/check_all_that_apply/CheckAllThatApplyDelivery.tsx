@@ -19,11 +19,14 @@ import {
   listenForReviewAttemptChange,
   resetAction,
   setSelection,
+  submit,
 } from 'data/activities/DeliveryState';
 import { initialPartInputs, isCorrect } from 'data/activities/utils';
 import { configureStore } from 'state/store';
 import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
 import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
+import { ScoreAsYouGoHeader } from '../common/ScoreAsYouGoHeader';
+import { ScoreAsYouGoSubmitReset } from '../common/ScoreAsYouGoSubmitReset';
 import { SubmitResetConnected } from '../common/delivery/SubmitReset';
 import { castPartId } from '../common/utils';
 
@@ -61,9 +64,20 @@ export const CheckAllThatApplyComponent: React.FC = () => {
     return null;
   }
 
+  const submitReset =
+    !uiState.activityContext.graded || uiState.activityContext.batchScoring ? (
+      <SubmitResetConnected onReset={() => dispatch(resetAction(onResetActivity, resetInputs))} />
+    ) : (
+      <ScoreAsYouGoSubmitReset
+        onSubmit={() => dispatch(submit(onSubmitActivity))}
+        onReset={() => dispatch(resetAction(onResetActivity, undefined))}
+      />
+    );
+
   return (
     <div className={`activity cata-activity ${isEvaluated(uiState) ? 'evaluated' : ''}`}>
       <div className="activity-content">
+        <ScoreAsYouGoHeader />
         <StemDeliveryConnected />
         <GradedPointsConnected />
         <ChoicesDeliveryConnected
@@ -89,8 +103,7 @@ export const CheckAllThatApplyComponent: React.FC = () => {
             )
           }
         />
-
-        <SubmitResetConnected onReset={() => dispatch(resetAction(onResetActivity, resetInputs))} />
+        {submitReset}
         <HintsDeliveryConnected
           partId={castPartId(activityState.parts[0].partId)}
           resetPartInputs={resetInputs}

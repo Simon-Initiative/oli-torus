@@ -17,9 +17,17 @@ export const getPossibleTriggers = (model: HasParts, partId: string): ActivityTr
 
   const triggers = [makeTrigger('correct_answer'), makeTrigger('incorrect_answer')];
   const hint_triggers = part.hints.filter(nonBlank).map((_h, i) => makeHintTrigger(i + 1));
-  const targeted_triggers = findTargetedResponses(model, partId).map((r: any) =>
-    makeTargetedTrigger(r.id),
-  );
+
+  let targeted_triggers = [] as ActivityTrigger[];
+
+  try {
+    targeted_triggers = findTargetedResponses(model, partId).map((r: any) =>
+      makeTargetedTrigger(r.id),
+    ) as ActivityTrigger[];
+  } catch (e) {
+    console.log(e);
+  }
+
   const explanation_triggers =
     part.explanation && nonBlank(part.explanation) ? [makeTrigger('explanation')] : [];
 
@@ -56,7 +64,7 @@ export const describeTrigger = (t: ActivityTrigger, part: Part, maxchars: number
 
     case 'explanation':
       const explanation = part.explanation!.content;
-      return addContent('Student triggers explanation', explanation);
+      return addContent('Student activates explanation', explanation);
 
     case 'hint':
       const hint = part.hints[t.ref_id - 1].content;
@@ -65,10 +73,10 @@ export const describeTrigger = (t: ActivityTrigger, part: Part, maxchars: number
     case 'targeted_feedback':
       const response = part.responses.find((r) => r.id == t.ref_id);
       const feedback = response?.feedback.content;
-      return addContent('Student triggers targeted feedback', feedback);
+      return addContent('Student activates targeted feedback', feedback);
 
     default:
-      console.error('unrecognized activity trigger type');
+      console.error('unrecognized activation point type');
       return '[unknown]';
   }
 };

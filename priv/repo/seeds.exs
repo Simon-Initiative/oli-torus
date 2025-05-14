@@ -111,7 +111,8 @@ Oli.Registrar.register_local_part_components(
     "janus_popup",
     "janus_capi_iframe",
     "janus_fill_blanks",
-    "janus_hub_spoke"
+    "janus_hub_spoke",
+    "janus-text-slider"
   ])
 )
 
@@ -130,7 +131,7 @@ end
 
 # create lti_1p3 platform roles
 if !Oli.Repo.get_by(Lti_1p3.DataProviders.EctoProvider.PlatformRole, id: 1) do
-  Lti_1p3.Tool.PlatformRoles.list_roles()
+  Lti_1p3.Roles.PlatformRoles.list_roles()
   |> Enum.map(fn t ->
     struct(Lti_1p3.DataProviders.EctoProvider.PlatformRole, Map.from_struct(t))
   end)
@@ -140,7 +141,7 @@ end
 
 # create lti_1p3 context roles
 if !Oli.Repo.get_by(Lti_1p3.DataProviders.EctoProvider.ContextRole, id: 1) do
-  Lti_1p3.Tool.ContextRoles.list_roles()
+  Lti_1p3.Roles.ContextRoles.list_roles()
   |> Enum.map(fn t ->
     struct(Lti_1p3.DataProviders.EctoProvider.ContextRole, Map.from_struct(t))
   end)
@@ -252,7 +253,7 @@ if Application.fetch_env!(:oli, :env) == :dev do
                 |> Repo.insert()
 
               Oli.Delivery.Sections.enroll(user.id, section.id, [
-                Lti_1p3.Tool.ContextRoles.get_role(:context_learner)
+                Lti_1p3.Roles.ContextRoles.get_role(:context_learner)
               ])
             end)
         end

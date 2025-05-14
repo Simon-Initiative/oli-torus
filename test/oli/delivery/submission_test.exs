@@ -12,7 +12,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
   alias Oli.Delivery.Page.PageContext
   alias Oli.Delivery.Attempts.PageLifecycle.FinalizationSummary
   alias Oli.Delivery.Sections
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
 
   defp setup_concurrent_activity(_) do
     content = %{
@@ -676,7 +676,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
 
       assert attempt_state.dateEvaluated == nil
       assert attempt_state.score == nil
-      assert attempt_state.outOf == nil
+      assert attempt_state.outOf == 10.0
       assert length(attempt_state.parts) == 1
       assert hd(attempt_state.parts).response == nil
       assert attempt_state.hasMoreAttempts == false
@@ -976,7 +976,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
 
       # No matching response should mark the answer as incorrect with out_of
       # being the highest score of any response considered.
-      {:ok, [%{feedback: %{id: _id}, score: 0, out_of: 10}]} =
+      {:ok, [%{feedback: %{id: _id}, score: 0, out_of: 10.0}]} =
         Evaluate.evaluate_from_input(
           section.slug,
           activity_attempt.attempt_guid,

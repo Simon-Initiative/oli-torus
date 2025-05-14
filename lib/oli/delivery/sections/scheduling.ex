@@ -95,7 +95,6 @@ defmodule Oli.Delivery.Sections.Scheduling do
   @doc """
   Clear the scheduling for all section resources for a given course section.
   """
-
   def clear(%Section{id: section_id, slug: section_slug}) do
     res =
       Multi.new()
@@ -151,13 +150,7 @@ defmodule Oli.Delivery.Sections.Scheduling do
   """
   @spec has_scheduled_resources?(section_id :: integer) :: boolean
   def has_scheduled_resources?(section_id) do
-    from(
-      sr in SectionResource,
-      where:
-        sr.section_id == ^section_id and (not is_nil(sr.start_date) or not is_nil(sr.end_date)),
-      limit: 1
-    )
-    |> Repo.exists?()
+    SectionResourceDepot.has_scheduled_resources?(section_id)
   end
 
   defp is_valid_update?(updates) do

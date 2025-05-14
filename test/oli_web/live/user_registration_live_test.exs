@@ -64,6 +64,11 @@ defmodule OliWeb.UserRegistrationLiveTest do
       response = html_response(conn, 200)
 
       assert response =~ "Access my courses"
+
+      # Assert that the new user has a unique sub generated
+      user = Oli.Accounts.get_independent_user_by_email(email)
+
+      refute is_nil(user.sub)
     end
 
     test "renders errors for duplicated email", %{conn: conn} do

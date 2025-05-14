@@ -1,5 +1,5 @@
 defmodule Oli.Interop.CustomActivities.Registration do
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
 
   import XmlBuilder
 

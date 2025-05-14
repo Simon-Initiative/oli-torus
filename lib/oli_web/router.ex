@@ -127,6 +127,7 @@ defmodule OliWeb.Router do
 
     plug(OliWeb.Plugs.MaybeSkipEmailVerification)
 
+    plug(:auto_enroll_admin)
     plug(:require_authenticated_user)
 
     plug(Oli.Plugs.RemoveXFrameOptions)
@@ -374,7 +375,6 @@ defmodule OliWeb.Router do
     pipe_through([:api])
 
     get("/api/v1/legacy_support", LegacySupportController, :index)
-    post("/access_tokens", LtiController, :access_tokens)
 
     post("/help/create", HelpController, :create)
     post("/consent/cookie", CookieConsentController, :persist_cookies)
@@ -713,7 +713,7 @@ defmodule OliWeb.Router do
     delete("/", SchedulingController, :clear)
   end
 
-  # AI trigger point endpoints
+  # AI activation point endpoints
   scope "/api/v1/triggers/:section_slug", OliWeb.Api do
     pipe_through([:api, :require_section, :delivery_protected])
 
@@ -835,18 +835,20 @@ defmodule OliWeb.Router do
     post("/ecl", Api.ECLController, :eval)
   end
 
-  scope "/api/v1/lti", OliWeb, as: :api do
-    pipe_through([:api, :authoring_protected])
+  # LTI routes
+  scope "/lti", OliWeb do
+    pipe_through([:api])
 
-    resources("/platforms", Api.PlatformInstanceController)
+    # LTI platform services access tokens
+    post("/auth/token", LtiController, :auth_token)
   end
 
-  # LTI routes
   scope "/lti", OliWeb do
     pipe_through([:lti, :www_url_form, :delivery])
 
     post("/login", LtiController, :login)
     get("/login", LtiController, :login)
+
     post("/launch", LtiController, :launch)
     post("/test", LtiController, :test)
 
@@ -1126,6 +1128,7 @@ defmodule OliWeb.Router do
           {OliWeb.UserAuth, :ensure_authenticated},
           OliWeb.LiveSessionPlugs.SetCtx,
           OliWeb.LiveSessionPlugs.SetSection,
+          OliWeb.LiveSessionPlugs.SetScheduledResourcesFlag,
           OliWeb.LiveSessionPlugs.SetRequireCertificationCheck,
           OliWeb.LiveSessionPlugs.SetBrand,
           OliWeb.LiveSessionPlugs.SetPreviewMode,
@@ -1156,6 +1159,7 @@ defmodule OliWeb.Router do
           {OliWeb.UserAuth, :ensure_authenticated},
           OliWeb.LiveSessionPlugs.SetCtx,
           OliWeb.LiveSessionPlugs.SetSection,
+          OliWeb.LiveSessionPlugs.SetScheduledResourcesFlag,
           OliWeb.LiveSessionPlugs.SetBrand,
           OliWeb.LiveSessionPlugs.SetPreviewMode,
           OliWeb.LiveSessionPlugs.SetSidebar,
@@ -1205,7 +1209,6 @@ defmodule OliWeb.Router do
       :delivery,
       :redirect_by_attempt_state,
       :delivery_protected,
-      :maybe_gated_resource,
       :enforce_paywall,
       :require_enrollment,
       :ensure_user_section_visit,
@@ -1220,6 +1223,7 @@ defmodule OliWeb.Router do
           {OliWeb.UserAuth, :ensure_authenticated},
           OliWeb.LiveSessionPlugs.SetCtx,
           OliWeb.LiveSessionPlugs.SetSection,
+          OliWeb.LiveSessionPlugs.SetScheduledResourcesFlag,
           {OliWeb.LiveSessionPlugs.InitPage, :set_prologue_context},
           OliWeb.LiveSessionPlugs.SetBrand,
           OliWeb.LiveSessionPlugs.SetPreviewMode,
@@ -1259,6 +1263,7 @@ defmodule OliWeb.Router do
           {OliWeb.UserAuth, :ensure_authenticated},
           OliWeb.LiveSessionPlugs.SetCtx,
           OliWeb.LiveSessionPlugs.SetSection,
+          OliWeb.LiveSessionPlugs.SetScheduledResourcesFlag,
           OliWeb.LiveSessionPlugs.SetBrand,
           OliWeb.LiveSessionPlugs.SetPreviewMode,
           OliWeb.LiveSessionPlugs.RequireEnrollment,
@@ -1269,6 +1274,8 @@ defmodule OliWeb.Router do
     end
 
     scope "/adaptive_lesson/:revision_slug" do
+      pipe_through([:maybe_gated_resource])
+
       get("/", PageDeliveryController, :page_fullscreen)
 
       get(
@@ -1429,6 +1436,26 @@ defmodule OliWeb.Router do
     get("/:activity_attempt_guid", Api.AttemptController, :get_activity_attempt)
   end
 
+  scope "/api/v1/lti/projects/:project_slug", OliWeb, as: :api do
+    pipe_through([:api, :authoring_protected])
+
+    get(
+      "/launch_details/:activity_id",
+      Api.LtiController,
+      :launch_details
+    )
+  end
+
+  scope "/api/v1/lti/sections/:section_slug", OliWeb, as: :api do
+    pipe_through([:api, :require_section, :delivery_protected])
+
+    get(
+      "/launch_details/:activity_id",
+      Api.LtiController,
+      :launch_details
+    )
+  end
+
   ### Invitations (to sections or projects)
 
   scope "/", OliWeb do
@@ -1467,7 +1494,16 @@ defmodule OliWeb.Router do
     live("/select_project", Delivery.NewCourse, :lms_instructor, as: :select_source)
   end
 
+  ### Admin Dashboard / LTI Platform Management
+
+  scope "/admin", OliWeb do
+    pipe_through([:browser, :authoring_protected, :require_authenticated_system_admin, :workspace])
+
+    resources("/platform_instances", PlatformInstanceController)
+  end
+
   ### Admin Dashboard / Telemetry
+
   scope "/admin", OliWeb do
     pipe_through([:browser, :authoring_protected, :require_authenticated_system_admin])
 
@@ -1479,8 +1515,6 @@ defmodule OliWeb.Router do
         broadway: {BroadwayDashboard, pipelines: [Oli.Analytics.XAPI.UploadPipeline]}
       ]
     )
-
-    resources("/platform_instances", PlatformInstanceController)
   end
 
   ### Admin Portal / Management
@@ -1583,6 +1617,11 @@ defmodule OliWeb.Router do
       resources("/registrations", RegistrationController, except: [:index]) do
         resources("/deployments", DeploymentController, except: [:index, :show])
       end
+
+      # External tools
+      live("/external_tools", Admin.ExternalTools.ExternalToolsView)
+      live("/external_tools/new", Admin.ExternalTools.NewExternalToolView)
+      live("/external_tools/:platform_instance_id/details", Admin.ExternalTools.DetailsView)
     end
 
     # System admin

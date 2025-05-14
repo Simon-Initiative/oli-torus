@@ -23,8 +23,16 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
   # this is an optimization to reduce the memory footprint of the liveview process
   @required_keys_per_assign %{
     section:
-      {[:id, :slug, :title, :brand, :lti_1p3_deployment, :resource_gating_index, :customizations],
-       %Sections.Section{}},
+      {[
+         :id,
+         :slug,
+         :title,
+         :brand,
+         :lti_1p3_deployment,
+         :resource_gating_index,
+         :customizations,
+         :open_and_free
+       ], %Sections.Section{}},
     current_user: {[:id, :name, :email, :sub], %User{}}
   }
 
@@ -99,12 +107,20 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
         />
         <div class="self-stretch h-[0px] opacity-80 dark:opacity-20 bg-white border border-gray-200 mt-3 mb-10">
         </div>
+
+        <StudentUtils.blocking_gates_warning
+          :if={@show_blocking_gates?}
+          attempt_message={@attempt_message}
+        />
         <.page_terms
+          :if={!@show_blocking_gates?}
           effective_settings={@page_context.effective_settings}
           ctx={@ctx}
           is_adaptive={is_adaptive_page(@page_context.page)}
+          has_scheduled_resources?={@has_scheduled_resources?}
         />
         <.attempts_summary
+          :if={!@show_blocking_gates?}
           page_context={@page_context}
           attempt_message={@attempt_message}
           ctx={@ctx}

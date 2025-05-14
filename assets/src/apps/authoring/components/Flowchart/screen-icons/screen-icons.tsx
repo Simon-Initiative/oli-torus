@@ -17,6 +17,7 @@ export const screenTypeToIcon: Record<ScreenTypes, React.FC<{ fill?: string }>> 
   multiple_choice: MultipleChoiceScreenIcon,
   multiline_text: MultilineTextScreenIcon,
   slider: SliderScreenIcon,
+  text_slider: SliderScreenIcon,
   end_screen: EndScreenIcon,
   number_input: NumberInputScreenIcon,
   text_input: TextInputScreenIcon,

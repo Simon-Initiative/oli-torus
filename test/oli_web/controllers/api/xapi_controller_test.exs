@@ -1,6 +1,8 @@
 defmodule OliWeb.XAPIControllerTest do
   use OliWeb.ConnCase
 
+  import ExUnit.CaptureLog
+
   alias Oli.Seeder
   alias OliWeb.Router.Helpers, as: Routes
 
@@ -40,8 +42,10 @@ defmodule OliWeb.XAPIControllerTest do
         Plug.Test.init_test_session(conn, lti_session: nil)
         |> log_in_user(map.user2)
 
-      conn = post(conn, Routes.xapi_path(conn, :emit), %{"event" => event, "key" => key})
-      assert %{"result" => "failure"} = json_response(conn, 200)
+      assert capture_log([level: :error], fn ->
+               conn = post(conn, Routes.xapi_path(conn, :emit), %{"event" => event, "key" => key})
+               assert %{"result" => "failure"} = json_response(conn, 200)
+             end) =~ "Error constructing xapi bundle: \"user id mismatch\""
     end
 
     test "can emit video played event", %{
@@ -276,7 +280,7 @@ defmodule OliWeb.XAPIControllerTest do
       user = map.user1
 
       Oli.Delivery.Sections.enroll(user.id, map.section.id, [
-        Lti_1p3.Tool.ContextRoles.get_role(:context_learner)
+        Lti_1p3.Roles.ContextRoles.get_role(:context_learner)
       ])
 
       Oli.Lti.TestHelpers.all_default_claims()

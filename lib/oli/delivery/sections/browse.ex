@@ -2,7 +2,7 @@ defmodule Oli.Delivery.Sections.Browse do
   import Ecto.Query, warn: false
 
   alias Oli.Delivery.Sections.EnrollmentContextRole
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
   alias Oli.Accounts.User
   alias Oli.Delivery.Sections.{Section, Enrollment, BrowseOptions}
   alias Oli.Repo

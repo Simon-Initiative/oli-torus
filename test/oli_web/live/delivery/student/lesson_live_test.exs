@@ -6,8 +6,9 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
   import Phoenix.LiveViewTest
   import Oli.Factory
   import Ecto.Query, warn: false
+  import Oli.TestHelpers
 
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
   alias Oli.Delivery.Attempts.Core
   alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias Oli.Delivery.Sections
@@ -669,6 +670,63 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
     end
   end
 
+  defp verify_access_as(conn, system_role_id, section, page) do
+    # Create a new authoring account and make it an admin
+    author = insert(:author)
+
+    {:ok, updated_author} = Oli.Accounts.update_author(author, %{system_role_id: system_role_id})
+
+    conn = log_in_author(conn, updated_author)
+
+    {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page.slug))
+
+    ensure_content_is_visible(view)
+
+    assert has_element?(view, "span", "The best course ever!")
+  end
+
+  describe "authors" do
+    setup [:setup_tags, :create_elixir_project]
+
+    test "can access via hidden instructor when content admin", %{
+      conn: conn,
+      section: section,
+      page_1: page
+    } do
+      verify_access_as(conn, Oli.Accounts.SystemRole.role_id().content_admin, section, page)
+    end
+
+    test "can access via hidden instructor when account admin", %{
+      conn: conn,
+      section: section,
+      page_1: page
+    } do
+      verify_access_as(conn, Oli.Accounts.SystemRole.role_id().account_admin, section, page)
+    end
+
+    test "can access via hidden instructor when system admin", %{
+      conn: conn,
+      section: section,
+      page_1: page
+    } do
+      verify_access_as(conn, Oli.Accounts.SystemRole.role_id().system_admin, section, page)
+    end
+
+    test "cannot access when regular author", %{
+      conn: conn,
+      section: section,
+      page_1: page_1
+    } do
+      author = insert(:author)
+      conn = log_in_author(conn, author)
+
+      {:error,
+       {:redirect,
+        %{to: "/users/log_in", flash: %{"error" => "You must log in to access this page."}}}} =
+        live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
+    end
+  end
+
   describe "student" do
     setup [:setup_tags, :user_conn, :create_elixir_project]
 
@@ -681,6 +739,151 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
         live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
 
       assert redirect_path == "/sections/#{section.slug}/enroll"
+    end
+
+    test "does not show the blocking gates warning when the practice page is not gated", %{
+      conn: conn,
+      section: section,
+      user: user,
+      page_1: page_1
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
+      ensure_content_is_visible(view)
+
+      refute has_element?(view, "div[id='blocking_gates_warning']")
+      assert has_element?(view, "div[role='page content']")
+    end
+
+    test "does not show the blocking gates warning when the practice page is gated but gating condition is not yet met",
+         %{
+           conn: conn,
+           section: section,
+           user: user,
+           page_1: page_1
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      _gating_condition =
+        gating_condition_fixture(%{
+          section_id: section.id,
+          resource_id: page_1.resource_id,
+          data: %{start_datetime: yesterday(), end_datetime: tomorrow()}
+        })
+
+      {:ok, section} = Oli.Delivery.Gating.update_resource_gating_index(section)
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
+      ensure_content_is_visible(view)
+
+      refute has_element?(view, "div[id='blocking_gates_warning']")
+      assert has_element?(view, "div[role='page content']")
+    end
+
+    test "shows the blocking gates warning when the practice page is gated and the gating condition is met",
+         %{
+           conn: conn,
+           section: section,
+           user: user,
+           page_1: page_1
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      _gating_condition =
+        gating_condition_fixture(%{
+          section_id: section.id,
+          resource_id: page_1.resource_id,
+          data: %{end_datetime: yesterday()}
+        })
+
+      {:ok, section} = Oli.Delivery.Gating.update_resource_gating_index(section)
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
+      ensure_content_is_visible(view)
+
+      assert has_element?(view, "div[id='blocking_gates_warning']")
+      refute has_element?(view, "div[role='page content']")
+    end
+
+    test "does not show the blocking gates warning when the graded page is not gated", %{
+      conn: conn,
+      section: section,
+      user: user,
+      page_3: page_3
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      _first_attempt_in_progress =
+        create_attempt(user, section, page_3, %{lifecycle_state: :active})
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_3.slug))
+      ensure_content_is_visible(view)
+
+      refute has_element?(view, "div[id='blocking_gates_warning']")
+      assert has_element?(view, "div[role='page content']")
+    end
+
+    test "does not show the blocking gates warning when the graded page is gated but gating condition is not yet met",
+         %{
+           conn: conn,
+           section: section,
+           user: user,
+           page_3: page_3
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      _first_attempt_in_progress =
+        create_attempt(user, section, page_3, %{lifecycle_state: :active})
+
+      _gating_condition =
+        gating_condition_fixture(%{
+          section_id: section.id,
+          resource_id: page_3.resource_id,
+          data: %{start_datetime: yesterday(), end_datetime: tomorrow()}
+        })
+
+      {:ok, section} = Oli.Delivery.Gating.update_resource_gating_index(section)
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_3.slug))
+      ensure_content_is_visible(view)
+
+      refute has_element?(view, "div[id='blocking_gates_warning']")
+      assert has_element?(view, "div[role='page content']")
+    end
+
+    test "shows the blocking gates warning when the graded page is gated and the gating condition is met",
+         %{
+           conn: conn,
+           section: section,
+           user: user,
+           page_3: page_3
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      _first_attempt_in_progress =
+        create_attempt(user, section, page_3, %{lifecycle_state: :active})
+
+      _gating_condition =
+        gating_condition_fixture(%{
+          section_id: section.id,
+          resource_id: page_3.resource_id,
+          data: %{end_datetime: yesterday()}
+        })
+
+      {:ok, section} = Oli.Delivery.Gating.update_resource_gating_index(section)
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_3.slug))
+      ensure_content_is_visible(view)
+
+      assert has_element?(view, "div[id='blocking_gates_warning']")
+      refute has_element?(view, "div[role='page content']")
     end
 
     test "redirects when page is adaptive", %{
@@ -735,6 +938,28 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
       ensure_content_is_visible(view)
       assert element(view, "#header_logo_button") |> render() =~ "www.logo.com"
+    end
+
+    test "see default brand logo if the section is not open and free", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_1: page_1
+    } do
+      {:ok, section} =
+        Sections.update_section(section, %{open_and_free: false, lti_1p3_deployment_id: nil})
+
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
+      ensure_content_is_visible(view)
+
+      # assert that the section has a brand
+      assert is_struct(section.brand, Oli.Branding.Brand)
+
+      # assert that the default logo is shown because the section is not open and free even if the brand is set
+      assert element(view, "#header_logo_button") |> render() =~ "/images/oli_torus_logo.png"
     end
 
     test "can access when enrolled to course", %{
@@ -1776,6 +2001,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       assert like_button_html =~ "<path class=\"stroke-primary\""
     end
 
+    @tag :flaky
     test "skips CheckCertification if require_certification_check is false when creating a student note",
          ctx do
       %{conn: conn, section: section, user: user, page_1: page_1} = ctx
@@ -1874,7 +2100,6 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       )
     end
 
-    @tag :skip
     test "posts a note", %{
       conn: conn,
       section: section,

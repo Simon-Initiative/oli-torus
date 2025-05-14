@@ -3,9 +3,11 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
 
   import Phoenix.Component, only: [assign: 2, update: 3]
 
-  alias Oli.Delivery.{Metrics, PreviousNextIndex, Settings}
+  alias Oli.Delivery.{Gating, Metrics, PreviousNextIndex, Settings}
+  alias Oli.Delivery.Attempts.Core
   alias Oli.Delivery.Page.{PageContext, PrologueContext}
   alias OliWeb.Router.Helpers, as: Routes
+  alias OliWeb.Common.FormatDateTime
 
   def on_mount(:set_prologue_context, %{"revision_slug" => revision_slug}, _session, socket) do
     %{section: section, current_user: current_user} = socket.assigns
@@ -29,7 +31,12 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
   end
 
   def on_mount(:set_page_context, %{"revision_slug" => revision_slug}, _session, socket) do
-    %{section: section, current_user: current_user, datashop_session_id: datashop_session_id} =
+    %{
+      section: section,
+      current_user: current_user,
+      datashop_session_id: datashop_session_id,
+      ctx: ctx
+    } =
       socket.assigns
 
     if Phoenix.LiveView.connected?(socket) do
@@ -41,12 +48,25 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
           datashop_session_id
         )
 
+      is_admin? = Oli.Accounts.is_admin?(ctx.author)
+
+      blocking_gates = blocking_gates(section, current_user, page_context, is_admin?)
+
+      attempt_message =
+        if blocking_gates != [],
+          do:
+            Oli.Delivery.Gating.details(blocking_gates,
+              format_datetime: format_datetime_fn(ctx)
+            )
+
       {:cont,
        assign(socket,
          page_context: page_context,
          # the page context will be a temporary assign,
          # that is why we need to "duplicate" the page context progress state in another socket assign
-         page_progress_state: page_context.progress_state
+         page_progress_state: page_context.progress_state,
+         show_blocking_gates?: blocking_gates != [],
+         attempt_message: attempt_message
        )}
     else
       {:cont, socket}
@@ -274,12 +294,10 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
 
     attempts_taken = length(resource_attempts)
 
-    # The Oli.Plugs.MaybeGatedResource plug sets the blocking_gates assign if there is a blocking
-    # gate that prevents this learning from starting another attempt of this resource
-    # TODO: get this blocking_gates from the conn and handle attempt_message for this case
+    is_admin? = Oli.Accounts.is_admin?(socket.assigns.ctx.author)
 
-    # blocking_gates = Map.get(conn.assigns, :blocking_gates, [])
-    blocking_gates = []
+    blocking_gates =
+      blocking_gates(socket.assigns.section, socket.assigns.current_user, page_context, is_admin?)
 
     new_attempt_allowed =
       Settings.new_attempt_allowed(
@@ -290,8 +308,10 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
 
     attempt_message =
       case {new_attempt_allowed, page_context.effective_settings.max_attempts} do
-        # {{:blocking_gates}, _max_attempts} ->
-        #  Oli.Delivery.Gating.details(blocking_gates, format_datetime: format_datetime_fn(conn))
+        {{:blocking_gates}, _max_attempts} ->
+          Oli.Delivery.Gating.details(blocking_gates,
+            format_datetime: format_datetime_fn(socket.assigns.ctx)
+          )
 
         {{:no_attempts_remaining}, max_attempts} ->
           "You have no attempts remaining out of #{max_attempts} total attempt#{plural(max_attempts)}."
@@ -315,8 +335,43 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
       page_context: %{page_context | historical_attempts: resource_attempts},
       allow_attempt?: new_attempt_allowed == {:allowed},
       attempt_message: attempt_message,
-      view: :prologue
+      view: :prologue,
+      show_blocking_gates?: blocking_gates != []
     )
+  end
+
+  defp blocking_gates(_section, _user, _page_context, true = _is_admin), do: []
+
+  defp blocking_gates(
+         section,
+         user,
+         %{page: %{resource_id: resource_id, graded: false}},
+         _is_admin
+       ),
+       do: Gating.blocked_by(section, user, resource_id)
+
+  defp blocking_gates(
+         section,
+         user,
+         %{page: %{resource_id: resource_id, graded: true}},
+         _is_admin
+       ) do
+    blocking_gates = Gating.blocked_by(section, user, resource_id)
+
+    if Enum.any?(blocking_gates, fn gc -> gc.graded_resource_policy == :allows_nothing end) or
+         !Core.has_any_attempts?(user, section, resource_id) do
+      blocking_gates
+    else
+      Enum.filter(blocking_gates, fn gc ->
+        gc.graded_resource_policy == :allows_review
+      end)
+    end
+  end
+
+  defp format_datetime_fn(ctx) do
+    fn datetime ->
+      FormatDateTime.date(datetime, ctx: ctx, precision: :minutes)
+    end
   end
 
   _docp = """
