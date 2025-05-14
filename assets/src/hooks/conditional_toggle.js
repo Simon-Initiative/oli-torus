@@ -2,10 +2,7 @@ export const ConditionalToggle = {
   mounted() {
     this.el.addEventListener('click', (e) => {
       const isChecked = this.el.dataset.checked === 'true';
-      console.log('isChecked', isChecked);
       if (isChecked) {
-        console.log('im in');
-
         e.preventDefault();
         e.stopPropagation();
 
