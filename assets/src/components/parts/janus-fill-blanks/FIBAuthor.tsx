@@ -10,24 +10,25 @@ import { clone, parseBoolean } from 'utils/common';
 import { registerEditor } from '../janus-text-flow/QuillEditor';
 import { tagName as quillEditorTagName } from '../janus-text-flow/QuillEditor';
 import {
-  convertFIBContetToQuillFormat,
-  convertQuillToFIBContetFormat,
-  parseQuillToTorusFIB,
+  convertFIBContentToQuillNodes,
+  convertQuillNodesToText,
+  normalizeBlanks,
+  parseTextToFIBStructure,
 } from './FIBUtils';
 import { FIBModel } from './schema';
 
 // eslint-disable-next-line react/display-name
-const Editor: React.FC<any> = React.memo(({ html, tree, portal, optionType }) => {
+const Editor: React.FC<any> = React.memo(({ html, tree, portal, customOptions }) => {
   const quillProps: {
     tree?: any;
     html?: any;
     showimagecontrol?: boolean;
     showcustomoptioncontrol?: boolean;
-    customoptiontype?: 'dropdown' | 'input';
+    customoptions?: any;
   } = {};
   quillProps.tree = JSON.stringify(tree);
   quillProps.showcustomoptioncontrol = true;
-  quillProps.customoptiontype = optionType;
+  quillProps.customoptions = JSON.stringify(normalizeBlanks(customOptions));
   const E = () => (
     <div style={{ padding: 20 }}>{React.createElement(quillEditorTagName, quillProps)}</div>
   );
@@ -43,7 +44,7 @@ const FIBAuthor: React.FC<AuthorPartComponentProps<FIBModel>> = (props) => {
   const [inConfigureMode, setInConfigureMode] = useState<boolean>(parseBoolean(configuremode));
   const [textNodes, setTextNodes] = useState<any[]>([]);
   const [finalContent, setFinalContent] = useState<any>([]);
-  const { content, elements, customCss, optionType } = model;
+  const { content, elements, customCss } = model;
 
   const styles: CSSProperties = {
     borderRadius: '5px',
@@ -59,8 +60,8 @@ const FIBAuthor: React.FC<AuthorPartComponentProps<FIBModel>> = (props) => {
   }, [props.model]);
 
   useEffect(() => {
-    const collectedText = convertQuillToFIBContetFormat(textNodes);
-    const finalcontent = parseQuillToTorusFIB(collectedText);
+    const collectedText = convertQuillNodesToText(textNodes);
+    const finalcontent = parseTextToFIBStructure(collectedText);
 
     setFinalContent(finalcontent);
   }, [textNodes]);
@@ -70,7 +71,7 @@ const FIBAuthor: React.FC<AuthorPartComponentProps<FIBModel>> = (props) => {
   }, []);
 
   useEffect(() => {
-    const convertedText = convertFIBContetToQuillFormat(content, elements);
+    const convertedText = convertFIBContentToQuillNodes(content, elements);
     setUpdatedContent(convertedText);
 
     setFinalContent({ content, elements });
@@ -257,7 +258,7 @@ const FIBAuthor: React.FC<AuthorPartComponentProps<FIBModel>> = (props) => {
   return (
     <React.Fragment>
       {inConfigureMode && portalEl && (
-        <Editor type={1} html="" tree={updatedContent} portal={portalEl} optionType={optionType} />
+        <Editor type={1} html="" tree={updatedContent} customOptions={elements} portal={portalEl} />
       )}
       <div data-janus-type={tagName} style={styles} className={`fib-container`}>
         <style type="text/css">{`${customCss}`};</style>

@@ -1,59 +1,110 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Modal } from 'react-bootstrap';
+import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 
 export interface QuillCustomOptionProps {
   text: string;
   correct: boolean;
 }
+
+export interface OptionItem {
+  key: string;
+  options: string[];
+  type: 'dropdown' | 'input';
+  correct: string;
+}
+
 interface QuillCustomOptionEditorProps {
-  optionType: 'Drop Down' | 'Input';
-  handleImageDetailsSave: (options: Array<QuillCustomOptionProps>) => void;
+  handleImageDetailsSave: (options: Array<OptionItem>) => void;
   handleImageDailogClose: () => void;
   showImageSelectorDailog?: boolean;
+  Options: OptionItem[];
 }
+
 export const QuillCustomOptionEditor: React.FC<QuillCustomOptionEditorProps> = ({
   handleImageDetailsSave,
   showImageSelectorDailog,
   handleImageDailogClose,
-  optionType,
+  Options,
 }) => {
-  const [items, setItems] = useState([
-    { text: `${optionType == 'Drop Down' ? 'Drop Down Item' : 'Correct Answer'} 1`, correct: true },
-    {
-      text: `${optionType == 'Drop Down' ? 'Drop Down Item' : 'Correct Answer'} 2`,
-      correct: optionType != 'Drop Down',
-    },
-  ]);
+  const [selectedKey, setSelectedKey] = useState<string>(Options[0]?.key || '');
+  const [items, setItems] = useState<QuillCustomOptionProps[]>([]);
+  const [finalOptions, setFinalOptions] = useState<OptionItem[]>([]);
+
+  const selectedOption = finalOptions.find((opt) => opt.key === selectedKey);
+  const isDropdown = selectedOption?.type === 'dropdown';
+  const isValidItem = selectedOption?.options?.length && selectedOption?.correct?.length;
+  useEffect(() => {
+    setFinalOptions(Options);
+  }, [Options]);
+
+  useEffect(() => {
+    let current = finalOptions.find((opt) => opt.key === selectedKey);
+    if (finalOptions?.length && !current) {
+      setSelectedKey(finalOptions[0]?.key);
+      current = finalOptions[0];
+    }
+    if (current) {
+      setItems(
+        current.options.map((opt) => ({
+          text: opt,
+          correct: current.type === 'dropdown' ? current.correct === opt : true,
+        })),
+      );
+    }
+  }, [selectedKey, finalOptions]);
+
+  const updateOptionItems = (updatedItems: QuillCustomOptionProps[]) => {
+    const updatedOptions = updatedItems.map((item) => item.text);
+    const correctItem = updatedItems.find((item) => item.correct)?.text || '';
+
+    setFinalOptions((prev) =>
+      prev.map((opt) =>
+        opt.key === selectedKey
+          ? {
+              ...opt,
+              options: updatedOptions,
+              correct: opt.type === 'dropdown' ? correctItem : 'true',
+            }
+          : opt,
+      ),
+    );
+  };
+
   const handleValueChange = (index: number, text: string) => {
     const updated = [...items];
     updated[index].text = text;
     setItems(updated);
+    updateOptionItems(updated);
   };
 
   const toggleSelected = (index: number) => {
-    const updated = items.map((item, i) => ({
-      ...item,
-      correct: i === index,
-    }));
+    const updated = items.map((item, i) => ({ ...item, correct: i === index }));
     setItems(updated);
+    updateOptionItems(updated);
   };
 
   const removeItem = (index: number) => {
+    const isCorrectRemoved = items[index].correct;
     const updated = items.filter((_, i) => i !== index);
-    setItems(updated);
+    const adjusted = updated.map((item) => ({
+      ...item,
+      correct: isCorrectRemoved ? false : item.correct,
+    }));
+    setItems(adjusted);
+    updateOptionItems(adjusted);
   };
 
   const addItem = () => {
-    setItems([
-      ...items,
-      {
-        text: `${optionType == 'Drop Down' ? 'Drop Down Item' : 'Correct Answer'} ${
-          items?.length + 1
-        }`,
-        correct: optionType != 'Drop Down',
-      },
-    ]);
+    const newItem = {
+      text: `${isDropdown ? 'Drop Down Item' : 'Correct Answer'} ${items.length + 1}`,
+      correct: !isDropdown,
+    };
+    const updated = [...items, newItem];
+    setItems(updated);
+    updateOptionItems(updated);
   };
+
   return (
     <React.Fragment>
       {
@@ -65,10 +116,26 @@ export const QuillCustomOptionEditor: React.FC<QuillCustomOptionEditorProps> = (
           >
             <Modal.Header closeButton={true} className="px-8 pb-0">
               <h3 className="modal-title font-bold">
-                {optionType == 'Drop Down' ? 'Drop Down Items' : 'Correct Answer(s)'}
+                {isDropdown ? 'Drop Down Items' : 'Input Items - Correct Answer(s)'}
               </h3>
             </Modal.Header>
             <Modal.Body className="px-8" style={{ backgroundColor: 'lightgray' }}>
+              <div style={{ display: 'flex', marginBottom: '10px', alignItems: 'center' }}>
+                <label className="form-label">Select FIB Item</label>
+                <select
+                  className="form-control"
+                  style={{ width: '71%', marginLeft: '13px' }}
+                  value={selectedKey}
+                  onChange={(e) => setSelectedKey(e.target.value)}
+                >
+                  {Options.map((option) => (
+                    <option key={option.key} value={option.key}>
+                      {option.key}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <hr></hr>
               <div style={{ width: '100%' }}>
                 {items.map((item, index) => (
                   <div
@@ -103,7 +170,7 @@ export const QuillCustomOptionEditor: React.FC<QuillCustomOptionEditorProps> = (
                         gap: '13px',
                       }}
                     >
-                      {optionType == 'Drop Down' && (
+                      {isDropdown && (
                         <button
                           className={`circle-btn ${item.correct ? 'correct' : ''}`}
                           onClick={() => toggleSelected(index)}
@@ -139,22 +206,44 @@ export const QuillCustomOptionEditor: React.FC<QuillCustomOptionEditorProps> = (
               </div>
             </Modal.Body>
             <Modal.Footer className="px-8 pb-6 flex-row justify-items-stretch">
-              <button
-                id="btnDelete"
-                className="btn btn-primary flex-grow basis-1"
-                onClick={() => {
-                  handleImageDetailsSave([{ correct: false, text: '' }]);
-                }}
+              <OverlayTrigger
+                placement="bottom"
+                delay={{ show: 150, hide: 150 }}
+                overlay={
+                  <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
+                    {!isValidItem ? (
+                      isDropdown ? (
+                        <div>You must mark one option as correct.</div>
+                      ) : (
+                        <div>A correct answer is required.</div>
+                      )
+                    ) : (
+                      <div>Save changes</div>
+                    )}
+                  </Tooltip>
+                }
               >
-                {optionType == 'Drop Down' ? `Update Drop down` : 'Update input'}
-              </button>
-              <button
-                className="btn btn-secondary"
-                style={{ border: '1px solid gray' }}
-                onClick={addItem}
-              >
-                <i className="fa-solid fa-plus"></i> Add item
-              </button>
+                <button
+                  id="btnDelete"
+                  className="btn btn-primary flex-grow basis-1"
+                  disabled={!isValidItem}
+                  onClick={() => {
+                    handleImageDetailsSave(finalOptions);
+                  }}
+                >
+                  Update Changes
+                </button>
+              </OverlayTrigger>
+              {isDropdown ||
+                (!selectedOption?.options?.length && (
+                  <button
+                    className="btn btn-secondary"
+                    style={{ border: '1px solid gray' }}
+                    onClick={addItem}
+                  >
+                    <i className="fa-solid fa-plus"></i> Add item
+                  </button>
+                ))}
               <button
                 className="btn btn-default"
                 style={{ border: '1px solid gray' }}
