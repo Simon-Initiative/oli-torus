@@ -24,7 +24,7 @@ defmodule OliWeb.TechSupportLive do
         accept: ~w(.jpg .jpeg .png),
         max_entries: 3,
         auto_upload: true,
-        max_file_size: 1_000_000
+        max_file_size: 10_000_000
       )
 
     {:ok, socket, layout: false}
