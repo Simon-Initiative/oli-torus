@@ -868,49 +868,6 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   attr :completed, :boolean, required: true
   attr :ctx, :map, required: true
 
-  # Non-completed graded page (assignment)
-  defp lesson_details(%{lesson: %{graded: true, batch_score: false}} = assigns) do
-    ~H"""
-    <div role="details" class="pt-2 pb-1 px-1 flex self-stretch justify-between gap-5">
-      <div class="justify-between items-end gap-2.5 flex ml-auto">
-        <div>Score as you go</div>
-        <div class="text-green-700 dark:text-green-500 flex justify-end items-center gap-1">
-          <div class="w-4 h-4 relative"><Icons.score_as_you_go /></div>
-          <div role="score" class="text-sm font-semibold tracking-tight">
-            <%= Utils.parse_score(@lesson.score) %>
-          </div>
-          <div class="text-sm font-semibold tracking-widest">
-            /
-          </div>
-          <div role="out_of" class="text-sm font-semibold tracking-tight">
-            <%= Utils.parse_score(@lesson.out_of) %>
-          </div>
-        </div>
-      </div>
-      <div
-        :if={lesson_expires?(@lesson)}
-        class="w-fit h-4 pl-1 justify-center items-start gap-1 inline-flex"
-      >
-        <div class="opacity-50 text-black dark:text-white text-xs font-normal">
-          Time Remaining:
-        </div>
-        <div
-          role="countdown"
-          class={[
-            if(@lesson.purpose == :application,
-              do: "text-exploration dark:text-exploration-dark",
-              else: "text-checkpoint dark:text-checkpoint-dark"
-            ),
-            "text-xs font-normal"
-          ]}
-        >
-          <%= effective_lesson_expiration_date(@lesson) |> Utils.format_time_remaining() %>
-        </div>
-      </div>
-    </div>
-    """
-  end
-
   defp lesson_details(%{upcoming: true} = assigns) do
     ~H"""
     <div role="details" class="w-full h-full flex flex-col items-stretch gap-5 relative">
@@ -946,6 +903,49 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             Completed
           </div>
           <Icons.check progress={1.0} />
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  # Non-completed graded page (assignment)
+  defp lesson_details(%{lesson: %{graded: true, batch_scoring: false}} = assigns) do
+    ~H"""
+    <div role="details" class="pt-2 pb-1 px-1 flex self-stretch justify-between gap-5">
+      <div class="flex justify-between gap-2.5 w-full">
+        <div>Score as you go</div>
+        <div class="text-green-700 dark:text-green-500 flex justify-end items-center gap-1">
+          <div class="relative"><Icons.score_as_you_go /></div>
+          <div role="score" class="text-sm font-semibold tracking-tight">
+            <%= Utils.format_score(@lesson.score) %>
+          </div>
+          <div class="text-sm font-semibold tracking-widest">
+            /
+          </div>
+          <div role="out_of" class="text-sm font-semibold tracking-tight">
+            <%= Utils.format_score(@lesson.out_of) %>
+          </div>
+        </div>
+      </div>
+      <div
+        :if={lesson_expires?(@lesson)}
+        class="w-fit h-4 pl-1 justify-center items-start gap-1 inline-flex"
+      >
+        <div class="opacity-50 text-black dark:text-white text-xs font-normal">
+          Time Remaining:
+        </div>
+        <div
+          role="countdown"
+          class={[
+            if(@lesson.purpose == :application,
+              do: "text-exploration dark:text-exploration-dark",
+              else: "text-checkpoint dark:text-checkpoint-dark"
+            ),
+            "text-xs font-normal"
+          ]}
+        >
+          <%= effective_lesson_expiration_date(@lesson) |> Utils.format_time_remaining() %>
         </div>
       </div>
     </div>
@@ -993,13 +993,13 @@ defmodule OliWeb.Delivery.Student.IndexLive do
         <div class="text-green-700 dark:text-green-500 flex justify-end items-center gap-1">
           <div class="w-4 h-4 relative"><Icons.star /></div>
           <div role="score" class="text-sm font-semibold tracking-tight">
-            <%= Utils.parse_score(@lesson.score) %>
+            <%= Utils.format_score(@lesson.score) %>
           </div>
           <div class="text-sm font-semibold tracking-widest">
             /
           </div>
           <div role="out_of" class="text-sm font-semibold tracking-tight">
-            <%= Utils.parse_score(@lesson.out_of) %>
+            <%= Utils.format_score(@lesson.out_of) %>
           </div>
         </div>
       </div>
