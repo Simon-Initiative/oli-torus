@@ -1619,7 +1619,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
           _ ->
             case total do
-              0 -> 1.0
+              0.0 -> 1.0
               _ -> out_of / total
             end
         end
