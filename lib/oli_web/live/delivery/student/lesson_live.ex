@@ -1614,12 +1614,16 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           nil ->
             1.0
 
-          0.0 ->
+          -0.0 ->
+            1.0
+
+          +0.0 ->
             1.0
 
           _ ->
             case total do
-              0.0 -> 1.0
+              -0.0 -> 1.0
+              +0.0 -> 1.0
               _ -> out_of / total
             end
         end
