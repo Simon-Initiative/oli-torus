@@ -6,17 +6,17 @@ communication between the LogicLab and Torus.
 */
 import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
-import { Provider, useDispatch } from 'react-redux';
+import { Provider, useDispatch} from 'react-redux';
 import {
   activityDeliverySlice,
   listenForParentSurveyReset,
   listenForParentSurveySubmit,
-  listenForReviewAttemptChange,
+  listenForReviewAttemptChange
 } from 'data/activities/DeliveryState';
+import { ScoreAsYouGoHeaderBase } from 'components/activities/common/ScoreAsYouGoHeader';
 import { configureStore } from 'state/store';
 import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
 import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
-import { ScoreAsYouGoHeader } from '../common/ScoreAsYouGoHeader';
 import { Manifest } from '../types';
 import { LogicLabModelSchema, getLabServer, isLabMessage } from './LogicLabModelSchema';
 
@@ -194,7 +194,13 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
       )}
       {loading === 'loaded' && (
         <div>
-          <ScoreAsYouGoHeader />
+          <ScoreAsYouGoHeaderBase
+            batchScoring={context.batchScoring}
+            graded={context.graded}
+            ordinal={context.ordinal}
+            maxAttempts={context.maxAttempts}
+            attemptNumber={activityState.attemptNumber}
+          />
           <iframe
             title={`LogicLab Activity ${model.context?.title}`}
             src={baseUrl}

@@ -1612,7 +1612,11 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       scale_factor =
         case out_of do
           nil -> 1.0
-          _ -> out_of / total
+          0.0 -> 1.0
+          _ -> case total do
+            0 -> 1.0
+            _ -> out_of / total
+          end
         end
 
       Enum.reduce(part_points, %{}, fn {part_id, points}, acc ->
