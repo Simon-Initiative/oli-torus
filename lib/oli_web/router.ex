@@ -1208,7 +1208,6 @@ defmodule OliWeb.Router do
       :delivery,
       :redirect_by_attempt_state,
       :delivery_protected,
-      :maybe_gated_resource,
       :enforce_paywall,
       :require_enrollment,
       :ensure_user_section_visit,
@@ -1274,6 +1273,8 @@ defmodule OliWeb.Router do
     end
 
     scope "/adaptive_lesson/:revision_slug" do
+      pipe_through([:maybe_gated_resource])
+
       get("/", PageDeliveryController, :page_fullscreen)
 
       get(

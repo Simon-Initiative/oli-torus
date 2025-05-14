@@ -23,7 +23,6 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   alias OliWeb.Delivery.Student.Lesson.Components.OutlineComponent
   alias Oli.Delivery.{Hierarchy, Metrics, Sections, Settings}
   alias Oli.Delivery.Sections.SectionCache
-  alias OliWeb.Delivery.Student.Utils
   alias OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion
   alias OliWeb.Icons
 
@@ -783,6 +782,14 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     else
       {:noreply, socket}
     end
+  end
+
+  def render(%{show_blocking_gates?: true} = assigns) do
+    ~H"""
+    <div class="h-[80vh] w-full flex items-center justify-center">
+      <Utils.blocking_gates_warning attempt_message={@attempt_message} />
+    </div>
+    """
   end
 
   def render(%{view: :practice_page, annotations: %{}} = assigns) do
