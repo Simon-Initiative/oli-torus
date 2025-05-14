@@ -12,20 +12,20 @@ export const ScoreAsYouGoHeader: React.FC<Props> = () => {
       ? `ATTEMPTS ${attemptState.attemptNumber} / ${uiState.activityContext.maxAttempts}`
       : `ATTEMPTS ${attemptState.attemptNumber} of Unlimited`;
 
-  const attemptsOrEmpty =
-    !uiState.activityContext.batchScoring && uiState.activityContext.graded ? (
-      <div className="text-[#757682] font-open-sans text-[14px] font-bold leading-[150%] tracking-[-0.14px]">
-        {attempts}
-      </div>
-    ) : (
-      <div>&nbsp;</div>
-    );
+  const attemptsOrEmpty = !uiState.activityContext.batchScoring ? (
+    <div className="text-[#757682] font-open-sans text-[14px] font-bold leading-[150%] tracking-[-0.14px]">
+      {attempts}
+    </div>
+  ) : (
+    <div>&nbsp;</div>
+  );
 
-  return (
+  // only render on graded pages, question ordinals unused and null on practice pages
+  return uiState.activityContext.graded ? (
     <div className="mt-3 flex justify-between">
       <div>{`Question #${uiState.activityContext.ordinal}`}</div>
 
       {attemptsOrEmpty}
     </div>
-  );
+  ) : null;
 };
