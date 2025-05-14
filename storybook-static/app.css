@@ -5493,6 +5493,10 @@ table.table-striped tbody tr:nth-child(even) {
   min-height: 100vh;
 }
 
+.\!w-1\/2 {
+  width: 50% !important;
+}
+
 .\!w-10 {
   width: 2.5rem !important;
 }
@@ -13830,11 +13834,21 @@ Not supports in Firefox and IE */
   background-color: rgb(255 255 255 / var(--tw-bg-opacity));
 }
 
-.after\:transition-all::after {
+.after\:transition-transform::after {
   content: var(--tw-content);
-  transition-property: all;
+  transition-property: transform;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   transition-duration: 150ms;
+}
+
+.after\:duration-300::after {
+  content: var(--tw-content);
+  transition-duration: 300ms;
+}
+
+.after\:ease-in-out::after {
+  content: var(--tw-content);
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .after\:content-\[\'\'\]::after {
@@ -14031,6 +14045,11 @@ Not supports in Firefox and IE */
 .hover\:bg-\[\#0052cb\]:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(0 82 203 / var(--tw-bg-opacity));
+}
+
+.hover\:bg-\[\#0062F2\]:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(0 98 242 / var(--tw-bg-opacity));
 }
 
 .hover\:bg-\[\#006cd9\]:hover {
@@ -16071,6 +16090,11 @@ Not supports in Firefox and IE */
   border-color: rgb(0 86 173 / var(--tw-border-opacity));
 }
 
+.dark .dark\:hover\:border-\[\#0062F2\]:hover {
+  --tw-border-opacity: 1;
+  border-color: rgb(0 98 242 / var(--tw-border-opacity));
+}
+
 .dark .dark\:hover\:border-white\/\[0\.02\]:hover {
   border-color: rgb(255 255 255 / 0.02);
 }
@@ -16103,6 +16127,11 @@ Not supports in Firefox and IE */
 .dark .dark\:hover\:bg-\[\#0056ad\]:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(0 86 173 / var(--tw-bg-opacity));
+}
+
+.dark .dark\:hover\:bg-\[\#0062F2\]:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(0 98 242 / var(--tw-bg-opacity));
 }
 
 .dark .dark\:hover\:bg-\[\#0D70FF\]:hover {
