@@ -254,7 +254,7 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
         {:noreply,
          socket
          |> put_flash(:info, "LTI 1.3 External tool deleted successfully.")
-         |> push_redirect(to: ~p"/admin/external_tools")}
+         |> push_navigate(to: ~p"/admin/external_tools")}
 
       {:error, _} ->
         {:noreply,
