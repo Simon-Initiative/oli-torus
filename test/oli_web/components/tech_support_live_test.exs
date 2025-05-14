@@ -2,14 +2,11 @@ defmodule OliWeb.Components.TechSupportLiveTest do
   use OliWeb.ConnCase
   import Phoenix.LiveViewTest
 
-  describe "modal" do
-    test "renders all fields", %{conn: conn} do
-      session_data = %{"id" => "some_ide", "requires_sender_data" => true}
+  describe "without an account" do
+    test "includes requester name and email fields since the user is not signed in", %{conn: conn} do
+      {:ok, view, _} = live_isolated(conn, OliWeb.TechSupportLive)
 
-      {:ok, view, _} =
-        live_isolated(conn, OliWeb.TechSupportLive, session: session_data)
-
-      # Extra fields added when not having a user account
+      # Extra fields are added when no user account is present
       assert view
              |> has_element?(
                ~s|form div[phx-feedback-for="help[name]"] input[required="required"][name="help[name]"][placeholder="Enter Name"]|
@@ -31,14 +28,15 @@ defmodule OliWeb.Components.TechSupportLiveTest do
                ~s|form div[phx-feedback-for="help[message]"] textarea[required="required"][name="help[message]"]|
              )
     end
+  end
 
-    test "omits requester info fields ", %{conn: conn} do
-      session_data = %{"id" => "some_ide"}
+  describe "with an account" do
+    setup [:signin_admin]
 
-      {:ok, view, _} =
-        live_isolated(conn, OliWeb.TechSupportLive, session: session_data)
+    test "excludes name and email fields because they are taken from the account", %{conn: conn} do
+      {:ok, view, _} = live_isolated(conn, OliWeb.TechSupportLive)
 
-      # Extra fields are omitted when having access to a user account
+      # Extra fields are omitted when accessing a user account
       refute view
              |> has_element?(
                ~s|form div[phx-feedback-for="help[name]"] input[required="required"][name="help[name]"][placeholder="Enter Name"]|
@@ -60,5 +58,11 @@ defmodule OliWeb.Components.TechSupportLiveTest do
                ~s|form div[phx-feedback-for="help[message]"] textarea[required="required"][name="help[message]"]|
              )
     end
+  end
+
+  defp signin_admin(%{conn: conn}) do
+    admin = author_fixture(%{system_role_id: Oli.Accounts.SystemRole.role_id().system_admin})
+    conn = log_in_author(conn, admin)
+    %{conn: conn, admin: admin}
   end
 end

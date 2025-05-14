@@ -13,7 +13,8 @@ defmodule Oli.Help.RequesterData do
         "requester_name" => requester_name,
         "requester_type" => requester_type,
         "student_report_url" => student_report_url
-      }) do
+      })
+      when not is_nil(requester_email) and not is_nil(requester_name) do
     help_requester_data = %Oli.Help.RequesterData{
       requester_name: requester_name,
       requester_email: requester_email,
