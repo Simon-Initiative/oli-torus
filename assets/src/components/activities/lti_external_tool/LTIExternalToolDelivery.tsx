@@ -37,6 +37,9 @@ const LTIExternalTool: React.FC = () => {
               name={ltiToolDetails.name}
               launchParams={ltiToolDetails.launch_params}
               resourceId={resourceId}
+              openInNewTab={model.openInNewTab}
+              height={model.height}
+              launchOnMount={true}
             />
           </div>
         </div>

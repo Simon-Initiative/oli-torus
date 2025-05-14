@@ -43,6 +43,8 @@ const LTIExternalTool: React.FC = () => {
               launchParams={ltiToolDetails.launch_params}
               resourceId={resourceId}
               openInNewTab={model.openInNewTab}
+              height={model.height}
+              onEditHeight={(height: number | undefined) => onEdit({ ...model, height })}
             />
 
             <div>
