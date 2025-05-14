@@ -250,7 +250,7 @@ defmodule Oli.Activities do
       Enum.reduce(project.activity_registrations, MapSet.new(), fn a, m -> MapSet.put(m, a.id) end)
 
     activities_enabled =
-      list_activity_registrations()
+      list_enabled_activity_registrations()
       |> Enum.filter(fn a -> a.globally_visible || is_admin? end)
       |> Enum.reduce([], fn a, m ->
         enabled_for_project =
@@ -345,6 +345,26 @@ defmodule Oli.Activities do
     from(ar in ActivityRegistration,
       left_join: d in LtiExternalToolActivityDeployment,
       on: d.activity_registration_id == ar.id,
+      select: ar,
+      select_merge: %{deployment_id: d.deployment_id}
+    )
+    |> Repo.all()
+  end
+
+  @doc """
+  Returns the list of activity_registrations that are enabled.
+  This excludes soft deleted and disabledLTI 1.3 tools.
+
+  ## Examples
+
+      iex> list_enabled_activity_registrations()
+      [%ActivityRegistration{}, ...]
+
+  """
+  def list_enabled_activity_registrations do
+    from(ar in ActivityRegistration,
+      left_join: d in LtiExternalToolActivityDeployment,
+      on: d.activity_registration_id == ar.id and d.status == :enabled,
       select: ar,
       select_merge: %{deployment_id: d.deployment_id}
     )
