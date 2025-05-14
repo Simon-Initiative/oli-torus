@@ -44,13 +44,15 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
   def render(assigns) do
     ~H"""
     <div class="flex flex-col justify-end mx-12 mt-4">
-      <.toggle_status_modal tool_name={@platform_instance.name} />
+      <.toggle_status_modal tool_name={@platform_instance.name} action={:disable} id="disable_tool_modal" />
+      <.toggle_status_modal tool_name={@platform_instance.name} action={:delete} id="delete_tool_modal" />
       <%= render_custom_flash(@custom_flash) %>
       <div class="w-full inline-flex flex-col justify-start items-start gap-3">
         <div class="w-full flex flex-row justify-between items-center">
           <div class="justify-center text-2xl font-normal leading-9">
             <%= @platform_instance.name %>
           </div>
+          <div class="flex flex-row gap-2">
           <.button
             :if={!@edit_mode}
             phx-click="toggle_edit_mode"
@@ -61,6 +63,17 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
           >
             Edit Details
           </.button>
+          <.button
+              :if={!@edit_mode}
+              phx-click={Modal.show_modal("delete_tool_modal")}
+              class="px-3 !py-1 bg-white text-red-600 border border-red-500 rounded-md
+                     hover:bg-red-600 hover:text-white
+                     dark:bg-gray-800 dark:text-red-400 dark:border-red-400
+                     dark:hover:bg-red-700 dark:hover:text-white dark:hover:border-red-700"
+            >
+              Delete Tool
+            </.button>
+          </div>
         </div>
         <div class="w-full flex-row flex justify-start text-lg font-normal">
           <text>
@@ -73,7 +86,7 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
             with_confirmation={true}
             on_toggle={
               if(@deployment.status == :enabled,
-                do: Modal.show_modal("toggle_tool_status_modal"),
+                do: Modal.show_modal("disable_tool_modal"),
                 else: "toggle_tool_status"
               )
             }
@@ -86,11 +99,13 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
   end
 
   attr :tool_name, :string, required: true
+  attr :action, :atom, required: true
+  attr :id, :string, required: true
 
   defp toggle_status_modal(assigns) do
     ~H"""
     <Modal.modal
-      id="toggle_tool_status_modal"
+      id={@id}
       class="!w-1/2"
       header_class="flex items-start justify-between p-6 border-b border-gray-300"
       confirm_class="h-8 w-fit px-5 py-3 text-white hover:no-underline rounded-md justify-center items-center gap-2 inline-flex bg-[#0062F2] hover:bg-[#0075EB] dark:bg-[#0062F2] dark:hover:bg-[#0D70FF]"
@@ -99,15 +114,35 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
                      dark:bg-gray-800 dark:text-[#197adc] dark:border-[#197adc]
                      dark:hover:bg-[#0062F2] dark:hover:text-white dark:hover:border-[#0062F2]"
       on_confirm={
-        JS.push("toggle_tool_status")
-        |> Modal.hide_modal("toggle_tool_status_modal")
+        JS.push(push_action(@action))
+        |> Modal.hide_modal(@id)
       }
     >
-      <:title>Disable <%= @tool_name %>?</:title>
-      Disabling this tool will disable its functionality across projects, products, active course sections. Course authors and instructors will be notified of this change on the affected pages. Functionality will be fully restored if the tool is re-enabled.
+      <:title><%= stringify_action(@action) %> <%= @tool_name %>?</:title>
+      <.modal_message action={@action} />
       <:cancel>Cancel</:cancel>
-      <:confirm>Disable Tool</:confirm>
+      <:confirm><%= stringify_action(@action) %> Tool</:confirm>
     </Modal.modal>
+    """
+  end
+
+  defp stringify_action(:disable), do: "Disable"
+  defp stringify_action(:delete), do: "Delete"
+
+  defp push_action(:delete), do: "delete_tool"
+  defp push_action(:disable), do: "toggle_tool_status"
+
+  attr :action, :atom, required: true
+
+  defp modal_message(%{action: :disable} = assigns) do
+    ~H"""
+    <div class="text-base font-medium">Disabling this tool will disable its functionality across projects, products, active course sections. Course authors and instructors will be notified of this change on the affected pages. Functionality will be fully restored if the tool is re-enabled.</div>
+    """
+  end
+
+  defp modal_message(%{action: :delete} = assigns) do
+    ~H"""
+    <div class="text-base font-medium">Deleting this tool will disable its functionality across projects, products, and course sections and <span class="font-bold">permanently delete the tool from the system.</span> Course authors and instructors will be notified of this change on the affected pages.</div>
     """
   end
 
@@ -207,6 +242,24 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
            type: :error,
            message: "There was an error updating the status of the LTI 1.3 External Tool."
          })}
+    end
+  end
+
+  def handle_event("delete_tool", _params, socket) do
+    case PlatformExternalTools.update_lti_external_tool_activity_deployment(
+           socket.assigns.deployment,
+           %{"status" => :deleted}
+         ) do
+      {:ok, _} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "LTI 1.3 External tool deleted successfully.")
+         |> push_redirect(to: ~p"/admin/external_tools")}
+
+      {:error, _} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Error deleting external tool.")}
     end
   end
 

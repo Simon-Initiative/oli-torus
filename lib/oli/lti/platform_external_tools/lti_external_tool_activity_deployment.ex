@@ -14,7 +14,7 @@ defmodule Oli.Lti.PlatformExternalTools.LtiExternalToolActivityDeployment do
                Lti_1p3.DataProviders.EctoProvider.PlatformInstance,
                foreign_key: :platform_instance_id
 
-    field :status, Ecto.Enum, values: [:enabled, :disabled], default: :enabled
+    field :status, Ecto.Enum, values: [:enabled, :disabled, :deleted], default: :enabled
 
     timestamps(type: :utc_datetime)
   end
