@@ -6,14 +6,14 @@ communication between the LogicLab and Torus.
 */
 import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
-import { Provider, useDispatch} from 'react-redux';
+import { Provider, useDispatch } from 'react-redux';
+import { ScoreAsYouGoHeaderBase } from 'components/activities/common/ScoreAsYouGoHeader';
 import {
   activityDeliverySlice,
   listenForParentSurveyReset,
   listenForParentSurveySubmit,
-  listenForReviewAttemptChange
+  listenForReviewAttemptChange,
 } from 'data/activities/DeliveryState';
-import { ScoreAsYouGoHeaderBase } from 'components/activities/common/ScoreAsYouGoHeader';
 import { configureStore } from 'state/store';
 import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
 import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';

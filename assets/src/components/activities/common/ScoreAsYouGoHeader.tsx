@@ -18,9 +18,20 @@ export const ScoreAsYouGoHeader: React.FC<Props> = () => {
   );
 };
 
-interface BaseProps {batchScoring: boolean; graded: boolean; ordinal: number; maxAttempts: number; attemptNumber: number;}
-export const ScoreAsYouGoHeaderBase: React.FC<BaseProps> = ({batchScoring, graded, ordinal, attemptNumber, maxAttempts }) => {
-
+interface BaseProps {
+  batchScoring: boolean;
+  graded: boolean;
+  ordinal: number;
+  maxAttempts: number;
+  attemptNumber: number;
+}
+export const ScoreAsYouGoHeaderBase: React.FC<BaseProps> = ({
+  batchScoring,
+  graded,
+  ordinal,
+  attemptNumber,
+  maxAttempts,
+}) => {
   const attempts =
     maxAttempts > 0
       ? `ATTEMPTS ${attemptNumber} / ${maxAttempts}`
@@ -42,5 +53,4 @@ export const ScoreAsYouGoHeaderBase: React.FC<BaseProps> = ({batchScoring, grade
       {attemptsOrEmpty}
     </div>
   ) : null;
-
 };
