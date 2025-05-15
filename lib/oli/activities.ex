@@ -251,7 +251,9 @@ defmodule Oli.Activities do
 
     activities_enabled =
       list_activity_registrations()
-      |> Enum.filter(fn a -> a.globally_visible || is_admin? end)
+      |> Enum.filter(fn a ->
+        (a.globally_visible || is_admin?) and (is_nil(a.status) or a.status == :enabled)
+      end)
       |> Enum.reduce([], fn a, m ->
         enabled_for_project =
           a.globally_available === true or MapSet.member?(project_activities, a.id)
@@ -346,7 +348,7 @@ defmodule Oli.Activities do
       left_join: d in LtiExternalToolActivityDeployment,
       on: d.activity_registration_id == ar.id,
       select: ar,
-      select_merge: %{deployment_id: d.deployment_id}
+      select_merge: %{deployment_id: d.deployment_id, status: d.status}
     )
     |> Repo.all()
   end
