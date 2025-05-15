@@ -179,12 +179,6 @@ defmodule OliWeb.Workspaces.InstructorTest do
                "To create course sections,"
              )
 
-      assert has_element?(
-               view,
-               "div[role='create section instructions'] button[onclick='window.showHelpModal();']",
-               "contact support."
-             )
-
       assert has_element?(view, "a[href='#']", "Create New Section")
     end
 

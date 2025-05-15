@@ -46,6 +46,7 @@ defmodule OliWeb.Router do
     plug(:fetch_current_user)
     plug(:fetch_live_flash)
     plug(:put_root_layout, {OliWeb.LayoutView, :lti})
+    plug(:protect_from_forgery)
     plug(OliWeb.Plugs.SessionContext)
   end
 

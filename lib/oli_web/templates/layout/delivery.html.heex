@@ -162,6 +162,11 @@
 
     <%= react_component("Components.ModalDisplay") %>
 
-    <%= render(OliWeb.SharedView, "_help.html", conn: @conn) %>
+    <%= live_render(@conn, OliWeb.TechSupportLive,
+      session: %{
+        "section" => Map.get(@conn.assigns, :section),
+        "user" => Map.get(@conn.assigns, :current_user) || Map.get(@conn.assigns, :current_author)
+      }
+    ) %>
   </body>
 </html>
