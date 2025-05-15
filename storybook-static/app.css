@@ -5869,6 +5869,10 @@ table.table-striped tbody tr:nth-child(even) {
   width: 75px;
 }
 
+.w-\[769px\] {
+  width: 769px;
+}
+
 .w-\[797px\] {
   width: 797px;
 }
@@ -10150,6 +10154,12 @@ table.table-striped tbody tr:nth-child(even) {
 .shadow {
   --tw-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
   --tw-shadow-colored: 0 1px 3px 0 var(--tw-shadow-color), 0 1px 2px -1px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+
+.shadow-\[0px_2px_10px_0px_rgba\(0\2c 50\2c 99\2c 0\.10\)\] {
+  --tw-shadow: 0px 2px 10px 0px rgba(0,50,99,0.10);
+  --tw-shadow-colored: 0px 2px 10px 0px var(--tw-shadow-color);
   box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
 }
 
