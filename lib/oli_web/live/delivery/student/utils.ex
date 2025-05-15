@@ -970,7 +970,6 @@ defmodule OliWeb.Delivery.Student.Utils do
   attr :attempt_message, :any
 
   def blocking_gates_warning(assigns) do
-    # TODO: update the support modal with the one that will be implemented on https://github.com/Simon-Initiative/oli-torus/pull/5584
     ~H"""
     <div id="blocking_gates_warning" class="container">
       <div class="grid grid-cols-12">
@@ -992,10 +991,13 @@ defmodule OliWeb.Delivery.Student.Utils do
           </p>
 
           <p class="mt-4">
-            If you think this is an error or would like more information, please <a
-              href="javascript:"
-              onclick="showHelpModal();"
-            >contact support</a>.
+            If you think this is an error or would like more information, please
+            <OliWeb.Components.Common.tech_support_link
+              id="tech_support_lti_error"
+              class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline text-base font-['Open Sans'] tracking-tight cursor-pointer"
+            >
+              contact support
+            </OliWeb.Components.Common.tech_support_link>.
           </p>
         </div>
       </div>
