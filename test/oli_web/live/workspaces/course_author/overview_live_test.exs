@@ -262,6 +262,36 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
       assert has_element?(view, "span", deployment_2.deployment_id)
     end
 
+    test "disabled external tools activities are not shown", %{conn: conn, author: author} do
+      project = create_project_with_author(author)
+
+      external_tool_1_params = %{
+        "name" => "External Too Test 1",
+        "description" => "External Tool Description",
+        "client_id" => "new_tool_client_id_1",
+        "target_link_uri" => "https://example.com/launch",
+        "login_url" => "https://example.com/login",
+        "keyset_url" => "https://example.com/jwks",
+        "redirect_uris" => "https://example.com/redirect",
+        "custom_params" => "param1=value1&param2=value2"
+      }
+
+      {:ok, {_platform_instance_1, activity_registration_1, deployment_1}} =
+        PlatformExternalTools.register_lti_external_tool_activity(external_tool_1_params)
+
+      # Disabled the tool
+      PlatformExternalTools.update_lti_external_tool_activity_deployment(
+        deployment_1,
+        %{"status" => :disabled}
+      )
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      assert has_element?(view, "h4", "Advanced Activities")
+
+      refute has_element?(view, "div", activity_registration_1.title)
+    end
+
     defp create_project_with_author(author) do
       %{project: project} = base_project_with_curriculum(nil)
       insert(:author_project, project_id: project.id, author_id: author.id)
