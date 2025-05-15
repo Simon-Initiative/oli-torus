@@ -64,6 +64,7 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
             Edit Details
           </.button>
           <.button
+              role="delete tool"
               :if={!@edit_mode}
               phx-click={Modal.show_modal("delete_tool_modal")}
               class="px-3 !py-1 bg-white text-red-600 border border-red-500 rounded-md
