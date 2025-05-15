@@ -786,8 +786,20 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
   def render(%{show_blocking_gates?: true} = assigns) do
     ~H"""
-    <div class="h-[80vh] w-full flex items-center justify-center">
-      <Utils.blocking_gates_warning attempt_message={@attempt_message} />
+    <div class="flex pb-20 flex-col w-full items-center gap-15 flex-1 overflow-auto">
+      <div class="flex-1 w-full max-w-[1040px] px-[80px] pt-20 pb-10 flex-col justify-start items-center inline-flex">
+        <.page_header
+          page_context={@page_context}
+          ctx={@ctx}
+          objectives={@objectives}
+          index={@current_page["index"]}
+          container_label={Utils.get_container_label(@current_page["id"], @section)}
+        />
+        <div class="self-stretch h-[0px] opacity-80 dark:opacity-20 bg-white border border-gray-200 mt-3 mb-10">
+        </div>
+
+        <Utils.blocking_gates_warning attempt_message={@attempt_message} />
+      </div>
     </div>
     """
   end
