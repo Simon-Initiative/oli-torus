@@ -923,7 +923,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
     value =
       case {key, Map.get(params, target_str)} do
         {key, value}
-        when key in ~w(late_policy retake_mode assessment_mode feedback_mode review_submission) ->
+        when key in ~w(late_policy retake_mode assessment_mode feedback_mode review_submission replacement_strategy) ->
           String.to_existing_atom(value)
 
         {key, value}
@@ -933,7 +933,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
         {key, value} when key in ~w(start_date end_date) ->
           FormatDateTime.datestring_to_utc_datetime(value, ctx)
 
-        {key, value} when key in ~w(allow_hints) ->
+        {key, value} when key in ~w(allow_hints batch_scoring) ->
           Utils.string_to_boolean(value)
 
         {_, value} ->
