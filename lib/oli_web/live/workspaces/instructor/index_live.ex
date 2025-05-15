@@ -237,12 +237,12 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
             class="dark:text-violet-100 text-base font-normal font-['Inter'] leading-normal"
           >
             To create course sections,
-            <button
-              onclick="window.showHelpModal();"
+            <.tech_support_link
+              id="tech_support_is_not_independet_instructor"
               class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline text-base font-bold font-['Open Sans'] tracking-tight cursor-pointer"
             >
               contact support.
-            </button>
+            </.tech_support_link>
           </div>
         </div>
         <div class="flex flex-col md:flex-row md:items-center w-full md:justify-between gap-3">

@@ -46,6 +46,7 @@ defmodule OliWeb.Router do
     plug(:fetch_current_user)
     plug(:fetch_live_flash)
     plug(:put_root_layout, {OliWeb.LayoutView, :lti})
+    plug(:protect_from_forgery)
     plug(OliWeb.Plugs.SessionContext)
   end
 
@@ -1208,7 +1209,6 @@ defmodule OliWeb.Router do
       :delivery,
       :redirect_by_attempt_state,
       :delivery_protected,
-      :maybe_gated_resource,
       :enforce_paywall,
       :require_enrollment,
       :ensure_user_section_visit,
@@ -1274,6 +1274,8 @@ defmodule OliWeb.Router do
     end
 
     scope "/adaptive_lesson/:revision_slug" do
+      pipe_through([:maybe_gated_resource])
+
       get("/", PageDeliveryController, :page_fullscreen)
 
       get(

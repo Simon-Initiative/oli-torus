@@ -1,7 +1,5 @@
 defmodule Oli.Help.HelpContent do
   defstruct [
-    :full_name,
-    :email,
     :subject,
     :message,
     :timestamp,
@@ -11,10 +9,15 @@ defmodule Oli.Help.HelpContent do
     :agent_accept,
     :agent_language,
     :cookies_enabled,
-    :account_email,
-    :account_name,
-    :account_role,
-    :account_created
+    :account_created,
+    :screen_size,
+    :browser_size,
+    :browser_plugins,
+    :operating_system,
+    :browser_info,
+    :screenshots,
+    :course_data,
+    :requester_data
   ]
 
   @subjects %{
@@ -44,8 +47,6 @@ defmodule Oli.Help.HelpContent do
   }
 
   def parse(%{
-        "full_name" => full_name,
-        "email" => email,
         "subject" => subject,
         "message" => message,
         "timestamp" => timestamp,
@@ -55,13 +56,17 @@ defmodule Oli.Help.HelpContent do
         "agent_accept" => agent_accept,
         "agent_language" => agent_language,
         "cookies_enabled" => cookies_enabled,
-        "account_email" => account_email,
-        "account_name" => account_name,
-        "account_created" => account_created
+        "account_created" => account_created,
+        "screen_size" => screen_size,
+        "browser_size" => browser_size,
+        "browser_plugins" => browser_plugins,
+        "operating_system" => operating_system,
+        "browser_info" => browser_info,
+        "course_data" => course_data,
+        "screenshots" => screenshots,
+        "requester_data" => %Oli.Help.RequesterData{} = requester_data
       }) do
     help_content = %Oli.Help.HelpContent{
-      full_name: full_name,
-      email: email,
       subject: subject,
       message: message,
       timestamp: timestamp,
@@ -71,9 +76,15 @@ defmodule Oli.Help.HelpContent do
       agent_accept: agent_accept,
       agent_language: agent_language,
       cookies_enabled: cookies_enabled,
-      account_email: account_email,
-      account_name: account_name,
-      account_created: account_created
+      account_created: account_created,
+      screen_size: screen_size,
+      browser_size: browser_size,
+      browser_plugins: browser_plugins,
+      operating_system: operating_system,
+      browser_info: browser_info,
+      course_data: course_data,
+      screenshots: screenshots,
+      requester_data: requester_data
     }
 
     {:ok, help_content}

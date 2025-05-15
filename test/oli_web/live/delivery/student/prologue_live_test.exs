@@ -1255,6 +1255,75 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
     end
   end
 
+  describe "Gated resources: Prologue view" do
+    setup [:user_conn, :create_elixir_project]
+
+    test "does not show the blocking gates warning when the resource is not gated", %{
+      conn: conn,
+      section: section,
+      user: user,
+      page_1: page_1
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_1.slug))
+
+      refute has_element?(view, "div[id='blocking_gates_warning']")
+      assert has_element?(view, "button[id='begin_attempt_button']")
+    end
+
+    test "does not show the blocking gates warning when the resource is gated but gating condition is not yet met",
+         %{
+           conn: conn,
+           section: section,
+           user: user,
+           page_1: page_1
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      _gating_condition =
+        gating_condition_fixture(%{
+          section_id: section.id,
+          resource_id: page_1.resource_id,
+          data: %{start_datetime: yesterday(), end_datetime: tomorrow()}
+        })
+
+      {:ok, section} = Oli.Delivery.Gating.update_resource_gating_index(section)
+
+      {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_1.slug))
+
+      refute has_element?(view, "div[id='blocking_gates_warning']")
+      assert has_element?(view, "button[id='begin_attempt_button']")
+    end
+
+    test "shows the blocking gates warning when the page is gated and the gating condition is met",
+         %{
+           conn: conn,
+           section: section,
+           user: user,
+           page_1: page_1
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      _gating_condition =
+        gating_condition_fixture(%{
+          section_id: section.id,
+          resource_id: page_1.resource_id,
+          data: %{end_datetime: yesterday()}
+        })
+
+      {:ok, section} = Oli.Delivery.Gating.update_resource_gating_index(section)
+
+      {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_1.slug))
+
+      assert has_element?(view, "div[id='blocking_gates_warning']")
+      refute has_element?(view, "button[id='begin_attempt_button']")
+    end
+  end
+
   describe "offline detector" do
     setup [:user_conn, :create_elixir_project]
 

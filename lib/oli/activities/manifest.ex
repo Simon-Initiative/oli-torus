@@ -12,7 +12,8 @@ defmodule Oli.Activities.Manifest do
     :icon,
     :global,
     :variables,
-    :generatesReport
+    :generatesReport,
+    :activityRegistration
   ]
 
   def parse(
@@ -37,7 +38,8 @@ defmodule Oli.Activities.Manifest do
        allowClientEvaluation: value_or(json["allowClientEvaluation"], false),
        global: false,
        variables: value_or(json["variables"], []),
-       generatesReport: value_or(json["generatesReport"], false)
+       generatesReport: value_or(json["generatesReport"], false),
+       activityRegistration: value_or(json["activityRegistration"], true)
      }}
   end
 

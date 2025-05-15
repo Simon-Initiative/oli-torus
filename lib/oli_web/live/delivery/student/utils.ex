@@ -967,6 +967,44 @@ defmodule OliWeb.Delivery.Student.Utils do
     """
   end
 
+  attr :attempt_message, :any
+
+  def blocking_gates_warning(assigns) do
+    ~H"""
+    <div id="blocking_gates_warning" class="container">
+      <div class="grid grid-cols-12">
+        <div class="col-span-12 text-center pt-4">
+          <p><i class="far fa-hand-paper" aria-hidden="true" style="font-size: 64px"></i></p>
+          <h2 class="mt-4 mb-4">This Resource is Gated</h2>
+          <p>
+            You are trying to access a resource that is gated by the following condition<%= if Enum.count(
+                                                                                                 @attempt_message
+                                                                                               ) >
+                                                                                                 1,
+                                                                                               do:
+                                                                                                 "s",
+                                                                                               else:
+                                                                                                 "" %>:
+            <ul style="list-style-position: inside">
+              <li :for={reason <- @attempt_message}><%= reason %></li>
+            </ul>
+          </p>
+
+          <p class="mt-4">
+            If you think this is an error or would like more information, please
+            <OliWeb.Components.Common.tech_support_link
+              id="tech_support_lti_error"
+              class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline text-base font-['Open Sans'] tracking-tight cursor-pointer"
+            >
+              contact support
+            </OliWeb.Components.Common.tech_support_link>.
+          </p>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
   def coalesce(first, second) do
     case {first, second} do
       {nil, nil} -> nil
