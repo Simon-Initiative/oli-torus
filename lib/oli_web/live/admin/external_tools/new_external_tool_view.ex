@@ -58,16 +58,14 @@ defmodule OliWeb.Admin.ExternalTools.NewExternalToolView do
 
   def handle_event("create_tool", %{"tool_form" => params}, socket) do
     case PlatformExternalTools.register_lti_external_tool_activity(params) do
-      {:ok, _tool} ->
-        new_changeset = PlatformExternalTools.change_platform_instance(%PlatformInstance{})
-
+      {:ok, {platform_instance, _activity_registration, _deployment}} ->
         {:noreply,
          socket
-         |> assign(form: to_form(new_changeset, as: :tool_form))
-         |> assign(:custom_flash, %{
-           type: :success,
-           message: "You have successfully added an LTI 1.3 External Tool at the system level."
-         })}
+         |> put_flash(
+           :info,
+           "You have successfully added an LTI 1.3 External Tool at the system level."
+         )
+         |> redirect(to: ~p"/admin/external_tools/#{platform_instance.id}/details")}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {flash_type, flash_message} =
