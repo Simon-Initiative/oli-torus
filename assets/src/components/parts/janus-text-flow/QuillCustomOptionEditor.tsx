@@ -15,23 +15,29 @@ export interface OptionItem {
 }
 
 interface QuillCustomOptionEditorProps {
-  handleImageDetailsSave: (options: Array<OptionItem>) => void;
-  handleImageDailogClose: () => void;
-  showImageSelectorDailog?: boolean;
+  handleOptionDetailsSave: (options: Array<OptionItem>) => void;
+  handleOptionDailogClose: () => void;
+  showOptionDailog?: boolean;
   Options: OptionItem[];
+  selectedIndex: number;
 }
 
 export const QuillCustomOptionEditor: React.FC<QuillCustomOptionEditorProps> = ({
-  handleImageDetailsSave,
-  showImageSelectorDailog,
-  handleImageDailogClose,
+  handleOptionDetailsSave,
+  showOptionDailog,
+  handleOptionDailogClose,
   Options,
+  selectedIndex,
 }) => {
-  const [selectedKey, setSelectedKey] = useState<string>(Options[0]?.key || '');
+  const [selectedKey, setSelectedKey] = useState<string>('');
   const [items, setItems] = useState<QuillCustomOptionProps[]>([]);
   const [finalOptions, setFinalOptions] = useState<OptionItem[]>([]);
 
-  const selectedOption = finalOptions.find((opt) => opt.key === selectedKey);
+  const selectedOption =
+    selectedIndex >= 0
+      ? finalOptions[selectedIndex]
+      : finalOptions.find((opt) => opt.key === selectedKey);
+
   const isDropdown = selectedOption?.type === 'dropdown';
   const isValidItem = selectedOption?.options?.length && selectedOption?.correct?.length;
   useEffect(() => {
@@ -39,11 +45,16 @@ export const QuillCustomOptionEditor: React.FC<QuillCustomOptionEditorProps> = (
   }, [Options]);
 
   useEffect(() => {
-    let current = finalOptions.find((opt) => opt.key === selectedKey);
-    if (finalOptions?.length && !current) {
-      setSelectedKey(finalOptions[0]?.key);
-      current = finalOptions[0];
+    if (finalOptions.length && selectedIndex >= 0 && selectedIndex < finalOptions.length) {
+      const current = finalOptions[selectedIndex];
+      if (current && current.key !== selectedKey) {
+        setSelectedKey(current.key);
+      }
     }
+  }, [selectedIndex, finalOptions]);
+
+  useEffect(() => {
+    const current = finalOptions.find((opt) => opt.key === selectedKey);
     if (current) {
       setItems(
         current.options.map((opt) => ({
@@ -109,11 +120,7 @@ export const QuillCustomOptionEditor: React.FC<QuillCustomOptionEditorProps> = (
     <React.Fragment>
       {
         <>
-          <Modal
-            show={showImageSelectorDailog}
-            onHide={handleImageDailogClose}
-            style={{ top: '225px' }}
-          >
+          <Modal show={showOptionDailog} onHide={handleOptionDailogClose} style={{ top: '225px' }}>
             <Modal.Header closeButton={true} className="px-8 pb-0">
               <h3 className="modal-title font-bold">
                 {isDropdown ? 'Drop Down Items' : 'Input Items - Correct Answer(s)'}
@@ -128,9 +135,9 @@ export const QuillCustomOptionEditor: React.FC<QuillCustomOptionEditorProps> = (
                   value={selectedKey}
                   onChange={(e) => setSelectedKey(e.target.value)}
                 >
-                  {Options.map((option) => (
+                  {Options.map((option, index) => (
                     <option key={option.key} value={option.key}>
-                      {option.key}
+                      {`Blank ${index + 1}`}
                     </option>
                   ))}
                 </select>
@@ -215,7 +222,7 @@ export const QuillCustomOptionEditor: React.FC<QuillCustomOptionEditorProps> = (
                       isDropdown ? (
                         <div>You must mark one option as correct.</div>
                       ) : (
-                        <div>A correct answer is required.</div>
+                        <div>You must have one correct option.</div>
                       )
                     ) : (
                       <div>Save changes</div>
@@ -228,26 +235,25 @@ export const QuillCustomOptionEditor: React.FC<QuillCustomOptionEditorProps> = (
                   className="btn btn-primary flex-grow basis-1"
                   disabled={!isValidItem}
                   onClick={() => {
-                    handleImageDetailsSave(finalOptions);
+                    handleOptionDetailsSave(finalOptions);
                   }}
                 >
                   Update Changes
                 </button>
               </OverlayTrigger>
-              {isDropdown ||
-                (!selectedOption?.options?.length && (
-                  <button
-                    className="btn btn-secondary"
-                    style={{ border: '1px solid gray' }}
-                    onClick={addItem}
-                  >
-                    <i className="fa-solid fa-plus"></i> Add item
-                  </button>
-                ))}
+
+              <button
+                className="btn btn-secondary"
+                style={{ border: '1px solid gray' }}
+                onClick={addItem}
+              >
+                <i className="fa-solid fa-plus"></i> Add item
+              </button>
+
               <button
                 className="btn btn-default"
                 style={{ border: '1px solid gray' }}
-                onClick={handleImageDailogClose}
+                onClick={handleOptionDailogClose}
               >
                 Cancel
               </button>

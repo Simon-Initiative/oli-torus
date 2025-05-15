@@ -29,6 +29,7 @@ const Editor: React.FC<any> = React.memo(({ html, tree, portal, customOptions })
   quillProps.tree = JSON.stringify(tree);
   quillProps.showcustomoptioncontrol = true;
   quillProps.customoptions = JSON.stringify(normalizeBlanks(customOptions));
+  console.log({ tt: quillProps.customoptions, tree, customOptions });
   const E = () => (
     <div style={{ padding: 20 }}>{React.createElement(quillEditorTagName, quillProps)}</div>
   );

@@ -84,11 +84,13 @@ interface ParsedFIBResult {
   content: FIBContentItem[];
   elements: (TextInputBlank | DropdownBlank)[];
 }
-
-export const parseTextToFIBStructure = (inputText: string): ParsedFIBResult => {
+export const parseTextToFIBStructure = (
+  inputText: string,
+): ParsedFIBResult & { blanksInsideBraces: string[][] } => {
   const contentItems: FIBContentItem[] = [];
-  const textInputs = new Map<string, TextInputBlank>();
-  const dropdowns: DropdownBlank[] = [];
+  const elements: (DropdownBlank | TextInputBlank)[] = [];
+  const blanksInsideBraces: string[][] = [];
+
   const placeholderRegex = /{([^{}]+)}/g;
   let lastProcessedIndex = 0;
   let match: RegExpExecArray | null;
@@ -99,6 +101,7 @@ export const parseTextToFIBStructure = (inputText: string): ParsedFIBResult => {
     const matchEnd = placeholderRegex.lastIndex;
     const placeholderContent = match[1];
 
+    // Plain text before current match
     if (matchStart > lastProcessedIndex) {
       const plainText = inputText.slice(lastProcessedIndex, matchStart);
       if (plainText) contentItems.push({ insert: plainText });
@@ -108,6 +111,8 @@ export const parseTextToFIBStructure = (inputText: string): ParsedFIBResult => {
       .split(/\s*,\s*/)
       .map((s) => s.trim().replace(/^"(.*)"$/, '$1'));
 
+    blanksInsideBraces.push([...parts]);
+
     if (parts.length === 1) {
       let value = parts[0];
       const isCorrect = value.endsWith('*');
@@ -115,9 +120,10 @@ export const parseTextToFIBStructure = (inputText: string): ParsedFIBResult => {
 
       contentItems.push({ 'text-input': value });
 
-      if (!textInputs.has(value)) {
-        textInputs.set(value, { correct: value, key: value });
-      }
+      elements.push({
+        correct: value,
+        key: value,
+      });
     } else {
       const options: { key: string; value: string }[] = [];
       let correctKey = '';
@@ -137,7 +143,7 @@ export const parseTextToFIBStructure = (inputText: string): ParsedFIBResult => {
       const dropdownKey = `blank${blankCounter++}`;
       contentItems.push({ dropdown: dropdownKey, insert: '' });
 
-      dropdowns.push({
+      elements.push({
         correct: correctKey,
         alternateCorrect: '',
         key: dropdownKey,
@@ -148,14 +154,17 @@ export const parseTextToFIBStructure = (inputText: string): ParsedFIBResult => {
     lastProcessedIndex = matchEnd;
   }
 
+  // Append any remaining text after last placeholder
   if (lastProcessedIndex < inputText.length) {
     const remaining = inputText.slice(lastProcessedIndex);
     if (remaining) contentItems.push({ insert: remaining });
   }
 
-  const elements = [...dropdowns, ...Array.from(textInputs.values())];
-  console.log({ contentItems, elements });
-  return { content: contentItems, elements };
+  return {
+    content: contentItems,
+    elements, // now correctly ordered
+    blanksInsideBraces,
+  };
 };
 
 type FIBElement = DropdownBlank | TextInputBlank;
@@ -184,5 +193,23 @@ export const normalizeBlanks = (elements: FIBElement[]): NormalizedBlank[] => {
         correct: 'true',
       };
     }
+  });
+};
+
+interface OptionItem {
+  key: string;
+  options: string[];
+  type: 'dropdown' | 'input';
+  correct: string;
+}
+export const updateStringWithCorrectAnswers = (input: string, options: OptionItem[]) => {
+  let matchIndex = 0;
+  return input.replace(/\{[^}]*\}/g, (match) => {
+    const option = options[matchIndex++];
+    if (!option) return match; // fallback if no matching option
+    const updatedOptions = option.options.map((opt) =>
+      opt === option.correct ? `"${opt}"*` : `"${opt}"`,
+    );
+    return `{${updatedOptions.join(', ')}}`;
   });
 };

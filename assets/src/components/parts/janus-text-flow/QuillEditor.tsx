@@ -1,7 +1,13 @@
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import ReactQuill, { Quill } from 'react-quill';
 import Delta from 'quill-delta';
 import register from '../customElementWrapper';
+import {
+  convertQuillNodesToText,
+  normalizeBlanks,
+  parseTextToFIBStructure,
+  updateStringWithCorrectAnswers,
+} from '../janus-fill-blanks/FIBUtils';
 import { OptionItem, QuillCustomOptionEditor } from './QuillCustomOptionEditor';
 import { QuillImageUploader } from './QuillImageUploader';
 import { convertJanusToQuill, convertQuillToJanus } from './quill-utils';
@@ -24,7 +30,7 @@ const supportedFonts = ['Initial', 'Arial', 'Times New Roman', 'Sans Serif'];
 const getFontName = (font: string) => {
   return font.toLowerCase().replace(/\s/g, '-');
 };
-Quill.import('ui/icons')['customDropDownOption'] = '<i class="fa-solid fa-square-caret-down"></i>';
+Quill.import('ui/icons')['customFIBOption'] = '<i class="fa-solid fa-square-caret-down"></i>';
 
 const FontAttributor = Quill.import('attributors/class/font');
 FontAttributor.whitelist = supportedFonts.map(getFontName);
@@ -121,6 +127,8 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
 }) => {
   const quill: any = useRef();
   const [contents, setContents] = React.useState<any>(tree);
+  const [selectedKey, setSelectedKey] = useState<number>(0);
+  const [textContents, setTextContents] = React.useState<any>(tree);
   const [customDropDownOptions, setCustomDropDownOptions] = React.useState<any>([]);
   const [delta, setDelta] = React.useState<any>(convertJanusToQuill(tree));
   const [currentQuillRange, setCurrentQuillRange] = React.useState<number>(0);
@@ -147,9 +155,63 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
       setShowImageSelectorDailog(true);
       setCurrentQuillRange(this.quill.getSelection()?.index || 0);
     },
-    customDropDownOption: function (value: string) {
-      setShowCustomOptionSelectorDailog(true);
-      setCurrentQuillRange(this.quill.getSelection()?.index || 0);
+    customFIBOption: function (value: string) {
+      const range = this.quill.getSelection();
+      const insertIndex = range ? range.index : this.quill.getLength();
+      setCurrentQuillRange(insertIndex);
+
+      const fullText = quill.current?.getEditor().getText() ?? '';
+      const cursorIndex = insertIndex;
+
+      // Match all {...} blocks
+      const placeholderRegex = /\{[^{}]*\}/g;
+      const results: { text: string; start: number; end: number }[] = [];
+
+      let match: RegExpExecArray | null;
+      while ((match = placeholderRegex.exec(fullText)) !== null) {
+        results.push({
+          text: match[0],
+          start: match.index,
+          end: match.index + match[0].length,
+        });
+      }
+
+      let isInsideExistingBlank = false;
+      let iMatchCounter = 0;
+      for (const block of results) {
+        const { text, start: matchStart, end: matchEnd } = block;
+
+        if (cursorIndex >= matchStart && cursorIndex <= matchEnd) {
+          isInsideExistingBlank = true;
+
+          // Extract options inside this {...}
+          const extractedOptions: string[] = [];
+          const optionRegex = /"([^"]+)"\*?/g;
+          let innerMatch: RegExpExecArray | null;
+          while ((innerMatch = optionRegex.exec(text)) !== null) {
+            extractedOptions.push(innerMatch[1]);
+          }
+          setSelectedKey(iMatchCounter);
+          setShowCustomOptionSelectorDailog(true);
+          break;
+        }
+        iMatchCounter++;
+      }
+
+      if (!isInsideExistingBlank) {
+        // Insert a new blank
+        const newKey = `New blank Option`;
+        quill.current?.getEditor().insertText(insertIndex, `{"${newKey}"}`);
+
+        // Update FIB structure and dropdown options
+        const updatedText = quill.current?.getEditor().getText() ?? '';
+        const parsed = parseTextToFIBStructure(updatedText);
+        const quillOptions = normalizeBlanks(parsed.elements);
+
+        setCustomDropDownOptions(quillOptions);
+        setSelectedKey(iMatchCounter);
+        setShowCustomOptionSelectorDailog(true);
+      }
     },
   };
   const handleImageDetailsSave = (imageURL: string, imageAltText: string) => {
@@ -169,7 +231,15 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
   const handleCustomOptionEditorSave = (Options: Array<OptionItem>) => {
     setShowCustomOptionSelectorDailog(false);
     if (quill?.current) {
-      console.log({ Options });
+      const mytextContents = quill.current?.getEditor().getText();
+
+      console.log({ textContents, Options, mytextContents });
+      const updatedString = updateStringWithCorrectAnswers(mytextContents, Options);
+
+      const editor = quill.current.getEditor();
+      // Clear all content first
+      editor.setText(''); // Clears the content safely
+      editor.setText(updatedString);
     }
   };
 
@@ -207,6 +277,11 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
       // console.log('quill changes', { content, delta, source, editor });
       const janusText = convertQuillToJanus(new Delta(editor.getContents().ops));
       // console.log('JANUS TEXT', janusText);
+      if (showcustomoptioncontrol) {
+        const collectedText = convertQuillNodesToText(janusText);
+        //const finalcontent = parseTextToFIBStructure(collectedText);
+        setTextContents(collectedText);
+      }
       setContents(janusText);
       onChange({ value: janusText });
     },
@@ -216,9 +291,7 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
     ? [
         ['bold', 'italic', 'underline'], // toggled buttons
         [{ script: 'sub' }, { script: 'super' }], // superscript/subscript
-        ['clean'], // remove formatting button
-        ['customDropDownOption'],
-        ['customInputOption'],
+        ['customFIBOption'],
       ]
     : [
         ['bold', 'italic', 'underline', 'strike'], // toggled buttons
@@ -324,10 +397,11 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
       }
       {
         <QuillCustomOptionEditor
-          showImageSelectorDailog={showCustomOptionSelectorDailog}
-          handleImageDetailsSave={handleCustomOptionEditorSave}
-          handleImageDailogClose={handleCustomOptionEditorDailogClose}
+          showOptionDailog={showCustomOptionSelectorDailog}
+          handleOptionDetailsSave={handleCustomOptionEditorSave}
+          handleOptionDailogClose={handleCustomOptionEditorDailogClose}
           Options={customDropDownOptions}
+          selectedIndex={selectedKey}
         ></QuillCustomOptionEditor>
       }
     </React.Fragment>
