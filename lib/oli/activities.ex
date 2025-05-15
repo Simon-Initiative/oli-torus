@@ -354,26 +354,6 @@ defmodule Oli.Activities do
   end
 
   @doc """
-  Returns the list of activity_registrations that are enabled.
-  This excludes soft deleted and disabledLTI 1.3 tools.
-
-  ## Examples
-
-      iex> list_enabled_activity_registrations()
-      [%ActivityRegistration{}, ...]
-
-  """
-  def list_enabled_activity_registrations do
-    from(ar in ActivityRegistration,
-      left_join: d in LtiExternalToolActivityDeployment,
-      on: d.activity_registration_id == ar.id and d.status == :enabled,
-      select: ar,
-      select_merge: %{deployment_id: d.deployment_id}
-    )
-    |> Repo.all()
-  end
-
-  @doc """
   Returns a list of script urls for all registered activities
   """
   def get_activity_scripts(scriptType \\ :authoring_script) do
