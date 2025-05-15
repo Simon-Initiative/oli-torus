@@ -44,8 +44,16 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
   def render(assigns) do
     ~H"""
     <div class="flex flex-col justify-end mx-12 mt-4">
-      <.toggle_status_modal tool_name={@platform_instance.name} action={:disable} id="disable_tool_modal" />
-      <.toggle_status_modal tool_name={@platform_instance.name} action={:delete} id="delete_tool_modal" />
+      <.toggle_status_modal
+        tool_name={@platform_instance.name}
+        action={:disable}
+        id="disable_tool_modal"
+      />
+      <.toggle_status_modal
+        tool_name={@platform_instance.name}
+        action={:delete}
+        id="delete_tool_modal"
+      />
       <%= render_custom_flash(@custom_flash) %>
       <div class="w-full inline-flex flex-col justify-start items-start gap-3">
         <div class="w-full flex flex-row justify-between items-center">
@@ -53,19 +61,19 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
             <%= @platform_instance.name %>
           </div>
           <div class="flex flex-row gap-2">
-          <.button
-            :if={!@edit_mode}
-            phx-click="toggle_edit_mode"
-            class="px-3 !py-1 bg-white text-[#006cd9] border border-blue-500 rounded-md
+            <.button
+              :if={!@edit_mode}
+              phx-click="toggle_edit_mode"
+              class="px-3 !py-1 bg-white text-[#006cd9] border border-blue-500 rounded-md
                    hover:bg-[#006cd9] hover:text-white
                    dark:bg-gray-800 dark:text-[#197adc] dark:border-[#197adc]
                    dark:hover:bg-[#0056ad] dark:hover:text-white dark:hover:border-[#0056ad]"
-          >
-            Edit Details
-          </.button>
-          <.button
-              role="delete tool"
+            >
+              Edit Details
+            </.button>
+            <.button
               :if={!@edit_mode}
+              role="delete tool"
               phx-click={Modal.show_modal("delete_tool_modal")}
               class="px-3 !py-1 bg-white text-red-600 border border-red-500 rounded-md
                      hover:bg-red-600 hover:text-white
@@ -137,13 +145,19 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
 
   defp modal_message(%{action: :disable} = assigns) do
     ~H"""
-    <div class="text-base font-medium">Disabling this tool will disable its functionality across projects, products, active course sections. Course authors and instructors will be notified of this change on the affected pages. Functionality will be fully restored if the tool is re-enabled.</div>
+    <div class="text-base font-medium">
+      Disabling this tool will disable its functionality across projects, products, active course sections. Course authors and instructors will be notified of this change on the affected pages. Functionality will be fully restored if the tool is re-enabled.
+    </div>
     """
   end
 
   defp modal_message(%{action: :delete} = assigns) do
     ~H"""
-    <div class="text-base font-medium">Deleting this tool will disable its functionality across projects, products, and course sections and <span class="font-bold">permanently delete the tool from the system.</span> Course authors and instructors will be notified of this change on the affected pages.</div>
+    <div class="text-base font-medium">
+      Deleting this tool will disable its functionality across projects, products, and course sections and
+      <span class="font-bold">permanently delete the tool from the system.</span>
+      Course authors and instructors will be notified of this change on the affected pages.
+    </div>
     """
   end
 
