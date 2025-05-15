@@ -112,6 +112,26 @@ export const LTIExternalToolFrame = ({
           />
         </>
       )}
+      {['disabled', 'deleted'].includes(launchParams.status) && (
+        <div className="w-[769px] p-6 my-4 rounded-2xl shadow-[0px_2px_10px_0px_rgba(0,50,99,0.10)] inline-flex gap-3 items-end">
+          <div className="flex-1 flex flex-col gap-3">
+            <div className="flex items-center gap-2">
+              <div className="p-1 rounded-lg flex justify-center items-center overflow-hidden">
+                <i className="fa-solid fa-triangle-exclamation text-[#c03a2b]"></i>
+              </div>
+              <span className="text-text-text-default text-lg font-semibold leading-normal">
+                Tool has been removed
+              </span>
+            </div>
+            <div className="pl-8 flex items-center gap-2">
+              <span className="text-text-text-neutral text-sm leading-none">
+                This tool is no longer registered in the system, and its functionality has been
+                disabled.
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
