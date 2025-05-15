@@ -6343,6 +6343,10 @@ table.table-striped tbody tr:nth-child(even) {
   cursor: not-allowed;
 }
 
+.cursor-ns-resize {
+  cursor: ns-resize;
+}
+
 .cursor-nw-resize {
   cursor: nw-resize;
 }
@@ -13930,6 +13934,10 @@ Not supports in Firefox and IE */
   pointer-events: none;
 }
 
+.hover\:flex:hover {
+  display: flex;
+}
+
 .hover\:w-16:hover {
   width: 4rem;
 }
@@ -13984,6 +13992,11 @@ Not supports in Firefox and IE */
 .hover\:border-delivery-primary-200:hover {
   --tw-border-opacity: 1;
   border-color: rgb(206 231 255 / var(--tw-border-opacity));
+}
+
+.hover\:border-gray-200:hover {
+  --tw-border-opacity: 1;
+  border-color: rgb(229 229 229 / var(--tw-border-opacity));
 }
 
 .hover\:border-gray-300:hover {
@@ -14175,6 +14188,11 @@ Not supports in Firefox and IE */
 .hover\:bg-gray-400:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(163 163 163 / var(--tw-bg-opacity));
+}
+
+.hover\:bg-gray-50:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(250 250 250 / var(--tw-bg-opacity));
 }
 
 .hover\:bg-gray-600:hover {
@@ -14691,6 +14709,11 @@ Not supports in Firefox and IE */
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
 
+.active\:border-primary:active {
+  --tw-border-opacity: 1;
+  border-color: rgb(59 118 211 / var(--tw-border-opacity));
+}
+
 .active\:bg-blue-600:active {
   --tw-bg-opacity: 1;
   background-color: rgb(39 92 175 / var(--tw-bg-opacity));
@@ -14799,6 +14822,11 @@ Not supports in Firefox and IE */
 .active\:text-green-700:active {
   --tw-text-opacity: 1;
   color: rgb(21 128 61 / var(--tw-text-opacity));
+}
+
+.active\:text-primary:active {
+  --tw-text-opacity: 1;
+  color: rgb(59 118 211 / var(--tw-text-opacity));
 }
 
 .active\:text-red-700:active {
