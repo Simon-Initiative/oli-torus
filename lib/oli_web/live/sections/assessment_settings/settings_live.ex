@@ -48,7 +48,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
       [
         Breadcrumb.new(%{
           full_title: "Assessments settings",
-          link: Routes.live_path(OliWeb.Endpoint, __MODULE__, section.slug)
+          link: Routes.live_path(OliWeb.Endpoint, __MODULE__, section.slug, "all")
         })
       ]
   end

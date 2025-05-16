@@ -48,7 +48,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsLive do
       [
         Breadcrumb.new(%{
           full_title: "Student Exceptions",
-          link: Routes.live_path(OliWeb.Endpoint, __MODULE__, section.slug)
+          link: Routes.live_path(OliWeb.Endpoint, __MODULE__, section.slug, "all")
         })
       ]
   end
