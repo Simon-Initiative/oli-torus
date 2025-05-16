@@ -35,7 +35,7 @@ defmodule OliWeb.Sections.OverviewView do
     previous ++
       [
         Breadcrumb.new(%{
-          full_title: section.title,
+          full_title: "Manage",
           link: ~p"/sections/#{section.slug}/manage"
         })
       ]
