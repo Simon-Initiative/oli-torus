@@ -123,21 +123,6 @@ defmodule OliWeb.Components.Delivery.Buttons do
     |> JS.toggle(to: "##{target_id}_options")
   end
 
-  @spec help_button(any()) :: Phoenix.LiveView.Rendered.t()
-  def help_button(assigns) do
-    ~H"""
-    <!-- Button trigger modal -->
-    <button
-      type="button"
-      class="btn btn-light btn-sm inline-flex items-center"
-      onclick="window.showHelpModal();"
-    >
-      <span class="hidden sm:inline">Tech Support</span>
-      <span class="inline sm:hidden"><i class="fa-solid fa-circle-question"></i></span>
-    </button>
-    """
-  end
-
   attr :id, :string, required: true
   attr :map_values, :map, default: %{}
 

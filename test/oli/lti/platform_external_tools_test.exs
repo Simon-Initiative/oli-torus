@@ -505,6 +505,65 @@ defmodule Oli.Lti.PlatformExternalToolsTest do
       assert PlatformExternalTools.get_sections_with_lti_activities_for_platform_instance_id(
                platform.id
              ) == []
+end
+end
+  describe "update_lti_external_tool_activity_deployment/2" do
+    setup do
+      deployment = insert(:lti_external_tool_activity_deployment)
+      %{deployment: deployment}
+    end
+
+    test "successfully updates the deployment", %{deployment: deployment} do
+      updated_attrs = %{
+        status: :disabled
+      }
+
+      assert {:ok, updated} =
+               Oli.Lti.PlatformExternalTools.update_lti_external_tool_activity_deployment(
+                 deployment,
+                 updated_attrs
+               )
+
+      assert updated.status == updated_attrs.status
+    end
+
+    test "returns error changeset when given invalid attrs", %{deployment: deployment} do
+      invalid_attrs = %{status: :invalid_status}
+
+      assert {:error, changeset} =
+               Oli.Lti.PlatformExternalTools.update_lti_external_tool_activity_deployment(
+                 deployment,
+                 invalid_attrs
+               )
+
+      refute changeset.valid?
+    end
+  end
+
+  describe "get_platform_instance_with_deployment/1" do
+    test "returns the platform_instance and associated deployment when found" do
+      deployment =
+        insert(:lti_external_tool_activity_deployment)
+
+      assert {returned_pi, returned_deployment} =
+               Oli.Lti.PlatformExternalTools.get_platform_instance_with_deployment(
+                 deployment.platform_instance_id
+               )
+
+      assert returned_pi.id == deployment.platform_instance_id
+      assert returned_deployment.deployment_id == deployment.deployment_id
+    end
+
+    test "returns nil when the platform_instance does not exist" do
+      refute Oli.Lti.PlatformExternalTools.get_platform_instance_with_deployment(-1)
+    end
+
+    test "returns nil when there is no associated deployment" do
+      platform_instance = insert(:platform_instance)
+
+      refute Oli.Lti.PlatformExternalTools.get_platform_instance_with_deployment(
+               platform_instance.id
+             )
     end
   end
 end

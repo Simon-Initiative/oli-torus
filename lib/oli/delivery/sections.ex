@@ -4620,6 +4620,7 @@ defmodule Oli.Delivery.Sections do
           rev.id,
           sr.numbering_index,
           sr.end_date,
+          sr.batch_scoring,
           last_att.lifecycle_state,
           last_att.inserted_at
         ],
@@ -4641,6 +4642,7 @@ defmodule Oli.Delivery.Sections do
           attempts_count: count(r_att.id),
           score: max(ra.score),
           out_of: max(ra.out_of),
+          batch_scoring: sr.batch_scoring,
           progress: max(ra.progress),
           last_attempt_started_at: last_att.inserted_at,
           last_attempt_state: last_att.lifecycle_state
@@ -4732,7 +4734,9 @@ defmodule Oli.Delivery.Sections do
         start_date: coalesce(se.start_date, sr.start_date),
         end_date: coalesce(se.end_date, sr.end_date),
         scheduling_type: sr.scheduling_type,
-        batch_scoring: sr.batch_scoring
+        batch_scoring: sr.batch_scoring,
+        score: ra.score,
+        out_of: ra.out_of
       }
     )
     |> where(^graded_filter)

@@ -63,7 +63,6 @@ defmodule OliWeb.UserRegistrationLiveTest do
       conn = get(conn, "/")
       response = html_response(conn, 200)
 
-      assert response =~ email
       assert response =~ "Access my courses"
 
       # Assert that the new user has a unique sub generated

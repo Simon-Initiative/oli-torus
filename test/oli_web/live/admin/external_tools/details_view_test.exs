@@ -11,7 +11,7 @@ defmodule OliWeb.Admin.ExternalTools.DetailsViewTest do
   def insert_lti_tool(_) do
     institution = insert(:institution)
 
-    {:ok, {pi, ar, _}} =
+    {:ok, {pi, ar, dep}} =
       PlatformExternalTools.register_lti_external_tool_activity(%{
         "name" => "Original Tool",
         "description" => "A test tool",
@@ -23,7 +23,7 @@ defmodule OliWeb.Admin.ExternalTools.DetailsViewTest do
         "institution_id" => institution.id
       })
 
-    %{institution: institution, platform_instance: pi, activity_registration: ar}
+    %{institution: institution, platform_instance: pi, activity_registration: ar, deployment: dep}
   end
 
   describe "user cannot access when is not logged in" do
@@ -112,7 +112,7 @@ defmodule OliWeb.Admin.ExternalTools.DetailsViewTest do
 
       # Click the cancel button to return to read-only mode
       view
-      |> element("button", "Cancel")
+      |> element("button[role=\"cancel_edit\"]", "Cancel")
       |> render_click()
 
       # Check that the form is in read-only mode
@@ -273,6 +273,29 @@ defmodule OliWeb.Admin.ExternalTools.DetailsViewTest do
           to: "/admin/external_tools",
           flash: %{"error" => "The LTI Tool you are trying to view does not exist."}
         }}} = live(conn, ~p"/admin/external_tools/12345/details")
+    end
+
+    test "enables the tool for project and course section use", %{
+      conn: conn,
+      platform_instance: pi,
+      deployment: dep
+    } do
+      PlatformExternalTools.update_lti_external_tool_activity_deployment(dep, %{status: :disabled})
+
+      {:ok, view, _html} = live(conn, ~p"/admin/external_tools/#{pi.id}/details")
+
+      # Check that the tool is disabled
+      assert has_element?(view, "#toggle_switch_checkbox[data-checked=\"false\"]")
+
+      view
+      |> element("#toggle_switch_form")
+      |> render_change()
+
+      # Check that the tool is enabled
+      assert has_element?(view, "#toggle_switch_checkbox[data-checked=\"true\"]")
+
+      assert PlatformExternalTools.get_lti_external_tool_activity_deployment!(dep.deployment_id).status ===
+               :enabled
     end
   end
 end

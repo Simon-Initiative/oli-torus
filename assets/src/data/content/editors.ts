@@ -10,6 +10,7 @@ export type EditorDesc = {
   enabledForProject: boolean;
   id: number;
   variables: any;
+  isLtiActivity: boolean;
 };
 
 export interface ActivityEditorMap {

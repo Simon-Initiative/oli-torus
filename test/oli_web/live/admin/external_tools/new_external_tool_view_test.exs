@@ -1,8 +1,12 @@
 defmodule OliWeb.Admin.ExternalTools.NewExternalToolViewTest do
   use OliWeb.ConnCase, async: true
+
+  import Ecto.Query, warn: false
   import Phoenix.LiveViewTest
   import Oli.Factory
   import Oli.TestHelpers
+
+  alias Lti_1p3.DataProviders.EctoProvider.PlatformInstance
 
   describe "new external tool" do
     setup [:admin_conn]
@@ -46,18 +50,17 @@ defmodule OliWeb.Admin.ExternalTools.NewExternalToolViewTest do
       })
       |> render_submit()
 
-      # Check that the success message is displayed
-      assert has_element?(
-               view,
-               "span",
-               "Success!"
-             )
+      # get id of the newly created platform instance
+      platform_instance =
+        PlatformInstance
+        |> where([p], p.client_id == "new_tool_client_id")
+        |> Oli.Repo.one()
 
-      assert has_element?(
-               view,
-               "#flash",
-               "You have successfully added an LTI 1.3 External Tool at the system level."
-             )
+      # Check that the view was successfully redirected to the details view
+      assert_redirect(
+        view,
+        ~p"/admin/external_tools/#{platform_instance.id}/details"
+      )
     end
 
     test "a new external tool cannot be added with missing data", %{conn: conn} do
@@ -108,15 +111,18 @@ defmodule OliWeb.Admin.ExternalTools.NewExternalToolViewTest do
     end
 
     test "flash message is cleared when the clear button is clicked", %{conn: conn} do
+      # Create an existing platform instance with a specific client_id
+      existing_platform_instance = insert(:platform_instance, client_id: "existing_client_id")
+
       {:ok, view, _html} = live(conn, ~p"/admin/external_tools/new")
 
-      # Fill in the form fields with valid data
+      # Fill in the form fields with the same client_id
       view
       |> form("#tool_form", %{
         "tool_form" => %{
           "name" => "New Tool",
           "description" => "A new external tool",
-          "client_id" => "new_tool_client_id",
+          "client_id" => existing_platform_instance.client_id,
           "target_link_uri" => "https://example.com/launch",
           "login_url" => "https://example.com/login",
           "keyset_url" => "https://example.com/jwks",
@@ -127,11 +133,8 @@ defmodule OliWeb.Admin.ExternalTools.NewExternalToolViewTest do
       |> render_submit()
 
       # Check that the error message is displayed
-      assert has_element?(
-               view,
-               "#flash",
-               "You have successfully added an LTI 1.3 External Tool at the system level."
-             )
+      assert has_element?(view, "span", "ID Already Exists")
+      assert has_element?(view, "#flash", "The client ID already exists and must be unique.")
 
       # Click the clear button to remove the error message
       view

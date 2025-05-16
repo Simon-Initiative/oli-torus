@@ -128,6 +128,30 @@ defmodule Oli.Lti.PlatformExternalTools do
   end
 
   @doc """
+  Updates a lti external tool deployment.
+
+  ## Examples
+
+      iex> update_lti_external_tool_activity_deployment(lti_external_tool_activity_deployment, %{field: new_value})
+      {:ok, %LtiExternalToolActivityDeployment{}}
+
+      iex> update_lti_external_tool_activity_deployment(lti_external_tool_activity_deployment, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+  """
+  @spec update_lti_external_tool_activity_deployment(
+          LtiExternalToolActivityDeployment.t(),
+          map()
+        ) :: {:ok, LtiExternalToolActivityDeployment.t()} | {:error, Ecto.Changeset.t()}
+  def update_lti_external_tool_activity_deployment(
+        %LtiExternalToolActivityDeployment{} = lti_external_tool_activity_deployment,
+        attrs
+      ) do
+    lti_external_tool_activity_deployment
+    |> LtiExternalToolActivityDeployment.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
   Deletes a lti external tool deployment.
   """
   def delete_lti_external_tool_activity_deployment(
@@ -360,5 +384,30 @@ defmodule Oli.Lti.PlatformExternalTools do
       select: s
     )
     |> Repo.all()
-  end
+    end
+
+@doc """
+  Gets a single platform_instance by ID, and the associated LtiExternalToolActivityDeployment.
+  Returns `nil` if the PlatformInstance does not exist.
+  ## Examples
+
+      iex> get_platform_instance_with_deployment(id)
+      {%PlatformInstance{}, %LtiExternalToolActivityDeployment{}}
+
+      iex> get_platform_instance_with_deployment(456)
+      nil
+  """
+  @spec get_platform_instance_with_deployment(integer()) ::
+          {%PlatformInstance{}, %LtiExternalToolActivityDeployment{}}
+  def get_platform_instance_with_deployment(platform_instance_id) do
+    from(
+      p in PlatformInstance,
+      join: lad in LtiExternalToolActivityDeployment,
+      on: lad.platform_instance_id == p.id,
+      where: p.id == ^platform_instance_id,
+      select: {p, lad}
+    )
+    |> Repo.one()
+
+end
 end

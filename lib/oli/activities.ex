@@ -175,6 +175,9 @@ defmodule Oli.Activities do
         end)
 
       list_activity_registrations()
+      |> Enum.filter(fn a ->
+        is_nil(a.status) or a.status == :enabled
+      end)
       |> Enum.map(&ActivityMapEntry.from_registration/1)
       |> Enum.reduce(%{}, fn e, m ->
         e =
@@ -250,8 +253,10 @@ defmodule Oli.Activities do
       Enum.reduce(project.activity_registrations, MapSet.new(), fn a, m -> MapSet.put(m, a.id) end)
 
     activities_enabled =
-      list_activity_registrations_with_deployment_id()
-      |> Enum.filter(fn a -> a.globally_visible || is_admin? end)
+      list_activity_registrations()
+      |> Enum.filter(fn a ->
+        (a.globally_visible || is_admin?) and (is_nil(a.status) or a.status == :enabled)
+      end)
       |> Enum.reduce([], fn a, m ->
         enabled_for_project =
           a.globally_available === true or MapSet.member?(project_activities, a.id)
@@ -342,25 +347,11 @@ defmodule Oli.Activities do
 
   """
   def list_activity_registrations do
-    Repo.all(ActivityRegistration)
-  end
-
-  @doc """
-  Returns the list of activity_registrations with their deployment ids.
-
-  ## Examples
-
-      iex> list_activity_registrations()
-      [%ActivityRegistration{}, ...]
-
-  """
-  def list_activity_registrations_with_deployment_id do
-    fields = ActivityRegistration.__schema__(:fields)
-
     from(ar in ActivityRegistration,
       left_join: d in LtiExternalToolActivityDeployment,
       on: d.activity_registration_id == ar.id,
-      select: merge(map(ar, ^fields), %{deployment_id: d.deployment_id})
+      select: ar,
+      select_merge: %{deployment_id: d.deployment_id, status: d.status}
     )
     |> Repo.all()
   end
