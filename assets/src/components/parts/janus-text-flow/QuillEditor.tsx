@@ -235,11 +235,14 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
 
       console.log({ textContents, Options, mytextContents });
       const updatedString = updateStringWithCorrectAnswers(mytextContents, Options);
-
+      const span = document.createElement('span');
+      span.innerHTML = updatedString;
+      span.style.fontSize = '16px';
       const editor = quill.current.getEditor();
       // Clear all content first
       editor.setText(''); // Clears the content safely
-      editor.setText(updatedString);
+      quill.current.editor.clipboard.dangerouslyPasteHTML(0, span.outerHTML);
+      //editor.setText(updatedString);
     }
   };
 
