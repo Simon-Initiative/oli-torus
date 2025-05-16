@@ -184,8 +184,6 @@ defmodule Oli.Lti.PlatformExternalTools do
       from p in PlatformInstance,
         join: lad in LtiExternalToolActivityDeployment,
         on: lad.platform_instance_id == p.id,
-        left_join: uc in subquery(count_sections_per_platform_instance_query()),
-        on: uc.platform_instance_id == p.id,
         where: ^filter_by_text,
         where: ^filter_by_status,
         limit: ^limit,
@@ -195,7 +193,6 @@ defmodule Oli.Lti.PlatformExternalTools do
           name: p.name,
           description: p.description,
           inserted_at: p.inserted_at,
-          usage_count: coalesce(uc.usage_count, 0),
           status: lad.status,
           total_count: fragment("count(*) OVER()")
         }
@@ -212,7 +209,15 @@ defmodule Oli.Lti.PlatformExternalTools do
           order_by(query, [_p, lad], {^direction, lad.status})
       end
 
-    Repo.all(query)
+    query
+    |> Repo.all()
+    |> Enum.map(fn p ->
+      Map.put(
+        p,
+        :usage_count,
+        length(get_sections_with_lti_activities_for_platform_instance_id(p.id))
+      )
+    end)
   end
 
   @doc """
@@ -355,27 +360,5 @@ defmodule Oli.Lti.PlatformExternalTools do
       select: s
     )
     |> Repo.all()
-  end
-
-  defp count_sections_per_platform_instance_query do
-    from(
-      pi in LtiExternalToolActivityDeployment,
-      join: ar in ActivityRegistration,
-      on: ar.id == pi.activity_registration_id,
-      join: r in Revision,
-      on: r.activity_type_id == ar.id,
-      join: sr in SectionResource,
-      on: sr.revision_id == r.id,
-      join: s in Section,
-      on: s.id == sr.section_id,
-      where:
-        r.resource_type_id == ^ResourceType.id_for_page() and
-          fragment("? = ANY(?)", ar.id, r.activity_refs),
-      group_by: pi.platform_instance_id,
-      select: %{
-        platform_instance_id: pi.platform_instance_id,
-        usage_count: count(s.id, :distinct)
-      }
-    )
   end
 end
