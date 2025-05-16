@@ -70,11 +70,13 @@ defmodule OliWeb.Admin.ExternalTools.TableModel do
   end
 
   def render_usage_count_column(assigns, row, _) do
-    assigns = Map.merge(assigns, %{usage_count: row.usage_count})
+    assigns = Map.merge(assigns, %{usage_count: row.usage_count, platform_instance_id: row.id})
 
-    # TODO: link this to the usage page (https://eliterate.atlassian.net/browse/MER-4332)
     ~H"""
-    <.link navigate="#" class="text-base font-bold underline">
+    <.link
+      href={~p"/admin/external_tools/#{@platform_instance_id}/usage"}
+      class="text-base font-bold underline"
+    >
       <%= @usage_count %>
     </.link>
     """
