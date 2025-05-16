@@ -1,5 +1,8 @@
 FROM amazonlinux:2
 
+ARG ELIXIR_VERSION=1.17.2
+ARG OTP_VERSION=26.1
+
 RUN yum update -y
 RUN yum install -y tar wget git
 
@@ -7,16 +10,16 @@ RUN yum install ncurses-devel openssl11-devel -y
 RUN yum groupinstall "Development Tools" -y
 
 WORKDIR /tmp
-RUN wget --tries=1 --timeout=30 "http://erlang.org/download/otp_src_26.1.tar.gz" -O otp_src_26.1.tar.gz || wget "https://github.com/erlang/otp/releases/download/OTP-26.1/otp_src_26.1.tar.gz" -O otp_src_26.1.tar.gz
-RUN tar xfz otp_src_26.1.tar.gz
-WORKDIR /tmp/otp_src_26.1/
+RUN wget --tries=1 --timeout=30 "http://erlang.org/download/otp_src_${OTP_VERSION}.tar.gz" -O otp_src_${OTP_VERSION}.tar.gz || wget "https://github.com/erlang/otp/releases/download/OTP-${OTP_VERSION}/otp_src_${OTP_VERSION}.tar.gz" -O otp_src_${OTP_VERSION}.tar.gz
+RUN tar xfz otp_src_${OTP_VERSION}.tar.gz
+WORKDIR /tmp/otp_src_${OTP_VERSION}/
 RUN ./configure
 RUN make && make install
 
 WORKDIR /tmp
-RUN wget "https://github.com/elixir-lang/elixir/archive/v1.17.2.tar.gz"
-RUN tar xfz v1.17.2.tar.gz
-WORKDIR /tmp/elixir-1.17.2/
+RUN wget "https://github.com/elixir-lang/elixir/archive/v${ELIXIR_VERSION}.tar.gz"
+RUN tar xfz v${ELIXIR_VERSION}.tar.gz
+WORKDIR /tmp/elixir-${ELIXIR_VERSION}/
 ENV PATH="${PATH}:/usr/local/bin"
 RUN make && make install
 
