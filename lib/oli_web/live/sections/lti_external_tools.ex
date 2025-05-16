@@ -35,8 +35,10 @@ defmodule OliWeb.Sections.LtiExternalToolsView do
 
   def render(assigns) do
     ~H"""
-    <div id="lti-external-tools">
-      placeholder
+    <div id="lti-external-tools" class="container flex flex-col">
+      <div class="flex-1 flex flex-col">
+        placeholder
+      </div>
     </div>
     """
   end
