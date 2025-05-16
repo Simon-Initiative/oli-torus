@@ -505,8 +505,9 @@ defmodule Oli.Lti.PlatformExternalToolsTest do
       assert PlatformExternalTools.get_sections_with_lti_activities_for_platform_instance_id(
                platform.id
              ) == []
-end
-end
+    end
+  end
+
   describe "update_lti_external_tool_activity_deployment/2" do
     setup do
       deployment = insert(:lti_external_tool_activity_deployment)

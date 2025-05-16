@@ -384,9 +384,9 @@ defmodule Oli.Lti.PlatformExternalTools do
       select: s
     )
     |> Repo.all()
-    end
+  end
 
-@doc """
+  @doc """
   Gets a single platform_instance by ID, and the associated LtiExternalToolActivityDeployment.
   Returns `nil` if the PlatformInstance does not exist.
   ## Examples
@@ -408,6 +408,5 @@ defmodule Oli.Lti.PlatformExternalTools do
       select: {p, lad}
     )
     |> Repo.one()
-
-end
+  end
 end
