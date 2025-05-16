@@ -175,6 +175,9 @@ defmodule Oli.Activities do
         end)
 
       list_activity_registrations()
+      |> Enum.filter(fn a ->
+        is_nil(a.status) or a.status == :enabled
+      end)
       |> Enum.map(&ActivityMapEntry.from_registration/1)
       |> Enum.reduce(%{}, fn e, m ->
         e =
