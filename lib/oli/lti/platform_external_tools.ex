@@ -180,20 +180,11 @@ defmodule Oli.Lti.PlatformExternalTools do
         dynamic([p, lad], lad.status == :enabled)
       end
 
-    usage_counts_query =
-      from ar in ActivityRegistration,
-        join: letad in LtiExternalToolActivityDeployment,
-        on: letad.activity_registration_id == ar.id,
-        join: pi in PlatformInstance,
-        on: pi.id == letad.platform_instance_id,
-        group_by: pi.id,
-        select: %{platform_instance_id: pi.id, usage_count: count(ar.id, :distinct)}
-
     query =
       from p in PlatformInstance,
         join: lad in LtiExternalToolActivityDeployment,
         on: lad.platform_instance_id == p.id,
-        left_join: uc in subquery(usage_counts_query),
+        left_join: uc in subquery(count_sections_per_platform_instance_query()),
         on: uc.platform_instance_id == p.id,
         where: ^filter_by_text,
         where: ^filter_by_status,
@@ -332,7 +323,7 @@ defmodule Oli.Lti.PlatformExternalTools do
   def get_sections_with_lti_activities_for_platform_instance_id(platform_instance_id) do
     # Step 1: Find all LTI activity registrations for the given platform instance ID
     lti_activity_registrations =
-      from(ar in Oli.Activities.ActivityRegistration,
+      from(ar in ActivityRegistration,
         join: d in assoc(ar, :lti_external_tool_activity_deployment),
         where: d.platform_instance_id == ^platform_instance_id,
         select: ar.id
@@ -360,8 +351,31 @@ defmodule Oli.Lti.PlatformExternalTools do
       where:
         r.resource_type_id == ^page_type_id and
           fragment("? && ?", r.activity_refs, ^lti_activity_ids),
+      distinct: true,
       select: s
     )
     |> Repo.all()
+  end
+
+  defp count_sections_per_platform_instance_query do
+    from(
+      pi in LtiExternalToolActivityDeployment,
+      join: ar in ActivityRegistration,
+      on: ar.id == pi.activity_registration_id,
+      join: r in Revision,
+      on: r.activity_type_id == ar.id,
+      join: sr in SectionResource,
+      on: sr.revision_id == r.id,
+      join: s in Section,
+      on: s.id == sr.section_id,
+      where:
+        r.resource_type_id == ^ResourceType.id_for_page() and
+          fragment("? = ANY(?)", ar.id, r.activity_refs),
+      group_by: pi.platform_instance_id,
+      select: %{
+        platform_instance_id: pi.platform_instance_id,
+        usage_count: count(s.id, :distinct)
+      }
+    )
   end
 end
