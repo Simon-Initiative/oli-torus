@@ -14,7 +14,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsLive do
       {:error, error} ->
         {:ok, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, error))}
 
-      {_user_type, user, section} ->
+      {user_type, user, section} ->
         section =
           section
           |> Oli.Repo.preload([:base_project, :root_section_resource])
@@ -33,17 +33,24 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsLive do
              Sections.enrolled_students(section.slug)
              |> Enum.reject(fn s -> s.user_role_id != 4 end)
              |> Enum.sort(),
-           breadcrumbs: [
-             Breadcrumb.new(%{
-               full_title: "Manage Section",
-               link: ~p"/sections/#{section.slug}/manage"
-             }),
-             Breadcrumb.new(%{
-               full_title: "Student Exceptions"
-             })
-           ]
+           breadcrumbs: set_breadcrumbs(user_type, section)
          )}
     end
+  end
+
+  defp set_breadcrumbs(type, section) do
+    OliWeb.Sections.OverviewView.set_breadcrumbs(type, section)
+    |> breadcrumb(section)
+  end
+
+  def breadcrumb(previous, section) do
+    previous ++
+      [
+        Breadcrumb.new(%{
+          full_title: "Student Exceptions",
+          link: Routes.live_path(OliWeb.Endpoint, __MODULE__, section.slug)
+        })
+      ]
   end
 
   @impl true
