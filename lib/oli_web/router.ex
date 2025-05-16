@@ -1378,6 +1378,7 @@ defmodule OliWeb.Router do
 
       live("/invitations", Sections.InviteView)
       live("/schedule", Sections.ScheduleView)
+      live("/lti_external_tools", Sections.LtiExternalToolsView)
       live("/edit", Sections.EditView)
       live("/gating_and_scheduling", Sections.GatingAndScheduling)
       live("/gating_and_scheduling/new", Sections.GatingAndScheduling.New)
