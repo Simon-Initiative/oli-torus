@@ -26,14 +26,25 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
   end
 
   defp live_view_overview_route(section_slug, active_tab, assessment_id, params \\ %{}) do
-    Routes.live_path(
-      OliWeb.Endpoint,
-      OliWeb.Sections.AssessmentSettings.SettingsLive,
-      section_slug,
-      active_tab,
-      assessment_id,
-      params
-    )
+    case active_tab do
+      "settings" ->
+        Routes.live_path(
+          OliWeb.Endpoint,
+          OliWeb.Sections.AssessmentSettings.SettingsLive,
+          section_slug,
+          assessment_id,
+          params
+        )
+
+      _ ->
+        Routes.live_path(
+          OliWeb.Endpoint,
+          OliWeb.Sections.AssessmentSettings.StudentExceptionsLive,
+          section_slug,
+          assessment_id,
+          params
+        )
+    end
   end
 
   defp create_project(%{user: user}) do
@@ -627,7 +638,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assert assessment_4 == page_4.title
 
       assert html =~
-               ~s(<a href="/sections/#{section.slug}/manage">Manage Section</a>)
+               ~s(<a href="/sections/#{section.slug}/manage">#{section.title}</a>)
     end
   end
 
@@ -660,7 +671,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assert assessment_4 == page_4.title
 
       assert html =~
-               ~s(<a href="/sections/#{section.slug}/manage">Manage Section</a>)
+               ~s(<a href="/sections/#{section.slug}/manage">#{section.title}</a>)
     end
 
     test "student_exceptions view loads correctly", %{
@@ -773,9 +784,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assert url ==
                Routes.live_path(
                  OliWeb.Endpoint,
-                 OliWeb.Sections.AssessmentSettings.SettingsLive,
+                 OliWeb.Sections.AssessmentSettings.StudentExceptionsLive,
                  section.slug,
-                 :student_exceptions,
                  page_1.resource.id
                )
     end

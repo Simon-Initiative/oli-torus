@@ -1348,6 +1348,43 @@ defmodule OliWeb.Router do
       as: :instructor_review
     )
 
+    live_session :schedule_gating,
+      on_mount: [
+        {OliWeb.UserAuth, :ensure_authenticated},
+        OliWeb.LiveSessionPlugs.SetCtx,
+        OliWeb.LiveSessionPlugs.SetSection,
+        OliWeb.LiveSessionPlugs.SetBrand,
+        OliWeb.LiveSessionPlugs.SetPreviewMode,
+        OliWeb.LiveSessionPlugs.SetUri,
+        OliWeb.Delivery.InstructorDashboard.InitialAssigns
+      ],
+      layout: {OliWeb.Layouts, :instructor_dashboard_schedule} do
+      live("/schedule", Sections.ScheduleView)
+      live("/gating_and_scheduling", Sections.GatingAndScheduling)
+      live("/gating_and_scheduling/new", Sections.GatingAndScheduling.New)
+      live("/gating_and_scheduling/edit/:id", Sections.GatingAndScheduling.Edit)
+
+      live(
+        "/gating_and_scheduling/exceptions/:parent_gate_id",
+        Sections.GatingAndScheduling
+      )
+
+      live(
+        "/gating_and_scheduling/new/:parent_gate_id",
+        Sections.GatingAndScheduling.New
+      )
+
+      live(
+        "/assessment_settings/student_exceptions/:assessment_id",
+        Sections.AssessmentSettings.StudentExceptionsLive
+      )
+
+      live(
+        "/assessment_settings/settings/:assessment_id",
+        Sections.AssessmentSettings.SettingsLive
+      )
+    end
+
     live_session :manage_section,
       on_mount: [
         {OliWeb.UserAuth, :ensure_authenticated},
@@ -1375,33 +1412,13 @@ defmodule OliWeb.Router do
       live("/remix", Delivery.RemixSection)
       live("/remix/:section_resource_slug", Delivery.RemixSection)
       live("/enrollments", Sections.EnrollmentsViewLive)
-
       live("/invitations", Sections.InviteView)
-      live("/schedule", Sections.ScheduleView)
+
       live("/edit", Sections.EditView)
-      live("/gating_and_scheduling", Sections.GatingAndScheduling)
-      live("/gating_and_scheduling/new", Sections.GatingAndScheduling.New)
 
       live("/debugger/:attempt_guid", Attempt.AttemptLive)
 
-      live(
-        "/gating_and_scheduling/new/:parent_gate_id",
-        Sections.GatingAndScheduling.New
-      )
-
-      live("/gating_and_scheduling/edit/:id", Sections.GatingAndScheduling.Edit)
-
-      live(
-        "/gating_and_scheduling/exceptions/:parent_gate_id",
-        Sections.GatingAndScheduling
-      )
-
       live("/collaborative_spaces", CollaborationLive.IndexView, as: :collab_spaces_index)
-
-      live(
-        "/assessment_settings/:active_tab/:assessment_id",
-        Sections.AssessmentSettings.SettingsLive
-      )
 
       live(
         "/assistant/conversations",
