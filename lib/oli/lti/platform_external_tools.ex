@@ -170,6 +170,7 @@ defmodule Oli.Lti.PlatformExternalTools do
 
   @doc """
   Browse platform external tools with support for pagination, sorting, text search and status filter.
+  This function excludes soft deleted tools.
 
   ## Examples
 
@@ -195,12 +196,10 @@ defmodule Oli.Lti.PlatformExternalTools do
         )
       end
 
-    filter_by_status =
-      if options.include_disabled do
-        true
-      else
-        dynamic([p, lad], lad.status == :enabled)
-      end
+    allowed_statuses =
+      [:enabled] ++ if options.include_disabled, do: [:disabled], else: []
+
+    filter_by_status = dynamic([p, lad], lad.status in ^allowed_statuses)
 
     # TODO: calculate usage_count (we need https://eliterate.atlassian.net/browse/MER-4469)
     query =

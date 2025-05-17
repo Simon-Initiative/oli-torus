@@ -262,7 +262,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
       assert has_element?(view, "span", deployment_2.deployment_id)
     end
 
-    test "disabled external tools activities are not shown", %{conn: conn, author: author} do
+    test "disabled or soft deleted external tools activities are not shown", %{
+      conn: conn,
+      author: author
+    } do
       project = create_project_with_author(author)
 
       external_tool_1_params = %{
@@ -279,10 +282,22 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
       {:ok, {_platform_instance_1, activity_registration_1, deployment_1}} =
         PlatformExternalTools.register_lti_external_tool_activity(external_tool_1_params)
 
-      # Disabled the tool
+      # Disable the tool
       PlatformExternalTools.update_lti_external_tool_activity_deployment(
         deployment_1,
         %{"status" => :disabled}
+      )
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      assert has_element?(view, "h4", "Advanced Activities")
+
+      refute has_element?(view, "div", activity_registration_1.title)
+
+      # Soft delete the tool
+      PlatformExternalTools.update_lti_external_tool_activity_deployment(
+        deployment_1,
+        %{"status" => :deleted}
       )
 
       {:ok, view, _html} = live(conn, live_view_route(project.slug))

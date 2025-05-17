@@ -2,6 +2,8 @@ defmodule Oli.Lti.PlatformExternalTools.LtiExternalToolActivityDeployment do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @status_values [:enabled, :disabled, :deleted]
+
   # the primary key 'id' is the same as the LTI 1.3 deployment ID
   @primary_key {:deployment_id, Ecto.UUID, autogenerate: true}
 
@@ -14,7 +16,7 @@ defmodule Oli.Lti.PlatformExternalTools.LtiExternalToolActivityDeployment do
                Lti_1p3.DataProviders.EctoProvider.PlatformInstance,
                foreign_key: :platform_instance_id
 
-    field :status, Ecto.Enum, values: [:enabled, :disabled], default: :enabled
+    field :status, Ecto.Enum, values: @status_values, default: :enabled
 
     timestamps(type: :utc_datetime)
   end
@@ -23,6 +25,8 @@ defmodule Oli.Lti.PlatformExternalTools.LtiExternalToolActivityDeployment do
     lti_external_tool_deployment
     |> cast(attrs, [:activity_registration_id, :platform_instance_id, :status])
     |> validate_required([:activity_registration_id, :platform_instance_id])
-    |> validate_inclusion(:status, Ecto.Enum.values(__MODULE__, :status))
+    |> validate_inclusion(:status, @status_values)
   end
+
+  def status_values, do: @status_values
 end

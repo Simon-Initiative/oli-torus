@@ -177,6 +177,29 @@ defmodule Oli.Lti.PlatformExternalToolsTest do
 
       assert Enum.map(results, & &1.status) == [:disabled, :enabled, :enabled]
     end
+
+    test "browse does not include soft deleted tools", %{
+      platform_1: platform_1,
+      platform_3: platform_3,
+      deployment_2: deployment_2
+    } do
+      # Soft delete platform_2 tool
+      PlatformExternalTools.update_lti_external_tool_activity_deployment(
+        deployment_2,
+        %{"status" => :deleted}
+      )
+
+      results =
+        PlatformExternalTools.browse_platform_external_tools(
+          %Paging{offset: 0, limit: 10},
+          %Sorting{field: :name, direction: :asc},
+          %BrowseOptions{include_disabled: true}
+        )
+
+      assert Enum.all?(results, fn result ->
+               result.name in [platform_1.name, platform_3.name]
+             end)
+    end
   end
 
   describe "update_lti_external_tool_activity/2" do

@@ -297,5 +297,23 @@ defmodule OliWeb.Admin.ExternalTools.DetailsViewTest do
       assert PlatformExternalTools.get_lti_external_tool_activity_deployment!(dep.deployment_id).status ===
                :enabled
     end
+
+    test "soft deletes the tool when the delete button is clicked", %{
+      conn: conn,
+      platform_instance: pi,
+      deployment: dep
+    } do
+      {:ok, view, _html} = live(conn, ~p"/admin/external_tools/#{pi.id}/details")
+
+      # Delete tool after accepting the modal warning
+      view
+      |> element("button[id=\"delete_tool_modal-confirm\"]", "Delete Tool")
+      |> render_click()
+
+      assert_redirected(view, ~p"/admin/external_tools")
+
+      assert PlatformExternalTools.get_lti_external_tool_activity_deployment!(dep.deployment_id).status ===
+               :deleted
+    end
   end
 end
