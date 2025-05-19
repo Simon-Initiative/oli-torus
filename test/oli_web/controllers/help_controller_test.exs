@@ -19,17 +19,50 @@ defmodule OliWeb.HelpControllerTest do
          }}
       end)
 
+      requester_data = %{
+        "requester_name" => nil,
+        "requester_email" => nil,
+        "requester_type" => nil,
+        "requester_account_url" => nil,
+        "student_report_url" => nil
+      }
+
+      assert {:error, "Help requester data is incomplete."} ==
+               Oli.Help.RequesterData.parse(requester_data)
+
+      requester_data = %{
+        requester_data
+        | "requester_name" => "Help me",
+          "requester_email" => "help@example.edu"
+      }
+
+      assert {:ok, _result} = Oli.Help.RequesterData.parse(requester_data)
+
       conn =
         post(
           conn,
           Routes.help_path(conn, :create),
           help: %{
-            location: "https://localhost/project/philosophy",
-            cookies_enabled: "true",
-            full_name: "Help Me",
-            email: "help@example.edu",
             subject: "help_login",
-            message: "Lorem Ipsum is simply dummy text of the printing and typesetting industry."
+            message: "Lorem Ipsum is simply dummy text of the printing and typesetting industry.",
+            timestamp: "timestamp",
+            ip_address: "ip_address",
+            location: "https://localhost/project/philosophy",
+            user_agent: "user_agent",
+            agent_accept: "agent_accept",
+            agent_language: "agent_language",
+            cookies_enabled: true,
+            account_email: "account_email",
+            account_name: "account_name",
+            account_created: "account_created",
+            screen_size: "screen_size",
+            browser_size: "browser_size",
+            browser_plugins: "browser_plugins",
+            operating_system: "operating_system",
+            browser_info: "browser_info",
+            course_data: nil,
+            screenshots: [],
+            requester_data: requester_data
           },
           "g-recaptcha-response": "any"
         )

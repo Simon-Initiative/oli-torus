@@ -46,7 +46,7 @@ defmodule OliWeb.Api.LtiController do
   def launch_details(conn, %{"project_slug" => project_slug, "activity_id" => activity_id}) do
     with %Oli.Resources.Revision{activity_type_id: activity_type_id} <-
            AuthoringResolver.from_resource_id(project_slug, activity_id),
-         %LtiExternalToolActivityDeployment{platform_instance: platform_instance} =
+         %LtiExternalToolActivityDeployment{platform_instance: platform_instance, status: status} =
            PlatformExternalTools.get_lti_external_tool_activity_deployment_by(
              activity_registration_id: activity_type_id
            ) do
@@ -65,7 +65,8 @@ defmodule OliWeb.Api.LtiController do
           login_hint: login_hint,
           client_id: platform_instance.client_id,
           target_link_uri: platform_instance.target_link_uri,
-          login_url: platform_instance.login_url
+          login_url: platform_instance.login_url,
+          status: status
         }
       })
     else

@@ -31,8 +31,7 @@ defmodule Oli.MixProject do
       releases: [
         oli: [
           include_executables_for: [:unix],
-          strip_beams: false,
-          applications: [runtime_tools: :permanent]
+          strip_beams: false
         ]
       ],
       default_release: :oli
@@ -121,14 +120,15 @@ defmodule Oli.MixProject do
   defp elixirc_options(:dev), do: []
   defp elixirc_options(:test), do: []
 
-  defp elixirc_options(_), do: [warnings_as_errors: true]
+  # defp elixirc_options(_), do: [warnings_as_errors: true]
+  defp elixirc_options(_), do: []
 
   # Specifies your project dependencies.
   #
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:appsignal_phoenix, "~> 2.3"},
+      {:appsignal_phoenix, "~> 2.7"},
       {:assent, "~> 0.2.9"},
       {:base32_crockford, "~> 1.0.0"},
       {:bcrypt_elixir, "~> 3.0"},

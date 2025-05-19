@@ -11,5 +11,6 @@
   "authoring": {
     "element": "lti-external-tool-authoring",
     "entry": "./authoring-entry.ts"
-  }
+  },
+  "activityRegistration": false
 }

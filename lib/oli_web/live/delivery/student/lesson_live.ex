@@ -23,7 +23,6 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   alias OliWeb.Delivery.Student.Lesson.Components.OutlineComponent
   alias Oli.Delivery.{Hierarchy, Metrics, Sections, Settings}
   alias Oli.Delivery.Sections.SectionCache
-  alias OliWeb.Delivery.Student.Utils
   alias OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion
   alias OliWeb.Icons
 
@@ -783,6 +782,26 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     else
       {:noreply, socket}
     end
+  end
+
+  def render(%{show_blocking_gates?: true} = assigns) do
+    ~H"""
+    <div class="flex pb-20 flex-col w-full items-center gap-15 flex-1 overflow-auto">
+      <div class="flex-1 w-full max-w-[1040px] px-[80px] pt-20 pb-10 flex-col justify-start items-center inline-flex">
+        <.page_header
+          page_context={@page_context}
+          ctx={@ctx}
+          objectives={@objectives}
+          index={@current_page["index"]}
+          container_label={Utils.get_container_label(@current_page["id"], @section)}
+        />
+        <div class="self-stretch h-[0px] opacity-80 dark:opacity-20 bg-white border border-gray-200 mt-3 mb-10">
+        </div>
+
+        <Utils.blocking_gates_warning attempt_message={@attempt_message} />
+      </div>
+    </div>
+    """
   end
 
   def render(%{view: :practice_page, annotations: %{}} = assigns) do
@@ -1611,8 +1630,21 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
       scale_factor =
         case out_of do
-          nil -> 1.0
-          _ -> out_of / total
+          nil ->
+            1.0
+
+          -0.0 ->
+            1.0
+
+          +0.0 ->
+            1.0
+
+          _ ->
+            case total do
+              -0.0 -> 1.0
+              +0.0 -> 1.0
+              _ -> out_of / total
+            end
         end
 
       Enum.reduce(part_points, %{}, fn {part_id, points}, acc ->
