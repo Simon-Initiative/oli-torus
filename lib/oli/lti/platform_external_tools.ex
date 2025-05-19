@@ -347,8 +347,16 @@ defmodule Oli.Lti.PlatformExternalTools do
   end
 
   @doc """
-  Given a section, return a map where the keys are LTI activity resource IDs and the values are lists of section resources that reference those activities.
+  Returns a list of all sections that contain LTI activities registered with a specific platform instance.
+
+  ## Example
+
+      iex> get_sections_with_lti_activities_for_platform_instance_id(42)
+      # => [%Section{...}, ...]
+
   """
+
+  @spec get_sections_with_lti_activities_for_platform_instance_id(integer()) :: [Section.t()]
   def get_sections_with_lti_activities_for_platform_instance_id(platform_instance_id) do
     # Step 1: Find all LTI activity registrations for the given platform instance ID
     lti_activity_registrations =
