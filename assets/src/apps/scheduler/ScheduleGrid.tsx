@@ -13,6 +13,38 @@ interface GridProps {
   onReset: () => void;
   onClear: () => void;
 }
+const darkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+const rowPalette = [
+  '#BC1A27',
+  '#94849B',
+  '#D97B68',
+  '#973F7D',
+  '#B9097E',
+  '#737373',
+  '#CC8100',
+  '#869A13',
+  '#2BA3AB',
+  '#4F6831',
+  '#0F7D85',
+  '#58759D',
+];
+
+const rowPaletteDark = [
+  '#FD7782',
+  '#FCE7E3',
+  '#E3D4E9',
+  '#E58FCC',
+  '#FF61CA',
+  '#CFB5B5',
+  '#FFC96B',
+  '#E4FE4D',
+  '#A1D463',
+  '#82EBF2',
+  '#AFC5E4',
+  '#33F1FF',
+];
+
 export const ScheduleGrid: React.FC<GridProps> = ({ startDate, endDate, onReset, onClear }) => {
   const [barContainer, attachBarContainer] = useCallbackRef<HTMLElement>();
   const rect = useResizeObserver(barContainer || null);
@@ -29,29 +61,59 @@ export const ScheduleGrid: React.FC<GridProps> = ({ startDate, endDate, onReset,
     [rect?.width, startDate, endDate],
   );
 
+  console.log('ScheduleGrid----dark mode', darkMode);
   return (
     <div className="pb-20">
-      <div className="flex flex-row justify-end gap-x-4 mb-6 px-6">
-        <button className="btn btn-sm btn-primary" onClick={onReset}>
-          Reset Timelines
-        </button>
-        <button id="clear-schedule" className="btn btn-sm btn-primary" onClick={onClear}>
-          Clear Timelines
-        </button>
+      <div className="flex flex-row justify-between gap-x-4 mb-6 px-6">
+        <div>
+          Start organizing your course with the interactive scheduling tool. Set dates for course
+          content, and manage content by right-clicking to remove or re-add it. All scheduled items
+          will appear in the student schedule and upcoming agenda.
+        </div>
+        <div className="flex flex-row gap-x-4 items-start py-1">
+          <button className="btn btn-sm btn-primary whitespace-nowrap" onClick={onReset}>
+            <i className="fa fa-undo-alt" /> Reset Timelines
+          </button>
+          <button
+            id="clear-schedule"
+            className="btn btn-sm btn-primary whitespace-nowrap"
+            onClick={onClear}
+          >
+            <i className="fa fa-trash-alt" /> Clear Timelines
+          </button>
+        </div>
       </div>
 
       <div className="w-full overflow-x-auto px-4">
-        <table className="select-none table-striped border-t-0">
+        <table className="select-none table-striped border-t-0 border-l-0">
           <thead>
             <ScheduleHeaderRow
               labels={true}
               attachBarContainer={attachBarContainer}
+              renderMonths={true}
+              dayGeometry={dayGeometry}
+            />
+            <ScheduleHeaderRow
+              labels={true}
+              attachBarContainer={attachBarContainer}
+              renderMonths={false}
               dayGeometry={dayGeometry}
             />
           </thead>
           <tbody>
-            {schedule.map((item) => (
-              <ScheduleLine key={item.id} indent={0} item={item} dayGeometry={dayGeometry} />
+            {schedule.map((item, index) => (
+              <ScheduleLine
+                key={item.id}
+                index={index}
+                indent={0}
+                item={item}
+                rowColor={
+                  darkMode
+                    ? rowPaletteDark[index % rowPaletteDark.length]
+                    : rowPalette[index % rowPalette.length]
+                }
+                dayGeometry={dayGeometry}
+              />
             ))}
           </tbody>
         </table>

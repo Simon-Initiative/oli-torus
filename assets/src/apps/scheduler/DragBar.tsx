@@ -9,6 +9,7 @@ interface DragBarProps {
   endDate: DateWithoutTime;
   isContainer: boolean;
   dayGeometry: DayGeometry;
+  color: string;
   onChange?: (start: DateWithoutTime, end: DateWithoutTime) => void;
   onStartDrag?: () => void;
   manual: boolean;
@@ -21,6 +22,7 @@ export const DragBar: React.FC<DragBarProps> = ({
   isContainer,
   onStartDrag,
   dayGeometry,
+  color,
   children,
   manual,
 }) => {
@@ -111,37 +113,49 @@ export const DragBar: React.FC<DragBarProps> = ({
       ? barGeometry(dayGeometry, workingStart, workingEnd)
       : barGeometry(dayGeometry, startDate, endDate);
 
-  const barStyles = {
-    left: geometry.left,
-    width: geometry.width,
-  };
+  // const barStyles = {
+  //   left: geometry.left,
+  //   width: geometry.width,
+  // };
 
-  const color = manual
-    ? 'bg-delivery-primary'
-    : 'bg-delivery-primary-300 dark:bg-delivery-primary-600';
+  // const bgColor = `bg-[${color}]`;
+  // const borderColor = `!border-t-[${color}]`;
+  // const color = manual
+  //   ? 'bg-delivery-primary'
+  //   : 'bg-delivery-primary-300 dark:bg-delivery-primary-600';
 
   return (
     <>
       {isContainer ? (
         <div
           onMouseDown={startDrag}
-          className=" absolute border-t-4 border-black h-3 top-3 cursor-move flex flex-row justify-between dark:border-gray-400"
-          style={barStyles}
+          className={`absolute border-t-4 h-3 top-3 cursor-move flex flex-row justify-between`}
+          style={{
+            left: geometry.left,
+            width: geometry.width,
+            borderTopColor: color,
+          }}
         >
           <div
             onMouseDown={startResize('left')}
-            className="w-1 inline-block h-full bg-black cursor-col-resize dark:bg-gray-400"
+            className={`w-1 inline-block h-full cursor-col-resize`}
+            style={{ backgroundColor: color }}
           ></div>
           <div
             onMouseDown={startResize('right')}
-            className="w-1 inline-block h-full bg-black cursor-col-resize dark:bg-gray-400"
+            className={`w-1 inline-block h-full cursor-col-resize`}
+            style={{ backgroundColor: color }}
           ></div>
         </div>
       ) : (
         <div
           onMouseDown={startDrag}
-          className={`rounded absolute ${color} h-7 top-1.5 flex flex-row justify-between p-0.5 cursor-move`}
-          style={barStyles}
+          className={`rounded absolute h-7 top-1.5 flex flex-row justify-between p-0.5 cursor-move`}
+          style={{
+            left: geometry.left,
+            width: geometry.width,
+            backgroundColor: color,
+          }}
         >
           <div
             onMouseDown={startResize('left')}

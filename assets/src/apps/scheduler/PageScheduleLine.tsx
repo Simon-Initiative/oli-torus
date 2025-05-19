@@ -10,11 +10,19 @@ import { HierarchyItem, moveScheduleItem, selectItem, unlockScheduleItem } from 
 
 interface ScheduleLineProps {
   item: HierarchyItem;
+  index: number;
   indent: number;
+  rowColor: string;
   dayGeometry: DayGeometry;
 }
 
-export const PageScheduleLine: React.FC<ScheduleLineProps> = ({ item, indent, dayGeometry }) => {
+export const PageScheduleLine: React.FC<ScheduleLineProps> = ({
+  item,
+  index,
+  indent,
+  rowColor,
+  dayGeometry,
+}) => {
   const dispatch = useDispatch();
   const isSelected = useSelector(getSelectedId) === item.id;
 
@@ -73,13 +81,19 @@ export const PageScheduleLine: React.FC<ScheduleLineProps> = ({ item, indent, da
     [item.startDateTime, item.endDateTime, item.id, dispatch],
   );
 
+  // const rowBg = (1 + index) % 2 === 0 ? 'bg-[#E3E7EB]' : 'bg-[#F3F4F8]';
+  // const rowDarkBg = (1 + index) % 2 === 0 ? 'bg-[#0D0C0F]' : 'bg-[#525252]';
   const rowClass = isSelected ? 'bg-green-50' : '';
   const labelClasses = item.scheduling_type === 'due_by' ? 'font-bold' : '';
 
   return (
     <>
       <tr className={`${rowClass} `}>
-        <td className={`w-64 ${labelClasses}`} colSpan={2} onClick={onSelect}>
+        <td
+          className={`w-[1px] p-[2px] border-r-0`}
+          style={{ backgroundColor: rowColor }}
+        ></td>
+        <td className={`w-64 ${labelClasses}`} onClick={onSelect}>
           <div style={{ paddingLeft: 20 + (1 + indent) * 10 }}>
             {item.manually_scheduled && (
               <span
@@ -96,7 +110,7 @@ export const PageScheduleLine: React.FC<ScheduleLineProps> = ({ item, indent, da
         </td>
 
         <td className="relative p-0">
-          <ScheduleHeader labels={false} dayGeometry={dayGeometry} />
+          <ScheduleHeader labels={false} renderMonths={false} dayGeometry={dayGeometry} />
 
           <PageDragBar
             onChange={onChange}
