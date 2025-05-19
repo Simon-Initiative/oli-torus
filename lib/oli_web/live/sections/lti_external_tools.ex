@@ -26,7 +26,7 @@ defmodule OliWeb.Sections.LtiExternalToolsView do
       {:error, e} ->
         Mount.handle_error(socket, {:error, e})
 
-      # TODO: fetch the tools from the database
+      # TODO MER-4314-part3: fetch the tools from the database
 
       {type, _user, section} ->
         {:ok,
@@ -74,7 +74,7 @@ defmodule OliWeb.Sections.LtiExternalToolsView do
        to: ~p"/sections/#{socket.assigns.section.slug}/lti_external_tools?#{params}"
      )}
 
-    # TODO: apply the search and push an event to expand the containers that contain a child that matches the search term
+    # TODO MER-4316: apply the search and push an event to expand the tools that contain a page that matches the search term
   end
 
   def handle_event("clear_search", _params, socket) do
