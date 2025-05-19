@@ -7,6 +7,8 @@ defmodule OliWeb.TechSupportLive do
   @modal_id "tech-support-modal"
   @base_url Oli.Utils.get_base_url()
 
+  require Logger
+
   @impl true
   def mount(_params, session, socket) do
     requires_sender_data = !Enum.any?(Map.take(session, ["current_user_id", "current_author_id"]))
@@ -194,7 +196,8 @@ defmodule OliWeb.TechSupportLive do
     {:noreply, socket}
   end
 
-  def handle_event("form_response", _params, socket) do
+  def handle_event("form_response", %{"error", error}, socket) do
+    Logger.error("Error requesting support help: #{inspect(error, pretty: true)}")
     message = "We are unable to forward your help request at the moment"
     socket = put_flash(socket, :error, message)
     {:noreply, socket}
