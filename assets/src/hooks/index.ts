@@ -4,6 +4,7 @@ import { BeforeUnloadListener } from './before_unload';
 import { CheckboxListener } from './checkbox_listener';
 import { ClickOutside } from './click_outside';
 import { ClickExecJS, HoverAway } from './click_variations';
+import { ConditionalToggle } from './conditional_toggle';
 import { CopyListener } from './copy_listener';
 import { Countdown } from './countdown';
 import { CountdownTimer } from './countdown_timer';
@@ -39,6 +40,7 @@ import { SelectListener } from './select_listener';
 import { ShowTeaser } from './show_teaser';
 import { SliderScroll } from './slider_scroll';
 import { SubmitForm } from './submit_form';
+import { SubmitTechSupportForm } from './submit_tech_support_form';
 import { SystemMessage } from './system_message';
 import { TextInputListener } from './text_input_listener';
 import { TextareaListener } from './textarea_listener';
@@ -103,4 +105,6 @@ export const Hooks = {
   Recaptcha,
   OnMountAndUpdate,
   FixedNavigationBar,
+  SubmitTechSupportForm,
+  ConditionalToggle,
 };

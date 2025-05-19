@@ -699,9 +699,8 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
        to:
          Routes.live_path(
            socket,
-           OliWeb.Sections.AssessmentSettings.SettingsLive,
+           OliWeb.Sections.AssessmentSettings.StudentExceptionsLive,
            socket.assigns.section.slug,
-           :student_exceptions,
            socket.assigns.params.selected_assessment_id,
            update_params(socket.assigns.params, %{limit: limit, offset: offset})
          )
@@ -714,9 +713,8 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
        to:
          Routes.live_path(
            socket,
-           OliWeb.Sections.AssessmentSettings.SettingsLive,
+           OliWeb.Sections.AssessmentSettings.StudentExceptionsLive,
            socket.assigns.section.slug,
-           :student_exceptions,
            socket.assigns.params.selected_assessment_id,
            update_params(socket.assigns.params, %{sort_by: String.to_existing_atom(sort_by)})
          )
@@ -729,9 +727,8 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
        to:
          Routes.live_path(
            socket,
-           OliWeb.Sections.AssessmentSettings.SettingsLive,
+           OliWeb.Sections.AssessmentSettings.StudentExceptionsLive,
            socket.assigns.section.slug,
-           :student_exceptions,
            assessment_id
          )
      )}

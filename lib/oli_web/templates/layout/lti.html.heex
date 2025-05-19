@@ -57,6 +57,9 @@
       rel="stylesheet"
     />
 
+    <script src="https://www.google.com/recaptcha/api.js">
+    </script>
+
     <%= csrf_meta_tag() %>
     <script type="text/javascript" src={Routes.static_path(@conn, "/js/vendor.js")}>
     </script>
@@ -72,5 +75,11 @@
     <main role="main" class="container mx-auto">
       <%= Map.get(assigns, :inner_layout) || @inner_content %>
     </main>
+    <%= live_render(@conn, OliWeb.TechSupportLive,
+      session: %{
+        "section" => Map.get(@conn.assigns, :section),
+        "user" => Map.get(@conn.assigns, :current_user) || Map.get(@conn.assigns, :current_author)
+      }
+    ) %>
   </body>
 </html>
