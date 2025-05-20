@@ -2,6 +2,8 @@ import React, { useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { useCallbackRef, useResizeObserver } from '@restart/hooks';
 import { DateWithoutTime } from 'epoq';
+import { getModeFromLocalStorage } from 'components/misc/DarkModeSelector';
+import { isDarkMode } from 'utils/browser';
 import { ScheduleHeaderRow } from './ScheduleHeader';
 import { ScheduleLine } from './ScheduleLine';
 import { generateDayGeometry } from './date-utils';
@@ -13,7 +15,6 @@ interface GridProps {
   onReset: () => void;
   onClear: () => void;
 }
-const darkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
 
 const rowPalette = [
   '#BC1A27',
@@ -51,6 +52,18 @@ export const ScheduleGrid: React.FC<GridProps> = ({ startDate, endDate, onReset,
 
   const schedule = useSelector(getTopLevelSchedule);
 
+  const isScheduled = schedule.some((item: any) => {
+    return item.startDateTime && item.endDateTime;
+  });
+
+  const darkMode = () => {
+    const mode = getModeFromLocalStorage();
+    if (mode === 'dark') return true;
+    if (mode === 'light') return false;
+    // mode === 'auto' or any other value
+    return isDarkMode();
+  };
+
   const dayGeometry = useMemo(
     () =>
       generateDayGeometry(
@@ -61,7 +74,6 @@ export const ScheduleGrid: React.FC<GridProps> = ({ startDate, endDate, onReset,
     [rect?.width, startDate, endDate],
   );
 
-  console.log('ScheduleGrid----dark mode', darkMode);
   return (
     <div className="pb-20">
       <div className="flex flex-row justify-between gap-x-4 mb-6 px-6">
@@ -71,9 +83,16 @@ export const ScheduleGrid: React.FC<GridProps> = ({ startDate, endDate, onReset,
           will appear in the student schedule and upcoming agenda.
         </div>
         <div className="flex flex-row gap-x-4 items-start py-1">
-          <button className="btn btn-sm btn-primary whitespace-nowrap" onClick={onReset}>
-            <i className="fa fa-undo-alt" /> Reset Timelines
-          </button>
+          {isScheduled ? (
+            <button className="btn btn-sm btn-primary whitespace-nowrap" onClick={onReset}>
+              <i className="fa fa-undo-alt" /> Reset Schedule
+            </button>
+          ) : (
+            <button className="btn btn-sm btn-primary whitespace-nowrap" onClick={onReset}>
+              <i className="fa fa-calendar" /> Set Schedule
+            </button>
+          )}
+
           <button
             id="clear-schedule"
             className="btn btn-sm btn-primary whitespace-nowrap"
@@ -84,19 +103,12 @@ export const ScheduleGrid: React.FC<GridProps> = ({ startDate, endDate, onReset,
         </div>
       </div>
 
-      <div className="w-full overflow-x-auto px-4">
-        <table className="select-none table-striped border-t-0 border-l-0">
-          <thead>
+      <div className="w-full px-4">
+        <table className="select-none table-striped-schedule border-t-0 border-l-0">
+          <thead className="sticky top-14 z-10">
             <ScheduleHeaderRow
               labels={true}
               attachBarContainer={attachBarContainer}
-              renderMonths={true}
-              dayGeometry={dayGeometry}
-            />
-            <ScheduleHeaderRow
-              labels={true}
-              attachBarContainer={attachBarContainer}
-              renderMonths={false}
               dayGeometry={dayGeometry}
             />
           </thead>
@@ -108,7 +120,7 @@ export const ScheduleGrid: React.FC<GridProps> = ({ startDate, endDate, onReset,
                 indent={0}
                 item={item}
                 rowColor={
-                  darkMode
+                  darkMode()
                     ? rowPaletteDark[index % rowPaletteDark.length]
                     : rowPalette[index % rowPalette.length]
                 }

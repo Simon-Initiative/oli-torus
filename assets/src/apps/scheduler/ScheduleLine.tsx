@@ -18,7 +18,6 @@ import {
   getScheduleItem,
   moveScheduleItem,
   selectItem,
-  unlockScheduleItem,
 } from './scheduler-slice';
 
 interface ScheduleLineProps {
@@ -36,7 +35,6 @@ export const ScheduleLine: React.FC<ScheduleLineProps> = ({
   rowColor,
   dayGeometry,
 }) => {
-  console.log('ScheduleLine', index);
   return item.resource_type_id === ScheduleItemType.Page ? (
     <PageScheduleLine
       item={item}
@@ -69,9 +67,9 @@ const ContainerScheduleLine: React.FC<ScheduleLineProps> = ({
   const schedule = useSelector(getSchedule);
   const showNumbers = useSelector(shouldDisplayCurriculumItemNumbering);
 
-  const onUnlock = useCallback(() => {
-    dispatch(unlockScheduleItem({ itemId: item.id }));
-  }, [dispatch, item.id]);
+  // const onUnlock = useCallback(() => {
+  //   dispatch(unlockScheduleItem({ itemId: item.id }));
+  // }, [dispatch, item.id]);
 
   const onSelect = useCallback(() => {
     dispatch(selectItem(item.id));
@@ -96,28 +94,22 @@ const ContainerScheduleLine: React.FC<ScheduleLineProps> = ({
     dispatch(selectItem(item.id));
   }, [dispatch, item.id]);
 
-  // const rowBg = (1 + index) % 2 === 0 ? 'bg-[#E3E7EB]' : 'bg-[#F3F4F8]';
-  // const rowDarkBg = (1 + index) % 2 === 0 ? 'bg-[#0D0C0F]' : 'bg-[#525252]';
-  const rowClass = isSelected ? 'bg-green-50' : '';
+  const rowSelectColor = isSelected ? { backgroundColor: '#effdf5' } : {};
   const labelClasses = item.scheduling_type === 'due_by' ? 'font-bold' : '';
 
   const plusMinusIcon = expanded ? 'fa-regular fa-square-minus' : 'fa-regular fa-square-plus';
   const chevronIcon = expanded ? 'fa-solid fa-chevron-up' : 'fa-solid fa-chevron-down';
 
-  const bgColor = `bg-[${rowColor}]`;
   return (
     <>
-      <tr className={rowClass}>
-        <td
-          className={`${bgColor} border-r-0 w-[1px] !p-[2px]`}
-          style={{ backgroundColor: rowColor }}
-        ></td>
+      <tr style={rowSelectColor}>
+        <td className={`border-r-0 w-[1px] !p-[2px]`} style={{ backgroundColor: rowColor }}></td>
         <td
           className={`w-48 ${labelClasses}`}
           style={{ paddingLeft: (1 + indent) * 10 }}
           onClick={onSelect}
         >
-          {item.manually_scheduled && (
+          {/* {item.manually_scheduled && (
             <span
               className="float-right"
               onClick={onUnlock}
@@ -126,7 +118,7 @@ const ContainerScheduleLine: React.FC<ScheduleLineProps> = ({
             >
               <i className="fa fa-lock fa-2xs"></i>
             </span>
-          )}
+          )} */}
           {item.children.length > 0 && indent > 0 && (
             <div className="inline mr-1" onClick={toggleExpanded} style={{ display: 'inline' }}>
               <i className={plusMinusIcon} />
@@ -145,7 +137,7 @@ const ContainerScheduleLine: React.FC<ScheduleLineProps> = ({
         </td>
 
         <td className="relative p-0">
-          <ScheduleHeader labels={false} renderMonths={false} dayGeometry={dayGeometry} />
+          <ScheduleHeader labels={false} dayGeometry={dayGeometry} />
           {item.startDate && item.endDate && (
             <DragBar
               onStartDrag={onStartDrag}

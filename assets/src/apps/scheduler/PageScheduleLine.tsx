@@ -6,7 +6,7 @@ import { ScheduleHeader } from './ScheduleHeader';
 import { DayGeometry } from './date-utils';
 import { getSelectedId } from './schedule-selectors';
 // import { SchedulePlaceholder } from './SchedulePlaceholder';
-import { HierarchyItem, moveScheduleItem, selectItem, unlockScheduleItem } from './scheduler-slice';
+import { HierarchyItem, moveScheduleItem, selectItem } from './scheduler-slice';
 
 interface ScheduleLineProps {
   item: HierarchyItem;
@@ -26,9 +26,9 @@ export const PageScheduleLine: React.FC<ScheduleLineProps> = ({
   const dispatch = useDispatch();
   const isSelected = useSelector(getSelectedId) === item.id;
 
-  const onUnlock = useCallback(() => {
-    dispatch(unlockScheduleItem({ itemId: item.id }));
-  }, [dispatch, item.id]);
+  // const onUnlock = useCallback(() => {
+  //   dispatch(unlockScheduleItem({ itemId: item.id }));
+  // }, [dispatch, item.id]);
 
   const onSelect = useCallback(() => {
     if (isSelected) {
@@ -81,21 +81,16 @@ export const PageScheduleLine: React.FC<ScheduleLineProps> = ({
     [item.startDateTime, item.endDateTime, item.id, dispatch],
   );
 
-  // const rowBg = (1 + index) % 2 === 0 ? 'bg-[#E3E7EB]' : 'bg-[#F3F4F8]';
-  // const rowDarkBg = (1 + index) % 2 === 0 ? 'bg-[#0D0C0F]' : 'bg-[#525252]';
-  const rowClass = isSelected ? 'bg-green-50' : '';
+  const rowSelectColor = isSelected ? { backgroundColor: '#effdf5' } : {};
   const labelClasses = item.scheduling_type === 'due_by' ? 'font-bold' : '';
 
   return (
     <>
-      <tr className={`${rowClass} `}>
-        <td
-          className={`w-[1px] p-[2px] border-r-0`}
-          style={{ backgroundColor: rowColor }}
-        ></td>
+      <tr style={rowSelectColor}>
+        <td className={`w-[1px] p-[2px] border-r-0`} style={{ backgroundColor: rowColor }}></td>
         <td className={`w-64 ${labelClasses}`} onClick={onSelect}>
           <div style={{ paddingLeft: 20 + (1 + indent) * 10 }}>
-            {item.manually_scheduled && (
+            {/* {item.manually_scheduled && (
               <span
                 className="float-right"
                 onClick={onUnlock}
@@ -104,13 +99,13 @@ export const PageScheduleLine: React.FC<ScheduleLineProps> = ({
               >
                 <i className="fa fa-lock fa-2xs"></i>
               </span>
-            )}
+            )} */}
             {item.title}
           </div>
         </td>
 
         <td className="relative p-0">
-          <ScheduleHeader labels={false} renderMonths={false} dayGeometry={dayGeometry} />
+          <ScheduleHeader labels={false} dayGeometry={dayGeometry} />
 
           <PageDragBar
             onChange={onChange}

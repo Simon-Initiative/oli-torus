@@ -113,17 +113,6 @@ export const DragBar: React.FC<DragBarProps> = ({
       ? barGeometry(dayGeometry, workingStart, workingEnd)
       : barGeometry(dayGeometry, startDate, endDate);
 
-  // const barStyles = {
-  //   left: geometry.left,
-  //   width: geometry.width,
-  // };
-
-  // const bgColor = `bg-[${color}]`;
-  // const borderColor = `!border-t-[${color}]`;
-  // const color = manual
-  //   ? 'bg-delivery-primary'
-  //   : 'bg-delivery-primary-300 dark:bg-delivery-primary-600';
-
   return (
     <>
       {isContainer ? (
