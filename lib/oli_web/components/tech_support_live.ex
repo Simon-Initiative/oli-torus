@@ -3,11 +3,10 @@ defmodule OliWeb.TechSupportLive do
   alias Oli.Help.HelpContent
   alias Oli.Help.HelpRequest
   alias OliWeb.Components.Modal
+  alias OliWeb.Icons
 
   @modal_id "tech-support-modal"
   @base_url Oli.Utils.get_base_url()
-
-  require Logger
 
   @impl true
   def mount(_params, session, socket) do
@@ -28,6 +27,7 @@ defmodule OliWeb.TechSupportLive do
         auto_upload: true,
         max_file_size: 10_000_000
       )
+      |> assign(custom_flash: nil)
 
     {:ok, socket, layout: false}
   end
@@ -35,9 +35,7 @@ defmodule OliWeb.TechSupportLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="mx-auto z-50 top-0 absolute right-0">
-      <.flash_group flash={@flash} />
-    </div>
+    <%= render_custom_flash(@custom_flash) %>
     <button
       id="trigger-tech-support-modal"
       class="hidden"
@@ -205,15 +203,18 @@ defmodule OliWeb.TechSupportLive do
   end
 
   def handle_event("form_response", %{"info" => info}, socket) do
-    socket = put_flash(socket, :info, info)
+    socket = assign(socket, :custom_flash, %{type: :success, message: info})
     {:noreply, socket}
   end
 
-  def handle_event("form_response", %{"error" => error}, socket) do
-    Logger.error("Error requesting support help: #{inspect(error, pretty: true)}")
-    message = "We are unable to forward your help request at the moment"
-    socket = put_flash(socket, :error, message)
+  def handle_event("form_response", %{"error" => _error}, socket) do
+    message = "We are unable to forward your help request at the moment."
+    socket = assign(socket, :custom_flash, %{type: :error, message: message})
     {:noreply, socket}
+  end
+
+  def handle_event("clear-custom-flash", _params, socket) do
+    {:noreply, assign(socket, custom_flash: nil)}
   end
 
   defp add_metadata(socket, params, changeset) do
@@ -325,5 +326,44 @@ defmodule OliWeb.TechSupportLive do
         "#{@base_url}/admin/authors/#{user.id}"
       end
     end
+  end
+
+  defp render_custom_flash(nil), do: nil
+
+  defp render_custom_flash(%{type: type, message: message}) do
+    {bg_class, text_color, label} =
+      case type do
+        :success -> {"bg-[#F2F9FF]", "#1b67b2", "Success!"}
+        :error -> {"bg-[#FEEBED]", "#ce2c31", "Error!"}
+      end
+
+    assigns = %{
+      bg_class: bg_class,
+      text_color: text_color,
+      label: label,
+      type: type,
+      message: message
+    }
+
+    ~H"""
+    <div id="flash" class={"#{@bg_class} px-6 py-4 rounded-md relative mb-8"}>
+      <div class="flex items-start justify-between gap-4">
+        <div class="flex items-center gap-2 font-semibold">
+          <Icons.check :if={@type == :success} stroke_class="stroke-blue-600" />
+          <Icons.alert :if={@type == :error} />
+          <span class={"text-[#{@text_color}] text-base font-semibold"}>
+            <%= @label %>
+          </span>
+        </div>
+        <button
+          phx-click="clear-custom-flash"
+          class={"text-sm hover:opacity-70 text-[#{@text_color}]"}
+        >
+          ✕
+        </button>
+      </div>
+      <p class="mt-1 text-[#353740] text-sm font-normal"><%= @message %></p>
+    </div>
+    """
   end
 end
