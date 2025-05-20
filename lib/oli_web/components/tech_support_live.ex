@@ -142,9 +142,20 @@ defmodule OliWeb.TechSupportLive do
               &times;
             </a>
           </div>
-
           <div class="w-full flex flex-col lg:flex-row gap-2 md:justify-between">
-            <.render_recaptcha recaptcha_error={@recaptcha_error} class="md:m-0 m-auto" />
+            <%!-- Start Captcha --%>
+            <div class="w-80 mx-auto">
+              <div
+                id="recaptcha"
+                phx-hook="Recaptcha"
+                data-sitekey={Application.fetch_env!(:oli, :recaptcha)[:site_key]}
+                data-theme="dark"
+                phx-update="ignore"
+              >
+              </div>
+
+              <.error :if={@recaptcha_error}><%= @recaptcha_error %></.error>
+            </div>
 
             <div class="flex w-full justify-around lg:justify-end items-center">
               <.button type="link" variant={:link} phx-click={Modal.hide_modal(@modal_id)}>
