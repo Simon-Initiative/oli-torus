@@ -118,7 +118,7 @@ export const DragBar: React.FC<DragBarProps> = ({
       {isContainer ? (
         <div
           onMouseDown={startDrag}
-          className={`absolute border-t-4 h-3 top-3 cursor-move flex flex-row justify-between`}
+          className={`absolute border-t-4 h-3 top-3 cursor-grab flex flex-row justify-between`}
           style={{
             left: geometry.left,
             width: geometry.width,
@@ -139,7 +139,7 @@ export const DragBar: React.FC<DragBarProps> = ({
       ) : (
         <div
           onMouseDown={startDrag}
-          className={`rounded absolute h-7 top-1.5 flex flex-row justify-between p-0.5 cursor-move`}
+          className={`rounded absolute h-7 top-1.5 flex flex-row justify-between p-0.5 cursor-grab`}
           style={{
             left: geometry.left,
             width: geometry.width,
