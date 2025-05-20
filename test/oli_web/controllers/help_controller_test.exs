@@ -27,7 +27,7 @@ defmodule OliWeb.HelpControllerTest do
         "student_report_url" => nil
       }
 
-      assert {:error, "Help requester data is incomplete. Required field: email and name"} ==
+      assert {:error, "Requester data is incomplete. Required field(s): email and name"} ==
                Oli.Help.RequesterData.parse(requester_data)
 
       requester_data = %{
