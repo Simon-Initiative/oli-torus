@@ -35,6 +35,6 @@ defmodule Oli.Help.RequesterData do
       end)
       |> Enum.join(" and ")
 
-    {:error, "Help requester data is incomplete. Required field: #{required_fields}"}
+    {:error, "Requester data is incomplete. Required field(s): #{required_fields}"}
   end
 end
