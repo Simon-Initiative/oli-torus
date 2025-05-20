@@ -46,7 +46,9 @@ defmodule OliWeb.TechSupportLive do
     />
     <Modal.modal id={@modal_id} class="md:w-8/12">
       <:title>Tech Support</:title>
-      <a href={@knowledgebase_url}>Find answers quickly in the Torus knowledge base.</a>
+      <a href={@knowledgebase_url} target="_blank">
+        Find answers quickly in the Torus knowledge base.
+      </a>
       <div class="w-auto">
         <.form
           id="tech-support-modal-form"
