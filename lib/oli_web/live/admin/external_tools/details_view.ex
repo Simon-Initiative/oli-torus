@@ -60,9 +60,8 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
           <div class="justify-center text-2xl font-normal leading-9">
             <%= @platform_instance.name %>
           </div>
-          <div class="flex flex-row gap-2">
+          <div :if={!@edit_mode} class="flex flex-row gap-2">
             <.button
-              :if={!@edit_mode}
               phx-click="toggle_edit_mode"
               class="px-3 !py-1 bg-white text-[#006cd9] border border-blue-500 rounded-md
                    hover:bg-[#006cd9] hover:text-white
@@ -72,7 +71,6 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
               Edit Details
             </.button>
             <.button
-              :if={!@edit_mode}
               role="delete tool"
               phx-click={Modal.show_modal("delete_tool_modal")}
               class="px-3 !py-1 bg-white text-red-600 border border-red-500 rounded-md
