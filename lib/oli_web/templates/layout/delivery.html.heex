@@ -166,8 +166,7 @@
       session: %{
         "section" => Map.get(@conn.assigns, :section),
         "user" => Map.get(@conn.assigns, :current_user) || Map.get(@conn.assigns, :current_author)
-      },
-      container: {:div, class: "absolute top-0 right-0 z-[999]"}
+      }
     ) %>
   </body>
 </html>
