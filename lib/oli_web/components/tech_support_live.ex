@@ -213,8 +213,8 @@ defmodule OliWeb.TechSupportLive do
 
   def handle_event("form_response", %{"error" => error}, socket) do
     Logger.error("Error requesting support help: #{inspect(error, pretty: true)}")
-    message = "We are unable to forward your help request at the moment"
-    socket = put_flash(socket, :error, message)
+    message = "We are unable to forward your help request at the moment."
+    socket = assign(socket, tech_support_flash: %{"error" => message})
     {:noreply, socket}
   end
 
