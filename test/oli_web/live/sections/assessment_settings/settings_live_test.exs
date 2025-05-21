@@ -638,7 +638,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assert assessment_4 == page_4.title
 
       assert html =~
-               ~s(<a href="/sections/#{section.slug}/manage">#{section.title}</a>)
+               ~s(<a href="/sections/#{section.slug}/manage">Manage</a>)
     end
   end
 
@@ -671,7 +671,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assert assessment_4 == page_4.title
 
       assert html =~
-               ~s(<a href="/sections/#{section.slug}/manage">#{section.title}</a>)
+               ~s(<a href="/sections/#{section.slug}/manage">Manage</a>)
     end
 
     test "student_exceptions view loads correctly", %{
