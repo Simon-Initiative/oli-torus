@@ -29,7 +29,11 @@ const LTIExternalTool: React.FC = () => {
     [activityIdStr],
   );
 
-  const resourceId = model.id as string;
+  if (activityIdStr == undefined) {
+    console.error('LTIExternalTool: activityId is undefined');
+
+    return <Alert variant="error">Failed to load LTI activity</Alert>;
+  }
 
   return ltiToolDetailsLoader.caseOf({
     loading: () => <LoadingSpinner />,
@@ -39,9 +43,10 @@ const LTIExternalTool: React.FC = () => {
         <div className="activity lti-external-tool-activity">
           <div className="activity-content">
             <LTIExternalToolFrame
+              mode="authoring"
               name={ltiToolDetails.name}
               launchParams={ltiToolDetails.launch_params}
-              resourceId={resourceId}
+              resourceId={activityIdStr}
               openInNewTab={model.openInNewTab}
               height={model.height}
               onEditHeight={(height: number | undefined) => onEdit({ ...model, height })}

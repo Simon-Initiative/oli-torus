@@ -3,12 +3,12 @@ import React, { useEffect, useState } from 'react';
 const DEFAULT_FRAME_HEIGHT = 600;
 
 type LTIExternalToolFrameProps = {
+  mode: 'authoring' | 'delivery';
   name: string;
   launchParams: Record<string, string>;
   resourceId: string;
   openInNewTab?: boolean;
   height?: number;
-  launchOnMount?: boolean;
   onEditHeight?: (height: number | undefined) => void;
 };
 
@@ -17,29 +17,32 @@ type LTIExternalToolFrameProps = {
  * an iframe.
  */
 export const LTIExternalToolFrame = ({
+  mode,
   name,
   launchParams,
   resourceId,
   openInNewTab,
   height,
-  launchOnMount,
   onEditHeight,
 }: LTIExternalToolFrameProps) => {
   const frameName = `tool-content-${resourceId}`;
   const target = openInNewTab ? '_blank' : frameName;
 
-  const [showFrame, setShowFrame] = useState(launchOnMount || false);
+  const [showFrame, setShowFrame] = useState(mode === 'delivery' && !openInNewTab);
 
   const frameRef = React.useRef<HTMLIFrameElement>(null);
   const formRef = React.useRef<HTMLFormElement>(null);
 
-  // If the launchOnMount prop is true, we submit the form immediately after the component mounts.
+  const autoLaunch = mode === 'delivery' && !openInNewTab;
+
+  const showLaunchButton = mode === 'authoring' || openInNewTab;
+
+  // If the autoLaunch prop is true, we submit the form immediately after the component mounts.
   // This is used in delvery mode to automatically open the tool when configured as a frame in the
   // page.
   useEffect(() => {
-    if (launchOnMount) {
+    if (autoLaunch) {
       if (formRef.current) {
-        console.log('Submitting form:', formRef.current);
         formRef.current.submit();
       }
     }
@@ -47,7 +50,7 @@ export const LTIExternalToolFrame = ({
 
   // Reset the iframe any time the openInNewTab setting changes
   useEffect(() => {
-    if (!launchOnMount) {
+    if (!autoLaunch) {
       setShowFrame(false);
     }
   }, [openInNewTab]);
@@ -75,7 +78,7 @@ export const LTIExternalToolFrame = ({
             ></input>
           ))}
 
-        {!launchOnMount && (
+        {showLaunchButton && (
           <div className="flex flex-row">
             <button
               className="w-full shadow-lg px-4 py-3 mb-4 bg-white rounded-lg border-2 border-gray-100 text-left text-primary font-semibold hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
