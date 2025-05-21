@@ -14568,6 +14568,10 @@ Not supports in Firefox and IE */
   color: rgb(0 0 0 / var(--tw-text-opacity));
 }
 
+.hover\:text-black\/75:hover {
+  color: rgb(0 0 0 / 0.75);
+}
+
 .hover\:text-black\/90:hover {
   color: rgb(0 0 0 / 0.9);
 }
@@ -16056,6 +16060,10 @@ Not supports in Firefox and IE */
   color: rgb(221 221 221 / var(--tw-text-opacity));
 }
 
+.dark .dark\:text-\[\#EEEBF5\]\/75 {
+  color: rgb(238 235 245 / 0.75);
+}
+
 .dark .dark\:text-\[\#FF8787\] {
   --tw-text-opacity: 1;
   color: rgb(255 135 135 / var(--tw-text-opacity));
@@ -16620,6 +16628,10 @@ Not supports in Firefox and IE */
 
 .dark .dark\:hover\:text-white\/50:hover {
   color: rgb(255 255 255 / 0.5);
+}
+
+.dark .dark\:hover\:text-white\/75:hover {
+  color: rgb(255 255 255 / 0.75);
 }
 
 .dark .dark\:hover\:text-yellow-500:hover {
