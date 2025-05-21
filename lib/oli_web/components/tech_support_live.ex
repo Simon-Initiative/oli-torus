@@ -94,6 +94,7 @@ defmodule OliWeb.TechSupportLive do
           <.input
             label="Questions or Comments:"
             field={@form[:message]}
+            phx-debounce="500"
             type="textarea"
             class="w-full dark:placeholder:text-zinc-300 pl-6 dark:bg-stone-900 rounded-md border dark:border-zinc-300 dark:text-zinc-300 leading-snug"
             required
