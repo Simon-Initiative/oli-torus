@@ -1,4 +1,4 @@
-import React, { ReactNode, useCallback, useEffect, useState } from 'react';
+import React, { ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { CloseIcon } from 'components/misc/icons/Icons';
 import { useToggle } from '../hooks/useToggle';
 
@@ -20,9 +20,18 @@ export const BackdropModal: React.FC<BackdropModalProps> = ({
   children,
 }) => {
   const [isVisible, setIsVisible] = useState(false);
+  const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsVisible(true), 100);
+    const timer = setTimeout(() => {
+      setIsVisible(true);
+      requestAnimationFrame(() => {
+        if (modalRef.current) {
+          modalRef.current.focus();
+        }
+      });
+    }, 100);
+
     return () => clearTimeout(timer);
   }, []);
 
@@ -36,6 +45,7 @@ export const BackdropModal: React.FC<BackdropModalProps> = ({
   return (
     <div
       id="backdrop-modal"
+      ref={modalRef}
       className={`fixed inset-0 z-50 transition-opacity duration-300 ${
         isVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'
       }`}
