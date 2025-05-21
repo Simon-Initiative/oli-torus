@@ -16,15 +16,18 @@ import { LTIExternalToolSchema } from './schema';
 const store = configureStore();
 
 const LTIExternalTool: React.FC = () => {
-  const { model, projectSlug, activityId, onEdit } =
+  const { model, projectSlug, authoringContext, activityId, onEdit } =
     useAuthoringElementContext<LTIExternalToolSchema>();
 
   const activityIdStr = activityId ? `${activityId}` : undefined;
 
+  const projectsOrSections =
+    authoringContext?.previewMode === 'instructor' ? 'sections' : 'projects';
+
   const ltiToolDetailsLoader = useLoader(
     () =>
       activityIdStr
-        ? getLtiExternalToolDetails('projects', projectSlug, activityIdStr)
+        ? getLtiExternalToolDetails(projectsOrSections, projectSlug, activityIdStr)
         : Promise.resolve(null),
     [activityIdStr],
   );

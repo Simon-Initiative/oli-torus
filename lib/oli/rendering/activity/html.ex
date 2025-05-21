@@ -83,7 +83,8 @@ defmodule Oli.Rendering.Activity.Html do
 
         activity_context =
           %{
-            variables: variables
+            variables: variables,
+            previewMode: "instructor"
           }
           |> Poison.encode!()
           |> HtmlEntities.encode()
