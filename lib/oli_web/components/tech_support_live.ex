@@ -21,6 +21,7 @@ defmodule OliWeb.TechSupportLive do
       |> assign(modal_id: @modal_id)
       |> assign(recaptcha_error: false)
       |> assign(:session, session)
+      |> assign(tech_support_flash: %{})
       |> assign(uploaded_files: [])
       |> allow_upload(:attached_screenshots,
         accept: ~w(.jpg .jpeg .png),
@@ -36,7 +37,7 @@ defmodule OliWeb.TechSupportLive do
   def render(assigns) do
     ~H"""
     <div class="mx-auto z-50 top-0 absolute right-0">
-      <.flash_group flash={@flash} />
+      <.flash_group flash={@tech_support_flash} />
     </div>
     <button
       id="trigger-tech-support-modal"
@@ -206,7 +207,7 @@ defmodule OliWeb.TechSupportLive do
   end
 
   def handle_event("form_response", %{"info" => info}, socket) do
-    socket = put_flash(socket, :info, info)
+    socket = assign(socket, tech_support_flash: %{"info" => info})
     {:noreply, socket}
   end
 
