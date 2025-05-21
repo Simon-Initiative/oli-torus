@@ -4772,6 +4772,10 @@ table.table-striped tbody tr:nth-child(even) {
   margin-left: 24px;
 }
 
+.ml-\[270px\] {
+  margin-left: 270px;
+}
+
 .ml-\[36px\] {
   margin-left: 36px;
 }
@@ -5312,6 +5316,10 @@ table.table-striped tbody tr:nth-child(even) {
   height: 500px;
 }
 
+.h-\[51px\] {
+  height: 51px;
+}
+
 .h-\[56px\] {
   height: 56px;
 }
@@ -5813,6 +5821,10 @@ table.table-striped tbody tr:nth-child(even) {
   width: 40%;
 }
 
+.w-\[461px\] {
+  width: 461px;
+}
+
 .w-\[485px\] {
   width: 485px;
 }
@@ -6248,6 +6260,12 @@ table.table-striped tbody tr:nth-child(even) {
 .scale-150 {
   --tw-scale-x: 1.5;
   --tw-scale-y: 1.5;
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+
+.scale-95 {
+  --tw-scale-x: .95;
+  --tw-scale-y: .95;
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
 
@@ -7213,6 +7231,11 @@ table.table-striped tbody tr:nth-child(even) {
   border-color: rgb(62 63 68 / var(--tw-border-opacity));
 }
 
+.border-\[\#8ab8e5\] {
+  --tw-border-opacity: 1;
+  border-color: rgb(138 184 229 / var(--tw-border-opacity));
+}
+
 .border-\[\#B0B0B0\] {
   --tw-border-opacity: 1;
   border-color: rgb(176 176 176 / var(--tw-border-opacity));
@@ -7221,6 +7244,11 @@ table.table-striped tbody tr:nth-child(even) {
 .border-\[\#CBD2E0\] {
   --tw-border-opacity: 1;
   border-color: rgb(203 210 224 / var(--tw-border-opacity));
+}
+
+.border-\[\#CED1D9\] {
+  --tw-border-opacity: 1;
+  border-color: rgb(206 209 217 / var(--tw-border-opacity));
 }
 
 .border-\[\#D4D4D4\] {
@@ -8395,6 +8423,10 @@ table.table-striped tbody tr:nth-child(even) {
   stroke: #275CAF;
 }
 
+.stroke-current {
+  stroke: currentColor;
+}
+
 .stroke-gray-300 {
   stroke: #d4d4d4;
 }
@@ -9486,6 +9518,11 @@ table.table-striped tbody tr:nth-child(even) {
   color: rgb(255 255 255 / var(--tw-text-opacity)) !important;
 }
 
+.text-\[\#0062F2\] {
+  --tw-text-opacity: 1;
+  color: rgb(0 98 242 / var(--tw-text-opacity));
+}
+
 .text-\[\#0062f2\] {
   --tw-text-opacity: 1;
   color: rgb(0 98 242 / var(--tw-text-opacity));
@@ -9569,6 +9606,11 @@ table.table-striped tbody tr:nth-child(even) {
 .text-\[\#373a44\] {
   --tw-text-opacity: 1;
   color: rgb(55 58 68 / var(--tw-text-opacity));
+}
+
+.text-\[\#383A44\] {
+  --tw-text-opacity: 1;
+  color: rgb(56 58 68 / var(--tw-text-opacity));
 }
 
 .text-\[\#383a44\] {
@@ -10162,6 +10204,12 @@ table.table-striped tbody tr:nth-child(even) {
 .shadow-\[0px_2px_4px_0px_rgba\(0\2c 52\2c 99\2c 0\.10\)\] {
   --tw-shadow: 0px 2px 4px 0px rgba(0,52,99,0.10);
   --tw-shadow-colored: 0px 2px 4px 0px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+
+.shadow-\[0px_2px_6\.099999904632568px_0px_rgba\(0\2c 0\2c 0\2c 0\.10\)\] {
+  --tw-shadow: 0px 2px 6.099999904632568px 0px rgba(0,0,0,0.10);
+  --tw-shadow-colored: 0px 2px 6.099999904632568px 0px var(--tw-shadow-color);
   box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
 }
 
@@ -13878,6 +13926,14 @@ Not supports in Firefox and IE */
   padding-left: 1.5rem;
 }
 
+.placeholder\:text-\[\#bg-\[var\(--text-text-default\2c \#353740\)\]\]::-moz-placeholder {
+  color: #bg-[var(--text-text-default,#353740)];
+}
+
+.placeholder\:text-\[\#bg-\[var\(--text-text-default\2c \#353740\)\]\]::placeholder {
+  color: #bg-[var(--text-text-default,#353740)];
+}
+
 .before\:absolute::before {
   content: var(--tw-content);
   position: absolute;
@@ -15342,6 +15398,11 @@ Not supports in Firefox and IE */
   border-color: rgb(62 63 68 / var(--tw-border-opacity));
 }
 
+.dark .dark\:border-\[\#514C59\] {
+  --tw-border-opacity: 1;
+  border-color: rgb(81 76 89 / var(--tw-border-opacity));
+}
+
 .dark .dark\:border-\[\#525252\] {
   --tw-border-opacity: 1;
   border-color: rgb(82 82 82 / var(--tw-border-opacity));
@@ -15541,6 +15602,11 @@ Not supports in Firefox and IE */
 .dark .dark\:bg-\[\#2957A9\] {
   --tw-bg-opacity: 1;
   background-color: rgb(41 87 169 / var(--tw-bg-opacity));
+}
+
+.dark .dark\:bg-\[\#2A282D\] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(42 40 45 / var(--tw-bg-opacity));
 }
 
 .dark .dark\:bg-\[\#2b282e\] {
@@ -15914,6 +15980,10 @@ Not supports in Firefox and IE */
 
 .dark .dark\:font-light {
   font-weight: 300;
+}
+
+.dark .dark\:font-normal {
+  font-weight: 400;
 }
 
 .dark .dark\:\!text-white {
