@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <Phoenix.Component.live_title>
-      <%= assigns[:page_title] || assigns[:title] || "Delivery" %>
+      <%= assigns[:page_title] || assigns[:title] || Oli.VendorProperties.product_short_name() %>
     </Phoenix.Component.live_title>
 
     <link
