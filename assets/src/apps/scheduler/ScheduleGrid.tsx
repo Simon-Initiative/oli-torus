@@ -3,6 +3,7 @@ import { useSelector } from 'react-redux';
 import { useCallbackRef, useResizeObserver } from '@restart/hooks';
 import { DateWithoutTime } from 'epoq';
 import { getModeFromLocalStorage } from 'components/misc/DarkModeSelector';
+import { ClearIcon, CollapseAllIcon, ExpandAllIcon, SearchIcon } from 'components/misc/icons/Icons';
 import { isDarkMode } from 'utils/browser';
 import { ScheduleHeaderRow } from './ScheduleHeader';
 import { ScheduleLine } from './ScheduleLine';
@@ -92,17 +93,45 @@ export const ScheduleGrid: React.FC<GridProps> = ({ startDate, endDate, onReset,
               <i className="fa fa-calendar" /> Set Schedule
             </button>
           )}
-
-          <button
-            id="clear-schedule"
-            className="btn btn-sm btn-primary whitespace-nowrap"
-            onClick={onClear}
-          >
-            <i className="fa fa-trash-alt" /> Clear Timelines
-          </button>
         </div>
       </div>
+      <div className="flex flex-row gap-x-4 justify-start items-center w-auto h-[51px] mb-6 ml-[270px] mr-2 px-2 bg-white dark:bg-black shadow-[0px_2px_6.099999904632568px_0px_rgba(0,0,0,0.10)]">
+        {/* Search Bar  */}
+        <div className="relative w-[461px]">
+          <SearchIcon className="text-[#383A44] dark:text-white absolute left-3 top-1/2 -translate-y-1/2" />
 
+          <input
+            className="w-[461px] h-9 pl-10 pr-3 dark:bg-[#2A282D] dark:text-[#eeebf5] rounded-md border border-[#CED1D9] dark:border-[#514C59] placeholder:text-[#bg-[var(--text-text-default,#353740)]]"
+            type="text"
+            placeholder="Search Schedule..."
+          />
+        </div>
+
+        {/* Expand/Collapse All button */}
+        <div className="flex flex-row items-center justify-start w-auto px-2 text-sm text-[#353740] ">
+          <button id="expand_all_button" className="flex space-x-3 dark:text-[#eeebf5]">
+            <ExpandAllIcon className="text-[#353740] dark:text-white ml-2" />
+            <span>Expand All</span>
+          </button>
+
+          <button id="collapse_all_button" className="hidden space-x-3 dark:text-[#eeebf5]">
+            <CollapseAllIcon className="text-[#353740] dark:text-white ml-2" />
+            <span>Collapse All</span>
+          </button>
+        </div>
+
+        {/* Clear Schedule button */}
+        <button
+          id="clear-schedule"
+          className="btn btn-sm flex gap-1 items-center"
+          onClick={onClear}
+        >
+          <ClearIcon className="text-[#0062F2] dark:text-white ml-2" />
+          <span className="justify-start text-[#0062F2] text-sm font-bold dark:font-normal dark:text-[#eeebf5]">
+            Clear
+          </span>
+        </button>
+      </div>
       <div className="w-full px-4">
         <table className="select-none table-striped-schedule border-t-0 border-l-0">
           <thead className="sticky top-14 z-10">

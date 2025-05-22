@@ -1413,6 +1413,7 @@ defmodule OliWeb.Router do
       live("/remix/:section_resource_slug", Delivery.RemixSection)
       live("/enrollments", Sections.EnrollmentsViewLive)
       live("/invitations", Sections.InviteView)
+      live("/lti_external_tools", Sections.LtiExternalToolsView)
 
       live("/edit", Sections.EditView)
 
