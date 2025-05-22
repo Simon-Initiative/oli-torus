@@ -16,20 +16,27 @@ import { LTIExternalToolSchema } from './schema';
 const store = configureStore();
 
 const LTIExternalTool: React.FC = () => {
-  const { model, projectSlug, activityId, onEdit } =
+  const { model, projectSlug, authoringContext, activityId, onEdit } =
     useAuthoringElementContext<LTIExternalToolSchema>();
 
   const activityIdStr = activityId ? `${activityId}` : undefined;
 
+  const projectsOrSections =
+    authoringContext?.previewMode === 'instructor' ? 'sections' : 'projects';
+
   const ltiToolDetailsLoader = useLoader(
     () =>
       activityIdStr
-        ? getLtiExternalToolDetails('projects', projectSlug, activityIdStr)
+        ? getLtiExternalToolDetails(projectsOrSections, projectSlug, activityIdStr)
         : Promise.resolve(null),
     [activityIdStr],
   );
 
-  const resourceId = model.id as string;
+  if (activityIdStr == undefined) {
+    console.error('LTIExternalTool: activityId is undefined');
+
+    return <Alert variant="error">Failed to load LTI activity</Alert>;
+  }
 
   return ltiToolDetailsLoader.caseOf({
     loading: () => <LoadingSpinner />,
@@ -39,9 +46,10 @@ const LTIExternalTool: React.FC = () => {
         <div className="activity lti-external-tool-activity">
           <div className="activity-content">
             <LTIExternalToolFrame
+              mode="authoring"
               name={ltiToolDetails.name}
               launchParams={ltiToolDetails.launch_params}
-              resourceId={resourceId}
+              resourceId={activityIdStr}
               openInNewTab={model.openInNewTab}
               height={model.height}
               onEditHeight={(height: number | undefined) => onEdit({ ...model, height })}
