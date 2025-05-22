@@ -9,17 +9,18 @@ defmodule OliWeb.LtiController do
   alias Oli.Delivery.Sections
   alias Oli.Institutions
   alias Oli.Institutions.PendingRegistration
-  alias Lti_1p3
   alias Oli.Predefined
   alias Oli.Slack
-  alias OliWeb.Common.Utils
-  alias OliWeb.UserAuth
   alias Oli.Lti.LtiParams
+  alias Oli.Lti.PlatformInstances
+  alias OliWeb.UserAuth
+  alias OliWeb.Common.Utils
+  alias OliWeb.Common.LtiCommon
+  alias Lti_1p3
   alias Lti_1p3.Roles.ContextRoles
   alias Lti_1p3.Roles.PlatformRoles
   alias Lti_1p3.Tool.Services.AGS
   alias Lti_1p3.Tool.Services.NRPS
-  alias Oli.Lti.PlatformInstances
 
   require Logger
 
@@ -485,73 +486,69 @@ defmodule OliWeb.LtiController do
                  institution.id
                ) do
             {:ok, user} ->
-              # update lti params and session to be associated with the current lms user
+              # Update stored LTI params associated with the current LTI user
               {:ok, _} =
                 LtiParams.create_or_update_lti_params(lti_params, user.id)
 
-              # update user platform roles
-              Accounts.update_user_platform_roles(
-                user,
-                PlatformRoles.get_roles_by_uris(lti_roles)
-              )
+              # Update user platform roles
+              {:ok, user} =
+                Accounts.update_user_platform_roles(
+                  user,
+                  PlatformRoles.get_roles_by_uris(lti_roles)
+                )
 
-              # context claim is considered optional according to IMS http://www.imsglobal.org/spec/lti/v1p3/#context-claim
-              # safeguard against the case that context is missing
-              case lti_params["https://purl.imsglobal.org/spec/lti/claim/context"] do
-                nil ->
-                  {_error_id, error_msg} = log_error("context claim is missing from lti params")
+              # Sign in user
+              conn =
+                conn
+                |> UserAuth.create_session(user)
 
-                  throw(error_msg)
+              # If a section already exists, enroll the user and update the section details
+              section =
+                case Sections.get_section_from_lti_params(lti_params) do
+                  nil ->
+                    # A section has not been created for this context yet
+                    nil
 
-                context ->
-                  # update section specifics - if one exists. Enroll the user and also update the section details
-                  with {:ok, section} <- get_existing_section(lti_params) do
+                  section ->
                     # transform lti_roles to a list only containing valid context roles (exclude all system and institution roles)
                     context_roles = ContextRoles.get_roles_by_uris(lti_roles)
 
                     # if a course section exists, ensure that this user has an enrollment in this section
-                    enroll_user(user.id, section.id, context_roles)
+                    Sections.enroll(user.id, section.id, context_roles)
 
-                    # make sure section details are up to date
-                    %{"title" => context_title} = context
+                    # update section LTI details
+                    case Sections.update_section(section, %{
+                           grade_passback_enabled: AGS.grade_passback_enabled?(lti_params),
+                           line_items_service_url:
+                             AGS.get_line_items_url(lti_params, registration),
+                           nrps_enabled: NRPS.nrps_enabled?(lti_params),
+                           nrps_context_memberships_url:
+                             NRPS.get_context_memberships_url(lti_params)
+                         }) do
+                      {:ok, section} ->
+                        section
 
-                    {:ok, _section} =
-                      update_section_details(context_title, section, lti_params, registration)
-                  end
+                      {:error, changeset} ->
+                        {_error_id, error_msg} =
+                          log_error("Failed to update section", changeset)
 
-                  # sign current user in and redirect to home page
-                  conn
-                  |> UserAuth.create_session(user)
-                  |> redirect(to: "/sections")
-              end
+                        render(conn, "lti_error.html", reason: error_msg)
+                    end
+                end
+
+              # Redirect the LTI user to the appropriate route
+              LtiCommon.redirect_lti_user(
+                conn,
+                section,
+                lti_params
+              )
 
             {:error, changeset} ->
               {_error_id, error_msg} = log_error("Failed to create or update user", changeset)
 
-              throw(error_msg)
+              render(conn, "lti_error.html", reason: error_msg)
           end
       end
     end)
-  end
-
-  defp enroll_user(user_id, section_id, context_roles) do
-    Sections.enroll(user_id, section_id, context_roles)
-  end
-
-  defp update_section_details(context_title, section, lti_params, registration) do
-    Sections.update_section(section, %{
-      title: context_title,
-      grade_passback_enabled: AGS.grade_passback_enabled?(lti_params),
-      line_items_service_url: AGS.get_line_items_url(lti_params, registration),
-      nrps_enabled: NRPS.nrps_enabled?(lti_params),
-      nrps_context_memberships_url: NRPS.get_context_memberships_url(lti_params)
-    })
-  end
-
-  defp get_existing_section(lti_params) do
-    case Sections.get_section_from_lti_params(lti_params) do
-      nil -> nil
-      section -> {:ok, section}
-    end
   end
 end

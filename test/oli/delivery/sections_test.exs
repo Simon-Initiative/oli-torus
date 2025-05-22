@@ -2597,4 +2597,17 @@ defmodule Oli.Delivery.SectionsTest do
       assert Enum.all?(enrollments, fn e -> e.status == :suspended end)
     end
   end
+
+  describe "get_section_from_latest_lti_launch/1" do
+    setup do
+      user = insert(:user)
+      section = insert(:section)
+
+      {:ok, section: section, user: user}
+    end
+
+    test "returns the section from the latest LTI launch", %{section: section, user: user} do
+      throw("Not implemented")
+    end
+  end
 end
