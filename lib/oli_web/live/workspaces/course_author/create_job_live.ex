@@ -14,6 +14,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
   alias OliWeb.Workspaces.CourseAuthor.Datasets.CreationTableModel
   alias OliWeb.Workspaces.CourseAuthor.Datasets.JobShortcuts
   alias Oli.Repo.{Paging, Sorting}
+  alias OliWeb.Workspaces.CourseAuthor.Datasets.Common
 
   @max_selected 5
 
@@ -113,6 +114,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
   def render(assigns) do
     ~H"""
     <h2 id="header_id" class="pb-2">Create Dataset Job</h2>
+    <Common.age_warning />
     <div class="mb-3">
       <%= if !@can_create_job? do %>
         <div class="alert alert-warning flex flex-row justify-between" role="alert">
