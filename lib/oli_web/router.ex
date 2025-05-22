@@ -1640,6 +1640,7 @@ defmodule OliWeb.Router do
       live("/external_tools", Admin.ExternalTools.ExternalToolsView)
       live("/external_tools/new", Admin.ExternalTools.NewExternalToolView)
       live("/external_tools/:platform_instance_id/details", Admin.ExternalTools.DetailsView)
+      live("/external_tools/:platform_instance_id/usage", Admin.ExternalTools.UsageView)
     end
 
     # System admin
