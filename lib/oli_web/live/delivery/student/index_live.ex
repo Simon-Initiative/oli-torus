@@ -4,7 +4,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   import OliWeb.Components.Delivery.Layouts
 
   alias Oli.Delivery.{Attempts, Certificates, Hierarchy, Metrics, Sections, Settings}
-  alias Oli.Delivery.Sections.SectionCache
+  alias Oli.Delivery.Sections.SectionResourceDepot
   alias Oli.Publishing.DeliveryResolver
   alias OliWeb.Common.FormatDateTime
   alias OliWeb.Components.Common
@@ -67,7 +67,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
               page ->
                 page_module_index =
                   section
-                  |> get_or_compute_full_hierarchy()
+                  |> SectionResourceDepot.get_full_hierarchy(hidden: false)
                   |> Hierarchy.find_module_ancestor(
                     Map.get(page, :resource_id),
                     Oli.Resources.ResourceType.get_id_by_type("container")
@@ -1098,12 +1098,6 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
   defp format_date(due_date, context, format) do
     FormatDateTime.to_formatted_datetime(due_date, context, format)
-  end
-
-  def get_or_compute_full_hierarchy(section) do
-    SectionCache.get_or_compute(section.slug, :full_hierarchy, fn ->
-      Hierarchy.full_hierarchy(section)
-    end)
   end
 
   # Do not show the module index if it does not exist or the page is not graded or is an exploration
