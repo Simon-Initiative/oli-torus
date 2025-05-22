@@ -10,7 +10,11 @@ get_env_as_boolean = fn key, default ->
   end
 end
 
-config :oli, Oban, plugins: [Oban.Plugins.Pruner, {Oban.Plugins.Cron, crontab: []}]
+if System.get_env("ADD_OBAN_CRONTAB_IN_DEV", "false") == "true" do
+  config :oli, Oban, plugins: [Oban.Plugins.Pruner, {Oban.Plugins.Cron, crontab: []}]
+else
+  nil
+end
 
 config :oli,
   env: :dev,
