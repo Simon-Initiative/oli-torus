@@ -35,6 +35,7 @@ const LikertComponent: React.FC = () => {
     state: activityState,
     context,
     model,
+    mode,
     writerContext,
     onSubmitActivity,
     onSaveActivity,
@@ -78,6 +79,7 @@ const LikertComponent: React.FC = () => {
       />
     ) : (
       <ScoreAsYouGoSubmitReset
+        mode={mode}
         onSubmit={() => dispatch(submit(onSubmitActivity))}
         onReset={() => dispatch(resetAction(onResetActivity, undefined))}
       />
