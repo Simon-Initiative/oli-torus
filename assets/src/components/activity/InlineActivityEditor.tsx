@@ -190,7 +190,10 @@ export class InlineActivityEditor extends React.Component<
     );
 
     return (
-      <div className={classNames(styles.inlineActivityEditor, 'activity-editor')}>
+      <div
+        className={classNames(styles.inlineActivityEditor, 'activity-editor')}
+        data-qa="activity"
+      >
         <div className="d-flex align-items-baseline flex-grow-1 mr-2">
           <TextEditor
             onEdit={onTitleEdit}
