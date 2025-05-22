@@ -35,7 +35,8 @@ export const SubmitTechSupportForm = {
         const json = await res.json();
         this.pushEvent('form_response', json);
       } catch (err) {
-        this.pushEvent('form_response', { error: 'Something went wrong' });
+        console.log('Something went wrong when trying to request help', err);
+        this.pushEvent('form_response', { error: err });
       }
     });
   },
