@@ -26,7 +26,15 @@ defmodule Oli.Help.RequesterData do
     {:ok, help_requester_data}
   end
 
-  def parse(_) do
-    {:error, "Help requester data is incomplete."}
+  def parse(requester_data) do
+    required_fields =
+      Enum.reduce(requester_data, [], fn
+        {"requester_email", nil}, acc -> acc ++ ["email"]
+        {"requester_name", nil}, acc -> acc ++ ["name"]
+        _, acc -> acc
+      end)
+      |> Enum.join(" and ")
+
+    {:error, "Requester data is incomplete. Required field(s): #{required_fields}"}
   end
 end

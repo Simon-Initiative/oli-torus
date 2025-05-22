@@ -21,6 +21,7 @@ defmodule OliWeb.TechSupportLive do
       |> assign(modal_id: @modal_id)
       |> assign(recaptcha_error: false)
       |> assign(:session, session)
+      |> assign(tech_support_flash: %{})
       |> assign(uploaded_files: [])
       |> allow_upload(:attached_screenshots,
         accept: ~w(.jpg .jpeg .png),
@@ -36,7 +37,7 @@ defmodule OliWeb.TechSupportLive do
   def render(assigns) do
     ~H"""
     <div class="mx-auto z-50 top-0 absolute right-0">
-      <.flash_group flash={@flash} />
+      <.flash_group flash={@tech_support_flash} />
     </div>
     <button
       id="trigger-tech-support-modal"
@@ -46,7 +47,9 @@ defmodule OliWeb.TechSupportLive do
     />
     <Modal.modal id={@modal_id} class="md:w-8/12">
       <:title>Tech Support</:title>
-      <a href={@knowledgebase_url}>Find answers quickly in the Torus knowledge base.</a>
+      <a href={@knowledgebase_url} target="_blank">
+        Find answers quickly in the Torus knowledge base.
+      </a>
       <div class="w-auto">
         <.form
           id="tech-support-modal-form"
@@ -94,6 +97,7 @@ defmodule OliWeb.TechSupportLive do
           <.input
             label="Questions or Comments:"
             field={@form[:message]}
+            phx-debounce="500"
             type="textarea"
             class="w-full dark:placeholder:text-zinc-300 pl-6 dark:bg-stone-900 rounded-md border dark:border-zinc-300 dark:text-zinc-300 leading-snug"
             required
@@ -140,9 +144,20 @@ defmodule OliWeb.TechSupportLive do
               &times;
             </a>
           </div>
-
           <div class="w-full flex flex-col lg:flex-row gap-2 md:justify-between">
-            <.render_recaptcha recaptcha_error={@recaptcha_error} class="md:m-0 m-auto" />
+            <%!-- Start Captcha --%>
+            <div class="w-80 mx-auto">
+              <div
+                id="recaptcha"
+                phx-hook="Recaptcha"
+                data-sitekey={Application.fetch_env!(:oli, :recaptcha)[:site_key]}
+                data-theme="dark"
+                phx-update="ignore"
+              >
+              </div>
+
+              <.error :if={@recaptcha_error}><%= @recaptcha_error %></.error>
+            </div>
 
             <div class="flex w-full justify-around lg:justify-end items-center">
               <.button type="link" variant={:link} phx-click={Modal.hide_modal(@modal_id)}>
@@ -192,14 +207,14 @@ defmodule OliWeb.TechSupportLive do
   end
 
   def handle_event("form_response", %{"info" => info}, socket) do
-    socket = put_flash(socket, :info, info)
+    socket = assign(socket, tech_support_flash: %{"info" => info})
     {:noreply, socket}
   end
 
   def handle_event("form_response", %{"error" => error}, socket) do
     Logger.error("Error requesting support help: #{inspect(error, pretty: true)}")
-    message = "We are unable to forward your help request at the moment"
-    socket = put_flash(socket, :error, message)
+    message = "We are unable to forward your help request at the moment."
+    socket = assign(socket, tech_support_flash: %{"error" => message})
     {:noreply, socket}
   end
 

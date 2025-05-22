@@ -17,12 +17,12 @@ defmodule OliWeb.HelpController do
          {:ok, _} <- Oli.Help.Dispatcher.dispatch(dispatcher, help_content) do
       json(conn, %{
         "result" => "success",
-        "info" => "Your help request has been successfully submitted"
+        "info" => "Your help request has been successfully submitted."
       })
     else
       {:error, message} ->
-        Logger.error("Error when processing help message #{inspect(message)}")
-        error(conn, 500, "We are unable to forward your help request at the moment")
+        Logger.error("Error when processing help message. #{inspect(message)}")
+        error(conn, 500, "We are unable to forward your help request at the moment.")
     end
   end
 
