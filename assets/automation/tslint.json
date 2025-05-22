@@ -1,0 +1,35 @@
+{
+    "defaultSeverity": "error",
+    "extends": [
+        "tslint-config-airbnb"
+    ],
+    "jsRules": {},
+    "rules": {
+        "import-name": false,
+        "variable-name": [
+            true,
+            "allow-pascal-case"
+        ],
+        "object-shorthand-properties-first": false,
+        "strict-boolean-expressions": false,
+        "no-trailing-whitespace": false,
+        "no-consecutive-blank-lines": false,
+        "ter-func-call-spacing": false,
+        "prefer-template": false,
+        "align": [
+            true,
+            "statements"
+        ],
+        "no-console": [
+            true,
+            "log"
+        ],
+        "ter-arrow-parens": [
+            true,
+            "always"
+        ],
+        "semicolon": false,
+        "ter-indent": false
+    },
+    "rulesDirectory": []
+}
