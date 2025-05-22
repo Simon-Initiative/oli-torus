@@ -83,9 +83,11 @@ export const ScoreAsYouGoSubmitReset: React.FC<Props> = ({ onSubmit, onReset, mo
     if (isEvaluated(uiState)) {
       if (!uiState.activityContext.batchScoring) {
         const pointsDisplay =
-          attemptState.score === undefined && mode === 'review'
-            ? null
-            : numberFormat(attemptState.score) + ' / ' + numberFormat(attemptState.outOf);
+          (attemptState.score === undefined || attemptState.score === null) && mode === 'review' ? (
+            <i>hidden</i>
+          ) : (
+            numberFormat(attemptState.score) + ' / ' + numberFormat(attemptState.outOf)
+          );
 
         return (
           <div className="mt-3 flex justify-between">
