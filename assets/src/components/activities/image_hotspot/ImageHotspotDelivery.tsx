@@ -44,6 +44,7 @@ const ImageHotspotComponent: React.FC = () => {
     state: activityState,
     context,
     model,
+    mode,
     writerContext,
     onSubmitActivity,
     onSaveActivity,
@@ -151,6 +152,7 @@ const ImageHotspotComponent: React.FC = () => {
       )
     ) : (
       <ScoreAsYouGoSubmitReset
+        mode={mode}
         onSubmit={() => dispatch(submit(onSubmitActivity))}
         onReset={() => dispatch(resetAction(onResetActivity, undefined))}
       />

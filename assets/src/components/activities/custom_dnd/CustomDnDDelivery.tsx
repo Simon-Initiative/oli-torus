@@ -188,6 +188,7 @@ export const CustomDnDComponent: React.FC = () => {
         )
       : working || (
           <ScoreAsYouGoSubmitReset
+            mode={mode}
             onSubmit={() => dispatch(submit(onSubmitActivity))}
             onReset={async () => {
               if (resetListener !== null) {

@@ -71,6 +71,7 @@ const Input = (props: InputProps) => {
 export const ShortAnswerComponent: React.FC = () => {
   const {
     model,
+    mode,
     state: activityState,
     context,
     onSubmitActivity,
@@ -144,6 +145,7 @@ export const ShortAnswerComponent: React.FC = () => {
       />
     ) : (
       <ScoreAsYouGoSubmitReset
+        mode={mode}
         onSubmit={() => dispatch(submit(onSubmitActivity))}
         onReset={() => dispatch(resetAction(onResetActivity, undefined))}
       />

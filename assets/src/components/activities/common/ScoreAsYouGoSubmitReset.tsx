@@ -1,5 +1,6 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
+import { DeliveryMode } from 'components/activities/types';
 import { Modal, ModalSize } from 'components/modal/Modal';
 import { modalActions } from 'actions/modal';
 import { ActivityDeliveryState, isEvaluated } from 'data/activities/DeliveryState';
@@ -8,6 +9,7 @@ import { ScoreAsYouGoIcon } from './utils';
 interface Props {
   onSubmit: () => void;
   onReset: () => void;
+  mode: DeliveryMode;
 }
 
 interface ModalProps {
@@ -61,19 +63,39 @@ function buildConfirmMessage(uiState: ActivityDeliveryState): any {
   );
 }
 
-export const ScoreAsYouGoSubmitReset: React.FC<Props> = ({ onSubmit, onReset }) => {
+export const ScoreAsYouGoSubmitReset: React.FC<Props> = ({ onSubmit, onReset, mode }) => {
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   const { attemptState } = uiState;
+
+  const numberFormat = (value: number | null) => {
+    if (value === null) {
+      return '';
+    }
+    // If the number is an integer, return it as is
+    if (Number.isInteger(value)) {
+      return value.toString();
+    }
+    // Otherwise, return it with two decimal places
+    return value.toFixed(2);
+  };
 
   if (uiState.activityContext.graded) {
     if (isEvaluated(uiState)) {
       if (!uiState.activityContext.batchScoring) {
+        const pointsDisplay =
+          (attemptState.score === undefined || attemptState.score === null) && mode === 'review' ? (
+            <i>hidden</i>
+          ) : (
+            numberFormat(attemptState.score) + ' / ' + numberFormat(attemptState.outOf)
+          );
+
         return (
           <div className="mt-3 flex justify-between">
             <button
               disabled={
-                uiState.activityContext.maxAttempts > 0 &&
-                attemptState.attemptNumber >= uiState.activityContext.maxAttempts
+                mode != 'delivery' ||
+                (uiState.activityContext.maxAttempts > 0 &&
+                  attemptState.attemptNumber >= uiState.activityContext.maxAttempts)
               }
               onClick={() => {
                 window.oliDispatch(
@@ -98,7 +120,7 @@ export const ScoreAsYouGoSubmitReset: React.FC<Props> = ({ onSubmit, onReset }) 
               <span>
                 <ScoreAsYouGoIcon /> Points:{' '}
               </span>
-              <span>{attemptState.score?.toFixed(2) + ' / ' + attemptState.outOf}</span>
+              <span>{pointsDisplay}</span>
             </div>
           </div>
         );
@@ -108,8 +130,9 @@ export const ScoreAsYouGoSubmitReset: React.FC<Props> = ({ onSubmit, onReset }) 
         <div className="flex justify-center">
           <button
             disabled={
-              uiState.activityContext.maxAttempts > 0 &&
-              attemptState.attemptNumber > uiState.activityContext.maxAttempts
+              mode != 'delivery' ||
+              (uiState.activityContext.maxAttempts > 0 &&
+                attemptState.attemptNumber > uiState.activityContext.maxAttempts)
             }
             className="btn btn-primary"
             onClick={() => onSubmit()}

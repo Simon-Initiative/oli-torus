@@ -335,6 +335,7 @@ export const MultiInputComponent: React.FC = () => {
         )}
 
         <ScoreAsYouGoSubmitReset
+          mode={mode}
           onSubmit={() => dispatch(submit(onSubmitActivity))}
           onReset={() => dispatch(resetAction(onResetActivity, undefined))}
         />

@@ -1135,19 +1135,19 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
   attr :batch_scoring, :boolean, default: false
 
-  def submit_button(%{batch_scoring: false} = assigns) do
-    ~H"""
-    """
-  end
-
   def submit_button(assigns) do
+    button_style =
+      if assigns[:batch_scoring] do
+        "cursor-pointer px-5 py-2.5 hover:bg-opacity-40 bg-blue-600 rounded-[3px] shadow justify-center items-center gap-2.5 inline-flex text-white text-sm font-normal font-['Open Sans'] leading-tight"
+      else
+        "invisible"
+      end
+
+    assigns = assign(assigns, button_style: button_style)
+
     ~H"""
     <div class="flex w-full justify-center">
-      <button
-        id="submit_answers"
-        phx-hook="DelayedSubmit"
-        class="cursor-pointer px-5 py-2.5 hover:bg-opacity-40 bg-blue-600 rounded-[3px] shadow justify-center items-center gap-2.5 inline-flex text-white text-sm font-normal font-['Open Sans'] leading-tight"
-      >
+      <button id="submit_answers" phx-hook="DelayedSubmit" class={@button_style}>
         <span class="button-text">Submit Answers</span>
         <span class="spinner hidden ml-2 animate-spin">
           <svg

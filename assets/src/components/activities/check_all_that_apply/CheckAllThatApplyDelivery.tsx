@@ -37,6 +37,7 @@ export const CheckAllThatApplyComponent: React.FC = () => {
     onSubmitActivity,
     onResetActivity,
     onSaveActivity,
+    mode,
     model,
   } = useDeliveryElementContext<CATASchema>();
   const uiState = useSelector((state: ActivityDeliveryState) => state);
@@ -69,6 +70,7 @@ export const CheckAllThatApplyComponent: React.FC = () => {
       <SubmitResetConnected onReset={() => dispatch(resetAction(onResetActivity, resetInputs))} />
     ) : (
       <ScoreAsYouGoSubmitReset
+        mode={mode}
         onSubmit={() => dispatch(submit(onSubmitActivity))}
         onReset={() => dispatch(resetAction(onResetActivity, undefined))}
       />
