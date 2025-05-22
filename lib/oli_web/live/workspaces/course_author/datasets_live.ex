@@ -106,7 +106,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.DatasetsLive do
   def render(assigns) do
     ~H"""
     <h2 id="header_id" class="pb-2">Datasets</h2>
-    <Common.age_warning/>
+    <Common.age_warning />
     <div class="mb-3">
       <%= if @all_disabled do %>
         <div class="alert alert-warning flex flex-row justify-between" role="alert">
