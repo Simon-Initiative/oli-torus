@@ -10,6 +10,8 @@ get_env_as_boolean = fn key, default ->
   end
 end
 
+config :oli, Oban, plugins: [Oban.Plugins.Pruner, {Oban.Plugins.Cron, crontab: []}]
+
 config :oli,
   env: :dev,
   s3_xapi_bucket_name: System.get_env("S3_XAPI_BUCKET_NAME"),
