@@ -10,6 +10,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.DatasetsLive do
   alias OliWeb.Common.{PagedTable, TextSearch}
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Router.Helpers, as: Routes
+  alias OliWeb.Workspaces.CourseAuthor.Datasets.Common
 
   alias OliWeb.Workspaces.CourseAuthor.Datasets.{
     DatasetsTableModel
@@ -105,6 +106,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.DatasetsLive do
   def render(assigns) do
     ~H"""
     <h2 id="header_id" class="pb-2">Datasets</h2>
+    <Common.age_warning/>
     <div class="mb-3">
       <%= if @all_disabled do %>
         <div class="alert alert-warning flex flex-row justify-between" role="alert">
