@@ -313,7 +313,9 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
 
     const correctArray: any[] =
       typeof alternateCorrect !== 'undefined'
-        ? [correct, ...alternateCorrect.split(alternateCorrectDelimiter)]
+        ? Array.isArray(alternateCorrect)
+          ? [correct, ...alternateCorrect]
+          : [correct, ...alternateCorrect.split(alternateCorrectDelimiter)]
         : [correct];
 
     return correctArray.includes(submission);

@@ -148,6 +148,7 @@ export const createSchema = (): Partial<FIBModel> => ({
       alternateCorrect: '',
       correct: 'Option 1',
       key: 'blank1',
+      type: 'dropdown',
       options: [
         {
           key: 'Option 1',

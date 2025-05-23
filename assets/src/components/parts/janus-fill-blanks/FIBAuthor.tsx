@@ -13,7 +13,7 @@ import {
   convertFIBContentToQuillNodes,
   convertQuillNodesToText,
   normalizeBlanks,
-  parseTextToFIBStructure,
+  parseTextContentToFIBStructure,
 } from './FIBUtils';
 import { FIBModel } from './schema';
 
@@ -29,7 +29,6 @@ const Editor: React.FC<any> = React.memo(({ html, tree, portal, customOptions })
   quillProps.tree = JSON.stringify(tree);
   quillProps.showcustomoptioncontrol = true;
   quillProps.customoptions = JSON.stringify(normalizeBlanks(customOptions));
-  console.log({ tt: quillProps.customoptions, tree, customOptions });
   const E = () => (
     <div style={{ padding: 20 }}>{React.createElement(quillEditorTagName, quillProps)}</div>
   );
@@ -41,10 +40,12 @@ const FIBAuthor: React.FC<AuthorPartComponentProps<FIBModel>> = (props) => {
   const { configuremode, id, onConfigure, onSaveConfigure } = props;
   const [model, setModel] = useState<any>(props.model);
   const [ready, setReady] = useState<boolean>(false);
+  const [isContentModified, setIsContentModified] = useState<boolean>(false);
   const [updatedContent, setUpdatedContent] = useState<any>([]);
   const [inConfigureMode, setInConfigureMode] = useState<boolean>(parseBoolean(configuremode));
   const [textNodes, setTextNodes] = useState<any[]>([]);
   const [finalContent, setFinalContent] = useState<any>([]);
+  const [finalElement, setFinalElement] = useState<any>([]);
   const { content, elements, customCss } = model;
 
   const styles: CSSProperties = {
@@ -61,11 +62,12 @@ const FIBAuthor: React.FC<AuthorPartComponentProps<FIBModel>> = (props) => {
   }, [props.model]);
 
   useEffect(() => {
-    const collectedText = convertQuillNodesToText(textNodes);
-    const finalcontent = parseTextToFIBStructure(collectedText);
-
-    setFinalContent(finalcontent);
-  }, [textNodes]);
+    if (textNodes?.length) {
+      const collectedText = convertQuillNodesToText(textNodes);
+      const finalcontent = parseTextContentToFIBStructure(collectedText, finalElement);
+      setFinalContent(finalcontent);
+    }
+  }, [textNodes, finalElement]);
 
   const initialize = useCallback(async (pModel) => {
     setReady(true);
@@ -73,6 +75,7 @@ const FIBAuthor: React.FC<AuthorPartComponentProps<FIBModel>> = (props) => {
 
   useEffect(() => {
     const convertedText = convertFIBContentToQuillNodes(content, elements);
+    console.log({ convertedText });
     setUpdatedContent(convertedText);
 
     setFinalContent({ content, elements });
@@ -86,13 +89,16 @@ const FIBAuthor: React.FC<AuthorPartComponentProps<FIBModel>> = (props) => {
   }, []);
 
   const handleNotificationSave = useCallback(async () => {
-    const modelClone = clone(model);
-    modelClone.content = finalContent.content;
-    modelClone.elements = finalContent.elements;
-    await onSaveConfigure({ id, snapshot: modelClone });
-
+    if (isContentModified) {
+      //console.log('handleNotificationSave - Called');
+      const modelClone = clone(model);
+      modelClone.content = finalContent.content;
+      modelClone.elements = finalElement;
+      await onSaveConfigure({ id, snapshot: modelClone });
+      setIsContentModified(false);
+    }
     setInConfigureMode(false);
-  }, [model, finalContent]);
+  }, [model, finalContent, finalElement, isContentModified]);
 
   useEffect(() => {
     if (!props.notify) {
@@ -169,7 +175,12 @@ const FIBAuthor: React.FC<AuthorPartComponentProps<FIBModel>> = (props) => {
         return;
       } // not mine
       const { payload } = e.detail;
-      setTextNodes(payload.value);
+      setIsContentModified(true);
+      console.log('handleEditorChange - Called', { payload });
+      if (payload?.value) {
+        setTextNodes(payload.value);
+      }
+      setFinalElement(payload.options);
     };
 
     if (inConfigureMode) {

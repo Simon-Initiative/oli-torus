@@ -6,6 +6,8 @@ import {
   convertQuillNodesToText,
   normalizeBlanks,
   parseTextToFIBStructure,
+  syncOptionsWithParsed,
+  updateFinalOptionsText,
   updateStringWithCorrectAnswers,
 } from '../janus-fill-blanks/FIBUtils';
 import { OptionItem, QuillCustomOptionEditor } from './QuillCustomOptionEditor';
@@ -114,6 +116,7 @@ const fontStyles = `${getCssForFonts(supportedFonts)}
 }
 
 `;
+let localOptions: any = [];
 export const QuillEditor: React.FC<QuillEditorProps> = ({
   tree,
   html,
@@ -128,7 +131,6 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
   const quill: any = useRef();
   const [contents, setContents] = React.useState<any>(tree);
   const [selectedKey, setSelectedKey] = useState<number>(0);
-  const [textContents, setTextContents] = React.useState<any>(tree);
   const [customDropDownOptions, setCustomDropDownOptions] = React.useState<any>([]);
   const [delta, setDelta] = React.useState<any>(convertJanusToQuill(tree));
   const [currentQuillRange, setCurrentQuillRange] = React.useState<number>(0);
@@ -207,7 +209,8 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
         const updatedText = quill.current?.getEditor().getText() ?? '';
         const parsed = parseTextToFIBStructure(updatedText);
         const quillOptions = normalizeBlanks(parsed.elements);
-
+        const tt = syncOptionsWithParsed(localOptions, quillOptions);
+        console.log({ tt });
         setCustomDropDownOptions(quillOptions);
         setSelectedKey(iMatchCounter);
         setShowCustomOptionSelectorDailog(true);
@@ -232,8 +235,7 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
     setShowCustomOptionSelectorDailog(false);
     if (quill?.current) {
       const mytextContents = quill.current?.getEditor().getText();
-
-      console.log({ textContents, Options, mytextContents });
+      localOptions = Options;
       const updatedString = updateStringWithCorrectAnswers(mytextContents, Options);
       const span = document.createElement('span');
       span.innerHTML = updatedString;
@@ -265,6 +267,7 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
     if (customoptions?.length) {
       const options = JSON.parse(customoptions);
       setCustomDropDownOptions(options);
+      localOptions = options;
     }
   }, [customoptions]);
 
@@ -278,15 +281,20 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
   const handleQuillChange = React.useCallback(
     (content, delta, source, editor) => {
       // console.log('quill changes', { content, delta, source, editor });
+      //let finalcontent: any = [];
       const janusText = convertQuillToJanus(new Delta(editor.getContents().ops));
       // console.log('JANUS TEXT', janusText);
+      let updatedOptionslist = [];
       if (showcustomoptioncontrol) {
         const collectedText = convertQuillNodesToText(janusText);
-        //const finalcontent = parseTextToFIBStructure(collectedText);
-        setTextContents(collectedText);
+        //finalcontent = parseTextToFIBStructure(collectedText);
+
+        updatedOptionslist = updateFinalOptionsText(collectedText, localOptions);
+        console.log({ updatedOptionslist, localOptions });
+        setCustomDropDownOptions(localOptions || []);
       }
       setContents(janusText);
-      onChange({ value: janusText });
+      onChange({ value: janusText, options: localOptions });
     },
     [onChange],
   );
@@ -398,7 +406,7 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
           handleImageDailogClose={handleImageUploaderDailogClose}
         ></QuillImageUploader>
       }
-      {
+      {showCustomOptionSelectorDailog && (
         <QuillCustomOptionEditor
           showOptionDailog={showCustomOptionSelectorDailog}
           handleOptionDetailsSave={handleCustomOptionEditorSave}
@@ -406,7 +414,7 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
           Options={customDropDownOptions}
           selectedIndex={selectedKey}
         ></QuillCustomOptionEditor>
-      }
+      )}
     </React.Fragment>
   );
 };

@@ -9,9 +9,10 @@ export interface QuillCustomOptionProps {
 
 export interface OptionItem {
   key: string;
-  options: string[];
+  options: any[];
   type: 'dropdown' | 'input';
   correct: string;
+  alternateCorrect: string[];
 }
 
 interface QuillCustomOptionEditorProps {
@@ -30,12 +31,13 @@ export const QuillCustomOptionEditor: React.FC<QuillCustomOptionEditorProps> = (
   selectedIndex,
 }) => {
   const [selectedKey, setSelectedKey] = useState<string>('');
+  const [currentSelectedIndex, setCurrentSelectedIndex] = useState<number>(selectedIndex);
   const [items, setItems] = useState<QuillCustomOptionProps[]>([]);
   const [finalOptions, setFinalOptions] = useState<OptionItem[]>([]);
-
+  const [selectedType, setSelectedType] = useState<'dropdown' | 'input'>('dropdown');
   const selectedOption =
-    selectedIndex >= 0
-      ? finalOptions[selectedIndex]
+    currentSelectedIndex >= 0
+      ? finalOptions[currentSelectedIndex]
       : finalOptions.find((opt) => opt.key === selectedKey);
 
   const isDropdown = selectedOption?.type === 'dropdown';
@@ -43,39 +45,53 @@ export const QuillCustomOptionEditor: React.FC<QuillCustomOptionEditorProps> = (
   useEffect(() => {
     setFinalOptions(Options);
   }, [Options]);
-
   useEffect(() => {
-    if (finalOptions.length && selectedIndex >= 0 && selectedIndex < finalOptions.length) {
-      const current = finalOptions[selectedIndex];
-      if (current && current.key !== selectedKey) {
-        setSelectedKey(current.key);
+    if (
+      finalOptions.length &&
+      currentSelectedIndex >= 0 &&
+      currentSelectedIndex < finalOptions.length
+    ) {
+      const current = finalOptions[currentSelectedIndex];
+
+      if (!current || current.key === selectedKey) return; // 🛑 Prevent overwrite unless it's a real change
+
+      if (current) {
+        if (current.key !== selectedKey) {
+          setSelectedKey(current.key);
+        }
+
+        setSelectedType(current.type);
+
+        setItems(
+          current.options.map((opt) => ({
+            text: opt.value,
+            correct:
+              current.type === 'dropdown'
+                ? current.correct === opt.value || current.alternateCorrect?.includes(opt.value)
+                : true,
+            alternateCorrect: '',
+          })),
+        );
       }
     }
-  }, [selectedIndex, finalOptions]);
-
-  useEffect(() => {
-    const current = finalOptions.find((opt) => opt.key === selectedKey);
-    if (current) {
-      setItems(
-        current.options.map((opt) => ({
-          text: opt,
-          correct: current.type === 'dropdown' ? current.correct === opt : true,
-        })),
-      );
-    }
-  }, [selectedKey, finalOptions]);
+  }, [currentSelectedIndex, finalOptions]);
 
   const updateOptionItems = (updatedItems: QuillCustomOptionProps[]) => {
-    const updatedOptions = updatedItems.map((item) => item.text);
-    const correctItem = updatedItems.find((item) => item.correct)?.text || '';
-
+    const updatedOptions = updatedItems.map((item) => {
+      return { key: item.text, value: item.text };
+    });
+    const correctMarkedItems = updatedItems.filter((item) => item.correct).map((item) => item.text);
+    const correct = correctMarkedItems[0] || ''; // Primary correct
+    const alternateCorrect = correctMarkedItems.slice(1); // All others
     setFinalOptions((prev) =>
       prev.map((opt) =>
         opt.key === selectedKey
           ? {
               ...opt,
               options: updatedOptions,
-              correct: opt.type === 'dropdown' ? correctItem : 'true',
+              correct,
+              alternateCorrect,
+              type: selectedType,
             }
           : opt,
       ),
@@ -90,7 +106,9 @@ export const QuillCustomOptionEditor: React.FC<QuillCustomOptionEditorProps> = (
   };
 
   const toggleSelected = (index: number) => {
-    const updated = items.map((item, i) => ({ ...item, correct: i === index }));
+    const updated = items.map((item, i) =>
+      i === index ? { ...item, correct: !item.correct } : item,
+    );
     setItems(updated);
     updateOptionItems(updated);
   };
@@ -107,20 +125,52 @@ export const QuillCustomOptionEditor: React.FC<QuillCustomOptionEditorProps> = (
   };
 
   const addItem = () => {
+    const newCorrectAnswer = `${isDropdown ? 'Drop Down Item' : 'Correct Answer'} ${
+      items.length + 1
+    }`;
     const newItem = {
-      text: `${isDropdown ? 'Drop Down Item' : 'Correct Answer'} ${items.length + 1}`,
+      text: newCorrectAnswer,
       correct: !isDropdown,
+      alternateCorrect: newCorrectAnswer,
     };
     const updated = [...items, newItem];
     setItems(updated);
     updateOptionItems(updated);
   };
 
+  const handleTypeChange = (newType: 'dropdown' | 'input') => {
+    setSelectedType(newType);
+    setFinalOptions((prev) =>
+      prev.map((opt) => {
+        if (opt.key !== selectedKey) return opt;
+
+        const allCorrect = opt.options || [];
+        const altCorrect =
+          newType === 'input' ? allCorrect.slice(1).map((item: any) => item.value) : [];
+        return {
+          ...opt,
+          type: newType,
+          correct: newType === 'input' ? allCorrect[0].value || '' : '',
+          alternateCorrect: altCorrect,
+        };
+      }),
+    );
+
+    // Mark all current items as correct when switching to input
+    if (newType === 'input') {
+      const updatedItems = items.map((item) => ({
+        ...item,
+        correct: true,
+      }));
+      setItems(updatedItems);
+    }
+  };
+
   return (
     <React.Fragment>
       {
         <>
-          <Modal show={showOptionDailog} onHide={handleOptionDailogClose} style={{ top: '225px' }}>
+          <Modal show={showOptionDailog} onHide={handleOptionDailogClose} style={{ top: '200px' }}>
             <Modal.Header closeButton={true} className="px-8 pb-0">
               <h3 className="modal-title font-bold">
                 {isDropdown ? 'Drop Down Items' : 'Input Items - Correct Answer(s)'}
@@ -133,7 +183,10 @@ export const QuillCustomOptionEditor: React.FC<QuillCustomOptionEditorProps> = (
                   className="form-control"
                   style={{ width: '71%', marginLeft: '13px' }}
                   value={selectedKey}
-                  onChange={(e) => setSelectedKey(e.target.value)}
+                  onChange={(e) => {
+                    setSelectedKey(e.target.value);
+                    setCurrentSelectedIndex(e.target.selectedIndex);
+                  }}
                 >
                   {Options.map((option, index) => (
                     <option key={option.key} value={option.key}>
@@ -141,6 +194,31 @@ export const QuillCustomOptionEditor: React.FC<QuillCustomOptionEditorProps> = (
                     </option>
                   ))}
                 </select>
+              </div>
+              <div style={{ display: 'flex', marginBottom: '10px', marginLeft: '20px' }}>
+                <label className="form-label" style={{ marginRight: '10px', marginLeft: '12px' }}>
+                  Input Type
+                </label>
+                <label style={{ marginRight: '10px' }}>
+                  <input
+                    type="radio"
+                    name="type"
+                    value="dropdown"
+                    checked={selectedType === 'dropdown'}
+                    onChange={(e) => handleTypeChange('dropdown')}
+                  />{' '}
+                  Dropdown
+                </label>
+                <label>
+                  <input
+                    type="radio"
+                    name="type"
+                    value="input"
+                    checked={selectedType === 'input'}
+                    onChange={(e) => handleTypeChange('input')}
+                  />{' '}
+                  Input
+                </label>
               </div>
               <hr></hr>
               <div style={{ width: '100%' }}>

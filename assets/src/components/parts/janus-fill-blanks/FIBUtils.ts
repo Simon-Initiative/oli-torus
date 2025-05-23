@@ -21,7 +21,6 @@ export const convertFIBContentToQuillNodes = (contentItems: any[], blanks: any[]
 
   contentItems?.forEach((item) => {
     if (!blanks?.length) return;
-
     if (item.insert) {
       finalText += item.insert;
     } else if (item.dropdown) {
@@ -31,7 +30,8 @@ export const convertFIBContentToQuillNodes = (contentItems: any[], blanks: any[]
         finalText += ` {${matchingDropdown.options
           .map((opt: any) => {
             const isCorrect =
-              opt.key === matchingDropdown.correct || opt.key === matchingDropdown.alternateCorrect;
+              opt.key === matchingDropdown.correct ||
+              matchingDropdown.alternateCorrect?.includes(opt.key);
             return `"${opt.value}"${isCorrect ? '*' : ''}`;
           })
           .join(', ')}}`;
@@ -40,7 +40,11 @@ export const convertFIBContentToQuillNodes = (contentItems: any[], blanks: any[]
       const matchingInput = blanks.find((b) => b.key === item['text-input']);
 
       if (matchingInput) {
-        finalText += `{"${matchingInput.key}"}`;
+        finalText += ` {${matchingInput.options
+          .map((opt: any) => {
+            return `"${opt.value}"*`;
+          })
+          .join(', ')}}`;
       }
     }
   });
@@ -72,12 +76,19 @@ type FIBContentItem =
   | { 'text-input': string }
   | { dropdown: string; insert: '' };
 
-type TextInputBlank = { correct: string; key: string };
+type TextInputBlank = {
+  alternateCorrect: [];
+  options: any[];
+  correct: string;
+  key: string;
+  type: 'input';
+};
 type DropdownBlank = {
   correct: string;
-  alternateCorrect: string;
+  alternateCorrect: [];
   key: string;
-  options: { key: string; value: string }[];
+  options: any[];
+  type: 'dropdown';
 };
 
 interface ParsedFIBResult {
@@ -99,7 +110,7 @@ export const parseTextToFIBStructure = (
   while ((match = placeholderRegex.exec(inputText)) !== null) {
     const matchStart = match.index;
     const matchEnd = placeholderRegex.lastIndex;
-    const placeholderContent = match[1];
+    const placeholderContent = match[1].replace(/\\"/g, '"'); // Unescape escaped quotes;
 
     // Plain text before current match
     if (matchStart > lastProcessedIndex) {
@@ -109,7 +120,7 @@ export const parseTextToFIBStructure = (
 
     const parts = placeholderContent
       .split(/\s*,\s*/)
-      .map((s) => s.trim().replace(/^"(.*)"$/, '$1'));
+      .map((s) => s.trim().replace(/^"(.*)"$/, '$1')); // ✅ Strip quotes
 
     blanksInsideBraces.push([...parts]);
 
@@ -123,6 +134,9 @@ export const parseTextToFIBStructure = (
       elements.push({
         correct: value,
         key: value,
+        type: 'input',
+        alternateCorrect: [],
+        options: [{ key: value, value: value }],
       });
     } else {
       const options: { key: string; value: string }[] = [];
@@ -145,9 +159,10 @@ export const parseTextToFIBStructure = (
 
       elements.push({
         correct: correctKey,
-        alternateCorrect: '',
+        alternateCorrect: [],
         key: dropdownKey,
         options,
+        type: 'dropdown',
       });
     }
 
@@ -171,26 +186,45 @@ type FIBElement = DropdownBlank | TextInputBlank;
 
 interface NormalizedBlank {
   key: string;
-  options: string[];
+  options: any[];
   type: 'dropdown' | 'input';
   correct: string;
+  alternateCorrect: [];
 }
 
 export const normalizeBlanks = (elements: FIBElement[]): NormalizedBlank[] => {
   return elements.map((el, idx) => {
-    if ('options' in el) {
+    let isKeyExists = false;
+    let isDropDownItem = false;
+    if ('type' in el) {
+      isKeyExists = true;
+      isDropDownItem = el.type == 'dropdown';
+    }
+    if (!isKeyExists && 'options' in el) {
+      isDropDownItem = true;
+    }
+    if (isDropDownItem) {
       return {
-        key: `blank ${idx + 1}`,
-        options: el.options.map((opt) => opt.value),
+        key: `blank${idx + 1}`,
+        options: el.options.map((opt) => {
+          return { key: opt.value, value: opt.value };
+        }),
         type: 'dropdown',
         correct: el.correct,
+        alternateCorrect: el.alternateCorrect || [],
       };
     } else {
       return {
-        key: `blank ${idx + 1}`,
-        options: [el.correct],
+        key: `blank${idx + 1}`,
+        options: el.options.map((opt) => {
+          return {
+            key: opt.value,
+            value: opt.value,
+          };
+        }),
         type: 'input',
-        correct: 'true',
+        correct: el.correct,
+        alternateCorrect: el.alternateCorrect || [],
       };
     }
   });
@@ -201,15 +235,145 @@ interface OptionItem {
   options: string[];
   type: 'dropdown' | 'input';
   correct: string;
+  alternateCorrect: any[];
 }
+
 export const updateStringWithCorrectAnswers = (input: string, options: OptionItem[]) => {
   let matchIndex = 0;
   return input.replace(/\{[^}]*\}/g, (match) => {
     const option = options[matchIndex++];
-    if (!option) return match; // fallback if no matching option
-    const updatedOptions = option.options.map((opt) =>
-      opt === option.correct ? `"${opt}"*` : `"${opt}"`,
-    );
-    return `{${updatedOptions.join(', ')}}`;
+    if (!option) return match;
+
+    const { correct, alternateCorrect, type, options: allOptions } = option;
+
+    if (type === 'dropdown') {
+      const updatedOptions = allOptions.map((opt: any) =>
+        [correct, ...(alternateCorrect || [])].includes(opt?.value)
+          ? `"${opt?.value}"*`
+          : `"${opt?.value}"`,
+      );
+      return `{${updatedOptions.join(', ')}}`;
+    }
+
+    if (type === 'input') {
+      const allCorrect = [correct, ...(alternateCorrect || [])].filter(Boolean);
+      const formatted = allCorrect.map((opt: any) => `"${opt}"*`);
+      return `{${formatted.join(', ')}}`;
+    }
+
+    return match; // fallback for unexpected types
   });
+};
+
+export const updateFinalOptionsText = (text: string, options: any[]) => {
+  const newOptionsList: any = parseTextToFIBStructure(text);
+  console.log({ newOptionsList, options });
+  return newOptionsList.elements.map((newOpt: any, idx: any) => {
+    const existing = options[idx];
+    console.log({ existing });
+    if (existing) {
+      // Update existing entry's text only
+      return {
+        ...existing,
+        options: newOpt.options,
+        correct: newOpt.correct,
+        alternateCorrect:
+          existing.type == 'input'
+            ? newOpt.options.map((option: any) => option.value)
+            : newOpt.alternateCorrect,
+      };
+    } else {
+      // Add a new one
+      return {
+        key: `blank${idx + 1}`,
+        options: newOpt.options,
+        correct: newOpt.correct,
+        alternateCorrect: newOpt.alternateCorrect,
+        type: 'dropdown', // or default to whatever you prefer
+      };
+    }
+  });
+};
+
+export const parseTextContentToFIBStructure = (inputText: string, options?: any[]) => {
+  const contentItems: FIBContentItem[] = [];
+
+  const placeholderRegex = /{([^{}]+)}/g;
+  let lastProcessedIndex = 0;
+  let match: RegExpExecArray | null;
+  let blankCounter = 1;
+
+  while ((match = placeholderRegex.exec(inputText)) !== null) {
+    const matchStart = match.index;
+    const matchEnd = placeholderRegex.lastIndex;
+    // Plain text before current match
+    if (matchStart > lastProcessedIndex) {
+      const plainText = inputText.slice(lastProcessedIndex, matchStart);
+      if (plainText) contentItems.push({ insert: plainText });
+    }
+    const currentOption = options?.[blankCounter - 1];
+    const isInput = currentOption?.type === 'input';
+    const key = `blank${blankCounter++}`;
+    if (isInput) {
+      contentItems.push({ 'text-input': key });
+    } else {
+      contentItems.push({ dropdown: key, insert: '' });
+    }
+    lastProcessedIndex = matchEnd;
+  }
+
+  // Append any remaining text after last placeholder
+  if (lastProcessedIndex < inputText.length) {
+    const remaining = inputText.slice(lastProcessedIndex);
+    if (remaining) contentItems.push({ insert: remaining });
+  }
+
+  return {
+    content: contentItems,
+  };
+};
+
+export function syncOptionsWithParsed(
+  existingOptions: NormalizedBlank[],
+  parsedElements: NormalizedBlank[],
+): NormalizedBlank[] {
+  const updated: NormalizedBlank[] = [];
+  const usedIndices = new Set<number>();
+
+  for (const parsedItem of parsedElements) {
+    let matchIndex = -1;
+
+    // Try to find a matching option in existingOptions by options.value[]
+    for (let i = 0; i < existingOptions.length; i++) {
+      if (usedIndices.has(i)) continue;
+
+      const existing = existingOptions[i];
+      if (
+        arraysEqual(
+          existing.options.map((o) => o.value),
+          parsedItem.options.map((o) => o.value),
+        )
+      ) {
+        matchIndex = i;
+        break;
+      }
+    }
+
+    if (matchIndex >= 0) {
+      // Found existing match — preserve type/correct values
+      const matched = { ...existingOptions[matchIndex], key: parsedItem.key };
+      updated.push(matched);
+      usedIndices.add(matchIndex);
+    } else {
+      // New blank — use parsed one directly
+      updated.push(parsedItem);
+    }
+  }
+
+  return updated;
+}
+
+export const arraysEqual = (a: string[], b: string[]) => {
+  if (a.length !== b.length) return false;
+  return a.every((val, idx) => val === b[idx]);
 };
