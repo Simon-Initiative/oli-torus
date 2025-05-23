@@ -117,7 +117,7 @@ defmodule OliWeb.Sections.LtiExternalToolsView do
 
   def tool(assigns) do
     ~H"""
-    <div class="flex flex-col">
+    <div id={"lti_external_tool_#{@tool.id}"} class="flex flex-col">
       <button
         class="flex flex-row items-center transition-transform duration-300 w-full h-12 border-b"
         type="button"
