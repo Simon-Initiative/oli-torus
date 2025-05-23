@@ -209,9 +209,8 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
         const updatedText = quill.current?.getEditor().getText() ?? '';
         const parsed = parseTextToFIBStructure(updatedText);
         const quillOptions = normalizeBlanks(parsed.elements);
-        const tt = syncOptionsWithParsed(localOptions, quillOptions);
-        console.log({ tt });
-        setCustomDropDownOptions(quillOptions);
+        const updatedFIBOptions = syncOptionsWithParsed(localOptions, quillOptions);
+        setCustomDropDownOptions(updatedFIBOptions);
         setSelectedKey(iMatchCounter);
         setShowCustomOptionSelectorDailog(true);
       }

@@ -184,7 +184,6 @@ export const QuillCustomOptionEditor: React.FC<QuillCustomOptionEditorProps> = (
                   style={{ width: '71%', marginLeft: '13px' }}
                   value={selectedKey}
                   onChange={(e) => {
-                    setSelectedKey(e.target.value);
                     setCurrentSelectedIndex(e.target.selectedIndex);
                   }}
                 >
