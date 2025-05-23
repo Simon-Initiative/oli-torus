@@ -1,6 +1,8 @@
 defmodule OliWeb.Sections.LtiExternalToolsView do
   use OliWeb, :live_view
 
+  alias Oli.Activities
+  alias Oli.Delivery.Sections
   alias OliWeb.Icons
   alias OliWeb.Sections.Mount
   alias OliWeb.Common.{Breadcrumb}
@@ -26,31 +28,29 @@ defmodule OliWeb.Sections.LtiExternalToolsView do
       {:error, e} ->
         Mount.handle_error(socket, {:error, e})
 
-      # TODO MER-4314-part3: fetch the tools from the database
-
       {type, _user, section} ->
+        contained_pages_mapper = Sections.get_section_resources_with_lti_activities(section)
+
+        tools =
+          contained_pages_mapper
+          |> Map.keys()
+          |> Activities.list_lti_activity_registrations()
+          |> Enum.sort_by(& &1.title)
+          |> Enum.map(fn lti_activity_registration ->
+            %{
+              id: lti_activity_registration.id,
+              title: lti_activity_registration.title,
+              children:
+                Map.get(contained_pages_mapper, lti_activity_registration.id, [])
+                |> Enum.sort_by(& &1.numbering_index)
+            }
+          end)
+
         {:ok,
          assign(socket,
            breadcrumbs: set_breadcrumbs(type, section),
            section: section,
-           tools: [
-             %{
-               id: 1,
-               title: "Tool 1",
-               children: [
-                 %{id: 1, title: "Page 1", numbering_index: 1},
-                 %{id: 2, title: "Page 2", numbering_index: 2}
-               ]
-             },
-             %{
-               id: 2,
-               title: "Tool 2",
-               children: [
-                 %{id: 3, title: "Page 3", numbering_index: 3},
-                 %{id: 4, title: "Page 4", numbering_index: 4}
-               ]
-             }
-           ]
+           tools: tools
          )}
     end
   end
@@ -106,13 +106,14 @@ defmodule OliWeb.Sections.LtiExternalToolsView do
         />
 
         <DeliveryUtils.toggle_expand_button />
-        <.tool :for={tool <- @tools} tool={tool} />
+        <.tool :for={tool <- @tools} tool={tool} section_slug={@section.slug} />
       </div>
     </div>
     """
   end
 
   attr :tool, :map, required: true
+  attr :section_slug, :string, required: true
 
   def tool(assigns) do
     ~H"""
@@ -139,7 +140,7 @@ defmodule OliWeb.Sections.LtiExternalToolsView do
       <ul id={"collapse-#{@tool.id}"} class="collapse">
         <li :for={child <- @tool.children} class="h-14 w-full border-b flex flex-row items-center">
           <.link
-            href="#"
+            href={~p"/sections/#{@section_slug}/lesson/#{child.revision_slug}"}
             class="flex flex-row items-center space-x-4 text-black dark:text-white hover:no-underline hover:text-black/75 dark:hover:text-white/75"
           >
             <span class="w-6 text-sm font-semibold leading-none text-[#757682] dark:text-[#EEEBF5]/75">
