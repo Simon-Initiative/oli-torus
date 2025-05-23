@@ -539,18 +539,6 @@ table.table-striped tbody tr:nth-child(even) {
   @apply bg-gray-100 dark:bg-gray-700;
 }
 
-table.table-striped-schedule tbody tr:nth-child(even) {
-  @apply bg-[#E3E7EB] dark:bg-[#201D21];
-}
-
-table.table-striped-schedule tbody tr:nth-child(odd) {
-  @apply bg-[#F3F4F8] dark:bg-[#0D0C0F];
-}
-
-table.table-striped-schedule tbody tr{
-  @apply hover:bg-[#F2F9FF] hover:dark:bg-[#0A203A];
-}
-
 .d-none {
   @apply hidden;
 }

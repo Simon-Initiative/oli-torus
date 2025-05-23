@@ -5,7 +5,6 @@ import { PageDragBar } from './PageDragBar';
 import { ScheduleHeader } from './ScheduleHeader';
 import { DayGeometry } from './date-utils';
 import { getSelectedId } from './schedule-selectors';
-// import { SchedulePlaceholder } from './SchedulePlaceholder';
 import { HierarchyItem, moveScheduleItem, selectItem } from './scheduler-slice';
 
 interface ScheduleLineProps {
@@ -25,10 +24,6 @@ export const PageScheduleLine: React.FC<ScheduleLineProps> = ({
 }) => {
   const dispatch = useDispatch();
   const isSelected = useSelector(getSelectedId) === item.id;
-
-  // const onUnlock = useCallback(() => {
-  //   dispatch(unlockScheduleItem({ itemId: item.id }));
-  // }, [dispatch, item.id]);
 
   const onSelect = useCallback(() => {
     if (isSelected) {
@@ -87,21 +82,9 @@ export const PageScheduleLine: React.FC<ScheduleLineProps> = ({
   return (
     <>
       <tr style={rowSelectColor}>
-        <td className={`w-[1px] p-[2px] border-r-0`} style={{ backgroundColor: rowColor }}></td>
+        <td className="w-[1px] p-[2px] border-r-0" style={{ backgroundColor: rowColor }}></td>
         <td className={`w-64 ${labelClasses}`} onClick={onSelect}>
-          <div style={{ paddingLeft: 20 + (1 + indent) * 10 }}>
-            {/* {item.manually_scheduled && (
-              <span
-                className="float-right"
-                onClick={onUnlock}
-                data-bs-toggle="tooltip"
-                title="You have manually adjusted the dates on this. Click to unlock."
-              >
-                <i className="fa fa-lock fa-2xs"></i>
-              </span>
-            )} */}
-            {item.title}
-          </div>
+          <div style={{ paddingLeft: 20 + (1 + indent) * 10 }}>{item.title}</div>
         </td>
 
         <td className="relative p-0">

@@ -133,7 +133,7 @@ export const ScheduleGrid: React.FC<GridProps> = ({ startDate, endDate, onReset,
         </button>
       </div>
       <div className="w-full px-4">
-        <table className="select-none table-striped-schedule border-t-0 border-l-0">
+        <table className="select-none schedule_table border-t-0 border-l-0">
           <thead className="sticky top-14 z-10">
             <ScheduleHeaderRow
               labels={true}

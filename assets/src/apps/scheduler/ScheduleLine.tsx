@@ -11,7 +11,6 @@ import {
   getSelectedId,
   shouldDisplayCurriculumItemNumbering,
 } from './schedule-selectors';
-// import { SchedulePlaceholder } from './SchedulePlaceholder';
 import {
   HierarchyItem,
   ScheduleItemType,
@@ -67,10 +66,6 @@ const ContainerScheduleLine: React.FC<ScheduleLineProps> = ({
   const schedule = useSelector(getSchedule);
   const showNumbers = useSelector(shouldDisplayCurriculumItemNumbering);
 
-  // const onUnlock = useCallback(() => {
-  //   dispatch(unlockScheduleItem({ itemId: item.id }));
-  // }, [dispatch, item.id]);
-
   const onSelect = useCallback(() => {
     dispatch(selectItem(item.id));
   }, [dispatch, item.id]);
@@ -103,22 +98,12 @@ const ContainerScheduleLine: React.FC<ScheduleLineProps> = ({
   return (
     <>
       <tr style={rowSelectColor}>
-        <td className={`border-r-0 w-[1px] !p-[2px]`} style={{ backgroundColor: rowColor }}></td>
+        <td className="border-r-0 w-[1px] !p-[2px]" style={{ backgroundColor: rowColor }}></td>
         <td
           className={`w-48 ${labelClasses}`}
           style={{ paddingLeft: (1 + indent) * 10 }}
           onClick={onSelect}
         >
-          {/* {item.manually_scheduled && (
-            <span
-              className="float-right"
-              onClick={onUnlock}
-              data-bs-toggle="tooltip"
-              title="You have manually adjusted the dates on this. Click to unlock."
-            >
-              <i className="fa fa-lock fa-2xs"></i>
-            </span>
-          )} */}
           {item.children.length > 0 && indent > 0 && (
             <div className="inline mr-1" onClick={toggleExpanded} style={{ display: 'inline' }}>
               <i className={plusMinusIcon} />
@@ -176,8 +161,6 @@ const ContainerScheduleLine: React.FC<ScheduleLineProps> = ({
             dayGeometry={dayGeometry}
           />
         ))}
-
-      {/* {expanded || containerChildren.map((_, i) => <SchedulePlaceholder key={i} />)} */}
     </>
   );
 };

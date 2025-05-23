@@ -15,18 +15,16 @@ export const ScheduleHeaderRow: React.FC<ScheduleHeaderRowProps> = ({
   return (
     <>
       <tr className="h-12 border-t-0 ">
-        <th
-          className={`w-[1px] p-[2px] border-r-0  border-l-0 bg-delivery-body dark:bg-delivery-body-dark`}
-        ></th>
-        <th className={`w-48 font-bold text-[12px] bg-delivery-body dark:bg-delivery-body-dark`} />
-        <th className={`p-0 relative bg-white dark:bg-black border-t `}>
+        <th className="w-[1px] p-[2px] border-r-0  border-l-0 bg-delivery-body dark:bg-delivery-body-dark"></th>
+        <th className="w-48 font-bold text-[12px] bg-delivery-body dark:bg-delivery-body-dark" />
+        <th className="p-0 relative bg-white dark:bg-black border-t">
           <ScheduleMonths dayGeometry={dayGeometry} />
         </th>
       </tr>
       <tr className="h-12 border-t-0 ">
-        <th className={`w-[1px] p-[2px] border-r-0 'bg-white dark:bg-black border-l' `}></th>
-        <th className={`w-48 font-bold text-[12px] bg-white dark:bg-black `}>CONTENT</th>
-        <th className={`p-0 relative bg-white dark:bg-black border-t-0 `} ref={attachBarContainer}>
+        <th className="w-[1px] p-[2px] border-r-0 'bg-white dark:bg-black border-l'"></th>
+        <th className="w-48 font-bold text-[12px] bg-white dark:bg-black">CONTENT</th>
+        <th className="p-0 relative bg-white dark:bg-black border-t-0" ref={attachBarContainer}>
           <ScheduleHeader labels={labels} dayGeometry={dayGeometry} />
         </th>
       </tr>
