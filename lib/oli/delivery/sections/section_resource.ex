@@ -95,8 +95,8 @@ defmodule Oli.Delivery.Sections.SectionResource do
     field :relates_to, {:array, :id}, default: []
     field :allow_hints, :boolean, default: false
     belongs_to :resource_type, Oli.Resources.ResourceType
-    belongs_to :revision, Oli.Activities.ActivityRegistration
-    belongs_to :activity_type, Oli.Resources.Revision
+    belongs_to :revision, Oli.Resources.Revision
+    belongs_to :activity_type, Oli.Activities.ActivityRegistration
 
     timestamps(type: :utc_datetime)
   end

@@ -357,6 +357,33 @@ defmodule Oli.Activities do
   end
 
   @doc """
+  Returns the list of lti_activity_registrations.
+  If a list of activity_registration_ids is provided, it will only return the registrations that match the ids.
+  If no ids are provided, it will return all lti_activity_registrations.
+
+  ## Examples
+
+      iex> list_lti_activity_registrations()
+      [%ActivityRegistration{}, ...]
+  """
+  def list_lti_activity_registrations(activity_registration_ids \\ nil) do
+    maybe_filter_by_ids =
+      if activity_registration_ids do
+        dynamic([ar], ar.id in ^activity_registration_ids)
+      else
+        true
+      end
+
+    from(ar in ActivityRegistration,
+      join: d in LtiExternalToolActivityDeployment,
+      on: d.activity_registration_id == ar.id,
+      where: ^maybe_filter_by_ids,
+      select: ar
+    )
+    |> Repo.all()
+  end
+
+  @doc """
   Returns a list of script urls for all registered activities
   """
   def get_activity_scripts(scriptType \\ :authoring_script) do

@@ -1,6 +1,8 @@
 defmodule OliWeb.Sections.LtiExternalToolsView do
   use OliWeb, :live_view
 
+  alias Oli.Activities
+  alias Oli.Delivery.Sections
   alias OliWeb.Icons
   alias OliWeb.Sections.Mount
   alias OliWeb.Common.{Breadcrumb}
@@ -26,31 +28,29 @@ defmodule OliWeb.Sections.LtiExternalToolsView do
       {:error, e} ->
         Mount.handle_error(socket, {:error, e})
 
-      # TODO MER-4314-part3: fetch the tools from the database
-
       {type, _user, section} ->
+        contained_pages_mapper = Sections.get_section_resources_with_lti_activities(section)
+
+        tools =
+          contained_pages_mapper
+          |> Map.keys()
+          |> Activities.list_lti_activity_registrations()
+          |> Enum.sort_by(& &1.title)
+          |> Enum.map(fn lti_activity_registration ->
+            %{
+              id: lti_activity_registration.id,
+              title: lti_activity_registration.title,
+              children:
+                Map.get(contained_pages_mapper, lti_activity_registration.id, [])
+                |> Enum.sort_by(& &1.numbering_index)
+            }
+          end)
+
         {:ok,
          assign(socket,
            breadcrumbs: set_breadcrumbs(type, section),
            section: section,
-           tools: [
-             %{
-               id: 1,
-               title: "Tool 1",
-               children: [
-                 %{id: 1, title: "Page 1", numbering_index: 1},
-                 %{id: 2, title: "Page 2", numbering_index: 2}
-               ]
-             },
-             %{
-               id: 2,
-               title: "Tool 2",
-               children: [
-                 %{id: 3, title: "Page 3", numbering_index: 3},
-                 %{id: 4, title: "Page 4", numbering_index: 4}
-               ]
-             }
-           ]
+           tools: tools
          )}
     end
   end
@@ -74,7 +74,7 @@ defmodule OliWeb.Sections.LtiExternalToolsView do
        to: ~p"/sections/#{socket.assigns.section.slug}/lti_external_tools?#{params}"
      )}
 
-    # TODO MER-4316: apply the search and push an event to expand the tools that contain a page that matches the search term
+    # TODO MER-4316: unhide the search box and apply the search and push an event to expand the tools that contain a page that matches the search term
   end
 
   def handle_event("clear_search", _params, socket) do
@@ -102,21 +102,22 @@ defmodule OliWeb.Sections.LtiExternalToolsView do
           on_clear_search={
             JS.push("clear_search") |> JS.dispatch("click", to: "#collapse_all_button")
           }
-          class="w-64"
+          class="hidden w-64"
         />
 
         <DeliveryUtils.toggle_expand_button />
-        <.tool :for={tool <- @tools} tool={tool} />
+        <.tool :for={tool <- @tools} tool={tool} section_slug={@section.slug} />
       </div>
     </div>
     """
   end
 
   attr :tool, :map, required: true
+  attr :section_slug, :string, required: true
 
   def tool(assigns) do
     ~H"""
-    <div class="flex flex-col">
+    <div id={"lti_external_tool_#{@tool.id}"} class="flex flex-col">
       <button
         class="flex flex-row items-center transition-transform duration-300 w-full h-12 border-b"
         type="button"
@@ -139,7 +140,9 @@ defmodule OliWeb.Sections.LtiExternalToolsView do
       <ul id={"collapse-#{@tool.id}"} class="collapse">
         <li :for={child <- @tool.children} class="h-14 w-full border-b flex flex-row items-center">
           <.link
-            href="#"
+            href={
+              ~p"/sections/#{@section_slug}/lesson/#{child.revision_slug}?#{[request_path: ~p"/sections/#{@section_slug}/lti_external_tools"]}"
+            }
             class="flex flex-row items-center space-x-4 text-black dark:text-white hover:no-underline hover:text-black/75 dark:hover:text-white/75"
           >
             <span class="w-6 text-sm font-semibold leading-none text-[#757682] dark:text-[#EEEBF5]/75">
