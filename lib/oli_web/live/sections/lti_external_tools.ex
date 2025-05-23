@@ -140,7 +140,9 @@ defmodule OliWeb.Sections.LtiExternalToolsView do
       <ul id={"collapse-#{@tool.id}"} class="collapse">
         <li :for={child <- @tool.children} class="h-14 w-full border-b flex flex-row items-center">
           <.link
-            href={~p"/sections/#{@section_slug}/lesson/#{child.revision_slug}"}
+            href={
+              ~p"/sections/#{@section_slug}/lesson/#{child.revision_slug}?#{[request_path: ~p"/sections/#{@section_slug}/lti_external_tools"]}"
+            }
             class="flex flex-row items-center space-x-4 text-black dark:text-white hover:no-underline hover:text-black/75 dark:hover:text-white/75"
           >
             <span class="w-6 text-sm font-semibold leading-none text-[#757682] dark:text-[#EEEBF5]/75">
