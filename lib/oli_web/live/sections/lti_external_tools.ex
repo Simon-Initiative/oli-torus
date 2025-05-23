@@ -74,7 +74,7 @@ defmodule OliWeb.Sections.LtiExternalToolsView do
        to: ~p"/sections/#{socket.assigns.section.slug}/lti_external_tools?#{params}"
      )}
 
-    # TODO MER-4316: apply the search and push an event to expand the tools that contain a page that matches the search term
+    # TODO MER-4316: unhide the search box and apply the search and push an event to expand the tools that contain a page that matches the search term
   end
 
   def handle_event("clear_search", _params, socket) do
@@ -102,7 +102,7 @@ defmodule OliWeb.Sections.LtiExternalToolsView do
           on_clear_search={
             JS.push("clear_search") |> JS.dispatch("click", to: "#collapse_all_button")
           }
-          class="w-64"
+          class="hidden w-64"
         />
 
         <DeliveryUtils.toggle_expand_button />
