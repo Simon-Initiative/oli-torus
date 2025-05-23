@@ -42,6 +42,18 @@
   @apply rounded-md shadow-[inset_0px_0px_0px_8px_rgba(0,0,0,0.0)] shadow-blue-100/50;
 }
 
+.schedule_table tbody tr:nth-child(even) {
+  @apply bg-[#E3E7EB] dark:bg-[#201D21];
+}
+
+.schedule_table tbody tr:nth-child(odd) {
+  @apply bg-[#F3F4F8] dark:bg-[#0D0C0F];
+}
+
+.schedule_table tbody tr{
+  @apply hover:bg-[#F2F9FF] hover:dark:bg-[#0A203A];
+}
+
 div:has(.instructor_dashboard_table) #header_paging {
   @apply sticky left-0 dark:bg-neutral-800;
 }

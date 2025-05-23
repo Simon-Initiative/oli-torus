@@ -87,7 +87,7 @@ export const DraggableIcon: React.FC<{
   return (
     <div
       onMouseDown={startDrag}
-      className={`absolute h-3 flex flex-row justify-between cursor-move transition-transform`}
+      className="absolute h-3 flex flex-row justify-between cursor-move transition-transform"
       style={barStyles}
     >
       {children}
@@ -180,15 +180,6 @@ const ConnectorLine: React.FC<{
   };
 
   return <span className="absolute rounded-sm bg-blue-500 h-1" style={barStyle} />;
-
-  // Alternate thick line style
-  // const barStyle = {
-  //   left: geometry.left - 8,
-  //   width: geometry.width + 28,
-  //   top: 3,
-  // };
-
-  // return <span className="absolute rounded-lg bg-blue-50 h-8" style={barStyle} />;
 };
 
 export const InClassIcon: React.FC = () => (

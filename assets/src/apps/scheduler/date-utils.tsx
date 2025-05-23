@@ -172,6 +172,7 @@ interface WeekGeometry {
   width: number;
   label: string;
   dateLabel: string;
+  month: number;
 }
 
 const generateWeekLabel = (date: DateWithoutTime | null) => {
@@ -198,6 +199,7 @@ export const weekGeometry = (dayGeometry: DayGeometry): WeekGeometry[] => {
         width: g.width,
         label: `Wk ${Math.floor(index / 7) + 1}`,
         dateLabel: generateWeekLabel(g.date),
+        month: g.date.getMonth(),
       });
     } else {
       last.width += g.width;
@@ -233,6 +235,11 @@ export const dateWithoutTimeLabel = (d: DateWithoutTime | null) => {
 export const dateWithoutTimeShortLabel = (d: DateWithoutTime | null) => {
   if (!d) return null;
   return `${d.getMonth() + 1}/${d.getDate()}`;
+};
+
+export const dateWithoutTimeMonth = (d: DateWithoutTime | null) => {
+  if (!d) return null;
+  return d.getMonth();
 };
 
 /* Makes sure the start is before the end date. */

@@ -54,7 +54,7 @@ const SlideoutItem: React.FC<SlideoutItemParams> = ({
   );
 
   return (
-    <li className={`m-1 p-1 bg-gray-100 rounded-sm shadow-sm shadow-sm`}>
+    <li className="m-1 p-1 bg-gray-100 rounded-sm shadow-sm shadow-sm">
       <label className="font-bold p-1">
         <GradedIcon graded={item.graded} />
 
