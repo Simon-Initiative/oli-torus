@@ -77,11 +77,10 @@ defmodule Oli.Delivery.Sections.Updates do
 
     case result do
       {:ok, _} ->
-        Oli.Delivery.Sections.SectionCache.clear(section.slug)
-
-        Oli.Delivery.DepotCoordinator.clear(
+        Oli.Delivery.DepotCoordinator.refresh(
           Oli.Delivery.Sections.SectionResourceDepot.depot_desc(),
-          section_id
+          section_id,
+          Oli.Delivery.Sections.SectionResourceDepot
         )
 
         Broadcaster.broadcast_update_progress(section.id, new_publication.id, :complete)
