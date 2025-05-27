@@ -197,7 +197,9 @@ defmodule Oli.Lti.PlatformExternalTools do
       end
 
     allowed_statuses =
-      [:enabled] ++ if options.include_disabled, do: [:disabled], else: []
+      [:enabled] ++
+        if(options.include_disabled, do: [:disabled], else: []) ++
+        if options.include_deleted, do: [:deleted], else: []
 
     filter_by_status = dynamic([p, lad], lad.status in ^allowed_statuses)
 
