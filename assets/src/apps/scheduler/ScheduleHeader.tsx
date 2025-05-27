@@ -82,7 +82,7 @@ export const ScheduleHeader: React.FC<ScheduleHeaderProps> = ({ labels, dayGeome
 export const ScheduleMonths: React.FC<ScheduleMonthsProps> = ({ dayGeometry }) => {
   const g = weekGeometry(dayGeometry);
   const gMonths = g.reduce((acc, g) => {
-    const key = monthNames[g.month];
+    const key = `${monthNames[g.month]}-${g.year}`;
     if (!acc.has(key)) {
       acc.set(key, 0);
     }
@@ -99,7 +99,7 @@ export const ScheduleMonths: React.FC<ScheduleMonthsProps> = ({ dayGeometry }) =
           className="pb-2 align-top content-end inline-block border-l h-full whitespace-nowrap text-ellipsis font-normal dark:border-gray-800 "
           style={{ width: value }}
         >
-          <div className="font-bold text-[11px]">{key}</div>
+          <div className="font-bold text-[11px]">{key.split('-')[0]}</div>
         </div>
       ))}
     </div>

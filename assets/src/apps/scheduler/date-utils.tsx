@@ -173,6 +173,7 @@ interface WeekGeometry {
   label: string;
   dateLabel: string;
   month: number;
+  year: number;
 }
 
 const generateWeekLabel = (date: DateWithoutTime | null) => {
@@ -200,6 +201,7 @@ export const weekGeometry = (dayGeometry: DayGeometry): WeekGeometry[] => {
         label: `Wk ${Math.floor(index / 7) + 1}`,
         dateLabel: generateWeekLabel(g.date),
         month: g.date.getMonth(),
+        year: g.date.getFullYear(),
       });
     } else {
       last.width += g.width;
