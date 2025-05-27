@@ -24,8 +24,6 @@ const LTIExternalTool: React.FC = () => {
     [state.activityId],
   );
 
-  const resourceId = model.id as string;
-
   return ltiToolDetailsLoader.caseOf({
     loading: () => <LoadingSpinner />,
     failure: (error) => <Alert variant="error">{error}</Alert>,
@@ -34,12 +32,12 @@ const LTIExternalTool: React.FC = () => {
         <div className="activity lti-external-tool-activity">
           <div className="activity-content">
             <LTIExternalToolFrame
+              mode="delivery"
               name={ltiToolDetails.name}
               launchParams={ltiToolDetails.launch_params}
-              resourceId={resourceId}
+              resourceId={`${context.resourceId}`}
               openInNewTab={model.openInNewTab}
               height={model.height}
-              launchOnMount={true}
             />
           </div>
         </div>
