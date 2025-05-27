@@ -61,6 +61,9 @@ const FIBAuthor: React.FC<AuthorPartComponentProps<FIBModel>> = (props) => {
     setModel(props.model);
   }, [props.model]);
 
+  // Whenever `textNodes` or `finalElement` changes, extract the formatted plain-text content from Quill nodes,
+  // generate the corresponding FIB structure by mapping it to existing blank elements (finalElement),
+  // and update the state with the parsed result.
   useEffect(() => {
     if (textNodes?.length) {
       const collectedText = extractFormattedHTMLFromQuillNodes(textNodes);
