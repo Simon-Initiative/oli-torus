@@ -5737,6 +5737,10 @@ table.table-striped tbody tr:nth-child(even) {
   width: 18px;
 }
 
+.w-\[1px\] {
+  width: 1px;
+}
+
 .w-\[200px\] {
   width: 200px;
 }
@@ -6349,6 +6353,10 @@ table.table-striped tbody tr:nth-child(even) {
   cursor: default;
 }
 
+.cursor-grab {
+  cursor: grab;
+}
+
 .cursor-help {
   cursor: help;
 }
@@ -6457,6 +6465,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .content-center {
   align-content: center;
+}
+
+.content-end {
+  align-content: flex-end;
 }
 
 .items-start {
@@ -7946,11 +7958,6 @@ table.table-striped tbody tr:nth-child(even) {
   background-color: rgb(134 239 172 / var(--tw-bg-opacity));
 }
 
-.bg-green-50 {
-  --tw-bg-opacity: 1;
-  background-color: rgb(240 253 244 / var(--tw-bg-opacity));
-}
-
 .bg-green-500 {
   --tw-bg-opacity: 1;
   background-color: rgb(34 197 94 / var(--tw-bg-opacity));
@@ -8473,6 +8480,10 @@ table.table-striped tbody tr:nth-child(even) {
      object-position: left;
 }
 
+.\!p-\[2px\] {
+  padding: 2px !important;
+}
+
 .p-0 {
   padding: 0px;
 }
@@ -8519,6 +8530,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .p-8 {
   padding: 2rem;
+}
+
+.p-\[2px\] {
+  padding: 2px;
 }
 
 .p-\[5px\] {
@@ -11425,6 +11440,36 @@ a {
   box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
   --tw-shadow-color: rgb(193 211 241 / 0.5);
   --tw-shadow: var(--tw-shadow-colored);
+}
+
+.schedule_table tbody tr:nth-child(even) {
+  --tw-bg-opacity: 1;
+  background-color: rgb(227 231 235 / var(--tw-bg-opacity));
+}
+
+.dark .schedule_table tbody tr:nth-child(even) {
+  --tw-bg-opacity: 1;
+  background-color: rgb(32 29 33 / var(--tw-bg-opacity));
+}
+
+.schedule_table tbody tr:nth-child(odd) {
+  --tw-bg-opacity: 1;
+  background-color: rgb(243 244 248 / var(--tw-bg-opacity));
+}
+
+.dark .schedule_table tbody tr:nth-child(odd) {
+  --tw-bg-opacity: 1;
+  background-color: rgb(13 12 15 / var(--tw-bg-opacity));
+}
+
+.schedule_table tbody tr:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(242 249 255 / var(--tw-bg-opacity));
+}
+
+.dark .schedule_table tbody tr:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(10 32 58 / var(--tw-bg-opacity));
 }
 
 div:has(.instructor_dashboard_table) #header_paging {
@@ -15584,6 +15629,11 @@ Not supports in Firefox and IE */
   background-color: rgb(28 26 32 / var(--tw-bg-opacity));
 }
 
+.dark .dark\:bg-\[\#1F1D23\] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(31 29 35 / var(--tw-bg-opacity));
+}
+
 .dark .dark\:bg-\[\#1b191f\] {
   --tw-bg-opacity: 1;
   background-color: rgb(27 25 31 / var(--tw-bg-opacity));
@@ -15723,11 +15773,6 @@ Not supports in Firefox and IE */
 .dark .dark\:bg-delivery-tooltip-bg-dark {
   --tw-bg-opacity: 1;
   background-color: rgb(232 232 232 / var(--tw-bg-opacity));
-}
-
-.dark .dark\:bg-gray-400 {
-  --tw-bg-opacity: 1;
-  background-color: rgb(163 163 163 / var(--tw-bg-opacity));
 }
 
 .dark .dark\:bg-gray-500 {
