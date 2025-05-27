@@ -92,7 +92,6 @@ const FIBAuthor: React.FC<AuthorPartComponentProps<FIBModel>> = (props) => {
 
   const handleNotificationSave = useCallback(async () => {
     if (isContentModified) {
-      //console.log('handleNotificationSave - Called');
       const modelClone = clone(model);
       modelClone.content = finalContent.content;
       modelClone.elements = finalElement;

@@ -128,7 +128,6 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
   showfibinsertoptioncontrol = false,
   options = '',
 }) => {
-  console.log({ tree });
   const quill: any = useRef();
   const [contents, setContents] = React.useState<any>(tree);
   const [selectedKey, setSelectedKey] = useState<number>(0);
@@ -285,19 +284,15 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
       // console.log('quill changes', { content, delta, source, editor });
       const janusText = convertQuillToJanus(new Delta(editor.getContents().ops));
       // console.log('JANUS TEXT', janusText);
-      let updatedOptionslist = [];
+      let normalizedFIBOptions: any = [];
       if (showfibinsertoptioncontrol) {
-        const collectedText = extractFormattedHTMLFromQuillNodes(janusText);
-        //finalcontent = parseTextToFIBStructure(collectedText);
-
-        updatedOptionslist = syncOptionsFromText(collectedText, localOptions);
-        const updatedFIBOptions = mergeParsedWithExistingBlanks(localOptions, updatedOptionslist);
-
-        console.log({ updatedFIBOptions, updatedOptionslist, localOptions });
-        setFibElements(localOptions || []);
+        const plainTextFromQuillNodes = extractFormattedHTMLFromQuillNodes(janusText);
+        normalizedFIBOptions = syncOptionsFromText(plainTextFromQuillNodes, localOptions);
+        setFibElements(normalizedFIBOptions || []);
+        console.log({ normalizedFIBOptions });
       }
       setContents(janusText);
-      onChange({ value: janusText, options: localOptions });
+      onChange({ value: janusText, options: normalizedFIBOptions });
     },
     [onChange],
   );

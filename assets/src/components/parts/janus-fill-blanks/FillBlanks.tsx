@@ -101,7 +101,7 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
         { key: `showHints`, type: CapiVariableTypes.BOOLEAN, value: pModel.showHints },
       ];
     });
-    const elementPartResponses = [].concat(...partResponses);
+    const elementPartResponses = partResponses ? [].concat(...partResponses) : [];
 
     const initResult = await props.onInit({
       id,

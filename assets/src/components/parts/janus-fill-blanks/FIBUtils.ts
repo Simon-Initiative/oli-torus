@@ -122,11 +122,18 @@ export const convertFIBContentToQuillNodes = (contentItems: any[], blanks: any[]
       const matchingInput = blanks.find((b) => b.key === item['text-input']);
 
       if (matchingInput) {
-        finalText += ` {${matchingInput.options
-          .map((opt: any) => {
-            return `"${opt.value}"*`;
-          })
-          .join(', ')}}`;
+        let updatedText = '';
+        if (matchingInput.options) {
+          updatedText = matchingInput.options
+            .map((opt: any) => {
+              return `"${opt.value}"*`;
+            })
+            .join(', ');
+        } else {
+          // this will be old formatted input type
+          updatedText = matchingInput.correct;
+        }
+        finalText += ` {${updatedText}}`;
       }
     }
   });
@@ -232,7 +239,6 @@ export const convertHTMLToQuillNodes = (htmlText: string) => {
     .map(parseNode)
     .flat()
     .filter(Boolean);
-  console.log({ parsedChildren });
   return [
     {
       tag: 'p',
@@ -294,16 +300,17 @@ export const generateFIBStructure = (
         if (isCorrect) value = value.slice(0, -1);
 
         contentItems.push({ 'text-input': value });
-
+        const cleaned = value.replace(/^"(.*)"$/, '$1');
         elements.push({
-          correct: value,
-          key: value,
+          correct: cleaned,
+          key: cleaned,
           type: 'input',
           alternateCorrect: [],
-          options: [{ key: value, value: value }],
+          options: [{ key: cleaned, value: cleaned }],
         });
       } else {
         const optionsList: { key: string; value: string }[] = [];
+        const alternateCorrectList: any = [];
         let correctKey = '';
 
         parts.forEach((option) => {
@@ -311,7 +318,10 @@ export const generateFIBStructure = (
           let cleaned = isCorrect ? option.slice(0, -1) : option;
           cleaned = cleaned.replace(/^"(.*)"$/, '$1');
           optionsList.push({ key: cleaned, value: cleaned });
-          if (isCorrect) correctKey = cleaned;
+          if (isCorrect) {
+            correctKey = cleaned;
+            alternateCorrectList.push(cleaned);
+          }
         });
 
         if (!correctKey && optionsList.length > 0) {
@@ -323,7 +333,7 @@ export const generateFIBStructure = (
 
         elements.push({
           correct: correctKey,
-          alternateCorrect: [],
+          alternateCorrect: alternateCorrectList,
           key: dropdownKey,
           options: optionsList,
           type: 'dropdown',
@@ -351,15 +361,8 @@ export const generateFIBStructure = (
  */
 export const transformOptionsToNormalized = (elements: FIBElement[]): NormalizedBlank[] => {
   return elements.map((el, idx) => {
-    let isKeyExists = false;
-    let isDropDownItem = false;
-    if ('type' in el) {
-      isKeyExists = true;
-      isDropDownItem = el.type == 'dropdown';
-    }
-    if (!isKeyExists && 'options' in el) {
-      isDropDownItem = true;
-    }
+    const isDropDownItem =
+      ('type' in el && el.type === 'dropdown') || (!('type' in el) && 'options' in el);
     if (isDropDownItem) {
       return {
         key: `blank${idx + 1}`,
@@ -371,14 +374,21 @@ export const transformOptionsToNormalized = (elements: FIBElement[]): Normalized
         alternateCorrect: el.alternateCorrect || [],
       };
     } else {
-      return {
-        key: `blank${idx + 1}`,
-        options: el.options.map((opt) => {
-          return {
+      // Normalize the options array safely
+      const safeOptions = Array.isArray(el.options)
+        ? el.options.map((opt) => ({
             key: opt.value,
             value: opt.value,
-          };
-        }),
+          }))
+        : [
+            {
+              key: el.correct,
+              value: el.correct,
+            },
+          ];
+      return {
+        key: `blank${idx + 1}`,
+        options: safeOptions,
         type: 'input',
         correct: el.correct,
         alternateCorrect: el.alternateCorrect || [],
