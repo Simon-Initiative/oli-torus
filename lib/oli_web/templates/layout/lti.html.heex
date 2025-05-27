@@ -78,7 +78,7 @@
     <%= live_render(@conn, OliWeb.TechSupportLive,
       session: %{
         "section" => Map.get(@conn.assigns, :section),
-        "user" => Map.get(@conn.assigns, :current_user) || Map.get(@conn.assigns, :current_author)
+        "user" => Map.get(@conn.assigns, :current_author) || Map.get(@conn.assigns, :current_user)
       }
     ) %>
   </body>
