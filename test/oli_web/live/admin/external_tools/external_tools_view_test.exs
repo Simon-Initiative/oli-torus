@@ -27,6 +27,12 @@ defmodule OliWeb.Admin.ExternalTools.ExternalToolsViewTest do
           description: "Third platform"
         })
 
+      platform4 =
+        insert(:platform_instance, %{
+          name: "Platform Four",
+          description: "Fourth platform"
+        })
+
       # Create deployments with different statuses
       deployment1 =
         insert(:lti_external_tool_activity_deployment, %{
@@ -46,13 +52,21 @@ defmodule OliWeb.Admin.ExternalTools.ExternalToolsViewTest do
           status: :disabled
         })
 
+      deployment4 =
+        insert(:lti_external_tool_activity_deployment, %{
+          platform_instance: platform4,
+          status: :deleted
+        })
+
       %{
         platform1: platform1,
         platform2: platform2,
         platform3: platform3,
+        platform4: platform4,
         deployment1: deployment1,
         deployment2: deployment2,
-        deployment3: deployment3
+        deployment3: deployment3,
+        deployment4: deployment4
       }
     end
 
@@ -170,11 +184,32 @@ defmodule OliWeb.Admin.ExternalTools.ExternalToolsViewTest do
 
       # Click the checkbox to hide disabled platforms
       view
-      |> element("input[type='checkbox']")
+      |> element("input[type='checkbox'][id='include_disabled']")
       |> render_click()
 
       # Should no longer show the disabled platform
       refute has_element?(view, "td", "Platform Three")
+    end
+
+    test "updates results when toggling include_deleted checkbox", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/admin/external_tools?include_deleted=true")
+
+      # Initially shows all platforms
+      assert has_element?(view, "td", "Platform One")
+      assert has_element?(view, "td", "Platform Two")
+      assert has_element?(view, "td", "Platform Three")
+      assert has_element?(view, "td", "Platform Four")
+
+      # Click the checkbox to hide deleted platforms
+      view
+      |> element("input[type='checkbox'][id='include_deleted']")
+      |> render_click()
+
+      # Should no longer show the deleted platform
+      assert has_element?(view, "td", "Platform One")
+      assert has_element?(view, "td", "Platform Two")
+      assert has_element?(view, "td", "Platform Three")
+      refute has_element?(view, "td", "Platform Four")
     end
 
     test "updates results when entering search text", %{conn: conn} do

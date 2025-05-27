@@ -114,10 +114,20 @@ defmodule OliWeb.Admin.ExternalTools.ExternalToolsView do
       </.link>
     </div>
     <div>
-      <Check.render class="mr-4" checked={@options.include_disabled} click="include_disabled">
+      <Check.render
+        class="mr-4"
+        checked={@options.include_disabled}
+        click="include_disabled"
+        id="include_disabled"
+      >
         Show tools that have been disabled
       </Check.render>
-      <Check.render class="mr-4" checked={@options.include_deleted} click="include_deleted">
+      <Check.render
+        class="mr-4"
+        checked={@options.include_deleted}
+        click="include_deleted"
+        id="include_deleted"
+      >
         Show tools that have been deleted
       </Check.render>
       <PagedTable.render
