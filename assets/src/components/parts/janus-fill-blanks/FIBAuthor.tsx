@@ -11,7 +11,7 @@ import { registerEditor } from '../janus-text-flow/QuillEditor';
 import { tagName as quillEditorTagName } from '../janus-text-flow/QuillEditor';
 import {
   convertFIBContentToQuillNodes,
-  convertQuillNodesToText,
+  convertQuillNodesToTextAfterSave,
   normalizeBlanks,
   parseTextContentToFIBStructure,
 } from './FIBUtils';
@@ -63,7 +63,7 @@ const FIBAuthor: React.FC<AuthorPartComponentProps<FIBModel>> = (props) => {
 
   useEffect(() => {
     if (textNodes?.length) {
-      const collectedText = convertQuillNodesToText(textNodes);
+      const collectedText = convertQuillNodesToTextAfterSave(textNodes);
       const finalcontent = parseTextContentToFIBStructure(collectedText, finalElement);
       setFinalContent(finalcontent);
     }
@@ -75,7 +75,6 @@ const FIBAuthor: React.FC<AuthorPartComponentProps<FIBModel>> = (props) => {
 
   useEffect(() => {
     const convertedText = convertFIBContentToQuillNodes(content, elements);
-    console.log({ convertedText });
     setUpdatedContent(convertedText);
 
     setFinalContent({ content, elements });
@@ -176,7 +175,6 @@ const FIBAuthor: React.FC<AuthorPartComponentProps<FIBModel>> = (props) => {
       } // not mine
       const { payload } = e.detail;
       setIsContentModified(true);
-      console.log('handleEditorChange - Called', { payload });
       if (payload?.value) {
         setTextNodes(payload.value);
       }

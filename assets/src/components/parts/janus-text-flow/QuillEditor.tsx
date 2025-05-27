@@ -128,6 +128,7 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
   showcustomoptioncontrol = false,
   customoptions = '',
 }) => {
+  console.log({ tree });
   const quill: any = useRef();
   const [contents, setContents] = React.useState<any>(tree);
   const [selectedKey, setSelectedKey] = useState<number>(0);
@@ -289,7 +290,9 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
         //finalcontent = parseTextToFIBStructure(collectedText);
 
         updatedOptionslist = updateFinalOptionsText(collectedText, localOptions);
-        console.log({ updatedOptionslist, localOptions });
+        const updatedFIBOptions = syncOptionsWithParsed(localOptions, updatedOptionslist);
+
+        console.log({ updatedFIBOptions, updatedOptionslist, localOptions });
         setCustomDropDownOptions(localOptions || []);
       }
       setContents(janusText);

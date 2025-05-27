@@ -16,6 +16,52 @@ export const convertQuillNodesToText = (nodes: any[]): string => {
   return textContent.trim();
 };
 
+export const convertQuillNodesToTextAfterSave = (nodes: any[]): string => {
+  const processNodes = (nodeArray: any[]): string => {
+    return nodeArray
+      .map((node) => {
+        if (node.tag === 'text' && node.text) {
+          return node.text;
+        }
+
+        if (node.tag === 'sup' || node.tag === 'sub') {
+          const inner = processNodes(node.children || []);
+          return `<${node.tag}>${inner}</${node.tag}>`;
+        }
+
+        if (
+          node.tag === 'span' &&
+          (node.style?.fontWeight === 'bold' ||
+            node.style?.fontStyle === 'italic' ||
+            node.style?.textDecoration === 'underline')
+        ) {
+          const boldText = processNodes(node.children || []);
+          let wrapped = boldText;
+          if (node.style?.fontWeight === 'bold') {
+            wrapped = `<b>${wrapped}</b>`;
+          }
+          if (node.style?.fontStyle === 'italic') {
+            wrapped = `<i>${wrapped}</i>`;
+          }
+          if (node.style?.textDecoration === 'underline') {
+            wrapped = `<u>${wrapped}</u>`;
+          }
+          return wrapped;
+        }
+
+        // Recurse for other tags (like <p> etc.)
+        if (Array.isArray(node.children)) {
+          return processNodes(node.children);
+        }
+
+        return '';
+      })
+      .join('');
+  };
+
+  return processNodes(nodes).trim();
+};
+
 export const convertFIBContentToQuillNodes = (contentItems: any[], blanks: any[]) => {
   let finalText = '';
 
@@ -48,29 +94,109 @@ export const convertFIBContentToQuillNodes = (contentItems: any[], blanks: any[]
       }
     }
   });
+  try {
+    const quillTextNodes = convertHTMLToQuillNodes(finalText);
+    return quillTextNodes;
+  } catch (ex) {
+    return [
+      {
+        tag: 'p',
+        style: {},
+        children: [
+          {
+            tag: 'span',
+            style: { fontSize: '1rem' },
+            children: [
+              {
+                tag: 'text',
+                style: {},
+                text: finalText,
+                children: [],
+              },
+            ],
+          },
+        ],
+      },
+    ];
+  }
+};
 
+export const convertHTMLToQuillNodes = (htmlText: string) => {
+  const parseNode = (node: Node): any | null => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      const text = node.textContent;
+      if (!text) return null;
+      return {
+        tag: 'span',
+        children: [
+          {
+            tag: 'text',
+            text,
+            children: [],
+          },
+        ],
+      };
+    }
+
+    if (node.nodeType === Node.ELEMENT_NODE) {
+      const el = node as HTMLElement;
+      const tag = el.tagName.toLowerCase();
+
+      const children = Array.from(el.childNodes).map(parseNode).filter(Boolean);
+
+      // Map supported tags to node structures
+      switch (tag) {
+        case 'sup':
+        case 'sub':
+          return { tag, children };
+
+        case 'b':
+        case 'strong':
+          return {
+            tag: 'span',
+            style: { fontWeight: 'bold' },
+            children,
+          };
+
+        case 'i':
+        case 'em':
+          return {
+            tag: 'span',
+            style: { fontStyle: 'italic' },
+            children,
+          };
+
+        case 'u':
+          return {
+            tag: 'span',
+            style: { textDecoration: 'underline' },
+            children,
+          };
+
+        default:
+          // Fallback: unwrap unknown tag and just return children
+          return children;
+      }
+    }
+
+    return null;
+  };
+
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(`<div>${htmlText}</div>`, 'text/html');
+  const parsedChildren = Array.from(doc.body.firstChild?.childNodes || [])
+    .map(parseNode)
+    .flat()
+    .filter(Boolean);
+  console.log({ parsedChildren });
   return [
     {
       tag: 'p',
-      style: {},
-      children: [
-        {
-          tag: 'span',
-          style: { fontSize: '1rem' },
-          children: [
-            {
-              tag: 'text',
-              style: {},
-              text: finalText,
-              children: [],
-            },
-          ],
-        },
-      ],
+      style: { fontSize: '1rem' },
+      children: parsedChildren,
     },
   ];
 };
-
 type FIBContentItem =
   | { insert: string }
   | { 'text-input': string }
@@ -267,10 +393,8 @@ export const updateStringWithCorrectAnswers = (input: string, options: OptionIte
 
 export const updateFinalOptionsText = (text: string, options: any[]) => {
   const newOptionsList: any = parseTextToFIBStructure(text);
-  console.log({ newOptionsList, options });
   return newOptionsList.elements.map((newOpt: any, idx: any) => {
     const existing = options[idx];
-    console.log({ existing });
     if (existing) {
       // Update existing entry's text only
       return {
