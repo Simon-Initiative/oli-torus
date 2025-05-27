@@ -11,9 +11,9 @@ import { registerEditor } from '../janus-text-flow/QuillEditor';
 import { tagName as quillEditorTagName } from '../janus-text-flow/QuillEditor';
 import {
   convertFIBContentToQuillNodes,
-  convertQuillNodesToTextAfterSave,
-  normalizeBlanks,
-  parseTextContentToFIBStructure,
+  extractFormattedHTMLFromQuillNodes,
+  generateFIBStructure,
+  transformOptionsToNormalized,
 } from './FIBUtils';
 import { FIBModel } from './schema';
 
@@ -28,7 +28,7 @@ const Editor: React.FC<any> = React.memo(({ html, tree, portal, customOptions })
   } = {};
   quillProps.tree = JSON.stringify(tree);
   quillProps.showcustomoptioncontrol = true;
-  quillProps.customoptions = JSON.stringify(normalizeBlanks(customOptions));
+  quillProps.customoptions = JSON.stringify(transformOptionsToNormalized(customOptions));
   const E = () => (
     <div style={{ padding: 20 }}>{React.createElement(quillEditorTagName, quillProps)}</div>
   );
@@ -63,8 +63,8 @@ const FIBAuthor: React.FC<AuthorPartComponentProps<FIBModel>> = (props) => {
 
   useEffect(() => {
     if (textNodes?.length) {
-      const collectedText = convertQuillNodesToTextAfterSave(textNodes);
-      const finalcontent = parseTextContentToFIBStructure(collectedText, finalElement);
+      const collectedText = extractFormattedHTMLFromQuillNodes(textNodes);
+      const finalcontent = generateFIBStructure(collectedText, 'map', finalElement);
       setFinalContent(finalcontent);
     }
   }, [textNodes, finalElement]);

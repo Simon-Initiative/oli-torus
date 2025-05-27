@@ -3,13 +3,12 @@ import ReactQuill, { Quill } from 'react-quill';
 import Delta from 'quill-delta';
 import register from '../customElementWrapper';
 import {
-  convertQuillNodesToText,
-  convertQuillNodesToTextAfterSave,
-  normalizeBlanks,
-  parseTextToFIBStructure,
-  syncOptionsWithParsed,
-  updateFinalOptionsText,
-  updateStringWithCorrectAnswers,
+  embedCorrectAnswersInString,
+  extractFormattedHTMLFromQuillNodes,
+  generateFIBStructure,
+  mergeParsedWithExistingBlanks,
+  syncOptionsFromText,
+  transformOptionsToNormalized,
 } from '../janus-fill-blanks/FIBUtils';
 import { OptionItem, QuillCustomOptionEditor } from './QuillCustomOptionEditor';
 import { QuillImageUploader } from './QuillImageUploader';
@@ -209,9 +208,9 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
 
         // Update FIB structure and dropdown options
         const updatedText = quill.current?.getEditor().getText() ?? '';
-        const parsed = parseTextToFIBStructure(updatedText);
-        const quillOptions = normalizeBlanks(parsed.elements);
-        const updatedFIBOptions = syncOptionsWithParsed(localOptions, quillOptions);
+        const parsed = generateFIBStructure(updatedText);
+        const quillOptions = transformOptionsToNormalized(parsed.elements);
+        const updatedFIBOptions = mergeParsedWithExistingBlanks(localOptions, quillOptions);
         setCustomDropDownOptions(updatedFIBOptions);
         setSelectedKey(iMatchCounter);
         setShowCustomOptionSelectorDailog(true);
@@ -238,9 +237,9 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
       const janusText = convertQuillToJanus(
         new Delta(quill.current?.getEditor()?.getContents().ops),
       );
-      const collectedText = convertQuillNodesToTextAfterSave(janusText);
+      const collectedText = extractFormattedHTMLFromQuillNodes(janusText);
       localOptions = Options;
-      const updatedString = updateStringWithCorrectAnswers(collectedText, Options);
+      const updatedString = embedCorrectAnswersInString(collectedText, Options);
       const span = document.createElement('span');
       span.innerHTML = updatedString;
       span.style.fontSize = '16px';
@@ -290,11 +289,11 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
       // console.log('JANUS TEXT', janusText);
       let updatedOptionslist = [];
       if (showcustomoptioncontrol) {
-        const collectedText = convertQuillNodesToText(janusText);
+        const collectedText = extractFormattedHTMLFromQuillNodes(janusText);
         //finalcontent = parseTextToFIBStructure(collectedText);
 
-        updatedOptionslist = updateFinalOptionsText(collectedText, localOptions);
-        const updatedFIBOptions = syncOptionsWithParsed(localOptions, updatedOptionslist);
+        updatedOptionslist = syncOptionsFromText(collectedText, localOptions);
+        const updatedFIBOptions = mergeParsedWithExistingBlanks(localOptions, updatedOptionslist);
 
         console.log({ updatedFIBOptions, updatedOptionslist, localOptions });
         setCustomDropDownOptions(localOptions || []);
