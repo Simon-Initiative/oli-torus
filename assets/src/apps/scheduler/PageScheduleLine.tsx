@@ -1,6 +1,7 @@
 import React, { useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { DateWithoutTime } from 'epoq';
+import { modeIsDark } from 'components/misc/DarkModeSelector';
 import { PageDragBar } from './PageDragBar';
 import { ScheduleHeader } from './ScheduleHeader';
 import { DayGeometry } from './date-utils';
@@ -76,7 +77,10 @@ export const PageScheduleLine: React.FC<ScheduleLineProps> = ({
     [item.startDateTime, item.endDateTime, item.id, dispatch],
   );
 
-  const rowSelectColor = isSelected ? { backgroundColor: '#effdf5' } : {};
+  const rowSelectColor = React.useMemo(
+    () => (isSelected ? { backgroundColor: modeIsDark() ? '#0D2A4E' : '#effdf5' } : {}),
+    [isSelected],
+  );
   const labelClasses = item.scheduling_type === 'due_by' ? 'font-bold' : '';
 
   return (

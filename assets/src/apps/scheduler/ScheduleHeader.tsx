@@ -42,18 +42,18 @@ interface ScheduleMonthsProps {
 }
 
 const monthNames = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December',
+  'JAN',
+  'FEB',
+  'MAR',
+  'APR',
+  'MAY',
+  'JUN',
+  'JUL',
+  'AUG',
+  'SEP',
+  'OCT',
+  'NOV',
+  'DEC',
 ];
 
 export const ScheduleHeader: React.FC<ScheduleHeaderProps> = ({ labels, dayGeometry }) => {
@@ -96,7 +96,7 @@ export const ScheduleMonths: React.FC<ScheduleMonthsProps> = ({ dayGeometry }) =
       {Array.from(gMonths).map(([key, value], i) => (
         <div
           key={i}
-          className="p-0 align-top inline-block border-l h-full whitespace-nowrap text-ellipsis font-normal dark:border-gray-800 "
+          className="pb-2 align-top content-end inline-block border-l h-full whitespace-nowrap text-ellipsis font-normal dark:border-gray-800 "
           style={{ width: value }}
         >
           <div className="font-bold text-[11px]">{key}</div>

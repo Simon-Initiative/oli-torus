@@ -1,6 +1,7 @@
 import React, { useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { DateWithoutTime } from 'epoq';
+import { modeIsDark } from 'components/misc/DarkModeSelector';
 import { useToggle } from '../../components/hooks/useToggle';
 import { DragBar } from './DragBar';
 import { PageScheduleLine } from './PageScheduleLine';
@@ -89,7 +90,10 @@ const ContainerScheduleLine: React.FC<ScheduleLineProps> = ({
     dispatch(selectItem(item.id));
   }, [dispatch, item.id]);
 
-  const rowSelectColor = isSelected ? { backgroundColor: '#effdf5' } : {};
+  const rowSelectColor = React.useMemo(
+    () => (isSelected ? { backgroundColor: modeIsDark() ? '#0D2A4E' : '#effdf5' } : {}),
+    [isSelected],
+  );
   const labelClasses = item.scheduling_type === 'due_by' ? 'font-bold' : '';
 
   const plusMinusIcon = expanded ? 'fa-regular fa-square-minus' : 'fa-regular fa-square-plus';
@@ -100,7 +104,7 @@ const ContainerScheduleLine: React.FC<ScheduleLineProps> = ({
       <tr style={rowSelectColor}>
         <td className="border-r-0 w-[1px] !p-[2px]" style={{ backgroundColor: rowColor }}></td>
         <td
-          className={`w-48 ${labelClasses}`}
+          className={`w-48 ${labelClasses} font-bold`}
           style={{ paddingLeft: (1 + indent) * 10 }}
           onClick={onSelect}
         >

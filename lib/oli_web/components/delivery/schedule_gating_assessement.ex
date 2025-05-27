@@ -11,32 +11,34 @@ defmodule OliWeb.Components.Delivery.ScheduleGatingAssessment do
       )
 
     ~H"""
-    <div class="container mx-auto py-4">
-      <div class="flex">
-        <ul
-          class="nav nav-tabs flex flex-col md:flex-row flex-wrap list-none border-b-0 pl-0 mb-4"
-          id="tabs-tab"
-          role="tablist"
-        >
-          <%= for {label, name, path} <- [
+    <div class="w-full flex justify-center flex-col bg-[#F2F9FF] dark:bg-[#1F1D23]">
+      <div class="container mx-auto py-4 ">
+        <div class="flex">
+          <ul
+            class="nav nav-tabs flex flex-col md:flex-row flex-wrap list-none border-b-0 pl-0 mb-4"
+            id="tabs-tab"
+            role="tablist"
+          >
+            <%= for {label, name, path} <- [
               {"Schedule", "schedule", ~p"/sections/#{@section_slug}/schedule"},
               {"Assessment Settings", "assessment_settings", ~p"/sections/#{@section_slug}/assessment_settings/settings/all"},
               {"Student Exceptions", "student_exceptions", ~p"/sections/#{@section_slug}/assessment_settings/student_exceptions/all"},
               {"Advanced Gating", "advanced_gating", ~p"/sections/#{@section_slug}/gating_and_scheduling"}
               ] do %>
-            <li>
-              <%= if name == "schedule" do %>
-                <.link href={path} class={tab_class(@active_tab, name)}>
-                  <%= label %>
-                </.link>
-              <% else %>
-                <.link navigate={path} class={tab_class(@active_tab, name)}>
-                  <%= label %>
-                </.link>
-              <% end %>
-            </li>
-          <% end %>
-        </ul>
+              <li>
+                <%= if name == "schedule" do %>
+                  <.link href={path} class={tab_class(@active_tab, name)}>
+                    <%= label %>
+                  </.link>
+                <% else %>
+                  <.link navigate={path} class={tab_class(@active_tab, name)}>
+                    <%= label %>
+                  </.link>
+                <% end %>
+              </li>
+            <% end %>
+          </ul>
+        </div>
       </div>
     </div>
     """

@@ -2,9 +2,8 @@ import React, { useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { useCallbackRef, useResizeObserver } from '@restart/hooks';
 import { DateWithoutTime } from 'epoq';
-import { getModeFromLocalStorage } from 'components/misc/DarkModeSelector';
+import { modeIsDark } from 'components/misc/DarkModeSelector';
 import { ClearIcon, CollapseAllIcon, ExpandAllIcon, SearchIcon } from 'components/misc/icons/Icons';
-import { isDarkMode } from 'utils/browser';
 import { ScheduleHeaderRow } from './ScheduleHeader';
 import { ScheduleLine } from './ScheduleLine';
 import { generateDayGeometry } from './date-utils';
@@ -57,14 +56,6 @@ export const ScheduleGrid: React.FC<GridProps> = ({ startDate, endDate, onReset,
     return item.startDateTime && item.endDateTime;
   });
 
-  const darkMode = () => {
-    const mode = getModeFromLocalStorage();
-    if (mode === 'dark') return true;
-    if (mode === 'light') return false;
-    // mode === 'auto' or any other value
-    return isDarkMode();
-  };
-
   const dayGeometry = useMemo(
     () =>
       generateDayGeometry(
@@ -77,7 +68,7 @@ export const ScheduleGrid: React.FC<GridProps> = ({ startDate, endDate, onReset,
 
   return (
     <div className="pb-20">
-      <div className="flex flex-row justify-between gap-x-4 mb-6 px-6">
+      <div className="flex flex-row justify-between gap-x-4 mb-6 px-6 bg-[#F2F9FF] dark:bg-[#1F1D23]">
         <div>
           Start organizing your course with the interactive scheduling tool. Set dates for course
           content, and manage content by right-clicking to remove or re-add it. All scheduled items
@@ -149,7 +140,7 @@ export const ScheduleGrid: React.FC<GridProps> = ({ startDate, endDate, onReset,
                 indent={0}
                 item={item}
                 rowColor={
-                  darkMode()
+                  modeIsDark()
                     ? rowPaletteDark[index % rowPaletteDark.length]
                     : rowPalette[index % rowPalette.length]
                 }
