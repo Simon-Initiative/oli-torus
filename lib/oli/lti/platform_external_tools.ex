@@ -200,7 +200,7 @@ defmodule Oli.Lti.PlatformExternalTools do
       [enabled: true, disabled: options.include_disabled, deleted: options.include_deleted]
       |> Enum.reduce([], fn
         {status, true}, acc -> [status | acc]
-        {_status, false}, acc -> acc
+        {_status, _}, acc -> acc
       end)
 
     filter_by_status = dynamic([p, lad], lad.status in ^allowed_statuses)
