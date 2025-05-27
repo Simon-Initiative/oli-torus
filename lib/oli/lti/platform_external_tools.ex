@@ -197,9 +197,11 @@ defmodule Oli.Lti.PlatformExternalTools do
       end
 
     allowed_statuses =
-      [:enabled] ++
-        if(options.include_disabled, do: [:disabled], else: []) ++
-        if options.include_deleted, do: [:deleted], else: []
+      [enabled: true, disabled: options.include_disabled, deleted: options.include_deleted]
+      |> Enum.reduce([], fn
+        {status, true}, acc -> [status | acc]
+        {_status, false}, acc -> acc
+      end)
 
     filter_by_status = dynamic([p, lad], lad.status in ^allowed_statuses)
 

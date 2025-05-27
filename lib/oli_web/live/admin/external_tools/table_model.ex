@@ -51,11 +51,11 @@ defmodule OliWeb.Admin.ExternalTools.TableModel do
     ~H"""
     <span class={[
       "text-sm font-bold text-center",
-      cond do
-        @status == :enabled -> "text-[#006CD9] dark:text-[#4CA6FF]"
-        @status == :disabled -> "text-[#CE2C31] dark:text-[#FF8787]"
-        @status == :deleted -> "text-gray-500 dark:text-gray-400"
-        true -> ""
+      case @status do
+        :enabled -> "text-[#006CD9] dark:text-[#4CA6FF]"
+        :disabled -> "text-[#CE2C31] dark:text-[#FF8787]"
+        :deleted -> "text-gray-500 dark:text-gray-400"
+        _ -> ""
       end
     ]}>
       <%= String.capitalize(Atom.to_string(@status)) %>
