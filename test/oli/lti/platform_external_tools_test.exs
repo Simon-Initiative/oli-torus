@@ -179,8 +179,9 @@ defmodule Oli.Lti.PlatformExternalToolsTest do
       assert Enum.map(results, & &1.status) == [:disabled, :enabled, :enabled]
     end
 
-    test "browse does not include soft deleted tools", %{
+    test "browse includes soft deleted tools depending on include_deleted options value", %{
       platform_1: platform_1,
+      platform_2: platform_2,
       platform_3: platform_3,
       deployment_2: deployment_2
     } do
@@ -190,15 +191,28 @@ defmodule Oli.Lti.PlatformExternalToolsTest do
         %{"status" => :deleted}
       )
 
+      # Should NOT include deleted tool by default
       results =
         PlatformExternalTools.browse_platform_external_tools(
           %Paging{offset: 0, limit: 10},
           %Sorting{field: :name, direction: :asc},
-          %BrowseOptions{include_disabled: true}
+          %BrowseOptions{include_disabled: true, include_deleted: false}
         )
 
       assert Enum.all?(results, fn result ->
                result.name in [platform_1.name, platform_3.name]
+             end)
+
+      # Should include deleted tool if include_deleted is true
+      results_with_deleted =
+        PlatformExternalTools.browse_platform_external_tools(
+          %Paging{offset: 0, limit: 10},
+          %Sorting{field: :name, direction: :asc},
+          %BrowseOptions{include_disabled: true, include_deleted: true}
+        )
+
+      assert Enum.all?(results_with_deleted, fn result ->
+               result.name in [platform_1.name, platform_2.name, platform_3.name]
              end)
     end
   end

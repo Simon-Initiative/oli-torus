@@ -14,7 +14,11 @@ defmodule OliWeb.Admin.ExternalTools.ExternalToolsView do
   @limit 25
   @sort_by :name
   @sort_order :asc
-  @default_options %PlatformExternalTools.BrowseOptions{text_search: "", include_disabled: true}
+  @default_options %PlatformExternalTools.BrowseOptions{
+    text_search: "",
+    include_disabled: true,
+    include_deleted: false
+  }
 
   on_mount OliWeb.LiveSessionPlugs.SetCtx
 
@@ -61,7 +65,8 @@ defmodule OliWeb.Admin.ExternalTools.ExternalToolsView do
 
     options = %PlatformExternalTools.BrowseOptions{
       text_search: get_param(params, "text_search", ""),
-      include_disabled: get_boolean_param(params, "include_disabled", true)
+      include_disabled: get_boolean_param(params, "include_disabled", true),
+      include_deleted: get_boolean_param(params, "include_deleted", false)
     }
 
     tools =
@@ -109,10 +114,22 @@ defmodule OliWeb.Admin.ExternalTools.ExternalToolsView do
       </.link>
     </div>
     <div>
-      <Check.render class="mr-4" checked={@options.include_disabled} click="include_disabled">
+      <Check.render
+        class="mr-4"
+        checked={@options.include_disabled}
+        click="include_disabled"
+        id="include_disabled"
+      >
         Show tools that have been disabled
       </Check.render>
-
+      <Check.render
+        class="mr-4"
+        checked={@options.include_deleted}
+        click="include_deleted"
+        id="include_deleted"
+      >
+        Show tools that have been deleted
+      </Check.render>
       <PagedTable.render
         filter={@options.text_search}
         table_model={@table_model}
@@ -126,6 +143,9 @@ defmodule OliWeb.Admin.ExternalTools.ExternalToolsView do
 
   def handle_event("include_disabled", _, socket),
     do: patch_with(socket, %{include_disabled: !socket.assigns.options.include_disabled})
+
+  def handle_event("include_deleted", _, socket),
+    do: patch_with(socket, %{include_deleted: !socket.assigns.options.include_deleted})
 
   def handle_event(event, params, socket) do
     {event, params, socket, &__MODULE__.patch_with/2}
@@ -141,7 +161,8 @@ defmodule OliWeb.Admin.ExternalTools.ExternalToolsView do
       sort_order: socket.assigns.table_model.sort_order,
       offset: socket.assigns.offset,
       text_search: socket.assigns.options.text_search,
-      include_disabled: socket.assigns.options.include_disabled
+      include_disabled: socket.assigns.options.include_disabled,
+      include_deleted: socket.assigns.options.include_deleted
     }
 
     {:noreply,
