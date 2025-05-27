@@ -315,5 +315,21 @@ defmodule OliWeb.Admin.ExternalTools.DetailsViewTest do
       assert PlatformExternalTools.get_lti_external_tool_activity_deployment!(dep.deployment_id).status ===
                :deleted
     end
+
+    test "does not show toggle enable, delete, or edit buttons for deleted tools", %{
+      conn: conn,
+      platform_instance: pi,
+      deployment: dep
+    } do
+      Oli.Lti.PlatformExternalTools.update_lti_external_tool_activity_deployment(dep, %{
+        status: :deleted
+      })
+
+      {:ok, view, _html} = live(conn, ~p"/admin/external_tools/#{pi.id}/details")
+
+      refute has_element?(view, "button", "Edit Details")
+      refute has_element?(view, "#toggle_switch_form")
+      refute has_element?(view, "button[role='delete tool']")
+    end
   end
 end
