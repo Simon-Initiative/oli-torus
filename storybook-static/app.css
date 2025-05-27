@@ -17106,10 +17106,6 @@ Not supports in Firefox and IE */
     grid-column: span 8 / span 8;
   }
 
-  .md\:m-0 {
-    margin: 0px;
-  }
-
   .md\:mx-auto {
     margin-left: auto;
     margin-right: auto;
