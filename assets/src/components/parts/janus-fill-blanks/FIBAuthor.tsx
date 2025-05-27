@@ -23,12 +23,12 @@ const Editor: React.FC<any> = React.memo(({ html, tree, portal, customOptions })
     tree?: any;
     html?: any;
     showimagecontrol?: boolean;
-    showcustomoptioncontrol?: boolean;
-    customoptions?: any;
+    showfibinsertoptioncontrol?: boolean;
+    options?: any;
   } = {};
   quillProps.tree = JSON.stringify(tree);
-  quillProps.showcustomoptioncontrol = true;
-  quillProps.customoptions = JSON.stringify(transformOptionsToNormalized(customOptions));
+  quillProps.showfibinsertoptioncontrol = true;
+  quillProps.options = JSON.stringify(transformOptionsToNormalized(customOptions));
   const E = () => (
     <div style={{ padding: 20 }}>{React.createElement(quillEditorTagName, quillProps)}</div>
   );

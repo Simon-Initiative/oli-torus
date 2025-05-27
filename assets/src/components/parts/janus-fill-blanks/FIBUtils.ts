@@ -42,6 +42,11 @@ interface NormalizedBlank {
 
 type ParseFIBMode = 'generate' | 'map';
 
+/**
+ * Converts an array of Quill-style nodes into a formatted HTML string.
+ * Supports text nodes, superscript, subscript, and styled spans (bold, italic, underline).
+ * Recursively processes children nodes to build the full HTML.
+ */
 export const extractFormattedHTMLFromQuillNodes = (nodes: any[]): string => {
   const processNodes = (nodeArray: any[]): string => {
     return nodeArray
@@ -88,6 +93,11 @@ export const extractFormattedHTMLFromQuillNodes = (nodes: any[]): string => {
   return processNodes(nodes).trim();
 };
 
+/**
+ * Converts a Fill-in-the-Blank (FIB) content representation with blanks and options
+ * into Quill nodes suitable for rendering.
+ * Inserts placeholder text or dropdown options in braces `{}`.
+ */
 export const convertFIBContentToQuillNodes = (contentItems: any[], blanks: any[]) => {
   let finalText = '';
 
@@ -147,6 +157,14 @@ export const convertFIBContentToQuillNodes = (contentItems: any[], blanks: any[]
   }
 };
 
+/**
+ * Parses a raw HTML string into a tree of Quill-style nodes.
+ * Maps supported tags (<b>, <i>, <u>, <sup>, <sub>) to node structures with styles.
+ * Unwraps unknown tags and preserves children.
+ *
+ * @param htmlText - Raw HTML string to parse
+ * @returns Array of Quill nodes representing the HTML content
+ */
 export const convertHTMLToQuillNodes = (htmlText: string) => {
   const parseNode = (node: Node): any | null => {
     if (node.nodeType === Node.TEXT_NODE) {
@@ -224,6 +242,13 @@ export const convertHTMLToQuillNodes = (htmlText: string) => {
   ];
 };
 
+/**
+ * Parses a text string containing fill-in-the-blank placeholders wrapped in braces `{}`.
+ * Extracts content items and blank elements with options and correct answers.
+ * Supports two modes:
+ *  - 'generate': auto-generate blanks from text
+ *  - 'map': map blanks from provided options list
+ */
 export const generateFIBStructure = (
   inputText: string,
   mode: ParseFIBMode = 'generate', // 'generate' = auto-generate from text, 'map' = map from provided options
@@ -319,6 +344,11 @@ export const generateFIBStructure = (
     : { content: contentItems, elements: [], blanksInsideBraces: [] };
 };
 
+/**
+ * Normalizes an array of FIB elements into a standard format with keys, options,
+ * types ('dropdown' or 'input'), and correct/alternate answers.
+ * Assigns default keys like 'blank1', 'blank2', etc.
+ */
 export const transformOptionsToNormalized = (elements: FIBElement[]): NormalizedBlank[] => {
   return elements.map((el, idx) => {
     let isKeyExists = false;
@@ -357,6 +387,14 @@ export const transformOptionsToNormalized = (elements: FIBElement[]): Normalized
   });
 };
 
+/**
+ * Embeds correct and alternate correct answers into a string with placeholders.
+ * Replaces each placeholder `{...}` with formatted options where correct answers
+ * are marked with an asterisk (*).
+ * @param input - String containing placeholders in braces `{...}`
+ * @param options - Array of option objects defining correct answers and types
+ * @returns Updated string with correct answers annotated in placeholders
+ */
 export const embedCorrectAnswersInString = (input: string, options: OptionItem[]) => {
   let matchIndex = 0;
   return input.replace(/\{[^}]*\}/g, (match) => {
@@ -384,6 +422,15 @@ export const embedCorrectAnswersInString = (input: string, options: OptionItem[]
   });
 };
 
+/**
+ * Synchronizes a list of existing options with new options parsed from text.
+ * Updates existing options' texts and correct values where matched by index,
+ * adds new options if they do not exist.
+ *
+ * @param text - Text containing fill-in-the-blank placeholders
+ * @param options - Existing list of option objects to update
+ * @returns Updated array of option objects synced with parsed text
+ */
 export const syncOptionsFromText = (text: string, options: any[]) => {
   const newOptionsList: any = generateFIBStructure(text);
   return newOptionsList.elements.map((newOpt: any, idx: any) => {
@@ -412,6 +459,15 @@ export const syncOptionsFromText = (text: string, options: any[]) => {
   });
 };
 
+/**
+ * Merges newly parsed blanks with existing normalized blanks.
+ * Matches blanks by comparing option values arrays.
+ * Preserves existing blanks where matched, adds new blanks otherwise.
+ *
+ * @param existingOptions - Array of existing normalized blanks
+ * @param parsedElements - Array of newly parsed blanks to merge
+ * @returns Merged array of normalized blanks
+ */
 export function mergeParsedWithExistingBlanks(
   existingOptions: NormalizedBlank[],
   parsedElements: NormalizedBlank[],

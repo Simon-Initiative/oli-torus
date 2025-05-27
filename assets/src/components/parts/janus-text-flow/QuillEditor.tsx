@@ -22,8 +22,8 @@ interface QuillEditorProps {
   onCancel: () => void;
   showSaveCancelButtons?: boolean;
   showimagecontrol?: boolean;
-  showcustomoptioncontrol?: boolean;
-  customoptions?: any;
+  showfibinsertoptioncontrol?: boolean;
+  options?: any;
 }
 
 const supportedFonts = ['Initial', 'Arial', 'Times New Roman', 'Sans Serif'];
@@ -32,7 +32,7 @@ const supportedFonts = ['Initial', 'Arial', 'Times New Roman', 'Sans Serif'];
 const getFontName = (font: string) => {
   return font.toLowerCase().replace(/\s/g, '-');
 };
-Quill.import('ui/icons')['customFIBOption'] = '<i class="fa-solid fa-square-caret-down"></i>';
+Quill.import('ui/icons')['insertFIBOption'] = '<i class="fa-solid fa-square-caret-down"></i>';
 
 const FontAttributor = Quill.import('attributors/class/font');
 FontAttributor.whitelist = supportedFonts.map(getFontName);
@@ -125,14 +125,14 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
   onSave,
   onCancel,
   showimagecontrol = false,
-  showcustomoptioncontrol = false,
-  customoptions = '',
+  showfibinsertoptioncontrol = false,
+  options = '',
 }) => {
   console.log({ tree });
   const quill: any = useRef();
   const [contents, setContents] = React.useState<any>(tree);
   const [selectedKey, setSelectedKey] = useState<number>(0);
-  const [customDropDownOptions, setCustomDropDownOptions] = React.useState<any>([]);
+  const [fibElements, setFibElements] = React.useState<any>([]);
   const [delta, setDelta] = React.useState<any>(convertJanusToQuill(tree));
   const [currentQuillRange, setCurrentQuillRange] = React.useState<number>(0);
   const [showImageSelectorDailog, setShowImageSelectorDailog] = React.useState<boolean>(false);
@@ -158,7 +158,7 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
       setShowImageSelectorDailog(true);
       setCurrentQuillRange(this.quill.getSelection()?.index || 0);
     },
-    customFIBOption: function (value: string) {
+    insertFIBOption: function (value: string) {
       const range = this.quill.getSelection();
       const insertIndex = range ? range.index : this.quill.getLength();
       setCurrentQuillRange(insertIndex);
@@ -211,7 +211,7 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
         const parsed = generateFIBStructure(updatedText);
         const quillOptions = transformOptionsToNormalized(parsed.elements);
         const updatedFIBOptions = mergeParsedWithExistingBlanks(localOptions, quillOptions);
-        setCustomDropDownOptions(updatedFIBOptions);
+        setFibElements(updatedFIBOptions);
         setSelectedKey(iMatchCounter);
         setShowCustomOptionSelectorDailog(true);
       }
@@ -245,9 +245,8 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
       span.style.fontSize = '16px';
       const editor = quill.current.getEditor();
       // Clear all content first
-      editor.setText(''); // Clears the content safely
+      editor.setText('');
       quill.current.editor.clipboard.dangerouslyPasteHTML(0, span.outerHTML);
-      //editor.setText(updatedString);
     }
   };
 
@@ -267,12 +266,12 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
   }, [tree]);
 
   useEffect(() => {
-    if (customoptions?.length) {
-      const options = JSON.parse(customoptions);
-      setCustomDropDownOptions(options);
-      localOptions = options;
+    if (options?.length) {
+      const myOptions = JSON.parse(options);
+      setFibElements(myOptions);
+      localOptions = myOptions;
     }
-  }, [customoptions]);
+  }, [options]);
 
   const handleSave = React.useCallback(() => {
     if (!contents) {
@@ -284,11 +283,10 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
   const handleQuillChange = React.useCallback(
     (content, delta, source, editor) => {
       // console.log('quill changes', { content, delta, source, editor });
-      //let finalcontent: any = [];
       const janusText = convertQuillToJanus(new Delta(editor.getContents().ops));
       // console.log('JANUS TEXT', janusText);
       let updatedOptionslist = [];
-      if (showcustomoptioncontrol) {
+      if (showfibinsertoptioncontrol) {
         const collectedText = extractFormattedHTMLFromQuillNodes(janusText);
         //finalcontent = parseTextToFIBStructure(collectedText);
 
@@ -296,18 +294,18 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
         const updatedFIBOptions = mergeParsedWithExistingBlanks(localOptions, updatedOptionslist);
 
         console.log({ updatedFIBOptions, updatedOptionslist, localOptions });
-        setCustomDropDownOptions(localOptions || []);
+        setFibElements(localOptions || []);
       }
       setContents(janusText);
       onChange({ value: janusText, options: localOptions });
     },
     [onChange],
   );
-  const toolbarContainerDefault = showcustomoptioncontrol
+  const toolbarContainerDefault = showfibinsertoptioncontrol
     ? [
         ['bold', 'italic', 'underline'], // toggled buttons
         [{ script: 'sub' }, { script: 'super' }], // superscript/subscript
-        ['customFIBOption'],
+        ['insertFIBOption'],
       ]
     : [
         ['bold', 'italic', 'underline', 'strike'], // toggled buttons
@@ -416,7 +414,7 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
           showOptionDailog={showCustomOptionSelectorDailog}
           handleOptionDetailsSave={handleCustomOptionEditorSave}
           handleOptionDailogClose={handleCustomOptionEditorDailogClose}
-          Options={customDropDownOptions}
+          Options={fibElements}
           selectedIndex={selectedKey}
         ></QuillCustomOptionEditor>
       )}
