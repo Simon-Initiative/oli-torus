@@ -51,10 +51,12 @@ defmodule OliWeb.Admin.ExternalTools.TableModel do
     ~H"""
     <span class={[
       "text-sm font-bold text-center",
-      if(@status == :enabled,
-        do: "text-[#006CD9] dark:text-[#4CA6FF]",
-        else: "text-[#CE2C31] dark:text-[#FF8787]"
-      )
+      cond do
+        @status == :enabled -> "text-[#006CD9] dark:text-[#4CA6FF]"
+        @status == :disabled -> "text-[#CE2C31] dark:text-[#FF8787]"
+        @status == :deleted -> "text-gray-500 dark:text-gray-400"
+        true -> ""
+      end
     ]}>
       <%= String.capitalize(Atom.to_string(@status)) %>
     </span>
@@ -81,10 +83,11 @@ defmodule OliWeb.Admin.ExternalTools.TableModel do
   end
 
   def render_actions_column(assigns, row, _) do
-    assigns = Map.merge(assigns, %{platform_instance_id: row.id})
+    assigns = Map.merge(assigns, %{platform_instance_id: row.id, status: row.status})
 
     ~H"""
     <.link
+      :if={@status != :deleted}
       href={~p"/admin/external_tools/#{@platform_instance_id}/details"}
       class="w-20 text-center text-sm font-semibold leading-none h-7 rounded-lg shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] outline outline-1 outline-offset-[-1px] inline-flex justify-center items-center"
     >
