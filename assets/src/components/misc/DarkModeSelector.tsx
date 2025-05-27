@@ -15,6 +15,14 @@ export const getModeFromLocalStorage = () => {
   return localStorage.theme;
 };
 
+export const modeIsDark = () => {
+  const mode = getModeFromLocalStorage();
+  if (mode === 'dark') return true;
+  if (mode === 'light') return false;
+  // mode === 'auto' or any other value
+  return isDarkMode();
+};
+
 export interface DarkModeSelectorProps {}
 
 export const DarkModeSelector = (_props: DarkModeSelectorProps) => {
