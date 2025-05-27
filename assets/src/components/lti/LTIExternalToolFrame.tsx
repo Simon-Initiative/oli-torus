@@ -85,7 +85,7 @@ export const LTIExternalToolFrame = ({
               onClick={openInNewTab ? undefined : () => setShowFrame(true)}
               type="submit"
             >
-              {name}
+              Load {openInNewTab ? `${name} in a new window` : name}
             </button>
           </div>
         )}
