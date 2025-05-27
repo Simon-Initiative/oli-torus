@@ -4,6 +4,7 @@ import Delta from 'quill-delta';
 import register from '../customElementWrapper';
 import {
   convertQuillNodesToText,
+  convertQuillNodesToTextAfterSave,
   normalizeBlanks,
   parseTextToFIBStructure,
   syncOptionsWithParsed,
@@ -234,9 +235,12 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
   const handleCustomOptionEditorSave = (Options: Array<OptionItem>) => {
     setShowCustomOptionSelectorDailog(false);
     if (quill?.current) {
-      const mytextContents = quill.current?.getEditor().getText();
+      const janusText = convertQuillToJanus(
+        new Delta(quill.current?.getEditor()?.getContents().ops),
+      );
+      const collectedText = convertQuillNodesToTextAfterSave(janusText);
       localOptions = Options;
-      const updatedString = updateStringWithCorrectAnswers(mytextContents, Options);
+      const updatedString = updateStringWithCorrectAnswers(collectedText, Options);
       const span = document.createElement('span');
       span.innerHTML = updatedString;
       span.style.fontSize = '16px';
