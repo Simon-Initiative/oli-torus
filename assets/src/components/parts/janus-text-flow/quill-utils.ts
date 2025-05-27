@@ -280,7 +280,6 @@ const processJanusChildren = (node: JanusMarkupNode, doc: Delta, parentAttrs: an
 const blockTags = ['p', 'blockquote', 'ol', 'ul', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'img'];
 
 export const convertJanusToQuill = (nodes: JanusMarkupNode[]) => {
-  console.log({ nodes });
   let doc = new Delta();
   const parentAttrs: any = {};
   nodes.forEach((node, index) => {
