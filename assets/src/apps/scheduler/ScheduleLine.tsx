@@ -16,8 +16,11 @@ import {
   HierarchyItem,
   ScheduleItemType,
   getScheduleItem,
+  isContainerExpanded,
   moveScheduleItem,
   selectItem,
+  toggleContainer,
+  unlockScheduleItem,
 } from './scheduler-slice';
 
 interface ScheduleLineProps {
@@ -63,6 +66,8 @@ const ContainerScheduleLine: React.FC<ScheduleLineProps> = ({
 }) => {
   const [expanded, toggleExpanded] = useToggle(false);
   const dispatch = useDispatch();
+  const expanded = useSelector((state) => isContainerExpanded(state, item.id));
+  const toggleExpanded = () => dispatch(toggleContainer(item.id));
   const isSelected = useSelector(getSelectedId) === item.id;
   const schedule = useSelector(getSchedule);
   const showNumbers = useSelector(shouldDisplayCurriculumItemNumbering);

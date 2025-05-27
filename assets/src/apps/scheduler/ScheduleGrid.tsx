@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { useCallbackRef, useResizeObserver } from '@restart/hooks';
 import { DateWithoutTime } from 'epoq';
 import { modeIsDark } from 'components/misc/DarkModeSelector';
@@ -8,6 +8,12 @@ import { ScheduleHeaderRow } from './ScheduleHeader';
 import { ScheduleLine } from './ScheduleLine';
 import { generateDayGeometry } from './date-utils';
 import { getTopLevelSchedule } from './schedule-selectors';
+import {
+  areSomeContainersExpanded,
+  collapseAllContainers,
+  expandAllContainers,
+  hasContainers,
+} from './scheduler-slice';
 
 interface GridProps {
   startDate: string;
@@ -66,6 +72,13 @@ export const ScheduleGrid: React.FC<GridProps> = ({ startDate, endDate, onReset,
     [rect?.width, startDate, endDate],
   );
 
+  const dispatch = useDispatch();
+  const someExpanded = useSelector(areSomeContainersExpanded);
+  const canToggle = useSelector(hasContainers);
+  const handleClick = () => {
+    someExpanded ? dispatch(collapseAllContainers()) : dispatch(expandAllContainers());
+  };
+
   return (
     <div className="pb-20">
       <div className="flex flex-row justify-between gap-x-4 mb-6 px-6 bg-[#F2F9FF] dark:bg-[#1F1D23]">
@@ -99,17 +112,20 @@ export const ScheduleGrid: React.FC<GridProps> = ({ startDate, endDate, onReset,
         </div>
 
         {/* Expand/Collapse All button */}
-        <div className="flex flex-row items-center justify-start w-auto px-2 text-sm text-[#353740] ">
-          <button id="expand_all_button" className="flex space-x-3 dark:text-[#eeebf5]">
-            <ExpandAllIcon className="text-[#353740] dark:text-white ml-2" />
-            <span>Expand All</span>
-          </button>
-
-          <button id="collapse_all_button" className="hidden space-x-3 dark:text-[#eeebf5]">
+        <button
+          id="toggle_expand_button"
+          className="flex space-x-3 dark:text-[#eeebf5] disabled:opacity-50 disabled:cursor-not-allowed items-center"
+          onClick={handleClick}
+          title={!canToggle ? 'No expandable containers available' : undefined}
+          disabled={!canToggle}
+        >
+          {someExpanded ? (
             <CollapseAllIcon className="text-[#353740] dark:text-white ml-2" />
-            <span>Collapse All</span>
-          </button>
-        </div>
+          ) : (
+            <ExpandAllIcon className="text-[#353740] dark:text-white ml-2" />
+          )}
+          <span>{someExpanded ? 'Collapse All' : 'Expand All'}</span>
+        </button>
 
         {/* Clear Schedule button */}
         <button
