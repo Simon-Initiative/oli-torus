@@ -77,6 +77,8 @@ defmodule Oli.Delivery.Sections.Updates do
 
     case result do
       {:ok, _} ->
+        Oli.Delivery.Sections.SectionCache.clear(section.slug)
+
         Oli.Delivery.DepotCoordinator.refresh(
           Oli.Delivery.Sections.SectionResourceDepot.depot_desc(),
           section_id,
