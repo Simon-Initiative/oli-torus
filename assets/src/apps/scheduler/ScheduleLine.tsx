@@ -2,7 +2,6 @@ import React, { useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { DateWithoutTime } from 'epoq';
 import { modeIsDark } from 'components/misc/DarkModeSelector';
-import { useToggle } from '../../components/hooks/useToggle';
 import { DragBar } from './DragBar';
 import { PageScheduleLine } from './PageScheduleLine';
 import { ScheduleHeader } from './ScheduleHeader';
@@ -20,7 +19,6 @@ import {
   moveScheduleItem,
   selectItem,
   toggleContainer,
-  unlockScheduleItem,
 } from './scheduler-slice';
 
 interface ScheduleLineProps {
@@ -64,7 +62,6 @@ const ContainerScheduleLine: React.FC<ScheduleLineProps> = ({
   rowColor,
   dayGeometry,
 }) => {
-  const [expanded, toggleExpanded] = useToggle(false);
   const dispatch = useDispatch();
   const expanded = useSelector((state) => isContainerExpanded(state, item.id));
   const toggleExpanded = () => dispatch(toggleContainer(item.id));
