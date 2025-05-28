@@ -8,7 +8,7 @@ defmodule OliWeb.Delivery.NewCourse do
   on_mount OliWeb.LiveSessionPlugs.SetPreviewMode
 
   alias Oli.Delivery
-  alias Oli.Delivery.DistributedDepotCoordinator
+  alias Oli.Delivery.DepotCoordinator
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.{Section, SectionResourceDepot, SectionSpecification}
   alias OliWeb.Common.{Breadcrumb, Stepper, FormatDateTime}
@@ -283,7 +283,7 @@ defmodule OliWeb.Delivery.NewCourse do
   def handle_info({:section_created, section_id, section_slug}, socket) do
     Task.Supervisor.start_child(Oli.TaskSupervisor, fn ->
       depot_desc = SectionResourceDepot.depot_desc()
-      DistributedDepotCoordinator.init_if_necessary(depot_desc, section_id, SectionResourceDepot)
+      DepotCoordinator.init_if_necessary(depot_desc, section_id, SectionResourceDepot)
     end)
 
     socket

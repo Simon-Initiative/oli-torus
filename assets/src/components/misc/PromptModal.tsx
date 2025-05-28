@@ -24,7 +24,7 @@ export const PromptModal: React.FC<PromptModalProps> = ({
 }) => {
   return (
     <Card.Card
-      className={`w-96 fixed top-1/3 inset-x-0 mx-auto border-[1px] border-gray-100 dark:border-gray-500 ${className}`}
+      className={`w-96 fixed top-1/3 inset-x-0 mx-auto border-[1px] border-gray-100 dark:border-gray-500 ${className} z-50`}
     >
       <Card.Title>
         <b>{title}</b>

@@ -60,7 +60,7 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
           <div class="justify-center text-2xl font-normal leading-9">
             <%= @platform_instance.name %>
           </div>
-          <div :if={!@edit_mode} class="flex flex-row gap-2">
+          <div :if={!@edit_mode and @deployment.status != :deleted} class="flex flex-row gap-2">
             <.button
               phx-click="toggle_edit_mode"
               class="px-3 !py-1 bg-white text-[#006cd9] border border-blue-500 rounded-md
@@ -82,7 +82,10 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
             </.button>
           </div>
         </div>
-        <div class="w-full flex-row flex justify-start text-lg font-normal">
+        <div
+          :if={@deployment.status != :deleted}
+          class="w-full flex-row flex justify-start text-lg font-normal"
+        >
           <text>
             Enable tool for project and course section use
           </text>

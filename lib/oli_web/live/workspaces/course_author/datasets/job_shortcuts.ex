@@ -68,9 +68,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.Datasets.JobShortcuts do
        chunk_size: 50_000,
        event_type: "attempt_evaluated",
        event_sub_types: [
-         "part_attempt_evaluted",
+         "part_attempt_evaluated",
          "activity_attempt_evaluated",
-         "page_attempt_evaluted"
+         "page_attempt_evaluated"
        ],
        page_ids: [],
        ignored_student_ids: [],
@@ -85,9 +85,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.Datasets.JobShortcuts do
        chunk_size: 5_000,
        event_type: "attempt_evaluated",
        event_sub_types: [
-         "part_attempt_evaluted",
+         "part_attempt_evaluated",
          "activity_attempt_evaluated",
-         "page_attempt_evaluted"
+         "page_attempt_evaluated"
        ],
        page_ids: [],
        ignored_student_ids: [],
@@ -127,7 +127,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Datasets.JobShortcuts do
        section_ids: section_ids,
        chunk_size: 5_000,
        event_type: "attempt_evaluated",
-       event_sub_types: ["part_attempt_evaluted"],
+       event_sub_types: ["part_attempt_evaluated"],
        page_ids: [],
        ignored_student_ids: [],
        excluded_fields: ["feedback", "hints"]

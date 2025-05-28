@@ -2,12 +2,10 @@ defmodule Oli.Plugs.MaybeGatedResourceTest do
   use OliWeb.ConnCase
 
   import Oli.Factory
-  import Phoenix.LiveViewTest
 
   alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Gating
-  alias Oli.Delivery.Attempts.Core
   alias Lti_1p3.Roles.ContextRoles
 
   describe "maybe_gated_resource plug" do

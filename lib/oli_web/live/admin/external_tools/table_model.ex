@@ -51,10 +51,12 @@ defmodule OliWeb.Admin.ExternalTools.TableModel do
     ~H"""
     <span class={[
       "text-sm font-bold text-center",
-      if(@status == :enabled,
-        do: "text-[#006CD9] dark:text-[#4CA6FF]",
-        else: "text-[#CE2C31] dark:text-[#FF8787]"
-      )
+      case @status do
+        :enabled -> "text-[#006CD9] dark:text-[#4CA6FF]"
+        :disabled -> "text-[#CE2C31] dark:text-[#FF8787]"
+        :deleted -> "text-gray-500 dark:text-gray-400"
+        _ -> ""
+      end
     ]}>
       <%= String.capitalize(Atom.to_string(@status)) %>
     </span>
@@ -70,11 +72,13 @@ defmodule OliWeb.Admin.ExternalTools.TableModel do
   end
 
   def render_usage_count_column(assigns, row, _) do
-    assigns = Map.merge(assigns, %{usage_count: row.usage_count})
+    assigns = Map.merge(assigns, %{usage_count: row.usage_count, platform_instance_id: row.id})
 
-    # TODO: link this to the usage page (https://eliterate.atlassian.net/browse/MER-4332)
     ~H"""
-    <.link navigate="#" class="text-base font-bold underline">
+    <.link
+      href={~p"/admin/external_tools/#{@platform_instance_id}/usage"}
+      class="text-base font-bold underline"
+    >
       <%= @usage_count %>
     </.link>
     """

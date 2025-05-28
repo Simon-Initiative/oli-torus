@@ -1,9 +1,9 @@
 defmodule OliWeb.Plugs.HeaderSizeLoggerTest do
   use ExUnit.Case, async: true
-  use Plug.Test
 
   import Mox
   import ExUnit.CaptureLog
+  import Plug.Test
   import Plug.Conn
 
   alias OliWeb.Plugs.HeaderSizeLogger

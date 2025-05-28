@@ -3082,9 +3082,10 @@ defmodule Oli.Delivery.Sections do
       # reset any section cached data
       SectionCache.clear(section.slug)
 
-      Oli.Delivery.DepotCoordinator.clear(
+      Oli.Delivery.DepotCoordinator.refresh(
         Oli.Delivery.Sections.SectionResourceDepot.depot_desc(),
-        section_id
+        section_id,
+        Oli.Delivery.Sections.SectionResourceDepot
       )
 
       # guarantee a deleted assessment is not required for gaining a certificate
@@ -5545,26 +5546,31 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
-  Given a section, return a map where the keys are LTI activity resource IDs and the values are lists of section resources that reference those activities.
+  Given a section, return a map where the keys are LTI activity registration IDs and the values are lists of section resources that reference those activities.
   """
   def get_section_resources_with_lti_activities(%Section{} = section) do
-    # Step 1: Find all LTI activity registrations
-    lti_activity_registrations =
+    # Step 1: Find all LTI activity registration ids
+    lti_activity_registration_ids =
       from(ar in Oli.Activities.ActivityRegistration,
         join: d in assoc(ar, :lti_external_tool_activity_deployment),
         select: ar.id
       )
       |> Repo.all()
 
-    # Step 2: Get IDs of all section resources in this section that are LTI activities
-    lti_activity_ids =
+    # Step 2: Get a map of LTI activity resource_id => activity_registration_id for this section
+    lti_activity_resource_ids_to_registration_ids =
       from(sr in SectionResource,
         join: r in Revision,
         on: sr.revision_id == r.id,
-        where: sr.section_id == ^section.id and r.activity_type_id in ^lti_activity_registrations,
-        select: r.resource_id
+        where:
+          sr.section_id == ^section.id and r.activity_type_id in ^lti_activity_registration_ids,
+        select: {r.resource_id, r.activity_type_id}
       )
       |> Repo.all()
+      |> Enum.into(%{})
+
+    activity_resource_ids =
+      Map.keys(lti_activity_resource_ids_to_registration_ids)
 
     # Step 3: Find all page section resources that reference these LTI activities
     page_type_id = ResourceType.id_for_page()
@@ -5575,24 +5581,31 @@ defmodule Oli.Delivery.Sections do
         on: sr.revision_id == r.id,
         where:
           sr.section_id == ^section.id and r.resource_type_id == ^page_type_id and
-            fragment("? && ?", r.activity_refs, ^lti_activity_ids),
+            fragment("? && ?", r.activity_refs, ^activity_resource_ids),
         select: {sr, r}
       )
       |> Repo.all()
 
-    # Step 4: Group the results by LTI activity ID
+    # Step 4: Group the results by LTI activity registration ID
     page_section_resources_with_lti
     |> Enum.reduce(%{}, fn {section_resource, revision}, acc ->
       # Find which LTI activities this page references
       referenced_lti_activities =
         Enum.filter(revision.activity_refs, fn ref_id ->
-          ref_id in lti_activity_ids
+          ref_id in activity_resource_ids
         end)
 
-      # Add this section resource to each referenced LTI activity's list
-      Enum.reduce(referenced_lti_activities, acc, fn lti_id, inner_acc ->
-        existing = Map.get(inner_acc, lti_id, [])
-        Map.put(inner_acc, lti_id, [section_resource | existing])
+      # For each referenced LTI activity, get its registration id and group by that
+      Enum.reduce(referenced_lti_activities, acc, fn lti_resource_id, inner_acc ->
+        registration_id = Map.get(lti_activity_resource_ids_to_registration_ids, lti_resource_id)
+
+        existing = Map.get(inner_acc, registration_id, [])
+
+        if registration_id && section_resource not in existing do
+          Map.put(inner_acc, registration_id, [section_resource | existing])
+        else
+          inner_acc
+        end
       end)
     end)
   end
