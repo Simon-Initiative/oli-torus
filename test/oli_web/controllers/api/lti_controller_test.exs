@@ -27,6 +27,7 @@ defmodule OliWeb.Api.LtiControllerTest do
 
       assert json_response(conn, 200)["launch_params"]["login_url"] == "some login_url"
       assert json_response(conn, 200)["launch_params"]["login_hint"] != nil
+      assert json_response(conn, 200)["launch_params"]["status"] != nil
     end
   end
 
@@ -45,6 +46,7 @@ defmodule OliWeb.Api.LtiControllerTest do
 
       assert json_response(conn, 200)["launch_params"]["login_url"] == "some login_url"
       assert json_response(conn, 200)["launch_params"]["login_hint"] != nil
+      assert json_response(conn, 200)["launch_params"]["status"] != nil
     end
   end
 
