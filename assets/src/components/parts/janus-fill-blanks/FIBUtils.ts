@@ -131,7 +131,7 @@ export const convertFIBContentToQuillNodes = (contentItems: any[], blanks: any[]
             .join(', ');
         } else {
           // this will be old formatted input type
-          updatedText = matchingInput.correct;
+          updatedText = `"${matchingInput.correct}"*`;
         }
         finalText += ` {${updatedText}}`;
       }
