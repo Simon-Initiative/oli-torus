@@ -372,24 +372,21 @@ defmodule Oli.Lti.PlatformExternalTools do
 
     # Step 2: Get IDs of all section resources that are LTI activities
     lti_activity_ids =
-      from(sr in SectionResource,
-        join: r in Revision,
-        on: sr.revision_id == r.id,
+      from(r in Revision,
         where: r.activity_type_id in ^lti_activity_registrations,
-        select: r.resource_id
+        select: r.resource_id,
+        distinct: true
       )
       |> Repo.all()
 
     # Step 3: Find all sections that reference these LTI activities
-    page_type_id = ResourceType.id_for_page()
-
     from(sr in SectionResource,
       join: r in Revision,
       on: sr.revision_id == r.id,
       join: s in Section,
       on: sr.section_id == s.id,
       where:
-        r.resource_type_id == ^page_type_id and
+        r.resource_type_id == ^ResourceType.id_for_page() and
           fragment("? && ?", r.activity_refs, ^lti_activity_ids),
       distinct: true,
       select: s
