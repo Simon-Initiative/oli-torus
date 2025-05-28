@@ -347,11 +347,18 @@ defmodule OliWeb.Components.Common do
 
     ~H"""
     <div class={@group_class} phx-feedback-for={@name}>
+      <.label :if={@label && @label_position == :top} class={@label_class} for={@id}>
+        <%= @label %>
+      </.label>
       <select id={@id} name={@name} class={@input_class} multiple={@multiple} {@rest}>
         <option :if={@prompt} value=""><%= @prompt %></option>
         <%= Phoenix.HTML.Form.options_for_select(@options, @value) %>
       </select>
-      <.label :if={@label} for={@id} class={@label_class}>
+      <.label
+        :if={@label && (@label_position == :bottom || @label_position == :responsive)}
+        class={@label_class}
+        for={@id}
+      >
         <%= @label %>
       </.label>
       <.error :for={msg <- @errors}><%= msg %></.error>
@@ -1127,15 +1134,30 @@ defmodule OliWeb.Components.Common do
   attr :name, :string, default: nil
   attr :checked, :boolean, default: false
   attr :phx_target, :any, default: nil
+  attr :with_confirmation, :boolean, default: false
   attr :rest, :global, include: ~w(class disabled role)
 
   def toggle_switch(assigns) do
     ~H"""
     <div {@rest}>
-      <form phx-change={@on_toggle} phx-target={@phx_target}>
+      <form id="toggle_switch_form" phx-change={@on_toggle} phx-target={@phx_target}>
         <label class="inline-flex items-center cursor-pointer">
-          <input type="checkbox" name={@name} class="sr-only peer" checked={@checked} />
-          <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary">
+          <input
+            id="toggle_switch_checkbox"
+            type="checkbox"
+            name={@name}
+            class="sr-only peer"
+            checked={@checked}
+            phx-hook={if @with_confirmation, do: "ConditionalToggle"}
+            data-checked={"#{@checked}"}
+          />
+          <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4
+                      peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full
+                      peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full
+                      peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px]
+                      after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5
+                      after:w-5 after:transition-transform dark:border-gray-600 peer-checked:bg-primary
+                      after:duration-300 after:ease-in-out transition-colors duration-300 ease-in-out">
           </div>
           <%= case @label do %>
             <% nil -> %>
@@ -1236,6 +1258,44 @@ defmodule OliWeb.Components.Common do
         </div>
       </.form>
     </div>
+    """
+  end
+
+  attr :id, :string, required: true
+  attr :class, :string, default: ""
+  attr :show_text, :boolean, default: true
+
+  def tech_support_button(assigns) do
+    ~H"""
+    <button
+      id={@id}
+      phx-click={JS.dispatch("click", to: "#trigger-tech-support-modal")}
+      class={[
+        "w-auto mr-auto h-11 px-3 py-3 flex-col justify-center items-start inline-flex text-black/70 hover:text-black/90 dark:text-gray-400 hover:dark:text-white stroke-black/70 hover:stroke-black/90 dark:stroke-[#B8B4BF] hover:dark:stroke-white",
+        @class
+      ]}
+    >
+      <div class="justify-start items-end gap-3 inline-flex">
+        <div class="w-5 h-5 flex items-center justify-center">
+          <OliWeb.Icons.support class="" />
+        </div>
+        <div :if={@show_text} class="text-sm font-medium tracking-tight">
+          Support
+        </div>
+      </div>
+    </button>
+    """
+  end
+
+  attr :id, :string, required: true
+  attr :class, :string, default: ""
+  slot :inner_block, required: true
+
+  def tech_support_link(assigns) do
+    ~H"""
+    <span id={@id} phx-click={JS.dispatch("click", to: "#trigger-tech-support-modal")} class={@class}>
+      <%= render_slot(@inner_block) %>
+    </span>
     """
   end
 end

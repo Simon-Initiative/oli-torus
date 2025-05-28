@@ -2,6 +2,7 @@ defmodule Oli.VendorProperties do
   @moduledoc """
   A collection of properties that vary depending on the vendor hosting the instance.
   """
+  def knowledgebase_url(), do: Application.fetch_env!(:oli, :vendor_property)[:knowledgebase_url]
 
   def workspace_logo(), do: Application.fetch_env!(:oli, :vendor_property)[:workspace_logo]
 

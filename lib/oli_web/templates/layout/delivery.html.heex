@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <Phoenix.Component.live_title>
-      <%= assigns[:page_title] || assigns[:title] || "Delivery" %>
+      <%= assigns[:page_title] || assigns[:title] || Oli.VendorProperties.product_short_name() %>
     </Phoenix.Component.live_title>
 
     <link
@@ -162,6 +162,11 @@
 
     <%= react_component("Components.ModalDisplay") %>
 
-    <%= render(OliWeb.SharedView, "_help.html", conn: @conn) %>
+    <%= live_render(@conn, OliWeb.TechSupportLive,
+      session: %{
+        "section" => Map.get(@conn.assigns, :section),
+        "user" => Map.get(@conn.assigns, :current_author) || Map.get(@conn.assigns, :current_user)
+      }
+    ) %>
   </body>
 </html>

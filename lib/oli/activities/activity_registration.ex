@@ -2,6 +2,8 @@ defmodule Oli.Activities.ActivityRegistration do
   use Ecto.Schema
   import Ecto.Changeset
 
+  alias Oli.Lti.PlatformExternalTools.LtiExternalToolActivityDeployment
+
   schema "activity_registrations" do
     field :slug, :string
     field :authoring_script, :string
@@ -18,10 +20,16 @@ defmodule Oli.Activities.ActivityRegistration do
     field :variables, {:array, :string}, default: []
     field :generates_report, :boolean, default: false
 
+    field :deployment_id, :string, virtual: true
+
+    field :status, Ecto.Enum,
+      values: LtiExternalToolActivityDeployment.status_values(),
+      virtual: true
+
     # Optionally, this activity registration can be associated with an LTI deployment.
     # If an LTI deployment is associated, the activity is considered an LTI activity.
     has_one :lti_external_tool_activity_deployment,
-            Oli.Lti.PlatformExternalTools.LtiExternalToolActivityDeployment
+            LtiExternalToolActivityDeployment
 
     many_to_many :projects, Oli.Authoring.Course.Project,
       join_through: Oli.Activities.ActivityRegistrationProject

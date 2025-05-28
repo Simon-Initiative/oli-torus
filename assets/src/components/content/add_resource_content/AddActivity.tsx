@@ -35,7 +35,13 @@ export const AddActivity: React.FC<Props> = ({
             addActivity(editorDesc, resourceContext, onAddItem, editorMap, index);
             document.body.click();
           }}
-          onHoverStart={() => onSetTip(editorDesc.description)}
+          onHoverStart={() =>
+            onSetTip(
+              editorDesc.isLtiActivity
+                ? `Insert an instance of ${editorDesc.petiteLabel}`
+                : editorDesc.description,
+            )
+          }
           onHoverEnd={() => onResetTip()}
           disabled={false}
           icon={editorDesc.icon}

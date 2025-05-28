@@ -1,8 +1,8 @@
 defmodule Oli.ActivitiesTest do
   use Oli.DataCase
   import ExUnit.Assertions
+  import Oli.Factory
   alias Oli.Activities
-  alias Oli.Lti.PlatformExternalTools
 
   setup [:author_project_fixture]
 
@@ -74,38 +74,84 @@ defmodule Oli.ActivitiesTest do
     end
   end
 
-  describe "list activities" do
-    test "list_activity_registrations_with_deployment_id/0 works correctly" do
-      # register a new lti external tool activity
-      params = %{
-        "name" => "External Tool Test 1",
-        "description" => "External Tool Description",
-        "client_id" => "new_tool_client_id_1",
-        "target_link_uri" => "https://example.com/launch",
-        "login_url" => "https://example.com/login",
-        "keyset_url" => "https://example.com/jwks",
-        "redirect_uris" => "https://example.com/redirect",
-        "custom_params" => "param1=value1&param2=value2"
-      }
+  describe "list_lti_activity_registrations/1" do
+    setup do
+      lti_activity1 =
+        insert(:activity_registration, %{
+          slug: "lti_activity_1",
+          title: "LTI Activity 1",
+          delivery_element: "lti-external-tool-delivery",
+          authoring_element: "lti-external-tool-authoring",
+          delivery_script: "lti_external_tool_delivery.js",
+          authoring_script: "lti_external_tool_authoring.js",
+          globally_available: false,
+          globally_visible: true
+        })
 
-      {:ok, {_platform_instance, activity_registration, deployment}} =
-        PlatformExternalTools.register_lti_external_tool_activity(params)
+      lti_activity2 =
+        insert(:activity_registration, %{
+          slug: "lti_activity_2",
+          title: "LTI Activity 2",
+          delivery_element: "lti-external-tool-delivery",
+          authoring_element: "lti-external-tool-authoring",
+          delivery_script: "lti_external_tool_delivery.js",
+          authoring_script: "lti_external_tool_authoring.js",
+          globally_available: false,
+          globally_visible: true
+        })
 
-      # get activity registrations with deployment id
-      activities = Activities.list_activity_registrations_with_deployment_id()
+      _non_lti_activity =
+        insert(:activity_registration, %{
+          slug: "non_lti_activity",
+          title: "Non-LTI Activity",
+          delivery_element: "non-lti-delivery",
+          authoring_element: "non-lti-authoring",
+          delivery_script: "non_lti_delivery.js",
+          authoring_script: "non_lti_authoring.js",
+          globally_available: false,
+          globally_visible: true
+        })
 
-      # assert that all activities have the :deployment_id field
-      assert Enum.all?(activities, fn activity ->
-               Map.has_key?(activity, :deployment_id)
-             end)
+      deployment1 =
+        insert(:lti_external_tool_activity_deployment, %{
+          activity_registration: lti_activity1,
+          deployment_id: Ecto.UUID.generate(),
+          status: :enabled
+        })
 
-      # assert that the lti external tool activity is included in the list with their deployment id
-      new_activity_registered =
-        Enum.find(activities, fn activity ->
-          activity.id == activity_registration.id
-        end)
+      deployment2 =
+        insert(:lti_external_tool_activity_deployment, %{
+          activity_registration: lti_activity2,
+          deployment_id: Ecto.UUID.generate(),
+          status: :enabled
+        })
 
-      assert new_activity_registered.deployment_id == deployment.deployment_id
+      [
+        lti_activity1: lti_activity1,
+        lti_activity2: lti_activity2,
+        deployment1: deployment1,
+        deployment2: deployment2
+      ]
+    end
+
+    test "returns all LTI activity registrations when no ids are provided" do
+      result = Oli.Activities.list_lti_activity_registrations()
+      slugs = Enum.map(result, & &1.slug)
+      assert "lti_activity_1" in slugs
+      assert "lti_activity_2" in slugs
+      assert length(result) == 2
+    end
+
+    test "returns only the LTI activity registrations matching the given ids", %{
+      lti_activity1: lti1
+    } do
+      result = Oli.Activities.list_lti_activity_registrations([lti1.id])
+      assert Enum.map(result, & &1.slug) == ["lti_activity_1"]
+    end
+
+    test "returns empty list if no LTI activity registrations match the given ids" do
+      result = Oli.Activities.list_lti_activity_registrations([-1])
+      assert result == []
     end
   end
 end

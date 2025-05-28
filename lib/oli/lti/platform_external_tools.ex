@@ -7,12 +7,14 @@ defmodule Oli.Lti.PlatformExternalTools do
   import Ecto.Changeset
   import Oli.Utils, only: [trap_nil: 1]
 
-  alias Oli.Repo
+  alias Lti_1p3.DataProviders.EctoProvider.PlatformInstance
   alias Oli.Activities
   alias Oli.Activities.ActivityRegistration
+  alias Oli.Delivery.Sections.{Section, SectionResource}
   alias Oli.Lti.PlatformExternalTools.{BrowseOptions, LtiExternalToolActivityDeployment}
+  alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
-  alias Lti_1p3.DataProviders.EctoProvider.PlatformInstance
+  alias Oli.Resources.{ResourceType, Revision}
 
   @doc """
   Lists all lti external tool deployments.
@@ -126,6 +128,30 @@ defmodule Oli.Lti.PlatformExternalTools do
   end
 
   @doc """
+  Updates a lti external tool deployment.
+
+  ## Examples
+
+      iex> update_lti_external_tool_activity_deployment(lti_external_tool_activity_deployment, %{field: new_value})
+      {:ok, %LtiExternalToolActivityDeployment{}}
+
+      iex> update_lti_external_tool_activity_deployment(lti_external_tool_activity_deployment, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+  """
+  @spec update_lti_external_tool_activity_deployment(
+          LtiExternalToolActivityDeployment.t(),
+          map()
+        ) :: {:ok, LtiExternalToolActivityDeployment.t()} | {:error, Ecto.Changeset.t()}
+  def update_lti_external_tool_activity_deployment(
+        %LtiExternalToolActivityDeployment{} = lti_external_tool_activity_deployment,
+        attrs
+      ) do
+    lti_external_tool_activity_deployment
+    |> LtiExternalToolActivityDeployment.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
   Deletes a lti external tool deployment.
   """
   def delete_lti_external_tool_activity_deployment(
@@ -146,6 +172,7 @@ defmodule Oli.Lti.PlatformExternalTools do
 
   @doc """
   Browse platform external tools with support for pagination, sorting, text search and status filter.
+  This function excludes soft deleted tools.
 
   ## Examples
 
@@ -171,14 +198,15 @@ defmodule Oli.Lti.PlatformExternalTools do
         )
       end
 
-    filter_by_status =
-      if options.include_disabled do
-        true
-      else
-        dynamic([p, lad], lad.status == :enabled)
-      end
+    allowed_statuses =
+      [enabled: true, disabled: options.include_disabled, deleted: options.include_deleted]
+      |> Enum.reduce([], fn
+        {status, true}, acc -> [status | acc]
+        {_status, _}, acc -> acc
+      end)
 
-    # TODO: calculate usage_count (we need https://eliterate.atlassian.net/browse/MER-4469)
+    filter_by_status = dynamic([p, lad], lad.status in ^allowed_statuses)
+
     query =
       from p in PlatformInstance,
         join: lad in LtiExternalToolActivityDeployment,
@@ -192,7 +220,6 @@ defmodule Oli.Lti.PlatformExternalTools do
           name: p.name,
           description: p.description,
           inserted_at: p.inserted_at,
-          usage_count: fragment("NULL AS usage_count"),
           status: lad.status,
           total_count: fragment("count(*) OVER()")
         }
@@ -209,7 +236,15 @@ defmodule Oli.Lti.PlatformExternalTools do
           order_by(query, [_p, lad], {^direction, lad.status})
       end
 
-    Repo.all(query)
+    query
+    |> Repo.all()
+    |> Enum.map(fn p ->
+      Map.put(
+        p,
+        :usage_count,
+        length(get_sections_with_lti_activities_for_platform_instance_id(p.id))
+      )
+    end)
   end
 
   @doc """
@@ -259,5 +294,130 @@ defmodule Oli.Lti.PlatformExternalTools do
   @spec get_platform_instance(integer()) :: %PlatformInstance{}
   def get_platform_instance(platform_instance_id) do
     Repo.get(PlatformInstance, platform_instance_id)
+  end
+
+  @doc """
+  Given a section, return a map where the keys are LTI activity resource IDs and the values are lists of section resources that reference those activities.
+  """
+  def get_section_resources_with_lti_activities(%Section{} = section) do
+    # Step 1: Find all LTI activity registrations
+    lti_activity_registrations =
+      from(ar in ActivityRegistration,
+        join: d in assoc(ar, :lti_external_tool_activity_deployment),
+        select: ar.id
+      )
+      |> Repo.all()
+
+    # Step 2: Get IDs of all section resources in this section that are LTI activities
+    lti_activity_ids =
+      from(sr in SectionResource,
+        join: r in Revision,
+        on: sr.revision_id == r.id,
+        where: sr.section_id == ^section.id and r.activity_type_id in ^lti_activity_registrations,
+        select: r.resource_id
+      )
+      |> Repo.all()
+
+    # Step 3: Find all page section resources that reference these LTI activities
+    page_type_id = ResourceType.id_for_page()
+
+    page_section_resources_with_lti =
+      from(sr in SectionResource,
+        join: r in Revision,
+        on: sr.revision_id == r.id,
+        where:
+          sr.section_id == ^section.id and r.resource_type_id == ^page_type_id and
+            fragment("? && ?", r.activity_refs, ^lti_activity_ids),
+        select: {sr, r}
+      )
+      |> Repo.all()
+
+    # Step 4: Group the results by LTI activity ID
+    page_section_resources_with_lti
+    |> Enum.reduce(%{}, fn {section_resource, revision}, acc ->
+      # Find which LTI activities this page references
+      referenced_lti_activities =
+        Enum.filter(revision.activity_refs, fn ref_id ->
+          ref_id in lti_activity_ids
+        end)
+
+      # Add this section resource to each referenced LTI activity's list
+      Enum.reduce(referenced_lti_activities, acc, fn lti_id, inner_acc ->
+        existing = Map.get(inner_acc, lti_id, [])
+        Map.put(inner_acc, lti_id, [section_resource | existing])
+      end)
+    end)
+  end
+
+  @doc """
+  Returns a list of all sections that contain LTI activities registered with a specific platform instance.
+
+  ## Example
+
+      iex> get_sections_with_lti_activities_for_platform_instance_id(42)
+      # => [%Section{...}, ...]
+
+  """
+
+  @spec get_sections_with_lti_activities_for_platform_instance_id(integer()) :: [Section.t()]
+  def get_sections_with_lti_activities_for_platform_instance_id(platform_instance_id) do
+    # Step 1: Find all LTI activity registrations for the given platform instance ID
+    lti_activity_registrations =
+      from(ar in ActivityRegistration,
+        join: d in assoc(ar, :lti_external_tool_activity_deployment),
+        where: d.platform_instance_id == ^platform_instance_id,
+        select: ar.id
+      )
+      |> Repo.all()
+
+    # Step 2: Get IDs of all section resources that are LTI activities
+    lti_activity_ids =
+      from(sr in SectionResource,
+        join: r in Revision,
+        on: sr.revision_id == r.id,
+        where: r.activity_type_id in ^lti_activity_registrations,
+        select: r.resource_id
+      )
+      |> Repo.all()
+
+    # Step 3: Find all sections that reference these LTI activities
+    page_type_id = ResourceType.id_for_page()
+
+    from(sr in SectionResource,
+      join: r in Revision,
+      on: sr.revision_id == r.id,
+      join: s in Section,
+      on: sr.section_id == s.id,
+      where:
+        r.resource_type_id == ^page_type_id and
+          fragment("? && ?", r.activity_refs, ^lti_activity_ids),
+      distinct: true,
+      select: s
+    )
+    |> Repo.all()
+  end
+
+  @doc """
+  Gets a single platform_instance by ID, and the associated LtiExternalToolActivityDeployment.
+  Returns `nil` if the PlatformInstance does not exist.
+  ## Examples
+
+      iex> get_platform_instance_with_deployment(id)
+      {%PlatformInstance{}, %LtiExternalToolActivityDeployment{}}
+
+      iex> get_platform_instance_with_deployment(456)
+      nil
+  """
+  @spec get_platform_instance_with_deployment(integer()) ::
+          {%PlatformInstance{}, %LtiExternalToolActivityDeployment{}}
+  def get_platform_instance_with_deployment(platform_instance_id) do
+    from(
+      p in PlatformInstance,
+      join: lad in LtiExternalToolActivityDeployment,
+      on: lad.platform_instance_id == p.id,
+      where: p.id == ^platform_instance_id,
+      select: {p, lad}
+    )
+    |> Repo.one()
   end
 end

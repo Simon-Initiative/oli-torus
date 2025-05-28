@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
+import { useBackdropModal } from 'components/misc/BackdropModal';
 import { Alert } from '../../components/misc/Alert';
 import { usePromptModal } from '../../components/misc/PromptModal';
 import { ErrorDisplay } from './ErrorDisplay';
@@ -95,11 +96,18 @@ export const ScheduleEditor: React.FC<SchedulerProps> = ({
     onReset,
   );
 
-  const { Modal: clearModal, showModal: showClearModal } = usePromptModal(
+  const { Modal: clearModal, showModal: showClearModal } = useBackdropModal(
     <div>
-      <p>This will clear all timelines. Are you sure?</p>
+      <p>
+        This will clear all timelines and remove dates from assignments. This will also affect the
+        information set in your assessment settings.
+      </p>
     </div>,
     onClear,
+    () => {},
+    'Are you sure you want to clear the schedule?',
+    'Clear Schedule',
+    'Cancel',
   );
 
   if (!start_date || !end_date) {

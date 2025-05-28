@@ -463,9 +463,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
         navigate={
           Routes.live_path(
             OliWeb.Endpoint,
-            OliWeb.Sections.AssessmentSettings.SettingsLive,
+            OliWeb.Sections.AssessmentSettings.StudentExceptionsLive,
             @section_slug,
-            :student_exceptions,
             @id
           )
         }
@@ -485,7 +484,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
 
     ~H"""
     <select class="torus-select pr-32" name={"batch_scoring-#{@id}"}>
-      <option selected={@batch_scoring} value="true">Batch</option>
+      <option selected={@batch_scoring} value="true">Score at the end</option>
       <option selected={!@batch_scoring} value="false">Score as you go</option>
     </select>
     """

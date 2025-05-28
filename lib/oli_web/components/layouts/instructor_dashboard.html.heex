@@ -1,4 +1,4 @@
-<div class="flex-1 flex flex-col min-h-screen">
+<div class="flex flex-col min-h-screen">
   <Components.Delivery.InstructorDashboard.header
     ctx={@ctx}
     is_admin={@is_admin}
@@ -8,6 +8,7 @@
   />
   <Components.Delivery.InstructorDashboard.section_details_header section={@section} />
   <OliWeb.Components.Header.delivery_breadcrumb
+    :if={assigns[:breadcrumbs] && length(assigns[:breadcrumbs]) > 1}
     socket_or_conn={socket_or_conn(assigns)}
     {assigns}
   />
@@ -18,7 +19,7 @@
     </div>
 
     <%= @inner_content %>
-
-    <Components.Delivery.InstructorDashboard.footer />
   </div>
+
+  <Components.Delivery.InstructorDashboard.footer />
 </div>

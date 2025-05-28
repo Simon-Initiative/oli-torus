@@ -6,6 +6,7 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
   alias OliWeb.Common.Breadcrumb
   alias OliWeb.Admin.ExternalTools.Form
   alias OliWeb.Icons
+  alias OliWeb.Components.Modal
 
   defp set_breadcrumbs() do
     OliWeb.Admin.AdminView.breadcrumb() ++
@@ -18,14 +19,14 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
   end
 
   def mount(%{"platform_instance_id" => platform_instance_id}, _session, socket) do
-    case PlatformExternalTools.get_platform_instance(platform_instance_id) do
+    case PlatformExternalTools.get_platform_instance_with_deployment(platform_instance_id) do
       nil ->
         {:ok,
          socket
          |> put_flash(:error, "The LTI Tool you are trying to view does not exist.")
          |> redirect(to: ~p"/admin/external_tools")}
 
-      platform_instance ->
+      {platform_instance, deployment} ->
         changeset = PlatformExternalTools.change_platform_instance(platform_instance)
 
         {:ok,
@@ -34,7 +35,8 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
            form: to_form(changeset, as: :tool_form),
            platform_instance: platform_instance,
            custom_flash: nil,
-           edit_mode: false
+           edit_mode: false,
+           deployment: deployment
          )}
     end
   end
@@ -42,25 +44,120 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
   def render(assigns) do
     ~H"""
     <div class="flex flex-col justify-end mx-12 mt-4">
+      <.toggle_status_modal
+        tool_name={@platform_instance.name}
+        action={:disable}
+        id="disable_tool_modal"
+      />
+      <.toggle_status_modal
+        tool_name={@platform_instance.name}
+        action={:delete}
+        id="delete_tool_modal"
+      />
       <%= render_custom_flash(@custom_flash) %>
       <div class="w-full inline-flex flex-col justify-start items-start gap-3">
         <div class="w-full flex flex-row justify-between items-center">
-          <div class="justify-center text-color-blue-24 text-2xl font-normal leading-9">
+          <div class="justify-center text-2xl font-normal leading-9">
             <%= @platform_instance.name %>
           </div>
-          <.button
-            :if={!@edit_mode}
-            phx-click="toggle_edit_mode"
-            class="px-3 !py-1 bg-white text-[#006cd9] border border-blue-500 rounded-md
+          <div :if={!@edit_mode and @deployment.status != :deleted} class="flex flex-row gap-2">
+            <.button
+              phx-click="toggle_edit_mode"
+              class="px-3 !py-1 bg-white text-[#006cd9] border border-blue-500 rounded-md
                    hover:bg-[#006cd9] hover:text-white
                    dark:bg-gray-800 dark:text-[#197adc] dark:border-[#197adc]
                    dark:hover:bg-[#0056ad] dark:hover:text-white dark:hover:border-[#0056ad]"
-          >
-            Edit Details
-          </.button>
+            >
+              Edit Details
+            </.button>
+            <.button
+              role="delete tool"
+              phx-click={Modal.show_modal("delete_tool_modal")}
+              class="px-3 !py-1 bg-white text-red-600 border border-red-500 rounded-md
+                     hover:bg-red-600 hover:text-white
+                     dark:bg-gray-800 dark:text-red-400 dark:border-red-400
+                     dark:hover:bg-red-700 dark:hover:text-white dark:hover:border-red-700"
+            >
+              Delete Tool
+            </.button>
+          </div>
+        </div>
+        <div
+          :if={@deployment.status != :deleted}
+          class="w-full flex-row flex justify-start text-lg font-normal"
+        >
+          <text>
+            Enable tool for project and course section use
+          </text>
+          <.toggle_switch
+            role="toggle_tool_switch"
+            class="ml-4 flex items-center h-9"
+            checked={@deployment.status == :enabled}
+            with_confirmation={true}
+            on_toggle={
+              if(@deployment.status == :enabled,
+                do: Modal.show_modal("disable_tool_modal"),
+                else: "toggle_tool_status"
+              )
+            }
+          />
         </div>
       </div>
       <Form.tool_form form={@form} action={:update} edit_mode={@edit_mode} />
+    </div>
+    """
+  end
+
+  attr :tool_name, :string, required: true
+  attr :action, :atom, required: true
+  attr :id, :string, required: true
+
+  defp toggle_status_modal(assigns) do
+    ~H"""
+    <Modal.modal
+      id={@id}
+      class="!w-1/2"
+      header_class="flex items-start justify-between p-6 border-b border-gray-300"
+      confirm_class="h-8 w-fit px-5 py-3 text-white hover:no-underline rounded-md justify-center items-center gap-2 inline-flex bg-[#0062F2] hover:bg-[#0075EB] dark:bg-[#0062F2] dark:hover:bg-[#0D70FF]"
+      cancel_class="h-8 px-3 !py-1 bg-white text-[#006cd9] border border-blue-500 rounded-md
+                     hover:bg-[#0062F2] hover:text-white
+                     dark:bg-gray-800 dark:text-[#197adc] dark:border-[#197adc]
+                     dark:hover:bg-[#0062F2] dark:hover:text-white dark:hover:border-[#0062F2]"
+      on_confirm={
+        JS.push(push_action(@action))
+        |> Modal.hide_modal(@id)
+      }
+    >
+      <:title><%= stringify_action(@action) %> <%= @tool_name %>?</:title>
+      <.modal_message action={@action} />
+      <:cancel>Cancel</:cancel>
+      <:confirm><%= stringify_action(@action) %> Tool</:confirm>
+    </Modal.modal>
+    """
+  end
+
+  defp stringify_action(:disable), do: "Disable"
+  defp stringify_action(:delete), do: "Delete"
+
+  defp push_action(:delete), do: "delete_tool"
+  defp push_action(:disable), do: "toggle_tool_status"
+
+  attr :action, :atom, required: true
+
+  defp modal_message(%{action: :disable} = assigns) do
+    ~H"""
+    <div class="text-base font-medium">
+      Disabling this tool will disable its functionality across projects, products, active course sections. Course authors and instructors will be notified of this change on the affected pages. Functionality will be fully restored if the tool is re-enabled.
+    </div>
+    """
+  end
+
+  defp modal_message(%{action: :delete} = assigns) do
+    ~H"""
+    <div class="text-base font-medium">
+      Deleting this tool will disable its functionality across projects, products, and course sections and
+      <span class="font-bold">permanently delete the tool from the system.</span>
+      Course authors and instructors will be notified of this change on the affected pages.
     </div>
     """
   end
@@ -131,6 +228,55 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
     {:noreply,
      socket
      |> assign(:edit_mode, !socket.assigns.edit_mode)}
+  end
+
+  def handle_event("toggle_tool_status", _params, socket) do
+    new_status =
+      case socket.assigns.deployment.status do
+        :enabled -> :disabled
+        :disabled -> :enabled
+      end
+
+    case PlatformExternalTools.update_lti_external_tool_activity_deployment(
+           socket.assigns.deployment,
+           %{"status" => new_status}
+         ) do
+      {:ok, deployment} ->
+        {:noreply,
+         socket
+         |> assign(deployment: deployment)
+         |> assign(:custom_flash, %{
+           type: :success,
+           message:
+             "You have successfully #{Atom.to_string(new_status)} the LTI 1.3 External Tool."
+         })}
+
+      {:error, _} ->
+        {:noreply,
+         socket
+         |> assign(:custom_flash, %{
+           type: :error,
+           message: "There was an error updating the status of the LTI 1.3 External Tool."
+         })}
+    end
+  end
+
+  def handle_event("delete_tool", _params, socket) do
+    case PlatformExternalTools.update_lti_external_tool_activity_deployment(
+           socket.assigns.deployment,
+           %{"status" => :deleted}
+         ) do
+      {:ok, _} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "LTI 1.3 External tool deleted successfully.")
+         |> push_navigate(to: ~p"/admin/external_tools")}
+
+      {:error, _} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Error deleting external tool.")}
+    end
   end
 
   defp render_custom_flash(nil), do: nil

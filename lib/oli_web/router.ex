@@ -46,6 +46,7 @@ defmodule OliWeb.Router do
     plug(:fetch_current_user)
     plug(:fetch_live_flash)
     plug(:put_root_layout, {OliWeb.LayoutView, :lti})
+    plug(:protect_from_forgery)
     plug(OliWeb.Plugs.SessionContext)
   end
 
@@ -1208,7 +1209,6 @@ defmodule OliWeb.Router do
       :delivery,
       :redirect_by_attempt_state,
       :delivery_protected,
-      :maybe_gated_resource,
       :enforce_paywall,
       :require_enrollment,
       :ensure_user_section_visit,
@@ -1274,6 +1274,8 @@ defmodule OliWeb.Router do
     end
 
     scope "/adaptive_lesson/:revision_slug" do
+      pipe_through([:maybe_gated_resource])
+
       get("/", PageDeliveryController, :page_fullscreen)
 
       get(
@@ -1346,6 +1348,43 @@ defmodule OliWeb.Router do
       as: :instructor_review
     )
 
+    live_session :schedule_gating,
+      on_mount: [
+        {OliWeb.UserAuth, :ensure_authenticated},
+        OliWeb.LiveSessionPlugs.SetCtx,
+        OliWeb.LiveSessionPlugs.SetSection,
+        OliWeb.LiveSessionPlugs.SetBrand,
+        OliWeb.LiveSessionPlugs.SetPreviewMode,
+        OliWeb.LiveSessionPlugs.SetUri,
+        OliWeb.Delivery.InstructorDashboard.InitialAssigns
+      ],
+      layout: {OliWeb.Layouts, :instructor_dashboard_schedule} do
+      live("/schedule", Sections.ScheduleView)
+      live("/gating_and_scheduling", Sections.GatingAndScheduling)
+      live("/gating_and_scheduling/new", Sections.GatingAndScheduling.New)
+      live("/gating_and_scheduling/edit/:id", Sections.GatingAndScheduling.Edit)
+
+      live(
+        "/gating_and_scheduling/exceptions/:parent_gate_id",
+        Sections.GatingAndScheduling
+      )
+
+      live(
+        "/gating_and_scheduling/new/:parent_gate_id",
+        Sections.GatingAndScheduling.New
+      )
+
+      live(
+        "/assessment_settings/student_exceptions/:assessment_id",
+        Sections.AssessmentSettings.StudentExceptionsLive
+      )
+
+      live(
+        "/assessment_settings/settings/:assessment_id",
+        Sections.AssessmentSettings.SettingsLive
+      )
+    end
+
     live_session :manage_section,
       on_mount: [
         {OliWeb.UserAuth, :ensure_authenticated},
@@ -1373,33 +1412,14 @@ defmodule OliWeb.Router do
       live("/remix", Delivery.RemixSection)
       live("/remix/:section_resource_slug", Delivery.RemixSection)
       live("/enrollments", Sections.EnrollmentsViewLive)
-
       live("/invitations", Sections.InviteView)
-      live("/schedule", Sections.ScheduleView)
+      live("/lti_external_tools", Sections.LtiExternalToolsView)
+
       live("/edit", Sections.EditView)
-      live("/gating_and_scheduling", Sections.GatingAndScheduling)
-      live("/gating_and_scheduling/new", Sections.GatingAndScheduling.New)
 
       live("/debugger/:attempt_guid", Attempt.AttemptLive)
 
-      live(
-        "/gating_and_scheduling/new/:parent_gate_id",
-        Sections.GatingAndScheduling.New
-      )
-
-      live("/gating_and_scheduling/edit/:id", Sections.GatingAndScheduling.Edit)
-
-      live(
-        "/gating_and_scheduling/exceptions/:parent_gate_id",
-        Sections.GatingAndScheduling
-      )
-
       live("/collaborative_spaces", CollaborationLive.IndexView, as: :collab_spaces_index)
-
-      live(
-        "/assessment_settings/:active_tab/:assessment_id",
-        Sections.AssessmentSettings.SettingsLive
-      )
 
       live(
         "/assistant/conversations",
@@ -1620,6 +1640,7 @@ defmodule OliWeb.Router do
       live("/external_tools", Admin.ExternalTools.ExternalToolsView)
       live("/external_tools/new", Admin.ExternalTools.NewExternalToolView)
       live("/external_tools/:platform_instance_id/details", Admin.ExternalTools.DetailsView)
+      live("/external_tools/:platform_instance_id/usage", Admin.ExternalTools.UsageView)
     end
 
     # System admin
