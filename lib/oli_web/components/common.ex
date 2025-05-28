@@ -1261,25 +1261,6 @@ defmodule OliWeb.Components.Common do
     """
   end
 
-  attr :recaptcha_error, :string, required: true
-  attr :class, :string, default: "w-80 mx-auto"
-
-  def render_recaptcha(assigns) do
-    ~H"""
-    <div class={@class}>
-      <div
-        id="recaptcha"
-        phx-hook="Recaptcha"
-        data-sitekey={Application.fetch_env!(:oli, :recaptcha)[:site_key]}
-        data-theme="light"
-        phx-update="ignore"
-      >
-      </div>
-      <.error :if={@recaptcha_error}><%= @recaptcha_error %></.error>
-    </div>
-    """
-  end
-
   attr :id, :string, required: true
   attr :class, :string, default: ""
   attr :show_text, :boolean, default: true
