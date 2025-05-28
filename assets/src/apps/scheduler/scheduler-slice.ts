@@ -443,12 +443,12 @@ export const schedulerSliceReducer = schedulerSlice.reducer;
 export const isContainerExpanded = (state: any, id: number) =>
   !!state.scheduler.expandedContainers[id];
 
-export const areSomeContainersExpanded = (state: any) => {
-  const containers: HierarchyItem[] = state.scheduler.schedule.filter(
-    (item: HierarchyItem) => item.resource_type_id === ScheduleItemType.Container,
+export const areSomeContainersExpanded = (state: any) =>
+  state.scheduler.schedule.some(
+    (item: HierarchyItem) =>
+      item.resource_type_id === ScheduleItemType.Container &&
+      state.scheduler.expandedContainers[item.id],
   );
-  return containers.some((item) => state.scheduler.expandedContainers[item.id]);
-};
 
 export const hasContainers = (state: any) =>
   state.scheduler.schedule.some(
