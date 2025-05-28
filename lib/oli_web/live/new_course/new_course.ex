@@ -7,17 +7,14 @@ defmodule OliWeb.Delivery.NewCourse do
   on_mount OliWeb.LiveSessionPlugs.SetBrand
   on_mount OliWeb.LiveSessionPlugs.SetPreviewMode
 
-  alias Oli.Accounts
   alias Oli.Delivery
   alias Oli.Delivery.DistributedDepotCoordinator
   alias Oli.Delivery.Sections
-  alias Oli.Institutions
   alias Oli.Delivery.Sections.{Section, SectionResourceDepot, SectionSpecification}
   alias OliWeb.Common.{Breadcrumb, Stepper, FormatDateTime}
   alias OliWeb.Common.Stepper.Step
   alias OliWeb.Components.Common
   alias OliWeb.Delivery.NewCourse.{CourseDetails, NameCourse, SelectSource}
-  alias Oli.Lti.LtiParams
 
   alias Phoenix.LiveView.JS
 
@@ -26,7 +23,6 @@ defmodule OliWeb.Delivery.NewCourse do
   on_mount {OliWeb.UserAuth, :ensure_authenticated}
   on_mount OliWeb.LiveSessionPlugs.SetCtx
 
-  @deployment_claims "https://purl.imsglobal.org/spec/lti/claim/deployment_id"
   @context_claims "https://purl.imsglobal.org/spec/lti/claim/context"
   @resource_link_claims "https://purl.imsglobal.org/spec/lti/claim/resource_link"
 

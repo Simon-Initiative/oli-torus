@@ -15,7 +15,6 @@ defmodule OliWeb.Common.LtiCommon do
   ]
 
   @roles_claims "https://purl.imsglobal.org/spec/lti/claim/roles"
-  @context_claims "https://purl.imsglobal.org/spec/lti/claim/context"
 
   def redirect_lti_user(conn, section, lti_params) do
     # Context claim is considered optional according to IMS http://www.imsglobal.org/spec/lti/v1p3/#context-claim

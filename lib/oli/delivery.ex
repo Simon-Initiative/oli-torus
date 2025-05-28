@@ -1,6 +1,5 @@
 defmodule Oli.Delivery do
   alias Lti_1p3.Roles.ContextRoles
-  alias Lti_1p3.Tool.Services.{AGS, NRPS}
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.PostProcessing
   alias Oli.Delivery.Settings.StudentException
@@ -15,8 +14,6 @@ defmodule Oli.Delivery do
 
   import Ecto.Query, warn: false
   import Oli.Utils
-
-  @context_claims "https://purl.imsglobal.org/spec/lti/claim/context"
 
   @doc """
   Creates a new section from the given changeset and source identifier. Depending on the

@@ -2,7 +2,6 @@ defmodule Oli.Delivery.Sections.SectionSpecification do
   alias Oli.Delivery.Sections.SectionSpecification
   alias Oli.Lti.LtiParams
   alias Oli.Institutions
-  alias Oli.Accounts.User
   alias Lti_1p3.Tool.Services.{AGS, NRPS}
 
   defmodule Lti do
@@ -25,7 +24,6 @@ defmodule Oli.Delivery.Sections.SectionSpecification do
   end
 
   @deployment_claims "https://purl.imsglobal.org/spec/lti/claim/deployment_id"
-  @resource_link_claims "https://purl.imsglobal.org/spec/lti/claim/resource_link"
   @context_claims "https://purl.imsglobal.org/spec/lti/claim/context"
 
   def new(user, %{"context_id" => context_id}) do
