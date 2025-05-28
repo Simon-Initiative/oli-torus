@@ -34,6 +34,7 @@ import { OrderingSchema } from './schema';
 export const OrderingComponent: React.FC = () => {
   const {
     model,
+    mode,
     context,
     state: activityState,
     onSubmitActivity,
@@ -145,6 +146,7 @@ export const OrderingComponent: React.FC = () => {
       />
     ) : (
       <ScoreAsYouGoSubmitReset
+        mode={mode}
         onSubmit={() => dispatch(submit(onSubmitActivity))}
         onReset={() => dispatch(resetAction(onResetActivity, undefined))}
       />

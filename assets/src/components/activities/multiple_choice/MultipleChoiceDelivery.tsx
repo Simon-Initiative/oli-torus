@@ -47,6 +47,7 @@ export const MultipleChoiceComponent: React.FC = () => {
     onSaveActivity,
     onResetActivity,
     model,
+    mode,
   } = useDeliveryElementContext<MCSchema>();
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   const dispatch = useDispatch();
@@ -122,6 +123,7 @@ export const MultipleChoiceComponent: React.FC = () => {
           context={writerContext}
         />
         <ScoreAsYouGoSubmitReset
+          mode={mode}
           onSubmit={() => dispatch(submit(onSubmitActivity))}
           onReset={() => dispatch(resetAction(onResetActivity, undefined))}
         />

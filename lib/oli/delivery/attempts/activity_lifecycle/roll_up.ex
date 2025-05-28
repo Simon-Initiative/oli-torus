@@ -199,7 +199,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
         %Result{score: page_score, out_of: page_out_of} =
           Scoring.calculate_score(total_scoring_strategy_id, all_aggregate_attempts)
 
-        with {1, _} <-
+        with :ok <-
                update_resource_access(
                  resource_access_id,
                  %{score: page_score, out_of: page_out_of},
@@ -375,13 +375,11 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
 
   defp update_resource_access(resource_access_id, attrs, now) do
     attrs = Map.merge(attrs, %{updated_at: now})
-    keyword_list = attrs |> Map.to_list()
 
-    from(a in ResourceAccess,
-      where: a.id == ^resource_access_id,
-      update: [set: ^keyword_list]
-    )
-    |> Repo.update_all([])
+    Oli.Repo.get(ResourceAccess, resource_access_id)
+    |> Oli.CertificationEligibility.update_resource_access_and_verify_qualification(attrs)
+
+    :ok
   end
 
   defp update_resource_attempt(resource_attempt_id, attrs, now) do

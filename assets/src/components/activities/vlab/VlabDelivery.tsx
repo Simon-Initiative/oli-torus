@@ -38,6 +38,7 @@ export const VlabComponent: React.FC = () => {
     onSaveActivity,
     onResetActivity,
     model,
+    mode,
   } = useDeliveryElementContext<VlabSchema>();
 
   const uiState = useSelector((state: ActivityDeliveryState) => state);
@@ -240,6 +241,7 @@ export const VlabComponent: React.FC = () => {
       />
     ) : (
       <ScoreAsYouGoSubmitReset
+        mode={mode}
         onSubmit={() => dispatch(submit(onSubmitActivity))}
         onReset={() => dispatch(resetAction(onResetActivity, undefined))}
       />
