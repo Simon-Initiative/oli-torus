@@ -289,6 +289,7 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
         const plainTextFromQuillNodes = extractFormattedHTMLFromQuillNodes(janusText);
         normalizedFIBOptions = syncOptionsFromText(plainTextFromQuillNodes, localOptions);
         setFibElements(normalizedFIBOptions || []);
+        localOptions = normalizedFIBOptions;
         console.log({ normalizedFIBOptions });
       }
       setContents(janusText);

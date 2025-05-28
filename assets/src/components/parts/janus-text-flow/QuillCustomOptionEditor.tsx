@@ -114,12 +114,12 @@ export const QuillCustomOptionEditor: React.FC<QuillCustomOptionEditorProps> = (
   };
 
   const removeItem = (index: number) => {
-    const isCorrectRemoved = items[index].correct;
     const updated = items.filter((_, i) => i !== index);
-    const adjusted = updated.map((item) => ({
-      ...item,
-      correct: isCorrectRemoved ? false : item.correct,
-    }));
+
+    // If type is 'input', all remaining items are correct
+    const adjusted =
+      selectedType === 'input' ? updated.map((item) => ({ ...item, correct: true })) : updated;
+
     setItems(adjusted);
     updateOptionItems(adjusted);
   };
