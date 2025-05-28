@@ -1,23 +1,24 @@
-interface OptionItem {
+export interface OptionItem {
   key: string;
-  options: string[];
+  options: any[];
   type: 'dropdown' | 'input';
   correct: string;
   alternateCorrect: any[];
 }
-type FIBContentItem =
+export type FIBContentItem =
   | { insert: string }
   | { 'text-input': string }
   | { dropdown: string; insert: '' };
 
-type TextInputBlank = {
+export type TextInputBlank = {
   alternateCorrect: [];
   options: any[];
   correct: string;
   key: string;
   type: 'input';
 };
-type DropdownBlank = {
+
+export type DropdownBlank = {
   correct: string;
   alternateCorrect: [];
   key: string;
@@ -25,14 +26,14 @@ type DropdownBlank = {
   type: 'dropdown';
 };
 
-interface ParsedFIBResult {
+export interface ParsedFIBResult {
   content: FIBContentItem[];
   elements: (TextInputBlank | DropdownBlank)[];
 }
 
-type FIBElement = DropdownBlank | TextInputBlank;
+export type FIBElement = DropdownBlank | TextInputBlank;
 
-interface NormalizedBlank {
+export interface NormalizedBlank {
   key: string;
   options: any[];
   type: 'dropdown' | 'input';
@@ -40,7 +41,7 @@ interface NormalizedBlank {
   alternateCorrect: [];
 }
 
-type ParseFIBMode = 'generate' | 'map';
+export type ParseFIBMode = 'generate' | 'map';
 
 /**
  * Converts an array of Quill-style nodes into a formatted HTML string.
@@ -423,7 +424,14 @@ export const embedCorrectAnswersInString = (input: string, options: OptionItem[]
     }
 
     if (type === 'input') {
-      const allCorrect = [correct, ...(alternateCorrect || [])].filter(Boolean);
+      const seen = new Set<string>();
+      const allCorrect = [...(alternateCorrect ?? []), correct].reduce<string[]>((acc, value) => {
+        if (value && !seen.has(value)) {
+          seen.add(value);
+          acc.push(value);
+        }
+        return acc;
+      }, []);
       const formatted = allCorrect.map((opt: any) => `"${opt}"*`);
       return `{${formatted.join(', ')}}`;
     }
