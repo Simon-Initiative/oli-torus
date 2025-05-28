@@ -75,6 +75,7 @@ export const ScheduleGrid: React.FC<GridProps> = ({ startDate, endDate, onReset,
   const dispatch = useDispatch();
   const someExpanded = useSelector(areSomeContainersExpanded);
   const canToggle = useSelector(hasContainers);
+
   const handleClick = () => {
     someExpanded ? dispatch(collapseAllContainers()) : dispatch(expandAllContainers());
   };
@@ -114,16 +115,19 @@ export const ScheduleGrid: React.FC<GridProps> = ({ startDate, endDate, onReset,
         {/* Expand/Collapse All button */}
         <button
           id="toggle_expand_button"
-          className="flex space-x-3 dark:text-[#eeebf5] disabled:opacity-50 disabled:cursor-not-allowed items-center"
+          className={`flex items-center space-x-3 font-medium disabled:opacity-50 disabled:cursor-not-allowed
+                      ${
+                        someExpanded
+                          ? 'text-[#0062F2] dark:text-[#4CA6FF] font-bold'
+                          : 'text-[#353740] dark:text-[#EEEBF5]'
+                      }
+                      hover:text-[#1B67B2] dark:hover:text-[#99CCFF] hover:font-bold
+                    `}
           onClick={handleClick}
           title={!canToggle ? 'No expandable containers available' : undefined}
           disabled={!canToggle}
         >
-          {someExpanded ? (
-            <CollapseAllIcon className="text-[#353740] dark:text-white ml-2" />
-          ) : (
-            <ExpandAllIcon className="text-[#353740] dark:text-white ml-2" />
-          )}
+          {someExpanded ? <CollapseAllIcon className="ml-2" /> : <ExpandAllIcon className="ml-2" />}
           <span>{someExpanded ? 'Collapse All' : 'Expand All'}</span>
         </button>
 
