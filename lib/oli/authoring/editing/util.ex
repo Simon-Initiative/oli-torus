@@ -49,7 +49,7 @@ defmodule Oli.Authoring.Editing.Utils do
     end
   end
 
-  def new_container_name(numberings, parent_container) do
+  def new_container_name(numberings, parent_container, customizations \\ nil) do
     numbering = Map.get(numberings, parent_container.id)
 
     if numbering do
@@ -57,10 +57,15 @@ defmodule Oli.Authoring.Editing.Utils do
     else
       random_numbering = Map.get(numberings, List.first(Map.keys(numberings)))
 
-      if random_numbering do
-        Numbering.container_type_label(%Numbering{random_numbering | level: 1})
-      else
-        "Unit"
+      cond do
+        random_numbering ->
+          Numbering.container_type_label(%Numbering{random_numbering | level: 1})
+
+        customizations ->
+          Numbering.container_type_label(%Numbering{level: 1, labels: customizations})
+
+        true ->
+          "Unit"
       end
     end
   end
