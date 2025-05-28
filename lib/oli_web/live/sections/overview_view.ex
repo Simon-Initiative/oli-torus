@@ -35,7 +35,7 @@ defmodule OliWeb.Sections.OverviewView do
     previous ++
       [
         Breadcrumb.new(%{
-          full_title: section.title,
+          full_title: "Manage",
           link: ~p"/sections/#{section.slug}/manage"
         })
       ]
@@ -197,6 +197,14 @@ defmodule OliWeb.Sections.OverviewView do
               class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
             >
               Customize Content
+            </a>
+          </li>
+          <li>
+            <a
+              href={~p"/sections/#{@section.slug}/lti_external_tools"}
+              class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
+            >
+              LTI 1.3 External Tools
             </a>
           </li>
           <li>

@@ -159,7 +159,7 @@ defmodule Oli.Rendering.Alternatives.HtmlTest do
 
       # renders activity embedded in R alternative
       assert rendered_html_string =~
-               ~s|<oli-multiple-choice-delivery phx-update="ignore" class="activity-container" state="{ "active": true }" model="{ "choices": [ "A", "B", "C", "D" ], "feedback": [ "A", "B", "C", "D" ], "stem": ""}" mode="author_preview"|
+               ~s|<oli-multiple-choice-delivery id="activity-1" phx-update="ignore" class="activity-container" state="{ "active": true }" model="{ "choices": [ "A", "B", "C", "D" ], "feedback": [ "A", "B", "C", "D" ], "stem": ""}" mode="author_preview"|
 
       # renders Excel alternative
       assert rendered_html_string =~

@@ -7,6 +7,8 @@ defmodule OliWeb.TechSupportLive do
   @modal_id "tech-support-modal"
   @base_url Oli.Utils.get_base_url()
 
+  require Logger
+
   @impl true
   def mount(_params, session, socket) do
     requires_sender_data = !Enum.any?(Map.take(session, ["current_user_id", "current_author_id"]))
@@ -19,7 +21,9 @@ defmodule OliWeb.TechSupportLive do
       |> assign(modal_id: @modal_id)
       |> assign(recaptcha_error: false)
       |> assign(:session, session)
+      |> assign(submission_result: nil)
       |> assign(uploaded_files: [])
+      |> assign(lifecycle_status: :ready)
       |> allow_upload(:attached_screenshots,
         accept: ~w(.jpg .jpeg .png),
         max_entries: 3,
@@ -33,25 +37,68 @@ defmodule OliWeb.TechSupportLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="mx-auto z-50 top-0 absolute right-0">
-      <.flash_group flash={@flash} />
-    </div>
     <button
       id="trigger-tech-support-modal"
       class="hidden"
       phx-click={Modal.show_modal(@modal_id)}
       data-hide_modal={Modal.hide_modal(@modal_id)}
     />
-    <Modal.modal id={@modal_id} class="md:w-8/12">
+    <Modal.modal id={@modal_id} class="md:w-8/12" on_cancel={JS.push("clear_result_request_message")}>
       <:title>Tech Support</:title>
-      <a href={@knowledgebase_url}>Find answers quickly in the Torus knowledge base.</a>
-      <div class="w-auto">
+
+      <a :if={!@submission_result} href={@knowledgebase_url} target="_blank">
+        Find answers quickly in the Torus knowledge base.
+      </a>
+
+      <div>
+        <div :if={@lifecycle_status == :result}>
+          <div
+            :if={@submission_result == :info}
+            class="flex flex-col items-center justify-center pb-4 text-center"
+          >
+            <span>Your help request has been successfully submitted.</span>
+            <.button
+              variant={:primary}
+              phx-click={Modal.hide_modal(@modal_id) |> JS.push("clear_result_request_message")}
+              class="mt-4"
+            >
+              Ok
+            </.button>
+          </div>
+
+          <div
+            :if={@submission_result == :error}
+            class="flex flex-col items-center justify-center pb-4 text-center"
+          >
+            <span class="text-danger">We are unable to forward your help request at the moment.</span>
+            <.button
+              variant={:primary}
+              phx-click={Modal.hide_modal(@modal_id) |> JS.push("clear_result_request_message")}
+              class="mt-4"
+            >
+              Ok
+            </.button>
+          </div>
+        </div>
+
+        <div
+          :if={@lifecycle_status == :pending}
+          class="absolute inset-0 z-10 flex items-center justify-center"
+        >
+          <div class="text-lg font-bold text-black dark:text-white">Loading...</div>
+        </div>
+
         <.form
+          :if={@lifecycle_status != :result}
           id="tech-support-modal-form"
           for={@form}
           phx-submit="submit"
           phx-change="validate"
           phx-hook="SubmitTechSupportForm"
+          class={[
+            "transition-opacity duration-200",
+            @lifecycle_status != :ready && "pointer-events-none opacity-50"
+          ]}
         >
           <.input
             type="checkbox"
@@ -92,6 +139,7 @@ defmodule OliWeb.TechSupportLive do
           <.input
             label="Questions or Comments:"
             field={@form[:message]}
+            phx-debounce="500"
             type="textarea"
             class="w-full dark:placeholder:text-zinc-300 pl-6 dark:bg-stone-900 rounded-md border dark:border-zinc-300 dark:text-zinc-300 leading-snug"
             required
@@ -138,9 +186,20 @@ defmodule OliWeb.TechSupportLive do
               &times;
             </a>
           </div>
-
           <div class="w-full flex flex-col lg:flex-row gap-2 md:justify-between">
-            <.render_recaptcha recaptcha_error={@recaptcha_error} class="md:m-0 m-auto" />
+            <%!-- Start Captcha --%>
+            <div class="w-80 mx-auto">
+              <div
+                id="recaptcha"
+                phx-hook="Recaptcha"
+                data-sitekey={Application.fetch_env!(:oli, :recaptcha)[:site_key]}
+                data-theme="dark"
+                phx-update="ignore"
+              >
+              </div>
+
+              <.error :if={@recaptcha_error}><%= @recaptcha_error %></.error>
+            </div>
 
             <div class="flex w-full justify-around lg:justify-end items-center">
               <.button type="link" variant={:link} phx-click={Modal.hide_modal(@modal_id)}>
@@ -155,6 +214,11 @@ defmodule OliWeb.TechSupportLive do
       </div>
     </Modal.modal>
     """
+  end
+
+  def handle_event("clear_result_request_message", _params, socket) do
+    socket = socket |> assign(submission_result: nil) |> assign(lifecycle_status: :ready)
+    {:noreply, socket}
   end
 
   def handle_event("cancel", %{"ref" => ref}, socket) do
@@ -172,11 +236,11 @@ defmodule OliWeb.TechSupportLive do
          %{valid?: true} = changeset <- HelpRequest.changeset(help) |> Map.put(:action, :validate) do
       params = add_metadata(socket, params, changeset)
 
+      send(self(), {:run_tech_support_hook, params})
+
       socket =
         socket
-        |> push_hide_modal_js_event()
-        |> push_event("run_tech_support_hook", params)
-        |> assign(recaptcha_error: false)
+        |> assign(lifecycle_status: :pending)
         |> assign_form(HelpRequest.changeset())
 
       {:noreply, socket}
@@ -189,14 +253,19 @@ defmodule OliWeb.TechSupportLive do
     end
   end
 
-  def handle_event("form_response", %{"info" => info}, socket) do
-    socket = put_flash(socket, :info, info)
+  def handle_event("form_response", %{"info" => _info}, socket) do
+    socket = assign(socket, submission_result: :info, lifecycle_status: :result)
     {:noreply, socket}
   end
 
-  def handle_event("form_response", _params, socket) do
-    message = "We are unable to forward your help request at the moment"
-    socket = put_flash(socket, :error, message)
+  def handle_event("form_response", %{"error" => _error}, socket) do
+    socket = assign(socket, submission_result: :error, lifecycle_status: :result)
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_info({:run_tech_support_hook, params}, socket) do
+    socket = push_event(socket, "run_tech_support_hook", params)
     {:noreply, socket}
   end
 
@@ -233,13 +302,6 @@ defmodule OliWeb.TechSupportLive do
 
       Oli.Utils.S3Storage.upload_file(bucket_name, upload_path, content)
     end)
-  end
-
-  defp push_hide_modal_js_event(socket) do
-    push_event(socket, "js-exec", %{
-      to: "#trigger-tech-support-modal",
-      attr: "data-hide_modal"
-    })
   end
 
   defp assign_form(socket, %Ecto.Changeset{} = changeset) do

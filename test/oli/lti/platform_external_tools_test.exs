@@ -6,6 +6,7 @@ defmodule Oli.Lti.PlatformExternalToolsTest do
   alias Oli.Lti.PlatformExternalTools
   alias Oli.Lti.PlatformExternalTools.BrowseOptions
   alias Oli.Repo.{Paging, Sorting}
+  alias Oli.Resources.ResourceType
 
   describe "browse_platform_instances/3" do
     import Oli.Factory
@@ -177,6 +178,43 @@ defmodule Oli.Lti.PlatformExternalToolsTest do
 
       assert Enum.map(results, & &1.status) == [:disabled, :enabled, :enabled]
     end
+
+    test "browse includes soft deleted tools depending on include_deleted options value", %{
+      platform_1: platform_1,
+      platform_2: platform_2,
+      platform_3: platform_3,
+      deployment_2: deployment_2
+    } do
+      # Soft delete platform_2 tool
+      PlatformExternalTools.update_lti_external_tool_activity_deployment(
+        deployment_2,
+        %{"status" => :deleted}
+      )
+
+      # Should NOT include deleted tool by default
+      results =
+        PlatformExternalTools.browse_platform_external_tools(
+          %Paging{offset: 0, limit: 10},
+          %Sorting{field: :name, direction: :asc},
+          %BrowseOptions{include_disabled: true, include_deleted: false}
+        )
+
+      assert Enum.all?(results, fn result ->
+               result.name in [platform_1.name, platform_3.name]
+             end)
+
+      # Should include deleted tool if include_deleted is true
+      results_with_deleted =
+        PlatformExternalTools.browse_platform_external_tools(
+          %Paging{offset: 0, limit: 10},
+          %Sorting{field: :name, direction: :asc},
+          %BrowseOptions{include_disabled: true, include_deleted: true}
+        )
+
+      assert Enum.all?(results_with_deleted, fn result ->
+               result.name in [platform_1.name, platform_2.name, platform_3.name]
+             end)
+    end
   end
 
   describe "update_lti_external_tool_activity/2" do
@@ -272,6 +310,238 @@ defmodule Oli.Lti.PlatformExternalToolsTest do
 
     test "returns nil when no platform_instance is found" do
       refute Oli.Lti.PlatformExternalTools.get_platform_instance(-1)
+    end
+  end
+
+  describe "get_section_resources_with_lti_activities/1" do
+    setup do
+      section = insert(:section)
+
+      lti_deployment = insert(:lti_external_tool_activity_deployment)
+
+      activity_registration =
+        insert(:activity_registration,
+          lti_external_tool_activity_deployment: lti_deployment
+        )
+
+      lti_activity_revision =
+        insert(:revision,
+          activity_type_id: activity_registration.id
+        )
+
+      lti_activity_resource = lti_activity_revision.resource
+
+      lti_section_resource =
+        insert(:section_resource,
+          section: section,
+          resource_id: lti_activity_resource.id,
+          revision_id: lti_activity_revision.id
+        )
+
+      page_revision =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_page(),
+          activity_refs: [lti_activity_resource.id]
+        )
+
+      page_section_resource =
+        insert(:section_resource,
+          section: section,
+          resource_id: page_revision.resource_id,
+          revision_id: page_revision.id
+        )
+
+      %{
+        section: section,
+        lti_activity_resource: lti_activity_resource,
+        lti_section_resource: lti_section_resource,
+        page_section_resource: page_section_resource
+      }
+    end
+
+    test "returns empty map when section has no LTI activities" do
+      empty_section = insert(:section)
+
+      result = PlatformExternalTools.get_section_resources_with_lti_activities(empty_section)
+
+      assert result == %{}
+    end
+
+    test "returns map of LTI activity IDs to section resources", %{
+      section: section,
+      lti_activity_resource: lti_activity_resource,
+      page_section_resource: page_section_resource
+    } do
+      result = PlatformExternalTools.get_section_resources_with_lti_activities(section)
+
+      assert is_map(result)
+      assert map_size(result) == 1
+      assert Map.has_key?(result, lti_activity_resource.id)
+
+      section_resources = result[lti_activity_resource.id]
+      assert is_list(section_resources)
+      assert length(section_resources) == 1
+      assert hd(section_resources).id == page_section_resource.id
+    end
+
+    test "handles multiple pages referencing the same LTI activity", %{
+      section: section,
+      lti_activity_resource: lti_activity_resource
+    } do
+      another_page_revision =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_page(),
+          activity_refs: [lti_activity_resource.id]
+        )
+
+      another_page_section_resource =
+        insert(:section_resource,
+          section: section,
+          resource_id: another_page_revision.resource_id,
+          revision_id: another_page_revision.id
+        )
+
+      result = PlatformExternalTools.get_section_resources_with_lti_activities(section)
+
+      section_resources = result[lti_activity_resource.id]
+      assert length(section_resources) == 2
+
+      section_resource_ids = Enum.map(section_resources, & &1.id)
+      assert Enum.member?(section_resource_ids, another_page_section_resource.id)
+    end
+
+    test "handles multiple LTI activities referenced by pages", %{
+      section: section
+    } do
+      lti_deployment2 = insert(:lti_external_tool_activity_deployment)
+
+      activity_registration2 =
+        insert(:activity_registration,
+          lti_external_tool_activity_deployment: lti_deployment2
+        )
+
+      lti_activity_revision2 =
+        insert(:revision,
+          activity_type_id: activity_registration2.id
+        )
+
+      lti_activity_resource2 = lti_activity_revision2.resource
+
+      insert(:section_resource,
+        section: section,
+        resource_id: lti_activity_resource2.id,
+        revision_id: lti_activity_revision2.id
+      )
+
+      page_revision =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_page(),
+          activity_refs: [lti_activity_resource2.id]
+        )
+
+      page_section_resource =
+        insert(:section_resource,
+          section: section,
+          resource_id: page_revision.resource_id,
+          revision_id: page_revision.id
+        )
+
+      result = PlatformExternalTools.get_section_resources_with_lti_activities(section)
+
+      assert map_size(result) == 2
+      assert Map.has_key?(result, lti_activity_resource2.id)
+
+      section_resources = result[lti_activity_resource2.id]
+      assert length(section_resources) == 1
+      assert hd(section_resources).id == page_section_resource.id
+    end
+
+    test "ignores pages that don't reference LTI activities", %{
+      section: section
+    } do
+      page_revision =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_page(),
+          activity_refs: []
+        )
+
+      insert(:section_resource,
+        section: section,
+        resource_id: page_revision.resource_id,
+        revision_id: page_revision.id
+      )
+
+      result = PlatformExternalTools.get_section_resources_with_lti_activities(section)
+
+      assert is_map(result)
+      assert map_size(result) == 1
+    end
+  end
+
+  describe "get_sections_with_lti_activities_for_platform_instance_id/1" do
+    test "returns only sections that include pages referencing deployed LTI tools" do
+      section = insert(:section)
+      lti_deployment = insert(:lti_external_tool_activity_deployment)
+
+      activity_registration =
+        insert(:activity_registration,
+          lti_external_tool_activity_deployment: lti_deployment
+        )
+
+      lti_activity_revision =
+        insert(:revision,
+          activity_type_id: activity_registration.id
+        )
+
+      lti_activity_resource = lti_activity_revision.resource
+
+      insert(:section_resource,
+        section: section,
+        resource_id: lti_activity_resource.id,
+        revision_id: lti_activity_revision.id
+      )
+
+      page_revision =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_page(),
+          activity_refs: [lti_activity_resource.id]
+        )
+
+      insert(:section_resource,
+        section: section,
+        resource_id: page_revision.resource_id,
+        revision_id: page_revision.id
+      )
+
+      result =
+        PlatformExternalTools.get_sections_with_lti_activities_for_platform_instance_id(
+          lti_deployment.platform_instance_id
+        )
+
+      assert Enum.any?(result, fn s -> s.id == section.id end)
+    end
+
+    test "returns empty list when no LTI activity deployments exist for platform" do
+      platform = insert(:platform_instance)
+
+      assert PlatformExternalTools.get_sections_with_lti_activities_for_platform_instance_id(
+               platform.id
+             ) == []
+    end
+
+    test "returns empty list when LTI activity is not used in any section" do
+      platform = insert(:platform_instance)
+      reg = insert(:activity_registration)
+
+      _deployment =
+        insert(:lti_external_tool_activity_deployment,
+          platform_instance: platform,
+          activity_registration: reg
+        )
+
+      assert PlatformExternalTools.get_sections_with_lti_activities_for_platform_instance_id(
+               platform.id
+             ) == []
     end
   end
 

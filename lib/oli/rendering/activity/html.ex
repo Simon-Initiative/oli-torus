@@ -83,7 +83,8 @@ defmodule Oli.Rendering.Activity.Html do
 
         activity_context =
           %{
-            variables: variables
+            variables: variables,
+            previewMode: "instructor"
           }
           |> Poison.encode!()
           |> HtmlEntities.encode()
@@ -94,7 +95,7 @@ defmodule Oli.Rendering.Activity.Html do
 
       :review ->
         if is_adaptive?(tag) do
-          render_single_activity_html(tag, context, summary, bib_params, model_json)
+          render_single_activity_html(tag, context, summary, bib_params, model_json, activity_id)
         else
           [
             render_historical_attempts(
@@ -103,12 +104,19 @@ defmodule Oli.Rendering.Activity.Html do
               section_slug,
               context
             ),
-            render_single_activity_html(tag, context, summary, bib_params, model_json)
+            render_single_activity_html(
+              tag,
+              context,
+              summary,
+              bib_params,
+              model_json,
+              activity_id
+            )
           ]
         end
 
       _ ->
-        render_single_activity_html(tag, context, summary, bib_params, model_json)
+        render_single_activity_html(tag, context, summary, bib_params, model_json, activity_id)
     end
   end
 
@@ -169,10 +177,12 @@ defmodule Oli.Rendering.Activity.Html do
            ordinal: ordinal
          },
          bib_params,
-         model_json
+         model_json,
+         resource_id
        ) do
     activity_context =
       %{
+        resourceId: resource_id,
         graded: graded,
         batchScoring: effective_settings && effective_settings.batch_scoring,
         oneAtATime: effective_settings && effective_settings.assessment_mode == :one_at_a_time,
@@ -209,7 +219,7 @@ defmodule Oli.Rendering.Activity.Html do
       |> HtmlEntities.encode()
 
     [
-      ~s|<#{tag} phx-update="ignore" class="activity-container" state="#{state}" model="#{model_json}" mode="#{mode}" context="#{activity_context}" id=#{UUID.uuid4()}></#{tag}>\n|
+      ~s|<#{tag} id="activity-#{resource_id}" phx-update="ignore" class="activity-container" state="#{state}" model="#{model_json}" mode="#{mode}" context="#{activity_context}"></#{tag}>\n|
     ]
   end
 
