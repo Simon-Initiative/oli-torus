@@ -15,16 +15,16 @@ export interface OptionItem {
   alternateCorrect: string[];
 }
 
-interface QuillCustomOptionEditorProps {
-  handleOptionDetailsSave: (options: Array<OptionItem>) => void;
+interface QuillFIBOptionEditorProps {
+  handleOptionSave: (options: Array<OptionItem>) => void;
   handleOptionDailogClose: () => void;
   showOptionDailog?: boolean;
   Options: OptionItem[];
   selectedIndex: number;
 }
 
-export const QuillCustomOptionEditor: React.FC<QuillCustomOptionEditorProps> = ({
-  handleOptionDetailsSave,
+export const QuillFIBOptionEditor: React.FC<QuillFIBOptionEditorProps> = ({
+  handleOptionSave,
   showOptionDailog,
   handleOptionDailogClose,
   Options,
@@ -53,7 +53,7 @@ export const QuillCustomOptionEditor: React.FC<QuillCustomOptionEditorProps> = (
     ) {
       const current = finalOptions[currentSelectedIndex];
 
-      if (!current || current.key === selectedKey) return; // 🛑 Prevent overwrite unless it's a real change
+      if (!current || current.key === selectedKey) return;
 
       if (current) {
         if (current.key !== selectedKey) {
@@ -312,7 +312,7 @@ export const QuillCustomOptionEditor: React.FC<QuillCustomOptionEditorProps> = (
                   className="btn btn-primary flex-grow basis-1"
                   disabled={!isValidItem}
                   onClick={() => {
-                    handleOptionDetailsSave(finalOptions);
+                    handleOptionSave(finalOptions);
                   }}
                 >
                   Update Changes

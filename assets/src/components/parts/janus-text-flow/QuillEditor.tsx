@@ -10,7 +10,7 @@ import {
   syncOptionsFromText,
   transformOptionsToNormalized,
 } from '../janus-fill-blanks/FIBUtils';
-import { OptionItem, QuillCustomOptionEditor } from './QuillCustomOptionEditor';
+import { OptionItem, QuillFIBOptionEditor } from './QuillFIBOptionEditor';
 import { QuillImageUploader } from './QuillImageUploader';
 import { convertJanusToQuill, convertQuillToJanus } from './quill-utils';
 
@@ -135,8 +135,7 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
   const [delta, setDelta] = React.useState<any>(convertJanusToQuill(tree));
   const [currentQuillRange, setCurrentQuillRange] = React.useState<number>(0);
   const [showImageSelectorDailog, setShowImageSelectorDailog] = React.useState<boolean>(false);
-  const [showCustomOptionSelectorDailog, setShowCustomOptionSelectorDailog] =
-    React.useState<boolean>(false);
+  const [showFIBOptionEditorDailog, setShowFIBOptionEditorDailog] = React.useState<boolean>(false);
   const customHandlers = {
     adaptivity: function (value: string) {
       const range = this.quill.getSelection();
@@ -194,7 +193,7 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
             extractedOptions.push(innerMatch[1]);
           }
           setSelectedKey(iMatchCounter);
-          setShowCustomOptionSelectorDailog(true);
+          setShowFIBOptionEditorDailog(true);
           break;
         }
         iMatchCounter++;
@@ -212,7 +211,7 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
         const updatedFIBOptions = mergeParsedWithExistingBlanks(localOptions, quillOptions);
         setFibElements(updatedFIBOptions);
         setSelectedKey(iMatchCounter);
-        setShowCustomOptionSelectorDailog(true);
+        setShowFIBOptionEditorDailog(true);
       }
     },
   };
@@ -230,8 +229,8 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
     }
   };
 
-  const handleCustomOptionEditorSave = (Options: Array<OptionItem>) => {
-    setShowCustomOptionSelectorDailog(false);
+  const handleFIBOptionsEditorSave = (Options: Array<OptionItem>) => {
+    setShowFIBOptionEditorDailog(false);
     if (quill?.current) {
       const janusText = convertQuillToJanus(
         new Delta(quill.current?.getEditor()?.getContents().ops),
@@ -253,8 +252,8 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
     setShowImageSelectorDailog(false);
   };
 
-  const handleCustomOptionEditorDailogClose = () => {
-    setShowCustomOptionSelectorDailog(false);
+  const handleFIBOptionsEditorClose = () => {
+    setShowFIBOptionEditorDailog(false);
   };
   /*  console.log('[QuillEditor]', { tree, html }); */
 
@@ -406,14 +405,14 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
           handleImageDailogClose={handleImageUploaderDailogClose}
         ></QuillImageUploader>
       }
-      {showCustomOptionSelectorDailog && (
-        <QuillCustomOptionEditor
-          showOptionDailog={showCustomOptionSelectorDailog}
-          handleOptionDetailsSave={handleCustomOptionEditorSave}
-          handleOptionDailogClose={handleCustomOptionEditorDailogClose}
+      {showFIBOptionEditorDailog && (
+        <QuillFIBOptionEditor
+          showOptionDailog={showFIBOptionEditorDailog}
+          handleOptionSave={handleFIBOptionsEditorSave}
+          handleOptionDailogClose={handleFIBOptionsEditorClose}
           Options={fibElements}
           selectedIndex={selectedKey}
-        ></QuillCustomOptionEditor>
+        ></QuillFIBOptionEditor>
       )}
     </React.Fragment>
   );
