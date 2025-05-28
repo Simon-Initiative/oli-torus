@@ -287,10 +287,11 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
       let normalizedFIBOptions: any = [];
       if (showfibinsertoptioncontrol) {
         const plainTextFromQuillNodes = extractFormattedHTMLFromQuillNodes(janusText);
-        normalizedFIBOptions = syncOptionsFromText(plainTextFromQuillNodes, localOptions);
-        setFibElements(normalizedFIBOptions || []);
-        localOptions = normalizedFIBOptions;
-        console.log({ normalizedFIBOptions });
+        if (plainTextFromQuillNodes?.trim()?.length) {
+          normalizedFIBOptions = syncOptionsFromText(plainTextFromQuillNodes, localOptions);
+          setFibElements(normalizedFIBOptions || []);
+          localOptions = normalizedFIBOptions;
+        }
       }
       setContents(janusText);
       onChange({ value: janusText, options: normalizedFIBOptions });

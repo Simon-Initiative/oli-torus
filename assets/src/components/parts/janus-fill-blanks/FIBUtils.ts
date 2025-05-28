@@ -442,7 +442,7 @@ export const embedCorrectAnswersInString = (input: string, options: OptionItem[]
  * @returns Updated array of option objects synced with parsed text
  */
 export const syncOptionsFromText = (text: string, options: any[]) => {
-  const newOptionsList: any = generateFIBStructure(text);
+  const newOptionsList: ParsedFIBResult = generateFIBStructure(text);
   return newOptionsList.elements.map((newOpt: any, idx: any) => {
     const existing = options[idx];
     if (existing) {
@@ -463,7 +463,7 @@ export const syncOptionsFromText = (text: string, options: any[]) => {
         options: newOpt.options,
         correct: newOpt.correct,
         alternateCorrect: newOpt.alternateCorrect,
-        type: 'dropdown', // or default to whatever you prefer
+        type: newOpt.options?.length <= 1 ? 'input' : 'dropdown',
       };
     }
   });
