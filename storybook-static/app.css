@@ -16105,6 +16105,11 @@ Not supports in Firefox and IE */
   color: rgb(221 221 221 / var(--tw-text-opacity));
 }
 
+.dark .dark\:text-\[\#EEEBF5\] {
+  --tw-text-opacity: 1;
+  color: rgb(238 235 245 / var(--tw-text-opacity));
+}
+
 .dark .dark\:text-\[\#EEEBF5\]\/75 {
   color: rgb(238 235 245 / 0.75);
 }
