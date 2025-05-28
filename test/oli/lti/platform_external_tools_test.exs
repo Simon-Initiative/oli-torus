@@ -534,6 +534,63 @@ defmodule Oli.Lti.PlatformExternalToolsTest do
     end
   end
 
+  describe "get_sections_grouped_by_platform_instance_ids/1" do
+    test "returns sections grouped by platform_instance_id" do
+      section = insert(:section)
+      platform = insert(:platform_instance)
+      lti_deployment = insert(:lti_external_tool_activity_deployment, platform_instance: platform)
+
+      activity_registration =
+        insert(:activity_registration,
+          lti_external_tool_activity_deployment: lti_deployment
+        )
+
+      revision =
+        insert(:revision,
+          activity_type_id: activity_registration.id
+        )
+
+      insert(:section_resource,
+        section: section,
+        resource_id: revision.resource_id,
+        revision_id: revision.id,
+        activity_type_id: activity_registration.id
+      )
+
+      result =
+        PlatformExternalTools.get_sections_grouped_by_platform_instance_ids([platform.id])
+
+      assert Map.has_key?(result, platform.id)
+      assert Enum.any?(result[platform.id], fn s -> s.id == section.id end)
+    end
+
+    test "returns empty map when no deployments match" do
+      platform = insert(:platform_instance)
+
+      result =
+        PlatformExternalTools.get_sections_grouped_by_platform_instance_ids([platform.id])
+
+      assert result == %{}
+    end
+
+    test "excludes platforms with no linked sections" do
+      platform = insert(:platform_instance)
+
+      activity_registration = insert(:activity_registration)
+
+      _deployment =
+        insert(:lti_external_tool_activity_deployment,
+          platform_instance: platform,
+          activity_registration: activity_registration
+        )
+
+      result =
+        PlatformExternalTools.get_sections_grouped_by_platform_instance_ids([platform.id])
+
+      assert result == %{}
+    end
+  end
+
   describe "update_lti_external_tool_activity_deployment/2" do
     setup do
       deployment = insert(:lti_external_tool_activity_deployment)
