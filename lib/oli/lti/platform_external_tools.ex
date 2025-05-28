@@ -361,35 +361,15 @@ defmodule Oli.Lti.PlatformExternalTools do
 
   @spec get_sections_with_lti_activities_for_platform_instance_id(integer()) :: [Section.t()]
   def get_sections_with_lti_activities_for_platform_instance_id(platform_instance_id) do
-    # Step 1: Find all LTI activity registrations for the given platform instance ID
-    lti_activity_registrations =
-      from(ar in ActivityRegistration,
-        join: d in assoc(ar, :lti_external_tool_activity_deployment),
-        where: d.platform_instance_id == ^platform_instance_id,
-        select: ar.id
-      )
-      |> Repo.all()
-
-    # Step 2: Get IDs of all section resources that are LTI activities
-    lti_activity_ids =
-      from(r in Revision,
-        where: r.activity_type_id in ^lti_activity_registrations,
-        select: r.resource_id,
-        distinct: true
-      )
-      |> Repo.all()
-
-    # Step 3: Find all sections that reference these LTI activities
-    from(sr in SectionResource,
-      join: r in Revision,
-      on: sr.revision_id == r.id,
+    from(ar in ActivityRegistration,
+      join: d in assoc(ar, :lti_external_tool_activity_deployment),
+      join: sr in SectionResource,
+      on: sr.activity_type_id == ar.id,
       join: s in Section,
       on: sr.section_id == s.id,
-      where:
-        r.resource_type_id == ^ResourceType.id_for_page() and
-          fragment("? && ?", r.activity_refs, ^lti_activity_ids),
-      distinct: true,
-      select: s
+      where: d.platform_instance_id == ^platform_instance_id,
+      select: s,
+      distinct: true
     )
     |> Repo.all()
   end
