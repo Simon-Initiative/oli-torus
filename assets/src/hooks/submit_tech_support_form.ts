@@ -1,42 +1,28 @@
 export const SubmitTechSupportForm = {
   mounted() {
-    this.handleEvent('run_tech_support_hook', async (payload: any) => {
-      payload.help = payload.help || {};
+    this.handleEvent('run_tech_support_hook', async (help_payload: any) => {
+      help_payload = help_payload;
       if (
         typeof document.cookie == 'undefined' ||
         typeof navigator == 'undefined' ||
         !navigator.cookieEnabled
       ) {
-        payload.help.cookies_enabled = 'false';
+        help_payload.cookies_enabled = 'false';
       } else {
-        payload.help.cookies_enabled = 'true';
+        help_payload.cookies_enabled = 'true';
       }
 
-      payload.help.location = window.location.href;
-      payload.help.screen_size = `${screen.width} x ${screen.height}`;
-      payload.help.browser_size = `${window.innerWidth} x ${window.innerHeight}`;
-      payload.help.browser_plugins = getPluginsInfo();
-      payload.help.operating_system = detectPlatform();
-      payload.help.browser_info = getBrowserInfo();
+      help_payload.location = window.location.href;
+      help_payload.screen_size = `${screen.width} x ${screen.height}`;
+      help_payload.browser_size = `${window.innerWidth} x ${window.innerHeight}`;
+      help_payload.browser_plugins = getPluginsInfo();
+      help_payload.operating_system = detectPlatform();
+      help_payload.browser_info = getBrowserInfo();
 
       const grecaptcha = (window as any).grecaptcha;
       grecaptcha.reset();
 
-      try {
-        const res = await fetch('/help/create', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Accept: 'application/json',
-          },
-          body: JSON.stringify(payload),
-        });
-
-        const json = await res.json();
-        this.pushEvent('form_response', json);
-      } catch (err) {
-        this.pushEvent('form_response', { error: err });
-      }
+      this.pushEvent('client_response', help_payload);
     });
   },
 };
