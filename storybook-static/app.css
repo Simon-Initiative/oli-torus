@@ -4296,6 +4296,10 @@ table.table-striped tbody tr:nth-child(even) {
   top: 60px;
 }
 
+.top-full {
+  top: 100%;
+}
+
 .isolate {
   isolation: isolate;
 }
@@ -6747,6 +6751,12 @@ table.table-striped tbody tr:nth-child(even) {
   --tw-space-x-reverse: 0;
   margin-right: calc(1.5rem * var(--tw-space-x-reverse));
   margin-left: calc(1.5rem * calc(1 - var(--tw-space-x-reverse)));
+}
+
+.space-x-8 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-x-reverse: 0;
+  margin-right: calc(2rem * var(--tw-space-x-reverse));
+  margin-left: calc(2rem * calc(1 - var(--tw-space-x-reverse)));
 }
 
 .space-y-1 > :not([hidden]) ~ :not([hidden]) {
@@ -15228,6 +15238,10 @@ Not supports in Firefox and IE */
 .group:hover .group-hover\:mx-0 {
   margin-left: 0px;
   margin-right: 0px;
+}
+
+.group:hover .group-hover\:block {
+  display: block;
 }
 
 .group:hover .group-hover\:flex {
