@@ -1,7 +1,6 @@
 export const SubmitTechSupportForm = {
   mounted() {
     this.handleEvent('run_tech_support_hook', async (help_payload: any) => {
-      help_payload = help_payload;
       if (
         typeof document.cookie == 'undefined' ||
         typeof navigator == 'undefined' ||
