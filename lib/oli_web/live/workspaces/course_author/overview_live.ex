@@ -35,7 +35,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
       |> Enum.map(fn {k, v} -> {v.text, k} end)
       |> Enum.sort(:desc)
 
-    custom_license? = project.attributes.license.license_type === :custom
+    custom_license? =
+      project.attributes && project.attributes.license &&
+        project.attributes.license.license_type === :custom
 
     {project_export_status, project_export_url, project_export_timestamp} =
       case ProjectExportWorker.project_export_status(project) do
