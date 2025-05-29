@@ -126,11 +126,11 @@ defmodule Oli.Help.Providers.EmailHelp do
     if contents.course_data do
       """
       COURSE DATA
-      Title: #{contents.course_data["title"] || ""}
-      Start Date: #{contents.course_data["start_date"] || ""}
-      End Date: #{contents.course_data["end_date"] || ""}
-      Course Managment URL: "<a href=\"#{contents.course_data["course_management_url"]}\">#{contents.course_data["course_management_url"]}</a>"
-      Institution: #{if contents.course_data["institution_name"], do: contents.course_data["institution_name"], else: ""}
+      Title: #{contents.course_data.title || ""}
+      Start Date: #{contents.course_data.start_date || ""}
+      End Date: #{contents.course_data.end_date || ""}
+      Course Managment URL: "<a href=\"#{contents.course_data.course_management_url}\">#{contents.course_data.course_management_url}</a>"
+      Institution: #{if contents.course_data.institution_name, do: contents.course_data.institution_name, else: ""}
       <br>
       """
     else

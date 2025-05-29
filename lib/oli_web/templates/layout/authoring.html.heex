@@ -157,10 +157,7 @@
     <%= react_component("Components.ModalDisplay") %>
 
     <%= live_render(@conn, OliWeb.TechSupportLive,
-      session: %{
-        "section" => Map.get(@conn.assigns, :section),
-        "user" => Map.get(@conn.assigns, :current_author) || Map.get(@conn.assigns, :current_user)
-      }
+      session: OliWeb.CollectHelpRequestInfo.collect(@conn)
     ) %>
   </body>
 </html>

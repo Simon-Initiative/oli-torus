@@ -376,7 +376,6 @@ defmodule OliWeb.Router do
 
     get("/api/v1/legacy_support", LegacySupportController, :index)
 
-    post("/help/create", HelpController, :create)
     post("/consent/cookie", CookieConsentController, :persist_cookies)
     get("/consent/cookie", CookieConsentController, :retrieve)
 
