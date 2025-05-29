@@ -95,7 +95,7 @@ defmodule OliWeb.Sections.LtiExternalToolsView do
           LTI 1.3 External Tools
         </h2>
         <div class="text-base font-medium">
-          External tools in this course inherit the page type (scored or practice). To pass learner roles, names, scores, and activity insights to the Torus, you need to configure these tools for your course section.
+          External tools in this course inherit the page type (scored or practice). To pass learner roles, names, scores, and activity insights, you need to configure these tools for your course section.
         </div>
         <DeliveryUtils.search_box
           search_term={@params["search_term"]}
