@@ -106,6 +106,8 @@ defmodule OliWeb.Admin.ExternalTools.ExternalToolsViewTest do
       # Check that at least one platform is shown
       assert has_element?(view, "td", platform1.name)
       assert has_element?(view, "td", platform1.description)
+
+      assert has_element?(view, "h1", "LTI 1.3 External Tools")
     end
 
     test "the view matches the url params", %{conn: conn} do

@@ -90,30 +90,33 @@ defmodule OliWeb.Admin.ExternalTools.ExternalToolsView do
 
   def render(assigns) do
     ~H"""
-    <div class="flex flex-row items-center justify-between mt-4">
-      <TextSearch.render
-        id="text-search"
-        class="lg:!max-w-[33%] w-full"
-        text={@options.text_search}
-        event_target={nil}
-      />
-      <.link
-        id="button-new-tool"
-        href={~p"/admin/external_tools/new"}
-        class="h-8 w-32 px-5 py-3 hover:no-underline rounded-md justify-center items-center gap-2 inline-flex bg-[#0062F2] hover:bg-[#0075EB] dark:bg-[#0062F2] dark:hover:bg-[#0D70FF]"
-      >
-        <div class="w-3 h-5 relative">
-          <Icons.plus
-            class="w-5 h-5 left-[-8px] top-0 absolute font-semibold"
-            path_class="stroke-white"
-          />
-        </div>
-        <div class="text-center justify-center text-white text-sm font-semibold leading-none">
-          Add Tool
-        </div>
-      </.link>
+    <div class="flex flex-col mt-4 space-y-4">
+      <h1 class="text-2xl font-normal leading-9">LTI 1.3 External Tools</h1>
+      <div class="flex flex-row items-center justify-between">
+        <TextSearch.render
+          id="text-search"
+          class="lg:!max-w-[33%] w-full"
+          text={@options.text_search}
+          event_target={nil}
+        />
+        <.link
+          id="button-new-tool"
+          href={~p"/admin/external_tools/new"}
+          class="h-8 w-32 px-5 py-3 hover:no-underline rounded-md justify-center items-center gap-2 inline-flex bg-[#0062F2] hover:bg-[#0075EB] dark:bg-[#0062F2] dark:hover:bg-[#0D70FF]"
+        >
+          <div class="w-3 h-5 relative">
+            <Icons.plus
+              class="w-5 h-5 left-[-8px] top-0 absolute font-semibold"
+              path_class="stroke-white"
+            />
+          </div>
+          <div class="text-center justify-center text-white text-sm font-semibold leading-none">
+            Add Tool
+          </div>
+        </.link>
+      </div>
     </div>
-    <div>
+    <div class="mt-4">
       <Check.render
         class="mr-4"
         checked={@options.include_disabled}
