@@ -3,6 +3,7 @@ defmodule OliWeb.Admin.ExternalTools.UsageView do
 
   import Ecto.Query
   import OliWeb.Common.Params
+  import OliWeb.DelegatedEvents
 
   alias Oli.Delivery.Sections
   alias Oli.Lti.PlatformExternalTools
@@ -110,6 +111,13 @@ defmodule OliWeb.Admin.ExternalTools.UsageView do
      )}
   end
 
+  def handle_event(event, params, socket) do
+    {event, params, socket, &__MODULE__.patch_with/2}
+    |> delegate_to([
+      &PagedTable.handle_delegated/4
+    ])
+  end
+
   defp browse_sections(platform_instance_id, paging, sorting) do
     section_ids =
       platform_instance_id
@@ -119,5 +127,21 @@ defmodule OliWeb.Admin.ExternalTools.UsageView do
     Sections.Browse.browse_sections_query(paging, sorting, @default_options)
     |> where([s], s.id in ^section_ids)
     |> Repo.all()
+  end
+
+  def patch_with(socket, changes) do
+    params = %{
+      sort_by: socket.assigns.table_model.sort_by_spec.name,
+      sort_order: socket.assigns.table_model.sort_order,
+      offset: socket.assigns.offset
+    }
+
+    piid = socket.assigns.platform_instance_id
+
+    {:noreply,
+     push_patch(socket,
+       to: ~p"/admin/external_tools/#{piid}/usage?#{Map.merge(params, changes)}",
+       replace: true
+     )}
   end
 end
