@@ -63,9 +63,9 @@ defmodule Oli.Help.Providers.FreshdeskHelp do
       "On " <>
         contents.timestamp <>
         ", " <>
-        contents.full_name <>
+        contents.requester_data.requester_name <>
         " <&nbsp;" <>
-        contents.email <>
+        contents.requester_data.requester_email <>
         "&nbsp;>" <>
         " wrote:<br><br>" <>
         contents.message <>
@@ -88,9 +88,9 @@ defmodule Oli.Help.Providers.FreshdeskHelp do
         contents.cookies_enabled <>
         "<br><br> USER ACCOUNT" <>
         "<br>Name: " <>
-        contents.account_name <>
+        contents.requester_data.requester_name <>
         "<br>Email: " <>
-        contents.account_email <>
+        contents.requester_data.requester_email <>
         "<br>Created: " <> contents.account_created
 
     message
