@@ -24,7 +24,8 @@ defmodule OliWeb.Endpoint do
     at: "/",
     from: :oli,
     gzip: true,
-    only: ~w(assets css fonts images js custom branding vlab favicon.ico robots.txt flame_graphs)
+    only:
+      ~w(assets css fonts images js custom branding vlab favicon.ico robots.txt superactivity super_media flame_graphs)
   )
 
   plug Plug.Static, at: "/schemas", from: {:oli, "priv/schemas"}, gzip: true

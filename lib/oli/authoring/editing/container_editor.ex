@@ -155,7 +155,7 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
             end
 
           "Container" ->
-            new_container_name(numberings, container, project.customizations)
+            new_container_name(numberings, container)
         end,
       graded:
         case type do
