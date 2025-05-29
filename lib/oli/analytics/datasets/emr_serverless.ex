@@ -137,6 +137,8 @@ defmodule Oli.Analytics.Datasets.EmrServerless do
     arguments = [
       "--bucket_name",
       Settings.source_bucket(),
+      "--results_bucket_name",
+      Settings.context_bucket(),
       "--chunk_size",
       "#{job.configuration.chunk_size}",
       "--sub_types",
