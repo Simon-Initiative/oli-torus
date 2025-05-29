@@ -229,11 +229,11 @@ defmodule Oli.Lti.PlatformExternalTools do
         field when field in [:name, :description, :inserted_at] ->
           order_by(query, [p], {^direction, field(p, ^field)})
 
-        :usage_count ->
-          order_by(query, [p, lad], {^direction, fragment("usage_count")})
-
         :status ->
           order_by(query, [_p, lad], {^direction, lad.status})
+
+        _ ->
+          query
       end
 
     platform_instances = Repo.all(query)
@@ -245,14 +245,21 @@ defmodule Oli.Lti.PlatformExternalTools do
       |> Enum.map(fn {id, sections} -> {id, length(sections)} end)
       |> Enum.into(%{})
 
-    platform_instances
-    |> Enum.map(fn p ->
-      Map.put(
-        p,
-        :usage_count,
-        Map.get(platform_instances_usage_count, p.id, 0)
-      )
-    end)
+    platform_instances =
+      platform_instances
+      |> Enum.map(fn p ->
+        Map.put(
+          p,
+          :usage_count,
+          Map.get(platform_instances_usage_count, p.id, 0)
+        )
+      end)
+
+    if field == :usage_count do
+      Enum.sort_by(platform_instances, & &1.usage_count, direction)
+    else
+      platform_instances
+    end
   end
 
   @doc """
