@@ -30,8 +30,6 @@ defmodule OliWeb.Delivery.NewCourse do
   def mount(params, _session, socket) do
     current_user = socket.assigns.current_user
 
-    changeset = Sections.change_independent_learner_section(%Section{registration_open: true})
-
     steps = [
       %Step{
         title: "Select your source materials",
@@ -61,13 +59,22 @@ defmodule OliWeb.Delivery.NewCourse do
       }
     ]
 
-    # Build section delivery details. If a context id is provided as a param, then we are creating
+    # Build section specification. If a context id is provided as a param, then we are creating
     # an LTI section. Otherwise, we are creating a direct delivery section.
-    section_spec = SectionSpecification.new(current_user, params)
+    section_spec =
+      case params do
+        %{"context_id" => context_id} ->
+          SectionSpecification.lti(current_user, context_id)
 
-    # Suggest a title for the course based on the LTI resource link or context title
+        _ ->
+          SectionSpecification.direct()
+      end
+
+    # Create a changeset for the section that will be used by the form.
+    # Suggest a title for the course based on the LTI resource link or context title and provide
+    # any reasonable default values for the course section.
     suggested_title = suggest_title(section_spec)
-    changeset = Section.changeset(changeset, %{title: suggested_title})
+    changeset = Sections.change_section(%Section{title: suggested_title, registration_open: true})
 
     {:ok,
      assign(socket,

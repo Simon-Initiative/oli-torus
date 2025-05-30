@@ -5,6 +5,7 @@ defmodule Oli.DeliveryTest do
 
   alias Oli.Delivery
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.{Section, SectionSpecification}
 
   describe "delivery settings" do
     test "maybe_update_section_contains_explorations/1 update contains_explorations field" do
@@ -98,18 +99,16 @@ defmodule Oli.DeliveryTest do
           lti_1p3_deployment: context.deployment
         })
 
-      lti_params =
-        put_in(
-          context.lti_params,
-          ["https://purl.imsglobal.org/spec/lti/claim/context", "id"],
-          section.context_id
-        )
+      changeset = Sections.change_section(%Section{})
+
+      section_spec = SectionSpecification.lti(context.user, section.context_id)
 
       assert {:ok, returned_section} =
                Delivery.create_section(
+                 changeset,
                  "publication:#{context.publication.id}",
                  context.user,
-                 lti_params
+                 section_spec
                )
 
       assert returned_section.id == section.id
@@ -120,19 +119,16 @@ defmodule Oli.DeliveryTest do
       context_id = "123"
       title = "Intro to Math"
 
-      lti_params =
-        context.lti_params
-        |> put_in(
-          ["https://purl.imsglobal.org/spec/lti/claim/context", "id"],
-          context_id
-        )
-        |> put_in(["https://purl.imsglobal.org/spec/lti/claim/context", "title"], title)
+      changeset = Sections.change_section(%Section{title: title})
+
+      section_spec = SectionSpecification.lti(context.user, context_id)
 
       assert {:ok, returned_section} =
                Delivery.create_section(
+                 changeset,
                  "publication:#{context.publication.id}",
                  context.user,
-                 lti_params
+                 section_spec
                )
 
       # Check section fields
@@ -218,19 +214,17 @@ defmodule Oli.DeliveryTest do
     end
 
     test "creates section with contained objectives from product if it does not exist", context do
-      lti_params =
-        context.lti_params
-        |> put_in(
-          ["https://purl.imsglobal.org/spec/lti/claim/context", "id"],
-          context.product.context_id
-        )
-        |> put_in(
-          ["https://purl.imsglobal.org/spec/lti/claim/context", "title"],
-          context.product.title
-        )
+      changeset = Sections.change_section(%Section{title: context.product.title})
+
+      section_spec = SectionSpecification.lti(context.user, context.product.context_id)
 
       assert {:ok, returned_section} =
-               Delivery.create_section("product:#{context.product.id}", context.user, lti_params)
+               Delivery.create_section(
+                 changeset,
+                 "publication:#{context.publication.id}",
+                 context.user,
+                 section_spec
+               )
 
       # Check section fields
       assert returned_section.type == :enrollable

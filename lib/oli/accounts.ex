@@ -416,6 +416,8 @@ defmodule Oli.Accounts do
     Repo.preload(user, :author)
   end
 
+  def preload_author(_), do: nil
+
   @doc """
   Updates the platform roles associated with a user
   ## Examples

@@ -937,7 +937,7 @@ defmodule OliWeb.Router do
   end
 
   scope "/workspaces", OliWeb.Workspaces do
-    pipe_through([:browser, :delivery_protected, :redirect_lti_user_to_section])
+    pipe_through([:browser, :delivery_protected])
 
     live_session :delivery_workspaces,
       root_layout: {OliWeb.LayoutView, :delivery},

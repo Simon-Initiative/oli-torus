@@ -8,6 +8,8 @@ defmodule Oli.Delivery.Sections.SectionSpecification do
     @moduledoc """
     LTI details for section creation.
     """
+    @enforce_keys [:lti_params, :institution, :registration, :deployment]
+
     defstruct [
       :lti_params,
       :institution,
@@ -26,7 +28,10 @@ defmodule Oli.Delivery.Sections.SectionSpecification do
   @deployment_claims "https://purl.imsglobal.org/spec/lti/claim/deployment_id"
   @context_claims "https://purl.imsglobal.org/spec/lti/claim/context"
 
-  def new(user, %{"context_id" => context_id}) do
+  @doc """
+  Creates a specification for an LTI section based on the user and context ID.
+  """
+  def lti(user, context_id) do
     %LtiParams{params: lti_params} =
       LtiParams.get_lti_params_for_user_context(user.id, context_id)
 
@@ -51,7 +56,10 @@ defmodule Oli.Delivery.Sections.SectionSpecification do
     }
   end
 
-  def new(_user, _params), do: %SectionSpecification.Direct{}
+  @doc """
+  Creates a specification for a direct delivery section.
+  """
+  def direct(), do: %SectionSpecification.Direct{}
 
   @doc """
   Applies the section specification to the given section parameters.
