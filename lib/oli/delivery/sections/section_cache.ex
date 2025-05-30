@@ -18,13 +18,11 @@ defmodule Oli.Delivery.Sections.SectionCache do
   @cache_keys [
     :ordered_container_labels,
     :contained_scheduling_types,
-    :page_to_container_map,
-    :full_hierarchy
+    :page_to_container_map
   ]
 
   @broadcastable_cache_keys [
-    :ordered_container_labels,
-    :full_hierarchy
+    :ordered_container_labels
   ]
 
   @ttl :timer.hours(24 * 365)
