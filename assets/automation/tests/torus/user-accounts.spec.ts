@@ -21,7 +21,7 @@ test.describe('User Accounts', () => {
     await torus.closeSite();
   });
 
-  test('TQA-2', async () => {
+  test('Sign into an authoring account with valid details', async () => {
     await torus.login(
       USER_TYPES.AUTHOR,
       'OLI Torus',
@@ -33,7 +33,7 @@ test.describe('User Accounts', () => {
     );
   });
 
-  test('TQA-4', async () => {
+  test('Sign in as a student with valid details', async () => {
     await torus.login(
       USER_TYPES.STUDENT,
       'OLI Torus',
@@ -45,7 +45,7 @@ test.describe('User Accounts', () => {
     );
   });
 
-  test('TQA-5', async () => {
+  test('Sign in as an instructor with valid details', async () => {
     await torus.login(
       USER_TYPES.INSTRUCTOR,
       'Sign in',
