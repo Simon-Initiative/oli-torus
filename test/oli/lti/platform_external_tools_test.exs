@@ -348,14 +348,16 @@ defmodule Oli.Lti.PlatformExternalToolsTest do
         insert(:section_resource,
           section: section,
           resource_id: page_revision.resource_id,
-          revision_id: page_revision.id
+          revision_id: page_revision.id,
+          activity_type_id: activity_registration.id
         )
 
       %{
         section: section,
         lti_activity_resource: lti_activity_resource,
         lti_section_resource: lti_section_resource,
-        page_section_resource: page_section_resource
+        page_section_resource: page_section_resource,
+        activity_registration: activity_registration
       }
     end
 
@@ -367,18 +369,18 @@ defmodule Oli.Lti.PlatformExternalToolsTest do
       assert result == %{}
     end
 
-    test "returns map of LTI activity IDs to section resources", %{
+    test "returns map of LTI activity registration IDs to section resources", %{
       section: section,
-      lti_activity_resource: lti_activity_resource,
+      activity_registration: activity_registration,
       page_section_resource: page_section_resource
     } do
       result = PlatformExternalTools.get_section_resources_with_lti_activities(section)
 
       assert is_map(result)
       assert map_size(result) == 1
-      assert Map.has_key?(result, lti_activity_resource.id)
+      assert Map.has_key?(result, activity_registration.id)
 
-      section_resources = result[lti_activity_resource.id]
+      section_resources = result[activity_registration.id]
       assert is_list(section_resources)
       assert length(section_resources) == 1
       assert hd(section_resources).id == page_section_resource.id
@@ -386,7 +388,8 @@ defmodule Oli.Lti.PlatformExternalToolsTest do
 
     test "handles multiple pages referencing the same LTI activity", %{
       section: section,
-      lti_activity_resource: lti_activity_resource
+      lti_activity_resource: lti_activity_resource,
+      activity_registration: activity_registration
     } do
       another_page_revision =
         insert(:revision,
@@ -398,12 +401,13 @@ defmodule Oli.Lti.PlatformExternalToolsTest do
         insert(:section_resource,
           section: section,
           resource_id: another_page_revision.resource_id,
-          revision_id: another_page_revision.id
+          revision_id: another_page_revision.id,
+          activity_type_id: activity_registration.id
         )
 
       result = PlatformExternalTools.get_section_resources_with_lti_activities(section)
 
-      section_resources = result[lti_activity_resource.id]
+      section_resources = result[activity_registration.id]
       assert length(section_resources) == 2
 
       section_resource_ids = Enum.map(section_resources, & &1.id)
@@ -443,21 +447,23 @@ defmodule Oli.Lti.PlatformExternalToolsTest do
         insert(:section_resource,
           section: section,
           resource_id: page_revision.resource_id,
-          revision_id: page_revision.id
+          revision_id: page_revision.id,
+          activity_type_id: activity_registration2.id
         )
 
       result = PlatformExternalTools.get_section_resources_with_lti_activities(section)
 
       assert map_size(result) == 2
-      assert Map.has_key?(result, lti_activity_resource2.id)
+      assert Map.has_key?(result, activity_registration2.id)
 
-      section_resources = result[lti_activity_resource2.id]
+      section_resources = result[activity_registration2.id]
       assert length(section_resources) == 1
       assert hd(section_resources).id == page_section_resource.id
     end
 
     test "ignores pages that don't reference LTI activities", %{
-      section: section
+      section: section,
+      activity_registration: activity_registration
     } do
       page_revision =
         insert(:revision,
@@ -475,6 +481,7 @@ defmodule Oli.Lti.PlatformExternalToolsTest do
 
       assert is_map(result)
       assert map_size(result) == 1
+      assert Map.has_key?(result, activity_registration.id)
     end
   end
 

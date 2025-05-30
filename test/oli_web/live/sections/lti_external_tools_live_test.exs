@@ -65,6 +65,7 @@ defmodule OliWeb.Sections.LtiExternalToolsLiveTest do
       insert(:revision, %{
         resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
         title: "Page One",
+        activity_type_id: lti_tool1.id,
         activity_refs: [tool1_revision.resource_id, tool2_revision.resource_id]
       })
 
@@ -72,6 +73,7 @@ defmodule OliWeb.Sections.LtiExternalToolsLiveTest do
       insert(:revision, %{
         resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
         title: "Page Two",
+        activity_type_id: lti_tool2.id,
         activity_refs: [tool2_revision.resource_id]
       })
 
