@@ -97,7 +97,7 @@ export const BackdropModal: React.FC<BackdropModalProps> = ({
             <div className="flex justify-end p-6 space-x-2">
               <button
                 onClick={handleClose}
-                className="h-8 w-24 px-3 border rounded-md
+                className="h-8 px-3 border rounded-md inline-flex items-center
               bg-white text-[#006cd9] border-[#8ab8e5] hover:bg-[#0062F2] hover:text-white
               dark:bg-gray-800 dark:text-[#197adc] dark:border-[#197adc]
               dark:hover:bg-[#0062F2] dark:hover:text-white dark:hover:border-[#0062F2]"
