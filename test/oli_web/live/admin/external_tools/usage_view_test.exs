@@ -27,31 +27,15 @@ defmodule OliWeb.Admin.ExternalTools.UsageViewTest do
       insert(:section_resource,
         section: section,
         resource_id: lti_activity_resource.id,
-        revision_id: lti_activity_revision.id
+        revision_id: lti_activity_revision.id,
+        activity_type_id: activity_registration.id
       )
 
       insert(:section_resource,
         section: section2,
         resource_id: lti_activity_resource.id,
-        revision_id: lti_activity_revision.id
-      )
-
-      page_revision =
-        insert(:revision,
-          resource_type_id: Oli.Resources.ResourceType.id_for_page(),
-          activity_refs: [lti_activity_resource.id]
-        )
-
-      insert(:section_resource,
-        section: section,
-        resource_id: page_revision.resource_id,
-        revision_id: page_revision.id
-      )
-
-      insert(:section_resource,
-        section: section2,
-        resource_id: page_revision.resource_id,
-        revision_id: page_revision.id
+        revision_id: lti_activity_revision.id,
+        activity_type_id: activity_registration.id
       )
 
       %{
