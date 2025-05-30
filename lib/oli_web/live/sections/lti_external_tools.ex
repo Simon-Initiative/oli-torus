@@ -2,7 +2,7 @@ defmodule OliWeb.Sections.LtiExternalToolsView do
   use OliWeb, :live_view
 
   alias Oli.Activities
-  alias Oli.Delivery.Sections
+  alias Oli.Lti.PlatformExternalTools
   alias OliWeb.Icons
   alias OliWeb.Sections.Mount
   alias OliWeb.Common.{Breadcrumb}
@@ -29,7 +29,8 @@ defmodule OliWeb.Sections.LtiExternalToolsView do
         Mount.handle_error(socket, {:error, e})
 
       {type, _user, section} ->
-        contained_pages_mapper = Sections.get_section_resources_with_lti_activities(section)
+        contained_pages_mapper =
+          PlatformExternalTools.get_section_resources_with_lti_activities(section)
 
         tools =
           contained_pages_mapper
