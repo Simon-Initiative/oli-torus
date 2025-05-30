@@ -1,4 +1,4 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createAction, createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import { DateWithoutTime } from 'epoq';
 import { toDateWithoutTime } from './date-utils';
@@ -61,6 +61,7 @@ export interface SchedulerState {
   weekdays: boolean[];
   preferredSchedulingTime: TimeParts;
   expandedContainers: Record<number, boolean>;
+  searchQuery: string;
 }
 
 export const initSchedulerState = (): SchedulerState => ({
@@ -82,6 +83,7 @@ export const initSchedulerState = (): SchedulerState => ({
     second: 59,
   },
   expandedContainers: {},
+  searchQuery: '',
 });
 
 const toDateTime = (str: string, preferredSchedulingTime: TimeParts) => {
@@ -180,6 +182,11 @@ const datesEqual = (a: DateWithoutTime | null, b: DateWithoutTime | null) => {
   if (b === null) return false;
   return a.getDaysSinceEpoch() === b.getDaysSinceEpoch();
 };
+
+export const expandVisibleContainers = createAction<number[]>('scheduler/expandVisibleContainers');
+export const collapseVisibleContainers = createAction<number[]>(
+  'scheduler/collapseVisibleContainers',
+);
 
 const schedulerSlice = createSlice({
   name: 'scheduler',
@@ -339,6 +346,11 @@ const schedulerSlice = createSlice({
       const id = action.payload;
       state.expandedContainers[id] = !state.expandedContainers[id];
     },
+    setContainersExpanded: (state, action: PayloadAction<{ ids: number[]; expanded: boolean }>) => {
+      action.payload.ids.forEach((id) => {
+        state.expandedContainers[id] = action.payload.expanded;
+      });
+    },
     expandAllContainers(state) {
       const containers = state.schedule.filter(
         (item) => item.resource_type_id === ScheduleItemType.Container,
@@ -349,6 +361,9 @@ const schedulerSlice = createSlice({
     },
     collapseAllContainers(state) {
       state.expandedContainers = {};
+    },
+    setSearchQuery: (state, action) => {
+      state.searchQuery = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -383,6 +398,17 @@ const schedulerSlice = createSlice({
     builder.addCase(scheduleAppStartup.rejected, (state, action) => {
       state.errorMessage = 'Could not load schedule.';
     });
+    builder
+      .addCase(expandVisibleContainers, (state, action) => {
+        action.payload.forEach((id) => {
+          state.expandedContainers[id] = true;
+        });
+      })
+      .addCase(collapseVisibleContainers, (state, action) => {
+        action.payload.forEach((id) => {
+          state.expandedContainers[id] = false;
+        });
+      });
     builder.addCase(scheduleAppStartup.fulfilled, (state, action) => {
       const {
         start_date,
@@ -440,18 +466,16 @@ export const {
 
 export const schedulerSliceReducer = schedulerSlice.reducer;
 
-export const isContainerExpanded = (state: any, id: number) =>
-  !!state.scheduler.expandedContainers[id];
+export const { setSearchQuery } = schedulerSlice.actions;
 
-export const areSomeContainersExpanded = (state: any) =>
-  state.scheduler.schedule.some(
-    (item: HierarchyItem) =>
-      item.resource_type_id === ScheduleItemType.Container &&
-      state.scheduler.expandedContainers[item.id],
-  );
+export const isContainerExpanded = (state: any, id: number): boolean => {
+  return !!state.scheduler.expandedContainers[id];
+};
 
 export const hasContainers = (state: any) =>
   state.scheduler.schedule.some(
     (item: HierarchyItem) =>
       item.resource_type_id === ScheduleItemType.Container && item.numbering_level !== 0,
   );
+
+export const { setContainersExpanded } = schedulerSlice.actions;

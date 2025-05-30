@@ -7,10 +7,13 @@ import { PageScheduleLine } from './PageScheduleLine';
 import { ScheduleHeader } from './ScheduleHeader';
 import { DayGeometry } from './date-utils';
 import {
+  getExpandedContainerIdsFromSearch,
   getSchedule,
   getSelectedId,
+  isSearching,
   shouldDisplayCurriculumItemNumbering,
 } from './schedule-selectors';
+import { SchedulerAppState } from './scheduler-reducer';
 import {
   HierarchyItem,
   ScheduleItemType,
@@ -63,7 +66,15 @@ const ContainerScheduleLine: React.FC<ScheduleLineProps> = ({
   dayGeometry,
 }) => {
   const dispatch = useDispatch();
-  const expanded = useSelector((state) => isContainerExpanded(state, item.id));
+
+  const isSearchActive = useSelector(isSearching);
+  const expandedContainerIds = useSelector(getExpandedContainerIdsFromSearch);
+  const isExpanded = useSelector((state) => isContainerExpanded(state, item.id));
+  const expanded = isSearchActive ? expandedContainerIds.has(item.id) : isExpanded;
+  const searchQuery = useSelector(
+    (state: SchedulerAppState) => state.scheduler.searchQuery?.toLowerCase().trim() || '',
+  );
+
   const toggleExpanded = () => dispatch(toggleContainer(item.id));
   const isSelected = useSelector(getSelectedId) === item.id;
   const schedule = useSelector(getSchedule);
@@ -87,6 +98,16 @@ const ContainerScheduleLine: React.FC<ScheduleLineProps> = ({
   const pageChildren = item.children
     .map((itemId) => getScheduleItem(itemId, schedule))
     .filter((item) => item?.resource_type_id === ScheduleItemType.Page) as HierarchyItem[];
+
+  const filteredPageChildren = React.useMemo(() => {
+    if (!isSearchActive) return pageChildren;
+
+    const matchingPages = pageChildren.filter((page) =>
+      page.title.toLowerCase().includes(searchQuery),
+    );
+
+    return matchingPages.length > 0 ? matchingPages : pageChildren;
+  }, [pageChildren, isSearchActive, searchQuery]);
 
   const onStartDrag = useCallback(() => {
     dispatch(selectItem(item.id));
@@ -160,7 +181,7 @@ const ContainerScheduleLine: React.FC<ScheduleLineProps> = ({
         ))}
 
       {expanded &&
-        pageChildren.map((child, cindex) => (
+        filteredPageChildren.map((child, cindex) => (
           <PageScheduleLine
             key={child?.resource_id}
             index={1 + index + cindex}
