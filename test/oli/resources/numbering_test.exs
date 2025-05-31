@@ -63,7 +63,7 @@ defmodule Oli.Resources.NumberingTest do
       |> Enum.to_list()
       |> Enum.filter(fn {id, _n} ->
         !Regex.match?(~r|page|, revisions_by_id[id].slug) &&
-          revisions_by_id[id].title != "Root container"
+          revisions_by_id[id].title != "Root Container"
       end)
       |> Enum.each(fn {id, n} ->
         revision = revisions_by_id[id]
