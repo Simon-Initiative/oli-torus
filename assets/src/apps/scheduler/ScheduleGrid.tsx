@@ -24,15 +24,15 @@ interface GridProps {
 
 const rowPalette = [
   '#BC1A27',
-  '#94849B',
   '#D97B68',
+  '#94849B',
   '#973F7D',
   '#B9097E',
   '#737373',
   '#CC8100',
   '#869A13',
-  '#2BA3AB',
   '#4F6831',
+  '#2BA3AB',
   '#0F7D85',
   '#58759D',
 ];
@@ -48,8 +48,8 @@ const rowPaletteDark = [
   '#E4FE4D',
   '#A1D463',
   '#82EBF2',
-  '#AFC5E4',
   '#33F1FF',
+  '#AFC5E4',
 ];
 
 export const ScheduleGrid: React.FC<GridProps> = ({ startDate, endDate, onReset, onClear }) => {
