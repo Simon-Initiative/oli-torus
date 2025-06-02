@@ -82,22 +82,26 @@ export const ScheduleGrid: React.FC<GridProps> = ({ startDate, endDate, onReset,
 
   return (
     <div className="pb-20">
-      <div className="flex flex-row justify-between gap-x-4 mb-6 px-6 bg-[#F2F9FF] dark:bg-[#1F1D23]">
-        <div>
-          Start organizing your course with the interactive scheduling tool. Set dates for course
-          content, and manage content by right-clicking to remove or re-add it. All scheduled items
-          will appear in the student schedule and upcoming agenda.
-        </div>
-        <div className="flex flex-row gap-x-4 items-start py-1">
-          {isScheduled ? (
-            <button className="btn btn-sm btn-primary whitespace-nowrap" onClick={onReset}>
-              <i className="fa fa-undo-alt" /> Reset Schedule
-            </button>
-          ) : (
-            <button className="btn btn-sm btn-primary whitespace-nowrap" onClick={onReset}>
-              <i className="fa fa-calendar" /> Set Schedule
-            </button>
-          )}
+      <div className="w-full flex justify-center flex-col bg-[#F2F9FF] dark:bg-[#1F1D23]">
+        <div className="container mx-auto">
+          <div className="flex flex-row justify-between gap-x-4 mb-6 px-2">
+            <div>
+              Start organizing your course with the interactive scheduling tool. Set dates for
+              course content, and manage content by right-clicking to remove or re-add it. All
+              scheduled items will appear in the student schedule and upcoming agenda.
+            </div>
+            <div className="flex flex-row gap-x-4 items-start py-1">
+              {isScheduled ? (
+                <button className="btn btn-sm btn-primary whitespace-nowrap" onClick={onReset}>
+                  <i className="fa fa-undo-alt" /> Reset Schedule
+                </button>
+              ) : (
+                <button className="btn btn-sm btn-primary whitespace-nowrap" onClick={onReset}>
+                  <i className="fa fa-calendar" /> Set Schedule
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       </div>
       <div className="flex flex-row gap-x-4 justify-start items-center w-auto h-[51px] mb-6 ml-[270px] mr-2 px-2 bg-white dark:bg-black shadow-[0px_2px_6.099999904632568px_0px_rgba(0,0,0,0.10)]">
