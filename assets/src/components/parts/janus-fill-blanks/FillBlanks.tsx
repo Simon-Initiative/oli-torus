@@ -62,7 +62,7 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
   );
   const [customCss, setCustomCss] = useState<string>(model?.customCss ? model.customCss : '');
   const [customCssClass, setCustomCssClass] = useState<string>(
-    model?.customCss ? model.customCss : '',
+    model?.customCssClass || model?.customCss || '',
   );
   const [ready, setReady] = useState<boolean>(false);
   const wrapperStyles: CSSProperties = {

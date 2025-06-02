@@ -17,7 +17,7 @@ export interface FIBModel extends JanusAbsolutePositioned, JanusCustomCss {
 }
 
 export const schema: JSONSchema7Object = {
-  cssClasses: {
+  customCssClass: {
     title: 'CSS Classes',
     type: 'string',
   },
