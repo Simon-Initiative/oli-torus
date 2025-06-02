@@ -379,7 +379,9 @@ export const FlowchartHeaderNav: React.FC<HeaderNavProps> = () => {
                 overlay={
                   <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
                     <strong>Paste Component</strong>
-                    {hasQuestion && <div>Only one question component per screen is allowed</div>}
+                    {!isStaticTypeCopiedPart && hasQuestion && (
+                      <div>Only one question component per screen is allowed</div>
+                    )}
                     {isLessonEndScreen && (
                       <div>Question/interaction components cannot be added to the last screen.</div>
                     )}
