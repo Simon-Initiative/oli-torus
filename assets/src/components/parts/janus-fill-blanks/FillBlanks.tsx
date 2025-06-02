@@ -226,7 +226,7 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
             setStateChanged(true);
             setMutateState(changes);
             const sEnabled = changes[`stage.${id}.enabled`];
-            if (sEnabled) {
+            if (sEnabled !== undefined) {
               setEnabled(parseBool(sEnabled));
             }
             const sShowCorrect = changes[`stage.${id}.showCorrect`];
