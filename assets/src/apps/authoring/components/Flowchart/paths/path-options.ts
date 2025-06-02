@@ -206,3 +206,7 @@ export const getScreenPrimaryQuestion = (screen: IActivity): IPartLayout | undef
     (part) => availableQuestionTypes.indexOf(part.type) !== -1,
   );
 };
+
+export const isStaticQuestionType = (part: IPartLayout): boolean | undefined => {
+  return availableQuestionTypes.indexOf(part.type) === -1;
+};
