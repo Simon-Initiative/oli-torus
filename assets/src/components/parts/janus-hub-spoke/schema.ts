@@ -18,6 +18,7 @@ export interface JanusHubSpokeItemProperties extends JanusCustomCss {
   configureMode?: boolean;
   verticalGap?: number;
   spokeFeedback?: string;
+  completedSpokeCount?: number;
 }
 
 export interface Item {
