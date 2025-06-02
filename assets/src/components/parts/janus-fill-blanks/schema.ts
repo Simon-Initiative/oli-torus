@@ -100,10 +100,13 @@ export const schema: JSONSchema7Object = {
 
 export const uiSchema = {};
 
+export const getCapabilities = () => ({
+  configure: true,
+});
+
 export const adaptivitySchema = ({ currentModel }: { currentModel: any }) => {
   const adaptivitySchema: Record<string, unknown> = {};
   const elementData: Record<string, unknown>[] = currentModel?.custom?.elements;
-
   adaptivitySchema.attempted = CapiVariableTypes.BOOLEAN;
   adaptivitySchema.correct = CapiVariableTypes.BOOLEAN;
   adaptivitySchema.customCss = CapiVariableTypes.STRING;
@@ -123,10 +126,39 @@ export const adaptivitySchema = ({ currentModel }: { currentModel: any }) => {
 };
 
 export const createSchema = (): Partial<FIBModel> => ({
+  width: 170,
+  height: 90,
   cssClasses: '',
   customCss: '',
   showHints: false,
   showCorrect: false,
   alternateCorrectDelimiter: '',
   caseSensitiveAnswers: false,
+  content: [
+    {
+      dropdown: 'blank1',
+      insert: '',
+    },
+    {
+      insert: ' sample text',
+    },
+  ],
+  elements: [
+    {
+      alternateCorrect: '',
+      correct: 'Option 1',
+      key: 'blank1',
+      type: 'dropdown',
+      options: [
+        {
+          key: 'Option 1',
+          value: 'Option 1',
+        },
+        {
+          key: 'Option 2',
+          value: 'Option 2',
+        },
+      ],
+    },
+  ],
 });

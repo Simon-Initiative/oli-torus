@@ -40,6 +40,8 @@ defmodule OliWeb.Sections.LtiExternalToolsView do
             %{
               id: lti_activity_registration.id,
               title: lti_activity_registration.title,
+              deployment_status:
+                lti_activity_registration.lti_external_tool_activity_deployment.status,
               children:
                 Map.get(contained_pages_mapper, lti_activity_registration.id, [])
                 |> Enum.sort_by(& &1.numbering_index)
@@ -93,7 +95,7 @@ defmodule OliWeb.Sections.LtiExternalToolsView do
           LTI 1.3 External Tools
         </h2>
         <div class="text-base font-medium">
-          External tools in this course inherit the page type (scored or practice). To pass learner roles, names, scores, and activity insights to the Torus, you need to configure these tools for your course section.
+          External tools in this course inherit the page type (scored or practice). To pass learner roles, names, scores, and activity insights, you need to configure these tools for your course section.
         </div>
         <DeliveryUtils.search_box
           search_term={@params["search_term"]}
@@ -129,7 +131,15 @@ defmodule OliWeb.Sections.LtiExternalToolsView do
         aria-expanded="false"
         aria-controls={"collapse-#{@tool.id}"}
       >
-        <div class="text-lg font-semibold leading-normal">
+        <div class="text-lg font-semibold leading-normal flex items-center space-x-8">
+          <%= if @tool.deployment_status == :deleted do %>
+            <div class="relative group mr-2">
+              <Icons.alert />
+              <div class="absolute top-full left-0 mt-2 w-64 p-2 bg-white border rounded shadow-lg text-sm text-gray-500 font-normal hidden group-hover:block z-10">
+                This tool is no longer registered in the system, and its functionality has been disabled.
+              </div>
+            </div>
+          <% end %>
           <%= @tool.title %>
         </div>
         <div id={"icon-#{@tool.id}"} class="transition-transform duration-300 ml-auto">

@@ -377,6 +377,7 @@ defmodule Oli.Activities do
     from(ar in ActivityRegistration,
       join: d in LtiExternalToolActivityDeployment,
       on: d.activity_registration_id == ar.id,
+      preload: [lti_external_tool_activity_deployment: d],
       where: ^maybe_filter_by_ids,
       select: ar
     )

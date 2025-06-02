@@ -60,6 +60,7 @@ export interface SchedulerState {
   errorMessage: string | null;
   weekdays: boolean[];
   preferredSchedulingTime: TimeParts;
+  expandedContainers: Record<number, boolean>;
 }
 
 export const initSchedulerState = (): SchedulerState => ({
@@ -80,6 +81,7 @@ export const initSchedulerState = (): SchedulerState => ({
     minute: 59,
     second: 59,
   },
+  expandedContainers: {},
 });
 
 const toDateTime = (str: string, preferredSchedulingTime: TimeParts) => {
@@ -333,6 +335,21 @@ const schedulerSlice = createSlice({
     dismissError(state) {
       state.errorMessage = null;
     },
+    toggleContainer(state, action: PayloadAction<number>) {
+      const id = action.payload;
+      state.expandedContainers[id] = !state.expandedContainers[id];
+    },
+    expandAllContainers(state) {
+      const containers = state.schedule.filter(
+        (item) => item.resource_type_id === ScheduleItemType.Container,
+      );
+      containers.forEach((item) => {
+        state.expandedContainers[item.id] = true;
+      });
+    },
+    collapseAllContainers(state) {
+      state.expandedContainers = {};
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(clearSectionSchedule.pending, (state, action) => {
@@ -416,6 +433,25 @@ export const {
   unlockScheduleItem,
   changeScheduleType,
   dismissError,
+  toggleContainer,
+  expandAllContainers,
+  collapseAllContainers,
 } = schedulerSlice.actions;
 
 export const schedulerSliceReducer = schedulerSlice.reducer;
+
+export const isContainerExpanded = (state: any, id: number) =>
+  !!state.scheduler.expandedContainers[id];
+
+export const areSomeContainersExpanded = (state: any) =>
+  state.scheduler.schedule.some(
+    (item: HierarchyItem) =>
+      item.resource_type_id === ScheduleItemType.Container &&
+      state.scheduler.expandedContainers[item.id],
+  );
+
+export const hasContainers = (state: any) =>
+  state.scheduler.schedule.some(
+    (item: HierarchyItem) =>
+      item.resource_type_id === ScheduleItemType.Container && item.numbering_level !== 0,
+  );
