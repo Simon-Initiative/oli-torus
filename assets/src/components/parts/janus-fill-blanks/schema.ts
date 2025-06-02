@@ -114,7 +114,7 @@ export const adaptivitySchema = ({ currentModel }: { currentModel: any }) => {
   adaptivitySchema.enabled = CapiVariableTypes.BOOLEAN;
   adaptivitySchema.showCorrect = CapiVariableTypes.BOOLEAN;
   adaptivitySchema.showHints = CapiVariableTypes.BOOLEAN;
-
+  adaptivitySchema.IsComplete = CapiVariableTypes.BOOLEAN;
   if (elementData?.length > 0) {
     elementData.forEach((element: Record<string, unknown>, index: number) => {
       adaptivitySchema[`Input ${index + 1}.Value`] = CapiVariableTypes.STRING;
@@ -134,6 +134,7 @@ export const createSchema = (): Partial<FIBModel> => ({
   showCorrect: false,
   alternateCorrectDelimiter: '',
   caseSensitiveAnswers: false,
+  IsComplete: false,
   content: [
     {
       dropdown: 'blank1',

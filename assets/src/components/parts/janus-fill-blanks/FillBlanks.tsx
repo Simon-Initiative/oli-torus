@@ -330,6 +330,14 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
         return isCorrect(elVal, element.correct, element.alternateCorrect);
       },
     );
+
+    const allInputCompleted = elements.every(
+      (element: { key: string; correct: string; alternateCorrect: string }) => {
+        const elVal = getElementValueByKey(element.key);
+        return elVal?.trim()?.length;
+      },
+    );
+
     setCorrect(allCorrect);
 
     // set up responses array based on current selections/values of elements
@@ -382,6 +390,11 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
             key: 'correct',
             type: CapiVariableTypes.BOOLEAN,
             value: allCorrect,
+          },
+          {
+            key: 'IsComplete',
+            type: CapiVariableTypes.BOOLEAN,
+            value: allInputCompleted,
           },
           {
             key: 'attempted',
