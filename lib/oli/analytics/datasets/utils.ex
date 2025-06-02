@@ -35,7 +35,6 @@ defmodule Oli.Analytics.Datasets.Utils do
   users that have opted out of research and users that are not students in the section.
   """
   def determine_ignored_student_ids(section_ids) do
-
     # The most robust way to calculate this is to get all user ids in the sections,
     # then subtract those that are students who have not opted out
 
