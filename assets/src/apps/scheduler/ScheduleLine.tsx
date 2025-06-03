@@ -98,7 +98,9 @@ const ContainerScheduleLine: React.FC<ScheduleLineProps> = ({
   );
   const labelClasses = item.scheduling_type === 'due_by' ? 'font-bold' : '';
 
-  const plusMinusIcon = expanded ? 'fa-regular fa-square-minus' : 'fa-regular fa-square-plus';
+  const plusMinusIcon = expanded
+    ? 'fa-regular fa-square-minus fa-lg'
+    : 'fa-regular fa-square-plus fa-lg';
   const chevronIcon = expanded ? 'fa-solid fa-chevron-up' : 'fa-solid fa-chevron-down';
 
   return (
@@ -110,21 +112,22 @@ const ContainerScheduleLine: React.FC<ScheduleLineProps> = ({
           style={{ paddingLeft: (1 + indent) * 10 }}
           onClick={onSelect}
         >
-          {item.children.length > 0 && indent > 0 && (
-            <div className="inline mr-1" onClick={toggleExpanded} style={{ display: 'inline' }}>
-              <i className={plusMinusIcon} />
+          <div className="flex flex-row justify-between items-center">
+            <div className="flex flex-row justify-start items-center">
+              {item.children.length > 0 && indent > 0 && (
+                <div className="inline mr-2 cursor-pointer" onClick={toggleExpanded}>
+                  <i className={plusMinusIcon} />
+                </div>
+              )}
+              <div className="inline mr-2">{showNumbers ? item.numbering_index + '.' : ''}</div>
+              <div className="inline">{item.title}</div>
             </div>
-          )}
-          {showNumbers ? item.numbering_index + '.' : ''} {item.title}
-          {item.children.length > 0 && indent === 0 && (
-            <div
-              className="inline mr-1 float-right"
-              onClick={toggleExpanded}
-              style={{ display: 'inline' }}
-            >
-              <i className={chevronIcon} />
-            </div>
-          )}
+            {item.children.length > 0 && indent === 0 && (
+              <div className="inline mr-1 float-right cursor-pointer" onClick={toggleExpanded}>
+                <i className={chevronIcon} />
+              </div>
+            )}
+          </div>
         </td>
 
         <td className="relative p-0">
