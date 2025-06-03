@@ -58,7 +58,23 @@ export const extractFormattedHTMLFromQuillNodes = (nodes: any[]): string => {
 
         if (node.tag === 'sup' || node.tag === 'sub') {
           const inner = processNodes(node.children || []);
-          return `<${node.tag}>${inner}</${node.tag}>`;
+          let wrapped = inner;
+          if (
+            node.style?.fontWeight === 'bold' ||
+            node.style?.fontStyle === 'italic' ||
+            node.style?.textDecoration === 'underline'
+          ) {
+            if (node.style?.fontWeight === 'bold') {
+              wrapped = `<b>${wrapped}</b>`;
+            }
+            if (node.style?.fontStyle === 'italic') {
+              wrapped = `<i>${wrapped}</i>`;
+            }
+            if (node.style?.textDecoration === 'underline') {
+              wrapped = `<u>${wrapped}</u>`;
+            }
+          }
+          return `<${node.tag}>${wrapped}</${node.tag}>`;
         }
 
         if (

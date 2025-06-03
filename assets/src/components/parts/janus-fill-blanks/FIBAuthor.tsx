@@ -226,7 +226,10 @@ const FIBAuthor: React.FC<AuthorPartComponentProps<FIBModel>> = (props) => {
         if (insertEl) {
           // build list of options for react-select
           const optionsList = insertEl.options.map(
-            ({ value: text, key: id }: { value: any; key: any }) => ({ id, text }),
+            ({ value: text, key: id }: { value: any; key: any }) => ({
+              id,
+              text: String(text)?.replace(/<[^>]*>/g, ''), // strip HTML tags
+            }),
           );
           insertList.push(
             <span className="dropdown-blot" tabIndex={-1}>

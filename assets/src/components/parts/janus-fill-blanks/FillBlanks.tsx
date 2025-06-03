@@ -480,7 +480,10 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
               // build list of options for react-select
               const elVal: string = getElementValueByKey(insertEl.key);
               const optionsList = insertEl.options.map(
-                ({ value: text, key: id }: { value: any; key: any }) => ({ id, text }),
+                ({ value: text, key: id }: { value: any; key: any }) => ({
+                  id,
+                  text,
+                }),
               );
               const answerStatus: string =
                 (showCorrect && isCorrect(elVal, insertEl.correct, insertEl.alternateCorrect)) ||
@@ -501,6 +504,8 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
                         dropdownParent: fibContainer.current,
                         minimumResultsForSearch: 10,
                         selectOnClose: false,
+                        // 👇 Important to allow HTML rendering in options
+                        escapeMarkup: (markup: string) => markup,
                       }}
                       onSelect={(e: any) => handleInput(e.currentTarget)}
                       disabled={!enabled}
