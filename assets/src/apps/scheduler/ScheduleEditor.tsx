@@ -139,9 +139,7 @@ export const ScheduleEditor: React.FC<SchedulerProps> = ({
 
   const { Modal: unsavedModal, showModal: showUnsavedModal } = useBackdropModal(
     <div>
-      <p>
-        Previewing your schedule requires that you save all changes first.
-      </p>
+      <p>Previewing your schedule requires that you save all changes first.</p>
     </div>,
     () => {},
     () => {
