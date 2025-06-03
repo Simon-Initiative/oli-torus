@@ -1,0 +1,26 @@
+{
+  "name": "ww-torus-e2e",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "npx playwright test",
+    "test-ui": "npx playwright test --ui",
+    "test-chromium": "npx playwright test --project=chromium",
+    "test-debug": "npx playwright test --debug",
+    "codegen": "npx playwright codegen",
+    "show-report": "npx playwright show-report"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@playwright/test": "^1.52.0",
+    "@types/node": "^22.13.10"
+  },
+  "dependencies": {
+    "csv-parse": "^5.6.0",
+    "dotenv": "^16.5.0",
+    "ww-torus-e2e": "file:"
+  }
+}
