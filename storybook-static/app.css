@@ -7519,6 +7519,11 @@ table.table-striped tbody tr:nth-child(even) {
   border-bottom-color: rgb(212 212 212 / var(--tw-border-opacity));
 }
 
+.border-l-\[\#CED1D9\] {
+  --tw-border-opacity: 1;
+  border-left-color: rgb(206 209 217 / var(--tw-border-opacity));
+}
+
 .border-l-gray-200 {
   --tw-border-opacity: 1;
   border-left-color: rgb(229 229 229 / var(--tw-border-opacity));
@@ -15259,6 +15264,11 @@ Not supports in Firefox and IE */
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
 
+.group:hover .group-hover\:bg-delivery-primary-300 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(161 210 255 / var(--tw-bg-opacity));
+}
+
 .group:hover .group-hover\:bg-white {
   --tw-bg-opacity: 1;
   background-color: rgb(255 255 255 / var(--tw-bg-opacity));
@@ -15484,11 +15494,6 @@ Not supports in Firefox and IE */
 .dark .dark\:border-delivery-primary-dark {
   --tw-border-opacity: 1;
   border-color: rgb(43 139 254 / var(--tw-border-opacity));
-}
-
-.dark .dark\:border-gray-400 {
-  --tw-border-opacity: 1;
-  border-color: rgb(163 163 163 / var(--tw-border-opacity));
 }
 
 .dark .dark\:border-gray-500 {
@@ -15767,11 +15772,6 @@ Not supports in Firefox and IE */
 .dark .dark\:bg-delivery-navbar-dark {
   --tw-bg-opacity: 1;
   background-color: rgb(0 0 0 / var(--tw-bg-opacity));
-}
-
-.dark .dark\:bg-delivery-primary-200 {
-  --tw-bg-opacity: 1;
-  background-color: rgb(206 231 255 / var(--tw-bg-opacity));
 }
 
 .dark .dark\:bg-delivery-primary-600 {
@@ -16897,9 +16897,19 @@ Not supports in Firefox and IE */
   background-color: rgb(19 44 83 / var(--tw-bg-opacity));
 }
 
+.group:hover .dark .group-hover\:dark\:border-gray-400 {
+  --tw-border-opacity: 1;
+  border-color: rgb(163 163 163 / var(--tw-border-opacity));
+}
+
 .dark .group:hover .dark\:group-hover\:bg-gray-800 {
   --tw-bg-opacity: 1;
   background-color: rgb(38 38 38 / var(--tw-bg-opacity));
+}
+
+.group:hover .dark .group-hover\:dark\:bg-delivery-primary-200 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(206 231 255 / var(--tw-bg-opacity));
 }
 
 .dark .group.past-start .dark\:group-\[\.past-start\]\:fill-\[\#66488c\] {
