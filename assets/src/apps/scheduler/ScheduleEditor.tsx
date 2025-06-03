@@ -140,7 +140,7 @@ export const ScheduleEditor: React.FC<SchedulerProps> = ({
   const { Modal: unsavedModal, showModal: showUnsavedModal } = useBackdropModal(
     <div>
       <p>
-        If you view without saving, you’ll see the last saved changes—not your most recent edits.
+        Previewing your schedule requires that you save all changes first.
       </p>
     </div>,
     () => {},
