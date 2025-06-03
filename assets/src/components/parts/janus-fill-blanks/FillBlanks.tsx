@@ -460,89 +460,96 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
 
   const buildContentList = useCallback(
     () =>
-      content?.map((contentItem: { [x: string]: any; insert: any; dropdown: any }) => {
-        if (!elements?.length) return;
+      content?.map(
+        (contentItem: { [x: string]: any; insert: any; dropdown: any }, index: number) => {
+          if (!elements?.length) return;
 
-        const insertList: any[] = [];
-        let insertEl: any;
+          const insertList: any[] = [];
+          let insertEl: any;
 
-        if (contentItem.insert) {
-          // contentItem.insert is always a string
-          insertList.push(<span dangerouslySetInnerHTML={{ __html: contentItem.insert }} />);
-        } else if (contentItem.dropdown) {
-          // get correlating dropdown from `elements`
-          insertEl = elements.find((elItem: { key: any }) => elItem.key === contentItem.dropdown);
-          if (insertEl) {
-            // build list of options for react-select
-            const elVal: string = getElementValueByKey(insertEl.key);
-            const optionsList = insertEl.options.map(
-              ({ value: text, key: id }: { value: any; key: any }) => ({ id, text }),
-            );
-            const answerStatus: string =
-              (showCorrect && isCorrect(elVal, insertEl.correct, insertEl.alternateCorrect)) ||
-              (showHints && isCorrect(elVal, insertEl.correct, insertEl.alternateCorrect))
-                ? 'correct'
-                : 'incorrect';
-
+          if (contentItem.insert) {
+            // contentItem.insert is always a string
+            const htmlString = contentItem?.insert?.replace(/\n/g, '<br />');
             insertList.push(
-              <span className="dropdown-blot" tabIndex={-1}>
-                <span className="dropdown-container" tabIndex={-1}>
-                  <Select2
-                    className={`dropdown ${showCorrect || showHints ? answerStatus : ''}`}
-                    name={insertEl.key}
-                    data={optionsList}
-                    value={elVal}
-                    aria-label="Make a selection"
-                    options={{
-                      dropdownParent: fibContainer.current,
-                      minimumResultsForSearch: 10,
-                      selectOnClose: false,
-                    }}
-                    onSelect={(e: any) => handleInput(e.currentTarget)}
-                    disabled={!enabled}
-                  />
-                </span>
-              </span>,
+              <span dangerouslySetInnerHTML={{ __html: htmlString }} key={`text-${index}`} />,
             );
-          }
-        } else if (contentItem['text-input']) {
-          // get correlating inputText from `elements`
-          insertEl = elements.find((elItem: { key: any }) => {
-            return elItem.key === contentItem['text-input'];
-          });
-          if (insertEl) {
-            const elVal: string = getElementValueByKey(insertEl.key);
-            const answerStatus: string =
-              (showCorrect && isCorrect(elVal, insertEl.correct, insertEl.alternateCorrect)) ||
-              (showHints && isCorrect(elVal, insertEl.correct, insertEl.alternateCorrect))
-                ? 'correct'
-                : 'incorrect';
+          } else if (contentItem.dropdown) {
+            // get correlating dropdown from `elements`
+            insertEl = elements.find((elItem: { key: any }) => elItem.key === contentItem.dropdown);
+            if (insertEl) {
+              // build list of options for react-select
+              const elVal: string = getElementValueByKey(insertEl.key);
+              const optionsList = insertEl.options.map(
+                ({ value: text, key: id }: { value: any; key: any }) => ({ id, text }),
+              );
+              const answerStatus: string =
+                (showCorrect && isCorrect(elVal, insertEl.correct, insertEl.alternateCorrect)) ||
+                (showHints && isCorrect(elVal, insertEl.correct, insertEl.alternateCorrect))
+                  ? 'correct'
+                  : 'incorrect';
 
-            insertList.push(
-              <span className="text-input-blot">
-                <span
-                  className={`text-input-container ${showCorrect || showHints ? answerStatus : ''}`}
-                  tabIndex={-1}
-                >
-                  <input
-                    name={insertEl.key}
-                    className={`text-input ${!enabled ? 'disabled' : ''} ${
-                      showCorrect && isCorrect(elVal, insertEl.correct, insertEl.alternateCorrect)
-                        ? 'correct'
-                        : ''
+              insertList.push(
+                <span className="dropdown-blot" tabIndex={-1}>
+                  <span className="dropdown-container" tabIndex={-1}>
+                    <Select2
+                      className={`dropdown ${showCorrect || showHints ? answerStatus : ''}`}
+                      name={insertEl.key}
+                      data={optionsList}
+                      value={elVal}
+                      aria-label="Make a selection"
+                      options={{
+                        dropdownParent: fibContainer.current,
+                        minimumResultsForSearch: 10,
+                        selectOnClose: false,
+                      }}
+                      onSelect={(e: any) => handleInput(e.currentTarget)}
+                      disabled={!enabled}
+                    />
+                  </span>
+                </span>,
+              );
+            }
+          } else if (contentItem['text-input']) {
+            // get correlating inputText from `elements`
+            insertEl = elements.find((elItem: { key: any }) => {
+              return elItem.key === contentItem['text-input'];
+            });
+            if (insertEl) {
+              const elVal: string = getElementValueByKey(insertEl.key);
+              const answerStatus: string =
+                (showCorrect && isCorrect(elVal, insertEl.correct, insertEl.alternateCorrect)) ||
+                (showHints && isCorrect(elVal, insertEl.correct, insertEl.alternateCorrect))
+                  ? 'correct'
+                  : 'incorrect';
+
+              insertList.push(
+                <span className="text-input-blot">
+                  <span
+                    className={`text-input-container ${
+                      showCorrect || showHints ? answerStatus : ''
                     }`}
-                    type="text"
-                    value={elVal}
-                    onChange={(e) => handleInput(e.currentTarget)}
-                    disabled={!enabled}
-                  />
-                </span>
-              </span>,
-            );
+                    tabIndex={-1}
+                  >
+                    <input
+                      name={insertEl.key}
+                      className={`text-input ${!enabled ? 'disabled' : ''} ${
+                        showCorrect && isCorrect(elVal, insertEl.correct, insertEl.alternateCorrect)
+                          ? 'correct'
+                          : ''
+                      }`}
+                      type="text"
+                      value={elVal}
+                      onChange={(e) => handleInput(e.currentTarget)}
+                      disabled={!enabled}
+                    />
+                  </span>
+                </span>,
+              );
+            }
           }
-        }
-        return insertList;
-      }),
+          return insertList;
+        },
+      ),
     [getElementValueByKey, showHints],
   );
 

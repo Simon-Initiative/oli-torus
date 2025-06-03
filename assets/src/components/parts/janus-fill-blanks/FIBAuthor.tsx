@@ -208,7 +208,7 @@ const FIBAuthor: React.FC<AuthorPartComponentProps<FIBModel>> = (props) => {
   }, [inConfigureMode, finalContent, props.portal]);
 
   const contentList = content?.map(
-    (contentItem: { [x: string]: any; insert: any; dropdown: any }) => {
+    (contentItem: { [x: string]: any; insert: any; dropdown: any }, index: number) => {
       if (!elements?.length) return;
 
       const insertList: any[] = [];
@@ -216,7 +216,10 @@ const FIBAuthor: React.FC<AuthorPartComponentProps<FIBModel>> = (props) => {
 
       if (contentItem.insert) {
         // contentItem.insert is always a string
-        insertList.push(<span dangerouslySetInnerHTML={{ __html: contentItem.insert }} />);
+        const htmlString = contentItem?.insert?.replace(/\n/g, '<br />');
+        insertList.push(
+          <span dangerouslySetInnerHTML={{ __html: htmlString }} key={`text-${index}`} />,
+        );
       } else if (contentItem.dropdown) {
         // get correlating dropdown from `elements`
         insertEl = elements.find((elItem: { key: any }) => elItem.key === contentItem.dropdown);

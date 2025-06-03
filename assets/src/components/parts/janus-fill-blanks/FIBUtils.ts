@@ -51,7 +51,7 @@ export type ParseFIBMode = 'generate' | 'map';
 export const extractFormattedHTMLFromQuillNodes = (nodes: any[]): string => {
   const processNodes = (nodeArray: any[]): string => {
     return nodeArray
-      .map((node) => {
+      .map((node, index) => {
         if (node.tag === 'text' && node.text) {
           return node.text;
         }
@@ -81,6 +81,11 @@ export const extractFormattedHTMLFromQuillNodes = (nodes: any[]): string => {
           return wrapped;
         }
 
+        if (node.tag === 'p') {
+          const inner = processNodes(node.children || []);
+          return `${inner}\n`;
+        }
+
         // Recurse for other tags (like <p> etc.)
         if (Array.isArray(node.children)) {
           return processNodes(node.children);
@@ -105,7 +110,8 @@ export const convertFIBContentToQuillNodes = (contentItems: any[], blanks: any[]
   contentItems?.forEach((item) => {
     if (!blanks?.length) return;
     if (item.insert) {
-      finalText += item.insert;
+      const htmlString = item.insert.replace(/\n/g, '<p></p>');
+      finalText += htmlString;
     } else if (item.dropdown) {
       const matchingDropdown = blanks.find((b) => b.key === item.dropdown);
 
@@ -209,7 +215,12 @@ export const convertHTMLToQuillNodes = (htmlText: string) => {
             style: { fontWeight: 'bold' },
             children,
           };
-
+        case 'p':
+          return {
+            tag: 'p',
+            style: {},
+            children,
+          };
         case 'i':
         case 'em':
           return {
