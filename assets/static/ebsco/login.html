@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <!-- Use referrer policy of origin only. Not essential given modern browser default -->
+    <meta name="referrer" content="origin" />
+
+    <title>OLI Torus EBSCO Access Page</title>
+    <script>
+      window.onload = () => {
+        // build ebsco login link with same search parameters as we got
+        const link = document.createElement("a");
+        link.href = `//search.ebscohost.com/login.aspx${window.location.search}`;
+        link.textContent = "Click here to access this EBSCO resource";
+        // noopener is weaker than noreferrer, allowing referer header to be sent
+        link.rel = "noopener";
+        // link.target = "_blank";
+        document.body.appendChild(link);
+
+        // Immediately simulate a click of the link. Pop-up blocker may suppress
+        link.click();
+      };
+    </script>
+  </head>
+  <body></body>
+</html>
