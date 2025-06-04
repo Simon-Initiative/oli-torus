@@ -1,7 +1,13 @@
 <!DOCTYPE html>
+<!--
+  Proxy page providing links to access to resources on EBSCO research database site
+  from torus courses.  Allows referrer header, normally suppressed on torus links, to
+  be sent for loginless access to EBSCO from origins whitelisted on EBSCO.
+-->
 <html lang="en">
   <head>
-    <!-- Use referrer policy of origin only. Not essential given modern browser default -->
+    <!-- Specify referrer policy to only send origin part of url. Modern browsers
+     default to this anyway for cross-origin links, but doesn't hurt to be safe -->
     <meta name="referrer" content="origin" />
 
     <title>OLI Torus EBSCO Access Page</title>
@@ -10,13 +16,11 @@
         // build ebsco login link with same search parameters as we got
         const link = document.createElement("a");
         link.href = `//search.ebscohost.com/login.aspx${window.location.search}`;
-        link.textContent = "Click here to access this EBSCO resource";
-        // noopener is weaker than noreferrer, allowing referer header to be sent
         link.rel = "noopener";
-        // link.target = "_blank";
+        link.textContent = "click here to access the specified EBSCO database";
         document.body.appendChild(link);
 
-        // Immediately simulate a click of the link. Pop-up blocker may suppress
+        // Simulate a click of the link to effect immediate redirect
         link.click();
       };
     </script>
