@@ -1,12 +1,13 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback } from 'react';
 import { DateWithoutTime } from 'epoq';
 import { useDocumentMouseEvents } from '../../components/hooks/useDocumentMouseEvents';
 import { useToggle } from '../../components/hooks/useToggle';
+import { ContextMenuItem } from './ContextMenu';
+import { useContextMenu } from './ContextMenuController';
 import { DayGeometry, barGeometry, leftToDate } from './date-utils';
-import ContextMenu, { ContextMenuItem } from './ContextMenu';
 
 interface DragBarProps {
-  itemId: number
+  itemId: number;
   startDate: DateWithoutTime;
   endDate: DateWithoutTime;
   isContainer: boolean;
@@ -37,50 +38,32 @@ export const DragBar: React.FC<DragBarProps> = ({
   const [workingStart, setWorkingStart] = React.useState<DateWithoutTime>(new DateWithoutTime());
   const [workingEnd, setWorkingEnd] = React.useState<DateWithoutTime>(new DateWithoutTime());
 
-  const [menuVisible, setMenuVisible] = React.useState(false);
-  const [menuPosition, setMenuPosition] = React.useState({ x: 0, y: 0 });
-
   const [mouseDownX, setMouseDownX] = React.useState(0);
+
+  const { showMenu, hideMenu } = useContextMenu();
 
   const handleContextMenu = (e: React.MouseEvent<HTMLDivElement>) => {
     e.preventDefault();
-    setMenuPosition({ x: e.clientX, y: e.clientY });
-    setMenuVisible(true);
+
+    const menuItems: ContextMenuItem[] = [
+      {
+        label: 'Remove from Schedule',
+        onClick: () => {
+          console.log('Removed from schedule');
+          hideMenu();
+        },
+      },
+      {
+        label: 'Re-add to Schedule',
+        onClick: () => {
+          console.log('Re-added to schedule');
+          hideMenu();
+        },
+      },
+    ];
+
+    showMenu({ x: e.clientX, y: e.clientY }, menuItems);
   };
-
-  useEffect(() => {
-    const handleClickOutside = () => {
-      setMenuVisible(false);
-    };
-    document.addEventListener('click', handleClickOutside);
-    return () => {
-      document.removeEventListener('click', handleClickOutside);
-    };
-  }, []);
-
-  const menuItems: ContextMenuItem[] = [
-    {
-      label: 'Remove from Schedule',
-      onClick: () => {
-        console.log('Removed from schedule');
-        setMenuVisible(false);
-      },
-    },
-    {
-      label: 'Re-add to Schedule',
-      onClick: () => {
-        console.log('Re-added to schedule');
-        setMenuVisible(false);
-      },
-    },
-    {
-      label: 'View Details',
-      onClick: () => {
-        console.log('Viewing details');
-        setMenuVisible(false);
-      },
-    },
-  ];
 
   const onMouseMove = (e: MouseEvent) => {
     const delta = e.clientX - mouseDownX;
@@ -163,6 +146,7 @@ export const DragBar: React.FC<DragBarProps> = ({
     <>
       {isContainer ? (
         <div
+          onContextMenu={handleContextMenu}
           onMouseDown={startDrag}
           className="absolute border-t-4 h-3 top-3 cursor-grab flex flex-row justify-between"
           style={{
@@ -184,9 +168,9 @@ export const DragBar: React.FC<DragBarProps> = ({
         </div>
       ) : (
         <div
-        onContextMenu={handleContextMenu}
+          onContextMenu={handleContextMenu}
           onMouseDown={startDrag}
-          className="rounded absolute h-7 top-1.5 flex flex-row justify-between p-0.5 cursor-grab"
+          className="group rounded absolute h-7 top-1.5 flex flex-row justify-between p-0.5 cursor-grab"
           style={{
             left: geometry.left,
             width: geometry.width,
@@ -195,22 +179,16 @@ export const DragBar: React.FC<DragBarProps> = ({
         >
           <div
             onMouseDown={startResize('left')}
-            className="w-0.5 inline-block h-full bg-delivery-primary-300 dark:bg-delivery-primary-200 cursor-col-resize dark:border-gray-400"
+            className="w-0.5 inline-block h-full group-hover:bg-delivery-primary-300 group-hover:dark:bg-delivery-primary-200 cursor-col-resize group-hover:dark:border-gray-400"
           ></div>
           {children}
 
           <div
             onMouseDown={startResize('right')}
-            className="w-0.5 inline-block h-full bg-delivery-primary-300 dark:bg-delivery-primary-200 cursor-col-resize dark:border-gray-400"
+            className="w-0.5 inline-block h-full group-hover:bg-delivery-primary-300 group-hover:dark:bg-delivery-primary-200 cursor-col-resize group-hover:dark:border-gray-400"
           ></div>
         </div>
       )}
-      <ContextMenu
-        visible={menuVisible}
-        position={menuPosition}
-        items={menuItems}
-        onClose={() => setMenuVisible(false)}
-      />
     </>
   );
 };

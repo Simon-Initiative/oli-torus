@@ -134,6 +134,7 @@ const ContainerScheduleLine: React.FC<ScheduleLineProps> = ({
           <ScheduleHeader labels={false} dayGeometry={dayGeometry} />
           {item.startDate && item.endDate && (
             <DragBar
+              itemId={item.id}
               onStartDrag={onStartDrag}
               onChange={onChange}
               startDate={item.startDate}

@@ -3,6 +3,7 @@ import { useDispatch } from 'react-redux';
 import { useBackdropModal } from 'components/misc/BackdropModal';
 import { Alert } from '../../components/misc/Alert';
 import { usePromptModal } from '../../components/misc/PromptModal';
+import { ContextMenuProvider } from './ContextMenuController';
 import { ErrorDisplay } from './ErrorDisplay';
 import { ScheduleGrid } from './ScheduleGrid';
 import { ScheduleSaveBar } from './SchedulerSaveBar';
@@ -124,7 +125,7 @@ export const ScheduleEditor: React.FC<SchedulerProps> = ({
   }
 
   return (
-    <>
+    <ContextMenuProvider>
       <ErrorDisplay />
       {wizard_mode || <ScheduleSaveBar onSave={onModification} />}
       <div className="w-full flex justify-center flex-col">
@@ -138,7 +139,7 @@ export const ScheduleEditor: React.FC<SchedulerProps> = ({
         {Modal}
         {clearModal}
       </div>
-    </>
+    </ContextMenuProvider>
   );
 };
 
