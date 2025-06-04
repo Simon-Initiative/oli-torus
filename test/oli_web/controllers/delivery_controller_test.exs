@@ -6,6 +6,7 @@ defmodule OliWeb.DeliveryControllerTest do
   alias Oli.Seeder
   alias Lti_1p3.Roles.ContextRoles
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Attempts.Core
 
   import Mox
   import Oli.Factory
@@ -237,36 +238,72 @@ defmodule OliWeb.DeliveryControllerTest do
     end
   end
 
-  describe "download_students_progress" do
-    setup [:setup_lti_session]
-
-    test "downloads the student progress when section exists", %{
-      conn: conn,
-      section: section,
-      instructor: instructor
-    } do
+  describe "download_students_progress/2" do
+    # Student 1: Progress: 0, Overall Proficiency: Not enough data
+    # Student 2: Progress: 50, Overall Proficiency: Low
+    # Student 3: Progress: 50, Overall Proficiency: Medium
+    # Student 4: Progress: 50, Overall Proficiency: High
+    # Student 5: Progress: 100, Overall Proficiency: Medium
+    test "downloads student progress with different proficiency levels", %{conn: conn} do
+      %{instructor: instructor, section: section} = prepare_student_progress_data()
+      # Download the CSV
       conn =
         conn
         |> log_in_user(instructor)
-        |> get(Routes.delivery_path(conn, :download_students_progress, section.slug))
+        |> get(~p"/sections/#{section.slug}/instructor_dashboard/downloads/students_progress")
 
-      Enum.any?(conn.resp_headers, fn h ->
-        h ==
-          {"content-disposition", "attachment; filename=\"#{section.slug}_students.csv\""}
-      end)
+      assert get_resp_header(conn, "content-disposition") == [
+               "attachment; filename=\"#{section.slug}_students.csv\""
+             ]
 
-      Enum.any?(conn.resp_headers, fn h -> h == {"content-type", "text/csv"} end)
+      assert get_resp_header(conn, "content-type") == ["text/csv"]
       assert response(conn, 200)
+
+      # Verify CSV content
+      resp = conn.resp_body
+
+      # Then verify each student's row in order
+      lines = String.split(resp, "\r\n")
+      [header | data_rows] = lines
+
+      # First verify the header row
+      assert header == "name,email,last_interaction,progress,overall_proficiency,requires_payment"
+
+      # Student 1
+      student1_row = Enum.at(data_rows, 0)
+      assert student1_row =~ "Student 1"
+      assert student1_row =~ "Not enough data"
+
+      # Student 2
+      student2_row = Enum.at(data_rows, 1)
+      assert student2_row =~ "Student 2"
+      assert student2_row =~ "Low"
+
+      # Student 3
+      student3_row = Enum.at(data_rows, 2)
+      assert student3_row =~ "Student 3"
+      assert student3_row =~ "Medium"
+
+      # Student 4
+      student4_row = Enum.at(data_rows, 3)
+      assert student4_row =~ "Student 4"
+      assert student4_row =~ "High"
+
+      # Student 5
+      student5_row = Enum.at(data_rows, 4)
+      assert student5_row =~ "Student 5"
+      assert student5_row =~ "Medium"
     end
 
-    test "Redirects to \"Not found\" page if the section doesn't exist", %{
-      conn: conn,
-      instructor: instructor
-    } do
+    test "Redirects to \"Not found\" page if the section doesn't exist", %{conn: conn} do
+      %{instructor: instructor, section: _section} = prepare_student_progress_data()
+
       conn =
         conn
         |> log_in_user(instructor)
-        |> get(Routes.delivery_path(conn, :download_students_progress, "invalid_section_slug"))
+        |> get(
+          ~p"/sections/invalid_section_slug/instructor_dashboard/downloads/students_progress"
+        )
 
       assert response(conn, 302) =~ "You are being <a href=\"/not_found\">redirected</a>"
     end
@@ -891,5 +928,209 @@ defmodule OliWeb.DeliveryControllerTest do
       Phoenix.HTML.Link.link("redirected", to: redirected_path) |> Phoenix.HTML.raw()
 
     assert html_response(conn, 302) =~ "You are being #{link}."
+  end
+
+  defp prepare_student_progress_data() do
+    # Create author and institution
+    author = author_fixture()
+
+    # Create a project with a container and a page
+    project = insert(:project)
+
+    # Create root container
+    container_id = Oli.Resources.ResourceType.id_for_container()
+    type_for_page = Oli.Resources.ResourceType.id_for_page()
+
+    %{resource: container_resource} =
+      container_revision =
+      insert(:revision, %{author_id: author.id, resource_type_id: container_id})
+
+    # Create a page
+
+    %{resource: page_resource} =
+      page_revision = insert(:revision, author: author, resource_type_id: type_for_page)
+
+    # Link resources to project
+    insert(:project_resource, project: project, resource: container_resource)
+    insert(:project_resource, project: project, resource: page_resource)
+
+    # Create publication
+    publication = insert(:publication, project: project, root_resource: container_resource)
+
+    # Create published resources
+    insert(:published_resource,
+      publication: publication,
+      resource: container_resource,
+      revision: container_revision
+    )
+
+    insert(:published_resource,
+      publication: publication,
+      resource: page_resource,
+      revision: page_revision
+    )
+
+    # Create section
+    section = insert(:section, base_project: project)
+
+    # Create section resources
+    {:ok, section} = Sections.create_section_resources(section, publication)
+
+    # Create students with different profiles
+    # No progress
+    student_1 = user_fixture(%{name: "Student 1", given_name: "Student", family_name: "One"})
+    # Low proficiency
+    student_2 = user_fixture(%{name: "Student 2", given_name: "Student", family_name: "Two"})
+    # Medium proficiency
+    student_3 = user_fixture(%{name: "Student 3", given_name: "Student", family_name: "Three"})
+    # High proficiency
+    student_4 = user_fixture(%{name: "Student 4", given_name: "Student", family_name: "Four"})
+    # Complete progress
+    student_5 = user_fixture(%{name: "Student 5", given_name: "Student", family_name: "Five"})
+
+    # Enroll students
+    Sections.enroll(student_1.id, section.id, [ContextRoles.get_role(:context_learner)])
+    Sections.enroll(student_2.id, section.id, [ContextRoles.get_role(:context_learner)])
+    Sections.enroll(student_3.id, section.id, [ContextRoles.get_role(:context_learner)])
+    Sections.enroll(student_4.id, section.id, [ContextRoles.get_role(:context_learner)])
+    Sections.enroll(student_5.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+    # Set up progress and attempts for each student
+    [section_resource] = Sections.get_section_resources(section.id)
+
+    # Student 1: No progress, no attempts
+    section_resource.resource_id
+    |> Core.track_access(section.id, student_1.id)
+    |> Core.update_resource_access(%{progress: 0})
+
+    section_resource.resource_id
+    |> Core.track_access(section.id, student_2.id)
+    |> Core.update_resource_access(%{progress: 50})
+
+    # Student 2: 50% progress, low proficiency
+    section_resource.resource_id
+    |> Core.track_access(section.id, student_2.id)
+    |> Core.update_resource_access(%{progress: 50})
+    |> then(fn ra ->
+      Core.create_resource_attempt(%{
+        resource_access: ra,
+        revision: section_resource.revision,
+        score: 0.3,
+        out_of: 1.0,
+        lifecycle_state: :evaluated
+      })
+    end)
+
+    # Student 3: 50% progress, medium proficiency
+    section_resource.resource_id
+    |> Core.track_access(section.id, student_3.id)
+    |> Core.update_resource_access(%{progress: 50})
+    |> then(fn ra ->
+      Core.create_resource_attempt(%{
+        resource_access: ra,
+        revision: section_resource.revision,
+        score: 0.3,
+        out_of: 1.0,
+        lifecycle_state: :evaluated
+      })
+    end)
+
+    # Student 4: 50% progress, high proficiency
+
+    section_resource.resource_id
+    |> Core.track_access(section.id, student_4.id)
+    |> Core.update_resource_access(%{progress: 50})
+    |> then(fn ra ->
+      Core.create_resource_attempt(%{
+        resource_access: ra,
+        revision: section_resource.revision,
+        score: 0.9,
+        out_of: 1.0,
+        lifecycle_state: :evaluated
+      })
+    end)
+
+    # Student 5: 100% progress, medium proficiency
+    section_resource.resource_id
+    |> Core.track_access(section.id, student_5.id)
+    |> Core.update_resource_access(%{progress: 100})
+    |> then(fn ra ->
+      Core.create_resource_attempt(%{
+        resource_access: ra,
+        revision: section_resource.revision,
+        score: 0.6,
+        out_of: 1.0,
+        lifecycle_state: :evaluated
+      })
+    end)
+
+    # Create summary records for analytics
+    page_type_id = Oli.Resources.ResourceType.id_for_page()
+
+    # Student 1: Not enough data
+    insert(:resource_summary, %{
+      section_id: section.id,
+      user_id: student_1.id,
+      resource_id: section_resource.resource_id,
+      resource_type_id: page_type_id,
+      num_attempts: 1,
+      num_correct: 0,
+      num_first_attempts: 1,
+      num_first_attempts_correct: 0
+    })
+
+    # Student 2: Low proficiency
+    insert(:resource_summary, %{
+      section_id: section.id,
+      user_id: student_2.id,
+      resource_id: section_resource.resource_id,
+      resource_type_id: page_type_id,
+      num_attempts: 5,
+      num_correct: 1,
+      num_first_attempts: 5,
+      num_first_attempts_correct: 1
+    })
+
+    # Student 3: Medium proficiency
+    insert(:resource_summary, %{
+      section_id: section.id,
+      user_id: student_3.id,
+      resource_id: section_resource.resource_id,
+      resource_type_id: page_type_id,
+      num_attempts: 5,
+      num_correct: 3,
+      num_first_attempts: 5,
+      num_first_attempts_correct: 3
+    })
+
+    # Student 4: High proficiency
+    insert(:resource_summary, %{
+      section_id: section.id,
+      user_id: student_4.id,
+      resource_id: section_resource.resource_id,
+      resource_type_id: page_type_id,
+      num_attempts: 5,
+      num_correct: 5,
+      num_first_attempts: 5,
+      num_first_attempts_correct: 5
+    })
+
+    # Student 5: Medium proficiency
+    insert(:resource_summary, %{
+      section_id: section.id,
+      user_id: student_5.id,
+      resource_id: section_resource.resource_id,
+      resource_type_id: page_type_id,
+      num_attempts: 5,
+      num_correct: 3,
+      num_first_attempts: 5,
+      num_first_attempts_correct: 3
+    })
+
+    # Create an instructor
+    instructor = user_fixture()
+    Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+    %{instructor: instructor, section: section}
   end
 end
