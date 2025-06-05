@@ -41,7 +41,7 @@ function contentToString(content: any) {
 export type PostUndoable = (undoable: Undoable) => void;
 
 /**
- * Three different modes of activity delivery.
+ * Four different modes of activity delivery.
  *
  * `'delivery'` is the standard mode where a student is interacting
  * with a an activity
@@ -49,8 +49,9 @@ export type PostUndoable = (undoable: Undoable) => void;
  * submitted activity, in a read only mode
  * `'preview'` mode is instructor specific and allows access to
  * responses and hints
+ * `'author_preview'` mode is for author-specific preview (when previewing an activity while editing a page)
  */
-export type DeliveryMode = 'delivery' | 'review' | 'preview';
+export type DeliveryMode = 'delivery' | 'review' | 'preview' | 'author_preview';
 
 /**
  * Request for a media item from the media library.
