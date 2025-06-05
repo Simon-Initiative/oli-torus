@@ -46,49 +46,91 @@ const HubSpokeAuthor: React.FC<AuthorPartComponentProps<hubSpokeModel>> = (props
           <style>
             {`
 
-              .spoke-horizontalLayout .hub-spoke-item {
-                box-sizing: border-box;
-                margin-left: 0px;
-                margin-right: 6px;
-              }
-              .spoke-horizontalLayout .progress-bar {
-                width: 25% !important;
-                margin-left: auto;
-                margin-right: 8px !important;
-              }
-              .spoke-horizontalLayout {
-                box-sizing: border-box;
-                margin-left: 0px;
-                margin-right: 0px;
-              }
-              .hub-spoke button {
-                color: white !important;
-                min-width: 100px;
-                height: auto !important;
-                min-height: 44px;
-                background-color: #006586;
-                border-radius: 3px;
-                border: none;
-                padding: 10px 20px;
-                cursor: pointer;
-              }
-              .hub-spoke {
-                border: none !important;
-                padding: 0px;
+            .spoke-horizontalLayout .progress-bar {
+            width: 25% !important;
+            margin-left: auto;
+            margin-right: 8px !important;
+            }
+            .spoke-horizontalLayout {
+            box-sizing: border-box;
+            margin-left: 0px;
+            margin-right: 0px;
+            white-space: normal;
+            font-size: 0; /* Removes inline-block spacing */
+            }
 
-                > div {
-                  display: block;
-                  position: static !important;
-                  margin: 0 9px 15px 0;
-                  min-height: 20px;
-                }
-                p {
-                  margin: 0px;
-                }
-                > br {
-                  display: none !important;
-                }
-              }
+            .spoke-horizontalLayout .hub-spoke-item {
+            box-sizing: border-box;
+            margin-left: 0px;
+            margin-right: 6px;
+            vertical-align: top;
+            min-height: 100px; /* match all */
+            font-size: 14px; /* reset font size */
+            }
+            .hub-spoke button {
+            color: white !important;
+            min-width: 100px;
+            height: auto !important;
+            min-height: 44px;
+            background-color: #006586;
+            border-radius: 3px;
+            border: none;
+            padding: 10px 3px;
+            cursor: pointer;
+            }
+            .hub-spoke {
+            border: none !important;
+            padding: 0px;
+
+            > div {
+            display: block;
+            position: static !important;
+            margin: 0 9px 15px 0;
+            min-height: 20px;
+            }
+            p {
+            margin: 0px;
+            }
+            > br {
+            display: none !important;
+            }
+            }
+
+            .hub-spoke-button {
+            display: flex;
+            align-items: center;
+            justify-content: center; /* center horizontally, or use flex-start for left-align */
+            padding: 10px 3px;
+            width: 100%;
+            }
+
+            .hub-spoke-content {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            gap: 10px;
+            }
+
+            .hub-spoke-content .icon {
+            flex: 0 0 auto;
+            font-size: 18px;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            }
+
+            .hub-spoke-content .label {
+            flex: 1;
+            color: white;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            }
+            .hub-spoke-item > * {
+            height: 100%;
+            display: block;
+            }
         `}
           </style>
           {options?.map((item, index) => (

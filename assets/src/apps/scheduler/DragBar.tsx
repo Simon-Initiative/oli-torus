@@ -139,7 +139,7 @@ export const DragBar: React.FC<DragBarProps> = ({
       ) : (
         <div
           onMouseDown={startDrag}
-          className="rounded absolute h-7 top-1.5 flex flex-row justify-between p-0.5 cursor-grab"
+          className="group rounded absolute h-7 top-1.5 flex flex-row justify-between p-0.5 cursor-grab"
           style={{
             left: geometry.left,
             width: geometry.width,
@@ -148,13 +148,13 @@ export const DragBar: React.FC<DragBarProps> = ({
         >
           <div
             onMouseDown={startResize('left')}
-            className="w-0.5 inline-block h-full bg-delivery-primary-300 dark:bg-delivery-primary-200 cursor-col-resize dark:border-gray-400"
+            className="w-0.5 inline-block h-full group-hover:bg-delivery-primary-300 group-hover:dark:bg-delivery-primary-200 cursor-col-resize group-hover:dark:border-gray-400"
           ></div>
           {children}
 
           <div
             onMouseDown={startResize('right')}
-            className="w-0.5 inline-block h-full bg-delivery-primary-300 dark:bg-delivery-primary-200 cursor-col-resize dark:border-gray-400"
+            className="w-0.5 inline-block h-full group-hover:bg-delivery-primary-300 group-hover:dark:bg-delivery-primary-200 cursor-col-resize group-hover:dark:border-gray-400"
           ></div>
         </div>
       )}

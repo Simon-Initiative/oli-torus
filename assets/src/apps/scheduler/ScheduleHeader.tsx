@@ -64,7 +64,7 @@ export const ScheduleHeader: React.FC<ScheduleHeaderProps> = ({ labels, dayGeome
       {g.map((g, i) => (
         <div
           key={i}
-          className="p-0 align-top inline-block border-l h-full whitespace-nowrap text-ellipsis font-normal dark:border-gray-800 "
+          className="p-0 align-top inline-block border-l h-full whitespace-nowrap text-ellipsis font-normal border-l-[#CED1D9] dark:border-gray-800 "
           style={{ width: g.width }}
         >
           {labels && (
@@ -96,7 +96,7 @@ export const ScheduleMonths: React.FC<ScheduleMonthsProps> = ({ dayGeometry }) =
       {Array.from(gMonths).map(([key, value], i) => (
         <div
           key={i}
-          className="pb-2 align-top content-end inline-block border-l h-full whitespace-nowrap text-ellipsis font-normal dark:border-gray-800 "
+          className="pb-2 align-top content-end inline-block border-l h-full whitespace-nowrap text-ellipsis font-normal border-l-[#CED1D9] dark:border-gray-800 "
           style={{ width: value }}
         >
           <div className="font-bold text-[11px]">{key.split('-')[0]}</div>

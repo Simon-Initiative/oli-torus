@@ -46,7 +46,6 @@ defmodule OliWeb.Router do
     plug(:fetch_current_user)
     plug(:fetch_live_flash)
     plug(:put_root_layout, {OliWeb.LayoutView, :lti})
-    plug(:protect_from_forgery)
     plug(OliWeb.Plugs.SessionContext)
   end
 
@@ -376,7 +375,6 @@ defmodule OliWeb.Router do
 
     get("/api/v1/legacy_support", LegacySupportController, :index)
 
-    post("/help/create", HelpController, :create)
     post("/consent/cookie", CookieConsentController, :persist_cookies)
     get("/consent/cookie", CookieConsentController, :retrieve)
 
