@@ -206,7 +206,7 @@ export const getScreenPrimaryQuestion = (screen: IActivity): IPartLayout | undef
     (part) => availableQuestionTypes.indexOf(part.type) !== -1,
   );
 };
-
+//checks if a given part component is a static question type
 export const isStaticQuestionType = (part: IPartLayout): boolean | undefined => {
   return availableQuestionTypes.indexOf(part.type) === -1;
 };
