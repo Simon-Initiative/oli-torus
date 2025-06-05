@@ -12,17 +12,7 @@
 
     <title>OLI Torus EBSCO Access Page</title>
     <script>
-      window.onload = () => {
-        // build ebsco login link with same search parameters as we got
-        const link = document.createElement("a");
-        link.href = `//search.ebscohost.com/login.aspx${window.location.search}`;
-        link.rel = "noopener";
-        link.textContent = "click here to access the specified EBSCO database";
-        document.body.appendChild(link);
-
-        // Simulate a click of the link to effect immediate redirect
-        link.click();
-      };
+      window.location.replace(`//search.ebscohost.com/login.aspx${window.location.search}`);
     </script>
   </head>
   <body></body>
