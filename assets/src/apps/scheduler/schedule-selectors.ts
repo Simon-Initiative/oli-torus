@@ -7,6 +7,17 @@ import {
   getScheduleRoot,
 } from './scheduler-slice';
 
+/**
+ * VisibleHierarchyItem:
+ * A recursive interface that represents a schedule item whose `children` are not just IDs,
+ * but fully expanded child objects (VisibleHierarchyItem[]).
+ * This is used to represent the tree structure with nested objects, allowing traversal and rendering
+ * without additional lookups.
+ */
+export interface VisibleHierarchyItem extends Omit<HierarchyItem, 'children'> {
+  children: VisibleHierarchyItem[];
+}
+
 export const getTopLevelSchedule = (state: SchedulerAppState): HierarchyItem[] => {
   const root = getScheduleRoot(state.scheduler.schedule);
   if (!root) return [];
@@ -59,26 +70,88 @@ export const getError = (state: SchedulerAppState) => state.scheduler.errorMessa
 
 export const isSearching = (state: SchedulerAppState) => !!state.scheduler.searchQuery?.trim();
 
+/**
+ * getVisibleSchedule:
+ * - If there is no search query, returns the full tree as VisibleHierarchyItem[].
+ * - If a container matches the search, displays that container and all its descendants in hierarchical order.
+ * - If pages match the search, displays those pages along with their full ancestry path up to the root (without siblings).
+ * - If a matching page is not under a matching container, its ancestry path is still shown.
+ * - Hierarchical order is preserved whenever possible.
+ */
 export const getVisibleSchedule = createSelector(
   [
     (state: SchedulerAppState) => state.scheduler.schedule,
     (state: SchedulerAppState) => state.scheduler.searchQuery?.toLowerCase().trim() || '',
   ],
-  (schedule: HierarchyItem[], search: string): HierarchyItem[] => {
+  (schedule: HierarchyItem[], search: string): VisibleHierarchyItem[] => {
     const root = getScheduleRoot(schedule);
     if (!root) return [];
 
     const getItemById = (id: number): HierarchyItem | undefined =>
       getScheduleItem(id, schedule) as HierarchyItem | undefined;
-
     const matches = (item: HierarchyItem): boolean => item.title.toLowerCase().includes(search);
 
-    const matchedIds = new Set<number>();
-
     if (!search) {
-      return root.children.map(getItemById).filter((i): i is HierarchyItem => !!i);
+      const buildTree = (item: HierarchyItem): VisibleHierarchyItem => ({
+        ...item,
+        children: item.children
+          .map(getItemById)
+          .filter((i): i is HierarchyItem => !!i)
+          .map(buildTree),
+      });
+      return root.children
+        .map(getItemById)
+        .filter((i): i is HierarchyItem => !!i)
+        .map(buildTree);
     }
 
+    const matchedItems = schedule.filter(matches);
+
+    const matchingContainers = matchedItems.filter(
+      (item) => item.resource_type_id === ScheduleItemType.Container,
+    );
+
+    const matchingPages = matchedItems.filter(
+      (item) => item.resource_type_id === ScheduleItemType.Page,
+    );
+
+    const descendantIds = new Set<number>();
+    const collectDescendantIds = (item: HierarchyItem) => {
+      item.children.forEach((childId) => {
+        descendantIds.add(childId);
+        const child = getItemById(childId);
+        if (child) collectDescendantIds(child);
+      });
+    };
+    matchingContainers.forEach(collectDescendantIds);
+
+    const includeSubtree = (item: HierarchyItem): VisibleHierarchyItem => ({
+      ...item,
+      children: item.children
+        .map(getItemById)
+        .filter((i): i is HierarchyItem => !!i)
+        .map(includeSubtree),
+    });
+    let containerTrees: VisibleHierarchyItem[] = [];
+    if (matchingContainers.length > 0) {
+      const matchingContainerIds = new Set(matchingContainers.map((c) => c.id));
+      const collectMatchingContainers = (item: HierarchyItem): VisibleHierarchyItem[] => {
+        if (matchingContainerIds.has(item.id)) {
+          return [includeSubtree(item)];
+        }
+        return item.children
+          .map(getItemById)
+          .filter((i): i is HierarchyItem => !!i)
+          .flatMap(collectMatchingContainers);
+      };
+      containerTrees = root.children
+        .map(getItemById)
+        .filter((i): i is HierarchyItem => !!i)
+        .flatMap(collectMatchingContainers);
+    }
+    const standalonePages = matchingPages.filter((page) => !descendantIds.has(page.id));
+
+    const matchedIds = new Set<number>();
     const includeAncestors = (item: HierarchyItem) => {
       matchedIds.add(item.id);
       schedule.forEach((potentialParent) => {
@@ -87,46 +160,32 @@ export const getVisibleSchedule = createSelector(
         }
       });
     };
+    standalonePages.forEach(includeAncestors);
 
-    for (const item of schedule) {
-      if (matches(item)) {
-        if (item.resource_type_id === ScheduleItemType.Container) {
-          matchedIds.add(item.id);
-          item.children.forEach((childId: number) => {
-            const child = getItemById(childId);
-            if (child) {
-              matchedIds.add(child.id);
-            }
-          });
-        } else {
-          includeAncestors(item);
-          matchedIds.add(item.id);
-        }
-      }
-    }
-
-    const collectVisible = (item: HierarchyItem): HierarchyItem | null => {
-      const children: HierarchyItem[] = item.children
+    const collectVisible = (item: HierarchyItem): VisibleHierarchyItem | null => {
+      if (!matchedIds.has(item.id)) return null;
+      const children: VisibleHierarchyItem[] = item.children
         .map(getItemById)
-        .filter((i): i is HierarchyItem => !!i)
+        .filter((i): i is HierarchyItem => !!i && matchedIds.has(i.id))
         .map(collectVisible)
-        .filter((i): i is HierarchyItem => !!i);
+        .filter((i): i is VisibleHierarchyItem => !!i);
 
-      if (matchedIds.has(item.id) || children.length > 0) {
-        return {
-          ...item,
-          children: children.map((child) => child.id),
-        };
-      }
-
-      return null;
+      return {
+        ...item,
+        children,
+      };
     };
 
-    return root.children
-      .map(getItemById)
-      .filter((i): i is HierarchyItem => !!i)
-      .map(collectVisible)
-      .filter((i): i is HierarchyItem => !!i);
+    const treeFromPages =
+      standalonePages.length > 0
+        ? root.children
+            .map(getItemById)
+            .filter((i): i is HierarchyItem => !!i)
+            .map(collectVisible)
+            .filter((i): i is VisibleHierarchyItem => !!i)
+        : [];
+
+    return [...containerTrees, ...treeFromPages];
   },
 );
 
@@ -197,15 +256,12 @@ export const getExpandedContainerIdsFromSearch: (state: SchedulerAppState) => Se
 export const isAnyVisibleContainerExpanded = createSelector(
   [(state: SchedulerAppState) => state.scheduler.expandedContainers, getVisibleSchedule],
   (expandedContainers, visibleTree) => {
-    const nodeMap = new Map<number, HierarchyItem>();
-    const buildMap = (nodes: HierarchyItem[]) => {
+    const nodeMap = new Map<number, VisibleHierarchyItem>();
+    const buildMap = (nodes: VisibleHierarchyItem[]) => {
       for (const node of nodes) {
         nodeMap.set(node.id, node);
         if (node.children && node.children.length > 0) {
-          const children = node.children
-            .map((cid) => nodes.find((n) => n.id === cid))
-            .filter((n): n is HierarchyItem => !!n);
-          buildMap(children);
+          buildMap(node.children);
         }
       }
     };

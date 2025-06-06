@@ -9,10 +9,13 @@ import { ViewMode } from './ScheduleEditor';
 import { ScheduleHeaderRow } from './ScheduleHeader';
 import { ScheduleLine } from './ScheduleLine';
 import { generateDayGeometry } from './date-utils';
-import { getVisibleSchedule, isAnyVisibleContainerExpanded } from './schedule-selectors';
+import {
+  VisibleHierarchyItem,
+  getVisibleSchedule,
+  isAnyVisibleContainerExpanded,
+} from './schedule-selectors';
 import { SchedulerAppState } from './scheduler-reducer';
 import {
-  HierarchyItem,
   ScheduleItemType,
   collapseAllContainers,
   collapseVisibleContainers,
@@ -69,7 +72,7 @@ export const ScheduleGrid: React.FC<GridProps> = ({
   const [barContainer, attachBarContainer] = useCallbackRef<HTMLElement>();
   const rect = useResizeObserver(barContainer || null);
 
-  const schedule = useSelector(getVisibleSchedule);
+  const schedule = useSelector(getVisibleSchedule) as VisibleHierarchyItem[];
   const isScheduled = schedule.some((item: any) => item.startDateTime && item.endDateTime);
   const dayGeometry = useMemo(
     () =>
@@ -110,21 +113,18 @@ export const ScheduleGrid: React.FC<GridProps> = ({
     }
   }, [searchQuery, schedule]);
 
-  const collectVisibleContainerIds = (nodes: HierarchyItem[]): number[] => {
-    const results: number[] = [];
-    const dfs = (items: HierarchyItem[]) => {
+  const collectVisibleContainerIds = (nodes: VisibleHierarchyItem[]): number[] => {
+    const result: number[] = [];
+    const dfs = (items: VisibleHierarchyItem[]) => {
       for (const node of items) {
         if (node.resource_type_id === ScheduleItemType.Container) {
-          results.push(node.id);
-          const childNodes: HierarchyItem[] = node.children
-            .map((cid: number) => nodes.find((n) => n.id === cid))
-            .filter((c: HierarchyItem | undefined): c is HierarchyItem => !!c);
-          dfs(childNodes);
+          result.push(node.id);
+          dfs(node.children);
         }
       }
     };
     dfs(nodes);
-    return results;
+    return result;
   };
 
   const handleClick = () => {

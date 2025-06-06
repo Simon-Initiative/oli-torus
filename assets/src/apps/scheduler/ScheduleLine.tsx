@@ -8,16 +8,15 @@ import { ScheduleHeader } from './ScheduleHeader';
 import { DayGeometry } from './date-utils';
 import {
   getExpandedContainerIdsFromSearch,
-  getSchedule,
   getSelectedId,
   isSearching,
   shouldDisplayCurriculumItemNumbering,
 } from './schedule-selectors';
+import type { VisibleHierarchyItem } from './schedule-selectors';
 import { SchedulerAppState } from './scheduler-reducer';
 import {
   HierarchyItem,
   ScheduleItemType,
-  getScheduleItem,
   isContainerExpanded,
   moveScheduleItem,
   selectItem,
@@ -25,11 +24,18 @@ import {
 } from './scheduler-slice';
 
 interface ScheduleLineProps {
-  item: HierarchyItem;
+  item: VisibleHierarchyItem;
   index: number;
   indent: number;
   rowColor: string;
   dayGeometry: DayGeometry;
+}
+
+function flattenItem(item: VisibleHierarchyItem): HierarchyItem {
+  return {
+    ...item,
+    children: item.children.map((child) => child.id),
+  };
 }
 
 export const ScheduleLine: React.FC<ScheduleLineProps> = ({
@@ -39,15 +45,19 @@ export const ScheduleLine: React.FC<ScheduleLineProps> = ({
   rowColor,
   dayGeometry,
 }) => {
-  return item.resource_type_id === ScheduleItemType.Page ? (
-    <PageScheduleLine
-      item={item}
-      index={index}
-      indent={indent}
-      rowColor={rowColor}
-      dayGeometry={dayGeometry}
-    />
-  ) : (
+  if (item.resource_type_id === ScheduleItemType.Page) {
+    return (
+      <PageScheduleLine
+        item={flattenItem(item)}
+        index={index}
+        indent={indent}
+        rowColor={rowColor}
+        dayGeometry={dayGeometry}
+      />
+    );
+  }
+
+  return (
     <ContainerScheduleLine
       item={item}
       index={index}
@@ -77,7 +87,6 @@ const ContainerScheduleLine: React.FC<ScheduleLineProps> = ({
 
   const toggleExpanded = () => dispatch(toggleContainer(item.id));
   const isSelected = useSelector(getSelectedId) === item.id;
-  const schedule = useSelector(getSchedule);
   const showNumbers = useSelector(shouldDisplayCurriculumItemNumbering);
 
   const onSelect = useCallback(() => {
@@ -91,13 +100,10 @@ const ContainerScheduleLine: React.FC<ScheduleLineProps> = ({
     [dispatch, item.id],
   );
 
-  const containerChildren = item.children
-    .map((itemId) => getScheduleItem(itemId, schedule))
-    .filter((item) => item?.resource_type_id === ScheduleItemType.Container) as HierarchyItem[];
-
-  const pageChildren = item.children
-    .map((itemId) => getScheduleItem(itemId, schedule))
-    .filter((item) => item?.resource_type_id === ScheduleItemType.Page) as HierarchyItem[];
+  const containerChildren = item.children.filter(
+    (c) => c.resource_type_id === ScheduleItemType.Container,
+  );
+  const pageChildren = item.children.filter((c) => c.resource_type_id === ScheduleItemType.Page);
 
   const filteredPageChildren = React.useMemo(() => {
     if (!isSearchActive) return pageChildren;
@@ -105,7 +111,6 @@ const ContainerScheduleLine: React.FC<ScheduleLineProps> = ({
     const matchingPages = pageChildren.filter((page) =>
       page.title.toLowerCase().includes(searchQuery),
     );
-
     return matchingPages.length > 0 ? matchingPages : pageChildren;
   }, [pageChildren, isSearchActive, searchQuery]);
 
@@ -150,7 +155,6 @@ const ContainerScheduleLine: React.FC<ScheduleLineProps> = ({
             )}
           </div>
         </td>
-
         <td className="relative p-0">
           <ScheduleHeader labels={false} dayGeometry={dayGeometry} />
           {item.startDate && item.endDate && (
@@ -167,11 +171,10 @@ const ContainerScheduleLine: React.FC<ScheduleLineProps> = ({
           )}
         </td>
       </tr>
-
       {expanded &&
         containerChildren.map((child, cindex) => (
           <ScheduleLine
-            key={child?.resource_id}
+            key={child.id}
             index={1 + index + cindex}
             item={child}
             indent={indent + 1}
@@ -179,13 +182,12 @@ const ContainerScheduleLine: React.FC<ScheduleLineProps> = ({
             dayGeometry={dayGeometry}
           />
         ))}
-
       {expanded &&
         filteredPageChildren.map((child, cindex) => (
           <PageScheduleLine
-            key={child?.resource_id}
+            key={child.id}
+            item={flattenItem(child)}
             index={1 + index + cindex}
-            item={child}
             indent={indent + 1}
             rowColor={rowColor}
             dayGeometry={dayGeometry}
