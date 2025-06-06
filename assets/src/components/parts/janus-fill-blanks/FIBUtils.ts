@@ -132,7 +132,7 @@ export const convertFIBContentToQuillNodes = (contentItems: any[], blanks: any[]
       const matchingDropdown = blanks.find((b) => b.key === item.dropdown);
 
       if (matchingDropdown) {
-        finalText += ` {${matchingDropdown.options
+        finalText += `{${matchingDropdown.options
           .map((opt: any) => {
             const isCorrect =
               opt.key === matchingDropdown.correct ||
@@ -156,7 +156,7 @@ export const convertFIBContentToQuillNodes = (contentItems: any[], blanks: any[]
           // this will be old formatted input type
           updatedText = `"${matchingInput.correct}"*`;
         }
-        finalText += ` {${updatedText}}`;
+        finalText += `{${updatedText}}`;
       }
     }
   });
