@@ -67,7 +67,7 @@ export const loadInitialPageState = createAsyncThunk(
       //As per the current implementation, the readGlobalUserState gives the Ever App state of the logged in user. However, in review mode, we need to
       //state of the student whose attempt is being review by the instructor. We get this info from the resource attempt state so no need to call this method in REVIEW mode
       if (!isReviewMode && everAppIds && Array.isArray(everAppIds)) {
-        const userState = await readGlobalUserState(everAppIds, params.previewMode);
+        const userState = await readGlobalUserState(params.blobStorageProvider, everAppIds, params.previewMode);
         if (typeof userState === 'object') {
           const everAppState = Object.keys(userState).reduce((acc: any, key) => {
             const subState = userState[key];

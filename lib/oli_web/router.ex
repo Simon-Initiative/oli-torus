@@ -39,6 +39,15 @@ defmodule OliWeb.Router do
     plug(OliWeb.Plugs.SessionContext)
   end
 
+  pipeline :raw_text_api do
+    plug(:accepts, ["text/plain"])
+    plug(:fetch_session)
+    plug(:fetch_current_user)
+    plug(:put_secure_browser_headers)
+    plug(Plug.Telemetry, event_prefix: [:oli, :plug])
+    plug(OliWeb.Plugs.SessionContext)
+  end
+
   # pipeline for LTI launch endpoints
   pipeline :lti do
     plug(:fetch_session)
@@ -798,6 +807,16 @@ defmodule OliWeb.Router do
     get("/", Api.GlobalStateController, :read)
     put("/", Api.GlobalStateController, :upsert)
     delete("/", Api.GlobalStateController, :delete)
+  end
+
+  # Raw text blob service
+  scope "/api/v1/blob", OliWeb do
+    pipe_through([:text_api, :delivery_protected])
+
+    get("/user/:key", Api.BlobStorageController, :read_user_key)
+    put("/user/:key", Api.BlobStorageController, :write_user_key)
+    get("/:key", Api.BlobStorageController, :read_key)
+    put("/:key", Api.BlobStorageController, :write_key)
   end
 
   scope "/api/v1/state/course/:section_slug", OliWeb do

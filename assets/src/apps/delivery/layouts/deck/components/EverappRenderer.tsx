@@ -11,7 +11,7 @@ import { getLocalizedCurrentStateSnapshot } from 'apps/delivery/store/features/a
 import { triggerCheck } from 'apps/delivery/store/features/adaptivity/actions/triggerCheck';
 import { selectCurrentActivityTree } from 'apps/delivery/store/features/groups/selectors/deck';
 import { toggleEverapp } from 'apps/delivery/store/features/page/actions/toggleEverapp';
-import { selectPreviewMode } from 'apps/delivery/store/features/page/slice';
+import { selectBlobStorageProvider, selectPreviewMode } from 'apps/delivery/store/features/page/slice';
 import { updateGlobalUserState } from 'data/persistence/extrinsic';
 import { getEverAppActivity, updateAttemptGuid } from '../EverApps';
 
@@ -36,7 +36,7 @@ const EverappRenderer: React.FC<IEverappRendererProps> = (props) => {
   const dispatch = useDispatch();
   const isPreviewMode = useSelector(selectPreviewMode);
   const [isOpen, setIsOpen] = useState<boolean>(props.open);
-
+  const blobStorageProvider = useSelector(selectBlobStorageProvider);
   const currentActivityTree = useSelector(selectCurrentActivityTree);
 
   useEffect(() => {
@@ -86,7 +86,7 @@ const EverappRenderer: React.FC<IEverappRendererProps> = (props) => {
 
     // because the everapp attemptGuid and partAttemptGuid are always made up
     // can't save it like normal, instead setData should cover it
-    const result = await updateGlobalUserState(updatedState, isPreviewMode);
+    const result = await updateGlobalUserState(blobStorageProvider, updatedState, isPreviewMode);
 
     /* console.log('EVERAPP SAVE PART', {
       activityId,
@@ -160,6 +160,7 @@ const EverappRenderer: React.FC<IEverappRendererProps> = (props) => {
           onRequestLatestState={handleRequestLatestState}
           adaptivityDomain="app"
           isEverApp={true}
+          blobStorageProvider={blobStorageProvider}
         />
       </div>
     </div>

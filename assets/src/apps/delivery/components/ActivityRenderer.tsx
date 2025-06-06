@@ -58,6 +58,7 @@ interface ActivityRendererProps {
   onRequestLatestState?: any;
   adaptivityDomain?: string; // currently 'stage' or 'app'
   isEverApp?: boolean;
+  blobStorageProvider: 'deprecated' | 'new'
 }
 
 const defaultHandler = async () => {
@@ -90,6 +91,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
   onRequestLatestState = async () => ({ snapshot: {} }),
   adaptivityDomain = 'stage',
   isEverApp = false,
+  blobStorageProvider
 }) => {
   const isPreviewMode = useSelector(selectPreviewMode);
   const isReviewMode = useSelector(selectReviewMode);
@@ -101,7 +103,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       return;
     }
     const { simId, key, value } = payload;
-    await Extrinsic.updateGlobalUserState({ [simId]: { [key]: value } }, isPreviewMode);
+    await Extrinsic.updateGlobalUserState(blobStorageProvider, { [simId]: { [key]: value } }, isPreviewMode);
     try {
       // Review mode requires the ever app variable to be fetched from Resourse Attempt state so we need to update the variable in scripting so that
       // when trigger check happens, the extrinsic state get updated and sent to server. Adding it in try catch to avoid any failure during the scripting update which
@@ -123,7 +125,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       }
       return undefined;
     }
-    const data = await Extrinsic.readGlobalUserState([simId], isPreviewMode);
+    const data = await Extrinsic.readGlobalUserState(blobStorageProvider, [simId], isPreviewMode);
     if (data) {
       const value = data[simId]?.[key];
       /* console.log('GOT DATA', { simId, key, value, data }); */
@@ -536,7 +538,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
         return data;
       }, {});
       /* console.log('updateGlobalState', { payloadData }); */
-      await Extrinsic.updateGlobalUserState(payloadData, isPreviewMode);
+      await Extrinsic.updateGlobalUserState(blobStorageProvider, payloadData, isPreviewMode);
     }
   };
 
@@ -635,7 +637,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
         return data;
       }, {});
       /* console.log('CHANGE EVENT EVERAPP', { changes, appChanges, updatePayload }); */
-      await Extrinsic.updateGlobalUserState(updatePayload, isPreviewMode);
+      await Extrinsic.updateGlobalUserState(blobStorageProvider, updatePayload, isPreviewMode);
     }
     // we send ALL of the changes to the components
     if (changes?.changed?.length > 1) {
