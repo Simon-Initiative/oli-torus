@@ -36,6 +36,7 @@ export interface HierarchyItemSrc {
   numbering_level: number;
   manually_scheduled: boolean;
   graded: boolean;
+  removed_from_schedule: boolean;
 }
 
 // Modified version we use with dates parsed
@@ -158,10 +159,23 @@ const descendentIds = (item: HierarchyItem, schedule: HierarchyItem[]) => {
   return ids;
 };
 
+const removeDescendents = (item: HierarchyItem, schedule: HierarchyItem[]) => {
+  for (const childId of item.children) {
+    const child = getScheduleItem(childId, schedule);
+    if (child) {
+      child.removed_from_schedule = true;
+      removeDescendents(child, schedule);
+    }
+  }
+};
+
 const neverScheduled = (schedule: HierarchyItem[]) =>
   !schedule.find((i) => i.startDate === null || i.endDate === null || i.manually_scheduled);
 
 interface UnlockPayload {
+  itemId: number;
+}
+interface RemovePayload {
   itemId: number;
 }
 
@@ -196,6 +210,28 @@ const schedulerSlice = createSlice({
       const mutableItem = getScheduleItem(action.payload.itemId, state.schedule);
       if (mutableItem) {
         mutableItem.manually_scheduled = false;
+      }
+    },
+    removeScheduleItem(state, action: PayloadAction<RemovePayload>) {
+      const mutableItem = getScheduleItem(action.payload.itemId, state.schedule);
+      if (mutableItem) {
+        mutableItem.removed_from_schedule = true;
+        state.dirty.push(mutableItem.id);
+        removeDescendents(mutableItem, state.schedule);
+        state.dirty.push(...descendentIds(mutableItem, state.schedule));
+        if (state.schedule && state.startDate && state.endDate) {
+          const root = getScheduleRoot(state.schedule);
+          root &&
+            resetScheduleItem(
+              root,
+              state.startDate,
+              state.endDate,
+              state.schedule,
+              true,
+              state.weekdays,
+              state.preferredSchedulingTime,
+            );
+        }
       }
     },
     moveScheduleItem(state, action: PayloadAction<MovePayload>) {
@@ -431,6 +467,7 @@ export const {
   resetSchedule,
   selectItem,
   unlockScheduleItem,
+  removeScheduleItem,
   changeScheduleType,
   dismissError,
   toggleContainer,

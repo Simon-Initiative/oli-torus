@@ -157,20 +157,22 @@ export const ScheduleGrid: React.FC<GridProps> = ({ startDate, endDate, onReset,
             />
           </thead>
           <tbody>
-            {schedule.map((item, index) => (
-              <ScheduleLine
-                key={item.id}
-                index={index}
-                indent={0}
-                item={item}
-                rowColor={
-                  modeIsDark()
-                    ? rowPaletteDark[index % rowPaletteDark.length]
-                    : rowPalette[index % rowPalette.length]
-                }
-                dayGeometry={dayGeometry}
-              />
-            ))}
+            {schedule
+              .filter((item) => !item.removed_from_schedule)
+              .map((item, index) => (
+                <ScheduleLine
+                  key={item.id}
+                  index={index}
+                  indent={0}
+                  item={item}
+                  rowColor={
+                    modeIsDark()
+                      ? rowPaletteDark[index % rowPaletteDark.length]
+                      : rowPalette[index % rowPalette.length]
+                  }
+                  dayGeometry={dayGeometry}
+                />
+              ))}
           </tbody>
         </table>
         <Legend />

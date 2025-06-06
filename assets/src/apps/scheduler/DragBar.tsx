@@ -1,10 +1,12 @@
 import React, { useCallback } from 'react';
+import { useDispatch } from 'react-redux';
 import { DateWithoutTime } from 'epoq';
 import { useDocumentMouseEvents } from '../../components/hooks/useDocumentMouseEvents';
 import { useToggle } from '../../components/hooks/useToggle';
 import { ContextMenuItem } from './ContextMenu';
 import { useContextMenu } from './ContextMenuController';
 import { DayGeometry, barGeometry, leftToDate } from './date-utils';
+import { removeScheduleItem } from './scheduler-slice';
 
 interface DragBarProps {
   itemId: number;
@@ -41,26 +43,32 @@ export const DragBar: React.FC<DragBarProps> = ({
   const [mouseDownX, setMouseDownX] = React.useState(0);
 
   const { showMenu, hideMenu } = useContextMenu();
+  const dispatch = useDispatch();
+
+  const menuItems: ContextMenuItem[] = [
+    {
+      label: 'Remove from Schedule',
+      onClick: () => {
+        console.log('Removed from schedule');
+        hideMenu();
+        dispatch(
+          removeScheduleItem({
+            itemId: itemId,
+          }),
+        );
+      },
+    },
+    {
+      label: 'Re-add to Schedule',
+      onClick: () => {
+        console.log('Re-added to schedule');
+        hideMenu();
+      },
+    },
+  ];
 
   const handleContextMenu = (e: React.MouseEvent<HTMLDivElement>) => {
     e.preventDefault();
-
-    const menuItems: ContextMenuItem[] = [
-      {
-        label: 'Remove from Schedule',
-        onClick: () => {
-          console.log('Removed from schedule');
-          hideMenu();
-        },
-      },
-      {
-        label: 'Re-add to Schedule',
-        onClick: () => {
-          console.log('Re-added to schedule');
-          hideMenu();
-        },
-      },
-    ];
 
     showMenu({ x: e.clientX, y: e.clientY }, menuItems);
   };

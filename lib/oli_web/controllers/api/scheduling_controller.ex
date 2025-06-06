@@ -38,13 +38,15 @@ defmodule OliWeb.Api.SchedulingController do
             "id" => 1,
             "start_date" => nil,
             "end_date" => "2023-03-19 23:59:59",
-            "scheduling_type" => "read_by"
+            "scheduling_type" => "read_by",
+            "removed_from_schedule" => false
           },
           %{
             "id" => 2,
             "start_date" => nil,
             "end_date" => "2023-03-29 11:20:02",
-            "scheduling_type" => "due_by"
+            "scheduling_type" => "due_by",
+            "removed_from_schedule" => true
           }
         ]
       }
@@ -100,7 +102,8 @@ defmodule OliWeb.Api.SchedulingController do
             "start_date" => "2023-02-03",
             "end_date" => "2023-02-09",
             "scheduling_type" => "read_by",
-            "resource_id" => 24523
+            "resource_id" => 24523,
+            "removed_from_schedule" => false
           }
         ]
       }
@@ -160,6 +163,8 @@ defmodule OliWeb.Api.SchedulingController do
   def update(conn, %{"updates" => updates}) do
     section = conn.assigns.section
     ctx = SessionContext.init(conn)
+
+    IO.inspect(updates, label: "Scheduling updates")
 
     if can_access_section?(conn, section) do
       case Scheduling.update(section, updates, ctx.local_tz) do
@@ -247,7 +252,8 @@ defmodule OliWeb.Api.SchedulingController do
       "resource_id" => sr.resource_id,
       "manually_scheduled" => sr.manually_scheduled,
       "numbering_index" => sr.numbering_index,
-      "numbering_level" => sr.numbering_level
+      "numbering_level" => sr.numbering_level,
+      "removed_from_schedule" => sr.removed_from_schedule
     }
   end
 end

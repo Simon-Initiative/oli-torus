@@ -80,13 +80,23 @@ const ContainerScheduleLine: React.FC<ScheduleLineProps> = ({
     [dispatch, item.id],
   );
 
+  const childrenCount = item.children.filter((itemId) => {
+    const child = getScheduleItem(itemId, schedule);
+    return child && !child.removed_from_schedule;
+  }).length;
+
   const containerChildren = item.children
     .map((itemId) => getScheduleItem(itemId, schedule))
-    .filter((item) => item?.resource_type_id === ScheduleItemType.Container) as HierarchyItem[];
+    .filter(
+      (item) =>
+        !item?.removed_from_schedule && item?.resource_type_id === ScheduleItemType.Container,
+    ) as HierarchyItem[];
 
   const pageChildren = item.children
     .map((itemId) => getScheduleItem(itemId, schedule))
-    .filter((item) => item?.resource_type_id === ScheduleItemType.Page) as HierarchyItem[];
+    .filter(
+      (item) => !item?.removed_from_schedule && item?.resource_type_id === ScheduleItemType.Page,
+    ) as HierarchyItem[];
 
   const onStartDrag = useCallback(() => {
     dispatch(selectItem(item.id));
@@ -114,7 +124,7 @@ const ContainerScheduleLine: React.FC<ScheduleLineProps> = ({
         >
           <div className="flex flex-row justify-between items-center">
             <div className="flex flex-row justify-start items-center">
-              {item.children.length > 0 && indent > 0 && (
+              {childrenCount > 0 && indent > 0 && (
                 <div className="inline mr-2 cursor-pointer" onClick={toggleExpanded}>
                   <i className={plusMinusIcon} />
                 </div>
@@ -122,7 +132,7 @@ const ContainerScheduleLine: React.FC<ScheduleLineProps> = ({
               <div className="inline mr-2">{showNumbers ? item.numbering_index + '.' : ''}</div>
               <div className="inline">{item.title}</div>
             </div>
-            {item.children.length > 0 && indent === 0 && (
+            {childrenCount > 0 && indent === 0 && (
               <div className="inline mr-1 float-right cursor-pointer" onClick={toggleExpanded}>
                 <i className={chevronIcon} />
               </div>

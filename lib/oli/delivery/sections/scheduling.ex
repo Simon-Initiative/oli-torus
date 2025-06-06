@@ -64,10 +64,11 @@ defmodule Oli.Delivery.Sections.Scheduling do
               start_date = batch_values.start_date,
               end_date = batch_values.end_date,
               manually_scheduled = batch_values.manually_scheduled,
+              removed_from_schedule = batch_values.removed_from_schedule,
               updated_at = NOW()
             FROM (
                 VALUES #{values}
-            ) AS batch_values (id, scheduling_type, start_date, end_date, manually_scheduled)
+            ) AS batch_values (id, scheduling_type, start_date, end_date, manually_scheduled, removed_from_schedule)
             WHERE section_resources.id = batch_values.id and section_resources.section_id = $1
           """
 
@@ -154,7 +155,7 @@ defmodule Oli.Delivery.Sections.Scheduling do
   end
 
   defp is_valid_update?(updates) do
-    keys = ["id", "scheduling_type", "start_date", "end_date", "manually_scheduled"]
+    keys = ["id", "scheduling_type", "start_date", "end_date", "manually_scheduled", "removed_from_schedule"]
     atoms = Enum.map(keys, fn k -> String.to_existing_atom(k) end)
 
     both = Enum.zip(keys, atoms)
@@ -215,7 +216,7 @@ defmodule Oli.Delivery.Sections.Scheduling do
         {
           values ++
             [
-              "($#{i + 1}::bigint, $#{i + 2}, $#{i + 3}::timestamp, $#{i + 4}::timestamp, $#{i + 5}::boolean)"
+              "($#{i + 1}::bigint, $#{i + 2}, $#{i + 3}::timestamp, $#{i + 4}::timestamp, $#{i + 5}::boolean, $#{i + 6}::boolean)"
             ],
           params ++
             [
@@ -223,9 +224,10 @@ defmodule Oli.Delivery.Sections.Scheduling do
               val(sr, :scheduling_type),
               val(sr, :start_date) |> parse_date(timezone, preferred_scheduling_time),
               val(sr, :end_date) |> parse_date(timezone, preferred_scheduling_time),
-              val(sr, :manually_scheduled)
+              val(sr, :manually_scheduled),
+              val(sr, :removed_from_schedule)
             ],
-          i + 5
+          i + 6
         }
       end)
 
