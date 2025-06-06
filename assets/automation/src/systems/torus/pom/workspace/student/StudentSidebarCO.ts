@@ -1,11 +1,9 @@
 import { Locator, Page } from '@playwright/test';
 
 export class StuedentSideberCO {
-  private page: Page;
   private instuctorLink: Locator;
 
-  constructor(page: Page) {
-    this.page = page;
+  constructor(private page: Page) {
     this.instuctorLink = this.page.getByRole('link', { name: 'Instructor' });
   }
 

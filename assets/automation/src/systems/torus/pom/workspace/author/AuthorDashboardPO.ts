@@ -2,23 +2,26 @@ import { Page, Locator } from '@playwright/test';
 import { Utils } from '../../../../../core/Utils';
 
 export class AuthorDashboardPO {
-  private page: Page;
   private utils: Utils;
   private searchInput: Locator;
-  private tableRows: Locator;
+
   private newProjectButton: Locator;
   private projectNameInput: Locator;
   private createButton: Locator;
   private projectLink: Locator;
+  private createHeader: Locator;
+  private projectRows: Locator;
+  private tableRows: Locator;
 
-  constructor(page: Page) {
-    this.page = page;
+  constructor(private page: Page) {
     this.utils = new Utils(page);
     this.searchInput = this.page.locator('#text-search-input');
-    this.tableRows = this.page.locator('#projects-table table > tbody > tr');
+    this.createHeader = page.getByRole('cell', { name: 'Created', exact: true });
+    this.projectRows = page.locator('table tbody tr');
     this.newProjectButton = this.page.locator('#button-new-project');
     this.projectNameInput = this.page.locator('#project_title');
     this.createButton = this.page.getByRole('button', { name: 'Create' });
+    this.tableRows = this.page.locator('#projects-table table > tbody > tr');
   }
 
   async searchProject(name: string) {
@@ -29,7 +32,11 @@ export class AuthorDashboardPO {
   }
 
   async clickNewProjectButton() {
-    await this.utils.forceclick(this.newProjectButton, this.projectNameInput);
+    await this.utils.forceClick(this.newProjectButton, this.projectNameInput);
+  }
+
+  async sortByCreatedDescending() {
+    await this.createHeader.click();
   }
 
   async getLastProjectName() {
@@ -40,6 +47,12 @@ export class AuthorDashboardPO {
       return await nameLocator.innerText();
     } else return null;
   }
+
+  // async getLastProjectName() {
+  //   const firstRow = this.projectRows.first();
+  //   const projectLink = firstRow.locator('td > div > a');
+  //   await projectLink.click();
+  // }
 
   async fillProjectName(name: string) {
     await this.projectNameInput.click();

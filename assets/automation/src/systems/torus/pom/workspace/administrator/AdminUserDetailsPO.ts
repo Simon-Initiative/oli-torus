@@ -3,14 +3,12 @@ import { Utils } from '../../../../../core/Utils';
 import { FileManager } from '../../../../../core/FileManager';
 
 export class AdminUserDetailsPO {
-  private page: Page;
   private utils: Utils;
   private editButton: Locator;
   private checkBox: Locator;
   private saveButton: Locator;
 
-  constructor(page: Page) {
-    this.page = page;
+  constructor(private page: Page) {
     this.utils = new Utils(this.page);
     this.editButton = this.page.getByRole('button', { name: 'Edit' });
     this.checkBox = this.page.getByRole('checkbox', {
@@ -20,12 +18,18 @@ export class AdminUserDetailsPO {
   }
 
   async goToUserEditPage(userId: string) {
+<<<<<<< HEAD
+    //TODO: usar baseurl, obtener la url del .env
+    const emailAuthor = FileManager.getValueEnv('EMAIL_AUTHOR');
+    await this.page.goto(`https://stellarator.oli.cmu.edu/admin/users/${userId}`);
+=======
     const baseUrl = FileManager.getValueEnv('BASE_URL');
     await this.page.goto(`${baseUrl}/admin/users/${userId}`);
+>>>>>>> e-tqa-6
   }
 
   async clickEditButton() {
-    await this.utils.forceclick(this.editButton, this.saveButton);
+    await this.utils.forceClick(this.editButton, this.saveButton);
   }
 
   async checkCreateSections() {
@@ -33,6 +37,6 @@ export class AdminUserDetailsPO {
   }
 
   async clickSaveButton() {
-    await this.utils.forceclick(this.saveButton, this.editButton);
+    await this.utils.forceClick(this.saveButton, this.editButton);
   }
 }

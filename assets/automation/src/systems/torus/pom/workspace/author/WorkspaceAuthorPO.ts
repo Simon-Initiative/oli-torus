@@ -1,20 +1,20 @@
-import { expect, Page } from "@playwright/test";
-import { AuthorDashboardPO } from "./AuthorDashboardPO";
-import { AuthorSidebarCO } from "./AuthorSidebarCO";
-import { OverviewProjectPO } from "../../project/OverviewProjectPO";
-import { PublishProjectPO } from "../../project/PublishProjectPO";
-import { NewCourseSetupPO } from "../../course/NewCourseSetupPO";
+import { expect, Page, Locator } from '@playwright/test';
+import { AuthorDashboardPO } from './AuthorDashboardPO';
+import { AuthorSidebarCO } from './AuthorSidebarCO';
+import { OverviewProjectPO } from '../../project/OverviewProjectPO';
+import { PublishProjectPO } from '../../project/PublishProjectPO';
+import { NewCourseSetupPO } from '../../course/NewCourseSetupPO';
 
 export class WorkspaceAuthorPO {
-  private page: Page;
+  private header: Locator;
   private dashboard: AuthorDashboardPO;
   private sidebar: AuthorSidebarCO;
   private overviewProject: OverviewProjectPO;
   private publishProject: PublishProjectPO;
   private newCourseSetup: NewCourseSetupPO;
 
-  constructor(page: Page) {
-    this.page = page;
+  constructor(private page: Page) {
+    this.header = this.page.locator('h1');
     this.dashboard = new AuthorDashboardPO(this.page);
     this.sidebar = new AuthorSidebarCO(this.page);
     this.overviewProject = new OverviewProjectPO(this.page);
@@ -43,6 +43,6 @@ export class WorkspaceAuthorPO {
   }
 
   async verifyHeader(expectedHeader: string) {
-    await expect(this.page.locator("h1")).toContainText(expectedHeader);
+    await expect(this.header).toContainText(expectedHeader);
   }
 }

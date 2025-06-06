@@ -3,12 +3,10 @@ import { Utils } from '../../../../../core/Utils';
 
 export class CurriculumPO {
   private utils: Utils;
-  private page: Page;
   private basicPracticeButton: Locator;
   private editPageLink: Locator;
 
-  constructor(page: Page) {
-    this.page = page;
+  constructor(private page: Page) {
     this.utils = new Utils(page);
     this.basicPracticeButton = this.page
       .getByRole('button', {

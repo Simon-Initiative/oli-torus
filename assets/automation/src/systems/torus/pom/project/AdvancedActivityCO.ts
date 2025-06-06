@@ -1,42 +1,27 @@
-import { Page } from '@playwright/test';
+import { expect, Locator, Page } from '@playwright/test';
+import { ACTIVITY_TYPE, ActivityType } from '@pom/types/activity-types';
 
+//TODO: Analizando este componente, ahora que tenemos mas experiencia con el sitio, no lo veo muy productivo, pienso que puede estar todo en OverviewProjectPO
 export class AdvancedActivityCO {
-  private page: Page;
-  private activities: string[];
+  private toolbar: Locator;
 
-  constructor(page: Page) {
-    this.page = page;
-    this.activities = [
-      'oli_logic_lab',
-      'oli_adaptive',
-      'oli_custom_dnd',
-      'oli_directed_discussion',
-      'oli_file_upload',
-      'oli_image_coding',
-      'oli_image_hotspot',
-      'oli_likert',
-      'oli_multi_input',
-      'oli_embedded',
-      'oli_response_multi',
-      'oli_vlab',
-    ];
+  constructor(private page: Page) {
+    this.toolbar = this.page.locator('.toolbar_nGbXING3');
   }
 
-  async clickEnableAllActivities(projectId: string) {
-    for (const activity of this.activities) {
-      const enableLink = this.page.locator(
-        `a[data-to="/authoring/project/${projectId}/activities/enable/${activity}"]`,
-      );
-      await enableLink.click();
-    }
+  async clickEnableAllActivities(projectId: string, activity: ActivityType) {
+    const enableLink = this.page.locator(
+      `a[data-to="/authoring/project/${projectId}/activities/enable/${ACTIVITY_TYPE[activity]['data-to']}"]`,
+    );
+    await enableLink.click();
+    await expect(this.toolbar).toBeVisible();
   }
 
-  async clickDisableAllActivities(projectId: string) {
-    for (const activity of this.activities) {
-      const enableLink = this.page.locator(
-        `a[data-to="/authoring/project/${projectId}/activities/disable/${activity}"]`,
-      );
-      await enableLink.click();
-    }
+  async clickDisableAllActivities(projectId: string, activity: ActivityType) {
+    const enableLink = this.page.locator(
+      `a[data-to="/authoring/project/${projectId}/activities/disable/${ACTIVITY_TYPE[activity]['data-to']}"]`,
+    );
+    await enableLink.click();
+    await expect(this.toolbar).toBeVisible();
   }
 }

@@ -2,16 +2,16 @@ import { Locator, Page, expect } from '@playwright/test';
 import { SortOrderType, MediaType, SelectImageTab, ViewMode } from '../types/select-image-types';
 
 export class SelectImageCO {
-  private page: Page;
   private urlInput: Locator;
   private sortBy: Locator;
   private searchBox: Locator;
   private selectButton: Locator;
   private cancelButton: Locator;
   private closeButton: Locator;
+  private uploadButton: Locator;
+  private externalSelectButton: Locator;
 
-  constructor(page: Page) {
-    this.page = page;
+  constructor(private page: Page) {
     this.urlInput = this.page.getByRole('textbox', {
       name: 'Enter the media URL address',
     });
@@ -20,6 +20,8 @@ export class SelectImageCO {
     this.selectButton = this.page.getByRole('button', { name: 'Select' });
     this.cancelButton = this.page.getByRole('button', { name: 'Cancel' });
     this.closeButton = this.page.getByRole('button', { name: 'Close' });
+    this.uploadButton = this.page.getByRole('button', { name: 'Upload' });
+    this.externalSelectButton = this.page.getByRole('button', { name: 'Select' });
   }
 
   async waitForLabel(title: string = 'Select Image') {
@@ -32,7 +34,7 @@ export class SelectImageCO {
 
   async enterExternalUrl(url: string) {
     await this.urlInput.fill(url);
-    await this.page.getByRole('button', { name: 'Select' }).click();
+    await this.externalSelectButton.click();
   }
 
   async switchViewMode(mode: ViewMode) {
@@ -40,7 +42,7 @@ export class SelectImageCO {
   }
 
   async clickUploadButton() {
-    await this.page.getByRole('button', { name: 'Upload' }).click();
+    await this.uploadButton.click();
   }
 
   async changeSortOrder(order: SortOrderType) {

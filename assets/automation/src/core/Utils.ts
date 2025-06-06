@@ -11,10 +11,10 @@ export class Utils {
     await this.page.waitForTimeout(seconds * 1000);
   }
 
-  async forceclick(elementToclick: Locator, elementToValidate: Locator) {
+  async forceClick(elementToClick: Locator, elementToValidate: Locator) {
     let condition = true;
     while (condition) {
-      await elementToclick.click();
+      await elementToClick.click();
 
       await expect(elementToValidate)
         .toBeVisible()
@@ -27,14 +27,14 @@ export class Utils {
     }
   }
 
-  async incrementID(name: string) {
-    const match = name!.trim().match(/^(.*?)(\d+)$/);
+  async incrementID(str: string) {
+    const match = str!.trim().match(/^(.*?)(\d+)$/);
 
     if (match) {
       const prefix = match[1];
       const number = match[2];
       const incremented = String(Number(number) + 1).padStart(number.length, '0');
       return prefix + incremented;
-    } else return name + '01';
+    } else return str + '01';
   }
 }

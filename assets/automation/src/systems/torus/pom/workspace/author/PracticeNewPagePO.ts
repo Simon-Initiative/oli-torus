@@ -1,12 +1,13 @@
 import { Locator, Page, expect } from '@playwright/test';
 import { AddResourceCO } from '../../component/AddResourceCO';
-import { ActivityType } from '../../types/activity-types';
+import { ACTIVITY_TYPE, ActivityType } from '../../types/activity-types';
 import { ToolbarCO } from '../../component/ToolbarCO';
 import { ToolbarTypes } from '../../types/toolbar-types';
 import { SelectImageCO } from '../../component/SelectImageCO';
+import { Utils } from '../../../../../core/Utils';
 
 export class PracticeNewPagePO {
-  private page: Page;
+  private utils: Utils;
   private addResourceCO: AddResourceCO;
   private toolbarCO: ToolbarCO;
   private selectImageCO: SelectImageCO;
@@ -15,29 +16,31 @@ export class PracticeNewPagePO {
   private paragraph: Locator;
   private chooseImageButton: Locator;
   private deleteButton: Locator;
+  private resourceChoicesActivities: Locator;
+  private titleLocator: Locator;
 
-  constructor(page: Page) {
-    this.page = page;
+  constructor(private page: Page) {
+    this.utils = new Utils(this.page);
     this.addResourceCO = new AddResourceCO(this.page);
     this.toolbarCO = new ToolbarCO(this.page);
     this.selectImageCO = new SelectImageCO(this.page);
     this.insertButtonIcon = this.page
       .locator('span[data-bs-original-title="Insert Content"]')
       .first();
-
     this.changesSaved = this.page.getByText('All changes saved');
     this.paragraph = this.page.locator('[id^="resource-editor-"]').getByRole('paragraph');
-
     this.chooseImageButton = this.page.getByRole('button', {
       name: 'Choose Image',
     });
     this.deleteButton = this.page
       .locator('[id^="resource-editor-"]')
       .getByRole('button', { name: 'delete' });
+    this.resourceChoicesActivities = this.page.locator('.resource-choices.activities');
+    this.titleLocator = this.page.locator('#page_editor-container');
   }
 
   async visibleTitlePage(titlePage: string = 'New Page') {
-    await this.page.locator('#page_editor-container').getByText(titlePage).waitFor();
+    await this.titleLocator.getByText(titlePage).waitFor();
   }
 
   async waitForChangesSaved() {
@@ -49,8 +52,7 @@ export class PracticeNewPagePO {
   }
 
   async clickInsertButtonIcon() {
-    await this.insertButtonIcon.waitFor({ state: 'visible', timeout: 30000 });
-    await this.insertButtonIcon.click();
+    this.utils.forceClick(this.insertButtonIcon, this.resourceChoicesActivities);
   }
 
   async selectActivity(nameActivity: ActivityType) {
@@ -90,15 +92,8 @@ export class PracticeNewPagePO {
     await expect(this.paragraph.nth(index)).toContainText(expectedText);
   }
 
-  async expectActivitiesVisible(activities: string[]) {
-    for (const activityName of activities) {
-      const locator = this.page.locator('[id^="resource-editor-"]').getByText(activityName);
-      await expect(locator).toBeVisible({ timeout: 10000 });
-    }
-  }
-
-  async expectActivityVisible(displayName: string) {
-    const locator = this.page.getByText(displayName, { exact: true });
+  async expectActivityVisible(displayName: ActivityType) {
+    const locator = this.page.getByText(ACTIVITY_TYPE[displayName].label, { exact: true });
     await expect(locator).toBeVisible();
   }
 }

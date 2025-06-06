@@ -1,14 +1,12 @@
 import { Locator, Page } from '@playwright/test';
 
 export class MenuCO {
-  private page: Page;
   private menu: Locator;
   private userAccontMenu: Locator;
   private adminPanel: Locator;
   private signOut: Locator;
 
-  constructor(page: Page) {
-    this.page = page;
+  constructor(private page: Page) {
     this.menu = this.page.locator('#workspace-user-menu');
     this.userAccontMenu = this.page.locator('#user-account-menu');
     this.adminPanel = this.page.getByRole('link', { name: 'Admin Panel' });

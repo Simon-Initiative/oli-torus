@@ -2,12 +2,10 @@ import { expect, Locator, Page } from '@playwright/test';
 import { StuedentSideberCO } from './StudentSidebarCO';
 
 export class WorkspaceStudentPO {
-  private page: Page;
   private studenSidebar: StuedentSideberCO;
   private h1: Locator;
 
-  constructor(page: Page) {
-    this.page = page;
+  constructor(private page: Page) {
     this.studenSidebar = new StuedentSideberCO(this.page);
     this.h1 = this.page.locator('h1');
   }
