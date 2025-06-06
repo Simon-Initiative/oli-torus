@@ -29,7 +29,7 @@ const hierarchItemTemplate: HierarchyItem = {
   numbering_level: 0,
   manually_scheduled: false,
   graded: false,
-  removed_from_schedule: false
+  removed_from_schedule: false,
 };
 
 describe('schedule-reset', () => {
