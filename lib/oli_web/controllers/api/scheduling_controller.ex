@@ -164,8 +164,6 @@ defmodule OliWeb.Api.SchedulingController do
     section = conn.assigns.section
     ctx = SessionContext.init(conn)
 
-    IO.inspect(updates, label: "Scheduling updates")
-
     if can_access_section?(conn, section) do
       case Scheduling.update(section, updates, ctx.local_tz) do
         {:ok, count} ->

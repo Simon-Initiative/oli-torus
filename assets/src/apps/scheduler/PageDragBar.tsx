@@ -52,20 +52,12 @@ export const DraggableIcon: React.FC<{
     {
       label: 'Remove from Schedule',
       onClick: () => {
-        console.log('Removed from schedule');
         hideMenu();
         dispatch(
           removeScheduleItem({
             itemId: itemId,
           }),
         );
-      },
-    },
-    {
-      label: 'Re-add to Schedule',
-      onClick: () => {
-        console.log('Re-added to schedule');
-        hideMenu();
       },
     },
   ];
