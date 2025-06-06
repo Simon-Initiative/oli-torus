@@ -27,7 +27,7 @@ defmodule Oli.Delivery.Sections.Scheduling do
   function can guarantee that only those section resources that pertain to this
   course section can be edited.  The shape of the maps that are the elements
   within the updates list must at least contain attributes for "id", "scheduling_type",
-  "start_date", "end_date" and "manually_scheduled". Other attributes will be ignored.
+  "start_date", "end_date", "manually_scheduled" and "removed_from_schedule". Other attributes will be ignored.
 
   Returns a {:ok, num_rows} tuple, with num_rows indicating the number of rows
   updated - or a {:error, error} tuple.
