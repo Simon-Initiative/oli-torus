@@ -107,7 +107,9 @@ const ContainerScheduleLine: React.FC<ScheduleLineProps> = ({
   const containerChildren = item.children.filter(
     (c) => !c.removed_from_schedule && c.resource_type_id === ScheduleItemType.Container,
   );
-  const pageChildren = item.children.filter((c) => !c.removed_from_schedule && c.resource_type_id === ScheduleItemType.Page);
+  const pageChildren = item.children.filter(
+    (c) => !c.removed_from_schedule && c.resource_type_id === ScheduleItemType.Page,
+  );
 
   const filteredPageChildren = React.useMemo(() => {
     if (!isSearchActive) return pageChildren;
