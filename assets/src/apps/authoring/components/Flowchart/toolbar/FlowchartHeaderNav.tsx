@@ -36,7 +36,7 @@ import ComponentSearchContextMenu from '../../ComponentToolbar/ComponentSearchCo
 import ShowInformationModal from '../../Modal/ShowInformationModal';
 import { RightPanelTabs } from '../../RightMenu/RightMenu';
 import { verifyFlowchartLesson } from '../flowchart-actions/verify-flowchart-lesson';
-import { getScreenQuestionType } from '../paths/path-options';
+import { getScreenQuestionType, isStaticQuestionType } from '../paths/path-options';
 import { isEndScreen } from '../screens/screen-utils';
 import { validateScreen } from '../screens/screen-validation';
 import { InvalidScreenWarning } from './InvalidScreenWarning';
@@ -151,6 +151,8 @@ export const FlowchartHeaderNav: React.FC<HeaderNavProps> = () => {
   const currentActivity = useSelector(selectCurrentActivity);
 
   const questionType = getScreenQuestionType(currentActivity);
+  const isStaticTypeCopiedPart = copiedPart ? isStaticQuestionType(copiedPart) : false;
+
   const hasQuestion = questionType !== 'none';
   const isLessonEndScreen = currentActivity ? isEndScreen(currentActivity) : false;
   const url = `/authoring/project/${projectSlug}/preview/${revisionSlug}`;
@@ -236,7 +238,7 @@ export const FlowchartHeaderNav: React.FC<HeaderNavProps> = () => {
   useKeyDown(
     () => {
       if (copiedPart && _currentPartPropertyFocus) {
-        if (hasQuestion) {
+        if (!isStaticTypeCopiedPart && hasQuestion) {
           setShowPartCopyValidationWarning(true);
           return;
         }
@@ -326,7 +328,7 @@ export const FlowchartHeaderNav: React.FC<HeaderNavProps> = () => {
           <div className="toolbar-buttons">
             {questionComponents.map((component) => (
               <ToolbarOption
-                disabled={hasQuestion || isLessonEndScreen}
+                disabled={(!isStaticTypeCopiedPart && hasQuestion) || isLessonEndScreen}
                 isLessonEndScreen={isLessonEndScreen}
                 component={component}
                 key={component}
@@ -377,7 +379,9 @@ export const FlowchartHeaderNav: React.FC<HeaderNavProps> = () => {
                 overlay={
                   <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
                     <strong>Paste Component</strong>
-                    {hasQuestion && <div>Only one question component per screen is allowed</div>}
+                    {!isStaticTypeCopiedPart && hasQuestion && (
+                      <div>Only one question component per screen is allowed</div>
+                    )}
                     {isLessonEndScreen && (
                       <div>Question/interaction components cannot be added to the last screen.</div>
                     )}
@@ -385,7 +389,7 @@ export const FlowchartHeaderNav: React.FC<HeaderNavProps> = () => {
                 }
               >
                 <button
-                  disabled={hasQuestion || isLessonEndScreen}
+                  disabled={(!isStaticTypeCopiedPart && hasQuestion) || isLessonEndScreen}
                   className="component-button"
                   onClick={handlePartPasteClick}
                 >
