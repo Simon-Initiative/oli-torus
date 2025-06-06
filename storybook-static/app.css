@@ -4040,6 +4040,10 @@ table.table-striped tbody tr:nth-child(even) {
   top: -0.25rem;
 }
 
+.-top-12 {
+  top: -3rem;
+}
+
 .-top-16 {
   top: -4rem;
 }
@@ -9738,6 +9742,11 @@ table.table-striped tbody tr:nth-child(even) {
 
 .text-\[18xl\] {
   color: 18xl;
+}
+
+.text-amber-400 {
+  --tw-text-opacity: 1;
+  color: rgb(251 191 36 / var(--tw-text-opacity));
 }
 
 .text-black {
