@@ -238,7 +238,7 @@ const schedulerSlice = createSlice({
               state.weekdays,
               state.preferredSchedulingTime,
             );
-            state.dirty = state.schedule.map((item) => item.id);
+          state.dirty = state.schedule.map((item) => item.id);
         }
       }
     },
