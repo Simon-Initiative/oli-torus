@@ -7872,11 +7872,6 @@ table.table-striped tbody tr:nth-child(even) {
   background-color: rgb(206 231 255 / var(--tw-bg-opacity));
 }
 
-.bg-delivery-primary-300 {
-  --tw-bg-opacity: 1;
-  background-color: rgb(161 210 255 / var(--tw-bg-opacity));
-}
-
 .bg-delivery-primary-50 {
   --tw-bg-opacity: 1;
   background-color: rgb(209 223 245 / var(--tw-bg-opacity));
@@ -13995,14 +13990,6 @@ Not supports in Firefox and IE */
   padding-left: 1.5rem;
 }
 
-.placeholder\:text-\[\#bg-\[var\(--text-text-default\2c \#353740\)\]\]::-moz-placeholder {
-  color: #bg-[var(--text-text-default,#353740)];
-}
-
-.placeholder\:text-\[\#bg-\[var\(--text-text-default\2c \#353740\)\]\]::placeholder {
-  color: #bg-[var(--text-text-default,#353740)];
-}
-
 .before\:absolute::before {
   content: var(--tw-content);
   position: absolute;
@@ -15781,11 +15768,6 @@ Not supports in Firefox and IE */
 .dark .dark\:bg-delivery-navbar-dark {
   --tw-bg-opacity: 1;
   background-color: rgb(0 0 0 / var(--tw-bg-opacity));
-}
-
-.dark .dark\:bg-delivery-primary-600 {
-  --tw-bg-opacity: 1;
-  background-color: rgb(1 101 217 / var(--tw-bg-opacity));
 }
 
 .dark .dark\:bg-delivery-primary-800 {
