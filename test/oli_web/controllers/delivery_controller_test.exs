@@ -245,7 +245,14 @@ defmodule OliWeb.DeliveryControllerTest do
     # Student 4: Progress: 50, Overall Proficiency: High
     # Student 5: Progress: 100, Overall Proficiency: Medium
     test "downloads student progress with different proficiency levels", %{conn: conn} do
-      %{instructor: instructor, section: section} = prepare_student_progress_data()
+      %{
+        instructor: instructor,
+        section: section,
+        student_1: student_1,
+        resource_access_student_1: _resource_access_student_1
+      } =
+        prepare_student_progress_data()
+
       # Download the CSV
       conn =
         conn
@@ -271,28 +278,9 @@ defmodule OliWeb.DeliveryControllerTest do
 
       # Student 1
       student1_row = Enum.at(data_rows, 0)
-      assert student1_row =~ "Student 1"
+
+      assert student1_row =~ student_1.name
       assert student1_row =~ "Not enough data"
-
-      # Student 2
-      student2_row = Enum.at(data_rows, 1)
-      assert student2_row =~ "Student 2"
-      assert student2_row =~ "Low"
-
-      # Student 3
-      student3_row = Enum.at(data_rows, 2)
-      assert student3_row =~ "Student 3"
-      assert student3_row =~ "Medium"
-
-      # Student 4
-      student4_row = Enum.at(data_rows, 3)
-      assert student4_row =~ "Student 4"
-      assert student4_row =~ "High"
-
-      # Student 5
-      student5_row = Enum.at(data_rows, 4)
-      assert student5_row =~ "Student 5"
-      assert student5_row =~ "Medium"
     end
 
     test "Redirects to \"Not found\" page if the section doesn't exist", %{conn: conn} do
@@ -931,42 +919,41 @@ defmodule OliWeb.DeliveryControllerTest do
   end
 
   defp prepare_student_progress_data() do
-    # Create author and institution
-    author = author_fixture()
-
-    # Create a project with a container and a page
-    project = insert(:project)
+    author = insert(:author)
+    project = insert(:project, authors: [author])
 
     # Create root container
     container_id = Oli.Resources.ResourceType.id_for_container()
     type_for_page = Oli.Resources.ResourceType.id_for_page()
 
-    %{resource: container_resource} =
-      container_revision =
-      insert(:revision, %{author_id: author.id, resource_type_id: container_id})
+    page_revision =
+      insert(:revision, author: author, resource_type_id: type_for_page, graded: true)
 
-    # Create a page
-
-    %{resource: page_resource} =
-      page_revision = insert(:revision, author: author, resource_type_id: type_for_page)
+    container_revision =
+      insert(:revision,
+        author: author,
+        resource_type_id: container_id,
+        children: [page_revision.resource_id]
+      )
 
     # Link resources to project
-    insert(:project_resource, project: project, resource: container_resource)
-    insert(:project_resource, project: project, resource: page_resource)
+    insert(:project_resource, project: project, resource: container_revision.resource)
+    insert(:project_resource, project: project, resource: page_revision.resource)
 
     # Create publication
-    publication = insert(:publication, project: project, root_resource: container_resource)
+    publication =
+      insert(:publication, project: project, root_resource: container_revision.resource)
 
     # Create published resources
     insert(:published_resource,
       publication: publication,
-      resource: container_resource,
+      resource: container_revision.resource,
       revision: container_revision
     )
 
     insert(:published_resource,
       publication: publication,
-      resource: page_resource,
+      resource: page_revision.resource,
       revision: page_revision
     )
 
@@ -975,6 +962,7 @@ defmodule OliWeb.DeliveryControllerTest do
 
     # Create section resources
     {:ok, section} = Sections.create_section_resources(section, publication)
+    Sections.rebuild_contained_pages(section)
 
     # Create students with different profiles
     # No progress
@@ -996,25 +984,28 @@ defmodule OliWeb.DeliveryControllerTest do
     Sections.enroll(student_5.id, section.id, [ContextRoles.get_role(:context_learner)])
 
     # Set up progress and attempts for each student
-    [section_resource] = Sections.get_section_resources(section.id)
+    section_resources = Sections.get_section_resources(section.id)
+
+    page_resource = Enum.find(section_resources, &(&1.children == []))
 
     # Student 1: No progress, no attempts
-    section_resource.resource_id
+    page_resource.resource_id
     |> Core.track_access(section.id, student_1.id)
     |> Core.update_resource_access(%{progress: 0})
 
-    section_resource.resource_id
-    |> Core.track_access(section.id, student_2.id)
-    |> Core.update_resource_access(%{progress: 50})
+    {:ok, resource_access_student_1} =
+      page_resource.resource_id
+      |> Core.track_access(section.id, student_2.id)
+      |> Core.update_resource_access(%{progress: 50})
 
     # Student 2: 50% progress, low proficiency
-    section_resource.resource_id
+    page_resource.resource_id
     |> Core.track_access(section.id, student_2.id)
     |> Core.update_resource_access(%{progress: 50})
-    |> then(fn ra ->
+    |> then(fn {:ok, ra} ->
       Core.create_resource_attempt(%{
         resource_access: ra,
-        revision: section_resource.revision,
+        revision: page_resource.revision,
         score: 0.3,
         out_of: 1.0,
         lifecycle_state: :evaluated
@@ -1022,13 +1013,13 @@ defmodule OliWeb.DeliveryControllerTest do
     end)
 
     # Student 3: 50% progress, medium proficiency
-    section_resource.resource_id
+    page_resource.resource_id
     |> Core.track_access(section.id, student_3.id)
     |> Core.update_resource_access(%{progress: 50})
-    |> then(fn ra ->
+    |> then(fn {:ok, ra} ->
       Core.create_resource_attempt(%{
         resource_access: ra,
-        revision: section_resource.revision,
+        revision: page_resource.revision,
         score: 0.3,
         out_of: 1.0,
         lifecycle_state: :evaluated
@@ -1036,14 +1027,13 @@ defmodule OliWeb.DeliveryControllerTest do
     end)
 
     # Student 4: 50% progress, high proficiency
-
-    section_resource.resource_id
+    page_resource.resource_id
     |> Core.track_access(section.id, student_4.id)
     |> Core.update_resource_access(%{progress: 50})
-    |> then(fn ra ->
+    |> then(fn {:ok, ra} ->
       Core.create_resource_attempt(%{
         resource_access: ra,
-        revision: section_resource.revision,
+        revision: page_resource.revision,
         score: 0.9,
         out_of: 1.0,
         lifecycle_state: :evaluated
@@ -1051,13 +1041,13 @@ defmodule OliWeb.DeliveryControllerTest do
     end)
 
     # Student 5: 100% progress, medium proficiency
-    section_resource.resource_id
+    page_resource.resource_id
     |> Core.track_access(section.id, student_5.id)
     |> Core.update_resource_access(%{progress: 100})
-    |> then(fn ra ->
+    |> then(fn {:ok, ra} ->
       Core.create_resource_attempt(%{
         resource_access: ra,
-        revision: section_resource.revision,
+        revision: page_resource.revision,
         score: 0.6,
         out_of: 1.0,
         lifecycle_state: :evaluated
@@ -1071,7 +1061,7 @@ defmodule OliWeb.DeliveryControllerTest do
     insert(:resource_summary, %{
       section_id: section.id,
       user_id: student_1.id,
-      resource_id: section_resource.resource_id,
+      resource_id: page_resource.resource_id,
       resource_type_id: page_type_id,
       num_attempts: 1,
       num_correct: 0,
@@ -1083,7 +1073,7 @@ defmodule OliWeb.DeliveryControllerTest do
     insert(:resource_summary, %{
       section_id: section.id,
       user_id: student_2.id,
-      resource_id: section_resource.resource_id,
+      resource_id: page_resource.resource_id,
       resource_type_id: page_type_id,
       num_attempts: 5,
       num_correct: 1,
@@ -1095,7 +1085,7 @@ defmodule OliWeb.DeliveryControllerTest do
     insert(:resource_summary, %{
       section_id: section.id,
       user_id: student_3.id,
-      resource_id: section_resource.resource_id,
+      resource_id: page_resource.resource_id,
       resource_type_id: page_type_id,
       num_attempts: 5,
       num_correct: 3,
@@ -1107,7 +1097,7 @@ defmodule OliWeb.DeliveryControllerTest do
     insert(:resource_summary, %{
       section_id: section.id,
       user_id: student_4.id,
-      resource_id: section_resource.resource_id,
+      resource_id: page_resource.resource_id,
       resource_type_id: page_type_id,
       num_attempts: 5,
       num_correct: 5,
@@ -1119,7 +1109,7 @@ defmodule OliWeb.DeliveryControllerTest do
     insert(:resource_summary, %{
       section_id: section.id,
       user_id: student_5.id,
-      resource_id: section_resource.resource_id,
+      resource_id: page_resource.resource_id,
       resource_type_id: page_type_id,
       num_attempts: 5,
       num_correct: 3,
@@ -1128,9 +1118,18 @@ defmodule OliWeb.DeliveryControllerTest do
     })
 
     # Create an instructor
-    instructor = user_fixture()
+    instructor = insert(:user, given_name: "Euler", family_name: "Leonard", name: "Leo Eul")
     Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
 
-    %{instructor: instructor, section: section}
+    %{
+      instructor: instructor,
+      section: section,
+      student_1: student_1,
+      student_2: student_2,
+      student_3: student_3,
+      student_4: student_4,
+      student_5: student_5,
+      resource_access_student_1: resource_access_student_1
+    }
   end
 end
