@@ -1,9 +1,11 @@
 import React, { useMemo } from 'react';
+import { Dropdown } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { useCallbackRef, useResizeObserver } from '@restart/hooks';
 import { DateWithoutTime } from 'epoq';
 import { modeIsDark } from 'components/misc/DarkModeSelector';
 import { ClearIcon, CollapseAllIcon, ExpandAllIcon, SearchIcon } from 'components/misc/icons/Icons';
+import { ViewMode } from './ScheduleEditor';
 import { ScheduleHeaderRow } from './ScheduleHeader';
 import { ScheduleLine } from './ScheduleLine';
 import { generateDayGeometry } from './date-utils';
@@ -20,6 +22,7 @@ interface GridProps {
   endDate: string;
   onReset: () => void;
   onClear: () => void;
+  onViewSelected: (view: ViewMode) => void;
 }
 
 const rowPalette = [
@@ -52,7 +55,13 @@ const rowPaletteDark = [
   '#AFC5E4',
 ];
 
-export const ScheduleGrid: React.FC<GridProps> = ({ startDate, endDate, onReset, onClear }) => {
+export const ScheduleGrid: React.FC<GridProps> = ({
+  startDate,
+  endDate,
+  onReset,
+  onClear,
+  onViewSelected,
+}) => {
   const [barContainer, attachBarContainer] = useCallbackRef<HTMLElement>();
   const rect = useResizeObserver(barContainer || null);
 
@@ -134,6 +143,37 @@ export const ScheduleGrid: React.FC<GridProps> = ({ startDate, endDate, onReset,
           {someExpanded ? <CollapseAllIcon className="ml-2" /> : <ExpandAllIcon className="ml-2" />}
           <span>{someExpanded ? 'Collapse All' : 'Expand All'}</span>
         </button>
+
+        {/* View Dropdown */}
+        <Dropdown>
+          <Dropdown.Toggle
+            id="bottom-panel-add-context-trigger"
+            variant="button"
+            className="text-[#0062F2] dark:text-white btn btn-sm flex gap-1 items-center"
+          >
+            <i className="fa-regular fa-eye" />
+            <span className="justify-start text-sm font-bold dark:font-normal dark:text-[#eeebf5]">
+              View
+            </span>
+          </Dropdown.Toggle>
+
+          <Dropdown.Menu>
+            <Dropdown.Item
+              onClick={() => {
+                onViewSelected(ViewMode.AGENDA);
+              }}
+            >
+              View Agenda
+            </Dropdown.Item>
+            <Dropdown.Item
+              onClick={() => {
+                onViewSelected(ViewMode.SCHEDULE);
+              }}
+            >
+              View Schedule
+            </Dropdown.Item>
+          </Dropdown.Menu>
+        </Dropdown>
 
         {/* Clear Schedule button */}
         <button
