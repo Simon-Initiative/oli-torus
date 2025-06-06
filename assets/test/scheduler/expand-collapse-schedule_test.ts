@@ -27,6 +27,7 @@ describe('expand/collapse containers', () => {
     endDateTime: null,
     start_date: '',
     end_date: '',
+    removed_from_schedule: false
   };
 
   const rootContainer: HierarchyItem = {
