@@ -100,10 +100,16 @@ const ContainerScheduleLine: React.FC<ScheduleLineProps> = ({
     [dispatch, item.id],
   );
 
+  const childrenCount = item.children.filter((c) => {
+    return !c.removed_from_schedule;
+  }).length;
+
   const containerChildren = item.children.filter(
-    (c) => c.resource_type_id === ScheduleItemType.Container,
+    (c) => !c.removed_from_schedule && c.resource_type_id === ScheduleItemType.Container,
   );
-  const pageChildren = item.children.filter((c) => c.resource_type_id === ScheduleItemType.Page);
+  const pageChildren = item.children.filter(
+    (c) => !c.removed_from_schedule && c.resource_type_id === ScheduleItemType.Page,
+  );
 
   const filteredPageChildren = React.useMemo(() => {
     if (!isSearchActive) return pageChildren;
@@ -140,7 +146,7 @@ const ContainerScheduleLine: React.FC<ScheduleLineProps> = ({
         >
           <div className="flex flex-row justify-between items-center">
             <div className="flex flex-row justify-start items-center">
-              {item.children.length > 0 && indent > 0 && (
+              {childrenCount > 0 && indent > 0 && (
                 <div className="inline mr-2 cursor-pointer" onClick={toggleExpanded}>
                   <i className={plusMinusIcon} />
                 </div>
@@ -148,7 +154,7 @@ const ContainerScheduleLine: React.FC<ScheduleLineProps> = ({
               <div className="inline mr-2">{showNumbers ? item.numbering_index + '.' : ''}</div>
               <div className="inline">{item.title}</div>
             </div>
-            {item.children.length > 0 && indent === 0 && (
+            {childrenCount > 0 && indent === 0 && (
               <div className="inline mr-1 float-right cursor-pointer" onClick={toggleExpanded}>
                 <i className={chevronIcon} />
               </div>
@@ -159,6 +165,7 @@ const ContainerScheduleLine: React.FC<ScheduleLineProps> = ({
           <ScheduleHeader labels={false} dayGeometry={dayGeometry} />
           {item.startDate && item.endDate && (
             <DragBar
+              itemId={item.id}
               onStartDrag={onStartDrag}
               onChange={onChange}
               startDate={item.startDate}

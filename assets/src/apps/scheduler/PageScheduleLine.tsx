@@ -95,6 +95,7 @@ export const PageScheduleLine: React.FC<ScheduleLineProps> = ({
           <ScheduleHeader labels={false} dayGeometry={dayGeometry} />
 
           <PageDragBar
+            itemId={item.id}
             onChange={onChange}
             onStartDrag={onSelect}
             startDate={item.startDate}

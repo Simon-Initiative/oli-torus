@@ -2029,6 +2029,7 @@ defmodule Oli.Delivery.Sections do
         case section_resource do
           %SectionResource{start_date: nil, end_date: nil} -> false
           %SectionResource{hidden: true} -> false
+          %SectionResource{removed_from_schedule: true} -> false
           _ -> true
         end
       end)
@@ -2088,6 +2089,7 @@ defmodule Oli.Delivery.Sections do
         case section_resource do
           %SectionResource{start_date: nil, end_date: nil} -> false
           %SectionResource{hidden: true} -> false
+          %SectionResource{removed_from_schedule: true} -> false
           _ -> true
         end
       end)
@@ -3128,6 +3130,7 @@ defmodule Oli.Delivery.Sections do
              :scoring_strategy_id,
              :scheduling_type,
              :manually_scheduled,
+             :removed_from_schedule,
              :start_date,
              :end_date,
              :collab_space_config,
@@ -3692,6 +3695,7 @@ defmodule Oli.Delivery.Sections do
                :scoring_strategy_id,
                :scheduling_type,
                :manually_scheduled,
+               :removed_from_schedule,
                :start_date,
                :end_date,
                :collab_space_config,
@@ -3819,6 +3823,7 @@ defmodule Oli.Delivery.Sections do
                :scoring_strategy_id,
                :scheduling_type,
                :manually_scheduled,
+               :removed_from_schedule,
                :start_date,
                :end_date,
                :collab_space_config,
@@ -3983,6 +3988,7 @@ defmodule Oli.Delivery.Sections do
                  :scoring_strategy_id,
                  :scheduling_type,
                  :manually_scheduled,
+                 :removed_from_schedule,
                  :start_date,
                  :end_date,
                  :collab_space_config,

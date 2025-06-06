@@ -1164,21 +1164,24 @@ defmodule Oli.Delivery.SectionsTest do
                        scheduling_type: "due_by",
                        start_date: "2023-01-25",
                        end_date: "2023-01-27",
-                       manually_scheduled: true
+                       manually_scheduled: true,
+                       removed_from_schedule: false
                      },
                      %{
                        id: scheduled_resources[page4.resource_id].id,
                        scheduling_type: "due_by",
                        start_date: "2023-02-01",
                        end_date: "2023-02-04",
-                       manually_scheduled: true
+                       manually_scheduled: true,
+                       removed_from_schedule: false
                      },
                      %{
                        id: scheduled_resources[page5.resource_id].id,
                        scheduling_type: "due_by",
                        start_date: "2023-02-06",
                        end_date: "2023-02-08",
-                       manually_scheduled: true
+                       manually_scheduled: true,
+                       removed_from_schedule: false
                      }
                    ],
                    "Etc/UTC"
@@ -1232,6 +1235,7 @@ defmodule Oli.Delivery.SectionsTest do
                                resource: %Oli.Delivery.Sections.SectionResource{
                                  scheduling_type: :due_by,
                                  manually_scheduled: true,
+                                 removed_from_schedule: false,
                                  start_date: ~U[2023-01-25 23:59:59Z],
                                  end_date: ~U[2023-01-27 23:59:59Z],
                                  resource_id: ^page3_resource_id,
@@ -1267,6 +1271,7 @@ defmodule Oli.Delivery.SectionsTest do
                               resource: %Oli.Delivery.Sections.SectionResource{
                                 scheduling_type: :due_by,
                                 manually_scheduled: true,
+                                removed_from_schedule: false,
                                 start_date: ~U[2023-02-01 23:59:59Z],
                                 end_date: ~U[2023-02-04 23:59:59Z],
                                 resource_id: ^page4_resource_id,
@@ -1298,6 +1303,7 @@ defmodule Oli.Delivery.SectionsTest do
                               resource: %Oli.Delivery.Sections.SectionResource{
                                 scheduling_type: :due_by,
                                 manually_scheduled: true,
+                                removed_from_schedule: false,
                                 start_date: ~U[2023-02-06 23:59:59Z],
                                 end_date: ~U[2023-02-08 23:59:59Z],
                                 resource_id: ^page5_resource_id,
@@ -1531,21 +1537,24 @@ defmodule Oli.Delivery.SectionsTest do
                      scheduling_type: "due_by",
                      start_date: "2023-02-03",
                      end_date: "2023-02-06",
-                     manually_scheduled: true
+                     manually_scheduled: true,
+                     removed_from_schedule: false
                    },
                    %{
                      id: scheduled_resources[page4.resource_id].id,
                      scheduling_type: "due_by",
                      start_date: "2023-02-04",
                      end_date: "2023-02-06",
-                     manually_scheduled: true
+                     manually_scheduled: true,
+                     removed_from_schedule: false
                    },
                    %{
                      id: scheduled_resources[page5.resource_id].id,
                      scheduling_type: "due_by",
                      start_date: "2023-02-05",
                      end_date: "2023-02-06",
-                     manually_scheduled: true
+                     manually_scheduled: true,
+                     removed_from_schedule: false
                    }
                  ],
                  "Etc/UTC"
@@ -1649,28 +1658,32 @@ defmodule Oli.Delivery.SectionsTest do
                      scheduling_type: "due_by",
                      start_date: "2023-02-04",
                      end_date: "2023-02-06",
-                     manually_scheduled: true
+                     manually_scheduled: true,
+                     removed_from_schedule: false
                    },
                    %{
                      id: scheduled_resources[page4.resource_id].id,
                      scheduling_type: "due_by",
                      start_date: "2023-02-05",
                      end_date: "2023-02-07",
-                     manually_scheduled: true
+                     manually_scheduled: true,
+                     removed_from_schedule: false
                    },
                    %{
                      id: scheduled_resources[page5.resource_id].id,
                      scheduling_type: "due_by",
                      start_date: "2023-02-03",
                      end_date: "2023-02-08",
-                     manually_scheduled: true
+                     manually_scheduled: true,
+                     removed_from_schedule: false
                    },
                    %{
                      id: scheduled_resources[scored_page2.resource_id].id,
                      scheduling_type: "due_by",
                      start_date: "2023-02-02",
                      end_date: "2023-02-09",
-                     manually_scheduled: true
+                     manually_scheduled: true,
+                     removed_from_schedule: false
                    }
                  ],
                  "Etc/UTC"
@@ -1716,28 +1729,32 @@ defmodule Oli.Delivery.SectionsTest do
                      scheduling_type: "due_by",
                      start_date: "2023-02-04",
                      end_date: "2023-02-06",
-                     manually_scheduled: true
+                     manually_scheduled: true,
+                     removed_from_schedule: false
                    },
                    %{
                      id: scheduled_resources[page4.resource_id].id,
                      scheduling_type: "due_by",
                      start_date: "2023-02-05",
                      end_date: "2023-02-07",
-                     manually_scheduled: true
+                     manually_scheduled: true,
+                     removed_from_schedule: false
                    },
                    %{
                      id: scheduled_resources[page5.resource_id].id,
                      scheduling_type: "read_by",
                      start_date: "2023-02-03",
                      end_date: nil,
-                     manually_scheduled: true
+                     manually_scheduled: true,
+                     removed_from_schedule: false
                    },
                    %{
                      id: scheduled_resources[scored_page2.resource_id].id,
                      scheduling_type: "read_by",
                      start_date: "2023-02-02",
                      end_date: nil,
-                     manually_scheduled: true
+                     manually_scheduled: true,
+                     removed_from_schedule: false
                    }
                  ],
                  "Etc/UTC"

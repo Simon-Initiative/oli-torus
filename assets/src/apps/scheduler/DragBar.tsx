@@ -1,10 +1,15 @@
 import React, { useCallback } from 'react';
+import { useDispatch } from 'react-redux';
 import { DateWithoutTime } from 'epoq';
 import { useDocumentMouseEvents } from '../../components/hooks/useDocumentMouseEvents';
 import { useToggle } from '../../components/hooks/useToggle';
+import { ContextMenuItem } from './ContextMenu';
+import { useContextMenu } from './ContextMenuController';
 import { DayGeometry, barGeometry, leftToDate } from './date-utils';
+import { removeScheduleItem } from './scheduler-slice';
 
 interface DragBarProps {
+  itemId: number;
   startDate: DateWithoutTime;
   endDate: DateWithoutTime;
   isContainer: boolean;
@@ -16,6 +21,7 @@ interface DragBarProps {
 }
 
 export const DragBar: React.FC<DragBarProps> = ({
+  itemId,
   startDate,
   endDate,
   onChange,
@@ -35,6 +41,29 @@ export const DragBar: React.FC<DragBarProps> = ({
   const [workingEnd, setWorkingEnd] = React.useState<DateWithoutTime>(new DateWithoutTime());
 
   const [mouseDownX, setMouseDownX] = React.useState(0);
+
+  const { showMenu, hideMenu } = useContextMenu();
+  const dispatch = useDispatch();
+
+  const menuItems: ContextMenuItem[] = [
+    {
+      label: 'Remove from Schedule',
+      onClick: () => {
+        hideMenu();
+        dispatch(
+          removeScheduleItem({
+            itemId: itemId,
+          }),
+        );
+      },
+    },
+  ];
+
+  const handleContextMenu = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.preventDefault();
+
+    showMenu({ x: e.clientX, y: e.clientY }, menuItems);
+  };
 
   const onMouseMove = (e: MouseEvent) => {
     const delta = e.clientX - mouseDownX;
@@ -117,6 +146,7 @@ export const DragBar: React.FC<DragBarProps> = ({
     <>
       {isContainer ? (
         <div
+          onContextMenu={handleContextMenu}
           onMouseDown={startDrag}
           className="absolute border-t-4 h-3 top-3 cursor-grab flex flex-row justify-between"
           style={{
@@ -138,6 +168,7 @@ export const DragBar: React.FC<DragBarProps> = ({
         </div>
       ) : (
         <div
+          onContextMenu={handleContextMenu}
           onMouseDown={startDrag}
           className="group rounded absolute h-7 top-1.5 flex flex-row justify-between p-0.5 cursor-grab"
           style={{
