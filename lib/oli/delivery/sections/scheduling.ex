@@ -155,7 +155,15 @@ defmodule Oli.Delivery.Sections.Scheduling do
   end
 
   defp is_valid_update?(updates) do
-    keys = ["id", "scheduling_type", "start_date", "end_date", "manually_scheduled", "removed_from_schedule"]
+    keys = [
+      "id",
+      "scheduling_type",
+      "start_date",
+      "end_date",
+      "manually_scheduled",
+      "removed_from_schedule"
+    ]
+
     atoms = Enum.map(keys, fn k -> String.to_existing_atom(k) end)
 
     both = Enum.zip(keys, atoms)
