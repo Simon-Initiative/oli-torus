@@ -7,6 +7,8 @@ defmodule OliWeb.DeliveryControllerTest do
   alias Lti_1p3.Roles.ContextRoles
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Attempts.Core
+  alias Oli.Delivery.Attempts.Core.ResourceAccess
+  alias Oli.Delivery.Sections.Enrollment
 
   import Mox
   import Oli.Factory
@@ -239,17 +241,15 @@ defmodule OliWeb.DeliveryControllerTest do
   end
 
   describe "download_students_progress/2" do
-    # Student 1: Progress: 0, Overall Proficiency: Not enough data
-    # Student 2: Progress: 50, Overall Proficiency: Low
-    # Student 3: Progress: 50, Overall Proficiency: Medium
-    # Student 4: Progress: 50, Overall Proficiency: High
-    # Student 5: Progress: 100, Overall Proficiency: Medium
     test "downloads student progress with different proficiency levels", %{conn: conn} do
       %{
         instructor: instructor,
         section: section,
         student_1: student_1,
-        resource_access_student_1: _resource_access_student_1
+        student_2: student_2,
+        student_3: student_3,
+        student_4: student_4,
+        student_5: student_5
       } =
         prepare_student_progress_data()
 
@@ -269,18 +269,69 @@ defmodule OliWeb.DeliveryControllerTest do
       # Verify CSV content
       resp = conn.resp_body
 
-      # Then verify each student's row in order
-      lines = String.split(resp, "\r\n")
-      [header | data_rows] = lines
+      [headers | students] = NimbleCSV.RFC4180.parse_string(resp, skip_headers: false)
+      # CSV Headers
+      assert [
+               "Status",
+               "Name",
+               "Email",
+               "LMS ID",
+               "Last Interaction",
+               "Progress (Pct)",
+               "Proficiency",
+               "Requires Payment"
+             ] == headers
 
-      # First verify the header row
-      assert header == "name,email,last_interaction,progress,overall_proficiency,requires_payment"
+      # CSV Student data
+      student_1_info = Enum.at(students, 0)
+      assert Enum.at(student_1_info, 0) == "enrolled"
+      assert Enum.at(student_1_info, 1) == build_student_name(student_1)
+      assert Enum.at(student_1_info, 2) == student_1.email
+      assert Enum.at(student_1_info, 3) == student_1.sub
+      assert Enum.at(student_1_info, 4) == get_last_interaction(student_1.id, Enrollment)
+      assert Enum.at(student_1_info, 5) == "0.0"
+      assert Enum.at(student_1_info, 6) == "Not enough data"
+      assert Enum.at(student_1_info, 7) == "N/A"
 
-      # Student 1
-      student1_row = Enum.at(data_rows, 0)
+      student_2_info = Enum.at(students, 1)
+      assert Enum.at(student_2_info, 0) == "enrolled"
+      assert Enum.at(student_2_info, 1) == build_student_name(student_2)
+      assert Enum.at(student_2_info, 2) == student_2.email
+      assert Enum.at(student_2_info, 3) == student_2.sub
+      assert Enum.at(student_2_info, 4) == get_last_interaction(student_2.id, ResourceAccess)
+      assert Enum.at(student_2_info, 5) == "50.0"
+      assert Enum.at(student_2_info, 6) == "Low"
+      assert Enum.at(student_2_info, 7) == "N/A"
 
-      assert student1_row =~ student_1.name
-      assert student1_row =~ "Not enough data"
+      student_3_info = Enum.at(students, 2)
+      assert Enum.at(student_3_info, 0) == "enrolled"
+      assert Enum.at(student_3_info, 1) == build_student_name(student_3)
+      assert Enum.at(student_3_info, 2) == student_3.email
+      assert Enum.at(student_3_info, 3) == student_3.sub
+      assert Enum.at(student_3_info, 4) == get_last_interaction(student_3.id, ResourceAccess)
+      assert Enum.at(student_3_info, 5) == "50.0"
+      assert Enum.at(student_3_info, 6) == "Medium"
+      assert Enum.at(student_3_info, 7) == "N/A"
+
+      student_4_info = Enum.at(students, 3)
+      assert Enum.at(student_4_info, 0) == "enrolled"
+      assert Enum.at(student_4_info, 1) == build_student_name(student_4)
+      assert Enum.at(student_4_info, 2) == student_4.email
+      assert Enum.at(student_4_info, 3) == student_4.sub
+      assert Enum.at(student_4_info, 4) == get_last_interaction(student_4.id, ResourceAccess)
+      assert Enum.at(student_4_info, 5) == "50.0"
+      assert Enum.at(student_4_info, 6) == "High"
+      assert Enum.at(student_4_info, 7) == "N/A"
+
+      student_5_info = Enum.at(students, 4)
+      assert Enum.at(student_5_info, 0) == "enrolled"
+      assert Enum.at(student_5_info, 1) == build_student_name(student_5)
+      assert Enum.at(student_5_info, 2) == student_5.email
+      assert Enum.at(student_5_info, 3) == student_5.sub
+      assert Enum.at(student_5_info, 4) == get_last_interaction(student_5.id, ResourceAccess)
+      assert Enum.at(student_5_info, 5) == "100.0"
+      assert Enum.at(student_5_info, 6) == "Medium"
+      assert Enum.at(student_5_info, 7) == "N/A"
     end
 
     test "Redirects to \"Not found\" page if the section doesn't exist", %{conn: conn} do
@@ -991,106 +1042,57 @@ defmodule OliWeb.DeliveryControllerTest do
     # Student 1: No progress, no attempts
     page_resource.resource_id
     |> Core.track_access(section.id, student_1.id)
-    |> Core.update_resource_access(%{progress: 0})
-
-    {:ok, resource_access_student_1} =
-      page_resource.resource_id
-      |> Core.track_access(section.id, student_2.id)
-      |> Core.update_resource_access(%{progress: 50})
 
     # Student 2: 50% progress, low proficiency
     page_resource.resource_id
     |> Core.track_access(section.id, student_2.id)
     |> Core.update_resource_access(%{progress: 50})
-    |> then(fn {:ok, ra} ->
-      Core.create_resource_attempt(%{
-        resource_access: ra,
-        revision: page_resource.revision,
-        score: 0.3,
-        out_of: 1.0,
-        lifecycle_state: :evaluated
-      })
-    end)
 
     # Student 3: 50% progress, medium proficiency
     page_resource.resource_id
     |> Core.track_access(section.id, student_3.id)
     |> Core.update_resource_access(%{progress: 50})
-    |> then(fn {:ok, ra} ->
-      Core.create_resource_attempt(%{
-        resource_access: ra,
-        revision: page_resource.revision,
-        score: 0.3,
-        out_of: 1.0,
-        lifecycle_state: :evaluated
-      })
-    end)
 
     # Student 4: 50% progress, high proficiency
     page_resource.resource_id
     |> Core.track_access(section.id, student_4.id)
     |> Core.update_resource_access(%{progress: 50})
-    |> then(fn {:ok, ra} ->
-      Core.create_resource_attempt(%{
-        resource_access: ra,
-        revision: page_resource.revision,
-        score: 0.9,
-        out_of: 1.0,
-        lifecycle_state: :evaluated
-      })
-    end)
 
     # Student 5: 100% progress, medium proficiency
     page_resource.resource_id
     |> Core.track_access(section.id, student_5.id)
     |> Core.update_resource_access(%{progress: 100})
-    |> then(fn {:ok, ra} ->
-      Core.create_resource_attempt(%{
-        resource_access: ra,
-        revision: page_resource.revision,
-        score: 0.6,
-        out_of: 1.0,
-        lifecycle_state: :evaluated
-      })
-    end)
 
     # Create summary records for analytics
     page_type_id = Oli.Resources.ResourceType.id_for_page()
 
-    # Student 1: Not enough data
+    # Student 1: Not enough data meaning "num first attempts is < 3"
     insert(:resource_summary, %{
       section_id: section.id,
       user_id: student_1.id,
       resource_id: page_resource.resource_id,
       resource_type_id: page_type_id,
-      num_attempts: 1,
-      num_correct: 0,
-      num_first_attempts: 1,
-      num_first_attempts_correct: 0
+      num_first_attempts: 2
     })
 
-    # Student 2: Low proficiency
+    # Student 2: Low proficiency (2+0.2*(10-2))/10 = 0.36 < 0.4
     insert(:resource_summary, %{
       section_id: section.id,
       user_id: student_2.id,
       resource_id: page_resource.resource_id,
       resource_type_id: page_type_id,
-      num_attempts: 5,
-      num_correct: 1,
-      num_first_attempts: 5,
-      num_first_attempts_correct: 1
+      num_first_attempts: 10,
+      num_first_attempts_correct: 2
     })
 
-    # Student 3: Medium proficiency
+    # Student 3: Medium proficiency (7+0.2*(10-7))/10 = 0.76 < 0.8
     insert(:resource_summary, %{
       section_id: section.id,
       user_id: student_3.id,
       resource_id: page_resource.resource_id,
       resource_type_id: page_type_id,
-      num_attempts: 5,
-      num_correct: 3,
-      num_first_attempts: 5,
-      num_first_attempts_correct: 3
+      num_first_attempts: 10,
+      num_first_attempts_correct: 7
     })
 
     # Student 4: High proficiency
@@ -1099,10 +1101,8 @@ defmodule OliWeb.DeliveryControllerTest do
       user_id: student_4.id,
       resource_id: page_resource.resource_id,
       resource_type_id: page_type_id,
-      num_attempts: 5,
-      num_correct: 5,
-      num_first_attempts: 5,
-      num_first_attempts_correct: 5
+      num_first_attempts: 10,
+      num_first_attempts_correct: 10
     })
 
     # Student 5: Medium proficiency
@@ -1111,10 +1111,8 @@ defmodule OliWeb.DeliveryControllerTest do
       user_id: student_5.id,
       resource_id: page_resource.resource_id,
       resource_type_id: page_type_id,
-      num_attempts: 5,
-      num_correct: 3,
-      num_first_attempts: 5,
-      num_first_attempts_correct: 3
+      num_first_attempts: 10,
+      num_first_attempts_correct: 7
     })
 
     # Create an instructor
@@ -1128,8 +1126,20 @@ defmodule OliWeb.DeliveryControllerTest do
       student_2: student_2,
       student_3: student_3,
       student_4: student_4,
-      student_5: student_5,
-      resource_access_student_1: resource_access_student_1
+      student_5: student_5
     }
+  end
+
+  defp get_last_interaction(user_id, struct) do
+    struct
+    |> Oli.Repo.get_by!(%{user_id: user_id})
+    |> Map.get(:updated_at)
+    |> Timex.format!("{YYYY}-{0M}-{0D} {h24}:{0m}:{0s}.000000Z")
+  end
+
+  defp build_student_name(student) do
+    family_name = String.trim(student.family_name)
+    given_name = String.trim(student.given_name)
+    "#{family_name}, #{given_name}"
   end
 end

@@ -344,11 +344,13 @@ defmodule OliWeb.DeliveryController do
         students = Helpers.get_students(section)
 
         contents =
-          students
-          |> Enum.map(
+          Enum.map(
+            students,
             &%{
-              name: &1.name,
+              status: &1.enrollment_status,
+              name: "#{&1.family_name}, #{&1.given_name}",
               email: &1.email,
+              lms_id: &1.sub,
               last_interaction: &1.last_interaction,
               progress: &1.progress,
               overall_proficiency: &1.overall_proficiency,
@@ -356,14 +358,16 @@ defmodule OliWeb.DeliveryController do
             }
           )
           |> DataTable.new()
-          |> DataTable.headers([
-            :name,
-            :email,
-            :last_interaction,
-            :progress,
-            :overall_proficiency,
-            :requires_payment
-          ])
+          |> DataTable.headers(
+            status: "Status",
+            name: "Name",
+            email: "Email",
+            lms_id: "LMS ID",
+            last_interaction: "Last Interaction",
+            progress: "Progress (Pct)",
+            overall_proficiency: "Proficiency",
+            requires_payment: "Requires Payment"
+          )
           |> DataTable.to_csv_content()
 
         conn
