@@ -89,7 +89,8 @@ export const getVisibleSchedule = createSelector(
 
     const getItemById = (id: number): HierarchyItem | undefined =>
       getScheduleItem(id, schedule) as HierarchyItem | undefined;
-    const matches = (item: HierarchyItem): boolean => item.title.toLowerCase().includes(search);
+    const matches = (item: HierarchyItem): boolean =>
+      !item.removed_from_schedule && item.title.toLowerCase().includes(search);
 
     if (!search) {
       const buildTree = (item: HierarchyItem): VisibleHierarchyItem => ({
