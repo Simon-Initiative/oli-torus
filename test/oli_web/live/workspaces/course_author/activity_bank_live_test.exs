@@ -67,6 +67,39 @@ defmodule OliWeb.Workspaces.CourseAuthor.ActivityBankLiveTest do
 
       assert has_element?(view, "div[role='alert']")
     end
+
+    test "editorMap does not include LTI activities", %{
+      conn: conn,
+      project: project,
+      lti_activity1: lti_activity1,
+      lti_activity2: lti_activity2
+    } do
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      render_hook(view, "survey_scripts_loaded", %{"success" => "success"})
+
+      html = render(view)
+      [activity_bank_html] = Floki.find(html, "#activity-bank")
+      props_json = Floki.attribute(activity_bank_html, "data-live-react-props") |> List.first()
+      {:ok, props} = Jason.decode(props_json)
+      editor_map = props["editorMap"]
+
+      # 1. Ensure that LTI activities exist in the database
+      lti_activities = Oli.Activities.list_activity_registrations()
+
+      assert Enum.all?([lti_activity1.slug, lti_activity2.slug], fn slug ->
+               Enum.any?(lti_activities, &(&1.slug == slug))
+             end)
+
+      # 2. Ensure that they are NOT present in the editorMap (React props)
+      editor_map_slugs = Map.keys(editor_map)
+
+      assert Enum.all?([lti_activity1.slug, lti_activity2.slug], fn slug ->
+               slug not in editor_map_slugs
+             end)
+
+      assert Enum.all?(editor_map, fn {_slug, entry} -> entry["isLtiActivity"] == false end)
+    end
   end
 
   ##### HELPER FUNCTIONS #####
@@ -74,6 +107,31 @@ defmodule OliWeb.Workspaces.CourseAuthor.ActivityBankLiveTest do
   defp create_project(_conn) do
     author = insert(:author)
     project = insert(:project, authors: [author])
+
+    lti_activity1 =
+      insert(:activity_registration, %{
+        slug: "lti_activity_1",
+        title: "LTI Activity 1"
+      })
+
+    lti_activity2 =
+      insert(:activity_registration, %{
+        slug: "lti_activity_2",
+        title: "LTI Activity 2"
+      })
+
+    insert(:lti_external_tool_activity_deployment, %{
+      activity_registration: lti_activity1,
+      deployment_id: Ecto.UUID.generate(),
+      status: :enabled
+    })
+
+    insert(:lti_external_tool_activity_deployment, %{
+      activity_registration: lti_activity2,
+      deployment_id: Ecto.UUID.generate(),
+      status: :enabled
+    })
+
     # root container
     container_resource = insert(:resource)
 
@@ -104,6 +162,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.ActivityBankLiveTest do
       author: author
     })
 
-    [project: project, publication: publication]
+    [
+      project: project,
+      publication: publication,
+      lti_activity1: lti_activity1,
+      lti_activity2: lti_activity2
+    ]
   end
 end
