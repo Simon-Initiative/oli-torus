@@ -44,7 +44,7 @@ defmodule Oli.Authoring.Editing.BankEditor do
            ) do
       editor_map =
         Activities.create_registered_activity_map(project_slug)
-        |> Enum.filter(fn {_key, entry} -> entry.isLtiActivity == false end)
+        |> Enum.reject(fn {_key, entry} -> entry.isLtiActivity end)
         |> Enum.into(%{})
 
       project = Oli.Authoring.Course.get_project_by_slug(project_slug)

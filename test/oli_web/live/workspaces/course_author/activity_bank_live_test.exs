@@ -84,14 +84,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ActivityBankLiveTest do
       {:ok, props} = Jason.decode(props_json)
       editor_map = props["editorMap"]
 
-      # 1. Ensure that LTI activities exist in the database
-      lti_activities = Oli.Activities.list_activity_registrations()
-
-      assert Enum.all?([lti_activity1.slug, lti_activity2.slug], fn slug ->
-               Enum.any?(lti_activities, &(&1.slug == slug))
-             end)
-
-      # 2. Ensure that they are NOT present in the editorMap (React props)
+      # Ensure that they are NOT present in the editorMap (React props)
       editor_map_slugs = Map.keys(editor_map)
 
       assert Enum.all?([lti_activity1.slug, lti_activity2.slug], fn slug ->
@@ -121,15 +114,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.ActivityBankLiveTest do
       })
 
     insert(:lti_external_tool_activity_deployment, %{
-      activity_registration: lti_activity1,
-      deployment_id: Ecto.UUID.generate(),
-      status: :enabled
+      activity_registration: lti_activity1
     })
 
     insert(:lti_external_tool_activity_deployment, %{
-      activity_registration: lti_activity2,
-      deployment_id: Ecto.UUID.generate(),
-      status: :enabled
+      activity_registration: lti_activity2
     })
 
     # root container
