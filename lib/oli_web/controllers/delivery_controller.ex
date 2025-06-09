@@ -17,6 +17,7 @@ defmodule OliWeb.DeliveryController do
   alias OliWeb.UserAuth
   alias OliWeb.Common.Params
   alias OliWeb.Delivery.InstructorDashboard.Helpers
+  alias OliWeb.Delivery.Student.Utils
 
   require Logger
 
@@ -352,7 +353,7 @@ defmodule OliWeb.DeliveryController do
               email: &1.email,
               lms_id: &1.sub,
               last_interaction: &1.last_interaction,
-              progress: &1.progress,
+              progress: convert_to_percentage(&1.progress),
               overall_proficiency: &1.overall_proficiency,
               requires_payment: Map.get(&1, :requires_payment, "N/A")
             }
@@ -510,5 +511,11 @@ defmodule OliWeb.DeliveryController do
       section.id,
       student_ids
     )
+  end
+
+  defp convert_to_percentage(nil), do: 0
+
+  defp convert_to_percentage(progress) when progress <= 1.0 do
+    Utils.parse_score(progress * 100)
   end
 end

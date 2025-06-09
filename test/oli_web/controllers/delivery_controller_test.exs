@@ -289,7 +289,7 @@ defmodule OliWeb.DeliveryControllerTest do
       assert Enum.at(student_1_info, 2) == student_1.email
       assert Enum.at(student_1_info, 3) == student_1.sub
       assert Enum.at(student_1_info, 4) == get_last_interaction(student_1.id, Enrollment)
-      assert Enum.at(student_1_info, 5) == "0.0"
+      assert Enum.at(student_1_info, 5) == "0"
       assert Enum.at(student_1_info, 6) == "Not enough data"
       assert Enum.at(student_1_info, 7) == "N/A"
 
@@ -299,7 +299,7 @@ defmodule OliWeb.DeliveryControllerTest do
       assert Enum.at(student_2_info, 2) == student_2.email
       assert Enum.at(student_2_info, 3) == student_2.sub
       assert Enum.at(student_2_info, 4) == get_last_interaction(student_2.id, ResourceAccess)
-      assert Enum.at(student_2_info, 5) == "50.0"
+      assert Enum.at(student_2_info, 5) == "11.11"
       assert Enum.at(student_2_info, 6) == "Low"
       assert Enum.at(student_2_info, 7) == "N/A"
 
@@ -309,7 +309,7 @@ defmodule OliWeb.DeliveryControllerTest do
       assert Enum.at(student_3_info, 2) == student_3.email
       assert Enum.at(student_3_info, 3) == student_3.sub
       assert Enum.at(student_3_info, 4) == get_last_interaction(student_3.id, ResourceAccess)
-      assert Enum.at(student_3_info, 5) == "50.0"
+      assert Enum.at(student_3_info, 5) == "22.22"
       assert Enum.at(student_3_info, 6) == "Medium"
       assert Enum.at(student_3_info, 7) == "N/A"
 
@@ -319,7 +319,7 @@ defmodule OliWeb.DeliveryControllerTest do
       assert Enum.at(student_4_info, 2) == student_4.email
       assert Enum.at(student_4_info, 3) == student_4.sub
       assert Enum.at(student_4_info, 4) == get_last_interaction(student_4.id, ResourceAccess)
-      assert Enum.at(student_4_info, 5) == "50.0"
+      assert Enum.at(student_4_info, 5) == "33.03"
       assert Enum.at(student_4_info, 6) == "High"
       assert Enum.at(student_4_info, 7) == "N/A"
 
@@ -329,8 +329,8 @@ defmodule OliWeb.DeliveryControllerTest do
       assert Enum.at(student_5_info, 2) == student_5.email
       assert Enum.at(student_5_info, 3) == student_5.sub
       assert Enum.at(student_5_info, 4) == get_last_interaction(student_5.id, ResourceAccess)
-      assert Enum.at(student_5_info, 5) == "100.0"
-      assert Enum.at(student_5_info, 6) == "Medium"
+      assert Enum.at(student_5_info, 5) == "100"
+      assert Enum.at(student_5_info, 6) == "High"
       assert Enum.at(student_5_info, 7) == "N/A"
     end
 
@@ -1016,15 +1016,15 @@ defmodule OliWeb.DeliveryControllerTest do
     Sections.rebuild_contained_pages(section)
 
     # Create students with different profiles
-    # No progress
+    # Progress: 0% | Proficiency: "Not enough data"
     student_1 = user_fixture(%{name: "Student 1", given_name: "Student", family_name: "One"})
-    # Low proficiency
+    # Progress: 11.11% | Proficiency: "Low"
     student_2 = user_fixture(%{name: "Student 2", given_name: "Student", family_name: "Two"})
-    # Medium proficiency
+    # Progress: 22.22% | Proficiency: "Medium"
     student_3 = user_fixture(%{name: "Student 3", given_name: "Student", family_name: "Three"})
-    # High proficiency
+    # Progress: 33.03% | Proficiency: "High"
     student_4 = user_fixture(%{name: "Student 4", given_name: "Student", family_name: "Four"})
-    # Complete progress
+    # Progress: 100% | Proficiency: "High"
     student_5 = user_fixture(%{name: "Student 5", given_name: "Student", family_name: "Five"})
 
     # Enroll students
@@ -1039,34 +1039,34 @@ defmodule OliWeb.DeliveryControllerTest do
 
     page_resource = Enum.find(section_resources, &(&1.children == []))
 
-    # Student 1: No progress, no attempts
+    # Student 1: No progress equals to 0%
     page_resource.resource_id
     |> Core.track_access(section.id, student_1.id)
 
-    # Student 2: 50% progress, low proficiency
+    # Student 2: 11.11% progress
     page_resource.resource_id
     |> Core.track_access(section.id, student_2.id)
-    |> Core.update_resource_access(%{progress: 50})
+    |> Core.update_resource_access(%{progress: 0.11111})
 
-    # Student 3: 50% progress, medium proficiency
+    # Student 3: 22.22% progress
     page_resource.resource_id
     |> Core.track_access(section.id, student_3.id)
-    |> Core.update_resource_access(%{progress: 50})
+    |> Core.update_resource_access(%{progress: 0.22222})
 
-    # Student 4: 50% progress, high proficiency
+    # Student 4: 33.03% progress
     page_resource.resource_id
     |> Core.track_access(section.id, student_4.id)
-    |> Core.update_resource_access(%{progress: 50})
+    |> Core.update_resource_access(%{progress: 0.33030})
 
-    # Student 5: 100% progress, medium proficiency
+    # Student 5: 100% progress
     page_resource.resource_id
     |> Core.track_access(section.id, student_5.id)
-    |> Core.update_resource_access(%{progress: 100})
+    |> Core.update_resource_access(%{progress: 1.00000})
 
     # Create summary records for analytics
     page_type_id = Oli.Resources.ResourceType.id_for_page()
 
-    # Student 1: Not enough data meaning "num first attempts is < 3"
+    # Student 1: "Not enough data" when "num_first_attempts < 3"
     insert(:resource_summary, %{
       section_id: section.id,
       user_id: student_1.id,
@@ -1075,7 +1075,7 @@ defmodule OliWeb.DeliveryControllerTest do
       num_first_attempts: 2
     })
 
-    # Student 2: Low proficiency (2+0.2*(10-2))/10 = 0.36 < 0.4
+    # Student 2: "Low" proficiency when (2+0.2*(10-2))/10 = 0.36 < 0.4
     insert(:resource_summary, %{
       section_id: section.id,
       user_id: student_2.id,
@@ -1085,7 +1085,7 @@ defmodule OliWeb.DeliveryControllerTest do
       num_first_attempts_correct: 2
     })
 
-    # Student 3: Medium proficiency (7+0.2*(10-7))/10 = 0.76 < 0.8
+    # Student 3: "Medium" proficiency when (7+0.2*(10-7))/10 = 0.76 < 0.8
     insert(:resource_summary, %{
       section_id: section.id,
       user_id: student_3.id,
@@ -1095,24 +1095,24 @@ defmodule OliWeb.DeliveryControllerTest do
       num_first_attempts_correct: 7
     })
 
-    # Student 4: High proficiency
+    # Student 4: "High" proficiency
     insert(:resource_summary, %{
       section_id: section.id,
       user_id: student_4.id,
       resource_id: page_resource.resource_id,
       resource_type_id: page_type_id,
       num_first_attempts: 10,
-      num_first_attempts_correct: 10
+      num_first_attempts_correct: 9
     })
 
-    # Student 5: Medium proficiency
+    # Student 5: High proficiency
     insert(:resource_summary, %{
       section_id: section.id,
       user_id: student_5.id,
       resource_id: page_resource.resource_id,
       resource_type_id: page_type_id,
       num_first_attempts: 10,
-      num_first_attempts_correct: 7
+      num_first_attempts_correct: 10
     })
 
     # Create an instructor
