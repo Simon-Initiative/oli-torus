@@ -4,7 +4,7 @@ defmodule OliWeb.DeliveryController do
 
   alias Lti_1p3.Roles.{PlatformRoles, ContextRoles}
   alias Oli.Accounts
-  alias Oli.Accounts.{User}
+  alias Oli.Accounts.User
   alias Oli.Analytics.DataTables.DataTable
   alias Oli.Delivery
   alias Oli.Delivery.Sections
@@ -357,7 +357,7 @@ defmodule OliWeb.DeliveryController do
               email: &1.email,
               lms_id: &1.sub,
               last_interaction: &1.last_interaction,
-              progress: convert_to_percentage(&1.progress),
+              progress: convert_to_percentage(&1),
               overall_proficiency: &1.overall_proficiency,
               requires_payment: Map.get(&1, :requires_payment, "N/A")
             }
@@ -522,10 +522,15 @@ defmodule OliWeb.DeliveryController do
     Enum.sort_by(results, &{@status_rank[&1.status], &1.name, &1.email})
   end
 
-  defp convert_to_percentage(nil), do: 0
+  defp convert_to_percentage(%{progress: nil}), do: 0
 
-  defp convert_to_percentage(progress) when progress <= 1.0 do
+  defp convert_to_percentage(%{progress: progress}) when progress <= 1.0 do
     Utils.parse_score(progress * 100)
+  end
+
+  defp convert_to_percentage(%{progress: _progress} = user_data) do
+    Logger.error("Progress exceeds 1.0 threshold: #{inspect(user_data)}")
+    nil
   end
 
   defp parse_enrollment_status(:enrolled), do: "Enrolled"
