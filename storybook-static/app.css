@@ -5956,6 +5956,10 @@ table.table-striped tbody tr:nth-child(even) {
   min-width: 0px;
 }
 
+.min-w-\[220px\] {
+  min-width: 220px;
+}
+
 .min-w-\[2rem\] {
   min-width: 2rem;
 }
@@ -14389,6 +14393,11 @@ Not supports in Firefox and IE */
 .hover\:bg-\[\#3383e1\]:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(51 131 225 / var(--tw-bg-opacity));
+}
+
+.hover\:bg-\[\#3E92F8\]:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(62 146 248 / var(--tw-bg-opacity));
 }
 
 .hover\:bg-\[\#F5F5F6\]:hover {
