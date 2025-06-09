@@ -7,8 +7,6 @@ defmodule OliWeb.DeliveryControllerTest do
   alias Lti_1p3.Roles.ContextRoles
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Attempts.Core
-  alias Oli.Delivery.Attempts.Core.ResourceAccess
-  alias Oli.Delivery.Sections.Enrollment
 
   import Mox
   import Oli.Factory
@@ -242,15 +240,7 @@ defmodule OliWeb.DeliveryControllerTest do
 
   describe "download_students_progress/2" do
     test "downloads student progress with different proficiency levels", %{conn: conn} do
-      %{
-        instructor: instructor,
-        section: section,
-        student_1: student_1,
-        student_2: student_2,
-        student_3: student_3,
-        student_4: student_4,
-        student_5: student_5
-      } =
+      %{instructor: instructor, section: section} =
         prepare_student_progress_data()
 
       # Download the CSV
@@ -283,55 +273,25 @@ defmodule OliWeb.DeliveryControllerTest do
              ] == headers
 
       # CSV Student data
-      student_1_info = Enum.at(students, 0)
-      assert Enum.at(student_1_info, 0) == "enrolled"
-      assert Enum.at(student_1_info, 1) == build_student_name(student_1)
-      assert Enum.at(student_1_info, 2) == student_1.email
-      assert Enum.at(student_1_info, 3) == student_1.sub
-      assert Enum.at(student_1_info, 4) == get_last_interaction(student_1.id, Enrollment)
-      assert Enum.at(student_1_info, 5) == "0"
-      assert Enum.at(student_1_info, 6) == "Not enough data"
-      assert Enum.at(student_1_info, 7) == "N/A"
+      assert ["Enrolled", "Five, Student", _, _, _, "100", "High", "N/A"] = Enum.at(students, 0)
+      assert ["Enrolled", "Four, Student", _, _, _, "33.03", "High", "N/A"] = Enum.at(students, 1)
 
-      student_2_info = Enum.at(students, 1)
-      assert Enum.at(student_2_info, 0) == "enrolled"
-      assert Enum.at(student_2_info, 1) == build_student_name(student_2)
-      assert Enum.at(student_2_info, 2) == student_2.email
-      assert Enum.at(student_2_info, 3) == student_2.sub
-      assert Enum.at(student_2_info, 4) == get_last_interaction(student_2.id, ResourceAccess)
-      assert Enum.at(student_2_info, 5) == "11.11"
-      assert Enum.at(student_2_info, 6) == "Low"
-      assert Enum.at(student_2_info, 7) == "N/A"
+      assert ["Enrolled", "One, Student", _, _, _, "0", "Not enough data", "N/A"] =
+               Enum.at(students, 2)
 
-      student_3_info = Enum.at(students, 2)
-      assert Enum.at(student_3_info, 0) == "enrolled"
-      assert Enum.at(student_3_info, 1) == build_student_name(student_3)
-      assert Enum.at(student_3_info, 2) == student_3.email
-      assert Enum.at(student_3_info, 3) == student_3.sub
-      assert Enum.at(student_3_info, 4) == get_last_interaction(student_3.id, ResourceAccess)
-      assert Enum.at(student_3_info, 5) == "22.22"
-      assert Enum.at(student_3_info, 6) == "Medium"
-      assert Enum.at(student_3_info, 7) == "N/A"
+      assert ["Enrolled", "Three, Student", _, _, _, "22.22", "Medium", "N/A"] =
+               Enum.at(students, 3)
 
-      student_4_info = Enum.at(students, 3)
-      assert Enum.at(student_4_info, 0) == "enrolled"
-      assert Enum.at(student_4_info, 1) == build_student_name(student_4)
-      assert Enum.at(student_4_info, 2) == student_4.email
-      assert Enum.at(student_4_info, 3) == student_4.sub
-      assert Enum.at(student_4_info, 4) == get_last_interaction(student_4.id, ResourceAccess)
-      assert Enum.at(student_4_info, 5) == "33.03"
-      assert Enum.at(student_4_info, 6) == "High"
-      assert Enum.at(student_4_info, 7) == "N/A"
+      assert ["Enrolled", "Two, Student", _, _, _, "11.11", "Low", "N/A"] = Enum.at(students, 4)
 
-      student_5_info = Enum.at(students, 4)
-      assert Enum.at(student_5_info, 0) == "enrolled"
-      assert Enum.at(student_5_info, 1) == build_student_name(student_5)
-      assert Enum.at(student_5_info, 2) == student_5.email
-      assert Enum.at(student_5_info, 3) == student_5.sub
-      assert Enum.at(student_5_info, 4) == get_last_interaction(student_5.id, ResourceAccess)
-      assert Enum.at(student_5_info, 5) == "100"
-      assert Enum.at(student_5_info, 6) == "High"
-      assert Enum.at(student_5_info, 7) == "N/A"
+      assert ["Rejected invitation", "Eight, Student", _, _, _, "0", "Not enough data", "N/A"] =
+               Enum.at(students, 5)
+
+      assert ["Suspended", "Six, Student", _, _, _, "0", "Not enough data", "N/A"] =
+               Enum.at(students, 6)
+
+      assert ["Waiting confirmation", "Seven, Student", _, _, _, "0", "Not enough data", "N/A"] =
+               Enum.at(students, 7)
     end
 
     test "Redirects to \"Not found\" page if the section doesn't exist", %{conn: conn} do
@@ -1016,27 +976,37 @@ defmodule OliWeb.DeliveryControllerTest do
     Sections.rebuild_contained_pages(section)
 
     # Create students with different profiles
-    # Progress: 0% | Proficiency: "Not enough data"
-    student_1 = user_fixture(%{name: "Student 1", given_name: "Student", family_name: "One"})
-    # Progress: 11.11% | Proficiency: "Low"
-    student_2 = user_fixture(%{name: "Student 2", given_name: "Student", family_name: "Two"})
-    # Progress: 22.22% | Proficiency: "Medium"
-    student_3 = user_fixture(%{name: "Student 3", given_name: "Student", family_name: "Three"})
-    # Progress: 33.03% | Proficiency: "High"
-    student_4 = user_fixture(%{name: "Student 4", given_name: "Student", family_name: "Four"})
-    # Progress: 100% | Proficiency: "High"
-    student_5 = user_fixture(%{name: "Student 5", given_name: "Student", family_name: "Five"})
+    # Student 1: Progress: 0% | Proficiency: "Not enough data"
+    # Student 2: Progress: 11.11% | Proficiency: "Low"
+    # Student 3: Progress: 22.22% | Proficiency: "Medium"
+    # Student 4: Progress: 33.03% | Proficiency: "High"
+    # Student 5: Progress: 100% | Proficiency: "High"
+    # Student 6-8: Progress: 0% | Proficiency: "Not enough data" | Enrollment different from enrolled
+    [student_1, student_2, student_3, student_4, student_5, student_6, student_7, student_8] =
+      ~w(One Two Three Four Five Six Seven Eight)
+      |> Enum.with_index(1)
+      |> Enum.map(fn {id, i} ->
+        user_fixture(%{
+          name: "Student #{1}",
+          given_name: "Student",
+          family_name: "#{id}",
+          email: "student_#{i}@example.edu"
+        })
+      end)
 
     # Enroll students
-    Sections.enroll(student_1.id, section.id, [ContextRoles.get_role(:context_learner)])
-    Sections.enroll(student_2.id, section.id, [ContextRoles.get_role(:context_learner)])
-    Sections.enroll(student_3.id, section.id, [ContextRoles.get_role(:context_learner)])
-    Sections.enroll(student_4.id, section.id, [ContextRoles.get_role(:context_learner)])
-    Sections.enroll(student_5.id, section.id, [ContextRoles.get_role(:context_learner)])
+    student_ctx = [ContextRoles.get_role(:context_learner)]
+    Sections.enroll(student_1.id, section.id, student_ctx)
+    Sections.enroll(student_2.id, section.id, student_ctx)
+    Sections.enroll(student_3.id, section.id, student_ctx)
+    Sections.enroll(student_4.id, section.id, student_ctx)
+    Sections.enroll(student_5.id, section.id, student_ctx)
+    Sections.enroll(student_6.id, section.id, student_ctx, :suspended)
+    Sections.enroll(student_7.id, section.id, student_ctx, :pending_confirmation)
+    Sections.enroll(student_8.id, section.id, student_ctx, :rejected)
 
     # Set up progress and attempts for each student
     section_resources = Sections.get_section_resources(section.id)
-
     page_resource = Enum.find(section_resources, &(&1.children == []))
 
     # Student 1: No progress equals to 0%
@@ -1116,30 +1086,14 @@ defmodule OliWeb.DeliveryControllerTest do
     })
 
     # Create an instructor
-    instructor = insert(:user, given_name: "Euler", family_name: "Leonard", name: "Leo Eul")
-    Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+    instructor =
+      user_fixture(%{
+        given_name: "Euler",
+        family_name: "Leonard",
+        name: "Leo Eul",
+        can_create_sections: true
+      })
 
-    %{
-      instructor: instructor,
-      section: section,
-      student_1: student_1,
-      student_2: student_2,
-      student_3: student_3,
-      student_4: student_4,
-      student_5: student_5
-    }
-  end
-
-  defp get_last_interaction(user_id, struct) do
-    struct
-    |> Oli.Repo.get_by!(%{user_id: user_id})
-    |> Map.get(:updated_at)
-    |> Timex.format!("{YYYY}-{0M}-{0D} {h24}:{0m}:{0s}.000000Z")
-  end
-
-  defp build_student_name(student) do
-    family_name = String.trim(student.family_name)
-    given_name = String.trim(student.given_name)
-    "#{family_name}, #{given_name}"
+    %{instructor: instructor, section: section}
   end
 end

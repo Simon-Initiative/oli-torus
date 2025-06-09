@@ -344,12 +344,17 @@ defmodule OliWeb.DeliveryController do
       section ->
         students = Helpers.get_students(section)
 
+        status_rank =
+          ["Enrolled", "Rejected invitation", "Suspended", "Waiting confirmation"]
+          |> Enum.with_index()
+          |> Enum.into(%{})
+
         contents =
           Enum.map(
             students,
             &%{
-              status: &1.enrollment_status,
-              name: "#{&1.family_name}, #{&1.given_name}",
+              status: parse_enrollment_status(&1.enrollment_status),
+              name: OliWeb.Common.Utils.name(&1),
               email: &1.email,
               lms_id: &1.sub,
               last_interaction: &1.last_interaction,
@@ -358,6 +363,7 @@ defmodule OliWeb.DeliveryController do
               requires_payment: Map.get(&1, :requires_payment, "N/A")
             }
           )
+          |> Enum.sort_by(&{status_rank[&1.status], &1.name, &1.email})
           |> DataTable.new()
           |> DataTable.headers(
             status: "Status",
@@ -518,4 +524,10 @@ defmodule OliWeb.DeliveryController do
   defp convert_to_percentage(progress) when progress <= 1.0 do
     Utils.parse_score(progress * 100)
   end
+
+  defp parse_enrollment_status(:enrolled), do: "Enrolled"
+  defp parse_enrollment_status(:suspended), do: "Suspended"
+  defp parse_enrollment_status(:pending_confirmation), do: "Waiting confirmation"
+  defp parse_enrollment_status(:rejected), do: "Rejected invitation"
+  defp parse_enrollment_status(_status), do: "Unkknown"
 end
