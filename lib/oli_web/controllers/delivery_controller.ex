@@ -27,6 +27,10 @@ defmodule OliWeb.DeliveryController do
     ContextRoles.get_role(:context_administrator),
     ContextRoles.get_role(:context_instructor)
   ]
+  # %{"Enrolled" => 0, "Rejected invitation" => 1, ...}
+  @status_rank ["Enrolled", "Rejected invitation", "Suspended", "Waiting confirmation"]
+               |> Enum.with_index()
+               |> Enum.into(%{})
 
   @doc """
   This is the default entry point for delivery users. It will redirect to the appropriate page based
@@ -344,11 +348,6 @@ defmodule OliWeb.DeliveryController do
       section ->
         students = Helpers.get_students(section)
 
-        status_rank =
-          ["Enrolled", "Rejected invitation", "Suspended", "Waiting confirmation"]
-          |> Enum.with_index()
-          |> Enum.into(%{})
-
         contents =
           Enum.map(
             students,
@@ -363,7 +362,7 @@ defmodule OliWeb.DeliveryController do
               requires_payment: Map.get(&1, :requires_payment, "N/A")
             }
           )
-          |> Enum.sort_by(&{status_rank[&1.status], &1.name, &1.email})
+          |> sort_data()
           |> DataTable.new()
           |> DataTable.headers(
             status: "Status",
@@ -517,6 +516,10 @@ defmodule OliWeb.DeliveryController do
       section.id,
       student_ids
     )
+  end
+
+  defp sort_data(results) do
+    Enum.sort_by(results, &{@status_rank[&1.status], &1.name, &1.email})
   end
 
   defp convert_to_percentage(nil), do: 0
