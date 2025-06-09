@@ -42,7 +42,11 @@ defmodule Oli.Authoring.Editing.BankEditor do
              },
              %Paging{limit: 1, offset: 0}
            ) do
-      editor_map = Activities.create_registered_activity_map(project_slug)
+      editor_map =
+        Activities.create_registered_activity_map(project_slug)
+        |> Enum.filter(fn {_key, entry} -> entry.isLtiActivity == false end)
+        |> Enum.into(%{})
+
       project = Oli.Authoring.Course.get_project_by_slug(project_slug)
 
       {:ok,
