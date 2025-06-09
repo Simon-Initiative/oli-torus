@@ -4,7 +4,14 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useCallbackRef, useResizeObserver } from '@restart/hooks';
 import { DateWithoutTime } from 'epoq';
 import { modeIsDark } from 'components/misc/DarkModeSelector';
-import { ClearIcon, CollapseAllIcon, ExpandAllIcon, SearchIcon, FilterIcon } from 'components/misc/icons/Icons';
+import {
+  ClearIcon,
+  CollapseAllIcon,
+  ExpandAllIcon,
+  EyeIcon,
+  FilterIcon,
+  SearchIcon,
+} from 'components/misc/icons/Icons';
 import { ViewMode } from './ScheduleEditor';
 import { ScheduleHeaderRow } from './ScheduleHeader';
 import { ScheduleLine } from './ScheduleLine';
@@ -212,7 +219,7 @@ export const ScheduleGrid: React.FC<GridProps> = ({
             variant="button"
             className="text-[#0062F2] dark:text-white btn btn-sm flex gap-1 items-center"
           >
-            <i className="fa-regular fa-eye" />
+            <EyeIcon className="text-[#0062F2] dark:text-white ml-2" />
             <span className="justify-start text-sm font-bold dark:font-normal dark:text-[#eeebf5]">
               View
             </span>
