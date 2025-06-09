@@ -1,10 +1,10 @@
 import React, { useEffect, useMemo, useRef } from 'react';
-import { Dropdown } from 'react-bootstrap';
+import { Dropdown, Form } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { useCallbackRef, useResizeObserver } from '@restart/hooks';
 import { DateWithoutTime } from 'epoq';
 import { modeIsDark } from 'components/misc/DarkModeSelector';
-import { ClearIcon, CollapseAllIcon, ExpandAllIcon, SearchIcon } from 'components/misc/icons/Icons';
+import { ClearIcon, CollapseAllIcon, ExpandAllIcon, SearchIcon, FilterIcon } from 'components/misc/icons/Icons';
 import { ViewMode } from './ScheduleEditor';
 import { ScheduleHeaderRow } from './ScheduleHeader';
 import { ScheduleLine } from './ScheduleLine';
@@ -23,6 +23,7 @@ import {
   expandVisibleContainers,
   hasContainers,
   setSearchQuery,
+  showHideRemoved,
 } from './scheduler-slice';
 
 interface GridProps {
@@ -90,6 +91,8 @@ export const ScheduleGrid: React.FC<GridProps> = ({
   const expandedContainers = useSelector(
     (state: SchedulerAppState) => state.scheduler.expandedContainers,
   );
+  const isShowRemoved = useSelector((state: SchedulerAppState) => state.scheduler.showRemoved);
+
   const canToggle = useSelector(hasContainers);
   const searchQuery = useSelector((state: SchedulerAppState) => state.scheduler.searchQuery || '');
   const prevSearchRef = useRef(searchQuery);
@@ -244,6 +247,29 @@ export const ScheduleGrid: React.FC<GridProps> = ({
             Clear
           </span>
         </button>
+
+        {/* Filter Dropdown */}
+        <Dropdown>
+          <Dropdown.Toggle
+            id="bottom-panel-add-context-trigger"
+            variant="button"
+            className="text-[#0062F2] dark:text-white btn btn-sm flex gap-1 items-center"
+          >
+            <FilterIcon className="text-[#0062F2] dark:text-white ml-2" />
+            <span className="justify-start text-sm font-bold dark:font-normal dark:text-[#eeebf5]">
+              Filter
+            </span>
+          </Dropdown.Toggle>
+
+          <Dropdown.Menu>
+            <Form.Check
+              type="checkbox"
+              label="  Show Removed"
+              checked={isShowRemoved}
+              onChange={() => dispatch(showHideRemoved(!isShowRemoved))}
+            />
+          </Dropdown.Menu>
+        </Dropdown>
       </div>
       <div className="w-full px-4">
         <table className="select-none schedule_table border-t-0 border-l-0">
@@ -256,7 +282,7 @@ export const ScheduleGrid: React.FC<GridProps> = ({
           </thead>
           <tbody>
             {schedule
-              .filter((item) => !item.removed_from_schedule)
+              .filter((item) => isShowRemoved || !item.removed_from_schedule)
               .map((item, index) => (
                 <ScheduleLine
                   key={item.id}

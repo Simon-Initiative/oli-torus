@@ -63,6 +63,7 @@ export interface SchedulerState {
   preferredSchedulingTime: TimeParts;
   expandedContainers: Record<number, boolean>;
   searchQuery: string;
+  showRemoved: boolean;
 }
 
 export const initSchedulerState = (): SchedulerState => ({
@@ -85,6 +86,7 @@ export const initSchedulerState = (): SchedulerState => ({
   },
   expandedContainers: {},
   searchQuery: '',
+  showRemoved: false,
 });
 
 const toDateTime = (str: string, preferredSchedulingTime: TimeParts) => {
@@ -171,6 +173,21 @@ const removeDescendents = (item: HierarchyItem, schedule: HierarchyItem[]) => {
   }
 };
 
+const reAddAncestors = (item: HierarchyItem, schedule: HierarchyItem[]) => {
+  const matchedIds = new Set<number>();
+  const includeAncestors = (item: HierarchyItem) => {
+    schedule.forEach((potentialParent) => {
+      if (potentialParent.children.includes(item.id)) {
+        matchedIds.add(potentialParent.id);
+        potentialParent.removed_from_schedule = false;
+        includeAncestors(potentialParent);
+      }
+    });
+  };
+  includeAncestors(item);
+  return Array.from(matchedIds);
+};
+
 const neverScheduled = (schedule: HierarchyItem[]) =>
   !schedule.find((i) => i.startDate === null || i.endDate === null || i.manually_scheduled);
 
@@ -178,6 +195,9 @@ interface UnlockPayload {
   itemId: number;
 }
 interface RemovePayload {
+  itemId: number;
+}
+interface ReAddPayload {
   itemId: number;
 }
 
@@ -226,6 +246,28 @@ const schedulerSlice = createSlice({
         state.dirty.push(mutableItem.id);
         removeDescendents(mutableItem, state.schedule);
         state.dirty.push(...descendentIds(mutableItem, state.schedule));
+        if (state.schedule && state.startDate && state.endDate) {
+          const root = getScheduleRoot(state.schedule);
+          root &&
+            resetScheduleItem(
+              root,
+              state.startDate,
+              state.endDate,
+              state.schedule,
+              true,
+              state.weekdays,
+              state.preferredSchedulingTime,
+            );
+          state.dirty = state.schedule.map((item) => item.id);
+        }
+      }
+    },
+    reAddScheduleItem(state, action: PayloadAction<ReAddPayload>) {
+      const mutableItem = getScheduleItem(action.payload.itemId, state.schedule);
+      if (mutableItem) {
+        mutableItem.removed_from_schedule = false;
+        state.dirty.push(mutableItem.id);
+        state.dirty.push(...reAddAncestors(mutableItem, state.schedule));
         if (state.schedule && state.startDate && state.endDate) {
           const root = getScheduleRoot(state.schedule);
           root &&
@@ -402,6 +444,9 @@ const schedulerSlice = createSlice({
     setSearchQuery: (state, action) => {
       state.searchQuery = action.payload;
     },
+    showHideRemoved: (state, action: PayloadAction<boolean>) => {
+      state.showRemoved = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(clearSectionSchedule.pending, (state, action) => {
@@ -495,11 +540,13 @@ export const {
   selectItem,
   unlockScheduleItem,
   removeScheduleItem,
+  reAddScheduleItem,
   changeScheduleType,
   dismissError,
   toggleContainer,
   expandAllContainers,
   collapseAllContainers,
+  showHideRemoved,
 } = schedulerSlice.actions;
 
 export const schedulerSliceReducer = schedulerSlice.reducer;

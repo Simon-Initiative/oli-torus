@@ -67,6 +67,7 @@ export const shouldDisplayCurriculumItemNumbering = (state: SchedulerAppState) =
 export const hasUnsavedChanges = (state: SchedulerAppState) => state.scheduler.dirty.length > 0;
 export const isSaving = (state: SchedulerAppState) => state.scheduler.saving;
 export const getError = (state: SchedulerAppState) => state.scheduler.errorMessage;
+// const isShowRemoved = (state: SchedulerAppState) => state.scheduler.showRemoved;
 
 export const isSearching = (state: SchedulerAppState) => !!state.scheduler.searchQuery?.trim();
 
@@ -82,15 +83,17 @@ export const getVisibleSchedule = createSelector(
   [
     (state: SchedulerAppState) => state.scheduler.schedule,
     (state: SchedulerAppState) => state.scheduler.searchQuery?.toLowerCase().trim() || '',
+    (state: SchedulerAppState) => state.scheduler.showRemoved,
   ],
-  (schedule: HierarchyItem[], search: string): VisibleHierarchyItem[] => {
+  (schedule: HierarchyItem[], search: string, showRemoved: boolean): VisibleHierarchyItem[] => {
     const root = getScheduleRoot(schedule);
     if (!root) return [];
 
     const getItemById = (id: number): HierarchyItem | undefined =>
       getScheduleItem(id, schedule) as HierarchyItem | undefined;
+
     const matches = (item: HierarchyItem): boolean =>
-      !item.removed_from_schedule && item.title.toLowerCase().includes(search);
+      (showRemoved || !item.removed_from_schedule) && item.title.toLowerCase().includes(search);
 
     if (!search) {
       const buildTree = (item: HierarchyItem): VisibleHierarchyItem => ({
