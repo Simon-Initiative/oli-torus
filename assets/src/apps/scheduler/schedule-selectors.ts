@@ -67,7 +67,8 @@ export const shouldDisplayCurriculumItemNumbering = (state: SchedulerAppState) =
 export const hasUnsavedChanges = (state: SchedulerAppState) => state.scheduler.dirty.length > 0;
 export const isSaving = (state: SchedulerAppState) => state.scheduler.saving;
 export const getError = (state: SchedulerAppState) => state.scheduler.errorMessage;
-// const isShowRemoved = (state: SchedulerAppState) => state.scheduler.showRemoved;
+export const hasRemovedItems = (state: SchedulerAppState) =>
+  state.scheduler.schedule.some((item) => item.removed_from_schedule);
 
 export const isSearching = (state: SchedulerAppState) => !!state.scheduler.searchQuery?.trim();
 

@@ -19,6 +19,7 @@ import { generateDayGeometry } from './date-utils';
 import {
   VisibleHierarchyItem,
   getVisibleSchedule,
+  hasRemovedItems,
   isAnyVisibleContainerExpanded,
 } from './schedule-selectors';
 import { SchedulerAppState } from './scheduler-reducer';
@@ -82,6 +83,7 @@ export const ScheduleGrid: React.FC<GridProps> = ({
 
   const schedule = useSelector(getVisibleSchedule) as VisibleHierarchyItem[];
   const isScheduled = schedule.some((item: any) => item.startDateTime && item.endDateTime);
+  const hasRemoved = useSelector(hasRemovedItems);
   const dayGeometry = useMemo(
     () =>
       generateDayGeometry(
@@ -271,6 +273,7 @@ export const ScheduleGrid: React.FC<GridProps> = ({
           <Dropdown.Menu>
             <Form.Check
               type="checkbox"
+              disabled={!hasRemoved}
               label="  Show Removed"
               checked={isShowRemoved}
               onChange={() => dispatch(showHideRemoved(!isShowRemoved))}
