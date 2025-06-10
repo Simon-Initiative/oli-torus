@@ -3,7 +3,6 @@ import { ArrowContainer, Popover } from 'react-tiny-popover';
 import { Popup as PopupModel } from 'data/content/model/elements/types';
 import { isEmptyContent } from '../../data/content/utils';
 import { useAudio } from '../hooks/useAudio';
-import { positionRect } from '../../data/content/utils';
 
 interface Props {
   children: React.ReactNode;
