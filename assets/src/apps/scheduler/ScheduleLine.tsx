@@ -7,14 +7,16 @@ import { PageScheduleLine } from './PageScheduleLine';
 import { ScheduleHeader } from './ScheduleHeader';
 import { DayGeometry } from './date-utils';
 import {
-  getSchedule,
+  getExpandedContainerIdsFromSearch,
   getSelectedId,
+  isSearching,
   shouldDisplayCurriculumItemNumbering,
 } from './schedule-selectors';
+import type { VisibleHierarchyItem } from './schedule-selectors';
+import { SchedulerAppState } from './scheduler-reducer';
 import {
   HierarchyItem,
   ScheduleItemType,
-  getScheduleItem,
   isContainerExpanded,
   moveScheduleItem,
   selectItem,
@@ -22,11 +24,18 @@ import {
 } from './scheduler-slice';
 
 interface ScheduleLineProps {
-  item: HierarchyItem;
+  item: VisibleHierarchyItem;
   index: number;
   indent: number;
   rowColor: string;
   dayGeometry: DayGeometry;
+}
+
+function flattenItem(item: VisibleHierarchyItem): HierarchyItem {
+  return {
+    ...item,
+    children: item.children.map((child) => child.id),
+  };
 }
 
 export const ScheduleLine: React.FC<ScheduleLineProps> = ({
@@ -36,15 +45,19 @@ export const ScheduleLine: React.FC<ScheduleLineProps> = ({
   rowColor,
   dayGeometry,
 }) => {
-  return item.resource_type_id === ScheduleItemType.Page ? (
-    <PageScheduleLine
-      item={item}
-      index={index}
-      indent={indent}
-      rowColor={rowColor}
-      dayGeometry={dayGeometry}
-    />
-  ) : (
+  if (item.resource_type_id === ScheduleItemType.Page) {
+    return (
+      <PageScheduleLine
+        item={flattenItem(item)}
+        index={index}
+        indent={indent}
+        rowColor={rowColor}
+        dayGeometry={dayGeometry}
+      />
+    );
+  }
+
+  return (
     <ContainerScheduleLine
       item={item}
       index={index}
@@ -63,10 +76,17 @@ const ContainerScheduleLine: React.FC<ScheduleLineProps> = ({
   dayGeometry,
 }) => {
   const dispatch = useDispatch();
-  const expanded = useSelector((state) => isContainerExpanded(state, item.id));
+
+  const isSearchActive = useSelector(isSearching);
+  const expandedContainerIds = useSelector(getExpandedContainerIdsFromSearch);
+  const isExpanded = useSelector((state) => isContainerExpanded(state, item.id));
+  const expanded = isSearchActive ? expandedContainerIds.has(item.id) : isExpanded;
+  const searchQuery = useSelector(
+    (state: SchedulerAppState) => state.scheduler.searchQuery?.toLowerCase().trim() || '',
+  );
+
   const toggleExpanded = () => dispatch(toggleContainer(item.id));
   const isSelected = useSelector(getSelectedId) === item.id;
-  const schedule = useSelector(getSchedule);
   const showNumbers = useSelector(shouldDisplayCurriculumItemNumbering);
 
   const onSelect = useCallback(() => {
@@ -80,13 +100,25 @@ const ContainerScheduleLine: React.FC<ScheduleLineProps> = ({
     [dispatch, item.id],
   );
 
-  const containerChildren = item.children
-    .map((itemId) => getScheduleItem(itemId, schedule))
-    .filter((item) => item?.resource_type_id === ScheduleItemType.Container) as HierarchyItem[];
+  const childrenCount = item.children.filter((c) => {
+    return !c.removed_from_schedule;
+  }).length;
 
-  const pageChildren = item.children
-    .map((itemId) => getScheduleItem(itemId, schedule))
-    .filter((item) => item?.resource_type_id === ScheduleItemType.Page) as HierarchyItem[];
+  const containerChildren = item.children.filter(
+    (c) => !c.removed_from_schedule && c.resource_type_id === ScheduleItemType.Container,
+  );
+  const pageChildren = item.children.filter(
+    (c) => !c.removed_from_schedule && c.resource_type_id === ScheduleItemType.Page,
+  );
+
+  const filteredPageChildren = React.useMemo(() => {
+    if (!isSearchActive) return pageChildren;
+
+    const matchingPages = pageChildren.filter((page) =>
+      page.title.toLowerCase().includes(searchQuery),
+    );
+    return matchingPages.length > 0 ? matchingPages : pageChildren;
+  }, [pageChildren, isSearchActive, searchQuery]);
 
   const onStartDrag = useCallback(() => {
     dispatch(selectItem(item.id));
@@ -114,7 +146,7 @@ const ContainerScheduleLine: React.FC<ScheduleLineProps> = ({
         >
           <div className="flex flex-row justify-between items-center">
             <div className="flex flex-row justify-start items-center">
-              {item.children.length > 0 && indent > 0 && (
+              {childrenCount > 0 && indent > 0 && (
                 <div className="inline mr-2 cursor-pointer" onClick={toggleExpanded}>
                   <i className={plusMinusIcon} />
                 </div>
@@ -122,18 +154,18 @@ const ContainerScheduleLine: React.FC<ScheduleLineProps> = ({
               <div className="inline mr-2">{showNumbers ? item.numbering_index + '.' : ''}</div>
               <div className="inline">{item.title}</div>
             </div>
-            {item.children.length > 0 && indent === 0 && (
+            {childrenCount > 0 && indent === 0 && (
               <div className="inline mr-1 float-right cursor-pointer" onClick={toggleExpanded}>
                 <i className={chevronIcon} />
               </div>
             )}
           </div>
         </td>
-
         <td className="relative p-0">
           <ScheduleHeader labels={false} dayGeometry={dayGeometry} />
           {item.startDate && item.endDate && (
             <DragBar
+              itemId={item.id}
               onStartDrag={onStartDrag}
               onChange={onChange}
               startDate={item.startDate}
@@ -146,11 +178,10 @@ const ContainerScheduleLine: React.FC<ScheduleLineProps> = ({
           )}
         </td>
       </tr>
-
       {expanded &&
         containerChildren.map((child, cindex) => (
           <ScheduleLine
-            key={child?.resource_id}
+            key={child.id}
             index={1 + index + cindex}
             item={child}
             indent={indent + 1}
@@ -158,13 +189,12 @@ const ContainerScheduleLine: React.FC<ScheduleLineProps> = ({
             dayGeometry={dayGeometry}
           />
         ))}
-
       {expanded &&
-        pageChildren.map((child, cindex) => (
+        filteredPageChildren.map((child, cindex) => (
           <PageScheduleLine
-            key={child?.resource_id}
+            key={child.id}
+            item={flattenItem(child)}
             index={1 + index + cindex}
-            item={child}
             indent={indent + 1}
             rowColor={rowColor}
             dayGeometry={dayGeometry}

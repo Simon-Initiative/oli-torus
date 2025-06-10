@@ -1,18 +1,28 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
+import { Dropdown } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { useCallbackRef, useResizeObserver } from '@restart/hooks';
 import { DateWithoutTime } from 'epoq';
 import { modeIsDark } from 'components/misc/DarkModeSelector';
 import { ClearIcon, CollapseAllIcon, ExpandAllIcon, SearchIcon } from 'components/misc/icons/Icons';
+import { ViewMode } from './ScheduleEditor';
 import { ScheduleHeaderRow } from './ScheduleHeader';
 import { ScheduleLine } from './ScheduleLine';
 import { generateDayGeometry } from './date-utils';
-import { getTopLevelSchedule } from './schedule-selectors';
 import {
-  areSomeContainersExpanded,
+  VisibleHierarchyItem,
+  getVisibleSchedule,
+  isAnyVisibleContainerExpanded,
+} from './schedule-selectors';
+import { SchedulerAppState } from './scheduler-reducer';
+import {
+  ScheduleItemType,
   collapseAllContainers,
+  collapseVisibleContainers,
   expandAllContainers,
+  expandVisibleContainers,
   hasContainers,
+  setSearchQuery,
 } from './scheduler-slice';
 
 interface GridProps {
@@ -20,6 +30,7 @@ interface GridProps {
   endDate: string;
   onReset: () => void;
   onClear: () => void;
+  onViewSelected: (view: ViewMode) => void;
 }
 
 const rowPalette = [
@@ -36,7 +47,6 @@ const rowPalette = [
   '#0F7D85',
   '#58759D',
 ];
-
 const rowPaletteDark = [
   '#FD7782',
   '#FCE7E3',
@@ -52,16 +62,18 @@ const rowPaletteDark = [
   '#AFC5E4',
 ];
 
-export const ScheduleGrid: React.FC<GridProps> = ({ startDate, endDate, onReset, onClear }) => {
+export const ScheduleGrid: React.FC<GridProps> = ({
+  startDate,
+  endDate,
+  onReset,
+  onClear,
+  onViewSelected,
+}) => {
   const [barContainer, attachBarContainer] = useCallbackRef<HTMLElement>();
   const rect = useResizeObserver(barContainer || null);
 
-  const schedule = useSelector(getTopLevelSchedule);
-
-  const isScheduled = schedule.some((item: any) => {
-    return item.startDateTime && item.endDateTime;
-  });
-
+  const schedule = useSelector(getVisibleSchedule) as VisibleHierarchyItem[];
+  const isScheduled = schedule.some((item: any) => item.startDateTime && item.endDateTime);
   const dayGeometry = useMemo(
     () =>
       generateDayGeometry(
@@ -73,11 +85,64 @@ export const ScheduleGrid: React.FC<GridProps> = ({ startDate, endDate, onReset,
   );
 
   const dispatch = useDispatch();
-  const someExpanded = useSelector(areSomeContainersExpanded);
+  const anyExpanded = useSelector(isAnyVisibleContainerExpanded);
+
+  const expandedContainers = useSelector(
+    (state: SchedulerAppState) => state.scheduler.expandedContainers,
+  );
   const canToggle = useSelector(hasContainers);
+  const searchQuery = useSelector((state: SchedulerAppState) => state.scheduler.searchQuery || '');
+  const prevSearchRef = useRef(searchQuery);
+
+  useEffect(() => {
+    if (prevSearchRef.current && !searchQuery) {
+      dispatch(collapseAllContainers());
+    }
+
+    prevSearchRef.current = searchQuery;
+  }, [searchQuery, dispatch]);
+
+  useEffect(() => {
+    if (searchQuery) {
+      const visibleContainers = collectVisibleContainerIds(schedule);
+
+      const allExpanded = visibleContainers.every((id) => expandedContainers[id]);
+      if (!allExpanded) {
+        dispatch(expandVisibleContainers(visibleContainers));
+      }
+    }
+  }, [searchQuery, schedule]);
+
+  const collectVisibleContainerIds = (nodes: VisibleHierarchyItem[]): number[] => {
+    const result: number[] = [];
+    const dfs = (items: VisibleHierarchyItem[]) => {
+      for (const node of items) {
+        if (node.resource_type_id === ScheduleItemType.Container) {
+          result.push(node.id);
+          dfs(node.children);
+        }
+      }
+    };
+    dfs(nodes);
+    return result;
+  };
 
   const handleClick = () => {
-    someExpanded ? dispatch(collapseAllContainers()) : dispatch(expandAllContainers());
+    const isSearchActive = !!searchQuery;
+
+    const visibleContainers = collectVisibleContainerIds(schedule);
+    const allExpanded = visibleContainers.every((id) => expandedContainers[id]);
+
+    if (isSearchActive) {
+      if (allExpanded) {
+        dispatch(collapseVisibleContainers(visibleContainers));
+      } else {
+        dispatch(expandVisibleContainers(visibleContainers));
+      }
+    } else {
+      const hasExpanded = Object.values(expandedContainers).some((val) => val);
+      hasExpanded ? dispatch(collapseAllContainers()) : dispatch(expandAllContainers());
+    }
   };
 
   return (
@@ -110,9 +175,11 @@ export const ScheduleGrid: React.FC<GridProps> = ({ startDate, endDate, onReset,
           <SearchIcon className="text-[#383A44] dark:text-white absolute left-3 top-1/2 -translate-y-1/2" />
 
           <input
-            className="w-[461px] h-9 pl-10 pr-3 dark:bg-[#2A282D] dark:text-[#eeebf5] rounded-md border border-[#CED1D9] dark:border-[#514C59] placeholder:text-[#bg-[var(--text-text-default,#353740)]]"
+            className="w-[461px] h-9 pl-10 pr-3 dark:bg-[#2A282D] dark:text-[#eeebf5] rounded-md border border-[#CED1D9] dark:border-[#514C59]"
             type="text"
             placeholder="Search Schedule..."
+            value={searchQuery}
+            onChange={(e) => dispatch(setSearchQuery(e.target.value))}
           />
         </div>
 
@@ -121,7 +188,7 @@ export const ScheduleGrid: React.FC<GridProps> = ({ startDate, endDate, onReset,
           id="toggle_expand_button"
           className={`flex items-center space-x-3 font-medium disabled:opacity-50 disabled:cursor-not-allowed
                       ${
-                        someExpanded
+                        anyExpanded
                           ? 'text-[#0062F2] dark:text-[#4CA6FF] font-bold'
                           : 'text-[#353740] dark:text-[#EEEBF5]'
                       }
@@ -131,9 +198,40 @@ export const ScheduleGrid: React.FC<GridProps> = ({ startDate, endDate, onReset,
           title={!canToggle ? 'No expandable containers available' : undefined}
           disabled={!canToggle}
         >
-          {someExpanded ? <CollapseAllIcon className="ml-2" /> : <ExpandAllIcon className="ml-2" />}
-          <span>{someExpanded ? 'Collapse All' : 'Expand All'}</span>
+          {anyExpanded ? <CollapseAllIcon className="ml-2" /> : <ExpandAllIcon className="ml-2" />}
+          <span>{anyExpanded ? 'Collapse All' : 'Expand All'}</span>
         </button>
+
+        {/* View Dropdown */}
+        <Dropdown>
+          <Dropdown.Toggle
+            id="bottom-panel-add-context-trigger"
+            variant="button"
+            className="text-[#0062F2] dark:text-white btn btn-sm flex gap-1 items-center"
+          >
+            <i className="fa-regular fa-eye" />
+            <span className="justify-start text-sm font-bold dark:font-normal dark:text-[#eeebf5]">
+              View
+            </span>
+          </Dropdown.Toggle>
+
+          <Dropdown.Menu>
+            <Dropdown.Item
+              onClick={() => {
+                onViewSelected(ViewMode.AGENDA);
+              }}
+            >
+              View Agenda
+            </Dropdown.Item>
+            <Dropdown.Item
+              onClick={() => {
+                onViewSelected(ViewMode.SCHEDULE);
+              }}
+            >
+              View Schedule
+            </Dropdown.Item>
+          </Dropdown.Menu>
+        </Dropdown>
 
         {/* Clear Schedule button */}
         <button
@@ -157,54 +255,25 @@ export const ScheduleGrid: React.FC<GridProps> = ({ startDate, endDate, onReset,
             />
           </thead>
           <tbody>
-            {schedule.map((item, index) => (
-              <ScheduleLine
-                key={item.id}
-                index={index}
-                indent={0}
-                item={item}
-                rowColor={
-                  modeIsDark()
-                    ? rowPaletteDark[index % rowPaletteDark.length]
-                    : rowPalette[index % rowPalette.length]
-                }
-                dayGeometry={dayGeometry}
-              />
-            ))}
+            {schedule
+              .filter((item) => !item.removed_from_schedule)
+              .map((item, index) => (
+                <ScheduleLine
+                  key={item.id}
+                  index={index}
+                  indent={0}
+                  item={item}
+                  rowColor={
+                    modeIsDark()
+                      ? rowPaletteDark[index % rowPaletteDark.length]
+                      : rowPalette[index % rowPalette.length]
+                  }
+                  dayGeometry={dayGeometry}
+                />
+              ))}
           </tbody>
         </table>
-        <Legend />
       </div>
     </div>
   );
 };
-
-const LegendIconItem: React.FC<{ icon: string; text: string; color: string }> = ({
-  icon,
-  text,
-  color,
-}) => (
-  <span className="inline-flex items-center mr-4 rounded-md bg-gray-100 py-1 px-3 dark:bg-black">
-    <i className={`fa fa-${icon} mr-3 ${color}`} />
-    {text}
-  </span>
-);
-
-const LegendBarItem: React.FC = () => (
-  <span className="inline-flex items-center mr-4 rounded-md bg-gray-100 py-1 px-3 dark:bg-black">
-    <span className="inline-block rounded bg-delivery-primary-300 dark:bg-delivery-primary-600 h-5 justify-between p-0.5 cursor-move w-10 mr-3" />
-    Suggested Range
-  </span>
-);
-
-const Legend = () => (
-  <div className="flex flex-row align-middle mt-3 ">
-    <span className="mr-3 my-auto">Legend:</span>
-    <LegendBarItem />
-
-    <LegendIconItem icon="flag" text="Available Date" color="text-green-500" />
-    <LegendIconItem icon="file" text="Suggested Date" color="text-blue-500" />
-    <LegendIconItem icon="users-line" text="In Class Activity" color="text-blue-500" />
-    <LegendIconItem icon="calendar" text="Due Date" color="text-red-700" />
-  </div>
-);
