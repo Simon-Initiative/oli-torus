@@ -146,11 +146,13 @@ export const QuillFIBOptionEditor: React.FC<QuillFIBOptionEditorProps> = ({
 
         const allCorrect = opt.options || [];
         const altCorrect =
-          newType === 'input' ? allCorrect.slice(1).map((item: any) => item.value) : [];
+          newType === 'input'
+            ? allCorrect.slice(1).map((item: any) => item.value)
+            : opt.alternateCorrect;
         return {
           ...opt,
           type: newType,
-          correct: newType === 'input' ? allCorrect[0].value || '' : '',
+          correct: newType === 'input' ? allCorrect[0].value || '' : opt.correct,
           alternateCorrect: altCorrect,
         };
       }),

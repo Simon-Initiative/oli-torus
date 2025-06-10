@@ -67,7 +67,12 @@ const FIBAuthor: React.FC<AuthorPartComponentProps<FIBModel>> = (props) => {
   useEffect(() => {
     if (textNodes?.length) {
       const collectedText = extractFormattedHTMLFromQuillNodes(textNodes);
-      const finalcontent = generateFIBStructure(collectedText, 'map', finalElement);
+      const finalcontent: any = generateFIBStructure(collectedText, 'map', finalElement);
+      if (!collectedText?.trim().length) {
+        setIsContentModified(false);
+        return;
+      }
+      console.log({ textNodes, collectedText, finalcontent });
       setFinalContent(finalcontent);
     }
   }, [textNodes, finalElement]);
