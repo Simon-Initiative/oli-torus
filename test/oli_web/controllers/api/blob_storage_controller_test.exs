@@ -20,7 +20,6 @@ defmodule OliWeb.Api.BlobStorageControllerTest do
     test "can read regular keys as a pure text, but psuedo JSON API", %{
       conn: conn
     } do
-
       expect(Oli.Test.MockAws, :request, 1, fn %ExAws.Operation.S3{} ->
         {:ok, %{status_code: 200, body: "{}"}}
       end)
@@ -34,7 +33,6 @@ defmodule OliWeb.Api.BlobStorageControllerTest do
     test "can read user scoped keys as a pure text, but psuedo JSON API", %{
       conn: conn
     } do
-
       expect(Oli.Test.MockAws, :request, 1, fn %ExAws.Operation.S3{} ->
         {:ok, %{status_code: 200, body: "{}"}}
       end)
@@ -48,7 +46,6 @@ defmodule OliWeb.Api.BlobStorageControllerTest do
     test "can write regular keys as a pure text, but psuedo JSON API", %{
       conn: conn
     } do
-
       expect(Oli.Test.MockAws, :request, 1, fn %ExAws.Operation.S3{} ->
         {:ok, %{status_code: 200, body: "{}"}}
       end)
@@ -65,7 +62,6 @@ defmodule OliWeb.Api.BlobStorageControllerTest do
     test "can write user scoped keys as a pure text, but psuedo JSON API", %{
       conn: conn
     } do
-
       expect(Oli.Test.MockAws, :request, 1, fn %ExAws.Operation.S3{} ->
         {:ok, %{status_code: 200, body: "{}"}}
       end)
@@ -78,7 +74,6 @@ defmodule OliWeb.Api.BlobStorageControllerTest do
       text = text_response(conn, 200)
       assert text == "{\"result\": \"success\"}"
     end
-
   end
 
   defp setup_session(%{conn: conn}) do
