@@ -180,7 +180,7 @@ export const QuillFIBOptionEditor: React.FC<QuillFIBOptionEditorProps> = ({
             </Modal.Header>
             <Modal.Body className="px-8" style={{ backgroundColor: 'lightgray' }}>
               <div style={{ display: 'flex', marginBottom: '10px', alignItems: 'center' }}>
-                <label className="form-label">Select FIB Item</label>
+                <label className="form-label">“Select FITB Item</label>
                 <select
                   className="form-control"
                   style={{ width: '71%', marginLeft: '13px' }}
@@ -256,24 +256,24 @@ export const QuillFIBOptionEditor: React.FC<QuillFIBOptionEditorProps> = ({
                         gap: '13px',
                       }}
                     >
-                      {isDropdown && (
-                        <button
-                          className={`circle-btn ${item.correct ? 'correct' : ''}`}
-                          onClick={() => toggleSelected(index)}
-                          style={{
-                            border: 'none',
-                            background: 'transparent',
-                            padding: '0',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          {item.correct ? (
-                            <i className="fa-solid fa-circle-check fa-lg"></i>
-                          ) : (
-                            <i className="fa-regular fa-circle-check fa-lg"></i>
-                          )}
-                        </button>
-                      )}
+                      <button
+                        className={`circle-btn ${item.correct ? 'correct' : ''}`}
+                        onClick={() => toggleSelected(index)}
+                        disabled={!isDropdown}
+                        style={{
+                          border: 'none',
+                          background: 'transparent',
+                          padding: '0',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {item.correct ? (
+                          <i className="fa-solid fa-circle-check fa-lg"></i>
+                        ) : (
+                          <i className="fa-regular fa-circle-check fa-lg"></i>
+                        )}
+                      </button>
+
                       {/* Remove button */}
                       <button
                         onClick={() => removeItem(index)}

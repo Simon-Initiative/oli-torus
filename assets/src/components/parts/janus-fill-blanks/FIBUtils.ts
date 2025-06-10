@@ -137,7 +137,12 @@ export const convertFIBContentToQuillNodes = (contentItems: any[], blanks: any[]
             const isCorrect =
               opt.key === matchingDropdown.correct ||
               matchingDropdown.alternateCorrect?.includes(opt.key);
-            return `"${opt.value}"${isCorrect ? '*' : ''}`;
+
+            const styledText = isCorrect
+              ? `<span style="color: #3B76D3">${opt.value}</span>`
+              : opt.value;
+
+            return `"${styledText}"${isCorrect ? '*' : ''}`;
           })
           .join(', ')}}`;
       }
@@ -149,17 +154,18 @@ export const convertFIBContentToQuillNodes = (contentItems: any[], blanks: any[]
         if (matchingInput.options) {
           updatedText = matchingInput.options
             .map((opt: any) => {
-              return `"${opt.value}"*`;
+              return `"${`<span style="color: #3B76D3">${opt.value}</span>`}"*`;
             })
             .join(', ');
         } else {
           // this will be old formatted input type
-          updatedText = `"${matchingInput.correct}"*`;
+          updatedText = `"${`<span style="color: #3B76D3">${matchingInput.correct}</span>`}"*`;
         }
         finalText += `{${updatedText}}`;
       }
     }
   });
+
   try {
     const quillTextNodes = convertHTMLToQuillNodes(finalText);
     return quillTextNodes;
@@ -217,7 +223,20 @@ export const convertHTMLToQuillNodes = (htmlText: string) => {
       const tag = el.tagName.toLowerCase();
 
       const children = Array.from(el.childNodes).map(parseNode).filter(Boolean);
-
+      const style: any = {};
+      // Extract common inline styles
+      if (el.style?.fontWeight === 'bold' || tag === 'b' || tag === 'strong') {
+        style.fontWeight = 'bold';
+      }
+      if (el.style?.fontStyle === 'italic' || tag === 'i' || tag === 'em') {
+        style.fontStyle = 'italic';
+      }
+      if (el.style?.textDecoration === 'underline' || tag === 'u') {
+        style.textDecoration = 'underline';
+      }
+      if (el.style?.color) {
+        style.color = el.style.color;
+      }
       // Map supported tags to node structures
       switch (tag) {
         case 'sup':
@@ -231,6 +250,15 @@ export const convertHTMLToQuillNodes = (htmlText: string) => {
             style: { fontWeight: 'bold' },
             children,
           };
+        case 'span':
+          if (Object.keys(style).length > 0) {
+            return {
+              tag: 'span',
+              style,
+              children,
+            };
+          }
+          return children;
         case 'p':
           return {
             tag: 'p',
@@ -444,7 +472,7 @@ export const embedCorrectAnswersInString = (input: string, options: OptionItem[]
     if (type === 'dropdown') {
       const updatedOptions = allOptions.map((opt: any) =>
         [correct, ...(alternateCorrect || [])].includes(opt?.value)
-          ? `"${opt?.value}"*`
+          ? `"<span style="color: #3B76D3">${opt?.value}</span>"*`
           : `"${opt?.value}"`,
       );
       return `{${updatedOptions.join(', ')}}`;
@@ -459,7 +487,9 @@ export const embedCorrectAnswersInString = (input: string, options: OptionItem[]
         }
         return acc;
       }, []);
-      const formatted = allCorrect.map((opt: any) => `"${opt}"*`);
+      const formatted = allCorrect.map(
+        (opt: any) => `"<span style="color: #3B76D3">${opt}</span>"*`,
+      );
       return `{${formatted.join(', ')}}`;
     }
 
