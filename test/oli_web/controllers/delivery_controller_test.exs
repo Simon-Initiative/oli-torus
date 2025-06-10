@@ -290,7 +290,7 @@ defmodule OliWeb.DeliveryControllerTest do
       assert ["Suspended", "Six, Student", _, _, _, "0", "Not enough data", "N/A"] =
                Enum.at(students, 6)
 
-      assert ["Waiting confirmation", "Seven, Student", _, _, _, "0", "Not enough data", "N/A"] =
+      assert ["Pending confirmation", "Seven, Student", _, _, _, "0", "Not enough data", "N/A"] =
                Enum.at(students, 7)
     end
 

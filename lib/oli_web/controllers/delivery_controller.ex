@@ -28,7 +28,7 @@ defmodule OliWeb.DeliveryController do
     ContextRoles.get_role(:context_instructor)
   ]
   # %{"Enrolled" => 0, "Rejected invitation" => 1, ...}
-  @status_rank ["Enrolled", "Rejected invitation", "Suspended", "Waiting confirmation"]
+  @status_rank ["Enrolled", "Rejected invitation", "Suspended", "Pending confirmation"]
                |> Enum.with_index()
                |> Enum.into(%{})
 
@@ -535,7 +535,7 @@ defmodule OliWeb.DeliveryController do
 
   defp parse_enrollment_status(:enrolled), do: "Enrolled"
   defp parse_enrollment_status(:suspended), do: "Suspended"
-  defp parse_enrollment_status(:pending_confirmation), do: "Waiting confirmation"
+  defp parse_enrollment_status(:pending_confirmation), do: "Pending confirmation"
   defp parse_enrollment_status(:rejected), do: "Rejected invitation"
   defp parse_enrollment_status(_status), do: "Unkknown"
 end
