@@ -272,6 +272,9 @@ defmodule OliWeb.DeliveryControllerTest do
                "Requires Payment"
              ] == headers
 
+      #  We have 8 students and 1 instructor
+      assert Enum.count(students) == 8
+
       # CSV Student data
       assert ["Enrolled", "Five, Student", _, _, _, "100", "High", "N/A"] = Enum.at(students, 0)
       assert ["Enrolled", "Four, Student", _, _, _, "33.03", "High", "N/A"] = Enum.at(students, 1)
@@ -284,13 +287,13 @@ defmodule OliWeb.DeliveryControllerTest do
 
       assert ["Enrolled", "Two, Student", _, _, _, "11.11", "Low", "N/A"] = Enum.at(students, 4)
 
-      assert ["Rejected invitation", "Eight, Student", _, _, _, "0", "Not enough data", "N/A"] =
+      assert ["Pending confirmation", "Seven, Student", _, _, _, "0", "Not enough data", "N/A"] =
                Enum.at(students, 5)
 
-      assert ["Suspended", "Six, Student", _, _, _, "0", "Not enough data", "N/A"] =
+      assert ["Rejected invitation", "Eight, Student", _, _, _, "0", "Not enough data", "N/A"] =
                Enum.at(students, 6)
 
-      assert ["Pending confirmation", "Seven, Student", _, _, _, "0", "Not enough data", "N/A"] =
+      assert ["Suspended", "Six, Student", _, _, _, "0", "Not enough data", "N/A"] =
                Enum.at(students, 7)
     end
 
@@ -1093,6 +1096,9 @@ defmodule OliWeb.DeliveryControllerTest do
         name: "Leo Eul",
         can_create_sections: true
       })
+
+    instructor_ctx = [ContextRoles.get_role(:context_instructor)]
+    Sections.enroll(instructor.id, section.id, instructor_ctx)
 
     %{instructor: instructor, section: section}
   end

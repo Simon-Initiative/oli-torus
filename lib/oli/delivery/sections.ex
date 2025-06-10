@@ -123,6 +123,7 @@ defmodule Oli.Delivery.Sections do
 
   def enrolled_students(section_slug) do
     section = get_section_by_slug(section_slug)
+    ctx_learner_id = Lti_1p3.Roles.ContextRoles.get_role(:context_learner).id
 
     from(e in Enrollment,
       join: s in assoc(e, :section),
@@ -131,6 +132,7 @@ defmodule Oli.Delivery.Sections do
       left_join: p in Payment,
       on: p.enrollment_id == e.id and not is_nil(p.application_date),
       where: s.slug == ^section_slug,
+      where: ecr.id == ^ctx_learner_id,
       select: {u, ecr.id, e, p},
       preload: [user: :platform_roles],
       distinct: u.id
