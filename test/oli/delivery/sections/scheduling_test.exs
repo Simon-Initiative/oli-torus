@@ -68,14 +68,16 @@ defmodule Oli.Delivery.Sections.SchedulingTest do
                      scheduling_type: "inclass_activity",
                      start_date: "2023-02-03",
                      end_date: "2023-02-06",
-                     manually_scheduled: true
+                     manually_scheduled: true,
+                     removed_from_schedule: false
                    },
                    %{
                      id: page_one.id,
                      scheduling_type: "inclass_activity",
                      start_date: nil,
                      end_date: "2023-02-06",
-                     manually_scheduled: false
+                     manually_scheduled: false,
+                     removed_from_schedule: false
                    }
                  ],
                  "Etc/UTC"
@@ -156,7 +158,8 @@ defmodule Oli.Delivery.Sections.SchedulingTest do
                      scheduling_type: "inclass_activity",
                      start_date: "2023-02-03",
                      end_date: "2023-02-06",
-                     manually_scheduled: true
+                     manually_scheduled: true,
+                     removed_from_schedule: false
                    }
                  ],
                  "Etc/UTC"

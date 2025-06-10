@@ -49,6 +49,7 @@ export const scheduleAppFlushChanges = createAsyncThunk(
           id: item.id,
           scheduling_type: item.scheduling_type,
           manually_scheduled: item.manually_scheduled,
+          removed_from_schedule: item.removed_from_schedule,
         };
       })
       .filter((i) => !!i) as ScheduleUpdate[];

@@ -30,6 +30,7 @@ export interface ScheduleUpdate {
   id: number;
   scheduling_type: SchedulingType;
   manually_scheduled: boolean;
+  removed_from_schedule: boolean;
 }
 
 export const updateSchedule = async (sectionSlug: string, updates: ScheduleUpdate[]) => {
