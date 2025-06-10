@@ -1,5 +1,4 @@
 defmodule Oli.Delivery.TextBlob do
-
   @moduledoc """
   A module for text blob storage, allowing for the storage and retrieval of text blobs
   keyed off of either a globally unique identifier or a user scoped unique identifier.
@@ -49,5 +48,4 @@ defmodule Oli.Delivery.TextBlob do
       _ -> "#{user.sub}/#{key}"
     end
   end
-
 end

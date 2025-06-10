@@ -492,7 +492,6 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
   # Retrieving the extrinsic state of the resource attempt must take
   # into account if the blob storage API is in use for extrinsic state.
   defp fetch_extrinsic_state(resource_attempt) do
-
     if Application.get_env(:oli, :blob_storage)[:use_deprecated_api] do
       resource_attempt.state
     else
@@ -511,7 +510,6 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
           %{}
       end
     end
-
   end
 
   defp assemble_full_adaptive_state(

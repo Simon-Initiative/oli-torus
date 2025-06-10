@@ -1,8 +1,7 @@
 import { SectionSlug } from 'data/types';
 import { batchedBuffer } from 'utils/common';
-import { makeRequest } from './common';
 import * as Blob from './blob';
-
+import { makeRequest } from './common';
 
 // eslint-disable-next-line
 export type ExtrinsicRead = Object;
@@ -111,13 +110,11 @@ export const internalUpdateGlobalUserState = async (
 const updateInterval = 300;
 const [batchedUpdate] = batchedBuffer(internalUpdateGlobalUserState, updateInterval);
 
-
 export const updateGlobalUserState = async (
   provider: 'deprecated' | 'new',
   updates: { [topKey: string]: { [key: string]: any } },
   useLocalStorage = false,
 ) => {
-
   if (provider === 'deprecated') {
     return deprecatedUpdateGlobalUserState(updates, useLocalStorage);
   }

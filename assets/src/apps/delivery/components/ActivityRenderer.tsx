@@ -58,7 +58,7 @@ interface ActivityRendererProps {
   onRequestLatestState?: any;
   adaptivityDomain?: string; // currently 'stage' or 'app'
   isEverApp?: boolean;
-  blobStorageProvider: 'deprecated' | 'new'
+  blobStorageProvider: 'deprecated' | 'new';
 }
 
 const defaultHandler = async () => {
@@ -91,7 +91,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
   onRequestLatestState = async () => ({ snapshot: {} }),
   adaptivityDomain = 'stage',
   isEverApp = false,
-  blobStorageProvider
+  blobStorageProvider,
 }) => {
   const isPreviewMode = useSelector(selectPreviewMode);
   const isReviewMode = useSelector(selectReviewMode);
@@ -103,7 +103,11 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       return;
     }
     const { simId, key, value } = payload;
-    await Extrinsic.updateGlobalUserState(blobStorageProvider, { [simId]: { [key]: value } }, isPreviewMode);
+    await Extrinsic.updateGlobalUserState(
+      blobStorageProvider,
+      { [simId]: { [key]: value } },
+      isPreviewMode,
+    );
     try {
       // Review mode requires the ever app variable to be fetched from Resourse Attempt state so we need to update the variable in scripting so that
       // when trigger check happens, the extrinsic state get updated and sent to server. Adding it in try catch to avoid any failure during the scripting update which

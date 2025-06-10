@@ -26,7 +26,6 @@ import {
   selectLastCheckTriggered,
   selectLessonEnd,
   selectNextActivityId,
-
   setCurrentFeedbacks,
   setIsGoodFeedback,
   setMutationTriggered,
@@ -45,13 +44,13 @@ import {
   selectCurrentActivityTreeAttemptState,
 } from '../../store/features/groups/selectors/deck';
 import {
+  selectBlobStorageProvider,
   selectIsLegacyTheme,
   selectPageContent,
   selectPreviewMode,
   selectResourceAttemptGuid,
   selectReviewMode,
   selectSectionSlug,
-  selectBlobStorageProvider,
   setScore,
   setScreenIdleExpirationTime,
 } from '../../store/features/page/slice';

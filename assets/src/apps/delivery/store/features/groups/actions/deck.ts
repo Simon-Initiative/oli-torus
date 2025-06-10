@@ -267,7 +267,12 @@ export const initializeActivity = createAsyncThunk(
       return { result: status };
     }
 
-    await writePageAttemptState(blobStorageProvider, sectionSlug, resourceAttemptGuid, sessionState);
+    await writePageAttemptState(
+      blobStorageProvider,
+      sectionSlug,
+      resourceAttemptGuid,
+      sessionState,
+    );
   },
 );
 
@@ -282,9 +287,11 @@ const getSessionVisitHistory = async (
     const allState = getEnvState(defaultGlobalEnv);
     pageAttemptState = allState;
   } else {
-    const { result } = await getPageAttemptState(blobStorageProvider, sectionSlug, resourceAttemptGuid);
-    console.log('session visit history')
-    console.log(result);
+    const { result } = await getPageAttemptState(
+      blobStorageProvider,
+      sectionSlug,
+      resourceAttemptGuid,
+    );
     pageAttemptState = result;
   }
   return Object.keys(pageAttemptState)
@@ -313,8 +320,6 @@ export const findNextSequenceId = createAsyncThunk(
       resourceAttemptGuid,
       isPreviewMode,
     );
-
-    console.log('visitHistory', visitHistory);
 
     const currentActivityId = selectCurrentActivityId(rootState);
     const currentIndex =
@@ -367,8 +372,7 @@ export const findNextSequenceId = createAsyncThunk(
     if (navError) {
       throw new Error(navError);
     }
-    console.log('end of sequence');
-    console.log(nextSequenceEntry?.custom.sequenceId);
+
     return nextSequenceEntry?.custom.sequenceId;
   },
 );

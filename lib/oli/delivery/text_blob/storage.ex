@@ -1,5 +1,4 @@
 defmodule Oli.Delivery.TextBlob.Storage do
-
   alias ExAws.S3
   alias Oli.HTTP
 
@@ -18,17 +17,16 @@ defmodule Oli.Delivery.TextBlob.Storage do
   Returns `:ok` on success or an error tuple on failure.
   """
   def write(key, text_blob) do
-
     bucket_name = Application.fetch_env!(:oli, :blob_storage)[:bucket_name]
 
     case S3.put_object(bucket_name, key, text_blob, [])
-    |> HTTP.aws().request() do
+         |> HTTP.aws().request() do
       {:ok, %{status_code: 200}} ->
         :ok
+
       {_, payload} ->
         {:error, payload}
     end
-
   end
 
   @doc """
@@ -38,17 +36,15 @@ defmodule Oli.Delivery.TextBlob.Storage do
   value as {:ok, default_value}.
   """
   def read(key, default_value) do
-
     bucket_name = Application.fetch_env!(:oli, :blob_storage)[:bucket_name]
 
     case S3.get_object(bucket_name, key)
-    |> HTTP.aws().request() do
+         |> HTTP.aws().request() do
       {:ok, %{status_code: 200, body: text_blob}} ->
         {:ok, text_blob}
+
       {_, _} ->
         {:ok, default_value}
     end
-
   end
-
 end

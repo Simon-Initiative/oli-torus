@@ -1,5 +1,4 @@
 defmodule OliWeb.Api.BlobStorageController do
-
   use OliWeb, :controller
 
   alias Oli.Delivery.TextBlob
@@ -20,14 +19,12 @@ defmodule OliWeb.Api.BlobStorageController do
   and without the need to store them in the database.
   """
 
-
   @doc """
   Reads a text blob from a user scoped key.
   """
   def read_user_key(conn, params) do
     read(conn, fn -> TextBlob.read(conn.assigns.current_user, params["key"], "{}") end)
   end
-
 
   @doc """
   Reads a text blob from storage using the provided key.
@@ -55,23 +52,23 @@ defmodule OliWeb.Api.BlobStorageController do
   end
 
   defp write(conn, write_fn) do
-
     {:ok, text, _conn} = Plug.Conn.read_body(conn)
 
     case write_fn.(text) do
       :ok ->
         text(conn, "{\"result\": \"success\"}")
+
       {:error, reason} ->
         Logger.error("Failed to write blob: #{inspect(reason)}")
         error(conn, 500, reason)
     end
-
   end
 
   defp read(conn, read_fn) do
     case read_fn.() do
       {:ok, result} ->
         text(conn, result)
+
       {:error, reason} ->
         error(conn, 500, reason)
     end
@@ -82,5 +79,4 @@ defmodule OliWeb.Api.BlobStorageController do
     |> send_resp(code, reason)
     |> halt()
   end
-
 end

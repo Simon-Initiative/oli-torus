@@ -85,8 +85,7 @@ config :oli,
 
 config :oli, :blob_storage,
   bucket_name: System.get_env("BLOB_STORAGE_BUCKET_NAME", "torus-blob-dev"),
-  use_deprecated_api:
-    get_env_as_boolean.("BLOB_STORAGE_USE_DEPRECATED_API", "true")
+  use_deprecated_api: get_env_as_boolean.("BLOB_STORAGE_USE_DEPRECATED_API", "true")
 
 config :oli, :dataset_generation,
   enabled: System.get_env("EMR_DATASET_ENABLED", "false") == "true",

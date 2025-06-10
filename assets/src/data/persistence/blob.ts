@@ -18,9 +18,7 @@ const lastSet = () => {
   return arr[arr.length - 1];
 };
 
-
-export const read = async(key: string) => {
-
+export const read = async (key: string) => {
   const params = {
     method: 'GET',
     url: '/blob/' + key,
@@ -40,10 +38,9 @@ export const read = async(key: string) => {
   });
 
   return { result };
-}
+};
 
 export const write = async (key: string, state: any) => {
-
   const body = JSON.stringify(state);
 
   const params = {
@@ -64,12 +61,9 @@ export const write = async (key: string, state: any) => {
   });
 
   return { result };
-}
-
-
+};
 
 function readGlobal(keys: string[] | null = null) {
-
   const promises = keys?.map((key) => {
     const params = {
       method: 'GET',
@@ -175,9 +169,7 @@ export const updateGlobalUserState = async (
 };
 
 export function upsertGlobal(keyValues: KeyValues) {
-
   const result = Object.keys(keyValues).map((key) => {
-
     const body = JSON.stringify((keyValues as any)[key]);
 
     const params = {

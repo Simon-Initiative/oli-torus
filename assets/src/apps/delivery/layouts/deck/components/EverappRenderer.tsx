@@ -11,7 +11,10 @@ import { getLocalizedCurrentStateSnapshot } from 'apps/delivery/store/features/a
 import { triggerCheck } from 'apps/delivery/store/features/adaptivity/actions/triggerCheck';
 import { selectCurrentActivityTree } from 'apps/delivery/store/features/groups/selectors/deck';
 import { toggleEverapp } from 'apps/delivery/store/features/page/actions/toggleEverapp';
-import { selectBlobStorageProvider, selectPreviewMode } from 'apps/delivery/store/features/page/slice';
+import {
+  selectBlobStorageProvider,
+  selectPreviewMode,
+} from 'apps/delivery/store/features/page/slice';
 import { updateGlobalUserState } from 'data/persistence/extrinsic';
 import { getEverAppActivity, updateAttemptGuid } from '../EverApps';
 

@@ -107,7 +107,12 @@ export const triggerCheck = createAsyncThunk(
         resourceAttemptGuid,
         extrnisicState,
       }); */
-      await writePageAttemptState(blobStorageProvider, sectionSlug, resourceAttemptGuid, extrnisicState);
+      await writePageAttemptState(
+        blobStorageProvider,
+        sectionSlug,
+        resourceAttemptGuid,
+        extrnisicState,
+      );
     }
 
     let checkResult;
@@ -473,7 +478,10 @@ export const triggerCheck = createAsyncThunk(
       }); */
       await writePageAttemptState(
         rootState.page.blobStorageProvider,
-        sectionSlug, resourceAttemptGuid, extrnisicState);
+        sectionSlug,
+        resourceAttemptGuid,
+        extrnisicState,
+      );
     }
     await dispatch(
       setLastCheckResults({
