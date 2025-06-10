@@ -3,6 +3,7 @@ import { ArrowContainer, Popover } from 'react-tiny-popover';
 import { Popup as PopupModel } from 'data/content/model/elements/types';
 import { isEmptyContent } from '../../data/content/utils';
 import { useAudio } from '../hooks/useAudio';
+import { positionRect } from '../../data/content/utils';
 
 interface Props {
   children: React.ReactNode;
@@ -71,6 +72,7 @@ export const Popup: React.FC<Props> = ({ children, popupContent, popup }) => {
       isOpen={isPopoverOpen}
       onClickOutside={() => (setIsPopoverOpen(false), pauseAudio())}
       positions={['top', 'bottom', 'left', 'right']}
+      reposition={false}
       content={({ position, childRect, popoverRect }) => (
         <ArrowContainer
           position={position}
