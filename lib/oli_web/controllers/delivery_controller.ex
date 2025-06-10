@@ -27,10 +27,8 @@ defmodule OliWeb.DeliveryController do
     ContextRoles.get_role(:context_administrator),
     ContextRoles.get_role(:context_instructor)
   ]
+
   # %{"Enrolled" => 0, "Rejected invitation" => 1, ...}
-  @status_rank ["Enrolled", "Rejected invitation", "Suspended", "Pending confirmation"]
-               |> Enum.with_index()
-               |> Enum.into(%{})
 
   @doc """
   This is the default entry point for delivery users. It will redirect to the appropriate page based
@@ -519,7 +517,7 @@ defmodule OliWeb.DeliveryController do
   end
 
   defp sort_data(results) do
-    Enum.sort_by(results, &{@status_rank[&1.status], &1.name, &1.email})
+    Enum.sort_by(results, &{&1.status, &1.name, &1.email})
   end
 
   defp convert_to_percentage(%{progress: nil}), do: 0
