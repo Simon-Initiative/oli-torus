@@ -64,7 +64,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ManageTabTest do
       assert render(view) =~ "Collaborative Space"
     end
 
-    test "can enable and disable agenda", %{
+    test "agenda toggle is not visible in the manage tab", %{
       instructor: instructor,
       section: section,
       conn: conn
@@ -81,30 +81,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.ManageTabTest do
           }
         )
 
-      assert has_element?(view, "input[name=\"toggle_agenda\"][checked]")
-
-      element(view, "form[phx-change=\"toggle_agenda\"]")
-      |> render_change(%{})
-
-      refute has_element?(view, "input[name=\"toggle_agenda\"][checked]")
-
-      element(view, "form[phx-change=\"toggle_agenda\"]")
-      |> render_change(%{})
-
-      assert has_element?(view, "input[name=\"toggle_agenda\"][checked]")
-    end
-
-    test "agenda is enabled by default when creating a course section", %{
-      instructor: instructor,
-      section: section,
-      conn: conn
-    } do
-      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
-
-      {:ok, view, _html} = live(conn, live_view_manage_route(section.slug))
-
-      assert section.agenda
-      assert has_element?(view, "input[name=\"toggle_agenda\"][checked]")
+      # Agenda is not visible in the manage tab
+      refute has_element?(view, "input[name=\"toggle_agenda\"]")
     end
   end
 end
