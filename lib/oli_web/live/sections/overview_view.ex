@@ -325,20 +325,6 @@ defmodule OliWeb.Sections.OverviewView do
         }
       ) %>
 
-      <Group.render label="Agenda" description="Include Schedule on Home Screen">
-        <section>
-          <div class="inline-flex py-2 mb-2">
-            <span>Enable Agenda</span>
-            <.toggle_switch
-              class="ml-4"
-              checked={@section.agenda}
-              on_toggle="toggle_agenda"
-              name="toggle_agenda"
-            />
-          </div>
-        </section>
-      </Group.render>
-
       <Group.render label="Scoring" description="View and manage student scores and progress">
         <ul class="link-list">
           <li>
@@ -677,14 +663,6 @@ defmodule OliWeb.Sections.OverviewView do
     socket =
       socket
       |> put_flash(:info, "AI assistant activation settings updated successfully")
-
-    {:noreply, assign(socket, section: section)}
-  end
-
-  def handle_event("toggle_agenda", _params, socket) do
-    section = socket.assigns.section
-
-    {:ok, section} = Sections.update_section(section, %{agenda: !section.agenda})
 
     {:noreply, assign(socket, section: section)}
   end
