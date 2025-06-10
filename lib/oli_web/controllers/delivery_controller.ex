@@ -344,7 +344,7 @@ defmodule OliWeb.DeliveryController do
         )
 
       section ->
-        students = Helpers.get_students(section)
+        students = Helpers.get_students(section, :context_learner)
 
         contents =
           Enum.map(
