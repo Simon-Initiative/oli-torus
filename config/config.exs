@@ -84,7 +84,7 @@ config :oli,
   log_incomplete_requests: true
 
 config :oli, :blob_storage,
-  bucket_name: System.get_env("BLOB_STORAGE_BUCKET_NAME", "torus-blob-storage-dev"),
+  bucket_name: System.get_env("BLOB_STORAGE_BUCKET_NAME", "torus-blob-dev"),
   use_deprecated_api:
     get_env_as_boolean.("BLOB_STORAGE_USE_DEPRECATED_API", "true")
 

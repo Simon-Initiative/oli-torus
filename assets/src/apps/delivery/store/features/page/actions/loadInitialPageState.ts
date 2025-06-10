@@ -104,7 +104,7 @@ export const loadInitialPageState = createAsyncThunk(
       const { result: _scriptResult } = evalScript(assignScript, defaultGlobalEnv);
       //No need to wite anything to server in REVIEW mode
       if (!params.previewMode && !isReviewMode) {
-        await writePageAttemptState(params.sectionSlug, resourceAttemptGuid, sessionState);
+        await writePageAttemptState(params.blobStorageProvider, params.sectionSlug, resourceAttemptGuid, sessionState);
       }
 
       dispatch(setExtrinsicState({ state: sessionState }));
@@ -148,7 +148,7 @@ export const loadInitialPageState = createAsyncThunk(
         updateSessionState['session.currentQuestionScore'] = 0;
         //No need to wite anything to server in REVIEW mode
         if (!params.previewMode && !isReviewMode) {
-          await writePageAttemptState(params.sectionSlug, resourceAttemptGuid, updateSessionState);
+          await writePageAttemptState(params.blobStorageProvider, params.sectionSlug, resourceAttemptGuid, updateSessionState);
         }
 
         let resumeSequenceId = sequence[0].custom.sequenceId;

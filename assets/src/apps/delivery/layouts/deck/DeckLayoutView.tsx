@@ -28,6 +28,7 @@ import {
   selectSequence,
 } from '../../store/features/groups/selectors/deck';
 import {
+  selectBlobStorageProvider,
   selectPageSlug,
   selectReviewMode,
   selectSectionSlug,
@@ -58,6 +59,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
   const currentLesson = useSelector(selectPageSlug);
   const sectionSlug = useSelector(selectSectionSlug);
   const currentUserId = useSelector(selectUserId);
+  const blobStorageProvider = useSelector(selectBlobStorageProvider);
   const currentUserName = useSelector(selectUserName);
   const historyModeNavigation = useSelector(selectHistoryNavigationActivity);
   const reviewMode = useSelector(selectReviewMode);
@@ -623,6 +625,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
           onActivitySubmitPart={handleActivitySubmitPart}
           onActivityReady={handleActivityReady}
           onRequestLatestState={handleActivityRequestLatestState}
+          blobStorageProvider={blobStorageProvider}
         />
       );
     });

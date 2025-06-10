@@ -1,5 +1,6 @@
 import { encodeFile, getFileName } from 'data/persistence/media';
 import { makeRequest } from '../common';
+import * as Blob from '../blob';
 
 export type BulkAttemptRetrieved = {
   result: 'success';
@@ -21,7 +22,37 @@ export const getBulkAttemptState = async (sectionSlug: string, attemptGuids: str
   return response.activityAttempts;
 };
 
-export const getPageAttemptState = async (sectionSlug: string, resourceAttemptGuid: string) => {
+
+export const getPageAttemptState = async (provider: 'deprecated' | 'new', sectionSlug: string, resourceAttemptGuid: string) => {
+  console.log('HERE READING', { sectionSlug, resourceAttemptGuid });
+
+  if (provider === 'deprecated') {
+    const result = deprecatedGetPageAttemptState(sectionSlug, resourceAttemptGuid);
+    return result;
+  }
+  const result = await Blob.read(resourceAttemptGuid);
+  console.log(result);
+  return result;
+};
+
+export const writePageAttemptState = async (
+  provider: 'deprecated' | 'new',
+  sectionSlug: string,
+  resourceAttemptGuid: string,
+  state: any,
+) => {
+  if (provider === 'deprecated') {
+    const result = deprecatedWritePageAttemptState(sectionSlug, resourceAttemptGuid, state);
+    console.log('deprecatedWritePageAttemptState', { sectionSlug, resourceAttemptGuid, state, result });
+    return result;
+  }
+  console.log("WRITING")
+  console.log(state)
+  return Blob.write(resourceAttemptGuid, state).then((result => result));
+
+};
+
+export const deprecatedGetPageAttemptState = async (sectionSlug: string, resourceAttemptGuid: string) => {
   const url = `/state/course/${sectionSlug}/resource_attempt/${resourceAttemptGuid}`;
   const result = await makeRequest({
     url,
@@ -30,7 +61,7 @@ export const getPageAttemptState = async (sectionSlug: string, resourceAttemptGu
   return { result };
 };
 
-export const writePageAttemptState = async (
+export const deprecatedWritePageAttemptState = async (
   sectionSlug: string,
   resourceAttemptGuid: string,
   state: any,

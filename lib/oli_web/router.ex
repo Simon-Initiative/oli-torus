@@ -39,7 +39,7 @@ defmodule OliWeb.Router do
     plug(OliWeb.Plugs.SessionContext)
   end
 
-  pipeline :raw_text_api do
+  pipeline :text_api do
     plug(:accepts, ["text/plain"])
     plug(:fetch_session)
     plug(:fetch_current_user)

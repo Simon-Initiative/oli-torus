@@ -60,9 +60,9 @@ defmodule OliWeb.Api.BlobStorageController do
 
     case write_fn.(text) do
       :ok ->
-        text(conn, "success")
+        text(conn, "{\"result\": \"success\"}")
       {:error, reason} ->
-        Logger.error("Failed to write blob with key #{key}: #{inspect(reason)}")
+        Logger.error("Failed to write blob: #{inspect(reason)}")
         error(conn, 500, reason)
     end
 

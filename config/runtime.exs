@@ -211,7 +211,7 @@ if config_env() == :prod do
     log_incomplete_requests: get_env_as_boolean.("LOG_INCOMPLETE_REQUESTS", "true")
 
   config :oli, :blob_storage,
-    bucket_name: System.get_env("BLOB_STORAGE_BUCKET_NAME", "torus-blob-storage-prod"),
+    bucket_name: System.get_env("BLOB_STORAGE_BUCKET_NAME", "torus-blob-prod"),
     use_deprecated_api:
       get_env_as_boolean.("BLOB_STORAGE_USE_DEPRECATED_API", "true")
 

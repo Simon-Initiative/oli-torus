@@ -21,7 +21,7 @@ defmodule Oli.Delivery.TextBlob.Storage do
 
     bucket_name = Application.fetch_env!(:oli, :blob_storage)[:bucket_name]
 
-    case S3.put_object(bucket_name, key, text_blob, [{:acl, :public_read}])
+    case S3.put_object(bucket_name, key, text_blob, [])
     |> HTTP.aws().request() do
       {:ok, %{status_code: 200}} ->
         :ok
@@ -35,18 +35,18 @@ defmodule Oli.Delivery.TextBlob.Storage do
   Reads a text blob from storage using the provided key.
   If the key exists, it returns `{:ok, text_blob}` where `text_blob` is the content
   associated with the key. If the key does not exist, it returns the specified
-  `not_found_value`.
+  value as {:ok, default_value}.
   """
   def read(key, default_value) do
 
     bucket_name = Application.fetch_env!(:oli, :blob_storage)[:bucket_name]
 
-    case S3.put_object(bucket_name, key, text_blob, [{:acl, :public_read}])
+    case S3.get_object(bucket_name, key)
     |> HTTP.aws().request() do
       {:ok, %{status_code: 200, body: text_blob}} ->
         {:ok, text_blob}
       {_, _} ->
-        default_value
+        {:ok, default_value}
     end
 
   end

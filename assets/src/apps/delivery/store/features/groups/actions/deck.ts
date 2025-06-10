@@ -42,6 +42,7 @@ import {
 import { loadActivityAttemptState, updateExtrinsicState } from '../../attempt/slice';
 import {
   selectActivityTypes,
+  selectBlobStorageProvider,
   selectIsInstructor,
   selectNavigationSequence,
   selectPreviewMode,
@@ -63,6 +64,7 @@ export const initializeActivity = createAsyncThunk(
     const rootState = thunkApi.getState() as DeliveryRootState;
     const isPreviewMode = selectPreviewMode(rootState);
     const sectionSlug = selectSectionSlug(rootState);
+    const blobStorageProvider = selectBlobStorageProvider(rootState);
     const resourceAttemptGuid = selectResourceAttemptGuid(rootState);
     const sequence = selectSequence(rootState);
     const isReviewMode = selectReviewMode(rootState);
@@ -265,11 +267,12 @@ export const initializeActivity = createAsyncThunk(
       return { result: status };
     }
 
-    await writePageAttemptState(sectionSlug, resourceAttemptGuid, sessionState);
+    await writePageAttemptState(blobStorageProvider, sectionSlug, resourceAttemptGuid, sessionState);
   },
 );
 
 const getSessionVisitHistory = async (
+  blobStorageProvider: 'deprecated' | 'new',
   sectionSlug: string,
   resourceAttemptGuid: string,
   isPreviewMode = false,
@@ -279,7 +282,9 @@ const getSessionVisitHistory = async (
     const allState = getEnvState(defaultGlobalEnv);
     pageAttemptState = allState;
   } else {
-    const { result } = await getPageAttemptState(sectionSlug, resourceAttemptGuid);
+    const { result } = await getPageAttemptState(blobStorageProvider, sectionSlug, resourceAttemptGuid);
+    console.log('session visit history')
+    console.log(result);
     pageAttemptState = result;
   }
   return Object.keys(pageAttemptState)
@@ -296,16 +301,20 @@ export const findNextSequenceId = createAsyncThunk(
     const rootState = thunkApi.getState() as DeliveryRootState;
     const isPreviewMode = selectPreviewMode(rootState);
     const sectionSlug = selectSectionSlug(rootState);
+    const blobStorageProvider = selectBlobStorageProvider(rootState);
     const resourceAttemptGuid = selectResourceAttemptGuid(rootState);
     const sequence = selectSequence(rootState);
     let nextSequenceEntry: SequenceEntry<SequenceEntryType> | null = null;
     let navError = '';
 
     const visitHistory = await getSessionVisitHistory(
+      blobStorageProvider,
       sectionSlug,
       resourceAttemptGuid,
       isPreviewMode,
     );
+
+    console.log('visitHistory', visitHistory);
 
     const currentActivityId = selectCurrentActivityId(rootState);
     const currentIndex =
@@ -358,6 +367,8 @@ export const findNextSequenceId = createAsyncThunk(
     if (navError) {
       throw new Error(navError);
     }
+    console.log('end of sequence');
+    console.log(nextSequenceEntry?.custom.sequenceId);
     return nextSequenceEntry?.custom.sequenceId;
   },
 );

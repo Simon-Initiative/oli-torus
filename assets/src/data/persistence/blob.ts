@@ -18,12 +18,66 @@ const lastSet = () => {
   return arr[arr.length - 1];
 };
 
+
+export const read = async(key: string) => {
+
+  const params = {
+    method: 'GET',
+    url: '/blob/' + key,
+    hasTextResult: true,
+    headers: {
+      'Content-Type': 'text/plain',
+    },
+  };
+
+  const result = await makeRequest<ExtrinsicRead>(params).then((result) => {
+    if (typeof result === 'string') {
+      const json = JSON.parse(result);
+      return json;
+    } else {
+      return { type: 'ServerError', message: 'Invalid response from server' };
+    }
+  });
+
+  return { result };
+}
+
+export const write = async (key: string, state: any) => {
+
+  const body = JSON.stringify(state);
+
+  const params = {
+    method: 'PUT',
+    body,
+    url: '/blob/' + key,
+    hasTextResult: true,
+    headers: {
+      'Content-Type': 'text/plain',
+    },
+  };
+
+  const result = await makeRequest<ExtrinsicDelete>(params).then((result) => {
+    if (typeof result === 'string') {
+      return JSON.parse(result);
+    }
+    return { type: 'ServerError', message: 'Invalid response from server' };
+  });
+
+  return { result };
+}
+
+
+
 function readGlobal(keys: string[] | null = null) {
 
   const promises = keys?.map((key) => {
     const params = {
       method: 'GET',
       url: '/blob/user/' + key,
+      hasTextResult: true,
+      headers: {
+        'Content-Type': 'text/plain',
+      },
     };
 
     return makeRequest<ExtrinsicRead>(params);
@@ -36,7 +90,8 @@ function readGlobal(keys: string[] | null = null) {
   return Promise.all(promises).then((results) => {
     return results.map((result) => {
       if (typeof result === 'string') {
-        return JSON.parse(result);
+        const json = JSON.parse(result);
+        return json;
       }
       return { type: 'ServerError', message: 'Invalid response from server' };
     });
@@ -123,10 +178,16 @@ export function upsertGlobal(keyValues: KeyValues) {
 
   const result = Object.keys(keyValues).map((key) => {
 
+    const body = JSON.stringify((keyValues as any)[key]);
+
     const params = {
       method: 'PUT',
-      body: JSON.stringify((keyValues as any)[key]),
+      body,
       url: '/blob/user/' + key,
+      hasTextResult: true,
+      headers: {
+        'Content-Type': 'text/plain',
+      },
     };
 
     return makeRequest<ExtrinsicDelete>(params);

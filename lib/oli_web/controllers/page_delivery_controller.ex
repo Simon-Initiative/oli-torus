@@ -761,6 +761,11 @@ defmodule OliWeb.PageDeliveryController do
             conn,
             :transition
           ),
+        blobStorageProvider: if Application.get_env(:oli, :blob_storage)[:use_deprecated_api] == false do
+          "new"
+        else
+          "deprecated"
+        end,
         screenIdleTimeOutInSeconds:
           String.to_integer(System.get_env("SCREEN_IDLE_TIMEOUT_IN_SECONDS", "1800")),
         isAuthor: !is_nil(author),
