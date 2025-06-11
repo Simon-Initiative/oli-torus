@@ -48,6 +48,8 @@ export interface HierarchyItem extends HierarchyItemSrc {
   startDateTime: Date | null; // This is only used for the available-from which includes a date and time.
 }
 
+export type AssessmentLayoutType = 'no_due_dates' | 'content_sequence' | 'end_of_each_section';
+
 export interface SchedulerState {
   schedule: HierarchyItem[];
   startDate: DateWithoutTime | null;
@@ -65,6 +67,7 @@ export interface SchedulerState {
   expandedContainers: Record<number, boolean>;
   searchQuery: string;
   agenda: boolean;
+  assessmentLayoutType: AssessmentLayoutType;
 }
 
 export const initSchedulerState = (): SchedulerState => ({
@@ -88,6 +91,7 @@ export const initSchedulerState = (): SchedulerState => ({
   expandedContainers: {},
   searchQuery: '',
   agenda: false,
+  assessmentLayoutType: 'end_of_each_section',
 });
 
 const toDateTime = (str: string, preferredSchedulingTime: TimeParts) => {
@@ -405,6 +409,9 @@ const schedulerSlice = createSlice({
     setSearchQuery: (state, action) => {
       state.searchQuery = action.payload;
     },
+    setAssessmentLayoutType: (state, action: PayloadAction<AssessmentLayoutType>) => {
+      state.assessmentLayoutType = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(clearSectionSchedule.pending, (state, action) => {
@@ -507,6 +514,7 @@ export const {
   toggleContainer,
   expandAllContainers,
   collapseAllContainers,
+  setAssessmentLayoutType,
 } = schedulerSlice.actions;
 
 export const schedulerSliceReducer = schedulerSlice.reducer;

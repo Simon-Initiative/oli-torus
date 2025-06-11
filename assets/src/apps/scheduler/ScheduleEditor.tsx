@@ -9,8 +9,8 @@ import { ErrorDisplay } from './ErrorDisplay';
 import { ScheduleGrid } from './ScheduleGrid';
 import { ScheduleSaveBar } from './SchedulerSaveBar';
 import { WeekDayPicker } from './WeekdayPicker';
-import { hasUnsavedChanges } from './schedule-selectors';
-import { StringDate, resetSchedule } from './scheduler-slice';
+import { assessmentLayoutType, hasUnsavedChanges } from './schedule-selectors';
+import { StringDate, resetSchedule, setAssessmentLayoutType } from './scheduler-slice';
 import {
   clearSectionSchedule,
   scheduleAppFlushChanges,
@@ -48,6 +48,8 @@ export const ScheduleEditor: React.FC<SchedulerProps> = ({
   const dispatch = useDispatch();
 
   const unsavedChanges = useSelector(hasUnsavedChanges);
+  const assessmentLayout = useSelector(assessmentLayoutType);
+
   const [validWeekdays, setValidWeekdays] = React.useState<boolean[]>([
     false,
     true,
@@ -118,14 +120,59 @@ export const ScheduleEditor: React.FC<SchedulerProps> = ({
 
   const steps = [
     <div key="step-1">
-      <p>
-        This will reset all timelines to the default. Select the week days you want to consider for
-        that schedule.
-      </p>
+      <div className="font-bold mb-4">Set Default Timeline</div>
+      <div className="mb-4">Select the week days you want to consider for that schedule.</div>
       <WeekDayPicker weekdays={validWeekdays} onChange={setValidWeekdays} />
     </div>,
-    <div key="step-2">This feature development is still in progress</div>,
-    <div key="step-3">Step 3 content</div>,
+    <div key="step-2">
+      <div className="font-bold mb-4">Identify Breaks</div>
+      <div className="mb-4">This feature is currently under development.</div>
+    </div>,
+    <div key="step-3">
+      <div className="font-bold mb-4">Set Default Layout</div>
+      <div className="mb-4">
+        Choose the default layout of your course schedule. You can later customize the schedule by
+        interacting with the timeline or visiting the assessment settings.
+      </div>
+      <div className="flex flex-col space-y-4 mt-4 pl-2">
+        <label className="flex items-start space-x-3 text-gray-700">
+          <input
+            type="radio"
+            name="assessmentLayoutType"
+            className="mt-1"
+            checked={assessmentLayout === 'no_due_dates'}
+            onChange={() => dispatch(setAssessmentLayoutType('no_due_dates'))}
+          />
+          <span className="leading-snug font-bold">Do not set assessment due dates</span>
+        </label>
+
+        <label className="flex items-start space-x-3 text-gray-700">
+          <input
+            type="radio"
+            name="assessmentLayoutType"
+            className="mt-1"
+            checked={assessmentLayout === 'content_sequence'}
+            onChange={() => dispatch(setAssessmentLayoutType('content_sequence'))}
+          />
+          <span className="leading-snug font-bold">
+            Set assessment due dates according to the sequence of course content.
+          </span>
+        </label>
+
+        <label className="flex items-start space-x-3 text-gray-700">
+          <input
+            type="radio"
+            name="assessmentLayoutType"
+            className="mt-1"
+            checked={assessmentLayout === 'end_of_each_section'}
+            onChange={() => dispatch(setAssessmentLayoutType('end_of_each_section'))}
+          />
+          <span className="leading-snug font-bold">
+            Set assessment due dates to the end of each section.
+          </span>
+        </label>
+      </div>
+    </div>,
   ];
   const stepTitles = ['Set Default Timeline', 'Identify Breaks', 'Set Default Layout'];
 

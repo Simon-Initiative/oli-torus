@@ -6,7 +6,7 @@ import { Card } from './Card';
 interface MultiStepModalProps {
   title: string;
   steps: ReactNode[];
-  stepTitles: string[];    // NEW PROP
+  stepTitles: string[]; // NEW PROP
   onFinish: () => void;
   onCancel: () => void;
   finishText?: string;
@@ -54,72 +54,65 @@ export const MultiStepModal: React.FC<MultiStepModalProps> = ({
     >
       <Card.Title>
         {/* Modal Title */}
-      <div className="text-center text-xl font-semibold mb-4">{title}</div>
+        <div className="text-center text-xl font-semibold mb-4">{title}</div>
       </Card.Title>
 
       <Card.Content>
         {/* Stepper */}
         <hr className="mb-6 border-gray-200 dark:border-gray-600" />
-        <div className="flex justify-center items-center mb-10 w-full max-w-3xl mx-auto" >
-  {stepTitles.map((label, index) => {
-    const isCompleted = index < currentStep;
-    const isCurrent = index === currentStep;
+        <div className="flex justify-center items-center mb-10 w-full max-w-3xl mx-auto">
+          {stepTitles.map((label, index) => {
+            const isCurrent = index === currentStep;
 
-    return (
-      <React.Fragment key={index}>
-        <div className="flex flex-col items-center flex-shrink-0">
-          <div
-            className={`flex items-center justify-center w-8 h-8 rounded-full border-2 text-sm font-medium ${
-              isCompleted
-                ? 'bg-blue-600 border-blue-600 text-white'
-                : isCurrent
-                ? 'bg-white border-blue-600 text-blue-600'
-                : 'bg-white border-gray-300 text-gray-500'
-            }`}
-          >
-            {index + 1}
-          </div>
-          <div
-            className={`text-xs mt-2 text-center ${
-              isCurrent ? 'text-black font-medium' : 'text-gray-500'
-            }`}
-          >
-            {label}
-          </div>
+            return (
+              <React.Fragment key={index}>
+                <div className="flex flex-col items-center flex-shrink-0">
+                  <div
+                    className={`flex items-center justify-center w-8 h-8 rounded-full border-2 text-sm font-medium ${
+                      isCurrent
+                        ? 'bg-blue-600 border-blue-600 text-white'
+                        : 'bg-white border-gray-300 text-gray-500'
+                    }`}
+                  >
+                    {index + 1}
+                  </div>
+                  <div
+                    className={`text-xs mt-2 text-center ${
+                      isCurrent ? 'text-black font-medium' : 'text-gray-500'
+                    }`}
+                  >
+                    {label}
+                  </div>
+                </div>
+
+                {/* Line connector */}
+                {index < stepTitles.length - 1 && (
+                  <div className={'flex-1 h-[2px] mx-2 bg-gray-300'}></div>
+                )}
+              </React.Fragment>
+            );
+          })}
         </div>
 
-        {/* Line connector */}
-        {index < stepTitles.length - 1 && (
-          <div
-            className={`flex-1 h-[2px] mx-2 ${
-              isCompleted ? 'bg-blue-600' : 'bg-gray-300'
-            }`}
-          ></div>
-        )}
-      </React.Fragment>
-    );
-  })}
-</div>
+        {/* Step Content */}
+        <div className="mb-8">{steps[currentStep]}</div>
 
-      {/* Step Content */}
-      <div className="mb-8">{steps[currentStep]}</div>
-
-      {/* Footer buttons */}
-      <div className="flex justify-end space-x-4">
-        <Button onClick={onCancel} variant="secondary">
-          {cancelText}
-        </Button>
-        {allowBack && !isFirstStep && (
-          <Button onClick={handleBack} variant="secondary">
-            {backText}
+        {/* Footer buttons */}
+        <div className="flex justify-end space-x-4">
+          <Button onClick={onCancel} variant="secondary">
+            {cancelText}
           </Button>
-        )}
-        {!isLastStep ? (
-          <Button onClick={handleNext}>{nextText}</Button>
-        ) : (
-          <Button onClick={handleFinish}>{finishText}</Button>
-        )}
-      </div>
+          {allowBack && !isFirstStep && (
+            <Button onClick={handleBack} variant="secondary">
+              {backText}
+            </Button>
+          )}
+          {!isLastStep ? (
+            <Button onClick={handleNext}>{nextText}</Button>
+          ) : (
+            <Button onClick={handleFinish}>{finishText}</Button>
+          )}
+        </div>
       </Card.Content>
     </Card.Card>
   );
@@ -147,7 +140,7 @@ export const useMultiStepModal = (
     backText?: string;
     allowBack?: boolean;
     className?: string;
-  }
+  },
 ) => {
   const [isOpen, , showModal, hideModal] = useToggle();
 
