@@ -6,10 +6,11 @@ import { useToggle } from '../../components/hooks/useToggle';
 import { ContextMenuItem } from './ContextMenu';
 import { useContextMenu } from './ContextMenuController';
 import { DayGeometry, barGeometry, leftToDate } from './date-utils';
-import { removeScheduleItem } from './scheduler-slice';
+import { VisibleHierarchyItem } from './schedule-selectors';
+import { reAddScheduleItem, removeScheduleItem } from './scheduler-slice';
 
 interface DragBarProps {
-  itemId: number;
+  item: VisibleHierarchyItem;
   startDate: DateWithoutTime;
   endDate: DateWithoutTime;
   isContainer: boolean;
@@ -21,7 +22,7 @@ interface DragBarProps {
 }
 
 export const DragBar: React.FC<DragBarProps> = ({
-  itemId,
+  item,
   startDate,
   endDate,
   onChange,
@@ -45,23 +46,33 @@ export const DragBar: React.FC<DragBarProps> = ({
   const { showMenu, hideMenu } = useContextMenu();
   const dispatch = useDispatch();
 
-  const menuItems: ContextMenuItem[] = [
-    {
-      label: 'Remove from Schedule',
-      onClick: () => {
-        hideMenu();
-        dispatch(
-          removeScheduleItem({
-            itemId: itemId,
-          }),
-        );
-      },
-    },
-  ];
+  const menuItem = item.removed_from_schedule
+    ? {
+        label: 'Re-add item to Schedule',
+        onClick: () => {
+          hideMenu();
+          dispatch(
+            reAddScheduleItem({
+              itemId: item.id,
+            }),
+          );
+        },
+      }
+    : {
+        label: 'Remove from Schedule',
+        onClick: () => {
+          hideMenu();
+          dispatch(
+            removeScheduleItem({
+              itemId: item.id,
+            }),
+          );
+        },
+      };
+  const menuItems: ContextMenuItem[] = [menuItem];
 
   const handleContextMenu = (e: React.MouseEvent<HTMLDivElement>) => {
     e.preventDefault();
-
     showMenu({ x: e.clientX, y: e.clientY }, menuItems);
   };
 
@@ -142,6 +153,25 @@ export const DragBar: React.FC<DragBarProps> = ({
       ? barGeometry(dayGeometry, workingStart, workingEnd)
       : barGeometry(dayGeometry, startDate, endDate);
 
+  const removedBackground = item.removed_from_schedule
+    ? {
+        left: geometry.left,
+        width: geometry.width,
+        background: `repeating-linear-gradient(
+                -45deg,
+                #ad2833,
+                #ad2833 6px,
+                transparent 6px,
+                transparent 14px
+            )`,
+        border: `2px solid #ad2833`,
+      }
+    : {
+        left: geometry.left,
+        width: geometry.width,
+        background: `${color} no-repeat fixed center`,
+        border: `2px solid ${color}`,
+      };
   return (
     <>
       {isContainer ? (
@@ -171,11 +201,7 @@ export const DragBar: React.FC<DragBarProps> = ({
           onContextMenu={handleContextMenu}
           onMouseDown={startDrag}
           className="group rounded absolute h-7 top-1.5 flex flex-row justify-between p-0.5 cursor-grab"
-          style={{
-            left: geometry.left,
-            width: geometry.width,
-            backgroundColor: color,
-          }}
+          style={removedBackground}
         >
           <div
             onMouseDown={startResize('left')}
