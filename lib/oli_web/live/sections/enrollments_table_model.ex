@@ -10,7 +10,6 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
   alias OliWeb.Common.Utils
   alias OliWeb.Common.FormatDateTime
   alias OliWeb.Delivery.InstructorDashboard.HTMLComponents
-  alias Lti_1p3.Roles.ContextRoles
 
   use Phoenix.Component
 
@@ -59,12 +58,6 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
           render_fn: &__MODULE__.render_overall_proficiency_column/3,
           tooltip:
             "For all students, or one specific student, proficiency for a learning objective will be calculated off the percentage of correct answers for first part attempts within first activity attempts - for those parts that have that learning objective or any of its sub-objectives attached to it."
-        },
-        %ColumnSpec{
-          name: :type,
-          label: "TYPE",
-          render_fn: &__MODULE__.render_type_column/3,
-          sortable: false
         }
       ] ++
         if section.requires_payment do
@@ -214,22 +207,6 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
 
     ~H"""
     <div><%= @email %></div>
-    """
-  end
-
-  def render_type_column(assigns, user, _) do
-    assigns =
-      Map.merge(assigns, %{
-        type:
-          if(
-            user.user_role_id == ContextRoles.get_role(:context_instructor).id,
-            do: "Instructor",
-            else: "Student"
-          )
-      })
-
-    ~H"""
-    <div><%= @type %></div>
     """
   end
 
