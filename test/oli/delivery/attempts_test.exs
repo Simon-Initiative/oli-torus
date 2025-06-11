@@ -10,7 +10,7 @@ defmodule Oli.Delivery.AttemptsTest do
   alias Oli.Activities.Model.{Part, Feedback}
   alias Oli.Delivery.Page.PageContext
   alias Oli.Delivery.Attempts.Core.{ClientEvaluation, StudentInput, ActivityAttempt}
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
   alias Oli.Delivery.Sections
 
   import Oli.Factory
@@ -941,8 +941,8 @@ defmodule Oli.Delivery.AttemptsTest do
                context_id,
                activity_attempt_guid,
                client_evaluations,
-               :normalize,
-               datashop_session_id
+               datashop_session_id,
+               normalize_mode: :normalize
              ) == {:error, "Activity type does not allow client evaluation"}
     end
   end

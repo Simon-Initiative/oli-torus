@@ -27,7 +27,7 @@ const create = (
   allowTriggers: boolean,
 ) => {
   let model: any;
-  invokeCreationFunc(editorDesc.slug, {} as any)
+  invokeCreationFunc(editorDesc.authoringElement, {} as any)
     .then((createdModel) => {
       model = createdModel;
       return Persistence.createBanked(projectSlug, editorDesc.slug, createdModel, []);
@@ -130,7 +130,9 @@ const createBulk = async (
   for (const data of bulkImportData) {
     const editorDesc = editorForData(data, editorMap);
     if (editorDesc) {
-      const model = await invokeCreationFunc(editorDesc.slug, { creationData: data } as any)
+      const model = await invokeCreationFunc(editorDesc.authoringElement, {
+        creationData: data,
+      } as any)
         .then((createdModel) => {
           return createdModel;
         })
@@ -211,7 +213,7 @@ export const CreateActivity = (props: CreateActivityProps) => {
         onClick={handleAdd.bind(this, editorDesc)}
         className="dropdown-item"
         href="#"
-        key={editorDesc.slug}
+        key={editorDesc.authoringElement}
       >
         {editorDesc.friendlyName}
       </a>

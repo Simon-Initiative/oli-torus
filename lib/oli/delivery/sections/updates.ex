@@ -24,6 +24,7 @@ defmodule Oli.Delivery.Sections.Updates do
                                     :scoring_strategy_id,
                                     :scheduling_type,
                                     :manually_scheduled,
+                                    :removed_from_schedule,
                                     :start_date,
                                     :end_date,
                                     :collab_space_config,
@@ -31,6 +32,8 @@ defmodule Oli.Delivery.Sections.Updates do
                                     :max_attempts,
                                     :retake_mode,
                                     :assessment_mode,
+                                    :batch_scoring,
+                                    :replacement_strategy,
                                     :password,
                                     :late_submit,
                                     :late_start,
@@ -77,9 +80,10 @@ defmodule Oli.Delivery.Sections.Updates do
       {:ok, _} ->
         Oli.Delivery.Sections.SectionCache.clear(section.slug)
 
-        Oli.Delivery.DepotCoordinator.clear(
+        Oli.Delivery.DepotCoordinator.refresh(
           Oli.Delivery.Sections.SectionResourceDepot.depot_desc(),
-          section_id
+          section_id,
+          Oli.Delivery.Sections.SectionResourceDepot
         )
 
         Broadcaster.broadcast_update_progress(section.id, new_publication.id, :complete)
@@ -258,6 +262,8 @@ defmodule Oli.Delivery.Sections.Updates do
           inserted_at: {:placeholder, :timestamp},
           updated_at: {:placeholder, :timestamp},
           collab_space_config: r.collab_space_config,
+          batch_scoring: r.batch_scoring,
+          replacement_strategy: r.replacement_strategy,
           max_attempts:
             if is_nil(r.max_attempts) do
               0

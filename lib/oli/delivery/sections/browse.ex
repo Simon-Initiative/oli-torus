@@ -2,7 +2,7 @@ defmodule Oli.Delivery.Sections.Browse do
   import Ecto.Query, warn: false
 
   alias Oli.Delivery.Sections.EnrollmentContextRole
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
   alias Oli.Accounts.User
   alias Oli.Delivery.Sections.{Section, Enrollment, BrowseOptions}
   alias Oli.Repo
@@ -14,7 +14,7 @@ defmodule Oli.Delivery.Sections.Browse do
     Paged, sorted, filterable queries for course sections. Joins the institution,
     the base product or project and counts the number of enrollments.
   """
-  def browse_sections(
+  def browse_sections_query(
         %Paging{limit: limit, offset: offset},
         %Sorting{direction: direction, field: field},
         %BrowseOptions{} = options
@@ -172,8 +172,15 @@ defmodule Oli.Delivery.Sections.Browse do
       end
 
     # ensure there is always a stable sort order based on id, in addition to the specified sort order
-    query = order_by(query, [s, _], s.id)
+    order_by(query, [s, _], s.id)
+  end
 
-    Repo.all(query)
+  def browse_sections(
+        %Paging{} = paging,
+        %Sorting{} = sorting,
+        %BrowseOptions{} = options
+      ) do
+    browse_sections_query(paging, sorting, options)
+    |> Repo.all()
   end
 end

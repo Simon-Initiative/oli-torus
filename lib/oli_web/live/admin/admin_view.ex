@@ -4,7 +4,6 @@ defmodule OliWeb.Admin.AdminView do
   alias Oli.Accounts
   alias OliWeb.Common.Properties.{Groups, Group}
   alias OliWeb.Common.Breadcrumb
-  alias OliWeb.Router.Helpers, as: Routes
 
   on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
   on_mount OliWeb.LiveSessionPlugs.SetCtx
@@ -34,12 +33,12 @@ defmodule OliWeb.Admin.AdminView do
         <Group.render label="Account Management" description="Access and manage all users and authors">
           <ul class="link-list">
             <li>
-              <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersView)}>
+              <a href={~p"/admin/users"}>
                 Manage Students and Instructor Accounts
               </a>
             </li>
             <li>
-              <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Users.AuthorsView)}>
+              <a href={~p"/admin/authors"}>
                 Manage Authoring Accounts
               </a>
             </li>
@@ -51,15 +50,20 @@ defmodule OliWeb.Admin.AdminView do
                 ) %>
               </a>
             </li>
-            <li><a href={Routes.invite_path(OliWeb.Endpoint, :index)}>Invite New Authors</a></li>
+            <li><a href={~p"/admin/invite"}>Invite New Authors</a></li>
             <li>
-              <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.CommunityLive.IndexView)}>
+              <a href={~p"/authoring/communities"}>
                 Manage Communities
               </a>
             </li>
             <li>
-              <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.RegistrationsView)}>
+              <a href={~p"/admin/registrations"}>
                 Manage LTI 1.3 Registrations
+              </a>
+            </li>
+            <li>
+              <a href={~p"/admin/external_tools"}>
+                Manage LTI 1.3 External Tools
               </a>
             </li>
           </ul>
@@ -69,32 +73,32 @@ defmodule OliWeb.Admin.AdminView do
         <Group.render label="Content Management" description="Access and manage created content">
           <ul class="link-list">
             <li>
-              <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive)}>
+              <a href={~p"/authoring/projects"}>
                 Browse all Projects
               </a>
             </li>
             <li>
-              <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Products.ProductsView)}>
+              <a href={~p"/admin/products"}>
                 Browse all Products
               </a>
             </li>
             <li>
-              <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.SectionsView)}>
+              <a href={~p"/admin/sections"}>
                 Browse all Course Sections
               </a>
             </li>
             <li>
-              <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.Ingest)}>Ingest Project</a>
+              <a href={~p"/admin/ingest"}>Ingest Project</a>
             </li>
-            <li><a href={Routes.ingest_path(OliWeb.Endpoint, :index)}>V2 Ingest Project</a></li>
-            <li><a href={Routes.brand_path(OliWeb.Endpoint, :index)}>Manage Branding</a></li>
+            <li><a href={~p"/admin/ingest/upload"}>V2 Ingest Project</a></li>
+            <li><a href={~p"/admin/brands"}>Manage Branding</a></li>
             <li>
-              <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.PublisherLive.IndexView)}>
+              <a href={~p"/admin/publishers"}>
                 Manage Publishers
               </a>
             </li>
             <li>
-              <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Workspaces.CourseAuthor.DatasetsLive)}>
+              <a href={~p"/admin/datasets"}>
                 Manage Dataset Jobs
               </a>
             </li>
@@ -108,21 +112,21 @@ defmodule OliWeb.Admin.AdminView do
         >
           <ul class="link-list">
             <li>
-              <a href={Routes.activity_manage_path(OliWeb.Endpoint, :index)}>Manage Activities</a>
+              <a href={~p"/admin/manage_activities"}>Manage Activities</a>
             </li>
             <li>
-              <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.SystemMessageLive.IndexView)}>
+              <a href={~p"/admin/system_messages"}>
                 Manage System Message Banner
               </a>
             </li>
 
             <li>
-              <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Features.FeaturesLive)}>
+              <a href={~p"/admin/features"}>
                 Feature Flags and Logging
               </a>
             </li>
             <li>
-              <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.ApiKeys.ApiKeysLive)}>
+              <a href={~p"/admin/api_keys"}>
                 Manage Third-Party API Keys
               </a>
             </li>
@@ -137,7 +141,7 @@ defmodule OliWeb.Admin.AdminView do
               </a>
             </li>
             <li>
-              <a href={Routes.live_dashboard_path(OliWeb.Endpoint, :home)} target="_blank">
+              <a href={~p"/admin/dashboard/home"} target="_blank">
                 <span>View System Performance Dashboard</span>
                 <i class="fas fa-external-link-alt self-center ml-1"></i>
               </a>
@@ -165,6 +169,6 @@ defmodule OliWeb.Admin.AdminView do
 
   def breadcrumb(),
     do: [
-      Breadcrumb.new(%{link: Routes.live_path(OliWeb.Endpoint, __MODULE__), full_title: "Admin"})
+      Breadcrumb.new(%{link: ~p"/admin", full_title: "Admin"})
     ]
 end

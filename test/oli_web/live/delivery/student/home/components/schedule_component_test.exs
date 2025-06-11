@@ -6,9 +6,10 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
 
   alias Oli.Delivery.Attempts.Core
   alias Oli.Delivery.Sections
+  alias OliWeb.Delivery.Student.Utils
   alias Oli.Resources.ResourceType
   alias OliWeb.Delivery.Student.Home.Components.ScheduleComponent
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
 
   defp enroll_as_student(%{user: user, section: section} = context) do
     Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
@@ -41,6 +42,14 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
   end
 
   defp build_project(_) do
+    create_project(true)
+  end
+
+  defp build_project_without_schedule(_) do
+    create_project(false)
+  end
+
+  defp create_project(add_schedule?) do
     author = insert(:author)
     project = insert(:project, authors: [author])
 
@@ -123,29 +132,58 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
         title: "Unit 1"
       })
 
+    ## 12 more units with 1 page each
+    {more_pages, more_units} =
+      Enum.reduce(2..11, {[], []}, fn x, {more_pages, more_units} ->
+        a_page =
+          insert(:revision, %{
+            resource_type_id: ResourceType.id_for_page(),
+            title: "A Page #{x}"
+          })
+
+        a_unit =
+          insert(:revision, %{
+            resource_type_id: ResourceType.id_for_container(),
+            children: [a_page.resource_id],
+            title: "Unit #{x}"
+          })
+
+        {
+          [a_page | more_pages],
+          [a_unit | more_units]
+        }
+      end)
+
+    all_units =
+      [unit_1_revision] ++ more_units
+
+    all_units_resource_ids =
+      Enum.map(all_units, & &1.resource_id)
+
     container_revision =
       insert(:revision, %{
         resource_type_id: ResourceType.id_for_container(),
-        children: [
-          unit_1_revision.resource_id
-        ],
+        children: all_units_resource_ids,
         deleted: false,
         slug: "root_container",
         title: "Root Container"
       })
 
     all_revisions =
-      [
-        graded_1_revision,
-        graded_2_revision,
-        practice_1_revision,
-        exploration_1_revision,
-        practice_2_revision,
-        module_1_revision,
-        module_2_revision,
-        unit_1_revision,
-        container_revision
-      ]
+      more_pages ++
+        [
+          graded_1_revision,
+          graded_2_revision,
+          practice_1_revision,
+          exploration_1_revision,
+          practice_2_revision,
+          module_1_revision,
+          module_2_revision
+        ] ++
+        all_units ++
+        [
+          container_revision
+        ]
 
     # asociate resources to project
     Enum.each(all_revisions, fn revision ->
@@ -185,60 +223,63 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
     {:ok, _} = Sections.rebuild_contained_pages(section)
     {:ok, _} = Sections.rebuild_contained_objectives(section)
 
-    # schedule start and end date for Unit 1 section_resource
-    Sections.get_section_resource(section.id, unit_1_revision.resource_id)
-    |> Sections.update_section_resource(%{
-      start_date: ~U[2024-05-05 20:00:00Z],
-      end_date: ~U[2024-05-18 20:00:00Z]
-    })
+    if add_schedule? do
+      # schedule start and end date for Unit 1 section_resource
+      # schedule start and end date for Unit 1 section_resource
+      Sections.get_section_resource(section.id, unit_1_revision.resource_id)
+      |> Sections.update_section_resource(%{
+        start_date: ~U[2024-05-05 20:00:00Z],
+        end_date: ~U[2024-05-18 20:00:00Z]
+      })
 
-    # schedule start and end date for Module 1 section_resource
-    Sections.get_section_resource(section.id, module_1_revision.resource_id)
-    |> Sections.update_section_resource(%{
-      start_date: ~U[2024-05-05 20:00:00Z],
-      end_date: ~U[2024-05-11 20:00:00Z]
-    })
+      # schedule start and end date for Module 1 section_resource
+      Sections.get_section_resource(section.id, module_1_revision.resource_id)
+      |> Sections.update_section_resource(%{
+        start_date: ~U[2024-05-05 20:00:00Z],
+        end_date: ~U[2024-05-11 20:00:00Z]
+      })
 
-    # schedule start and end date for Module 2 section_resource
-    Sections.get_section_resource(section.id, module_2_revision.resource_id)
-    |> Sections.update_section_resource(%{
-      start_date: ~U[2024-05-12 20:00:00Z],
-      end_date: ~U[2024-05-18 20:00:00Z]
-    })
+      # schedule start and end date for Module 2 section_resource
+      Sections.get_section_resource(section.id, module_2_revision.resource_id)
+      |> Sections.update_section_resource(%{
+        start_date: ~U[2024-05-12 20:00:00Z],
+        end_date: ~U[2024-05-18 20:00:00Z]
+      })
 
-    # schedule start and end date for Graded 1 section_resource
-    Sections.get_section_resource(section.id, graded_1_revision.resource_id)
-    |> Sections.update_section_resource(%{
-      start_date: ~U[2024-05-05 20:00:00Z],
-      end_date: ~U[2024-05-06 20:00:00Z]
-    })
+      # schedule start and end date for Graded 1 section_resource
+      Sections.get_section_resource(section.id, graded_1_revision.resource_id)
+      |> Sections.update_section_resource(%{
+        start_date: ~U[2024-05-05 20:00:00Z],
+        end_date: ~U[2024-05-06 20:00:00Z]
+      })
 
-    # schedule start and end date for Graded 2 and Practice 1 section_resources
-    Sections.get_section_resource(section.id, graded_2_revision.resource_id)
-    |> Sections.update_section_resource(%{
-      start_date: ~U[2024-05-06 20:00:00Z],
-      end_date: ~U[2024-05-07 20:00:00Z]
-    })
+      # schedule start and end date for Graded 2 and Practice 1 section_resources
+      Sections.get_section_resource(section.id, graded_2_revision.resource_id)
+      |> Sections.update_section_resource(%{
+        start_date: ~U[2024-05-06 20:00:00Z],
+        end_date: ~U[2024-05-07 20:00:00Z]
+      })
 
-    Sections.get_section_resource(section.id, practice_1_revision.resource_id)
-    |> Sections.update_section_resource(%{
-      start_date: ~U[2024-05-06 20:00:00Z],
-      end_date: ~U[2024-05-07 20:00:00Z]
-    })
+      Sections.get_section_resource(section.id, practice_1_revision.resource_id)
+      |> Sections.update_section_resource(%{
+        start_date: ~U[2024-05-06 20:00:00Z],
+        end_date: ~U[2024-05-07 20:00:00Z]
+      })
 
-    # schedule start and end date for Exploration 1 section_resource
-    Sections.get_section_resource(section.id, exploration_1_revision.resource_id)
-    |> Sections.update_section_resource(%{
-      start_date: ~U[2024-05-12 20:00:00Z],
-      end_date: ~U[2024-05-14 20:00:00Z]
-    })
+      # schedule start and end date for Exploration 1 section_resource
+      Sections.get_section_resource(section.id, exploration_1_revision.resource_id)
+      |> Sections.update_section_resource(%{
+        start_date: ~U[2024-05-12 20:00:00Z],
+        end_date: ~U[2024-05-14 20:00:00Z]
+      })
 
-    # schedule start and end date for Practice 2 section_resource
-    Sections.get_section_resource(section.id, practice_2_revision.resource_id)
-    |> Sections.update_section_resource(%{
-      start_date: ~U[2024-05-15 20:00:00Z],
-      end_date: ~U[2024-05-17 20:00:00Z]
-    })
+      # schedule start and end date for Practice 2 section_resource
+      Sections.get_section_resource(section.id, practice_2_revision.resource_id)
+      |> Sections.update_section_resource(%{
+        start_date: ~U[2024-05-15 20:00:00Z],
+        end_date: ~U[2024-05-17 20:00:00Z]
+      })
+    end
 
     session_context = %OliWeb.Common.SessionContext{
       browser_timezone: "America/Montevideo",
@@ -266,7 +307,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
     ]
   end
 
-  describe "live component" do
+  describe "live component with schedule" do
     setup [:user_conn, :build_project, :enroll_as_student, :mark_section_visited]
 
     # use a mocked datetime to have past, present and future items
@@ -279,15 +320,15 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
     } do
       stub_current_time(~U[2024-05-07 20:00:00Z])
 
-      grouped_agenda_resources =
-        Sections.get_schedule_for_current_and_next_week(section, nil, user.id)
+      grouped_agenda_resources = Utils.grouped_agenda_resources(section, nil, user.id, true)
 
       {:ok, lcd, _html} =
         live_component_isolated(conn, ScheduleComponent, %{
           ctx: session_context,
           grouped_agenda_resources: grouped_agenda_resources,
           section_start_date: section.start_date,
-          section_slug: section.slug
+          section_slug: section.slug,
+          has_scheduled_resources?: true
         })
 
       ## Displays current week
@@ -360,15 +401,15 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
       set_progress(section.id, graded_2.resource_id, user.id, 1.0, graded_2)
       set_progress(section.id, practice_1.resource_id, user.id, 1.0, practice_1)
 
-      grouped_agenda_resources =
-        Sections.get_schedule_for_current_and_next_week(section, nil, user.id)
+      grouped_agenda_resources = Utils.grouped_agenda_resources(section, nil, user.id, true)
 
       {:ok, lcd, _html} =
         live_component_isolated(conn, ScheduleComponent, %{
           ctx: session_context,
           grouped_agenda_resources: grouped_agenda_resources,
           section_start_date: section.start_date,
-          section_slug: section.slug
+          section_slug: section.slug,
+          has_scheduled_resources?: true
         })
 
       # Practice 2 is completed
@@ -394,15 +435,15 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
       # Leave Exploration 1 in progress
       set_progress(section.id, exploration_1.resource_id, user.id, 1.0, exploration_1, :active)
 
-      grouped_agenda_resources =
-        Sections.get_schedule_for_current_and_next_week(section, nil, user.id)
+      grouped_agenda_resources = Utils.grouped_agenda_resources(section, nil, user.id, true)
 
       {:ok, lcd, _html} =
         live_component_isolated(conn, ScheduleComponent, %{
           ctx: session_context,
           grouped_agenda_resources: grouped_agenda_resources,
           section_start_date: section.start_date,
-          section_slug: section.slug
+          section_slug: section.slug,
+          has_scheduled_resources?: true
         })
 
       # Graded 1 is completed and displays attempts info
@@ -427,15 +468,15 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
       # Complete Practice 1 (inside Lesson group)
       set_progress(section.id, practice_1.resource_id, user.id, 1.0, practice_1)
 
-      grouped_agenda_resources =
-        Sections.get_schedule_for_current_and_next_week(section, nil, user.id)
+      grouped_agenda_resources = Utils.grouped_agenda_resources(section, nil, user.id, true)
 
       {:ok, lcd, _html} =
         live_component_isolated(conn, ScheduleComponent, %{
           ctx: session_context,
           grouped_agenda_resources: grouped_agenda_resources,
           section_start_date: section.start_date,
-          section_slug: section.slug
+          section_slug: section.slug,
+          has_scheduled_resources?: true
         })
 
       lcd
@@ -460,6 +501,86 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
                ~s{#schedule_item_1_2 div[role="group_item"]},
                "Graded 2"
              )
+    end
+
+    test "does render the schedule details label", %{
+      conn: conn,
+      section: section,
+      user: user,
+      session_context: session_context
+    } do
+      stub_current_time(~U[2024-05-07 20:00:00Z])
+      grouped_agenda_resources = Utils.grouped_agenda_resources(section, nil, user.id, true)
+
+      {:ok, lcd, _html} =
+        live_component_isolated(conn, ScheduleComponent, %{
+          ctx: session_context,
+          grouped_agenda_resources: grouped_agenda_resources,
+          section_start_date: section.start_date,
+          section_slug: section.slug,
+          has_scheduled_resources?: true
+        })
+
+      assert has_element?(lcd, ~s{span[role="schedule details"]})
+    end
+  end
+
+  describe "live component without schedule" do
+    setup [:user_conn, :build_project_without_schedule, :enroll_as_student, :mark_section_visited]
+
+    test "renders 6 first containers as ordered in the curriculum", %{
+      conn: conn,
+      section: section,
+      user: user,
+      session_context: session_context
+    } do
+      # no schedule
+      grouped_agenda_resources = Utils.grouped_agenda_resources(section, nil, user.id, false)
+
+      {:ok, lcd, _html} =
+        live_component_isolated(conn, ScheduleComponent, %{
+          ctx: session_context,
+          grouped_agenda_resources: grouped_agenda_resources,
+          section_start_date: section.start_date,
+          section_slug: section.slug,
+          has_scheduled_resources?: false
+        })
+
+      ## Does not display current week (no schedule)
+      refute has_element?(lcd, ~s{#schedule_week_1 div[role="schedule_title"]}, "This Week")
+
+      # Displays first 6 containers (as ordered in the curriculum)
+      assert has_element?(lcd, ~s{#schedule_item_1_1 div[role="container_label"]}, "Unit 1")
+      assert has_element?(lcd, ~s{#schedule_item_1_2 div[role="container_label"]}, "Module 1")
+      assert has_element?(lcd, ~s{#schedule_item_1_3 div[role="container_label"]}, "Module 2")
+      assert has_element?(lcd, ~s{#schedule_item_1_4 div[role="container_label"]}, "Unit 2")
+      assert has_element?(lcd, ~s{#schedule_item_1_5 div[role="container_label"]}, "Unit 3")
+      assert has_element?(lcd, ~s{#schedule_item_1_6 div[role="container_label"]}, "Unit 4")
+
+      Enum.each(5..11, fn x ->
+        refute render(lcd) =~ "Unit #{x}"
+      end)
+    end
+
+    test "does not render the schedule details ('Not yet scheduled' label)", %{
+      conn: conn,
+      section: section,
+      user: user,
+      session_context: session_context
+    } do
+      # no schedule
+      grouped_agenda_resources = Utils.grouped_agenda_resources(section, nil, user.id, false)
+
+      {:ok, lcd, _html} =
+        live_component_isolated(conn, ScheduleComponent, %{
+          ctx: session_context,
+          grouped_agenda_resources: grouped_agenda_resources,
+          section_start_date: section.start_date,
+          section_slug: section.slug,
+          has_scheduled_resources?: false
+        })
+
+      refute has_element?(lcd, ~s{span[role="schedule details"]})
     end
   end
 end

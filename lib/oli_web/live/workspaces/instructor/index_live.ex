@@ -12,7 +12,7 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
   @default_params %{text_search: "", sidebar_expanded: true}
 
   @context_instructor_roles [
-    Lti_1p3.Tool.ContextRoles.get_role(:context_instructor)
+    Lti_1p3.Roles.ContextRoles.get_role(:context_instructor)
   ]
 
   @impl Phoenix.LiveView
@@ -97,6 +97,54 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
           <h3 class="w-full text-xl dark:text-white">
             Instructor workspace with an admin account has not yet been developed.
             To use this workspace please logout and sign in with an instructor account
+          </h3>
+        </div>
+
+        <div class="flex flex-col gap-4">
+          <h3 class="w-full text-xl dark:text-white">
+            <%= if !is_nil(@current_user) do %>
+              You are currently logged in with a delivery account:
+              <div class="bg-gray-300 dark:bg-gray-700 rounded-lg p-4 text-sm">
+                <table>
+                  <tr>
+                    <th class="text-left">Name</th>
+                    <td><%= @current_user.name %></td>
+                  </tr>
+                  <tr>
+                    <th class="text-left">Given Name</th>
+                    <td><%= @current_user.given_name %></td>
+                  </tr>
+                  <tr>
+                    <th class="text-left">Family Name</th>
+                    <td><%= @current_user.family_name %></td>
+                  </tr>
+                  <tr>
+                    <th class="text-left">Email</th>
+                    <td><%= @current_user.email %></td>
+                  </tr>
+                  <tr>
+                    <th class="text-left">Guest?</th>
+                    <td><%= @current_user.guest %></td>
+                  </tr>
+                  <tr>
+                    <th class="text-left">Hidden?</th>
+                    <td><%= @current_user.hidden %></td>
+                  </tr>
+                  <tr>
+                    <th class="text-left">Direct Delivery?</th>
+                    <td><%= @current_user.independent_learner %></td>
+                  </tr>
+                </table>
+              </div>
+
+              <p>
+                <%= link to: ~p"/users/log_out", method: :delete do %>
+                  Sign out of this delivery account.
+                <% end %>
+              </p>
+            <% else %>
+              You are not logged in with any delivery account.
+            <% end %>
           </h3>
         </div>
       </div>
@@ -189,12 +237,12 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
             class="dark:text-violet-100 text-base font-normal font-['Inter'] leading-normal"
           >
             To create course sections,
-            <button
-              onclick="window.showHelpModal();"
+            <.tech_support_link
+              id="tech_support_is_not_independet_instructor"
               class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline text-base font-bold font-['Open Sans'] tracking-tight cursor-pointer"
             >
               contact support.
-            </button>
+            </.tech_support_link>
           </div>
         </div>
         <div class="flex flex-col md:flex-row md:items-center w-full md:justify-between gap-3">

@@ -5,7 +5,7 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
   alias Oli.Seeder
 
   alias Oli.Delivery.Attempts.Core, as: Attempts
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
   alias Oli.Activities
 
   alias OliWeb.Router.Helpers, as: Routes
@@ -13,9 +13,9 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
   describe "legacy superactivity" do
     setup [:setup_session]
 
-    @tag :skip
     # this test should be migrated to a liveview approach since now we
     # are not rendering any content on the first response (we render when websocket is connected)
+    @tag :skip
     test "deliver legacy superactivity", %{
       user: user,
       conn: conn,

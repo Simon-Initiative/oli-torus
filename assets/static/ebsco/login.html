@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<!--
+  Proxy page providing links to access to resources on EBSCO research database site
+  from torus courses.  Allows referrer header, normally suppressed on torus links, to
+  be sent for loginless access to EBSCO from origins whitelisted on EBSCO.
+-->
+<html lang="en">
+  <head>
+    <!-- Specify referrer policy to only send origin part of url. Modern browsers
+     default to this anyway for cross-origin links, but doesn't hurt to be safe -->
+    <meta name="referrer" content="origin" />
+
+    <title>OLI Torus EBSCO Access Page</title>
+    <script>
+      window.location.replace(`//search.ebscohost.com/login.aspx${window.location.search}`);
+    </script>
+  </head>
+  <body></body>
+</html>

@@ -2,9 +2,9 @@ defmodule OliWeb.DeliveryController do
   use OliWeb, :controller
   use OliWeb, :verified_routes
 
-  alias Lti_1p3.Tool.{PlatformRoles, ContextRoles}
+  alias Lti_1p3.Roles.{PlatformRoles, ContextRoles}
   alias Oli.Accounts
-  alias Oli.Accounts.{User}
+  alias Oli.Accounts.User
   alias Oli.Analytics.DataTables.DataTable
   alias Oli.Delivery
   alias Oli.Delivery.Sections
@@ -17,6 +17,7 @@ defmodule OliWeb.DeliveryController do
   alias OliWeb.UserAuth
   alias OliWeb.Common.Params
   alias OliWeb.Delivery.InstructorDashboard.Helpers
+  alias OliWeb.Delivery.Student.Utils
 
   require Logger
 
@@ -341,29 +342,34 @@ defmodule OliWeb.DeliveryController do
         )
 
       section ->
-        students = Helpers.get_students(section)
+        students = Helpers.get_students(section, :context_learner)
 
         contents =
-          students
-          |> Enum.map(
+          Enum.map(
+            students,
             &%{
-              name: &1.name,
+              status: parse_enrollment_status(&1.enrollment_status),
+              name: OliWeb.Common.Utils.name(&1),
               email: &1.email,
+              lms_id: &1.sub,
               last_interaction: &1.last_interaction,
-              progress: &1.progress,
+              progress: convert_to_percentage(&1),
               overall_proficiency: &1.overall_proficiency,
               requires_payment: Map.get(&1, :requires_payment, "N/A")
             }
           )
+          |> sort_data()
           |> DataTable.new()
-          |> DataTable.headers([
-            :name,
-            :email,
-            :last_interaction,
-            :progress,
-            :overall_proficiency,
-            :requires_payment
-          ])
+          |> DataTable.headers(
+            status: "Status",
+            name: "Name",
+            email: "Email",
+            lms_id: "LMS ID",
+            last_interaction: "Last Interaction",
+            progress: "Progress (Pct)",
+            overall_proficiency: "Proficiency",
+            requires_payment: "Requires Payment"
+          )
           |> DataTable.to_csv_content()
 
         conn
@@ -507,4 +513,25 @@ defmodule OliWeb.DeliveryController do
       student_ids
     )
   end
+
+  defp sort_data(results) do
+    Enum.sort_by(results, &{&1.status, &1.name, &1.email})
+  end
+
+  defp convert_to_percentage(%{progress: nil}), do: 0
+
+  defp convert_to_percentage(%{progress: progress}) when progress <= 1.0 do
+    Utils.parse_score(progress * 100)
+  end
+
+  defp convert_to_percentage(%{progress: _progress} = user_data) do
+    Logger.error("Progress exceeds 1.0 threshold: #{inspect(user_data)}")
+    nil
+  end
+
+  defp parse_enrollment_status(:enrolled), do: "Enrolled"
+  defp parse_enrollment_status(:suspended), do: "Suspended"
+  defp parse_enrollment_status(:pending_confirmation), do: "Pending confirmation"
+  defp parse_enrollment_status(:rejected), do: "Rejected invitation"
+  defp parse_enrollment_status(_status), do: "Unkknown"
 end

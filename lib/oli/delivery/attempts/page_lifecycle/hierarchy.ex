@@ -65,6 +65,13 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
     case create_resource_attempt(%{
            content: transformed_content,
            errors: errors,
+           out_of:
+             Enum.reduce(prototypes, 0.0, fn p, acc ->
+               case p.out_of do
+                 nil -> acc
+                 _ -> p.out_of + acc
+               end
+             end),
            attempt_guid: UUID.uuid4(),
            resource_access_id: resource_access_id,
            attempt_number: next_attempt_number,
@@ -94,38 +101,41 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
        do: []
 
   defp construct_attempt_prototypes(%VisitContext{
-         effective_settings: %{retake_mode: :targeted},
+         effective_settings: %{retake_mode: retake_mode, batch_scoring: batch_scoring},
          latest_resource_attempt: latest_resource_attempt,
-         page_revision: %Revision{graded: true} = page_revision
+         page_revision: %Revision{graded: graded} = page_revision
        }) do
-    # If the page has changed revisions between attempts, we do not allow previous
-    # correct attempts to manifest as constraining prototypes.  The issue here is that
-    # it is possible that referenced activities or selection counts have changed. We could
-    # make this step more robust by diffing all the referenced activities and selections.
-    if latest_resource_attempt.revision_id == page_revision.id do
-      get_correct_attempts(latest_resource_attempt.id)
-      |> Enum.map(fn attempt ->
-        Oli.Delivery.ActivityProvider.AttemptPrototype.from_attempt(attempt)
-      end)
-    else
-      []
-    end
-  end
-
-  defp construct_attempt_prototypes(%VisitContext{
-         latest_resource_attempt: latest_resource_attempt,
-         page_revision: %Revision{graded: false} = page_revision
-       }) do
-    # For ungraded pages, when the revision of page has changed, we
-    # construct activity attempt prototypes for all activities to pull forward
-    # their state, but only for those whose own revisions have not changed
-    if latest_resource_attempt.revision_id != page_revision.id do
+    migrate_all_fn = fn ->
       get_migratable_activity_attempts(latest_resource_attempt.id)
       |> Enum.map(fn attempt ->
-        Oli.Delivery.ActivityProvider.AttemptPrototype.from_attempt(attempt)
+        Oli.Delivery.ActivityProvider.AttemptPrototype.from_attempt(attempt, true)
       end)
-    else
-      []
+    end
+
+    revisions_changed =
+      latest_resource_attempt.revision_id != page_revision.id
+
+    # When the revision of page has changed, there are three cases where
+    # we migrate forward the activity attempts from the previous resource attempt:
+    #
+    # 1. Revisions have changed in a practice page
+    # 2. Page revisions have NOT changed, graded page and targeted retake mode is enabled
+    # 2. Revisions changed in a score as you go graded page
+    case {revisions_changed, graded, retake_mode, batch_scoring} do
+      {true, false, _, _} ->
+        migrate_all_fn.()
+
+      {false, true, :targeted, _} ->
+        get_correct_attempts(latest_resource_attempt.id)
+        |> Enum.map(fn attempt ->
+          Oli.Delivery.ActivityProvider.AttemptPrototype.from_attempt(attempt)
+        end)
+
+      {true, true, _, false} ->
+        migrate_all_fn.()
+
+      _ ->
+        []
     end
   end
 
@@ -223,7 +233,6 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
   defp bulk_create_activity_attempts(raw_attempts, now, resource_attempt_id) do
     placeholders = %{
       now: now,
-      attempt_number: 1,
       resource_attempt_id: resource_attempt_id
     }
 
@@ -390,7 +399,6 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
           Enum.map(raw_attempts, fn a ->
             Map.delete(a, :lifecycle_state)
             |> Map.delete(:score)
-            |> Map.delete(:out_of)
             |> Map.delete(:date_submitted)
             |> Map.delete(:date_evaluated)
           end)
@@ -441,13 +449,21 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
            survey_id: survey_id,
            selection_id: selection_id,
            score: score,
-           out_of: out_of
+           out_of: out_of,
+           aggregate_score: aggregate_score,
+           aggregate_out_of: aggregate_out_of,
+           attempt_number: attempt_number
          } = prototype
        ) do
     %{
       resource_attempt_id: {:placeholder, :resource_attempt_id},
       attempt_guid: UUID.uuid4(),
-      attempt_number: {:placeholder, :attempt_number},
+      attempt_number:
+        if is_nil(attempt_number) do
+          1
+        else
+          attempt_number
+        end,
       revision_id: id,
       resource_id: resource_id,
       transformed_model: transformed_model,
@@ -462,6 +478,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
       date_evaluated: prototype.date_evaluated,
       score: score,
       out_of: out_of,
+      aggregate_score: aggregate_score,
+      aggregate_out_of: aggregate_out_of,
       group_id: group_id,
       survey_id: survey_id,
       selection_id: selection_id,

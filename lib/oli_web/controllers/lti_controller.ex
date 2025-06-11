@@ -5,6 +5,7 @@ defmodule OliWeb.LtiController do
   import Oli.Utils
 
   alias Oli.Accounts
+  alias Oli.Accounts.SystemRole
   alias Oli.Delivery.Sections
   alias Oli.Institutions
   alias Oli.Institutions.PendingRegistration
@@ -14,10 +15,11 @@ defmodule OliWeb.LtiController do
   alias OliWeb.Common.Utils
   alias OliWeb.UserAuth
   alias Oli.Lti.LtiParams
-  alias Lti_1p3.Tool.ContextRoles
-  alias Lti_1p3.Tool.PlatformRoles
+  alias Lti_1p3.Roles.ContextRoles
+  alias Lti_1p3.Roles.PlatformRoles
   alias Lti_1p3.Tool.Services.AGS
   alias Lti_1p3.Tool.Services.NRPS
+  alias Oli.Lti.PlatformInstances
 
   require Logger
 
@@ -80,7 +82,7 @@ defmodule OliWeb.LtiController do
     session_state = Plug.Conn.get_session(conn, "state")
 
     case Lti_1p3.Tool.LaunchValidation.validate(params, session_state) do
-      {:ok, lti_params, _cache_key} ->
+      {:ok, lti_params} ->
         render(conn, "lti_test.html", lti_params: lti_params)
 
       {:error, %{reason: _reason, msg: msg}} ->
@@ -95,26 +97,119 @@ defmodule OliWeb.LtiController do
           reason: "The current user must be the same user initiating the LTI request"
         )
 
-      %Lti_1p3.Platform.LoginHint{context: context} ->
-        current_user =
+      %Lti_1p3.Platform.LoginHint{context: context, session_user_id: session_user_id} ->
+        {user, resource_id, roles} =
           case context do
-            "author" ->
-              conn.assigns[:current_author]
+            "admin" ->
+              with author <- Accounts.get_author!(session_user_id),
+                   true <- Accounts.has_admin_role?(author, SystemRole.role_id().system_admin) do
+                roles = [
+                  Lti_1p3.Roles.PlatformRoles.get_role(:system_administrator),
+                  Lti_1p3.Roles.PlatformRoles.get_role(:institution_administrator),
+                  Lti_1p3.Roles.ContextRoles.get_role(:context_content_developer)
+                ]
+
+                {%Accounts.User{
+                   id: author.id,
+                   sub: "admin",
+                   email: author.email,
+                   email_verified: true,
+                   name: author.name,
+                   given_name: author.given_name,
+                   family_name: author.family_name,
+                   middle_name: "",
+                   nickname: "",
+                   preferred_username: "",
+                   profile: "",
+                   picture: author.picture,
+                   website: "",
+                   gender: "",
+                   birthdate: "",
+                   zoneinfo: "",
+                   locale: "",
+                   phone_number: "",
+                   phone_number_verified: "",
+                   address: ""
+                 }, nil, roles}
+              else
+                _ ->
+                  Logger.error("Author with id #{session_user_id} is not an admin")
+
+                  throw("Author is not an admin")
+              end
+
+            %{"project" => _project, "resource_id" => resource_id} ->
+              author = Accounts.get_author!(session_user_id)
+
+              roles = [
+                Lti_1p3.Roles.ContextRoles.get_role(:context_content_developer)
+              ]
+
+              {%Accounts.User{
+                 id: author.id,
+                 sub: "admin",
+                 email: author.email,
+                 email_verified: true,
+                 name: author.name,
+                 given_name: author.given_name,
+                 family_name: author.family_name,
+                 middle_name: "",
+                 nickname: "",
+                 preferred_username: "",
+                 profile: "",
+                 picture: author.picture,
+                 website: "",
+                 gender: "",
+                 birthdate: "",
+                 zoneinfo: "",
+                 locale: "",
+                 phone_number: "",
+                 phone_number_verified: "",
+                 address: ""
+               }, resource_id, roles}
+
+            %{"section" => section_slug, "resource_id" => resource_id} ->
+              user = conn.assigns[:current_user]
+
+              context_roles = Lti_1p3.Roles.Lti_1p3_User.get_context_roles(user, section_slug)
+
+              platform_roles =
+                Lti_1p3.Roles.Lti_1p3_User.get_platform_roles(user)
+
+              {user, resource_id, context_roles ++ platform_roles}
 
             _ ->
-              conn.assigns[:current_user]
+              Logger.error("Unsupported context value in login hint: #{Kernel.inspect(context)}")
+
+              throw("Unsupported context value in login hint")
           end
 
         issuer = Oli.Utils.get_base_url()
-        # TODO: add multiple deployment support
-        # for now, just use a single deployment with a static deployment_id
-        deployment_id = "1"
+
+        client_id = params["client_id"]
+
+        platform_instance =
+          PlatformInstances.get_platform_instance_by_client_id(client_id)
+
+        deployment =
+          Oli.Lti.PlatformExternalTools.get_lti_external_tool_activity_deployment_by(
+            platform_instance_id: platform_instance.id
+          )
+
+        claims = [
+          Lti_1p3.Claims.DeploymentId.deployment_id(deployment.deployment_id),
+          Lti_1p3.Claims.MessageType.message_type(:lti_resource_link_request),
+          Lti_1p3.Claims.Version.version("1.3.0"),
+          Lti_1p3.Claims.ResourceLink.resource_link(resource_id),
+          Lti_1p3.Claims.TargetLinkUri.target_link_uri(platform_instance.target_link_uri),
+          Lti_1p3.Claims.Roles.roles(roles)
+        ]
 
         case Lti_1p3.Platform.AuthorizationRedirect.authorize_redirect(
                params,
-               current_user,
+               user,
                issuer,
-               deployment_id
+               claims
              ) do
           {:ok, redirect_uri, state, id_token} ->
             conn
@@ -128,112 +223,6 @@ defmodule OliWeb.LtiController do
             render(conn, "lti_error.html", reason: msg)
         end
     end
-  end
-
-  def developer_key_json(conn, params) do
-    {:ok, active_jwk} = Lti_1p3.get_active_jwk()
-
-    public_jwk =
-      JOSE.JWK.from_pem(active_jwk.pem)
-      |> JOSE.JWK.to_public()
-      |> JOSE.JWK.to_map()
-      |> (fn {_kty, public_jwk} -> public_jwk end).()
-      |> Map.put("typ", active_jwk.typ)
-      |> Map.put("alg", active_jwk.alg)
-      |> Map.put("kid", active_jwk.kid)
-
-    host =
-      Application.get_env(:oli, OliWeb.Endpoint)
-      |> Keyword.get(:url)
-      |> Keyword.get(:host)
-
-    developer_key_config = %{
-      "title" => Oli.VendorProperties.product_short_name(),
-      "scopes" => [
-        "https://purl.imsglobal.org/spec/lti-ags/scope/lineitem",
-        "https://purl.imsglobal.org/spec/lti-ags/scope/lineitem.readonly",
-        "https://purl.imsglobal.org/spec/lti-ags/scope/result.readonly",
-        "https://purl.imsglobal.org/spec/lti-ags/scope/score",
-        "https://purl.imsglobal.org/spec/lti-nrps/scope/contextmembership.readonly"
-      ],
-      "extensions" => [
-        %{
-          "platform" => "canvas.instructure.com",
-          "settings" => %{
-            "platform" => "canvas.instructure.com",
-            "placements" => [
-              %{
-                "placement" => "link_selection",
-                "message_type" => "LtiResourceLinkRequest",
-                "icon_url" => Oli.VendorProperties.normalized_workspace_logo(host)
-              },
-              %{
-                "placement" => "assignment_selection",
-                "message_type" => "LtiResourceLinkRequest"
-              },
-              %{
-                "placement" => "course_navigation",
-                "message_type" => "LtiResourceLinkRequest",
-                "default" => get_course_navigation_default(params),
-                "windowTarget" => "_blank"
-              }
-              ## TODO: add support for more placement types in the future, possibly configurable by LMS admin
-              # assignment_selection when we support deep linking
-              # %{
-              #   "placement" => "assignment_selection",
-              #   "message_type" => "LtiDeepLinkingRequest",
-              #   "custom_fields" => %{
-              #     "assignment_id" => "$Canvas.assignment.id"
-              #   }
-              # },
-              # %{
-              #   "placement" => "homework_submission",
-              #   "message_type" => "LtiDeepLinkingRequest"
-              # },
-              # %{
-              #   "placement" => "tool_configuration",
-              #   "message_type" => "LtiResourceLinkRequest",
-              #   "target_link_uri" => "https://#{host}/lti/configure"
-              # },
-              # ...
-            ]
-          },
-          "privacy_level" => "public"
-        }
-      ],
-      "public_jwk" => %{
-        "e" => public_jwk["e"],
-        "n" => public_jwk["n"],
-        "alg" => public_jwk["alg"],
-        "kid" => public_jwk["kid"],
-        "kty" => "RSA",
-        "use" => "sig"
-      },
-      "description" => "Create, deliver and iteratively improve course content",
-      "custom_fields" => %{},
-      "public_jwk_url" => "https://#{host}/.well-known/jwks.json",
-      "target_link_uri" => "https://#{host}/lti/launch",
-      "oidc_initiation_url" => "https://#{host}/lti/login"
-    }
-
-    conn
-    |> json(developer_key_config)
-  end
-
-  defp get_course_navigation_default(%{"course_navigation_default" => "enabled"}), do: "enabled"
-  defp get_course_navigation_default(_params), do: "disabled"
-
-  def jwks(conn, _params) do
-    conn
-    |> json(Lti_1p3.get_all_public_keys())
-  end
-
-  def access_tokens(conn, _params) do
-    conn
-    |> put_status(:not_implemented)
-    |> json(%{
-      error: "NOT IMPLEMENTED"
-    })
   end
 
   def request_registration(

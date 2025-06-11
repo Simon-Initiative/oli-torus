@@ -11,12 +11,12 @@ defmodule OliWeb.Delivery.Student.Learn.Components.ViewSelector do
 
   def render(%{expanded: true} = assigns) do
     ~H"""
-    <div id={@id} class="relative" phx-click-away="collapse_select" phx-target={@myself}>
+    <div id={@id} class="relative w-48" phx-click-away="collapse_select" phx-target={@myself}>
       <button
         id="select_view_button"
         phx-click="collapse_select"
         phx-target={@myself}
-        class="h-[36px] justify-center items-center gap-2 inline-flex"
+        class="h-[36px] w-full justify-center items-center gap-2 inline-flex"
       >
         <div class="w-[114px] h-[36px] pl-2.5 pr-[7px] py-2.5 justify-center items-center gap-2.5 flex">
           <div class="dark:text-white text-base font-normal">View page as</div>
@@ -49,7 +49,7 @@ defmodule OliWeb.Delivery.Student.Learn.Components.ViewSelector do
 
   def render(%{expanded: false} = assigns) do
     ~H"""
-    <div id={@id}>
+    <div id={@id} class="w-48">
       <button
         phx-click="expand_select"
         phx-target={@myself}

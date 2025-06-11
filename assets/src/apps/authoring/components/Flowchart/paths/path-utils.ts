@@ -72,7 +72,7 @@ export const isInputNumber = (screen: IPartLayout): screen is IInputNumberPartLa
   screen.type === 'janus-input-number';
 
 export const isSlider = (screen: IPartLayout): screen is ISliderPartLayout =>
-  screen.type === 'janus-slider';
+  screen.type === 'janus-slider' || screen.type === 'janus-text-slider';
 
 export const isMCQ = (screen: IPartLayout): screen is IMCQPartLayout => screen.type === 'janus-mcq';
 

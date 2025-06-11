@@ -4,7 +4,7 @@ defmodule Oli.MixProject do
   def project do
     [
       app: :oli,
-      version: "0.30.2",
+      version: "0.31.0",
       elixir: "~> 1.17.2",
       elixirc_paths: elixirc_paths(Mix.env()),
       elixirc_options: elixirc_options(Mix.env()),
@@ -31,8 +31,7 @@ defmodule Oli.MixProject do
       releases: [
         oli: [
           include_executables_for: [:unix],
-          strip_beams: false,
-          applications: [runtime_tools: :permanent]
+          strip_beams: false
         ]
       ],
       default_release: :oli
@@ -121,14 +120,15 @@ defmodule Oli.MixProject do
   defp elixirc_options(:dev), do: []
   defp elixirc_options(:test), do: []
 
-  defp elixirc_options(_), do: [warnings_as_errors: true]
+  # defp elixirc_options(_), do: [warnings_as_errors: true]
+  defp elixirc_options(_), do: []
 
   # Specifies your project dependencies.
   #
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:appsignal_phoenix, "~> 2.3"},
+      {:appsignal_phoenix, "~> 2.7"},
       {:assent, "~> 0.2.9"},
       {:base32_crockford, "~> 1.0.0"},
       {:bcrypt_elixir, "~> 3.0"},
@@ -167,14 +167,18 @@ defmodule Oli.MixProject do
       {:jason, "~> 1.3"},
       {:joken, "~> 2.2.0"},
       {:jose, "~> 1.10"},
-      {:lti_1p3, "~> 0.6.0"},
-      {:lti_1p3_ecto_provider, "~> 0.6.0"},
+      {:lti_1p3,
+       git: "https://github.com/Simon-Initiative/lti_1p3", branch: "extend-platform-support"},
+      {:lti_1p3_ecto_provider,
+       git: "https://github.com/Simon-Initiative/lti_1p3_ecto_provider",
+       branch: "extend-platform-support"},
       {:libcluster, "~> 3.3"},
       {:libcluster_ec2, "~> 0.6"},
       {:mime, "~> 1.2"},
       {:mix_test_watch, "~> 1.0", only: :dev, runtime: false},
       {:monocle, "~> 0.0.1"},
       {:mox, "~> 0.5", only: [:test]},
+      {:nimble_csv, "~> 1.1"},
       {:nimble_parsec, "~> 1.2"},
       {:nodejs, "~> 2.0"},
       {:oban, "~> 2.17.2"},

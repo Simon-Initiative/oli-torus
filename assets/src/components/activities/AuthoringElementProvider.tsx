@@ -9,9 +9,11 @@ export interface AuthoringElementState<T> {
   projectSlug: string;
   editMode: boolean;
   authoringContext: any;
+  onEdit: (model: T) => void;
   onRequestMedia: (request: MediaItemRequest) => Promise<string | boolean>;
   dispatch: (action: (model: T, post: PostUndoable) => any) => T;
   model: T;
+  activityId?: number;
 }
 const AuthoringElementContext = React.createContext<AuthoringElementState<any> | undefined>(
   undefined,
@@ -29,6 +31,7 @@ export const AuthoringElementProvider: React.FC<AuthoringElementProps<ActivityMo
   children,
   model,
   authoringContext,
+  activityId,
   onPostUndoable,
   onRequestMedia,
   onEdit,
@@ -51,7 +54,16 @@ export const AuthoringElementProvider: React.FC<AuthoringElementProps<ActivityMo
   };
   return (
     <AuthoringElementContext.Provider
-      value={{ projectSlug, editMode, dispatch, model, onRequestMedia, authoringContext }}
+      value={{
+        projectSlug,
+        editMode,
+        onEdit,
+        dispatch,
+        model,
+        onRequestMedia,
+        authoringContext,
+        activityId,
+      }}
     >
       <ErrorBoundary>{children}</ErrorBoundary>
     </AuthoringElementContext.Provider>

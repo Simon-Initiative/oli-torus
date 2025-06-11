@@ -7,6 +7,7 @@ communication between the LogicLab and Torus.
 import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { Provider, useDispatch } from 'react-redux';
+import { ScoreAsYouGoHeaderBase } from 'components/activities/common/ScoreAsYouGoHeader';
 import {
   activityDeliverySlice,
   listenForParentSurveyReset,
@@ -192,14 +193,23 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
         </div>
       )}
       {loading === 'loaded' && (
-        <iframe
-          title={`LogicLab Activity ${model.context?.title}`}
-          src={baseUrl}
-          allow="fullscreen"
-          height="800"
-          width="100%"
-          data-activity-mode={mode}
-        ></iframe>
+        <div>
+          <ScoreAsYouGoHeaderBase
+            batchScoring={context.batchScoring}
+            graded={context.graded}
+            ordinal={context.ordinal}
+            maxAttempts={context.maxAttempts}
+            attemptNumber={activityState.attemptNumber}
+          />
+          <iframe
+            title={`LogicLab Activity ${model.context?.title}`}
+            src={baseUrl}
+            allow="fullscreen"
+            height="800"
+            width="100%"
+            data-activity-mode={mode}
+          ></iframe>
+        </div>
       )}
     </>
   );

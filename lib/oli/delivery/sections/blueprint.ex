@@ -170,7 +170,8 @@ defmodule Oli.Delivery.Sections.Blueprint do
             "customizations" => custom_labels,
             "welcome_title" => attrs["welcome_title"] || project.welcome_title,
             "encouraging_subtitle" =>
-              attrs["encouraging_subtitle"] || project.encouraging_subtitle
+              attrs["encouraging_subtitle"] || project.encouraging_subtitle,
+            "certificate_enabled" => attrs["certificate_enabled"] || false
           }
 
           case Sections.create_section(new_blueprint) do
@@ -350,6 +351,14 @@ defmodule Oli.Delivery.Sections.Blueprint do
 
       # Update all section resources at the same time
       {_cont, rows} = Sections.bulk_update_section_resource(section_resources, returning: true)
+
+      Task.Supervisor.start_child(Oli.TaskSupervisor, fn ->
+        Oli.Delivery.DepotCoordinator.init_if_necessary(
+          Oli.Delivery.Sections.SectionResourceDepot.depot_desc(),
+          blueprint.id,
+          Oli.Delivery.Sections.SectionResourceDepot
+        )
+      end)
 
       # Return the section resource that corresponds to the original root resource
       Enum.find(rows, &(Map.get(resource_map, root_id) == &1.id))

@@ -2,20 +2,23 @@ defmodule Oli.Help.Providers.FreshdeskHelp do
   @behaviour Oli.Help.Dispatcher
 
   alias Oli.Help.HelpContent
+  alias Oli.Help.RequesterData
   import Oli.HTTP
 
   require Logger
 
   @impl Oli.Help.Dispatcher
-  def dispatch(%HelpContent{} = contents) do
+  def dispatch(%HelpContent{requester_data: %RequesterData{} = requester_data} = contents) do
     url = System.get_env("FRESHDESK_API_URL", "example.edu")
+    requester_name = requester_data.requester_name
+    requester_email = requester_data.requester_email
 
     {:ok, body} =
       Jason.encode(%{
-        name: contents.full_name,
+        name: requester_name,
         description: build_help_message(contents),
-        subject: HelpContent.get_subject(contents.subject) <> "[" <> contents.full_name <> "]",
-        email: contents.email,
+        subject: HelpContent.get_subject(contents.subject) <> "[" <> requester_name <> "]",
+        email: requester_email,
         priority: 1,
         status: 2
       })
@@ -60,9 +63,9 @@ defmodule Oli.Help.Providers.FreshdeskHelp do
       "On " <>
         contents.timestamp <>
         ", " <>
-        contents.full_name <>
+        contents.requester_data.requester_name <>
         " <&nbsp;" <>
-        contents.email <>
+        contents.requester_data.requester_email <>
         "&nbsp;>" <>
         " wrote:<br><br>" <>
         contents.message <>
@@ -85,9 +88,9 @@ defmodule Oli.Help.Providers.FreshdeskHelp do
         contents.cookies_enabled <>
         "<br><br> USER ACCOUNT" <>
         "<br>Name: " <>
-        contents.account_name <>
+        contents.requester_data.requester_name <>
         "<br>Email: " <>
-        contents.account_email <>
+        contents.requester_data.requester_email <>
         "<br>Created: " <> contents.account_created
 
     message

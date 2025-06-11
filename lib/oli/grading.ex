@@ -270,23 +270,71 @@ defmodule Oli.Grading do
     |> max(1.0)
   end
 
-  def determine_page_out_of(_section_slug, %Revision{content: %{"model" => model}}) do
-    Enum.reduce(model, 0, fn e, count ->
-      case e["type"] do
-        "activity-reference" ->
-          count + 1
+  def determine_page_out_of(section_slug, %Revision{content: content}) do
+    {total_out, activity_ids} =
+      Oli.Resources.PageContent.flat_filter(
+        content,
+        &(&1["type"] == "activity-reference" || &1["type"] == "selection")
+      )
+      |> Enum.reduce({0, []}, fn e, {total_out_of, activity_ids} ->
+        case e["type"] do
+          "activity-reference" ->
+            {total_out_of, activity_ids ++ [e["activity_id"]]}
 
-        "selection" ->
-          case Selection.parse(e) do
-            {:ok, %Selection{count: selection_count}} -> selection_count + count
-            _ -> count
-          end
+          "selection" ->
+            case Selection.parse(e) do
+              {:ok, %Selection{count: selection_count, points_per_activity: points_per_activity}} ->
+                {selection_count * points_per_activity + total_out_of, activity_ids}
 
-        _ ->
-          count
-      end
+              _ ->
+                {total_out_of, activity_ids}
+            end
+
+          _ ->
+            {total_out_of, activity_ids}
+        end
+      end)
+
+    DeliveryResolver.from_resource_id(
+      section_slug,
+      activity_ids
+    )
+    |> Enum.reduce(total_out, fn activity, total_out_of ->
+      total_out_of + determine_activity_out_of(activity)
     end)
     |> max(1.0)
+  end
+
+  def determine_activity_out_of(%Revision{content: content}) do
+    case content["authoring"] do
+      nil ->
+        1.0
+
+      %{"parts" => parts} ->
+        case parts do
+          nil ->
+            1.0
+
+          p ->
+            Enum.reduce(p, 0.0, fn part, total_out_of ->
+              total_out_of + determine_responses_max_score(part["responses"])
+            end)
+        end
+    end
+  end
+
+  defp determine_responses_max_score(nil), do: 1.0
+
+  defp determine_responses_max_score(responses) do
+    Enum.reduce(responses, 0.0, fn response, max_score ->
+      case response["score"] do
+        nil ->
+          max_score
+
+        score ->
+          max(max_score, score)
+      end
+    end)
   end
 
   # reads the "custom / totalScore" nested key in a robust manner, with a default

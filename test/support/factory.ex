@@ -704,6 +704,47 @@ defmodule Oli.Factory do
     }
   end
 
+  def activity_registration_factory() do
+    %Oli.Activities.ActivityRegistration{
+      slug: sequence("activity_slug"),
+      title: sequence("Activity Title"),
+      icon: "icon",
+      description: sequence("Activity Description"),
+      delivery_element: sequence("delivery-element"),
+      authoring_element: sequence("authoring-element"),
+      delivery_script: sequence("delivery.js"),
+      authoring_script: sequence("authoring.js"),
+      allow_client_evaluation: false,
+      globally_available: true,
+      globally_visible: true,
+      variables: [],
+      generates_report: false
+    }
+  end
+
+  def platform_instance_factory() do
+    %Lti_1p3.DataProviders.EctoProvider.PlatformInstance{
+      id: System.unique_integer([:positive]),
+      name: sequence("Platform Instance"),
+      description: sequence("Platform Instance Description"),
+      client_id: sequence("client_id"),
+      custom_params: "some custom_params",
+      keyset_url: "some keyset_url",
+      login_url: "some login_url",
+      redirect_uris: "some redirect_uris",
+      target_link_uri: "some target_link_uri"
+    }
+  end
+
+  def lti_external_tool_activity_deployment_factory() do
+    %Oli.Lti.PlatformExternalTools.LtiExternalToolActivityDeployment{
+      deployment_id: Ecto.UUID.generate(),
+      activity_registration: build(:activity_registration),
+      platform_instance: build(:platform_instance),
+      status: :enabled
+    }
+  end
+
   # HELPERS
 
   defp anonymous_build(entity_name, attrs \\ %{}),

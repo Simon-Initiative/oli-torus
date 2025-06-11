@@ -560,29 +560,6 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
       {:password, user_id, new_value} ->
         do_update(:password, user_id, new_value, socket)
 
-      {:late_submit, user_id, :allow} ->
-        result =
-          Repo.transaction(fn ->
-            AutoSubmitCustodian.cancel(
-              socket.assigns.section.id,
-              socket.assigns.params.selected_assessment_id,
-              user_id
-            )
-
-            do_update(:late_submit, user_id, :allow, socket)
-          end)
-
-        case result do
-          {:ok, return} ->
-            return
-
-          {:error, _} ->
-            {:noreply,
-             socket
-             |> flash_to_liveview(:error, "ERROR: Student Exception could not be updated")
-             |> assign(modal_assigns: %{show: false})}
-        end
-
       {key, user_id, new_value} when new_value != "" ->
         do_update(key, user_id, new_value, socket)
 
@@ -722,9 +699,8 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
        to:
          Routes.live_path(
            socket,
-           OliWeb.Sections.AssessmentSettings.SettingsLive,
+           OliWeb.Sections.AssessmentSettings.StudentExceptionsLive,
            socket.assigns.section.slug,
-           :student_exceptions,
            socket.assigns.params.selected_assessment_id,
            update_params(socket.assigns.params, %{limit: limit, offset: offset})
          )
@@ -737,9 +713,8 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
        to:
          Routes.live_path(
            socket,
-           OliWeb.Sections.AssessmentSettings.SettingsLive,
+           OliWeb.Sections.AssessmentSettings.StudentExceptionsLive,
            socket.assigns.section.slug,
-           :student_exceptions,
            socket.assigns.params.selected_assessment_id,
            update_params(socket.assigns.params, %{sort_by: String.to_existing_atom(sort_by)})
          )
@@ -752,9 +727,8 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
        to:
          Routes.live_path(
            socket,
-           OliWeb.Sections.AssessmentSettings.SettingsLive,
+           OliWeb.Sections.AssessmentSettings.StudentExceptionsLive,
            socket.assigns.section.slug,
-           :student_exceptions,
            assessment_id
          )
      )}
@@ -888,8 +862,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
             :available_date,
             :max_attempts,
             :time_limit,
-            :late_submit,
-            :late_start,
+            :late_policy,
             :scoring,
             :grace_period,
             :retake_mode,
@@ -906,11 +879,17 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
   end
 
   defp do_update(key, user_id, new_value, socket) do
+    changes =
+      case key do
+        :late_policy -> determine_late_policy(new_value)
+        _ -> Map.new([{key, new_value}])
+      end
+
     Delivery.get_delivery_setting_by(%{
       resource_id: socket.assigns.params.selected_assessment_id,
       user_id: user_id
     })
-    |> StudentException.changeset(Map.new([{key, new_value}]))
+    |> StudentException.changeset(changes)
     |> Repo.update()
     |> case do
       {:error, _changeset} ->
@@ -958,6 +937,17 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
         Enum.sort_by(
           student_exceptions,
           fn se -> if se.scheduling_type == :due_by, do: se.end_date, else: nil end,
+          sort_order
+        )
+
+      :late_policy ->
+        Enum.sort_by(
+          student_exceptions,
+          fn
+            %{late_start: :allow, late_submit: :allow} -> 1
+            %{late_start: :disallow, late_submit: :allow} -> 2
+            %{late_start: :disallow, late_submit: :disallow} -> 3
+          end,
           sort_order
         )
 
@@ -1042,8 +1032,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
       case {key, Map.get(params, target_str)} do
         {key, value}
         when key in [
-               "late_submit",
-               "late_start",
+               "late_policy",
                "retake_mode",
                "assessment_mode",
                "feedback_mode",
@@ -1069,4 +1058,13 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
     send(self(), {:flash_message, type, message})
     socket
   end
+
+  defp determine_late_policy(:allow_late_start_and_late_submit),
+    do: %{late_start: :allow, late_submit: :allow}
+
+  defp determine_late_policy(:allow_late_submit_but_not_late_start),
+    do: %{late_start: :disallow, late_submit: :allow}
+
+  defp determine_late_policy(:disallow_late_start_and_late_submit),
+    do: %{late_start: :disallow, late_submit: :disallow}
 end

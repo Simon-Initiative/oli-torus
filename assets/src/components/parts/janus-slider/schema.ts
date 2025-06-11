@@ -74,6 +74,18 @@ export const simpleUISchema = {
   snapInterval: {
     classNames: 'col-span-12',
   },
+  correctFeedback: {
+    'ui:widget': 'textarea',
+    'ui:options': {
+      rows: 2,
+    },
+  },
+  incorrectFeedback: {
+    'ui:widget': 'textarea',
+    'ui:options': {
+      rows: 2,
+    },
+  },
   advancedFeedback: numericAdvancedFeedback.uiSchema,
 };
 
@@ -150,5 +162,5 @@ export const createSchema = (): Partial<SliderModel> => ({
   minimum: 0,
   maximum: 100,
   snapInterval: 1,
-  label: 'Slider',
+  label: 'Slider (Numeric)',
 });

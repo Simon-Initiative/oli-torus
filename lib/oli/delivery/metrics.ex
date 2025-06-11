@@ -21,7 +21,7 @@ defmodule Oli.Delivery.Metrics do
   }
 
   alias Oli.Accounts.User
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
 
   def progress_datatable_for(section_id, container_id) do
     learner_id = ContextRoles.get_role(:context_learner).id
@@ -213,6 +213,26 @@ defmodule Oli.Delivery.Metrics do
       nil -> 0
       {_, progress} -> progress
     end
+  end
+
+  @doc """
+  Calculate the progress for a given student for a list of pages.
+  """
+
+  def progress_for_pages(section_id, user_id, page_ids) do
+    from(ra in ResourceAccess,
+      where:
+        ra.resource_id in ^page_ids and
+          ra.section_id == ^section_id and
+          ra.user_id == ^user_id,
+      group_by: ra.resource_id,
+      select: {
+        ra.resource_id,
+        fragment("COALESCE(SUM(?), 0)", ra.progress)
+      }
+    )
+    |> Repo.all()
+    |> Enum.into(%{})
   end
 
   @doc """

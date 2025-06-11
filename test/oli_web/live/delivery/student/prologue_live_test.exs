@@ -6,7 +6,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
   import Oli.Factory
   import Ecto.Query, warn: false
 
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
   alias Oli.Delivery.Attempts.Core.{ResourceAccess}
   alias Oli.Delivery.Sections
   alias Oli.Resources.ResourceType
@@ -74,7 +74,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
     end
   end
 
-  defp create_elixir_project(_) do
+  defp create_elixir_project(_, add_schedule? \\ true) do
     author = insert(:author)
     project = insert(:project, authors: [author])
 
@@ -368,21 +368,23 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
     {:ok, section} = Sections.create_section_resources(section, publication)
     {:ok, _} = Sections.rebuild_contained_pages(section)
 
-    # schedule start and end date for unit 1 section resource
-    Sections.get_section_resource(section.id, unit_1_revision.resource_id)
-    |> Sections.update_section_resource(%{
-      start_date: ~U[2023-10-31 20:00:00Z],
-      end_date: ~U[2023-12-31 20:00:00Z]
-    })
+    if add_schedule? do
+      # schedule start and end date for unit 1 section resource
+      Sections.get_section_resource(section.id, unit_1_revision.resource_id)
+      |> Sections.update_section_resource(%{
+        start_date: ~U[2023-10-31 20:00:00Z],
+        end_date: ~U[2023-12-31 20:00:00Z]
+      })
 
-    # schedule start and end date for page 2 section resource
-    Sections.get_section_resource(section.id, page_2_revision.resource_id)
-    |> Sections.update_section_resource(%{
-      start_date: ~U[2023-11-10 20:00:00Z],
-      end_date: ~U[2023-11-14 20:00:00Z],
-      late_submit: :disallow,
-      scheduling_type: :due_by
-    })
+      # schedule start and end date for page 2 section resource
+      Sections.get_section_resource(section.id, page_2_revision.resource_id)
+      |> Sections.update_section_resource(%{
+        start_date: ~U[2023-11-10 20:00:00Z],
+        end_date: ~U[2023-11-14 20:00:00Z],
+        late_submit: :disallow,
+        scheduling_type: :due_by
+      })
+    end
 
     # enable collaboration spaces for all pages in the section
     {_total_page_count, _section_resources} =
@@ -1099,7 +1101,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
                "/sections/#{section.slug}/learn?target_resource_id=#{graded_adaptive_page_revision.resource_id}"
     end
 
-    test "page terms are shown correctly when page is not yet scheduled",
+    test "page due terms are shown when page is not yet scheduled (but course has scheduled resources)",
          %{
            conn: conn,
            user: user,
@@ -1110,8 +1112,23 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
 
       {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_5.slug))
 
-      assert view |> element("#page_terms") |> render() =~
+      assert view |> element("#page_due_terms") |> render() =~
                "This assignment is <b>not yet scheduled.</b>"
+    end
+
+    test "page due terms are not shown when course has no scheduled resources",
+         %{
+           conn: conn,
+           user: user
+         } do
+      %{section: section_without_schedule, page_5: page_5} = create_elixir_project(%{}, false)
+
+      enroll_and_mark_visited(user, section_without_schedule)
+
+      {:ok, view, _html} =
+        live(conn, Utils.prologue_live_path(section_without_schedule.slug, page_5.slug))
+
+      refute has_element?(view, "#page_due_terms")
     end
 
     test "page terms render the due date when is set", ctx do
@@ -1169,12 +1186,13 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       refute has_element?(view, "#page_time_limit_term", "<li id=\"page_time_limit_term\">")
     end
 
-    test "page terms render a late submit message", ctx do
+    test "page terms render a time limit late submit in both due_by and read_by scheduling types",
+         ctx do
       %{conn: conn, user: user, section: section, page_2: page_2} = ctx
 
       enroll_and_mark_visited(user, section)
 
-      params = %{late_submit: :allow, time_limit: 10}
+      params = %{late_submit: :allow, time_limit: 10, scheduling_type: :due_by}
 
       get_and_update_section_resource(section.id, page_2.resource_id, params)
 
@@ -1182,6 +1200,38 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
 
       assert view |> element("#page_submit_term") |> render() =~
                "<li id=\"page_submit_term\">\n  If you exceed this time, it will be marked late.\n</li>"
+
+      params = %{late_submit: :allow, time_limit: 10, scheduling_type: :read_by}
+
+      get_and_update_section_resource(section.id, page_2.resource_id, params)
+
+      {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
+
+      assert view |> element("#page_submit_term") |> render() =~
+               "<li id=\"page_submit_term\">\n  If you exceed this time, it will be marked late.\n</li>"
+    end
+
+    test "page terms render a late submit due date message only for pages with due date", ctx do
+      %{conn: conn, user: user, section: section, page_2: page_2} = ctx
+
+      enroll_and_mark_visited(user, section)
+
+      params = %{late_submit: :allow, time_limit: 0, scheduling_type: :due_by}
+
+      get_and_update_section_resource(section.id, page_2.resource_id, params)
+
+      {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
+
+      assert view |> element("#page_submit_term") |> render() =~
+               "<li id=\"page_submit_term\">\n  If you submit after the due date, it will be marked late.\n</li>"
+
+      params = %{late_submit: :allow, time_limit: 0, scheduling_type: :read_by}
+
+      get_and_update_section_resource(section.id, page_2.resource_id, params)
+
+      {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
+
+      refute view |> has_element?("#page_submit_term")
     end
 
     test "page terms render no message when late submit is disallowed", ctx do
@@ -1202,6 +1252,75 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
     defp get_and_update_section_resource(section_id, resource_id, updated_params) do
       Sections.get_section_resource(section_id, resource_id)
       |> Sections.update_section_resource(updated_params)
+    end
+  end
+
+  describe "Gated resources: Prologue view" do
+    setup [:user_conn, :create_elixir_project]
+
+    test "does not show the blocking gates warning when the resource is not gated", %{
+      conn: conn,
+      section: section,
+      user: user,
+      page_1: page_1
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_1.slug))
+
+      refute has_element?(view, "div[id='blocking_gates_warning']")
+      assert has_element?(view, "button[id='begin_attempt_button']")
+    end
+
+    test "does not show the blocking gates warning when the resource is gated but gating condition is not yet met",
+         %{
+           conn: conn,
+           section: section,
+           user: user,
+           page_1: page_1
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      _gating_condition =
+        gating_condition_fixture(%{
+          section_id: section.id,
+          resource_id: page_1.resource_id,
+          data: %{start_datetime: yesterday(), end_datetime: tomorrow()}
+        })
+
+      {:ok, section} = Oli.Delivery.Gating.update_resource_gating_index(section)
+
+      {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_1.slug))
+
+      refute has_element?(view, "div[id='blocking_gates_warning']")
+      assert has_element?(view, "button[id='begin_attempt_button']")
+    end
+
+    test "shows the blocking gates warning when the page is gated and the gating condition is met",
+         %{
+           conn: conn,
+           section: section,
+           user: user,
+           page_1: page_1
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      _gating_condition =
+        gating_condition_fixture(%{
+          section_id: section.id,
+          resource_id: page_1.resource_id,
+          data: %{end_datetime: yesterday()}
+        })
+
+      {:ok, section} = Oli.Delivery.Gating.update_resource_gating_index(section)
+
+      {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_1.slug))
+
+      assert has_element?(view, "div[id='blocking_gates_warning']")
+      refute has_element?(view, "button[id='begin_attempt_button']")
     end
   end
 

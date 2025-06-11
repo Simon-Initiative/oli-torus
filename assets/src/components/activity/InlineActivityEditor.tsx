@@ -147,6 +147,7 @@ export class InlineActivityEditor extends React.Component<
 
     const webComponentProps = {
       key: this.props.activityId,
+      activity_id: `activity_${this.props.activityId}`,
       model: JSON.stringify(this.props.model),
       editmode: new Boolean(this.props.editMode).toString(),
       projectslug: this.props.projectSlug,
@@ -189,7 +190,10 @@ export class InlineActivityEditor extends React.Component<
     );
 
     return (
-      <div className={classNames(styles.inlineActivityEditor, 'activity-editor')}>
+      <div
+        className={classNames(styles.inlineActivityEditor, 'activity-editor')}
+        data-qa="activity"
+      >
         <div className="d-flex align-items-baseline flex-grow-1 mr-2">
           <TextEditor
             onEdit={onTitleEdit}

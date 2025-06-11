@@ -22,11 +22,14 @@ import {
   listenForParentSurveySubmit,
   listenForReviewAttemptChange,
   resetAction,
+  submit,
 } from 'data/activities/DeliveryState';
 import { safelySelectStringInputs } from 'data/activities/utils';
 import { configureStore } from 'state/store';
 import { assertNever, valueOr } from 'utils/common';
 import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
+import { ScoreAsYouGoHeader } from '../common/ScoreAsYouGoHeader';
+import { ScoreAsYouGoSubmitReset } from '../common/ScoreAsYouGoSubmitReset';
 import { SubmitResetConnected } from '../common/delivery/SubmitReset';
 import { MathInput } from '../common/delivery/inputs/MathInput';
 import { initializePersistence } from '../common/delivery/persistence';
@@ -68,6 +71,7 @@ const Input = (props: InputProps) => {
 export const ShortAnswerComponent: React.FC = () => {
   const {
     model,
+    mode,
     state: activityState,
     context,
     onSubmitActivity,
@@ -133,9 +137,24 @@ export const ShortAnswerComponent: React.FC = () => {
     }
   };
 
+  const submitReset =
+    !uiState.activityContext.graded || uiState.activityContext.batchScoring ? (
+      <SubmitResetConnected
+        onReset={() => dispatch(resetAction(onResetActivity, resetParts))}
+        submitLabel={model.submitAndCompare ? 'Submit and Compare' : undefined}
+      />
+    ) : (
+      <ScoreAsYouGoSubmitReset
+        mode={mode}
+        onSubmit={() => dispatch(submit(onSubmitActivity))}
+        onReset={() => dispatch(resetAction(onResetActivity, undefined))}
+      />
+    );
+
   return (
     <div className="activity cata-activity">
       <div className="activity-content">
+        <ScoreAsYouGoHeader />
         <StemDeliveryConnected />
         <GradedPointsConnected />
 
@@ -154,10 +173,7 @@ export const ShortAnswerComponent: React.FC = () => {
           onBlur={() => deferredSave.current.flushPendingChanges(false)}
         />
 
-        <SubmitResetConnected
-          onReset={() => dispatch(resetAction(onResetActivity, resetParts))}
-          submitLabel={model.submitAndCompare ? 'Submit and Compare' : undefined}
-        />
+        {submitReset}
 
         <HintsDeliveryConnected
           partId={castPartId(activityState.parts[0].partId)}

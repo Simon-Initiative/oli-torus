@@ -15,6 +15,8 @@ const NavButtonAuthor: React.FC<AuthorPartComponentProps<NavButtonModel>> = (pro
     enabled = true,
     ariaLabel,
     transparent,
+    imageSource,
+    imagePosition,
   } = model;
 
   const styles: CSSProperties = {
@@ -35,6 +37,23 @@ const NavButtonAuthor: React.FC<AuthorPartComponentProps<NavButtonModel>> = (pro
   if (buttonColor) {
     styles.backgroundColor = buttonColor;
   }
+  const isVertical = imagePosition === 'Top' || imagePosition === 'Bottom';
+
+  //Apply these style only if button have image
+  if (imageSource?.length) {
+    styles.display = 'flex';
+    styles.flexDirection = isVertical
+      ? imagePosition === 'Top'
+        ? 'column'
+        : 'column-reverse'
+      : imagePosition === 'Left'
+      ? 'row'
+      : 'row-reverse';
+
+    styles.alignItems = 'center';
+    styles.gap = isVertical ? '1px' : '4px';
+  }
+
   const handleStylingChanges = () => {
     const styleChanges: any = {};
     if (width !== undefined) {
@@ -56,11 +75,20 @@ const NavButtonAuthor: React.FC<AuthorPartComponentProps<NavButtonModel>> = (pro
     'aria-label': ariaLabel,
     disabled: false,
   };
-
   return (
     <div className={`navigation-button`}>
       <button data-janus-type={tagName} {...buttonProps} style={styles}>
-        {title}
+        {imageSource?.length > 0 && (
+          <img
+            draggable="false"
+            src={imageSource}
+            style={{
+              height: isVertical && title ? '60%' : '100%',
+              width: title ? '50%' : '100%',
+            }}
+          />
+        )}
+        {title && <span>{title}</span>}
       </button>
     </div>
   );

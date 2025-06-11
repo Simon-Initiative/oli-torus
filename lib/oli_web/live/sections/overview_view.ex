@@ -35,7 +35,7 @@ defmodule OliWeb.Sections.OverviewView do
     previous ++
       [
         Breadcrumb.new(%{
-          full_title: section.title,
+          full_title: "Manage",
           link: ~p"/sections/#{section.slug}/manage"
         })
       ]
@@ -48,7 +48,7 @@ defmodule OliWeb.Sections.OverviewView do
         _ -> Map.get(params, "section_slug")
       end
 
-    case Mount.for(section_slug, session) do
+    case Mount.for(section_slug, socket) do
       {:error, e} ->
         Mount.handle_error(socket, {:error, e})
 
@@ -112,6 +112,7 @@ defmodule OliWeb.Sections.OverviewView do
         text_search: nil
       }
     )
+    |> Enum.filter(fn u -> !u.hidden end)
   end
 
   attr(:user, :any)
@@ -200,10 +201,18 @@ defmodule OliWeb.Sections.OverviewView do
           </li>
           <li>
             <a
+              href={~p"/sections/#{@section.slug}/lti_external_tools"}
+              class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
+            >
+              LTI 1.3 External Tools
+            </a>
+          </li>
+          <li>
+            <a
               href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.ScheduleView, @section.slug)}
               class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
             >
-              Scheduling
+              Scheduling and Assessment Settings
             </a>
           </li>
           <li>
@@ -271,22 +280,7 @@ defmodule OliWeb.Sections.OverviewView do
               Browse Collaborative Spaces
             </a>
           </li>
-          <li>
-            <a
-              href={
-                Routes.live_path(
-                  OliWeb.Endpoint,
-                  OliWeb.Sections.AssessmentSettings.SettingsLive,
-                  @section.slug,
-                  :settings,
-                  :all
-                )
-              }
-              class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
-            >
-              Assessment Settings
-            </a>
-          </li>
+
           <li>
             <button
               type="button"
@@ -330,20 +324,6 @@ defmodule OliWeb.Sections.OverviewView do
           "is_delivery" => true
         }
       ) %>
-
-      <Group.render label="Agenda" description="Include Schedule on Home Screen">
-        <section>
-          <div class="inline-flex py-2 mb-2">
-            <span>Enable Agenda</span>
-            <.toggle_switch
-              class="ml-4"
-              checked={@section.agenda}
-              on_toggle="toggle_agenda"
-              name="toggle_agenda"
-            />
-          </div>
-        </section>
-      </Group.render>
 
       <Group.render label="Scoring" description="View and manage student scores and progress">
         <ul class="link-list">
@@ -683,14 +663,6 @@ defmodule OliWeb.Sections.OverviewView do
     socket =
       socket
       |> put_flash(:info, "AI assistant activation settings updated successfully")
-
-    {:noreply, assign(socket, section: section)}
-  end
-
-  def handle_event("toggle_agenda", _params, socket) do
-    section = socket.assigns.section
-
-    {:ok, section} = Sections.update_section(section, %{agenda: !section.agenda})
 
     {:noreply, assign(socket, section: section)}
   end

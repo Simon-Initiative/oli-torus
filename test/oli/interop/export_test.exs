@@ -62,7 +62,7 @@ defmodule Oli.Interop.ExportTest do
     test "carry over products and their settings", %{section: section, export: export} do
       product_id = section.id
 
-      {:ok, product_json} = Jason.decode(Map.get(export, ~c"#{product_id}.json"))
+      {:ok, product_json} = Jason.decode(Map.get(export, ~c"_product-#{product_id}.json"))
 
       assert product_json["type"] == "Product"
       assert product_json["title"] == section.title

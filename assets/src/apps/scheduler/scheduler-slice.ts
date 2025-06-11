@@ -1,4 +1,4 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createAction, createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import { DateWithoutTime } from 'epoq';
 import { toDateWithoutTime } from './date-utils';
@@ -7,6 +7,7 @@ import {
   clearSectionSchedule,
   scheduleAppFlushChanges,
   scheduleAppStartup,
+  updateSectionAgenda,
 } from './scheduling-thunk';
 
 export enum ScheduleItemType {
@@ -36,6 +37,7 @@ export interface HierarchyItemSrc {
   numbering_level: number;
   manually_scheduled: boolean;
   graded: boolean;
+  removed_from_schedule: boolean;
 }
 
 // Modified version we use with dates parsed
@@ -60,6 +62,9 @@ export interface SchedulerState {
   errorMessage: string | null;
   weekdays: boolean[];
   preferredSchedulingTime: TimeParts;
+  expandedContainers: Record<number, boolean>;
+  searchQuery: string;
+  agenda: boolean;
 }
 
 export const initSchedulerState = (): SchedulerState => ({
@@ -80,6 +85,9 @@ export const initSchedulerState = (): SchedulerState => ({
     minute: 59,
     second: 59,
   },
+  expandedContainers: {},
+  searchQuery: '',
+  agenda: false,
 });
 
 const toDateTime = (str: string, preferredSchedulingTime: TimeParts) => {
@@ -156,10 +164,23 @@ const descendentIds = (item: HierarchyItem, schedule: HierarchyItem[]) => {
   return ids;
 };
 
+const removeDescendents = (item: HierarchyItem, schedule: HierarchyItem[]) => {
+  for (const childId of item.children) {
+    const child = getScheduleItem(childId, schedule);
+    if (child) {
+      child.removed_from_schedule = true;
+      removeDescendents(child, schedule);
+    }
+  }
+};
+
 const neverScheduled = (schedule: HierarchyItem[]) =>
   !schedule.find((i) => i.startDate === null || i.endDate === null || i.manually_scheduled);
 
 interface UnlockPayload {
+  itemId: number;
+}
+interface RemovePayload {
   itemId: number;
 }
 
@@ -179,6 +200,11 @@ const datesEqual = (a: DateWithoutTime | null, b: DateWithoutTime | null) => {
   return a.getDaysSinceEpoch() === b.getDaysSinceEpoch();
 };
 
+export const expandVisibleContainers = createAction<number[]>('scheduler/expandVisibleContainers');
+export const collapseVisibleContainers = createAction<number[]>(
+  'scheduler/collapseVisibleContainers',
+);
+
 const schedulerSlice = createSlice({
   name: 'scheduler',
   initialState,
@@ -194,6 +220,29 @@ const schedulerSlice = createSlice({
       const mutableItem = getScheduleItem(action.payload.itemId, state.schedule);
       if (mutableItem) {
         mutableItem.manually_scheduled = false;
+      }
+    },
+    removeScheduleItem(state, action: PayloadAction<RemovePayload>) {
+      const mutableItem = getScheduleItem(action.payload.itemId, state.schedule);
+      if (mutableItem) {
+        mutableItem.removed_from_schedule = true;
+        state.dirty.push(mutableItem.id);
+        removeDescendents(mutableItem, state.schedule);
+        state.dirty.push(...descendentIds(mutableItem, state.schedule));
+        if (state.schedule && state.startDate && state.endDate) {
+          const root = getScheduleRoot(state.schedule);
+          root &&
+            resetScheduleItem(
+              root,
+              state.startDate,
+              state.endDate,
+              state.schedule,
+              true,
+              state.weekdays,
+              state.preferredSchedulingTime,
+            );
+          state.dirty = state.schedule.map((item) => item.id);
+        }
       }
     },
     moveScheduleItem(state, action: PayloadAction<MovePayload>) {
@@ -333,6 +382,29 @@ const schedulerSlice = createSlice({
     dismissError(state) {
       state.errorMessage = null;
     },
+    toggleContainer(state, action: PayloadAction<number>) {
+      const id = action.payload;
+      state.expandedContainers[id] = !state.expandedContainers[id];
+    },
+    setContainersExpanded: (state, action: PayloadAction<{ ids: number[]; expanded: boolean }>) => {
+      action.payload.ids.forEach((id) => {
+        state.expandedContainers[id] = action.payload.expanded;
+      });
+    },
+    expandAllContainers(state) {
+      const containers = state.schedule.filter(
+        (item) => item.resource_type_id === ScheduleItemType.Container,
+      );
+      containers.forEach((item) => {
+        state.expandedContainers[item.id] = true;
+      });
+    },
+    collapseAllContainers(state) {
+      state.expandedContainers = {};
+    },
+    setSearchQuery: (state, action) => {
+      state.searchQuery = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(clearSectionSchedule.pending, (state, action) => {
@@ -366,6 +438,20 @@ const schedulerSlice = createSlice({
     builder.addCase(scheduleAppStartup.rejected, (state, action) => {
       state.errorMessage = 'Could not load schedule.';
     });
+    builder
+      .addCase(expandVisibleContainers, (state, action) => {
+        action.payload.forEach((id) => {
+          state.expandedContainers[id] = true;
+        });
+      })
+      .addCase(collapseVisibleContainers, (state, action) => {
+        action.payload.forEach((id) => {
+          state.expandedContainers[id] = false;
+        });
+      });
+    builder.addCase(updateSectionAgenda.fulfilled, (state, action) => {
+      state.agenda = action.payload.agenda;
+    });
     builder.addCase(scheduleAppStartup.fulfilled, (state, action) => {
       const {
         start_date,
@@ -391,6 +477,7 @@ const schedulerSlice = createSlice({
       state.endDate = new DateWithoutTime(end_date);
       state.schedule = buildHierarchyItems(schedule, state.preferredSchedulingTime);
       state.sectionSlug = section_slug;
+      state.agenda = action.payload.agenda;
       if (state.startDate && state.endDate && neverScheduled(state.schedule)) {
         const root = getScheduleRoot(state.schedule);
         root &&
@@ -414,8 +501,26 @@ export const {
   resetSchedule,
   selectItem,
   unlockScheduleItem,
+  removeScheduleItem,
   changeScheduleType,
   dismissError,
+  toggleContainer,
+  expandAllContainers,
+  collapseAllContainers,
 } = schedulerSlice.actions;
 
 export const schedulerSliceReducer = schedulerSlice.reducer;
+
+export const { setSearchQuery } = schedulerSlice.actions;
+
+export const isContainerExpanded = (state: any, id: number): boolean => {
+  return !!state.scheduler.expandedContainers[id];
+};
+
+export const hasContainers = (state: any) =>
+  state.scheduler.schedule.some(
+    (item: HierarchyItem) =>
+      item.resource_type_id === ScheduleItemType.Container && item.numbering_level !== 0,
+  );
+
+export const { setContainersExpanded } = schedulerSlice.actions;

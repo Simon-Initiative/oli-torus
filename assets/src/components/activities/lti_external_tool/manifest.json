@@ -1,0 +1,16 @@
+{
+  "id": "lti_external_tool",
+  "friendlyName": "LTI External Tool",
+  "petiteLabel": "LTI",
+  "description": "LTI external tool that can be used to link to an external resource.",
+  "icon": "plug",
+  "delivery": {
+    "element": "lti-external-tool-delivery",
+    "entry": "./delivery-entry.ts"
+  },
+  "authoring": {
+    "element": "lti-external-tool-authoring",
+    "entry": "./authoring-entry.ts"
+  },
+  "activityRegistration": false
+}

@@ -16,6 +16,7 @@ import {
   listenForParentSurveySubmit,
   listenForReviewAttemptChange,
   resetAction,
+  submit,
 } from 'data/activities/DeliveryState';
 import { Choices } from 'data/activities/model/choices';
 import { initialPartInputs, studentInputToString } from 'data/activities/utils';
@@ -23,6 +24,8 @@ import { elementsOfType } from 'data/content/utils';
 import { configureStore } from 'state/store';
 import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
 import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
+import { ScoreAsYouGoHeader } from '../common/ScoreAsYouGoHeader';
+import { ScoreAsYouGoSubmitReset } from '../common/ScoreAsYouGoSubmitReset';
 import { SubmitResetConnected } from '../common/delivery/SubmitReset';
 import { castPartId } from '../common/utils';
 import * as ActivityTypes from '../types';
@@ -31,6 +34,7 @@ import { OrderingSchema } from './schema';
 export const OrderingComponent: React.FC = () => {
   const {
     model,
+    mode,
     context,
     state: activityState,
     onSubmitActivity,
@@ -135,9 +139,23 @@ export const OrderingComponent: React.FC = () => {
     setPlayingAll(false);
   };
 
+  const submitReset =
+    !uiState.activityContext.graded || uiState.activityContext.batchScoring ? (
+      <SubmitResetConnected
+        onReset={() => dispatch(resetAction(onResetActivity, defaultPartInputs))}
+      />
+    ) : (
+      <ScoreAsYouGoSubmitReset
+        mode={mode}
+        onSubmit={() => dispatch(submit(onSubmitActivity))}
+        onReset={() => dispatch(resetAction(onResetActivity, undefined))}
+      />
+    );
+
   return (
     <div className="activity ordering-activity">
       <div className="activity-content">
+        <ScoreAsYouGoHeader />
         <StemDeliveryConnected />
         <GradedPointsConnected />
         <ResponseChoices
@@ -160,9 +178,7 @@ export const OrderingComponent: React.FC = () => {
           </div>
         )}
 
-        <SubmitResetConnected
-          onReset={() => dispatch(resetAction(onResetActivity, defaultPartInputs))}
-        />
+        {submitReset}
 
         <HintsDeliveryConnected
           partId={castPartId(activityState.parts[0].partId)}

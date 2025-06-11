@@ -18,11 +18,14 @@ import {
   resetAndSubmitPart,
   resetPart,
   setSelection,
+  submit,
   submitPart,
 } from 'data/activities/DeliveryState';
 import { safelySelectFiles } from 'data/activities/utils';
 import { configureStore } from 'state/store';
 import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
+import { ScoreAsYouGoHeader } from '../common/ScoreAsYouGoHeader';
+import { ScoreAsYouGoSubmitReset } from '../common/ScoreAsYouGoSubmitReset';
 import { castPartId } from '../common/utils';
 import { DragCanvas, ResetListener } from './DragCanvas';
 import { FocusedFeedback } from './FocusedFeedback';
@@ -162,26 +165,9 @@ export const CustomDnDComponent: React.FC = () => {
 
   const editMode = mode !== 'review' && uiState.attemptState.dateEvaluated === null;
 
-  return (
-    <div className="activity cata-activity">
-      <div className="activity-content">
-        <StemDeliveryConnected />
-        <DragCanvas
-          model={model}
-          initialState={initialState}
-          editMode={editMode && !working}
-          activityAttemptGuid={uiState.attemptState.attemptGuid}
-          partAttemptGuids={uiState.attemptState.parts.map((p: PartState) => p.attemptGuid)}
-          onRegisterResetCallback={(listener) => {
-            setResetListener(() => listener);
-          }}
-          onDrop={saveOrSubmit}
-          onFocusChange={onFocusChange}
-          onDetach={onDetach}
-        />
-        <GradedPointsConnected />
-
-        {working || (
+  const submitReset =
+    !uiState.activityContext.graded || uiState.activityContext.batchScoring
+      ? working || (
           <ResetButtonConnected
             onReset={async () => {
               if (resetListener !== null) {
@@ -199,7 +185,49 @@ export const CustomDnDComponent: React.FC = () => {
               setWorking(false);
             }}
           />
-        )}
+        )
+      : working || (
+          <ScoreAsYouGoSubmitReset
+            mode={mode}
+            onSubmit={() => dispatch(submit(onSubmitActivity))}
+            onReset={async () => {
+              if (resetListener !== null) {
+                resetListener();
+              }
+
+              const partInputs = uiState.attemptState.parts.reduce((m: any, p) => {
+                m[p.partId] = '';
+                return m;
+              }, {});
+              setWorking(true);
+              await dispatch(resetAction(onResetActivity, partInputs));
+              setWorking(false);
+            }}
+          />
+        );
+
+  return (
+    <div className="activity cata-activity">
+      <div className="activity-content">
+        <ScoreAsYouGoHeader />
+        <StemDeliveryConnected />
+        <DragCanvas
+          model={model}
+          initialState={initialState}
+          editMode={editMode && !working}
+          activityAttemptGuid={uiState.attemptState.attemptGuid}
+          partAttemptGuids={uiState.attemptState.parts.map((p: PartState) => p.attemptGuid)}
+          onRegisterResetCallback={(listener) => {
+            setResetListener(() => listener);
+          }}
+          onDrop={saveOrSubmit}
+          onFocusChange={onFocusChange}
+          onDetach={onDetach}
+        />
+        <GradedPointsConnected />
+
+        {submitReset}
+
         <FocusedHints focusedPart={focusedPart} />
         {working ? <WorkingMessage /> : <FocusedFeedback focusedPart={focusedPart} />}
       </div>

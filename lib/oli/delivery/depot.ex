@@ -146,4 +146,55 @@ defmodule Oli.Delivery.Depot do
     DepotDesc.table_name(depot_desc, table_id)
     |> :ets.select_count([match_spec])
   end
+
+  @doc """
+  Returns true if any entries match the given conditions.
+
+  AND semantics:
+    Pass a single keyword list of filters, all of which must hold.
+    Example: `exists?(desc, table_id, [start_date: {:!=, nil}, hidden: false])`
+    Equivalent to the expression:
+      start_date != nil and hidden == false
+
+  OR semantics:
+    Pass a list of keyword lists. Each inner list is AND'ed, and groups are OR'ed.
+    Example:
+      exists?(desc, table_id, [
+        [start_date: {:!=, nil}, hidden: false],
+        [end_date:   {:!=, nil}]
+      ])
+
+    Equivalent to the expression:
+      (start_date != nil and hidden == false) or (end_date != nil)
+  """
+  def exists?(%DepotDesc{} = depot_desc, table_id, filters) when is_list(filters) do
+    groups =
+      cond do
+        Keyword.keyword?(filters) ->
+          # AND-case
+          [filters]
+
+        Enum.all?(filters, &Keyword.keyword?(&1)) ->
+          # OR-case
+          filters
+
+        true ->
+          raise ArgumentError,
+                "exists?/3 expects a keyword list or a list of keyword lists, got: #{inspect(filters)}"
+      end
+
+    # Translate each group into an ETS match spec
+    specs =
+      Enum.map(groups, fn conds ->
+        {mh, gs, _} = MatchSpecTranslator.translate(depot_desc, conds)
+        {mh, gs, [true]}
+      end)
+
+    DepotDesc.table_name(depot_desc, table_id)
+    |> :ets.select(specs, 1)
+    |> case do
+      :"$end_of_table" -> false
+      _ -> true
+    end
+  end
 end

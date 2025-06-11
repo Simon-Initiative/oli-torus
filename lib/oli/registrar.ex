@@ -12,6 +12,10 @@ defmodule Oli.Registrar do
       end
     end)
     |> Enum.map(&Manifest.parse/1)
+    |> Enum.filter(fn {:ok, m} ->
+      # filter out any activities that have activityRegistration set to false
+      m.activityRegistration
+    end)
     |> Enum.map(fn {:ok, m} ->
       m =
         if(MapSet.member?(global, m.id)) do

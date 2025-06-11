@@ -24,6 +24,7 @@ import {
   resetAction,
   resetAndSavePart,
   resetAndSubmitPart,
+  submit,
   submitPart,
 } from 'data/activities/DeliveryState';
 import { getByUnsafe } from 'data/activities/model/utils';
@@ -31,6 +32,8 @@ import { safelySelectStringInputs } from 'data/activities/utils';
 import { defaultWriterContext } from 'data/content/writers/context';
 import { configureStore } from 'state/store';
 import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
+import { ScoreAsYouGoHeader } from '../common/ScoreAsYouGoHeader';
+import { ScoreAsYouGoSubmitReset } from '../common/ScoreAsYouGoSubmitReset';
 import { SubmitResetConnected } from '../common/delivery/SubmitReset';
 import { initializePersistence } from '../common/delivery/persistence';
 import { MultiInput } from '../multi_input/schema';
@@ -363,6 +366,7 @@ export const ResponseMultiInputComponent: React.FC = () => {
   return (
     <div className="activity response-multi-input-activity">
       <div className="activity-content">
+        <ScoreAsYouGoHeader />
         <StemDelivery
           className="form-inline"
           stem={(uiState.model as ResponseMultiInputSchema).stem}
@@ -384,6 +388,12 @@ export const ResponseMultiInputComponent: React.FC = () => {
             submitDisabled={false}
           />
         )}
+
+        <ScoreAsYouGoSubmitReset
+          mode={mode}
+          onSubmit={() => dispatch(submit(onSubmitActivity))}
+          onReset={() => dispatch(resetAction(onResetActivity, undefined))}
+        />
 
         {hintsShown.map((partId) => (
           <HintsDeliveryConnected

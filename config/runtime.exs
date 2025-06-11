@@ -240,6 +240,7 @@ if config_env() == :prod do
   """
 
   config :oli, :vendor_property,
+    knowledgebase_url: System.get_env("KNOWLEDGEBASE_URL", "#"),
     workspace_logo:
       System.get_env("VENDOR_PROPERTY_WORKSPACE_LOGO", "/branding/prod/oli_torus_icon.png"),
     product_full_name:
@@ -360,7 +361,7 @@ if config_env() == :prod do
   if System.get_env("SSL_CERT_PATH") && System.get_env("SSL_KEY_PATH") do
     config :oli, OliWeb.Endpoint,
       https: [
-        port: 443,
+        port: String.to_integer(System.get_env("HTTPS_PORT", "443")),
         otp_app: :oli,
         keyfile: System.get_env("SSL_CERT_PATH", "priv/ssl/localhost.key"),
         certfile: System.get_env("SSL_KEY_PATH", "priv/ssl/localhost.crt"),

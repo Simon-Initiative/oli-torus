@@ -18,6 +18,7 @@ export interface JanusHubSpokeItemProperties extends JanusCustomCss {
   configureMode?: boolean;
   verticalGap?: number;
   spokeFeedback?: string;
+  completedSpokeCount?: number;
 }
 
 export interface Item {
@@ -213,6 +214,24 @@ export const simpleUiSchema = {
     'spokeFeedback',
     'commonErrorFeedback',
   ],
+  correctFeedback: {
+    'ui:widget': 'textarea',
+    'ui:options': {
+      rows: 2,
+    },
+  },
+  incorrectFeedback: {
+    'ui:widget': 'textarea',
+    'ui:options': {
+      rows: 2,
+    },
+  },
+  spokeFeedback: {
+    'ui:widget': 'textarea',
+    'ui:options': {
+      rows: 2,
+    },
+  },
   layoutType: { classNames: 'col-span-12 spokeItem' },
   spokeItems: { 'ui:widget': 'SpokeOptionsEditor', classNames: 'col-span-12 spokeItem' },
   hubCompletionDestination: { 'ui:widget': 'SpokeCompletedOption' },

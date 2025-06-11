@@ -154,7 +154,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
       Metrics.avg_score_across_for_pages(section, page_ids, student_ids)
 
     attempts_across_for_pages =
-      Metrics.attempts_across_for_pages(section, page_ids, student_ids)
+      Metrics.attempts_across_for_pages(section, page_ids, student_ids, false)
 
     resources
     |> Enum.map(fn r ->
@@ -178,17 +178,27 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
     |> return_page(section, students)
   end
 
-  def get_students(section, params \\ %{container_id: nil}) do
+  @valid_contexts ~w(context_administrator context_content_developer context_instructor context_learner context_mentor context_manager context_member context_officer)a
+  def get_students(section, context_role)
+      when is_atom(context_role) and context_role in @valid_contexts do
+    get_students(section, [context_role])
+  end
+
+  def get_students(section, context_roles) when is_list(context_roles) do
+    get_students(section, %{container_id: nil}, context_roles)
+  end
+
+  def get_students(section, params \\ %{container_id: nil}, context_roles \\ @valid_contexts) do
     case params[:page_id] do
       nil ->
-        Sections.enrolled_students(section.slug)
+        Sections.enrolled_students(section.slug, context_roles)
         |> add_students_progress(section.id, params.container_id)
         |> add_students_last_interaction(section, params.container_id)
         |> add_students_overall_proficiency(section, params.container_id)
         |> maybe_add_certificates(section)
 
       page_id ->
-        Sections.enrolled_students(section.slug)
+        Sections.enrolled_students(section.slug, context_roles)
         |> add_students_progress_for_page(section.id, page_id)
         |> add_students_last_interaction_for_page(section.slug, page_id)
         |> add_students_overall_proficiency_for_page(section, page_id)

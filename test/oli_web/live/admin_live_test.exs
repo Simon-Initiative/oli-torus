@@ -14,13 +14,9 @@ defmodule OliWeb.AdminLiveTest do
   @live_view_users_route Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersView)
   @live_view_authors_route Routes.live_path(OliWeb.Endpoint, OliWeb.Users.AuthorsView)
 
-  defp live_view_user_detail_route(user_id) do
-    Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, user_id)
-  end
+  defp live_view_user_detail_route(user_id), do: ~p"/admin/users/#{user_id}"
 
-  defp live_view_author_detail_route(author_id) do
-    Routes.live_path(OliWeb.Endpoint, OliWeb.Users.AuthorsDetailView, author_id)
-  end
+  defp live_view_author_detail_route(author_id), do: ~p"/admin/authors/#{author_id}"
 
   defp create_user(_conn) do
     user = insert(:user)
@@ -119,12 +115,12 @@ defmodule OliWeb.AdminLiveTest do
 
       assert has_element?(
                view,
-               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersView)}\"]"
+               "a[href=\"#{~p"/admin/users"}\"]"
              )
 
       assert has_element?(
                view,
-               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Users.AuthorsView)}\"]"
+               "a[href=\"#{~p"/admin/authors"}\"]"
              )
 
       assert has_element?(
@@ -134,17 +130,22 @@ defmodule OliWeb.AdminLiveTest do
 
       assert has_element?(
                view,
-               "a[href=\"#{Routes.invite_path(OliWeb.Endpoint, :index)}\"]"
+               "a[href=\"#{~p"/admin/invite"}\"]"
              )
 
       assert has_element?(
                view,
-               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.CommunityLive.IndexView)}\"]"
+               "a[href=\"#{~p"/authoring/communities"}\"]"
              )
 
       assert has_element?(
                view,
-               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.RegistrationsView)}\"]"
+               "a[href=\"#{~p"/admin/registrations"}\"]"
+             )
+
+      assert has_element?(
+               view,
+               "a[href=\"#{~p"/admin/external_tools"}\"]"
              )
     end
 
@@ -156,27 +157,27 @@ defmodule OliWeb.AdminLiveTest do
 
       assert has_element?(
                view,
-               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive)}\"]"
+               "a[href=\"#{~p"/authoring/projects"}\"]"
              )
 
       assert has_element?(
                view,
-               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Products.ProductsView)}\"]"
+               "a[href=\"#{~p"/admin/products"}\"]"
              )
 
       assert has_element?(
                view,
-               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.SectionsView)}\"]"
+               "a[href=\"#{~p"/admin/sections"}\"]"
              )
 
       assert has_element?(
                view,
-               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.Ingest)}\"]"
+               "a[href=\"#{~p"/admin/ingest"}\"]"
              )
 
       assert has_element?(
                view,
-               "a[href=\"#{Routes.brand_path(OliWeb.Endpoint, :index)}\"]"
+               "a[href=\"#{~p"/admin/brands"}\"]"
              )
     end
 
@@ -188,31 +189,31 @@ defmodule OliWeb.AdminLiveTest do
 
       assert has_element?(
                view,
-               "a[href=\"#{Routes.activity_manage_path(OliWeb.Endpoint, :index)}\"]",
+               "a[href=\"#{~p"/admin/manage_activities"}\"]",
                "Manage Activities"
              )
 
       assert has_element?(
                view,
-               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.SystemMessageLive.IndexView)}\"]",
+               "a[href=\"#{~p"/admin/system_messages"}\"]",
                "Manage System Message Banner"
              )
 
       assert has_element?(
                view,
-               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Features.FeaturesLive)}\"]",
+               "a[href=\"#{~p"/admin/features"}\"]",
                "Feature Flags and Logging"
              )
 
       assert has_element?(
                view,
-               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.ApiKeys.ApiKeysLive)}\"]",
+               "a[href=\"#{~p"/admin/api_keys"}\"]",
                "Manage Third-Party API Keys"
              )
 
       assert has_element?(
                view,
-               "a[href=\"#{~p"/admin/dashboard"}\"]",
+               "a[href=\"#{~p"/admin/dashboard/home"}\"]",
                "View System Performance Dashboard"
              )
     end
@@ -234,13 +235,13 @@ defmodule OliWeb.AdminLiveTest do
 
       assert has_element?(
                view,
-               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersView)}\"]",
+               "a[href=\"#{~p"/admin/users"}\"]",
                "Manage Students and Instructor Accounts"
              )
 
       assert has_element?(
                view,
-               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Users.AuthorsView)}\"]",
+               "a[href=\"#{~p"/admin/authors"}\"]",
                "Manage Authoring Accounts"
              )
 
@@ -252,20 +253,26 @@ defmodule OliWeb.AdminLiveTest do
 
       assert has_element?(
                view,
-               "a[href=\"#{Routes.invite_path(OliWeb.Endpoint, :index)}\"]",
+               "a[href=\"#{~p"/admin/invite"}\"]",
                "Invite New Authors"
              )
 
       assert has_element?(
                view,
-               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.CommunityLive.IndexView)}\"]",
+               "a[href=\"#{~p"/authoring/communities"}\"]",
                "Manage Communities"
              )
 
       assert has_element?(
                view,
-               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.RegistrationsView)}\"]",
+               "a[href=\"#{~p"/admin/registrations"}\"]",
                "Manage LTI 1.3 Registrations"
+             )
+
+      assert has_element?(
+               view,
+               "a[href=\"#{~p"/admin/external_tools"}\"]",
+               "Manage LTI 1.3 External Tools"
              )
     end
 
@@ -277,25 +284,25 @@ defmodule OliWeb.AdminLiveTest do
 
       assert has_element?(
                view,
-               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive)}\"]",
+               "a[href=\"#{~p"/authoring/projects"}\"]",
                "Browse all Projects"
              )
 
       assert has_element?(
                view,
-               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Products.ProductsView)}\"]",
+               "a[href=\"#{~p"/admin/products"}\"]",
                "Browse all Products"
              )
 
       assert has_element?(
                view,
-               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.SectionsView)}\"]",
+               "a[href=\"#{~p"/admin/sections"}\"]",
                "Browse all Course Sections"
              )
 
       assert has_element?(
                view,
-               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.Ingest)}\"]",
+               "a[href=\"#{~p"/admin/ingest"}\"]",
                "Ingest Project"
              )
 
@@ -307,13 +314,13 @@ defmodule OliWeb.AdminLiveTest do
 
       assert has_element?(
                view,
-               "a[href=\"#{Routes.brand_path(OliWeb.Endpoint, :index)}\"]",
+               "a[href=\"#{~p"/admin/brands"}\"]",
                "Manage Branding"
              )
 
       assert has_element?(
                view,
-               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.PublisherLive.IndexView)}\"]",
+               "a[href=\"#{~p"/admin/publishers"}\"]",
                "Manage Publishers"
              )
     end
@@ -326,31 +333,31 @@ defmodule OliWeb.AdminLiveTest do
 
       refute has_element?(
                view,
-               "a[href=\"#{Routes.activity_manage_path(OliWeb.Endpoint, :index)}\"]",
+               "a[href=\"#{~p"/admin/manage_activities"}\"]",
                "Manage Activities"
              )
 
       refute has_element?(
                view,
-               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.SystemMessageLive.IndexView)}\"]",
+               "a[href=\"#{~p"/admin/system_messages"}\"]",
                "Manage System Message Banner"
              )
 
       refute has_element?(
                view,
-               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Features.FeaturesLive)}\"]",
+               "a[href=\"#{~p"/admin/features"}\"]",
                "Feature Flags and Logging"
              )
 
       refute has_element?(
                view,
-               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.ApiKeys.ApiKeysLive)}\"]",
+               "a[href=\"#{~p"/admin/api_keys"}\"]",
                "Manage Third-Party API Keys"
              )
 
       refute has_element?(
                view,
-               "a[href=\"#{~p"/admin/dashboard"}\"]",
+               "a[href=\"#{~p"/admin/dashboard/home"}\"]",
                "View System Performance Dashboard "
              )
     end
@@ -372,13 +379,13 @@ defmodule OliWeb.AdminLiveTest do
 
       refute has_element?(
                view,
-               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersView)}\"]",
+               "a[href=\"#{~p"/admin/users"}\"]",
                "Manage Students and Instructor Accounts"
              )
 
       refute has_element?(
                view,
-               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Users.AuthorsView)}\"]",
+               "a[href=\"#{~p"/admin/authors"}\"]",
                "Manage Authoring Accounts"
              )
 
@@ -390,20 +397,26 @@ defmodule OliWeb.AdminLiveTest do
 
       refute has_element?(
                view,
-               "a[href=\"#{Routes.invite_path(OliWeb.Endpoint, :index)}\"]",
+               "a[href=\"#{~p"/admin/invite"}\"]",
                "Invite New Authors"
              )
 
       refute has_element?(
                view,
-               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.CommunityLive.IndexView)}\"]",
+               "a[href=\"#{~p"/authoring/communities"}\"]",
                "Manage Communities"
              )
 
       refute has_element?(
                view,
-               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.RegistrationsView)}\"]",
+               "a[href=\"#{~p"/admin/registrations"}\"]",
                "Manage LTI 1.3 Registrations"
+             )
+
+      refute has_element?(
+               view,
+               "a[href=\"#{~p"/admin/external_tools"}\"]",
+               "Manage LTI 1.3 External Tools"
              )
     end
 
@@ -415,25 +428,25 @@ defmodule OliWeb.AdminLiveTest do
 
       assert has_element?(
                view,
-               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive)}\"]",
+               "a[href=\"#{~p"/authoring/projects"}\"]",
                "Browse all Projects"
              )
 
       assert has_element?(
                view,
-               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Products.ProductsView)}\"]",
+               "a[href=\"#{~p"/admin/products"}\"]",
                "Browse all Products"
              )
 
       assert has_element?(
                view,
-               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.SectionsView)}\"]",
+               "a[href=\"#{~p"/admin/sections"}\"]",
                "Browse all Course Sections"
              )
 
       assert has_element?(
                view,
-               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.Ingest)}\"]",
+               "a[href=\"#{~p"/admin/ingest"}\"]",
                "Ingest Project"
              )
 
@@ -445,13 +458,13 @@ defmodule OliWeb.AdminLiveTest do
 
       assert has_element?(
                view,
-               "a[href=\"#{Routes.brand_path(OliWeb.Endpoint, :index)}\"]",
+               "a[href=\"#{~p"/admin/brands"}\"]",
                "Manage Branding"
              )
 
       assert has_element?(
                view,
-               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.PublisherLive.IndexView)}\"]",
+               "a[href=\"#{~p"/admin/publishers"}\"]",
                "Manage Publishers"
              )
     end
@@ -464,25 +477,25 @@ defmodule OliWeb.AdminLiveTest do
 
       refute has_element?(
                view,
-               "a[href=\"#{Routes.activity_manage_path(OliWeb.Endpoint, :index)}\"]",
+               "a[href=\"#{~p"/admin/manage_activities"}\"]",
                "Manage Activities"
              )
 
       refute has_element?(
                view,
-               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.SystemMessageLive.IndexView)}\"]",
+               "a[href=\"#{~p"/admin/system_messages"}\"]",
                "Manage System Message Banner"
              )
 
       refute has_element?(
                view,
-               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Features.FeaturesLive)}\"]",
+               "a[href=\"#{~p"/admin/features"}\"]",
                "Feature Flags and Logging"
              )
 
       refute has_element?(
                view,
-               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.ApiKeys.ApiKeysLive)}\"]",
+               "a[href=\"#{~p"/admin/api_keys"}\"]",
                "Manage Third-Party API Keys"
              )
 

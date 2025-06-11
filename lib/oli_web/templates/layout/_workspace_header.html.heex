@@ -3,12 +3,15 @@
     <h3 class="truncate">
       <%= if Map.has_key?(@conn.assigns, :breadcrumbs) and length(@breadcrumbs) > 0,
         do: hd(Enum.reverse(@breadcrumbs)).short_title,
-        else: @title %>
+        else: assigns[:title] %>
     </h3>
     <div class="flex-1"></div>
-    <div>
-      <%= render(OliWeb.SharedView, "_help_button.html", conn: @conn) %>
-    </div>
+    <.tech_support_link
+      id="tech_support_all_sections_top_navbar"
+      class="btn btn-light btn-sm inline-flex items-center"
+    >
+      Tech Support
+    </.tech_support_link>
     <div>
       <Components.Delivery.UserAccount.menu
         id="user-account-menu"

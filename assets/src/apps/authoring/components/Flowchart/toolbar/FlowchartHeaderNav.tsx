@@ -32,10 +32,12 @@ import { redo } from '../../../store/history/actions/redo';
 import { undo } from '../../../store/history/actions/undo';
 import { selectHasRedo, selectHasUndo } from '../../../store/history/slice';
 import { addPart } from '../../../store/parts/actions/addPart';
+import ComponentSearchContextMenu from '../../ComponentToolbar/ComponentSearchContextMenu';
 import ShowInformationModal from '../../Modal/ShowInformationModal';
 import { RightPanelTabs } from '../../RightMenu/RightMenu';
 import { verifyFlowchartLesson } from '../flowchart-actions/verify-flowchart-lesson';
-import { getScreenQuestionType } from '../paths/path-options';
+import { getScreenQuestionType, isStaticQuestionType } from '../paths/path-options';
+import { isEndScreen } from '../screens/screen-utils';
 import { validateScreen } from '../screens/screen-validation';
 import { InvalidScreenWarning } from './InvalidScreenWarning';
 import PasteIcon from './PasteIcon';
@@ -72,13 +74,15 @@ const questionComponents: string[] = [
   'janus_slider',
   'janus_multi_line_text',
   'janus_hub_spoke',
+  'janus_text_slider',
 ];
 
-const ToolbarOption: React.FC<{ disabled?: boolean; component: string; onClick: () => void }> = ({
-  component,
-  onClick,
-  disabled = false,
-}) => {
+const ToolbarOption: React.FC<{
+  isLessonEndScreen?: boolean;
+  disabled?: boolean;
+  component: string;
+  onClick: () => void;
+}> = ({ component, onClick, disabled = false, isLessonEndScreen = false }) => {
   const ref = useRef<HTMLButtonElement>(null);
   const hover = useHover(ref);
 
@@ -98,7 +102,12 @@ const ToolbarOption: React.FC<{ disabled?: boolean; component: string; onClick: 
         overlay={
           <Tooltip placement="top" id="button-tooltip" style={{ fontSize: '12px' }}>
             <strong>{toolbarTooltips[component]}</strong>
-            {disabled && <div>Only one question component per screen is allowed</div>}
+            {disabled &&
+              (isLessonEndScreen ? (
+                <div>Question/interaction components cannot be added to the last screen.</div>
+              ) : (
+                <div>Only one question component per screen is allowed</div>
+              ))}
           </Tooltip>
         }
       >
@@ -142,8 +151,10 @@ export const FlowchartHeaderNav: React.FC<HeaderNavProps> = () => {
   const currentActivity = useSelector(selectCurrentActivity);
 
   const questionType = getScreenQuestionType(currentActivity);
-  const hasQuestion = questionType !== 'none';
+  const isStaticTypeCopiedPart = copiedPart ? isStaticQuestionType(copiedPart) : false;
 
+  const hasQuestion = questionType !== 'none';
+  const isLessonEndScreen = currentActivity ? isEndScreen(currentActivity) : false;
   const url = `/authoring/project/${projectSlug}/preview/${revisionSlug}`;
   const windowName = `preview-${projectSlug}`;
 
@@ -227,7 +238,7 @@ export const FlowchartHeaderNav: React.FC<HeaderNavProps> = () => {
   useKeyDown(
     () => {
       if (copiedPart && _currentPartPropertyFocus) {
-        if (hasQuestion) {
+        if (!isStaticTypeCopiedPart && hasQuestion) {
           setShowPartCopyValidationWarning(true);
           return;
         }
@@ -281,10 +292,10 @@ export const FlowchartHeaderNav: React.FC<HeaderNavProps> = () => {
     },
     [availablePartComponents, currentActivityTree, dispatch, newPartAddOffset],
   );
-
+  const authoringContainer = useRef<HTMLDivElement>(null);
   return (
     paths && (
-      <div className="component-toolbar">
+      <div className="component-toolbar" ref={authoringContainer}>
         <div className="toolbar-column" style={{ flexBasis: '10%', maxWidth: 50 }}>
           <label>Undo</label>
           <button className="undo-redo-button" onClick={handleUndo} disabled={!hasUndo}>
@@ -317,7 +328,8 @@ export const FlowchartHeaderNav: React.FC<HeaderNavProps> = () => {
           <div className="toolbar-buttons">
             {questionComponents.map((component) => (
               <ToolbarOption
-                disabled={hasQuestion}
+                disabled={(!isStaticTypeCopiedPart && hasQuestion) || isLessonEndScreen}
+                isLessonEndScreen={isLessonEndScreen}
                 component={component}
                 key={component}
                 onClick={handleAddComponent(component)}
@@ -355,6 +367,11 @@ export const FlowchartHeaderNav: React.FC<HeaderNavProps> = () => {
                 <ScoringIcon />
               </button>
             </OverlayTrigger>
+            <ComponentSearchContextMenu
+              basicAuthoring={true}
+              authoringContainer={authoringContainer}
+            />
+
             {copiedPart && (
               <OverlayTrigger
                 placement="bottom"
@@ -362,12 +379,17 @@ export const FlowchartHeaderNav: React.FC<HeaderNavProps> = () => {
                 overlay={
                   <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
                     <strong>Paste Component</strong>
-                    {hasQuestion && <div>Only one question component per screen is allowed</div>}
+                    {!isStaticTypeCopiedPart && hasQuestion && (
+                      <div>Only one question component per screen is allowed</div>
+                    )}
+                    {isLessonEndScreen && (
+                      <div>Question/interaction components cannot be added to the last screen.</div>
+                    )}
                   </Tooltip>
                 }
               >
                 <button
-                  disabled={hasQuestion}
+                  disabled={(!isStaticTypeCopiedPart && hasQuestion) || isLessonEndScreen}
                   className="component-button"
                   onClick={handlePartPasteClick}
                 >
@@ -472,7 +494,11 @@ export const FlowchartHeaderNav: React.FC<HeaderNavProps> = () => {
         <ShowInformationModal
           show={showPartCopyValidationWarning}
           title="Paste Component"
-          explanation="Only one question component per screen is allowed"
+          explanation={
+            isLessonEndScreen
+              ? 'Question/interaction components cannot be added to the last screen.'
+              : 'Only one question component per screen is allowed'
+          }
           cancelHandler={() => setShowPartCopyValidationWarning(false)}
         />
       </div>

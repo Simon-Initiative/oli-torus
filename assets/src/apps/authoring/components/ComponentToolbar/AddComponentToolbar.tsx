@@ -115,7 +115,7 @@ const AddComponentToolbar: React.FC<{
     setPartsMenuTarget(event.target);
   };
   const handlePartPasteClick = () => {
-    //When a part is pasted, offset the new part component by 20px from the original part
+    // When a part is pasted, offset the new part component by 20px from the original part
     const pasteOffset = 20;
     let newPartData = {
       id: `${copiedPart.type}-${guid()}`,
@@ -157,116 +157,112 @@ const AddComponentToolbar: React.FC<{
 
   return (
     <Fragment>
-      <div className="btn-group align-items-center" role="group">
-        {availablePartComponents
-          .filter((part) => frequentlyUsed!.includes(part.slug))
-          .sort((a, b) => {
-            const aIndex = frequentlyUsed!.indexOf(a.slug);
-            const bIndex = frequentlyUsed!.indexOf(b.slug);
-            return aIndex - bIndex;
-          })
-          .map((part) => (
-            <OverlayTrigger
-              key={part.slug}
-              placement="bottom"
-              delay={{ show: 150, hide: 150 }}
-              overlay={
-                <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
-                  <strong>{part.title}</strong>
-                  <br />
-                  <em>{part.description}</em>
-                </Tooltip>
-              }
-            >
-              <span>
-                <button
-                  disabled={disabled}
-                  className="px-2 btn btn-link"
-                  onClick={() => handleAddComponent(part.slug)}
-                >
-                  <img src={`${imgsPath}/icons/${part.icon}`}></img>
-                </button>
-              </span>
-            </OverlayTrigger>
-          ))}
-      </div>
-      <div className="btn-group pl-3 ml-3 border-left align-items-center" role="group">
-        {showPasteComponentOption && copiedPart ? (
+      {availablePartComponents
+        .filter((part) => frequentlyUsed!.includes(part.slug))
+        .sort((a, b) => {
+          const aIndex = frequentlyUsed!.indexOf(a.slug);
+          const bIndex = frequentlyUsed!.indexOf(b.slug);
+          return aIndex - bIndex;
+        })
+        .map((part) => (
+          <OverlayTrigger
+            key={part.slug}
+            placement="bottom"
+            delay={{ show: 150, hide: 150 }}
+            overlay={
+              <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
+                <strong>{part.title}</strong>
+                <br />
+                <em>{part.description}</em>
+              </Tooltip>
+            }
+          >
+            <span>
+              <button
+                disabled={disabled}
+                className="px-2 btn btn-link"
+                onClick={() => handleAddComponent(part.slug)}
+              >
+                <img src={`${imgsPath}/icons/${part.icon}`}></img>
+              </button>
+            </span>
+          </OverlayTrigger>
+        ))}
+      {showPasteComponentOption && copiedPart ? (
+        <OverlayTrigger
+          placement="bottom"
+          delay={{ show: 150, hide: 150 }}
+          overlay={
+            <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
+              Paste Component
+            </Tooltip>
+          }
+        >
+          <span>
+            <button className="px-2 btn btn-link" onClick={handlePartPasteClick}>
+              <img src={`${imgsPath}/icons/icon-paste.svg`} width="30px"></img>
+            </button>
+          </span>
+        </OverlayTrigger>
+      ) : null}
+      {showMoreComponentsMenu && (
+        <>
           <OverlayTrigger
             placement="bottom"
             delay={{ show: 150, hide: 150 }}
             overlay={
               <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
-                Paste Component
+                More Components
               </Tooltip>
             }
           >
             <span>
-              <button className="px-2 btn btn-link" onClick={handlePartPasteClick}>
-                <img src={`${imgsPath}/icons/icon-paste.svg`} width="30px"></img>
+              <button className="px-2 btn btn-link" onClick={handlePartMenuButtonClick}>
+                <img src={`${imgsPath}/icons/icon-componentList.svg`}></img>
               </button>
             </span>
           </OverlayTrigger>
-        ) : null}
-        {showMoreComponentsMenu && (
-          <>
-            <OverlayTrigger
-              placement="bottom"
-              delay={{ show: 150, hide: 150 }}
-              overlay={
-                <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
-                  More Components
-                </Tooltip>
-              }
-            >
-              <span>
-                <button className="px-2 btn btn-link" onClick={handlePartMenuButtonClick}>
-                  <img src={`${imgsPath}/icons/icon-componentList.svg`}></img>
-                </button>
-              </span>
-            </OverlayTrigger>
 
-            <Overlay
-              show={showPartsMenu}
-              target={partsMenuTarget}
-              placement="bottom"
-              container={authoringContainer}
-              containerPadding={20}
-              rootClose={true}
-              onHide={() => setShowPartsMenu(false)}
-            >
-              <Popover id="moreComponents-popover">
-                <Popover.Title as="h3">More Components</Popover.Title>
-                <Popover.Content>
-                  <ListGroup className="aa-parts-list">
-                    {availablePartComponents
-                      .filter(
-                        (part) =>
-                          !frequentlyUsed!.includes(part.slug) && part.slug !== 'janus_hub_spoke', // hub Spoke is only for basic authoring
-                      )
-                      .map((part) => (
-                        <ListGroup.Item
-                          action
-                          onClick={() => handleAddComponent(part.slug)}
-                          key={part.slug}
-                          className="d-flex align-items-center"
+          <Overlay
+            show={showPartsMenu}
+            target={partsMenuTarget}
+            placement="bottom"
+            container={authoringContainer}
+            containerPadding={20}
+            rootClose={true}
+            onHide={() => setShowPartsMenu(false)}
+          >
+            <Popover id="moreComponents-popover">
+              <Popover.Title as="h3">More Components</Popover.Title>
+              <Popover.Content>
+                <ListGroup className="aa-parts-list">
+                  {availablePartComponents
+                    .filter(
+                      (part) =>
+                        !frequentlyUsed!.includes(part.slug) && part.slug !== 'janus_hub_spoke', // hub Spoke is only for basic authoring
+                    )
+                    .map((part) => (
+                      <ListGroup.Item
+                        action
+                        onClick={() => handleAddComponent(part.slug)}
+                        key={part.slug}
+                        className="d-flex align-items-center"
+                      >
+                        <div
+                          className="text-center mr-1 d-inline-block"
+                          style={{ minWidth: '36px' }}
                         >
-                          <div
-                            className="text-center mr-1 d-inline-block"
-                            style={{ minWidth: '36px' }}
-                          >
-                            <img title={part.description} src={`${imgsPath}/icons/${part.icon}`} />
-                          </div>
-                          <span className="mr-3">{part.title}</span>
-                        </ListGroup.Item>
-                      ))}
-                  </ListGroup>
-                </Popover.Content>
-              </Popover>
-            </Overlay>
-          </>
-        )}
-      </div>
+                          <img title={part.description} src={`${imgsPath}/icons/${part.icon}`} />
+                        </div>
+                        <span className="mr-3">{part.title}</span>
+                      </ListGroup.Item>
+                    ))}
+                </ListGroup>
+              </Popover.Content>
+            </Popover>
+          </Overlay>
+        </>
+      )}
     </Fragment>
   );
 };

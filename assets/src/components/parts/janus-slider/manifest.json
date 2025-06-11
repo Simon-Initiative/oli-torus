@@ -1,7 +1,7 @@
 {
   "id": "janus_slider",
-  "friendlyName": "Slider",
-  "description": "A slider element from min and max.",
+  "friendlyName": "Slider (Numeric)",
+  "description": "A slider (Numeric) element from min and max.",
   "icon": "icon-part-slider.svg",
   "author": "Project Janus Team",
   "global": true,

@@ -16,28 +16,33 @@ defmodule Oli.Delivery.Sections.SectionCacheTest do
     assert value == nil
   end
 
+  @tag :flaky
   test "get_or_compute/3 calculates and stores the value if it is not present" do
     Phoenix.PubSub.subscribe(Oli.PubSub, SectionCache.cache_topic())
     slug = "test_slug"
-    cache_id = "#{slug}_full_hierarchy"
-    hierarchy = %{example: "hierarchy"}
+    cache_id = "#{slug}_ordered_container_labels"
+    ordered_container_labels = %{example: "ordered_container_labels"}
 
     ## 1st call that stores the value in the cache
-    assert hierarchy ==
-             SectionCache.get_or_compute(slug, :full_hierarchy, fn -> hierarchy end)
+    assert ordered_container_labels ==
+             SectionCache.get_or_compute(slug, :ordered_container_labels, fn ->
+               ordered_container_labels
+             end)
 
     # Check that the value was stored in the cache
-    assert {:ok, hierarchy} == SectionCache.get(cache_id)
+    assert {:ok, ordered_container_labels} == SectionCache.get(cache_id)
 
-    # Check that a message was broadcasted with the new hierarchy
-    assert_receive {:put, ^cache_id, ^hierarchy}
+    # Check that a message was broadcasted with the new ordered_container_labels
+    assert_receive {:put, ^cache_id, ^ordered_container_labels}
 
     ## 2nd call that fetches the value from the cache and does not store it
-    assert hierarchy ==
-             SectionCache.get_or_compute(slug, :full_hierarchy, fn -> hierarchy end)
+    assert ordered_container_labels ==
+             SectionCache.get_or_compute(slug, :ordered_container_labels, fn ->
+               ordered_container_labels
+             end)
 
     # Check that a message was not broadcasted this time
-    refute_receive {:put, ^cache_id, ^hierarchy}
+    refute_receive {:put, ^cache_id, ^ordered_container_labels}
   end
 
   test "clear/1 deletes all stored values for the given section in the cache" do

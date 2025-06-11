@@ -1,8 +1,9 @@
 defmodule OliWeb.Components.Modal do
   use Phoenix.Component
 
+  use Gettext, backend: OliWeb.Gettext
+
   import OliWeb.Components.Common
-  import OliWeb.Gettext
 
   alias Phoenix.LiveView.JS
 
@@ -30,6 +31,11 @@ defmodule OliWeb.Components.Modal do
   attr :class, :string, default: ""
   attr :header_class, :string, default: "flex items-start justify-between p-4"
   attr :body_class, :string, default: "p-6 space-y-6"
+  attr :confirm_class, :string, default: "py-2 px-3"
+
+  attr :cancel_class, :string,
+    default: "bg-transparent text-blue-500 hover:underline hover:bg-transparent"
+
   attr :show, :boolean, default: false
   attr :on_cancel, JS, default: %JS{}
   attr :on_confirm, JS, default: %JS{}
@@ -126,7 +132,7 @@ defmodule OliWeb.Components.Modal do
                   <.button
                     :for={cancel <- @cancel}
                     phx-click={hide_modal(@on_cancel, @id)}
-                    class="bg-transparent text-blue-500 hover:underline hover:bg-transparent"
+                    class={@cancel_class}
                   >
                     <%= render_slot(cancel) %>
                   </.button>
@@ -136,8 +142,7 @@ defmodule OliWeb.Components.Modal do
                     id={"#{@id}-confirm"}
                     phx-click={@on_confirm}
                     phx-disable-with
-                    class="py-2 px-3"
-                    variant={:primary}
+                    class={@confirm_class}
                   >
                     <%= render_slot(confirm) %>
                   </.button>

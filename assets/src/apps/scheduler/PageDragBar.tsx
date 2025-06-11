@@ -1,7 +1,10 @@
 import React, { useCallback, useState } from 'react';
+import { useDispatch } from 'react-redux';
 import { DateWithoutTime } from 'epoq';
 import { useDocumentMouseEvents } from '../../components/hooks/useDocumentMouseEvents';
 import { useToggle } from '../../components/hooks/useToggle';
+import { ContextMenuItem } from './ContextMenu';
+import { useContextMenu } from './ContextMenuController';
 import {
   DayGeometry,
   barGeometry,
@@ -9,9 +12,10 @@ import {
   leftToDate,
   validateStartEndDates,
 } from './date-utils';
-import { SchedulingType } from './scheduler-slice';
+import { SchedulingType, removeScheduleItem } from './scheduler-slice';
 
 interface DragBarProps {
+  itemId: number;
   endDate: DateWithoutTime | null;
   startDate: DateWithoutTime | null;
   isContainer: boolean;
@@ -25,13 +29,14 @@ interface DragBarProps {
 }
 
 export const DraggableIcon: React.FC<{
+  itemId: number;
   date: DateWithoutTime;
   dayGeometry: DayGeometry;
   onChange: (date: DateWithoutTime) => void;
   onStartDrag?: () => void;
   children: React.ReactNode;
   offset: number;
-}> = ({ date, dayGeometry, onChange, onStartDrag, children, offset }) => {
+}> = ({ itemId, date, dayGeometry, onChange, onStartDrag, children, offset }) => {
   const [isDragging, , enableDrag, disableDrag] = useToggle();
 
   const [startingGeometry, setStartingGeometry] = React.useState({ left: 0, width: 0 });
@@ -39,6 +44,29 @@ export const DraggableIcon: React.FC<{
   const [mouseDownX, setMouseDownX] = React.useState(0);
 
   const [workingDate, setWorkingDate] = useState<DateWithoutTime>(new DateWithoutTime());
+
+  const { showMenu, hideMenu } = useContextMenu();
+  const dispatch = useDispatch();
+
+  const menuItems: ContextMenuItem[] = [
+    {
+      label: 'Remove from Schedule',
+      onClick: () => {
+        hideMenu();
+        dispatch(
+          removeScheduleItem({
+            itemId: itemId,
+          }),
+        );
+      },
+    },
+  ];
+
+  const handleContextMenu = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.preventDefault();
+
+    showMenu({ x: e.clientX, y: e.clientY }, menuItems);
+  };
 
   const onMouseMove = (e: MouseEvent) => {
     const delta = e.clientX - mouseDownX;
@@ -86,8 +114,9 @@ export const DraggableIcon: React.FC<{
 
   return (
     <div
+      onContextMenu={handleContextMenu}
       onMouseDown={startDrag}
-      className={`absolute h-3 flex flex-row justify-between cursor-move transition-transform`}
+      className="absolute h-3 flex flex-row justify-between cursor-move transition-transform"
       style={barStyles}
     >
       {children}
@@ -96,6 +125,7 @@ export const DraggableIcon: React.FC<{
 };
 
 export const PageDragBar: React.FC<DragBarProps> = ({
+  itemId,
   endDate,
   startDate,
   onChange,
@@ -141,6 +171,7 @@ export const PageDragBar: React.FC<DragBarProps> = ({
 
       {endDate && (
         <DraggableIcon
+          itemId={itemId}
           date={endDate}
           dayGeometry={dayGeometry}
           onStartDrag={onStartDrag}
@@ -153,6 +184,7 @@ export const PageDragBar: React.FC<DragBarProps> = ({
 
       {isGraded && startDate && (
         <DraggableIcon
+          itemId={itemId}
           date={startDate}
           dayGeometry={dayGeometry}
           onStartDrag={onStartDrag}
@@ -180,15 +212,6 @@ const ConnectorLine: React.FC<{
   };
 
   return <span className="absolute rounded-sm bg-blue-500 h-1" style={barStyle} />;
-
-  // Alternate thick line style
-  // const barStyle = {
-  //   left: geometry.left - 8,
-  //   width: geometry.width + 28,
-  //   top: 3,
-  // };
-
-  // return <span className="absolute rounded-lg bg-blue-50 h-8" style={barStyle} />;
 };
 
 export const InClassIcon: React.FC = () => (

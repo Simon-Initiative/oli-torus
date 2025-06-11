@@ -20,7 +20,7 @@ defmodule Oli.Delivery.SectionsTest do
 
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Resources.ResourceType
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
 
   defp set_progress(
          section_id,
@@ -1164,21 +1164,24 @@ defmodule Oli.Delivery.SectionsTest do
                        scheduling_type: "due_by",
                        start_date: "2023-01-25",
                        end_date: "2023-01-27",
-                       manually_scheduled: true
+                       manually_scheduled: true,
+                       removed_from_schedule: false
                      },
                      %{
                        id: scheduled_resources[page4.resource_id].id,
                        scheduling_type: "due_by",
                        start_date: "2023-02-01",
                        end_date: "2023-02-04",
-                       manually_scheduled: true
+                       manually_scheduled: true,
+                       removed_from_schedule: false
                      },
                      %{
                        id: scheduled_resources[page5.resource_id].id,
                        scheduling_type: "due_by",
                        start_date: "2023-02-06",
                        end_date: "2023-02-08",
-                       manually_scheduled: true
+                       manually_scheduled: true,
+                       removed_from_schedule: false
                      }
                    ],
                    "Etc/UTC"
@@ -1232,6 +1235,7 @@ defmodule Oli.Delivery.SectionsTest do
                                resource: %Oli.Delivery.Sections.SectionResource{
                                  scheduling_type: :due_by,
                                  manually_scheduled: true,
+                                 removed_from_schedule: false,
                                  start_date: ~U[2023-01-25 23:59:59Z],
                                  end_date: ~U[2023-01-27 23:59:59Z],
                                  resource_id: ^page3_resource_id,
@@ -1267,6 +1271,7 @@ defmodule Oli.Delivery.SectionsTest do
                               resource: %Oli.Delivery.Sections.SectionResource{
                                 scheduling_type: :due_by,
                                 manually_scheduled: true,
+                                removed_from_schedule: false,
                                 start_date: ~U[2023-02-01 23:59:59Z],
                                 end_date: ~U[2023-02-04 23:59:59Z],
                                 resource_id: ^page4_resource_id,
@@ -1298,6 +1303,7 @@ defmodule Oli.Delivery.SectionsTest do
                               resource: %Oli.Delivery.Sections.SectionResource{
                                 scheduling_type: :due_by,
                                 manually_scheduled: true,
+                                removed_from_schedule: false,
                                 start_date: ~U[2023-02-06 23:59:59Z],
                                 end_date: ~U[2023-02-08 23:59:59Z],
                                 resource_id: ^page5_resource_id,
@@ -1531,21 +1537,24 @@ defmodule Oli.Delivery.SectionsTest do
                      scheduling_type: "due_by",
                      start_date: "2023-02-03",
                      end_date: "2023-02-06",
-                     manually_scheduled: true
+                     manually_scheduled: true,
+                     removed_from_schedule: false
                    },
                    %{
                      id: scheduled_resources[page4.resource_id].id,
                      scheduling_type: "due_by",
                      start_date: "2023-02-04",
                      end_date: "2023-02-06",
-                     manually_scheduled: true
+                     manually_scheduled: true,
+                     removed_from_schedule: false
                    },
                    %{
                      id: scheduled_resources[page5.resource_id].id,
                      scheduling_type: "due_by",
                      start_date: "2023-02-05",
                      end_date: "2023-02-06",
-                     manually_scheduled: true
+                     manually_scheduled: true,
+                     removed_from_schedule: false
                    }
                  ],
                  "Etc/UTC"
@@ -1649,28 +1658,32 @@ defmodule Oli.Delivery.SectionsTest do
                      scheduling_type: "due_by",
                      start_date: "2023-02-04",
                      end_date: "2023-02-06",
-                     manually_scheduled: true
+                     manually_scheduled: true,
+                     removed_from_schedule: false
                    },
                    %{
                      id: scheduled_resources[page4.resource_id].id,
                      scheduling_type: "due_by",
                      start_date: "2023-02-05",
                      end_date: "2023-02-07",
-                     manually_scheduled: true
+                     manually_scheduled: true,
+                     removed_from_schedule: false
                    },
                    %{
                      id: scheduled_resources[page5.resource_id].id,
                      scheduling_type: "due_by",
                      start_date: "2023-02-03",
                      end_date: "2023-02-08",
-                     manually_scheduled: true
+                     manually_scheduled: true,
+                     removed_from_schedule: false
                    },
                    %{
                      id: scheduled_resources[scored_page2.resource_id].id,
                      scheduling_type: "due_by",
                      start_date: "2023-02-02",
                      end_date: "2023-02-09",
-                     manually_scheduled: true
+                     manually_scheduled: true,
+                     removed_from_schedule: false
                    }
                  ],
                  "Etc/UTC"
@@ -1716,28 +1729,32 @@ defmodule Oli.Delivery.SectionsTest do
                      scheduling_type: "due_by",
                      start_date: "2023-02-04",
                      end_date: "2023-02-06",
-                     manually_scheduled: true
+                     manually_scheduled: true,
+                     removed_from_schedule: false
                    },
                    %{
                      id: scheduled_resources[page4.resource_id].id,
                      scheduling_type: "due_by",
                      start_date: "2023-02-05",
                      end_date: "2023-02-07",
-                     manually_scheduled: true
+                     manually_scheduled: true,
+                     removed_from_schedule: false
                    },
                    %{
                      id: scheduled_resources[page5.resource_id].id,
                      scheduling_type: "read_by",
                      start_date: "2023-02-03",
                      end_date: nil,
-                     manually_scheduled: true
+                     manually_scheduled: true,
+                     removed_from_schedule: false
                    },
                    %{
                      id: scheduled_resources[scored_page2.resource_id].id,
                      scheduling_type: "read_by",
                      start_date: "2023-02-02",
                      end_date: nil,
-                     manually_scheduled: true
+                     manually_scheduled: true,
+                     removed_from_schedule: false
                    }
                  ],
                  "Etc/UTC"
@@ -2384,21 +2401,21 @@ defmodule Oli.Delivery.SectionsTest do
       section_3 = insert(:section, title: "LiveView", open_and_free: true, status: :archived)
 
       Sections.enroll(user.id, section_1.id, [
-        Lti_1p3.Tool.ContextRoles.get_role(:context_instructor)
+        Lti_1p3.Roles.ContextRoles.get_role(:context_instructor)
       ])
 
       Sections.enroll(user.id, section_2.id, [
-        Lti_1p3.Tool.ContextRoles.get_role(:context_learner)
+        Lti_1p3.Roles.ContextRoles.get_role(:context_learner)
       ])
 
       Sections.enroll(user.id, section_3.id, [
-        Lti_1p3.Tool.ContextRoles.get_role(:context_learner)
+        Lti_1p3.Roles.ContextRoles.get_role(:context_learner)
       ])
 
       sections =
         Sections.get_open_and_free_active_sections_by_roles(user.id, [
-          Lti_1p3.Tool.ContextRoles.get_role(:context_learner),
-          Lti_1p3.Tool.ContextRoles.get_role(:context_instructor)
+          Lti_1p3.Roles.ContextRoles.get_role(:context_learner),
+          Lti_1p3.Roles.ContextRoles.get_role(:context_instructor)
         ])
 
       assert length(sections) == 2
@@ -2595,6 +2612,175 @@ defmodule Oli.Delivery.SectionsTest do
 
       assert length(enrollments) == 3
       assert Enum.all?(enrollments, fn e -> e.status == :suspended end)
+    end
+  end
+
+  describe "get_section_resources_with_lti_activities/1" do
+    setup do
+      section = insert(:section)
+
+      lti_deployment = insert(:lti_external_tool_activity_deployment)
+
+      activity_registration =
+        insert(:activity_registration,
+          lti_external_tool_activity_deployment: lti_deployment
+        )
+
+      lti_activity_revision =
+        insert(:revision,
+          activity_type_id: activity_registration.id
+        )
+
+      lti_activity_resource = lti_activity_revision.resource
+
+      lti_section_resource =
+        insert(:section_resource,
+          section: section,
+          resource_id: lti_activity_resource.id,
+          revision_id: lti_activity_revision.id
+        )
+
+      page_revision =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_page(),
+          activity_refs: [lti_activity_resource.id]
+        )
+
+      page_section_resource =
+        insert(:section_resource,
+          section: section,
+          resource_id: page_revision.resource_id,
+          revision_id: page_revision.id
+        )
+
+      %{
+        section: section,
+        lti_activity_resource: lti_activity_resource,
+        lti_section_resource: lti_section_resource,
+        page_section_resource: page_section_resource,
+        activity_registration: activity_registration
+      }
+    end
+
+    test "returns empty map when section has no LTI activities" do
+      empty_section = insert(:section)
+
+      result = Sections.get_section_resources_with_lti_activities(empty_section)
+
+      assert result == %{}
+    end
+
+    test "returns map of LTI activity registration IDs to section resources", %{
+      section: section,
+      activity_registration: activity_registration,
+      page_section_resource: page_section_resource
+    } do
+      result = Sections.get_section_resources_with_lti_activities(section)
+
+      assert is_map(result)
+      assert map_size(result) == 1
+      assert Map.has_key?(result, activity_registration.id)
+
+      section_resources = result[activity_registration.id]
+      assert is_list(section_resources)
+      assert length(section_resources) == 1
+      assert hd(section_resources).id == page_section_resource.id
+    end
+
+    test "handles multiple pages referencing the same LTI activity", %{
+      section: section,
+      lti_activity_resource: lti_activity_resource,
+      activity_registration: activity_registration
+    } do
+      another_page_revision =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_page(),
+          activity_refs: [lti_activity_resource.id]
+        )
+
+      another_page_section_resource =
+        insert(:section_resource,
+          section: section,
+          resource_id: another_page_revision.resource_id,
+          revision_id: another_page_revision.id
+        )
+
+      result = Sections.get_section_resources_with_lti_activities(section)
+
+      section_resources = result[activity_registration.id]
+      assert length(section_resources) == 2
+
+      section_resource_ids = Enum.map(section_resources, & &1.id)
+      assert Enum.member?(section_resource_ids, another_page_section_resource.id)
+    end
+
+    test "handles multiple LTI activities referenced by pages", %{
+      section: section
+    } do
+      lti_deployment2 = insert(:lti_external_tool_activity_deployment)
+
+      activity_registration2 =
+        insert(:activity_registration,
+          lti_external_tool_activity_deployment: lti_deployment2
+        )
+
+      lti_activity_revision2 =
+        insert(:revision,
+          activity_type_id: activity_registration2.id
+        )
+
+      lti_activity_resource2 = lti_activity_revision2.resource
+
+      insert(:section_resource,
+        section: section,
+        resource_id: lti_activity_resource2.id,
+        revision_id: lti_activity_revision2.id
+      )
+
+      page_revision =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_page(),
+          activity_refs: [lti_activity_resource2.id]
+        )
+
+      page_section_resource =
+        insert(:section_resource,
+          section: section,
+          resource_id: page_revision.resource_id,
+          revision_id: page_revision.id
+        )
+
+      result = Sections.get_section_resources_with_lti_activities(section)
+
+      assert map_size(result) == 2
+      assert Map.has_key?(result, activity_registration2.id)
+
+      section_resources = result[activity_registration2.id]
+      assert length(section_resources) == 1
+      assert hd(section_resources).id == page_section_resource.id
+    end
+
+    test "ignores pages that don't reference LTI activities", %{
+      section: section,
+      activity_registration: activity_registration
+    } do
+      page_revision =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_page(),
+          activity_refs: []
+        )
+
+      insert(:section_resource,
+        section: section,
+        resource_id: page_revision.resource_id,
+        revision_id: page_revision.id
+      )
+
+      result = Sections.get_section_resources_with_lti_activities(section)
+
+      assert is_map(result)
+      assert map_size(result) == 1
+      assert Map.has_key?(result, activity_registration.id)
     end
   end
 end

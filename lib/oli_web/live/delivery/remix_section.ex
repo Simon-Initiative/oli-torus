@@ -12,6 +12,11 @@ defmodule OliWeb.Delivery.RemixSection do
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Accounts
 
+  alias Oli.Accounts.{
+    User,
+    Author
+  }
+
   alias OliWeb.Delivery.Remix.{
     DropTarget,
     Entry
@@ -33,6 +38,9 @@ defmodule OliWeb.Delivery.RemixSection do
   alias OliWeb.Common.Cancel
 
   alias Phoenix.LiveView.JS
+
+  on_mount {OliWeb.AuthorAuth, :mount_current_author}
+  on_mount {OliWeb.UserAuth, :mount_current_user}
 
   defp redirect_after_save(:instructor, %Section{slug: slug}),
     do: ~p"/sections/#{slug}/remix"
@@ -63,36 +71,34 @@ defmodule OliWeb.Delivery.RemixSection do
         %{
           "section_slug" => section_slug
         },
-        session,
+        _session,
         socket
       ) do
-    case Mount.for(section_slug, session) do
+    case Mount.for(section_slug, socket) do
       {:error, e} ->
         Mount.handle_error(socket, {:error, e})
 
-      {:admin, _, section} ->
+      {:admin, current_author, section} ->
         cond do
           section.open_and_free ->
-            mount_as_open_and_free(socket, section, session)
+            mount_as_open_and_free(socket, section)
 
           section.type == :blueprint ->
-            mount_as_product_creator(socket, section, session)
+            mount_as_product_creator(socket, section, current_author)
 
           true ->
-            mount_as_instructor(socket, section, session)
+            mount_as_instructor(socket, section, current_author)
         end
 
-      {:user, _, section} ->
-        mount_as_instructor(socket, section, session)
+      {:user, current_user, section} ->
+        mount_as_instructor(socket, section, current_user)
 
-      {:author, _, section} ->
-        mount_as_product_creator(socket, section, session)
+      {:author, current_author, section} ->
+        mount_as_product_creator(socket, section, current_author)
     end
   end
 
-  def mount_as_instructor(socket, section, %{"current_user_id" => current_user_id} = _session) do
-    current_user = Accounts.get_user!(current_user_id, preload: [:platform_roles, :author])
-
+  def mount_as_instructor(socket, section, %User{} = current_user) do
     section =
       section
       |> Repo.preload(:institution)
@@ -110,14 +116,13 @@ defmodule OliWeb.Delivery.RemixSection do
     )
   end
 
-  def mount_as_instructor(socket, section, %{"current_author_id" => current_author_id} = _session) do
-    author = Accounts.get_author!(current_author_id)
-
+  def mount_as_instructor(socket, section, %Author{} = current_author) do
     section =
       section
       |> Repo.preload(:institution)
 
-    available_publications = Publishing.available_publications(author, section.institution)
+    available_publications =
+      Publishing.available_publications(current_author, section.institution)
 
     # only permit instructor or admin level access
 
@@ -131,8 +136,7 @@ defmodule OliWeb.Delivery.RemixSection do
 
   def mount_as_open_and_free(
         socket,
-        section,
-        _session
+        section
       ) do
     # only permit authoring admin level access
     init_state(socket,
@@ -146,11 +150,9 @@ defmodule OliWeb.Delivery.RemixSection do
   def mount_as_product_creator(
         socket,
         section,
-        %{"current_author_id" => current_author_id} = _session
+        current_author
       ) do
-    current_author = Accounts.get_author!(current_author_id)
-
-    if Oli.Delivery.Sections.Blueprint.is_author_of_blueprint?(section.slug, current_author_id) or
+    if Oli.Delivery.Sections.Blueprint.is_author_of_blueprint?(section.slug, current_author.id) or
          Accounts.at_least_content_admin?(current_author) do
       init_state(socket,
         breadcrumbs: set_breadcrumbs(:user, section),

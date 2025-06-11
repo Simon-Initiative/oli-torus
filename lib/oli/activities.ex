@@ -11,6 +11,7 @@ defmodule Oli.Activities do
   alias Oli.Authoring.Course
   alias Oli.Activities.ActivityRegistrationProject
   alias Oli.Activities.ActivityMapEntry
+  alias Oli.Lti.PlatformExternalTools.LtiExternalToolActivityDeployment
   import Oli.Utils
   require Logger
 
@@ -56,6 +57,30 @@ defmodule Oli.Activities do
       _ ->
         Logger.warning("Invalid archive")
         {:error, :invalid_archive}
+    end
+  end
+
+  def register_lti_external_tool_activity(title, petite_label, description) do
+    attrs = %{
+      slug: Oli.Utils.Slug.slugify(title),
+      title: title,
+      petite_label: petite_label,
+      icon: "plug",
+      description: description,
+      delivery_element: "lti-external-tool-delivery",
+      authoring_element: "lti-external-tool-authoring",
+      delivery_script: "lti_external_tool_delivery.js",
+      authoring_script: "lti_external_tool_authoring.js",
+      allow_client_evaluation: false,
+      generates_report: false,
+      globally_available: false,
+      globally_visible: true,
+      variables: []
+    }
+
+    case get_registration_by_slug(attrs.slug) do
+      nil -> create_registration(attrs)
+      registration -> update_registration(registration, attrs)
     end
   end
 
@@ -150,6 +175,9 @@ defmodule Oli.Activities do
         end)
 
       list_activity_registrations()
+      |> Enum.filter(fn a ->
+        is_nil(a.status) or a.status == :enabled
+      end)
       |> Enum.map(&ActivityMapEntry.from_registration/1)
       |> Enum.reduce(%{}, fn e, m ->
         e =
@@ -226,7 +254,9 @@ defmodule Oli.Activities do
 
     activities_enabled =
       list_activity_registrations()
-      |> Enum.filter(fn a -> a.globally_visible || is_admin? end)
+      |> Enum.filter(fn a ->
+        (a.globally_visible || is_admin?) and (is_nil(a.status) or a.status == :enabled)
+      end)
       |> Enum.reduce([], fn a, m ->
         enabled_for_project =
           a.globally_available === true or MapSet.member?(project_activities, a.id)
@@ -243,7 +273,8 @@ defmodule Oli.Activities do
               title: a.title,
               global: a.globally_available,
               petite_label: a.petite_label,
-              enabled: enabled_for_project
+              enabled: enabled_for_project,
+              deployment_id: a.deployment_id
             }
           ]
       end)
@@ -254,7 +285,7 @@ defmodule Oli.Activities do
   def advanced_activities(project, is_admin? \\ true) do
     activities_for_project(project, is_admin?)
     |> Enum.filter(&(!&1.global))
-    |> Enum.sort_by(& &1.title)
+    |> Enum.sort_by(fn a -> {a.deployment_id, a.title} end)
   end
 
   # TODO only get needed for section... hide authoring sometimes
@@ -316,7 +347,41 @@ defmodule Oli.Activities do
 
   """
   def list_activity_registrations do
-    Repo.all(ActivityRegistration)
+    from(ar in ActivityRegistration,
+      left_join: d in LtiExternalToolActivityDeployment,
+      on: d.activity_registration_id == ar.id,
+      select: ar,
+      select_merge: %{deployment_id: d.deployment_id, status: d.status}
+    )
+    |> Repo.all()
+  end
+
+  @doc """
+  Returns the list of lti_activity_registrations.
+  If a list of activity_registration_ids is provided, it will only return the registrations that match the ids.
+  If no ids are provided, it will return all lti_activity_registrations.
+
+  ## Examples
+
+      iex> list_lti_activity_registrations()
+      [%ActivityRegistration{}, ...]
+  """
+  def list_lti_activity_registrations(activity_registration_ids \\ nil) do
+    maybe_filter_by_ids =
+      if activity_registration_ids do
+        dynamic([ar], ar.id in ^activity_registration_ids)
+      else
+        true
+      end
+
+    from(ar in ActivityRegistration,
+      join: d in LtiExternalToolActivityDeployment,
+      on: d.activity_registration_id == ar.id,
+      preload: [lti_external_tool_activity_deployment: d],
+      where: ^maybe_filter_by_ids,
+      select: ar
+    )
+    |> Repo.all()
   end
 
   @doc """

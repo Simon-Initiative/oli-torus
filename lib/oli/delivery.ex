@@ -1,5 +1,5 @@
 defmodule Oli.Delivery do
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
   alias Lti_1p3.Tool.Services.{AGS, NRPS}
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.PostProcessing

@@ -62,6 +62,60 @@ defmodule Oli.Delivery.SettingsTest do
     refute Settings.was_late?(ra, settings, DateTime.add(ra.inserted_at, 20, :minute))
   end
 
+  test "was_late/2 returns true for :read_by pages when there is a time limit + allow late submit, and student submits late" do
+    ra = %ResourceAttempt{
+      inserted_at: ~U[2020-01-15 00:00:00Z]
+    }
+
+    settings = %Combined{
+      late_submit: :allow,
+      time_limit: 1,
+      scheduling_type: :read_by,
+      end_date: ~U[2020-01-12 00:00:00Z]
+    }
+
+    assert Settings.was_late?(ra, settings, DateTime.add(ra.inserted_at, 20, :minute))
+
+    settings = %Combined{
+      late_submit: :allow,
+      time_limit: 0,
+      scheduling_type: :read_by,
+      end_date: ~U[2020-01-12 00:00:00Z]
+    }
+
+    refute Settings.was_late?(ra, settings, DateTime.add(ra.inserted_at, 20, :minute))
+  end
+
+  #   iex(12)> today = DateTime.utc_now
+  # ~U[2025-03-27 18:52:09.691707Z]
+  # iex(13)> next_week = DateTime.add(today, 7, :day)
+  # ~U[2025-04-03 18:52:09.691707Z]
+  # iex(14)> today < next_week
+  # false
+  # iex(15)> DateTime.compare(today, next_week)
+  # :lt
+  test "was_late/2 correctly compares datetimes" do
+    today = ~U[2025-03-27 18:52:09.00Z]
+    next_week = DateTime.add(today, 7, :day)
+
+    # a bad date comparison would be `today < next week`
+
+    ra = %ResourceAttempt{
+      inserted_at: today
+    }
+
+    settings = %Combined{
+      late_submit: :allow,
+      time_limit: 1,
+      scheduling_type: :due_by,
+      end_date: next_week
+    }
+
+    # inside its logic the was_late function compares datetimes using DateTime.compare
+    # and not "<" sign
+    assert Settings.was_late?(ra, settings, DateTime.add(ra.inserted_at, 20, :minute))
+  end
+
   test "was_late/2 determines lateness correctly when only a time limit" do
     ra = %ResourceAttempt{
       inserted_at: ~U[2020-01-01 00:00:00Z]
@@ -70,13 +124,15 @@ defmodule Oli.Delivery.SettingsTest do
     settings_with_grace_period = %Combined{
       end_date: nil,
       time_limit: 30,
-      grace_period: 5
+      grace_period: 5,
+      scheduling_type: :due_by
     }
 
     settings_with_no_grace_period = %Combined{
       end_date: nil,
       time_limit: 30,
-      grace_period: 0
+      grace_period: 0,
+      scheduling_type: :due_by
     }
 
     refute Settings.was_late?(
@@ -133,12 +189,14 @@ defmodule Oli.Delivery.SettingsTest do
 
     settings_with_grace_period = %Combined{
       end_date: ~U[2020-01-01 02:00:00Z],
-      grace_period: 5
+      grace_period: 5,
+      scheduling_type: :due_by
     }
 
     settings_with_no_grace_period = %Combined{
       end_date: ~U[2020-01-01 02:00:00Z],
-      grace_period: 0
+      grace_period: 0,
+      scheduling_type: :due_by
     }
 
     refute Settings.was_late?(
@@ -178,6 +236,7 @@ defmodule Oli.Delivery.SettingsTest do
     }
 
     settings = %Combined{
+      scheduling_type: :due_by,
       end_date: ~U[2020-01-01 02:00:00Z],
       time_limit: 30
     }

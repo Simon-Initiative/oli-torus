@@ -28,7 +28,7 @@ defmodule OliWeb.Progress.StudentResourceView do
 
   def mount(
         %{"section_slug" => section_slug, "user_id" => user_id, "resource_id" => resource_id},
-        session,
+        _session,
         socket
       ) do
     case get_user_and_revision(section_slug, user_id, resource_id) do
@@ -36,7 +36,7 @@ defmodule OliWeb.Progress.StudentResourceView do
         Mount.handle_error(socket, {:error, e})
 
       {:ok, user, revision} ->
-        case Mount.for(section_slug, session) do
+        case Mount.for(section_slug, socket) do
           {:error, e} ->
             Mount.handle_error(socket, {:error, e})
 

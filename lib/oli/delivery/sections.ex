@@ -27,7 +27,7 @@ defmodule Oli.Delivery.Sections do
     MinimalHierarchy
   }
 
-  alias Lti_1p3.Tool.ContextRole
+  alias Lti_1p3.Roles.ContextRole
   alias Lti_1p3.DataProviders.EctoProvider
   alias Oli.Lti.Tool.{Deployment, Registration}
   alias Oli.Lti.LtiParams
@@ -44,8 +44,8 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Publishing.PublishedResource
   alias Oli.Publishing.Publications.{PublicationDiff}
   alias Oli.Accounts.User
-  alias Lti_1p3.Tool.ContextRoles
-  alias Lti_1p3.Tool.PlatformRoles
+  alias Lti_1p3.Roles.ContextRoles
+  alias Lti_1p3.Roles.PlatformRoles
   alias Oli.Delivery.Updates.Broadcaster
   alias Oli.Delivery.Sections.EnrollmentBrowseOptions
   alias Oli.Delivery.Sections.PostProcessing
@@ -64,8 +64,69 @@ defmodule Oli.Delivery.Sections do
   @instructor_context_role_id ContextRoles.get_role(:context_instructor).id
   @student_role_id ContextRoles.get_role(:context_learner).id
 
-  def enrolled_students(section_slug) do
+  @doc """
+  Fetches the hidden instructor for a given section. If no hidden instructor exists,
+  it creates one.  The "hidden" instructor is a special user account that is used to
+  allow admins to access delivery routes.
+  """
+  def fetch_hidden_instructor(section_id) do
+    case from(e in Enrollment,
+           join: ecr in EnrollmentContextRole,
+           on: ecr.enrollment_id == e.id,
+           join: u in assoc(e, :user),
+           where:
+             e.section_id == ^section_id and
+               u.hidden == true and ecr.context_role_id == ^@instructor_context_role_id,
+           select: u
+         )
+         |> Repo.all() do
+      [] ->
+        create_hidden_instructor(section_id)
+
+      [user | _rest] ->
+        token = Oli.Accounts.generate_user_session_token(user)
+        {:ok, {user, token}}
+    end
+  end
+
+  # Creates a hidden instructor account for a given section.
+  defp create_hidden_instructor(section_id) do
+    Repo.transaction(fn ->
+      # Create a new user with the hidden flag set to true
+      {:ok, user} =
+        Repo.insert(%User{
+          hidden: true,
+          sub: UUID.uuid4(),
+          name: "Admin",
+          given_name: "Admin",
+          family_name: "User",
+          email_confirmed_at: DateTime.utc_now() |> DateTime.truncate(:second),
+          email_verified: true,
+          age_verified: true
+        })
+
+      # Create a new enrollment for the user in the section
+      {:ok, _enrollment} =
+        Oli.Delivery.Sections.enroll(
+          user.id,
+          section_id,
+          [ContextRoles.get_role(:context_instructor)],
+          :enrolled
+        )
+
+      token = Oli.Accounts.generate_user_session_token(user)
+
+      # Return the created user and session token
+      {user, token}
+    end)
+  end
+
+  @valid_contexts ~w(context_administrator context_content_developer context_instructor context_learner context_mentor context_manager context_member context_officer)a
+  def enrolled_students(section_slug, context_roles \\ @valid_contexts)
+      when is_list(context_roles) do
     section = get_section_by_slug(section_slug)
+
+    context_ids = Enum.map(context_roles, &Lti_1p3.Roles.ContextRoles.get_role(&1).id)
 
     from(e in Enrollment,
       join: s in assoc(e, :section),
@@ -74,6 +135,7 @@ defmodule Oli.Delivery.Sections do
       left_join: p in Payment,
       on: p.enrollment_id == e.id and not is_nil(p.application_date),
       where: s.slug == ^section_slug,
+      where: ecr.id in ^context_ids,
       select: {u, ecr.id, e, p},
       preload: [user: :platform_roles],
       distinct: u.id
@@ -1972,6 +2034,7 @@ defmodule Oli.Delivery.Sections do
         case section_resource do
           %SectionResource{start_date: nil, end_date: nil} -> false
           %SectionResource{hidden: true} -> false
+          %SectionResource{removed_from_schedule: true} -> false
           _ -> true
         end
       end)
@@ -2031,6 +2094,7 @@ defmodule Oli.Delivery.Sections do
         case section_resource do
           %SectionResource{start_date: nil, end_date: nil} -> false
           %SectionResource{hidden: true} -> false
+          %SectionResource{removed_from_schedule: true} -> false
           _ -> true
         end
       end)
@@ -2743,6 +2807,8 @@ defmodule Oli.Delivery.Sections do
         project_id: publication.project_id,
         scoring_strategy_id: revision.scoring_strategy_id,
         assessment_mode: revision.assessment_mode,
+        batch_scoring: revision.batch_scoring,
+        replacement_strategy: revision.replacement_strategy,
         section_id: section.id
       }
       |> SectionResource.to_map()
@@ -2997,9 +3063,10 @@ defmodule Oli.Delivery.Sections do
       # reset any section cached data
       SectionCache.clear(section.slug)
 
-      Oli.Delivery.DepotCoordinator.clear(
+      Oli.Delivery.DepotCoordinator.refresh(
         Oli.Delivery.Sections.SectionResourceDepot.depot_desc(),
-        section_id
+        section_id,
+        Oli.Delivery.Sections.SectionResourceDepot
       )
 
       # guarantee a deleted assessment is not required for gaining a certificate
@@ -3068,6 +3135,7 @@ defmodule Oli.Delivery.Sections do
              :scoring_strategy_id,
              :scheduling_type,
              :manually_scheduled,
+             :removed_from_schedule,
              :start_date,
              :end_date,
              :collab_space_config,
@@ -3632,6 +3700,7 @@ defmodule Oli.Delivery.Sections do
                :scoring_strategy_id,
                :scheduling_type,
                :manually_scheduled,
+               :removed_from_schedule,
                :start_date,
                :end_date,
                :collab_space_config,
@@ -3759,6 +3828,7 @@ defmodule Oli.Delivery.Sections do
                :scoring_strategy_id,
                :scheduling_type,
                :manually_scheduled,
+               :removed_from_schedule,
                :start_date,
                :end_date,
                :collab_space_config,
@@ -3923,6 +3993,7 @@ defmodule Oli.Delivery.Sections do
                  :scoring_strategy_id,
                  :scheduling_type,
                  :manually_scheduled,
+                 :removed_from_schedule,
                  :start_date,
                  :end_date,
                  :collab_space_config,
@@ -4561,6 +4632,7 @@ defmodule Oli.Delivery.Sections do
           rev.id,
           sr.numbering_index,
           sr.end_date,
+          sr.batch_scoring,
           last_att.lifecycle_state,
           last_att.inserted_at
         ],
@@ -4582,6 +4654,7 @@ defmodule Oli.Delivery.Sections do
           attempts_count: count(r_att.id),
           score: max(ra.score),
           out_of: max(ra.out_of),
+          batch_scoring: sr.batch_scoring,
           progress: max(ra.progress),
           last_attempt_started_at: last_att.inserted_at,
           last_attempt_state: last_att.lifecycle_state
@@ -4672,7 +4745,10 @@ defmodule Oli.Delivery.Sections do
         numbering_index: sr.numbering_index,
         start_date: coalesce(se.start_date, sr.start_date),
         end_date: coalesce(se.end_date, sr.end_date),
-        scheduling_type: sr.scheduling_type
+        scheduling_type: sr.scheduling_type,
+        batch_scoring: sr.batch_scoring,
+        score: ra.score,
+        out_of: ra.out_of
       }
     )
     |> where(^graded_filter)
@@ -5452,5 +5528,70 @@ defmodule Oli.Delivery.Sections do
       where: e.status == :enrolled and s.skip_email_verification == true
     )
     |> Repo.exists?()
+  end
+
+  @doc """
+  Given a section, return a map where the keys are LTI activity registration IDs and the values are lists of section resources that reference those activities.
+  """
+  def get_section_resources_with_lti_activities(%Section{} = section) do
+    # Step 1: Find all LTI activity registration ids
+    lti_activity_registration_ids =
+      from(ar in Oli.Activities.ActivityRegistration,
+        join: d in assoc(ar, :lti_external_tool_activity_deployment),
+        select: ar.id
+      )
+      |> Repo.all()
+
+    # Step 2: Get a map of LTI activity resource_id => activity_registration_id for this section
+    lti_activity_resource_ids_to_registration_ids =
+      from(sr in SectionResource,
+        join: r in Revision,
+        on: sr.revision_id == r.id,
+        where:
+          sr.section_id == ^section.id and r.activity_type_id in ^lti_activity_registration_ids,
+        select: {r.resource_id, r.activity_type_id}
+      )
+      |> Repo.all()
+      |> Enum.into(%{})
+
+    activity_resource_ids =
+      Map.keys(lti_activity_resource_ids_to_registration_ids)
+
+    # Step 3: Find all page section resources that reference these LTI activities
+    page_type_id = ResourceType.id_for_page()
+
+    page_section_resources_with_lti =
+      from(sr in SectionResource,
+        join: r in Revision,
+        on: sr.revision_id == r.id,
+        where:
+          sr.section_id == ^section.id and r.resource_type_id == ^page_type_id and
+            fragment("? && ?", r.activity_refs, ^activity_resource_ids),
+        select: {sr, r}
+      )
+      |> Repo.all()
+
+    # Step 4: Group the results by LTI activity registration ID
+    page_section_resources_with_lti
+    |> Enum.reduce(%{}, fn {section_resource, revision}, acc ->
+      # Find which LTI activities this page references
+      referenced_lti_activities =
+        Enum.filter(revision.activity_refs, fn ref_id ->
+          ref_id in activity_resource_ids
+        end)
+
+      # For each referenced LTI activity, get its registration id and group by that
+      Enum.reduce(referenced_lti_activities, acc, fn lti_resource_id, inner_acc ->
+        registration_id = Map.get(lti_activity_resource_ids_to_registration_ids, lti_resource_id)
+
+        existing = Map.get(inner_acc, registration_id, [])
+
+        if registration_id && section_resource not in existing do
+          Map.put(inner_acc, registration_id, [section_resource | existing])
+        else
+          inner_acc
+        end
+      end)
+    end)
   end
 end

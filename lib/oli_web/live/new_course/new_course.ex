@@ -9,7 +9,7 @@ defmodule OliWeb.Delivery.NewCourse do
 
   alias Oli.Accounts
   alias Oli.Delivery
-  alias Oli.Delivery.DistributedDepotCoordinator
+  alias Oli.Delivery.DepotCoordinator
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.PostProcessing
   alias Oli.Delivery.Sections.Section
@@ -19,7 +19,7 @@ defmodule OliWeb.Delivery.NewCourse do
   alias OliWeb.Common.Stepper.Step
   alias OliWeb.Components.Common
   alias OliWeb.Delivery.NewCourse.{CourseDetails, NameCourse, SelectSource}
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
   alias Oli.Lti.LtiParams
 
   alias Phoenix.LiveView.JS
@@ -441,7 +441,7 @@ defmodule OliWeb.Delivery.NewCourse do
   def handle_info({:section_created, section_id, section_slug}, socket) do
     Task.Supervisor.start_child(Oli.TaskSupervisor, fn ->
       depot_desc = SectionResourceDepot.depot_desc()
-      DistributedDepotCoordinator.init_if_necessary(depot_desc, section_id, SectionResourceDepot)
+      DepotCoordinator.init_if_necessary(depot_desc, section_id, SectionResourceDepot)
     end)
 
     socket

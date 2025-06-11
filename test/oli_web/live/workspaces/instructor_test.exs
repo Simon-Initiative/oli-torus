@@ -5,7 +5,7 @@ defmodule OliWeb.Workspaces.InstructorTest do
   import Phoenix.LiveViewTest
   import Oli.Factory
 
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
   alias Oli.Accounts
   alias Oli.Delivery.Sections
 
@@ -177,12 +177,6 @@ defmodule OliWeb.Workspaces.InstructorTest do
                view,
                "div[role='create section instructions']",
                "To create course sections,"
-             )
-
-      assert has_element?(
-               view,
-               "div[role='create section instructions'] button[onclick='window.showHelpModal();']",
-               "contact support."
              )
 
       assert has_element?(view, "a[href='#']", "Create New Section")

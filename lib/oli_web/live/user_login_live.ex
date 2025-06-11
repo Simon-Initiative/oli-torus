@@ -85,7 +85,7 @@ defmodule OliWeb.UserLoginLive do
 
   @impl Phoenix.LiveView
   def mount(_, session, socket) do
-    title = session["title"] || "Sign in"
+    title = session["title"] || product_short_name()
 
     email = Phoenix.Flash.get(socket.assigns.flash, :email)
     form = to_form(%{"email" => email}, as: "user")

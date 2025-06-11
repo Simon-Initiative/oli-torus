@@ -55,7 +55,7 @@ const ExpertHeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
       <nav
         className={`aa-header-nav mt-8 top-panel overflow-hidden${
           isVisible ? ' open' : ''
-        } d-flex aa-panel-section-title-bar ${!sidebarExpanded ? '' : 'ml-[135px]'}`}
+        }  aa-panel-section-title-bar ${!sidebarExpanded ? '' : 'ml-[135px]'}`}
         style={{
           alignItems: 'center',
           left: panelState['left'] ? '335px' : '65px', // 335 = PANEL_SIDE_WIDTH + 65px (torus sidebar width)
@@ -65,12 +65,8 @@ const ExpertHeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
         <div className="btn-toolbar" role="toolbar">
           <div className="btn-group pl-3 align-items-center" role="group" aria-label="Third group">
             <UndoRedoToolbar />
-          </div>
-          <div className="btn-group px-3 border-right align-items-center" role="group">
             <AddComponentToolbar authoringContainer={props.authoringContainer} />
             <ComponentSearchContextMenu authoringContainer={props.authoringContainer} />
-          </div>
-          <div className="btn-group pl-3 align-items-center" role="group" aria-label="Third group">
             <OverlayTrigger
               placement="bottom"
               delay={{ show: 150, hide: 150 }}
@@ -99,7 +95,12 @@ const ExpertHeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
                 <button className="px-2 btn btn-link" onClick={handleScoringOverviewClick}>
                   <i
                     className="fa fa-star"
-                    style={{ fontSize: 32, color: '#333', verticalAlign: 'middle' }}
+                    style={{
+                      fontSize: 24,
+                      color: '#333',
+                      verticalAlign: 'text-bottom',
+                      paddingBottom: '4px',
+                    }}
                   />
                 </button>
               </span>
@@ -126,7 +127,12 @@ const ExpertHeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
                   >
                     <i
                       className="fa fa-history"
-                      style={{ fontSize: 32, color: '#333', verticalAlign: 'middle' }}
+                      style={{
+                        fontSize: 24,
+                        color: '#333',
+                        verticalAlign: 'text-bottom',
+                        paddingBottom: '4px',
+                      }}
                     />
                   </button>
                 </span>
@@ -147,7 +153,12 @@ const ExpertHeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
                   <button className="px-2 btn btn-link" onClick={props.onToggleExport}>
                     <i
                       className="fa fa-file-export"
-                      style={{ fontSize: 32, color: '#333', verticalAlign: 'middle' }}
+                      style={{
+                        fontSize: 24,
+                        color: '#333',
+                        verticalAlign: 'text-bottom',
+                        paddingBottom: '4px',
+                      }}
                     />
                   </button>
                 </span>
@@ -168,7 +179,12 @@ const ExpertHeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
                   <button className="px-2 btn btn-link" onClick={handleReadOnlyClick}>
                     <i
                       className="fa fa-exclamation-triangle"
-                      style={{ fontSize: 40, color: 'goldenrod' }}
+                      style={{
+                        fontSize: 24,
+                        color: 'goldenrod',
+                        verticalAlign: 'text-bottom',
+                        paddingBottom: '4px',
+                      }}
                     />
                   </button>
                 </span>

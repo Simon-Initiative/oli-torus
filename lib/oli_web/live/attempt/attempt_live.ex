@@ -29,8 +29,8 @@ defmodule OliWeb.Attempt.AttemptLive do
       ]
   end
 
-  def mount(%{"section_slug" => section_slug, "attempt_guid" => attempt_guid}, session, socket) do
-    case Mount.for(section_slug, session) do
+  def mount(%{"section_slug" => section_slug, "attempt_guid" => attempt_guid}, _session, socket) do
+    case Mount.for(section_slug, socket) do
       {:error, e} ->
         Mount.handle_error(socket, {:error, e})
 

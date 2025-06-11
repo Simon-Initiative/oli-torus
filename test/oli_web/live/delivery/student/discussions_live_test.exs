@@ -8,7 +8,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLiveTest do
   import Oli.Factory
   import Ecto.Query, warn: false
 
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
   alias Oli.Delivery.Sections
   alias Oli.Resources.ResourceType
   alias Oli.Delivery.Sections.Certificates.Workers.CheckCertification
@@ -702,6 +702,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLiveTest do
       )
     end
 
+    @tag :flaky
     test "triggers CheckCertification when creating a child post",
          ctx do
       %{conn: conn, student: student, section: section, root_container: root_container} = ctx

@@ -30,7 +30,31 @@
         }
       ],
       "id": "unit-1",
-      "title": "Unit 1"
+      "title": "Unit 1",
+      "tags": [],
+      "introContent": {
+        "children": [
+          {
+            "children": [
+              {
+                "text": "Some intro "
+              },
+              {
+                "strong": true,
+                "text": "content"
+              },
+              {
+                "text": " for unit 1"
+              }
+            ],
+            "id": "4235184375",
+            "type": "p"
+          }
+        ],
+        "type": "p"
+      },
+      "introVideo": null,
+      "posterImage": "https://torus-media-dev.s3.amazonaws.com/poster_images/example_course/6f9621ae-06da-4824-848c-ac6e82d4c08b.jpg"
     },
     {
       "type": "container",
@@ -57,5 +81,39 @@
   "originalFile": "",
   "tags": [],
   "title": "This is a product",
-  "type": "Product"
+  "type": "Product",
+  "certificate": {
+    "description": "Certificate description",
+    "title": "Product 2",
+    "section_id": 10,
+    "custom_assessments": [
+      8
+    ],
+    "assessments_apply_to": "all",
+    "required_discussion_posts": 1,
+    "required_class_notes": 1,
+    "min_percentage_for_completion": 75.0,
+    "min_percentage_for_distinction": 95.0,
+    "requires_instructor_approval": true,
+    "admin_name1": null,
+    "admin_name2": null,
+    "admin_name3": null,
+    "admin_title1": null,
+    "admin_title2": null,
+    "admin_title3": null,
+    "logo1": null,
+    "logo2": null,
+    "logo3": null
+  },
+  "amount": {
+    "currency": "USD",
+    "amount": "25.00"
+  },
+  "welcomeTitle": {},
+  "encouragingSubtitle": null,
+  "requiresPayment": false,
+  "paymentOptions": "direct_and_deferred",
+  "payByInstitution": false,
+  "gracePeriodDays": 1,
+  "certificateEnabled": true
 }

@@ -39,14 +39,22 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
   Usefull for generating a full hierarchy of section resources for a section,
   in places where code had been calling Oli.Delivery.Hierarchy.full_hierarchy
   directly.
+
+  An optional keyword list can be passed to extend the filtering conditions.
+
+  Example:
+    SectionResourceDepot.get_full_hierarchy(some_section_id, [hidden: false])
   """
-  def get_full_hierarchy(%Section{} = section) do
+  def get_full_hierarchy(%Section{} = section, additional_query_conditions \\ []) do
     depot_coordinator().init_if_necessary(@depot_desc, section.id, __MODULE__)
 
     page = Oli.Resources.ResourceType.id_for_page()
     container = Oli.Resources.ResourceType.id_for_container()
 
-    srs = Depot.query(@depot_desc, section.id, [{:resource_type_id, {:in, [page, container]}}])
+    query_conditions =
+      Keyword.merge([{:resource_type_id, {:in, [page, container]}}], additional_query_conditions)
+
+    srs = Depot.query(@depot_desc, section.id, query_conditions)
     Oli.Delivery.Hierarchy.full_hierarchy(section, srs)
   end
 
@@ -186,6 +194,22 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
       end
 
     Depot.query(@depot_desc, section_id, conditions)
+  end
+
+  @doc """
+  Returns true if the section has any scheduled resources.
+  """
+  def has_scheduled_resources?(section_id) do
+    depot_coordinator().init_if_necessary(@depot_desc, section_id, __MODULE__)
+
+    Depot.exists?(
+      @depot_desc,
+      section_id,
+      [
+        [start_date: {:!=, nil}],
+        [end_date: {:!=, nil}]
+      ]
+    )
   end
 
   @doc """

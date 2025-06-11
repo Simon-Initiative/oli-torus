@@ -57,6 +57,7 @@ defmodule Oli.Delivery.Sections.SectionResource do
     field :feedback_mode, Ecto.Enum, values: [:allow, :disallow, :scheduled], default: :allow
     field :feedback_scheduled_date, :utc_datetime
     field :hidden, :boolean, default: false
+    field :removed_from_schedule, :boolean, default: false
 
     # an array of ids to other section resources
     field :children, {:array, :id}, default: []
@@ -85,6 +86,8 @@ defmodule Oli.Delivery.Sections.SectionResource do
       values: [:foundation, :application, :deliberate_practice],
       default: :foundation
 
+    field :batch_scoring, :boolean, default: true
+    field :replacement_strategy, Ecto.Enum, values: [:none, :dynamic], default: :none
     field :duration_minutes, :integer
     field :intro_content, :map, default: %{}
     field :intro_video, :string, default: nil
@@ -93,8 +96,8 @@ defmodule Oli.Delivery.Sections.SectionResource do
     field :relates_to, {:array, :id}, default: []
     field :allow_hints, :boolean, default: false
     belongs_to :resource_type, Oli.Resources.ResourceType
-    belongs_to :revision, Oli.Activities.ActivityRegistration
-    belongs_to :activity_type, Oli.Resources.Revision
+    belongs_to :revision, Oli.Resources.Revision
+    belongs_to :activity_type, Oli.Activities.ActivityRegistration
 
     timestamps(type: :utc_datetime)
   end
@@ -115,6 +118,8 @@ defmodule Oli.Delivery.Sections.SectionResource do
       :max_attempts,
       :password,
       :retake_mode,
+      :batch_scoring,
+      :replacement_strategy,
       :assessment_mode,
       :late_submit,
       :late_start,
@@ -124,6 +129,7 @@ defmodule Oli.Delivery.Sections.SectionResource do
       :feedback_mode,
       :feedback_scheduled_date,
       :hidden,
+      :removed_from_schedule,
       :scoring_strategy_id,
       :resource_id,
       :project_id,
@@ -173,7 +179,8 @@ defmodule Oli.Delivery.Sections.SectionResource do
     :scoring_strategy_id,
     :inserted_at,
     :updated_at,
-    :hidden
+    :hidden,
+    :removed_from_schedule
   ]
 
   def to_map(%SectionResource{} = section_resource) do

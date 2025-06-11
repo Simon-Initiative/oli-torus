@@ -4,6 +4,7 @@ import { BeforeUnloadListener } from './before_unload';
 import { CheckboxListener } from './checkbox_listener';
 import { ClickOutside } from './click_outside';
 import { ClickExecJS, HoverAway } from './click_variations';
+import { ConditionalToggle } from './conditional_toggle';
 import { CopyListener } from './copy_listener';
 import { Countdown } from './countdown';
 import { CountdownTimer } from './countdown_timer';
@@ -15,6 +16,8 @@ import { DragSource, DropTarget } from './dragdrop';
 import { EmailList } from './email_list';
 import { EndDateTimer } from './end_date_timer';
 import { EvaluateMathJaxExpressions } from './evaluate_mathjax_expressions';
+import { ExpandContainers } from './expand_containers';
+import { FixedNavigationBar } from './fixed_navigation_bar';
 import { GraphNavigation } from './graph';
 import { HierarchySelector } from './hierarchy_selector';
 import { InputAutoSelect } from './input_auto_select';
@@ -37,6 +40,7 @@ import { SelectListener } from './select_listener';
 import { ShowTeaser } from './show_teaser';
 import { SliderScroll } from './slider_scroll';
 import { SubmitForm } from './submit_form';
+import { SubmitTechSupportForm } from './submit_tech_support_form';
 import { SystemMessage } from './system_message';
 import { TextInputListener } from './text_input_listener';
 import { TextareaListener } from './textarea_listener';
@@ -47,6 +51,7 @@ import { VideoPlayer } from './video_player';
 import { PauseOthersOnSelected, VideoPreview } from './video_preview';
 
 export const Hooks = {
+  ExpandContainers,
   ShowTeaser,
   FirePageTrigger,
   DelayedSubmit,
@@ -99,4 +104,7 @@ export const Hooks = {
   DisableSubmitted,
   Recaptcha,
   OnMountAndUpdate,
+  FixedNavigationBar,
+  SubmitTechSupportForm,
+  ConditionalToggle,
 };

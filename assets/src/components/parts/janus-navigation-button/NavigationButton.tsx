@@ -25,6 +25,8 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
   const [buttonTransparent, setButtonTransparent] = useState('');
   const [buttonEnabled, setButtonEnabled] = useState(true);
   const [buttonTitle, setButtonTitle] = useState('');
+  const [buttonImageSrc, setButtonImageSrc] = useState('');
+  const [imagePosition, setImagePosition] = useState('');
   const [_cssClass, setCssClass] = useState('');
 
   const initialize = useCallback(async (pModel) => {
@@ -40,6 +42,12 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
 
     const dTitle = pModel.title || '';
     setButtonTitle(dTitle);
+
+    const dSrc = pModel.imageSource || '';
+    setButtonImageSrc(dSrc);
+
+    const dImagePosition = pModel.imagePosition || 'Left';
+    setImagePosition(dImagePosition);
 
     const dAccessibilityText = pModel.ariaLabel || accessibilityText;
     setAccessibilityText(dAccessibilityText);
@@ -125,6 +133,16 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
     const sVisible = currentStateSnapshot[`stage.${id}.visible`];
     if (sVisible !== undefined) {
       setButtonVisible(sVisible);
+    }
+
+    const imageSource = currentStateSnapshot[`stage.${id}.imageSource`];
+    if (imageSource?.length) {
+      setButtonImageSrc(imageSource);
+    }
+
+    const imagePosition = currentStateSnapshot[`stage.${id}.imagePosition`];
+    if (imagePosition?.length) {
+      setImagePosition(imagePosition);
     }
 
     const sTitle = currentStateSnapshot[`stage.${id}.title`];
@@ -244,6 +262,16 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
                 setButtonTitle(sTitle);
               }
 
+              const imageSource = changes[`stage.${id}.imageSource`];
+              if (imageSource?.length) {
+                setButtonImageSrc(imageSource);
+              }
+
+              const imagePosition = changes[`stage.${id}.imagePosition`];
+              if (imagePosition?.length) {
+                setImagePosition(imagePosition);
+              }
+
               const sTitles = changes[`stage.${id}.buttonTitles`];
               if (sTitles !== undefined) {
                 setButtonTitle(sTitles[0]);
@@ -294,6 +322,16 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
               const sTitle = changes[`stage.${id}.title`];
               if (sTitle !== undefined) {
                 setButtonTitle(sTitle);
+              }
+
+              const imageSource = changes[`stage.${id}.imageSource`];
+              if (imageSource?.length) {
+                setButtonImageSrc(imageSource);
+              }
+
+              const imagePosition = changes[`stage.${id}.imagePosition`];
+              if (imagePosition?.length) {
+                setImagePosition(imagePosition);
               }
 
               const sTitles = changes[`stage.${id}.buttonTitles`];
@@ -377,7 +415,21 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
     styles.backgroundColor = backgroundColor;
     janusButtonStyle.backgroundColor = backgroundColor;
   }
+  const isVertical = imagePosition === 'Top' || imagePosition === 'Bottom';
+  //Apply these style only if button have image
+  if (buttonImageSrc?.length) {
+    styles.display = 'flex';
+    styles.flexDirection = isVertical
+      ? imagePosition === 'Top'
+        ? 'column'
+        : 'column-reverse'
+      : imagePosition === 'Left'
+      ? 'row'
+      : 'row-reverse';
 
+    styles.alignItems = 'center';
+    styles.gap = isVertical ? '1px' : '4px';
+  }
   const handleButtonPress = () => {
     props.onSubmit({
       id: `${id}`,
@@ -427,10 +479,19 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
     'aria-label': ariaLabel,
     disabled: !buttonEnabled,
   };
-
   return ready && buttonVisible ? (
     <button data-janus-type={tagName} {...buttonProps} style={styles}>
-      {buttonTitle}
+      {buttonImageSrc?.length > 0 && (
+        <img
+          draggable="false"
+          src={buttonImageSrc}
+          style={{
+            height: isVertical && buttonTitle ? '60%' : '100%',
+            width: buttonTitle ? '50%' : '100%',
+          }}
+        />
+      )}
+      {buttonTitle && <span>{buttonTitle}</span>}
     </button>
   ) : null;
 };
