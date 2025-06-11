@@ -33,7 +33,7 @@ describe('Agenda Visibility Toggle', () => {
       errorMessage: null,
       weekdays: [false, true, true, true, true, true, false],
       preferredSchedulingTime: { hour: 23, minute: 59, second: 59 },
-      showRemoved: false
+      showRemoved: false,
     };
 
     it('updates agenda to true when fulfilled', () => {
@@ -91,7 +91,7 @@ describe('Agenda Visibility Toggle', () => {
       errorMessage: null,
       weekdays: [false, true, true, true, true, true, false],
       preferredSchedulingTime: { hour: 23, minute: 59, second: 59 },
-      showRemoved: false
+      showRemoved: false,
     };
 
     const createTestStore = (preloadedState: SchedulerState) =>
