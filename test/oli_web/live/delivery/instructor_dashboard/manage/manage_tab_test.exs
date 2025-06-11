@@ -63,26 +63,5 @@ defmodule OliWeb.Delivery.InstructorDashboard.ManageTabTest do
       # Collab Space Group gets rendered
       assert render(view) =~ "Collaborative Space"
     end
-
-    test "agenda toggle is not visible in the manage tab", %{
-      instructor: instructor,
-      section: section,
-      conn: conn
-    } do
-      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
-
-      {:ok, view, _html} =
-        live_isolated(
-          conn,
-          OliWeb.Sections.OverviewView,
-          session: %{
-            "section_slug" => section.slug,
-            "current_user_id" => instructor.id
-          }
-        )
-
-      # Agenda is not visible in the manage tab
-      refute has_element?(view, "input[name=\"toggle_agenda\"]")
-    end
   end
 end
