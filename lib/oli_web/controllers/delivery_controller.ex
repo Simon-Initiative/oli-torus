@@ -28,8 +28,6 @@ defmodule OliWeb.DeliveryController do
     ContextRoles.get_role(:context_instructor)
   ]
 
-  # %{"Enrolled" => 0, "Rejected invitation" => 1, ...}
-
   @doc """
   This is the default entry point for delivery users. It will redirect to the appropriate page based
   on whether the user is an independent learner or an LTI user.
