@@ -191,6 +191,22 @@ const reAddAncestors = (item: HierarchyItem, schedule: HierarchyItem[]) => {
   return Array.from(matchedIds);
 };
 
+const reAddDescendents = (item: HierarchyItem, schedule: HierarchyItem[]) => {
+  const matchedIds = new Set<number>();
+  const includeDescendents = (item: HierarchyItem) => {
+    for (const childId of item.children) {
+      const child = getScheduleItem(childId, schedule);
+      if (child) {
+        matchedIds.add(child.id);
+        child.removed_from_schedule = false;
+        includeDescendents(child);
+      }
+    }
+  };
+  includeDescendents(item);
+  return Array.from(matchedIds);
+};
+
 const neverScheduled = (schedule: HierarchyItem[]) =>
   !schedule.find((i) => i.startDate === null || i.endDate === null || i.manually_scheduled);
 
@@ -271,6 +287,7 @@ const schedulerSlice = createSlice({
         mutableItem.removed_from_schedule = false;
         state.dirty.push(mutableItem.id);
         state.dirty.push(...reAddAncestors(mutableItem, state.schedule));
+        state.dirty.push(...reAddDescendents(mutableItem, state.schedule));
         if (state.schedule && state.startDate && state.endDate) {
           const root = getScheduleRoot(state.schedule);
           root &&
@@ -285,6 +302,9 @@ const schedulerSlice = createSlice({
             );
           state.dirty = state.schedule.map((item) => item.id);
         }
+        state.showRemoved = state.showRemoved
+          ? state.schedule.some((item) => item.removed_from_schedule)
+          : state.showRemoved;
       }
     },
     moveScheduleItem(state, action: PayloadAction<MovePayload>) {
