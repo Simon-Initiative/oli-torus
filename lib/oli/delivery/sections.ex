@@ -121,8 +121,12 @@ defmodule Oli.Delivery.Sections do
     end)
   end
 
-  def enrolled_students(section_slug) do
+  @valid_contexts ~w(context_administrator context_content_developer context_instructor context_learner context_mentor context_manager context_member context_officer)a
+  def enrolled_students(section_slug, context_roles \\ @valid_contexts)
+      when is_list(context_roles) do
     section = get_section_by_slug(section_slug)
+
+    context_ids = Enum.map(context_roles, &Lti_1p3.Roles.ContextRoles.get_role(&1).id)
 
     from(e in Enrollment,
       join: s in assoc(e, :section),
@@ -131,6 +135,7 @@ defmodule Oli.Delivery.Sections do
       left_join: p in Payment,
       on: p.enrollment_id == e.id and not is_nil(p.application_date),
       where: s.slug == ^section_slug,
+      where: ecr.id in ^context_ids,
       select: {u, ecr.id, e, p},
       preload: [user: :platform_roles],
       distinct: u.id
