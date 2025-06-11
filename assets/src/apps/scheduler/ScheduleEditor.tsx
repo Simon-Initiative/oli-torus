@@ -26,6 +26,7 @@ export interface SchedulerProps {
   display_curriculum_item_numbering: boolean;
   wizard_mode: boolean;
   edit_section_details_url: string;
+  agenda: boolean;
 }
 
 export enum ViewMode {
@@ -42,6 +43,7 @@ export const ScheduleEditor: React.FC<SchedulerProps> = ({
   wizard_mode,
   edit_section_details_url,
   preferred_scheduling_time,
+  agenda,
 }) => {
   const dispatch = useDispatch();
 
@@ -109,6 +111,7 @@ export const ScheduleEditor: React.FC<SchedulerProps> = ({
         section_slug,
         display_curriculum_item_numbering,
         preferred_scheduling_time,
+        agenda,
       }),
     );
   }, [dispatch, display_curriculum_item_numbering, end_date, section_slug, start_date, title]);
@@ -201,6 +204,7 @@ export const ScheduleEditor: React.FC<SchedulerProps> = ({
         <ScheduleGrid
           startDate={start_date}
           endDate={end_date}
+          section_slug={section_slug}
           onReset={showModal}
           onClear={showClearModal}
           onViewSelected={onViewSelected}

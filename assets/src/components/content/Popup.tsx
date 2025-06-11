@@ -71,6 +71,7 @@ export const Popup: React.FC<Props> = ({ children, popupContent, popup }) => {
       isOpen={isPopoverOpen}
       onClickOutside={() => (setIsPopoverOpen(false), pauseAudio())}
       positions={['top', 'bottom', 'left', 'right']}
+      reposition={false}
       content={({ position, childRect, popoverRect }) => (
         <ArrowContainer
           position={position}

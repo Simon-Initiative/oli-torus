@@ -7,6 +7,7 @@ import {
   clearSectionSchedule,
   scheduleAppFlushChanges,
   scheduleAppStartup,
+  updateSectionAgenda,
 } from './scheduling-thunk';
 
 export enum ScheduleItemType {
@@ -63,6 +64,7 @@ export interface SchedulerState {
   preferredSchedulingTime: TimeParts;
   expandedContainers: Record<number, boolean>;
   searchQuery: string;
+  agenda: boolean;
 }
 
 export const initSchedulerState = (): SchedulerState => ({
@@ -85,6 +87,7 @@ export const initSchedulerState = (): SchedulerState => ({
   },
   expandedContainers: {},
   searchQuery: '',
+  agenda: false,
 });
 
 const toDateTime = (str: string, preferredSchedulingTime: TimeParts) => {
@@ -446,6 +449,9 @@ const schedulerSlice = createSlice({
           state.expandedContainers[id] = false;
         });
       });
+    builder.addCase(updateSectionAgenda.fulfilled, (state, action) => {
+      state.agenda = action.payload.agenda;
+    });
     builder.addCase(scheduleAppStartup.fulfilled, (state, action) => {
       const {
         start_date,
@@ -471,6 +477,7 @@ const schedulerSlice = createSlice({
       state.endDate = new DateWithoutTime(end_date);
       state.schedule = buildHierarchyItems(schedule, state.preferredSchedulingTime);
       state.sectionSlug = section_slug;
+      state.agenda = action.payload.agenda;
       if (state.startDate && state.endDate && neverScheduled(state.schedule)) {
         const root = getScheduleRoot(state.schedule);
         root &&
