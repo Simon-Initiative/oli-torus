@@ -33,10 +33,12 @@ import {
   setSearchQuery,
   showHideRemoved,
 } from './scheduler-slice';
+import { updateSectionAgenda } from './scheduling-thunk';
 
 interface GridProps {
   startDate: string;
   endDate: string;
+  section_slug: string;
   onReset: () => void;
   onClear: () => void;
   onViewSelected: (view: ViewMode) => void;
@@ -74,12 +76,14 @@ const rowPaletteDark = [
 export const ScheduleGrid: React.FC<GridProps> = ({
   startDate,
   endDate,
+  section_slug,
   onReset,
   onClear,
   onViewSelected,
 }) => {
   const [barContainer, attachBarContainer] = useCallbackRef<HTMLElement>();
   const rect = useResizeObserver(barContainer || null);
+  const agendaEnabled = useSelector((state: SchedulerAppState) => state.scheduler.agenda);
 
   const schedule = useSelector(getVisibleSchedule) as VisibleHierarchyItem[];
   const isScheduled = schedule.some((item: any) => item.startDateTime && item.endDateTime);
@@ -157,6 +161,10 @@ export const ScheduleGrid: React.FC<GridProps> = ({
     }
   };
 
+  const onToggleAgenda = () => {
+    dispatch(updateSectionAgenda({ section_slug, agenda: !agendaEnabled }));
+  };
+
   return (
     <div className="pb-20">
       <div className="w-full flex justify-center flex-col bg-[#F2F9FF] dark:bg-[#1F1D23]">
@@ -181,7 +189,40 @@ export const ScheduleGrid: React.FC<GridProps> = ({
           </div>
         </div>
       </div>
-      <div className="flex flex-row gap-x-4 justify-start items-center w-auto h-[51px] mb-6 ml-[270px] mr-2 px-2 bg-white dark:bg-black shadow-[0px_2px_6.099999904632568px_0px_rgba(0,0,0,0.10)]">
+      <div className="flex flex-row gap-x-4 justify-start items-center w-auto h-[51px] mb-6 ml-[270px] mr-2 px-8 bg-white dark:bg-black shadow-[0px_2px_6.099999904632568px_0px_rgba(0,0,0,0.10)]">
+        {/* Agenda Visibility Toggle */}
+        <form id="toggle_switch_form" className="mr-2">
+          <label className="flex flex-row gap-x-4 items-center cursor-pointer ">
+            <span
+              className={`justify-start text-sm font-bold transition-colors duration-300
+                          ${
+                            agendaEnabled
+                              ? 'text-[#0062F2] dark:text-[#4ca6ff] hover:text-[#1B67B2]'
+                              : 'text-[#5c5d69] dark:text-[#eeebf5] hover:text-[#1B67B2]'
+                          }`}
+            >
+              Agenda Visibility
+            </span>
+            <input
+              id="toggle_switch_checkbox"
+              type="checkbox"
+              name="agenda_visibility"
+              className="sr-only peer"
+              checked={agendaEnabled}
+              onChange={onToggleAgenda}
+            />
+            <div
+              className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4
+                  peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full
+                  peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full
+                  peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px]
+                  after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5
+                  after:w-5 after:transition-transform dark:border-gray-600 peer-checked:bg-primary
+                  after:duration-300 after:ease-in-out transition-colors duration-300 ease-in-out"
+            ></div>
+          </label>
+        </form>
+
         {/* Search Bar  */}
         <div className="relative w-[461px]">
           <SearchIcon className="text-[#383A44] dark:text-white absolute left-3 top-1/2 -translate-y-1/2" />

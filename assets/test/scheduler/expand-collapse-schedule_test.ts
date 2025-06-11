@@ -55,6 +55,7 @@ describe('expand/collapse containers', () => {
       preferredSchedulingTime: { hour: 23, minute: 59, second: 59 },
       searchQuery: '',
       showRemoved: false,
+      agenda: true,
     },
   };
 

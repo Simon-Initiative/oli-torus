@@ -6,17 +6,9 @@ defmodule Oli.Delivery.Sections.SectionResourceMigration do
   def requires_migration?(section_id) do
     query =
       from sr in SectionResource,
-        where: sr.section_id == ^section_id,
-        select: sr.graded,
-        limit: 1
+        where: sr.section_id == ^section_id and is_nil(sr.graded)
 
-    case Oli.Repo.all(query) do
-      [nil] ->
-        true
-
-      _ ->
-        false
-    end
+    Repo.exists?(query)
   end
 
   def migrate(section_id) do

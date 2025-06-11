@@ -201,6 +201,18 @@ defmodule OliWeb.Api.SchedulingController do
     end
   end
 
+  def update_agenda(conn, %{"agenda" => agenda}) do
+    section = conn.assigns.section
+
+    case Sections.update_section(section, %{agenda: agenda}) do
+      {:ok, _section} ->
+        json(conn, %{"result" => "success", "agenda" => agenda})
+
+      {:error, _} ->
+        json(conn, %{"result" => "error"})
+    end
+  end
+
   # Restrict access to enrolled instructors, LMS admins, or system
   # (authoring) admins
   defp can_access_section?(conn, section) do

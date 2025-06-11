@@ -196,15 +196,11 @@ defmodule OliWeb.LtiController do
             platform_instance_id: platform_instance.id
           )
 
-        resource_link = %{
-          id: resource_id
-        }
-
         claims = [
           Lti_1p3.Claims.DeploymentId.deployment_id(deployment.deployment_id),
           Lti_1p3.Claims.MessageType.message_type(:lti_resource_link_request),
           Lti_1p3.Claims.Version.version("1.3.0"),
-          Lti_1p3.Claims.ResourceLink.resource_link(resource_link),
+          Lti_1p3.Claims.ResourceLink.resource_link(resource_id),
           Lti_1p3.Claims.TargetLinkUri.target_link_uri(platform_instance.target_link_uri),
           Lti_1p3.Claims.Roles.roles(roles)
         ]
