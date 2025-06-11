@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useBackdropModal } from 'components/misc/BackdropModal';
+import { useMultiStepModal } from 'components/misc/MultiStepModal';
 import { Alert } from '../../components/misc/Alert';
-import { usePromptModal } from '../../components/misc/PromptModal';
+// import { usePromptModal } from '../../components/misc/PromptModal';
 import { ContextMenuProvider } from './ContextMenuController';
 import { ErrorDisplay } from './ErrorDisplay';
 import { ScheduleGrid } from './ScheduleGrid';
@@ -112,17 +113,44 @@ export const ScheduleEditor: React.FC<SchedulerProps> = ({
     );
   }, [dispatch, display_curriculum_item_numbering, end_date, section_slug, start_date, title]);
 
-  const { Modal, showModal } = usePromptModal(
-    <div>
+  const steps = [
+    <div key="step-1">
       <p>
         This will reset all timelines to the default. Select the week days you want to consider for
         that schedule.
       </p>
       <WeekDayPicker weekdays={validWeekdays} onChange={setValidWeekdays} />
     </div>,
+    <div key="step-2">This feature development is still in progress</div>,
+    <div key="step-3">Step 3 content</div>,
+  ];
+  const stepTitles = ['Set Default Timeline', 'Identify Breaks', 'Set Default Layout'];
 
-    onReset,
+  const { showModal, Modal } = useMultiStepModal(
+    steps,
+    stepTitles,
+    () => onReset(),
+    () => console.log('Cancelled!'),
+    {
+      title: 'Schedule Preferences',
+      finishText: 'Complete',
+      nextText: 'Continue',
+      backText: 'Back',
+      allowBack: false,
+    },
   );
+
+  // const { Modal, showModal } = usePromptModal(
+  //   <div>
+  //     <p>
+  //       This will reset all timelines to the default. Select the week days you want to consider for
+  //       that schedule.
+  //     </p>
+  //     <WeekDayPicker weekdays={validWeekdays} onChange={setValidWeekdays} />
+  //   </div>,
+
+  //   onReset,
+  // );
 
   const { Modal: clearModal, showModal: showClearModal } = useBackdropModal(
     <div>
