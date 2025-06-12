@@ -956,3 +956,15 @@ $font-family-sans-serif: var(--font-sans);
     }
   }
 }
+
+.component-tab {
+  .part-documentation {
+    font-size: 14px;
+    font-weight: bold;
+    text-decoration: underline;
+    margin-left: 0px;
+    margin-right: 0px;
+    padding: 5px 8px 8px 6px;
+    border-radius: 4px;
+  }
+}

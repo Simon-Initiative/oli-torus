@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo } from 'react';
-import { Button, ButtonGroup, ButtonToolbar } from 'react-bootstrap';
+import { Alert, Button, ButtonGroup, ButtonToolbar } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { JSONSchema7 } from 'json-schema';
 import { isEqual } from 'lodash';
@@ -345,6 +345,17 @@ export const PartPropertyEditor: React.FC<Props> = ({
     <div
       className={`component-tab p-3 overflow-hidden part-property-editor ${selectPartType}-part-property`}
     >
+      {selectPartType === 'janus-fill-blanks' && (
+        <Alert variant="info" className="part-documentation">
+          <a
+            href="https://etx-tech.notion.site/FITB-Component-New-20862d4b114580948615d0ccd2706450"
+            target="_blank"
+            rel="noreferrer"
+          >
+            <i className="fa-solid fa-circle-info"></i> How to Use This Component{' '}
+          </a>
+        </Alert>
+      )}
       {selectedPartDef && partEditMode === 'expert' && (
         <ButtonToolbar aria-label="Component Tools">
           <ButtonGroup className="me-2" aria-label="First group">
