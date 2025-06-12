@@ -707,6 +707,7 @@ defmodule OliWeb.Router do
     pipe_through([:api, :require_section, :delivery_protected])
 
     put("/", SchedulingController, :update)
+    put("/agenda", SchedulingController, :update_agenda)
     get("/", SchedulingController, :index)
     delete("/", SchedulingController, :clear)
   end

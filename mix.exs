@@ -178,6 +178,7 @@ defmodule Oli.MixProject do
       {:mix_test_watch, "~> 1.0", only: :dev, runtime: false},
       {:monocle, "~> 0.0.1"},
       {:mox, "~> 0.5", only: [:test]},
+      {:nimble_csv, "~> 1.1"},
       {:nimble_parsec, "~> 1.2"},
       {:nodejs, "~> 2.0"},
       {:oban, "~> 2.17.2"},

@@ -109,7 +109,7 @@ defmodule Oli.Delivery.Sections.Scheduling do
       |> Multi.update_all(
         :updated_resources,
         &get_section_resources_with_schedule(&1, section_id),
-        set: [start_date: nil, end_date: nil]
+        set: [start_date: nil, end_date: nil, removed_from_schedule: false]
       )
       |> Repo.transaction()
 

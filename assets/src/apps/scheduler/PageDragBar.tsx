@@ -12,10 +12,15 @@ import {
   leftToDate,
   validateStartEndDates,
 } from './date-utils';
-import { SchedulingType, removeScheduleItem } from './scheduler-slice';
+import {
+  HierarchyItem,
+  SchedulingType,
+  reAddScheduleItem,
+  removeScheduleItem,
+} from './scheduler-slice';
 
 interface DragBarProps {
-  itemId: number;
+  item: HierarchyItem;
   endDate: DateWithoutTime | null;
   startDate: DateWithoutTime | null;
   isContainer: boolean;
@@ -29,14 +34,14 @@ interface DragBarProps {
 }
 
 export const DraggableIcon: React.FC<{
-  itemId: number;
+  item: HierarchyItem;
   date: DateWithoutTime;
   dayGeometry: DayGeometry;
   onChange: (date: DateWithoutTime) => void;
   onStartDrag?: () => void;
   children: React.ReactNode;
   offset: number;
-}> = ({ itemId, date, dayGeometry, onChange, onStartDrag, children, offset }) => {
+}> = ({ item, date, dayGeometry, onChange, onStartDrag, children, offset }) => {
   const [isDragging, , enableDrag, disableDrag] = useToggle();
 
   const [startingGeometry, setStartingGeometry] = React.useState({ left: 0, width: 0 });
@@ -48,23 +53,33 @@ export const DraggableIcon: React.FC<{
   const { showMenu, hideMenu } = useContextMenu();
   const dispatch = useDispatch();
 
-  const menuItems: ContextMenuItem[] = [
-    {
-      label: 'Remove from Schedule',
-      onClick: () => {
-        hideMenu();
-        dispatch(
-          removeScheduleItem({
-            itemId: itemId,
-          }),
-        );
-      },
-    },
-  ];
+  const menuItem = item.removed_from_schedule
+    ? {
+        label: 'Re-add item to Schedule',
+        onClick: () => {
+          hideMenu();
+          dispatch(
+            reAddScheduleItem({
+              itemId: item.id,
+            }),
+          );
+        },
+      }
+    : {
+        label: 'Remove from Schedule',
+        onClick: () => {
+          hideMenu();
+          dispatch(
+            removeScheduleItem({
+              itemId: item.id,
+            }),
+          );
+        },
+      };
+  const menuItems: ContextMenuItem[] = [menuItem];
 
   const handleContextMenu = (e: React.MouseEvent<HTMLDivElement>) => {
     e.preventDefault();
-
     showMenu({ x: e.clientX, y: e.clientY }, menuItems);
   };
 
@@ -125,7 +140,7 @@ export const DraggableIcon: React.FC<{
 };
 
 export const PageDragBar: React.FC<DragBarProps> = ({
-  itemId,
+  item,
   endDate,
   startDate,
   onChange,
@@ -171,7 +186,7 @@ export const PageDragBar: React.FC<DragBarProps> = ({
 
       {endDate && (
         <DraggableIcon
-          itemId={itemId}
+          item={item}
           date={endDate}
           dayGeometry={dayGeometry}
           onStartDrag={onStartDrag}
@@ -184,7 +199,7 @@ export const PageDragBar: React.FC<DragBarProps> = ({
 
       {isGraded && startDate && (
         <DraggableIcon
-          itemId={itemId}
+          item={item}
           date={startDate}
           dayGeometry={dayGeometry}
           onStartDrag={onStartDrag}

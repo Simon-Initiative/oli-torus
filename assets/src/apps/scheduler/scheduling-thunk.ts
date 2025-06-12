@@ -3,7 +3,13 @@ import uniq from 'lodash/uniq';
 import { dateTimeInTorusFormat, dateWithoutTimeLabel } from './date-utils';
 import { SchedulerAppState } from './scheduler-reducer';
 import { StringDate, getScheduleItem } from './scheduler-slice';
-import { ScheduleUpdate, clearSchedule, loadSchedule, updateSchedule } from './scheduling-service';
+import {
+  ScheduleUpdate,
+  clearSchedule,
+  loadSchedule,
+  updateAgenda,
+  updateSchedule,
+} from './scheduling-service';
 
 interface StartupPayload {
   start_date: StringDate;
@@ -12,6 +18,7 @@ interface StartupPayload {
   section_slug: string;
   display_curriculum_item_numbering: boolean;
   preferred_scheduling_time: string;
+  agenda: boolean;
 }
 
 interface ClearPayload {
@@ -22,6 +29,13 @@ export const clearSectionSchedule = createAsyncThunk(
   'schedule/clear',
   async (param: ClearPayload, thunkAPI) => {
     return clearSchedule(param.section_slug);
+  },
+);
+
+export const updateSectionAgenda = createAsyncThunk(
+  'schedule/updateAgenda',
+  async (params: { section_slug: string; agenda: boolean }, thunkAPI) => {
+    return updateAgenda(params.section_slug, params.agenda);
   },
 );
 
@@ -81,6 +95,7 @@ export const scheduleAppStartup = createAsyncThunk(
       section_slug,
       display_curriculum_item_numbering,
       preferred_scheduling_time,
+      agenda,
     }: StartupPayload,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     thunkAPI,
@@ -94,6 +109,7 @@ export const scheduleAppStartup = createAsyncThunk(
       title,
       display_curriculum_item_numbering,
       section_slug,
+      agenda,
     };
   },
 );
