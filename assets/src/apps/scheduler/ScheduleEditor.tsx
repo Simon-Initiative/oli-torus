@@ -102,22 +102,25 @@ export const ScheduleEditor: React.FC<SchedulerProps> = ({
     }
   };
 
-      const interceptNavigation = useCallback((e: Event) => {
-    if (!unsavedChanges) return;
+  const interceptNavigation = useCallback(
+    (e: Event) => {
+      if (!unsavedChanges) return;
 
-    e.preventDefault();
-    e.stopPropagation();
+      e.preventDefault();
+      e.stopPropagation();
 
-    const target = e.target as HTMLElement;
-    const link = target.closest('a');
+      const target = e.target as HTMLElement;
+      const link = target.closest('a');
 
-    if (link) {
-      pendingNavigationUrl.current = link.href;
-      if (showNavigationWarningModalRef.current) {
-        showNavigationWarningModalRef.current();
+      if (link) {
+        pendingNavigationUrl.current = link.href;
+        if (showNavigationWarningModalRef.current) {
+          showNavigationWarningModalRef.current();
+        }
       }
-    }
-  }, [unsavedChanges]);
+    },
+    [unsavedChanges],
+  );
 
   // Set up navigation interception for tabs and breadcrumbs
   useEffect(() => {
@@ -126,25 +129,25 @@ export const ScheduleEditor: React.FC<SchedulerProps> = ({
       const tabLinks = document.querySelectorAll('#tabs-tab a');
       const breadcrumbLinks = document.querySelectorAll('.breadcrumb a');
 
-            // Remove existing listeners
+      // Remove existing listeners
       if (navigationEventListener.current) {
-        Array.from(tabLinks).forEach(link => {
+        Array.from(tabLinks).forEach((link) => {
           link.removeEventListener('click', navigationEventListener.current as EventListener);
         });
-        Array.from(breadcrumbLinks).forEach(link => {
+        Array.from(breadcrumbLinks).forEach((link) => {
           link.removeEventListener('click', navigationEventListener.current as EventListener);
         });
       }
 
       // Add new listeners
       navigationEventListener.current = interceptNavigation;
-      Array.from(tabLinks).forEach(link => {
+      Array.from(tabLinks).forEach((link) => {
         // Skip the current schedule tab
         if (link.getAttribute('href')?.includes('/schedule')) return;
 
         link.addEventListener('click', navigationEventListener.current as EventListener);
       });
-      Array.from(breadcrumbLinks).forEach(link => {
+      Array.from(breadcrumbLinks).forEach((link) => {
         link.addEventListener('click', navigationEventListener.current as EventListener);
       });
     };
@@ -157,10 +160,10 @@ export const ScheduleEditor: React.FC<SchedulerProps> = ({
       if (navigationEventListener.current) {
         const tabLinks = document.querySelectorAll('#tabs-tab a');
         const breadcrumbLinks = document.querySelectorAll('.breadcrumb a');
-        Array.from(tabLinks).forEach(link => {
+        Array.from(tabLinks).forEach((link) => {
           link.removeEventListener('click', navigationEventListener.current as EventListener);
         });
-        Array.from(breadcrumbLinks).forEach(link => {
+        Array.from(breadcrumbLinks).forEach((link) => {
           link.removeEventListener('click', navigationEventListener.current as EventListener);
         });
       }
