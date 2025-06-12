@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useBackdropModal } from 'components/misc/BackdropModal';
 import { Alert } from '../../components/misc/Alert';
@@ -58,6 +58,10 @@ export const ScheduleEditor: React.FC<SchedulerProps> = ({
   ]);
 
   const [viewMode, setViewMode] = React.useState<ViewMode | null>(null);
+  const pendingNavigationUrl = useRef<string | null>(null);
+  const navigationEventListener = useRef<((e: Event) => void) | null>(null);
+  const showNavigationWarningModalRef = useRef<(() => void) | null>(null);
+  const allowNavigation = useRef<boolean>(false);
 
   const onModification = useCallback(() => {
     dispatch(scheduleAppFlushChanges());
@@ -88,6 +92,120 @@ export const ScheduleEditor: React.FC<SchedulerProps> = ({
     }
     window.open(url.href, '_blank');
   };
+
+  const handlePendingNavigation = () => {
+    if (pendingNavigationUrl.current) {
+      // Set flag to allow navigation without showing browser warning
+      allowNavigation.current = true;
+      window.location.href = pendingNavigationUrl.current;
+      pendingNavigationUrl.current = null;
+    }
+  };
+
+  const interceptNavigation = useCallback(
+    (e: Event) => {
+      if (!unsavedChanges) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      const target = e.target as HTMLElement;
+      const link = target.closest('a');
+
+      if (link) {
+        pendingNavigationUrl.current = link.href;
+        if (showNavigationWarningModalRef.current) {
+          showNavigationWarningModalRef.current();
+        }
+      }
+    },
+    [unsavedChanges],
+  );
+
+  // Set up navigation interception for tabs and breadcrumbs
+  useEffect(() => {
+    const setupNavigationGuards = () => {
+      // Find tab navigation elements
+      const tabLinks = document.querySelectorAll('#tabs-tab a');
+      const breadcrumbLinks = document.querySelectorAll('.breadcrumb a');
+
+      // Remove existing listeners
+      if (navigationEventListener.current) {
+        Array.from(tabLinks).forEach((link) => {
+          link.removeEventListener('click', navigationEventListener.current as EventListener);
+        });
+        Array.from(breadcrumbLinks).forEach((link) => {
+          link.removeEventListener('click', navigationEventListener.current as EventListener);
+        });
+      }
+
+      // Add new listeners
+      navigationEventListener.current = interceptNavigation;
+      Array.from(tabLinks).forEach((link) => {
+        // Skip the current schedule tab
+        if (link.getAttribute('href')?.includes('/schedule')) return;
+
+        link.addEventListener('click', navigationEventListener.current as EventListener);
+      });
+      Array.from(breadcrumbLinks).forEach((link) => {
+        link.addEventListener('click', navigationEventListener.current as EventListener);
+      });
+    };
+
+    // Setup navigation guards after a short delay to ensure DOM is ready
+    const timer = setTimeout(setupNavigationGuards, 100);
+
+    return () => {
+      clearTimeout(timer);
+      if (navigationEventListener.current) {
+        const tabLinks = document.querySelectorAll('#tabs-tab a');
+        const breadcrumbLinks = document.querySelectorAll('.breadcrumb a');
+        Array.from(tabLinks).forEach((link) => {
+          link.removeEventListener('click', navigationEventListener.current as EventListener);
+        });
+        Array.from(breadcrumbLinks).forEach((link) => {
+          link.removeEventListener('click', navigationEventListener.current as EventListener);
+        });
+      }
+    };
+  }, [interceptNavigation]);
+
+  // Handle browser navigation (refresh, close tab, external navigation)
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      // Don't show warning if user already chose to leave via modal
+      if (allowNavigation.current) {
+        allowNavigation.current = false; // Reset flag
+        return;
+      }
+
+      if (unsavedChanges) {
+        e.preventDefault();
+        e.returnValue = '';
+        return '';
+      }
+    };
+
+    const handlePopState = (e: PopStateEvent) => {
+      if (unsavedChanges) {
+        e.preventDefault();
+        pendingNavigationUrl.current = window.location.href;
+        if (showNavigationWarningModalRef.current) {
+          showNavigationWarningModalRef.current();
+        }
+        // Push the current state back to prevent navigation
+        history.pushState(null, '', window.location.href);
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [unsavedChanges]);
 
   // Set up a way the page can call into us to save, useful for the wizard mode when we don't have a save bar to click.
   useEffect(() => {
@@ -155,6 +273,28 @@ export const ScheduleEditor: React.FC<SchedulerProps> = ({
     'View after saving',
   );
 
+  const { Modal: navigationWarningModal, showModal: showNavigationWarningModal } = useBackdropModal(
+    <div>
+      <p>You have unsaved changes that will be lost if you leave this page.</p>
+    </div>,
+    () => {
+      // Keep editing - just close the modal
+      pendingNavigationUrl.current = null;
+    },
+    () => {
+      // Leave without saving
+      handlePendingNavigation();
+    },
+    'You have unsaved changes',
+    'Keep editing',
+    'Leave without saving',
+  );
+
+  // Set the ref so it can be used in the interceptNavigation callback
+  useEffect(() => {
+    showNavigationWarningModalRef.current = showNavigationWarningModal;
+  }, [showNavigationWarningModal]);
+
   if (!start_date || !end_date) {
     return (
       <div className="container">
@@ -185,6 +325,7 @@ export const ScheduleEditor: React.FC<SchedulerProps> = ({
         {Modal}
         {clearModal}
         {unsavedModal}
+        {navigationWarningModal}
       </div>
     </ContextMenuProvider>
   );
