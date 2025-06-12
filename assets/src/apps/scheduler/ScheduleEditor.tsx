@@ -61,6 +61,7 @@ export const ScheduleEditor: React.FC<SchedulerProps> = ({
   const pendingNavigationUrl = useRef<string | null>(null);
   const navigationEventListener = useRef<((e: Event) => void) | null>(null);
   const showNavigationWarningModalRef = useRef<(() => void) | null>(null);
+  const allowNavigation = useRef<boolean>(false);
 
   const onModification = useCallback(() => {
     dispatch(scheduleAppFlushChanges());
@@ -94,6 +95,8 @@ export const ScheduleEditor: React.FC<SchedulerProps> = ({
 
   const handlePendingNavigation = () => {
     if (pendingNavigationUrl.current) {
+      // Set flag to allow navigation without showing browser warning
+      allowNavigation.current = true;
       window.location.href = pendingNavigationUrl.current;
       pendingNavigationUrl.current = null;
     }
@@ -164,9 +167,15 @@ export const ScheduleEditor: React.FC<SchedulerProps> = ({
     };
   }, [interceptNavigation]);
 
-  // Handle browser back button and other navigation
+  // Handle browser navigation (refresh, close tab, external navigation)
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      // Don't show warning if user already chose to leave via modal
+      if (allowNavigation.current) {
+        allowNavigation.current = false; // Reset flag
+        return;
+      }
+
       if (unsavedChanges) {
         e.preventDefault();
         e.returnValue = '';
@@ -178,7 +187,9 @@ export const ScheduleEditor: React.FC<SchedulerProps> = ({
       if (unsavedChanges) {
         e.preventDefault();
         pendingNavigationUrl.current = window.location.href;
-        showNavigationWarningModal();
+        if (showNavigationWarningModalRef.current) {
+          showNavigationWarningModalRef.current();
+        }
         // Push the current state back to prevent navigation
         history.pushState(null, '', window.location.href);
       }
@@ -280,14 +291,6 @@ export const ScheduleEditor: React.FC<SchedulerProps> = ({
   useEffect(() => {
     showNavigationWarningModalRef.current = showNavigationWarningModal;
   }, [showNavigationWarningModal]);
-
-  // Update the data-saved attribute for BeforeUnloadListener integration
-  useEffect(() => {
-    const container = document.getElementById('schedule-container');
-    if (container) {
-      container.setAttribute('data-saved', unsavedChanges ? 'false' : 'true');
-    }
-  }, [unsavedChanges]);
 
   if (!start_date || !end_date) {
     return (

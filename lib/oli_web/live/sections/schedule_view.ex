@@ -58,8 +58,6 @@ defmodule OliWeb.Sections.ScheduleView do
 
     <div
       id="schedule-container"
-      data-saved="true"
-      phx-hook="BeforeUnloadListener"
       phx-update="ignore"
     >
       <div id="schedule-app">
