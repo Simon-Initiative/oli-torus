@@ -857,6 +857,13 @@ defmodule OliWeb.Router do
     get("/authorize_redirect", LtiController, :authorize_redirect)
   end
 
+  # LTI 1.3 AGS endpoints for migrated LTI 1.1 Basic Outcomes
+  scope "/lti/lineitems/:section_slug/:activity_attempt_guid", OliWeb.Api do
+    pipe_through([:api])
+    get "/results", LtiAgsController, :get_result
+    post "/scores", LtiAgsController, :post_score
+  end
+
   ### Workspaces
   scope "/workspaces", OliWeb.Workspaces do
     pipe_through([:browser, :authoring_protected])

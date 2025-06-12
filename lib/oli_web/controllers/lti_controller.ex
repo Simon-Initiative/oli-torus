@@ -15,11 +15,12 @@ defmodule OliWeb.LtiController do
   alias OliWeb.Common.Utils
   alias OliWeb.UserAuth
   alias Oli.Lti.LtiParams
+  alias Oli.Delivery.Attempts.Core
+  alias Oli.Lti.PlatformInstances
   alias Lti_1p3.Roles.ContextRoles
   alias Lti_1p3.Roles.PlatformRoles
   alias Lti_1p3.Tool.Services.AGS
   alias Lti_1p3.Tool.Services.NRPS
-  alias Oli.Lti.PlatformInstances
 
   require Logger
 
@@ -98,7 +99,7 @@ defmodule OliWeb.LtiController do
         )
 
       %Lti_1p3.Platform.LoginHint{context: context, session_user_id: session_user_id} ->
-        {user, resource_id, roles} =
+        {user, resource_id, roles, additional_claims} =
           case context do
             "admin" ->
               with author <- Accounts.get_author!(session_user_id),
@@ -145,6 +146,8 @@ defmodule OliWeb.LtiController do
                 Lti_1p3.Roles.ContextRoles.get_role(:context_content_developer)
               ]
 
+              additional_claims = []
+
               {%Accounts.User{
                  id: author.id,
                  sub: "admin",
@@ -166,7 +169,7 @@ defmodule OliWeb.LtiController do
                  phone_number: "",
                  phone_number_verified: "",
                  address: ""
-               }, resource_id, roles}
+               }, resource_id, roles, additional_claims}
 
             %{"section" => section_slug, "resource_id" => resource_id} ->
               user = conn.assigns[:current_user]
@@ -176,7 +179,28 @@ defmodule OliWeb.LtiController do
               platform_roles =
                 Lti_1p3.Roles.Lti_1p3_User.get_platform_roles(user)
 
-              {user, resource_id, context_roles ++ platform_roles}
+              activity_attempt =
+                Core.get_latest_activity_attempt(
+                  section_slug,
+                  resource_id,
+                  user.id
+                )
+
+              ags_endpoint =
+                Lti_1p3.Claims.AgsEndpoint.endpoint(
+                  [
+                    "https://purl.imsglobal.org/spec/lti-ags/scope/lineitem",
+                    "https://purl.imsglobal.org/spec/lti-ags/scope/result.readonly",
+                    "https://purl.imsglobal.org/spec/lti-ags/scope/score"
+                  ],
+                  lineitem:
+                    Oli.Utils.get_base_url() <>
+                      "/lti/lineitems/#{section_slug}/#{activity_attempt.attempt_guid}"
+                )
+
+              additional_claims = [ags_endpoint]
+
+              {user, resource_id, context_roles ++ platform_roles, additional_claims}
 
             _ ->
               Logger.error("Unsupported context value in login hint: #{Kernel.inspect(context)}")
@@ -207,6 +231,7 @@ defmodule OliWeb.LtiController do
           Lti_1p3.Claims.ResourceLink.resource_link(resource_link),
           Lti_1p3.Claims.TargetLinkUri.target_link_uri(platform_instance.target_link_uri),
           Lti_1p3.Claims.Roles.roles(roles)
+          | additional_claims
         ]
 
         case Lti_1p3.Platform.AuthorizationRedirect.authorize_redirect(
