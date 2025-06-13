@@ -213,6 +213,17 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
           "An embedded activity"
         )
 
+      {:ok, {activity_revision2, _}} =
+        ActivityEditor.create(
+          project.slug,
+          "oli_short_answer",
+          author,
+          embeded_activity_content,
+          [obj1.resource.id],
+          "embedded",
+          "An embedded activity"
+        )
+
       page = %{
         objectives: %{"attached" => [obj1.resource.id]},
         children: [],
@@ -230,12 +241,25 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
                 }
               ]
             },
-            # Embedded activity
+            # Embedded activity 1
             %{
               "id" => UUID.uuid4(),
               "type" => "activity-reference",
               "children" => [],
               "activity_id" => activity_revision.resource_id
+            },
+            %{
+              "type" => "group",
+              "id" => UUID.uuid4(),
+              "children" => [
+                # Embedded activity 2, a nested activity
+                %{
+                  "id" => UUID.uuid4(),
+                  "type" => "activity-reference",
+                  "children" => [],
+                  "activity_id" => activity_revision2.resource_id
+                }
+              ]
             }
           ]
         },
@@ -259,7 +283,9 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
 
       assert duplicated_page_revision.objectives == page.objectives
 
-      # Verify that it deep copied the activities, id should't be the same as the previous one
+      # Verify that it deep copied BOTH activities, the top level and the nested activity
+
+      # Top level
       activity_reference = duplicated_page_revision.content["model"] |> Enum.at(1)
       refute activity_reference["activity_id"] == activity_revision.resource_id
 
@@ -267,6 +293,20 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
         Repo.get_by(Oli.Resources.Revision, %{resource_id: activity_reference["activity_id"]})
 
       assert created_activity.objectives["1"] == activity_revision.objectives["1"]
+
+      # The nested activity
+      activity_reference2 =
+        duplicated_page_revision.content["model"]
+        |> Enum.at(2)
+        |> Map.get("children")
+        |> Enum.at(0)
+
+      refute activity_reference2["activity_id"] == activity_revision2.resource_id
+
+      created_activity2 =
+        Repo.get_by(Oli.Resources.Revision, %{resource_id: activity_reference2["activity_id"]})
+
+      assert created_activity2.objectives["1"] == activity_revision2.objectives["1"]
     end
   end
 end
