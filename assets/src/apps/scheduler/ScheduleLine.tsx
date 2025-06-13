@@ -141,10 +141,12 @@ const ContainerScheduleLine: React.FC<ScheduleLineProps> = ({
   const chevronIcon = expanded ? 'fa-solid fa-chevron-up' : 'fa-solid fa-chevron-down';
 
   const backgroundWithPadding = item.removed_from_schedule
-    ? { paddingLeft: (1 + indent) * 10, backgroundColor: '#FFE8E8' }
+    ? { paddingLeft: (1 + indent) * 10, backgroundColor: modeIsDark() ? '#33181A' : '#FFE8E8' }
     : { paddingLeft: (1 + indent) * 10 };
 
-  const removedBackgroundColor = item.removed_from_schedule ? { backgroundColor: '#FFE8E8' } : {};
+  const removedBackgroundColor = item.removed_from_schedule
+    ? { backgroundColor: modeIsDark() ? '#33181A' : '#FFE8E8' }
+    : {};
   return (
     <>
       <tr style={rowSelectColor}>
