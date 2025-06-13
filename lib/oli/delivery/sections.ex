@@ -1239,7 +1239,7 @@ defmodule Oli.Delivery.Sections do
     |> Enum.filter(fn e ->
       ContextRoles.contains_role?(e.context_roles, ContextRoles.get_role(:context_learner))
     end)
-    |> Enum.map(fn e -> e.user end)
+    |> Enum.map(fn e -> Map.put(e.user, :enrollment_status, e.status) end)
   end
 
   @doc """
@@ -1289,7 +1289,8 @@ defmodule Oli.Delivery.Sections do
   @doc """
   Returns all scored pages for the given section.
   """
-  def fetch_scored_pages(section_slug), do: fetch_all_pages(section_slug, true)
+  def fetch_scored_pages(section_slug, order_by \\ :resource_id),
+    do: fetch_all_pages(section_slug, true, order_by)
 
   @doc """
   Returns all unscored pages for the given section.
@@ -1299,7 +1300,13 @@ defmodule Oli.Delivery.Sections do
   @doc """
   Returns all pages for the given section.
   """
-  def fetch_all_pages(section_slug, graded \\ nil) do
+  def fetch_all_pages(section_slug, graded \\ nil, order_by \\ :resource_id) do
+    order_by =
+      case order_by do
+        :resource_id -> [asc: dynamic([_, _, _, _, rev], rev.resource_id)]
+        :numbering_index -> [asc: dynamic([sr, _, _, _, _], sr.numbering_index)]
+      end
+
     maybe_filter_by_graded =
       case graded do
         nil -> true
@@ -1322,7 +1329,7 @@ defmodule Oli.Delivery.Sections do
         rev.resource_type_id == ^ResourceType.id_for_page()
     )
     |> where(^maybe_filter_by_graded)
-    |> order_by([_, _, _, _, rev], asc: rev.resource_id)
+    |> order_by(^order_by)
     |> select([_, _, _, _, rev], rev)
     |> Repo.all()
   end

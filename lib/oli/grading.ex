@@ -16,11 +16,13 @@ defmodule Oli.Grading do
   alias Oli.Grading.GradebookRow
   alias Oli.Grading.GradebookScore
   alias Oli.Activities.Realizer.Selection
+  alias Oli.Analytics.DataTables.DataTable
   alias Lti_1p3.Tool.Services.AGS
   alias Lti_1p3.Tool.Services.AGS.Score
   alias Oli.Resources.Revision
   alias OliWeb.Common.Utils
   alias Oli.Repo
+  alias OliWeb.Delivery.Student.Utils, as: StudentUtils
 
   @doc """
   If grade passback services 2.0 is enabled, sends the current state of a ResourceAccess
@@ -104,6 +106,20 @@ defmodule Oli.Grading do
   Returns a Stream which can be written to a file or other IO
   """
   def export_csv(%Section{} = section) do
+    {gradebook, assessments_column_labels} = generate_gradebook_for_section(section)
+
+    column_labels =
+      [status: "Status", name: "Name", email: "Email", lms_id: "LMS ID"]
+      |> Keyword.merge(assessments_column_labels)
+
+    Enum.map(gradebook, &build_gradebook_row/1)
+    |> sort_data()
+    |> DataTable.new()
+    |> DataTable.headers(column_labels)
+    |> DataTable.to_csv_content()
+  end
+
+  def export_csv(section) do
     {gradebook, column_labels} = generate_gradebook_for_section(section)
 
     table_data =
@@ -157,6 +173,49 @@ defmodule Oli.Grading do
     |> CSV.encode()
   end
 
+  defp build_gradebook_row(%{user: user} = row) do
+    main_attrs = %{
+      status: parse_enrollment_status(user.enrollment_status),
+      name: OliWeb.Common.Utils.name(user),
+      email: user.email,
+      lms_id: user.sub
+    }
+
+    Enum.reduce(row.scores, main_attrs, fn score, acc ->
+      points_earned_column_label = :"#{score.label} - Points Earned"
+      points_possible_column_label = :"#{score.label} - Points Possible"
+      percentage_column_label = :"#{score.label} - Percentage"
+
+      acc
+      |> Map.put(points_earned_column_label, score.score)
+      |> Map.put(
+        points_possible_column_label,
+        score.out_of
+      )
+      |> Map.put(percentage_column_label, parse_percentage(score.score, score.out_of))
+    end)
+  end
+
+  defp sort_data(results) do
+    Enum.sort_by(results, &{&1.status, &1.name, &1.email})
+  end
+
+  defp parse_percentage(nil, _), do: nil
+
+  defp parse_percentage(score, out_of) do
+    percentage =
+      (score / out_of * 100)
+      |> StudentUtils.parse_score()
+
+    "#{percentage}%"
+  end
+
+  defp parse_enrollment_status(:enrolled), do: "Enrolled"
+  defp parse_enrollment_status(:suspended), do: "Suspended"
+  defp parse_enrollment_status(:pending_confirmation), do: "Pending confirmation"
+  defp parse_enrollment_status(:rejected), do: "Rejected invitation"
+  defp parse_enrollment_status(_status), do: "Unknown"
+
   @doc """
   Returns a tuple containing a list of GradebookRow for every enrolled user
   and an ordered list of column labels
@@ -164,8 +223,8 @@ defmodule Oli.Grading do
   `{[%GradebookRow{user: %User{}, scores: [%GradebookScore{}, ...]}, ...], ["Quiz 1", "Quiz 2"]}`
   """
   def generate_gradebook_for_section(%Section{} = section) do
-    # get publication page resources, filtered by graded: true
-    graded_pages = Sections.fetch_scored_pages(section.slug)
+    # get publication page resources, filtered by graded: true and ordered by numbering index
+    graded_pages = Sections.fetch_scored_pages(section.slug, :numbering_index)
 
     # get students enrolled in the section, filter by role: student
     students = Sections.fetch_students(section.slug)
@@ -180,24 +239,26 @@ defmodule Oli.Grading do
         scores =
           Enum.reduce(Enum.reverse(graded_pages), [], fn revision, acc ->
             score =
-              case resource_accesses[revision.resource_id] do
-                %{^user_id => student_resource_accesses} ->
-                  case student_resource_accesses do
-                    %ResourceAccess{score: score, out_of: out_of, was_late: was_late} ->
-                      %GradebookScore{
-                        resource_id: revision.resource_id,
-                        label: revision.title,
-                        score: score,
-                        out_of: out_of,
-                        was_late: was_late
-                      }
-
-                    _ ->
-                      nil
-                  end
-
+              with %{^user_id => student_resource_accesses} <-
+                     resource_accesses[revision.resource_id],
+                   %ResourceAccess{score: score, out_of: out_of, was_late: was_late} <-
+                     student_resource_accesses do
+                %GradebookScore{
+                  resource_id: revision.resource_id,
+                  label: revision.title,
+                  score: score,
+                  out_of: out_of,
+                  was_late: was_late
+                }
+              else
                 _ ->
-                  nil
+                  %GradebookScore{
+                    resource_id: revision.resource_id,
+                    label: revision.title,
+                    score: nil,
+                    out_of: nil,
+                    was_late: nil
+                  }
               end
 
             [score | acc]
@@ -207,9 +268,30 @@ defmodule Oli.Grading do
       end)
 
     # return gradebook
-    column_labels = Enum.map(graded_pages, fn revision -> revision.title end)
+    assessments_column_labels =
+      graded_pages
+      |> Enum.reverse()
+      |> Enum.reduce([], fn revision, acc ->
+        points_earned_column_label = :"#{revision.title} - Points Earned"
+        points_possible_column_label = :"#{revision.title} - Points Possible"
+        percentage_column_label = :"#{revision.title} - Percentage"
 
-    {gradebook, column_labels}
+        acc
+        |> Keyword.put(
+          percentage_column_label,
+          Oli.Utils.title_case(Atom.to_string(percentage_column_label))
+        )
+        |> Keyword.put(
+          points_possible_column_label,
+          Oli.Utils.title_case(Atom.to_string(points_possible_column_label))
+        )
+        |> Keyword.put(
+          points_earned_column_label,
+          Oli.Utils.title_case(Atom.to_string(points_earned_column_label))
+        )
+      end)
+
+    {gradebook, assessments_column_labels}
   end
 
   @doc """

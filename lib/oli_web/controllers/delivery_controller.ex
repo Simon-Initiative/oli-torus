@@ -598,5 +598,5 @@ defmodule OliWeb.DeliveryController do
   defp parse_enrollment_status(:suspended), do: "Suspended"
   defp parse_enrollment_status(:pending_confirmation), do: "Pending confirmation"
   defp parse_enrollment_status(:rejected), do: "Rejected invitation"
-  defp parse_enrollment_status(_status), do: "Unkknown"
+  defp parse_enrollment_status(_status), do: "Unknown"
 end
