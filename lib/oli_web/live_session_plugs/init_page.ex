@@ -197,7 +197,13 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
           :transition
         ),
       screenIdleTimeOutInSeconds:
-        String.to_integer(System.get_env("SCREEN_IDLE_TIMEOUT_IN_SECONDS", "1800"))
+        String.to_integer(System.get_env("SCREEN_IDLE_TIMEOUT_IN_SECONDS", "1800")),
+      blobStorageProvider:
+        if Application.get_env(:oli, :blob_storage)[:use_deprecated_api] == false do
+          "new"
+        else
+          "deprecated"
+        end
     }
 
     assign(socket, %{

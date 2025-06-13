@@ -210,6 +210,10 @@ if config_env() == :prod do
       String.to_integer(System.get_env("SCREEN_IDLE_TIMEOUT_IN_SECONDS", "1800")),
     log_incomplete_requests: get_env_as_boolean.("LOG_INCOMPLETE_REQUESTS", "true")
 
+  config :oli, :blob_storage,
+    bucket_name: System.get_env("BLOB_STORAGE_BUCKET_NAME", "torus-blob-prod"),
+    use_deprecated_api: get_env_as_boolean.("BLOB_STORAGE_USE_DEPRECATED_API", "true")
+
   config :oli, :dataset_generation,
     enabled: System.get_env("EMR_DATASET_ENABLED", "false") == "true",
     emr_aplication_name: System.get_env("EMR_DATASET_APPLICATION_NAME", "csv_job"),
