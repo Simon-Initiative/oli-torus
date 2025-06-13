@@ -188,7 +188,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
     get_students(section, %{container_id: nil}, context_roles)
   end
 
-  def get_students(section, params \\ %{container_id: nil}, context_roles \\ @valid_contexts) do
+  def get_students(section, params \\ %{container_id: nil}, context_roles \\ @valid_contexts)
+
+  def get_students(section, params, context_role) when is_atom(context_role) do
+    get_students(section, params, [context_role])
+  end
+
+  def get_students(section, params, context_roles) do
     case params[:page_id] do
       nil ->
         Sections.enrolled_students(section.slug, context_roles)
