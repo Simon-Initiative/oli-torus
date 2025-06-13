@@ -319,6 +319,9 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
             format_datetime: format_datetime_fn(socket.assigns.ctx)
           )
 
+        {{:score_as_you_go_completed}, _max_attempts} ->
+          "This score as you go assessment has already been completed."
+
         {{:no_attempts_remaining}, max_attempts} ->
           "You have no attempts remaining out of #{max_attempts} total attempt#{plural(max_attempts)}."
 

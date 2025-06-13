@@ -286,6 +286,9 @@ defmodule Oli.Delivery.Settings do
   defp check_blocking_gates([]), do: {:allowed}
   defp check_blocking_gates(_), do: {:blocking_gates}
 
+  defp check_num_attempts(%Combined{batch_scoring: false}, 0), do: {:allowed}
+  defp check_num_attempts(%Combined{batch_scoring: false}, _), do: {:score_as_you_go_completed}
+
   defp check_num_attempts(settings, num_attempts_taken) do
     if max(settings.max_attempts - num_attempts_taken, 0) > 0 or settings.max_attempts == 0 do
       {:allowed}
