@@ -1073,8 +1073,7 @@ defmodule OliWeb.Router do
 
   scope "/sections/:section_slug/instructor_dashboard", OliWeb do
     pipe_through([:browser, :delivery_protected])
-
-    get("/downloads/progress/:container_id", MetricsController, :download_container_progress)
+    get("/downloads/progress/:container_id", DeliveryController, :download_container_progress)
     get("/downloads/course_content", DeliveryController, :download_course_content_info)
     get("/downloads/students_progress", DeliveryController, :download_students_progress)
     get("/downloads/learning_objectives", DeliveryController, :download_learning_objectives)

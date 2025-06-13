@@ -515,12 +515,7 @@ defmodule OliWeb.Components.Delivery.Students do
               <a
                 class="self-end"
                 href={
-                  Routes.metrics_path(
-                    OliWeb.Endpoint,
-                    :download_container_progress,
-                    @section_slug,
-                    @params.container_id || ""
-                  )
+                  ~p(/sections/#{@section_slug}/instructor_dashboard/downloads/progress/#{@params.container_id || ""})
                 }
                 download="progress.csv"
               >
