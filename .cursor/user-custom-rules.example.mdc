@@ -1,0 +1,9 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+
+## Running the server
+- `set -a && source oli.env && iex -S mix phx.server`
+

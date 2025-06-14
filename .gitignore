@@ -97,3 +97,6 @@ _imports
 logfile
 MnesiaCore.nonode@nohost_1698_943806_800396
 .envrc
+.cursor/mcp.json
+.cursor/rules/user-custom-rules.mdc
+.cursor/rules/oli.mdc
