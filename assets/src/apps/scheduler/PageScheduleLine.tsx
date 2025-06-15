@@ -83,7 +83,9 @@ export const PageScheduleLine: React.FC<ScheduleLineProps> = ({
   );
   const labelClasses = item.scheduling_type === 'due_by' ? 'font-bold' : '';
 
-  const removedBackgroundColor = item.removed_from_schedule ? { backgroundColor: '#FFE8E8' } : {};
+  const removedBackgroundColor = item.removed_from_schedule
+    ? { backgroundColor: modeIsDark() ? '#33181A' : '#FFE8E8' }
+    : {};
 
   return (
     <>

@@ -39,6 +39,7 @@ export const triggerCheck = createAsyncThunk(
     const rootState = getState() as DeliveryRootState;
     const isPreviewMode = selectPreviewMode(rootState);
     const sectionSlug = selectSectionSlug(rootState);
+    const blobStorageProvider = rootState.page.blobStorageProvider;
     const resourceAttemptGuid = selectResourceAttemptGuid(rootState);
 
     const currentActivityTreeAttempts = selectCurrentActivityTreeAttemptState(rootState) || [];
@@ -106,7 +107,12 @@ export const triggerCheck = createAsyncThunk(
         resourceAttemptGuid,
         extrnisicState,
       }); */
-      await writePageAttemptState(sectionSlug, resourceAttemptGuid, extrnisicState);
+      await writePageAttemptState(
+        blobStorageProvider,
+        sectionSlug,
+        resourceAttemptGuid,
+        extrnisicState,
+      );
     }
 
     let checkResult;
@@ -470,7 +476,12 @@ export const triggerCheck = createAsyncThunk(
         resourceAttemptGuid,
         extrnisicState,
       }); */
-      await writePageAttemptState(sectionSlug, resourceAttemptGuid, extrnisicState);
+      await writePageAttemptState(
+        rootState.page.blobStorageProvider,
+        sectionSlug,
+        resourceAttemptGuid,
+        extrnisicState,
+      );
     }
     await dispatch(
       setLastCheckResults({
