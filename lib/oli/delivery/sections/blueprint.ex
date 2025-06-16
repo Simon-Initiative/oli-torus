@@ -13,7 +13,6 @@ defmodule Oli.Delivery.Sections.Blueprint do
   alias Oli.Institutions.Institution
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
-  alias Ecto.Multi
 
   @doc """
   From a slug, retrieve a valid section blueprint.  A section is a
@@ -141,9 +140,7 @@ defmodule Oli.Delivery.Sections.Blueprint do
   3. Retrieves the latest published publication for the project
   4. Creates section resource records mirroring the project hierarchy
   5. Applies post-processing to update section flags (discussions, explorations, etc.)
-  6. Starts a background task to initialize the depot coordinator
-
-  Uses `Ecto.Multi` to ensure all operations succeed atomically within a transaction.
+  6. Migrates the section resources
 
   ## Parameters
   - `base_project_slug` - The slug of the base project to create the blueprint from
@@ -170,36 +167,26 @@ defmodule Oli.Delivery.Sections.Blueprint do
         hierarchy_definition \\ nil,
         attrs \\ %{}
       ) do
-    Multi.new()
-    |> Multi.run(:project, fn _repo, _changes ->
-      case Oli.Authoring.Course.get_project_by_slug(base_project_slug) do
-        nil -> {:error, {:invalid_project}}
-        project -> {:ok, project}
+    Repo.transaction(fn _ ->
+      with {:ok, project} <- get_project(base_project_slug),
+           new_blueprint = build_blueprint_attrs(project, title, custom_labels, attrs),
+           {:ok, blueprint} <- Sections.create_section(new_blueprint),
+           publication =
+             Oli.Publishing.get_latest_published_publication_by_slug(base_project_slug),
+           {:ok, section} <-
+             Sections.create_section_resources(blueprint, publication, hierarchy_definition),
+           {:ok, _} <- migrate_section_resources(section.id) do
+        PostProcessing.apply(section, :all)
+      else
+        {:error, e} -> Repo.rollback(e)
       end
     end)
-    |> Multi.run(:blueprint, fn _repo, %{project: project} ->
-      new_blueprint = build_blueprint_attrs(project, title, custom_labels, attrs)
-      Sections.create_section(new_blueprint)
-    end)
-    |> Multi.run(:publication, fn _repo, _changes ->
-      publication = Oli.Publishing.get_latest_published_publication_by_slug(base_project_slug)
-      {:ok, publication}
-    end)
-    |> Multi.run(:section_resources, fn _repo,
-                                        %{blueprint: blueprint, publication: publication} ->
-      Sections.create_section_resources(blueprint, publication, hierarchy_definition)
-    end)
-    |> Multi.run(:processed_section, fn _repo, %{section_resources: section} ->
-      {:ok, PostProcessing.apply(section, :all)}
-    end)
-    |> Repo.transaction()
-    |> case do
-      {:ok, %{processed_section: section}} ->
-        start_depot_coordinator_task(section)
-        {:ok, section}
+  end
 
-      {:error, _step, reason, _changes} ->
-        {:error, reason}
+  defp get_project(base_project_slug) do
+    case Oli.Authoring.Course.get_project_by_slug(base_project_slug) do
+      nil -> {:error, {:invalid_project}}
+      project -> {:ok, project}
     end
   end
 
@@ -231,14 +218,11 @@ defmodule Oli.Delivery.Sections.Blueprint do
     }
   end
 
-  defp start_depot_coordinator_task(section) do
-    Task.Supervisor.start_child(Oli.TaskSupervisor, fn ->
-      Oli.Delivery.DepotCoordinator.init_if_necessary(
-        Oli.Delivery.Sections.SectionResourceDepot.depot_desc(),
-        section.id,
-        Oli.Delivery.Sections.SectionResourceDepot
-      )
-    end)
+  defp migrate_section_resources(section_id) do
+    case Oli.Delivery.Sections.SectionResourceMigration.migrate(section_id) do
+      {:ok, _count} -> {:ok, :migrated}
+      error -> error
+    end
   end
 
   @doc """
@@ -264,6 +248,7 @@ defmodule Oli.Delivery.Sections.Blueprint do
              ),
            {:ok, duplicated_root_resource} <-
              dupe_section_resources(section, blueprint, cloned_from_project_publication_ids),
+           {:ok, _} <- migrate_section_resources(blueprint.id),
            {:ok, blueprint} <-
              Sections.update_section(blueprint, %{
                root_section_resource_id: duplicated_root_resource.id
@@ -401,8 +386,6 @@ defmodule Oli.Delivery.Sections.Blueprint do
 
       # Update all section resources at the same time
       {_cont, rows} = Sections.bulk_update_section_resource(section_resources, returning: true)
-
-      start_depot_coordinator_task(blueprint)
 
       # Return the section resource that corresponds to the original root resource
       Enum.find(rows, &(Map.get(resource_map, root_id) == &1.id))
