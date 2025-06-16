@@ -206,8 +206,11 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
         quill.current?.getEditor().insertText(insertIndex, `{"${newKey}"}`);
 
         // Update FIB structure and dropdown options
-        const updatedText = quill.current?.getEditor().getText() ?? '';
-        const parsed = generateFIBStructure(updatedText);
+        const janusText = convertQuillToJanus(
+          new Delta(quill.current?.getEditor()?.getContents().ops),
+        );
+        const collectedText = extractFormattedHTMLFromQuillNodes(janusText);
+        const parsed = generateFIBStructure(collectedText);
         const quillOptions = transformOptionsToNormalized(parsed.elements);
         const updatedFIBOptions = mergeParsedWithExistingBlanks(localOptions, quillOptions);
         setFibElements(updatedFIBOptions);

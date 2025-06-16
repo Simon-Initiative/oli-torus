@@ -99,7 +99,7 @@ export const extractFormattedHTMLFromQuillNodes = (nodes: any[]): string => {
 
         if (node.tag === 'p') {
           const inner = processNodes(node.children || []);
-          return `${inner}\n`;
+          return index < nodeArray?.length - 1 ? `${inner} <br> ` : `${inner}`;
         }
 
         // Recurse for other tags (like <p> etc.)
@@ -126,7 +126,7 @@ export const convertFIBContentToQuillNodes = (contentItems: any[], blanks: any[]
   contentItems?.forEach((item) => {
     if (!blanks?.length) return;
     if (item.insert) {
-      const htmlString = item.insert.replace(/\n/g, '<p></p>');
+      const htmlString = item.insert.replace(/<br>/g, '<p></p>');
       finalText += htmlString;
     } else if (item.dropdown) {
       const matchingDropdown = blanks.find((b) => b.key === item.dropdown);
