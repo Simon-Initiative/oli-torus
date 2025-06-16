@@ -6,7 +6,7 @@ import { Card } from './Card';
 interface MultiStepModalProps {
   title: string;
   steps: ReactNode[];
-  stepTitles: string[]; // NEW PROP
+  stepTitles: string[];
   onFinish: () => void;
   onCancel: () => void;
   finishText?: string;
@@ -60,15 +60,20 @@ export const MultiStepModal: React.FC<MultiStepModalProps> = ({
       <Card.Content>
         {/* Stepper */}
         <hr className="mb-6 border-gray-200 dark:border-gray-600" />
-        <div className="flex justify-center items-center mb-10 w-full max-w-3xl mx-auto">
+        <div className="flex justify-center items-center mb-8 w-full max-w-3xl mx-auto">
           {stepTitles.map((label, index) => {
             const isCurrent = index === currentStep;
 
             return (
-              <React.Fragment key={index}>
-                <div className="flex flex-col items-center flex-shrink-0">
+              <div className="flex flex-col w-full mb-2" key={index}>
+                {/* Top row */}
+                <div className="flex w-full space-x-2 items-center">
+                  {/* Left connector */}
+                  <div className={`flex-grow h-[2px] ${index > 0 ? 'bg-gray-300' : ''}`}></div>
+
+                  {/* Middle dot (step number) */}
                   <div
-                    className={`flex items-center justify-center w-8 h-8 rounded-full border-2 text-sm font-medium ${
+                    className={`flex items-center justify-center w-8 h-8 rounded-full border-2 text-sm font-medium flex-shrink-0 ${
                       isCurrent
                         ? 'bg-blue-600 border-blue-600 text-white'
                         : 'bg-white border-gray-300 text-gray-500'
@@ -76,20 +81,24 @@ export const MultiStepModal: React.FC<MultiStepModalProps> = ({
                   >
                     {index + 1}
                   </div>
+
+                  {/* Right connector */}
                   <div
-                    className={`text-xs mt-2 text-center ${
-                      isCurrent ? 'text-black font-medium' : 'text-gray-500'
+                    className={`flex-grow h-[2px] ${
+                      index < stepTitles.length - 1 ? 'bg-gray-300' : ''
                     }`}
-                  >
-                    {label}
-                  </div>
+                  ></div>
                 </div>
 
-                {/* Line connector */}
-                {index < stepTitles.length - 1 && (
-                  <div className={'flex-1 h-[2px] mx-2 bg-gray-300'}></div>
-                )}
-              </React.Fragment>
+                {/* Bottom row: Step title */}
+                <div
+                  className={`w-full text-xs mt-2 text-center ${
+                    isCurrent ? 'text-black font-medium' : 'text-gray-500'
+                  }`}
+                >
+                  {label}
+                </div>
+              </div>
             );
           })}
         </div>

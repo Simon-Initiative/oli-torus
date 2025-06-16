@@ -124,10 +124,6 @@ export const ScheduleEditor: React.FC<SchedulerProps> = ({
       <div className="mb-4">Select the week days you want to consider for that schedule.</div>
       <WeekDayPicker weekdays={validWeekdays} onChange={setValidWeekdays} />
     </div>,
-    <div key="step-2">
-      <div className="font-bold mb-4">Identify Breaks</div>
-      <div className="mb-4">This feature is currently under development.</div>
-    </div>,
     <div key="step-3">
       <div className="font-bold mb-4">Set Default Layout</div>
       <div className="mb-4">
@@ -174,7 +170,7 @@ export const ScheduleEditor: React.FC<SchedulerProps> = ({
       </div>
     </div>,
   ];
-  const stepTitles = ['Set Default Timeline', 'Identify Breaks', 'Set Default Layout'];
+  const stepTitles = ['Set Default Timeline', 'Set Default Layout'];
 
   const { showModal, Modal } = useMultiStepModal(
     steps,
@@ -189,18 +185,6 @@ export const ScheduleEditor: React.FC<SchedulerProps> = ({
       allowBack: false,
     },
   );
-
-  // const { Modal, showModal } = usePromptModal(
-  //   <div>
-  //     <p>
-  //       This will reset all timelines to the default. Select the week days you want to consider for
-  //       that schedule.
-  //     </p>
-  //     <WeekDayPicker weekdays={validWeekdays} onChange={setValidWeekdays} />
-  //   </div>,
-
-  //   onReset,
-  // );
 
   const { Modal: clearModal, showModal: showClearModal } = useBackdropModal(
     <div>

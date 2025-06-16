@@ -1,5 +1,10 @@
 import { DateWithoutTime } from 'epoq';
-import { HierarchyItem, ScheduleItemType, getScheduleItem } from './scheduler-slice';
+import {
+  AssessmentLayoutType,
+  HierarchyItem,
+  ScheduleItemType,
+  getScheduleItem,
+} from './scheduler-slice';
 
 export const countWorkingDays = (
   start: DateWithoutTime,
@@ -114,6 +119,7 @@ export const resetScheduleItem = (
     minute: number;
     second: number;
   },
+  assessmentLayoutType: AssessmentLayoutType,
 ) => {
   const hasChildren = !!target.children.map((id) => getScheduleItem(id, schedule)).length;
 
@@ -157,16 +163,34 @@ export const resetScheduleItem = (
     if (child && (resetManual || !child?.manually_scheduled)) {
       child.startDate =
         child.resource_type_id === ScheduleItemType.Container ? calculatedStart : null;
-      child.endDate = calculatedEnd;
+      if (child.graded) {
+        if (assessmentLayoutType === 'no_due_dates') {
+          child.endDate = null;
+        } else if (assessmentLayoutType === 'end_of_each_section') {
+          schedule.forEach((potentialParent) => {
+            if (potentialParent.children.includes(child.id)) {
+              child.endDate = new DateWithoutTime(
+                potentialParent.endDate?.getDaysSinceEpoch() || end.getDaysSinceEpoch(),
+              );
+            }
+          });
+        } else {
+          child.endDate = calculatedEnd;
+        }
+      } else {
+        child.endDate = calculatedEnd;
+      }
 
-      const delta = child.endDate.getDaysSinceEpoch() - end.getDaysSinceEpoch();
-      if (delta > 0) {
+      const delta =
+        child.endDate !== null ? child.endDate.getDaysSinceEpoch() - end.getDaysSinceEpoch() : 0;
+      if (child.endDate !== null && delta > 0) {
         // Make sure we never schedule past the end.
         child.endDate.addDays(-delta);
       }
 
       if (
         child.startDate &&
+        child.endDate &&
         child.endDate.getDaysSinceEpoch() < child.startDate.getDaysSinceEpoch()
       ) {
         // Make sure the start date is never after the end date.
@@ -187,24 +211,27 @@ export const resetScheduleItem = (
         child.startDateTime = null;
       }
 
-      child.endDateTime = new Date(
-        child.endDate.getFullYear(),
-        child.endDate.getMonth(),
-        child.endDate.getDate(),
-        preferredTime.hour,
-        preferredTime.minute,
-        preferredTime.second,
-        0,
-      );
+      child.endDateTime = child.endDate
+        ? new Date(
+            child.endDate.getFullYear(),
+            child.endDate.getMonth(),
+            child.endDate.getDate(),
+            preferredTime.hour,
+            preferredTime.minute,
+            preferredTime.second,
+            0,
+          )
+        : null;
 
       resetScheduleItem(
         child,
         calculatedStart,
-        child.endDate,
+        calculatedEnd,
         schedule,
         resetManual,
         weekdaysToSchedule,
         preferredTime,
+        assessmentLayoutType,
       );
     }
   }

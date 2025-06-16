@@ -93,7 +93,7 @@ export const initSchedulerState = (): SchedulerState => ({
   searchQuery: '',
   showRemoved: false,
   agenda: false,
-  assessmentLayoutType: 'end_of_each_section',
+  assessmentLayoutType: 'content_sequence',
 });
 
 const toDateTime = (str: string, preferredSchedulingTime: TimeParts) => {
@@ -280,6 +280,7 @@ const schedulerSlice = createSlice({
               true,
               state.weekdays,
               state.preferredSchedulingTime,
+              state.assessmentLayoutType,
             );
           state.dirty = state.schedule.map((item) => item.id);
         }
@@ -303,6 +304,7 @@ const schedulerSlice = createSlice({
               true,
               state.weekdays,
               state.preferredSchedulingTime,
+              state.assessmentLayoutType,
             );
           state.dirty = state.schedule.map((item) => item.id);
         }
@@ -413,6 +415,7 @@ const schedulerSlice = createSlice({
             false,
             state.weekdays,
             state.preferredSchedulingTime,
+            state.assessmentLayoutType,
           );
 
           state.dirty.push(...descendentIds(mutableItem, state.schedule));
@@ -438,6 +441,7 @@ const schedulerSlice = createSlice({
             true,
             action.payload.weekdays,
             state.preferredSchedulingTime,
+            state.assessmentLayoutType,
           );
         state.dirty = state.schedule.map((item) => item.id);
       }
@@ -561,6 +565,7 @@ const schedulerSlice = createSlice({
             true,
             state.weekdays,
             state.preferredSchedulingTime,
+            state.assessmentLayoutType,
           );
         state.dirty = state.schedule.map((item) => item.id);
       }
