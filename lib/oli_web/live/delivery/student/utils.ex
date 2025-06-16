@@ -809,6 +809,30 @@ defmodule OliWeb.Delivery.Student.Utils do
   end
 
   @doc """
+  Calculates and formats the percentage score based on the given score and out_of value.
+
+  Returns `nil` if the score is `nil`.
+
+  ## Examples
+
+      iex> parse_percentage(45, 50)
+      "90%"
+
+      iex> parse_percentage(nil, 50)
+      nil
+  """
+  @spec parse_percentage(number() | nil, number() | nil) :: String.t() | nil
+  def parse_percentage(nil, _), do: nil
+
+  def parse_percentage(score, out_of) do
+    percentage =
+      (score / out_of * 100)
+      |> parse_score()
+
+    "#{percentage}%"
+  end
+
+  @doc """
   Rounds a given score to two decimal places and converts it to an integer if the result is a whole number.
 
   ## Parameters:

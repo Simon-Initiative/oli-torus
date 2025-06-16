@@ -6,7 +6,7 @@ defmodule Oli.Grading.GradebookScore do
           resource_id: integer,
           label: String.t(),
           score: float | nil,
-          out_of: float,
-          was_late: boolean
+          out_of: float | nil,
+          was_late: boolean | nil
         }
 end
