@@ -10,6 +10,7 @@ defmodule OliWeb.GradesLiveTest do
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Common.Utils
   alias Oli.Delivery.Sections.Section
+  alias OliWeb.Delivery.Student.Utils, as: StudentUtils
 
   defp live_view_grades_route(section_slug) do
     Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.GradesLive, section_slug)
@@ -399,12 +400,16 @@ defmodule OliWeb.GradesLiveTest do
       user_1_name = Utils.name(user_1.name, user_1.given_name, user_1.family_name)
       user_2_name = Utils.name(user_2.name, user_2.given_name, user_2.family_name)
 
+      score_1 = resource_access_1.score
+      out_of_1 = resource_access_1.out_of
+      score_2 = resource_access_2.score
+      out_of_2 = resource_access_2.out_of
+
       assert response(conn, 200) =~
                """
-               Student,Progress test revision,Other test revision\r
-                   Points Possible,#{@out_of},\r
-               \"#{user_1_name} (#{user_1.email})\",#{resource_access_1.score},\r
-               \"#{user_2_name} (#{user_2.email})\",#{resource_access_2.score},\r
+               Status,Name,Email,LMS ID,Progress Test Revision - Points Earned,Progress Test Revision - Points Possible,Progress Test Revision - Percentage,Other Test Revision - Points Earned,Other Test Revision - Points Possible,Other Test Revision - Percentage\r
+               Enrolled,\"#{user_1_name}\",#{user_1.email},#{user_1.sub},#{score_1},#{out_of_1},#{StudentUtils.parse_percentage(score_1, out_of_1)},,,\r
+               Enrolled,\"#{user_2_name}\",#{user_2.email},#{user_2.sub},#{score_2},#{out_of_2},#{StudentUtils.parse_percentage(score_2, out_of_2)},,,\r
                """
     end
 
@@ -437,10 +442,9 @@ defmodule OliWeb.GradesLiveTest do
 
       assert response(conn, 200) =~
                """
-               Student,Progress test revision,Other test revision\r
-                   Points Possible,,\r
-               \"#{user_1_name} (#{user_1.email})\",#{},\r
-               \"#{user_2_name} (#{user_2.email})\",#{},\r
+               Status,Name,Email,LMS ID,Progress Test Revision - Points Earned,Progress Test Revision - Points Possible,Progress Test Revision - Percentage,Other Test Revision - Points Earned,Other Test Revision - Points Possible,Other Test Revision - Percentage\r
+               Enrolled,\"#{user_1_name}\",#{user_1.email},#{user_1.sub},,,,,,\r
+               Enrolled,\"#{user_2_name}\",#{user_2.email},#{user_2.sub},,,,,,\r
                """
     end
   end
