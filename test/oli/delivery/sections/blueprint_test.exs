@@ -161,6 +161,17 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
       refute duplicate.slug == section.slug
       refute duplicate.root_section_resource_id == section.root_section_resource_id
 
+      # Verify section resources were created and migrated
+      section_resources = Sections.get_section_resources(duplicate.id)
+      assert length(section_resources) > 0
+
+      section_resources
+      |> Enum.each(fn sr ->
+        assert sr.section_id == duplicate.id
+        # revision_id is a field that is populated by the migration
+        assert sr.revision_id != nil
+      end)
+
       duped =
         get_resources(id)
         |> Enum.map(fn s -> s.id end)
@@ -354,9 +365,16 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
       assert blueprint.customizations.unit == "Module"
       refute blueprint.open_and_free
 
-      # Verify section resources were created
+      # Verify section resources were created and migrated
       section_resources = Sections.get_section_resources(blueprint.id)
       assert length(section_resources) > 0
+
+      section_resources
+      |> Enum.each(fn sr ->
+        assert sr.section_id == blueprint.id
+        # revision_id is a field that is populated by the migration
+        assert sr.revision_id != nil
+      end)
 
       # Verify root section resource is set
       assert blueprint.root_section_resource_id != nil
@@ -403,28 +421,6 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
                  "Test Blueprint",
                  %{}
                )
-    end
-
-    test "spawns task to initialize depot coordinator", %{
-      project: project,
-      author: author
-    } do
-      {:ok, _publication} = Publishing.publish_project(project, "initial publication", author.id)
-
-      # Get the number of children before creating the blueprint
-      children_before = Task.Supervisor.children(Oli.TaskSupervisor) |> length()
-
-      {:ok, _blueprint} =
-        Blueprint.create_blueprint(
-          project.slug,
-          "Depot Test Blueprint",
-          %{}
-        )
-
-      # Verify that a task was spawned by checking the children count increased
-      children_after = Task.Supervisor.children(Oli.TaskSupervisor) |> length()
-
-      assert children_after == children_before + 1
     end
   end
 
