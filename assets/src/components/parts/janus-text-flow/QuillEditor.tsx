@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Alert } from 'react-bootstrap';
 import ReactQuill, { Quill } from 'react-quill';
 import Delta from 'quill-delta';
 import register from '../customElementWrapper';
@@ -205,8 +206,11 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
         quill.current?.getEditor().insertText(insertIndex, `{"${newKey}"}`);
 
         // Update FIB structure and dropdown options
-        const updatedText = quill.current?.getEditor().getText() ?? '';
-        const parsed = generateFIBStructure(updatedText);
+        const janusText = convertQuillToJanus(
+          new Delta(quill.current?.getEditor()?.getContents().ops),
+        );
+        const collectedText = extractFormattedHTMLFromQuillNodes(janusText);
+        const parsed = generateFIBStructure(collectedText);
         const quillOptions = transformOptionsToNormalized(parsed.elements);
         const updatedFIBOptions = mergeParsedWithExistingBlanks(localOptions, quillOptions);
         setFibElements(updatedFIBOptions);
@@ -374,6 +378,12 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
     <React.Fragment>
       <link rel="stylesheet" href="https://cdn.quilljs.com/1.3.6/quill.snow.css" />
       <style>{fontStyles}</style>
+      {showfibinsertoptioncontrol && (
+        <Alert variant="info" style={{ fontSize: '14px' }}>
+          To edit a blank: Place your cursor in the blank and select 🔽. <br></br> To create a new
+          blank: Place your cursor where you want it and select 🔽.
+        </Alert>
+      )}
       <div
         style={{
           maxWidth: 520,
