@@ -10,7 +10,16 @@ defmodule Oli.Grading do
 
   alias Oli.Publishing.{DeliveryResolver, PublishedResource}
   alias Oli.Delivery.Sections
-  alias Oli.Delivery.Sections.{Section, SectionResource, SectionsProjectsPublications}
+  alias Oli.Delivery.Sections
+
+  alias Oli.Delivery.Sections.{
+    EnrollmentBrowseOptions,
+    Section,
+    SectionResource,
+    SectionsProjectsPublications,
+    SectionResourceDepot
+  }
+
   alias Oli.Delivery.Attempts.Core, as: Attempts
   alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias Oli.Grading.GradebookRow
@@ -122,7 +131,7 @@ defmodule Oli.Grading do
 
   defp build_gradebook_row(%{user: user} = row, points_possible) do
     main_attrs = %{
-      status: parse_enrollment_status(user.enrollment_status),
+      status: StudentUtils.parse_enrollment_status(user.enrollment_status),
       name: Utils.name(user),
       email: user.email,
       lms_id: user.sub
@@ -150,12 +159,6 @@ defmodule Oli.Grading do
     Enum.sort_by(results, &{&1.status, &1.name, &1.email})
   end
 
-  defp parse_enrollment_status(:enrolled), do: "Enrolled"
-  defp parse_enrollment_status(:suspended), do: "Suspended"
-  defp parse_enrollment_status(:pending_confirmation), do: "Pending confirmation"
-  defp parse_enrollment_status(:rejected), do: "Rejected invitation"
-  defp parse_enrollment_status(_status), do: "Unknown"
-
   @doc """
   Returns a tuple containing a list of GradebookRow for every enrolled user, an ordered list of column labels and a map of points possible for each resource id.
 
@@ -163,10 +166,20 @@ defmodule Oli.Grading do
   """
   def generate_gradebook_for_section(%Section{} = section) do
     # get publication page resources, filtered by graded: true and ordered by numbering index
-    graded_pages = Sections.fetch_scored_pages(section.slug, :numbering_index)
+    graded_pages = SectionResourceDepot.graded_pages(section.id)
 
     # get students enrolled in the section, filter by role: student
-    students = Sections.fetch_students(section.slug)
+    students =
+      Sections.browse_enrollments(
+        section,
+        %Oli.Repo.Paging{offset: 0, limit: nil},
+        %Oli.Repo.Sorting{direction: :desc, field: :name},
+        %EnrollmentBrowseOptions{
+          text_search: "",
+          is_student: true,
+          is_instructor: false
+        }
+      )
 
     # create a map of all resource accesses, keyed off resource id
     resource_accesses = fetch_resource_accesses(section.id)
@@ -182,17 +195,18 @@ defmodule Oli.Grading do
         {scores, points_possible} =
           graded_pages
           |> Enum.reverse()
-          |> Enum.reduce({[], points_possible}, fn revision, {acc_scores, points_possible} ->
+          |> Enum.reduce({[], points_possible}, fn section_resource,
+                                                   {acc_scores, points_possible} ->
             {score, points_possible} =
               with %{^user_id => student_resource_accesses} <-
-                     resource_accesses[revision.resource_id],
+                     resource_accesses[section_resource.resource_id],
                    %ResourceAccess{score: score, out_of: out_of, was_late: was_late} <-
                      student_resource_accesses do
-                points_possible = Map.put(points_possible, revision.resource_id, out_of)
+                points_possible = Map.put(points_possible, section_resource.resource_id, out_of)
 
                 {%GradebookScore{
-                   resource_id: revision.resource_id,
-                   label: revision.title,
+                   resource_id: section_resource.resource_id,
+                   label: section_resource.title,
                    score: score,
                    out_of: out_of,
                    was_late: was_late
@@ -200,8 +214,8 @@ defmodule Oli.Grading do
               else
                 _ ->
                   {%GradebookScore{
-                     resource_id: revision.resource_id,
-                     label: revision.title,
+                     resource_id: section_resource.resource_id,
+                     label: section_resource.title,
                      score: nil,
                      out_of: nil,
                      was_late: nil
@@ -217,10 +231,10 @@ defmodule Oli.Grading do
     assessments_column_labels =
       graded_pages
       |> Enum.reverse()
-      |> Enum.reduce([], fn revision, acc ->
-        points_earned_column_label = :"#{revision.title} - Points Earned"
-        points_possible_column_label = :"#{revision.title} - Points Possible"
-        percentage_column_label = :"#{revision.title} - Percentage"
+      |> Enum.reduce([], fn section_resource, acc ->
+        points_earned_column_label = :"#{section_resource.title} - Points Earned"
+        points_possible_column_label = :"#{section_resource.title} - Points Possible"
+        percentage_column_label = :"#{section_resource.title} - Percentage"
 
         acc
         |> Keyword.put(

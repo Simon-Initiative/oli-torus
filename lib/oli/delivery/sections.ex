@@ -252,7 +252,8 @@ defmodule Oli.Delivery.Sections do
         total_count: fragment("count(*) OVER()"),
         enrollment_date: e.inserted_at,
         payment_date: p.application_date,
-        payment_id: p.id
+        payment_id: p.id,
+        enrollment_status: e.status
       })
 
     case field do

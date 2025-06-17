@@ -527,15 +527,9 @@ defmodule Oli.Utils do
   def title_case(string) do
     string
     |> String.split()
-    |> Enum.map(&capitalize_word/1)
+    |> Enum.map(&String.capitalize/1)
     |> Enum.join(" ")
   end
-
-  defp capitalize_word(<<first::utf8, rest::binary>>) do
-    String.upcase(<<first>>) <> String.downcase(rest)
-  end
-
-  defp capitalize_word(word), do: word
 
   defp compare(f, t, true), do: f <= t
   defp compare(f, t, false), do: f < t

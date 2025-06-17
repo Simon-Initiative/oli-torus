@@ -1097,6 +1097,17 @@ defmodule OliWeb.Delivery.Student.Utils do
     ]
   end
 
+  @doc """
+  Parses the enrollment status and returns a human-readable string.
+  """
+
+  @spec parse_enrollment_status(atom()) :: String.t()
+  def parse_enrollment_status(:enrolled), do: "Enrolled"
+  def parse_enrollment_status(:suspended), do: "Suspended"
+  def parse_enrollment_status(:pending_confirmation), do: "Pending confirmation"
+  def parse_enrollment_status(:rejected), do: "Rejected invitation"
+  def parse_enrollment_status(_status), do: "Unknown"
+
   def emit_page_viewed_event(socket) do
     section = socket.assigns.section
     context = socket.assigns.page_context
