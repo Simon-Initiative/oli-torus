@@ -63,7 +63,7 @@ defmodule OliWeb.Components.Delivery.QuizScores do
           class="flex justify-between sm:items-end px-4 sm:px-9 py-4 instructor_dashboard_table"
         >
           <div>
-            <h4 class="torus-h4 !py-0 sm:mr-auto mb-2">Quiz Scores</h4>
+            <h4 class="torus-h4 !py-0 sm:mr-auto mb-2">Assessment Scores</h4>
             <a
               href={Routes.delivery_path(OliWeb.Endpoint, :download_quiz_scores, @section_slug)}
               class="self-end"

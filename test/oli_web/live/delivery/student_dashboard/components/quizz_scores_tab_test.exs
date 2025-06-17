@@ -116,7 +116,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.QuizzScoresTabTest do
       assert has_element?(
                view,
                ~s{a[href="#{live_view_students_dashboard_route(section.slug, student.id, :quizz_scores)}"].border-b-2},
-               "Quiz Scores"
+               "Assessment Scores"
              )
 
       # QuizScores tab content gets rendered
@@ -153,7 +153,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.QuizzScoresTabTest do
       assert has_element?(
                view,
                ~s{a[href="#{live_view_students_dashboard_route(section.slug, student.id, :quizz_scores)}"].border-b-2},
-               "Quiz Scores"
+               "Assessment Scores"
              )
 
       assert has_element?(
