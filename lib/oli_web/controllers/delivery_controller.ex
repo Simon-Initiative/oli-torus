@@ -494,6 +494,71 @@ defmodule OliWeb.DeliveryController do
     end
   end
 
+  @doc """
+  Endpoint that triggers download of a container specific progress report.
+  """
+  def download_container_progress(
+        conn,
+        %{"section_slug" => slug, "container_id" => container_id, "title" => title} = params
+      ) do
+    {container_id, _} = Integer.parse(container_id)
+
+    case Oli.Delivery.Sections.get_section_by_slug(slug) do
+      nil ->
+        OliWeb.StaticPageController.not_found(conn, params)
+
+      section ->
+        students =
+          Helpers.get_students(section, %{container_id: container_id}, :context_learner)
+
+        contents =
+          Enum.map(
+            students,
+            &%{
+              status: parse_enrollment_status(&1.enrollment_status),
+              name: OliWeb.Common.Utils.name(&1),
+              email: &1.email,
+              lms_id: &1.sub,
+              last_interaction: &1.last_interaction,
+              progress: convert_to_percentage(&1),
+              overall_proficiency: &1.overall_proficiency
+            }
+          )
+          |> sort_data()
+          |> DataTable.new()
+          |> DataTable.headers(
+            status: "Status",
+            name: "Name",
+            email: "Email",
+            lms_id: "LMS ID",
+            last_interaction: "Last Interaction",
+            progress: "Progress (Pct)",
+            overall_proficiency: "Proficiency"
+          )
+          |> DataTable.to_csv_content()
+
+        send_download(conn, {:binary, contents},
+          filename: "progress__#{slug}__#{generate_title(title)}.csv"
+        )
+    end
+  end
+
+  def generate_title(title) when is_binary(title) do
+    title
+    |> remove_special_chars()
+    |> String.slice(0, 50)
+  end
+
+  defp remove_special_chars(string) do
+    string
+    # Remove all non-alphanumeric except space
+    |> String.replace(~r/[^A-Za-z0-9\s]/u, "")
+    # Replace spaces with underscores
+    |> String.replace(~r/\s+/, "_")
+    # Remove leading/trailing underscores
+    |> String.trim("_")
+  end
+
   defp safe_score(score, out_of) do
     not_finished_msg = "Not finished"
 

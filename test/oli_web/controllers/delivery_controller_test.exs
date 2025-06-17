@@ -238,10 +238,61 @@ defmodule OliWeb.DeliveryControllerTest do
     end
   end
 
+  describe "download_container_progress/2" do
+    test "downloads student progress per container", %{conn: conn} do
+      %{instructor: instructor, section: section, unit_1_revision: unit_1_revision} =
+        prepare_student_progress_data()
+
+      container_id =
+        Oli.Repo.all(Oli.Delivery.Sections.ContainedPage)
+        |> Enum.reject(&is_nil(&1.container_id))
+        |> List.first()
+        |> Map.get(:id)
+
+      conn =
+        conn
+        |> log_in_user(instructor)
+        |> get(
+          ~p"/sections/#{section.slug}/instructor_dashboard/downloads/progress/#{container_id}/#{unit_1_revision.slug}"
+        )
+
+      assert get_resp_header(conn, "content-disposition") == [
+               "attachment; filename=\"progress__#{section.slug}__Intro_to_Physics_Module_1_2025.csv\""
+             ]
+
+      # Verify CSV content
+      resp = conn.resp_body
+
+      [headers | students] = NimbleCSV.RFC4180.parse_string(resp, skip_headers: false)
+      # CSV Headers
+      assert [
+               "Status",
+               "Name",
+               "Email",
+               "LMS ID",
+               "Last Interaction",
+               "Progress (Pct)",
+               "Proficiency"
+             ] == headers
+
+      #  We have 8 students and 1 instructor
+      assert Enum.count(students) == 8
+
+      # CSV Student data
+      assert ["Enrolled", "Five, Student", _, _, _, _, _] = Enum.at(students, 0)
+      assert ["Enrolled", "Four, Student", _, _, _, _, _] = Enum.at(students, 1)
+      assert ["Enrolled", "One, Student", _, _, _, _, _] = Enum.at(students, 2)
+      assert ["Enrolled", "Three, Student", _, _, _, _, _] = Enum.at(students, 3)
+      assert ["Enrolled", "Two, Student", _, _, _, _, _] = Enum.at(students, 4)
+      assert ["Pending confirmation", "Seven, Student", _, _, _, _, _] = Enum.at(students, 5)
+      assert ["Rejected invitation", "Eight, Student", _, _, _, _, _] = Enum.at(students, 6)
+      assert ["Suspended", "Six, Student", _, _, _, _, _] = Enum.at(students, 7)
+    end
+  end
+
   describe "download_students_progress/2" do
     test "downloads student progress with different proficiency levels", %{conn: conn} do
-      %{instructor: instructor, section: section} =
-        prepare_student_progress_data()
+      %{instructor: instructor, section: section} = prepare_student_progress_data()
 
       # Download the CSV
       conn =
@@ -933,43 +984,43 @@ defmodule OliWeb.DeliveryControllerTest do
   end
 
   defp prepare_student_progress_data() do
-    author = insert(:author)
-    project = insert(:project, authors: [author])
+    project = insert(:project)
 
-    # Create root container
     container_id = Oli.Resources.ResourceType.id_for_container()
     type_for_page = Oli.Resources.ResourceType.id_for_page()
 
     page_revision =
-      insert(:revision, author: author, resource_type_id: type_for_page, graded: true)
+      insert(:revision, resource_type_id: type_for_page, graded: true)
 
-    container_revision =
+    unit_1_revision =
       insert(:revision,
-        author: author,
         resource_type_id: container_id,
-        children: [page_revision.resource_id]
+        children: [page_revision.resource_id],
+        slug: "Intro to Physics! 🚀 - Module #1 @2025"
       )
 
+    root_container_revision =
+      insert(:revision, resource_type_id: container_id, children: [unit_1_revision.resource_id])
+
     # Link resources to project
-    insert(:project_resource, project: project, resource: container_revision.resource)
-    insert(:project_resource, project: project, resource: page_revision.resource)
+    [root_container_revision, unit_1_revision, page_revision]
+    |> Enum.each(fn revision ->
+      insert(:project_resource, project: project, resource: revision.resource)
+    end)
 
     # Create publication
     publication =
-      insert(:publication, project: project, root_resource: container_revision.resource)
+      insert(:publication, project: project, root_resource: root_container_revision.resource)
 
     # Create published resources
-    insert(:published_resource,
-      publication: publication,
-      resource: container_revision.resource,
-      revision: container_revision
-    )
-
-    insert(:published_resource,
-      publication: publication,
-      resource: page_revision.resource,
-      revision: page_revision
-    )
+    [root_container_revision, unit_1_revision, page_revision]
+    |> Enum.each(fn revision ->
+      insert(:published_resource,
+        publication: publication,
+        resource: revision.resource,
+        revision: revision
+      )
+    end)
 
     # Create section
     section = insert(:section, base_project: project)
@@ -985,7 +1036,8 @@ defmodule OliWeb.DeliveryControllerTest do
     # Student 4: Progress: 33.03% | Proficiency: "High"
     # Student 5: Progress: 100% | Proficiency: "High"
     # Student 6-8: Progress: 0% | Proficiency: "Not enough data" | Enrollment different from enrolled
-    [student_1, student_2, student_3, student_4, student_5, student_6, student_7, student_8] =
+    [student_1, student_2, student_3, student_4, student_5 | _rest] =
+      students =
       ~w(One Two Three Four Five Six Seven Eight)
       |> Enum.with_index(1)
       |> Enum.map(fn {id, i} ->
@@ -999,14 +1051,16 @@ defmodule OliWeb.DeliveryControllerTest do
 
     # Enroll students
     student_ctx = [ContextRoles.get_role(:context_learner)]
-    Sections.enroll(student_1.id, section.id, student_ctx)
-    Sections.enroll(student_2.id, section.id, student_ctx)
-    Sections.enroll(student_3.id, section.id, student_ctx)
-    Sections.enroll(student_4.id, section.id, student_ctx)
-    Sections.enroll(student_5.id, section.id, student_ctx)
-    Sections.enroll(student_6.id, section.id, student_ctx, :suspended)
-    Sections.enroll(student_7.id, section.id, student_ctx, :pending_confirmation)
-    Sections.enroll(student_8.id, section.id, student_ctx, :rejected)
+
+    student_ids = Enum.map(students, & &1.id)
+
+    enrollment_statuses =
+      List.duplicate(:enrolled, 5) ++ [:suspended, :pending_confirmation, :rejected]
+
+    Enum.zip(student_ids, enrollment_statuses)
+    |> Enum.each(fn {student_id, status} ->
+      Sections.enroll(student_id, section.id, student_ctx, status)
+    end)
 
     # Set up progress and attempts for each student
     section_resources = Sections.get_section_resources(section.id)
@@ -1100,6 +1154,6 @@ defmodule OliWeb.DeliveryControllerTest do
     instructor_ctx = [ContextRoles.get_role(:context_instructor)]
     Sections.enroll(instructor.id, section.id, instructor_ctx)
 
-    %{instructor: instructor, section: section}
+    %{instructor: instructor, section: section, unit_1_revision: unit_1_revision}
   end
 end
