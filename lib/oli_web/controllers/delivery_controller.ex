@@ -499,7 +499,7 @@ defmodule OliWeb.DeliveryController do
   """
   def download_container_progress(
         conn,
-        %{"section_slug" => slug, "container_id" => container_id} = params
+        %{"section_slug" => slug, "container_id" => container_id, "title" => title} = params
       ) do
     {container_id, _} = Integer.parse(container_id)
 
@@ -537,8 +537,26 @@ defmodule OliWeb.DeliveryController do
           )
           |> DataTable.to_csv_content()
 
-        send_download(conn, {:binary, contents}, filename: "progress_#{slug}_#{container_id}.csv")
+        send_download(conn, {:binary, contents},
+          filename: "progress__#{slug}__#{generate_title(title)}.csv"
+        )
     end
+  end
+
+  def generate_title(title) when is_binary(title) do
+    title
+    |> remove_special_chars()
+    |> String.slice(0, 50)
+  end
+
+  defp remove_special_chars(string) do
+    string
+    # Remove all non-alphanumeric except space
+    |> String.replace(~r/[^A-Za-z0-9\s]/u, "")
+    # Replace spaces with underscores
+    |> String.replace(~r/\s+/, "_")
+    # Remove leading/trailing underscores
+    |> String.trim("_")
   end
 
   defp safe_score(score, out_of) do

@@ -240,7 +240,8 @@ defmodule OliWeb.DeliveryControllerTest do
 
   describe "download_container_progress/2" do
     test "downloads student progress per container", %{conn: conn} do
-      %{instructor: instructor, section: section} = prepare_student_progress_data()
+      %{instructor: instructor, section: section, unit_1_revision: unit_1_revision} =
+        prepare_student_progress_data()
 
       container_id =
         Oli.Repo.all(Oli.Delivery.Sections.ContainedPage)
@@ -252,11 +253,11 @@ defmodule OliWeb.DeliveryControllerTest do
         conn
         |> log_in_user(instructor)
         |> get(
-          ~p"/sections/#{section.slug}/instructor_dashboard/downloads/progress/#{container_id}"
+          ~p"/sections/#{section.slug}/instructor_dashboard/downloads/progress/#{container_id}/#{unit_1_revision.slug}"
         )
 
       assert get_resp_header(conn, "content-disposition") == [
-               "attachment; filename=\"progress_#{section.slug}_#{container_id}.csv\""
+               "attachment; filename=\"progress__#{section.slug}__Intro_to_Physics_Module_1_2025.csv\""
              ]
 
       # Verify CSV content
@@ -992,7 +993,11 @@ defmodule OliWeb.DeliveryControllerTest do
       insert(:revision, resource_type_id: type_for_page, graded: true)
 
     unit_1_revision =
-      insert(:revision, resource_type_id: container_id, children: [page_revision.resource_id])
+      insert(:revision,
+        resource_type_id: container_id,
+        children: [page_revision.resource_id],
+        slug: "Intro to Physics! 🚀 - Module #1 @2025"
+      )
 
     root_container_revision =
       insert(:revision, resource_type_id: container_id, children: [unit_1_revision.resource_id])
@@ -1149,6 +1154,6 @@ defmodule OliWeb.DeliveryControllerTest do
     instructor_ctx = [ContextRoles.get_role(:context_instructor)]
     Sections.enroll(instructor.id, section.id, instructor_ctx)
 
-    %{instructor: instructor, section: section}
+    %{instructor: instructor, section: section, unit_1_revision: unit_1_revision}
   end
 end

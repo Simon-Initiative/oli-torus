@@ -515,7 +515,7 @@ defmodule OliWeb.Components.Delivery.Students do
               <a
                 class="self-end"
                 href={
-                  ~p(/sections/#{@section_slug}/instructor_dashboard/downloads/progress/#{@params.container_id || ""})
+                  ~p(/sections/#{@section_slug}/instructor_dashboard/downloads/progress/#{@params.container_id || ""}/#{@title})
                 }
                 download="progress.csv"
               >
