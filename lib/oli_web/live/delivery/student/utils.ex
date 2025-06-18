@@ -195,7 +195,7 @@ defmodule OliWeb.Delivery.Student.Utils do
           <%= score_as_you_go(@effective_settings) %>
         </li>
         <li id="page_scoring_terms">
-          <%= page_scoring_term(@effective_settings.scoring_strategy_id) %>
+          <%= page_scoring_term(@effective_settings) %>
         </li>
         <li :if={!@effective_settings.batch_scoring} id="question_attempts">
           <%= question_attempts(@effective_settings) %>
@@ -340,18 +340,25 @@ defmodule OliWeb.Delivery.Student.Utils do
   defp to_hours(1), do: "1 hour"
   defp to_hours(hours), do: "#{hours} hours"
 
-  defp page_scoring_term(1 = _scoring_strategy_id),
-    do: "Your overall score for this assignment will be the average score of your attempts."
+  defp page_scoring_term(effective_settings) do
+    # Determine the scoring policy text
+    policy_text =
+      if effective_settings.batch_scoring, do: "this assignment", else: "each question"
 
-  defp page_scoring_term(3 = _scoring_strategy_id),
-    do: "Your overall score for this assignment will be the score of your last attempt."
+    # Determine the scoring strategy text
+    strategy_text =
+      case effective_settings.scoring_strategy_id do
+        1 -> "the average of your attempts"
+        2 -> "your best attempt"
+        3 -> "your last attempt"
+        4 -> "the total sum of your attempts"
+        # Default to best (strategy 2)
+        _ -> "your best attempt"
+      end
 
-  defp page_scoring_term(4 = _scoring_strategy_id),
-    do: "Your overall score for this assignment will be the total sum of your attempts."
-
-  # scoring strategy 2 is the default scoring strategy
-  defp page_scoring_term(_scoring_strategy_id),
-    do: "Your overall score for this assignment will be the score of your best attempt."
+    # Generate the final message
+    "For #{policy_text}, your score will be determined by #{strategy_text}."
+  end
 
   @doc """
   Returns the scheduling type label for the container.
@@ -371,9 +378,9 @@ defmodule OliWeb.Delivery.Student.Utils do
       assign(assigns, %{
         proficiency_levels: [
           {"Not enough data", "Not enough information",
-           "You haven’t completed enough activities for the system to calculate learning proficiency."},
+           "You haven't completed enough activities for the system to calculate learning proficiency."},
           {"Low", "Beginning Proficiency",
-           "You’re beginning to understand key ideas, but there is room to grow."},
+           "You're beginning to understand key ideas, but there is room to grow."},
           {"Medium", "Growing Proficiency",
            "Your understanding and skills are clearly strengthening and expanding."},
           {"High", "Establishing Proficiency",
