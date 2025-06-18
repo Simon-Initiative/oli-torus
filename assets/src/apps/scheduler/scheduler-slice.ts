@@ -48,7 +48,11 @@ export interface HierarchyItem extends HierarchyItemSrc {
   startDateTime: Date | null; // This is only used for the available-from which includes a date and time.
 }
 
-export type AssessmentLayoutType = 'no_due_dates' | 'content_sequence' | 'end_of_each_section';
+export enum AssessmentLayoutType {
+  NoDueDates = 'no_due_dates',
+  ContentSequence = 'content_sequence',
+  EndOfEachSection = 'end_of_each_section',
+}
 
 export interface SchedulerState {
   schedule: HierarchyItem[];
@@ -93,7 +97,7 @@ export const initSchedulerState = (): SchedulerState => ({
   searchQuery: '',
   showRemoved: false,
   agenda: false,
-  assessmentLayoutType: 'content_sequence',
+  assessmentLayoutType: AssessmentLayoutType.ContentSequence,
 });
 
 const toDateTime = (str: string, preferredSchedulingTime: TimeParts) => {

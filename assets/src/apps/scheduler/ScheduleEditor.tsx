@@ -10,7 +10,12 @@ import { ScheduleGrid } from './ScheduleGrid';
 import { ScheduleSaveBar } from './SchedulerSaveBar';
 import { WeekDayPicker } from './WeekdayPicker';
 import { assessmentLayoutType, hasUnsavedChanges } from './schedule-selectors';
-import { StringDate, resetSchedule, setAssessmentLayoutType } from './scheduler-slice';
+import {
+  AssessmentLayoutType,
+  StringDate,
+  resetSchedule,
+  setAssessmentLayoutType,
+} from './scheduler-slice';
 import {
   clearSectionSchedule,
   scheduleAppFlushChanges,
@@ -136,8 +141,8 @@ export const ScheduleEditor: React.FC<SchedulerProps> = ({
             type="radio"
             name="assessmentLayoutType"
             className="mt-1"
-            checked={assessmentLayout === 'no_due_dates'}
-            onChange={() => dispatch(setAssessmentLayoutType('no_due_dates'))}
+            checked={assessmentLayout === AssessmentLayoutType.NoDueDates}
+            onChange={() => dispatch(setAssessmentLayoutType(AssessmentLayoutType.NoDueDates))}
           />
           <span className="leading-snug font-bold">Do not set assessment due dates</span>
         </label>
@@ -147,8 +152,8 @@ export const ScheduleEditor: React.FC<SchedulerProps> = ({
             type="radio"
             name="assessmentLayoutType"
             className="mt-1"
-            checked={assessmentLayout === 'content_sequence'}
-            onChange={() => dispatch(setAssessmentLayoutType('content_sequence'))}
+            checked={assessmentLayout === AssessmentLayoutType.ContentSequence}
+            onChange={() => dispatch(setAssessmentLayoutType(AssessmentLayoutType.ContentSequence))}
           />
           <span className="leading-snug font-bold">
             Set assessment due dates according to the sequence of course content.
@@ -160,8 +165,10 @@ export const ScheduleEditor: React.FC<SchedulerProps> = ({
             type="radio"
             name="assessmentLayoutType"
             className="mt-1"
-            checked={assessmentLayout === 'end_of_each_section'}
-            onChange={() => dispatch(setAssessmentLayoutType('end_of_each_section'))}
+            checked={assessmentLayout === AssessmentLayoutType.EndOfEachSection}
+            onChange={() =>
+              dispatch(setAssessmentLayoutType(AssessmentLayoutType.EndOfEachSection))
+            }
           />
           <span className="leading-snug font-bold">
             Set assessment due dates to the end of each section.

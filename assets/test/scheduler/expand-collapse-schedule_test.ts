@@ -1,4 +1,5 @@
 import {
+  AssessmentLayoutType,
   HierarchyItem,
   ScheduleItemType,
   collapseAllContainers,
@@ -37,7 +38,7 @@ describe('expand/collapse containers', () => {
     numbering_index: 1,
   };
 
-  const baseState = {
+  const baseState: { scheduler: ReturnType<typeof schedulerSliceReducer> } = {
     scheduler: {
       schedule: [rootContainer, container1],
       expandedContainers: {},
@@ -56,7 +57,7 @@ describe('expand/collapse containers', () => {
       searchQuery: '',
       showRemoved: false,
       agenda: true,
-      assessmentLayoutType: 'end_of_each_section',
+      assessmentLayoutType: AssessmentLayoutType.ContentSequence,
     },
   };
 
