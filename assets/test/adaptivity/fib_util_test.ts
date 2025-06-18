@@ -113,14 +113,100 @@ describe('FIB Util', () => {
     expect(convertedNodes).toEqual([
       {
         tag: 'p',
-        style: { fontSize: '1rem' },
+        style: {
+          fontSize: '1rem',
+        },
         children: [
           {
             tag: 'span',
             children: [
               {
                 tag: 'text',
-                text: '1 C₈H₁₈ +  {"25/2"*}O₂ →  {"8"*}CO₂ +  {"9"*}H₂O',
+                text: '1 C₈H₁₈ + {"',
+                children: [],
+              },
+            ],
+          },
+          {
+            tag: 'span',
+            style: {
+              color: 'rgb(59, 118, 211)',
+            },
+            children: [
+              {
+                tag: 'span',
+                children: [
+                  {
+                    tag: 'text',
+                    text: '25/2',
+                    children: [],
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            tag: 'span',
+            children: [
+              {
+                tag: 'text',
+                text: '"*}O₂ → {"',
+                children: [],
+              },
+            ],
+          },
+          {
+            tag: 'span',
+            style: {
+              color: 'rgb(59, 118, 211)',
+            },
+            children: [
+              {
+                tag: 'span',
+                children: [
+                  {
+                    tag: 'text',
+                    text: '8',
+                    children: [],
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            tag: 'span',
+            children: [
+              {
+                tag: 'text',
+                text: '"*}CO₂ + {"',
+                children: [],
+              },
+            ],
+          },
+          {
+            tag: 'span',
+            style: {
+              color: 'rgb(59, 118, 211)',
+            },
+            children: [
+              {
+                tag: 'span',
+                children: [
+                  {
+                    tag: 'text',
+                    text: '9',
+                    children: [],
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            tag: 'span',
+            children: [
+              {
+                tag: 'text',
+                text: '"*}H₂O',
                 children: [],
               },
             ],
@@ -133,14 +219,72 @@ describe('FIB Util', () => {
     expect(convertedNodes).toEqual([
       {
         tag: 'p',
-        style: { fontSize: '1rem' },
+        style: {
+          fontSize: '1rem',
+        },
         children: [
           {
             tag: 'span',
             children: [
               {
                 tag: 'text',
-                text: 'With fewer  {"calcium", "carbonate"*} ions available, it becomes  {"easier", "harder"*} for oysters to build their shells.',
+                text: 'With fewer {"calcium", "',
+                children: [],
+              },
+            ],
+          },
+          {
+            tag: 'span',
+            style: {
+              color: 'rgb(59, 118, 211)',
+            },
+            children: [
+              {
+                tag: 'span',
+                children: [
+                  {
+                    tag: 'text',
+                    text: 'carbonate',
+                    children: [],
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            tag: 'span',
+            children: [
+              {
+                tag: 'text',
+                text: '"*} ions available, it becomes {"easier", "',
+                children: [],
+              },
+            ],
+          },
+          {
+            tag: 'span',
+            style: {
+              color: 'rgb(59, 118, 211)',
+            },
+            children: [
+              {
+                tag: 'span',
+                children: [
+                  {
+                    tag: 'text',
+                    text: 'harder',
+                    children: [],
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            tag: 'span',
+            children: [
+              {
+                tag: 'text',
+                text: '"*} for oysters to build their shells.',
                 children: [],
               },
             ],
@@ -243,7 +387,9 @@ describe('FIB Util', () => {
       ],
     );
 
-    expect(quillOptions).toBe(`1 C₈H₁₈ + {"25/2"*}O₂ → {"8"*}CO₂ + {"99"*, "12"*}H₂O`);
+    expect(quillOptions).toBe(
+      `1 C₈H₁₈ + {"<span style="color: #3B76D3">25/2</span>"*}O₂ → {"<span style="color: #3B76D3">8</span>"*}CO₂ + {"<span style="color: #3B76D3">99</span>"*, "<span style="color: #3B76D3">12</span>"*}H₂O`,
+    );
 
     quillOptions = embedCorrectAnswersInString(
       `With fewer {"calcium", "carbonate"*} ions available, it becomes {"easier", "harder"*} for oysters to build their shells.`,
@@ -272,7 +418,7 @@ describe('FIB Util', () => {
     );
 
     expect(quillOptions).toBe(
-      `With fewer {"calcium", "carbonate"*} ions available, it becomes {"easier", "harders"*} for oysters to build their shells.`,
+      `With fewer {"calcium", "<span style="color: #3B76D3">carbonate</span>"*} ions available, it becomes {"easier", "<span style="color: #3B76D3">harders</span>"*} for oysters to build their shells.`,
     );
   });
 });
