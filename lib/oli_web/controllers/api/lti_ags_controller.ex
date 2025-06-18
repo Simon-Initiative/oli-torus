@@ -2,6 +2,7 @@ defmodule OliWeb.Api.LtiAgsController do
   use OliWeb, :controller
 
   alias Oli.Delivery.Attempts.Core.ClientEvaluation
+  alias Oli.Delivery.Sections.Section
 
   plug OliWeb.Plugs.LtiAgsTokenValidator
 
@@ -26,7 +27,6 @@ defmodule OliWeb.Api.LtiAgsController do
   def post_score(
         conn,
         %{
-          "section_slug" => _section_slug,
           "activity_attempt_guid" => _activity_attempt_guid,
           "gradingProgress" => "NotReady",
           "activityProgress" => "Initialized"
@@ -39,7 +39,6 @@ defmodule OliWeb.Api.LtiAgsController do
   def post_score(
         conn,
         %{
-          "section_slug" => section_slug,
           "activity_attempt_guid" => activity_attempt_guid,
           "userId" => _user_id,
           "scoreGiven" => score_given,
@@ -52,11 +51,10 @@ defmodule OliWeb.Api.LtiAgsController do
            if(String.downcase(grading_progress) == "fullygraded",
              do: :ok,
              else: {:error, "gradingProgress must be FullyGraded"}
-           ) do
+           ),
+         %Section{slug: section_slug} <-
+           Oli.Delivery.Attempts.Core.get_section_by_activity_attempt_guid(activity_attempt_guid) do
       datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
-
-      # TODO: optionally, get section from activity_attempt_id instead of using a section_slug param
-      # Oli.Delivery.Attempts.Core.get_section_by_activity_attempt_guid
 
       # get attempt_guid using activity_attempt_guid. There should be only one part attempt
       case Oli.Delivery.Attempts.Core.get_latest_part_attempts(activity_attempt_guid) do

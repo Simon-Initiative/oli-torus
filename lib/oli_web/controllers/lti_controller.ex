@@ -195,7 +195,7 @@ defmodule OliWeb.LtiController do
                   ],
                   lineitem:
                     Oli.Utils.get_base_url() <>
-                      "/lti/lineitems/#{section_slug}/#{activity_attempt.attempt_guid}"
+                      "/lti/lineitems/#{activity_attempt.attempt_guid}"
                 )
 
               additional_claims = [ags_endpoint]
