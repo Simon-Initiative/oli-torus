@@ -489,7 +489,7 @@ defmodule Oli.Delivery.Attempts.Core do
     |> Repo.preload(revision: [:activity_type])
   end
 
-  def get_latest_activity_attempt(section_id, user_id, resource_id) do
+  def get_latest_activity_attempt(section_slug, user_id, resource_id) do
     Repo.one(
       from(aa in ActivityAttempt,
         left_join: aa2 in ActivityAttempt,
@@ -500,9 +500,33 @@ defmodule Oli.Delivery.Attempts.Core do
         on: ra.id == aa.resource_attempt_id,
         join: rac in ResourceAccess,
         on: rac.id == ra.resource_access_id,
+        join: section in Section,
+        on: section.id == rac.section_id and section.slug == ^section_slug,
+        where:
+          aa.resource_id == ^resource_id and
+            is_nil(aa2) and rac.user_id == ^user_id and section.slug == ^section_slug,
+        select: aa
+      )
+    )
+    |> Repo.preload(revision: [:activity_type])
+  end
+
+  def get_latest_evaluated_activity_attempt(section_slug, user_id, resource_id) do
+    Repo.one(
+      from(aa in ActivityAttempt,
+        left_join: aa2 in ActivityAttempt,
+        on:
+          aa.resource_id == aa2.resource_id and
+            aa.id < aa2.id,
+        join: ra in ResourceAttempt,
+        on: ra.id == aa.resource_attempt_id,
+        join: rac in ResourceAccess,
+        on: rac.id == ra.resource_access_id,
+        join: section in Section,
+        on: section.id == rac.section_id and section.slug == ^section_slug,
         where:
           aa.resource_id == ^resource_id and not is_nil(aa.date_evaluated) and
-            is_nil(aa2) and rac.user_id == ^user_id and rac.section_id == ^section_id,
+            is_nil(aa2) and rac.user_id == ^user_id and section.slug == ^section_slug,
         select: aa
       )
     )

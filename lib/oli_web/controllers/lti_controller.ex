@@ -182,8 +182,8 @@ defmodule OliWeb.LtiController do
               activity_attempt =
                 Core.get_latest_activity_attempt(
                   section_slug,
-                  resource_id,
-                  user.id
+                  user.id,
+                  String.to_integer(resource_id)
                 )
 
               ags_endpoint =

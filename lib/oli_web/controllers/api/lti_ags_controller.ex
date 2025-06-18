@@ -41,21 +41,18 @@ defmodule OliWeb.Api.LtiAgsController do
         %{
           "section_slug" => section_slug,
           "activity_attempt_guid" => activity_attempt_guid,
-          "user_id" => _user_id,
+          "userId" => _user_id,
           "scoreGiven" => score_given,
           "scoreMaximum" => score_maximum,
           "gradingProgress" => grading_progress
-        } = _params
+        } = params
       ) do
-    # Validate the score_maximum and grading_progress
-    with {score_maximum, _} <- Float.parse(score_maximum),
-         :ok <- if(score_maximum == 1.0, do: :ok, else: {:error, "scoreMaximum must be 1"}),
-         :ok <-
-           if(String.downcase(grading_progress) == "FullyGraded",
+    # Validate the grading_progress
+    with :ok <-
+           if(String.downcase(grading_progress) == "fullygraded",
              do: :ok,
              else: {:error, "gradingProgress must be FullyGraded"}
-           ),
-         {score_given, _} <- Float.parse(score_given) do
+           ) do
       datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
 
       # TODO: optionally, get section from activity_attempt_id instead of using a section_slug param
@@ -63,7 +60,7 @@ defmodule OliWeb.Api.LtiAgsController do
 
       # get attempt_guid using activity_attempt_guid. There should be only one part attempt
       case Oli.Delivery.Attempts.Core.get_latest_part_attempts(activity_attempt_guid) do
-        {:ok, [part_attempt | _]} ->
+        [part_attempt | _] ->
           attempt_guid = part_attempt.attempt_guid
 
           # Create a single client evaluation that represents the basic outcomes score
@@ -92,7 +89,7 @@ defmodule OliWeb.Api.LtiAgsController do
               send_resp(conn, 500, msg)
           end
 
-        {:error, _} ->
+        _ ->
           {:error, "Activity attempt not found or no attempts available"}
       end
     else
