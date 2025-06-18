@@ -115,21 +115,20 @@ defmodule Oli.Grading do
   Returns a Stream which can be written to a file or other IO
   """
   def export_csv(%Section{} = section) do
-    {gradebook, assessments_column_labels, points_possible} =
-      generate_gradebook_for_section(section)
+    {gradebook, assessments_column_labels} = generate_gradebook_for_section(section)
 
     column_labels =
       [status: "Status", name: "Name", email: "Email", lms_id: "LMS ID"]
       |> Keyword.merge(assessments_column_labels)
 
-    Enum.map(gradebook, &build_gradebook_row(&1, points_possible))
+    Enum.map(gradebook, &build_gradebook_row/1)
     |> sort_data()
     |> DataTable.new()
     |> DataTable.headers(column_labels)
     |> DataTable.to_csv_content()
   end
 
-  defp build_gradebook_row(%{user: user} = row, points_possible) do
+  defp build_gradebook_row(%{user: user} = row) do
     main_attrs = %{
       status: StudentUtils.parse_enrollment_status(user.enrollment_status),
       name: Utils.name(user),
@@ -143,10 +142,10 @@ defmodule Oli.Grading do
       percentage_column_label = :"#{score.label} - Percentage"
 
       acc
-      |> Map.put(points_earned_column_label, score.score)
+      |> Map.put(points_earned_column_label, format_score(score.score))
       |> Map.put(
         points_possible_column_label,
-        score.out_of || Map.get(points_possible, score.resource_id)
+        format_score(score.out_of)
       )
       |> Map.put(
         percentage_column_label,
@@ -155,14 +154,18 @@ defmodule Oli.Grading do
     end)
   end
 
+  def format_score(nil), do: nil
+
+  def format_score(score) when is_number(score), do: StudentUtils.parse_score(score)
+
   defp sort_data(results) do
     Enum.sort_by(results, &{&1.status, &1.name, &1.email})
   end
 
   @doc """
-  Returns a tuple containing a list of GradebookRow for every enrolled user, an ordered list of column labels and a map of points possible for each resource id.
+  Returns a tuple containing a list of GradebookRow for every enrolled user and an ordered list of column labels.
 
-  `{[%GradebookRow{user: %User{}, scores: [%GradebookScore{}, ...]}, ...], ["Quiz 1 - Points Earned", "Quiz 1 - Points Possible", "Quiz 1 - Percentage"], %{1 => 20, 2 => 10}}`
+  `{[%GradebookRow{user: %User{}, scores: [%GradebookScore{}, ...]}, ...], ["Quiz 1 - Points Earned", "Quiz 1 - Points Possible", "Quiz 1 - Percentage"]}`
   """
   def generate_gradebook_for_section(%Section{} = section) do
     # get publication page resources, filtered by graded: true and ordered by numbering index
@@ -186,46 +189,41 @@ defmodule Oli.Grading do
 
     # Build gradebook map - for each user in the section, create a gradebook row. Using
     # resource_accesses, create a list of gradebook scores leaving scores null if they do not exist.
-    # Also build a map of points possible for each resource id, which will be used to fill missing
-    # points possible values in the gradebook row.
-    {gradebook, points_possible} =
+    gradebook =
       students
       |> Enum.reverse()
-      |> Enum.reduce({[], %{}}, fn %{id: user_id} = student, {acc_rows, points_possible} ->
-        {scores, points_possible} =
+      |> Enum.reduce([], fn %{id: user_id} = student, acc_rows ->
+        scores =
           graded_pages
           |> Enum.reverse()
-          |> Enum.reduce({[], points_possible}, fn section_resource,
-                                                   {acc_scores, points_possible} ->
-            {score, points_possible} =
+          |> Enum.reduce([], fn section_resource, acc_scores ->
+            score =
               with %{^user_id => student_resource_accesses} <-
                      resource_accesses[section_resource.resource_id],
                    %ResourceAccess{score: score, out_of: out_of, was_late: was_late} <-
                      student_resource_accesses do
-                points_possible = Map.put(points_possible, section_resource.resource_id, out_of)
-
-                {%GradebookScore{
-                   resource_id: section_resource.resource_id,
-                   label: section_resource.title,
-                   score: score,
-                   out_of: out_of,
-                   was_late: was_late
-                 }, points_possible}
+                %GradebookScore{
+                  resource_id: section_resource.resource_id,
+                  label: section_resource.title,
+                  score: score,
+                  out_of: out_of,
+                  was_late: was_late
+                }
               else
                 _ ->
-                  {%GradebookScore{
-                     resource_id: section_resource.resource_id,
-                     label: section_resource.title,
-                     score: nil,
-                     out_of: nil,
-                     was_late: nil
-                   }, points_possible}
+                  %GradebookScore{
+                    resource_id: section_resource.resource_id,
+                    label: section_resource.title,
+                    score: nil,
+                    out_of: nil,
+                    was_late: nil
+                  }
               end
 
-            {[score | acc_scores], points_possible}
+            [score | acc_scores]
           end)
 
-        {[%GradebookRow{user: student, scores: scores} | acc_rows], points_possible}
+        [%GradebookRow{user: student, scores: scores} | acc_rows]
       end)
 
     assessments_column_labels =
@@ -251,7 +249,7 @@ defmodule Oli.Grading do
         )
       end)
 
-    {gradebook, assessments_column_labels, points_possible}
+    {gradebook, assessments_column_labels}
   end
 
   @doc """

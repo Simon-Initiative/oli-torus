@@ -1355,6 +1355,18 @@ defmodule Oli.Seeder do
     end
   end
 
+  def add_enrollment(map, user_id, section_id, tag, role) do
+    {:ok, enrollment} =
+      Sections.enroll(user_id, section_id, [
+        Lti_1p3.Roles.ContextRoles.get_role(role)
+      ])
+
+    case tag do
+      nil -> map
+      t -> Map.put(map, t, enrollment)
+    end
+  end
+
   def add_guest_user(map, attrs, tag \\ nil) do
     {:ok, user} =
       User.noauth_changeset(
@@ -1397,13 +1409,10 @@ defmodule Oli.Seeder do
 
     # Enroll users
     user_tags
-    |> Enum.each(fn user_tag ->
-      Sections.enroll(map[user_tag].id, map[section_tag].id, [
-        Lti_1p3.Roles.ContextRoles.get_role(:context_learner)
-      ])
+    |> Enum.reduce(map, fn user_tag, acc ->
+      tag = :"#{user_tag}_enrollment"
+      add_enrollment(acc, map[user_tag].id, map[section_tag].id, tag, :context_learner)
     end)
-
-    map
   end
 
   def create_hierarchy(map, nodes) do

@@ -408,8 +408,8 @@ defmodule OliWeb.GradesLiveTest do
       assert response(conn, 200) =~
                """
                Status,Name,Email,LMS ID,Progress Test Revision - Points Earned,Progress Test Revision - Points Possible,Progress Test Revision - Percentage,Other Test Revision - Points Earned,Other Test Revision - Points Possible,Other Test Revision - Percentage\r
-               Enrolled,\"#{user_1_name}\",#{user_1.email},#{user_1.sub},#{score_1},#{out_of_1},#{StudentUtils.parse_percentage(score_1, out_of_1)},,,\r
-               Enrolled,\"#{user_2_name}\",#{user_2.email},#{user_2.sub},#{score_2},#{out_of_2},#{StudentUtils.parse_percentage(score_2, out_of_2)},,,\r
+               Enrolled,\"#{user_1_name}\",#{user_1.email},#{user_1.sub},#{StudentUtils.parse_score(score_1)},#{StudentUtils.parse_score(out_of_1)},#{StudentUtils.parse_percentage(score_1, out_of_1)},,,\r
+               Enrolled,\"#{user_2_name}\",#{user_2.email},#{user_2.sub},#{StudentUtils.parse_score(score_2)},#{StudentUtils.parse_score(out_of_2)},#{StudentUtils.parse_percentage(score_2, out_of_2)},,,\r
                """
     end
 

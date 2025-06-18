@@ -824,13 +824,7 @@ defmodule OliWeb.Delivery.Student.Utils do
   @spec parse_percentage(number() | nil, number() | nil) :: String.t() | nil
   def parse_percentage(nil, _), do: nil
 
-  def parse_percentage(score, out_of) do
-    percentage =
-      (score / out_of * 100)
-      |> parse_score()
-
-    "#{percentage}%"
-  end
+  def parse_percentage(score, out_of), do: parse_score(score / out_of * 100)
 
   @doc """
   Rounds a given score to two decimal places and converts it to an integer if the result is a whole number.
