@@ -13,10 +13,10 @@ defmodule Oli.Delivery.SettingsTest do
 
   test "new_attempt_allowed/3 determines if a new attempt is allowed" do
     assert {:no_attempts_remaining} ==
-             Settings.new_attempt_allowed(%Combined{max_attempts: 5}, 5, [])
+             Settings.new_attempt_allowed(%Combined{max_attempts: 5, batch_scoring: true}, 5, [])
 
     assert {:blocking_gates} ==
-             Settings.new_attempt_allowed(%Combined{max_attempts: 5}, 1, [1])
+             Settings.new_attempt_allowed(%Combined{max_attempts: 5, batch_scoring: true}, 1, [1])
 
     assert {:end_date_passed} ==
              Settings.new_attempt_allowed(
@@ -26,7 +26,7 @@ defmodule Oli.Delivery.SettingsTest do
                  end_date: ~U[2020-01-01 00:00:00Z],
                  scheduling_type: :due_by
                },
-               1,
+               0,
                []
              )
 
@@ -37,16 +37,30 @@ defmodule Oli.Delivery.SettingsTest do
                  late_start: :disallow,
                  start_date: DateTime.utc_now() |> DateTime.add(1, :day)
                },
-               1,
+               0,
                []
              )
 
     assert {:allowed} ==
              Settings.new_attempt_allowed(
-               %Combined{max_attempts: 5, late_start: :allow, end_date: ~U[2020-01-01 00:00:00Z]},
+               %Combined{
+                 max_attempts: 5,
+                 batch_scoring: true,
+                 late_start: :allow,
+                 end_date: ~U[2020-01-01 00:00:00Z]
+               },
                1,
                []
              )
+
+    assert {:score_as_you_go_completed} ==
+             Settings.new_attempt_allowed(%Combined{batch_scoring: false, max_attempts: 5}, 1, [])
+
+    assert {:score_as_you_go_completed} ==
+             Settings.new_attempt_allowed(%Combined{batch_scoring: false, max_attempts: 5}, 5, [])
+
+    assert {:allowed} ==
+             Settings.new_attempt_allowed(%Combined{batch_scoring: false, max_attempts: 5}, 0, [])
   end
 
   test "was_late/2 never returns true when late submissions disallowed" do

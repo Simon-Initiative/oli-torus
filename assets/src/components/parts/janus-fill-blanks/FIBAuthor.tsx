@@ -30,7 +30,7 @@ const Editor: React.FC<any> = React.memo(({ html, tree, portal, customOptions })
   quillProps.showfibinsertoptioncontrol = true;
   quillProps.options = JSON.stringify(transformOptionsToNormalized(customOptions));
   const E = () => (
-    <div style={{ padding: 20 }}>{React.createElement(quillEditorTagName, quillProps)}</div>
+    <div style={{ padding: 5 }}>{React.createElement(quillEditorTagName, quillProps)}</div>
   );
 
   return portal && ReactDOM.createPortal(<E />, portal);
@@ -67,7 +67,11 @@ const FIBAuthor: React.FC<AuthorPartComponentProps<FIBModel>> = (props) => {
   useEffect(() => {
     if (textNodes?.length) {
       const collectedText = extractFormattedHTMLFromQuillNodes(textNodes);
-      const finalcontent = generateFIBStructure(collectedText, 'map', finalElement);
+      const finalcontent: any = generateFIBStructure(collectedText, 'map', finalElement);
+      if (!collectedText?.trim().length) {
+        setIsContentModified(false);
+        return;
+      }
       setFinalContent(finalcontent);
     }
   }, [textNodes, finalElement]);

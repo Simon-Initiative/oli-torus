@@ -85,6 +85,8 @@ const ContainerScheduleLine: React.FC<ScheduleLineProps> = ({
     (state: SchedulerAppState) => state.scheduler.searchQuery?.toLowerCase().trim() || '',
   );
 
+  const isShowRemoved = useSelector((state: SchedulerAppState) => state.scheduler.showRemoved);
+
   const toggleExpanded = () => dispatch(toggleContainer(item.id));
   const isSelected = useSelector(getSelectedId) === item.id;
   const showNumbers = useSelector(shouldDisplayCurriculumItemNumbering);
@@ -101,14 +103,17 @@ const ContainerScheduleLine: React.FC<ScheduleLineProps> = ({
   );
 
   const childrenCount = item.children.filter((c) => {
-    return !c.removed_from_schedule;
+    return isShowRemoved || !c.removed_from_schedule;
   }).length;
 
   const containerChildren = item.children.filter(
-    (c) => !c.removed_from_schedule && c.resource_type_id === ScheduleItemType.Container,
+    (c) =>
+      (isShowRemoved || !c.removed_from_schedule) &&
+      c.resource_type_id === ScheduleItemType.Container,
   );
   const pageChildren = item.children.filter(
-    (c) => !c.removed_from_schedule && c.resource_type_id === ScheduleItemType.Page,
+    (c) =>
+      (isShowRemoved || !c.removed_from_schedule) && c.resource_type_id === ScheduleItemType.Page,
   );
 
   const filteredPageChildren = React.useMemo(() => {
@@ -135,13 +140,20 @@ const ContainerScheduleLine: React.FC<ScheduleLineProps> = ({
     : 'fa-regular fa-square-plus fa-lg';
   const chevronIcon = expanded ? 'fa-solid fa-chevron-up' : 'fa-solid fa-chevron-down';
 
+  const backgroundWithPadding = item.removed_from_schedule
+    ? { paddingLeft: (1 + indent) * 10, backgroundColor: modeIsDark() ? '#33181A' : '#FFE8E8' }
+    : { paddingLeft: (1 + indent) * 10 };
+
+  const removedBackgroundColor = item.removed_from_schedule
+    ? { backgroundColor: modeIsDark() ? '#33181A' : '#FFE8E8' }
+    : {};
   return (
     <>
       <tr style={rowSelectColor}>
         <td className="border-r-0 w-[1px] !p-[2px]" style={{ backgroundColor: rowColor }}></td>
         <td
           className={`w-48 ${labelClasses} font-bold`}
-          style={{ paddingLeft: (1 + indent) * 10 }}
+          style={backgroundWithPadding}
           onClick={onSelect}
         >
           <div className="flex flex-row justify-between items-center">
@@ -161,11 +173,11 @@ const ContainerScheduleLine: React.FC<ScheduleLineProps> = ({
             )}
           </div>
         </td>
-        <td className="relative p-0">
+        <td className="relative p-0" style={removedBackgroundColor}>
           <ScheduleHeader labels={false} dayGeometry={dayGeometry} />
           {item.startDate && item.endDate && (
             <DragBar
-              itemId={item.id}
+              item={item}
               onStartDrag={onStartDrag}
               onChange={onChange}
               startDate={item.startDate}

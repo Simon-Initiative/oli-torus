@@ -6,6 +6,7 @@ defmodule OliWeb.DeliveryControllerTest do
   alias Oli.Seeder
   alias Lti_1p3.Roles.ContextRoles
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Attempts.Core
 
   import Mox
   import Oli.Factory
@@ -237,36 +238,125 @@ defmodule OliWeb.DeliveryControllerTest do
     end
   end
 
-  describe "download_students_progress" do
-    setup [:setup_lti_session]
+  describe "download_container_progress/2" do
+    test "downloads student progress per container", %{conn: conn} do
+      %{instructor: instructor, section: section, unit_1_revision: unit_1_revision} =
+        prepare_student_progress_data()
 
-    test "downloads the student progress when section exists", %{
-      conn: conn,
-      section: section,
-      instructor: instructor
-    } do
+      container_id =
+        Oli.Repo.all(Oli.Delivery.Sections.ContainedPage)
+        |> Enum.reject(&is_nil(&1.container_id))
+        |> List.first()
+        |> Map.get(:id)
+
       conn =
         conn
         |> log_in_user(instructor)
-        |> get(Routes.delivery_path(conn, :download_students_progress, section.slug))
+        |> get(
+          ~p"/sections/#{section.slug}/instructor_dashboard/downloads/progress/#{container_id}/#{unit_1_revision.slug}"
+        )
 
-      Enum.any?(conn.resp_headers, fn h ->
-        h ==
-          {"content-disposition", "attachment; filename=\"#{section.slug}_students.csv\""}
-      end)
+      assert get_resp_header(conn, "content-disposition") == [
+               "attachment; filename=\"progress__#{section.slug}__Intro_to_Physics_Module_1_2025.csv\""
+             ]
 
-      Enum.any?(conn.resp_headers, fn h -> h == {"content-type", "text/csv"} end)
+      # Verify CSV content
+      resp = conn.resp_body
+
+      [headers | students] = NimbleCSV.RFC4180.parse_string(resp, skip_headers: false)
+      # CSV Headers
+      assert [
+               "Status",
+               "Name",
+               "Email",
+               "LMS ID",
+               "Last Interaction",
+               "Progress (Pct)",
+               "Proficiency"
+             ] == headers
+
+      #  We have 8 students and 1 instructor
+      assert Enum.count(students) == 8
+
+      # CSV Student data
+      assert ["Enrolled", "Five, Student", _, _, _, _, _] = Enum.at(students, 0)
+      assert ["Enrolled", "Four, Student", _, _, _, _, _] = Enum.at(students, 1)
+      assert ["Enrolled", "One, Student", _, _, _, _, _] = Enum.at(students, 2)
+      assert ["Enrolled", "Three, Student", _, _, _, _, _] = Enum.at(students, 3)
+      assert ["Enrolled", "Two, Student", _, _, _, _, _] = Enum.at(students, 4)
+      assert ["Pending confirmation", "Seven, Student", _, _, _, _, _] = Enum.at(students, 5)
+      assert ["Rejected invitation", "Eight, Student", _, _, _, _, _] = Enum.at(students, 6)
+      assert ["Suspended", "Six, Student", _, _, _, _, _] = Enum.at(students, 7)
+    end
+  end
+
+  describe "download_students_progress/2" do
+    test "downloads student progress with different proficiency levels", %{conn: conn} do
+      %{instructor: instructor, section: section} = prepare_student_progress_data()
+
+      # Download the CSV
+      conn =
+        conn
+        |> log_in_user(instructor)
+        |> get(~p"/sections/#{section.slug}/instructor_dashboard/downloads/students_progress")
+
+      assert get_resp_header(conn, "content-disposition") == [
+               "attachment; filename=\"#{section.slug}_students.csv\""
+             ]
+
+      assert get_resp_header(conn, "content-type") == ["text/csv"]
       assert response(conn, 200)
+
+      # Verify CSV content
+      resp = conn.resp_body
+
+      [headers | students] = NimbleCSV.RFC4180.parse_string(resp, skip_headers: false)
+      # CSV Headers
+      assert [
+               "Status",
+               "Name",
+               "Email",
+               "LMS ID",
+               "Last Interaction",
+               "Progress (Pct)",
+               "Proficiency",
+               "Requires Payment"
+             ] == headers
+
+      #  We have 8 students and 1 instructor
+      assert Enum.count(students) == 8
+
+      # CSV Student data
+      assert ["Enrolled", "Five, Student", _, _, _, "100", "High", "N/A"] = Enum.at(students, 0)
+      assert ["Enrolled", "Four, Student", _, _, _, "33.03", "High", "N/A"] = Enum.at(students, 1)
+
+      assert ["Enrolled", "One, Student", _, _, _, "0", "Not enough data", "N/A"] =
+               Enum.at(students, 2)
+
+      assert ["Enrolled", "Three, Student", _, _, _, "22.22", "Medium", "N/A"] =
+               Enum.at(students, 3)
+
+      assert ["Enrolled", "Two, Student", _, _, _, "11.11", "Low", "N/A"] = Enum.at(students, 4)
+
+      assert ["Pending confirmation", "Seven, Student", _, _, _, "0", "Not enough data", "N/A"] =
+               Enum.at(students, 5)
+
+      assert ["Rejected invitation", "Eight, Student", _, _, _, "0", "Not enough data", "N/A"] =
+               Enum.at(students, 6)
+
+      assert ["Suspended", "Six, Student", _, _, _, "0", "Not enough data", "N/A"] =
+               Enum.at(students, 7)
     end
 
-    test "Redirects to \"Not found\" page if the section doesn't exist", %{
-      conn: conn,
-      instructor: instructor
-    } do
+    test "Redirects to \"Not found\" page if the section doesn't exist", %{conn: conn} do
+      %{instructor: instructor, section: _section} = prepare_student_progress_data()
+
       conn =
         conn
         |> log_in_user(instructor)
-        |> get(Routes.delivery_path(conn, :download_students_progress, "invalid_section_slug"))
+        |> get(
+          ~p"/sections/invalid_section_slug/instructor_dashboard/downloads/students_progress"
+        )
 
       assert response(conn, 302) =~ "You are being <a href=\"/not_found\">redirected</a>"
     end
@@ -891,5 +981,179 @@ defmodule OliWeb.DeliveryControllerTest do
       Phoenix.HTML.Link.link("redirected", to: redirected_path) |> Phoenix.HTML.raw()
 
     assert html_response(conn, 302) =~ "You are being #{link}."
+  end
+
+  defp prepare_student_progress_data() do
+    project = insert(:project)
+
+    container_id = Oli.Resources.ResourceType.id_for_container()
+    type_for_page = Oli.Resources.ResourceType.id_for_page()
+
+    page_revision =
+      insert(:revision, resource_type_id: type_for_page, graded: true)
+
+    unit_1_revision =
+      insert(:revision,
+        resource_type_id: container_id,
+        children: [page_revision.resource_id],
+        slug: "Intro to Physics! 🚀 - Module #1 @2025"
+      )
+
+    root_container_revision =
+      insert(:revision, resource_type_id: container_id, children: [unit_1_revision.resource_id])
+
+    # Link resources to project
+    [root_container_revision, unit_1_revision, page_revision]
+    |> Enum.each(fn revision ->
+      insert(:project_resource, project: project, resource: revision.resource)
+    end)
+
+    # Create publication
+    publication =
+      insert(:publication, project: project, root_resource: root_container_revision.resource)
+
+    # Create published resources
+    [root_container_revision, unit_1_revision, page_revision]
+    |> Enum.each(fn revision ->
+      insert(:published_resource,
+        publication: publication,
+        resource: revision.resource,
+        revision: revision
+      )
+    end)
+
+    # Create section
+    section = insert(:section, base_project: project)
+
+    # Create section resources
+    {:ok, section} = Sections.create_section_resources(section, publication)
+    Sections.rebuild_contained_pages(section)
+
+    # Create students with different profiles
+    # Student 1: Progress: 0% | Proficiency: "Not enough data"
+    # Student 2: Progress: 11.11% | Proficiency: "Low"
+    # Student 3: Progress: 22.22% | Proficiency: "Medium"
+    # Student 4: Progress: 33.03% | Proficiency: "High"
+    # Student 5: Progress: 100% | Proficiency: "High"
+    # Student 6-8: Progress: 0% | Proficiency: "Not enough data" | Enrollment different from enrolled
+    [student_1, student_2, student_3, student_4, student_5 | _rest] =
+      students =
+      ~w(One Two Three Four Five Six Seven Eight)
+      |> Enum.with_index(1)
+      |> Enum.map(fn {id, i} ->
+        user_fixture(%{
+          name: "Student #{1}",
+          given_name: "Student",
+          family_name: "#{id}",
+          email: "student_#{i}@example.edu"
+        })
+      end)
+
+    # Enroll students
+    student_ctx = [ContextRoles.get_role(:context_learner)]
+
+    student_ids = Enum.map(students, & &1.id)
+
+    enrollment_statuses =
+      List.duplicate(:enrolled, 5) ++ [:suspended, :pending_confirmation, :rejected]
+
+    Enum.zip(student_ids, enrollment_statuses)
+    |> Enum.each(fn {student_id, status} ->
+      Sections.enroll(student_id, section.id, student_ctx, status)
+    end)
+
+    # Set up progress and attempts for each student
+    section_resources = Sections.get_section_resources(section.id)
+    page_resource = Enum.find(section_resources, &(&1.children == []))
+
+    # Student 1: No progress equals to 0%
+    page_resource.resource_id
+    |> Core.track_access(section.id, student_1.id)
+
+    # Student 2: 11.11% progress
+    page_resource.resource_id
+    |> Core.track_access(section.id, student_2.id)
+    |> Core.update_resource_access(%{progress: 0.11111})
+
+    # Student 3: 22.22% progress
+    page_resource.resource_id
+    |> Core.track_access(section.id, student_3.id)
+    |> Core.update_resource_access(%{progress: 0.22222})
+
+    # Student 4: 33.03% progress
+    page_resource.resource_id
+    |> Core.track_access(section.id, student_4.id)
+    |> Core.update_resource_access(%{progress: 0.33030})
+
+    # Student 5: 100% progress
+    page_resource.resource_id
+    |> Core.track_access(section.id, student_5.id)
+    |> Core.update_resource_access(%{progress: 1.00000})
+
+    # Create summary records for analytics
+    page_type_id = Oli.Resources.ResourceType.id_for_page()
+
+    # Student 1: "Not enough data" when "num_first_attempts < 3"
+    insert(:resource_summary, %{
+      section_id: section.id,
+      user_id: student_1.id,
+      resource_id: page_resource.resource_id,
+      resource_type_id: page_type_id,
+      num_first_attempts: 2
+    })
+
+    # Student 2: "Low" proficiency when (2+0.2*(10-2))/10 = 0.36 < 0.4
+    insert(:resource_summary, %{
+      section_id: section.id,
+      user_id: student_2.id,
+      resource_id: page_resource.resource_id,
+      resource_type_id: page_type_id,
+      num_first_attempts: 10,
+      num_first_attempts_correct: 2
+    })
+
+    # Student 3: "Medium" proficiency when (7+0.2*(10-7))/10 = 0.76 < 0.8
+    insert(:resource_summary, %{
+      section_id: section.id,
+      user_id: student_3.id,
+      resource_id: page_resource.resource_id,
+      resource_type_id: page_type_id,
+      num_first_attempts: 10,
+      num_first_attempts_correct: 7
+    })
+
+    # Student 4: "High" proficiency
+    insert(:resource_summary, %{
+      section_id: section.id,
+      user_id: student_4.id,
+      resource_id: page_resource.resource_id,
+      resource_type_id: page_type_id,
+      num_first_attempts: 10,
+      num_first_attempts_correct: 9
+    })
+
+    # Student 5: High proficiency
+    insert(:resource_summary, %{
+      section_id: section.id,
+      user_id: student_5.id,
+      resource_id: page_resource.resource_id,
+      resource_type_id: page_type_id,
+      num_first_attempts: 10,
+      num_first_attempts_correct: 10
+    })
+
+    # Create an instructor
+    instructor =
+      user_fixture(%{
+        given_name: "Euler",
+        family_name: "Leonard",
+        name: "Leo Eul",
+        can_create_sections: true
+      })
+
+    instructor_ctx = [ContextRoles.get_role(:context_instructor)]
+    Sections.enroll(instructor.id, section.id, instructor_ctx)
+
+    %{instructor: instructor, section: section, unit_1_revision: unit_1_revision}
   end
 end

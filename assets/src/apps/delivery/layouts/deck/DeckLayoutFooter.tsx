@@ -44,6 +44,7 @@ import {
   selectCurrentActivityTreeAttemptState,
 } from '../../store/features/groups/selectors/deck';
 import {
+  selectBlobStorageProvider,
   selectIsLegacyTheme,
   selectPageContent,
   selectPreviewMode,
@@ -229,6 +230,7 @@ const DeckLayoutFooter: React.FC = () => {
   const isGoodFeedback = useSelector(selectIsGoodFeedback);
   const currentFeedbacks = useSelector(selectCurrentFeedbacks);
   const nextActivityId: string = useSelector(selectNextActivityId);
+  const blobStorageProvider = useSelector(selectBlobStorageProvider);
   const lastCheckTimestamp = useSelector(selectLastCheckTriggered);
   const lastCheckResults = useSelector(selectLastCheckResults);
   const initPhaseComplete = useSelector(selectInitPhaseComplete);
@@ -349,7 +351,7 @@ const DeckLayoutFooter: React.FC = () => {
       },
       {},
     );
-    writePageAttemptState(sectionSlug, resourceAttemptGuid, extrinsicSnapshot);
+    writePageAttemptState(blobStorageProvider, sectionSlug, resourceAttemptGuid, extrinsicSnapshot);
   };
 
   useEffect(() => {
@@ -441,7 +443,7 @@ const DeckLayoutFooter: React.FC = () => {
           acc[everAppId][op.target.replace(`app.${everAppId}.`, '')] = envState[op.target];
           return acc;
         }, {});
-        updateGlobalUserState(everAppState, isPreviewMode);
+        updateGlobalUserState(blobStorageProvider, everAppState, isPreviewMode);
       }
 
       const latestSnapshot = getLocalizedStateSnapshot(
