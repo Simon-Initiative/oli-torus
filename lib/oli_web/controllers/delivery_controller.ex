@@ -515,7 +515,7 @@ defmodule OliWeb.DeliveryController do
           Enum.map(
             students,
             &%{
-              status: parse_enrollment_status(&1.enrollment_status),
+              status: Utils.parse_enrollment_status(&1.enrollment_status),
               name: OliWeb.Common.Utils.name(&1),
               email: &1.email,
               lms_id: &1.sub,
