@@ -177,7 +177,6 @@ export const initializeActivity = createAsyncThunk(
       applyState(targetIsResumeModeOp, defaultGlobalEnv);
     }
     const sessionOps = [
-      resumeTarget,
       timeStartOp,
       timeOnQuestion,
       timeExceededOp,
@@ -198,6 +197,7 @@ export const initializeActivity = createAsyncThunk(
     };
     if (!isReviewMode && !isHistoryMode) {
       sessionOps.push(targetVisitTimeStampOp);
+      sessionOps.push(resumeTarget);
     }
     // init state is always "local" but the parts may come from parent layers
     // in that case they actually need to be written to the parent layer values

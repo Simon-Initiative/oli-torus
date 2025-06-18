@@ -447,6 +447,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       partAttemptGuid: string,
       response: StudentResponse,
     ) => {
+      if (reviewMode) return;
       // save before submitting
       const { result, snapshot } = await handleActivitySavePart(
         activityId,
@@ -459,7 +460,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
 
       return { result, snapshot };
     },
-    [dispatch, handleActivitySavePart],
+    [dispatch, handleActivitySavePart, reviewMode],
   );
 
   const handleActivityRequestLatestState = useCallback(async () => {
