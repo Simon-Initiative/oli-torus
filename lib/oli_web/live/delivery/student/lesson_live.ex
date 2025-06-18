@@ -149,8 +149,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       attempt_expired_auto_submit =
         with true <- now > effective_end_time,
              true <- auto_submit,
-             false <- page_context.review_mode,
-             :due_by <- page_context.effective_settings.scheduling_type do
+             false <- page_context.review_mode do
           true
         else
           _ ->
