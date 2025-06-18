@@ -3,7 +3,7 @@ import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { ScheduleGrid } from '../../src/apps/scheduler/ScheduleGrid';
-import { SchedulerState, schedulerSliceReducer } from '../../src/apps/scheduler/scheduler-slice';
+import { AssessmentLayoutType, SchedulerState, schedulerSliceReducer } from '../../src/apps/scheduler/scheduler-slice';
 import { updateSectionAgenda } from '../../src/apps/scheduler/scheduling-thunk';
 import * as thunks from '../../src/apps/scheduler/scheduling-thunk';
 
@@ -34,7 +34,7 @@ describe('Agenda Visibility Toggle', () => {
       weekdays: [false, true, true, true, true, true, false],
       preferredSchedulingTime: { hour: 23, minute: 59, second: 59 },
       showRemoved: false,
-      assessmentLayoutType: 'no_due_dates',
+      assessmentLayoutType: AssessmentLayoutType.ContentSequence,
     };
 
     it('updates agenda to true when fulfilled', () => {
@@ -93,7 +93,7 @@ describe('Agenda Visibility Toggle', () => {
       weekdays: [false, true, true, true, true, true, false],
       preferredSchedulingTime: { hour: 23, minute: 59, second: 59 },
       showRemoved: false,
-      assessmentLayoutType: 'no_due_dates',
+      assessmentLayoutType: AssessmentLayoutType.ContentSequence,
     };
 
     const createTestStore = (preloadedState: SchedulerState) =>
