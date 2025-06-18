@@ -3,7 +3,11 @@ import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { ScheduleGrid } from '../../src/apps/scheduler/ScheduleGrid';
-import { AssessmentLayoutType, SchedulerState, schedulerSliceReducer } from '../../src/apps/scheduler/scheduler-slice';
+import {
+  AssessmentLayoutType,
+  SchedulerState,
+  schedulerSliceReducer,
+} from '../../src/apps/scheduler/scheduler-slice';
 import { updateSectionAgenda } from '../../src/apps/scheduler/scheduling-thunk';
 import * as thunks from '../../src/apps/scheduler/scheduling-thunk';
 
