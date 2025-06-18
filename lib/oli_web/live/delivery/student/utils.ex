@@ -341,22 +341,18 @@ defmodule OliWeb.Delivery.Student.Utils do
   defp to_hours(hours), do: "#{hours} hours"
 
   defp page_scoring_term(effective_settings) do
-    # Determine the scoring policy text
     policy_text =
       if effective_settings.batch_scoring, do: "this assignment", else: "each question"
 
-    # Determine the scoring strategy text
     strategy_text =
       case effective_settings.scoring_strategy_id do
         1 -> "the average of your attempts"
         2 -> "your best attempt"
         3 -> "your last attempt"
         4 -> "the total sum of your attempts"
-        # Default to best (strategy 2)
         _ -> "your best attempt"
       end
 
-    # Generate the final message
     "For #{policy_text}, your score will be determined by #{strategy_text}."
   end
 
