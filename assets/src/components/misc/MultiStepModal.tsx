@@ -108,7 +108,7 @@ export const MultiStepModal: React.FC<MultiStepModalProps> = ({
 
         {/* Footer buttons */}
         <div className="flex justify-end space-x-4">
-          <Button onClick={onCancel} variant="secondary">
+          <Button className="border-[1px] border-blue-600" onClick={onCancel} variant="secondary">
             {cancelText}
           </Button>
           {allowBack && !isFirstStep && (
