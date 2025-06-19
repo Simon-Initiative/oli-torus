@@ -8,6 +8,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.Entry do
 
   alias OliWeb.Curriculum.{Actions, Details, LearningSummary}
   alias Oli.Resources.Numbering
+  alias Oli.Resources.ResourceType
 
   attr(:ctx, :map, required: true)
   attr(:child, :map, required: true)
@@ -51,14 +52,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.Entry do
             <%= container_link(@child, @project, @numberings, "ml-1 mr-1 entry-title") %>
           <% else %>
             <span class="ml-1 mr-1 entry-title"><%= @child.title %></span>
-            <.link
-              class="entry-title mx-3"
-              navigate={
-                ~p"/workspaces/course_author/#{@project.slug}/curriculum/#{@child.slug}/edit?sidebar_expanded=#{@sidebar_expanded}"
-              }
-            >
-              Edit Page
-            </.link>
+            <.edit_link
+              project_slug={@project.slug}
+              child={@child}
+              sidebar_expanded={@sidebar_expanded}
+            />
           <% end %>
           <span :if={@editor} class="badge">
             <%= Map.get(@editor, :name) || "Someone" %> is editing this
@@ -90,6 +88,36 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.Entry do
       </div>
     </div>
     """
+  end
+
+  attr(:project_slug, :string, required: true)
+  attr(:child, :map, required: true)
+  attr(:sidebar_expanded, :boolean, required: true)
+
+  def edit_link(%{child: child} = assigns) do
+    if ResourceType.is_adaptive_page(child) do
+      ~H"""
+      <.link
+        class="entry-title mx-3"
+        href={
+          ~p"/workspaces/course_author/#{@project_slug}/curriculum/#{@child.slug}/edit?sidebar_expanded=#{@sidebar_expanded}"
+        }
+      >
+        Edit Page
+      </.link>
+      """
+    else
+      ~H"""
+      <.link
+        class="entry-title mx-3"
+        navigate={
+          ~p"/workspaces/course_author/#{@project_slug}/curriculum/#{@child.slug}/edit?sidebar_expanded=#{@sidebar_expanded}"
+        }
+      >
+        Edit Page
+      </.link>
+      """
+    end
   end
 
   def entry_icon(%{child: child} = assigns) do
