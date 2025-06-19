@@ -1155,7 +1155,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
 
       assert view |> element("#page_scoring_terms") |> render() =~
-               "For this assignment, your score will be determined by the average of your attempts."
+               "For this assignment, your score will be the average of your attempts."
     end
 
     test "page terms show correct scoring messages for different policies and strategies", ctx do
@@ -1166,14 +1166,12 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       # Test score at the end (batch_scoring: true) with different strategies
       test_cases = [
         # {batch_scoring, scoring_strategy_id, expected_message}
-        {true, 1,
-         "For this assignment, your score will be determined by the average of your attempts."},
+        {true, 1, "For this assignment, your score will be the average of your attempts."},
         {true, 2, "For this assignment, your score will be determined by your best attempt."},
         {true, 3, "For this assignment, your score will be determined by your last attempt."},
         {true, 4,
          "For this assignment, your score will be determined by the total sum of your attempts."},
-        {false, 1,
-         "For each question, your score will be determined by the average of your attempts."},
+        {false, 1, "For each question, your score will be the average of your attempts."},
         {false, 2, "For each question, your score will be determined by your best attempt."},
         {false, 3, "For each question, your score will be determined by your last attempt."},
         {false, 4,

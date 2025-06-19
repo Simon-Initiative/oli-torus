@@ -347,13 +347,13 @@ defmodule OliWeb.Delivery.Student.Utils do
     strategy_text =
       case effective_settings.scoring_strategy_id do
         1 -> "the average of your attempts"
-        2 -> "your best attempt"
-        3 -> "your last attempt"
-        4 -> "the total sum of your attempts"
-        _ -> "your best attempt"
+        2 -> "determined by your best attempt"
+        3 -> "determined by your last attempt"
+        4 -> "determined by the total sum of your attempts"
+        _ -> "determined by your best attempt"
       end
 
-    "For #{policy_text}, your score will be determined by #{strategy_text}."
+    "For #{policy_text}, your score will be #{strategy_text}."
   end
 
   @doc """
