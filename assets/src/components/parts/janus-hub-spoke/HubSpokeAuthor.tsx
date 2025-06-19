@@ -1,7 +1,7 @@
 import React, { CSSProperties, useEffect } from 'react';
 import { AuthorPartComponentProps } from 'components/parts/types/parts';
 import { SpokeItems } from './HubSpoke';
-import './hubSpoke.scss';
+import './HubSpoke.scss';
 import { hubSpokeModel } from './schema';
 
 const HubSpokeAuthor: React.FC<AuthorPartComponentProps<hubSpokeModel>> = (props) => {

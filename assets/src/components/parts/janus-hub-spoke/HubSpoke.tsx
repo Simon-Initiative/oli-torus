@@ -7,7 +7,7 @@ import {
 } from '../../../apps/delivery/components/NotificationContext';
 import { contexts } from '../../../types/applicationContext';
 import { PartComponentProps } from '../types/parts';
-import './hubSpoke.scss';
+import './HubSpoke.scss';
 import { Item, JanusHubSpokeItemProperties, hubSpokeModel } from './schema';
 
 const SpokeItemContentComponent: React.FC<any> = ({ spokeLabel }) => {
