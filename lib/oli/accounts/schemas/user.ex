@@ -82,6 +82,11 @@ defmodule Oli.Accounts.User do
     field :enrollments_count, :integer, virtual: true
     field :total_count, :integer, virtual: true
     field :enrollment_date, :utc_datetime, virtual: true
+
+    field :enrollment_status, Ecto.Enum,
+      values: [:enrolled, :suspended, :pending_confirmation, :rejected],
+      virtual: true
+
     field :payment_date, :utc_datetime, virtual: true
     field :payment_id, :integer, virtual: true
     field :payment, :map, virtual: true

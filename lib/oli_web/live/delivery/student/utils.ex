@@ -812,6 +812,24 @@ defmodule OliWeb.Delivery.Student.Utils do
   end
 
   @doc """
+  Calculates and formats the percentage score based on the given score and out_of value.
+
+  Returns `nil` if the score is `nil`.
+
+  ## Examples
+
+      iex> parse_percentage(45, 50)
+      "90%"
+
+      iex> parse_percentage(nil, 50)
+      nil
+  """
+  @spec parse_percentage(number() | nil, number() | nil) :: String.t() | nil
+  def parse_percentage(nil, _), do: nil
+
+  def parse_percentage(score, out_of), do: parse_score(score / out_of * 100)
+
+  @doc """
   Rounds a given score to two decimal places and converts it to an integer if the result is a whole number.
 
   ## Parameters:
@@ -1075,6 +1093,17 @@ defmodule OliWeb.Delivery.Student.Utils do
       selected_view: selected_view
     ]
   end
+
+  @doc """
+  Parses the enrollment status and returns a human-readable string.
+  """
+
+  @spec parse_enrollment_status(atom()) :: String.t()
+  def parse_enrollment_status(:enrolled), do: "Enrolled"
+  def parse_enrollment_status(:suspended), do: "Suspended"
+  def parse_enrollment_status(:pending_confirmation), do: "Pending confirmation"
+  def parse_enrollment_status(:rejected), do: "Rejected invitation"
+  def parse_enrollment_status(_status), do: "Unknown"
 
   def emit_page_viewed_event(socket) do
     section = socket.assigns.section
