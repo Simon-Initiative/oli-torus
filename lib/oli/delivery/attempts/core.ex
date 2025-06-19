@@ -1057,4 +1057,11 @@ defmodule Oli.Delivery.Attempts.Core do
       activity_attempts: [:part_attempts]
     )
   end
+
+  @doc """
+  Preloads the `activity_attempt` and its associated `resource_attempt` and `revision` for a given part attempt.
+  """
+  def preload_part_attempt_revisions(part_attempt) do
+    Repo.preload(part_attempt, activity_attempt: [resource_attempt: :revision])
+  end
 end

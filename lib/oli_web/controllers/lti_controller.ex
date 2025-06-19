@@ -1,4 +1,5 @@
 defmodule OliWeb.LtiController do
+  alias Oli.Delivery.Attempts.Core.ActivityAttempt
   use OliWeb, :controller
   use OliWeb, :verified_routes
 
@@ -179,26 +180,36 @@ defmodule OliWeb.LtiController do
               platform_roles =
                 Lti_1p3.Roles.Lti_1p3_User.get_platform_roles(user)
 
-              activity_attempt =
-                Core.get_latest_activity_attempt(
-                  section_slug,
-                  user.id,
-                  String.to_integer(resource_id)
-                )
+              # Build additional claims
+              additional_claims = []
 
-              ags_endpoint =
-                Lti_1p3.Claims.AgsEndpoint.endpoint(
-                  [
-                    "https://purl.imsglobal.org/spec/lti-ags/scope/lineitem",
-                    "https://purl.imsglobal.org/spec/lti-ags/scope/result.readonly",
-                    "https://purl.imsglobal.org/spec/lti-ags/scope/score"
-                  ],
-                  lineitem:
-                    Oli.Utils.get_base_url() <>
-                      "/lti/lineitems/#{activity_attempt.attempt_guid}"
-                )
+              # If the user has an activity attempt for the given resource_id,
+              # add the AGS endpoint to the additional claims
+              additional_claims =
+                case Core.get_latest_activity_attempt(
+                       section_slug,
+                       user.id,
+                       # resource_id is expected to be an database id integer
+                       String.to_integer(resource_id)
+                     ) do
+                  %ActivityAttempt{attempt_guid: activity_attempt_guid} ->
+                    [
+                      Lti_1p3.Claims.AgsEndpoint.endpoint(
+                        [
+                          "https://purl.imsglobal.org/spec/lti-ags/scope/lineitem",
+                          "https://purl.imsglobal.org/spec/lti-ags/scope/result.readonly",
+                          "https://purl.imsglobal.org/spec/lti-ags/scope/score"
+                        ],
+                        lineitem:
+                          Oli.Utils.get_base_url() <>
+                            "/lti/lineitems/#{activity_attempt_guid}"
+                      )
+                      | additional_claims
+                    ]
 
-              additional_claims = [ags_endpoint]
+                  _ ->
+                    additional_claims
+                end
 
               {user, resource_id, context_roles ++ platform_roles, additional_claims}
 
