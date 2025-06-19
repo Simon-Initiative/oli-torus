@@ -331,7 +331,7 @@ defmodule Oli.GradingTest do
       ]
 
       assert expected_gradebook == gradebook |> Enum.sort_by(& &1.user.email)
-      assert expected_column_labels == Enum.map(columns, fn {_, column} -> column end)
+      assert expected_column_labels == columns
     end
 
     test "exports gradebook as CSV", %{section: section} do

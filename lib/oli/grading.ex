@@ -118,8 +118,7 @@ defmodule Oli.Grading do
     {gradebook, assessments_column_labels} = generate_gradebook_for_section(section)
 
     column_labels =
-      [status: "Status", name: "Name", email: "Email", lms_id: "LMS ID"]
-      |> Keyword.merge(assessments_column_labels)
+      ["Status", "Name", "Email", "LMS ID" | assessments_column_labels]
 
     Enum.map(gradebook, &build_gradebook_row/1)
     |> sort_data()
@@ -130,16 +129,16 @@ defmodule Oli.Grading do
 
   defp build_gradebook_row(%{user: user} = row) do
     main_attrs = %{
-      status: StudentUtils.parse_enrollment_status(user.enrollment_status),
-      name: Utils.name(user),
-      email: user.email,
-      lms_id: user.sub
+      "Status" => StudentUtils.parse_enrollment_status(user.enrollment_status),
+      "Name" => Utils.name(user),
+      "Email" => user.email,
+      "LMS ID" => user.sub
     }
 
     Enum.reduce(row.scores, main_attrs, fn score, acc ->
-      points_earned_column_label = :"#{score.label} - Points Earned"
-      points_possible_column_label = :"#{score.label} - Points Possible"
-      percentage_column_label = :"#{score.label} - Percentage"
+      points_earned_column_label = Oli.Utils.title_case("#{score.label} - Points Earned")
+      points_possible_column_label = Oli.Utils.title_case("#{score.label} - Points Possible")
+      percentage_column_label = Oli.Utils.title_case("#{score.label} - Percentage")
 
       acc
       |> Map.put(points_earned_column_label, format_score(score.score))
@@ -159,7 +158,7 @@ defmodule Oli.Grading do
   def format_score(score) when is_number(score), do: StudentUtils.parse_score(score)
 
   defp sort_data(results) do
-    Enum.sort_by(results, &{&1.status, &1.name, &1.email})
+    Enum.sort_by(results, &{&1["Status"], &1["Name"], &1["Email"], &1["LMS ID"]})
   end
 
   @doc """
@@ -230,23 +229,15 @@ defmodule Oli.Grading do
       graded_pages
       |> Enum.reverse()
       |> Enum.reduce([], fn section_resource, acc ->
-        points_earned_column_label = :"#{section_resource.title} - Points Earned"
-        points_possible_column_label = :"#{section_resource.title} - Points Possible"
-        percentage_column_label = :"#{section_resource.title} - Percentage"
+        points_earned_column_label =
+          Oli.Utils.title_case("#{section_resource.title} - Points Earned")
 
-        acc
-        |> Keyword.put(
-          percentage_column_label,
-          Oli.Utils.title_case(Atom.to_string(percentage_column_label))
-        )
-        |> Keyword.put(
-          points_possible_column_label,
-          Oli.Utils.title_case(Atom.to_string(points_possible_column_label))
-        )
-        |> Keyword.put(
-          points_earned_column_label,
-          Oli.Utils.title_case(Atom.to_string(points_earned_column_label))
-        )
+        points_possible_column_label =
+          Oli.Utils.title_case("#{section_resource.title} - Points Possible")
+
+        percentage_column_label = Oli.Utils.title_case("#{section_resource.title} - Percentage")
+
+        [points_earned_column_label, points_possible_column_label, percentage_column_label | acc]
       end)
 
     {gradebook, assessments_column_labels}
