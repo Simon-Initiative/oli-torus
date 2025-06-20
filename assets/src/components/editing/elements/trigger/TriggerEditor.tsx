@@ -3,12 +3,13 @@ import { Transforms } from 'slate';
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
 import { EditorProps } from 'components/editing/elements/interfaces';
 import { useEditModelCallback } from 'components/editing/elements/utils';
+import { AIIcon } from 'components/misc/AIIcon';
 import { DeleteButton } from 'components/misc/DeleteButton';
 import { Model } from 'data/content/model/elements/factories';
 import * as ContentModel from 'data/content/model/elements/types';
 
 export const insertTrigger = createButtonCommandDesc({
-  icon: <img src="/images/icons/icon-AI.svg" className="inline mr-1" />,
+  icon: <AIIcon size="sm" className="inline mr-1" />,
   category: 'General',
   description: 'DOT Activation Point',
   execute: (_context, editor) => {
@@ -54,7 +55,7 @@ export const TriggerEditorCore = ({
     <div className="bg-gray-100 dark:bg-gray-600 rounded-lg p-3" contentEditable={false}>
       <div className="flex justify-between">
         <h4>
-          <img src="/images/icons/icon-AI.svg" className="inline mr-1" />
+          <AIIcon size="sm" className="inline mr-1" />
           DOT AI Activation Point
         </h4>
         {showDelete ? <DeleteButton onClick={() => onDelete()} editMode={true} /> : null}
@@ -94,9 +95,8 @@ export const TriggerEditor: React.FC<Props> = ({ model }) => {
       onDelete={() => onEdit(undefined as any)}
       instructions={
         <p>
-          When a student clicks the{' '}
-          <img src="/images/icons/icon-AI.svg" className="inline mr-1"></img> icon within this text
-          block, our AI assistant, DOT will appear and follow your custom prompt.
+          When a student clicks the <AIIcon size="sm" className="inline mr-1" /> icon within this
+          text block, our AI assistant, DOT will appear and follow your custom prompt.
         </p>
       }
     >
