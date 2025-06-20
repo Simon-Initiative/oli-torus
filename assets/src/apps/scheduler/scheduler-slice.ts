@@ -48,6 +48,12 @@ export interface HierarchyItem extends HierarchyItemSrc {
   startDateTime: Date | null; // This is only used for the available-from which includes a date and time.
 }
 
+export enum AssessmentLayoutType {
+  NoDueDates = 'no_due_dates',
+  ContentSequence = 'content_sequence',
+  EndOfEachSection = 'end_of_each_section',
+}
+
 export interface SchedulerState {
   schedule: HierarchyItem[];
   startDate: DateWithoutTime | null;
@@ -66,6 +72,7 @@ export interface SchedulerState {
   searchQuery: string;
   showRemoved: boolean;
   agenda: boolean;
+  assessmentLayoutType: AssessmentLayoutType;
 }
 
 export const initSchedulerState = (): SchedulerState => ({
@@ -90,6 +97,7 @@ export const initSchedulerState = (): SchedulerState => ({
   searchQuery: '',
   showRemoved: false,
   agenda: false,
+  assessmentLayoutType: AssessmentLayoutType.ContentSequence,
 });
 
 const toDateTime = (str: string, preferredSchedulingTime: TimeParts) => {
@@ -276,6 +284,7 @@ const schedulerSlice = createSlice({
               true,
               state.weekdays,
               state.preferredSchedulingTime,
+              state.assessmentLayoutType,
             );
           state.dirty = state.schedule.map((item) => item.id);
         }
@@ -299,6 +308,7 @@ const schedulerSlice = createSlice({
               true,
               state.weekdays,
               state.preferredSchedulingTime,
+              state.assessmentLayoutType,
             );
           state.dirty = state.schedule.map((item) => item.id);
         }
@@ -409,6 +419,7 @@ const schedulerSlice = createSlice({
             false,
             state.weekdays,
             state.preferredSchedulingTime,
+            state.assessmentLayoutType,
           );
 
           state.dirty.push(...descendentIds(mutableItem, state.schedule));
@@ -434,6 +445,7 @@ const schedulerSlice = createSlice({
             true,
             action.payload.weekdays,
             state.preferredSchedulingTime,
+            state.assessmentLayoutType,
           );
         state.dirty = state.schedule.map((item) => item.id);
       }
@@ -469,6 +481,9 @@ const schedulerSlice = createSlice({
     },
     showHideRemoved: (state, action: PayloadAction<boolean>) => {
       state.showRemoved = action.payload;
+    },
+    setAssessmentLayoutType: (state, action: PayloadAction<AssessmentLayoutType>) => {
+      state.assessmentLayoutType = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -554,6 +569,7 @@ const schedulerSlice = createSlice({
             true,
             state.weekdays,
             state.preferredSchedulingTime,
+            state.assessmentLayoutType,
           );
         state.dirty = state.schedule.map((item) => item.id);
       }
@@ -574,6 +590,7 @@ export const {
   expandAllContainers,
   collapseAllContainers,
   showHideRemoved,
+  setAssessmentLayoutType,
 } = schedulerSlice.actions;
 
 export const schedulerSliceReducer = schedulerSlice.reducer;
