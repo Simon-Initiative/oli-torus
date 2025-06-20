@@ -173,7 +173,8 @@ defmodule OliWeb.Sections.LtiExternalToolsView do
           on_clear_search={
             JS.push("clear_search") |> JS.dispatch("click", to: "#collapse_all_button")
           }
-          class="w-64"
+          class="w-96"
+          placeholder="Search..."
         />
 
         <DeliveryUtils.toggle_expand_button
