@@ -297,9 +297,8 @@ defmodule OliWeb.Components.Delivery.QuizScores do
     {length(scores), scores |> Enum.drop(params.offset) |> Enum.take(params.limit)}
   end
 
-  defp sort_by(scores, sort_order) do
-    Enum.sort_by(scores, fn score -> score.label end, sort_order)
-  end
+  defp sort_by(scores, :desc), do: Enum.reverse(scores)
+  defp sort_by(scores, _sort_order), do: scores
 
   defp maybe_filter_by_text(scores, nil), do: scores
   defp maybe_filter_by_text(scores, ""), do: scores
