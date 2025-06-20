@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { AIIcon } from 'components/misc/AIIcon';
 import { PageTrigger } from 'data/triggers';
 
 export const PageTriggerEditor: React.FC<{
@@ -17,14 +18,9 @@ export const PageTriggerEditor: React.FC<{
       </button>
       {promptsExpanded && (
         <ul className="list-disc list-inside py-2 ml-10">
-          <li>&quot;Highlight the most imporant concepts present on this page&quot;</li>
-          <li>
-            &quot;Welcome the student to this page and let them know that you are here to help&quot;
-          </li>
-          <li>
-            &quot;Point students towards more practice regarding the concepts on this page&apos;s
-            learning objectives&quot;
-          </li>
+          <li>&quot;Welcome the student to this page and introduce the key concepts&quot;</li>
+          <li>&quot;Ask the student what they hope to learn from this page&quot;</li>
+          <li>&quot;Provide a brief overview of what the student will encounter&quot;</li>
         </ul>
       )}
     </div>
@@ -34,7 +30,7 @@ export const PageTriggerEditor: React.FC<{
     <div className="mt-3 bg-white dark:bg-gray-600 rounded-lg p-3" contentEditable={false}>
       <div className="flex justify-between">
         <h4>
-          <img src="/images/icons/icon-AI.svg" className="inline mr-1" />
+          <AIIcon size="sm" className="inline mr-1" />
           DOT AI Page Activation Point
         </h4>
         <button onClick={() => onEdit(undefined)} className="btn btn-primary">
@@ -76,7 +72,7 @@ export const PageTriggerEditor: React.FC<{
     <div className="mt-3 bg-white dark:bg-gray-600 rounded-lg p-3" contentEditable={false}>
       <div className="flex justify-between">
         <h4>
-          <img src="/images/icons/icon-AI.svg" className="inline mr-1" />
+          <AIIcon size="sm" className="inline mr-1" />
           DOT AI Page Activation Point
         </h4>
         <button
