@@ -64,10 +64,7 @@ defmodule OliWeb.Components.Delivery.QuizScores do
         >
           <div>
             <h4 class="torus-h4 !py-0 sm:mr-auto mb-2">Assessment Scores</h4>
-            <a
-              href={Routes.delivery_path(OliWeb.Endpoint, :download_quiz_scores, @section_slug)}
-              class="self-end"
-            >
+            <a href={~p"/sections/#{@section_slug}/grades/export"} class="self-end">
               <i class="fa-solid fa-download ml-1" /> Download
             </a>
           </div>
