@@ -71,14 +71,14 @@ defmodule OliWeb.Delivery.InstructorDashboard.QuizScoreTabTest do
              )
 
       # QuizScores tab content gets rendered
-      assert has_element?(view, "h6", "There are no quiz scores to show")
+      assert has_element?(view, "h6", "There are no assessment scores to show")
     end
   end
 
-  describe "quiz scores" do
+  describe "assessment scores" do
     setup [:instructor_conn, :section_with_gating_conditions]
 
-    test "loads correctly when there are no quiz scores", %{
+    test "loads correctly when there are no assessment scores", %{
       conn: conn,
       instructor: instructor
     } do
@@ -92,10 +92,10 @@ defmodule OliWeb.Delivery.InstructorDashboard.QuizScoreTabTest do
       Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
       {:ok, view, _html} = live(conn, live_view_quiz_scores_route(section.slug))
 
-      assert has_element?(view, "h6", "There are no quiz scores to show")
+      assert has_element?(view, "h6", "There are no assessment scores to show")
     end
 
-    test "loads correctly when a student has not yet finished a quiz", %{
+    test "loads correctly when a student has not yet finished an assessment", %{
       conn: conn,
       section: section,
       instructor: instructor,

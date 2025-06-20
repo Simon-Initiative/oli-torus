@@ -58,7 +58,7 @@ defmodule OliWeb.Grades.GradebookTableModel do
     column_specs = [
       %ColumnSpec{
         name: :name,
-        label: "Quiz",
+        label: "Assessment",
         render_fn: &__MODULE__.render_grade/3,
         th_class: "pl-10"
       },

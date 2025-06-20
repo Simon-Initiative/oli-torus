@@ -266,7 +266,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.QuizzScoresTabTest do
       assert has_element?(
                view,
                "h6",
-               "There are no quiz scores to show"
+               "There are no assessment scores to show"
              )
     end
 

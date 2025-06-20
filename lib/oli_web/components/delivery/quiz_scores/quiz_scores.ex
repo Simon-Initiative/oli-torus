@@ -114,7 +114,7 @@ defmodule OliWeb.Components.Delivery.QuizScores do
             overflow_class="block scrollbar"
           />
         <% else %>
-          <h6 class="text-center py-4">There are no quiz scores to show</h6>
+          <h6 class="text-center py-4">There are no assessment scores to show</h6>
         <% end %>
       </div>
     </div>
