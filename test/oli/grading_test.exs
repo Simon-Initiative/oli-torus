@@ -237,7 +237,10 @@ defmodule Oli.GradingTest do
       revision2: revision2,
       user1: user1,
       user2: user2,
-      user3: user3
+      user3: user3,
+      user1_enrollment: user1_enrollment,
+      user2_enrollment: user2_enrollment,
+      user3_enrollment: user3_enrollment
     } do
       {gradebook, columns} = Grading.generate_gradebook_for_section(section)
 
@@ -260,7 +263,12 @@ defmodule Oli.GradingTest do
                 was_late: false
               }
             ],
-            user: user1
+            user:
+              Map.merge(user1, %{
+                enrollment_status: :enrolled,
+                enrollment_date: user1_enrollment.inserted_at,
+                total_count: 3
+              })
           },
           %Grading.GradebookRow{
             scores: [
@@ -279,7 +287,12 @@ defmodule Oli.GradingTest do
                 was_late: false
               }
             ],
-            user: user2
+            user:
+              Map.merge(user2, %{
+                enrollment_status: :enrolled,
+                enrollment_date: user2_enrollment.inserted_at,
+                total_count: 3
+              })
           },
           %Grading.GradebookRow{
             scores: [
@@ -298,27 +311,38 @@ defmodule Oli.GradingTest do
                 was_late: false
               }
             ],
-            user: user3
+            user:
+              Map.merge(user3, %{
+                enrollment_status: :enrolled,
+                enrollment_date: user3_enrollment.inserted_at,
+                total_count: 3
+              })
           }
         ]
         |> Enum.sort_by(& &1.user.email)
 
-      expected_column_labels = ["Page one", "Page two"]
+      expected_column_labels = [
+        "Page One - Points Earned",
+        "Page One - Points Possible",
+        "Page One - Percentage",
+        "Page Two - Points Earned",
+        "Page Two - Points Possible",
+        "Page Two - Percentage"
+      ]
 
-      assert {expected_gradebook, expected_column_labels} ==
-               {gradebook |> Enum.sort_by(& &1.user.email), Enum.sort(columns)}
+      assert expected_gradebook == gradebook |> Enum.sort_by(& &1.user.email)
+      assert expected_column_labels == columns
     end
 
     test "exports gradebook as CSV", %{section: section} do
       expected_csv = """
-      Student,Page one,Page two\r
-          Points Possible,20.0,5.0\r
-      "Doe, Jane 0 (jane0@platform.example.edu)",12.0,0.0\r
-      "Doe, Jane 1 (jane1@platform.example.edu)",20.0,3.0\r
-      "Doe, Jane 2 (jane2@platform.example.edu)",19.0,5.0\r
+      Status,Name,Email,LMS ID,Page One - Points Earned,Page One - Points Possible,Page One - Percentage,Page Two - Points Earned,Page Two - Points Possible,Page Two - Percentage\r
+      Enrolled,\"Doe, Jane 0\",jane0@platform.example.edu,user1,12,20,60,0,5,0\r
+      Enrolled,\"Doe, Jane 1\",jane1@platform.example.edu,user2,20,20,100,3,5,60\r
+      Enrolled,\"Doe, Jane 2\",jane2@platform.example.edu,user3,19,20,95,5,5,100\r
       """
 
-      csv = Grading.export_csv(section) |> Enum.join("")
+      csv = Grading.export_csv(section)
 
       assert expected_csv == csv
     end

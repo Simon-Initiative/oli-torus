@@ -348,7 +348,7 @@ defmodule OliWeb.DeliveryController do
           Enum.map(
             students,
             &%{
-              status: parse_enrollment_status(&1.enrollment_status),
+              status: Utils.parse_enrollment_status(&1.enrollment_status),
               name: OliWeb.Common.Utils.name(&1),
               email: &1.email,
               lms_id: &1.sub,
@@ -515,7 +515,7 @@ defmodule OliWeb.DeliveryController do
           Enum.map(
             students,
             &%{
-              status: parse_enrollment_status(&1.enrollment_status),
+              status: Utils.parse_enrollment_status(&1.enrollment_status),
               name: OliWeb.Common.Utils.name(&1),
               email: &1.email,
               lms_id: &1.sub,
@@ -580,7 +580,7 @@ defmodule OliWeb.DeliveryController do
   end
 
   defp sort_data(results) do
-    Enum.sort_by(results, &{&1.status, &1.name, &1.email})
+    Enum.sort_by(results, &{&1.status, &1.name, &1.email, &1.lms_id})
   end
 
   defp convert_to_percentage(%{progress: nil}), do: 0
@@ -593,10 +593,4 @@ defmodule OliWeb.DeliveryController do
     Logger.error("Progress exceeds 1.0 threshold: #{inspect(user_data)}")
     nil
   end
-
-  defp parse_enrollment_status(:enrolled), do: "Enrolled"
-  defp parse_enrollment_status(:suspended), do: "Suspended"
-  defp parse_enrollment_status(:pending_confirmation), do: "Pending confirmation"
-  defp parse_enrollment_status(:rejected), do: "Rejected invitation"
-  defp parse_enrollment_status(_status), do: "Unkknown"
 end
