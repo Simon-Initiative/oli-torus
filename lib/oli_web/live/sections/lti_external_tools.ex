@@ -188,6 +188,10 @@ defmodule OliWeb.Sections.LtiExternalToolsView do
           search_term={@params["search_term"]}
           expanded_tools={@params["expanded_tools"]}
         />
+
+        <div :if={@filtered_tools == []} class="text-base font-medium">
+          No results found for <strong><%= @params["search_term"] %></strong>.
+        </div>
       </div>
     </div>
     """
