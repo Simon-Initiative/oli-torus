@@ -2149,7 +2149,7 @@ defmodule Oli.TestHelpers do
       insert(
         :revision,
         resource_type_id: Oli.Resources.ResourceType.id_for_page(),
-        title: "Graded page 1 - Level 1 (w/ no date)",
+        title: "E Graded page 1 - Level 1 (w/ no date)",
         graded: true,
         resource: graded_page_1_resource
       )
@@ -2158,7 +2158,7 @@ defmodule Oli.TestHelpers do
       insert(
         :revision,
         resource_type_id: Oli.Resources.ResourceType.id_for_page(),
-        title: "Graded page 2 - Level 0 (w/ date)",
+        title: "D Graded page 2 - Level 0 (w/ date)",
         graded: true,
         purpose: :application,
         resource: graded_page_2_resource
@@ -2168,7 +2168,7 @@ defmodule Oli.TestHelpers do
       insert(
         :revision,
         resource_type_id: Oli.Resources.ResourceType.id_for_page(),
-        title: "Graded page 3 - Level 1 (w/ no date)",
+        title: "C Graded page 3 - Level 1 (w/ no date)",
         graded: true,
         resource: graded_page_3_resource,
         relates_to: [graded_page_1_resource.id, graded_page_2_resource.id]
@@ -2178,7 +2178,7 @@ defmodule Oli.TestHelpers do
       insert(
         :revision,
         resource_type_id: Oli.Resources.ResourceType.id_for_page(),
-        title: "Graded page 4 - Level 0 (w/ gating condition)",
+        title: "B Graded page 4 - Level 0 (w/ gating condition)",
         graded: true,
         resource: graded_page_4_resource
       )
@@ -2187,7 +2187,7 @@ defmodule Oli.TestHelpers do
       insert(
         :revision,
         resource_type_id: Oli.Resources.ResourceType.id_for_page(),
-        title: "Graded page 5 - Level 0 (w/ student gating condition)",
+        title: "A Graded page 5 - Level 0 (w/ student gating condition)",
         graded: true,
         resource: graded_page_5_resource,
         relates_to: [graded_page_4_resource.id]
@@ -2197,7 +2197,7 @@ defmodule Oli.TestHelpers do
       insert(
         :revision,
         resource_type_id: Oli.Resources.ResourceType.id_for_page(),
-        title: "Graded page 6 - Level 0 (w/o student gating condition)",
+        title: "Z Graded page 6 - Level 0 (w/o student gating condition)",
         graded: true,
         resource: graded_page_6_resource
       )

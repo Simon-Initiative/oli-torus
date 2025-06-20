@@ -63,11 +63,8 @@ defmodule OliWeb.Components.Delivery.QuizScores do
           class="flex justify-between sm:items-end px-4 sm:px-9 py-4 instructor_dashboard_table"
         >
           <div>
-            <h4 class="torus-h4 !py-0 sm:mr-auto mb-2">Quiz Scores</h4>
-            <a
-              href={Routes.delivery_path(OliWeb.Endpoint, :download_quiz_scores, @section_slug)}
-              class="self-end"
-            >
+            <h4 class="torus-h4 !py-0 sm:mr-auto mb-2">Assessment Scores</h4>
+            <a href={~p"/sections/#{@section_slug}/grades/export"} class="self-end">
               <i class="fa-solid fa-download ml-1" /> Download
             </a>
           </div>
@@ -114,7 +111,7 @@ defmodule OliWeb.Components.Delivery.QuizScores do
             overflow_class="block scrollbar"
           />
         <% else %>
-          <h6 class="text-center py-4">There are no quiz scores to show</h6>
+          <h6 class="text-center py-4">There are no assessment scores to show</h6>
         <% end %>
       </div>
     </div>
@@ -300,9 +297,8 @@ defmodule OliWeb.Components.Delivery.QuizScores do
     {length(scores), scores |> Enum.drop(params.offset) |> Enum.take(params.limit)}
   end
 
-  defp sort_by(scores, sort_order) do
-    Enum.sort_by(scores, fn score -> score.label end, sort_order)
-  end
+  defp sort_by(scores, :desc), do: Enum.reverse(scores)
+  defp sort_by(scores, _sort_order), do: scores
 
   defp maybe_filter_by_text(scores, nil), do: scores
   defp maybe_filter_by_text(scores, ""), do: scores

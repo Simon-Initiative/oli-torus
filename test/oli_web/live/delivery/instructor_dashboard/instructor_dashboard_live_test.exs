@@ -114,8 +114,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
       assert has_element?(view, "a.active", "Course Content")
       assert has_element?(view, "a", "Students")
       refute has_element?(view, "a.active", "Students")
-      assert has_element?(view, "a", "Quiz Scores")
-      refute has_element?(view, "a.active", "Quiz Scores")
+      assert has_element?(view, "a", "Assessment Scores")
+      refute has_element?(view, "a.active", "Assessment Scores")
       assert has_element?(view, "a", "Recommended Actions")
       refute has_element?(view, "a.active", "Recommended Actions")
     end

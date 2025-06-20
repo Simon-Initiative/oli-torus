@@ -411,7 +411,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         active: is_active_tab?(:students, active_tab)
       },
       %TabLink{
-        label: "Quiz Scores",
+        label: "Assessment Scores",
         path: path_for(:overview, :quiz_scores, section_slug, preview_mode),
         badge: nil,
         active: is_active_tab?(:quiz_scores, active_tab)

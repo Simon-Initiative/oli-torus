@@ -164,7 +164,8 @@ defmodule Oli.Grading do
   @doc """
   Returns a tuple containing a list of GradebookRow for every enrolled user and an ordered list of column labels.
 
-  `{[%GradebookRow{user: %User{}, scores: [%GradebookScore{}, ...]}, ...], ["Quiz 1 - Points Earned", "Quiz 1 - Points Possible", "Quiz 1 - Percentage"]}`
+  `{[%GradebookRow{user: %User{}, scores: [%GradebookScore{}, ...]}, ...], ["Assessment 1 - Points Earned", "Assessment 1 - Points Possible", "Assessment 1 - Percentage"]}`
+
   """
   def generate_gradebook_for_section(%Section{} = section) do
     # get publication page resources, filtered by graded: true and ordered by numbering index

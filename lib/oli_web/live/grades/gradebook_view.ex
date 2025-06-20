@@ -15,7 +15,7 @@ defmodule OliWeb.Grades.GradebookView do
     previous ++
       [
         Breadcrumb.new(%{
-          full_title: "Gradebook",
+          full_title: "Assessment Scores",
           link: Routes.live_path(OliWeb.Endpoint, __MODULE__, section.slug)
         })
       ]

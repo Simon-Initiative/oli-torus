@@ -358,7 +358,7 @@ defmodule OliWeb.Workspaces.Utils do
             parent_view: :overview
           },
           %SubMenuItem{
-            text: "Quiz Scores",
+            text: "Assessment Scores",
             view: :quiz_scores,
             parent_view: :overview
           },
