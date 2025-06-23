@@ -216,6 +216,10 @@ defmodule OliWeb.Api.LtiAgsController do
           {:ok, activity_attempt_guid, part_attempt_guid}
 
         {:error, e} ->
+          Logger.error(
+            "Failed to reset activity for activity attempt guid #{activity_attempt_guid}: #{inspect(e)}"
+          )
+
           {:error, "Failed to reset activity for activity attempt guid: #{activity_attempt_guid}"}
       end
     end

@@ -1,5 +1,8 @@
 defmodule OliWeb.Plugs.LtiAgsTokenValidator do
   import Plug.Conn
+
+  alias Oli.Lti.Tokens
+
   require Logger
 
   # def init(opts), do: opts
@@ -22,32 +25,15 @@ defmodule OliWeb.Plugs.LtiAgsTokenValidator do
 
   def init(opts), do: opts
 
-  def call(conn, opts) do
+  def call(conn, _opts) do
     with ["Bearer " <> token] <- get_req_header(conn, "authorization"),
-         {:ok, claims} <- verify_token(token, opts) do
+         {:ok, claims} <- Tokens.verify_token(token) do
       assign(conn, :lti_ags_claims, claims)
     else
       _ ->
         conn
         |> send_resp(401, "Unauthorized")
         |> halt()
-    end
-  end
-
-  defp verify_token(token, _opts) do
-    # Use the same logic as issue_access_token in LtiController
-    # Only accept tokens signed by our platform, not by external platforms
-    with {:ok, %{pem: pem, alg: _alg, kid: _kid}} <- Lti_1p3.get_active_jwk(),
-         jwk <- JOSE.JWK.from_pem(pem),
-         {true, jwt, _jws} <- JOSE.JWT.verify(jwk, token),
-         %{"exp" => exp, "scope" => _scope} = claims <- jwt.fields,
-         true <- DateTime.to_unix(DateTime.utc_now()) < exp do
-      # TODO validate claims and scopes
-      {:ok, claims}
-    else
-      e ->
-        Logger.error("LTI AGS token validation failed: #{inspect(e)}")
-        {:error, :invalid_token}
     end
   end
 end

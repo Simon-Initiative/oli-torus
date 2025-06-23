@@ -7,6 +7,7 @@ defmodule OliWeb.Api.LtiController do
   alias Oli.Lti.PlatformExternalTools
   alias Oli.Lti.PlatformExternalTools.LtiExternalToolActivityDeployment
   alias Oli.Lti.PlatformInstances
+  alias Oli.Lti.Tokens
 
   require Logger
 
@@ -212,7 +213,7 @@ defmodule OliWeb.Api.LtiController do
          {:ok, %{sub: client_id}} <-
            validate_client_assertion(client_assertion),
          {:ok, access_token, expires_in} <-
-           issue_access_token(client_id, scope) do
+           Tokens.issue_access_token(client_id, scope) do
       conn
       |> put_resp_content_type("application/json")
       |> json(%{
@@ -301,34 +302,5 @@ defmodule OliWeb.Api.LtiController do
       error ->
         error
     end
-  end
-
-  defp issue_access_token(client_id, scope) do
-    # Set token expiration (e.g., 1 hour)
-    expires_in = 3600
-    now = DateTime.utc_now() |> DateTime.to_unix()
-
-    claims = %{
-      "sub" => client_id,
-      "scope" => scope,
-      "iat" => now,
-      "exp" => now + expires_in,
-      "iss" => Oli.Utils.get_base_url(),
-      "aud" => client_id
-    }
-
-    # Get the active JWK for signing
-    {:ok, jwk} = Lti_1p3.get_active_jwk()
-
-    jwt =
-      JOSE.JWT.sign(
-        JOSE.JWK.from_pem(jwk.pem),
-        %{"alg" => jwk.alg, "kid" => jwk.kid},
-        claims
-      )
-      |> JOSE.JWS.compact()
-      |> elem(1)
-
-    {:ok, jwt, expires_in}
   end
 end
