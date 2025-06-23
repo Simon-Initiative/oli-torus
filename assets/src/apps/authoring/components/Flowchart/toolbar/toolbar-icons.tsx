@@ -3,6 +3,7 @@ import { AudioIcon } from './AudioIcon';
 import { CarouselIcon } from './CarouselIcon';
 import { CheckboxIcon } from './CheckboxIcon';
 import { DropdownIcon } from './DropdownIcon';
+import { FormulaIcon } from './FormulaIcon';
 import { HubSpokeIcon } from './HubSpokeIcon';
 import { IframeIcon } from './IframeIcon';
 import { ImageIcon } from './ImageIcon';
@@ -30,6 +31,7 @@ export const toolbarIcons: Record<string, React.FC<{ fill?: string; stroke?: str
   janus_multi_line_text: MultilineIcon,
   janus_hub_spoke: HubSpokeIcon,
   janus_text_slider: SliderIcon,
+  janus_formula: FormulaIcon,
 };
 
 export const toolbarTooltips: Record<string, string> = {
@@ -48,4 +50,5 @@ export const toolbarTooltips: Record<string, string> = {
   janus_multi_line_text: 'Multiline text input',
   janus_hub_spoke: 'Hub and Spoke',
   janus_text_slider: 'Slider (Text)',
+  janus_formula: 'Formula',
 };
