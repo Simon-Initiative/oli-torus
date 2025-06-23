@@ -278,7 +278,9 @@ defmodule Oli.Grading do
           label: rev.title,
           score: ra.score,
           out_of: ra.out_of,
-          was_late: ra.was_late
+          was_late: ra.was_late,
+          index: sr.numbering_index,
+          title: sr.title
         }
       )
     )
