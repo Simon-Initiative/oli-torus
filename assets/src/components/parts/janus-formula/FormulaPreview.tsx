@@ -13,7 +13,6 @@ const FormulaPreview: React.FC<FormulaPreviewProps> = ({ input, altText = '', cl
   const containerRef = useRef<HTMLDivElement>(null);
 
   const renderPreview = useMemo(() => {
-    console.log('useMemo->useMemo', { input });
     return (
       <MathJax>
         <div dangerouslySetInnerHTML={{ __html: renderedContent }} aria-label={altText} />
