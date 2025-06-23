@@ -190,11 +190,7 @@ const FormulaAuthor: React.FC<AuthorPartComponentProps<FormulaModel>> = (props) 
   const renderPreview = useMemo(() => {
     if (!mathData.input) return null;
     return (
-      <MathJaxContext
-        config={mathjaxConfig}
-        version={3}
-        src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
-      >
+      <MathJaxContext config={mathjaxConfig} version={3}>
         <FormulaPreview input={mathData.input} altText={mathData.altText} />
       </MathJaxContext>
     );
