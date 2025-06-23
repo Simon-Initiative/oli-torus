@@ -499,13 +499,12 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
     } = socket.assigns
 
     case ManualGrading.apply_manual_scoring(section, attempt, score_feedbacks) do
-      {:ok, finalized_part_attempts} ->
+      {:ok, finalized_part_attempt_guids} ->
         pid = self()
 
         send(
           pid,
-          {:purge_score_feedbacks,
-           Enum.map(finalized_part_attempts, fn pa -> pa.attempt_guid end)}
+          {:purge_score_feedbacks, finalized_part_attempt_guids}
         )
 
         put_flash(socket, :info, "Student attempt scored.")
