@@ -537,16 +537,18 @@ defmodule OliWeb.Api.LtiAgsControllerTest do
           user_id: student_1.id
         )
 
-      assert json_response(conn, 200) == [
-               %{
-                 "id" =>
-                   "https://localhost/lineitems/#{activity_attempt.attempt_guid}/results/#{student_1.id}",
-                 "resultMaximum" => 2.0,
-                 "resultScore" => 1.0,
-                 "scoreOf" => "https://localhost/lineitems/#{activity_attempt.attempt_guid}",
-                 "userId" => "#{student_1.id}"
-               }
-             ]
+      assert response = json_response(conn, 200)
+
+      score = response |> hd()
+
+      assert score["id"] ==
+               "https://localhost/lineitems/#{activity_attempt.attempt_guid}/results/#{student_1.id}"
+
+      assert score["resultMaximum"] == 2.0
+      assert score["resultScore"] == 1.0
+      assert score["scoreOf"] == "https://localhost/lineitems/#{activity_attempt.attempt_guid}"
+      assert score["userId"] == "#{student_1.id}"
+      assert score["timestamp"] != nil
     end
 
     test "returns result JSON and nil resultScore when an attempt has not been submitted", %{
@@ -568,10 +570,11 @@ defmodule OliWeb.Api.LtiAgsControllerTest do
                %{
                  "id" =>
                    "https://localhost/lineitems/#{activity_attempt.attempt_guid}/results/#{student_1.id}",
-                 "resultMaximum" => 2.0,
+                 "resultMaximum" => nil,
                  "resultScore" => nil,
                  "scoreOf" => "https://localhost/lineitems/#{activity_attempt.attempt_guid}",
-                 "userId" => "#{student_1.id}"
+                 "userId" => "#{student_1.id}",
+                 "timestamp" => nil
                }
              ]
     end
@@ -618,7 +621,8 @@ defmodule OliWeb.Api.LtiAgsControllerTest do
         "userId" => student_1.sub,
         "scoreGiven" => 8,
         "scoreMaximum" => 10,
-        "gradingProgress" => "FullyGraded"
+        "gradingProgress" => "FullyGraded",
+        "timestamp" => DateTime.utc_now() |> DateTime.to_iso8601()
       }
 
       conn =
@@ -634,21 +638,31 @@ defmodule OliWeb.Api.LtiAgsControllerTest do
       unscored_page: unscored_page,
       lti_activity: lti_activity
     } do
-      {_resource_attempt, activity_attempt, _part_attempt} =
+      {_resource_attempt, activity_attempt, part_attempt} =
         setup_activity_attempt(section, unscored_page, student_1, lti_activity, 2.0)
+
+      assert part_attempt.score == nil
+      assert part_attempt.out_of == nil
 
       params = %{
         "activity_attempt_guid" => activity_attempt.attempt_guid,
         "userId" => student_1.sub,
         "scoreGiven" => 8,
         "scoreMaximum" => 10,
-        "gradingProgress" => "FullyGraded"
+        "gradingProgress" => "FullyGraded",
+        "timestamp" => DateTime.utc_now() |> DateTime.to_iso8601()
       }
 
       conn =
         post(conn, ~p"/lti/lineitems/#{activity_attempt.attempt_guid}/scores", params)
 
       assert response(conn, 204)
+
+      updated_part_attempt =
+        Oli.Delivery.Attempts.Core.get_part_attempt_by(attempt_guid: part_attempt.attempt_guid)
+
+      assert updated_part_attempt.score == 8
+      assert updated_part_attempt.out_of == 10
 
       # Reset the activity attempt
       params = %{
@@ -662,13 +676,11 @@ defmodule OliWeb.Api.LtiAgsControllerTest do
 
       assert response(conn, 204)
 
-      # verify that the activity attempt was actually reset
-      # dbg(
-      #   Oli.Delivery.Attempts.Core.get_activity_attempt_by(
-      #     attempt_guid: activity_attempt.attempt_guid
-      #   )
-      # )
-      dbg(Oli.Delivery.Attempts.Core.get_activity_attempts([]))
+      updated_part_attempt =
+        Oli.Delivery.Attempts.Core.get_part_attempt_by(attempt_guid: part_attempt.attempt_guid)
+
+      assert updated_part_attempt.score == nil
+      assert updated_part_attempt.out_of == nil
     end
 
     @tag capture_log: true
@@ -683,13 +695,15 @@ defmodule OliWeb.Api.LtiAgsControllerTest do
       {resource_attempt, activity_attempt, _part_attempt} =
         setup_activity_attempt(section, scored_page, student_1, lti_activity, 2.0)
 
-      params = %{
-        "activity_attempt_guid" => activity_attempt.attempt_guid,
-        "userId" => student_1.sub,
-        "scoreGiven" => 8,
-        "scoreMaximum" => 10,
-        "gradingProgress" => "FullyGraded"
-      }
+      params =
+        %{
+          "activity_attempt_guid" => activity_attempt.attempt_guid,
+          "userId" => student_1.sub,
+          "scoreGiven" => 8,
+          "scoreMaximum" => 10,
+          "gradingProgress" => "FullyGraded",
+          "timestamp" => DateTime.utc_now() |> DateTime.to_iso8601()
+        }
 
       conn =
         post(conn, ~p"/lti/lineitems/#{activity_attempt.attempt_guid}/scores", params)
@@ -712,7 +726,8 @@ defmodule OliWeb.Api.LtiAgsControllerTest do
         "userId" => student_1.sub,
         "scoreGiven" => 10,
         "scoreMaximum" => 10,
-        "gradingProgress" => "FullyGraded"
+        "gradingProgress" => "FullyGraded",
+        "timestamp" => DateTime.utc_now() |> DateTime.add(1, :second) |> DateTime.to_iso8601()
       }
 
       conn =
@@ -742,7 +757,8 @@ defmodule OliWeb.Api.LtiAgsControllerTest do
         "userId" => "user-1",
         "scoreGiven" => 8,
         "scoreMaximum" => 10,
-        "gradingProgress" => "NotGraded"
+        "gradingProgress" => "NotGraded",
+        "timestamp" => DateTime.utc_now() |> DateTime.to_iso8601()
       }
 
       conn =
@@ -752,16 +768,131 @@ defmodule OliWeb.Api.LtiAgsControllerTest do
                "Error processing score. Invalid score payload. \"gradingProgress\" must be \"FullyGraded\""
     end
 
-    @tag :skip
-    test "rejects a score POST with the same timestamp" do
+    @tag capture_log: true
+    test "rejects a score POST with the same timestamp", %{
+      conn: conn,
+      section: section,
+      student_1: student_1,
+      scored_page: scored_page,
+      lti_activity: lti_activity
+    } do
+      {_resource_attempt, activity_attempt, _part_attempt} =
+        setup_activity_attempt(section, scored_page, student_1, lti_activity, 2.0)
+
+      params = %{
+        "activity_attempt_guid" => activity_attempt.attempt_guid,
+        "userId" => student_1.sub,
+        "scoreGiven" => 8,
+        "scoreMaximum" => 10,
+        "gradingProgress" => "FullyGraded",
+        "timestamp" => DateTime.utc_now() |> DateTime.to_iso8601()
+      }
+
+      conn =
+        post(conn, ~p"/lti/lineitems/#{activity_attempt.attempt_guid}/scores", params)
+
+      assert response(conn, 204)
+
+      # Attempt to apply the same score again
+      conn =
+        post(conn, ~p"/lti/lineitems/#{activity_attempt.attempt_guid}/scores", params)
+
+      assert response(conn, 400) =~
+               "Error processing score. Timestamp must be later than the current date_submitted"
     end
 
-    @tag :skip
-    test "accepts a score POST with a later timestamp" do
+    test "accepts a score POST with a later timestamp", %{
+      conn: conn,
+      section: section,
+      student_1: student_1,
+      scored_page: scored_page,
+      lti_activity: lti_activity
+    } do
+      {_resource_attempt, activity_attempt, _part_attempt} =
+        setup_activity_attempt(section, scored_page, student_1, lti_activity, 2.0)
+
+      now = DateTime.utc_now()
+      timestamp = now |> DateTime.to_iso8601()
+
+      later_timestamp =
+        now |> DateTime.add(2, :second) |> DateTime.to_iso8601()
+
+      params = %{
+        "activity_attempt_guid" => activity_attempt.attempt_guid,
+        "userId" => student_1.sub,
+        "scoreGiven" => 8,
+        "scoreMaximum" => 10,
+        "gradingProgress" => "FullyGraded",
+        "timestamp" => timestamp
+      }
+
+      conn =
+        post(conn, ~p"/lti/lineitems/#{activity_attempt.attempt_guid}/scores", params)
+
+      assert response(conn, 204)
+
+      # Apply another score with a later timestamp
+      params = %{
+        "activity_attempt_guid" => activity_attempt.attempt_guid,
+        "userId" => student_1.sub,
+        "scoreGiven" => 10,
+        "scoreMaximum" => 10,
+        "gradingProgress" => "FullyGraded",
+        "timestamp" => later_timestamp
+      }
+
+      conn =
+        post(conn, ~p"/lti/lineitems/#{activity_attempt.attempt_guid}/scores", params)
+
+      assert response(conn, 204)
     end
 
-    @tag :skip
-    test "ignores a score POST with an earlier timestamp" do
+    @tag capture_log: true
+    test "ignores a score POST with an earlier timestamp", %{
+      conn: conn,
+      section: section,
+      student_1: student_1,
+      scored_page: scored_page,
+      lti_activity: lti_activity
+    } do
+      {_resource_attempt, activity_attempt, _part_attempt} =
+        setup_activity_attempt(section, scored_page, student_1, lti_activity, 2.0)
+
+      now = DateTime.utc_now()
+      timestamp = now |> DateTime.to_iso8601()
+
+      ealier_timestamp =
+        now |> DateTime.add(-2, :second) |> DateTime.to_iso8601()
+
+      params = %{
+        "activity_attempt_guid" => activity_attempt.attempt_guid,
+        "userId" => student_1.sub,
+        "scoreGiven" => 8,
+        "scoreMaximum" => 10,
+        "gradingProgress" => "FullyGraded",
+        "timestamp" => timestamp
+      }
+
+      conn =
+        post(conn, ~p"/lti/lineitems/#{activity_attempt.attempt_guid}/scores", params)
+
+      assert response(conn, 204)
+
+      # Apply another score with a later timestamp
+      params = %{
+        "activity_attempt_guid" => activity_attempt.attempt_guid,
+        "userId" => student_1.sub,
+        "scoreGiven" => 10,
+        "scoreMaximum" => 10,
+        "gradingProgress" => "FullyGraded",
+        "timestamp" => ealier_timestamp
+      }
+
+      conn =
+        post(conn, ~p"/lti/lineitems/#{activity_attempt.attempt_guid}/scores", params)
+
+      assert response(conn, 400) =~
+               "Error processing score. Timestamp must be later than the current date_submitted"
     end
   end
 end

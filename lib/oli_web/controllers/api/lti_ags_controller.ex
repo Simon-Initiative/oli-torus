@@ -9,7 +9,8 @@ defmodule OliWeb.Api.LtiAgsController do
 
   # GET /lti/lineitems/:activity_attempt_guid?user_id=...
   def get_result(conn, %{"activity_attempt_guid" => activity_attempt_guid, "user_id" => user_id}) do
-    with {:ok, activity_attempt} <- get_activity_attempt(activity_attempt_guid) do
+    with {:ok, part_attempt} <-
+           get_single_part_attempt_from_activity_attempt(activity_attempt_guid) do
       platform_url = Oli.Utils.get_base_url()
 
       json(conn, [
@@ -17,10 +18,11 @@ defmodule OliWeb.Api.LtiAgsController do
           "id" => "#{platform_url}/lineitems/#{activity_attempt_guid}/results/#{user_id}",
           "scoreOf" => "#{platform_url}/lineitems/#{activity_attempt_guid}",
           "userId" => user_id,
-          "resultScore" => activity_attempt.score,
-          "resultMaximum" => activity_attempt.out_of
+          "resultScore" => part_attempt.score,
+          "resultMaximum" => part_attempt.out_of,
+          "timestamp" => part_attempt.date_submitted
         }
-        |> maybe_put_comment_from_activity_attempt(activity_attempt)
+        |> maybe_put_comment_from_part_attempt(part_attempt)
       ])
     else
       {:error, error} ->
@@ -35,27 +37,10 @@ defmodule OliWeb.Api.LtiAgsController do
     send_resp(conn, 400, "Invalid request. 'user_id' parameter is required.")
   end
 
-  defp get_activity_attempt(activity_attempt_guid) do
-    case Core.get_activity_attempt_by(attempt_guid: activity_attempt_guid) do
-      nil ->
-        {:error, "Activity attempt not found for guid: #{activity_attempt_guid}"}
-
-      activity_attempt ->
-        {:ok, activity_attempt}
-    end
-  end
-
-  defp maybe_put_comment_from_activity_attempt(result, activity_attempt) do
-    # get part attempt guid using activity_attempt_guid. There should be only one part attempt
-    case get_single_part_attempt_from_activity_attempt(activity_attempt.attempt_guid) do
-      {:ok, part_attempt} ->
-        case OliWeb.Common.Utils.extract_from_part_attempt(part_attempt) do
-          [] -> result
-          feedbacks -> Map.put(result, "comment", feedbacks |> Enum.join("\n"))
-        end
-
-      error ->
-        error
+  defp maybe_put_comment_from_part_attempt(result, part_attempt) do
+    case OliWeb.Common.Utils.extract_from_part_attempt(part_attempt) do
+      [] -> result
+      feedbacks -> Map.put(result, "comment", feedbacks |> Enum.join("\n"))
     end
   end
 
@@ -87,7 +72,8 @@ defmodule OliWeb.Api.LtiAgsController do
           "userId" => _user_id,
           "scoreGiven" => score_given,
           "scoreMaximum" => score_maximum,
-          "gradingProgress" => grading_progress
+          "gradingProgress" => grading_progress,
+          "timestamp" => timestamp
         } = params
       ) do
     with :ok <- validate_grading_progress(grading_progress),
@@ -96,6 +82,7 @@ defmodule OliWeb.Api.LtiAgsController do
              activity_attempt_guid,
              score_given,
              score_maximum,
+             timestamp,
              params["comment"]
            ) do
       # Respond with 204 No Content per spec
@@ -115,28 +102,58 @@ defmodule OliWeb.Api.LtiAgsController do
     )
   end
 
-  defp update_active_attempt_score(activity_attempt_guid, score_given, score_maximum, comment) do
-    # get part attempt guid using activity_attempt_guid. There should be only one part attempt
-    case get_single_part_attempt_from_activity_attempt(activity_attempt_guid) do
-      {:ok, part_attempt} ->
-        # If the part attempt lifecycle_state is not active then reset the activity
-        if part_attempt.lifecycle_state != :active do
-          {:error, "Activity attempt is not active. Cannot update score."}
+  defp update_active_attempt_score(
+         activity_attempt_guid,
+         score_given,
+         score_maximum,
+         timestamp,
+         comment
+       ) do
+    with {:ok, part_attempt} <-
+           get_single_part_attempt_from_activity_attempt(activity_attempt_guid),
+         :ok <- require_active_part_attempt(part_attempt),
+         {:ok, date_submitted} <- validate_timestamp(part_attempt, timestamp) do
+      # Update the activity attempt with the new score and timestamp
+      Core.update_part_attempt(
+        part_attempt,
+        %{
+          score: score_given,
+          out_of: score_maximum,
+          date_submitted: date_submitted
+        }
+        |> maybe_apply_feedback_from_comment(comment)
+      )
+    else
+      error -> error
+    end
+  end
+
+  defp require_active_part_attempt(part_attempt) do
+    if part_attempt.lifecycle_state != :active do
+      {:error, "Activity attempt is not active. Cannot update score."}
+    else
+      :ok
+    end
+  end
+
+  defp validate_timestamp(part_attempt, timestamp) do
+    case DateTime.from_iso8601(timestamp) do
+      {:ok, new_datetime, _offset} ->
+        # The spec prescribes that the timestamp comparison should support sub-second precision, but our
+        # part attempt database schema only stores the date at second precision.
+        # Therefore, we must round the timestamp to the nearest second to ensure a proper comparison.
+        new_datetime = DateTime.truncate(new_datetime, :second)
+
+        # Ensure the new timestamp is later than the current date_submitted
+        if is_nil(part_attempt.date_submitted) ||
+             DateTime.compare(part_attempt.date_submitted, new_datetime) == :lt do
+          {:ok, new_datetime}
         else
-          # The part attempt is active, update the part attempt with the new attributes
-          Core.update_part_attempt(
-            part_attempt,
-            %{
-              score: score_given,
-              out_of: score_maximum,
-              date_submitted: DateTime.utc_now()
-            }
-            |> maybe_apply_feedback_from_comment(comment)
-          )
+          {:error, "Timestamp must be later than the current date_submitted."}
         end
 
-      error ->
-        error
+      {:error, _reason} ->
+        {:error, "Invalid timestamp format. Expected ISO 8601 format."}
     end
   end
 
@@ -151,7 +168,9 @@ defmodule OliWeb.Api.LtiAgsController do
           # The part attempt is active, update the part attempt with the new attributes
           Core.update_part_attempt(part_attempt, %{
             score: nil,
-            date_submitted: nil
+            out_of: nil,
+            date_submitted: nil,
+            feedback: nil
           })
         end
 
