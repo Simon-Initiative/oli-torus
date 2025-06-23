@@ -2,9 +2,6 @@ defmodule OliWeb.Api.LtiAgsController do
   use OliWeb, :controller
 
   alias Oli.Delivery.Attempts.Core
-  alias Oli.Delivery.Attempts.Core.ClientEvaluation
-  alias Oli.Delivery.Attempts.ActivityLifecycle.Evaluate
-  alias Oli.Delivery.Sections.Section
 
   require Logger
 
@@ -71,18 +68,8 @@ defmodule OliWeb.Api.LtiAgsController do
           "activityProgress" => "Initialized"
         } = _params
       ) do
-    with {:ok, section_slug} <-
-           get_section_slug_from_activity_attempt_guid(activity_attempt_guid),
-         datashop_session_id <- Plug.Conn.get_session(conn, :datashop_session_id),
-         {:ok, part_attempt} <-
-           get_single_part_attempt_from_activity_attempt(activity_attempt_guid),
-         {:ok, _activity_attempt_guid, _part_attempt_guid} <-
-           reset_unscored_activity(
-             section_slug,
-             activity_attempt_guid,
-             part_attempt,
-             datashop_session_id
-           ) do
+    with {:ok, _part_attempt} <-
+           reset_active_attempt_score(activity_attempt_guid) do
       # Respond with 204 No Content per spec
       send_resp(conn, 204, "")
     else
@@ -104,24 +91,12 @@ defmodule OliWeb.Api.LtiAgsController do
         } = params
       ) do
     with :ok <- validate_grading_progress(grading_progress),
-         {:ok, section_slug} <-
-           get_section_slug_from_activity_attempt_guid(activity_attempt_guid),
-         datashop_session_id <- Plug.Conn.get_session(conn, :datashop_session_id),
-         {:ok, activity_attempt_guid, part_attempt_guid} <-
-           get_active_attempt_or_reset_unscored(
-             section_slug,
+         {:ok, _part_attempt} <-
+           update_active_attempt_score(
              activity_attempt_guid,
-             datashop_session_id
-           ),
-         :ok <-
-           apply_score(
-             section_slug,
-             activity_attempt_guid,
-             part_attempt_guid,
              score_given,
              score_maximum,
-             params["comment"],
-             datashop_session_id
+             params["comment"]
            ) do
       # Respond with 204 No Content per spec
       send_resp(conn, 204, "")
@@ -140,35 +115,44 @@ defmodule OliWeb.Api.LtiAgsController do
     )
   end
 
-  defp get_section_slug_from_activity_attempt_guid(activity_attempt_guid) do
-    case Core.get_section_by_activity_attempt_guid(activity_attempt_guid) do
-      %Section{slug: section_slug} ->
-        {:ok, section_slug}
-
-      _ ->
-        {:error, "Section not found for activity attempt guid: #{activity_attempt_guid}"}
-    end
-  end
-
-  defp get_active_attempt_or_reset_unscored(
-         section_slug,
-         activity_attempt_guid,
-         datashop_session_id
-       ) do
+  defp update_active_attempt_score(activity_attempt_guid, score_given, score_maximum, comment) do
     # get part attempt guid using activity_attempt_guid. There should be only one part attempt
     case get_single_part_attempt_from_activity_attempt(activity_attempt_guid) do
       {:ok, part_attempt} ->
         # If the part attempt lifecycle_state is not active then reset the activity
         if part_attempt.lifecycle_state != :active do
-          reset_unscored_activity(
-            section_slug,
-            activity_attempt_guid,
-            part_attempt,
-            datashop_session_id
-          )
+          {:error, "Activity attempt is not active. Cannot update score."}
         else
-          # The part attempt is active, return the existing activity and part attempt guids
-          {:ok, activity_attempt_guid, part_attempt.attempt_guid}
+          # The part attempt is active, update the part attempt with the new attributes
+          Core.update_part_attempt(
+            part_attempt,
+            %{
+              score: score_given,
+              out_of: score_maximum,
+              date_submitted: DateTime.utc_now()
+            }
+            |> maybe_apply_feedback_from_comment(comment)
+          )
+        end
+
+      error ->
+        error
+    end
+  end
+
+  defp reset_active_attempt_score(activity_attempt_guid) do
+    # get part attempt guid using activity_attempt_guid. There should be only one part attempt
+    case get_single_part_attempt_from_activity_attempt(activity_attempt_guid) do
+      {:ok, part_attempt} ->
+        # If the part attempt lifecycle_state is not active then reset the activity
+        if part_attempt.lifecycle_state != :active do
+          {:error, "Activity attempt is not active. Cannot reset score."}
+        else
+          # The part attempt is active, update the part attempt with the new attributes
+          Core.update_part_attempt(part_attempt, %{
+            score: nil,
+            date_submitted: nil
+          })
         end
 
       error ->
@@ -188,93 +172,12 @@ defmodule OliWeb.Api.LtiAgsController do
     end
   end
 
-  defp reset_unscored_activity(
-         section_slug,
-         activity_attempt_guid,
-         part_attempt,
-         datashop_session_id
-       ) do
-    # Only reset the activity automatically if it is on an unscored page
-    page_revision = get_page_revision_from_part_attempt(part_attempt)
+  defp maybe_apply_feedback_from_comment(attrs, nil), do: attrs
+  defp maybe_apply_feedback_from_comment(attrs, ""), do: attrs
 
-    if page_revision.graded do
-      {:error,
-       "Activity attempt has already been submitted and this activity is on a scored page. \
-        A new attempt must be started before a score can be applied."}
-    else
-      # In an unscored page, automatically reset the activity attempt and return the new
-      # activity and part attempt guids
-      case Oli.Delivery.Attempts.ActivityLifecycle.reset_activity(
-             section_slug,
-             activity_attempt_guid,
-             datashop_session_id
-           ) do
-        {:ok, {activity_state, _model}} ->
-          activity_attempt_guid = activity_state.attemptGuid
-          part_attempt_guid = hd(activity_state.parts).attemptGuid
-
-          {:ok, activity_attempt_guid, part_attempt_guid}
-
-        {:error, e} ->
-          Logger.error(
-            "Failed to reset activity for activity attempt guid #{activity_attempt_guid}: #{inspect(e)}"
-          )
-
-          {:error, "Failed to reset activity for activity attempt guid: #{activity_attempt_guid}"}
-      end
-    end
-  end
-
-  defp get_page_revision_from_part_attempt(part_attempt) do
-    part_attempt = Core.preload_part_attempt_revisions(part_attempt)
-
-    part_attempt.activity_attempt.resource_attempt.revision
-  end
-
-  defp apply_score(
-         section_slug,
-         activity_attempt_guid,
-         part_attempt_guid,
-         score_given,
-         score_maximum,
-         comment,
-         datashop_session_id
-       ) do
-    # Create a single client evaluation that represents the posted LTI score
-    client_evaluations = [
-      %{
-        attempt_guid: part_attempt_guid,
-        client_evaluation:
-          %ClientEvaluation{
-            score: score_given,
-            out_of: score_maximum
-          }
-          |> maybe_apply_feedback_from_comment(comment)
-      }
-    ]
-
-    case Evaluate.apply_client_evaluation(
-           section_slug,
-           activity_attempt_guid,
-           client_evaluations,
-           datashop_session_id
-         ) do
-      {:ok, _evaluations} ->
-        :ok
-
-      {:error, e} ->
-        Logger.error("Failed to process activity evaluations. #{inspect(e)}")
-
-        {:error, "Failed to process activity evaluations"}
-    end
-  end
-
-  defp maybe_apply_feedback_from_comment(client_evaluation, nil), do: client_evaluation
-  defp maybe_apply_feedback_from_comment(client_evaluation, ""), do: client_evaluation
-
-  defp maybe_apply_feedback_from_comment(client_evaluation, comment),
-    do: %ClientEvaluation{
-      client_evaluation
+  defp maybe_apply_feedback_from_comment(attrs, comment),
+    do: %{
+      attrs
       | feedback: %{content: feedback_content(comment)}
     }
 

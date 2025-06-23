@@ -3,10 +3,11 @@ defmodule OliWeb.Api.LtiAgsControllerTest do
 
   import Oli.Factory
 
-  alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Resources.ResourceType
   alias Oli.Delivery.Sections
   alias Lti_1p3.Roles.ContextRoles
+  alias Oli.Delivery.Attempts.ActivityLifecycle.Evaluate
+  alias Oli.Delivery.Attempts.Core.{ClientEvaluation}
 
   defp generate_lti_content() do
     %{
@@ -183,12 +184,54 @@ defmodule OliWeb.Api.LtiAgsControllerTest do
         content: generate_lti_content()
       )
 
-    ## scored pages (assessments)...
+    ## unscored page
+    unscored_page_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.id_for_page(),
+        objectives: %{"attached" => [objective_1_revision.resource_id]},
+        title: "Page",
+        graded: false,
+        content: %{
+          model: [
+            %{
+              id: "4286170280",
+              type: "content",
+              children: [
+                %{
+                  id: "2905665054",
+                  type: "p",
+                  children: [
+                    %{
+                      text: "This is an unscored page."
+                    }
+                  ]
+                }
+              ]
+            },
+            %{
+              id: "3330767711",
+              type: "activity-reference",
+              children: [],
+              activity_id: mcq_activity_revision.resource.id
+            },
+            %{
+              id: "3330767712",
+              type: "activity-reference",
+              children: [],
+              activity_id: lti_activity_revision.resource.id
+            }
+          ],
+          bibrefs: [],
+          version: "0.1.0"
+        }
+      )
+
+    ## scored page (assessments)
     scored_page_revision =
       insert(:revision,
         resource_type_id: ResourceType.id_for_page(),
         objectives: %{"attached" => [objective_1_revision.resource_id]},
-        title: "Scored Page 1",
+        title: "Scored Page",
         graded: true,
         content: %{
           model: [
@@ -232,6 +275,7 @@ defmodule OliWeb.Api.LtiAgsControllerTest do
         objectives: %{},
         resource_type_id: Oli.Resources.ResourceType.id_for_container(),
         children: [
+          unscored_page_revision.resource_id,
           scored_page_revision.resource_id
         ],
         content: %{},
@@ -253,6 +297,11 @@ defmodule OliWeb.Api.LtiAgsControllerTest do
     insert(:project_resource, %{
       project_id: project.id,
       resource_id: lti_activity_revision.resource_id
+    })
+
+    insert(:project_resource, %{
+      project_id: project.id,
+      resource_id: unscored_page_revision.resource_id
     })
 
     insert(:project_resource, %{
@@ -290,6 +339,13 @@ defmodule OliWeb.Api.LtiAgsControllerTest do
       publication: publication,
       resource: lti_activity_revision.resource,
       revision: lti_activity_revision,
+      author: author
+    })
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: unscored_page_revision.resource,
+      revision: unscored_page_revision,
       author: author
     })
 
@@ -343,6 +399,8 @@ defmodule OliWeb.Api.LtiAgsControllerTest do
       section: section,
       mcq_activity: mcq_activity_revision,
       lti_activity: lti_activity_revision,
+      unscored_page: unscored_page_revision,
+      unscored_page_objectives: objective_1_revision,
       scored_page: scored_page_revision,
       scored_page_objective: objective_1_revision,
       student_1: student_1,
@@ -366,6 +424,71 @@ defmodule OliWeb.Api.LtiAgsControllerTest do
       |> put_req_header("authorization", "Bearer " <> token)
 
     {:ok, conn: conn}
+  end
+
+  defp setup_activity_attempt(section, page, user, activity_revision, out_of) do
+    resource_access =
+      Oli.Delivery.Attempts.Core.track_access(
+        page.resource_id,
+        section.id,
+        user.id
+      )
+
+    resource_attempt =
+      insert(:resource_attempt, %{
+        resource_access_id: resource_access.id,
+        resource_access: resource_access,
+        revision_id: page.id,
+        revision: page,
+        attempt_guid: UUID.uuid4(),
+        content: page.content
+      })
+
+    activity_attempt =
+      insert(:activity_attempt, %{
+        resource_attempt_id: resource_attempt.id,
+        resource_attempt: resource_attempt,
+        revision_id: activity_revision.id,
+        revision: activity_revision,
+        resource_id: activity_revision.resource_id,
+        resource: activity_revision.resource,
+        attempt_guid: UUID.uuid4(),
+        out_of: out_of
+      })
+
+    part_attempt =
+      insert(:part_attempt, %{
+        activity_attempt_id: activity_attempt.id,
+        activity_attempt: activity_attempt,
+        attempt_guid: UUID.uuid4(),
+        part_id: "1"
+      })
+
+    {resource_attempt, activity_attempt, part_attempt}
+  end
+
+  defp apply_score(
+         section_slug,
+         activity_attempt_guid,
+         part_attempt_guid,
+         score,
+         out_of,
+         datashop_id
+       ) do
+    Evaluate.apply_client_evaluation(
+      section_slug,
+      activity_attempt_guid,
+      [
+        %{
+          attempt_guid: part_attempt_guid,
+          client_evaluation: %ClientEvaluation{
+            score: score,
+            out_of: out_of
+          }
+        }
+      ],
+      datashop_id
+    )
   end
 
   describe "validate token" do
@@ -397,43 +520,17 @@ defmodule OliWeb.Api.LtiAgsControllerTest do
       scored_page: scored_page,
       lti_activity: lti_activity
     } do
-      resource_access =
-        Oli.Delivery.Attempts.Core.track_access(
-          scored_page.resource_id,
-          section.id,
-          student_1.id
-        )
+      {_resource_attempt, activity_attempt, part_attempt} =
+        setup_activity_attempt(section, scored_page, student_1, lti_activity, 2.0)
 
-      resource_attempt =
-        insert(:resource_attempt, %{
-          resource_access_id: resource_access.id,
-          resource_access: resource_access,
-          revision_id: scored_page.id,
-          revision: scored_page,
-          attempt_guid: UUID.uuid4(),
-          content: scored_page.content
-        })
-
-      activity_attempt =
-        insert(:activity_attempt, %{
-          resource_attempt_id: resource_attempt.id,
-          resource_attempt: resource_attempt,
-          revision_id: lti_activity.id,
-          revision: lti_activity,
-          resource_id: lti_activity.resource_id,
-          resource: lti_activity.resource,
-          attempt_guid: UUID.uuid4(),
-          score: 1.0,
-          out_of: 2.0
-        })
-
-      _part_attempt =
-        insert(:part_attempt, %{
-          activity_attempt_id: activity_attempt.id,
-          activity_attempt: activity_attempt,
-          attempt_guid: UUID.uuid4(),
-          part_id: "1"
-        })
+      apply_score(
+        section.slug,
+        activity_attempt.attempt_guid,
+        part_attempt.attempt_guid,
+        1.0,
+        2.0,
+        UUID.uuid4()
+      )
 
       conn =
         get(conn, ~p"/lti/lineitems/#{activity_attempt.attempt_guid}/results",
@@ -459,42 +556,8 @@ defmodule OliWeb.Api.LtiAgsControllerTest do
       scored_page: scored_page,
       lti_activity: lti_activity
     } do
-      resource_access =
-        Oli.Delivery.Attempts.Core.track_access(
-          scored_page.resource_id,
-          section.id,
-          student_1.id
-        )
-
-      resource_attempt =
-        insert(:resource_attempt, %{
-          resource_access_id: resource_access.id,
-          resource_access: resource_access,
-          revision_id: scored_page.id,
-          revision: scored_page,
-          attempt_guid: UUID.uuid4(),
-          content: scored_page.content
-        })
-
-      activity_attempt =
-        insert(:activity_attempt, %{
-          resource_attempt_id: resource_attempt.id,
-          resource_attempt: resource_attempt,
-          revision_id: lti_activity.id,
-          revision: lti_activity,
-          resource_id: lti_activity.resource_id,
-          resource: lti_activity.resource,
-          attempt_guid: UUID.uuid4(),
-          out_of: 2.0
-        })
-
-      _part_attempt =
-        insert(:part_attempt, %{
-          activity_attempt_id: activity_attempt.id,
-          activity_attempt: activity_attempt,
-          attempt_guid: UUID.uuid4(),
-          part_id: "1"
-        })
+      {_resource_attempt, activity_attempt, _part_attempt} =
+        setup_activity_attempt(section, scored_page, student_1, lti_activity, 2.0)
 
       conn =
         get(conn, ~p"/lti/lineitems/#{activity_attempt.attempt_guid}/results",
@@ -527,42 +590,8 @@ defmodule OliWeb.Api.LtiAgsControllerTest do
       scored_page: scored_page,
       lti_activity: lti_activity
     } do
-      resource_access =
-        Oli.Delivery.Attempts.Core.track_access(
-          scored_page.resource_id,
-          section.id,
-          student_1.id
-        )
-
-      resource_attempt =
-        insert(:resource_attempt, %{
-          resource_access_id: resource_access.id,
-          resource_access: resource_access,
-          revision_id: scored_page.id,
-          revision: scored_page,
-          attempt_guid: UUID.uuid4(),
-          content: scored_page.content
-        })
-
-      activity_attempt =
-        insert(:activity_attempt, %{
-          resource_attempt_id: resource_attempt.id,
-          resource_attempt: resource_attempt,
-          revision_id: lti_activity.id,
-          revision: lti_activity,
-          resource_id: lti_activity.resource_id,
-          resource: lti_activity.resource,
-          attempt_guid: UUID.uuid4(),
-          out_of: 2.0
-        })
-
-      _part_attempt =
-        insert(:part_attempt, %{
-          activity_attempt_id: activity_attempt.id,
-          activity_attempt: activity_attempt,
-          attempt_guid: UUID.uuid4(),
-          part_id: "1"
-        })
+      {_resource_attempt, activity_attempt, _part_attempt} =
+        setup_activity_attempt(section, scored_page, student_1, lti_activity, 2.0)
 
       conn = get(conn, ~p"/lti/lineitems/#{activity_attempt.attempt_guid}/results")
 
@@ -573,50 +602,55 @@ defmodule OliWeb.Api.LtiAgsControllerTest do
   describe "post_score/2" do
     setup [:setup_section, :setup_token]
 
-    test "resets unscored activity and returns 204 for NotReady/Initialized", %{
+    @tag :skip
+    test "applies score and returns 204 for valid score payload", %{
       conn: conn,
       section: section,
       student_1: student_1,
       scored_page: scored_page,
       lti_activity: lti_activity
     } do
-      resource_access =
-        Oli.Delivery.Attempts.Core.track_access(
-          scored_page.resource_id,
-          section.id,
-          student_1.id
-        )
+      {_resource_attempt, activity_attempt, _part_attempt} =
+        setup_activity_attempt(section, scored_page, student_1, lti_activity, 2.0)
 
-      resource_attempt =
-        insert(:resource_attempt, %{
-          resource_access_id: resource_access.id,
-          resource_access: resource_access,
-          revision_id: scored_page.id,
-          revision: scored_page,
-          attempt_guid: UUID.uuid4(),
-          content: scored_page.content
-        })
+      params = %{
+        "activity_attempt_guid" => activity_attempt.attempt_guid,
+        "userId" => student_1.sub,
+        "scoreGiven" => 8,
+        "scoreMaximum" => 10,
+        "gradingProgress" => "FullyGraded"
+      }
 
-      activity_attempt =
-        insert(:activity_attempt, %{
-          resource_attempt_id: resource_attempt.id,
-          resource_attempt: resource_attempt,
-          revision_id: lti_activity.id,
-          revision: lti_activity,
-          resource_id: lti_activity.resource_id,
-          resource: lti_activity.resource,
-          attempt_guid: UUID.uuid4(),
-          out_of: 2.0
-        })
+      conn =
+        post(conn, ~p"/lti/lineitems/#{activity_attempt.attempt_guid}/scores", params)
 
-      _part_attempt =
-        insert(:part_attempt, %{
-          activity_attempt_id: activity_attempt.id,
-          activity_attempt: activity_attempt,
-          attempt_guid: UUID.uuid4(),
-          part_id: "1"
-        })
+      assert response(conn, 204)
+    end
 
+    test "resets unscored activity and returns 204 for NotReady/Initialized", %{
+      conn: conn,
+      section: section,
+      student_1: student_1,
+      unscored_page: unscored_page,
+      lti_activity: lti_activity
+    } do
+      {_resource_attempt, activity_attempt, _part_attempt} =
+        setup_activity_attempt(section, unscored_page, student_1, lti_activity, 2.0)
+
+      params = %{
+        "activity_attempt_guid" => activity_attempt.attempt_guid,
+        "userId" => student_1.sub,
+        "scoreGiven" => 8,
+        "scoreMaximum" => 10,
+        "gradingProgress" => "FullyGraded"
+      }
+
+      conn =
+        post(conn, ~p"/lti/lineitems/#{activity_attempt.attempt_guid}/scores", params)
+
+      assert response(conn, 204)
+
+      # Reset the activity attempt
       params = %{
         "activity_attempt_guid" => activity_attempt.attempt_guid,
         "gradingProgress" => "NotReady",
@@ -627,52 +661,67 @@ defmodule OliWeb.Api.LtiAgsControllerTest do
         post(conn, ~p"/lti/lineitems/#{activity_attempt.attempt_guid}/scores", params)
 
       assert response(conn, 204)
+
+      # verify that the activity attempt was actually reset
+      # dbg(
+      #   Oli.Delivery.Attempts.Core.get_activity_attempt_by(
+      #     attempt_guid: activity_attempt.attempt_guid
+      #   )
+      # )
+      dbg(Oli.Delivery.Attempts.Core.get_activity_attempts([]))
     end
 
-    test "returns an error when trying to reset a scored activity has already been submitted", %{
-      conn: conn,
-      section: section,
-      student_1: student_1,
-      scored_page: scored_page,
-      lti_activity: lti_activity
-    } do
-      resource_access =
-        Oli.Delivery.Attempts.Core.track_access(
-          scored_page.resource_id,
-          section.id,
-          student_1.id
+    @tag capture_log: true
+    test "returns an error when trying to update or reset a scored activity that is not active",
+         %{
+           conn: conn,
+           section: section,
+           student_1: student_1,
+           scored_page: scored_page,
+           lti_activity: lti_activity
+         } do
+      {resource_attempt, activity_attempt, _part_attempt} =
+        setup_activity_attempt(section, scored_page, student_1, lti_activity, 2.0)
+
+      params = %{
+        "activity_attempt_guid" => activity_attempt.attempt_guid,
+        "userId" => student_1.sub,
+        "scoreGiven" => 8,
+        "scoreMaximum" => 10,
+        "gradingProgress" => "FullyGraded"
+      }
+
+      conn =
+        post(conn, ~p"/lti/lineitems/#{activity_attempt.attempt_guid}/scores", params)
+
+      assert response(conn, 204)
+
+      # Finalize the score page
+      datashop_session_id = UUID.uuid4()
+
+      {:ok, _} =
+        Oli.Delivery.Attempts.PageLifecycle.finalize(
+          section.slug,
+          resource_attempt.attempt_guid,
+          datashop_session_id
         )
 
-      resource_attempt =
-        insert(:resource_attempt, %{
-          resource_access_id: resource_access.id,
-          resource_access: resource_access,
-          revision_id: scored_page.id,
-          revision: scored_page,
-          attempt_guid: UUID.uuid4(),
-          content: scored_page.content
-        })
+      # Attempt to apply a score again after finalization
+      params = %{
+        "activity_attempt_guid" => activity_attempt.attempt_guid,
+        "userId" => student_1.sub,
+        "scoreGiven" => 10,
+        "scoreMaximum" => 10,
+        "gradingProgress" => "FullyGraded"
+      }
 
-      activity_attempt =
-        insert(:activity_attempt, %{
-          resource_attempt_id: resource_attempt.id,
-          resource_attempt: resource_attempt,
-          revision_id: lti_activity.id,
-          revision: lti_activity,
-          resource_id: lti_activity.resource_id,
-          resource: lti_activity.resource,
-          attempt_guid: UUID.uuid4(),
-          out_of: 2.0
-        })
+      conn =
+        post(conn, ~p"/lti/lineitems/#{activity_attempt.attempt_guid}/scores", params)
 
-      _part_attempt =
-        insert(:part_attempt, %{
-          activity_attempt_id: activity_attempt.id,
-          activity_attempt: activity_attempt,
-          attempt_guid: UUID.uuid4(),
-          part_id: "1"
-        })
+      assert response(conn, 400) =~
+               "Error processing score. Activity attempt is not active. Cannot update score"
 
+      # Attempt to reset the activity attempt
       params = %{
         "activity_attempt_guid" => activity_attempt.attempt_guid,
         "gradingProgress" => "NotReady",
@@ -683,26 +732,10 @@ defmodule OliWeb.Api.LtiAgsControllerTest do
         post(conn, ~p"/lti/lineitems/#{activity_attempt.attempt_guid}/scores", params)
 
       assert response(conn, 400) =~
-               "Error resetting score. Activity attempt has already been submitted and this activity is on a scored page"
+               "Error resetting score. Activity attempt is not active. Cannot reset score"
     end
 
-    @tag :skip
-    test "applies score and returns 204 for valid score payload", %{conn: conn} do
-      # Setup: Insert section, part_attempt (lifecycle_state: :active), and activity_attempt with graded: false
-
-      params = %{
-        "activity_attempt_guid" => "attempt-guid",
-        "userId" => "user-1",
-        "scoreGiven" => 8,
-        "scoreMaximum" => 10,
-        "gradingProgress" => "FullyGraded"
-      }
-
-      conn = post(conn, Routes.lti_ags_path(conn, :post_score, "attempt-guid"), params)
-      assert response(conn, 204)
-    end
-
-    @tag :skip
+    @tag capture_log: true
     test "returns error for invalid gradingProgress", %{conn: conn} do
       params = %{
         "activity_attempt_guid" => "attempt-guid",
@@ -712,23 +745,23 @@ defmodule OliWeb.Api.LtiAgsControllerTest do
         "gradingProgress" => "NotGraded"
       }
 
-      conn = post(conn, Routes.lti_ags_path(conn, :post_score, "attempt-guid"), params)
-      assert response(conn, 400) =~ "gradingProgress"
+      conn =
+        post(conn, ~p"/lti/lineitems/attempt-guid/scores", params)
+
+      assert response(conn, 400) =~
+               "Error processing score. Invalid score payload. \"gradingProgress\" must be \"FullyGraded\""
     end
 
     @tag :skip
-    test "returns error if section not found", %{conn: conn} do
-      # Setup: Ensure no section exists for "attempt-guid"
-      params = %{
-        "activity_attempt_guid" => "attempt-guid",
-        "userId" => "user-1",
-        "scoreGiven" => 8,
-        "scoreMaximum" => 10,
-        "gradingProgress" => "FullyGraded"
-      }
+    test "rejects a score POST with the same timestamp" do
+    end
 
-      conn = post(conn, Routes.lti_ags_path(conn, :post_score, "attempt-guid"), params)
-      assert response(conn, 400) =~ "Section not found"
+    @tag :skip
+    test "accepts a score POST with a later timestamp" do
+    end
+
+    @tag :skip
+    test "ignores a score POST with an earlier timestamp" do
     end
   end
 end
