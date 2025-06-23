@@ -325,30 +325,52 @@ defmodule Oli.Delivery.Settings do
     end
   end
 
+  @doc """
+  Determine the effective deadline for a resource attempt.
+  The effective deadline is the deadline that is used to determine if the attempt is late
+  or if the attempt should be auto-submitted.
+
+  - When end date is a hard one (scheduling type is due_by):
+    effective_deadline = EARLIEST(due date, start time + time limit) + grace period
+
+  - When end date is a soft one (scheduling type is read_by):
+    - If there is a time limit:
+      effective_deadline = start time + time limit + grace period
+    - If there is no time limit:
+      effective_deadline = nil
+  """
+
   def determine_effective_deadline(nil, _), do: nil
 
   def determine_effective_deadline(
         %ResourceAttempt{} = resource_attempt,
         %Combined{} = effective_settings
       ) do
+    hard_end_date =
+      case {effective_settings.end_date, effective_settings.scheduling_type} do
+        {nil, _} -> nil
+        {end_date, :due_by} -> end_date
+        {_, _} -> nil
+      end
+
     deadline =
-      case {effective_settings.end_date, effective_settings.time_limit} do
-        # no end date or time limit, no deadline
+      case {hard_end_date, effective_settings.time_limit} do
+        # no hard end date or time limit => no deadline
         {nil, nil} ->
           nil
 
         {nil, 0} ->
           nil
 
-        # only a time limit, just add the minutes to the start
+        # only a time limit, just add the minutes to the attempt start time
         {nil, time_limit} ->
           DateTime.add(resource_attempt.inserted_at, time_limit, :minute)
 
-        # only an end date, use that
+        # only a hard end date, use that
         {end_date, 0} ->
           end_date
 
-        # both an end date and a time limit, use the earlier of the two
+        # both a hard end date and a time limit, use the earlier of the two
         {end_date, time_limit} ->
           if DateTime.compare(
                end_date,
