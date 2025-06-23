@@ -103,7 +103,7 @@ const Formula: React.FC<PartComponentProps<FormulaModel>> = (props: any) => {
     },
   };
   return ready ? (
-    <div style={{ marginTop: 24, display: `${!isFormulaVisible ? 'none' : 'block'}` }}>
+    <div style={{ display: `${!isFormulaVisible ? 'none' : 'block'}` }}>
       <MathJaxContext config={config} version={3}>
         <FormulaPreview input={formula} altText={formulaAltText} />
       </MathJaxContext>

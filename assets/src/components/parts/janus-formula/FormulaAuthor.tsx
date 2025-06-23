@@ -182,7 +182,14 @@ const FormulaAuthor: React.FC<AuthorPartComponentProps<FormulaModel>> = (props) 
     () => ({
       loader: { load: ['[tex]/mhchem'] },
       tex: { packages: { '[+]': ['mhchem'] } },
-      options: { enableAssistiveMml: true },
+      options: { enableAssistiveMml: true, typeset: false },
+      chtml: {
+        scale: 1,
+        displayAlign: 'center',
+        displayIndent: '0',
+        mtextInheritFont: true,
+        matchFontHeight: false,
+      },
     }),
     [],
   );

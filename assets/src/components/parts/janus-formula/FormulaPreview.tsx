@@ -1,4 +1,4 @@
-import React, { useMemo, useRef } from 'react';
+import React, { useMemo } from 'react';
 import { MathJax } from 'better-react-mathjax';
 
 interface FormulaPreviewProps {
@@ -9,19 +9,31 @@ interface FormulaPreviewProps {
 
 const FormulaPreview: React.FC<FormulaPreviewProps> = ({ input, altText = '', className = '' }) => {
   const isMathML = input.trim().startsWith('<math');
+  const isAlreadyRendered =
+    input.includes('<mjx-container') || input.includes('MathJax') || input.includes('<math');
+
   const renderedContent = isMathML ? input : `\\(${input}\\)`;
-  const containerRef = useRef<HTMLDivElement>(null);
 
   const renderPreview = useMemo(() => {
+    if (!input) return null;
+    if (isAlreadyRendered) {
+      return <div aria-label={altText} dangerouslySetInnerHTML={{ __html: input }} />;
+    }
+
     return (
       <MathJax>
-        <div dangerouslySetInnerHTML={{ __html: renderedContent }} aria-label={altText} />
+        <div aria-label={altText} dangerouslySetInnerHTML={{ __html: renderedContent }} />
       </MathJax>
     );
-  }, [input]);
+  }, [input, altText]);
 
   return (
-    <div className={`mt-4 ${className}`} ref={containerRef}>
+    <div
+      className={`mt-4 ${className}`}
+      style={{
+        fontSize: '20px',
+      }}
+    >
       {renderPreview}
     </div>
   );
