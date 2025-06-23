@@ -5248,6 +5248,10 @@ table.table-striped tbody tr:nth-child(even) {
   height: 291px;
 }
 
+.h-\[2px\] {
+  height: 2px;
+}
+
 .h-\[30px\] {
   height: 30px;
 }
@@ -5809,6 +5813,10 @@ table.table-striped tbody tr:nth-child(even) {
   width: 32px;
 }
 
+.w-\[32rem\] {
+  width: 32rem;
+}
+
 .w-\[341px\] {
   width: 341px;
 }
@@ -5995,6 +6003,10 @@ table.table-striped tbody tr:nth-child(even) {
 .min-w-max {
   min-width: -moz-max-content;
   min-width: max-content;
+}
+
+.max-w-3xl {
+  max-width: 48rem;
 }
 
 .max-w-4xl {
@@ -7350,6 +7362,11 @@ table.table-striped tbody tr:nth-child(even) {
 
 .border-blue-500\/30 {
   border-color: rgb(59 118 211 / 0.3);
+}
+
+.border-blue-600 {
+  --tw-border-opacity: 1;
+  border-color: rgb(39 92 175 / var(--tw-border-opacity));
 }
 
 .border-body-color {
@@ -15120,6 +15137,15 @@ Not supports in Firefox and IE */
   background-color: rgb(178 115 7 / var(--tw-bg-opacity));
 }
 
+.active\:font-bold:active {
+  font-weight: 700;
+}
+
+.active\:text-\[\#0062F2\]:active {
+  --tw-text-opacity: 1;
+  color: rgb(0 98 242 / var(--tw-text-opacity));
+}
+
 .active\:text-blue-700:active {
   --tw-text-opacity: 1;
   color: rgb(29 68 129 / var(--tw-text-opacity));
@@ -15360,6 +15386,15 @@ Not supports in Firefox and IE */
 .peer:focus ~ .peer-focus\:ring-primary-300 {
   --tw-ring-opacity: 1;
   --tw-ring-color: rgb(126 165 226 / var(--tw-ring-opacity));
+}
+
+.aria-expanded\:font-bold[aria-expanded="true"] {
+  font-weight: 700;
+}
+
+.aria-expanded\:text-\[\#0062F2\][aria-expanded="true"] {
+  --tw-text-opacity: 1;
+  color: rgb(0 98 242 / var(--tw-text-opacity));
 }
 
 .group[aria-expanded="true"] .group-aria-expanded\:rotate-180 {
@@ -16050,10 +16085,6 @@ Not supports in Firefox and IE */
   font-weight: 300;
 }
 
-.dark .dark\:font-normal {
-  font-weight: 400;
-}
-
 .dark .dark\:\!text-white {
   --tw-text-opacity: 1 !important;
   color: rgb(255 255 255 / var(--tw-text-opacity)) !important;
@@ -16645,6 +16676,10 @@ Not supports in Firefox and IE */
   stroke: #fff;
 }
 
+.dark .dark\:hover\:font-bold:hover {
+  font-weight: 700;
+}
+
 .dark .dark\:hover\:text-\[\#0165da\]:hover {
   --tw-text-opacity: 1;
   color: rgb(1 101 218 / var(--tw-text-opacity));
@@ -16862,6 +16897,15 @@ Not supports in Firefox and IE */
   background-color: rgb(249 190 89 / var(--tw-bg-opacity));
 }
 
+.dark .dark\:active\:font-bold:active {
+  font-weight: 700;
+}
+
+.dark .dark\:active\:text-\[\#4CA6FF\]:active {
+  --tw-text-opacity: 1;
+  color: rgb(76 166 255 / var(--tw-text-opacity));
+}
+
 .dark .dark\:active\:text-blue-400:active {
   --tw-text-opacity: 1;
   color: rgb(93 141 219 / var(--tw-text-opacity));
@@ -16938,6 +16982,15 @@ Not supports in Firefox and IE */
 .dark .peer:focus ~ .dark\:peer-focus\:ring-primary-800 {
   --tw-ring-opacity: 1;
   --tw-ring-color: rgb(19 44 83 / var(--tw-ring-opacity));
+}
+
+.dark .dark\:aria-expanded\:font-bold[aria-expanded="true"] {
+  font-weight: 700;
+}
+
+.dark .dark\:aria-expanded\:text-\[\#4CA6FF\][aria-expanded="true"] {
+  --tw-text-opacity: 1;
+  color: rgb(76 166 255 / var(--tw-text-opacity));
 }
 
 .dark .data-\[checked\=false\]\:dark\:bg-gray-800[data-checked=false] {
