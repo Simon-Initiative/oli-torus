@@ -69,6 +69,8 @@ export const isSaving = (state: SchedulerAppState) => state.scheduler.saving;
 export const getError = (state: SchedulerAppState) => state.scheduler.errorMessage;
 export const hasRemovedItems = (state: SchedulerAppState) =>
   state.scheduler.schedule.some((item) => item.removed_from_schedule);
+export const assessmentLayoutType = (state: SchedulerAppState) =>
+  state.scheduler.assessmentLayoutType;
 
 export const isSearching = (state: SchedulerAppState) => !!state.scheduler.searchQuery?.trim();
 

@@ -1,15 +1,21 @@
 import React, { useCallback, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useBackdropModal } from 'components/misc/BackdropModal';
+import { useMultiStepModal } from 'components/misc/MultiStepModal';
 import { Alert } from '../../components/misc/Alert';
-import { usePromptModal } from '../../components/misc/PromptModal';
+// import { usePromptModal } from '../../components/misc/PromptModal';
 import { ContextMenuProvider } from './ContextMenuController';
 import { ErrorDisplay } from './ErrorDisplay';
 import { ScheduleGrid } from './ScheduleGrid';
 import { ScheduleSaveBar } from './SchedulerSaveBar';
 import { WeekDayPicker } from './WeekdayPicker';
-import { hasUnsavedChanges } from './schedule-selectors';
-import { StringDate, resetSchedule } from './scheduler-slice';
+import { assessmentLayoutType, hasUnsavedChanges } from './schedule-selectors';
+import {
+  AssessmentLayoutType,
+  StringDate,
+  resetSchedule,
+  setAssessmentLayoutType,
+} from './scheduler-slice';
 import {
   clearSectionSchedule,
   scheduleAppFlushChanges,
@@ -47,6 +53,8 @@ export const ScheduleEditor: React.FC<SchedulerProps> = ({
   const dispatch = useDispatch();
 
   const unsavedChanges = useSelector(hasUnsavedChanges);
+  const assessmentLayout = useSelector(assessmentLayoutType);
+
   const [validWeekdays, setValidWeekdays] = React.useState<boolean[]>([
     false,
     true,
@@ -233,16 +241,74 @@ export const ScheduleEditor: React.FC<SchedulerProps> = ({
     );
   }, [dispatch, display_curriculum_item_numbering, end_date, section_slug, start_date, title]);
 
-  const { Modal, showModal } = usePromptModal(
-    <div>
-      <p>
-        This will reset all timelines to the default. Select the week days you want to consider for
-        that schedule.
-      </p>
+  const steps = [
+    <div key="step-1">
+      <div className="font-bold mb-4">Set Default Timeline</div>
+      <div className="mb-4">Select the week days you want to consider for that schedule.</div>
       <WeekDayPicker weekdays={validWeekdays} onChange={setValidWeekdays} />
     </div>,
+    <div key="step-3">
+      <div className="font-bold mb-4">Set Default Layout</div>
+      <div className="mb-4">
+        Choose the default layout of your course schedule. You can later customize the schedule by
+        interacting with the timeline or visiting the assessment settings.
+      </div>
+      <div className="flex flex-col space-y-4 mt-4 pl-2">
+        <label className="flex items-start space-x-3 text-gray-700">
+          <input
+            type="radio"
+            name="assessmentLayoutType"
+            className="mt-1"
+            checked={assessmentLayout === AssessmentLayoutType.NoDueDates}
+            onChange={() => dispatch(setAssessmentLayoutType(AssessmentLayoutType.NoDueDates))}
+          />
+          <span className="leading-snug font-bold">Do not set assessment due dates</span>
+        </label>
 
-    onReset,
+        <label className="flex items-start space-x-3 text-gray-700">
+          <input
+            type="radio"
+            name="assessmentLayoutType"
+            className="mt-1"
+            checked={assessmentLayout === AssessmentLayoutType.ContentSequence}
+            onChange={() => dispatch(setAssessmentLayoutType(AssessmentLayoutType.ContentSequence))}
+          />
+          <span className="leading-snug font-bold">
+            Set assessment due dates according to the sequence of course content.
+          </span>
+        </label>
+
+        <label className="flex items-start space-x-3 text-gray-700">
+          <input
+            type="radio"
+            name="assessmentLayoutType"
+            className="mt-1"
+            checked={assessmentLayout === AssessmentLayoutType.EndOfEachSection}
+            onChange={() =>
+              dispatch(setAssessmentLayoutType(AssessmentLayoutType.EndOfEachSection))
+            }
+          />
+          <span className="leading-snug font-bold">
+            Set assessment due dates to the end of each section.
+          </span>
+        </label>
+      </div>
+    </div>,
+  ];
+  const stepTitles = ['Set Default Timeline', 'Set Default Layout'];
+
+  const { showModal, Modal } = useMultiStepModal(
+    steps,
+    stepTitles,
+    () => onReset(),
+    () => console.log('Cancelled!'),
+    {
+      title: 'Schedule Preferences',
+      finishText: 'Complete',
+      nextText: 'Continue',
+      backText: 'Back',
+      allowBack: false,
+    },
   );
 
   const { Modal: clearModal, showModal: showClearModal } = useBackdropModal(
