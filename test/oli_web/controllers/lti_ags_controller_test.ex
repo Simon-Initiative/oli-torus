@@ -563,7 +563,7 @@ defmodule OliWeb.Api.LtiAgsControllerTest do
       scored_page: scored_page,
       lti_activity: lti_activity
     } do
-      {resource_attempt, activity_attempt, _part_attempt} =
+      {resource_attempt, _activity_attempt, _part_attempt} =
         setup_activity_attempt(section, scored_page, student_1, lti_activity, 2.0)
 
       conn =
@@ -588,8 +588,8 @@ defmodule OliWeb.Api.LtiAgsControllerTest do
     end
 
     @tag capture_log: true
-    test "returns error when activity attempt not found", %{conn: conn, student_1: student_1} do
-      conn = get(conn, ~p"/lti/lineitems/some-attempt-guid/results", user_id: student_1.id)
+    test "returns error when resource attempt not found", %{conn: conn, student_1: student_1} do
+      conn = get(conn, ~p"/lti/lineitems/some-attempt-guid/1/results", user_id: student_1.sub)
 
       assert response(conn, 400) =~ "Error fetching result"
     end
@@ -601,10 +601,14 @@ defmodule OliWeb.Api.LtiAgsControllerTest do
       scored_page: scored_page,
       lti_activity: lti_activity
     } do
-      {_resource_attempt, activity_attempt, _part_attempt} =
+      {resource_attempt, _activity_attempt, _part_attempt} =
         setup_activity_attempt(section, scored_page, student_1, lti_activity, 2.0)
 
-      conn = get(conn, ~p"/lti/lineitems/#{activity_attempt.attempt_guid}/results")
+      conn =
+        get(
+          conn,
+          ~p"/lti/lineitems/#{resource_attempt.attempt_guid}/#{lti_activity.resource_id}/results"
+        )
 
       assert response(conn, 400) =~ "Invalid request. 'user_id' parameter is required."
     end
@@ -621,20 +625,24 @@ defmodule OliWeb.Api.LtiAgsControllerTest do
       scored_page: scored_page,
       lti_activity: lti_activity
     } do
-      {_resource_attempt, activity_attempt, _part_attempt} =
+      {resource_attempt, _activity_attempt, _part_attempt} =
         setup_activity_attempt(section, scored_page, student_1, lti_activity, 2.0)
 
       params = %{
-        "activity_attempt_guid" => activity_attempt.attempt_guid,
         "userId" => student_1.sub,
         "scoreGiven" => 8,
         "scoreMaximum" => 10,
+        "activityProgress" => "Completed",
         "gradingProgress" => "FullyGraded",
         "timestamp" => DateTime.utc_now() |> DateTime.to_iso8601()
       }
 
       conn =
-        post(conn, ~p"/lti/lineitems/#{activity_attempt.attempt_guid}/scores", params)
+        post(
+          conn,
+          ~p"/lti/lineitems/#{resource_attempt.attempt_guid}/#{lti_activity.resource_id}/scores",
+          params
+        )
 
       assert response(conn, 204)
     end
@@ -646,23 +654,27 @@ defmodule OliWeb.Api.LtiAgsControllerTest do
       unscored_page: unscored_page,
       lti_activity: lti_activity
     } do
-      {_resource_attempt, activity_attempt, part_attempt} =
+      {resource_attempt, _activity_attempt, part_attempt} =
         setup_activity_attempt(section, unscored_page, student_1, lti_activity, 2.0)
 
       assert part_attempt.score == nil
       assert part_attempt.out_of == nil
 
       params = %{
-        "activity_attempt_guid" => activity_attempt.attempt_guid,
         "userId" => student_1.sub,
         "scoreGiven" => 8,
         "scoreMaximum" => 10,
+        "activityProgress" => "Completed",
         "gradingProgress" => "FullyGraded",
         "timestamp" => DateTime.utc_now() |> DateTime.to_iso8601()
       }
 
       conn =
-        post(conn, ~p"/lti/lineitems/#{activity_attempt.attempt_guid}/scores", params)
+        post(
+          conn,
+          ~p"/lti/lineitems/#{resource_attempt.attempt_guid}/#{lti_activity.resource_id}/scores",
+          params
+        )
 
       assert response(conn, 204)
 
@@ -674,106 +686,48 @@ defmodule OliWeb.Api.LtiAgsControllerTest do
 
       # Reset the activity attempt
       params = %{
-        "activity_attempt_guid" => activity_attempt.attempt_guid,
+        "userId" => student_1.sub,
         "gradingProgress" => "NotReady",
         "activityProgress" => "Initialized"
       }
 
       conn =
-        post(conn, ~p"/lti/lineitems/#{activity_attempt.attempt_guid}/scores", params)
-
-      assert response(conn, 204)
-
-      updated_part_attempt =
-        Oli.Delivery.Attempts.Core.get_part_attempt_by(attempt_guid: part_attempt.attempt_guid)
-
-      assert updated_part_attempt.score == nil
-      assert updated_part_attempt.out_of == nil
-    end
-
-    @tag capture_log: true
-    test "returns an error when trying to update or reset a scored activity that is not active",
-         %{
-           conn: conn,
-           section: section,
-           student_1: student_1,
-           scored_page: scored_page,
-           lti_activity: lti_activity
-         } do
-      {resource_attempt, activity_attempt, _part_attempt} =
-        setup_activity_attempt(section, scored_page, student_1, lti_activity, 2.0)
-
-      params =
-        %{
-          "activity_attempt_guid" => activity_attempt.attempt_guid,
-          "userId" => student_1.sub,
-          "scoreGiven" => 8,
-          "scoreMaximum" => 10,
-          "gradingProgress" => "FullyGraded",
-          "timestamp" => DateTime.utc_now() |> DateTime.to_iso8601()
-        }
-
-      conn =
-        post(conn, ~p"/lti/lineitems/#{activity_attempt.attempt_guid}/scores", params)
-
-      assert response(conn, 204)
-
-      # Finalize the score page
-      datashop_session_id = UUID.uuid4()
-
-      {:ok, _} =
-        Oli.Delivery.Attempts.PageLifecycle.finalize(
-          section.slug,
-          resource_attempt.attempt_guid,
-          datashop_session_id
+        post(
+          conn,
+          ~p"/lti/lineitems/#{resource_attempt.attempt_guid}/#{lti_activity.resource_id}/scores",
+          params
         )
 
-      # Attempt to apply a score again after finalization
-      params = %{
-        "activity_attempt_guid" => activity_attempt.attempt_guid,
-        "userId" => student_1.sub,
-        "scoreGiven" => 10,
-        "scoreMaximum" => 10,
-        "gradingProgress" => "FullyGraded",
-        "timestamp" => DateTime.utc_now() |> DateTime.add(1, :second) |> DateTime.to_iso8601()
-      }
+      assert response(conn, 204)
 
-      conn =
-        post(conn, ~p"/lti/lineitems/#{activity_attempt.attempt_guid}/scores", params)
+      latest_part_attempt =
+        Oli.Delivery.Attempts.Core.get_latest_activity_attempt_from_page_attempt(
+          resource_attempt.attempt_guid,
+          lti_activity.resource_id,
+          student_1.id
+        ).part_attempts
+        |> hd()
 
-      assert response(conn, 400) =~
-               "Error processing score. Activity attempt is not active. Cannot update score"
-
-      # Attempt to reset the activity attempt
-      params = %{
-        "activity_attempt_guid" => activity_attempt.attempt_guid,
-        "gradingProgress" => "NotReady",
-        "activityProgress" => "Initialized"
-      }
-
-      conn =
-        post(conn, ~p"/lti/lineitems/#{activity_attempt.attempt_guid}/scores", params)
-
-      assert response(conn, 400) =~
-               "Error resetting score. Activity attempt is not active. Cannot reset score"
+      assert latest_part_attempt.score == nil
+      assert latest_part_attempt.out_of == nil
     end
 
     @tag capture_log: true
     test "returns error for invalid gradingProgress", %{conn: conn} do
       params = %{
-        "activity_attempt_guid" => "attempt-guid",
         "userId" => "user-1",
         "scoreGiven" => 8,
         "scoreMaximum" => 10,
+        "activityProgress" => "Completed",
         "gradingProgress" => "NotGraded",
         "timestamp" => DateTime.utc_now() |> DateTime.to_iso8601()
       }
 
       conn =
-        post(conn, ~p"/lti/lineitems/attempt-guid/scores", params)
+        post(conn, ~p"/lti/lineitems/attempt-guid/1/scores", params)
 
       assert response(conn, 400) =~
-               "Error processing score. Invalid score payload. \"gradingProgress\" must be \"FullyGraded\""
+               "Invalid request"
     end
 
     @tag capture_log: true
@@ -784,26 +738,34 @@ defmodule OliWeb.Api.LtiAgsControllerTest do
       scored_page: scored_page,
       lti_activity: lti_activity
     } do
-      {_resource_attempt, activity_attempt, _part_attempt} =
+      {resource_attempt, _activity_attempt, _part_attempt} =
         setup_activity_attempt(section, scored_page, student_1, lti_activity, 2.0)
 
       params = %{
-        "activity_attempt_guid" => activity_attempt.attempt_guid,
         "userId" => student_1.sub,
         "scoreGiven" => 8,
         "scoreMaximum" => 10,
+        "activityProgress" => "Completed",
         "gradingProgress" => "FullyGraded",
         "timestamp" => DateTime.utc_now() |> DateTime.to_iso8601()
       }
 
       conn =
-        post(conn, ~p"/lti/lineitems/#{activity_attempt.attempt_guid}/scores", params)
+        post(
+          conn,
+          ~p"/lti/lineitems/#{resource_attempt.attempt_guid}/#{lti_activity.resource_id}/scores",
+          params
+        )
 
       assert response(conn, 204)
 
       # Attempt to apply the same score again
       conn =
-        post(conn, ~p"/lti/lineitems/#{activity_attempt.attempt_guid}/scores", params)
+        post(
+          conn,
+          ~p"/lti/lineitems/#{resource_attempt.attempt_guid}/#{lti_activity.resource_id}/scores",
+          params
+        )
 
       assert response(conn, 400) =~
                "Error processing score. Timestamp must be later than the current date_submitted"
@@ -816,7 +778,7 @@ defmodule OliWeb.Api.LtiAgsControllerTest do
       scored_page: scored_page,
       lti_activity: lti_activity
     } do
-      {_resource_attempt, activity_attempt, _part_attempt} =
+      {resource_attempt, _activity_attempt, _part_attempt} =
         setup_activity_attempt(section, scored_page, student_1, lti_activity, 2.0)
 
       now = DateTime.utc_now()
@@ -826,31 +788,39 @@ defmodule OliWeb.Api.LtiAgsControllerTest do
         now |> DateTime.add(2, :second) |> DateTime.to_iso8601()
 
       params = %{
-        "activity_attempt_guid" => activity_attempt.attempt_guid,
         "userId" => student_1.sub,
         "scoreGiven" => 8,
         "scoreMaximum" => 10,
+        "activityProgress" => "Completed",
         "gradingProgress" => "FullyGraded",
         "timestamp" => timestamp
       }
 
       conn =
-        post(conn, ~p"/lti/lineitems/#{activity_attempt.attempt_guid}/scores", params)
+        post(
+          conn,
+          ~p"/lti/lineitems/#{resource_attempt.attempt_guid}/#{lti_activity.resource_id}/scores",
+          params
+        )
 
       assert response(conn, 204)
 
       # Apply another score with a later timestamp
       params = %{
-        "activity_attempt_guid" => activity_attempt.attempt_guid,
         "userId" => student_1.sub,
         "scoreGiven" => 10,
         "scoreMaximum" => 10,
+        "activityProgress" => "Completed",
         "gradingProgress" => "FullyGraded",
         "timestamp" => later_timestamp
       }
 
       conn =
-        post(conn, ~p"/lti/lineitems/#{activity_attempt.attempt_guid}/scores", params)
+        post(
+          conn,
+          ~p"/lti/lineitems/#{resource_attempt.attempt_guid}/#{lti_activity.resource_id}/scores",
+          params
+        )
 
       assert response(conn, 204)
     end
@@ -863,7 +833,7 @@ defmodule OliWeb.Api.LtiAgsControllerTest do
       scored_page: scored_page,
       lti_activity: lti_activity
     } do
-      {_resource_attempt, activity_attempt, _part_attempt} =
+      {resource_attempt, _activity_attempt, _part_attempt} =
         setup_activity_attempt(section, scored_page, student_1, lti_activity, 2.0)
 
       now = DateTime.utc_now()
@@ -873,31 +843,39 @@ defmodule OliWeb.Api.LtiAgsControllerTest do
         now |> DateTime.add(-2, :second) |> DateTime.to_iso8601()
 
       params = %{
-        "activity_attempt_guid" => activity_attempt.attempt_guid,
         "userId" => student_1.sub,
         "scoreGiven" => 8,
         "scoreMaximum" => 10,
+        "activityProgress" => "Completed",
         "gradingProgress" => "FullyGraded",
         "timestamp" => timestamp
       }
 
       conn =
-        post(conn, ~p"/lti/lineitems/#{activity_attempt.attempt_guid}/scores", params)
+        post(
+          conn,
+          ~p"/lti/lineitems/#{resource_attempt.attempt_guid}/#{lti_activity.resource_id}/scores",
+          params
+        )
 
       assert response(conn, 204)
 
-      # Apply another score with a later timestamp
+      # Apply another score with an earlier timestamp
       params = %{
-        "activity_attempt_guid" => activity_attempt.attempt_guid,
         "userId" => student_1.sub,
         "scoreGiven" => 10,
         "scoreMaximum" => 10,
+        "activityProgress" => "Completed",
         "gradingProgress" => "FullyGraded",
         "timestamp" => ealier_timestamp
       }
 
       conn =
-        post(conn, ~p"/lti/lineitems/#{activity_attempt.attempt_guid}/scores", params)
+        post(
+          conn,
+          ~p"/lti/lineitems/#{resource_attempt.attempt_guid}/#{lti_activity.resource_id}/scores",
+          params
+        )
 
       assert response(conn, 400) =~
                "Error processing score. Timestamp must be later than the current date_submitted"

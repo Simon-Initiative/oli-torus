@@ -18,13 +18,14 @@ defmodule OliWeb.Api.LtiAgsController do
         "user_id" => user_sub
       }) do
     with {:ok, user_id} <- get_user_id_from_sub(user_sub),
-         %ActivityAttempt{
-           score: score,
-           out_of: out_of,
-           date_submitted: date_submitted,
-           part_attempts: [part_attempt | _]
-         } <-
-           Core.get_latest_activity_attempt_from_page_attempt(
+         {:ok,
+          %ActivityAttempt{
+            score: score,
+            out_of: out_of,
+            date_submitted: date_submitted,
+            part_attempts: [part_attempt | _]
+          }} <-
+           get_latest_activity_attempt_from_page_attempt(
              page_attempt_guid,
              activity_resource_id,
              user_id
@@ -56,14 +57,11 @@ defmodule OliWeb.Api.LtiAgsController do
     send_resp(conn, 400, "Invalid request. 'user_id' parameter is required.")
   end
 
-  defp convert_to_iso8601(nil), do: nil
-
-  defp convert_to_iso8601(datetime) do
-    case DateTime.from_iso8601(datetime) do
-      {:ok, dt, _offset} -> DateTime.to_iso8601(dt)
-      {:error, _reason} -> nil
-    end
+  defp convert_to_iso8601(%DateTime{} = datetime) do
+    DateTime.to_iso8601(datetime)
   end
+
+  defp convert_to_iso8601(_), do: nil
 
   defp maybe_put_comment_from_part_attempt(result, part_attempt) do
     case OliWeb.Common.Utils.extract_from_part_attempt(part_attempt) do
@@ -85,8 +83,8 @@ defmodule OliWeb.Api.LtiAgsController do
       ) do
     with datashop_session_id <- Plug.Conn.get_session(conn, :datashop_session_id),
          {:ok, user_id} <- get_user_id_from_sub(user_sub),
-         latest_activity_attempt <-
-           Core.get_latest_activity_attempt_from_page_attempt(
+         {:ok, latest_activity_attempt} <-
+           get_latest_activity_attempt_from_page_attempt(
              page_attempt_guid,
              activity_resource_id,
              user_id
@@ -120,15 +118,15 @@ defmodule OliWeb.Api.LtiAgsController do
       ) do
     with datashop_session_id <- Plug.Conn.get_session(conn, :datashop_session_id),
          {:ok, user_id} <- get_user_id_from_sub(user_sub),
-         latest_activity_attempt <-
-           Core.get_latest_activity_attempt_from_page_attempt(
+         {:ok, latest_activity_attempt} <-
+           get_latest_activity_attempt_from_page_attempt(
              page_attempt_guid,
              activity_resource_id,
              user_id
            ),
+         {:ok, timestamp} <- validate_attempt_timestamp(latest_activity_attempt, timestamp),
          {:ok, activity_attempt} <-
            maybe_reset_activity_attempt(latest_activity_attempt, datashop_session_id),
-         {:ok, timestamp} <- validate_attempt_timestamp(activity_attempt, timestamp),
          {:ok, section_slug} <-
            get_section_slug_from_activity_attempt_guid(activity_attempt.attempt_guid),
          {:ok, part_attempt} <-
@@ -159,8 +157,7 @@ defmodule OliWeb.Api.LtiAgsController do
     send_resp(
       conn,
       400,
-      "Invalid request. Please check your parameters. \
-    The request must include 'userId', 'gradingProgress', and 'activityProgress' or 'scoreGiven'."
+      "Invalid request. Please check your parameters. The request must include 'userId', 'scoreGiven', 'scoreMaximum', 'timestamp', 'activityProgress' and 'gradingProgress'."
     )
   end
 
@@ -168,6 +165,24 @@ defmodule OliWeb.Api.LtiAgsController do
     case Oli.Accounts.get_user_by(sub: user_sub) do
       %User{id: user_id} -> {:ok, user_id}
       _ -> {:error, "Invalid user: #{user_sub}"}
+    end
+  end
+
+  defp get_latest_activity_attempt_from_page_attempt(
+         page_attempt_guid,
+         activity_resource_id,
+         user_id
+       ) do
+    case Core.get_latest_activity_attempt_from_page_attempt(
+           page_attempt_guid,
+           activity_resource_id,
+           user_id
+         ) do
+      nil ->
+        {:error, "No activity attempt found for page attempt guid: #{page_attempt_guid}"}
+
+      activity_attempt ->
+        {:ok, activity_attempt}
     end
   end
 
