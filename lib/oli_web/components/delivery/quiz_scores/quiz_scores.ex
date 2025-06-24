@@ -242,8 +242,7 @@ defmodule OliWeb.Components.Delivery.QuizScores do
   def handle_event("paged_table_sort", %{"sort_by" => sort_by} = _params, socket) do
     patch_url_type = socket.assigns.patch_url_type
     sort_by = String.to_existing_atom(sort_by)
-    updated_params = update_params(socket.assigns.params, %{sort_by: sort_by})
-    {:noreply, push_patch(socket, to: route_for(socket, updated_params, patch_url_type))}
+    {:noreply, push_patch(socket, to: route_for(socket, %{sort_by: sort_by}, patch_url_type))}
   end
 
   def handle_event("show_all_links", _params, socket) do
@@ -334,7 +333,6 @@ defmodule OliWeb.Components.Delivery.QuizScores do
 
   defp purge_default_params(params) do
     Map.filter(params, fn
-      {:sort_by, _value} -> true
       {key, value} -> @default_params[key] != value
     end)
   end
