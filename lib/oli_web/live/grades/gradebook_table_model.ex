@@ -57,6 +57,12 @@ defmodule OliWeb.Grades.GradebookTableModel do
   def new(graded_pages, section_slug, student_id) do
     column_specs = [
       %ColumnSpec{
+        name: :index,
+        label: "Order",
+        render_fn: &__MODULE__.render_grade_order/3,
+        th_class: "pl-10"
+      },
+      %ColumnSpec{
         name: :name,
         label: "Assessment",
         render_fn: &__MODULE__.render_grade/3,
@@ -78,6 +84,16 @@ defmodule OliWeb.Grades.GradebookTableModel do
       id_field: [:id],
       data: %{section_slug: section_slug, student_id: student_id}
     )
+  end
+
+  def render_grade_order(assigns, row, _) do
+    assigns = Map.merge(assigns, %{row: row})
+
+    ~H"""
+    <div class="ml-8">
+      <%= @row.index %>
+    </div>
+    """
   end
 
   def render_grade(assigns, row, _) do

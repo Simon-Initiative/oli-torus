@@ -16,7 +16,7 @@ defmodule OliWeb.Components.Delivery.QuizScores do
     offset: 0,
     limit: 20,
     sort_order: :asc,
-    sort_by: :name,
+    sort_by: :index,
     text_search: nil,
     show_all_links: false
   }
@@ -246,15 +246,10 @@ defmodule OliWeb.Components.Delivery.QuizScores do
   end
 
   def handle_event("paged_table_sort", %{"sort_by" => sort_by} = _params, socket) do
-    {:noreply,
-     push_patch(socket,
-       to:
-         route_for(
-           socket,
-           %{sort_by: String.to_existing_atom(sort_by)},
-           socket.assigns.patch_url_type
-         )
-     )}
+    patch_url_type = socket.assigns.patch_url_type
+    sort_by = String.to_existing_atom(sort_by)
+    updated_params = update_params(socket.assigns.params, %{sort_by: sort_by})
+    {:noreply, push_patch(socket, to: route_for(socket, updated_params, patch_url_type))}
   end
 
   def handle_event("show_all_links", _params, socket) do
@@ -275,13 +270,7 @@ defmodule OliWeb.Components.Delivery.QuizScores do
       limit: Params.get_int_param(params, "limit", @default_params.limit),
       sort_order:
         Params.get_atom_param(params, "sort_order", [:asc, :desc], @default_params.sort_order),
-      sort_by:
-        Params.get_atom_param(
-          params,
-          "sort_by",
-          [:name],
-          @default_params.sort_by
-        ),
+      sort_by: Params.get_atom_param(params, "sort_by", [:index, :name], @default_params.sort_by),
       text_search: Params.get_param(params, "text_search", @default_params.text_search),
       show_all_links:
         Params.get_boolean_param(params, "show_all_links", @default_params.show_all_links)
@@ -292,13 +281,18 @@ defmodule OliWeb.Components.Delivery.QuizScores do
     scores =
       scores
       |> maybe_filter_by_text(params.text_search)
-      |> sort_by(params.sort_order)
+      |> sort_by(params.sort_by, params.sort_order)
 
     {length(scores), scores |> Enum.drop(params.offset) |> Enum.take(params.limit)}
   end
 
-  defp sort_by(scores, :desc), do: Enum.reverse(scores)
-  defp sort_by(scores, _sort_order), do: scores
+  defp sort_by(scores, :name, sort_order) do
+    Enum.sort_by(scores, & &1.title, sort_order)
+  end
+
+  defp sort_by(scores, _sort_by, sort_order) do
+    Enum.sort_by(scores, &{&1.index, &1.title}, sort_order)
+  end
 
   defp maybe_filter_by_text(scores, nil), do: scores
   defp maybe_filter_by_text(scores, ""), do: scores
@@ -334,14 +328,15 @@ defmodule OliWeb.Components.Delivery.QuizScores do
     update_params(params, %{sort_order: toggled_sort_order})
   end
 
-  defp update_params(params, new_param) do
-    Map.merge(params, new_param)
+  defp update_params(params, new_params) do
+    Map.merge(params, new_params)
     |> purge_default_params()
   end
 
   defp purge_default_params(params) do
-    Map.filter(params, fn {key, value} ->
-      @default_params[key] != value
+    Map.filter(params, fn
+      {:sort_by, _value} -> true
+      {key, value} -> @default_params[key] != value
     end)
   end
 
@@ -366,13 +361,9 @@ defmodule OliWeb.Components.Delivery.QuizScores do
   end
 
   defp route_for(socket, new_params, :quiz_scores_student) do
-    Routes.live_path(
-      socket,
-      OliWeb.Delivery.StudentDashboard.StudentDashboardLive,
-      socket.assigns.section_slug,
-      socket.assigns.student_id,
-      :quizz_scores,
-      update_params(socket.assigns.params, new_params)
-    )
+    section_slug = socket.assigns.section_slug
+    student_id = socket.assigns.student_id
+    params = update_params(socket.assigns.params, new_params)
+    ~p"/sections/#{section_slug}/student_dashboard/#{student_id}/quizz_scores?#{params}"
   end
 end
