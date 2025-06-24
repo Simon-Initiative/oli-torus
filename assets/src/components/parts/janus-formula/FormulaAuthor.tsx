@@ -96,7 +96,6 @@ const FormulaAuthor: React.FC<AuthorPartComponentProps<FormulaModel>> = (props) 
     ];
     const notifications = notificationsHandled.map((notificationType: NotificationType) => {
       const handler = (payload: any) => {
-        /* console.log(`${notificationType.toString()} notification event [PopupAuthor]`, payload); */
         if (!payload) {
           // if we don't have anything, we won't even have an id to know who it's for
           // for these events we need something, it's not for *all* of them

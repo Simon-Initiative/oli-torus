@@ -5,7 +5,7 @@ import {
   observedAttributes as apiObservedAttributes,
   authoringObservedAttributes,
 } from '../partsApi';
-import TextFlowAuthor from './FormulaAuthor';
+import FormulaAuthor from './FormulaAuthor';
 import {
   adaptivitySchema,
   createSchema,
@@ -30,7 +30,7 @@ const customEvents: any = {
   onCancelConfigure: 'cancelconfigure',
 };
 
-register(TextFlowAuthor, manifest.authoring.element, observedAttributes, {
+register(FormulaAuthor, manifest.authoring.element, observedAttributes, {
   customEvents,
   shadow: false,
   attrs: {

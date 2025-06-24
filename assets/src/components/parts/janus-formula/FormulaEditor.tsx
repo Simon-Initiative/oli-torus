@@ -45,7 +45,7 @@ const FormulaEditor: React.FC<FormulaEditorProps> = ({ onChange, formula, alttex
               checked={mode === 'builder'}
               onChange={() => setMode('builder')}
             />
-            <span>Visual Builder</span>
+            <span>Visual Builder (LaTeX Only)</span>
           </label>
 
           <div className="flex items-center gap-4 ml-auto">
@@ -79,7 +79,7 @@ const FormulaEditor: React.FC<FormulaEditorProps> = ({ onChange, formula, alttex
             onChange={(e) => setInput(e.target.value)}
             rows={8}
             placeholder="Enter LaTeX or MathML here"
-            className="w-full p-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-mono text-sm"
+            className="w-full p-3 border border-gray-300 rounded-l shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-mono text-sm"
           />
         </label>
       ) : (
@@ -89,24 +89,23 @@ const FormulaEditor: React.FC<FormulaEditorProps> = ({ onChange, formula, alttex
           onChange={(latex: string) => setInput(latex)}
         />
       )}
-
-      <label style={{ display: 'block', marginTop: 12 }}>
+      <label className="font-semibold text-sm mb-2 block mt-4">
         Alt text (for screen readers):
         <input
           type="text"
           value={altText}
           onChange={(e) => setAltText(e.target.value)}
           placeholder="Please enter alt text for screen reader"
-          className="w-full p-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+          className="w-full p-3 border border-gray-300 rounded-l shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
         />
       </label>
 
       <div style={{ marginTop: 24 }}>
-        <div className="text-sm font-bold text-gray-600 mb-2">Preview:</div>
+        <div className="text-sm font-semibold text-gray-600 mb-2">Preview:</div>
         <div
           style={{
             border: '1px solid #ddd',
-            borderRadius: '8px',
+            borderRadius: '5px',
             padding: '16px',
             backgroundColor: '#f9f9f9',
             fontSize: '20px',
