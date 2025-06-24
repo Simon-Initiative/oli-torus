@@ -878,7 +878,7 @@ defmodule OliWeb.Router do
   end
 
   # LTI 1.3 AGS endpoints for migrated LTI 1.1 Basic Outcomes
-  scope "/lti/lineitems/:activity_attempt_guid", OliWeb.Api do
+  scope "/lti/lineitems/:page_attempt_guid/:activity_resource_id", OliWeb.Api do
     pipe_through([:api])
     get "/results", LtiAgsController, :get_result
     post "/scores", LtiAgsController, :post_score

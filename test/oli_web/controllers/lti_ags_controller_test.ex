@@ -494,7 +494,7 @@ defmodule OliWeb.Api.LtiAgsControllerTest do
   describe "validate token" do
     @tag capture_log: true
     test "returns 401 Unauthorized when no token is provided", %{conn: conn} do
-      conn = get(conn, ~p"/lti/lineitems/some-attempt-guid/results", user_id: "user-1")
+      conn = get(conn, ~p"/lti/lineitems/some-attempt-guid/1/results", user_id: "user-1")
       assert response(conn, 401) =~ "Unauthorized"
     end
 
@@ -504,7 +504,7 @@ defmodule OliWeb.Api.LtiAgsControllerTest do
         conn
         |> put_req_header("authorization", "Bearer invalid-token")
 
-      conn = get(conn, ~p"/lti/lineitems/some-attempt-guid/results", user_id: "user-1")
+      conn = get(conn, ~p"/lti/lineitems/some-attempt-guid/1/results", user_id: "user-1")
 
       assert response(conn, 401) =~ "Unauthorized"
     end
@@ -520,7 +520,7 @@ defmodule OliWeb.Api.LtiAgsControllerTest do
       scored_page: scored_page,
       lti_activity: lti_activity
     } do
-      {_resource_attempt, activity_attempt, part_attempt} =
+      {resource_attempt, activity_attempt, part_attempt} =
         setup_activity_attempt(section, scored_page, student_1, lti_activity, 2.0)
 
       apply_score(
@@ -533,8 +533,10 @@ defmodule OliWeb.Api.LtiAgsControllerTest do
       )
 
       conn =
-        get(conn, ~p"/lti/lineitems/#{activity_attempt.attempt_guid}/results",
-          user_id: student_1.id
+        get(
+          conn,
+          ~p"/lti/lineitems/#{resource_attempt.attempt_guid}/#{lti_activity.resource_id}/results",
+          user_id: student_1.sub
         )
 
       assert response = json_response(conn, 200)
@@ -542,12 +544,15 @@ defmodule OliWeb.Api.LtiAgsControllerTest do
       score = response |> hd()
 
       assert score["id"] ==
-               "https://localhost/lineitems/#{activity_attempt.attempt_guid}/results/#{student_1.id}"
+               "https://localhost/lineitems/#{resource_attempt.attempt_guid}/#{lti_activity.resource_id}/results/#{student_1.sub}"
 
       assert score["resultMaximum"] == 2.0
       assert score["resultScore"] == 1.0
-      assert score["scoreOf"] == "https://localhost/lineitems/#{activity_attempt.attempt_guid}"
-      assert score["userId"] == "#{student_1.id}"
+
+      assert score["scoreOf"] ==
+               "https://localhost/lineitems/#{resource_attempt.attempt_guid}/#{lti_activity.resource_id}"
+
+      assert score["userId"] == "#{student_1.sub}"
       assert score["timestamp"] != nil
     end
 
@@ -558,22 +563,25 @@ defmodule OliWeb.Api.LtiAgsControllerTest do
       scored_page: scored_page,
       lti_activity: lti_activity
     } do
-      {_resource_attempt, activity_attempt, _part_attempt} =
+      {resource_attempt, activity_attempt, _part_attempt} =
         setup_activity_attempt(section, scored_page, student_1, lti_activity, 2.0)
 
       conn =
-        get(conn, ~p"/lti/lineitems/#{activity_attempt.attempt_guid}/results",
-          user_id: student_1.id
+        get(
+          conn,
+          ~p"/lti/lineitems/#{resource_attempt.attempt_guid}/#{lti_activity.resource_id}/results",
+          user_id: student_1.sub
         )
 
       assert json_response(conn, 200) == [
                %{
                  "id" =>
-                   "https://localhost/lineitems/#{activity_attempt.attempt_guid}/results/#{student_1.id}",
-                 "resultMaximum" => nil,
+                   "https://localhost/lineitems/#{resource_attempt.attempt_guid}/#{lti_activity.resource_id}/results/#{student_1.sub}",
+                 "resultMaximum" => 2.0,
                  "resultScore" => nil,
-                 "scoreOf" => "https://localhost/lineitems/#{activity_attempt.attempt_guid}",
-                 "userId" => "#{student_1.id}",
+                 "scoreOf" =>
+                   "https://localhost/lineitems/#{resource_attempt.attempt_guid}/#{lti_activity.resource_id}",
+                 "userId" => "#{student_1.sub}",
                  "timestamp" => nil
                }
              ]
