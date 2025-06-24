@@ -271,4 +271,37 @@ defmodule OliWeb.Common.Utils do
     Logger.error("Could not parse feedback text from #{inspect(other)}")
     []
   end
+
+  @doc """
+  Helper to highlight search term in text. Returns HTML-safe string with matches wrapped in <em> tags.
+
+  ## Examples
+
+      iex> highlight_search_term("Hello World", "world")
+      "Hello <em>World</em>"
+
+      iex> highlight_search_term("Hello World", nil)
+      "Hello World"
+
+      iex> highlight_search_term("Hello World", "")
+      "Hello World"
+  """
+  def highlight_search_term(text, nil), do: escape_html(text)
+  def highlight_search_term(text, ""), do: escape_html(text)
+
+  def highlight_search_term(text, search_term) do
+    pattern = Regex.escape(search_term)
+    # case insensitive match
+    regex = ~r/#{pattern}/i
+
+    text
+    |> escape_html()
+    |> String.replace(regex, "<em>\\0</em>")
+  end
+
+  defp escape_html(text) do
+    text
+    |> Phoenix.HTML.html_escape()
+    |> Phoenix.HTML.safe_to_string()
+  end
 end
