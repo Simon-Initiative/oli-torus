@@ -22,7 +22,6 @@ const ConfigurationModal: React.FC<ConfigModalProps> = ({
   onClose,
   onSave,
 }) => {
-  console.log({ customClassName });
   const [instanceId, setInstanceId] = useState(-1);
   const [enforceFocus, setEnforceFocus] = useState(false);
   const [show, setShow] = useState(isOpen);
