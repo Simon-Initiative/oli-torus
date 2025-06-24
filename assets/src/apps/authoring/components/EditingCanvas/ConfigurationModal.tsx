@@ -8,6 +8,7 @@ interface ConfigModalProps {
   bodyId?: string;
   fullscreen?: boolean;
   headerText?: string;
+  customClassName?: string;
 }
 
 let instanceCounter = 0;
@@ -17,9 +18,11 @@ const ConfigurationModal: React.FC<ConfigModalProps> = ({
   bodyId = 'configuration-modal-body',
   headerText = 'Configuration',
   fullscreen = false,
+  customClassName = '',
   onClose,
   onSave,
 }) => {
+  console.log({ customClassName });
   const [instanceId, setInstanceId] = useState(-1);
   const [enforceFocus, setEnforceFocus] = useState(false);
   const [show, setShow] = useState(isOpen);
@@ -56,7 +59,7 @@ const ConfigurationModal: React.FC<ConfigModalProps> = ({
 
   return (
     <Modal
-      dialogClassName={`config-modal ${fullscreen ? 'modal-90w' : ''}`}
+      dialogClassName={`config-modal ${customClassName} ${fullscreen ? 'modal-90w' : ''}`}
       show={show}
       onHide={handleCancelClick}
       enforceFocus={enforceFocus}

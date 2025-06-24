@@ -109,7 +109,11 @@ const FormulaAuthor: React.FC<AuthorPartComponentProps<FormulaModel>> = (props) 
               const { partId } = payload;
               if (partId === id) {
                 setInConfigureMode(false);
-                onConfigure({ id, configure: true, context: { fullscreen: false } });
+                onConfigure({
+                  id,
+                  configure: true,
+                  context: { fullscreen: false, customClassName: 'modal-800' },
+                });
               }
             }
             break;

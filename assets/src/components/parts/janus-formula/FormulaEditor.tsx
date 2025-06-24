@@ -39,7 +39,7 @@ const FormulaEditor: React.FC<FormulaEditorProps> = ({ onChange, formula, alttex
     <>
       <div className="mb-4">
         <label className="font-semibold text-sm mb-2 block">Choose Input Mode:</label>
-        <div className="flex gap-4">
+        <div className="flex items-center gap-4">
           <label className="flex items-center space-x-2">
             <input
               type="radio"
@@ -48,7 +48,7 @@ const FormulaEditor: React.FC<FormulaEditorProps> = ({ onChange, formula, alttex
               checked={mode === 'plain'}
               onChange={() => setMode('plain')}
             />
-            <span>Plain Text / LaTeX / MathML</span>
+            <span>LaTeX / MathML</span>
           </label>
           <label className="flex items-center space-x-2">
             <input
@@ -60,6 +60,28 @@ const FormulaEditor: React.FC<FormulaEditorProps> = ({ onChange, formula, alttex
             />
             <span>Visual Builder</span>
           </label>
+
+          <div className="flex items-center gap-4 ml-auto">
+            {' '}
+            <a
+              href="https://en.wikibooks.org/wiki/LaTeX/Mathematics"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:underline flex items-center"
+            >
+              LaTeX Reference
+              <i className="fa-solid fa-external-link-alt ml-1 text-sm"></i>
+            </a>
+            <a
+              href="https://developer.mozilla.org/en-US/docs/Web/MathML/Element"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:underline flex items-center"
+            >
+              MathML Reference
+              <i className="fa-solid fa-external-link-alt ml-1 text-sm"></i>
+            </a>
+          </div>
         </div>
       </div>
 
@@ -68,7 +90,7 @@ const FormulaEditor: React.FC<FormulaEditorProps> = ({ onChange, formula, alttex
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            rows={2}
+            rows={8}
             placeholder="Enter LaTeX or MathML here"
             className="w-full p-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-mono text-sm"
           />
@@ -93,7 +115,7 @@ const FormulaEditor: React.FC<FormulaEditorProps> = ({ onChange, formula, alttex
       </label>
 
       <div style={{ marginTop: 24 }}>
-        <div className="text-sm font-bold text-gray-600 mb-2">Live Preview:</div>
+        <div className="text-sm font-bold text-gray-600 mb-2">Preview:</div>
         <div
           style={{
             border: '1px solid #ddd',
