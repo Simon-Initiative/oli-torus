@@ -338,7 +338,7 @@ defmodule OliWeb.Sections.OverviewView do
               }
               class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
             >
-              Score Manually Graded Activities
+              Manual Scoring
               <%= if @has_submitted_attempts do %>
                 <span class="badge badge-primary">*</span>
               <% end %>
@@ -349,15 +349,7 @@ defmodule OliWeb.Sections.OverviewView do
               href={Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.GradebookView, @section.slug)}
               class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
             >
-              View all Scores
-            </a>
-          </li>
-          <li>
-            <a
-              href={Routes.page_delivery_path(OliWeb.Endpoint, :export_gradebook, @section.slug)}
-              class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
-            >
-              Download Gradebook as <code>.csv</code> file
+              Assessment Scores
             </a>
           </li>
 

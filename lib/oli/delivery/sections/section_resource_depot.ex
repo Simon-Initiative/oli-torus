@@ -97,7 +97,7 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
       section_id,
       query_conditions
     )
-    |> Enum.sort_by(& &1.numbering_index)
+    |> Enum.sort_by(&{&1.numbering_index, &1.title})
   end
 
   @doc """
