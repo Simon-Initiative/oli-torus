@@ -180,10 +180,10 @@ export const QuillFIBOptionEditor: React.FC<QuillFIBOptionEditorProps> = ({
             </Modal.Header>
             <Modal.Body className="px-8" style={{ backgroundColor: 'lightgray' }}>
               <div style={{ display: 'flex', marginBottom: '10px', alignItems: 'center' }}>
-                <label className="form-label">“Select FITB Item</label>
+                <label className="form-label">Select FITB Item</label>
                 <select
                   className="form-control"
-                  style={{ width: '71%', marginLeft: '13px' }}
+                  style={{ width: '69%', marginLeft: '13px' }}
                   value={selectedKey}
                   onChange={(e) => {
                     setCurrentSelectedIndex(e.target.selectedIndex);
@@ -268,7 +268,10 @@ export const QuillFIBOptionEditor: React.FC<QuillFIBOptionEditorProps> = ({
                         }}
                       >
                         {item.correct ? (
-                          <i className="fa-solid fa-circle-check fa-lg"></i>
+                          <i
+                            style={{ color: '#3B76D3' }}
+                            className="fa-solid fa-circle-check fa-lg"
+                          ></i>
                         ) : (
                           <i className="fa-regular fa-circle-check fa-lg"></i>
                         )}

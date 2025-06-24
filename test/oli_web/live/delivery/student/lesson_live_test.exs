@@ -39,7 +39,8 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
         score: resource_attempt_data[:score] || 5,
         out_of: resource_attempt_data[:out_of] || 10,
         lifecycle_state: resource_attempt_data[:lifecycle_state] || :submitted,
-        content: resource_attempt_data[:content] || %{model: []}
+        content: resource_attempt_data[:content] || %{model: []},
+        inserted_at: resource_attempt_data[:inserted_at] || DateTime.utc_now()
       })
 
     resource_attempt
@@ -1778,7 +1779,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       refute has_element?(view, ~s{svg[role="flag icon"]})
     end
 
-    test "no auto-submit when late disallowed and read_by is past due", %{
+    test "no auto-submit when late disallowed, no time limit, and scheduling type is read_by", %{
       conn: conn,
       user: user,
       section: section,
@@ -1805,6 +1806,49 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       ## assert that redirect is not happening and the submit button and title are present
       assert has_element?(view, "div[role='page title']", page_3.title)
       assert has_element?(view, "button[id='submit_answers']", "Submit Answers")
+    end
+
+    test "auto-submit when late disallowed and there is a time limit (even when scheduling type is read_by)",
+         %{
+           conn: conn,
+           user: user,
+           section: section,
+           page_3: page_3
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      Sections.get_section_resource(section.id, page_3.resource_id)
+      |> Sections.update_section_resource(%{
+        end_date: yesterday(),
+        late_submit: :disallow,
+        late_start: :disallow,
+        scheduling_type: :read_by,
+        time_limit: 20
+      })
+
+      # the attempt in progress is past the time limit by one minute
+      # (we are mimicking the case the student has closed the browser and reopened the page after the time limit)
+      attempt_in_progress =
+        create_attempt(user, section, page_3, %{
+          lifecycle_state: :active,
+          inserted_at: DateTime.add(DateTime.utc_now(), -21, :minute)
+        })
+
+      # attempt is auto-submitted and the student is redirected to the review page
+
+      {:error, {:redirect, %{to: redirect_path}}} =
+        live(conn, Utils.lesson_live_path(section.slug, page_3.slug))
+
+      assert redirect_path ==
+               "/sections/#{section.slug}/lesson/#{page_3.slug}/attempt/#{attempt_in_progress.attempt_guid}/review?request_path=%2Fsections%2F#{section.slug}%2Flearn%3Fselected_view%3Dgallery"
+
+      updated_attempt =
+        Core.get_resource_attempt_by(attempt_guid: attempt_in_progress.attempt_guid)
+
+      # the attempt was auto-submitted, so it's not considered late
+      assert updated_attempt.lifecycle_state == :evaluated
+      refute updated_attempt.was_late
     end
   end
 

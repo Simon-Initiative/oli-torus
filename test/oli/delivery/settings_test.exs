@@ -499,4 +499,107 @@ defmodule Oli.Delivery.SettingsTest do
                student.id
              )
   end
+
+  describe "determine_effective_deadline/2" do
+    test "returns nil when both end_date and time_limit are nil or 0" do
+      ra = %ResourceAttempt{inserted_at: ~U[2024-01-01 00:00:00Z]}
+
+      settings = %Combined{
+        end_date: nil,
+        time_limit: nil,
+        scheduling_type: :due_by
+      }
+
+      assert Settings.determine_effective_deadline(ra, settings) == nil
+
+      settings2 = %Combined{
+        end_date: nil,
+        time_limit: 0,
+        scheduling_type: :due_by
+      }
+
+      assert Settings.determine_effective_deadline(ra, settings2) == nil
+    end
+
+    test "returns inserted_at + time_limit + grace_period when only time_limit is set" do
+      ra = %ResourceAttempt{inserted_at: ~U[2024-01-01 00:00:00Z]}
+
+      settings = %Combined{
+        end_date: nil,
+        time_limit: 30,
+        grace_period: 5,
+        scheduling_type: :due_by
+      }
+
+      expected = DateTime.add(~U[2024-01-01 00:00:00Z], 35, :minute)
+      assert Settings.determine_effective_deadline(ra, settings) == expected
+    end
+
+    test "returns end_date + grace_period when only end_date is set and time_limit is 0" do
+      ra = %ResourceAttempt{inserted_at: ~U[2024-01-01 00:00:00Z]}
+
+      settings = %Combined{
+        end_date: ~U[2024-01-01 01:00:00Z],
+        time_limit: 0,
+        grace_period: 10,
+        scheduling_type: :due_by
+      }
+
+      expected = DateTime.add(~U[2024-01-01 01:00:00Z], 10, :minute)
+      assert Settings.determine_effective_deadline(ra, settings) == expected
+    end
+
+    test "returns the earlier of end_date or inserted_at + time_limit, plus grace_period" do
+      ra = %ResourceAttempt{inserted_at: ~U[2024-01-01 00:00:00Z]}
+      # end_date is earlier
+      settings = %Combined{
+        end_date: ~U[2024-01-01 00:10:00Z],
+        time_limit: 30,
+        grace_period: 2,
+        scheduling_type: :due_by
+      }
+
+      expected = DateTime.add(~U[2024-01-01 00:10:00Z], 2, :minute)
+      assert Settings.determine_effective_deadline(ra, settings) == expected
+
+      # inserted_at + time_limit is earlier
+      settings2 = %Combined{
+        end_date: ~U[2024-01-01 01:00:00Z],
+        time_limit: 15,
+        grace_period: 3,
+        scheduling_type: :due_by
+      }
+
+      expected2 = DateTime.add(~U[2024-01-01 00:00:00Z], 18, :minute)
+      assert Settings.determine_effective_deadline(ra, settings2) == expected2
+    end
+
+    test "returns inserted_at + time_limit + grace_period for :read_by with time_limit" do
+      ra = %ResourceAttempt{inserted_at: ~U[2024-01-01 00:00:00Z]}
+
+      # end date should be ignored, since scheduling type is read_by
+      settings = %Combined{
+        end_date: ~U[2024-01-01 00:10:00Z],
+        time_limit: 20,
+        grace_period: 4,
+        scheduling_type: :read_by
+      }
+
+      expected = DateTime.add(~U[2024-01-01 00:00:00Z], 24, :minute)
+      assert Settings.determine_effective_deadline(ra, settings) == expected
+    end
+
+    test "returns nil for :read_by with no time_limit" do
+      ra = %ResourceAttempt{inserted_at: ~U[2024-01-01 00:00:00Z]}
+
+      settings = %Combined{
+        end_date: ~U[2024-01-01 01:00:00Z],
+        time_limit: nil,
+        grace_period: 0,
+        scheduling_type: :read_by
+      }
+
+      assert Settings.determine_effective_deadline(ra, settings) == nil
+    end
+  end
 end

@@ -273,6 +273,43 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLiveTest do
 
       refute render(view) =~ "View revision history"
     end
+
+    test "edit link uses `href` for adaptive pages and `navigate` for regular pages", %{
+      conn: conn,
+      author: author,
+      project: project,
+      revision1: revision_page_one,
+      adaptive_page_revision: adaptive_page_revision
+    } do
+      conn =
+        recycle(conn)
+        |> log_in_author(author)
+        |> get("/workspaces/course_author/#{project.slug}/curriculum/")
+
+      {:ok, view, _html} = live(conn)
+
+      [edit_link_regular] =
+        view
+        |> element("div[phx-value-slug=\"#{revision_page_one.slug}\"]")
+        |> render()
+        |> Floki.parse_document!()
+        |> Floki.find("a.entry-title.mx-3")
+
+      [edit_link_adaptive] =
+        view
+        |> element("div[phx-value-slug=\"#{adaptive_page_revision.slug}\"]")
+        |> render()
+        |> Floki.parse_document!()
+        |> Floki.find("a.entry-title.mx-3")
+
+      # For regular page, should have data-phx-link="redirect" (navigate)
+      assert Floki.attribute(edit_link_regular, "data-phx-link") == ["redirect"]
+      assert Floki.attribute(edit_link_regular, "href") != []
+
+      # For adaptive page, should NOT have data-phx-link (plain href)
+      assert Floki.attribute(edit_link_adaptive, "data-phx-link") == []
+      assert Floki.attribute(edit_link_adaptive, "href") != []
+    end
   end
 
   describe "curriculum live test (as admin)" do

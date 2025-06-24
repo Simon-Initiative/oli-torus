@@ -239,7 +239,7 @@ export const ScheduleGrid: React.FC<GridProps> = ({
         {/* Expand/Collapse All button */}
         <button
           id="toggle_expand_button"
-          className={`flex items-center space-x-3 font-medium disabled:opacity-50 disabled:cursor-not-allowed
+          className={`flex items-center space-x-3 font-medium disabled:opacity-50 disabled:cursor-not-allowed w-32 whitespace-nowrap
                       ${
                         anyExpanded
                           ? 'text-[#0062F2] dark:text-[#4CA6FF] font-bold'
@@ -260,12 +260,10 @@ export const ScheduleGrid: React.FC<GridProps> = ({
           <Dropdown.Toggle
             id="bottom-panel-add-context-trigger"
             variant="button"
-            className="text-[#0062F2] dark:text-white btn btn-sm flex gap-1 items-center"
+            className="btn btn-sm flex gap-1 items-center text-[#353740] hover:text-[#1B67B2] hover:font-bold aria-expanded:text-[#0062F2] aria-expanded:font-bold dark:text-[#EEEBF5] dark:hover:text-[#99CCFF] dark:hover:font-bold dark:aria-expanded:text-[#4CA6FF] dark:aria-expanded:font-bold"
           >
-            <EyeIcon className="text-[#0062F2] dark:text-white ml-2" />
-            <span className="justify-start text-sm font-bold dark:font-normal dark:text-[#eeebf5]">
-              View
-            </span>
+            <EyeIcon className="ml-2" />
+            <span className="justify-start text-sm w-9">View</span>
           </Dropdown.Toggle>
 
           <Dropdown.Menu>
@@ -289,13 +287,11 @@ export const ScheduleGrid: React.FC<GridProps> = ({
         {/* Clear Schedule button */}
         <button
           id="clear-schedule"
-          className="btn btn-sm flex gap-1 items-center"
+          className="btn btn-sm flex gap-1 items-center text-[#353740] hover:text-[#1B67B2] hover:font-bold active:text-[#0062F2] active:font-bold dark:text-[#EEEBF5] dark:hover:text-[#99CCFF] dark:hover:font-bold dark:active:text-[#4CA6FF] dark:active:font-bold"
           onClick={onClear}
         >
-          <ClearIcon className="text-[#0062F2] dark:text-white ml-2" />
-          <span className="justify-start text-[#0062F2] text-sm font-bold dark:font-normal dark:text-[#eeebf5]">
-            Clear
-          </span>
+          <ClearIcon className="ml-2" />
+          <span className="justify-start text-sm w-9">Clear</span>
         </button>
 
         {/* Filter Dropdown */}
@@ -303,12 +299,10 @@ export const ScheduleGrid: React.FC<GridProps> = ({
           <Dropdown.Toggle
             id="bottom-panel-add-context-trigger"
             variant="button"
-            className="text-[#0062F2] dark:text-white btn btn-sm flex gap-1 items-center"
+            className="btn btn-sm flex gap-1 items-center text-[#353740] hover:text-[#1B67B2] hover:font-bold aria-expanded:text-[#0062F2] aria-expanded:font-bold dark:text-[#EEEBF5] dark:hover:text-[#99CCFF] dark:hover:font-bold dark:aria-expanded:text-[#4CA6FF] dark:aria-expanded:font-bold"
           >
-            <FilterIcon className="text-[#0062F2] dark:text-white ml-2" />
-            <span className="justify-start text-sm font-bold dark:font-normal dark:text-[#eeebf5]">
-              Filter
-            </span>
+            <FilterIcon className="ml-2" />
+            <span className="justify-start text-sm w-9">Filter</span>
           </Dropdown.Toggle>
 
           <Dropdown.Menu>
