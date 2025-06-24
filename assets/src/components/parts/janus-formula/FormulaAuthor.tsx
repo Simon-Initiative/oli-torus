@@ -7,8 +7,8 @@ import {
 } from 'apps/delivery/components/NotificationContext';
 import { clone, parseBoolean } from 'utils/common';
 import { AuthorPartComponentProps } from '../types/parts';
+import { formulaTagName, registerFormulaEditor } from './FormulaEditor';
 import FormulaPreview from './FormulaPreview';
-import { formulaTagName, registerFormulaEditor } from './MathRenderer';
 import { FormulaModel } from './schema';
 
 // eslint-disable-next-line react/display-name
@@ -142,9 +142,7 @@ const FormulaAuthor: React.FC<AuthorPartComponentProps<FormulaModel>> = (props) 
   }, [props.notify, handleNotificationSave]);
 
   useEffect(() => {
-    const handleEditorSave = (e: any) => {
-      //handleNotificationSave();
-    };
+    const handleEditorSave = (e: any) => {};
 
     const handleEditorCancel = () => {
       if (!inConfigureMode) {

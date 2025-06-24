@@ -15,7 +15,7 @@ const config = {
   },
 };
 
-interface MathEditorModalProps {
+interface FormulaEditorProps {
   onClose: () => void;
   onChange: (data: { input: string; altText: string }) => void;
   onSave: (data: { input: string; altText: string }) => void;
@@ -23,7 +23,7 @@ interface MathEditorModalProps {
   alttext: string;
 }
 
-const MathRenderer: React.FC<MathEditorModalProps> = ({ onChange, formula, alttext }) => {
+const FormulaEditor: React.FC<FormulaEditorProps> = ({ onChange, formula, alttext }) => {
   const [input, setInput] = useState(formula || '');
   const [altText, setAltText] = useState(alttext || '');
   const [mode, setMode] = useState<'plain' | 'builder'>('plain');
@@ -115,13 +115,13 @@ const MathRenderer: React.FC<MathEditorModalProps> = ({ onChange, formula, altte
   );
 };
 
-export default MathRenderer;
+export default FormulaEditor;
 
 export const formulaTagName = 'formula-editor';
 
 export const registerFormulaEditor = () => {
   if (!customElements.get(formulaTagName)) {
-    register(MathRenderer, formulaTagName, ['formula', 'alttext'], {
+    register(FormulaEditor, formulaTagName, ['formula', 'alttext'], {
       customEvents: {
         onSave: `${formulaTagName}-save`,
         onChange: `${formulaTagName}-change`,
