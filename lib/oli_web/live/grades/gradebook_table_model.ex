@@ -94,9 +94,18 @@ defmodule OliWeb.Grades.GradebookTableModel do
     perc = score(row.score) / out_of_score(row.out_of) * 100
     has_score? = row.score != nil
     was_late = row.was_late
+    score = if has_score?, do: Utils.format_score(row.score)
+    out_of = Utils.format_score(row.out_of)
 
     assigns =
-      Map.merge(assigns, %{perc: perc, has_score?: has_score?, was_late: was_late, row: row})
+      Map.merge(assigns, %{
+        perc: perc,
+        has_score?: has_score?,
+        was_late: was_late,
+        row: row,
+        score: score,
+        out_of: out_of
+      })
 
     ~H"""
     <div>
@@ -114,7 +123,7 @@ defmodule OliWeb.Grades.GradebookTableModel do
         }
       >
         <%= if @has_score? do %>
-          <%= "#{@row.score}/#{@row.out_of}" %>
+          <%= "#{@score}/#{@out_of}" %>
         <% else %>
           Not Finished
         <% end %>
