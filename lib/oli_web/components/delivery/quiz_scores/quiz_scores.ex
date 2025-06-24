@@ -21,28 +21,22 @@ defmodule OliWeb.Components.Delivery.QuizScores do
     show_all_links: false
   }
 
-  def update(
-        %{
-          params: params,
-          section: section
-        } = assigns,
-        socket
-      ) do
-    params = decode_params(params)
+  def update(%{params: params, section: section} = assigns, socket) do
+    params = decode_params(params, assigns[:student_id])
 
-    if is_nil(assigns[:student_id]),
-      do:
-        get_grades_all_students(section, assigns[:view], assigns[:patch_url_type], params, socket),
-      else:
-        get_scores_for_student(
-          assigns[:scores].scores,
-          assigns[:student_id],
-          section,
-          assigns[:view],
-          assigns[:patch_url_type],
-          params,
-          socket
-        )
+    if is_nil(assigns[:student_id]) do
+      get_grades_all_students(section, assigns[:view], assigns[:patch_url_type], params, socket)
+    else
+      get_scores_for_student(
+        assigns[:scores].scores,
+        assigns[:student_id],
+        section,
+        assigns[:view],
+        assigns[:patch_url_type],
+        params,
+        socket
+      )
+    end
   end
 
   attr(:params, :map, required: true)
@@ -264,13 +258,18 @@ defmodule OliWeb.Components.Delivery.QuizScores do
      )}
   end
 
-  defp decode_params(params) do
+  defp decode_params(params, student_id) do
+    default_params =
+      if student_id,
+        do: @default_params,
+        else: %{@default_params | sort_by: :name}
+
     %{
       offset: Params.get_int_param(params, "offset", @default_params.offset),
       limit: Params.get_int_param(params, "limit", @default_params.limit),
       sort_order:
         Params.get_atom_param(params, "sort_order", [:asc, :desc], @default_params.sort_order),
-      sort_by: Params.get_atom_param(params, "sort_by", [:index, :name], @default_params.sort_by),
+      sort_by: Params.get_atom_param(params, "sort_by", [:index, :name], default_params.sort_by),
       text_search: Params.get_param(params, "text_search", @default_params.text_search),
       show_all_links:
         Params.get_boolean_param(params, "show_all_links", @default_params.show_all_links)
