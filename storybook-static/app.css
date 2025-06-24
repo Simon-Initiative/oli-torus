@@ -8281,6 +8281,10 @@ table.table-striped tbody tr:nth-child(even) {
   fill: #0062F2;
 }
 
+.fill-\[\#0165DA\] {
+  fill: #0165DA;
+}
+
 .fill-\[\#0CAF61\] {
   fill: #0CAF61;
 }
@@ -15991,6 +15995,10 @@ Not supports in Firefox and IE */
 
 .dark .dark\:fill-\[\#39e581\] {
   fill: #39e581;
+}
+
+.dark .dark\:fill-\[\#4CA6FF\] {
+  fill: #4CA6FF;
 }
 
 .dark .dark\:fill-\[\#651FFF\] {
