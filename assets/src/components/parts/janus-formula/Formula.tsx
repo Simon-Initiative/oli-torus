@@ -1,11 +1,10 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { MathJaxContext } from 'better-react-mathjax';
 import {
   NotificationType,
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
+import { Formula as CommonFormula } from '../../common/Formula';
 import { PartComponentProps } from '../types/parts';
-import FormulaPreview from './FormulaPreview';
 import { FormulaModel } from './schema';
 
 const Formula: React.FC<PartComponentProps<FormulaModel>> = (props: any) => {
@@ -91,22 +90,17 @@ const Formula: React.FC<PartComponentProps<FormulaModel>> = (props: any) => {
     }
     props.onReady({ id, responses: [] });
   }, [ready]);
-  const config = {
-    loader: {
-      load: ['[tex]/mhchem'],
-    },
-    tex: {
-      packages: { '[+]': ['mhchem'] },
-    },
-    options: {
-      enableAssistiveMml: true,
-    },
-  };
+  const isMathML = formula?.trim().startsWith('<math');
   return ready ? (
     <div style={{ display: `${!isFormulaVisible ? 'none' : 'block'}` }}>
-      <MathJaxContext config={config} version={3}>
-        <FormulaPreview input={formula} altText={formulaAltText} />
-      </MathJaxContext>
+      {
+        <CommonFormula
+          id={id}
+          src={formula}
+          formulaAltText={formulaAltText}
+          subtype={isMathML ? 'mathml' : 'latex'}
+        ></CommonFormula>
+      }
     </div>
   ) : null;
 };

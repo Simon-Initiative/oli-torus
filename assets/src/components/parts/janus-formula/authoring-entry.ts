@@ -32,7 +32,7 @@ const customEvents: any = {
 
 register(TextFlowAuthor, manifest.authoring.element, observedAttributes, {
   customEvents,
-  shadow: true,
+  shadow: false,
   attrs: {
     model: {
       json: true,

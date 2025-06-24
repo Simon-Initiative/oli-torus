@@ -8,7 +8,8 @@ export const Formula: React.FC<{
   src: string;
   onClick?: () => void;
   style?: Record<string, string>;
-}> = ({ id, type, subtype, src, style, onClick }) => {
+  formulaAltText?: string;
+}> = ({ id, type, subtype, src, style, onClick, formulaAltText = '' }) => {
   switch (subtype) {
     case 'latex':
       return (
@@ -18,6 +19,7 @@ export const Formula: React.FC<{
           style={style}
           inline={type === 'formula_inline'}
           src={src}
+          formulaAltText={formulaAltText}
         />
       );
     case 'mathml':
@@ -28,6 +30,7 @@ export const Formula: React.FC<{
           style={style}
           inline={type === 'formula_inline'}
           src={src}
+          formulaAltText={formulaAltText}
         />
       );
     default:

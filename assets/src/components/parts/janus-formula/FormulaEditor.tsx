@@ -1,19 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { MathJax, MathJaxContext } from 'better-react-mathjax';
 import { MathLive } from 'components/common/MathLive';
+import { Formula } from '../../common/Formula';
 import register from '../customElementWrapper';
-
-const config = {
-  loader: {
-    load: ['[tex]/mhchem'],
-  },
-  tex: {
-    packages: { '[+]': ['mhchem'] },
-  },
-  options: {
-    enableAssistiveMml: true,
-  },
-};
 
 interface FormulaEditorProps {
   onClose: () => void;
@@ -29,7 +17,6 @@ const FormulaEditor: React.FC<FormulaEditorProps> = ({ onChange, formula, alttex
   const [mode, setMode] = useState<'plain' | 'builder'>('plain');
 
   const isMathML = input.trim().startsWith('<math');
-  const content = isMathML ? input : `\\(${input}\\)`;
 
   useEffect(() => {
     onChange({ input, altText });
@@ -126,11 +113,12 @@ const FormulaEditor: React.FC<FormulaEditorProps> = ({ onChange, formula, alttex
             minHeight: '60px',
           }}
         >
-          <MathJaxContext config={config} version={3}>
-            <MathJax dynamic>
-              <div dangerouslySetInnerHTML={{ __html: content }} role="math" aria-label={altText} />
-            </MathJax>
-          </MathJaxContext>
+          <Formula
+            id="formula-preview"
+            src={input}
+            formulaAltText={altText}
+            subtype={isMathML ? 'mathml' : 'latex'}
+          />
         </div>
       </div>
     </>

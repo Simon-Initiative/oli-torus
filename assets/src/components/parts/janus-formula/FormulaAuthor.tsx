@@ -1,14 +1,13 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
-import { MathJaxContext } from 'better-react-mathjax';
 import {
   NotificationType,
   subscribeToNotification,
 } from 'apps/delivery/components/NotificationContext';
 import { clone, parseBoolean } from 'utils/common';
+import { Formula } from '../../common/Formula';
 import { AuthorPartComponentProps } from '../types/parts';
 import { formulaTagName, registerFormulaEditor } from './FormulaEditor';
-import FormulaPreview from './FormulaPreview';
 import { FormulaModel } from './schema';
 
 // eslint-disable-next-line react/display-name
@@ -180,39 +179,21 @@ const FormulaAuthor: React.FC<AuthorPartComponentProps<FormulaModel>> = (props) 
     };
   }, [ready, inConfigureMode, model]);
 
-  const mathjaxConfig = useMemo(
-    () => ({
-      loader: { load: ['[tex]/mhchem'] },
-      tex: { packages: { '[+]': ['mhchem'] } },
-      options: { enableAssistiveMml: true, typeset: false },
-      chtml: {
-        scale: 1,
-        displayAlign: 'center',
-        displayIndent: '0',
-        mtextInheritFont: true,
-        matchFontHeight: false,
-      },
-    }),
-    [],
-  );
-
-  const renderPreview = useMemo(() => {
-    if (!mathData.input) return null;
-    return (
-      <MathJaxContext config={mathjaxConfig} version={3}>
-        <FormulaPreview input={mathData.input} altText={mathData.altText} />
-      </MathJaxContext>
-    );
-  }, [mathData.input, mathData.altText, mathjaxConfig]);
-
   if (!model.visible || !ready) return null;
-
+  const isMathML = mathData?.input?.trim().startsWith('<math');
   return (
     <div>
       {inConfigureMode && portalEl ? (
         <Editor formula={mathData.input} alttext={mathData.altText} portal={portalEl} />
       ) : (
-        <>{renderPreview}</>
+        <>
+          <Formula
+            id={id}
+            src={mathData.input}
+            formulaAltText={mathData.altText}
+            subtype={isMathML ? 'mathml' : 'latex'}
+          />
+        </>
       )}
     </div>
   );
