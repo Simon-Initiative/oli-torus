@@ -36,6 +36,15 @@ $font-family-sans-serif: var(--font-sans);
   }
 }
 .advanced-authoring {
+  .activity-no-part-content {
+    position: absolute;
+    border: 1px solid #ccc;
+    width: 1000px;
+    height: 540px;
+  }
+  &.flowchart-editor .activity-no-part-content {
+    background-color: #fff;
+  }
   position: relative;
   // opacity: 0;
   transition-timing-function: ease-in-out;

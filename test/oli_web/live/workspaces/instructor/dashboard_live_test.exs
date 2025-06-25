@@ -26,7 +26,7 @@ defmodule OliWeb.Workspaces.Instructor.DashboardLiveTest do
           {"Students",
            "/workspaces/instructor/#{section.slug}/overview/students?sidebar_expanded=true"},
         3 =>
-          {"Quiz Scores",
+          {"Assessment Scores",
            "/workspaces/instructor/#{section.slug}/overview/quiz_scores?sidebar_expanded=true"},
         4 =>
           {"Recommended Actions",

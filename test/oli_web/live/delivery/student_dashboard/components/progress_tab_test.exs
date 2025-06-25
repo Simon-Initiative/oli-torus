@@ -257,38 +257,41 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ProgressTabTest do
       )
 
       {:ok, view, _html} =
-        live(
-          conn,
-          live_view_students_progress_route(
-            section.slug,
-            student.id,
-            :progress
-          )
-        )
+        live(conn, live_view_students_progress_route(section.slug, student.id, :progress))
+
+      titles =
+        [
+          graded_page_1.title,
+          graded_page_2.title,
+          graded_page_3.title,
+          graded_page_4.title,
+          graded_page_5.title,
+          graded_page_6.title
+        ]
 
       assert view
              |> element("table.instructor_dashboard_table > tbody > tr:first-child")
-             |> render() =~ graded_page_1.title
+             |> render() =~ Enum.find(titles, fn t -> String.contains?(t, "A Graded page 5") end)
 
       assert view
              |> element("table.instructor_dashboard_table > tbody > tr:nth-child(2)")
-             |> render() =~ graded_page_2.title
+             |> render() =~ Enum.find(titles, fn t -> String.contains?(t, "B Graded page 4") end)
 
       assert view
              |> element("table.instructor_dashboard_table > tbody > tr:nth-child(3)")
-             |> render() =~ graded_page_3.title
+             |> render() =~ Enum.find(titles, fn t -> String.contains?(t, "C Graded page 3") end)
 
       assert view
              |> element("table.instructor_dashboard_table > tbody > tr:nth-child(4)")
-             |> render() =~ graded_page_4.title
+             |> render() =~ Enum.find(titles, fn t -> String.contains?(t, "D Graded page 2") end)
 
       assert view
              |> element("table.instructor_dashboard_table > tbody > tr:nth-child(5)")
-             |> render() =~ graded_page_5.title
+             |> render() =~ Enum.find(titles, fn t -> String.contains?(t, "E Graded page 1") end)
 
       assert view
              |> element("table.instructor_dashboard_table > tbody > tr:last-child")
-             |> render() =~ graded_page_6.title
+             |> render() =~ Enum.find(titles, fn t -> String.contains?(t, "Z Graded page 6") end)
 
       ## sorting by student
       params = %{
@@ -296,39 +299,31 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ProgressTabTest do
       }
 
       {:ok, view, _html} =
-        live(
-          conn,
-          live_view_students_progress_route(
-            section.slug,
-            student.id,
-            :progress,
-            params
-          )
-        )
+        live(conn, live_view_students_progress_route(section.slug, student.id, :progress, params))
 
       assert view
              |> element("table.instructor_dashboard_table > tbody > tr:last-child")
-             |> render() =~ graded_page_1.title
+             |> render() =~ Enum.find(titles, fn t -> String.contains?(t, "A Graded page 5") end)
 
       assert view
              |> element("table.instructor_dashboard_table > tbody > tr:nth-child(5)")
-             |> render() =~ graded_page_2.title
+             |> render() =~ Enum.find(titles, fn t -> String.contains?(t, "B Graded page 4") end)
 
       assert view
              |> element("table.instructor_dashboard_table > tbody > tr:nth-child(4)")
-             |> render() =~ graded_page_3.title
+             |> render() =~ Enum.find(titles, fn t -> String.contains?(t, "C Graded page 3") end)
 
       assert view
              |> element("table.instructor_dashboard_table > tbody > tr:nth-child(3)")
-             |> render() =~ graded_page_4.title
+             |> render() =~ Enum.find(titles, fn t -> String.contains?(t, "D Graded page 2") end)
 
       assert view
              |> element("table.instructor_dashboard_table > tbody > tr:nth-child(2)")
-             |> render() =~ graded_page_5.title
+             |> render() =~ Enum.find(titles, fn t -> String.contains?(t, "E Graded page 1") end)
 
       assert view
              |> element("table.instructor_dashboard_table > tbody > tr:first-child")
-             |> render() =~ graded_page_6.title
+             |> render() =~ Enum.find(titles, fn t -> String.contains?(t, "Z Graded page 6") end)
     end
 
     test "applies pagination", %{
@@ -337,7 +332,10 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ProgressTabTest do
       student: student,
       graded_page_1: graded_page_1,
       graded_page_2: graded_page_2,
-      graded_page_3: graded_page_3
+      graded_page_3: graded_page_3,
+      graded_page_4: graded_page_4,
+      graded_page_5: graded_page_5,
+      graded_page_6: graded_page_6
     } do
       insert_resource_access(
         graded_page_1,
@@ -348,103 +346,58 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ProgressTabTest do
       )
 
       {:ok, view, _html} =
-        live(
-          conn,
-          live_view_students_progress_route(
-            section.slug,
-            student.id,
-            :progress
-          )
-        )
+        live(conn, live_view_students_progress_route(section.slug, student.id, :progress))
 
-      assert has_element?(
-               view,
-               "div",
-               "#{graded_page_1.title}"
-             )
-
-      assert has_element?(
-               view,
-               "div",
-               "#{graded_page_2.title}"
-             )
-
-      assert has_element?(
-               view,
-               "div",
-               "#{graded_page_3.title}"
-             )
+      assert has_element?(view, "div", "#{graded_page_1.title}")
+      assert has_element?(view, "div", "#{graded_page_2.title}")
+      assert has_element?(view, "div", "#{graded_page_3.title}")
 
       ## aplies limit
-      params = %{
-        limit: 2,
-        sort_order: "asc"
-      }
+      params = %{limit: 2, sort_order: "asc"}
 
       {:ok, view, _html} =
-        live(
-          conn,
-          live_view_students_progress_route(
-            section.slug,
-            student.id,
-            :progress,
-            params
-          )
-        )
+        live(conn, live_view_students_progress_route(section.slug, student.id, :progress, params))
 
-      assert has_element?(
-               view,
-               "div",
-               "#{graded_page_1.title}"
-             )
+      titles = [
+        graded_page_1.title,
+        graded_page_2.title,
+        graded_page_3.title,
+        graded_page_4.title,
+        graded_page_5.title,
+        graded_page_6.title
+      ]
 
-      assert has_element?(
-               view,
-               "div",
-               "#{graded_page_2.title}"
-             )
+      assert view
+             |> render()
+             |> Floki.find("table.instructor_dashboard_table > tbody > tr")
+             |> Enum.count() == 2
 
-      refute has_element?(
-               view,
-               "div",
-               "#{graded_page_3.title}"
-             )
+      assert view
+             |> element("table.instructor_dashboard_table > tbody > tr:first-child")
+             |> render() =~ Enum.find(titles, fn t -> String.contains?(t, "A Graded page 5") end)
+
+      assert view
+             |> element("table.instructor_dashboard_table > tbody > tr:nth-child(2)")
+             |> render() =~ Enum.find(titles, fn t -> String.contains?(t, "B Graded page 4") end)
 
       ## aplies pagination
-      params = %{
-        limit: 2,
-        offset: 2,
-        sort_order: "asc"
-      }
+      params = %{limit: 2, offset: 2, sort_order: "asc"}
 
       {:ok, view, _html} =
-        live(
-          conn,
-          live_view_students_progress_route(
-            section.slug,
-            student.id,
-            :progress,
-            params
-          )
-        )
+        live(conn, live_view_students_progress_route(section.slug, student.id, :progress, params))
 
-      refute has_element?(
-               view,
-               "div",
-               "#{graded_page_1.title}"
-             )
+      assert view
+             |> render()
+             |> Floki.find("table.instructor_dashboard_table > tbody > tr")
+             |> Enum.count() == 2
 
-      refute has_element?(
-               view,
-               "div",
-               "#{graded_page_2.title}"
-             )
+      assert view
+             |> element("table.instructor_dashboard_table > tbody > tr:first-child")
+             |> render() =~ Enum.find(titles, fn t -> String.contains?(t, "C Graded page 3") end)
 
-      assert has_element?(
-               view,
-               "div",
-               "#{graded_page_3.title}"
-             )
+      assert view
+             |> element("table.instructor_dashboard_table > tbody > tr:nth-child(2)")
+             |> render() =~ Enum.find(titles, fn t -> String.contains?(t, "D Graded page 2") end)
     end
   end
 

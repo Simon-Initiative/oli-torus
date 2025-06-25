@@ -306,4 +306,80 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
       assert Enum.at(result, 0).total_count == 2
     end
   end
+
+  describe "apply_manual_scoring/3" do
+    setup do
+      map = Seeder.base_project_with_resource2()
+      Oli.Resources.update_revision(map.revision2, %{graded: true})
+
+      map
+      |> Seeder.create_section()
+      |> Seeder.add_user(%{}, :user1)
+      |> Seeder.add_activity(
+        %{title: "activity manual"},
+        :publication,
+        :project,
+        :author,
+        :activity_a
+      )
+      |> Seeder.create_section_resources()
+      |> Seeder.create_resource_attempt(
+        %{attempt_number: 1, lifecycle_state: :submitted},
+        :user1,
+        :page2,
+        :revision2,
+        :attempt1
+      )
+      |> add_submitted_activity(:attempt1, :activity_a, :attempt_1a)
+    end
+
+    test "applies manual scoring and updates states", %{
+      section: section,
+      attempt_1a: attempt_1a
+    } do
+      results =
+        ManualGrading.browse_submitted_attempts(
+          section,
+          %Paging{limit: 1, offset: 0},
+          %Sorting{field: :date_submitted, direction: :desc},
+          %BrowseOptions{
+            user_id: nil,
+            activity_id: nil,
+            page_id: nil,
+            graded: nil,
+            text_search: nil
+          }
+        )
+
+      attempt = Enum.find(results, fn a -> a.id == attempt_1a.id end)
+      assert attempt.lifecycle_state == :submitted
+      assert attempt.graded
+
+      # Applies manual scoring
+      result =
+        Oli.Delivery.Attempts.ManualGrading.apply_manual_scoring(
+          section,
+          attempt,
+          create_score_feedbacks(attempt)
+        )
+
+      # Returns {:ok, [guid, ...]}
+      assert {:ok, part_guids} = result
+      assert is_list(part_guids)
+      assert length(part_guids) == 1
+
+      # Verifies that the returned GUIDs are the ones associated with the part attempts
+      part_attempts = Oli.Delivery.Attempts.Core.get_latest_part_attempts(attempt_1a.attempt_guid)
+      expected_guids = Enum.map(part_attempts, & &1.attempt_guid)
+      assert Enum.sort(part_guids) == Enum.sort(expected_guids)
+
+      # The activity attempt must be evaluated
+      aa = Oli.Delivery.Attempts.Core.get_activity_attempt_by(id: attempt_1a.id)
+      assert aa.lifecycle_state == :evaluated
+
+      # The resource attempt must be evaluated
+      ra = Oli.Delivery.Attempts.Core.get_resource_attempt_by(id: aa.resource_attempt_id)
+      assert ra.lifecycle_state == :evaluated
+    end
+  end
 end

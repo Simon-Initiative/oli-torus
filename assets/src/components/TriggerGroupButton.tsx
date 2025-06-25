@@ -1,6 +1,7 @@
 import React, { ReactNode, useState } from 'react';
 import * as Trigger from 'data/persistence/trigger';
 import * as TriggerModel from 'data/triggers';
+import { AIIcon } from './misc/AIIcon';
 
 export const TriggerGroupButton: React.FC<{
   trigger: TriggerModel.GroupTrigger;
@@ -36,7 +37,7 @@ export const TriggerGroupButton: React.FC<{
       }`}
       onClick={onClick}
     >
-      <img src="/images/icons/icon-AI.svg" className="inline mr-1" />
+      <AIIcon size="md" className="inline mr-1" />
     </button>
   );
 });
