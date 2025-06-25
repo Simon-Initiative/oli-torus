@@ -69,14 +69,18 @@ export const MultiStepModal: React.FC<MultiStepModalProps> = ({
                 {/* Top row */}
                 <div className="flex w-full space-x-2 items-center">
                   {/* Left connector */}
-                  <div className={`flex-grow h-[2px] ${index > 0 ? 'bg-gray-300' : ''}`}></div>
+                  <div
+                    className={`flex-grow h-[2px] ${
+                      index > 0 ? 'bg-gray-300 dark:bg-gray-600' : ''
+                    }`}
+                  ></div>
 
                   {/* Middle dot (step number) */}
                   <div
                     className={`flex items-center justify-center w-8 h-8 rounded-full border-2 text-sm font-medium flex-shrink-0 ${
                       isCurrent
                         ? 'bg-blue-600 border-blue-600 text-white'
-                        : 'bg-white border-gray-300 text-gray-500'
+                        : 'bg-white border-gray-300 text-gray-500 dark:bg-gray-800 dark:border-gray-400 dark:text-gray-200'
                     }`}
                   >
                     {index + 1}
@@ -85,7 +89,7 @@ export const MultiStepModal: React.FC<MultiStepModalProps> = ({
                   {/* Right connector */}
                   <div
                     className={`flex-grow h-[2px] ${
-                      index < stepTitles.length - 1 ? 'bg-gray-300' : ''
+                      index < stepTitles.length - 1 ? 'bg-gray-300 dark:bg-gray-600' : ''
                     }`}
                   ></div>
                 </div>
@@ -93,7 +97,9 @@ export const MultiStepModal: React.FC<MultiStepModalProps> = ({
                 {/* Bottom row: Step title */}
                 <div
                   className={`w-full text-xs mt-2 text-center ${
-                    isCurrent ? 'text-black font-medium' : 'text-gray-500'
+                    isCurrent
+                      ? 'text-black dark:text-white font-medium'
+                      : 'text-gray-500 dark:text-gray-400'
                   }`}
                 >
                   {label}
