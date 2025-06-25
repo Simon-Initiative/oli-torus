@@ -13,28 +13,24 @@ defmodule Oli.Interop.Ingest.Processing.Rewiring do
 
   @spec rewire_activity_references(map(), any) :: map()
   def rewire_activity_references(content, activity_map) do
-    PageContent.map_reduce(content, {:ok, []}, fn e, {status, invalid_refs}, _tr_context ->
-      case e do
-        %{"type" => "activity-reference", "activity_id" => original} = ref ->
-          case retrieve(activity_map, original) do
-            nil ->
-              {ref, {:error, [original | invalid_refs]}}
+    {mapped, _} =
+      PageContent.map_reduce(content, {:ok, []}, fn e, {status, invalid_refs}, _tr_context ->
+        case e do
+          %{"type" => "activity-reference", "activity_id" => original} = ref ->
+            case retrieve(activity_map, original) do
+              nil ->
+                {ref, {:error, [original | invalid_refs]}}
 
-            retrieved ->
-              {Map.put(ref, "activity_id", retrieved), {status, invalid_refs}}
-          end
+              retrieved ->
+                {Map.put(ref, "activity_id", retrieved), {status, invalid_refs}}
+            end
 
-        other ->
-          {other, {status, invalid_refs}}
-      end
-    end)
-    |> case do
-      {mapped, {:ok, _}} ->
-        mapped
+          other ->
+            {other, {status, invalid_refs}}
+        end
+      end)
 
-      {_mapped, {:error, invalid_refs}} ->
-        {:error, {:rewire_activity_references, invalid_refs}}
-    end
+    mapped
   end
 
   @spec rewire_report_activity_references(map(), any) :: map()
