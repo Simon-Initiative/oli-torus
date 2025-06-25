@@ -62,7 +62,7 @@ defmodule Oli.Activities.Reports.Providers.OliLikert do
 
   defp process_attempt_data(section_id, user_id, activity_id) do
     activity_attempt =
-      Core.get_latest_evaluated_activity_attempt(section_id, user_id, activity_id)
+      Core.get_latest_activity_attempt(section_id, user_id, activity_id)
       |> Oli.Repo.preload(:part_attempts)
 
     if is_nil(activity_attempt) do
