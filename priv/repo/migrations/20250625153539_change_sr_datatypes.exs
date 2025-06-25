@@ -7,4 +7,3 @@ defmodule Oli.Repo.Migrations.ChangeSrDatatypes do
     execute("ALTER TABLE section_resources ALTER COLUMN intro_video type text")
   end
 end
-3
