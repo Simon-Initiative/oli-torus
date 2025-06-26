@@ -1,4 +1,10 @@
 defmodule Oli.Interop.Ingest.Processing.Rewiring do
+  @moduledoc """
+  Rewiring functions for the ingest processor.
+  This module is responsible for rewiring (updating or remapping) references inside content data structures during an ingest (import) process.
+  When content is imported, IDs for activities, tags, bibliographic references, etc., may change. This module updates those references in the content to point to the new, correct IDs.
+  """
+
   alias Oli.Resources.PageContent
 
   defp retrieve(map, key) do
