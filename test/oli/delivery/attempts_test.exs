@@ -1035,17 +1035,25 @@ defmodule Oli.Delivery.AttemptsTest do
           :part1_attempt2
         )
 
-      assert Attempts.get_latest_activity_attempt_from_page_attempt(
-               attempt1.attempt_guid,
-               activity_a.resource.id,
-               user1.id
-             ).id == activity_attempt1.id
+      {resource_attempt, latest_activity_attempt} =
+        Attempts.get_latest_activity_attempt_from_page_attempt(
+          attempt1.attempt_guid,
+          activity_a.resource.id,
+          user1.id
+        )
 
-      assert Attempts.get_latest_activity_attempt_from_page_attempt(
-               attempt2.attempt_guid,
-               activity_a.resource.id,
-               user1.id
-             ).id == activity_attempt2.id
+      assert resource_attempt.lifecycle_state == :active
+      assert latest_activity_attempt.id == activity_attempt1.id
+
+      {_resource_attempt, latest_activity_attempt} =
+        Attempts.get_latest_activity_attempt_from_page_attempt(
+          attempt2.attempt_guid,
+          activity_a.resource.id,
+          user1.id
+        )
+
+      assert resource_attempt.lifecycle_state == :active
+      assert latest_activity_attempt.id == activity_attempt2.id
     end
   end
 

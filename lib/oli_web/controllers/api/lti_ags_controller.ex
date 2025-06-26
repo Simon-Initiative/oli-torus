@@ -4,14 +4,13 @@ defmodule OliWeb.Api.LtiAgsController do
   alias Oli.Delivery.Sections.Section
   alias Oli.Accounts.User
   alias Oli.Delivery.Attempts.Core
-  alias Oli.Delivery.Attempts.Core.{ClientEvaluation, ActivityAttempt}
+  alias Oli.Delivery.Attempts.Core.{ClientEvaluation, ActivityAttempt, ResourceAttempt}
   alias Oli.Delivery.Attempts.ActivityLifecycle.Evaluate
 
   require Logger
 
   plug OliWeb.Plugs.LtiAgsTokenValidator
 
-  # GET /lti/lineitems/:activity_attempt_guid?user_id=...
   def get_result(conn, %{
         "page_attempt_guid" => page_attempt_guid,
         "activity_resource_id" => activity_resource_id,
@@ -28,7 +27,8 @@ defmodule OliWeb.Api.LtiAgsController do
            get_latest_activity_attempt_from_page_attempt(
              page_attempt_guid,
              activity_resource_id,
-             user_id
+             user_id,
+             require_active_page_attempt: false
            ) do
       platform_url = Oli.Utils.get_base_url()
 
@@ -70,7 +70,6 @@ defmodule OliWeb.Api.LtiAgsController do
     end
   end
 
-  # POST /lti/lineitems/:activity_attempt_guid
   def post_score(
         conn,
         %{
@@ -171,7 +170,8 @@ defmodule OliWeb.Api.LtiAgsController do
   defp get_latest_activity_attempt_from_page_attempt(
          page_attempt_guid,
          activity_resource_id,
-         user_id
+         user_id,
+         opts \\ []
        ) do
     case Core.get_latest_activity_attempt_from_page_attempt(
            page_attempt_guid,
@@ -181,8 +181,21 @@ defmodule OliWeb.Api.LtiAgsController do
       nil ->
         {:error, "No activity attempt found for page attempt guid: #{page_attempt_guid}"}
 
-      activity_attempt ->
-        {:ok, activity_attempt}
+      {resource_attempt, activity_attempt} ->
+        if Keyword.get(opts, :require_active_page_attempt, true) do
+          case resource_attempt do
+            %ResourceAttempt{lifecycle_state: :active} ->
+              # If the resource attempt is active, we can return the activity attempt
+              # as it is already in an active state.
+              {:ok, activity_attempt}
+
+            _ ->
+              {:error,
+               "Resource attempt is not active for page attempt guid: #{page_attempt_guid}"}
+          end
+        else
+          {:ok, activity_attempt}
+        end
     end
   end
 

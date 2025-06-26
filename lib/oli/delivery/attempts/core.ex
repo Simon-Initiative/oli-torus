@@ -528,7 +528,7 @@ defmodule Oli.Delivery.Attempts.Core do
           activity_attempt.resource_id == ^activity_resource_id and
           resource_access.user_id == ^user_id,
       order_by: [desc: activity_attempt.attempt_number],
-      select: activity_attempt,
+      select: {resource_attempt, activity_attempt},
       preload: [:part_attempts, :revision],
       limit: 1
     )

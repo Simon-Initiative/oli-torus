@@ -700,13 +700,18 @@ defmodule OliWeb.Api.LtiAgsControllerTest do
 
       assert response(conn, 204)
 
-      latest_part_attempt =
+      {resource_attempt, latest_activity_attempt} =
         Oli.Delivery.Attempts.Core.get_latest_activity_attempt_from_page_attempt(
           resource_attempt.attempt_guid,
           lti_activity.resource_id,
           student_1.id
-        ).part_attempts
+        )
+
+      latest_part_attempt =
+        latest_activity_attempt.part_attempts
         |> hd()
+
+      assert resource_attempt.lifecycle_state == :active
 
       assert latest_part_attempt.score == nil
       assert latest_part_attempt.out_of == nil
