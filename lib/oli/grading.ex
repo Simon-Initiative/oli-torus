@@ -158,7 +158,7 @@ defmodule Oli.Grading do
   def format_score(score) when is_number(score), do: StudentUtils.parse_score(score)
 
   defp sort_data(results) do
-    Enum.sort_by(results, &{&1["Status"], &1["Name"], &1["Email"], &1["LMS ID"]})
+    Enum.sort_by(results, &{&1["Status"], String.downcase(&1["Name"]), &1["Email"], &1["LMS ID"]})
   end
 
   @doc """
