@@ -212,7 +212,11 @@ defmodule OliWeb.Api.LtiController do
          } <- params,
          {:ok, %{sub: client_id}} <-
            validate_client_assertion(client_assertion),
-         {:ok, scope} <- validate_scope(scope),
+         {:ok, scope} <-
+           validate_scope(scope, [
+             "https://purl.imsglobal.org/spec/lti-ags/scope/result.readonly",
+             "https://purl.imsglobal.org/spec/lti-ags/scope/score"
+           ]),
          {:ok, access_token, expires_in} <-
            Tokens.issue_access_token(client_id, scope) do
       conn
@@ -252,13 +256,15 @@ defmodule OliWeb.Api.LtiController do
     end
   end
 
-  defp validate_scope(scope) do
-    valid_scopes = [
-      "https://purl.imsglobal.org/spec/lti-ags/scope/result.readonly",
-      "https://purl.imsglobal.org/spec/lti-ags/scope/score"
-    ]
+  defp validate_scope(scope, valid_scopes) do
+    scopes =
+      scope
+      |> String.split(" ")
+      |> Enum.map(&String.trim/1)
+      |> Enum.map(&String.downcase/1)
+      |> Enum.reject(&(&1 == ""))
 
-    if scope in valid_scopes do
+    if Enum.all?(scopes, &(&1 in valid_scopes)) do
       {:ok, scope}
     else
       {:error, :invalid_scope}

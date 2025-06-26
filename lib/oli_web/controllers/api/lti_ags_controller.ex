@@ -10,12 +10,8 @@ defmodule OliWeb.Api.LtiAgsController do
   require Logger
 
   plug OliWeb.Plugs.LtiAgsTokenValidator,
-       [require_scope: "https://purl.imsglobal.org/spec/lti-ags/scope/result.readonly"]
+       [scope: "https://purl.imsglobal.org/spec/lti-ags/scope/result.readonly"]
        when action in [:get_result]
-
-  plug OliWeb.Plugs.LtiAgsTokenValidator,
-       [require_scope: "https://purl.imsglobal.org/spec/lti-ags/scope/score"]
-       when action in [:post_score]
 
   def get_result(conn, %{
         "page_attempt_guid" => page_attempt_guid,
@@ -75,6 +71,10 @@ defmodule OliWeb.Api.LtiAgsController do
       feedbacks -> Map.put(result, "comment", feedbacks |> Enum.join("\n"))
     end
   end
+
+  plug OliWeb.Plugs.LtiAgsTokenValidator,
+       [scope: "https://purl.imsglobal.org/spec/lti-ags/scope/score"]
+       when action in [:post_score]
 
   def post_score(
         conn,

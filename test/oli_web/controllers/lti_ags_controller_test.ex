@@ -410,13 +410,11 @@ defmodule OliWeb.Api.LtiAgsControllerTest do
   end
 
   defp setup_token(%{conn: conn}) do
-    scopes = [
-      "https://purl.imsglobal.org/spec/lti-ags/scope/result.readonly",
-      "https://purl.imsglobal.org/spec/lti-ags/scope/score"
-    ]
+    scope =
+      "https://purl.imsglobal.org/spec/lti-ags/scope/result.readonly https://purl.imsglobal.org/spec/lti-ags/scope/score"
 
     {:ok, token, _expires_in} =
-      Oli.Lti.Tokens.issue_access_token("valid-lti-ags-test-client", scopes)
+      Oli.Lti.Tokens.issue_access_token("valid-lti-ags-test-client", scope)
 
     conn =
       conn
@@ -491,6 +489,8 @@ defmodule OliWeb.Api.LtiAgsControllerTest do
   end
 
   describe "validate token" do
+    setup [:setup_section]
+
     @tag capture_log: true
     test "returns 401 Unauthorized when no token is provided", %{conn: conn} do
       conn = get(conn, ~p"/lti/lineitems/some-attempt-guid/1/results", user_id: "user-1")
@@ -509,25 +509,37 @@ defmodule OliWeb.Api.LtiAgsControllerTest do
     end
 
     @tag capture_log: true
-    test "returns 401 when token scope is invalid", %{conn: conn} do
-      scopes = [
-        "some-invalid-scope"
-      ]
+    test "returns 401 when token scope is invalid", %{
+      conn: conn,
+      section: section,
+      student_1: student_1,
+      scored_page: scored_page,
+      lti_activity: lti_activity
+    } do
+      {resource_attempt, _activity_attempt, _part_attempt} =
+        setup_activity_attempt(section, scored_page, student_1, lti_activity, 2.0)
+
+      scope = "some-invalid-scope"
 
       {:ok, token, _expires_in} =
-        Oli.Lti.Tokens.issue_access_token("valid-lti-ags-test-client", scopes)
+        Oli.Lti.Tokens.issue_access_token("valid-lti-ags-test-client", scope)
 
       conn =
         conn
         |> put_req_header("authorization", "Bearer " <> token)
 
-      conn = get(conn, ~p"/lti/lineitems/some-attempt-guid/1/results", user_id: "user-1")
+      conn =
+        get(
+          conn,
+          ~p"/lti/lineitems/#{resource_attempt.attempt_guid}/#{lti_activity.resource_id}/results",
+          user_id: student_1.sub
+        )
 
       assert response(conn, 401) =~
                "Unauthorized: Missing required scope: https://purl.imsglobal.org/spec/lti-ags/scope/result.readonly"
 
       params = %{
-        "userId" => "user-1",
+        "userId" => student_1.sub,
         "scoreGiven" => 8,
         "scoreMaximum" => 10,
         "activityProgress" => "Completed",
@@ -538,7 +550,7 @@ defmodule OliWeb.Api.LtiAgsControllerTest do
       conn =
         post(
           conn,
-          ~p"/lti/lineitems/some-attempt-guid/1/scores",
+          ~p"/lti/lineitems/#{resource_attempt.attempt_guid}/#{lti_activity.resource_id}/scores",
           params
         )
 
