@@ -1204,5 +1204,72 @@ defmodule OliWeb.AdminLiveTest do
              |> element("input[value=\"#{new_first_name} #{new_last_name}\"][disabled]")
              |> render() =~ "#{new_first_name} #{new_last_name}"
     end
+
+    test "shows error message when First Name is empty", %{conn: conn, author: author} do
+      {:ok, view, _html} = live(conn, live_view_author_detail_route(author.id))
+
+      view
+      |> element("button[phx-click=\"start_edit\"]", "Edit")
+      |> render_click()
+
+      view
+      |> element("form[phx-submit=\"submit\"")
+      |> render_submit(%{
+        "author" => %{
+          "given_name" => "",
+          "family_name" => author.family_name,
+          "email" => author.email
+        }
+      })
+
+      assert render(view) =~ "Please enter a First Name"
+    end
+
+    test "shows error message when Last Name is shorter than 2 characters", %{
+      conn: conn,
+      author: author
+    } do
+      {:ok, view, _html} = live(conn, live_view_author_detail_route(author.id))
+
+      view
+      |> element("button[phx-click=\"start_edit\"]", "Edit")
+      |> render_click()
+
+      view
+      |> element("form[phx-submit=\"submit\"")
+      |> render_submit(%{
+        "author" => %{
+          "given_name" => author.given_name,
+          "family_name" => "A",
+          "email" => author.email
+        }
+      })
+
+      assert render(view) =~ "Please enter a Last Name that is at least two characters long."
+    end
+
+    test "shows both error messages when First Name is empty and Last Name has less than 2 characters on form submit",
+         %{conn: conn, author: author} do
+      {:ok, view, _html} = live(conn, live_view_author_detail_route(author.id))
+
+      view
+      |> element("button[phx-click=\"start_edit\"]", "Edit")
+      |> render_click()
+
+      view
+      |> element("form[phx-submit=\"submit\"")
+      |> render_submit(%{
+        "author" => %{
+          "given_name" => "",
+          "family_name" => "A",
+          "email" => author.email
+        }
+      })
+
+      html = render(view)
+
+      assert html =~ "Please enter a First Name"
+      assert html =~ "Please enter a Last Name that is at least two characters long."
+    end
   end
 end
