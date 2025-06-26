@@ -554,7 +554,7 @@ defmodule Oli.Delivery.Attempts.Core do
         s.slug == ^section_slug and
           activity_attempt.resource_id == ^activity_resource_id and
           resource_access.user_id == ^user_id,
-      order_by: [desc: activity_attempt.attempt_number],
+      order_by: [desc: resource_attempt.attempt_number],
       select: resource_attempt,
       limit: 1
     )
