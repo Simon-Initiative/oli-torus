@@ -1,11 +1,12 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom';
-import { Provider } from 'react-redux';
+import { Provider, useDispatch } from 'react-redux';
+import { GradedPointsConnected } from 'components/activities/common/delivery/graded_points/GradedPointsConnected';
 import { LoadingSpinner } from 'components/common/LoadingSpinner';
 import { useLoader } from 'components/hooks/useLoader';
 import { LTIExternalToolFrame } from 'components/lti/LTIExternalToolFrame';
 import { Alert } from 'components/misc/Alert';
-import { activityDeliverySlice } from 'data/activities/DeliveryState';
+import { activityDeliverySlice, initializeState } from 'data/activities/DeliveryState';
 import { getLtiExternalToolDetails } from 'data/persistence/lti_platform';
 import { configureStore } from 'state/store';
 import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
@@ -14,6 +15,7 @@ import * as ActivityTypes from '../types';
 import { LTIExternalToolSchema } from './schema';
 
 const LTIExternalTool: React.FC = () => {
+  const dispatch = useDispatch();
   const { model, state, context, mode } = useDeliveryElementContext<LTIExternalToolSchema>();
 
   const ltiToolDetailsLoader = useLoader(() => {
@@ -27,6 +29,10 @@ const LTIExternalTool: React.FC = () => {
       return getLtiExternalToolDetails('sections', context.sectionSlug, `${state.activityId}`);
     }
   }, [state.activityId]);
+
+  useEffect(() => {
+    dispatch(initializeState(state, {}, model, context));
+  }, []);
 
   return ltiToolDetailsLoader.caseOf({
     loading: () => <LoadingSpinner />,
@@ -55,6 +61,7 @@ const LTIExternalTool: React.FC = () => {
       return (
         <div className="activity lti-external-tool-activity">
           <div className="activity-content">
+            <GradedPointsConnected />
             <LTIExternalToolFrame
               mode="delivery"
               name={ltiToolDetails.name}
