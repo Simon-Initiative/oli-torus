@@ -3,7 +3,6 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useBackdropModal } from 'components/misc/BackdropModal';
 import { useMultiStepModal } from 'components/misc/MultiStepModal';
 import { Alert } from '../../components/misc/Alert';
-// import { usePromptModal } from '../../components/misc/PromptModal';
 import { ContextMenuProvider } from './ContextMenuController';
 import { ErrorDisplay } from './ErrorDisplay';
 import { ScheduleGrid } from './ScheduleGrid';
@@ -254,7 +253,7 @@ export const ScheduleEditor: React.FC<SchedulerProps> = ({
         interacting with the timeline or visiting the assessment settings.
       </div>
       <div className="flex flex-col space-y-4 mt-4 pl-2">
-        <label className="flex items-start space-x-3 text-gray-700">
+        <label className="flex items-start space-x-3 text-gray-700 dark:text-gray-200">
           <input
             type="radio"
             name="assessmentLayoutType"
@@ -265,7 +264,7 @@ export const ScheduleEditor: React.FC<SchedulerProps> = ({
           <span className="leading-snug font-bold">Do not set assessment due dates</span>
         </label>
 
-        <label className="flex items-start space-x-3 text-gray-700">
+        <label className="flex items-start space-x-3 text-gray-700 dark:text-gray-200">
           <input
             type="radio"
             name="assessmentLayoutType"
@@ -278,7 +277,7 @@ export const ScheduleEditor: React.FC<SchedulerProps> = ({
           </span>
         </label>
 
-        <label className="flex items-start space-x-3 text-gray-700">
+        <label className="flex items-start space-x-3 text-gray-700 dark:text-gray-200">
           <input
             type="radio"
             name="assessmentLayoutType"
