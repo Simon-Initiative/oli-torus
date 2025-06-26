@@ -14869,6 +14869,11 @@ Not supports in Firefox and IE */
   border-color: rgb(206 231 255 / var(--tw-border-opacity));
 }
 
+.focus\:border-indigo-500:focus {
+  --tw-border-opacity: 1;
+  border-color: rgb(99 102 241 / var(--tw-border-opacity));
+}
+
 .focus\:border-red-400:focus {
   --tw-border-opacity: 1;
   border-color: rgb(248 113 113 / var(--tw-border-opacity));
@@ -15006,6 +15011,11 @@ Not supports in Firefox and IE */
 .focus\:ring-green-700:focus {
   --tw-ring-opacity: 1;
   --tw-ring-color: rgb(21 128 61 / var(--tw-ring-opacity));
+}
+
+.focus\:ring-indigo-500:focus {
+  --tw-ring-opacity: 1;
+  --tw-ring-color: rgb(99 102 241 / var(--tw-ring-opacity));
 }
 
 .focus\:ring-primary:focus {
