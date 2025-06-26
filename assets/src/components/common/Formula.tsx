@@ -1,6 +1,13 @@
 import React from 'react';
 import { MathJaxLatexFormula, MathJaxMathMLFormula } from './MathJaxFormula';
 
+/**
+ * ⚠️ IMPORTANT: This component is also used in the Formula component within both
+ * Simple Author (Flowchart) and Advanced Author, specifically for rendering LaTeX and MathML formulas.
+ *
+ * Any changes made here must be thoroughly tested in both authoring contexts
+ * to ensure correct rendering and to prevent regressions or unexpected behavior.
+ */
 export const Formula: React.FC<{
   id: string;
   type?: string;
@@ -8,7 +15,8 @@ export const Formula: React.FC<{
   src: string;
   onClick?: () => void;
   style?: Record<string, string>;
-}> = ({ id, type, subtype, src, style, onClick }) => {
+  formulaAltText?: string;
+}> = ({ id, type, subtype, src, style, onClick, formulaAltText = '' }) => {
   switch (subtype) {
     case 'latex':
       return (
@@ -18,6 +26,7 @@ export const Formula: React.FC<{
           style={style}
           inline={type === 'formula_inline'}
           src={src}
+          formulaAltText={formulaAltText}
         />
       );
     case 'mathml':
@@ -28,6 +37,7 @@ export const Formula: React.FC<{
           style={style}
           inline={type === 'formula_inline'}
           src={src}
+          formulaAltText={formulaAltText}
         />
       );
     default:
