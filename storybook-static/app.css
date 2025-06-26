@@ -15555,6 +15555,11 @@ Not supports in Firefox and IE */
   border-color: rgb(43 139 254 / var(--tw-border-opacity));
 }
 
+.dark .dark\:border-gray-400 {
+  --tw-border-opacity: 1;
+  border-color: rgb(163 163 163 / var(--tw-border-opacity));
+}
+
 .dark .dark\:border-gray-500 {
   --tw-border-opacity: 1;
   border-color: rgb(115 115 115 / var(--tw-border-opacity));
@@ -16294,6 +16299,11 @@ Not supports in Firefox and IE */
 .dark .dark\:text-gray-100 {
   --tw-text-opacity: 1;
   color: rgb(245 245 245 / var(--tw-text-opacity));
+}
+
+.dark .dark\:text-gray-200 {
+  --tw-text-opacity: 1;
+  color: rgb(229 229 229 / var(--tw-text-opacity));
 }
 
 .dark .dark\:text-gray-300 {
