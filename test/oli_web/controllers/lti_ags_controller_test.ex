@@ -411,9 +411,8 @@ defmodule OliWeb.Api.LtiAgsControllerTest do
 
   defp setup_token(%{conn: conn}) do
     scopes = [
-      "https://purl.imsglobal.org/spec/lti-ags/scope/lineitem",
       "https://purl.imsglobal.org/spec/lti-ags/scope/result.readonly",
-      "https://purl.imsglobal.org/spec/lti-ags/scope/result.score"
+      "https://purl.imsglobal.org/spec/lti-ags/scope/score"
     ]
 
     {:ok, token, _expires_in} =
@@ -507,6 +506,44 @@ defmodule OliWeb.Api.LtiAgsControllerTest do
       conn = get(conn, ~p"/lti/lineitems/some-attempt-guid/1/results", user_id: "user-1")
 
       assert response(conn, 401) =~ "Unauthorized"
+    end
+
+    @tag capture_log: true
+    test "returns 401 when token scope is invalid", %{conn: conn} do
+      scopes = [
+        "some-invalid-scope"
+      ]
+
+      {:ok, token, _expires_in} =
+        Oli.Lti.Tokens.issue_access_token("valid-lti-ags-test-client", scopes)
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer " <> token)
+
+      conn = get(conn, ~p"/lti/lineitems/some-attempt-guid/1/results", user_id: "user-1")
+
+      assert response(conn, 401) =~
+               "Unauthorized: Missing required scope: https://purl.imsglobal.org/spec/lti-ags/scope/result.readonly"
+
+      params = %{
+        "userId" => "user-1",
+        "scoreGiven" => 8,
+        "scoreMaximum" => 10,
+        "activityProgress" => "Completed",
+        "gradingProgress" => "FullyGraded",
+        "timestamp" => DateTime.utc_now() |> DateTime.to_iso8601()
+      }
+
+      conn =
+        post(
+          conn,
+          ~p"/lti/lineitems/some-attempt-guid/1/scores",
+          params
+        )
+
+      assert response(conn, 401) =~
+               "Unauthorized: Missing required scope: https://purl.imsglobal.org/spec/lti-ags/scope/score"
     end
   end
 

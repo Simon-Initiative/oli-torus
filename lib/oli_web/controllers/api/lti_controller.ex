@@ -212,6 +212,7 @@ defmodule OliWeb.Api.LtiController do
          } <- params,
          {:ok, %{sub: client_id}} <-
            validate_client_assertion(client_assertion),
+         {:ok, scope} <- validate_scope(scope),
          {:ok, access_token, expires_in} <-
            Tokens.issue_access_token(client_id, scope) do
       conn
@@ -248,6 +249,19 @@ defmodule OliWeb.Api.LtiController do
       e ->
         Logger.error("Failed to validate client assertion: #{inspect(e)}")
         {:error, :invalid_client_assertion}
+    end
+  end
+
+  defp validate_scope(scope) do
+    valid_scopes = [
+      "https://purl.imsglobal.org/spec/lti-ags/scope/result.readonly",
+      "https://purl.imsglobal.org/spec/lti-ags/scope/score"
+    ]
+
+    if scope in valid_scopes do
+      {:ok, scope}
+    else
+      {:error, :invalid_scope}
     end
   end
 
