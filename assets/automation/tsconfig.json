@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "baseUrl": "./",
+    "paths": {
+      "@core/*": ["src/core/*"],
+      "@pom/*": ["src/systems/torus/pom/*"],
+      "@facade/*": ["src/systems/torus/facade/*"]
+    }
+  }
+}

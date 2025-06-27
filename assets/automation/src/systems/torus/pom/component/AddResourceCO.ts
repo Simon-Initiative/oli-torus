@@ -1,14 +1,10 @@
 import { Page } from '@playwright/test';
-import { ActivityType } from '../types/activity-types';
+import { ACTIVITY_TYPE, ActivityType } from '../types/activity-types';
 
 export class AddResourceCO {
-  private page: Page;
-
-  constructor(page: Page) {
-    this.page = page;
-  }
+  constructor(private page: Page) {}
 
   async selectActivity(nameActivity: ActivityType) {
-    await this.page.getByRole('button', { name: nameActivity }).first().click();
+    await this.page.getByRole('button', { name: ACTIVITY_TYPE[nameActivity].type }).first().click();
   }
 }

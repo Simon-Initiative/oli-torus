@@ -1,14 +1,12 @@
 import { Locator, Page } from '@playwright/test';
 
 export class NavbarCO {
-  private page: Page;
   private studentOption: Locator;
   private instructorOption: Locator;
   private courseAuthorOption: Locator;
   private administratorOption: Locator;
 
-  constructor(page: Page) {
-    this.page = page;
+  constructor(private page: Page) {
     this.studentOption = this.page.getByRole('link', { name: 'OLI Torus' });
     this.instructorOption = this.page.getByRole('link', {
       name: 'For Instructors',
