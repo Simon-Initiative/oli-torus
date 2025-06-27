@@ -71,7 +71,7 @@ defmodule Oli.Activities do
       authoring_element: "lti-external-tool-authoring",
       delivery_script: "lti_external_tool_delivery.js",
       authoring_script: "lti_external_tool_authoring.js",
-      allow_client_evaluation: false,
+      allow_client_evaluation: true,
       generates_report: false,
       globally_available: false,
       globally_visible: true,

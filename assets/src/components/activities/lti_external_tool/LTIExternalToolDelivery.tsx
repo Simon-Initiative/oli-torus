@@ -5,11 +5,15 @@ import { LoadingSpinner } from 'components/common/LoadingSpinner';
 import { useLoader } from 'components/hooks/useLoader';
 import { LTIExternalToolFrame } from 'components/lti/LTIExternalToolFrame';
 import { Alert } from 'components/misc/Alert';
+import { Checkmark } from 'components/misc/icons/Checkmark';
+import { Cross } from 'components/misc/icons/Cross';
 import { activityDeliverySlice } from 'data/activities/DeliveryState';
+import { isCorrect } from 'data/activities/utils';
 import { getLtiExternalToolDetails } from 'data/persistence/lti_platform';
 import { configureStore } from 'state/store';
 import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
 import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
+import { GradedPoints } from '../common/delivery/graded_points/GradedPoints';
 import * as ActivityTypes from '../types';
 import { LTIExternalToolSchema } from './schema';
 
@@ -27,6 +31,22 @@ const LTIExternalTool: React.FC = () => {
       return getLtiExternalToolDetails('sections', context.sectionSlug, `${state.activityId}`);
     }
   }, [state.activityId]);
+
+  const isEvaluated = state.score !== null;
+
+  const maybeGradedPoints = (
+    <GradedPoints
+      shouldShow={
+        isEvaluated &&
+        context.graded &&
+        mode === 'review' &&
+        context.showFeedback === true &&
+        context.surveyId === null
+      }
+      icon={isCorrect(state) ? <Checkmark /> : <Cross />}
+      attemptState={state}
+    />
+  );
 
   return ltiToolDetailsLoader.caseOf({
     loading: () => <LoadingSpinner />,
@@ -55,6 +75,7 @@ const LTIExternalTool: React.FC = () => {
       return (
         <div className="activity lti-external-tool-activity">
           <div className="activity-content">
+            {maybeGradedPoints}
             <LTIExternalToolFrame
               mode="delivery"
               name={ltiToolDetails.name}
