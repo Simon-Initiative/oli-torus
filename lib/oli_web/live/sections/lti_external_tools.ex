@@ -68,7 +68,7 @@ defmodule OliWeb.Sections.LtiExternalToolsView do
     {
       :noreply,
       socket
-      |> assign(params: params)
+      |> assign(params: update_params(params, expanded_tools, socket.assigns.tools))
       |> assign(filtered_tools: filtered_tools)
     }
   end
@@ -112,48 +112,48 @@ defmodule OliWeb.Sections.LtiExternalToolsView do
   end
 
   def handle_event("expand_all", _, socket) do
+    %{tools: tools, params: params, section: section} = socket.assigns
+
     expanded_tools =
-      socket.assigns.tools
+      tools
       |> Enum.map(& &1.id)
       |> Enum.join(",")
 
-    {:noreply,
-     push_patch(socket,
-       to:
-         ~p"/sections/#{socket.assigns.section.slug}/lti_external_tools?#{Map.put(socket.assigns.params, "expanded_tools", expanded_tools)}"
-     )}
+    params =
+      params
+      |> Map.put("expanded_tools", expanded_tools)
+      |> Map.put("toggle_expand_button", "collapse_all")
+
+    {:noreply, push_patch(socket, to: ~p"/sections/#{section.slug}/lti_external_tools?#{params}")}
   end
 
   def handle_event("collapse_all", _, socket) do
-    {:noreply,
-     push_patch(socket,
-       to:
-         ~p"/sections/#{socket.assigns.section.slug}/lti_external_tools?#{Map.drop(socket.assigns.params, ["expanded_tools"])}"
-     )}
+    %{params: params, section: section} = socket.assigns
+
+    params =
+      params
+      |> Map.put("toggle_expand_button", "expand_all")
+      |> Map.drop(["expanded_tools"])
+
+    {:noreply, push_patch(socket, to: ~p"/sections/#{section.slug}/lti_external_tools?#{params}")}
   end
 
   def handle_event("toggle_tool", %{"id" => tool_id}, socket) do
-    %{params: params} = socket.assigns
+    %{params: params, section: section, tools: tools} = socket.assigns
 
-    current_expanded =
+    current_expanded_ids =
       Map.get(params, "expanded_tools", "") |> String.split(",", trim: true)
 
-    updated_expanded =
-      if tool_id in current_expanded do
-        List.delete(current_expanded, tool_id)
+    updated_expanded_ids =
+      if tool_id in current_expanded_ids do
+        List.delete(current_expanded_ids, tool_id)
       else
-        [tool_id | current_expanded]
+        [tool_id | current_expanded_ids]
       end
 
-    params =
-      if updated_expanded == [],
-        do: Map.delete(params, "expanded_tools"),
-        else: Map.put(params, "expanded_tools", Enum.join(updated_expanded, ","))
+    params = update_params(params, updated_expanded_ids, tools)
 
-    {:noreply,
-     push_patch(socket,
-       to: ~p"/sections/#{socket.assigns.section.slug}/lti_external_tools?#{params}"
-     )}
+    {:noreply, push_patch(socket, to: ~p"/sections/#{section.slug}/lti_external_tools?#{params}")}
   end
 
   def render(assigns) do
@@ -177,16 +177,15 @@ defmodule OliWeb.Sections.LtiExternalToolsView do
           placeholder="Search..."
         />
 
-        <DeliveryUtils.toggle_expand_button
-          on_expand={JS.push("expand_all")}
-          on_collapse={JS.push("collapse_all")}
-        />
+        <.toggle_expand_button active={@params["toggle_expand_button"]} />
+
         <.tool
           :for={tool <- @filtered_tools || @tools}
           tool={tool}
           section_slug={@section.slug}
           search_term={@params["search_term"]}
           expanded_tools={@params["expanded_tools"]}
+          toggle_expand_button={@params["toggle_expand_button"]}
         />
 
         <div :if={@filtered_tools == []} class="text-base font-medium">
@@ -197,10 +196,33 @@ defmodule OliWeb.Sections.LtiExternalToolsView do
     """
   end
 
+  def toggle_expand_button(%{active: active} = assigns) when active in ["expand_all", nil] do
+    ~H"""
+    <div class="flex items-center justify-start w-32 px-2 text-sm font-bold text-[#0080FF] dark:text-[#0062F2]">
+      <button id="expand_all_button" phx-click="expand_all" class="flex space-x-3">
+        <Icons.expand />
+        <span>Expand All</span>
+      </button>
+    </div>
+    """
+  end
+
+  def toggle_expand_button(%{active: "collapse_all"} = assigns) do
+    ~H"""
+    <div class="flex items-center justify-start w-32 px-2 text-sm font-bold text-[#0080FF] dark:text-[#0062F2]">
+      <button id="collapse_all_button" phx-click="collapse_all" class="flex space-x-3">
+        <Icons.collapse />
+        <span>Collapse All</span>
+      </button>
+    </div>
+    """
+  end
+
   attr :tool, :map, required: true
   attr :section_slug, :string, required: true
   attr :search_term, :string, default: ""
   attr :expanded_tools, :list, required: true
+  attr :toggle_expand_button, :string, required: true
 
   def tool(assigns) do
     ~H"""
@@ -240,7 +262,7 @@ defmodule OliWeb.Sections.LtiExternalToolsView do
         <li :for={child <- @tool.children} class="h-14 w-full border-b flex flex-row items-center">
           <.link
             href={
-              ~p"/sections/#{@section_slug}/lesson/#{child.revision_slug}?#{[request_path: ~p"/sections/#{@section_slug}/lti_external_tools?#{%{expanded_tools: @expanded_tools, search_term: @search_term}}"]}"
+              ~p"/sections/#{@section_slug}/lesson/#{child.revision_slug}?#{[request_path: ~p"/sections/#{@section_slug}/lti_external_tools?#{%{expanded_tools: @expanded_tools, search_term: @search_term, toggle_expand_button: @toggle_expand_button}}"]}"
             }
             class="flex flex-row items-center space-x-4 text-black dark:text-white hover:no-underline hover:text-black/75 dark:hover:text-white/75"
           >
@@ -308,5 +330,25 @@ defmodule OliWeb.Sections.LtiExternalToolsView do
       end
     end)
     |> Enum.reverse()
+  end
+
+  defp update_params(params, [] = _expanded_tool_ids, _tools) do
+    # no tool expanded => the toggle button should say "Expand all"
+    params
+    |> Map.delete("expanded_tools")
+    |> Map.put("toggle_expand_button", "expand_all")
+  end
+
+  defp update_params(params, expanded_tool_ids, tools)
+       when length(expanded_tool_ids) == length(tools) do
+    # all tools expanded => the toggle button should say "Collapse all"
+    params
+    |> Map.put("expanded_tools", Enum.join(expanded_tool_ids, ","))
+    |> Map.put("toggle_expand_button", "collapse_all")
+  end
+
+  defp update_params(params, expanded_tool_ids, _tools) do
+    # some tools expanded => the toggle button should remain as is (expand_all or collapse_all)
+    Map.put(params, "expanded_tools", Enum.join(expanded_tool_ids, ","))
   end
 end
