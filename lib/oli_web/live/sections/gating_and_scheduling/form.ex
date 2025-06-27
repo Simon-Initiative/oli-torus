@@ -122,7 +122,7 @@ defmodule OliWeb.Sections.GatingAndScheduling.Form do
   defp render_resource_selection(%{parent_gate: nil} = assigns) do
     ~H"""
     <div class="form-group">
-      <label for="resource">Target resource</label>
+      <label for="resource">Target resource (page or container)</label>
       <div class="input-group mb-3">
         <input
           type="text"
