@@ -7,10 +7,6 @@ export class Utils {
     this.page = page;
   }
 
-  async sleep(seconds: number) {
-    await this.page.waitForTimeout(seconds * 1000);
-  }
-
   async forceClick(elementToClick: Locator, elementToValidate: Locator) {
     let condition = true;
     while (condition) {
@@ -36,5 +32,22 @@ export class Utils {
       const incremented = String(Number(number) + 1).padStart(number.length, '0');
       return prefix + incremented;
     } else return str + '01';
+  }
+
+  async scrollToTop() {
+    await this.page.evaluate(() => {
+      scrollTo(document.body.scrollHeight, document.body.scrollHeight);
+    });
+  }
+
+  async paintElement(locator: Locator) {
+    await locator.evaluate((lo) => {
+      lo.style.outline = '3px solid red';
+      lo.style.backgroundColor = 'yellow';
+    });
+  }
+
+  async sleep(seconds: number = 1) {
+    await this.page.waitForTimeout(seconds * 1000);
   }
 }

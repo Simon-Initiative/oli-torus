@@ -1,24 +1,22 @@
-import { Page } from '@playwright/test';
-import { LoginPO } from '../pom/login/LoginPO';
-import { WorkspaceStudentPO } from '../pom/workspace/student/WorkspaceStudentPO';
-import { WorkspaceInstructorPO } from '../pom/workspace/instructor/WorkspaceInstructorPO';
-import { WorkspaceAuthorPO } from '../pom/workspace/author/WorkspaceAuthorPO';
-import { Utils } from '../../../core/Utils';
-import { MenuCO } from '../pom/menu/MenuCO';
-import { AdminManagementPO } from '../pom/workspace/administrator/AdminManagementPO';
-import { AdminAllUsersPO } from '../pom/workspace/administrator/AdminAllUsersPO';
-import { AdminUserDetailsPO } from '../pom/workspace/administrator/AdminUserDetailsPO';
-import { USER_TYPES, UserType } from '../pom/types/user-type';
+import { Utils } from '@core/Utils';
+import { Page } from '@playwright/test'; 
+import { MenuDropdownCO } from '@pom/component/MenuDropdownCO';
+import { LoginPO } from '@pom/login/LoginPO';
+import { USER_TYPES, UserType } from '@pom/types/user-type';
+import { AdminAllUsersPO } from '@pom/workspace/administrator/AdminAllUsersPO';
+import { AdminUserDetailsPO } from '@pom/workspace/administrator/AdminUserDetailsPO';
+import { WorkspaceAuthorPO } from '@pom/workspace/author/WorkspaceAuthorPO';
+import { WorkspaceInstructorPO } from '@pom/workspace/instructor/WorkspaceInstructorPO';
+import { WorkspaceStudentPO } from '@pom/workspace/student/WorkspaceStudentPO';
 
 export class TorusFacade {
   private environment: string;
   private utils: Utils;
   private loginpo: LoginPO;
-  private menu: MenuCO;
+  private menu: MenuDropdownCO;
   private wss: WorkspaceStudentPO;
   private wsi: WorkspaceInstructorPO;
   private wsa: WorkspaceAuthorPO;
-  private adminManagment: AdminManagementPO;
   private adminAllUsers: AdminAllUsersPO;
   private adminUserDetails: AdminUserDetailsPO;
 
@@ -26,11 +24,10 @@ export class TorusFacade {
     this.environment = environment ?? '/';
     this.utils = new Utils(this.page);
     this.loginpo = new LoginPO(this.page);
-    this.menu = new MenuCO(this.page);
+    this.menu = new MenuDropdownCO(this.page);
     this.wss = new WorkspaceStudentPO(this.page);
     this.wsi = new WorkspaceInstructorPO(this.page);
     this.wsa = new WorkspaceAuthorPO(this.page);
-    this.adminManagment = new AdminManagementPO(this.page);
     this.adminAllUsers = new AdminAllUsersPO(this.page);
     this.adminUserDetails = new AdminUserDetailsPO(this.page);
   }
@@ -77,73 +74,78 @@ export class TorusFacade {
 
   async createNewProjectAsOpen(projectNameFilter: string) {
     let projectName: string = '';
-    await this.wsa.getDashboard().searchProject(projectNameFilter);
-    // await this.wsa.getDashboard().sortByCreatedDescending();
-    const lastProject = await this.wsa.getDashboard().getLastProjectName();
+    await this.wsa.dashboard.search.fillSearchInput(projectNameFilter);
+    const lastProject = await this.wsa.dashboard.table.getLastProjectName();
 
     if (lastProject) projectName = await this.utils.incrementID(lastProject);
     else projectName = projectNameFilter;
 
-    await this.wsa.getDashboard().clickNewProjectButton();
-    await this.wsa.getDashboard().fillProjectName(projectName);
-    await this.wsa.getDashboard().clickCreateButton();
-    await this.wsa.getOverviewProject().waitForEditorReady();
-    await this.wsa.getOverviewProject().setVisibilityOpen();
-    await this.wsa.getSidebar().clickPublishProject();
-    await this.wsa.getSidebar().clickPublishLink();
-    await this.wsa.getPublishProject().clickPublishButton();
-    await this.wsa.getPublishProject().clickOkButton();
+    await this.wsa.dashboard.new.clickNewProjectButton();
+    await this.wsa.dashboard.new.fillProjectName(projectName);
+    await this.wsa.dashboard.new.clickCreateButton();
+    await this.wsa.overviewProject.details.waitForEditorReady();
+    await this.wsa.overviewProject.publishingVisibility.setVisibilityOpen();
+    await this.wsa.sidebar.author.clickPublish();
+    await this.wsa.sidebar.author.clickPublishLink();
+    await this.wsa.publishProject.clickPublishButton();
+    await this.wsa.publishProject.clickOkButton();
     return projectName;
   }
 
-  // async openLatestCreatedProject(baseName: string = 'AutomationProject') {
-  //   await this.wsa.getDashboard().searchProject(baseName);
-  //   await this.wsa.getDashboard().sortByCreatedDescending();
-
-  //   const lastProject = await this.wsa.getDashboard().getLastProjectName();
-
-  //   let projectName: string;
-  //   if (lastProject) {
-  //     projectName = this.utils.incrementID(lastProject);
-  //   } else {
-  //     projectName = baseName;
-  //   }
-
-  //   await this.wsa.getDashboard().clickNewProjectButton();
-  //   await this.wsa.getDashboard().fillProjectName(projectName);
-  //   await this.wsa.getDashboard().clickCreateButton();
-  //   await this.wsa.getOverviewProject().waitForEditorReady();
-  //   await this.wsa.getOverviewProject().setVisibilityOpen();
-  //   await this.wsa.getSidebar().clickPublishProject();
-  //   await this.wsa.getSidebar().clickPublishLink();
-  //   await this.wsa.getPublishProject().clickPublishButton();
-  //   await this.wsa.getPublishProject().clickOkButton();
-
-  //   return projectName;
-  // }
-
   async verifyProjectAsOpen(projectName: string) {
-    await this.wsi.getDashboard().clickCreateNewSection();
-    await this.wsi.getNewCourseSetup().searchProject(projectName);
-    await this.wsi.getNewCourseSetup().verifySearchResult(projectName);
+    await this.wsi.dashboard.clickCreateNewSection();
+    await this.wsi.newCourseSetup.step1.searchProject(projectName);
+    await this.wsi.newCourseSetup.step1.verifySearchResult(projectName);
   }
 
   async canCreateSections(searchEmail: string, nameLink: string) {
-    await this.menu.openMenu();
-    await this.menu.clickAdminPanel();
-    await this.adminManagment.goToManageStudents();
+    await this.goToSite('/admin/users');
     await this.adminAllUsers.searchUserByEmail(searchEmail);
     await this.adminAllUsers.openUserDetails(nameLink);
     await this.adminUserDetails.clickEditButton();
     await this.adminUserDetails.checkCreateSections();
     await this.adminUserDetails.clickSaveButton();
-    await this.menu.openUserAccountMenu();
-    await this.menu.clickSignOut();
+    await this.goToSite('/workspaces/course_author');
+    await this.menu.open();
+    await this.menu.signOut();
   }
 
   async verifyCanCreateSections(textToVerify: string) {
-    await this.wss.getStudentSidebar().clickInstructorLink();
-    await this.wsi.getDashboard().clickCreateNewSection();
-    await this.wsi.getNewCourseSetup().verifyTextStepperContent(textToVerify);
+    await this.wss.sidebar.workspace.clickInstructor();
+    await this.wsi.dashboard.clickCreateNewSection();
+    await this.wsi.newCourseSetup.step1.verifyTextStepperContent(textToVerify);
+  }
+
+  async deletePage(projectName: string) {
+    const s = this.wsa.dashboard.search;
+    const t = this.wsa.dashboard.table;
+    const a = this.wsa.sidebar.author;
+    const d = this.wsa.curriculum.delete;
+
+    await s.fillSearchInput(projectName);
+    await t.clickProjectLink(projectName);
+    await a.clickCreate();
+    await a.clickCurriculum();
+    await d.openPageDropdownMenu();
+    await d.clickShowDeleteModalButton();
+    await d.confirmDeletePage();
+  }
+
+  async addPage(type: 'basic-practice' | 'basic-scored', projectName: string) {
+    const s = this.wsa.dashboard.search;
+    const t = this.wsa.dashboard.table;
+    const a = this.wsa.sidebar.author;
+    const c = this.wsa.curriculum.create;
+
+    await s.fillSearchInput(projectName);
+    await t.clickProjectLink(projectName);
+    await this.utils.sleep();
+    await a.clickCreate();
+    await this.utils.sleep();
+    await a.clickCurriculum();
+    await this.utils.sleep();
+
+    if (type === 'basic-practice') await c.clickBasicPracticeButton();
+    if (type === 'basic-scored') await c.clickBasicScoredButton();
   }
 }

@@ -1,6 +1,6 @@
 import { Page, Locator } from '@playwright/test';
-import { Utils } from '../../../../../core/Utils';
-import { FileManager } from '../../../../../core/FileManager';
+import { FileManager } from '@core/FileManager';
+import { Utils } from '@core/Utils';
 
 export class AdminUserDetailsPO {
   private utils: Utils;
@@ -18,14 +18,8 @@ export class AdminUserDetailsPO {
   }
 
   async goToUserEditPage(userId: string) {
-<<<<<<< HEAD
-    //TODO: usar baseurl, obtener la url del .env
-    const emailAuthor = FileManager.getValueEnv('EMAIL_AUTHOR');
-    await this.page.goto(`https://stellarator.oli.cmu.edu/admin/users/${userId}`);
-=======
     const baseUrl = FileManager.getValueEnv('BASE_URL');
     await this.page.goto(`${baseUrl}/admin/users/${userId}`);
->>>>>>> e-tqa-6
   }
 
   async clickEditButton() {

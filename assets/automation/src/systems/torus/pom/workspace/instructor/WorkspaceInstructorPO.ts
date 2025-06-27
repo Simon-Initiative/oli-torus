@@ -1,24 +1,20 @@
 import { expect, Page, Locator } from '@playwright/test';
 import { InstructorDashboardPO } from './InstructorDashboardPO';
-import { NewCourseSetupPO } from '../../course/NewCourseSetupPO';
+import { NewCourseSetupPO } from '@pom/course/NewCourseSetupPO';
 
 export class WorkspaceInstructorPO {
   private header: Locator;
-  private dashboard: InstructorDashboardPO;
-  private newCourseSetup: NewCourseSetupPO;
 
   constructor(private page: Page) {
     this.header = this.page.locator('h1');
-    this.dashboard = new InstructorDashboardPO(page);
-    this.newCourseSetup = new NewCourseSetupPO(page);
   }
 
-  getDashboard(): InstructorDashboardPO {
-    return this.dashboard;
+  get dashboard() {
+    return new InstructorDashboardPO(this.page);
   }
 
-  getNewCourseSetup(): NewCourseSetupPO {
-    return this.newCourseSetup;
+  get newCourseSetup() {
+    return new NewCourseSetupPO(this.page);
   }
 
   async verifyrHeader(expectedHeader: string) {

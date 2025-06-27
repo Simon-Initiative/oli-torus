@@ -2,18 +2,18 @@ import { expect, Locator, Page } from '@playwright/test';
 import { Utils } from '@core/Utils';
 
 export class NewCourseSetupPO {
-  private utils: Utils;
-  private searchInput: Locator;
-  private searchButton: Locator;
-  private resultsSummary: Locator;
-  private stepperContent: Locator;
+  private readonly utils: Utils;
+  private readonly searchInput: Locator;
+  private readonly searchButton: Locator;
+  private readonly resultsSummary: Locator;
+  private readonly stepperContent: Locator;
 
-  private courseNameInput: Locator;
-  private sectionNumberInput: Locator;
-  private nextStepButton: Locator;
-  private startDateInput: Locator;
-  private endDateInput: Locator;
-  private createSectionButton: Locator;
+  private readonly courseNameInput: Locator;
+  private readonly sectionNumberInput: Locator;
+  private readonly nextStepButton: Locator;
+  private readonly startDateInput: Locator;
+  private readonly endDateInput: Locator;
+  private readonly createSectionButton: Locator;
 
   constructor(private page: Page) {
     this.utils = new Utils(this.page);
@@ -29,48 +29,44 @@ export class NewCourseSetupPO {
     this.createSectionButton = this.page.getByRole('button', { name: 'Create section' });
   }
 
-  async searchProject(name: string) {
-    await this.searchInput.click();
-    await this.searchInput.fill(name);
-    await this.utils.sleep(2);
-    await this.searchButton.click();
+  get step1() {
+    return {
+      searchProject: async (name: string) => {
+        await this.searchInput.click();
+        await this.searchInput.fill(name);
+        await this.utils.sleep(2);
+        await this.searchButton.click();
+      },
+      verifySearchResult: async (name: string) => {
+        await expect(this.resultsSummary).toContainText(`Results filtered on "${name}"`);
+        await expect(this.stepperContent).toContainText('Showing all results (1 total)');
+      },
+      verifyTextStepperContent: async (str: string) =>
+        await expect(this.stepperContent).toContainText(str),
+    };
   }
 
-  async verifySearchResult(name: string) {
-    await expect(this.resultsSummary).toContainText(`Results filtered on "${name}"`);
-    await expect(this.stepperContent).toContainText('Showing all results (1 total)');
+  get step2() {
+    return {
+      clickOnCardProject: async (projectName: string) => {
+        const projectLink = this.page.getByRole('heading', { name: projectName });
+        await projectLink.click();
+      },
+      fillCourseName: async (courseName: string) => await this.courseNameInput.fill(courseName),
+
+      fillCourseSectionNumber: async (sectionNumber: string) =>
+        await this.sectionNumberInput.fill(sectionNumber),
+      goToNextStep: async () => await this.nextStepButton.click(),
+    };
   }
 
-  async verifyTextStepperContent(str: string) {
-    await expect(this.stepperContent).toContainText(str);
-  }
-
-  async clickOnCardProject(projectName: string) {
-    const projectLink = this.page.getByRole('heading', { name: projectName });
-    await projectLink.click();
-  }
-
-  async fillCourseName(courseName: string) {
-    await this.courseNameInput.fill(courseName);
-  }
-
-  async fillCourseSectionNumber(sectionNumber: string) {
-    await this.sectionNumberInput.fill(sectionNumber);
-  }
-
-  async goToNextStep() {
-    await this.nextStepButton.click();
-  }
-
-  async fillStartDate(dateTime: Date) {
-    await this.startDateInput.fill(dateTime.toISOString().slice(0, 16));
-  }
-
-  async fillEndDate(dateTime: Date) {
-    await this.endDateInput.fill(dateTime.toISOString().slice(0, 16));
-  }
-
-  async submitSection() {
-    await this.createSectionButton.click();
+  get step3() {
+    return {
+      fillStartDate: async (dateTime: Date) =>
+        await this.startDateInput.fill(dateTime.toISOString().slice(0, 16)),
+      fillEndDate: async (dateTime: Date) =>
+        await this.endDateInput.fill(dateTime.toISOString().slice(0, 16)),
+      submitSection: async () => await this.createSectionButton.click(),
+    };
   }
 }

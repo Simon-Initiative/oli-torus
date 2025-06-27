@@ -1,17 +1,15 @@
 import { expect, Locator, Page } from '@playwright/test';
-import { StuedentSideberCO } from './StudentSidebarCO';
+import { SidebarCO } from '@pom/component/SidebarCO';
 
 export class WorkspaceStudentPO {
-  private studenSidebar: StuedentSideberCO;
-  private h1: Locator;
+  private readonly h1: Locator;
 
   constructor(private page: Page) {
-    this.studenSidebar = new StuedentSideberCO(this.page);
     this.h1 = this.page.locator('h1');
   }
 
-  getStudentSidebar(): StuedentSideberCO {
-    return this.studenSidebar;
+  get sidebar() {
+    return new SidebarCO(this.page);
   }
 
   async verifyName(name: string) {
