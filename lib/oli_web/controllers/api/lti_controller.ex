@@ -241,18 +241,36 @@ defmodule OliWeb.Api.LtiController do
   end
 
   defp validate_client_assertion(client_assertion) do
-    with {:ok, %JOSE.JWT{fields: %{"iss" => client_id, "sub" => client_id_sub} = jwt}} <-
+    with {:ok, %JOSE.JWT{fields: %{"iss" => client_id, "sub" => client_id}}} <-
            peek_jwt(client_assertion),
-         true <- client_id == client_id_sub,
-         platform_instance when not is_nil(platform_instance) <-
-           PlatformInstances.get_platform_instance_by_client_id(client_id),
-         {:ok, jwk} <- get_jwk_for_assertion(client_id, jwt["kid"]),
+         %JOSE.JWS{fields: %{"kid" => kid}} <- JOSE.JWT.peek_protected(client_assertion),
+         {:ok, _iss, _sub} <- validate_matching_iss_sub(client_id, client_id),
+         {:ok, platform_instance} <- get_platform_instance_by_client_id(client_id),
+         {:ok, jwk} <- get_jwk_for_assertion(platform_instance.keyset_url, kid),
          {true, _jwt, _jws} <- JOSE.JWT.verify(jwk, client_assertion) do
       {:ok, %{sub: client_id}}
     else
       e ->
         Logger.error("Failed to validate client assertion: #{inspect(e)}")
         {:error, :invalid_client_assertion}
+    end
+  end
+
+  defp validate_matching_iss_sub(iss, sub) do
+    if iss == sub do
+      {:ok, iss, sub}
+    else
+      {:error, :mismatched_iss_sub}
+    end
+  end
+
+  defp get_platform_instance_by_client_id(client_id) do
+    case PlatformInstances.get_platform_instance_by_client_id(client_id) do
+      nil ->
+        {:error, :platform_instance_not_found}
+
+      platform_instance ->
+        {:ok, platform_instance}
     end
   end
 
@@ -282,15 +300,24 @@ defmodule OliWeb.Api.LtiController do
     end
   end
 
-  defp get_jwk_for_assertion(client_id, kid) do
-    keys = get_keys_for_client(client_id)
+  defp get_jwk_for_assertion(keyset_url, kid) do
+    keys =
+      fetch_public_keyset(keyset_url)
+      |> Map.get("keys", [])
 
     cond do
       is_nil(kid) ->
-        # If no kid is provided, we assume the first key in the set is the active one
+        # If no kid is provided, assume the first key in the set is the active one
+        Logger.warning(
+          "No 'kid' provided in client_assertion, using first key in keyset from #{keyset_url}"
+        )
+
         case keys do
-          [] -> {:error, :no_keys_available}
-          [first_key | _] -> {:ok, JOSE.JWK.from_map(first_key)}
+          [] ->
+            {:error, :no_keys_available}
+
+          [first_key | _] ->
+            {:ok, JOSE.JWK.from_map(first_key)}
         end
 
       true ->
@@ -298,19 +325,6 @@ defmodule OliWeb.Api.LtiController do
           nil -> {:error, :key_not_found}
           key -> {:ok, JOSE.JWK.from_map(key)}
         end
-    end
-  end
-
-  defp get_keys_for_client(client_id) do
-    case PlatformInstances.get_platform_instance_by_client_id(client_id) do
-      nil ->
-        %{}
-
-      platform_instance ->
-        # TODO: Eventually, we should cache the keys for each platform instance
-        # For now, we fetch them directly from the keyset_url
-        fetch_public_keyset(platform_instance.keyset_url)
-        |> Map.get("keys", %{})
     end
   end
 
