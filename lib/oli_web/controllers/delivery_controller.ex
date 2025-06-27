@@ -582,7 +582,7 @@ defmodule OliWeb.DeliveryController do
   defp sort_data(results) do
     Enum.sort_by(
       results,
-      &{&1.status, String.downcase(&1.name), String.downcase(&1.email), &1.lms_id}
+      &{&1.status, String.downcase(&1.name), String.downcase("#{&1.email}"), &1.lms_id}
     )
   end
 
