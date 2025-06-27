@@ -118,7 +118,8 @@ defmodule OliWeb.Api.LtiControllerTest do
       params = %{
         "grant_type" => "client_credentials",
         "client_assertion" => client_assertion,
-        "scope" => "scope1 scope2"
+        "scope" =>
+          "https://purl.imsglobal.org/spec/lti-ags/scope/result.readonly https://purl.imsglobal.org/spec/lti-ags/scope/score"
       }
 
       conn = post(conn, ~p"/lti/auth/token", params)
@@ -126,7 +127,9 @@ defmodule OliWeb.Api.LtiControllerTest do
       assert resp["access_token"]
       assert resp["token_type"] == "bearer"
       assert resp["expires_in"] == 3600
-      assert resp["scope"] == "scope1 scope2"
+
+      assert resp["scope"] ==
+               "https://purl.imsglobal.org/spec/lti-ags/scope/result.readonly https://purl.imsglobal.org/spec/lti-ags/scope/score"
     end
 
     @tag capture_log: true

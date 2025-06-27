@@ -106,7 +106,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Persistence do
   end
 
   defp attrs_for(
-         {%{attempt_guid: attempt_guid, input: input},
+         {%{attempt_guid: attempt_guid, input: input} = part_input,
           {:ok,
            %FeedbackAction{
              feedback: feedback,
@@ -116,12 +116,15 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Persistence do
          datashop_session_id,
          now
        ) do
+    # If the timestamp is not provided, use the current time
+    date_submitted = part_input[:timestamp] || now
+
     %{
       attempt_guid: attempt_guid,
       response: input,
       lifecycle_state: :evaluated,
       date_evaluated: now,
-      date_submitted: now,
+      date_submitted: date_submitted,
       score: score,
       out_of: out_of,
       feedback: feedback,
@@ -130,16 +133,19 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Persistence do
   end
 
   defp attrs_for(
-         {%{attempt_guid: attempt_guid, input: input}, {:ok, %SubmissionAction{}}},
+         {%{attempt_guid: attempt_guid, input: input} = part_input, {:ok, %SubmissionAction{}}},
          datashop_session_id,
          now
        ) do
+    # If the timestamp is not provided, use the current time
+    date_submitted = part_input[:timestamp] || now
+
     %{
       attempt_guid: attempt_guid,
       response: input,
       lifecycle_state: :submitted,
       date_evaluated: nil,
-      date_submitted: now,
+      date_submitted: date_submitted,
       score: nil,
       out_of: nil,
       feedback: nil,

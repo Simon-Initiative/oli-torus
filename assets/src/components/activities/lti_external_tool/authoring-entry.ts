@@ -1,6 +1,7 @@
 // Registers the creation function:
 import { registerCreationFunc } from '../creation';
 import { CreationContext, Manifest } from '../types';
+import { ScoringStrategy } from '../types';
 import { LTIExternalToolSchema } from './schema';
 
 // This is the entry point for the lti external tool authoring
@@ -25,8 +26,21 @@ export { LTIExternalToolAuthoring } from './LTIExternalToolAuthoring';
 // eslint-disable-next-line
 const manifest: Manifest = require('./manifest.json');
 
-function createFn(content: CreationContext): Promise<LTIExternalToolSchema> {
-  return Promise.resolve({ openInNewTab: true, authoring: { parts: [] } });
+function createFn(_content: CreationContext): Promise<LTIExternalToolSchema> {
+  return Promise.resolve({
+    openInNewTab: true,
+    authoring: {
+      parts: [
+        {
+          id: '1',
+          scoringStrategy: ScoringStrategy.average,
+          responses: [],
+          hints: [],
+        },
+      ],
+      previewText: '',
+    },
+  });
 }
 
 registerCreationFunc(manifest, createFn);

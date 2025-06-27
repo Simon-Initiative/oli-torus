@@ -15,11 +15,13 @@ defmodule OliWeb.LtiController do
   alias OliWeb.Common.Utils
   alias OliWeb.UserAuth
   alias Oli.Lti.LtiParams
+  alias Oli.Delivery.Attempts.Core
+  alias Oli.Delivery.Attempts.Core.ResourceAttempt
+  alias Oli.Lti.PlatformInstances
   alias Lti_1p3.Roles.ContextRoles
   alias Lti_1p3.Roles.PlatformRoles
   alias Lti_1p3.Tool.Services.AGS
   alias Lti_1p3.Tool.Services.NRPS
-  alias Oli.Lti.PlatformInstances
 
   require Logger
 
@@ -98,7 +100,7 @@ defmodule OliWeb.LtiController do
         )
 
       %Lti_1p3.Platform.LoginHint{context: context, session_user_id: session_user_id} ->
-        {user, resource_id, roles} =
+        {user, activity_resource_id, roles, additional_claims} =
           case context do
             "admin" ->
               with author <- Accounts.get_author!(session_user_id),
@@ -138,12 +140,14 @@ defmodule OliWeb.LtiController do
                   throw("Author is not an admin")
               end
 
-            %{"project" => _project, "resource_id" => resource_id} ->
+            %{"project" => _project, "resource_id" => activity_resource_id} ->
               author = Accounts.get_author!(session_user_id)
 
               roles = [
                 Lti_1p3.Roles.ContextRoles.get_role(:context_content_developer)
               ]
+
+              additional_claims = []
 
               {%Accounts.User{
                  id: author.id,
@@ -166,9 +170,9 @@ defmodule OliWeb.LtiController do
                  phone_number: "",
                  phone_number_verified: "",
                  address: ""
-               }, resource_id, roles}
+               }, activity_resource_id, roles, additional_claims}
 
-            %{"section" => section_slug, "resource_id" => resource_id} ->
+            %{"section" => section_slug, "resource_id" => activity_resource_id} ->
               user = conn.assigns[:current_user]
 
               context_roles = Lti_1p3.Roles.Lti_1p3_User.get_context_roles(user, section_slug)
@@ -176,7 +180,38 @@ defmodule OliWeb.LtiController do
               platform_roles =
                 Lti_1p3.Roles.Lti_1p3_User.get_platform_roles(user)
 
-              {user, resource_id, context_roles ++ platform_roles}
+              # Build additional claims
+              additional_claims = []
+
+              # If the user has an activity attempt for the given activity_resource_id,
+              # add the AGS endpoint to the additional claims
+              additional_claims =
+                case Core.get_latest_user_resource_attempt_for_activity(
+                       section_slug,
+                       user.id,
+                       # activity_resource_id is expected to be an database id integer
+                       String.to_integer(activity_resource_id)
+                     ) do
+                  %ResourceAttempt{attempt_guid: page_attempt_guid} ->
+                    [
+                      Lti_1p3.Claims.AgsEndpoint.endpoint(
+                        [
+                          "https://purl.imsglobal.org/spec/lti-ags/scope/lineitem",
+                          "https://purl.imsglobal.org/spec/lti-ags/scope/result.readonly",
+                          "https://purl.imsglobal.org/spec/lti-ags/scope/score"
+                        ],
+                        lineitem:
+                          Oli.Utils.get_base_url() <>
+                            "/lti/lineitems/#{page_attempt_guid}/#{activity_resource_id}"
+                      )
+                      | additional_claims
+                    ]
+
+                  _ ->
+                    additional_claims
+                end
+
+              {user, activity_resource_id, context_roles ++ platform_roles, additional_claims}
 
             _ ->
               Logger.error("Unsupported context value in login hint: #{Kernel.inspect(context)}")
@@ -200,9 +235,10 @@ defmodule OliWeb.LtiController do
           Lti_1p3.Claims.DeploymentId.deployment_id(deployment.deployment_id),
           Lti_1p3.Claims.MessageType.message_type(:lti_resource_link_request),
           Lti_1p3.Claims.Version.version("1.3.0"),
-          Lti_1p3.Claims.ResourceLink.resource_link(resource_id),
+          Lti_1p3.Claims.ResourceLink.resource_link(activity_resource_id),
           Lti_1p3.Claims.TargetLinkUri.target_link_uri(platform_instance.target_link_uri),
           Lti_1p3.Claims.Roles.roles(roles)
+          | additional_claims
         ]
 
         case Lti_1p3.Platform.AuthorizationRedirect.authorize_redirect(
