@@ -288,7 +288,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
         %{
           resource_id: node.revision.resource_id,
           node: node,
-          index: index,
+          index: index + 1,
           title: node.revision.title,
           type: if(node.revision.graded, do: "Scored", else: "Practice"),
           was_late: if(is_nil(ra), do: false, else: ra.was_late),

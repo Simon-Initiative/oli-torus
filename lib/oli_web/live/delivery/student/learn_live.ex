@@ -6,9 +6,11 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   alias Oli.Delivery.{Hierarchy, Metrics, Sections}
   alias Phoenix.LiveView.JS
   alias Oli.Delivery.Sections.SectionCache
+  alias Oli.Delivery.Sections.SectionResourceDepot
   alias OliWeb.Common.Utils, as: WebUtils
   alias OliWeb.Components.Delivery.Student
   alias OliWeb.Delivery.Student.Utils
+  alias OliWeb.Common.Utils, as: CommonUtils
   alias OliWeb.Components.Delivery.Utils, as: DeliveryUtils
   alias OliWeb.Icons
   alias Phoenix.LiveView.JS
@@ -36,7 +38,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
          :contains_discussions,
          :contains_explorations,
          :contains_deliberate_practice,
-         :open_and_free
+         :open_and_free,
+         :root_section_resource_id
        ], %Sections.Section{}},
     current_user: {[:id, :name, :email, :sub], %User{}}
   }
@@ -111,8 +114,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     with selected_view <- get_selected_view(params),
          resource_id <- params["target_resource_id"],
          search_term <- params["search_term"] do
-      full_hierarchy =
-        get_or_compute_full_hierarchy(socket.assigns.section, selected_view, search_term)
+      full_hierarchy = get_full_hierarchy(socket.assigns.section, selected_view, search_term)
 
       units =
         full_hierarchy["children"]
@@ -414,7 +416,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     resource_id = String.to_integer(resource_id)
 
     full_hierarchy =
-      get_or_compute_full_hierarchy(
+      get_full_hierarchy(
         socket.assigns.section,
         socket.assigns.selected_view,
         socket.assigns.params["search_term"]
@@ -557,7 +559,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   def handle_event("toggle_completed_visibility", _, socket) do
     full_hierarchy =
-      get_or_compute_full_hierarchy(
+      get_full_hierarchy(
         socket.assigns.section,
         socket.assigns.selected_view,
         socket.assigns.params["search_term"]
@@ -635,7 +637,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     module_resource_id = String.to_integer(module_resource_id)
 
     full_hierarchy =
-      get_or_compute_full_hierarchy(
+      get_full_hierarchy(
         socket.assigns.section,
         socket.assigns.selected_view,
         socket.assigns.params["search_term"]
@@ -814,7 +816,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     send(self(), :gc)
 
     units =
-      get_or_compute_full_hierarchy(
+      get_full_hierarchy(
         section,
         socket.assigns.selected_view,
         socket.assigns.params["search_term"]
@@ -1443,7 +1445,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 role="unit title"
                 class="search-result grow shrink basis-0 dark:text-white md:text-2xl font-semibold font-['Open Sans'] md:leading-loose"
               >
-                <%= Phoenix.HTML.raw(highlight_search_term(@row["title"], @search_term)) %>
+                <%= Phoenix.HTML.raw(CommonUtils.highlight_search_term(@row["title"], @search_term)) %>
               </div>
               <div class="flex flex-row gap-x-2">
                 <%= if @progress == 100 do %>
@@ -1577,7 +1579,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         "w-full pl-16 py-2.5 justify-start items-center gap-5 flex rounded-lg"
       ]}>
         <span class="search-result opacity-60 dark:text-white text-base font-semibold font-['Open Sans']">
-          <%= Phoenix.HTML.raw(highlight_search_term(@row["title"], @search_term)) %>
+          <%= Phoenix.HTML.raw(CommonUtils.highlight_search_term(@row["title"], @search_term)) %>
         </span>
       </div>
       <.outline_row
@@ -1634,7 +1636,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 role="module title"
                 class="search-result grow shrink basis-0 dark:text-white md:text-2xl font-semibold font-['Open Sans'] md:leading-loose"
               >
-                <%= Phoenix.HTML.raw(highlight_search_term(@row["title"], @search_term)) %>
+                <%= Phoenix.HTML.raw(CommonUtils.highlight_search_term(@row["title"], @search_term)) %>
               </div>
             </div>
             <div class="flex justify-between items-center h-6 mb-3 w-full">
@@ -1859,7 +1861,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                   ]
                 }
               >
-                <%= Phoenix.HTML.raw(highlight_search_term(@row["title"], @search_term)) %>
+                <%= Phoenix.HTML.raw(CommonUtils.highlight_search_term(@row["title"], @search_term)) %>
               </span>
 
               <Student.duration_in_minutes
@@ -3229,17 +3231,13 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   For the outline view, it also filters the hierarchy by the search term (if any)
   """
 
-  def get_or_compute_full_hierarchy(section, :outline, search_term) do
-    SectionCache.get_or_compute(section.slug, :full_hierarchy, fn ->
-      Hierarchy.full_hierarchy(section)
-    end)
+  def get_full_hierarchy(section, :outline, search_term) do
+    SectionResourceDepot.get_full_hierarchy(section, hidden: false)
     |> Hierarchy.filter_hierarchy_by_search_term(search_term)
   end
 
-  def get_or_compute_full_hierarchy(section, _seleted_view, _search_term) do
-    SectionCache.get_or_compute(section.slug, :full_hierarchy, fn ->
-      Hierarchy.full_hierarchy(section)
-    end)
+  def get_full_hierarchy(section, _seleted_view, _search_term) do
+    SectionResourceDepot.get_full_hierarchy(section, hidden: false)
   end
 
   def get_or_compute_contained_scheduling_types(section_slug, full_hierarchy) do
@@ -3350,26 +3348,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
          total_pages_count: total_pages_count
        }),
        do: completed_pages_count == total_pages_count
-
-  # Helper to highlight search term in resource title
-  defp highlight_search_term(title, nil), do: escape_html(title)
-  defp highlight_search_term(title, ""), do: escape_html(title)
-
-  defp highlight_search_term(title, search_term) do
-    pattern = Regex.escape(search_term)
-    # case insensitive match
-    regex = ~r/#{pattern}/i
-
-    title
-    |> escape_html()
-    |> String.replace(regex, "<em>\\0</em>")
-  end
-
-  defp escape_html(text) do
-    text
-    |> Phoenix.HTML.html_escape()
-    |> Phoenix.HTML.safe_to_string()
-  end
 
   _docp = """
   This function resets the toggle buttons to their default state ('Hide Completed' and 'Expand All')

@@ -1,9 +1,11 @@
 import { Utils } from '@core/Utils';
-import { Page } from '@playwright/test'; 
+import { Page } from '@playwright/test';
 import { MenuDropdownCO } from '@pom/component/MenuDropdownCO';
 import { LoginPO } from '@pom/login/LoginPO';
+import { CurriculumPO } from '@pom/project/CurriculumPO';
 import { USER_TYPES, UserType } from '@pom/types/user-type';
 import { AdminAllUsersPO } from '@pom/workspace/administrator/AdminAllUsersPO';
+import { AdminPanelPO } from '@pom/workspace/administrator/AdminPanelPO';
 import { AdminUserDetailsPO } from '@pom/workspace/administrator/AdminUserDetailsPO';
 import { WorkspaceAuthorPO } from '@pom/workspace/author/WorkspaceAuthorPO';
 import { WorkspaceInstructorPO } from '@pom/workspace/instructor/WorkspaceInstructorPO';
@@ -17,8 +19,10 @@ export class TorusFacade {
   private wss: WorkspaceStudentPO;
   private wsi: WorkspaceInstructorPO;
   private wsa: WorkspaceAuthorPO;
+  private adminPanel: AdminPanelPO;
   private adminAllUsers: AdminAllUsersPO;
   private adminUserDetails: AdminUserDetailsPO;
+  private curriculum: CurriculumPO;
 
   constructor(private page: Page, environment?: string) {
     this.environment = environment ?? '/';
@@ -28,8 +32,10 @@ export class TorusFacade {
     this.wss = new WorkspaceStudentPO(this.page);
     this.wsi = new WorkspaceInstructorPO(this.page);
     this.wsa = new WorkspaceAuthorPO(this.page);
+    this.adminPanel = new AdminPanelPO(this.page);
     this.adminAllUsers = new AdminAllUsersPO(this.page);
     this.adminUserDetails = new AdminUserDetailsPO(this.page);
+    this.curriculum = new CurriculumPO(this.page);
   }
 
   async goToSite(environment: string = this.environment) {

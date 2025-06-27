@@ -5,7 +5,7 @@ defmodule OliWeb.Sections.LtiExternalToolsView do
   alias Oli.Delivery.Sections
   alias OliWeb.Icons
   alias OliWeb.Sections.Mount
-  alias OliWeb.Common.{Breadcrumb}
+  alias OliWeb.Common.{Breadcrumb, Utils}
   alias OliWeb.Components.Delivery.Utils, as: DeliveryUtils
 
   defp set_breadcrumbs(type, section) do
@@ -40,6 +40,7 @@ defmodule OliWeb.Sections.LtiExternalToolsView do
             %{
               id: lti_activity_registration.id,
               title: lti_activity_registration.title,
+              expanded: false,
               deployment_status:
                 lti_activity_registration.lti_external_tool_activity_deployment.status,
               children:
@@ -58,32 +59,100 @@ defmodule OliWeb.Sections.LtiExternalToolsView do
   end
 
   def handle_params(params, _uri, socket) do
-    params = %{"search_term" => params["search_term"]}
+    search_term = Map.get(params, "search_term", "")
+    expanded_tools = Map.get(params, "expanded_tools", "") |> String.split(",", trim: true)
 
-    {:noreply, assign(socket, params: params)}
+    # We filter again here to render the results
+    filtered_tools = filter_tools(socket.assigns.tools, search_term, expanded_tools)
+
+    {
+      :noreply,
+      socket
+      |> assign(params: params)
+      |> assign(filtered_tools: filtered_tools)
+    }
   end
 
   def handle_event("search", %{"search_term" => search_term}, socket) do
+    %{params: params, tools: tools} = socket.assigns
+
     params =
       if search_term not in ["", nil] do
-        Map.merge(socket.assigns.params, %{"search_term" => search_term})
+        # We need to filter here to determine which tools should be expanded
+        filtered_tools = filter_tools(tools, search_term)
+
+        expanded_ids =
+          filtered_tools
+          |> Enum.filter(& &1[:expanded])
+          |> Enum.map(&Integer.to_string(&1.id))
+
+        params = Map.put(params, "search_term", search_term)
+
+        if expanded_ids != [],
+          do: Map.put(params, "expanded_tools", Enum.join(expanded_ids, ",")),
+          else: Map.delete(params, "expanded_tools")
       else
-        Map.drop(socket.assigns.params, ["search_term"])
+        params
+        |> Map.delete("search_term")
+        |> Map.delete("expanded_tools")
       end
 
     {:noreply,
      push_patch(socket,
        to: ~p"/sections/#{socket.assigns.section.slug}/lti_external_tools?#{params}"
      )}
-
-    # TODO MER-4316: unhide the search box and apply the search and push an event to expand the tools that contain a page that matches the search term
   end
 
   def handle_event("clear_search", _params, socket) do
     {:noreply,
      push_patch(socket,
        to:
-         ~p"/sections/#{socket.assigns.section.slug}/lti_external_tools?#{Map.drop(socket.assigns.params, ["search_term"])}"
+         ~p"/sections/#{socket.assigns.section.slug}/lti_external_tools?#{Map.drop(socket.assigns.params, ["search_term", "expanded_tools"])}"
+     )}
+  end
+
+  def handle_event("expand_all", _, socket) do
+    expanded_tools =
+      socket.assigns.tools
+      |> Enum.map(& &1.id)
+      |> Enum.join(",")
+
+    {:noreply,
+     push_patch(socket,
+       to:
+         ~p"/sections/#{socket.assigns.section.slug}/lti_external_tools?#{Map.put(socket.assigns.params, "expanded_tools", expanded_tools)}"
+     )}
+  end
+
+  def handle_event("collapse_all", _, socket) do
+    {:noreply,
+     push_patch(socket,
+       to:
+         ~p"/sections/#{socket.assigns.section.slug}/lti_external_tools?#{Map.drop(socket.assigns.params, ["expanded_tools"])}"
+     )}
+  end
+
+  def handle_event("toggle_tool", %{"id" => tool_id}, socket) do
+    %{params: params} = socket.assigns
+
+    current_expanded =
+      Map.get(params, "expanded_tools", "") |> String.split(",", trim: true)
+
+    updated_expanded =
+      if tool_id in current_expanded do
+        List.delete(current_expanded, tool_id)
+      else
+        [tool_id | current_expanded]
+      end
+
+    params =
+      if updated_expanded == [],
+        do: Map.delete(params, "expanded_tools"),
+        else: Map.put(params, "expanded_tools", Enum.join(updated_expanded, ","))
+
+    {:noreply,
+     push_patch(socket,
+       to: ~p"/sections/#{socket.assigns.section.slug}/lti_external_tools?#{params}"
      )}
   end
 
@@ -104,11 +173,25 @@ defmodule OliWeb.Sections.LtiExternalToolsView do
           on_clear_search={
             JS.push("clear_search") |> JS.dispatch("click", to: "#collapse_all_button")
           }
-          class="hidden w-64"
+          class="w-96"
+          placeholder="Search..."
         />
 
-        <DeliveryUtils.toggle_expand_button />
-        <.tool :for={tool <- @tools} tool={tool} section_slug={@section.slug} />
+        <DeliveryUtils.toggle_expand_button
+          on_expand={JS.push("expand_all")}
+          on_collapse={JS.push("collapse_all")}
+        />
+        <.tool
+          :for={tool <- @filtered_tools || @tools}
+          tool={tool}
+          section_slug={@section.slug}
+          search_term={@params["search_term"]}
+          expanded_tools={@params["expanded_tools"]}
+        />
+
+        <div :if={@filtered_tools == []} class="text-base font-medium">
+          No results found for <strong><%= @params["search_term"] %></strong>.
+        </div>
       </div>
     </div>
     """
@@ -116,6 +199,8 @@ defmodule OliWeb.Sections.LtiExternalToolsView do
 
   attr :tool, :map, required: true
   attr :section_slug, :string, required: true
+  attr :search_term, :string, default: ""
+  attr :expanded_tools, :list, required: true
 
   def tool(assigns) do
     ~H"""
@@ -123,15 +208,11 @@ defmodule OliWeb.Sections.LtiExternalToolsView do
       <button
         class="flex flex-row items-center transition-transform duration-300 w-full h-12 border-b"
         type="button"
-        phx-click={JS.toggle_class("rotate-180", to: "#icon-#{@tool.id}")}
+        phx-click="toggle_tool"
         phx-value-id={@tool.id}
-        data-bs-toggle="collapse"
-        data-bs-target={"#collapse-#{@tool.id}"}
-        data-child_matches_search_term={false}
-        aria-expanded="false"
-        aria-controls={"collapse-#{@tool.id}"}
+        aria-expanded={"#{@tool.expanded}"}
       >
-        <div class="text-lg font-semibold leading-normal flex items-center space-x-8">
+        <div class="text-lg font-semibold leading-normal flex items-center space-x-1">
           <%= if @tool.deployment_status == :deleted do %>
             <div class="relative group mr-2">
               <Icons.alert />
@@ -140,29 +221,92 @@ defmodule OliWeb.Sections.LtiExternalToolsView do
               </div>
             </div>
           <% end %>
-          <%= @tool.title %>
+          <div class="search-result">
+            <%= Phoenix.HTML.raw(Utils.highlight_search_term(@tool.title, @search_term)) %>
+          </div>
         </div>
-        <div id={"icon-#{@tool.id}"} class="transition-transform duration-300 ml-auto">
+        <div
+          id={"icon-#{@tool.id}"}
+          class={"transition-transform duration-300 ml-auto #{if @tool.expanded, do: "rotate-180", else: ""}"}
+        >
           <Icons.chevron_down />
         </div>
       </button>
 
-      <ul id={"collapse-#{@tool.id}"} class="collapse">
+      <ul
+        id={"collapse-#{@tool.id}"}
+        class={"#{if @tool.expanded, do: "block", else: "hidden"} transition-all duration-300"}
+      >
         <li :for={child <- @tool.children} class="h-14 w-full border-b flex flex-row items-center">
           <.link
             href={
-              ~p"/sections/#{@section_slug}/lesson/#{child.revision_slug}?#{[request_path: ~p"/sections/#{@section_slug}/lti_external_tools"]}"
+              ~p"/sections/#{@section_slug}/lesson/#{child.revision_slug}?#{[request_path: ~p"/sections/#{@section_slug}/lti_external_tools?#{%{expanded_tools: @expanded_tools, search_term: @search_term}}"]}"
             }
             class="flex flex-row items-center space-x-4 text-black dark:text-white hover:no-underline hover:text-black/75 dark:hover:text-white/75"
           >
             <span class="w-6 text-sm font-semibold leading-none text-[#757682] dark:text-[#EEEBF5]/75">
               <%= child.numbering_index %>
             </span>
-            <span class="text-base font-semibold leading-normal"><%= child.title %></span>
+            <span class="search-result text-base font-semibold leading-normal">
+              <%= Phoenix.HTML.raw(Utils.highlight_search_term(child.title, @search_term)) %>
+            </span>
           </.link>
         </li>
       </ul>
     </div>
     """
+  end
+
+  defp filter_tools(tools, search_term, expanded_tools \\ nil)
+
+  defp filter_tools(tools, search_term, nil) when search_term in ["", nil], do: tools
+
+  defp filter_tools(tools, search_term, expanded_tools) do
+    search_term = String.downcase(search_term)
+
+    Enum.reduce(tools, [], fn tool, acc ->
+      tool_matches_search_term = String.contains?(String.downcase(tool.title), search_term)
+
+      matching_children =
+        Enum.filter(tool.children, fn child ->
+          String.contains?(String.downcase(child.title), search_term)
+        end)
+
+      has_matching_children = matching_children != []
+
+      cond do
+        # If tool title matches, keep all children
+        tool_matches_search_term ->
+          expanded =
+            case expanded_tools do
+              nil ->
+                has_matching_children
+
+              ids ->
+                Integer.to_string(tool.id) in ids
+            end
+
+          [Map.put(tool, :expanded, expanded) | acc]
+
+        # If any children match but tool doesn't, keep only matching children
+        has_matching_children ->
+          expanded =
+            case expanded_tools do
+              nil -> true
+              ids -> Integer.to_string(tool.id) in ids
+            end
+
+          [
+            Map.put(tool, :children, matching_children)
+            |> Map.put(:expanded, expanded)
+            | acc
+          ]
+
+        # If neither tool nor children match, exclude from results
+        true ->
+          acc
+      end
+    end)
+    |> Enum.reverse()
   end
 end

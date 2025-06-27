@@ -761,6 +761,12 @@ defmodule OliWeb.PageDeliveryController do
             conn,
             :transition
           ),
+        blobStorageProvider:
+          if Application.get_env(:oli, :blob_storage)[:use_deprecated_api] == false do
+            "new"
+          else
+            "deprecated"
+          end,
         screenIdleTimeOutInSeconds:
           String.to_integer(System.get_env("SCREEN_IDLE_TIMEOUT_IN_SECONDS", "1800")),
         isAuthor: !is_nil(author),
@@ -1306,14 +1312,11 @@ defmodule OliWeb.PageDeliveryController do
   def export_gradebook(conn, %{"section_slug" => section_slug}) do
     section = Sections.get_section_by(slug: section_slug)
 
-    gradebook_csv = Grading.export_csv(section) |> Enum.join("")
+    gradebook_csv = Grading.export_csv(section)
 
     filename = "#{Slug.slugify(section.title)}-#{Timex.format!(Time.now(), "{YYYY}-{M}-{D}")}.csv"
 
-    conn
-    |> put_resp_content_type("text/csv")
-    |> put_resp_header("content-disposition", "attachment; filename=\"#{filename}\"")
-    |> send_resp(200, gradebook_csv)
+    send_download(conn, {:binary, gradebook_csv}, filename: filename)
   end
 
   def export_enrollments(conn, %{"section_slug" => section_slug}) do

@@ -30,7 +30,13 @@ export interface MathLiveProps {
   onKeyUp?: (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
   onBlur?: () => void;
 }
-
+/**
+ * ⚠️ IMPORTANT: This component is also used in the Formula component within both
+ * Simple Author (Flowchart) and Advanced Author, specifically for building LaTeX formulas.
+ *
+ * Any changes made here must be thoroughly tested in both authoring contexts
+ * to ensure correct rendering and to prevent regressions or unexpected behavior.
+ */
 export const MathLive = ({
   className,
   options,

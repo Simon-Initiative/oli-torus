@@ -24,6 +24,61 @@ defmodule Oli.Delivery.Sections.SectionResourceDepotTest do
         container_revision: container_revision,
         module_1_revision: module_1_revision,
         page_1_revision: page_1_revision,
+        page_2_revision: page_2_revision,
+        hidden_page_revision: hidden_page_revision
+      } = ctx
+
+      container_revision_id = container_revision.id
+      module_1_revision_id = module_1_revision.id
+      page_1_revision_id = page_1_revision.id
+      page_2_revision_id = page_2_revision.id
+      hidden_page_revision_id = hidden_page_revision.id
+
+      assert %{
+               "id" => ^container_revision_id,
+               "is_root?" => true,
+               "numbering" => %{"index" => 1, "level" => 0},
+               "children" => [
+                 %{
+                   "id" => ^module_1_revision_id,
+                   "is_root?" => false,
+                   "numbering" => %{"index" => 1, "level" => 1},
+                   "children" => [
+                     %{
+                       "id" => ^page_1_revision_id,
+                       "is_root?" => false,
+                       "numbering" => %{"index" => 1, "level" => 2},
+                       "children" => []
+                     },
+                     %{
+                       "id" => ^page_2_revision_id,
+                       "is_root?" => false,
+                       "numbering" => %{"index" => 2, "level" => 2},
+                       "children" => []
+                     },
+                     %{
+                       "id" => ^hidden_page_revision_id,
+                       "is_root?" => false,
+                       "numbering" => %{"index" => 3, "level" => 2},
+                       "children" => []
+                     }
+                   ]
+                 }
+               ]
+             } =
+               SectionResourceDepot.get_full_hierarchy(section)
+
+      # Test Depot
+      test_depot(section_id)
+    end
+
+    test "gets full hierarchy considering extra query conditions (like excluding hidden pages)",
+         ctx do
+      %{
+        section: %{id: section_id} = section,
+        container_revision: container_revision,
+        module_1_revision: module_1_revision,
+        page_1_revision: page_1_revision,
         page_2_revision: page_2_revision
       } = ctx
 
@@ -58,7 +113,7 @@ defmodule Oli.Delivery.Sections.SectionResourceDepotTest do
                  }
                ]
              } =
-               SectionResourceDepot.get_full_hierarchy(section)
+               SectionResourceDepot.get_full_hierarchy(section, hidden: false)
 
       # Test Depot
       test_depot(section_id)
@@ -74,18 +129,26 @@ defmodule Oli.Delivery.Sections.SectionResourceDepotTest do
         container_revision: container_revision,
         module_1_revision: module_1_revision,
         page_1_revision: page_1_revision,
-        page_2_revision: page_2_revision
+        page_2_revision: page_2_revision,
+        hidden_page_revision: hidden_page_revision
       } = ctx
 
       container_revision_id = container_revision.id
       module_1_revision_id = module_1_revision.id
       page_1_revision_id = page_1_revision.id
       page_2_revision_id = page_2_revision.id
+      hidden_page_revision_id = hidden_page_revision.id
 
       revision_ids =
-        [container_revision_id, module_1_revision_id, page_1_revision_id, page_2_revision_id]
+        [
+          container_revision_id,
+          module_1_revision_id,
+          page_1_revision_id,
+          page_2_revision_id,
+          hidden_page_revision_id
+        ]
 
-      [container_sr_id, module_1_sr_id, page_1_sr_id, page_2_sr_id] =
+      [container_sr_id, module_1_sr_id, page_1_sr_id, page_2_sr_id, hidden_page_sr_id] =
         from(sr in SectionResource,
           join: r in Oli.Resources.Revision,
           on: r.resource_id == sr.resource_id,
@@ -93,7 +156,7 @@ defmodule Oli.Delivery.Sections.SectionResourceDepotTest do
           select: {r.id, sr.id}
         )
         |> Repo.all()
-        |> Enum.reduce([nil, nil, nil, nil], fn {r_id, sr_id}, acc ->
+        |> Enum.reduce([nil, nil, nil, nil, nil], fn {r_id, sr_id}, acc ->
           index = Enum.find_index(revision_ids, fn revision_id -> revision_id == r_id end)
           List.replace_at(acc, index, sr_id)
         end)
@@ -115,6 +178,11 @@ defmodule Oli.Delivery.Sections.SectionResourceDepotTest do
                        numbering: %Numbering{level: 2, index: 2},
                        children: [],
                        section_resource: %SectionResource{id: ^page_2_sr_id}
+                     },
+                     %HierarchyNode{
+                       numbering: %Numbering{level: 2, index: 3},
+                       children: [],
+                       section_resource: %SectionResource{id: ^hidden_page_sr_id}
                      }
                    ]
                  }
@@ -161,16 +229,17 @@ defmodule Oli.Delivery.Sections.SectionResourceDepotTest do
       %{
         section: %{id: section_id} = _section,
         page_1_revision: page_1_revision,
-        page_2_revision: page_2_revision
+        page_2_revision: page_2_revision,
+        hidden_page_revision: hidden_page_revision
       } = ctx
 
-      revision_ids = [page_1_revision.id, page_2_revision.id]
+      revision_ids = [page_1_revision.id, page_2_revision.id, hidden_page_revision.id]
       page_sr_ids = get_section_resource_ids(revision_ids)
 
-      assert [%SectionResource{id: sr_1}, %SectionResource{id: sr_2}] =
+      assert [%SectionResource{id: sr_1}, %SectionResource{id: sr_2}, %SectionResource{id: sr_3}] =
                SectionResourceDepot.retrieve_schedule(section_id, :pages)
 
-      assert Enum.all?([sr_1, sr_2], &(&1 in page_sr_ids))
+      assert Enum.all?([sr_1, sr_2, sr_3], &(&1 in page_sr_ids))
 
       # Test Depot
       test_depot(section_id)
@@ -274,7 +343,7 @@ defmodule Oli.Delivery.Sections.SectionResourceDepotTest do
                section_id,
                [page_type_id]
              )
-             |> Enum.count() == 2
+             |> Enum.count() == 3
 
       assert SectionResourceDepot.get_section_resources_by_type_ids(
                section_id,
@@ -286,7 +355,7 @@ defmodule Oli.Delivery.Sections.SectionResourceDepotTest do
                section_id,
                [page_type_id, container_type_id]
              )
-             |> Enum.count() == 4
+             |> Enum.count() == 5
     end
   end
 
@@ -416,7 +485,7 @@ defmodule Oli.Delivery.Sections.SectionResourceDepotTest do
       )
       |> Repo.all()
 
-    assert Depot.count(@depot_desc, section_id) == 4
+    assert Depot.count(@depot_desc, section_id) == 5
 
     for resource_id <- resource_ids do
       assert Depot.get(@depot_desc, section_id, resource_id)
@@ -439,10 +508,21 @@ defmodule Oli.Delivery.Sections.SectionResourceDepotTest do
         graded: true
       )
 
+    # Hidden page
+    hidden_page_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.id_for_page(),
+        title: "Hidden Page"
+      )
+
     module_1_revision =
       insert(:revision,
         resource_type_id: ResourceType.id_for_container(),
-        children: [page_1_revision.resource_id, page_2_revision.resource_id],
+        children: [
+          page_1_revision.resource_id,
+          page_2_revision.resource_id,
+          hidden_page_revision.resource_id
+        ],
         title: "Module 1"
       )
 
@@ -457,7 +537,13 @@ defmodule Oli.Delivery.Sections.SectionResourceDepotTest do
     instructor = insert(:user)
     project = insert(:project, authors: [instructor.author])
 
-    all_revisions = [container_revision, module_1_revision, page_1_revision, page_2_revision]
+    all_revisions = [
+      container_revision,
+      module_1_revision,
+      page_1_revision,
+      page_2_revision,
+      hidden_page_revision
+    ]
 
     # Asociate resources to project
     Enum.each(all_revisions, fn revision ->
@@ -487,12 +573,17 @@ defmodule Oli.Delivery.Sections.SectionResourceDepotTest do
     # Create section-resources
     {:ok, section} = Sections.create_section_resources(section, publication)
 
+    # Set page as hidden
+    section_resource = Sections.get_section_resource(section.id, hidden_page_revision.resource_id)
+    Sections.update_section_resource(section_resource, %{hidden: true})
+
     %{
       section: section,
       container_revision: container_revision,
       module_1_revision: module_1_revision,
       page_1_revision: page_1_revision,
-      page_2_revision: page_2_revision
+      page_2_revision: page_2_revision,
+      hidden_page_revision: hidden_page_revision
     }
   end
 end

@@ -41,6 +41,7 @@ export interface DeliveryProps {
   graded: boolean;
   overviewURL: string;
   finalizeGradedURL: string;
+  blobStorageProvider: 'new' | 'deprecated';
   screenIdleTimeOutInSeconds?: number;
   reviewMode?: boolean;
   signoutUrl?: string;
@@ -70,6 +71,7 @@ const Delivery: React.FC<DeliveryProps> = ({
   graded = false,
   overviewURL = '',
   finalizeGradedURL = '',
+  blobStorageProvider = 'deprecated',
   screenIdleTimeOutInSeconds = 1800,
   reviewMode = false,
   currentServerTime = 0,
@@ -189,6 +191,7 @@ const Delivery: React.FC<DeliveryProps> = ({
         activeEverapp: 'none',
         overviewURL,
         finalizeGradedURL,
+        blobStorageProvider,
         screenIdleTimeOutInSeconds,
         reviewMode,
       }),

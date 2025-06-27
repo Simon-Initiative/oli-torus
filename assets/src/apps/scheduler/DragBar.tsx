@@ -1,10 +1,16 @@
 import React, { useCallback } from 'react';
+import { useDispatch } from 'react-redux';
 import { DateWithoutTime } from 'epoq';
 import { useDocumentMouseEvents } from '../../components/hooks/useDocumentMouseEvents';
 import { useToggle } from '../../components/hooks/useToggle';
+import { ContextMenuItem } from './ContextMenu';
+import { useContextMenu } from './ContextMenuController';
 import { DayGeometry, barGeometry, leftToDate } from './date-utils';
+import { VisibleHierarchyItem } from './schedule-selectors';
+import { reAddScheduleItem, removeScheduleItem } from './scheduler-slice';
 
 interface DragBarProps {
+  item: VisibleHierarchyItem;
   startDate: DateWithoutTime;
   endDate: DateWithoutTime;
   isContainer: boolean;
@@ -16,6 +22,7 @@ interface DragBarProps {
 }
 
 export const DragBar: React.FC<DragBarProps> = ({
+  item,
   startDate,
   endDate,
   onChange,
@@ -35,6 +42,39 @@ export const DragBar: React.FC<DragBarProps> = ({
   const [workingEnd, setWorkingEnd] = React.useState<DateWithoutTime>(new DateWithoutTime());
 
   const [mouseDownX, setMouseDownX] = React.useState(0);
+
+  const { showMenu, hideMenu } = useContextMenu();
+  const dispatch = useDispatch();
+
+  const menuItem = item.removed_from_schedule
+    ? {
+        label: 'Re-add item to Schedule',
+        onClick: () => {
+          hideMenu();
+          dispatch(
+            reAddScheduleItem({
+              itemId: item.id,
+            }),
+          );
+        },
+      }
+    : {
+        label: 'Remove from Schedule',
+        onClick: () => {
+          hideMenu();
+          dispatch(
+            removeScheduleItem({
+              itemId: item.id,
+            }),
+          );
+        },
+      };
+  const menuItems: ContextMenuItem[] = [menuItem];
+
+  const handleContextMenu = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    showMenu({ x: e.clientX, y: e.clientY }, menuItems);
+  };
 
   const onMouseMove = (e: MouseEvent) => {
     const delta = e.clientX - mouseDownX;
@@ -113,10 +153,30 @@ export const DragBar: React.FC<DragBarProps> = ({
       ? barGeometry(dayGeometry, workingStart, workingEnd)
       : barGeometry(dayGeometry, startDate, endDate);
 
+  const removedBackground = item.removed_from_schedule
+    ? {
+        left: geometry.left,
+        width: geometry.width,
+        background: `repeating-linear-gradient(
+                -45deg,
+                #ad2833,
+                #ad2833 6px,
+                transparent 6px,
+                transparent 14px
+            )`,
+        border: `2px solid #ad2833`,
+      }
+    : {
+        left: geometry.left,
+        width: geometry.width,
+        background: `${color} no-repeat fixed center`,
+        border: `2px solid ${color}`,
+      };
   return (
     <>
       {isContainer ? (
         <div
+          onContextMenu={handleContextMenu}
           onMouseDown={startDrag}
           className="absolute border-t-4 h-3 top-3 cursor-grab flex flex-row justify-between"
           style={{
@@ -138,23 +198,20 @@ export const DragBar: React.FC<DragBarProps> = ({
         </div>
       ) : (
         <div
+          onContextMenu={handleContextMenu}
           onMouseDown={startDrag}
-          className="rounded absolute h-7 top-1.5 flex flex-row justify-between p-0.5 cursor-grab"
-          style={{
-            left: geometry.left,
-            width: geometry.width,
-            backgroundColor: color,
-          }}
+          className="group rounded absolute h-7 top-1.5 flex flex-row justify-between p-0.5 cursor-grab"
+          style={removedBackground}
         >
           <div
             onMouseDown={startResize('left')}
-            className="w-0.5 inline-block h-full bg-delivery-primary-300 dark:bg-delivery-primary-200 cursor-col-resize dark:border-gray-400"
+            className="w-0.5 inline-block h-full group-hover:bg-delivery-primary-300 group-hover:dark:bg-delivery-primary-200 cursor-col-resize group-hover:dark:border-gray-400"
           ></div>
           {children}
 
           <div
             onMouseDown={startResize('right')}
-            className="w-0.5 inline-block h-full bg-delivery-primary-300 dark:bg-delivery-primary-200 cursor-col-resize dark:border-gray-400"
+            className="w-0.5 inline-block h-full group-hover:bg-delivery-primary-300 group-hover:dark:bg-delivery-primary-200 cursor-col-resize group-hover:dark:border-gray-400"
           ></div>
         </div>
       )}

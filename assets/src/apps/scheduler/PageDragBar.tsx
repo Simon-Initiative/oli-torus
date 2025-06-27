@@ -1,7 +1,10 @@
 import React, { useCallback, useState } from 'react';
+import { useDispatch } from 'react-redux';
 import { DateWithoutTime } from 'epoq';
 import { useDocumentMouseEvents } from '../../components/hooks/useDocumentMouseEvents';
 import { useToggle } from '../../components/hooks/useToggle';
+import { ContextMenuItem } from './ContextMenu';
+import { useContextMenu } from './ContextMenuController';
 import {
   DayGeometry,
   barGeometry,
@@ -9,9 +12,15 @@ import {
   leftToDate,
   validateStartEndDates,
 } from './date-utils';
-import { SchedulingType } from './scheduler-slice';
+import {
+  HierarchyItem,
+  SchedulingType,
+  reAddScheduleItem,
+  removeScheduleItem,
+} from './scheduler-slice';
 
 interface DragBarProps {
+  item: HierarchyItem;
   endDate: DateWithoutTime | null;
   startDate: DateWithoutTime | null;
   isContainer: boolean;
@@ -25,13 +34,14 @@ interface DragBarProps {
 }
 
 export const DraggableIcon: React.FC<{
+  item: HierarchyItem;
   date: DateWithoutTime;
   dayGeometry: DayGeometry;
   onChange: (date: DateWithoutTime) => void;
   onStartDrag?: () => void;
   children: React.ReactNode;
   offset: number;
-}> = ({ date, dayGeometry, onChange, onStartDrag, children, offset }) => {
+}> = ({ item, date, dayGeometry, onChange, onStartDrag, children, offset }) => {
   const [isDragging, , enableDrag, disableDrag] = useToggle();
 
   const [startingGeometry, setStartingGeometry] = React.useState({ left: 0, width: 0 });
@@ -39,6 +49,39 @@ export const DraggableIcon: React.FC<{
   const [mouseDownX, setMouseDownX] = React.useState(0);
 
   const [workingDate, setWorkingDate] = useState<DateWithoutTime>(new DateWithoutTime());
+
+  const { showMenu, hideMenu } = useContextMenu();
+  const dispatch = useDispatch();
+
+  const menuItem = item.removed_from_schedule
+    ? {
+        label: 'Re-add item to Schedule',
+        onClick: () => {
+          hideMenu();
+          dispatch(
+            reAddScheduleItem({
+              itemId: item.id,
+            }),
+          );
+        },
+      }
+    : {
+        label: 'Remove from Schedule',
+        onClick: () => {
+          hideMenu();
+          dispatch(
+            removeScheduleItem({
+              itemId: item.id,
+            }),
+          );
+        },
+      };
+  const menuItems: ContextMenuItem[] = [menuItem];
+
+  const handleContextMenu = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    showMenu({ x: e.clientX, y: e.clientY }, menuItems);
+  };
 
   const onMouseMove = (e: MouseEvent) => {
     const delta = e.clientX - mouseDownX;
@@ -86,6 +129,7 @@ export const DraggableIcon: React.FC<{
 
   return (
     <div
+      onContextMenu={handleContextMenu}
       onMouseDown={startDrag}
       className="absolute h-3 flex flex-row justify-between cursor-move transition-transform"
       style={barStyles}
@@ -96,6 +140,7 @@ export const DraggableIcon: React.FC<{
 };
 
 export const PageDragBar: React.FC<DragBarProps> = ({
+  item,
   endDate,
   startDate,
   onChange,
@@ -141,6 +186,7 @@ export const PageDragBar: React.FC<DragBarProps> = ({
 
       {endDate && (
         <DraggableIcon
+          item={item}
           date={endDate}
           dayGeometry={dayGeometry}
           onStartDrag={onStartDrag}
@@ -153,6 +199,7 @@ export const PageDragBar: React.FC<DragBarProps> = ({
 
       {isGraded && startDate && (
         <DraggableIcon
+          item={item}
           date={startDate}
           dayGeometry={dayGeometry}
           onStartDrag={onStartDrag}

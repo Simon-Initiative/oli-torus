@@ -88,7 +88,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
         <%= for {label, href, badge, active, hidden} <- [
             {"Content", path_for(:content, @section_slug, @student_id, @preview_mode), nil, is_active_tab?(:content, @active_tab), is_hidden?(:content, @hidden_tabs)},
             {"Learning Objectives", path_for(:learning_objectives, @section_slug, @student_id, @preview_mode), nil, is_active_tab?(:learning_objectives, @active_tab), is_hidden?(:learning_objectives, @hidden_tabs)},
-            {"Quiz Scores", path_for(:quizz_scores, @section_slug, @student_id, @preview_mode), nil, is_active_tab?(:quizz_scores, @active_tab), is_hidden?(:quizz_scores, @hidden_tabs)},
+            {"Assessment Scores", path_for(:quizz_scores, @section_slug, @student_id, @preview_mode), nil, is_active_tab?(:quizz_scores, @active_tab), is_hidden?(:quizz_scores, @hidden_tabs)},
             {"Progress", path_for(:progress, @section_slug, @student_id, @preview_mode), nil, is_active_tab?(:progress, @active_tab), is_hidden?(:progress, @hidden_tabs)},
             {"Actions", path_for(:actions, @section_slug, @student_id, @preview_mode), nil, is_active_tab?(:actions, @active_tab), is_hidden?(:actions, @hidden_tabs)},
           ] do %>

@@ -2,7 +2,6 @@ import { Locator, Page, expect } from '@playwright/test';
 import { NavbarCO } from './NavbarCO';
 import { Utils } from '../../../../core/Utils';
 import { USER_TYPES, UserType } from '../types/user-type';
-
 export class LoginPO {
   private acceptCookiesButton: Locator;
   private welcomeText: Locator;
@@ -50,7 +49,6 @@ export class LoginPO {
   async clickSignInButton() {
     await this.signInButton.click();
   }
-
 
   async selectRoleAccount(role: UserType) {
     const navbarco = new NavbarCO(this.page);

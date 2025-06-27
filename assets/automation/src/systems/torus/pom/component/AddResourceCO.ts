@@ -1,4 +1,3 @@
-
 import { Page } from '@playwright/test';
 import { ACTIVITY_TYPE, ActivityType } from '../types/activity-types';
 

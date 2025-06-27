@@ -35,7 +35,19 @@ defmodule Oli.Analytics.Datasets.Utils do
   users that have opted out of research and users that are not students in the section.
   """
   def determine_ignored_student_ids(section_ids) do
-    query =
+    # The most robust way to calculate this is to get all user ids in the sections,
+    # then subtract those that are students who have not opted out
+
+    all_user_ids =
+      from(e in Oli.Delivery.Sections.Enrollment,
+        where: e.section_id in ^section_ids,
+        distinct: true,
+        select: e.user_id
+      )
+      |> Repo.all()
+      |> MapSet.new()
+
+    students_who_have_not_opted_out =
       from(e in Oli.Delivery.Sections.Enrollment,
         join: u in Oli.Accounts.User,
         on: u.id == e.user_id,
@@ -43,12 +55,17 @@ defmodule Oli.Analytics.Datasets.Utils do
         on: ecr.enrollment_id == e.id,
         where:
           e.section_id in ^section_ids and
-            (u.research_opt_out == true or ecr.context_role_id != @student_role),
+            u.research_opt_out == false and
+            ecr.context_role_id == @student_role,
         distinct: true,
         select: u.id
       )
+      |> Repo.all()
+      |> MapSet.new()
 
-    Repo.all(query)
+    # Return the difference between all user ids and students who have not opted out
+    MapSet.difference(all_user_ids, students_who_have_not_opted_out)
+    |> MapSet.to_list()
   end
 
   def context_sql(section_ids) do

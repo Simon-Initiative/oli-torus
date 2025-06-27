@@ -51,14 +51,30 @@ export type ParseFIBMode = 'generate' | 'map';
 export const extractFormattedHTMLFromQuillNodes = (nodes: any[]): string => {
   const processNodes = (nodeArray: any[]): string => {
     return nodeArray
-      .map((node) => {
+      .map((node, index) => {
         if (node.tag === 'text' && node.text) {
           return node.text;
         }
 
         if (node.tag === 'sup' || node.tag === 'sub') {
           const inner = processNodes(node.children || []);
-          return `<${node.tag}>${inner}</${node.tag}>`;
+          let wrapped = inner;
+          if (
+            node.style?.fontWeight === 'bold' ||
+            node.style?.fontStyle === 'italic' ||
+            node.style?.textDecoration === 'underline'
+          ) {
+            if (node.style?.fontWeight === 'bold') {
+              wrapped = `<b>${wrapped}</b>`;
+            }
+            if (node.style?.fontStyle === 'italic') {
+              wrapped = `<i>${wrapped}</i>`;
+            }
+            if (node.style?.textDecoration === 'underline') {
+              wrapped = `<u>${wrapped}</u>`;
+            }
+          }
+          return `<${node.tag}>${wrapped}</${node.tag}>`;
         }
 
         if (
@@ -79,6 +95,11 @@ export const extractFormattedHTMLFromQuillNodes = (nodes: any[]): string => {
             wrapped = `<u>${wrapped}</u>`;
           }
           return wrapped;
+        }
+
+        if (node.tag === 'p') {
+          const inner = processNodes(node.children || []);
+          return index < nodeArray?.length - 1 ? `${inner} <br> ` : `${inner}`;
         }
 
         // Recurse for other tags (like <p> etc.)
@@ -105,17 +126,23 @@ export const convertFIBContentToQuillNodes = (contentItems: any[], blanks: any[]
   contentItems?.forEach((item) => {
     if (!blanks?.length) return;
     if (item.insert) {
-      finalText += item.insert;
+      const htmlString = item.insert.replace(/<br>/g, '<p></p>');
+      finalText += htmlString;
     } else if (item.dropdown) {
       const matchingDropdown = blanks.find((b) => b.key === item.dropdown);
 
       if (matchingDropdown) {
-        finalText += ` {${matchingDropdown.options
+        finalText += `{${matchingDropdown.options
           .map((opt: any) => {
             const isCorrect =
               opt.key === matchingDropdown.correct ||
               matchingDropdown.alternateCorrect?.includes(opt.key);
-            return `"${opt.value}"${isCorrect ? '*' : ''}`;
+
+            const styledText = isCorrect
+              ? `<span style="color: #3B76D3">${opt.value}</span>`
+              : opt.value;
+
+            return `"${styledText}"${isCorrect ? '*' : ''}`;
           })
           .join(', ')}}`;
       }
@@ -127,17 +154,18 @@ export const convertFIBContentToQuillNodes = (contentItems: any[], blanks: any[]
         if (matchingInput.options) {
           updatedText = matchingInput.options
             .map((opt: any) => {
-              return `"${opt.value}"*`;
+              return `"${`<span style="color: #3B76D3">${opt.value}</span>`}"*`;
             })
             .join(', ');
         } else {
           // this will be old formatted input type
-          updatedText = `"${matchingInput.correct}"*`;
+          updatedText = `"${`<span style="color: #3B76D3">${matchingInput.correct}</span>`}"*`;
         }
-        finalText += ` {${updatedText}}`;
+        finalText += `{${updatedText}}`;
       }
     }
   });
+
   try {
     const quillTextNodes = convertHTMLToQuillNodes(finalText);
     return quillTextNodes;
@@ -195,7 +223,20 @@ export const convertHTMLToQuillNodes = (htmlText: string) => {
       const tag = el.tagName.toLowerCase();
 
       const children = Array.from(el.childNodes).map(parseNode).filter(Boolean);
-
+      const style: any = {};
+      // Extract common inline styles
+      if (el.style?.fontWeight === 'bold' || tag === 'b' || tag === 'strong') {
+        style.fontWeight = 'bold';
+      }
+      if (el.style?.fontStyle === 'italic' || tag === 'i' || tag === 'em') {
+        style.fontStyle = 'italic';
+      }
+      if (el.style?.textDecoration === 'underline' || tag === 'u') {
+        style.textDecoration = 'underline';
+      }
+      if (el.style?.color) {
+        style.color = el.style.color;
+      }
       // Map supported tags to node structures
       switch (tag) {
         case 'sup':
@@ -209,7 +250,21 @@ export const convertHTMLToQuillNodes = (htmlText: string) => {
             style: { fontWeight: 'bold' },
             children,
           };
-
+        case 'span':
+          if (Object.keys(style).length > 0) {
+            return {
+              tag: 'span',
+              style,
+              children,
+            };
+          }
+          return children;
+        case 'p':
+          return {
+            tag: 'p',
+            style: {},
+            children,
+          };
         case 'i':
         case 'em':
           return {
@@ -417,7 +472,7 @@ export const embedCorrectAnswersInString = (input: string, options: OptionItem[]
     if (type === 'dropdown') {
       const updatedOptions = allOptions.map((opt: any) =>
         [correct, ...(alternateCorrect || [])].includes(opt?.value)
-          ? `"${opt?.value}"*`
+          ? `"<span style="color: #3B76D3">${opt?.value}</span>"*`
           : `"${opt?.value}"`,
       );
       return `{${updatedOptions.join(', ')}}`;
@@ -432,7 +487,9 @@ export const embedCorrectAnswersInString = (input: string, options: OptionItem[]
         }
         return acc;
       }, []);
-      const formatted = allCorrect.map((opt: any) => `"${opt}"*`);
+      const formatted = allCorrect.map(
+        (opt: any) => `"<span style="color: #3B76D3">${opt}</span>"*`,
+      );
       return `{${formatted.join(', ')}}`;
     }
 

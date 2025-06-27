@@ -1,7 +1,7 @@
 import {
+  AssessmentLayoutType,
   HierarchyItem,
   ScheduleItemType,
-  areSomeContainersExpanded,
   collapseAllContainers,
   expandAllContainers,
   hasContainers,
@@ -28,6 +28,7 @@ describe('expand/collapse containers', () => {
     endDateTime: null,
     start_date: '',
     end_date: '',
+    removed_from_schedule: false,
   };
 
   const rootContainer: HierarchyItem = {
@@ -37,7 +38,7 @@ describe('expand/collapse containers', () => {
     numbering_index: 1,
   };
 
-  const baseState = {
+  const baseState: { scheduler: ReturnType<typeof schedulerSliceReducer> } = {
     scheduler: {
       schedule: [rootContainer, container1],
       expandedContainers: {},
@@ -53,6 +54,10 @@ describe('expand/collapse containers', () => {
       errorMessage: null,
       weekdays: [false, true, true, true, true, true, false],
       preferredSchedulingTime: { hour: 23, minute: 59, second: 59 },
+      searchQuery: '',
+      showRemoved: false,
+      agenda: true,
+      assessmentLayoutType: AssessmentLayoutType.ContentSequence,
     },
   };
 
@@ -86,26 +91,6 @@ describe('expand/collapse containers', () => {
     };
     expect(isContainerExpanded(stateWithExpanded, 1)).toBe(true);
     expect(isContainerExpanded(stateWithExpanded, 999)).toBe(false);
-  });
-
-  it('areSomeContainersExpanded should return true if any container is expanded', () => {
-    const stateWithExpanded = {
-      ...baseState,
-      scheduler: {
-        ...baseState.scheduler,
-        expandedContainers: { 1: true },
-      },
-    };
-    expect(areSomeContainersExpanded(stateWithExpanded)).toBe(true);
-
-    const stateCollapsed = {
-      ...baseState,
-      scheduler: {
-        ...baseState.scheduler,
-        expandedContainers: {},
-      },
-    };
-    expect(areSomeContainersExpanded(stateCollapsed)).toBe(false);
   });
 
   it('hasContainers should return true only if there are non-root containers', () => {
