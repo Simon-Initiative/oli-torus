@@ -218,8 +218,13 @@ defmodule Oli.Rendering.Activity.Html do
       |> Poison.encode!()
       |> HtmlEntities.encode()
 
+    activity_resource_id =
+      if mode == :review,
+        do: "activity-#{resource_id}-#{Ecto.UUID.generate()}}",
+        else: "activity-#{resource_id}"
+
     [
-      ~s|<#{tag} id="activity-#{resource_id}" phx-update="ignore" class="activity-container" state="#{state}" model="#{model_json}" mode="#{mode}" context="#{activity_context}"></#{tag}>\n|
+      ~s|<#{tag} id="#{activity_resource_id}" phx-update="ignore" class="activity-container" state="#{state}" model="#{model_json}" mode="#{mode}" context="#{activity_context}"></#{tag}>\n|
     ]
   end
 
