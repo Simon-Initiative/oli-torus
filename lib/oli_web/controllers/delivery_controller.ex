@@ -580,7 +580,10 @@ defmodule OliWeb.DeliveryController do
   end
 
   defp sort_data(results) do
-    Enum.sort_by(results, &{&1.status, &1.name, &1.email, &1.lms_id})
+    Enum.sort_by(
+      results,
+      &{&1.status, String.downcase(&1.name), String.downcase(&1.email), &1.lms_id}
+    )
   end
 
   defp convert_to_percentage(%{progress: nil}), do: 0
