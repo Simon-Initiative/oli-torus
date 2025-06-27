@@ -5,7 +5,6 @@ defmodule OliWeb.LtiController do
   import Oli.Utils
 
   alias Oli.Accounts
-  alias Oli.Accounts.SystemRole
   alias Oli.Delivery.Sections
   alias Oli.Institutions
   alias Oli.Institutions.PendingRegistration
