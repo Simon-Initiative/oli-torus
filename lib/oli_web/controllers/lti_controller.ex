@@ -140,8 +140,7 @@ defmodule OliWeb.LtiController do
           Lti_1p3.Claims.Roles.roles(roles),
           # Optional claims
           Lti_1p3.Claims.PlatformInstance.platform_instance(
-            # platform_instance.guid,
-            "changeme",
+            PlatformInstances.platform_instance_guid(platform_instance),
             contact_email: Oli.VendorProperties.support_email(),
             description: Oli.VendorProperties.product_description(),
             name: Oli.VendorProperties.product_full_name(),
@@ -190,7 +189,7 @@ defmodule OliWeb.LtiController do
 
     # Build additional claims
     additional_claims = [
-      Oli.Lti.Claims.Context.context(project.slug,
+      Lti_1p3.Claims.Context.context(project.slug,
         title: project.title,
         type: ["http://purl.imsglobal.org/vocab/lis/v2/course#CourseOffering"]
       )
@@ -233,7 +232,7 @@ defmodule OliWeb.LtiController do
 
     # Build additional claims
     additional_claims = [
-      Oli.Lti.Claims.Context.context(section.slug,
+      Lti_1p3.Claims.Context.context(section.slug,
         title: section.title,
         type: ["http://purl.imsglobal.org/vocab/lis/v2/course#CourseSection"]
       )
@@ -488,61 +487,5 @@ defmodule OliWeb.LtiController do
       nil -> nil
       section -> {:ok, section}
     end
-  end
-end
-
-defmodule Oli.Lti.Claims.Context do
-  @moduledoc """
-  A struct representing the context claim in an LTI 1.3 request.
-
-  https://www.imsglobal.org/spec/lti/v1p3#context-claim
-  """
-
-  @enforce_keys [:id]
-
-  defstruct [
-    :id,
-    :label,
-    :title,
-    :type
-  ]
-
-  @type t() :: %__MODULE__{
-          id: String.t(),
-          label: String.t(),
-          title: String.t(),
-          type: String.t()
-        }
-
-  def key, do: "https://purl.imsglobal.org/spec/lti/claim/context"
-
-  @doc """
-  Create a new context claim.
-  """
-  def context(id, opts \\ []) do
-    %__MODULE__{
-      id: id,
-      label: Keyword.get(opts, :label),
-      title: Keyword.get(opts, :title),
-      type: Keyword.get(opts, :type)
-    }
-  end
-end
-
-defimpl Lti_1p3.Claims.Claim, for: Oli.Lti.Claims.Context do
-  def get_key(_), do: Oli.Lti.Claims.Context.key()
-
-  def get_value(%Oli.Lti.Claims.Context{
-        id: id,
-        label: label,
-        title: title,
-        type: type
-      }) do
-    %{
-      "id" => id,
-      "label" => label,
-      "title" => title,
-      "type" => type
-    }
   end
 end

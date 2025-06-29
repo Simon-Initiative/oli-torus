@@ -111,4 +111,14 @@ defmodule Oli.Lti.PlatformInstances do
   def change_platform_instance(%PlatformInstance{} = platform_instance, attrs \\ %{}) do
     PlatformInstance.changeset(platform_instance, attrs)
   end
+
+  @doc """
+  Returns the platform instance unique identifier for a given platform instance.
+  """
+  def platform_instance_guid(platform_instance) do
+    url_config = Application.fetch_env!(:oli, OliWeb.Endpoint)[:url]
+    host = Keyword.get(url_config, :host, "localhost")
+
+    "#{platform_instance.guid}.#{host}"
+  end
 end
