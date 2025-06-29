@@ -265,9 +265,12 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
     part_inputs =
       Enum.map(client_evaluations, fn %{
                                         attempt_guid: attempt_guid,
-                                        client_evaluation: %ClientEvaluation{input: input}
+                                        client_evaluation: %ClientEvaluation{
+                                          input: input,
+                                          timestamp: timestamp
+                                        }
                                       } ->
-        %{attempt_guid: attempt_guid, input: input}
+        %{attempt_guid: attempt_guid, input: input, timestamp: timestamp}
       end)
 
     %Oli.Activities.ActivityRegistration{allow_client_evaluation: allow_client_evaluation} =

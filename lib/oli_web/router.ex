@@ -877,6 +877,13 @@ defmodule OliWeb.Router do
     get("/authorize_redirect", LtiController, :authorize_redirect)
   end
 
+  # LTI 1.3 AGS endpoints for migrated LTI 1.1 Basic Outcomes
+  scope "/lti/lineitems/:page_attempt_guid/:activity_resource_id", OliWeb.Api do
+    pipe_through([:api])
+    get "/results", LtiAgsController, :get_result
+    post "/scores", LtiAgsController, :post_score
+  end
+
   ### Workspaces
   scope "/workspaces", OliWeb.Workspaces do
     pipe_through([:browser, :authoring_protected])
@@ -1533,14 +1540,6 @@ defmodule OliWeb.Router do
     pipe_through([:browser, :delivery_protected])
 
     live("/select_project", Delivery.NewCourse, :lms_instructor, as: :select_source)
-  end
-
-  ### Admin Dashboard / LTI Platform Management
-
-  scope "/admin", OliWeb do
-    pipe_through([:browser, :authoring_protected, :require_authenticated_system_admin, :workspace])
-
-    resources("/platform_instances", PlatformInstanceController)
   end
 
   ### Admin Dashboard / Telemetry

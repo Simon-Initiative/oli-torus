@@ -313,7 +313,6 @@ defmodule Oli.Utils do
     url_config = Application.fetch_env!(:oli, OliWeb.Endpoint)[:url]
 
     scheme = Keyword.get(url_config, :scheme, "http") |> String.downcase()
-
     host = Keyword.get(url_config, :host, "localhost")
 
     port =

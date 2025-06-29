@@ -947,6 +947,210 @@ defmodule Oli.Delivery.AttemptsTest do
     end
   end
 
+  describe "get_latest_activity_attempt_from_page_attempt/3" do
+    alias Oli.Activities
+    alias Oli.Activities.Manifest
+    alias Oli.Activities.ModeSpecification
+
+    test "returns the latest activity attempt for a given page attempt and activity id" do
+      # create mock activity which does not allow client evaluation
+      {:ok, %Activities.ActivityRegistration{}} =
+        Activities.register_activity(%Manifest{
+          id: "example_lti_activity",
+          friendlyName: "Test LTI Activity",
+          description: "An LTI activity that allows evaluation",
+          delivery: %ModeSpecification{
+            element: "test-lti-activity-delivery",
+            entry: "./delivery-entry.ts"
+          },
+          icon: "nothing",
+          petiteLabel: "test",
+          authoring: %ModeSpecification{
+            element: "test-lti-activity-authoring",
+            entry: "./authoring-entry.ts"
+          },
+          allowClientEvaluation: true,
+          global: true,
+          variables: []
+        })
+
+      # create an example project with the activity in a graded page
+      %{
+        user1: user1,
+        activity_a: activity_a,
+        attempt1: attempt1,
+        attempt2: attempt2,
+        activity_attempt1: activity_attempt1,
+        activity_attempt2: activity_attempt2
+      } =
+        Seeder.base_project_with_resource2()
+        |> Seeder.create_section()
+        |> Seeder.create_section_resources()
+        |> Seeder.add_user(%{}, :user1)
+        |> Seeder.add_user(%{}, :user2)
+        |> Seeder.add_activity(
+          %{activity_type_id: Activities.get_registration_by_slug("example_lti_activity").id},
+          :publication,
+          :project,
+          :author,
+          :activity_a
+        )
+        |> Seeder.add_page(%{graded: true}, :graded_page)
+        |> Seeder.create_resource_attempt(
+          %{attempt_number: 1},
+          :user1,
+          :page1,
+          :revision1,
+          :attempt1
+        )
+        |> Seeder.create_activity_attempt(
+          %{attempt_number: 1, transformed_model: nil},
+          :activity_a,
+          :attempt1,
+          :activity_attempt1
+        )
+        |> Seeder.create_part_attempt(
+          %{attempt_number: 1},
+          %Part{id: "1", responses: [], hints: []},
+          :activity_attempt1,
+          :part1_attempt1
+        )
+        |> Seeder.create_resource_attempt(
+          %{attempt_number: 2},
+          :user1,
+          :page1,
+          :revision1,
+          :attempt2
+        )
+        |> Seeder.create_activity_attempt(
+          %{attempt_number: 1, transformed_model: nil},
+          :activity_a,
+          :attempt2,
+          :activity_attempt2
+        )
+        |> Seeder.create_part_attempt(
+          %{attempt_number: 1},
+          %Part{id: "1", responses: [], hints: []},
+          :activity_attempt2,
+          :part1_attempt2
+        )
+
+      {resource_attempt, latest_activity_attempt} =
+        Attempts.get_latest_activity_attempt_from_page_attempt(
+          attempt1.attempt_guid,
+          activity_a.resource.id,
+          user1.id
+        )
+
+      assert resource_attempt.lifecycle_state == :active
+      assert latest_activity_attempt.id == activity_attempt1.id
+
+      {_resource_attempt, latest_activity_attempt} =
+        Attempts.get_latest_activity_attempt_from_page_attempt(
+          attempt2.attempt_guid,
+          activity_a.resource.id,
+          user1.id
+        )
+
+      assert resource_attempt.lifecycle_state == :active
+      assert latest_activity_attempt.id == activity_attempt2.id
+    end
+  end
+
+  describe "get_latest_user_resource_attempt_for_activity/3" do
+    alias Oli.Activities
+    alias Oli.Activities.Manifest
+    alias Oli.Activities.ModeSpecification
+
+    test "returns the latest activity attempt for a given page attempt and activity id" do
+      # create mock activity which does not allow client evaluation
+      {:ok, %Activities.ActivityRegistration{}} =
+        Activities.register_activity(%Manifest{
+          id: "example_lti_activity",
+          friendlyName: "Test LTI Activity",
+          description: "An LTI activity that allows evaluation",
+          delivery: %ModeSpecification{
+            element: "test-lti-activity-delivery",
+            entry: "./delivery-entry.ts"
+          },
+          icon: "nothing",
+          petiteLabel: "test",
+          authoring: %ModeSpecification{
+            element: "test-lti-activity-authoring",
+            entry: "./authoring-entry.ts"
+          },
+          allowClientEvaluation: true,
+          global: true,
+          variables: []
+        })
+
+      # create an example project with the activity in a graded page
+      %{
+        user1: user1,
+        section: section,
+        activity_a: activity_a,
+        attempt2: attempt2
+      } =
+        Seeder.base_project_with_resource2()
+        |> Seeder.create_section()
+        |> Seeder.create_section_resources()
+        |> Seeder.add_user(%{}, :user1)
+        |> Seeder.add_user(%{}, :user2)
+        |> Seeder.add_activity(
+          %{activity_type_id: Activities.get_registration_by_slug("example_lti_activity").id},
+          :publication,
+          :project,
+          :author,
+          :activity_a
+        )
+        |> Seeder.add_page(%{graded: true}, :graded_page)
+        |> Seeder.create_resource_attempt(
+          %{attempt_number: 1},
+          :user1,
+          :page1,
+          :revision1,
+          :attempt1
+        )
+        |> Seeder.create_activity_attempt(
+          %{attempt_number: 1, transformed_model: nil},
+          :activity_a,
+          :attempt1,
+          :activity_attempt1
+        )
+        |> Seeder.create_part_attempt(
+          %{attempt_number: 1},
+          %Part{id: "1", responses: [], hints: []},
+          :activity_attempt1,
+          :part1_attempt1
+        )
+        |> Seeder.create_resource_attempt(
+          %{attempt_number: 2},
+          :user1,
+          :page1,
+          :revision1,
+          :attempt2
+        )
+        |> Seeder.create_activity_attempt(
+          %{attempt_number: 1, transformed_model: nil},
+          :activity_a,
+          :attempt2,
+          :activity_attempt2
+        )
+        |> Seeder.create_part_attempt(
+          %{attempt_number: 1},
+          %Part{id: "1", responses: [], hints: []},
+          :activity_attempt2,
+          :part1_attempt2
+        )
+
+      assert Attempts.get_latest_user_resource_attempt_for_activity(
+               section.slug,
+               user1.id,
+               activity_a.resource.id
+             ).id == attempt2.id
+    end
+  end
+
   defp get_latest_resource_part_attempt(resource_attempt_id) do
     [{_activity_attempt, part_attempt_map}] =
       Hierarchy.get_latest_attempts(resource_attempt_id)

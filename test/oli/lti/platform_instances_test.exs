@@ -2,10 +2,9 @@ defmodule Oli.Lti.PlatformInstancesTest do
   use Oli.DataCase
 
   alias Oli.Lti.PlatformInstances
+  alias Lti_1p3.DataProviders.EctoProvider.PlatformInstance
 
   describe "lti_1p3_platform_instances" do
-    alias Lti_1p3.DataProviders.EctoProvider.PlatformInstance
-
     @valid_attrs %{
       client_id: "some client_id",
       custom_params: "some custom_params",
@@ -48,12 +47,32 @@ defmodule Oli.Lti.PlatformInstancesTest do
 
     test "list_lti_1p3_platform_instances/0 returns all lti_1p3_platform_instances" do
       platform_instance = platform_instance_fixture()
-      assert PlatformInstances.list_lti_1p3_platform_instances() == [platform_instance]
+
+      result = PlatformInstances.list_lti_1p3_platform_instances() |> hd()
+
+      assert result.client_id == platform_instance.client_id
+      assert result.custom_params == platform_instance.custom_params
+      assert result.description == platform_instance.description
+      assert result.keyset_url == platform_instance.keyset_url
+      assert result.login_url == platform_instance.login_url
+      assert result.name == platform_instance.name
+      assert result.redirect_uris == platform_instance.redirect_uris
+      assert result.target_link_uri == platform_instance.target_link_uri
     end
 
     test "get_platform_instance!/1 returns the platform_instance with given id" do
       platform_instance = platform_instance_fixture()
-      assert PlatformInstances.get_platform_instance!(platform_instance.id) == platform_instance
+
+      result = PlatformInstances.get_platform_instance!(platform_instance.id)
+
+      assert result.client_id == platform_instance.client_id
+      assert result.custom_params == platform_instance.custom_params
+      assert result.description == platform_instance.description
+      assert result.keyset_url == platform_instance.keyset_url
+      assert result.login_url == platform_instance.login_url
+      assert result.name == platform_instance.name
+      assert result.redirect_uris == platform_instance.redirect_uris
+      assert result.target_link_uri == platform_instance.target_link_uri
     end
 
     test "create_platform_instance/1 with valid data creates a platform_instance" do
@@ -97,7 +116,16 @@ defmodule Oli.Lti.PlatformInstancesTest do
       assert {:error, %Ecto.Changeset{}} =
                PlatformInstances.update_platform_instance(platform_instance, @invalid_attrs)
 
-      assert platform_instance == PlatformInstances.get_platform_instance!(platform_instance.id)
+      result = PlatformInstances.get_platform_instance!(platform_instance.id)
+
+      assert result.client_id == platform_instance.client_id
+      assert result.custom_params == platform_instance.custom_params
+      assert result.description == platform_instance.description
+      assert result.keyset_url == platform_instance.keyset_url
+      assert result.login_url == platform_instance.login_url
+      assert result.name == platform_instance.name
+      assert result.redirect_uris == platform_instance.redirect_uris
+      assert result.target_link_uri == platform_instance.target_link_uri
     end
 
     test "delete_platform_instance/1 deletes the platform_instance" do
