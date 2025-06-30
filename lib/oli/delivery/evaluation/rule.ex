@@ -148,7 +148,7 @@ defmodule Oli.Delivery.Evaluation.Rule do
 
         # The comparison is successful if the difference is within the calculated tolerance
         # and the precision (number of significant figures) matches the expected value.
-        abs_diff < tolerance && check_precision(left, r_precision)
+        abs_diff <= tolerance && check_precision(left, r_precision)
 
       true ->
         l_value = parse_number(left)

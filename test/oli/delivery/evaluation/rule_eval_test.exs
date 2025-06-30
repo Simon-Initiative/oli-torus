@@ -293,5 +293,8 @@ defmodule Oli.Delivery.Evaluation.RuleEvalTest do
 
     # Ensures small scientific notation floats are not incorrectly considered equal
     refute eval("input = {2.2e-10}", "2.2e-11")
+
+    # Ensures 0.0 is considered equal to 0.0
+    assert eval("input = {0.0}", "0.0")
   end
 end
