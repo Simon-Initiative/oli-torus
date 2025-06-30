@@ -290,5 +290,8 @@ defmodule Oli.Delivery.Evaluation.RuleEvalTest do
     assert eval("attemptNumber = {1} && input < {4#1}", "3")
     assert eval("attemptNumber = {1} && input > {3#2}", "3.1")
     assert eval("attemptNumber = {1} && input > {3#1}", "4")
+
+    # Ensures small scientific notation floats are not incorrectly considered equal
+    refute eval("input = {2.2e-10}", "2.2e-11")
   end
 end

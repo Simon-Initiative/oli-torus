@@ -133,8 +133,22 @@ defmodule Oli.Delivery.Evaluation.Rule do
         l_value = parse_number(left)
         {r_value, r_precision} = parse_number_with_precision(right)
 
-        abs(l_value - r_value) < 0.00001 &&
-          check_precision(left, r_precision)
+        # Relative tolerance: allowed error is a percentage of the largest value.
+        # This ensures that the comparison is robust for both large and small numbers,
+        # and avoids false positives for very small values with different exponents.
+        # For example, 1.0e-10 means 0.00000001% error tolerance
+        relative_tolerance = 1.0e-10
+
+        # Calculate the absolute difference between the two values
+        abs_diff = abs(l_value - r_value)
+        # Use the largest magnitude as the reference for relative tolerance
+        max_magnitude = max(abs(l_value), abs(r_value))
+        # Calculate the allowed tolerance as a fraction of the largest value
+        tolerance = relative_tolerance * max_magnitude
+
+        # The comparison is successful if the difference is within the calculated tolerance
+        # and the precision (number of significant figures) matches the expected value.
+        abs_diff < tolerance && check_precision(left, r_precision)
 
       true ->
         l_value = parse_number(left)
