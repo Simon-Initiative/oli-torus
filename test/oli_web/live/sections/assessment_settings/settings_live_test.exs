@@ -2697,5 +2697,37 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assert exception.late_start == :disallow
       assert exception.late_submit == :disallow
     end
+
+    test "defaults to first assessment when none is selected", %{
+      conn: conn,
+      section: section,
+      page_1: page_1,
+      page_2: page_2,
+      student_1: student_1,
+      student_2: student_2
+    } do
+      # set up one exception on each of two assessments
+      set_student_exception(section, page_1.resource, student_1)
+      set_student_exception(section, page_2.resource, student_2)
+
+      # load the student_exceptions tab with no specific assessment selected
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_overview_route(section.slug, "student_exceptions", "all")
+        )
+
+      # verify the first assessment (page_1) is selected by default
+      selected =
+        view
+        |> element(~s{select[id="assessment_select_assessment_id"] option[selected]})
+        |> render()
+
+      assert selected =~ page_1.title
+
+      # and only exceptions for that first assessment are shown
+      [se] = table_as_list_of_maps(view, :student_exceptions)
+      assert se.student =~ student_1.name
+    end
   end
 end
