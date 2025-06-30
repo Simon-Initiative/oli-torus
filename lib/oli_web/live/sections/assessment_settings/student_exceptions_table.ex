@@ -846,14 +846,14 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
     })
   end
 
-  defp default_selected_assesment_id(params, assesments) do
-    case {Params.get_int_param(params, "assessment_id", 0), assesments} do
-      {0, [%{resource_id: assesment_id} | _]} -> assesment_id
-      {assesment_id, _} -> assesment_id
+  defp default_selected_assessment_id(params, assessments) do
+    case {Params.get_int_param(params, "assessment_id", 0), assessments} do
+      {0, [%{resource_id: assessment_id} | _]} -> assessment_id
+      {assessment_id, _} -> assessment_id
     end
   end
 
-  defp decode_params(params, assesments) do
+  defp decode_params(params, assessments) do
     %{
       offset: Params.get_int_param(params, "offset", @default_params.offset),
       limit: Params.get_int_param(params, "limit", @default_params.limit),
@@ -881,7 +881,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
           ],
           @default_params.sort_by
         ),
-      selected_assessment_id: default_selected_assesment_id(params, assesments)
+      selected_assessment_id: default_selected_assessment_id(params, assessments)
     }
   end
 
