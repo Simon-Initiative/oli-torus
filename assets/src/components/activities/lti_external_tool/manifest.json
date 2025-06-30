@@ -4,6 +4,7 @@
   "petiteLabel": "LTI",
   "description": "LTI external tool that can be used to link to an external resource.",
   "icon": "plug",
+  "allowClientEvaluation": true,
   "delivery": {
     "element": "lti-external-tool-delivery",
     "entry": "./delivery-entry.ts"

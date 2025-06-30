@@ -245,17 +245,23 @@ defmodule OliWeb.Common.Utils do
     |> List.flatten()
   end
 
-  defp extract_from_activity_attempt(%{part_attempts: part_attempts}) do
+  @doc """
+  Extracts the feedback text from an activity attempt, which contains multiple part attempts.
+  """
+  def extract_from_activity_attempt(%{part_attempts: part_attempts}) do
     part_attempts
     |> Enum.map(&extract_from_part_attempt/1)
   end
 
-  defp extract_from_part_attempt(%{feedback: %{"content" => content}}) do
+  @doc """
+  Extracts the feedback text from a part attempt.
+  """
+  def extract_from_part_attempt(%{feedback: %{"content" => content}}) do
     content
     |> Enum.map(&extract_text/1)
   end
 
-  defp extract_from_part_attempt(%{feedback: nil}), do: []
+  def extract_from_part_attempt(%{feedback: nil}), do: []
 
   defp extract_text(%{"children" => children}) do
     children

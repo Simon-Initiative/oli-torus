@@ -394,7 +394,7 @@ defmodule OliWeb.LtiControllerTest do
       {:ok, %LoginHint{value: login_hint}} =
         LoginHints.create_login_hint(user.id, %{
           "section" => "some_section",
-          "resource_id" => "some_resource_id"
+          "resource_id" => 1
         })
 
       target_link_uri = "some-valid-url"
