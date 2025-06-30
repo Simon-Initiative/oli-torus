@@ -337,7 +337,7 @@ defmodule OliWeb.Components.Delivery.Students do
         )
 
       :email ->
-        Enum.sort_by(students, fn student -> String.downcase(student.email) end, sort_order)
+        Enum.sort_by(students, fn student -> String.downcase("#{student.email}") end, sort_order)
 
       :last_interaction ->
         Enum.sort_by(students, & &1.last_interaction, {sort_order, DateTime})
