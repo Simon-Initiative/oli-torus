@@ -5,7 +5,6 @@ defmodule OliWeb.LtiController do
   import Oli.Utils
 
   alias Oli.Accounts
-  alias Oli.Accounts.SystemRole
   alias Oli.Delivery.Sections
   alias Oli.Institutions
   alias Oli.Institutions.PendingRegistration
@@ -99,119 +98,19 @@ defmodule OliWeb.LtiController do
           reason: "The current user must be the same user initiating the LTI request"
         )
 
-      %Lti_1p3.Platform.LoginHint{context: context, session_user_id: session_user_id} ->
+      %Lti_1p3.Platform.LoginHint{context: context, session_user_id: _session_user_id} ->
         {user, activity_resource_id, roles, additional_claims} =
           case context do
-            "admin" ->
-              with author <- Accounts.get_author!(session_user_id),
-                   true <- Accounts.has_admin_role?(author, SystemRole.role_id().system_admin) do
-                roles = [
-                  Lti_1p3.Roles.PlatformRoles.get_role(:system_administrator),
-                  Lti_1p3.Roles.PlatformRoles.get_role(:institution_administrator),
-                  Lti_1p3.Roles.ContextRoles.get_role(:context_content_developer)
-                ]
-
-                {%Accounts.User{
-                   id: author.id,
-                   sub: "admin",
-                   email: author.email,
-                   email_verified: true,
-                   name: author.name,
-                   given_name: author.given_name,
-                   family_name: author.family_name,
-                   middle_name: "",
-                   nickname: "",
-                   preferred_username: "",
-                   profile: "",
-                   picture: author.picture,
-                   website: "",
-                   gender: "",
-                   birthdate: "",
-                   zoneinfo: "",
-                   locale: "",
-                   phone_number: "",
-                   phone_number_verified: "",
-                   address: ""
-                 }, nil, roles}
-              else
-                _ ->
-                  Logger.error("Author with id #{session_user_id} is not an admin")
-
-                  throw("Author is not an admin")
-              end
-
-            %{"project" => _project, "resource_id" => activity_resource_id} ->
-              author = Accounts.get_author!(session_user_id)
-
-              roles = [
-                Lti_1p3.Roles.ContextRoles.get_role(:context_content_developer)
-              ]
-
-              additional_claims = []
-
-              {%Accounts.User{
-                 id: author.id,
-                 sub: "admin",
-                 email: author.email,
-                 email_verified: true,
-                 name: author.name,
-                 given_name: author.given_name,
-                 family_name: author.family_name,
-                 middle_name: "",
-                 nickname: "",
-                 preferred_username: "",
-                 profile: "",
-                 picture: author.picture,
-                 website: "",
-                 gender: "",
-                 birthdate: "",
-                 zoneinfo: "",
-                 locale: "",
-                 phone_number: "",
-                 phone_number_verified: "",
-                 address: ""
-               }, activity_resource_id, roles, additional_claims}
+            %{"project" => project_slug, "resource_id" => activity_resource_id} ->
+              build_authorization_for(
+                :authoring,
+                conn,
+                project_slug,
+                activity_resource_id
+              )
 
             %{"section" => section_slug, "resource_id" => activity_resource_id} ->
-              user = conn.assigns[:current_user]
-
-              context_roles = Lti_1p3.Roles.Lti_1p3_User.get_context_roles(user, section_slug)
-
-              platform_roles =
-                Lti_1p3.Roles.Lti_1p3_User.get_platform_roles(user)
-
-              # Build additional claims
-              additional_claims = []
-
-              # If the user has an activity attempt for the given activity_resource_id,
-              # add the AGS endpoint to the additional claims
-              additional_claims =
-                case Core.get_latest_user_resource_attempt_for_activity(
-                       section_slug,
-                       user.id,
-                       # activity_resource_id is expected to be an database id integer
-                       String.to_integer(activity_resource_id)
-                     ) do
-                  %ResourceAttempt{attempt_guid: page_attempt_guid} ->
-                    [
-                      Lti_1p3.Claims.AgsEndpoint.endpoint(
-                        [
-                          "https://purl.imsglobal.org/spec/lti-ags/scope/lineitem",
-                          "https://purl.imsglobal.org/spec/lti-ags/scope/result.readonly",
-                          "https://purl.imsglobal.org/spec/lti-ags/scope/score"
-                        ],
-                        lineitem:
-                          Oli.Utils.get_base_url() <>
-                            "/lti/lineitems/#{page_attempt_guid}/#{activity_resource_id}"
-                      )
-                      | additional_claims
-                    ]
-
-                  _ ->
-                    additional_claims
-                end
-
-              {user, activity_resource_id, context_roles ++ platform_roles, additional_claims}
+              build_authorization_for(:delivery, conn, section_slug, activity_resource_id)
 
             _ ->
               Logger.error("Unsupported context value in login hint: #{Kernel.inspect(context)}")
@@ -232,12 +131,23 @@ defmodule OliWeb.LtiController do
           )
 
         claims = [
-          Lti_1p3.Claims.DeploymentId.deployment_id(deployment.deployment_id),
+          # Required claims
           Lti_1p3.Claims.MessageType.message_type(:lti_resource_link_request),
           Lti_1p3.Claims.Version.version("1.3.0"),
-          Lti_1p3.Claims.ResourceLink.resource_link(activity_resource_id),
+          Lti_1p3.Claims.DeploymentId.deployment_id(deployment.deployment_id),
           Lti_1p3.Claims.TargetLinkUri.target_link_uri(platform_instance.target_link_uri),
-          Lti_1p3.Claims.Roles.roles(roles)
+          Lti_1p3.Claims.ResourceLink.resource_link(activity_resource_id),
+          Lti_1p3.Claims.Roles.roles(roles),
+          # Optional claims
+          Lti_1p3.Claims.PlatformInstance.platform_instance(
+            PlatformInstances.platform_instance_guid(platform_instance),
+            contact_email: Oli.VendorProperties.support_email(),
+            description: Oli.VendorProperties.product_description(),
+            name: Oli.VendorProperties.product_full_name(),
+            url: Oli.Utils.get_base_url(),
+            product_family_code: "oli-torus",
+            version: Application.fetch_env!(:oli, :build).version
+          )
           | additional_claims
         ]
 
@@ -259,6 +169,103 @@ defmodule OliWeb.LtiController do
             render(conn, "lti_error.html", reason: msg)
         end
     end
+  end
+
+  defp build_authorization_for(:authoring, conn, project_slug, activity_resource_id) do
+    author = conn.assigns[:current_author]
+    project = Oli.Authoring.Course.get_project_by_slug(project_slug)
+
+    roles =
+      [
+        Lti_1p3.Roles.ContextRoles.get_role(:context_content_developer)
+      ] ++
+        if Oli.Accounts.is_admin?(author),
+          do: [
+            Lti_1p3.Roles.PlatformRoles.get_role(:system_administrator),
+            Lti_1p3.Roles.PlatformRoles.get_role(:institution_administrator)
+          ],
+          else: []
+
+    # Build additional claims
+    additional_claims = [
+      Lti_1p3.Claims.Context.context(project.slug,
+        title: project.title,
+        type: ["http://purl.imsglobal.org/vocab/lis/v2/course#CourseOffering"]
+      )
+    ]
+
+    {%Accounts.User{
+       id: author.id,
+       sub: "author-#{author.id}",
+       email: author.email,
+       email_verified: true,
+       name: author.name,
+       given_name: author.given_name,
+       family_name: author.family_name,
+       picture: author.picture
+     }, activity_resource_id, roles, additional_claims}
+  end
+
+  defp build_authorization_for(:delivery, conn, section_slug, activity_resource_id) do
+    user = conn.assigns[:current_user]
+    author = conn.assigns[:current_author]
+    section = Sections.get_section_by_slug(section_slug)
+
+    context_roles =
+      Lti_1p3.Roles.Lti_1p3_User.get_context_roles(user, section.slug)
+
+    platform_roles =
+      Lti_1p3.Roles.Lti_1p3_User.get_platform_roles(user)
+
+    roles =
+      context_roles ++
+        platform_roles ++
+        if Oli.Accounts.is_admin?(author) do
+          [
+            Lti_1p3.Roles.PlatformRoles.get_role(:system_administrator),
+            Lti_1p3.Roles.PlatformRoles.get_role(:institution_administrator)
+          ]
+        else
+          []
+        end
+
+    # Build additional claims
+    additional_claims = [
+      Lti_1p3.Claims.Context.context(section.slug,
+        title: section.title,
+        type: ["http://purl.imsglobal.org/vocab/lis/v2/course#CourseSection"]
+      )
+    ]
+
+    # If the user has an activity attempt for the given activity_resource_id,
+    # add the AGS endpoint to the additional claims
+    additional_claims =
+      case Core.get_latest_user_resource_attempt_for_activity(
+             section.slug,
+             user.id,
+             # activity_resource_id is expected to be an database id integer
+             String.to_integer(activity_resource_id)
+           ) do
+        %ResourceAttempt{attempt_guid: page_attempt_guid} ->
+          [
+            Lti_1p3.Claims.AgsEndpoint.endpoint(
+              [
+                "https://purl.imsglobal.org/spec/lti-ags/scope/lineitem",
+                "https://purl.imsglobal.org/spec/lti-ags/scope/result.readonly",
+                "https://purl.imsglobal.org/spec/lti-ags/scope/score"
+              ],
+              lineitem:
+                Oli.Utils.get_base_url() <>
+                  "/lti/lineitems/#{page_attempt_guid}/#{activity_resource_id}"
+            )
+            | additional_claims
+          ]
+
+        _ ->
+          additional_claims
+      end
+
+    {user, activity_resource_id, roles, additional_claims}
   end
 
   def request_registration(

@@ -1542,14 +1542,6 @@ defmodule OliWeb.Router do
     live("/select_project", Delivery.NewCourse, :lms_instructor, as: :select_source)
   end
 
-  ### Admin Dashboard / LTI Platform Management
-
-  scope "/admin", OliWeb do
-    pipe_through([:browser, :authoring_protected, :require_authenticated_system_admin, :workspace])
-
-    resources("/platform_instances", PlatformInstanceController)
-  end
-
   ### Admin Dashboard / Telemetry
 
   scope "/admin", OliWeb do
