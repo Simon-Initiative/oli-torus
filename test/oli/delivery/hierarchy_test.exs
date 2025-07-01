@@ -4,7 +4,6 @@ defmodule Oli.Delivery.HierarchyTest do
   alias Oli.Delivery.Hierarchy
   alias Oli.Delivery.Hierarchy.HierarchyNode
   alias Oli.Delivery.Sections
-  alias Oli.Delivery.Sections.SectionCache
   alias Oli.Publishing
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Resources.ResourceType
@@ -275,10 +274,7 @@ defmodule Oli.Delivery.HierarchyTest do
       module_1: module_1,
       section_1: section_1
     } do
-      full_hierarchy =
-        SectionCache.get_or_compute(section.slug, :full_hierarchy, fn ->
-          Hierarchy.full_hierarchy(section)
-        end)
+      full_hierarchy = Hierarchy.full_hierarchy(section)
 
       scheduling_types =
         Hierarchy.contained_scheduling_types(full_hierarchy)

@@ -75,7 +75,7 @@ jobs:
         run: |
           set -a;source oli.env
           MIX_ENV=test mix ecto.reset
-          mix test || if [[ $? = 2  ]]; then mix test --failed; else false; fi # https://angelika.me/2024/01/08/do-not-run-mix-test-failed/
+          mix test --trace || if [[ $? = 2  ]]; then mix test --failed; else false; fi # https://angelika.me/2024/01/08/do-not-run-mix-test-failed/
 
       - name: 📦 Install node_module dependencies
         run: yarn --cwd assets --frozen-lockfile

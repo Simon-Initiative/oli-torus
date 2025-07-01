@@ -238,6 +238,8 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
   If this activity is the last activity remaining in a graded page, this will finalize that graded page attempt,
   recalculate a resource access level score, and trigger LMS grade passback (if this is an LMS section and that
   section has gradepassback enabled)
+
+  It returns a tuple of `{:ok, part_attempt_guids}` if successful, or `{:error, reason}` if there was an error.
   """
   def apply_manual_scoring(
         %Section{slug: section_slug} = section,
@@ -271,6 +273,8 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
         {:ok, _} ->
           maybe_finalize_resource_attempt(section, graded, resource_attempt_guid)
 
+          Enum.map(mocked_part_attempts, & &1.attempt_guid)
+
         {:error, error} ->
           Repo.rollback(error)
       end
@@ -290,7 +294,7 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
           input =
             case Map.get(pa, :response) do
               %{input: input} -> input
-              nil -> %{}
+              _ -> %{}
             end
 
           %{

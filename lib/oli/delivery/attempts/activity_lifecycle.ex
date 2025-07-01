@@ -87,7 +87,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
 
   The return value is of the form:
 
-  `{:ok, %ActivityState, model}` where model is potentially a new model of the activity
+  `{:ok, {%ActivityState, model}}` where model is potentially a new model of the activity
 
   If all attempts have been exhausted:
 

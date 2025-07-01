@@ -80,8 +80,7 @@ config :oli, :user_auth_providers,
      end)
 
 config :oli, :certificates,
-  generate_pdf_lambda:
-    System.get_env("CERTIFICATES_GENERATE_PDF_LAMBDA", "generate_certificate_pdf_from_html"),
+  generate_pdf_lambda: System.get_env("CERTIFICATES_GENERATE_PDF_LAMBDA", "generate-certificate"),
   s3_pdf_bucket: System.get_env("CERTIFICATES_S3_PDF_URL", "torus-pdf-certificates")
 
 ####################### Production-only configurations ########################
@@ -209,6 +208,10 @@ if config_env() == :prod do
     screen_idle_timeout_in_seconds:
       String.to_integer(System.get_env("SCREEN_IDLE_TIMEOUT_IN_SECONDS", "1800")),
     log_incomplete_requests: get_env_as_boolean.("LOG_INCOMPLETE_REQUESTS", "true")
+
+  config :oli, :blob_storage,
+    bucket_name: System.get_env("BLOB_STORAGE_BUCKET_NAME", "torus-blob-prod"),
+    use_deprecated_api: get_env_as_boolean.("BLOB_STORAGE_USE_DEPRECATED_API", "true")
 
   config :oli, :dataset_generation,
     enabled: System.get_env("EMR_DATASET_ENABLED", "false") == "true",

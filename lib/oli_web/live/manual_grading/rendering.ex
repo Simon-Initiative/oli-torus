@@ -17,6 +17,12 @@ defmodule OliWeb.ManualGrading.Rendering do
 
     effective_settings = Oli.Delivery.Settings.get_combined_settings(resource_attempt)
 
+    content_for_ordinal_assignment =
+      case resource_attempt.content do
+        nil -> resource_attempt.revision.content
+        content -> content
+      end
+
     %Context{
       user: attempt.user,
       section_slug: section_slug,
@@ -30,7 +36,8 @@ defmodule OliWeb.ManualGrading.Rendering do
           nil,
           nil,
           effective_settings,
-          prune: false
+          prune: false,
+          assign_ordinals_from: content_for_ordinal_assignment
         ),
       activity_types_map: activity_types_map,
       resource_attempt: resource_attempt

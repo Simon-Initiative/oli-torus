@@ -35,6 +35,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
       |> Enum.map(fn {k, v} -> {v.text, k} end)
       |> Enum.sort(:desc)
 
+    custom_license? =
+      project.attributes && project.attributes.license &&
+        project.attributes.license.license_type === :custom
+
     {project_export_status, project_export_url, project_export_timestamp} =
       case ProjectExportWorker.project_export_status(project) do
         {:available, url, timestamp} -> {:available, url, timestamp}
@@ -61,6 +65,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
        attributes: project.attributes,
        language_codes: LanguageCodesIso639.codes(),
        license_opts: cc_options,
+       custom_license: custom_license?,
        collab_space_config: collab_space_config,
        revision_slug: revision_slug,
        latest_publication: latest_publication,
@@ -199,11 +204,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
               <%= inputs_for fp, :license, fn fpp -> %>
                 <%= label(fpp, :license_type, "License (optional)", class: "control-label") %>
                 <%= select(fpp, :license_type, @license_opts,
-                  phx_change: "on_selected",
+                  phx_change: "on_select_license_type",
                   class: "form-control",
                   required: false
                 ) %>
-                <div :if={open_custom_type?(@changeset)} class="form-label-group mb-3">
+                <div :if={@custom_license} class="form-label-group mb-3">
                   <%= label(fpp, :custom_license_details, "Custom license (URL)",
                     class: "control-label"
                   ) %>
@@ -516,16 +521,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
     """
   end
 
-  defp open_custom_type?(changeset) do
-    with %Ecto.Changeset{} = changeset <- Ecto.Changeset.get_embed(changeset, :attributes),
-         %Ecto.Changeset{} = changeset <- Ecto.Changeset.get_embed(changeset, :license),
-         :custom <- Ecto.Changeset.get_field(changeset, :license_type) do
-      true
-    else
-      _ -> false
-    end
-  end
-
   defp get_collab_space_config_and_revision(project_slug) do
     %{slug: revision_slug} = AuthoringResolver.root_container(project_slug)
 
@@ -539,9 +534,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
   end
 
   @impl Phoenix.LiveView
-  def handle_event("on_selected", %{"project" => project_attrs}, socket) do
-    project = socket.assigns.project
-    {:noreply, assign(socket, changeset: Project.changeset(project, project_attrs))}
+  def handle_event(
+        "on_select_license_type",
+        %{"project" => %{"attributes" => %{"license" => %{"license_type" => license_type}}}},
+        socket
+      ) do
+    {:noreply, socket |> assign(custom_license: license_type === "custom")}
   end
 
   def handle_event("update", %{"project" => project_params}, socket) do

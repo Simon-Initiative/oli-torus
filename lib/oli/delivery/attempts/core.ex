@@ -509,6 +509,58 @@ defmodule Oli.Delivery.Attempts.Core do
     |> Repo.preload(revision: [:activity_type])
   end
 
+  @doc """
+  Retrieves the latest activity attempt for a given page attempt guid, activity resource id,
+  and user id. If no attempts exist, returns nil.
+  """
+  def get_latest_activity_attempt_from_page_attempt(
+        page_attempt_guid,
+        activity_resource_id,
+        user_id
+      ) do
+    from(activity_attempt in ActivityAttempt,
+      join: resource_attempt in ResourceAttempt,
+      on: activity_attempt.resource_attempt_id == resource_attempt.id,
+      join: resource_access in ResourceAccess,
+      on: resource_attempt.resource_access_id == resource_access.id,
+      where:
+        resource_attempt.attempt_guid == ^page_attempt_guid and
+          activity_attempt.resource_id == ^activity_resource_id and
+          resource_access.user_id == ^user_id,
+      order_by: [desc: activity_attempt.attempt_number],
+      select: {resource_attempt, activity_attempt},
+      preload: [:part_attempts, :revision],
+      limit: 1
+    )
+    |> Repo.one()
+  end
+
+  @doc """
+  Retrieves the latest resource attempt for a given section slug, user id, and activity resource id.
+  """
+  def get_latest_user_resource_attempt_for_activity(
+        section_slug,
+        user_id,
+        activity_resource_id
+      ) do
+    from(activity_attempt in ActivityAttempt,
+      join: resource_attempt in ResourceAttempt,
+      on: activity_attempt.resource_attempt_id == resource_attempt.id,
+      join: resource_access in ResourceAccess,
+      on: resource_attempt.resource_access_id == resource_access.id,
+      join: s in Section,
+      on: resource_access.section_id == s.id,
+      where:
+        s.slug == ^section_slug and
+          activity_attempt.resource_id == ^activity_resource_id and
+          resource_access.user_id == ^user_id,
+      order_by: [desc: resource_attempt.attempt_number],
+      select: resource_attempt,
+      limit: 1
+    )
+    |> Repo.one()
+  end
+
   def get_latest_activity_attempts(resource_attempt_id) do
     Repo.all(
       from(aa in ActivityAttempt,

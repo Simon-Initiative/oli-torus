@@ -1,5 +1,6 @@
 import { SectionSlug } from 'data/types';
 import { batchedBuffer } from 'utils/common';
+import * as Blob from './blob';
 import { makeRequest } from './common';
 
 // eslint-disable-next-line
@@ -33,6 +34,17 @@ export function readGlobal(keys: string[] | null = null) {
 }
 
 export const readGlobalUserState = async (
+  provider: 'deprecated' | 'new',
+  keys: string[] | null = null,
+  useLocalStorage = false,
+) => {
+  if (provider === 'deprecated') {
+    return deprecatedReadGlobalUserState(keys, useLocalStorage);
+  }
+  return Blob.readGlobalUserState(keys, useLocalStorage);
+};
+
+const deprecatedReadGlobalUserState = async (
   keys: string[] | null = null,
   useLocalStorage = false,
 ) => {
@@ -69,7 +81,7 @@ export const internalUpdateGlobalUserState = async (
 ) => {
   /* console.log('updateGlobalUserState', updates); */
   const topLevelKeys = Object.keys(updates);
-  const currentState = await readGlobalUserState(topLevelKeys, useLocalStorage);
+  const currentState = await deprecatedReadGlobalUserState(topLevelKeys, useLocalStorage);
 
   const newState = { ...currentState };
   topLevelKeys.forEach((topKey) => {
@@ -99,6 +111,17 @@ const updateInterval = 300;
 const [batchedUpdate] = batchedBuffer(internalUpdateGlobalUserState, updateInterval);
 
 export const updateGlobalUserState = async (
+  provider: 'deprecated' | 'new',
+  updates: { [topKey: string]: { [key: string]: any } },
+  useLocalStorage = false,
+) => {
+  if (provider === 'deprecated') {
+    return deprecatedUpdateGlobalUserState(updates, useLocalStorage);
+  }
+  return Blob.updateGlobalUserState(updates, useLocalStorage);
+};
+
+export const deprecatedUpdateGlobalUserState = async (
   updates: { [topKey: string]: { [key: string]: any } },
   useLocalStorage = false,
 ) => {

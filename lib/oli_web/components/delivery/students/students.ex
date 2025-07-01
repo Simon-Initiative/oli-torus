@@ -330,12 +330,14 @@ defmodule OliWeb.Components.Delivery.Students do
       :name ->
         Enum.sort_by(
           students,
-          fn student -> Utils.name(student.name, student.given_name, student.family_name) end,
+          fn student ->
+            String.downcase(Utils.name(student.name, student.given_name, student.family_name))
+          end,
           sort_order
         )
 
       :email ->
-        Enum.sort_by(students, fn student -> student.email end, sort_order)
+        Enum.sort_by(students, fn student -> String.downcase("#{student.email}") end, sort_order)
 
       :last_interaction ->
         Enum.sort_by(students, & &1.last_interaction, {sort_order, DateTime})
@@ -515,12 +517,7 @@ defmodule OliWeb.Components.Delivery.Students do
               <a
                 class="self-end"
                 href={
-                  Routes.metrics_path(
-                    OliWeb.Endpoint,
-                    :download_container_progress,
-                    @section_slug,
-                    @params.container_id || ""
-                  )
+                  ~p(/sections/#{@section_slug}/instructor_dashboard/downloads/progress/#{@params.container_id || ""}/#{@title})
                 }
                 download="progress.csv"
               >

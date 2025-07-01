@@ -1,6 +1,7 @@
 import React, { ReactNode, useState } from 'react';
 import * as Trigger from 'data/persistence/trigger';
 import * as ContentModel from '../data/content/model/elements/types';
+import { AIIcon } from './misc/AIIcon';
 
 export const TriggerButton: React.FC<{
   trigger: ContentModel.TriggerBlock;
@@ -39,11 +40,7 @@ export const TriggerButton: React.FC<{
         } rounded`}
         onClick={onClick}
       >
-        <img
-          src="/images/icons/icon-AI.svg"
-          style={{ marginBottom: 0 }}
-          className="block w-6 h-6 m-0 p-0"
-        />
+        <AIIcon size="md" className="block m-0 p-0" />
       </button>
     </div>
   );

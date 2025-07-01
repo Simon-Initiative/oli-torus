@@ -325,20 +325,6 @@ defmodule OliWeb.Sections.OverviewView do
         }
       ) %>
 
-      <Group.render label="Agenda" description="Include Schedule on Home Screen">
-        <section>
-          <div class="inline-flex py-2 mb-2">
-            <span>Enable Agenda</span>
-            <.toggle_switch
-              class="ml-4"
-              checked={@section.agenda}
-              on_toggle="toggle_agenda"
-              name="toggle_agenda"
-            />
-          </div>
-        </section>
-      </Group.render>
-
       <Group.render label="Scoring" description="View and manage student scores and progress">
         <ul class="link-list">
           <li>
@@ -352,7 +338,7 @@ defmodule OliWeb.Sections.OverviewView do
               }
               class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
             >
-              Score Manually Graded Activities
+              Manual Scoring
               <%= if @has_submitted_attempts do %>
                 <span class="badge badge-primary">*</span>
               <% end %>
@@ -363,15 +349,7 @@ defmodule OliWeb.Sections.OverviewView do
               href={Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.GradebookView, @section.slug)}
               class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
             >
-              View all Scores
-            </a>
-          </li>
-          <li>
-            <a
-              href={Routes.page_delivery_path(OliWeb.Endpoint, :export_gradebook, @section.slug)}
-              class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
-            >
-              Download Gradebook as <code>.csv</code> file
+              Assessment Scores
             </a>
           </li>
 
@@ -677,14 +655,6 @@ defmodule OliWeb.Sections.OverviewView do
     socket =
       socket
       |> put_flash(:info, "AI assistant activation settings updated successfully")
-
-    {:noreply, assign(socket, section: section)}
-  end
-
-  def handle_event("toggle_agenda", _params, socket) do
-    section = socket.assigns.section
-
-    {:ok, section} = Sections.update_section(section, %{agenda: !section.agenda})
 
     {:noreply, assign(socket, section: section)}
   end

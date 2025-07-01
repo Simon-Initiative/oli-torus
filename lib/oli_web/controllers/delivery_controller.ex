@@ -4,7 +4,7 @@ defmodule OliWeb.DeliveryController do
 
   alias Lti_1p3.Roles.{PlatformRoles, ContextRoles}
   alias Oli.Accounts
-  alias Oli.Accounts.{User}
+  alias Oli.Accounts.User
   alias Oli.Analytics.DataTables.DataTable
   alias Oli.Delivery
   alias Oli.Delivery.Sections
@@ -17,6 +17,7 @@ defmodule OliWeb.DeliveryController do
   alias OliWeb.UserAuth
   alias OliWeb.Common.Params
   alias OliWeb.Delivery.InstructorDashboard.Helpers
+  alias OliWeb.Delivery.Student.Utils
 
   require Logger
 
@@ -341,29 +342,34 @@ defmodule OliWeb.DeliveryController do
         )
 
       section ->
-        students = Helpers.get_students(section)
+        students = Helpers.get_students(section, :context_learner)
 
         contents =
-          students
-          |> Enum.map(
+          Enum.map(
+            students,
             &%{
-              name: &1.name,
+              status: Utils.parse_enrollment_status(&1.enrollment_status),
+              name: OliWeb.Common.Utils.name(&1),
               email: &1.email,
+              lms_id: &1.sub,
               last_interaction: &1.last_interaction,
-              progress: &1.progress,
+              progress: convert_to_percentage(&1),
               overall_proficiency: &1.overall_proficiency,
               requires_payment: Map.get(&1, :requires_payment, "N/A")
             }
           )
+          |> sort_data()
           |> DataTable.new()
-          |> DataTable.headers([
-            :name,
-            :email,
-            :last_interaction,
-            :progress,
-            :overall_proficiency,
-            :requires_payment
-          ])
+          |> DataTable.headers(
+            status: "Status",
+            name: "Name",
+            email: "Email",
+            lms_id: "LMS ID",
+            last_interaction: "Last Interaction",
+            progress: "Progress (Pct)",
+            overall_proficiency: "Proficiency",
+            requires_payment: "Requires Payment"
+          )
           |> DataTable.to_csv_content()
 
         conn
@@ -488,6 +494,71 @@ defmodule OliWeb.DeliveryController do
     end
   end
 
+  @doc """
+  Endpoint that triggers download of a container specific progress report.
+  """
+  def download_container_progress(
+        conn,
+        %{"section_slug" => slug, "container_id" => container_id, "title" => title} = params
+      ) do
+    {container_id, _} = Integer.parse(container_id)
+
+    case Oli.Delivery.Sections.get_section_by_slug(slug) do
+      nil ->
+        OliWeb.StaticPageController.not_found(conn, params)
+
+      section ->
+        students =
+          Helpers.get_students(section, %{container_id: container_id}, :context_learner)
+
+        contents =
+          Enum.map(
+            students,
+            &%{
+              status: Utils.parse_enrollment_status(&1.enrollment_status),
+              name: OliWeb.Common.Utils.name(&1),
+              email: &1.email,
+              lms_id: &1.sub,
+              last_interaction: &1.last_interaction,
+              progress: convert_to_percentage(&1),
+              overall_proficiency: &1.overall_proficiency
+            }
+          )
+          |> sort_data()
+          |> DataTable.new()
+          |> DataTable.headers(
+            status: "Status",
+            name: "Name",
+            email: "Email",
+            lms_id: "LMS ID",
+            last_interaction: "Last Interaction",
+            progress: "Progress (Pct)",
+            overall_proficiency: "Proficiency"
+          )
+          |> DataTable.to_csv_content()
+
+        send_download(conn, {:binary, contents},
+          filename: "progress__#{slug}__#{generate_title(title)}.csv"
+        )
+    end
+  end
+
+  def generate_title(title) when is_binary(title) do
+    title
+    |> remove_special_chars()
+    |> String.slice(0, 50)
+  end
+
+  defp remove_special_chars(string) do
+    string
+    # Remove all non-alphanumeric except space
+    |> String.replace(~r/[^A-Za-z0-9\s]/u, "")
+    # Replace spaces with underscores
+    |> String.replace(~r/\s+/, "_")
+    # Remove leading/trailing underscores
+    |> String.trim("_")
+  end
+
   defp safe_score(score, out_of) do
     not_finished_msg = "Not finished"
 
@@ -506,5 +577,23 @@ defmodule OliWeb.DeliveryController do
       section.id,
       student_ids
     )
+  end
+
+  defp sort_data(results) do
+    Enum.sort_by(
+      results,
+      &{&1.status, String.downcase(&1.name), String.downcase("#{&1.email}"), &1.lms_id}
+    )
+  end
+
+  defp convert_to_percentage(%{progress: nil}), do: 0
+
+  defp convert_to_percentage(%{progress: progress}) when progress <= 1.0 do
+    Utils.parse_score(progress * 100)
+  end
+
+  defp convert_to_percentage(%{progress: _progress} = user_data) do
+    Logger.error("Progress exceeds 1.0 threshold: #{inspect(user_data)}")
+    nil
   end
 end

@@ -30,7 +30,7 @@ const Editor: React.FC<any> = React.memo(({ html, tree, portal, customOptions })
   quillProps.showfibinsertoptioncontrol = true;
   quillProps.options = JSON.stringify(transformOptionsToNormalized(customOptions));
   const E = () => (
-    <div style={{ padding: 20 }}>{React.createElement(quillEditorTagName, quillProps)}</div>
+    <div style={{ padding: 5 }}>{React.createElement(quillEditorTagName, quillProps)}</div>
   );
 
   return portal && ReactDOM.createPortal(<E />, portal);
@@ -67,7 +67,11 @@ const FIBAuthor: React.FC<AuthorPartComponentProps<FIBModel>> = (props) => {
   useEffect(() => {
     if (textNodes?.length) {
       const collectedText = extractFormattedHTMLFromQuillNodes(textNodes);
-      const finalcontent = generateFIBStructure(collectedText, 'map', finalElement);
+      const finalcontent: any = generateFIBStructure(collectedText, 'map', finalElement);
+      if (!collectedText?.trim().length) {
+        setIsContentModified(false);
+        return;
+      }
       setFinalContent(finalcontent);
     }
   }, [textNodes, finalElement]);
@@ -208,7 +212,7 @@ const FIBAuthor: React.FC<AuthorPartComponentProps<FIBModel>> = (props) => {
   }, [inConfigureMode, finalContent, props.portal]);
 
   const contentList = content?.map(
-    (contentItem: { [x: string]: any; insert: any; dropdown: any }) => {
+    (contentItem: { [x: string]: any; insert: any; dropdown: any }, index: number) => {
       if (!elements?.length) return;
 
       const insertList: any[] = [];
@@ -216,14 +220,20 @@ const FIBAuthor: React.FC<AuthorPartComponentProps<FIBModel>> = (props) => {
 
       if (contentItem.insert) {
         // contentItem.insert is always a string
-        insertList.push(<span dangerouslySetInnerHTML={{ __html: contentItem.insert }} />);
+        const htmlString = contentItem?.insert?.replace(/\n/g, '<br />');
+        insertList.push(
+          <span dangerouslySetInnerHTML={{ __html: htmlString }} key={`text-${index}`} />,
+        );
       } else if (contentItem.dropdown) {
         // get correlating dropdown from `elements`
         insertEl = elements.find((elItem: { key: any }) => elItem.key === contentItem.dropdown);
         if (insertEl) {
           // build list of options for react-select
           const optionsList = insertEl.options.map(
-            ({ value: text, key: id }: { value: any; key: any }) => ({ id, text }),
+            ({ value: text, key: id }: { value: any; key: any }) => ({
+              id,
+              text: String(text)?.replace(/<[^>]*>/g, ''), // strip HTML tags
+            }),
           );
           insertList.push(
             <span className="dropdown-blot" tabIndex={-1}>

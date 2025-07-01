@@ -1,0 +1,16 @@
+{
+  "id": "janus_formula",
+  "friendlyName": "Formula",
+  "description": "Displays static formula that can render portions of adaptive state.",
+  "icon": "icon-part-formula.svg",
+  "author": "Project Janus Team",
+  "global": true,
+  "delivery": {
+    "element": "janus-formula",
+    "entry": "./delivery-entry.ts"
+  },
+  "authoring": {
+    "element": "janus-formula",
+    "entry": "./authoring-entry.ts"
+  }
+}

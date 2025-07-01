@@ -515,6 +515,22 @@ defmodule Oli.Utils do
     end
   end
 
+  @doc """
+  Capitalizes the first letter of each word in the given string.
+
+  ## Examples
+
+      iex> StringUtils.title_case("hello world")
+      "Hello World"
+  """
+  @spec title_case(String.t()) :: String.t()
+  def title_case(string) do
+    string
+    |> String.split()
+    |> Enum.map(&String.capitalize/1)
+    |> Enum.join(" ")
+  end
+
   defp compare(f, t, true), do: f <= t
   defp compare(f, t, false), do: f < t
 end

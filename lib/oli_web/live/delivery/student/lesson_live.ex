@@ -22,7 +22,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   alias OliWeb.Delivery.Student.Lesson.Annotations
   alias OliWeb.Delivery.Student.Lesson.Components.OutlineComponent
   alias Oli.Delivery.{Hierarchy, Metrics, Sections, Settings}
-  alias Oli.Delivery.Sections.SectionCache
+  alias Oli.Delivery.Sections.SectionResourceDepot
   alias OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion
   alias OliWeb.Icons
 
@@ -34,8 +34,16 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   # this is an optimization to reduce the memory footprint of the liveview process
   @required_keys_per_assign %{
     section:
-      {[:id, :slug, :title, :brand, :lti_1p3_deployment, :customizations, :open_and_free],
-       %Sections.Section{}},
+      {[
+         :id,
+         :slug,
+         :title,
+         :brand,
+         :lti_1p3_deployment,
+         :customizations,
+         :open_and_free,
+         :root_section_resource_id
+       ], %Sections.Section{}},
     current_user: {[:id, :name, :email, :sub], %User{}}
   }
 
@@ -48,7 +56,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     if connected?(socket) do
       thin_hierarchy =
         socket.assigns.section
-        |> get_or_compute_full_hierarchy()
+        |> SectionResourceDepot.get_full_hierarchy(hidden: false)
         |> Hierarchy.thin_hierarchy(
           [
             "id",
@@ -141,8 +149,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       attempt_expired_auto_submit =
         with true <- now > effective_end_time,
              true <- auto_submit,
-             false <- page_context.review_mode,
-             :due_by <- page_context.effective_settings.scheduling_type do
+             false <- page_context.review_mode do
           true
         else
           _ ->
@@ -1750,12 +1757,6 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       view when view not in ~w(gallery outline) -> @default_selected_view
       view -> String.to_existing_atom(view)
     end
-  end
-
-  defp get_or_compute_full_hierarchy(section) do
-    SectionCache.get_or_compute(section.slug, :full_hierarchy, fn ->
-      Hierarchy.full_hierarchy(section)
-    end)
   end
 
   defp possibly_fire_page_trigger(section, page) do

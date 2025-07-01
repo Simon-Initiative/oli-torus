@@ -36,6 +36,15 @@ $font-family-sans-serif: var(--font-sans);
   }
 }
 .advanced-authoring {
+  .activity-no-part-content {
+    position: absolute;
+    border: 1px solid #ccc;
+    width: 1000px;
+    height: 540px;
+  }
+  &.flowchart-editor .activity-no-part-content {
+    background-color: #fff;
+  }
   position: relative;
   // opacity: 0;
   transition-timing-function: ease-in-out;
@@ -954,5 +963,17 @@ $font-family-sans-serif: var(--font-sans);
     .btn-group {
       transform: scale(0.7);
     }
+  }
+}
+
+.component-tab {
+  .part-documentation {
+    font-size: 14px;
+    font-weight: bold;
+    text-decoration: underline;
+    margin-left: 0px;
+    margin-right: 0px;
+    padding: 5px 8px 8px 6px;
+    border-radius: 4px;
   }
 }

@@ -15,6 +15,7 @@ export interface SchedulerAppProps {
   display_curriculum_item_numbering: boolean;
   edit_section_details_url: string;
   preferred_scheduling_time: string;
+  agenda: boolean;
 }
 
 const store = configureStore(initState(), schedulerAppReducer, { name: 'SchedulerApp' });
@@ -28,6 +29,7 @@ const ScheduleEditorApp: React.FC<SchedulerAppProps> = React.memo(
     display_curriculum_item_numbering,
     edit_section_details_url,
     preferred_scheduling_time,
+    agenda,
   }) => (
     <Provider store={store}>
       <ScheduleEditor
@@ -39,6 +41,7 @@ const ScheduleEditorApp: React.FC<SchedulerAppProps> = React.memo(
         wizard_mode={false} // TODO - set this from torus
         edit_section_details_url={edit_section_details_url}
         preferred_scheduling_time={preferred_scheduling_time}
+        agenda={agenda}
       />
     </Provider>
   ),

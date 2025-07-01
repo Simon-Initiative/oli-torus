@@ -102,7 +102,25 @@ describe('MathJaxFormula', () => {
       expect(e).toBeTruthy();
       expect(e).toHaveAttribute('class', 'formula-inline');
       expect(e).toContainHTML(
-        '<span class="formula-inline">\\(&lt;script&gt;alert(\'Breaking the law\');&lt;/script&gt;\\)</span>',
+        '<span aria-label="" class="formula-inline">\\(&lt;script&gt;alert(\'Breaking the law\');&lt;/script&gt;\\)</span>',
+      );
+    });
+
+    test('render a formula with altText', () => {
+      const { container } = render(
+        <MathJaxLatexFormula
+          id="1"
+          src="x^2 + y^2 = z^2"
+          formulaAltText="x squared plus y squared equals z squared"
+          inline={true}
+        />,
+      );
+
+      const e = container.querySelector('span');
+      expect(e).toBeTruthy();
+      expect(e).toHaveAttribute('class', 'formula-inline');
+      expect(e).toContainHTML(
+        '<span aria-label="x squared plus y squared equals z squared" class="formula-inline">\\(x^2 + y^2 = z^2\\)</span>',
       );
     });
   });

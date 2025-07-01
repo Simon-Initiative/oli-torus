@@ -1,5 +1,10 @@
 import { DateWithoutTime } from 'epoq';
-import { HierarchyItem, ScheduleItemType, getScheduleItem } from './scheduler-slice';
+import {
+  AssessmentLayoutType,
+  HierarchyItem,
+  ScheduleItemType,
+  getScheduleItem,
+} from './scheduler-slice';
 
 export const countWorkingDays = (
   start: DateWithoutTime,
@@ -73,8 +78,12 @@ export const getPageCount = (
   schedule: HierarchyItem[],
 ): number => {
   if (!item) return 0;
-  if (item.resource_type_id === ScheduleItemType.Page) return 1;
-  if (item.children.length === 0) return 1; // Empty units still get to take up some space.
+  if (item.resource_type_id === ScheduleItemType.Page) return item.removed_from_schedule ? 0 : 1;
+  const childrenIds = item.children.filter((id) => {
+    const child = getScheduleItem(id, schedule);
+    return child && !child.removed_from_schedule;
+  });
+  if (childrenIds.length === 0) return 1; // Empty units still get to take up some space.
   return item.children.reduce(
     (acc, id) => acc + getPageCount(getScheduleItem(id, schedule), schedule),
     0,
@@ -93,6 +102,7 @@ export const clearScheduleItem = (target: HierarchyItem, schedule: HierarchyItem
   target.startDateTime = null;
   target.endDateTime = null;
   target.manually_scheduled = false;
+  target.removed_from_schedule = false;
   const children = target.children.map((id) => getScheduleItem(id, schedule));
   children.filter((child) => !!child).forEach((child) => clearScheduleItem(child!, schedule));
 };
@@ -109,6 +119,7 @@ export const resetScheduleItem = (
     minute: number;
     second: number;
   },
+  assessmentLayoutType: AssessmentLayoutType,
 ) => {
   const hasChildren = !!target.children.map((id) => getScheduleItem(id, schedule)).length;
 
@@ -116,26 +127,25 @@ export const resetScheduleItem = (
   if (!hasChildren) return;
 
   const totalPages = getPageCount(target, schedule); //getTotalPageCount(schedule);
+  if (totalPages === 0) return;
   const dayCount = countWorkingDays(start, end, weekdaysToSchedule);
 
   let nextStart = start;
 
-  for (const [index, childId] of target.children.entries()) {
+  const childrenIds = target.children.filter((id) => {
+    const child = getScheduleItem(id, schedule);
+    return child && !child.removed_from_schedule;
+  });
+
+  for (const [index, childId] of childrenIds.entries()) {
     const child = getScheduleItem(childId, schedule);
 
-    // start: DateWithoutTime,
-    // workingDayCount: number,
-    // entryIndex: number,
-    // totalEntries: number,
-    // workingDays: boolean[]
-
-    // const [calculatedStart, calculatedEnd] = findStartEnd(startDay, length, weekdaysToSchedule);
     const [calculatedStart, calculatedEnd] = findStartEndByPercent(
       nextStart,
       end,
       dayCount,
       index,
-      target.children.length,
+      childrenIds.length,
       weekdaysToSchedule,
       getPageCount(child, schedule),
       totalPages,
@@ -146,16 +156,35 @@ export const resetScheduleItem = (
     if (child && (resetManual || !child?.manually_scheduled)) {
       child.startDate =
         child.resource_type_id === ScheduleItemType.Container ? calculatedStart : null;
-      child.endDate = calculatedEnd;
+      if (child.graded) {
+        child.scheduling_type = 'due_by';
+        if (assessmentLayoutType === 'no_due_dates') {
+          child.endDate = null;
+        } else if (assessmentLayoutType === 'end_of_each_section') {
+          schedule.forEach((potentialParent) => {
+            if (potentialParent.children.includes(child.id)) {
+              child.endDate = new DateWithoutTime(
+                potentialParent.endDate?.getDaysSinceEpoch() || end.getDaysSinceEpoch(),
+              );
+            }
+          });
+        } else {
+          child.endDate = calculatedEnd;
+        }
+      } else {
+        child.endDate = calculatedEnd;
+      }
 
-      const delta = child.endDate.getDaysSinceEpoch() - end.getDaysSinceEpoch();
-      if (delta > 0) {
+      const delta =
+        child.endDate !== null ? child.endDate.getDaysSinceEpoch() - end.getDaysSinceEpoch() : 0;
+      if (child.endDate !== null && delta > 0) {
         // Make sure we never schedule past the end.
         child.endDate.addDays(-delta);
       }
 
       if (
         child.startDate &&
+        child.endDate &&
         child.endDate.getDaysSinceEpoch() < child.startDate.getDaysSinceEpoch()
       ) {
         // Make sure the start date is never after the end date.
@@ -176,24 +205,27 @@ export const resetScheduleItem = (
         child.startDateTime = null;
       }
 
-      child.endDateTime = new Date(
-        child.endDate.getFullYear(),
-        child.endDate.getMonth(),
-        child.endDate.getDate(),
-        preferredTime.hour,
-        preferredTime.minute,
-        preferredTime.second,
-        0,
-      );
+      child.endDateTime = child.endDate
+        ? new Date(
+            child.endDate.getFullYear(),
+            child.endDate.getMonth(),
+            child.endDate.getDate(),
+            preferredTime.hour,
+            preferredTime.minute,
+            preferredTime.second,
+            0,
+          )
+        : null;
 
       resetScheduleItem(
         child,
         calculatedStart,
-        child.endDate,
+        calculatedEnd,
         schedule,
         resetManual,
         weekdaysToSchedule,
         preferredTime,
+        assessmentLayoutType,
       );
     }
   }
