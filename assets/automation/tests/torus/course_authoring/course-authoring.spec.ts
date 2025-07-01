@@ -18,7 +18,7 @@ test.describe('Course authoring', () => {
     await torus.closeSite();
   });
 
-  test('TQA9-Log in as an author and create a new course project with valid details, set the Publishing Visibility as Open', async ({
+  test('Log in as an author and create a new course project with valid details, set the Publishing Visibility as Open', async ({
     page,
   }) => {
     const startDate = new Date();
