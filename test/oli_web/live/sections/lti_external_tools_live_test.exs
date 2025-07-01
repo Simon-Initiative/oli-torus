@@ -318,6 +318,77 @@ defmodule OliWeb.Sections.LtiExternalToolsLiveTest do
       html = element(view, "#lti_external_tool_#{tool1.id} button") |> render_click()
       refute html =~ "collapse-#{tool1.id}\" class=\"block"
     end
+
+    test "shows the correct toggle button based on URL param", %{
+      conn: conn,
+      section: section,
+      instructor: instructor,
+      tool1: tool1
+    } do
+      {:ok, _} =
+        Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_lti_external_tools_route(section.slug) <>
+            "?expanded_tools=#{tool1.id}&toggle_expand_button=expand_all"
+        )
+
+      assert has_element?(view, "#expand_all_button")
+      refute has_element?(view, "#collapse_all_button")
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_lti_external_tools_route(section.slug) <>
+            "?expanded_tools=#{tool1.id}&toggle_expand_button=collapse_all"
+        )
+
+      assert has_element?(view, "#collapse_all_button")
+      refute has_element?(view, "#expand_all_button")
+    end
+
+    test "expand/collapse all button state updates when last tool is toggled", %{
+      conn: conn,
+      section: section,
+      instructor: instructor,
+      tool1: tool1,
+      tool2: tool2
+    } do
+      {:ok, _} =
+        Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, view, _html} = live(conn, live_view_lti_external_tools_route(section.slug))
+
+      # Initially, both tools are collapsed, button says "Expand All"
+      assert has_element?(view, "#expand_all_button")
+      refute has_element?(view, "#collapse_all_button")
+
+      # Expand first tool (tool1)
+      element(view, "#lti_external_tool_#{tool1.id} button") |> render_click()
+      # Should still say "Expand All" (not all expanded yet)
+      assert has_element?(view, "#expand_all_button")
+      refute has_element?(view, "#collapse_all_button")
+
+      # Expand second tool (tool2)
+      element(view, "#lti_external_tool_#{tool2.id} button") |> render_click()
+      # Now all tools are expanded, button should say "Collapse All"
+      assert has_element?(view, "#collapse_all_button")
+      refute has_element?(view, "#expand_all_button")
+
+      # Collapse first tool (tool1)
+      element(view, "#lti_external_tool_#{tool1.id} button") |> render_click()
+      # Not all collapsed, button should say "Collapse All"
+      assert has_element?(view, "#collapse_all_button")
+      refute has_element?(view, "#expand_all_button")
+
+      # Collapse second tool (tool2)
+      element(view, "#lti_external_tool_#{tool2.id} button") |> render_click()
+      # Now all tools are collapsed, button should say "Expand All"
+      assert has_element?(view, "#expand_all_button")
+      refute has_element?(view, "#collapse_all_button")
+    end
   end
 
   describe "admin" do

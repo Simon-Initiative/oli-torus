@@ -2,12 +2,10 @@ import { Page, Locator } from '@playwright/test';
 import { Utils } from '../../../../../core/Utils';
 
 export class AdminAllUsersPO {
-  private page: Page;
   private utils: Utils;
   private searchInput: Locator;
 
-  constructor(page: Page) {
-    this.page = page;
+  constructor(private page: Page) {
     this.utils = new Utils(this.page);
     this.searchInput = this.page.locator('#text-search-input');
   }

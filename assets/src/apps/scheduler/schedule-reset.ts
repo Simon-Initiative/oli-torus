@@ -140,13 +140,6 @@ export const resetScheduleItem = (
   for (const [index, childId] of childrenIds.entries()) {
     const child = getScheduleItem(childId, schedule);
 
-    // start: DateWithoutTime,
-    // workingDayCount: number,
-    // entryIndex: number,
-    // totalEntries: number,
-    // workingDays: boolean[]
-
-    // const [calculatedStart, calculatedEnd] = findStartEnd(startDay, length, weekdaysToSchedule);
     const [calculatedStart, calculatedEnd] = findStartEndByPercent(
       nextStart,
       end,
@@ -164,6 +157,7 @@ export const resetScheduleItem = (
       child.startDate =
         child.resource_type_id === ScheduleItemType.Container ? calculatedStart : null;
       if (child.graded) {
+        child.scheduling_type = 'due_by';
         if (assessmentLayoutType === 'no_due_dates') {
           child.endDate = null;
         } else if (assessmentLayoutType === 'end_of_each_section') {
