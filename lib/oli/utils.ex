@@ -532,4 +532,34 @@ defmodule Oli.Utils do
 
   defp compare(f, t, true), do: f <= t
   defp compare(f, t, false), do: f < t
+
+  @doc """
+  Validates the given_name and family_name fields.
+
+  ## Examples
+
+      iex> common_name_validations(changeset)
+      %Ecto.Changeset{data: %Author{}}
+
+      iex> common_name_validations(changeset)
+      %Ecto.Changeset{data: %User{}}
+
+  """
+  @spec common_name_validations(Ecto.Changeset.t()) :: Ecto.Changeset.t()
+  def common_name_validations(changeset) do
+    changeset
+    |> update_change(:given_name, &maybe_trim/1)
+    |> update_change(:family_name, &maybe_trim/1)
+    |> validate_length(:given_name, min: 1, message: "Please enter a First Name.")
+    |> validate_length(:family_name,
+      min: 2,
+      message: "Please enter a Last Name that is at least two characters long."
+    )
+  end
+
+  defp maybe_trim(nil), do: ""
+  defp maybe_trim(val) when is_binary(val), do: String.trim(val)
+
+  def input_value(%Phoenix.HTML.FormField{value: val}), do: val
+  def input_value(_), do: nil
 end

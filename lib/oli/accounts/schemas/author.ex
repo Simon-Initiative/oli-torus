@@ -284,6 +284,7 @@ defmodule Oli.Accounts.Author do
       :email_confirmed_at
     ])
     |> cast_embed(:preferences)
+    |> common_name_validations()
     |> unique_constraint(:email)
     |> default_system_role()
     |> maybe_hash_password([])

@@ -215,4 +215,121 @@ defmodule OliWeb.AuthorSettingsLiveTest do
       assert message == "You must log in to access this page."
     end
   end
+
+  describe "update name form" do
+    test "shows error message when First Name is empty", %{conn: conn} do
+      author = author_fixture()
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_author(author)
+        |> live(~p"/authors/settings")
+
+      result =
+        lv
+        |> element("#author_form")
+        |> render_change(%{
+          "author" => %{
+            "given_name" => "",
+            "family_name" => "Doe"
+          }
+        })
+
+      assert result =~ "Please enter a First Name."
+    end
+
+    test "shows error message when Last Name is less than two characters", %{conn: conn} do
+      author = author_fixture()
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_author(author)
+        |> live(~p"/authors/settings")
+
+      result =
+        lv
+        |> element("#author_form")
+        |> render_change(%{
+          "author" => %{
+            "given_name" => "John",
+            "family_name" => "D"
+          }
+        })
+
+      assert result =~ "Please enter a Last Name that is at least two characters long."
+    end
+
+    test "shows both error messages when First Name is empty and Last Name has less than 2 characters on form submit",
+         %{conn: conn} do
+      author = author_fixture(%{given_name: "John", family_name: "Doe"})
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_author(author)
+        |> live(~p"/authors/settings")
+
+      invalid_params = %{
+        "given_name" => "",
+        "family_name" => "A"
+      }
+
+      result =
+        lv
+        |> form("#author_form", %{"author" => invalid_params})
+        |> render_submit()
+
+      assert result =~ "Please enter a First Name."
+      assert result =~ "Please enter a Last Name that is at least two characters long."
+    end
+
+    test "shows correct full name when first name or last name change", %{conn: conn} do
+      author = author_fixture(%{given_name: "John", family_name: "Doe"})
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_author(author)
+        |> live(~p"/authors/settings")
+
+      # Simulate author changing first name
+      result =
+        lv
+        |> element("#author_form")
+        |> render_change(%{"author" => %{"given_name" => "Jane", "family_name" => "Doe"}})
+
+      assert result =~ "Full name"
+      assert result =~ "Jane Doe"
+
+      # Simulate author changing last name
+      result =
+        lv
+        |> element("#author_form")
+        |> render_change(%{"author" => %{"given_name" => "Jane", "family_name" => "Smith"}})
+
+      assert result =~ "Full name"
+      assert result =~ "Jane Smith"
+    end
+
+    test "shows flash message when first name or last name are successfully updated", %{
+      conn: conn
+    } do
+      author = author_fixture(%{given_name: "John", family_name: "Doe"})
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_author(author)
+        |> live(~p"/authors/settings")
+
+      updated_params = %{
+        "given_name" => "Jane",
+        "family_name" => "Smith"
+      }
+
+      result =
+        lv
+        |> form("#author_form", %{"author" => updated_params})
+        |> render_submit()
+
+      assert result =~ "Account details successfully updated."
+    end
+  end
 end
