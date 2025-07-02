@@ -2817,7 +2817,8 @@ defmodule Oli.Delivery.Sections do
         assessment_mode: revision.assessment_mode,
         batch_scoring: revision.batch_scoring,
         replacement_strategy: revision.replacement_strategy,
-        section_id: section.id
+        section_id: section.id,
+        retake_mode: revision.retake_mode
       }
       |> SectionResource.to_map()
       |> Map.delete(:id)
