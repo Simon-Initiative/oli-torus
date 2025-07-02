@@ -390,10 +390,11 @@ defmodule OliWeb.LtiControllerTest do
 
     test "authorize_redirect get successful for user", %{conn: conn} do
       user = user_fixture()
+      section = insert(:section)
 
       {:ok, %LoginHint{value: login_hint}} =
         LoginHints.create_login_hint(user.id, %{
-          "section" => "some_section",
+          "section" => section.slug,
           "resource_id" => 1
         })
 
@@ -439,10 +440,11 @@ defmodule OliWeb.LtiControllerTest do
 
     test "authorize_redirect get successful for author", %{conn: conn} do
       author = author_fixture()
+      project = insert(:project)
 
       {:ok, %LoginHint{value: login_hint}} =
         LoginHints.create_login_hint(author.id, %{
-          "project" => "some_project",
+          "project" => project.slug,
           "resource_id" => "some_resource_id"
         })
 
