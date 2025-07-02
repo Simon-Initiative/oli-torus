@@ -592,6 +592,10 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
            }
          )}
 
+      {key = :password, assessment_setting_id, new_value} ->
+        AssessmentSettings.do_update(key, assessment_setting_id, new_value, resources)
+        |> process_updated_result(socket, assessment_setting_id, key, new_value)
+
       {key, assessment_setting_id, new_value} when new_value != "" ->
         AssessmentSettings.do_update(key, assessment_setting_id, new_value, resources)
         |> process_updated_result(socket, assessment_setting_id, key, new_value)
