@@ -1,27 +1,36 @@
 defmodule Oli.GenAI.Dialogue do
   require Logger
 
+  @moduledoc """
+  This module implements a statement dialogue between a user and a LLM model.
+
+  The dialogue is guided by a `ServiceConfig` which contains the primary and
+  backup models to use for the dialogue.  The dialogue is intended to be
+  stateful - as each user message that is sent results in the return on an
+  updated dialogue state.
+
+  """
+
   alias Oli.GenAI.Completions.ServiceConfig
   alias Oli.GenAI.Completions.Message
   alias Oli.GenAI.Completions.Function
   alias Oli.GenAI.Completions.RegisteredModel
+  alias Oli.GenAI.Completions
 
   defstruct [
     :service_config,
-    :rendered_messages,
     :messages,
     :response_handler_fn,
     :functions,
     :registered_model
   ]
 
-  def new(%ServiceConfig{} = service_config, messages, functions, response_handler_fn, options \\ []) do
+  def new(%ServiceConfig{} = service_config, messages, functions, dialogue_listener, options \\ []) do
     %__MODULE__{
       service_config: service_config,
-      rendered_messages: [],
       messages: messages,
-      response_handler_fn: response_handler_fn,
-      functions: function,
+      dialogue_listener: dialogue_listener,
+      functions: functions,
       registered_model: service_config.primary_model
     }
   end
@@ -30,28 +39,37 @@ defmodule Oli.GenAI.Dialogue do
         %__MODULE__{
           registered_model: registered_model,
           messages: messages,
-          rendered_messages: rendered_messages,
-          response_handler_fn: response_handler_fn
+          functions: functions,
+          dialogue_listener: dialogue_listener
         } =
-          dialogue,
-        message
+          dialogue
       ) do
 
-    case get_provider(registered_model)
-    |> apply(:stream, [messages, functions, registered_model, response_handler_fn]) do
+    response_handler_fn = fn response ->
+      case response do
+        {:finished} ->
+          dialogue_listener.complete()
+
+        {:delta, :function_call, function_call} ->
+
+        {:delta, :content, content} ->
+          dialogue_listener.tokens_received(content)
+      end
+    end
+
+    Completions.stream(messages, functions, registered_model, response_handler_fn) do
       {:error, error} ->
         if should_retry?(dialogue) do
-          fallback(dialogue)
-          |> engage(message)
+          dialogue
+          |> fallback()
+          |> engage()
         else
           {:error, error}
         end
 
-      success ->
-        success
+      {:ok, _} ->
+        {:ok, dialogue}
     end
-
-    add_message(dialogue, message)
   end
 
   defp should_retry?(dialogue) do
@@ -61,20 +79,11 @@ defmodule Oli.GenAI.Dialogue do
 
   defp fallback(dialogue), do: Map.put(dialogue, :registered_model, dialogue.service_config.backup_model)
 
-  defp get_provider(%RegisteredModel{} = registered_model) do
-    case registered_model.provider do
-      :open_ai -> Oli.GenAI.Completions.OpenAIProvider
-      :gemini -> Oli.GenAI.Completions.GeminiProvider
-      :claude -> Oli.GenAI.Completions.ClaudeProvider
-    end
-  end
-
-  defp add_message(
-        %__MODULE__{messages: messages, rendered_messages: rendered_messages} = dialog,
+  def add_message(
+        %__MODULE__{messages: messages} = dialog,
         message
       ) do
     Map.put(dialog, :messages, messages ++ [message])
-    |> Map.put(:rendered_messages, rendered_messages ++ [message])
   end
 
 end
