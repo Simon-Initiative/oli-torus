@@ -6,6 +6,8 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
 
   require Logger
 
+  alias Oli.Delivery.Attempts.Core
+  alias Oli.Delivery.Attempts.ActivityLifecycle.Evaluate
   alias Oli.Delivery.Attempts.PageLifecycle
   alias Oli.Delivery.Attempts.PageLifecycle.FinalizationSummary
   alias Oli.Delivery.Sections
@@ -368,11 +370,9 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
       ) do
     ## evaluate the activity attempt
 
-    Oli.Repo.get_by(Oli.Delivery.Attempts.Core.ActivityAttempt,
-      attempt_guid: attempt_guid
-    )
+    Core.get_activity_attempt_by(attempt_guid: attempt_guid)
     |> Oli.Repo.preload([:resource_attempt, :part_attempts, :revision])
-    |> Oli.Delivery.Attempts.ActivityLifecycle.Evaluate.update_part_attempts_for_activity(
+    |> Evaluate.update_part_attempts_for_activity(
       socket.assigns.datashop_session_id,
       socket.assigns.effective_settings
     )

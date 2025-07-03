@@ -400,8 +400,6 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestionTest do
     } do
       {:ok, lcd, _html} = live_component_isolated(conn, OneAtATimeQuestion, component_params)
 
-      open_browser(lcd)
-
       assert lcd
              |> element("div[role='questions header']")
              |> render() =~ "Question 1 / 3 • 1 point"
