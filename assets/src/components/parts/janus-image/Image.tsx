@@ -98,7 +98,7 @@ const Image: React.FC<PartComponentProps<ImageModel>> = (props) => {
     props.onReady({ id, responses: [] });
   }, [ready]);
 
-  const { width, height, src, imageSrc,defaultSrc, alt } = model;
+  const { width, height, src, imageSrc, defaultSrc, alt } = model;
   const imageStyles: CSSProperties = {
     width,
     height,
