@@ -306,3 +306,43 @@ export const padLeft = (inp: string | number, length: number, char = '0') => {
 export function isDefined<T>(value: T | undefined): value is T {
   return value !== undefined;
 }
+
+/**
+ * Calculates the number of significant figures in a numeric string input.
+ *
+ * Rules handled:
+ * - Leading zeros are not significant.
+ * - All non-zero digits are significant.
+ * - Zeros between non-zero digits are significant.
+ * - Trailing zeros in decimal numbers are significant.
+ * - Trailing zeros in whole numbers are not significant unless followed by a decimal point (e.g., "100.").
+ * - Scientific notation is parsed correctly (e.g., "1.23e4" has 3 sig figs).
+ *
+ * @param input - The number input as a string (e.g., "0.01230", "100", "1.23e4").
+ * @returns The count of significant figures as a number.
+ */
+export const countSigFigs = (input: string): number => {
+  if (!input || isNaN(Number(input))) return 0;
+
+  const trimmed = input.trim();
+
+  // Handle scientific notation like "1.23e4"
+  const sciMatch = trimmed.match(/^(-)?(\d+(\.\d+)?)(e[-+]?\d+)?$/i);
+  if (sciMatch) {
+    const [base] = trimmed.split(/e/i);
+    return base.replace('.', '').replace(/^0+/, '').length;
+  }
+
+  // Remove leading/trailing zeros (depending on decimal)
+  if (trimmed.includes('.')) {
+    // Decimal number: all digits except leading zeros are significant
+    return trimmed
+      .replace(/^[-+]?0+/, '') // Remove leading zeros
+      .replace('.', '').length; // Remove decimal
+  } else {
+    // Integer: trailing zeros are not significant unless scientific notation
+    return trimmed
+      .replace(/^[-+]?0*/, '') // Remove leading zeros
+      .replace(/0+$/, '').length; // Remove trailing zeros
+  }
+};
