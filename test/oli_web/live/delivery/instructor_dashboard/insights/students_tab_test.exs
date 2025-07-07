@@ -1843,7 +1843,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
         sub: UUID.uuid4(),
         name: "#{v}",
         given_name: "#{v}",
-        family_name: "#{v}",
+        family_name: "name_#{v}",
         middle_name: "",
         picture: "https://platform.example.edu/jane.jpg",
         email: "test#{v}@example.edu",
