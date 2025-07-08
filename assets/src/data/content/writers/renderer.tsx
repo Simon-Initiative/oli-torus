@@ -15,7 +15,7 @@ interface Props {
 export const HtmlContentModelRenderer: React.FC<Props> = (props) => {
   // Support content persisted when RichText had a `model` property.
   const content = (props.content as any).model ? (props.content as any).model : props.content;
-  const className = props.inline ? 'inline' : '';
+  const className = props.inline ? 'inline content' : 'content';
 
   const dispatchPageContentChange = useCallback(
     () => Events.dispatch(Events.Registry.PageContentChange, Events.makePageContentChangeEvent({})),
