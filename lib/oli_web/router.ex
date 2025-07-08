@@ -859,6 +859,8 @@ defmodule OliWeb.Router do
 
     # LTI platform services access tokens
     post("/auth/token", Api.LtiController, :auth_token)
+
+    post("/deep_linking", Api.LtiController, :deep_linking)
   end
 
   scope "/lti", OliWeb do
@@ -877,7 +879,7 @@ defmodule OliWeb.Router do
     get("/authorize_redirect", LtiController, :authorize_redirect)
   end
 
-  # LTI 1.3 AGS endpoints for migrated LTI 1.1 Basic Outcomes
+  # LTI 1.3 AGS endpoints
   scope "/lti/lineitems/:page_attempt_guid/:activity_resource_id", OliWeb.Api do
     pipe_through([:api])
     get "/results", LtiAgsController, :get_result

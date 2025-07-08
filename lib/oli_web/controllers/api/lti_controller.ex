@@ -337,4 +337,11 @@ defmodule OliWeb.Api.LtiController do
         error
     end
   end
+
+  def deep_linking(conn, %{
+        "section_slug" => section_slug,
+        "activity_resource_id" => activity_resource_id
+      }) do
+    # Implement deep linking logic here
+  end
 end
