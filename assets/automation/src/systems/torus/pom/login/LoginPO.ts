@@ -1,9 +1,8 @@
 import { Locator, Page, expect } from '@playwright/test';
 import { NavbarCO } from './NavbarCO';
 import { Utils } from '../../../../core/Utils';
-
+import { USER_TYPES, UserType } from '../types/user-type';
 export class LoginPO {
-  private page: Page;
   private acceptCookiesButton: Locator;
   private welcomeText: Locator;
   private mainContent: Locator;
@@ -11,8 +10,7 @@ export class LoginPO {
   private passwordInput: Locator;
   private signInButton: Locator;
 
-  constructor(page: Page) {
-    this.page = page;
+  constructor(private page: Page) {
     this.acceptCookiesButton = page.getByRole('button', { name: 'Accept' });
     this.welcomeText = page.locator('#main-content');
     this.mainContent = page.locator('#main-content');
@@ -52,12 +50,16 @@ export class LoginPO {
     await this.signInButton.click();
   }
 
-  async selectRoleAccount(role: 'student' | 'instructor' | 'author' | 'administrator') {
-    let navbarco = new NavbarCO(this.page);
-    if (role === 'student') await navbarco.selectStudentLogin();
-    if (role === 'instructor') await navbarco.selectInstructorLogin();
-    if (role === 'author') await navbarco.selectCourseAuthorLogin();
-    if (role === 'administrator') {
+  async selectRoleAccount(role: UserType) {
+    const navbarco = new NavbarCO(this.page);
+
+    if (role === USER_TYPES.STUDENT) {
+      await navbarco.selectStudentLogin();
+    } else if (role === USER_TYPES.INSTRUCTOR) {
+      await navbarco.selectInstructorLogin();
+    } else if (role === USER_TYPES.AUTHOR) {
+      await navbarco.selectCourseAuthorLogin();
+    } else if (role === USER_TYPES.ADMIN) {
       await navbarco.selectAdministratorLogin();
     }
   }

@@ -1,48 +1,43 @@
-import { expect, Page } from "@playwright/test";
-import { AuthorDashboardPO } from "./AuthorDashboardPO";
-import { AuthorSidebarCO } from "./AuthorSidebarCO";
-import { OverviewProjectPO } from "../../project/OverviewProjectPO";
-import { PublishProjectPO } from "../../project/PublishProjectPO";
-import { NewCourseSetupPO } from "../../course/NewCourseSetupPO";
+import { expect, Page, Locator } from '@playwright/test';
+import { AuthorDashboardPO } from './AuthorDashboardPO';
+import { SidebarCO } from '@pom/component/SidebarCO';
+import { OverviewProjectPO } from '@pom/project/OverviewProjectPO';
+import { PublishProjectPO } from '@pom/project/PublishProjectPO';
+import { NewCourseSetupPO } from '@pom/course/NewCourseSetupPO';
+import { CurriculumPO } from '@pom/project/CurriculumPO';
 
 export class WorkspaceAuthorPO {
-  private page: Page;
-  private dashboard: AuthorDashboardPO;
-  private sidebar: AuthorSidebarCO;
-  private overviewProject: OverviewProjectPO;
-  private publishProject: PublishProjectPO;
-  private newCourseSetup: NewCourseSetupPO;
+  private readonly header: Locator;
 
-  constructor(page: Page) {
-    this.page = page;
-    this.dashboard = new AuthorDashboardPO(this.page);
-    this.sidebar = new AuthorSidebarCO(this.page);
-    this.overviewProject = new OverviewProjectPO(this.page);
-    this.publishProject = new PublishProjectPO(this.page);
-    this.newCourseSetup = new NewCourseSetupPO(this.page);
+  constructor(private page: Page) {
+    this.header = this.page.locator('h1');
   }
 
-  getDashboard(): AuthorDashboardPO {
-    return this.dashboard;
+  get dashboard() {
+    return new AuthorDashboardPO(this.page);
   }
 
-  getSidebar(): AuthorSidebarCO {
-    return this.sidebar;
+  get sidebar() {
+    return new SidebarCO(this.page);
   }
 
-  getOverviewProject(): OverviewProjectPO {
-    return this.overviewProject;
+  get overviewProject() {
+    return new OverviewProjectPO(this.page);
   }
 
-  getPublishProject(): PublishProjectPO {
-    return this.publishProject;
+  get publishProject() {
+    return new PublishProjectPO(this.page);
   }
 
-  getNewCourseSetup(): NewCourseSetupPO {
-    return this.newCourseSetup;
+  get newCourseSetup() {
+    return new NewCourseSetupPO(this.page);
+  }
+
+  get curriculum() {
+    return new CurriculumPO(this.page);
   }
 
   async verifyHeader(expectedHeader: string) {
-    await expect(this.page.locator("h1")).toContainText(expectedHeader);
+    await expect(this.header).toContainText(expectedHeader);
   }
 }

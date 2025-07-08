@@ -334,7 +334,7 @@ defmodule Oli.Accounts.User do
       :hidden
     ])
     |> cast_embed(:preferences)
-    |> validate_required([:given_name, :family_name])
+    |> common_name_validations()
     |> maybe_name_from_given_and_family()
   end
 
@@ -376,6 +376,7 @@ defmodule Oli.Accounts.User do
       :hidden
     ])
     |> cast_embed(:preferences)
+    |> common_name_validations()
     |> validate_email_if(&is_independent_learner_and_not_guest/1)
     |> maybe_name_from_given_and_family()
   end

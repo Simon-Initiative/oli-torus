@@ -182,8 +182,7 @@ defmodule OliWeb.LtiController do
         if Oli.Accounts.is_admin?(author),
           do: [
             Lti_1p3.Roles.PlatformRoles.get_role(:system_administrator),
-            Lti_1p3.Roles.PlatformRoles.get_role(:institution_administrator),
-            Lti_1p3.Roles.ContextRoles.get_role(:context_content_developer)
+            Lti_1p3.Roles.PlatformRoles.get_role(:institution_administrator)
           ],
           else: []
 
