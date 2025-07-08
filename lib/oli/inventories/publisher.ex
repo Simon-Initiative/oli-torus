@@ -13,6 +13,8 @@ defmodule Oli.Inventories.Publisher do
     field :website_url, :string
     field :default, :boolean, default: false
     field :available_via_api, :boolean, default: true
+    field :knowledge_base_link, :string
+    field :support_email, :string
 
     has_many :products, Oli.Delivery.Sections.Section
     has_many :projects, Oli.Authoring.Course.Project
@@ -30,10 +32,13 @@ defmodule Oli.Inventories.Publisher do
       :main_contact,
       :website_url,
       :default,
-      :available_via_api
+      :available_via_api,
+      :knowledge_base_link,
+      :support_email
     ])
     |> validate_required([:name, :email, :default])
     |> validate_format(:email, ~r/@/)
+    |> maybe_validate_support_email()
     |> unique_constraint(:name)
     |> unique_constraint_if([:default], &is_default?/1,
       name: :publisher_default_true_index,
@@ -48,6 +53,18 @@ defmodule Oli.Inventories.Publisher do
 
       _ ->
         false
+    end
+  end
+
+  defp maybe_validate_support_email(changeset) do
+    support_email = get_field(changeset, :support_email)
+
+    if is_binary(support_email) and String.trim(support_email) != "" do
+      validate_format(changeset, :support_email, ~r/^[^\s]+@[^\s]+\.[^\s]+$/,
+        message: "must have the @ sign and no spaces"
+      )
+    else
+      changeset
     end
   end
 end
