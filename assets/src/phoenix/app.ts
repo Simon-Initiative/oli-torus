@@ -134,8 +134,47 @@ window.OLI = {
   CreateAccountPopup: (node: any, props: any) => mount(CreateAccountPopup, node, props),
 };
 
-// connect if there are any LiveViews on the page
-liveSocket.connect();
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").then((reg) => {
+      console.log("SW registered", reg);
+    });
+  });
+}
+
+import { set } from 'idb-keyval';
+
+window.addEventListener('load', () => {
+  const path = window.location.pathname;
+
+  // Prevent caching when viewing the offline shell
+  if (!navigator.onLine && path !== "/offline.html") {
+    const encodedPath = encodeURIComponent(path);
+    window.location.href = `/offline.html?path=${encodedPath}`;
+  }
+});
+
+if (navigator.onLine) {
+  liveSocket.connectionCallback = () => {
+    const path = window.location.pathname;
+    const html = document.documentElement.outerHTML;
+    console.log("callback")
+    if (navigator.onLine && path !== "/offline.html") {
+      import("idb-keyval").then(({ set }) => {
+        set(`offline-html:${path}`, html).then(() => {
+          console.log(`[offline] Cached LiveView-rendered HTML for ${path}`);
+        });
+      });
+    }
+  };
+
+
+  liveSocket.connect();
+
+} else {
+  console.log("Skipping LiveView connect: offline");
+}
+
 
 // expose liveSocket on window for web console debug logs and latency simulation:
 // >> liveSocket.enableDebug()

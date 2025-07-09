@@ -815,6 +815,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     # For practice page the activity scripts and activity_bridge script are needed as soon as the page loads.
     ~H"""
     <div id="fire_page_trigger" phx-hook="FirePageTrigger"></div>
+    <div id="offline_cacher" phx-hook="OfflineCacher"></div>
     <Annotations.delete_post_modal />
     <div id="sticky_panel" class="absolute top-4 right-0 z-40 h-full">
       <div class="sticky top-20 right-0">
@@ -925,6 +926,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     # For practice page the activity scripts and activity_bridge script are needed as soon as the page loads.
     ~H"""
     <div id="fire_page_trigger" phx-hook="FirePageTrigger"></div>
+    <div id="offline_cacher" phx-hook="OfflineCacher"></div>
     <div id="sticky_panel" class="absolute top-4 right-0 z-50 h-full">
       <div class="sticky ml-auto top-20 right-0">
         <div class={[

@@ -50,8 +50,10 @@ import { AutoHideTooltip, TooltipInit, TooltipWithTarget } from './tooltip';
 import { VideoPlayer } from './video_player';
 import { PauseOthersOnSelected, VideoPreview } from './video_preview';
 import { WakeUpDot } from './wakeup_dot';
+import { OfflineCacher } from './offline';
 
 export const Hooks = {
+  OfflineCacher,
   WakeUpDot,
   ExpandContainers,
   ShowTeaser,
