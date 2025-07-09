@@ -585,6 +585,14 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
     {total_count, rows}
   end
 
+  @proficiency_rank ["High", "Medium", "Low", "Not enough data"]
+                    |> Enum.with_index()
+                    |> Enum.into(%{})
+
+  defp sort_by(objectives, :student_proficiency_obj, sort_order) do
+    Enum.sort_by(objectives, &{@proficiency_rank[&1.student_proficiency_obj]}, sort_order)
+  end
+
   defp sort_by(objectives, sort_by, sort_order) do
     Enum.sort_by(objectives, fn obj -> obj[sort_by] end, sort_order)
   end
