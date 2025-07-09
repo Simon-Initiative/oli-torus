@@ -49,7 +49,10 @@ defmodule OliWeb.TechSupportLive do
     <Modal.modal id={@modal_id} class="md:w-8/12" on_cancel={JS.push("clear_result_request_message")}>
       <:title>Tech Support</:title>
 
-      <.process_result_message submission_result={@submission_result} knowledge_base_link={@knowledge_base_link} />
+      <.process_result_message
+        submission_result={@submission_result}
+        knowledge_base_link={@knowledge_base_link}
+      />
 
       <.form
         :if={!@submission_result}
