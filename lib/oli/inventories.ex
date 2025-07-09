@@ -227,8 +227,11 @@ defmodule Oli.Inventories do
 
   @doc """
   Returns the knowledge base link for the given publisher.
-  If the publisher has a non-empty knowledge_base_link, it is returned.
-  Otherwise, returns the global default from Oli.VendorProperties.knowledgebase_url/0.
+
+  - If the publisher has a non-empty `knowledge_base_link` field, it is returned.
+  - Otherwise, returns the global default from `Oli.VendorProperties.knowledgebase_url/0`.
+
+  This function is used by the help modal and other support features to determine the appropriate knowledge base link for a given context.
   """
   @spec knowledge_base_link_for_publisher(Publisher.t() | nil) :: String.t()
   def knowledge_base_link_for_publisher(%Publisher{knowledge_base_link: kb})
@@ -240,8 +243,11 @@ defmodule Oli.Inventories do
 
   @doc """
   Returns the support email for the given publisher.
-  If the publisher has a non-empty support_email, it is returned.
-  Otherwise, returns the global default from Oli.VendorProperties.support_email/0.
+
+  - If the publisher has a non-empty `support_email` field, it is returned.
+  - Otherwise, returns the global default from `Oli.VendorProperties.support_email/0`.
+
+  This function is used by the help modal and other support features to determine the appropriate support email for a given context.
   """
   @spec support_email_for_publisher(Publisher.t() | nil) :: String.t()
   def support_email_for_publisher(%Publisher{support_email: email})

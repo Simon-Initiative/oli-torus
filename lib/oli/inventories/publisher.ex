@@ -3,6 +3,15 @@ defmodule Oli.Inventories.Publisher do
   import Ecto.Changeset
   import Oli.Utils
 
+  @moduledoc """
+  The Publisher schema represents a content publisher in the system.
+
+  ## Fields
+
+  - `knowledge_base_link`: (string) Optional. The URL to the publisher’s knowledge base or support documentation. Used for routing help modal links. If blank, the system falls back to the global default.
+  - `support_email`: (string) Optional. The support email address for this publisher. Used for routing help requests. Must be a valid email (must contain `@` and no spaces). If blank, the system falls back to the global default.
+  """
+
   @derive {Jason.Encoder, only: [:id, :name, :email, :address, :main_contact, :website_url]}
 
   schema "publishers" do
