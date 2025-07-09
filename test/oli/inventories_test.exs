@@ -178,21 +178,29 @@ defmodule Oli.InventoriesTest do
 
       # Save the original config to restore later
       original_vendor_property = Application.get_env(:oli, :vendor_property)
+      original_help_desk_email = System.get_env("HELP_DESK_EMAIL")
 
       Application.put_env(
         :oli,
         :vendor_property,
         Keyword.merge(Application.get_env(:oli, :vendor_property, []),
-          knowledgebase_url: default_kb,
-          support_email: default_email
+          knowledgebase_url: default_kb
         )
       )
+
+      System.put_env("HELP_DESK_EMAIL", default_email)
 
       on_exit(fn ->
         if is_nil(original_vendor_property) do
           Application.delete_env(:oli, :vendor_property)
         else
           Application.put_env(:oli, :vendor_property, original_vendor_property)
+        end
+
+        if is_nil(original_help_desk_email) do
+          System.delete_env("HELP_DESK_EMAIL")
+        else
+          System.put_env("HELP_DESK_EMAIL", original_help_desk_email)
         end
       end)
 

@@ -245,7 +245,7 @@ defmodule Oli.Inventories do
   Returns the support email for the given publisher.
 
   - If the publisher has a non-empty `support_email` field, it is returned.
-  - Otherwise, returns the global default from `Oli.VendorProperties.support_email/0`.
+  - Otherwise, returns the value of the `HELP_DESK_EMAIL` environment variable, or "test@example.edu" if not set.
 
   This function is used by the help modal and other support features to determine the appropriate support email for a given context.
   """
@@ -255,5 +255,5 @@ defmodule Oli.Inventories do
     email
   end
 
-  def support_email_for_publisher(_), do: Oli.VendorProperties.support_email()
+  def support_email_for_publisher(_), do: System.get_env("HELP_DESK_EMAIL", "test@example.edu")
 end

@@ -63,17 +63,15 @@ defmodule OliWeb.Components.TechSupportLiveTest do
 
   describe "publisher-specific support and knowledge base link logic" do
     setup do
-      # Set global defaults
+      # Set global default
       default_kb = "https://default.kb.example.com"
-      default_email = "default-support@example.com"
       original_vendor_property = Application.get_env(:oli, :vendor_property)
 
       Application.put_env(
         :oli,
         :vendor_property,
         Keyword.merge(Application.get_env(:oli, :vendor_property, []),
-          knowledgebase_url: default_kb,
-          support_email: default_email
+          knowledgebase_url: default_kb
         )
       )
 
