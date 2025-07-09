@@ -170,4 +170,74 @@ defmodule Oli.InventoriesTest do
       refute non_available_publisher.id in Enum.map(returned_publishers, & &1.id)
     end
   end
+
+  describe "publisher support and knowledge base link logic" do
+    setup do
+      default_kb = "https://default.kb.example.com"
+      default_email = "default-support@example.com"
+
+      # Save the original config to restore later
+      original_vendor_property = Application.get_env(:oli, :vendor_property)
+
+      Application.put_env(
+        :oli,
+        :vendor_property,
+        Keyword.merge(Application.get_env(:oli, :vendor_property, []),
+          knowledgebase_url: default_kb,
+          support_email: default_email
+        )
+      )
+
+      on_exit(fn ->
+        if is_nil(original_vendor_property) do
+          Application.delete_env(:oli, :vendor_property)
+        else
+          Application.put_env(:oli, :vendor_property, original_vendor_property)
+        end
+      end)
+
+      :ok
+    end
+
+    test "knowledge_base_link_for_publisher returns publisher value if set" do
+      publisher = build(:publisher, knowledge_base_link: "https://custom.kb.com")
+
+      assert Oli.Inventories.knowledge_base_link_for_publisher(publisher) ==
+               "https://custom.kb.com"
+    end
+
+    test "knowledge_base_link_for_publisher falls back to global default if nil or empty" do
+      publisher_nil = build(:publisher, knowledge_base_link: nil)
+      publisher_empty = build(:publisher, knowledge_base_link: "")
+
+      assert Oli.Inventories.knowledge_base_link_for_publisher(publisher_nil) ==
+               "https://default.kb.example.com"
+
+      assert Oli.Inventories.knowledge_base_link_for_publisher(publisher_empty) ==
+               "https://default.kb.example.com"
+
+      assert Oli.Inventories.knowledge_base_link_for_publisher(nil) ==
+               "https://default.kb.example.com"
+    end
+
+    test "support_email_for_publisher returns publisher value if set" do
+      publisher = build(:publisher, support_email: "custom-support@example.com")
+
+      assert Oli.Inventories.support_email_for_publisher(publisher) ==
+               "custom-support@example.com"
+    end
+
+    test "support_email_for_publisher falls back to global default if nil or empty" do
+      publisher_nil = build(:publisher, support_email: nil)
+      publisher_empty = build(:publisher, support_email: "")
+
+      assert Oli.Inventories.support_email_for_publisher(publisher_nil) ==
+               "default-support@example.com"
+
+      assert Oli.Inventories.support_email_for_publisher(publisher_empty) ==
+               "default-support@example.com"
+
+      assert Oli.Inventories.support_email_for_publisher(nil) == "default-support@example.com"
+    end
+  end
 end
