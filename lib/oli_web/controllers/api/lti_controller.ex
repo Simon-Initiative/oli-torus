@@ -90,6 +90,45 @@ defmodule OliWeb.Api.LtiController do
     end
   end
 
+  def deep_linking_launch_details(conn, %{
+        "section_slug" => section_slug,
+        "activity_id" => activity_id
+      }) do
+    with %Oli.Resources.Revision{activity_type_id: activity_type_id} <-
+           DeliveryResolver.from_resource_id(section_slug, activity_id),
+         %LtiExternalToolActivityDeployment{platform_instance: platform_instance, status: status} =
+           PlatformExternalTools.get_lti_external_tool_activity_deployment_by(
+             activity_registration_id: activity_type_id
+           ) do
+      user = conn.assigns[:current_user]
+
+      {:ok, %LoginHint{value: login_hint}} =
+        LoginHints.create_login_hint(user.id, %{
+          "section" => section_slug,
+          "deep_linking" => "true"
+        })
+
+      json(conn, %{
+        name: platform_instance.name,
+        launch_params: %{
+          iss: Oli.Utils.get_base_url(),
+          login_hint: login_hint,
+          client_id: platform_instance.client_id,
+          target_link_uri: platform_instance.target_link_uri,
+          login_url: platform_instance.login_url,
+          status: status,
+          lti_message_type: "LtiDeepLinkingRequest"
+        }
+      })
+    else
+      _ ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{error: "Activity not found"})
+        |> halt()
+    end
+  end
+
   @doc """
   Returns the developer key configuration for LTI 1.3, including public JWK and
   platform-specific settings.
@@ -338,10 +377,24 @@ defmodule OliWeb.Api.LtiController do
     end
   end
 
-  def deep_linking(conn, %{
-        "section_slug" => section_slug,
-        "activity_resource_id" => activity_resource_id
-      }) do
-    # Implement deep linking logic here
+  @doc """
+  Handles the Deep Linking response from the LTI tool.
+  This endpoint receives the JWT containing the content items selected by the user.
+  """
+  def deep_linking(conn, params) do
+    # Extract the JWT from the request
+    jwt = params["JWT"]
+
+    # For now, we'll just log the JWT and return success
+    # In a full implementation, you would:
+    # 1. Validate the JWT signature
+    # 2. Parse the content items from the JWT
+    # 3. Create resources in your system based on the selected content
+    Logger.info("Received deep linking JWT: #{inspect(jwt)}")
+
+    json(conn, %{
+      status: "success",
+      message: "Deep linking response received successfully"
+    })
   end
 end

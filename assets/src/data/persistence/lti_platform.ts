@@ -24,6 +24,20 @@ export function getLtiExternalToolDetails(
   });
 }
 
+export function getLtiExternalToolDeepLinkingDetails(
+  slug: string,
+  activityId: string,
+): Promise<LTIExternalToolDetails> {
+  return fetch(`/api/v1/lti/sections/${slug}/deep_linking_launch_details/${activityId}`, {
+    method: 'GET',
+  }).then((response) => {
+    if (!response.ok)
+      return Promise.reject(new Error('Failed to fetch external tool deep linking details'));
+
+    return response.json();
+  });
+}
+
 export type PlatformInstance = {
   id: string;
   client_id: string;

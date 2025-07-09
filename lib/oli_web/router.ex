@@ -1504,6 +1504,12 @@ defmodule OliWeb.Router do
       Api.LtiController,
       :launch_details
     )
+
+    get(
+      "/deep_linking_launch_details/:activity_id",
+      Api.LtiController,
+      :deep_linking_launch_details
+    )
   end
 
   ### Invitations (to sections or projects)
