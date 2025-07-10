@@ -3,6 +3,8 @@ defmodule OliWeb.Api.LtiController do
 
   alias Lti_1p3.Platform.LoginHint
   alias Lti_1p3.Platform.LoginHints
+  alias Oli.Accounts
+  alias Oli.Delivery.Sections
   alias Oli.Publishing.{DeliveryResolver, AuthoringResolver}
   alias Oli.Lti.PlatformExternalTools
   alias Oli.Lti.PlatformExternalTools.LtiExternalToolActivityDeployment
@@ -23,11 +25,19 @@ defmodule OliWeb.Api.LtiController do
   def launch_details(conn, %{"section_slug" => section_slug, "activity_id" => activity_id}) do
     with %Oli.Resources.Revision{activity_type_id: activity_type_id} <-
            DeliveryResolver.from_resource_id(section_slug, activity_id),
-         %LtiExternalToolActivityDeployment{platform_instance: platform_instance, status: status} =
+         %LtiExternalToolActivityDeployment{
+           platform_instance: platform_instance,
+           status: status,
+           deep_linking_enabled: deep_linking_enabled
+         } =
            PlatformExternalTools.get_lti_external_tool_activity_deployment_by(
              activity_registration_id: activity_type_id
            ) do
       user = conn.assigns[:current_user]
+      current_author = conn.assigns[:current_author]
+
+      can_configure_tool =
+        Sections.is_instructor?(user, section_slug) || Accounts.is_admin?(current_author)
 
       {:ok, %LoginHint{value: login_hint}} =
         LoginHints.create_login_hint(user.id, %{
@@ -42,9 +52,11 @@ defmodule OliWeb.Api.LtiController do
           login_hint: login_hint,
           client_id: platform_instance.client_id,
           target_link_uri: platform_instance.target_link_uri,
-          login_url: platform_instance.login_url,
-          status: status
-        }
+          login_url: platform_instance.login_url
+        },
+        status: status,
+        deep_linking_enabled: deep_linking_enabled,
+        can_configure_tool: can_configure_tool
       })
     else
       _ ->
@@ -58,7 +70,11 @@ defmodule OliWeb.Api.LtiController do
   def launch_details(conn, %{"project_slug" => project_slug, "activity_id" => activity_id}) do
     with %Oli.Resources.Revision{activity_type_id: activity_type_id} <-
            AuthoringResolver.from_resource_id(project_slug, activity_id),
-         %LtiExternalToolActivityDeployment{platform_instance: platform_instance, status: status} =
+         %LtiExternalToolActivityDeployment{
+           platform_instance: platform_instance,
+           status: status,
+           deep_linking_enabled: deep_linking_enabled
+         } =
            PlatformExternalTools.get_lti_external_tool_activity_deployment_by(
              activity_registration_id: activity_type_id
            ) do
@@ -77,9 +93,11 @@ defmodule OliWeb.Api.LtiController do
           login_hint: login_hint,
           client_id: platform_instance.client_id,
           target_link_uri: platform_instance.target_link_uri,
-          login_url: platform_instance.login_url,
-          status: status
-        }
+          login_url: platform_instance.login_url
+        },
+        status: status,
+        deep_linking_enabled: deep_linking_enabled,
+        can_configure_tool: false
       })
     else
       _ ->

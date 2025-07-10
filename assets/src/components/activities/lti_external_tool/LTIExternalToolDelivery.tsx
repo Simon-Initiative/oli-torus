@@ -90,21 +90,23 @@ const LTIExternalTool: React.FC = () => {
               openInNewTab={model.openInNewTab}
               height={model.height}
             />
-            <div className="flex flex-row justify-end items-center">
-              <Button
-                variant="tertiary"
-                size="md"
-                onClick={() =>
-                  showConfigureDeepLinkingModal(
-                    context.sectionSlug,
-                    `${state.activityId}`,
-                    `${context.resourceId}`,
-                  )
-                }
-              >
-                Configure
-              </Button>
-            </div>
+            {ltiToolDetails.deep_linking_enabled && ltiToolDetails.can_configure_tool && (
+              <div className="flex flex-row justify-start items-center">
+                <Button
+                  variant="tertiary"
+                  size="md"
+                  onClick={() =>
+                    showConfigureDeepLinkingModal(
+                      context.sectionSlug,
+                      `${state.activityId}`,
+                      `${context.resourceId}`,
+                    )
+                  }
+                >
+                  <i className="fa-solid fa-plug mr-1"></i> Select Resource from Tool
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       );
@@ -154,7 +156,7 @@ export const ConfigureDeepLinkingModal = ({
 
   return (
     <Modal
-      title="Configure External Tool"
+      title="Select Resource from External Tool"
       size={ModalSize.X_LARGE}
       okLabel="Done"
       cancelLabel="Cancel"

@@ -6,8 +6,10 @@ export type LTIExternalToolDetails = {
     client_id: string;
     target_link_uri: string;
     login_url: string;
-    status: string;
   };
+  status: string;
+  deep_linking_enabled: boolean;
+  can_configure_tool: boolean;
 };
 
 export function getLtiExternalToolDetails(
