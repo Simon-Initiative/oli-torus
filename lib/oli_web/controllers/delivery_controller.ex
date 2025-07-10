@@ -399,7 +399,7 @@ defmodule OliWeb.DeliveryController do
 
             %{
               objective: (!subobjective && objective.title) || nil,
-              subobjective: subobjective && subobjective.title,
+              subobjective: subobjective && subobjective,
               student_proficiency_obj:
                 (!student_proficiency_subobj && student_proficiency_obj) || nil,
               student_proficiency_subobj: student_proficiency_subobj
