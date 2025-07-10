@@ -2831,24 +2831,17 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   end
 
   defp get_student_metrics(section, current_user_id) do
-    student_end_date_exceptions_per_resource_id =
+    {student_available_date_exceptions_per_resource_id,
+     student_end_date_exceptions_per_resource_id} =
       Oli.Delivery.Settings.get_student_exception_setting_for_all_resources(
         section.id,
         current_user_id,
-        [:end_date]
+        [:start_date, :end_date]
       )
-      |> Enum.reduce(%{}, fn {resource_id, settings}, acc ->
-        Map.put(acc, resource_id, settings[:end_date])
-      end)
-
-    student_available_date_exceptions_per_resource_id =
-      Oli.Delivery.Settings.get_student_exception_setting_for_all_resources(
-        section.id,
-        current_user_id,
-        [:start_date]
-      )
-      |> Enum.reduce(%{}, fn {resource_id, settings}, acc ->
-        Map.put(acc, resource_id, settings[:start_date])
+      |> Enum.reduce({%{}, %{}}, fn {resource_id, settings},
+                                    {available_date_exceptions, end_date_exceptions} = _acum ->
+        {Map.put(available_date_exceptions, resource_id, settings[:start_date]),
+         Map.put(end_date_exceptions, resource_id, settings[:end_date])}
       end)
 
     visited_pages_map = Sections.get_visited_pages(section.id, current_user_id)
