@@ -284,11 +284,26 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
           role="assignment schedule details"
           class="text-[#757682] dark:text-[#eeebf5]/75 text-xs font-semibold leading-3 whitespace-nowrap truncate"
         >
-          <%= Utils.label_for_scheduling_type(@assignment.scheduling_type) %> <%= FormatDateTime.to_formatted_datetime(
-            @assignment.end_date,
-            @ctx,
-            "{WDshort} {Mshort} {D}, {YYYY}"
-          ) %>
+          <span>
+            Available:
+            <%= if @assignment.start_date do %>
+              <%= FormatDateTime.to_formatted_datetime(
+                @assignment.start_date,
+                @ctx,
+                "{WDshort} {Mshort} {D}, {YYYY}"
+              ) %>
+            <% else %>
+              Now
+            <% end %>
+          </span>
+          <span class="ml-6">
+            <%= Utils.label_for_scheduling_type(@assignment.scheduling_type) %>
+            <%= FormatDateTime.to_formatted_datetime(
+              @assignment.end_date,
+              @ctx,
+              "{WDshort} {Mshort} {D}, {YYYY}"
+            ) %>
+          </span>
         </span>
       </div>
       <div :if={@assignment.raw_avg_score} class="ml-auto h-12 flex flex-col justify-between">
@@ -370,6 +385,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
             _ ->
               true
           end,
+        start_date: effective_settings.start_date,
         end_date: effective_settings.end_date,
         purpose: assignment.purpose,
         progress: progress_per_page_id[assignment.resource_id],
