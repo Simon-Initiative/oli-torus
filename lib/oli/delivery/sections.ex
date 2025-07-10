@@ -5066,14 +5066,14 @@ defmodule Oli.Delivery.Sections do
 
                   Map.merge(sub_objective, %{
                     section_id: section.id,
-                    objective: sub_objective.title,
-                    objective_resource_id: sub_objective.resource_id,
-                    student_proficiency_obj: student_proficiency_subobj,
-                    student_proficiency_obj_dist: student_proficiency_subobj_dist,
-                    subobjective: sub_objective,
-                    subobjective_resource_id: nil,
+                    objective: objective.title,
+                    objective_resource_id: objective.resource_id,
+                    student_proficiency_obj: student_proficiency_obj,
+                    student_proficiency_obj_dist: student_proficiency_obj_dist,
+                    subobjective: sub_objective.title,
+                    subobjective_resource_id: sub_objective.resource_id,
                     student_proficiency_subobj: student_proficiency_subobj,
-                    student_proficiency_subobj_dist: nil
+                    student_proficiency_subobj_dist: student_proficiency_subobj_dist
                   })
                 end)
 
