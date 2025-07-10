@@ -650,6 +650,73 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
 
       assert html_response(conn, 200) =~ "Graded Adaptive Page"
     end
+
+    test "can access student attempt even when review_submission is disallowed", %{
+      conn: conn,
+      instructor: instructor,
+      section: section,
+      page_1: page_1
+    } do
+      student = insert(:user)
+
+      # Enroll both instructor and student
+      {:ok, _enrollment} =
+        Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, _enrollment} =
+        Sections.enroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      Sections.mark_section_visited_for_student(section, student)
+
+      # Disallow review submission for this page
+      section_resource = Sections.get_section_resource(section.id, page_1.resource_id)
+      Sections.update_section_resource(section_resource, %{review_submission: :disallow})
+
+      # Create an attempt for the student
+      attempt = create_attempt(student, section, page_1)
+
+      # Verify instructor role is set correctly
+      user_roles = Sections.get_user_roles(instructor, section.slug)
+      assert user_roles.is_instructor? == true
+
+      # Instructor should be able to access the student's attempt
+      {:ok, view, _html} =
+        live(conn, Utils.review_live_path(section.slug, page_1.slug, attempt.attempt_guid))
+
+      ensure_content_is_visible(view)
+      assert has_element?(view, "span", "The best course ever!")
+      assert has_element?(view, ~s{div[role="page title"]}, "Page 1")
+    end
+
+    test "student cannot access attempt when review_submission is disallowed", %{
+      conn: conn,
+      section: section,
+      page_1: page_1
+    } do
+      student = insert(:user)
+
+      # Enroll student
+      {:ok, _enrollment} =
+        Sections.enroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      Sections.mark_section_visited_for_student(section, student)
+
+      # Disallow review submission for this page
+      section_resource = Sections.get_section_resource(section.id, page_1.resource_id)
+      Sections.update_section_resource(section_resource, %{review_submission: :disallow})
+
+      # Create an attempt for the student
+      attempt = create_attempt(student, section, page_1)
+
+      # Log in as the student
+      conn = log_in_user(conn, student)
+
+      # Student should NOT be able to access their own attempt
+      {:error, {:redirect, %{to: redirect_path}}} =
+        live(conn, Utils.review_live_path(section.slug, page_1.slug, attempt.attempt_guid))
+
+      assert redirect_path == Utils.learn_live_path(section.slug)
+    end
   end
 
   describe "admin" do
