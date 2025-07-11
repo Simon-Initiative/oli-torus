@@ -45,7 +45,7 @@ export const YoutubePlayer: React.FC<{
           disablekb: 1,
           modestbranding: 1,
           showinfo: 0,
-          rel: 0,
+          rel: 0, // Always limit related videos to same channel
           controls: 0,
         },
       }
@@ -54,6 +54,7 @@ export const YoutubePlayer: React.FC<{
         height: '100%',
         playerVars: {
           start: video.startTime,
+          rel: 0, // Always limit related videos to same channel
         },
       };
 
