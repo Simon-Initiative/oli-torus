@@ -128,7 +128,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
     breadcrumbs =
       Breadcrumb.trail_to(project_slug, revision_slug, AuthoringResolver, project.customizations)
 
-    is_advanced_authoring = context.content && Map.get(context.content, "advancedAuthoring", false)
+    is_advanced_authoring =
+      context.content && Map.get(context.content, "advancedAuthoring", false)
 
     content = %{
       active: :curriculum,

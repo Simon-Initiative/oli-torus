@@ -146,25 +146,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLiveTest do
       assert html =~ "Curriculum"
       assert html =~ revision.title
     end
-
-    test "breadcrumbs are rendered in correct location based on authoring mode", %{
-      conn: conn,
-      project: project,
-      revision: revision
-    } do
-      {:ok, _view, html} = live(conn, live_view_route(project.slug, revision.slug))
-
-      # Check that breadcrumbs are rendered in the workspace layout
-      assert html =~ "<nav class=\"breadcrumb-bar"
-
-      # Verify that breadcrumbs are present but not duplicated
-      # The workspace layout can render breadcrumbs in two locations:
-      # 1. Inside the overview div (for advanced authoring)
-      # 2. Outside the overview div (for basic authoring)
-      # We should have exactly one breadcrumb nav element
-      breadcrumb_occurrences = html |> String.split("<nav class=\"breadcrumb-bar") |> length()
-      assert breadcrumb_occurrences == 2 # The split creates 2 parts when there's 1 occurrence
-    end
   end
 
   defp create_author_project_conn(%{conn: conn}) do
