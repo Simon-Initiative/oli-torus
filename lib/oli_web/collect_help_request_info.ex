@@ -2,6 +2,7 @@ defmodule OliWeb.CollectHelpRequestInfo do
   def collect(conn) do
     %{
       "section" => Map.get(conn.assigns, :section),
+      "project" => Map.get(conn.assigns, :project),
       "user" => Map.get(conn.assigns, :current_author) || Map.get(conn.assigns, :current_user),
       "user_agent" => get_user_agent(conn),
       "ip_address" => get_remote_ip(conn),
