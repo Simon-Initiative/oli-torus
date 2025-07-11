@@ -13,7 +13,7 @@ import {
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
 import { contexts } from '../../../types/applicationContext';
-import { parseBool } from '../../../utils/common';
+import { countSigFigs, parseBool } from '../../../utils/common';
 import { PartComponentProps } from '../types/parts';
 import './InputNumber.scss';
 import { InputNumberModel } from './schema';
@@ -121,6 +121,11 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = ({
           key: 'customCssClass',
           type: CapiVariableTypes.STRING,
           value: model.customCssClass || '',
+        },
+        {
+          key: 'Number of sigfigs',
+          type: CapiVariableTypes.NUMBER,
+          value: 0,
         },
       ],
     });
@@ -241,6 +246,7 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = ({
 
   const saveInputText = useCallback(
     (val: number) => {
+      const numberOFSigfigs = countSigFigs(val?.toString());
       onSave({
         id: `${id}`,
         responses: [
@@ -248,6 +254,11 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = ({
             key: 'value',
             type: CapiVariableTypes.NUMBER,
             value: val,
+          },
+          {
+            key: 'Number of sigfigs',
+            type: CapiVariableTypes.NUMBER,
+            value: numberOFSigfigs,
           },
         ],
       });
