@@ -33,7 +33,7 @@ defmodule OliWeb.Common.Utils do
 
   ## Examples
 
-      iex> format_date(~U[2023-09-06 13:28:00Z], %{SessionContext.init() | local_tz: "America/Montevideo"}, "{0M}/{D}/{YY}")
+      iex> format_date(~U[2023-09-06 13:28:00Z], %{SessionContext.init() | local_tz: "America/Montevideo"}, "{0M}/{0D}/{YY}")
       "09/06/23"
   """
   @spec format_date(DateTime.t(), map(), String.t()) :: String.t()
