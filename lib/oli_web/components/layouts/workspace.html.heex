@@ -74,11 +74,18 @@
           </button>
         </div>
       <% end %>
+
+      <%= if assigns[:is_advanced_authoring] && assigns[:breadcrumbs] do %>
+        <Components.Delivery.Layouts.breadcrumb_trail
+          breadcrumbs={assigns[:breadcrumbs]}
+          socket={@socket}
+        />
+      <% end %>
     </div>
     <div class={OliWeb.Workspaces.Utils.maybe_add_padding(assigns[:uri])}>
       <div class="-mt-[28px]">
         <Components.Delivery.Layouts.breadcrumb_trail
-          :if={assigns[:breadcrumbs]}
+          :if={assigns[:breadcrumbs] && !assigns[:is_advanced_authoring]}
           breadcrumbs={assigns[:breadcrumbs]}
           socket={@socket}
         />
