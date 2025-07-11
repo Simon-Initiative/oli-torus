@@ -110,16 +110,6 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
     """
   end
 
-  defp custom_render(assigns, objective, %ColumnSpec{name: :objective}) do
-    assigns = Map.merge(assigns, %{objective: objective.objective})
-
-    ~H"""
-    <div class="flex items-center ml-8 gap-x-4">
-      <span><%= @objective %></span>
-    </div>
-    """
-  end
-
   defp custom_render(assigns, objective, %ColumnSpec{name: :objective_instructor_dashboard}) do
     objective =
       case Map.get(objective, :subobjective) do
