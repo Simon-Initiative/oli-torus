@@ -7,11 +7,11 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   alias Phoenix.LiveView.JS
   alias Oli.Delivery.Sections.SectionCache
   alias Oli.Delivery.Sections.SectionResourceDepot
-  alias OliWeb.Common.Utils, as: WebUtils
   alias OliWeb.Components.Delivery.Student
   alias OliWeb.Delivery.Student.Utils
   alias OliWeb.Common.Utils, as: CommonUtils
   alias OliWeb.Components.Delivery.Utils, as: DeliveryUtils
+  alias OliWeb.Components.Utils, as: ComponentsUtils
   alias OliWeb.Icons
   alias Phoenix.LiveView.JS
 
@@ -892,6 +892,11 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       phx-hook="Scroller"
     >
       <.video_player />
+      <div class="px-3 md:px-[25px]">
+        <ComponentsUtils.timezone_info timezone={
+          CommonUtils.get_timezone(@ctx.browser_timezone, @ctx.user)
+        } />
+      </div>
       <div class="flex justify-between items-center h-16 p-3 md:p-[25px] sticky top-14 z-40 bg-delivery-body dark:bg-delivery-body-dark">
         <DeliveryUtils.toggle_visibility_button
           target_selector="div[data-completed='true']"
@@ -962,6 +967,11 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     ~H"""
     <div id="student_learn" class="lg:container lg:mx-auto p-3 md:p-[25px]" phx-hook="Scroller">
       <.video_player />
+      <div class="px-3 md:px-[25px]">
+        <ComponentsUtils.timezone_info timezone={
+          CommonUtils.get_timezone(@ctx.browser_timezone, @ctx.user)
+        } />
+      </div>
       <div class="flex justify-between items-center h-16 p-3 md:p-[25px] sticky top-14 z-40 bg-delivery-body dark:bg-delivery-body-dark">
         <DeliveryUtils.toggle_visibility_button
           class="dark:text-[#bab8bf] text-sm font-medium hover:text-black dark:hover:text-white"
@@ -1187,7 +1197,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 duration_minutes={@unit["duration_minutes"]}
                 card_resource_id={@unit["resource_id"]}
                 intro_video_viewed={@unit["resource_id"] in @viewed_intro_video_resource_ids}
-                is_youtube_video={WebUtils.is_youtube_video?(@unit["intro_video"])}
+                is_youtube_video={CommonUtils.is_youtube_video?(@unit["intro_video"])}
               />
               <.card
                 :for={module <- @unit["children"]}
@@ -2351,7 +2361,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       </div>
       <div
         class="flex flex-col items-center rounded-xl h-[170px] w-[294px] bg-gray-200/50 shrink-0 px-5 pt-[15px] bg-cover bg-center"
-        style={"background-image: url('#{WebUtils.convert_to_youtube_image_url(@video_url)}');"}
+        style={"background-image: url('#{CommonUtils.convert_to_youtube_image_url(@video_url)}');"}
       >
         <span
           role="card top label"

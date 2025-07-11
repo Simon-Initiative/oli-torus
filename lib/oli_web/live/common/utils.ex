@@ -1,6 +1,7 @@
 defmodule OliWeb.Common.Utils do
   import OliWeb.Common.FormatDateTime
 
+  alias Oli.Accounts
   alias Oli.Accounts.{User, Author}
   alias OliWeb.Common.SessionContext
 
@@ -310,4 +311,19 @@ defmodule OliWeb.Common.Utils do
     |> Phoenix.HTML.html_escape()
     |> Phoenix.HTML.safe_to_string()
   end
+
+  @doc """
+  Returns the timezone preference for a user or author.
+  If the user or author has a timezone preference, returns the preference.
+  If the user or author does not have a timezone preference, returns the browser timezone from the session.
+  If the browser timezone is not set, returns "Etc/UTC".
+  """
+  @spec get_timezone(binary, map | nil) :: binary
+  def get_timezone(browser_timezone, user) do
+    timezone_preference(user) || browser_timezone || "Etc/UTC"
+  end
+
+  defp timezone_preference(nil), do: nil
+  defp timezone_preference(%User{} = user), do: Accounts.get_user_preference(user, :timezone)
+  defp timezone_preference(%Author{} = user), do: Accounts.get_author_preference(user, :timezone)
 end

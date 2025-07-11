@@ -1,5 +1,6 @@
 defmodule OliWeb.Components.Utils do
   use OliWeb, :verified_routes
+  use Phoenix.Component
 
   alias Phoenix.LiveView.JS
   alias OliWeb.Common.SessionContext
@@ -68,5 +69,24 @@ defmodule OliWeb.Components.Utils do
       _ ->
         false
     end
+  end
+
+  attr :timezone, :string, required: true
+  attr :class, :string, default: nil
+
+  def timezone_info(assigns) do
+    ~H"""
+    <div
+      id="timezone_info"
+      class={["flex items-center gap-2 text-[#757682] dark:text-[#bab8bf] mb-1", @class]}
+    >
+      <div class="w-5 h-5 flex items-center justify-center">
+        <OliWeb.Icons.timezone_world />
+      </div>
+      <span class="text-sm font-medium leading-4">
+        <%= @timezone %>
+      </span>
+    </div>
+    """
   end
 end
