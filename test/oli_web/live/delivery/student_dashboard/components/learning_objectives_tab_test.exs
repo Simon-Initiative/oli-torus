@@ -88,71 +88,15 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.LearningObjectivesTabTest 
         )
 
       # Row 1
-      assert view
-             |> element(
-               "table.instructor_dashboard_table > tbody > tr:nth-child(1) [data-proficiency-check='true'] > span:last-child"
-             )
-             |> render() =~ obj_revision_1.title
-
-      assert view
-             |> element(
-               "table.instructor_dashboard_table > tbody > tr:nth-child(1) > td:nth-child(2) > div > div"
-             )
-             |> render() ==
-               "<div>-</div>"
-
+      assert [obj_revision_1.title, "-"] == pull_data_from_table(view, 1)
       # Row 2
-      assert view
-             |> element(
-               "table.instructor_dashboard_table > tbody > tr:nth-child(2) [data-proficiency-check='true'] > span:last-child"
-             )
-             |> render() =~ obj_revision_2.title
-
-      assert view
-             |> element(
-               "table.instructor_dashboard_table > tbody > tr:nth-child(2) > td:nth-child(2) > div > div"
-             )
-             |> render() ==
-               "<div>-</div>"
-
+      assert [obj_revision_2.title, "-"] == pull_data_from_table(view, 2)
       # Row 3 - has subobjective 1
-      assert view
-             |> element(
-               "table.instructor_dashboard_table > tbody > tr:nth-child(3) [data-proficiency-check='true'] > span:last-child"
-             )
-             |> render() =~ obj_revision_1.title
-
-      assert view
-             |> element(
-               "table.instructor_dashboard_table > tbody > tr:nth-child(3) > td:nth-child(2) > div > div"
-             )
-             |> render() =~ subobj_rev_1.title
-
+      assert [obj_revision_1.title, subobj_rev_1.title] == pull_data_from_table(view, 3)
       # Row 4 - has subobjective 2 (We also check here the order)
-      assert view
-             |> element(
-               "table.instructor_dashboard_table > tbody > tr:nth-child(4) [data-proficiency-check='true'] > span:last-child"
-             )
-             |> render() =~ obj_revision_1.title
-
-      assert view
-             |> element(
-               "table.instructor_dashboard_table > tbody > tr:nth-child(4) > td:nth-child(2) > div > div"
-             )
-             |> render() =~ subobj_rev_3.title
-
+      assert [obj_revision_1.title, subobj_rev_3.title] == pull_data_from_table(view, 4)
       # Row 5 - has subobjective 2 (We also check here the order)
-      assert view
-             |> element(
-               "table.instructor_dashboard_table > tbody > tr:nth-child(5) [data-proficiency-check='true'] > span:last-child"
-             )
-             |> render() =~ obj_revision_1.title
-
-      assert view
-             |> element(
-               "table.instructor_dashboard_table > tbody > tr:nth-child(5) > td:nth-child(2) > div > div"
-             )
-             |> render() =~ subobj_rev_2.title
+      assert [obj_revision_1.title, subobj_rev_2.title] == pull_data_from_table(view, 5)
     end
 
     test "gets rendered correctly", %{
@@ -612,5 +556,27 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.LearningObjectivesTabTest 
       refute has_element?(view, "span", "#{revisions.obj_revision_e.title}")
       refute has_element?(view, "span", "#{revisions.obj_revision_f.title}")
     end
+  end
+
+  defp pull_data_from_table(view, row) do
+    col_1 =
+      view
+      |> element(
+        "table.instructor_dashboard_table > tbody > tr:nth-child(#{row}) [data-proficiency-check='true'] > span:last-child"
+      )
+      |> render()
+      |> Floki.parse_document!()
+      |> Floki.text()
+
+    col_2 =
+      view
+      |> element(
+        "table.instructor_dashboard_table > tbody > tr:nth-child(#{row}) > td:nth-child(2) > div > div"
+      )
+      |> render()
+      |> Floki.parse_document!()
+      |> Floki.text()
+
+    [col_1, col_2]
   end
 end
