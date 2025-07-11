@@ -378,7 +378,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
           ~p"/sections/#{section_slug}/student_dashboard/#{student_id}/learning_objectives"
       end
 
-    {:noreply, push_navigate(socket, to: path)}
+    {:noreply, push_patch(socket, to: path)}
   end
 
   def handle_event("filter_by", %{"filter" => filter}, socket) do
