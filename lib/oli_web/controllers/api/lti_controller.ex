@@ -123,6 +123,7 @@ defmodule OliWeb.Api.LtiController do
       {:ok, %LoginHint{value: login_hint}} =
         LoginHints.create_login_hint(user.id, %{
           "section" => section_slug,
+          "resource_id" => activity_id,
           "deep_linking" => "true"
         })
 
@@ -346,9 +347,9 @@ defmodule OliWeb.Api.LtiController do
     end
   end
 
-  defp peek_jwt(client_assertion) do
+  defp peek_jwt(token) do
     try do
-      jwt = JOSE.JWT.peek(client_assertion)
+      jwt = JOSE.JWT.peek(token)
 
       {:ok, jwt}
     rescue
@@ -399,20 +400,109 @@ defmodule OliWeb.Api.LtiController do
   Handles the Deep Linking response from the LTI tool.
   This endpoint receives the JWT containing the content items selected by the user.
   """
-  def deep_linking(conn, params) do
-    # Extract the JWT from the request
-    jwt = params["JWT"]
+  def deep_link(
+        conn,
+        %{"JWT" => jwt, "section_slug" => section_slug, "resource_id" => resource_id} = _params
+      ) do
+    with {:ok, claims} <- validate_deep_linking_jwt(jwt),
+         {:ok, content_item} <- require_single_content_item(claims),
+         :ok <- require_lti_resource_link_type(dbg(content_item)),
+         %Sections.Section{id: section_id} <-
+           Sections.get_section_by_slug(section_slug),
+         #  {:ok, resource_id} <- parse_resource_id(resource_id),
+         :ok = process_deep_linking_content_item(content_item, section_id, resource_id) do
+      # Respond with success
+      json(conn, %{
+        status: "success",
+        message: "Deep linking response processed successfully",
+        content_items: [content_item]
+      })
+    else
+      {:error, _reason, error_description} ->
+        conn
+        |> put_status(:bad_request)
+        |> json(%{error: "invalid_request", error_description: error_description})
 
-    # For now, we'll just log the JWT and return success
-    # In a full implementation, you would:
-    # 1. Validate the JWT signature
-    # 2. Parse the content items from the JWT
-    # 3. Create resources in your system based on the selected content
-    Logger.info("Received deep linking JWT: #{inspect(jwt)}")
+      {:error, reason} ->
+        conn
+        |> put_status(:bad_request)
+        |> json(%{error: "invalid_request", error_description: to_string(reason)})
+    end
+  end
 
-    json(conn, %{
-      status: "success",
-      message: "Deep linking response received successfully"
-    })
+  defp validate_deep_linking_jwt(jwt) do
+    with {:ok, %JOSE.JWT{fields: %{"iss" => client_id, "aud" => audience}}} <- peek_jwt(jwt),
+         %JOSE.JWS{fields: %{"kid" => kid}} <- JOSE.JWT.peek_protected(jwt),
+         {:ok, platform_instance} <- get_platform_instance_by_client_id(client_id),
+         {:ok, jwk} <- get_jwk_for_assertion(platform_instance.keyset_url, kid),
+         {true, jwt, _jws} <- JOSE.JWT.verify(jwk, jwt),
+         jwt_claims <- jwt.fields,
+         :ok <- validate_audience(audience),
+         :ok <- validate_message_type(jwt_claims) do
+      {:ok, jwt_claims}
+    else
+      e ->
+        Logger.error("Failed to validate deep linking JWT: #{inspect(e)}")
+        {:error, :invalid_deep_linking_jwt}
+    end
+  end
+
+  defp validate_audience(audience) do
+    expected_audience = Oli.Utils.get_base_url()
+
+    if audience == expected_audience do
+      :ok
+    else
+      {:error, :invalid_audience}
+    end
+  end
+
+  defp validate_message_type(%{
+         "https://purl.imsglobal.org/spec/lti/claim/message_type" => "LtiDeepLinkingResponse"
+       }) do
+    :ok
+  end
+
+  defp validate_message_type(_) do
+    {:error, :invalid_message_type}
+  end
+
+  defp require_single_content_item(%{
+         "https://purl.imsglobal.org/spec/lti-dl/claim/content_items" => content_items
+       }) do
+    if is_list(content_items) and length(content_items) == 1 do
+      {:ok, hd(content_items)}
+    else
+      {:error, :invalid_content_item,
+       "Expected exactly one content item, got #{length(content_items)}"}
+    end
+  end
+
+  defp require_lti_resource_link_type(%{"type" => "ltiResourceLink"}), do: :ok
+
+  defp require_lti_resource_link_type(_),
+    do: {:error, :invalid_content_item_type, "Expected content item type to be 'ltiResourceLink'"}
+
+  defp process_deep_linking_content_item(content_item, section_id, resource_id) do
+    Logger.info("Processing deep linking content item: #{inspect(content_item)}")
+
+    case PlatformExternalTools.create_section_resource_deep_link(%{
+           type: content_item["type"],
+           title: content_item["title"],
+           text: content_item["text"],
+           url: content_item["url"],
+           custom: content_item["custom"],
+           resource_id: resource_id,
+           section_id: section_id
+         }) do
+      {:ok, _deep_link} ->
+        :ok
+
+      {:error, reason} ->
+        Logger.error("Failed to create section resource deep link: #{inspect(reason)}")
+        {:error, :failed_to_create_deep_link}
+    end
+
+    :ok
   end
 end

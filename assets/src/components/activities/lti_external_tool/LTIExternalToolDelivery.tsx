@@ -103,7 +103,7 @@ const LTIExternalTool: React.FC = () => {
                     )
                   }
                 >
-                  <i className="fa-solid fa-plug mr-1"></i> Select Resource from Tool
+                  <i className="fa-solid fa-rectangle-list mr-1"></i> Select Resource from Tool
                 </Button>
               </div>
             )}

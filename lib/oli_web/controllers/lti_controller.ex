@@ -99,21 +99,43 @@ defmodule OliWeb.LtiController do
         )
 
       %Lti_1p3.Platform.LoginHint{context: context, session_user_id: _session_user_id} ->
-        {user, activity_resource_id, roles, additional_claims, message_type} =
+        client_id = params["client_id"]
+
+        platform_instance =
+          PlatformInstances.get_platform_instance_by_client_id(client_id)
+
+        {user, target_link_uri, activity_resource_id, roles, additional_claims, message_type} =
           case context do
             %{"project" => project_slug, "resource_id" => activity_resource_id} ->
               build_authorization_for(
                 :authoring,
                 conn,
+                platform_instance,
                 project_slug,
                 activity_resource_id
               )
 
-            %{"section" => section_slug, "resource_id" => activity_resource_id} ->
-              build_authorization_for(:delivery, conn, section_slug, activity_resource_id)
+            %{
+              "section" => section_slug,
+              "resource_id" => activity_resource_id,
+              "deep_linking" => "true"
+            } ->
+              build_authorization_for(
+                :deep_linking,
+                conn,
+                platform_instance,
+                section_slug,
+                activity_resource_id
+              )
 
-            %{"section" => section_slug, "deep_linking" => "true"} ->
-              build_authorization_for(:deep_linking, conn, section_slug, nil)
+            %{"section" => section_slug, "resource_id" => activity_resource_id} ->
+              build_authorization_for(
+                :delivery,
+                conn,
+                platform_instance,
+                section_slug,
+                activity_resource_id
+              )
 
             _ ->
               Logger.error("Unsupported context value in login hint: #{Kernel.inspect(context)}")
@@ -122,11 +144,6 @@ defmodule OliWeb.LtiController do
           end
 
         issuer = Oli.Utils.get_base_url()
-
-        client_id = params["client_id"]
-
-        platform_instance =
-          PlatformInstances.get_platform_instance_by_client_id(client_id)
 
         deployment =
           Oli.Lti.PlatformExternalTools.get_lti_external_tool_activity_deployment_by(
@@ -148,7 +165,7 @@ defmodule OliWeb.LtiController do
           message_type_claim,
           Lti_1p3.Claims.Version.version("1.3.0"),
           Lti_1p3.Claims.DeploymentId.deployment_id(deployment.deployment_id),
-          Lti_1p3.Claims.TargetLinkUri.target_link_uri(platform_instance.target_link_uri),
+          Lti_1p3.Claims.TargetLinkUri.target_link_uri(target_link_uri),
           Lti_1p3.Claims.Roles.roles(roles),
           # Optional claims
           Lti_1p3.Claims.PlatformInstance.platform_instance(
@@ -190,7 +207,13 @@ defmodule OliWeb.LtiController do
     end
   end
 
-  defp build_authorization_for(:authoring, conn, project_slug, activity_resource_id) do
+  defp build_authorization_for(
+         :authoring,
+         conn,
+         platform_instance,
+         project_slug,
+         activity_resource_id
+       ) do
     author = conn.assigns[:current_author]
     project = Oli.Authoring.Course.get_project_by_slug(project_slug)
 
@@ -222,10 +245,17 @@ defmodule OliWeb.LtiController do
        given_name: author.given_name,
        family_name: author.family_name,
        picture: author.picture
-     }, activity_resource_id, roles, additional_claims, :resource_link_request}
+     }, platform_instance.target_link_uri, activity_resource_id, roles, additional_claims,
+     :resource_link_request}
   end
 
-  defp build_authorization_for(:delivery, conn, section_slug, activity_resource_id) do
+  defp build_authorization_for(
+         :delivery,
+         conn,
+         platform_instance,
+         section_slug,
+         activity_resource_id
+       ) do
     user = conn.assigns[:current_user]
     author = conn.assigns[:current_author]
     section = Sections.get_section_by_slug(section_slug)
@@ -248,12 +278,32 @@ defmodule OliWeb.LtiController do
           []
         end
 
+    # If there is a section resource deep link for the activity,
+    # use that as the target link URI. Otherwise, use the platform instance's target link URI.
+    {target_link_uri, additional_claims} =
+      case Oli.Lti.PlatformExternalTools.get_section_resource_deep_link_by(
+             section_id: section.id,
+             resource_id: activity_resource_id
+           ) do
+        nil ->
+          {platform_instance.target_link_uri, []}
+
+        %Oli.Lti.PlatformExternalTools.SectionResourceDeepLink{url: nil, custom: custom} ->
+          {platform_instance.target_link_uri, maybe_add_custom_claims(custom)}
+
+        %Oli.Lti.PlatformExternalTools.SectionResourceDeepLink{url: url, custom: custom} ->
+          {url, maybe_add_custom_claims(custom)}
+      end
+
+    dbg(additional_claims)
+
     # Build additional claims
     additional_claims = [
       Lti_1p3.Claims.Context.context(section.slug,
         title: section.title,
         type: ["http://purl.imsglobal.org/vocab/lis/v2/course#CourseSection"]
       )
+      | additional_claims
     ]
 
     # If the user has an activity attempt for the given activity_resource_id,
@@ -284,10 +334,17 @@ defmodule OliWeb.LtiController do
           additional_claims
       end
 
-    {user, activity_resource_id, roles, additional_claims, :resource_link_request}
+    {user, target_link_uri, activity_resource_id, roles, additional_claims,
+     :resource_link_request}
   end
 
-  defp build_authorization_for(:deep_linking, conn, section_slug, _activity_resource_id) do
+  defp build_authorization_for(
+         :deep_linking,
+         conn,
+         platform_instance,
+         section_slug,
+         activity_resource_id
+       ) do
     user = conn.assigns[:current_user]
     author = conn.assigns[:current_author]
     section = Sections.get_section_by_slug(section_slug)
@@ -317,7 +374,7 @@ defmodule OliWeb.LtiController do
         type: ["http://purl.imsglobal.org/vocab/lis/v2/course#CourseSection"]
       ),
       Lti_1p3.Claims.DeepLinkingSettings.deep_linking_settings(
-        Oli.Utils.get_base_url() <> "/lti/deep_linking",
+        Oli.Utils.get_base_url() <> "/lti/deep_link/#{section_slug}/#{activity_resource_id}",
         ["ltiResourceLink"],
         ["iframe", "window"],
         accept_multiple: false,
@@ -325,8 +382,18 @@ defmodule OliWeb.LtiController do
       )
     ]
 
-    {user, nil, roles, additional_claims, :deep_linking_request}
+    {user, platform_instance.target_link_uri, nil, roles, additional_claims,
+     :deep_linking_request}
   end
+
+  defp maybe_add_custom_claims(nil) do
+    []
+  end
+
+  defp maybe_add_custom_claims(custom),
+    do: [
+      Lti_1p3.Claims.Custom.custom(custom)
+    ]
 
   def request_registration(
         conn,
