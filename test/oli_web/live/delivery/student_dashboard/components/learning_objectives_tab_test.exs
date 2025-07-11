@@ -34,6 +34,71 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.LearningObjectivesTabTest 
   describe "Learning Objectives tab" do
     setup [:instructor_conn, :create_project_with_objectives, :enrolled_student_and_instructor]
 
+    test "renders subobjectives", %{
+      section: section,
+      conn: conn,
+      student: student,
+      obj_revision_1: obj_revision_1,
+      obj_revision_2: obj_revision_2,
+      project: project,
+      publication: publication
+    } do
+      %{authors: [author]} = project
+      # Creating subobjectives
+      [subobj_rev_1, subobj_rev_2, subobj_rev_3] =
+        for index <- ["1", "3", "2"] do
+          subobj_resource = insert(:resource)
+
+          subobj_revision =
+            insert(:revision,
+              resource: subobj_resource,
+              resource_type_id: Oli.Resources.ResourceType.id_for_objective(),
+              slug: "subobjective_#{index}",
+              title: "Sub_Objective #{index}"
+            )
+
+          insert(:project_resource, project_id: project.id, resource_id: subobj_resource.id)
+
+          insert(:published_resource,
+            publication: publication,
+            resource: subobj_resource,
+            revision: subobj_revision
+          )
+
+          subobj_revision
+        end
+
+      # Attaching subobjectives to objective
+      {:ok, _obj_revision_1} =
+        Oli.Resources.update_revision(obj_revision_1, %{
+          children: [subobj_rev_1.resource_id, subobj_rev_2.resource_id, subobj_rev_3.resource_id],
+          author_id: author.id
+        })
+
+      # Publishing the project
+      {:ok, _publication} = Oli.Publishing.update_publication(publication, %{published: nil})
+      {:ok, publication} = Oli.Publishing.publish_project(project, "some changes", author.id)
+      Sections.update_section_project_publication(section, project.id, publication.id)
+      Sections.rebuild_section_resources(section: section, publication: publication)
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_students_dashboard_route(section.slug, student.id, :learning_objectives)
+        )
+
+      # Row 1
+      assert [obj_revision_1.title, "-"] == pull_data_from_table(view, 1)
+      # Row 2
+      assert [obj_revision_2.title, "-"] == pull_data_from_table(view, 2)
+      # Row 3 - has subobjective 1
+      assert [obj_revision_1.title, subobj_rev_1.title] == pull_data_from_table(view, 3)
+      # Row 4 - has subobjective 2 (We also check here the order)
+      assert [obj_revision_1.title, subobj_rev_3.title] == pull_data_from_table(view, 4)
+      # Row 5 - has subobjective 2 (We also check here the order)
+      assert [obj_revision_1.title, subobj_rev_2.title] == pull_data_from_table(view, 5)
+    end
+
     test "gets rendered correctly", %{
       section: section,
       conn: conn,
@@ -491,5 +556,27 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.LearningObjectivesTabTest 
       refute has_element?(view, "span", "#{revisions.obj_revision_e.title}")
       refute has_element?(view, "span", "#{revisions.obj_revision_f.title}")
     end
+  end
+
+  defp pull_data_from_table(view, row) do
+    col_1 =
+      view
+      |> element(
+        "table.instructor_dashboard_table > tbody > tr:nth-child(#{row}) [data-proficiency-check='true'] > span:last-child"
+      )
+      |> render()
+      |> Floki.parse_document!()
+      |> Floki.text()
+
+    col_2 =
+      view
+      |> element(
+        "table.instructor_dashboard_table > tbody > tr:nth-child(#{row}) > td:nth-child(2) > div > div"
+      )
+      |> render()
+      |> Floki.parse_document!()
+      |> Floki.text()
+
+    [col_1, col_2]
   end
 end
