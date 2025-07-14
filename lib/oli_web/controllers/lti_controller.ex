@@ -295,8 +295,6 @@ defmodule OliWeb.LtiController do
           {url, maybe_add_custom_claims(custom)}
       end
 
-    dbg(additional_claims)
-
     # Build additional claims
     additional_claims = [
       Lti_1p3.Claims.Context.context(section.slug,

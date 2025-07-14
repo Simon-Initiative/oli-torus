@@ -273,7 +273,8 @@ defmodule OliWeb.Api.LtiController do
          {:ok, scope} <-
            validate_scope(scope, [
              "https://purl.imsglobal.org/spec/lti-ags/scope/result.readonly",
-             "https://purl.imsglobal.org/spec/lti-ags/scope/score"
+             "https://purl.imsglobal.org/spec/lti-ags/scope/score",
+             "https://purl.imsglobal.org/spec/lti-ags/scope/lineitem"
            ]),
          {:ok, access_token, expires_in} <-
            Tokens.issue_access_token(client_id, scope) do
@@ -287,11 +288,15 @@ defmodule OliWeb.Api.LtiController do
       })
     else
       {:error, reason} ->
+        Logger.error("Failed to issue access token: #{inspect(reason)}")
+
         conn
         |> put_status(:unauthorized)
         |> json(%{error: "invalid_request", error_description: to_string(reason)})
 
-      _ ->
+      e ->
+        Logger.error("Failed to issue access token: #{inspect(e)}")
+
         conn
         |> put_status(:bad_request)
         |> json(%{error: "invalid_request"})
@@ -455,6 +460,9 @@ defmodule OliWeb.Api.LtiController do
     end
   end
 
+  defp validate_audience(audience) when is_list(audience),
+    do: audience |> hd() |> validate_audience()
+
   defp validate_audience(audience) do
     expected_audience = Oli.Utils.get_base_url()
 
@@ -494,7 +502,7 @@ defmodule OliWeb.Api.LtiController do
   defp process_deep_linking_content_item(content_item, section_id, resource_id) do
     Logger.info("Processing deep linking content item: #{inspect(content_item)}")
 
-    case PlatformExternalTools.create_section_resource_deep_link(%{
+    case PlatformExternalTools.upsert_section_resource_deep_link(%{
            type: content_item["type"],
            title: content_item["title"],
            text: content_item["text"],

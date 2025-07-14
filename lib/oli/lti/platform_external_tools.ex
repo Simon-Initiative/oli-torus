@@ -458,6 +458,17 @@ defmodule Oli.Lti.PlatformExternalTools do
   end
 
   @doc """
+  Upserts a SectionResourceDeepLink record.
+  If a record with the same section_id and resource_id exists, it will be updated.
+  If it does not exist, a new record will be created.
+  """
+  def upsert_section_resource_deep_link(attrs) do
+    %Oli.Lti.PlatformExternalTools.SectionResourceDeepLink{}
+    |> Oli.Lti.PlatformExternalTools.SectionResourceDeepLink.changeset(attrs)
+    |> Repo.insert(on_conflict: :replace_all, conflict_target: [:section_id, :resource_id])
+  end
+
+  @doc """
   Retrieves a SectionResourceDeepLink by its attributes.
   """
   def get_section_resource_deep_link_by(attrs) do
