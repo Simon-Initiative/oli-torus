@@ -33,7 +33,7 @@ defmodule OliWeb.Api.LtiControllerTest do
 
       assert json_response(conn, 200)["launch_params"]["login_url"] == "some login_url"
       assert json_response(conn, 200)["launch_params"]["login_hint"] != nil
-      assert json_response(conn, 200)["launch_params"]["status"] != nil
+      assert json_response(conn, 200)["status"] != nil
     end
   end
 
@@ -52,7 +52,7 @@ defmodule OliWeb.Api.LtiControllerTest do
 
       assert json_response(conn, 200)["launch_params"]["login_url"] == "some login_url"
       assert json_response(conn, 200)["launch_params"]["login_hint"] != nil
-      assert json_response(conn, 200)["launch_params"]["status"] != nil
+      assert json_response(conn, 200)["status"] != nil
     end
   end
 
@@ -147,6 +147,435 @@ defmodule OliWeb.Api.LtiControllerTest do
     test "returns 400 for missing params", %{conn: conn} do
       conn = post(conn, ~p"/lti/auth/token", %{})
       assert json_response(conn, 400)["error"] == "invalid_request"
+    end
+  end
+
+  describe "deep_link" do
+    setup [:setup_section]
+
+    defp generate_deep_linking_jwt(client_id, key, kid, claims \\ %{}) do
+      now = DateTime.utc_now() |> DateTime.to_unix()
+
+      base_claims = %{
+        "iss" => client_id,
+        "aud" => Oli.Utils.get_base_url(),
+        "iat" => now,
+        "exp" => now + 3600,
+        "jti" => UUID.uuid4(),
+        "https://purl.imsglobal.org/spec/lti/claim/message_type" => "LtiDeepLinkingResponse",
+        "https://purl.imsglobal.org/spec/lti-dl/claim/content_items" => [
+          %{
+            "type" => "ltiResourceLink",
+            "title" => "Test Resource",
+            "text" => "A test resource for deep linking",
+            "url" => "https://example.com/resource/123",
+            "custom" => %{
+              "param1" => "value1",
+              "param2" => "value2"
+            }
+          }
+        ]
+      }
+
+      final_claims = Map.merge(base_claims, claims)
+
+      jwk = JOSE.JWK.from_pem(key)
+
+      {_, jwt} =
+        JOSE.JWT.sign(
+          jwk,
+          %{"alg" => "RS256", "kid" => kid},
+          final_claims
+        )
+        |> JOSE.JWS.compact()
+
+      jwt
+    end
+
+    test "successfully processes valid deep linking response", %{
+      conn: conn,
+      section: section,
+      activity_id: activity_id
+    } do
+      client_id = "test-client-id"
+      key_pem = File.read!("test/support/fixtures/test_rsa_private.pem")
+
+      public_jwk =
+        JOSE.JWK.from_pem(key_pem)
+        |> JOSE.JWK.to_public()
+        |> JOSE.JWK.to_map()
+        |> elem(1)
+        |> Map.put("kid", "test-kid")
+
+      keyset_url = "https://some-tool.example.edu/.well-known/jwks.json"
+
+      # Insert a platform instance
+      insert(:platform_instance, %{
+        client_id: client_id,
+        keyset_url: keyset_url
+      })
+
+      # Mock HTTP request to fetch the keyset
+      MockHTTP
+      |> expect(:get, fn ^keyset_url ->
+        {:ok,
+         %HTTPoison.Response{
+           status_code: 200,
+           body: Jason.encode!(%{"keys" => [public_jwk]})
+         }}
+      end)
+
+      jwt = generate_deep_linking_jwt(client_id, key_pem, "test-kid")
+
+      params = %{
+        "JWT" => jwt
+      }
+
+      conn = post(conn, ~p"/lti/deep_link/#{section.slug}/#{activity_id}", params)
+      resp = json_response(conn, 200)
+
+      assert resp["status"] == "success"
+      assert resp["message"] == "Deep linking response processed successfully"
+      assert is_list(resp["content_items"])
+      assert length(resp["content_items"]) == 1
+
+      content_item = hd(resp["content_items"])
+      assert content_item["type"] == "ltiResourceLink"
+      assert content_item["title"] == "Test Resource"
+      assert content_item["url"] == "https://example.com/resource/123"
+    end
+
+    @tag capture_log: true
+    test "returns 400 for invalid JWT", %{conn: conn, section: section, activity_id: activity_id} do
+      params = %{
+        "JWT" => "invalid.jwt.token"
+      }
+
+      conn = post(conn, ~p"/lti/deep_link/#{section.slug}/#{activity_id}", params)
+      resp = json_response(conn, 400)
+
+      assert resp["error"] == "invalid_request"
+      assert resp["error_description"] == "invalid_deep_linking_jwt"
+    end
+
+    @tag capture_log: true
+    test "returns 400 for JWT with wrong message type", %{
+      conn: conn,
+      section: section,
+      activity_id: activity_id
+    } do
+      client_id = "test-client-id"
+      key_pem = File.read!("test/support/fixtures/test_rsa_private.pem")
+
+      public_jwk =
+        JOSE.JWK.from_pem(key_pem)
+        |> JOSE.JWK.to_public()
+        |> JOSE.JWK.to_map()
+        |> elem(1)
+        |> Map.put("kid", "test-kid")
+
+      keyset_url = "https://some-tool.example.edu/.well-known/jwks.json"
+
+      insert(:platform_instance, %{
+        client_id: client_id,
+        keyset_url: keyset_url
+      })
+
+      MockHTTP
+      |> expect(:get, fn ^keyset_url ->
+        {:ok,
+         %HTTPoison.Response{
+           status_code: 200,
+           body: Jason.encode!(%{"keys" => [public_jwk]})
+         }}
+      end)
+
+      # Generate JWT with wrong message type
+      jwt =
+        generate_deep_linking_jwt(client_id, key_pem, "test-kid", %{
+          "https://purl.imsglobal.org/spec/lti/claim/message_type" => "LtiResourceLinkRequest"
+        })
+
+      params = %{
+        "JWT" => jwt
+      }
+
+      conn = post(conn, ~p"/lti/deep_link/#{section.slug}/#{activity_id}", params)
+      resp = json_response(conn, 400)
+
+      assert resp["error"] == "invalid_request"
+      assert resp["error_description"] == "invalid_deep_linking_jwt"
+    end
+
+    @tag capture_log: true
+    test "returns 400 for JWT with wrong audience", %{
+      conn: conn,
+      section: section,
+      activity_id: activity_id
+    } do
+      client_id = "test-client-id"
+      key_pem = File.read!("test/support/fixtures/test_rsa_private.pem")
+
+      public_jwk =
+        JOSE.JWK.from_pem(key_pem)
+        |> JOSE.JWK.to_public()
+        |> JOSE.JWK.to_map()
+        |> elem(1)
+        |> Map.put("kid", "test-kid")
+
+      keyset_url = "https://some-tool.example.edu/.well-known/jwks.json"
+
+      insert(:platform_instance, %{
+        client_id: client_id,
+        keyset_url: keyset_url
+      })
+
+      MockHTTP
+      |> expect(:get, fn ^keyset_url ->
+        {:ok,
+         %HTTPoison.Response{
+           status_code: 200,
+           body: Jason.encode!(%{"keys" => [public_jwk]})
+         }}
+      end)
+
+      # Generate JWT with wrong audience
+      jwt =
+        generate_deep_linking_jwt(client_id, key_pem, "test-kid", %{
+          "aud" => "https://wrong-audience.com"
+        })
+
+      params = %{
+        "JWT" => jwt
+      }
+
+      conn = post(conn, ~p"/lti/deep_link/#{section.slug}/#{activity_id}", params)
+      resp = json_response(conn, 400)
+
+      assert resp["error"] == "invalid_request"
+      assert resp["error_description"] == "invalid_deep_linking_jwt"
+    end
+
+    test "returns 400 for JWT with multiple content items", %{
+      conn: conn,
+      section: section,
+      activity_id: activity_id
+    } do
+      client_id = "test-client-id"
+      key_pem = File.read!("test/support/fixtures/test_rsa_private.pem")
+
+      public_jwk =
+        JOSE.JWK.from_pem(key_pem)
+        |> JOSE.JWK.to_public()
+        |> JOSE.JWK.to_map()
+        |> elem(1)
+        |> Map.put("kid", "test-kid")
+
+      keyset_url = "https://some-tool.example.edu/.well-known/jwks.json"
+
+      insert(:platform_instance, %{
+        client_id: client_id,
+        keyset_url: keyset_url
+      })
+
+      MockHTTP
+      |> expect(:get, fn ^keyset_url ->
+        {:ok,
+         %HTTPoison.Response{
+           status_code: 200,
+           body: Jason.encode!(%{"keys" => [public_jwk]})
+         }}
+      end)
+
+      # Generate JWT with multiple content items
+      jwt =
+        generate_deep_linking_jwt(client_id, key_pem, "test-kid", %{
+          "https://purl.imsglobal.org/spec/lti-dl/claim/content_items" => [
+            %{
+              "type" => "ltiResourceLink",
+              "title" => "Test Resource 1",
+              "url" => "https://example.com/resource/1"
+            },
+            %{
+              "type" => "ltiResourceLink",
+              "title" => "Test Resource 2",
+              "url" => "https://example.com/resource/2"
+            }
+          ]
+        })
+
+      params = %{
+        "JWT" => jwt
+      }
+
+      conn = post(conn, ~p"/lti/deep_link/#{section.slug}/#{activity_id}", params)
+      resp = json_response(conn, 400)
+
+      assert resp["error"] == "invalid_request"
+      assert resp["error_description"] == "Expected exactly one content item, got 2"
+    end
+
+    test "returns 400 for JWT with no content items", %{
+      conn: conn,
+      section: section,
+      activity_id: activity_id
+    } do
+      client_id = "test-client-id"
+      key_pem = File.read!("test/support/fixtures/test_rsa_private.pem")
+
+      public_jwk =
+        JOSE.JWK.from_pem(key_pem)
+        |> JOSE.JWK.to_public()
+        |> JOSE.JWK.to_map()
+        |> elem(1)
+        |> Map.put("kid", "test-kid")
+
+      keyset_url = "https://some-tool.example.edu/.well-known/jwks.json"
+
+      insert(:platform_instance, %{
+        client_id: client_id,
+        keyset_url: keyset_url
+      })
+
+      MockHTTP
+      |> expect(:get, fn ^keyset_url ->
+        {:ok,
+         %HTTPoison.Response{
+           status_code: 200,
+           body: Jason.encode!(%{"keys" => [public_jwk]})
+         }}
+      end)
+
+      # Generate JWT with no content items
+      jwt =
+        generate_deep_linking_jwt(client_id, key_pem, "test-kid", %{
+          "https://purl.imsglobal.org/spec/lti-dl/claim/content_items" => []
+        })
+
+      params = %{
+        "JWT" => jwt
+      }
+
+      conn = post(conn, ~p"/lti/deep_link/#{section.slug}/#{activity_id}", params)
+      resp = json_response(conn, 400)
+
+      assert resp["error"] == "invalid_request"
+      assert resp["error_description"] == "Expected exactly one content item, got 0"
+    end
+
+    test "returns 400 for content item with wrong type", %{
+      conn: conn,
+      section: section,
+      activity_id: activity_id
+    } do
+      client_id = "test-client-id"
+      key_pem = File.read!("test/support/fixtures/test_rsa_private.pem")
+
+      public_jwk =
+        JOSE.JWK.from_pem(key_pem)
+        |> JOSE.JWK.to_public()
+        |> JOSE.JWK.to_map()
+        |> elem(1)
+        |> Map.put("kid", "test-kid")
+
+      keyset_url = "https://some-tool.example.edu/.well-known/jwks.json"
+
+      insert(:platform_instance, %{
+        client_id: client_id,
+        keyset_url: keyset_url
+      })
+
+      MockHTTP
+      |> expect(:get, fn ^keyset_url ->
+        {:ok,
+         %HTTPoison.Response{
+           status_code: 200,
+           body: Jason.encode!(%{"keys" => [public_jwk]})
+         }}
+      end)
+
+      # Generate JWT with wrong content item type
+      jwt =
+        generate_deep_linking_jwt(client_id, key_pem, "test-kid", %{
+          "https://purl.imsglobal.org/spec/lti-dl/claim/content_items" => [
+            %{
+              "type" => "file",
+              "title" => "Test File",
+              "url" => "https://example.com/file.pdf"
+            }
+          ]
+        })
+
+      params = %{
+        "JWT" => jwt
+      }
+
+      conn = post(conn, ~p"/lti/deep_link/#{section.slug}/#{activity_id}", params)
+      resp = json_response(conn, 400)
+
+      assert resp["error"] == "invalid_request"
+      assert resp["error_description"] == "Expected content item type to be 'ltiResourceLink'"
+    end
+
+    test "returns 400 for non-existent section", %{conn: conn, activity_id: activity_id} do
+      client_id = "test-client-id"
+      key_pem = File.read!("test/support/fixtures/test_rsa_private.pem")
+
+      public_jwk =
+        JOSE.JWK.from_pem(key_pem)
+        |> JOSE.JWK.to_public()
+        |> JOSE.JWK.to_map()
+        |> elem(1)
+        |> Map.put("kid", "test-kid")
+
+      keyset_url = "https://some-tool.example.edu/.well-known/jwks.json"
+
+      insert(:platform_instance, %{
+        client_id: client_id,
+        keyset_url: keyset_url
+      })
+
+      MockHTTP
+      |> expect(:get, fn ^keyset_url ->
+        {:ok,
+         %HTTPoison.Response{
+           status_code: 200,
+           body: Jason.encode!(%{"keys" => [public_jwk]})
+         }}
+      end)
+
+      jwt = generate_deep_linking_jwt(client_id, key_pem, "test-kid")
+
+      params = %{
+        "JWT" => jwt
+      }
+
+      conn = post(conn, ~p"/lti/deep_link/non-existent-section/#{activity_id}", params)
+      resp = json_response(conn, 400)
+
+      assert resp["error"] == "invalid_request"
+    end
+
+    @tag capture_log: true
+    test "returns 400 for JWT without platform instance", %{
+      conn: conn,
+      section: section,
+      activity_id: activity_id
+    } do
+      client_id = "non-existent-client-id"
+      key_pem = File.read!("test/support/fixtures/test_rsa_private.pem")
+
+      jwt = generate_deep_linking_jwt(client_id, key_pem, "test-kid")
+
+      params = %{
+        "JWT" => jwt
+      }
+
+      conn = post(conn, ~p"/lti/deep_link/#{section.slug}/#{activity_id}", params)
+      resp = json_response(conn, 400)
+
+      assert resp["error"] == "invalid_request"
+      assert resp["error_description"] == "invalid_deep_linking_jwt"
     end
   end
 

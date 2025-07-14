@@ -406,11 +406,9 @@ defmodule OliWeb.Api.LtiController do
       ) do
     with {:ok, claims} <- validate_deep_linking_jwt(jwt),
          {:ok, content_item} <- require_single_content_item(claims),
-         :ok <- require_lti_resource_link_type(dbg(content_item)),
-         %Sections.Section{id: section_id} <-
-           Sections.get_section_by_slug(section_slug),
-         #  {:ok, resource_id} <- parse_resource_id(resource_id),
-         :ok = process_deep_linking_content_item(content_item, section_id, resource_id) do
+         :ok <- require_lti_resource_link_type(content_item),
+         {:ok, section} <- get_section_by_slug(section_slug),
+         :ok = process_deep_linking_content_item(content_item, section.id, resource_id) do
       # Respond with success
       json(conn, %{
         status: "success",
@@ -427,6 +425,16 @@ defmodule OliWeb.Api.LtiController do
         conn
         |> put_status(:bad_request)
         |> json(%{error: "invalid_request", error_description: to_string(reason)})
+    end
+  end
+
+  defp get_section_by_slug(section_slug) do
+    case Sections.get_section_by_slug(section_slug) do
+      %Sections.Section{} = section ->
+        {:ok, section}
+
+      nil ->
+        {:error, :section_not_found}
     end
   end
 
