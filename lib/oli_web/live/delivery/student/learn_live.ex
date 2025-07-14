@@ -894,7 +894,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       <.video_player />
       <div class="px-3 md:px-[25px]">
         <ComponentsUtils.timezone_info timezone={
-          CommonUtils.get_timezone(@ctx.browser_timezone, @ctx.user)
+          FormatDateTime.tz_preference_or_default(@ctx.author, @ctx.user, @ctx.browser_timezone)
         } />
       </div>
       <div class="flex justify-between items-center h-16 p-3 md:p-[25px] sticky top-14 z-40 bg-delivery-body dark:bg-delivery-body-dark">
@@ -969,7 +969,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       <.video_player />
       <div class="px-3 md:px-[25px]">
         <ComponentsUtils.timezone_info timezone={
-          CommonUtils.get_timezone(@ctx.browser_timezone, @ctx.user)
+          FormatDateTime.tz_preference_or_default(@ctx.author, @ctx.user, @ctx.browser_timezone)
         } />
       </div>
       <div class="flex justify-between items-center h-16 p-3 md:p-[25px] sticky top-14 z-40 bg-delivery-body dark:bg-delivery-body-dark">

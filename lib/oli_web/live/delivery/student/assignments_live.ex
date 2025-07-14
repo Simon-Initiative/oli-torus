@@ -9,7 +9,6 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
   alias OliWeb.Components.Delivery.Utils, as: DeliveryUtils
   alias OliWeb.Delivery.Student.Utils
   alias OliWeb.Icons
-  alias OliWeb.Common.Utils, as: CommonUtils
   alias OliWeb.Components.Utils, as: ComponentsUtils
 
   # this is an optimization to reduce the memory footprint of the liveview process
@@ -191,7 +190,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
         class="w-full flex-col pt-2 border-b border-[#ced1d9] dark:border-[#3a3740] justify-between items-center text-[#757682] dark:text-[#bab8bf] text-sm font-medium leading-none"
       >
         <ComponentsUtils.timezone_info timezone={
-          CommonUtils.get_timezone(@ctx.browser_timezone, @ctx.user)
+          FormatDateTime.tz_preference_or_default(@ctx.author, @ctx.user, @ctx.browser_timezone)
         } />
         <div class="flex w-full h-11 justify-between items-center inline-flex">
           <div class="justify-end items-center gap-2 flex">
