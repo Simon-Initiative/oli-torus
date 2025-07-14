@@ -94,16 +94,16 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLiveTest do
     test "displays breadcrumbs in advanced authoring mode", %{
       conn: conn,
       project: project,
-      revision: revision
+      adaptive_page_revision: adaptive_page_revision
     } do
       # For this test, we'll verify that breadcrumbs are rendered
       # The advanced authoring detection is handled in the live view
-      {:ok, _view, html} = live(conn, live_view_route(project.slug, revision.slug))
+      {:ok, _view, html} = live(conn, live_view_route(project.slug, adaptive_page_revision.slug))
 
       # Check that breadcrumbs are rendered in advanced authoring mode
       assert html =~ "<nav class=\"breadcrumb-bar"
       assert html =~ "Curriculum"
-      assert html =~ revision.title
+      assert html =~ adaptive_page_revision.title
     end
 
     test "breadcrumbs contain correct navigation links", %{
@@ -149,12 +149,23 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLiveTest do
   end
 
   defp create_author_project_conn(%{conn: conn}) do
-    %{project: project, author: author, revision1: revision} =
-      Seeder.base_project_with_resource2()
+    %{
+      project: project,
+      author: author,
+      revision1: revision,
+      adaptive_page_revision: adaptive_page_revision
+    } =
+      Seeder.base_project_with_resource2() |> Seeder.add_adaptive_page()
 
     conn =
       log_in_author(conn, author)
 
-    %{project: project, author: author, revision: revision, conn: conn}
+    %{
+      project: project,
+      author: author,
+      revision: revision,
+      adaptive_page_revision: adaptive_page_revision,
+      conn: conn
+    }
   end
 end
