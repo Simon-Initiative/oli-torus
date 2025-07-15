@@ -19,7 +19,7 @@ defmodule Oli.Repo.Migrations.EnableLtiExternalToolDeepLinking do
     end
 
     # For now, the system will only allow one deep link per section and resource.
-    create unique_index(:lti_section_resource_deep_links, [:section_id, :resource_id],
+    create unique_index(:lti_section_resource_deep_links, [:resource_id, :section_id],
              name: :unique_section_resource_deep_link
            )
   end

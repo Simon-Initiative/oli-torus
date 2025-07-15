@@ -465,7 +465,10 @@ defmodule Oli.Lti.PlatformExternalTools do
   def upsert_section_resource_deep_link(attrs) do
     %Oli.Lti.PlatformExternalTools.SectionResourceDeepLink{}
     |> Oli.Lti.PlatformExternalTools.SectionResourceDeepLink.changeset(attrs)
-    |> Repo.insert(on_conflict: :replace_all, conflict_target: [:section_id, :resource_id])
+    |> Repo.insert(
+      on_conflict: {:replace_all_except, [:id, :inserted_at]},
+      conflict_target: [:section_id, :resource_id]
+    )
   end
 
   @doc """
