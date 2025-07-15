@@ -9385,6 +9385,10 @@ table.table-striped tbody tr:nth-child(even) {
   line-height: .75rem;
 }
 
+.leading-4 {
+  line-height: 1rem;
+}
+
 .leading-5 {
   line-height: 1.25rem;
 }
@@ -17499,6 +17503,11 @@ Not supports in Firefox and IE */
   .md\:px-\[100px\] {
     padding-left: 100px;
     padding-right: 100px;
+  }
+
+  .md\:px-\[25px\] {
+    padding-left: 25px;
+    padding-right: 25px;
   }
 
   .md\:px-\[50px\] {
