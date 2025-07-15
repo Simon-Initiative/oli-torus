@@ -22,8 +22,10 @@ export const ScoringActions = {
         model.scoringStrategy = ScoringStrategy.average;
         model.authoring?.parts?.forEach((part: Part) => {
           const oldCorrectScore = getOutOfPoints(model, part.id);
-          part.outOf = 1;
-          part.incorrectScore = 0;
+          // code part same as for single-part default scoring. Needed by TargetedFeedback
+          // on part which doesn't know if it is part of single or multi part activity.
+          part.outOf = null;
+          part.incorrectScore = null;
           part.responses?.forEach((response) => {
             response.score = response.score === oldCorrectScore ? 1 : 0;
           });
