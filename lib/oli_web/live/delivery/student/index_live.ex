@@ -822,21 +822,24 @@ defmodule OliWeb.Delivery.Student.IndexLive do
         "flex h-full px-2.5 py-3.5 rounded-xl border flex-col justify-start items-start hover:cursor-pointer relative overflow-hidden z-0 before:content-[''] before:absolute before:left-0 before:top-0 before:w-0.5 before:h-full before:z-10"
       ]}>
         <div class="self-stretch justify-between items-start flex pl-2">
-          <div class="grow shrink basis-0 self-stretch flex-col justify-start items-start gap-2.5 flex">
-            <div role="container_label" class="justify-start items-start gap-2 flex uppercase">
-              <div class="dark:text-white text-opacity-60 text-xs font-bold whitespace-nowrap">
+          <div class="flex flex-col justify-start items-start gap-2.5 flex-grow min-w-0 overflow-hidden pr-2">
+            <div
+              role="container_label"
+              class="uppercase w-full min-w-0 dark:text-white text-opacity-60 text-xs font-bold break-words"
+            >
+              <span class="break-words">
                 <%= @unit["label"] %>
-              </div>
-
-              <div :if={@module} class="flex items-center gap-2">
-                <div class="dark:text-white text-opacity-60 text-xs font-bold">•</div>
-                <div class="dark:text-white text-opacity-60 text-xs font-bold whitespace-nowrap">
-                  <%= @module["label"] %>
-                </div>
-              </div>
+                <%= if @module do %>
+                  <span class="mx-2">•</span><%= @module["label"] %>
+                <% end %>
+              </span>
             </div>
-            <div role="title" class="self-stretch pb-2.5 justify-start items-start gap-2.5 flex">
-              <div class="grow shrink basis-0 dark:text-white text-opacity-90 text-lg font-semibold">
+
+            <div
+              role="title"
+              class="self-stretch pb-2.5 justify-start items-start gap-2.5 flex min-w-0"
+            >
+              <div class="grow shrink basis-0 dark:text-white text-opacity-90 text-lg font-semibold break-words">
                 <%= @lesson.title %>
               </div>
             </div>

@@ -127,6 +127,7 @@ export const uiSchema = {};
 export const adaptivitySchema = {
   value: CapiVariableTypes.NUMBER,
   enabled: CapiVariableTypes.BOOLEAN,
+  'Number of sigfigs': CapiVariableTypes.NUMBER,
 };
 
 export const createSchema = (): Partial<InputNumberModel> => ({

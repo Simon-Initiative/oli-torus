@@ -1,6 +1,8 @@
 defmodule OliWeb.UserSettingsLive do
   use OliWeb, :live_view
 
+  import Oli.Utils
+
   alias Oli.Accounts
   alias Oli.Accounts.{User, Author}
   alias Oli.AssentAuth.UserAssentAuth
@@ -21,7 +23,13 @@ defmodule OliWeb.UserSettingsLive do
               phx-submit="update_user"
               phx-change="validate_user"
             >
-              <.input field={@user_form[:name]} type="text" label="Full name" readonly />
+              <.input
+                field={@user_form[:name]}
+                type="text"
+                label="Full name"
+                value={@user_form[:name].value}
+                readonly
+              />
               <.input field={@user_form[:given_name]} type="text" label="First name" />
               <.input field={@user_form[:family_name]} type="text" label="Last name" />
 
@@ -199,16 +207,22 @@ defmodule OliWeb.UserSettingsLive do
     {:ok, socket}
   end
 
-  def handle_event("validate_user", params, socket) do
-    %{"user" => user_params} = params
+  def handle_event("validate_user", %{"user" => user_params}, socket) do
+    %{user_form: user_form} = socket.assigns
+
+    user_data = %User{
+      name: input_value(user_form[:name]),
+      given_name: input_value(user_form[:given_name]),
+      family_name: input_value(user_form[:family_name])
+    }
 
     user_form =
-      socket.assigns.current_user
+      user_data
       |> Accounts.change_user_details(user_params)
       |> Map.put(:action, :validate)
       |> to_form()
 
-    {:noreply, assign(socket, user_form: user_form)}
+    {:noreply, assign(socket, user_form: user_form) |> clear_flash()}
   end
 
   def handle_event("update_user", params, socket) do
