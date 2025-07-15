@@ -22,8 +22,8 @@ export const ScoringActions = {
         model.scoringStrategy = ScoringStrategy.average;
         model.authoring?.parts?.forEach((part: Part) => {
           const oldCorrectScore = getOutOfPoints(model, part.id);
-          // code part same as for single-part default scoring. Needed by TargetedFeedback
-          // on part which doesn't know if it is part of single or multi part activity.
+          // code part same as for single-part default scoring. TargetedFeedback component
+          // on part doesn't know if it is part of single or multipart activity.
           part.outOf = null;
           part.incorrectScore = null;
           part.responses?.forEach((response) => {
@@ -64,33 +64,23 @@ export const ScoringActions = {
         console.warn('Could not set score for part', partId);
         return;
       }
-
-      // reject any change that violates consistency requirements
-      const newCorrectPoints = correctScore || 1;
-      const newIncorrectPoints = incorrectScore || 0;
-      if (!(newCorrectPoints > newIncorrectPoints)) return;
-
       // fetch current special point values before modifying anything
       const oldCorrectPoints = getOutOfPoints(model, partId);
       const oldIncorrectPoints = getIncorrectPoints(model, partId);
 
       // update correct/incorrect scores in all responses, using score
       // match to hit alternate correct/incorrect in targeted feedbacks
+      const newCorrectPoints = correctScore ?? 1;
+      const newIncorrectPoints = incorrectScore ?? 0;
       part.responses?.forEach((response: Response) => {
         if (response.score === oldCorrectPoints) response.score = newCorrectPoints;
         else if (response.score === oldIncorrectPoints) response.score = newIncorrectPoints;
         else {
-          // Partial credit response. Ensure score remains within possibly new range
+          // Partial credit response.
           if (correctScore === null) {
             // Going to default scoring. No more partial credit, so just treat
             // all non-correct as wrong.
-            response.score = newIncorrectPoints;
-          } else {
-            // adjust score by scaling, preserving fraction of score range width
-            const fraction =
-              (response.score - oldIncorrectPoints) / (oldCorrectPoints - oldIncorrectPoints);
-            response.score =
-              newIncorrectPoints + fraction * (newCorrectPoints - newIncorrectPoints);
+            response.score = 0;
           }
         }
       });

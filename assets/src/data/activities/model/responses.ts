@@ -46,13 +46,6 @@ export const getResponsesByPartId = (model: HasParts, partId: string): Response[
 export const getResponseBy = (model: HasParts, predicate: (x: Response) => boolean) =>
   getByUnsafe(getResponses(model), predicate);
 
-export const findResponsePartId = (model: HasParts, responseId: string): string | undefined => {
-  const part = model.authoring.parts.find((p: Part) =>
-    p.responses.map((r) => r.id).includes(responseId),
-  );
-  return part?.id;
-};
-
 // Use of custom scoring is explicitly flagged to authoring differently in
 // single-part and multi-part activities. However, older migrations did not set
 // these flags, so these routines also allow it to be implicit in the use of
