@@ -119,7 +119,7 @@ defmodule OliWeb.Api.LtiControllerTest do
         "grant_type" => "client_credentials",
         "client_assertion" => client_assertion,
         "scope" =>
-          "https://purl.imsglobal.org/spec/lti-ags/scope/result.readonly https://purl.imsglobal.org/spec/lti-ags/scope/score"
+          "https://purl.imsglobal.org/spec/lti-ags/scope/result.readonly https://purl.imsglobal.org/spec/lti-ags/scope/score https://purl.imsglobal.org/spec/lti-ags/scope/lineitem"
       }
 
       conn = post(conn, ~p"/lti/auth/token", params)
@@ -129,7 +129,7 @@ defmodule OliWeb.Api.LtiControllerTest do
       assert resp["expires_in"] == 3600
 
       assert resp["scope"] ==
-               "https://purl.imsglobal.org/spec/lti-ags/scope/result.readonly https://purl.imsglobal.org/spec/lti-ags/scope/score"
+               "https://purl.imsglobal.org/spec/lti-ags/scope/result.readonly https://purl.imsglobal.org/spec/lti-ags/scope/score https://purl.imsglobal.org/spec/lti-ags/scope/lineitem"
     end
 
     @tag capture_log: true
@@ -144,6 +144,7 @@ defmodule OliWeb.Api.LtiControllerTest do
       assert json_response(conn, 401)["error"] == "invalid_request"
     end
 
+    @tag capture_log: true
     test "returns 400 for missing params", %{conn: conn} do
       conn = post(conn, ~p"/lti/auth/token", %{})
       assert json_response(conn, 400)["error"] == "invalid_request"

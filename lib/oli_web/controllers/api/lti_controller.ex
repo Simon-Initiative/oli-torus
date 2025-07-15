@@ -274,7 +274,8 @@ defmodule OliWeb.Api.LtiController do
            validate_scope(scope, [
              "https://purl.imsglobal.org/spec/lti-ags/scope/result.readonly",
              "https://purl.imsglobal.org/spec/lti-ags/scope/score",
-             "https://purl.imsglobal.org/spec/lti-ags/scope/lineitem"
+             "https://purl.imsglobal.org/spec/lti-ags/scope/lineitem",
+             "https://purl.imsglobal.org/spec/lti-ags/scope/lineitem.readonly"
            ]),
          {:ok, access_token, expires_in} <-
            Tokens.issue_access_token(client_id, scope) do
