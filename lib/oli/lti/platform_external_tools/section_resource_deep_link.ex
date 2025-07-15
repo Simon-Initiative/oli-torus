@@ -9,8 +9,7 @@ defmodule Oli.Lti.PlatformExternalTools.SectionResourceDeepLink do
   schema "lti_section_resource_deep_links" do
     field :type, Ecto.Enum,
       values: [:ltiResourceLink, :ltiLink, :ltiAssignmentAndGradeServices],
-      default: :ltiResourceLink,
-      embed_as: :dumped
+      default: :ltiResourceLink
 
     field :url, :string
     field :title, :string
