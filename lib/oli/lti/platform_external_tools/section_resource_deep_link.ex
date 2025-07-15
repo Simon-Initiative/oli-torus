@@ -5,6 +5,7 @@ defmodule Oli.Lti.PlatformExternalTools.SectionResourceDeepLink do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @derive {Jason.Encoder, only: [:id, :type, :title, :text]}
   schema "lti_section_resource_deep_links" do
     field :type, Ecto.Enum,
       values: [:ltiResourceLink, :ltiLink, :ltiAssignmentAndGradeServices],

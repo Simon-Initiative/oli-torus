@@ -9,6 +9,11 @@ export type LTIExternalToolDetails = {
   };
   status: string;
   deep_linking_enabled: boolean;
+  deep_link?: {
+    type: string;
+    title: string;
+    text: string;
+  };
   can_configure_tool: boolean;
 };
 

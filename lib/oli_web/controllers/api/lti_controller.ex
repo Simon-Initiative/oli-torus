@@ -25,6 +25,7 @@ defmodule OliWeb.Api.LtiController do
   def launch_details(conn, %{"section_slug" => section_slug, "activity_id" => activity_id}) do
     with %Oli.Resources.Revision{activity_type_id: activity_type_id} <-
            DeliveryResolver.from_resource_id(section_slug, activity_id),
+         {:ok, section} <- get_section_by_slug(section_slug),
          %LtiExternalToolActivityDeployment{
            platform_instance: platform_instance,
            status: status,
@@ -45,6 +46,12 @@ defmodule OliWeb.Api.LtiController do
           "resource_id" => activity_id
         })
 
+      deep_link =
+        PlatformExternalTools.get_section_resource_deep_link_by(
+          section_id: section.id,
+          resource_id: activity_id
+        )
+
       json(conn, %{
         name: platform_instance.name,
         launch_params: %{
@@ -56,6 +63,7 @@ defmodule OliWeb.Api.LtiController do
         },
         status: status,
         deep_linking_enabled: deep_linking_enabled,
+        deep_link: deep_link,
         can_configure_tool: can_configure_tool
       })
     else

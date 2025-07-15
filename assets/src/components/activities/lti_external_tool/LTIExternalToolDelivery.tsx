@@ -91,20 +91,29 @@ const LTIExternalTool: React.FC = () => {
               height={model.height}
             />
             {ltiToolDetails.deep_linking_enabled && ltiToolDetails.can_configure_tool && (
-              <div className="flex flex-row justify-start items-center">
-                <Button
-                  variant="tertiary"
-                  size="md"
-                  onClick={() =>
-                    showConfigureDeepLinkingModal(
-                      context.sectionSlug,
-                      `${state.activityId}`,
-                      `${context.resourceId}`,
-                    )
-                  }
-                >
-                  <i className="fa-solid fa-rectangle-list mr-1"></i> Select Resource from Tool
-                </Button>
+              <div className="flex justify-between items-center mt-1">
+                <div className="flex flex-row justify-start items-center">
+                  <Button
+                    variant="tertiary"
+                    size="md"
+                    onClick={() =>
+                      showConfigureDeepLinkingModal(
+                        context.sectionSlug,
+                        `${state.activityId}`,
+                        `${context.resourceId}`,
+                        ltiToolDetailsLoader.reload,
+                      )
+                    }
+                  >
+                    {ltiToolDetails.deep_link ? 'Change Selection' : 'Select Resource'} from Tool
+                  </Button>
+                </div>
+                {ltiToolDetails.deep_link && (
+                  <div>
+                    <i className="fa-solid fa-check text-success mr-1"></i>Selection:{' '}
+                    {ltiToolDetails.deep_link.title}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -118,6 +127,7 @@ function showConfigureDeepLinkingModal(
   sectionSlug: string,
   activityId: string,
   resourceId: string,
+  reload: () => void,
 ) {
   // Show the configuration modal
   window.oliDispatch(
@@ -128,8 +138,12 @@ function showConfigureDeepLinkingModal(
         resourceId={resourceId}
         onDone={() => {
           window.oliDispatch(modalActions.dismiss());
+          reload();
         }}
-        onCancel={() => window.oliDispatch(modalActions.dismiss())}
+        onCancel={() => {
+          window.oliDispatch(modalActions.dismiss());
+          reload();
+        }}
       />,
     ),
   );
