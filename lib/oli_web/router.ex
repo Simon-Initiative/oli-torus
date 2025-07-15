@@ -860,7 +860,7 @@ defmodule OliWeb.Router do
     # LTI platform services access tokens
     post("/auth/token", Api.LtiController, :auth_token)
 
-    post("/deep_link/:section_slug/:resource_id", Api.LtiController, :deep_link)
+    post("/deep_link/:section_slug/:resource_id", LtiController, :deep_link)
   end
 
   scope "/lti", OliWeb do

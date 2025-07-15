@@ -156,6 +156,16 @@ defmodule OliWeb.Api.LtiController do
     end
   end
 
+  defp get_section_by_slug(section_slug) do
+    case Sections.get_section_by_slug(section_slug) do
+      %Sections.Section{} = section ->
+        {:ok, section}
+
+      nil ->
+        {:error, :section_not_found}
+    end
+  end
+
   @doc """
   Returns the developer key configuration for LTI 1.3, including public JWK and
   platform-specific settings.
@@ -316,7 +326,8 @@ defmodule OliWeb.Api.LtiController do
            peek_jwt(client_assertion),
          %JOSE.JWS{fields: %{"kid" => kid}} <- JOSE.JWT.peek_protected(client_assertion),
          {:ok, _iss, _sub} <- validate_matching_iss_sub(client_id, client_id),
-         {:ok, platform_instance} <- get_platform_instance_by_client_id(client_id),
+         {:ok, platform_instance} <-
+           PlatformInstances.get_platform_instance_by_client_id(client_id),
          {:ok, jwk} <- get_jwk_for_assertion(platform_instance.keyset_url, kid),
          {true, _jwt, _jws} <- JOSE.JWT.verify(jwk, client_assertion) do
       {:ok, %{sub: client_id}}
@@ -332,16 +343,6 @@ defmodule OliWeb.Api.LtiController do
       {:ok, iss, sub}
     else
       {:error, :mismatched_iss_sub}
-    end
-  end
-
-  defp get_platform_instance_by_client_id(client_id) do
-    case PlatformInstances.get_platform_instance_by_client_id(client_id) do
-      nil ->
-        {:error, :platform_instance_not_found}
-
-      platform_instance ->
-        {:ok, platform_instance}
     end
   end
 
@@ -407,226 +408,5 @@ defmodule OliWeb.Api.LtiController do
       error ->
         error
     end
-  end
-
-  @doc """
-  Handles the Deep Linking response from the LTI tool.
-  This endpoint receives the JWT containing the content items selected by the user.
-  """
-  def deep_link(
-        conn,
-        %{"JWT" => jwt, "section_slug" => section_slug, "resource_id" => resource_id} = _params
-      ) do
-    with {:ok, claims} <- validate_deep_linking_jwt(jwt),
-         {:ok, content_item} <- require_single_content_item(claims),
-         :ok <- require_lti_resource_link_type(content_item),
-         {:ok, section} <- get_section_by_slug(section_slug),
-         :ok = process_deep_linking_content_item(content_item, section.id, resource_id) do
-      # Return HTML page that sends postMessage to parent and shows success message
-      conn
-      |> put_resp_content_type("text/html")
-      |> send_resp(200, """
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Deep Linking Complete</title>
-        <style>
-          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 20px; text-align: center; }
-          .success { color: #22c55e; margin: 20px 0; }
-          .content-item { background: #f8fafc; padding: 15px; border-radius: 8px; margin: 10px 0; }
-        </style>
-      </head>
-      <body>
-        <div class="success">
-          <h2>✓ Resource Selected Successfully</h2>
-          <p>#{content_item["title"]}</p>
-          <div class="content-item">
-            <strong>Selected:</strong> #{content_item["title"]}<br>
-            <small>#{content_item["text"] || ""}</small>
-          </div>
-          <p>You can close this window or it will close automatically.</p>
-        </div>
-        <script>
-          // Send message to parent window
-          if (window.parent !== window) {
-            window.parent.postMessage({
-              type: 'lti_deep_linking_response',
-              status: 'success',
-              message: 'Deep linking response processed successfully',
-              content_items: #{Jason.encode!([content_item])}
-            }, '*');
-          }
-
-          // Auto-close after 3 seconds
-          setTimeout(() => {
-            if (window.parent !== window) {
-              window.parent.postMessage({
-                type: 'lti_close_modal',
-                reason: 'deep_linking_complete'
-              }, '*');
-            }
-          }, 3000);
-        </script>
-      </body>
-      </html>
-      """)
-    else
-      {:error, _reason, error_description} ->
-        conn
-        |> put_resp_content_type("text/html")
-        |> put_status(:bad_request)
-        |> send_resp(400, """
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <title>Deep Linking Error</title>
-          <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 20px; text-align: center; }
-            .error { color: #ef4444; margin: 20px 0; }
-          </style>
-        </head>
-        <body>
-          <div class="error">
-            <h2>❌ Deep Linking Failed</h2>
-            <p>#{error_description}</p>
-          </div>
-          <script>
-            if (window.parent !== window) {
-              window.parent.postMessage({
-                type: 'lti_deep_linking_response',
-                status: 'error',
-                error: 'invalid_request',
-                error_description: '#{error_description}'
-              }, '*');
-            }
-          </script>
-        </body>
-        </html>
-        """)
-
-      {:error, reason} ->
-        error_description = to_string(reason)
-
-        conn
-        |> put_resp_content_type("text/html")
-        |> put_status(:bad_request)
-        |> send_resp(400, """
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <title>Deep Linking Error</title>
-          <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 20px; text-align: center; }
-            .error { color: #ef4444; margin: 20px 0; }
-          </style>
-        </head>
-        <body>
-          <div class="error">
-            <h2>❌ Deep Linking Failed</h2>
-            <p>#{error_description}</p>
-          </div>
-          <script>
-            if (window.parent !== window) {
-              window.parent.postMessage({
-                type: 'lti_deep_linking_response',
-                status: 'error',
-                error: 'invalid_request',
-                error_description: '#{error_description}'
-              }, '*');
-            }
-          </script>
-        </body>
-        </html>
-        """)
-    end
-  end
-
-  defp get_section_by_slug(section_slug) do
-    case Sections.get_section_by_slug(section_slug) do
-      %Sections.Section{} = section ->
-        {:ok, section}
-
-      nil ->
-        {:error, :section_not_found}
-    end
-  end
-
-  defp validate_deep_linking_jwt(jwt) do
-    with {:ok, %JOSE.JWT{fields: %{"iss" => client_id, "aud" => audience}}} <- peek_jwt(jwt),
-         %JOSE.JWS{fields: %{"kid" => kid}} <- JOSE.JWT.peek_protected(jwt),
-         {:ok, platform_instance} <- get_platform_instance_by_client_id(client_id),
-         {:ok, jwk} <- get_jwk_for_assertion(platform_instance.keyset_url, kid),
-         {true, jwt, _jws} <- JOSE.JWT.verify(jwk, jwt),
-         jwt_claims <- jwt.fields,
-         :ok <- validate_audience(audience),
-         :ok <- validate_message_type(jwt_claims) do
-      {:ok, jwt_claims}
-    else
-      e ->
-        Logger.error("Failed to validate deep linking JWT: #{inspect(e)}")
-        {:error, :invalid_deep_linking_jwt}
-    end
-  end
-
-  defp validate_audience(audience) when is_list(audience),
-    do: audience |> hd() |> validate_audience()
-
-  defp validate_audience(audience) do
-    expected_audience = Oli.Utils.get_base_url()
-
-    if audience == expected_audience do
-      :ok
-    else
-      {:error, :invalid_audience}
-    end
-  end
-
-  defp validate_message_type(%{
-         "https://purl.imsglobal.org/spec/lti/claim/message_type" => "LtiDeepLinkingResponse"
-       }) do
-    :ok
-  end
-
-  defp validate_message_type(_) do
-    {:error, :invalid_message_type}
-  end
-
-  defp require_single_content_item(%{
-         "https://purl.imsglobal.org/spec/lti-dl/claim/content_items" => content_items
-       }) do
-    if is_list(content_items) and length(content_items) == 1 do
-      {:ok, hd(content_items)}
-    else
-      {:error, :invalid_content_item,
-       "Expected exactly one content item, got #{length(content_items)}"}
-    end
-  end
-
-  defp require_lti_resource_link_type(%{"type" => "ltiResourceLink"}), do: :ok
-
-  defp require_lti_resource_link_type(_),
-    do: {:error, :invalid_content_item_type, "Expected content item type to be 'ltiResourceLink'"}
-
-  defp process_deep_linking_content_item(content_item, section_id, resource_id) do
-    Logger.info("Processing deep linking content item: #{inspect(content_item)}")
-
-    case PlatformExternalTools.upsert_section_resource_deep_link(%{
-           type: content_item["type"],
-           title: content_item["title"],
-           text: content_item["text"],
-           url: content_item["url"],
-           custom: content_item["custom"],
-           resource_id: resource_id,
-           section_id: section_id
-         }) do
-      {:ok, _deep_link} ->
-        :ok
-
-      {:error, reason} ->
-        Logger.error("Failed to create section resource deep link: #{inspect(reason)}")
-        {:error, :failed_to_create_deep_link}
-    end
-
-    :ok
   end
 end

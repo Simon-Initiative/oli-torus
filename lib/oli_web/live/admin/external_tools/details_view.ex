@@ -90,6 +90,7 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
             Enable tool for project and course section use
           </text>
           <.toggle_switch
+            id="toggle_tool_switch"
             role="toggle_tool_switch"
             class="ml-4 flex items-center h-9"
             checked={@deployment.status == :enabled}
@@ -108,6 +109,7 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
             Enable deep linking for this tool
           </text>
           <.toggle_switch
+            id="toggle_deep_linking_switch"
             role="toggle_deep_linking_switch"
             class="ml-4 flex items-center h-9"
             checked={@deployment.deep_linking_enabled}
