@@ -422,22 +422,122 @@ defmodule OliWeb.Api.LtiController do
          :ok <- require_lti_resource_link_type(content_item),
          {:ok, section} <- get_section_by_slug(section_slug),
          :ok = process_deep_linking_content_item(content_item, section.id, resource_id) do
-      # Respond with success
-      json(conn, %{
-        status: "success",
-        message: "Deep linking response processed successfully",
-        content_items: [content_item]
-      })
+      # Return HTML page that sends postMessage to parent and shows success message
+      conn
+      |> put_resp_content_type("text/html")
+      |> send_resp(200, """
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Deep Linking Complete</title>
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 20px; text-align: center; }
+          .success { color: #22c55e; margin: 20px 0; }
+          .content-item { background: #f8fafc; padding: 15px; border-radius: 8px; margin: 10px 0; }
+        </style>
+      </head>
+      <body>
+        <div class="success">
+          <h2>✓ Resource Selected Successfully</h2>
+          <p>#{content_item["title"]}</p>
+          <div class="content-item">
+            <strong>Selected:</strong> #{content_item["title"]}<br>
+            <small>#{content_item["text"] || ""}</small>
+          </div>
+          <p>You can close this window or it will close automatically.</p>
+        </div>
+        <script>
+          // Send message to parent window
+          if (window.parent !== window) {
+            window.parent.postMessage({
+              type: 'lti_deep_linking_response',
+              status: 'success',
+              message: 'Deep linking response processed successfully',
+              content_items: #{Jason.encode!([content_item])}
+            }, '*');
+          }
+
+          // Auto-close after 3 seconds
+          setTimeout(() => {
+            if (window.parent !== window) {
+              window.parent.postMessage({
+                type: 'lti_close_modal',
+                reason: 'deep_linking_complete'
+              }, '*');
+            }
+          }, 3000);
+        </script>
+      </body>
+      </html>
+      """)
     else
       {:error, _reason, error_description} ->
         conn
+        |> put_resp_content_type("text/html")
         |> put_status(:bad_request)
-        |> json(%{error: "invalid_request", error_description: error_description})
+        |> send_resp(400, """
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Deep Linking Error</title>
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 20px; text-align: center; }
+            .error { color: #ef4444; margin: 20px 0; }
+          </style>
+        </head>
+        <body>
+          <div class="error">
+            <h2>❌ Deep Linking Failed</h2>
+            <p>#{error_description}</p>
+          </div>
+          <script>
+            if (window.parent !== window) {
+              window.parent.postMessage({
+                type: 'lti_deep_linking_response',
+                status: 'error',
+                error: 'invalid_request',
+                error_description: '#{error_description}'
+              }, '*');
+            }
+          </script>
+        </body>
+        </html>
+        """)
 
       {:error, reason} ->
+        error_description = to_string(reason)
+
         conn
+        |> put_resp_content_type("text/html")
         |> put_status(:bad_request)
-        |> json(%{error: "invalid_request", error_description: to_string(reason)})
+        |> send_resp(400, """
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Deep Linking Error</title>
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 20px; text-align: center; }
+            .error { color: #ef4444; margin: 20px 0; }
+          </style>
+        </head>
+        <body>
+          <div class="error">
+            <h2>❌ Deep Linking Failed</h2>
+            <p>#{error_description}</p>
+          </div>
+          <script>
+            if (window.parent !== window) {
+              window.parent.postMessage({
+                type: 'lti_deep_linking_response',
+                status: 'error',
+                error: 'invalid_request',
+                error_description: '#{error_description}'
+              }, '*');
+            }
+          </script>
+        </body>
+        </html>
+        """)
     end
   end
 

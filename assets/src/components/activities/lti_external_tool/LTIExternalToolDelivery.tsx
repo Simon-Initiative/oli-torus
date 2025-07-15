@@ -91,10 +91,10 @@ const LTIExternalTool: React.FC = () => {
               height={model.height}
             />
             {ltiToolDetails.deep_linking_enabled && ltiToolDetails.can_configure_tool && (
-              <div className="flex justify-between items-center mt-1">
+              <div className="flex justify-between gap-2 items-center mt-1">
                 <div className="flex flex-row justify-start items-center">
                   <Button
-                    variant="tertiary"
+                    variant="primary"
                     size="md"
                     onClick={() =>
                       showConfigureDeepLinkingModal(
@@ -109,7 +109,7 @@ const LTIExternalTool: React.FC = () => {
                   </Button>
                 </div>
                 {ltiToolDetails.deep_link && (
-                  <div>
+                  <div className="overflow-hidden text-ellipsis whitespace-nowrap">
                     <i className="fa-solid fa-check text-success mr-1"></i>Selection:{' '}
                     {ltiToolDetails.deep_link.title}
                   </div>
@@ -173,7 +173,7 @@ export const ConfigureDeepLinkingModal = ({
       title="Select Resource from External Tool"
       size={ModalSize.X_LARGE}
       okLabel="Done"
-      cancelLabel="Cancel"
+      hideCancelButton
       onCancel={() => onCancel()}
       onOk={() => onDone({})}
     >
@@ -187,6 +187,14 @@ export const ConfigureDeepLinkingModal = ({
               name={ltiToolDetails.name}
               launchParams={ltiToolDetails.launch_params}
               resourceId={`${resourceId}`}
+              onDeepLinkingComplete={() => {
+                // Automatically close the modal and refresh when deep linking completes
+                onDone({});
+              }}
+              onCloseModal={() => {
+                // Handle modal close request from iframe
+                onDone({});
+              }}
             />
           ),
         })}
