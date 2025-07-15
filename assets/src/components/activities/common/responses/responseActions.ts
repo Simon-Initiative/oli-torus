@@ -12,6 +12,9 @@ import {
 } from 'components/activities/types';
 import {
   RESPONSES_PATH,
+  findResponsePartId,
+  getIncorrectPoints,
+  getMaxPoints,
   getResponseBy,
   getResponseId,
   getResponsesByPartId,
@@ -51,7 +54,14 @@ export const ResponseActions = {
 
   editResponseScore(responseId: ResponseId, score: number) {
     return (model: HasParts) => {
-      getResponseBy(model, (r) => r.id === responseId).score = score;
+      // ensure score is within allowed range
+      const partId = findResponsePartId(model, responseId);
+      if (
+        partId &&
+        getIncorrectPoints(model, partId) <= score &&
+        score <= getMaxPoints(model, partId)
+      )
+        getResponseBy(model, (r) => r.id === responseId).score = score;
     };
   },
 

@@ -1,9 +1,11 @@
 import { Maybe } from 'tsmonad';
 import * as MultiRule from 'components/activities/response_multi/rules';
 import {
+  ActivityLevelScoring,
   ChoiceId,
   ChoiceIdsToResponseId,
   HasParts,
+  Part,
   Response,
   makeResponse,
 } from 'components/activities/types';
@@ -44,18 +46,36 @@ export const getResponsesByPartId = (model: HasParts, partId: string): Response[
 export const getResponseBy = (model: HasParts, predicate: (x: Response) => boolean) =>
   getByUnsafe(getResponses(model), predicate);
 
+export const findResponsePartId = (model: HasParts, responseId: string): string | undefined => {
+  const part = model.authoring.parts.find((p: Part) =>
+    p.responses.map((r) => r.id).includes(responseId),
+  );
+  return part?.id;
+};
+
+// Use of custom scoring is explicitly flagged to authoring differently in
+// single-part and multi-part activities. However, older migrations did not set
+// these flags, so these routines also allow it to be implicit in the use of
+// non-default point values.
+
+// single-part questions flag by non-nullish outOf attribute in the part
 export const hasCustomScoring = (model: HasParts, partId?: string): boolean => {
   const pId = partId || model.authoring.parts[0].id;
-  // new questions carry outOf attribute for custom scoring
   const outOf = getPartById(model, pId)?.outOf;
   // migrated qs may carry non-default point values but no outOf attribute
   const maxScore = getMaxPoints(model, pId);
   return (outOf !== null && outOf !== undefined) || maxScore > 1;
 };
 
+// multi-part activities use activity-wide customScoring flag
+export const multiHasCustomScoring = (model: ActivityLevelScoring) =>
+  model.customScoring ||
+  // migrated qs may carry non-default point values but no customScoring attribute.
+  model.authoring.parts.some((part: Part) => part.responses.some((r: Response) => r.score > 1));
+
 export const getOutOfPoints = (model: HasParts, partId: string) => {
   const outOf = getPartById(model, partId)?.outOf;
-  // migrated qs may carry non-default point values but no outOf attribute
+  // migrated qs may carry non-default point values but no  attribute
   return outOf ?? getMaxPoints(model, partId);
 };
 
@@ -66,7 +86,7 @@ export const getScoringStrategy = (model: HasParts, partId: string) => {
 
 export const getIncorrectPoints = (model: HasParts, partId: string) => {
   const part = getPartById(model, partId);
-  return part?.incorrectScore;
+  return part?.incorrectScore ?? 0;
 };
 
 export const getCorrectResponse = (model: HasParts, partId: string) => {
@@ -80,7 +100,8 @@ export const getIncorrectResponse = (model: HasParts, partId: string) => {
   return Maybe.maybe(
     getResponsesByPartId(model, partId).find((r) => {
       return (
-        r.score === 0 &&
+        // check score for edge case where author sets a correct response of .*
+        r.score === getIncorrectPoints(model, partId) &&
         (r.rule === matchRule('.*') ||
           // Allow for special rule form used by ResponseMulti
           (r.rule.startsWith('input_ref') && MultiRule.ruleIsCatchAll(r.rule)))
