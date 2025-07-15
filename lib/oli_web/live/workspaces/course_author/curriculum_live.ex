@@ -175,10 +175,17 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
   end
 
   def handle_event("save-options", %{"revision" => revision_params}, socket) do
-    %{options_modal_assigns: %{redirect_url: redirect_url, revision: revision}, project: project} =
+    %{
+      options_modal_assigns: %{redirect_url: redirect_url, revision: revision},
+      project: project,
+      author: author
+    } =
       socket.assigns
 
-    revision_params = ContainerLiveHelpers.decode_revision_params(revision_params)
+    revision_params =
+      revision_params
+      |> Map.put("author_id", author.id)
+      |> ContainerLiveHelpers.decode_revision_params()
 
     case ContainerEditor.edit_page(project, revision.slug, revision_params) do
       {:ok, _} ->
