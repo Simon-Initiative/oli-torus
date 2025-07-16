@@ -9,6 +9,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
   alias OliWeb.Components.Delivery.Utils, as: DeliveryUtils
   alias OliWeb.Delivery.Student.Utils
   alias OliWeb.Icons
+  alias OliWeb.Components.Utils, as: ComponentsUtils
 
   # this is an optimization to reduce the memory footprint of the liveview process
   @required_keys_per_assign %{
@@ -186,22 +187,27 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
     <div class="w-full px-2 bg-white dark:bg-[#1b191f]/50 rounded-xl border border-[#ced1d9] dark:border-[#2a282d] flex-col justify-start items-start inline-flex">
       <div
         role="assignments header"
-        class="w-full h-11 py-3 border-b border-[#ced1d9] dark:border-[#3a3740] justify-between items-center inline-flex text-[#757682] dark:text-[#bab8bf] text-sm font-medium leading-none"
+        class="w-full flex-col pt-2 border-b border-[#ced1d9] dark:border-[#3a3740] justify-between items-center text-[#757682] dark:text-[#bab8bf] text-sm font-medium leading-none"
       >
-        <div class="justify-end items-center gap-2 flex">
-          <div class="w-5 h-5 relative"><Icons.check /></div>
-          <span>
-            <%= completed_assignments_count(@assignments, @certificate, @filter) %> of <%= total_assignments_count(
-              @assignments,
-              @certificate,
-              @filter
-            ) %> Assignments
-          </span>
+        <ComponentsUtils.timezone_info timezone={
+          FormatDateTime.tz_preference_or_default(@ctx.author, @ctx.user, @ctx.browser_timezone)
+        } />
+        <div class="flex w-full h-11 justify-between items-center inline-flex">
+          <div class="justify-end items-center gap-2 flex">
+            <div class="w-5 h-5 relative"><Icons.check /></div>
+            <span>
+              <%= completed_assignments_count(@assignments, @certificate, @filter) %> of <%= total_assignments_count(
+                @assignments,
+                @certificate,
+                @filter
+              ) %> Assignments
+            </span>
+          </div>
+          <DeliveryUtils.toggle_visibility_button
+            :if={@assignments != []}
+            target_selector={~s{div[role="assignment detail"][data-completed="true"]}}
+          />
         </div>
-        <DeliveryUtils.toggle_visibility_button
-          :if={@assignments != []}
-          target_selector={~s{div[role="assignment detail"][data-completed="true"]}}
-        />
       </div>
       <div role="assignments details" class="mt-12 px-5 pb-5 flex flex-col gap-12 w-full">
         <.assignment
