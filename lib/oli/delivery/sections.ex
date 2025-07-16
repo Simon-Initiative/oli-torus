@@ -4932,15 +4932,9 @@ defmodule Oli.Delivery.Sections do
   directly attached to them.
   """
   def get_objectives_and_subobjectives(%Section{slug: section_slug} = section, opts \\ []) do
-    student_id =
-      if opts[:student_id],
-        do: opts[:student_id],
-        else: nil
+    student_id = if opts[:student_id], do: opts[:student_id], else: nil
 
-    exclude_sub_objectives =
-      if opts[:exclude_sub_objectives],
-        do: true,
-        else: false
+    exclude_sub_objectives = if opts[:exclude_sub_objectives], do: true, else: false
 
     # get the minimal fields for all objectives from the database
     objective_id = Oli.Resources.ResourceType.id_for_objective()
@@ -4956,20 +4950,10 @@ defmodule Oli.Delivery.Sections do
       })
       |> Repo.all()
 
-    id_list =
-      objectives
-      |> Enum.map(& &1.resource_id)
+    id_list = Enum.map(objectives, & &1.resource_id)
 
     proficiencies_for_objectives =
-      case student_id do
-        nil ->
-          Metrics.proficiency_per_student_for_objective(section.id, id_list)
-
-        student_id ->
-          Metrics.proficiency_per_student_for_objective(section.id, id_list,
-            student_id: student_id
-          )
-      end
+      Metrics.proficiency_per_student_for_objective(section.id, id_list, student_id: student_id)
 
     student_ids =
       Sections.enrolled_student_ids(section_slug)
@@ -4985,8 +4969,9 @@ defmodule Oli.Delivery.Sections do
           end)
 
         proficiency_dist =
-          student_proficiency
-          |> Enum.frequencies_by(fn {_student_id, proficiency} -> proficiency end)
+          Enum.frequencies_by(student_proficiency, fn {_student_id, proficiency} ->
+            proficiency
+          end)
 
         proficiency_mode =
           proficiency_dist
@@ -5060,9 +5045,9 @@ defmodule Oli.Delivery.Sections do
               objective_resource_id: objective.resource_id,
               student_proficiency_obj: student_proficiency_obj,
               student_proficiency_obj_dist: student_proficiency_obj_dist,
-              subobjective: "",
+              subobjective: nil,
               subobjective_resource_id: nil,
-              student_proficiency_subobj: ""
+              student_proficiency_subobj: nil
             })
 
           case exclude_sub_objectives do
@@ -5100,7 +5085,7 @@ defmodule Oli.Delivery.Sections do
           end
 
         # this is a subobjective, we do nothing as it will be handled in the context of its parent(s)
-        _ ->
+        _true ->
           all
       end
     end)
