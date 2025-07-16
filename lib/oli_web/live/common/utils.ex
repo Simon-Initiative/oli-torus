@@ -3,7 +3,6 @@ defmodule OliWeb.Common.Utils do
 
   alias Oli.Accounts.{User, Author}
   alias OliWeb.Common.SessionContext
-  alias OliWeb.Common.FormatDateTime
 
   require Logger
 
@@ -26,19 +25,6 @@ defmodule OliWeb.Common.Utils do
       {true, _, _} -> name
       _ -> "Unknown"
     end
-  end
-
-  @doc """
-  Formats a date using the given format.
-
-  ## Examples
-
-      iex> format_date(~U[2023-09-06 13:28:00Z], %{SessionContext.init() | local_tz: "America/Montevideo"}, "{0M}/{0D}/{YY}")
-      "09/06/23"
-  """
-  @spec format_date(DateTime.t(), map(), String.t()) :: String.t()
-  def format_date(date, context, format) do
-    FormatDateTime.to_formatted_datetime(date, context, format)
   end
 
   def render_date(item, attr_name, %SessionContext{} = ctx) do

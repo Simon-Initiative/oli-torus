@@ -4,11 +4,10 @@ defmodule OliWeb.Workspaces.Student do
   alias Oli.Delivery.Metrics
   alias Oli.Delivery.Sections
   alias OliWeb.Backgrounds
-  alias OliWeb.Common.{Params, SearchInput}
+  alias OliWeb.Common.{FormatDateTime, Params, SearchInput}
   alias OliWeb.Common.SourceImage
 
   import Ecto.Query, warn: false
-  import OliWeb.Common.Utils
   import OliWeb.Components.Utils
   import OliWeb.Components.Delivery.Layouts
 
@@ -240,7 +239,7 @@ defmodule OliWeb.Workspaces.Student do
             class="justify-center text-[#bab8bf] text-xs font-bold uppercase leading-3"
             role="start_end_date"
           >
-            <%= format_date(@section.start_date, @ctx, "{Mshort} {YYYY}") %> - <%= format_date(
+            <%= FormatDateTime.to_formatted_datetime(@section.start_date, @ctx, "{Mshort} {YYYY}") %> - <%= FormatDateTime.to_formatted_datetime(
               @section.end_date,
               @ctx,
               "{Mshort} {YYYY}"

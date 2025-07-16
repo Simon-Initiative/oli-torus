@@ -3,10 +3,10 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
 
   alias Oli.Delivery.Sections
   alias OliWeb.Backgrounds
-  alias OliWeb.Common.{Params, SearchInput}
+  alias OliWeb.Common.{FormatDateTime, Params, SearchInput}
   alias OliWeb.Icons
 
-  import OliWeb.Common.{SourceImage, Utils}
+  import OliWeb.Common.SourceImage
   import OliWeb.Components.Utils
 
   @default_params %{text_search: "", sidebar_expanded: true}
@@ -321,7 +321,7 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
           class="justify-center text-[#757682] text-xs font-bold uppercase leading-3"
           role="start_end_date"
         >
-          <%= format_date(@section.start_date, @ctx, "{Mshort} {YYYY}") %> - <%= format_date(
+          <%= FormatDateTime.to_formatted_datetime(@section.start_date, @ctx, "{Mshort} {YYYY}") %> - <%= FormatDateTime.to_formatted_datetime(
             @section.end_date,
             @ctx,
             "{Mshort} {YYYY}"
