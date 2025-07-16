@@ -69,7 +69,7 @@ defmodule Oli.Inventories.Publisher do
     support_email = get_field(changeset, :support_email)
 
     if is_binary(support_email) and String.trim(support_email) != "" do
-      validate_format(changeset, :support_email, ~r/^[^\s]+@[^\s]+\.[^\s]+$/,
+      validate_format(changeset, :support_email, ~r/^[^\s@]+@[^\s@]+\.[^\s@]+$/,
         message: "must have the @ sign and no spaces"
       )
     else

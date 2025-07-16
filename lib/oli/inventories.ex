@@ -201,6 +201,24 @@ defmodule Oli.Inventories do
     Publisher.changeset(publisher, attrs)
   end
 
+  @doc """
+  Determines the publisher for a given context map.
+
+  Accepts a map with either a `"section"` or `"project"` key, each pointing to their respective structs.
+  Returns the associated publisher for the section or project, or the default publisher if not found.
+
+  ## Examples
+
+      iex> get_publisher_for_context(%{"section" => %Oli.Delivery.Sections.Section{id: 1}})
+      %Publisher{} # the publisher for the section
+
+      iex> get_publisher_for_context(%{"project" => %Oli.Authoring.Course.Project{id: 1}})
+      %Publisher{} # the publisher for the project
+
+      iex> get_publisher_for_context(%{})
+      %Publisher{} # the default publisher
+  """
+  @spec get_publisher_for_context(map()) :: Publisher.t()
   def get_publisher_for_context(%{"section" => %Oli.Delivery.Sections.Section{id: section_id}}) do
     from(s in Oli.Delivery.Sections.Section,
       join: p in Oli.Authoring.Course.Project,
