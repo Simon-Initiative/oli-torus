@@ -551,6 +551,64 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       assert sr_updated.hidden == false
     end
+
+    test "remix section - add materials - resources are inserted preserving hierarchical order",
+         %{
+           conn: conn,
+           map: %{
+             section_1: section
+           }
+         } do
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/remix")
+
+      # Open the add materials modal
+      view
+      |> element("button[phx-click=\"show_add_materials_modal\"]")
+      |> render_click()
+
+      # Select the project
+      view
+      |> element(
+        ".hierarchy table > tbody tr button[phx-click=\"HierarchyPicker.select_publication\"]",
+        "Project 1"
+      )
+      |> render_click()
+
+      # First add the orphan page, which is the last one in the hierarchy
+      view
+      |> element(".hierarchy > div", "Another orph. Page")
+      |> render_click()
+
+      # Then add the elixir page, which is the second to last one in the hierarchy
+      view
+      |> element(".hierarchy > div", "Elixir Page")
+      |> render_click()
+
+      # Add the resources
+      view
+      |> element("button[phx-click=\"AddMaterialsModal.add\"]", "Add")
+      |> render_click()
+
+      # Save the changes
+      view
+      |> element("#save", "Save")
+      |> render_click()
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/remix")
+
+      html = render(view)
+
+      # Get the entries
+      entries =
+        html
+        |> Floki.parse_document!()
+        |> Floki.find(".curriculum-entries .entry-title")
+        |> Enum.map(&Floki.text/1)
+
+      # Assert the elixir page is before the orphan page
+      assert Enum.find_index(entries, &(&1 =~ "Elixir Page")) <
+               Enum.find_index(entries, &(&1 =~ "Another orph. Page"))
+    end
   end
 
   describe "remix section as product manager" do
