@@ -12,16 +12,21 @@ defmodule OliWeb.TechSupportLive do
   @impl true
   def mount(_params, session, socket) do
     requires_sender_data = !Enum.any?(Map.take(session, ["current_user_id", "current_author_id"]))
-    socket = assign(socket, requires_sender_data: requires_sender_data)
+    publisher = Oli.Inventories.get_publisher_for_context(session)
+    knowledge_base_link = Oli.Inventories.knowledge_base_link_for_publisher(publisher)
+    support_email = Oli.Inventories.support_email_for_publisher(publisher)
 
     socket =
       socket
+      |> assign(:requires_sender_data, requires_sender_data)
       |> assign_form(HelpRequest.changeset())
-      |> assign(modal_id: @modal_id)
-      |> assign(recaptcha_error: false)
+      |> assign(:modal_id, @modal_id)
+      |> assign(:recaptcha_error, false)
       |> assign(:session, session)
-      |> assign(submission_result: nil)
-      |> assign(uploaded_files: [])
+      |> assign(:submission_result, nil)
+      |> assign(:uploaded_files, [])
+      |> assign(:knowledge_base_link, knowledge_base_link)
+      |> assign(:support_email, support_email)
       |> allow_upload(:attached_screenshots,
         accept: ~w(.jpg .jpeg .png),
         max_entries: 3,
@@ -44,7 +49,10 @@ defmodule OliWeb.TechSupportLive do
     <Modal.modal id={@modal_id} class="md:w-8/12" on_cancel={JS.push("clear_result_request_message")}>
       <:title>Tech Support</:title>
 
-      <.process_result_message submission_result={@submission_result} />
+      <.process_result_message
+        submission_result={@submission_result}
+        knowledge_base_link={@knowledge_base_link}
+      />
 
       <.form
         :if={!@submission_result}
@@ -171,8 +179,8 @@ defmodule OliWeb.TechSupportLive do
 
   defp process_result_message(%{submission_result: nil} = assigns) do
     ~H"""
-    <a href={Oli.VendorProperties.knowledgebase_url()} target="_blank">
-      Find answers quickly in the Torus knowledge base.
+    <a href={@knowledge_base_link} target="_blank">
+      Find answers quickly in the knowledge base.
     </a>
     """
   end
@@ -265,6 +273,7 @@ defmodule OliWeb.TechSupportLive do
     |> Map.put("screenshots", uploaded_screenshots)
     |> Map.put("account_created", account_created)
     |> Map.put("requester_data", requester_data)
+    |> Map.put("support_email", socket.assigns.support_email)
   end
 
   defp dispatch_email(help_content) do
