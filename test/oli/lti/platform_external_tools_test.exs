@@ -774,7 +774,9 @@ defmodule Oli.Lti.PlatformExternalToolsTest do
       assert updated_deep_link.custom == %{"updated" => "value"}
 
       # Verify only one record exists
-      count = Repo.aggregate(Oli.Lti.PlatformExternalTools.SectionResourceDeepLink, :count, :id)
+      count =
+        Repo.aggregate(Oli.Lti.PlatformExternalTools.LtiSectionResourceDeepLink, :count, :id)
+
       assert count == 1
     end
 
@@ -1025,7 +1027,9 @@ defmodule Oli.Lti.PlatformExternalToolsTest do
       assert second.title == "Updated"
 
       # Should only have one record total
-      count = Repo.aggregate(Oli.Lti.PlatformExternalTools.SectionResourceDeepLink, :count, :id)
+      count =
+        Repo.aggregate(Oli.Lti.PlatformExternalTools.LtiSectionResourceDeepLink, :count, :id)
+
       assert count == 1
     end
   end

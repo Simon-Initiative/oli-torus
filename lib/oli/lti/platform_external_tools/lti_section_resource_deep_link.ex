@@ -1,6 +1,6 @@
-defmodule Oli.Lti.PlatformExternalTools.SectionResourceDeepLink do
+defmodule Oli.Lti.PlatformExternalTools.LtiSectionResourceDeepLink do
   @moduledoc """
-  Represents a deep link resource in the context of an LTI platform external tool
+  Represents an LTI deep link resource in the context of an external tool
   """
   use Ecto.Schema
   import Ecto.Changeset

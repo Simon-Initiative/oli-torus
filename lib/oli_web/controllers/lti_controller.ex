@@ -398,10 +398,10 @@ defmodule OliWeb.LtiController do
         nil ->
           {platform_instance.target_link_uri, []}
 
-        %Oli.Lti.PlatformExternalTools.SectionResourceDeepLink{url: nil, custom: custom} ->
+        %Oli.Lti.PlatformExternalTools.LtiSectionResourceDeepLink{url: nil, custom: custom} ->
           {platform_instance.target_link_uri, maybe_add_custom_claims(custom)}
 
-        %Oli.Lti.PlatformExternalTools.SectionResourceDeepLink{url: url, custom: custom} ->
+        %Oli.Lti.PlatformExternalTools.LtiSectionResourceDeepLink{url: url, custom: custom} ->
           {url, maybe_add_custom_claims(custom)}
       end
 
