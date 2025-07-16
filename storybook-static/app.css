@@ -17272,6 +17272,10 @@ Not supports in Firefox and IE */
     margin-top: 0px;
   }
 
+  .md\:mt-4 {
+    margin-top: 1rem;
+  }
+
   .md\:mt-auto {
     margin-top: auto;
   }
@@ -17298,10 +17302,6 @@ Not supports in Firefox and IE */
 
   .md\:h-72 {
     height: 18rem;
-  }
-
-  .md\:h-\[200px\] {
-    height: 200px;
   }
 
   .md\:h-\[247px\] {
