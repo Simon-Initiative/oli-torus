@@ -870,7 +870,8 @@ $font-family-sans-serif: var(--font-sans);
 .dark .aa-sequence-editor .aa-panel-section-title-bar,
 .dark .aa-adaptivity-rules .aa-panel-section-title-bar,
 .dark .aa-panel.bottom-panel .aa-panel-section-title-bar,
-.dark .aa-panel.right-panel .aa-panel-section-title-bar {
+.dark .aa-panel.right-panel .aa-panel-section-title-bar,
+.dark .aa-condition .aa-condition-header > div {
   background-color: var(--color-body-dark);
   color: var(--color-body-color-dark);
   box-shadow: 1px 1px 8px 1px var(--color-gray-900);
