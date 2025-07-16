@@ -228,10 +228,10 @@ defmodule OliWeb.LtiController do
             %{
               "section" => section_slug,
               "resource_id" => activity_resource_id,
-              "deep_linking" => "true"
+              "configure_deep_linking" => "true"
             } ->
               build_authorization_for(
-                :deep_linking,
+                :configure_deep_linking,
                 conn,
                 platform_instance,
                 section_slug,
@@ -447,7 +447,7 @@ defmodule OliWeb.LtiController do
   end
 
   defp build_authorization_for(
-         :deep_linking,
+         :configure_deep_linking,
          conn,
          platform_instance,
          section_slug,

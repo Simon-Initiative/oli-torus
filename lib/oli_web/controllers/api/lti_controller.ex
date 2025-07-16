@@ -132,7 +132,7 @@ defmodule OliWeb.Api.LtiController do
         LoginHints.create_login_hint(user.id, %{
           "section" => section_slug,
           "resource_id" => activity_id,
-          "deep_linking" => "true"
+          "configure_deep_linking" => "true"
         })
 
       json(conn, %{
