@@ -285,14 +285,14 @@ defmodule OliWeb.Admin.ExternalTools.DetailsViewTest do
       {:ok, view, _html} = live(conn, ~p"/admin/external_tools/#{pi.id}/details")
 
       # Check that the tool is disabled
-      assert has_element?(view, "#toggle_switch_checkbox[data-checked=\"false\"]")
+      assert has_element?(view, "#toggle_tool_switch_checkbox[data-checked=\"false\"]")
 
       view
-      |> element("#toggle_switch_form")
+      |> element("#toggle_tool_switch")
       |> render_change()
 
       # Check that the tool is enabled
-      assert has_element?(view, "#toggle_switch_checkbox[data-checked=\"true\"]")
+      assert has_element?(view, "#toggle_tool_switch_checkbox[data-checked=\"true\"]")
 
       assert PlatformExternalTools.get_lti_external_tool_activity_deployment!(dep.deployment_id).status ===
                :enabled
