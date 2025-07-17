@@ -13,7 +13,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Resources.Collaboration
   alias OliWeb.Common.Utils
-  alias OliWeb.Components.{Common, Overview}
+  alias OliWeb.Components.{Common, Modal, Overview}
   alias OliWeb.Components.Project.{AdvancedActivityItem, AsyncExporter}
   alias OliWeb.Projects.{RequiredSurvey, TransferPaymentCodes}
 
@@ -315,11 +315,30 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
 
       <Overview.section
         title="Advanced Activities"
-        description="Enable advanced activity types for your project to include in your curriculum."
+        description="Add advanced activity types and LTI 1.3 external tools to the content type selector. Removing a tool or activity at the project level prevents new inserts but does not remove existing instances."
       >
         <%= for activity_enabled <- @activities_enabled do %>
           <AdvancedActivityItem.render activity_enabled={activity_enabled} project={@project} />
         <% end %>
+        <button
+          type="button"
+          class="btn btn-primary mb-4"
+          phx-click={
+            JS.push("show_modal",
+              target: "#add-activities-tools",
+              value: %{project_id: @project.id}
+            )
+            |> Modal.show_modal("add-activities-tools-modal")
+          }
+        >
+        + Add Activities and Tools
+        </button>
+
+        <.live_component
+          module={OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal}
+          id="add-activities-tools"
+          project_id={@project.id}
+        />
       </Overview.section>
 
       <%= live_render(@socket, OliWeb.Projects.VisibilityLive,
