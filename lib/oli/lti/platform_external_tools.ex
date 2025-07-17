@@ -446,4 +446,58 @@ defmodule Oli.Lti.PlatformExternalTools do
     )
     |> Repo.one()
   end
+
+  @doc """
+  Creates a new LtiSectionResourceDeepLink record.
+  This function is used to store deep link resources associated with a particular section resource.
+  """
+  def create_section_resource_deep_link(attrs) do
+    %Oli.Lti.PlatformExternalTools.LtiSectionResourceDeepLink{}
+    |> Oli.Lti.PlatformExternalTools.LtiSectionResourceDeepLink.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Upserts a LtiSectionResourceDeepLink record.
+  If a record with the same section_id and resource_id exists, it will be updated.
+  If it does not exist, a new record will be created.
+  """
+  def upsert_section_resource_deep_link(attrs) do
+    %Oli.Lti.PlatformExternalTools.LtiSectionResourceDeepLink{}
+    |> Oli.Lti.PlatformExternalTools.LtiSectionResourceDeepLink.changeset(attrs)
+    |> Repo.insert(
+      on_conflict: {:replace_all_except, [:id, :inserted_at]},
+      conflict_target: [:section_id, :resource_id]
+    )
+  end
+
+  @doc """
+  Retrieves a LtiSectionResourceDeepLink by its attributes.
+  """
+  def get_section_resource_deep_link_by(attrs) do
+    Oli.Lti.PlatformExternalTools.LtiSectionResourceDeepLink
+    |> where(^attrs)
+    |> Repo.one()
+  end
+
+  @doc """
+  Updates an existing LtiSectionResourceDeepLink record.
+  """
+  def update_section_resource_deep_link(
+        %Oli.Lti.PlatformExternalTools.LtiSectionResourceDeepLink{} = deep_link,
+        attrs
+      ) do
+    deep_link
+    |> Oli.Lti.PlatformExternalTools.LtiSectionResourceDeepLink.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Deletes a LtiSectionResourceDeepLink record.
+  """
+  def delete_section_resource_deep_link(
+        %Oli.Lti.PlatformExternalTools.LtiSectionResourceDeepLink{} = deep_link
+      ) do
+    Repo.delete(deep_link)
+  end
 end
