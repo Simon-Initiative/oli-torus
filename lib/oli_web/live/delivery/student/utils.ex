@@ -388,7 +388,7 @@ defmodule OliWeb.Delivery.Student.Utils do
   def container_label_for_scheduling_type([:read_by]), do: "Read by: "
   def container_label_for_scheduling_type(_), do: "Due by: "
 
-  def label_for_scheduling_type(:due_by), do: "Due by: "
+  def label_for_scheduling_type(type) when type in [:due_by, "Not yet scheduled"], do: "Due by: "
   def label_for_scheduling_type(:read_by), do: "Read by: "
   def label_for_scheduling_type(:inclass_activity), do: "In-class activity by: "
   def label_for_scheduling_type(_), do: ""
