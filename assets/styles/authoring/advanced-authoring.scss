@@ -913,6 +913,11 @@ $font-family-sans-serif: var(--font-sans);
 .dark .flowchart-editor .undo-redo-button > svg {
   background: white;
 }
+
+.dark #advanced-authoring-modals .invalid-screen-list,
+.dark #advanced-authoring-modals .modal-body > p {
+  color: var(--color-body-color-dark);
+}
 .dark #advanced-authoring-modals .screen-context-menu {
   background-color: var(--color-body-dark);
 }
