@@ -870,11 +870,68 @@ $font-family-sans-serif: var(--font-sans);
 .dark .aa-sequence-editor .aa-panel-section-title-bar,
 .dark .aa-adaptivity-rules .aa-panel-section-title-bar,
 .dark .aa-panel.bottom-panel .aa-panel-section-title-bar,
-.dark .aa-panel.right-panel .aa-panel-section-title-bar {
+.dark .aa-panel.right-panel .aa-panel-section-title-bar,
+.dark .aa-condition .aa-condition-header > div,
+.dark .advance-author-scoring-overview .input-group-text,
+.dark .flowchart-editor .screen-list-container,
+.dark .flowchart-editor .flowchart-order-note,
+.dark .flowchart-editor .sidebar-header,
+.dark .flowchart-editor .component-toolbar,
+.dark .flowchart-editor .component-toolbar .toolbar-column,
+.dark .flowchart-right,
+.dark .flowchart-editor .flowchart-sidebar,
+.dark .flowchart-editor .flowchart-sidebar .none-selected,
+.dark .flowchart-editor .flowchart-sidebar .screen-title,
+.dark .flowchart-editor .flowchart-sidebar .path-editor-completed,
+.dark .flowchart-editor .flowchart-sidebar .path-editor-completed .path-param,
+.dark .flowchart-editor .flowchart-sidebar .path-editor-incomplete,
+.dark .flowchart-editor .flowchart-sidebar .path-editor-incomplete > select,
+.dark .flowchart-editor .flowchart-sidebar .path-editor-incomplete .path-param,
+.dark .flowchart-editor .fixed-right-panel,
+.dark .flowchart-editor .fixed-right-panel .nav,
+.dark .flowchart-right .toolbar-option,
+.dark .flowchart-editor .screen-list-container ul.screen-list li.active,
+.dark .flowchart-editor .screen-list-container ul.screen-list li:hover,
+.dark .flowchart-editor .react-flow,
+.dark .flowchart-editor .react-flow .react-flow__pane,
+.dark .flowchart-editor .react-flow > div,
+.dark .flowchart-editor .flowchart-node .node-box {
   background-color: var(--color-body-dark);
   color: var(--color-body-color-dark);
   box-shadow: 1px 1px 8px 1px var(--color-gray-900);
   border-color: var(--color-gray-600);
+}
+
+.dark .flowchart-editor .flowchart-sidebar .none-selected > svg {
+  background: white;
+  border-radius: 9px;
+}
+.dark .flowchart-editor .flowchart-order-note > svg {
+  background: white;
+  border-radius: 9px;
+}
+.dark .flowchart-editor .undo-redo-button > svg {
+  background: white;
+}
+
+.dark #advanced-authoring-modals .invalid-screen-list,
+.dark #advanced-authoring-modals .modal-body > p {
+  color: var(--color-body-color-dark);
+}
+.dark #advanced-authoring-modals .screen-context-menu {
+  background-color: var(--color-body-dark);
+}
+.dark .flowchart-right .toolbar-option:hover {
+  background-color: var(--color-body-dark) !important;
+  border: 1px solid;
+}
+.dark #advanced-authoring-modals .screen-context-menu {
+  background-color: var(--color-body-dark);
+}
+.dark .flowchart-editor .screen-list-container ul.screen-list li.active,
+.dark .flowchart-editor .screen-list-container ul.screen-list li:hover,
+.dark .flowchart-right .toolbar-option:active {
+  border: 1px solid;
 }
 .dark .advanced-authoring .aa-panel-tabs .nav-link {
   color: #f5f5f5;
@@ -888,6 +945,10 @@ $font-family-sans-serif: var(--font-sans);
   color: inherit;
 }
 
+.dark .flowchart-editor .activity-content,
+.dark .advanced-authoring .activity-content {
+  color: $panel-bg-color-dark;
+}
 .dark .dark\:text-white .activity-content {
   --tw-text-opacity: 0;
   color: rgb(55, 58, 68);
