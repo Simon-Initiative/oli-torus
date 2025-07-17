@@ -876,27 +876,52 @@ $font-family-sans-serif: var(--font-sans);
 .dark .flowchart-editor .screen-list-container,
 .dark .flowchart-editor .flowchart-order-note,
 .dark .flowchart-editor .sidebar-header,
+.dark .flowchart-editor .component-toolbar,
+.dark .flowchart-editor .component-toolbar .toolbar-column,
 .dark .flowchart-right,
 .dark .flowchart-editor .flowchart-sidebar,
+.dark .flowchart-editor .flowchart-sidebar .none-selected,
 .dark .flowchart-editor .flowchart-sidebar .screen-title,
 .dark .flowchart-editor .flowchart-sidebar .path-editor-completed,
 .dark .flowchart-editor .flowchart-sidebar .path-editor-completed .path-param,
+.dark .flowchart-editor .flowchart-sidebar .path-editor-incomplete,
+.dark .flowchart-editor .flowchart-sidebar .path-editor-incomplete > select,
+.dark .flowchart-editor .flowchart-sidebar .path-editor-incomplete .path-param,
 .dark .flowchart-editor .fixed-right-panel,
 .dark .flowchart-editor .fixed-right-panel .nav,
 .dark .flowchart-right .toolbar-option,
 .dark .flowchart-editor .screen-list-container ul.screen-list li.active,
-.dark .flowchart-editor .screen-list-container ul.screen-list li:hover {
+.dark .flowchart-editor .screen-list-container ul.screen-list li:hover,
+.dark .flowchart-editor .react-flow,
+.dark .flowchart-editor .react-flow .react-flow__pane,
+.dark .flowchart-editor .react-flow > div,
+.dark .flowchart-editor .flowchart-node .node-box {
   background-color: var(--color-body-dark);
   color: var(--color-body-color-dark);
   box-shadow: 1px 1px 8px 1px var(--color-gray-900);
   border-color: var(--color-gray-600);
 }
+
+.dark .flowchart-editor .flowchart-sidebar .none-selected > svg {
+  background: white;
+  border-radius: 9px;
+}
 .dark .flowchart-editor .flowchart-order-note > svg {
   background: white;
   border-radius: 9px;
 }
+.dark .flowchart-editor .undo-redo-button > svg {
+  background: white;
+}
 .dark #advanced-authoring-modals .screen-context-menu {
-  background-color: black;
+  background-color: var(--color-body-dark);
+}
+.dark .flowchart-right .toolbar-option:hover {
+  background-color: var(--color-body-dark) !important;
+  border: 1px solid;
+}
+.dark #advanced-authoring-modals .screen-context-menu {
+  background-color: var(--color-body-dark);
 }
 .dark .flowchart-editor .screen-list-container ul.screen-list li.active,
 .dark .flowchart-editor .screen-list-container ul.screen-list li:hover,
