@@ -876,8 +876,14 @@ $font-family-sans-serif: var(--font-sans);
 .dark .flowchart-editor .screen-list-container,
 .dark .flowchart-editor .flowchart-order-note,
 .dark .flowchart-editor .sidebar-header,
+.dark .flowchart-right,
+.dark .flowchart-editor .flowchart-sidebar,
+.dark .flowchart-editor .flowchart-sidebar .screen-title,
+.dark .flowchart-editor .flowchart-sidebar .path-editor-completed,
+.dark .flowchart-editor .flowchart-sidebar .path-editor-completed .path-param,
 .dark .flowchart-editor .fixed-right-panel,
 .dark .flowchart-editor .fixed-right-panel .nav,
+.dark .flowchart-right .toolbar-option,
 .dark .flowchart-editor .screen-list-container ul.screen-list li.active,
 .dark .flowchart-editor .screen-list-container ul.screen-list li:hover {
   background-color: var(--color-body-dark);
@@ -893,7 +899,8 @@ $font-family-sans-serif: var(--font-sans);
   background-color: black;
 }
 .dark .flowchart-editor .screen-list-container ul.screen-list li.active,
-.dark .flowchart-editor .screen-list-container ul.screen-list li:hover {
+.dark .flowchart-editor .screen-list-container ul.screen-list li:hover,
+.dark .flowchart-right .toolbar-option:active {
   border: 1px solid;
 }
 .dark .advanced-authoring .aa-panel-tabs .nav-link {
