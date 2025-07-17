@@ -3,7 +3,6 @@ import { Editor } from 'slate';
 import { ReactEditor } from 'slate-react';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';
-import { usesCustomScoring } from 'components/activities/common/authoring/actions/scoringActions';
 import { ActivityScoring } from 'components/activities/common/responses/ActivityScoring';
 import { ResponseActions } from 'components/activities/common/responses/responseActions';
 import { Dropdown, FillInTheBlank, MultiInput } from 'components/activities/multi_input/schema';
@@ -11,7 +10,7 @@ import { ResponseMultiInputSchema } from 'components/activities/response_multi/s
 import { ResponseTab } from 'components/activities/response_multi/sections/ResponseTab';
 import { Part, Response, makeResponse } from 'components/activities/types';
 import { Card } from 'components/misc/Card';
-import { getMaxScoreResponse } from 'data/activities/model/responses';
+import { getMaxScoreResponse, multiHasCustomScoring } from 'data/activities/model/responses';
 import { containsRule, eqRule, equalsRule, matchRule } from 'data/activities/model/rules';
 import { getPartById } from 'data/activities/model/utils';
 import { ResponseMultiInputScoringMethod } from '../ResponseMultiInputScoringMethod';
@@ -65,7 +64,7 @@ export const PartsTab: React.FC<Props> = (props) => {
         title={title}
         response={response}
         partId={part.id}
-        customScoring={usesCustomScoring(model)}
+        customScoring={multiHasCustomScoring(model)}
         removeResponse={(id) => dispatch(ResponseActions.removeResponse(id))}
         updateScore={(_id, score) =>
           dispatch(ResponseActions.editResponseScore(response.id, score))
@@ -102,7 +101,9 @@ export const PartsTab: React.FC<Props> = (props) => {
           Add targeted feedback
         </AuthoringButtonConnected>
         <ResponseMultiInputScoringMethod />
-        {usesCustomScoring(model) && <ActivityScoring partId={part.id} promptForDefault={false} />}
+        {multiHasCustomScoring(model) && (
+          <ActivityScoring partId={part.id} promptForDefault={false} />
+        )}
       </Card.Content>
     </Card.Card>
   );
