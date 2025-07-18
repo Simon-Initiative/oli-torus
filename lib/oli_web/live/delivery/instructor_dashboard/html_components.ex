@@ -233,7 +233,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.HTMLComponents do
         <Icons.info />
       </button>
     </div>
-    <%= @title %>
+    <div class="ml-1">
+      <%= @title %>
+    </div>
     """
   end
 
