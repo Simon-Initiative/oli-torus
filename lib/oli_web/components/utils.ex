@@ -85,4 +85,19 @@ defmodule OliWeb.Components.Utils do
     </div>
     """
   end
+
+  @doc """
+  Given a list of instructors, returns a comma-separated string of their names
+
+  ## Examples
+
+      iex> list_instructors([%{name: "John Doe"}, %{name: "Jane Smith"}])
+      "John Doe, Jane Smith"
+  """
+  @spec list_instructors(list(map())) :: String.t()
+  def list_instructors(instructors) do
+    instructors
+    |> Enum.map(& &1.name)
+    |> Enum.join(", ")
+  end
 end
