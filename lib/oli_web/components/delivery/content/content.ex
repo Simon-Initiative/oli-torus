@@ -8,7 +8,7 @@ defmodule OliWeb.Components.Delivery.Content do
   alias Oli.Delivery.Metrics
   alias OliWeb.Common.SearchInput
   alias OliWeb.Components.Delivery.{CardHighlights, ContentTableModel}
-  alias OliWeb.Common.{InstructorDashboardPagedTable, Params}
+  alias OliWeb.Common.{StripedPagedTable, Params}
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Delivery.Content.Progress
 
@@ -25,7 +25,7 @@ defmodule OliWeb.Components.Delivery.Content do
     container_filter_by: :units,
     selected_card_value: nil,
     progress_percentage: 100,
-    progress_selector: :is_less_than_or_equal,
+    progress_selector: nil,
     selected_proficiency_ids: Jason.encode!([])
   }
 
@@ -162,10 +162,7 @@ defmodule OliWeb.Components.Delivery.Content do
         </button>
       </div>
       <div class="bg-white dark:bg-gray-800 shadow-sm">
-        <div
-          style="min-height: 83px;"
-          class="flex justify-between gap-2 items-center px-4 sm:px-9 py-4 instructor_dashboard_table"
-        >
+        <div class="flex justify-between gap-2 items-center px-4 pt-8 pb-4 instructor_dashboard_table">
           <div class="text-zinc-700 text-lg font-bold leading-none tracking-tight dark:bg-gray-800 dark:text-white">
             Course <%= if @params.container_filter_by == :units, do: "Units", else: "Modules" %>
           </div>
@@ -184,7 +181,7 @@ defmodule OliWeb.Components.Delivery.Content do
           </div>
         </div>
 
-        <div class="flex flex-row mx-9 gap-x-4">
+        <div class="flex flex-row mx-4 gap-x-4">
           <%= for card <- @card_props do %>
             <CardHighlights.render
               title={card.title}
@@ -197,42 +194,44 @@ defmodule OliWeb.Components.Delivery.Content do
           <% end %>
         </div>
 
-        <div class="flex gap-2 mx-9 mt-4 mb-10">
-          <.form for={%{}} phx-target={@myself} phx-change="search_container" class="w-56">
-            <SearchInput.render
-              id="content_search_input"
-              name="container_name"
-              text={@params.text_search}
+        <div class="flex w-fit gap-2 mx-4 mt-4 mb-4 shadow-[0px_2px_6.099999904632568px_0px_rgba(0,0,0,0.10)] border border-[#ced1d9] dark:border-[#3B3740] dark:bg-[#000000]">
+          <div class="flex p-2 gap-2">
+            <.form for={%{}} phx-target={@myself} phx-change="search_container" class="w-56">
+              <SearchInput.render
+                id="content_search_input"
+                name="container_name"
+                text={@params.text_search}
+              />
+            </.form>
+
+            <Progress.render
+              target={@myself}
+              progress_percentage={@params.progress_percentage}
+              progress_selector={@params.progress_selector}
+              params_from_url={@params_from_url}
             />
-          </.form>
 
-          <Progress.render
-            target={@myself}
-            progress_percentage={@params.progress_percentage}
-            progress_selector={@params.progress_selector}
-            params_from_url={@params_from_url}
-          />
+            <.multi_select
+              id="proficiency_select"
+              options={@proficiency_options}
+              selected_values={@selected_proficiency_options}
+              selected_proficiency_ids={@selected_proficiency_ids}
+              target={@myself}
+              disabled={@selected_proficiency_ids == %{}}
+              placeholder="Proficiency"
+            />
 
-          <.multi_select
-            id="proficiency_select"
-            options={@proficiency_options}
-            selected_values={@selected_proficiency_options}
-            selected_proficiency_ids={@selected_proficiency_ids}
-            target={@myself}
-            disabled={@selected_proficiency_ids == %{}}
-            placeholder="Proficiency"
-          />
-
-          <button
-            class="text-center text-blue-500 text-xs font-semibold underline leading-none"
-            phx-click="clear_all_filters"
-            phx-target={@myself}
-          >
-            Clear All Filters
-          </button>
+            <button
+              class="ml-2 mr-6 text-center text-[#353740] dark:text-[#EEEBF5] text-sm font-normal leading-none flex items-center gap-x-2"
+              phx-click="clear_all_filters"
+              phx-target={@myself}
+            >
+              <Icons.trash class="stroke-[#353740] dark:stroke-[#EEEBF5]" /> Clear All Filters
+            </button>
+          </div>
         </div>
 
-        <InstructorDashboardPagedTable.render
+        <StripedPagedTable.render
           table_model={@table_model}
           total_count={@total_count}
           offset={@params.offset}
@@ -259,7 +258,7 @@ defmodule OliWeb.Components.Delivery.Content do
 
   def multi_select(assigns) do
     ~H"""
-    <div class={"flex flex-col border relative rounded-md h-9 #{if @selected_values != %{}, do: "border-blue-500", else: "border-zinc-400"}"}>
+    <div class={"flex flex-col relative rounded h-9 #{if @selected_values != %{}, do: "border border-blue-500", else: "outline outline-1 outline-[#ced1d9] dark:outline-[#3B3740]"}"}>
       <div
         phx-click={
           if(!@disabled,
@@ -270,7 +269,7 @@ defmodule OliWeb.Components.Delivery.Content do
           )
         }
         class={[
-          "flex gap-x-4 px-4 h-9 justify-between items-center w-auto hover:cursor-pointer rounded",
+          "flex gap-x-2 px-2 h-9 justify-between items-center w-auto hover:cursor-pointer rounded",
           if(@disabled, do: "bg-gray-300 hover:cursor-not-allowed")
         ]}
         id={"#{@id}-selected-options-container"}
@@ -278,7 +277,7 @@ defmodule OliWeb.Components.Delivery.Content do
         <div class="flex gap-1 flex-wrap">
           <span
             :if={@selected_values == %{}}
-            class="text-zinc-900 text-xs font-semibold leading-none dark:text-white"
+            class="text-[#353740] text-xs font-semibold leading-none dark:text-[#EEEBF5]"
           >
             <%= @placeholder %>
           </span>
@@ -400,7 +399,7 @@ defmodule OliWeb.Components.Delivery.Content do
   def handle_event("filter_container", %{"filter" => filter}, socket) do
     socket =
       update(socket, :params, fn params ->
-        %{params | progress_percentage: 100, progress_selector: :is_less_than_or_equal}
+        %{params | progress_percentage: 100, progress_selector: nil}
       end)
 
     {:noreply,
@@ -577,7 +576,7 @@ defmodule OliWeb.Components.Delivery.Content do
           |> maybe_filter_by_proficiency(params.selected_proficiency_ids)
           |> sort_by(params.sort_by, params.sort_order)
 
-        {length(modules), "MODULES",
+        {length(modules), "Modules",
          modules |> Enum.drop(params.offset) |> Enum.take(params.limit)}
 
       :units ->
@@ -590,7 +589,7 @@ defmodule OliWeb.Components.Delivery.Content do
           |> maybe_filter_by_proficiency(params.selected_proficiency_ids)
           |> sort_by(params.sort_by, params.sort_order)
 
-        {length(units), "UNITS", units |> Enum.drop(params.offset) |> Enum.take(params.limit)}
+        {length(units), "Units", units |> Enum.drop(params.offset) |> Enum.take(params.limit)}
 
       :pages ->
         pages =
@@ -601,7 +600,7 @@ defmodule OliWeb.Components.Delivery.Content do
           |> maybe_filter_by_proficiency(params.selected_proficiency_ids)
           |> sort_by(params.sort_by, params.sort_order)
 
-        {length(pages), "PAGES", pages |> Enum.drop(params.offset) |> Enum.take(params.limit)}
+        {length(pages), "Pages", pages |> Enum.drop(params.offset) |> Enum.take(params.limit)}
     end
   end
 
