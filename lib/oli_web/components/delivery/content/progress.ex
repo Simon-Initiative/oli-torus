@@ -46,7 +46,7 @@ defmodule OliWeb.Delivery.Content.Progress do
           |> JS.hide(to: "#progress-up-icon")
           |> JS.show(to: "#progress-down-icon")
         }
-        class="hidden bg-white dark:bg-gray-800 mt-1 rounded border flex flex-col p-2 absolute w-auto"
+        class="hidden bg-white dark:bg-gray-800 mt-1 rounded border flex flex-col p-2 px-4 absolute w-auto"
         phx-submit="apply_progress_filter"
         id="progress_form"
         phx-target={@target}
@@ -91,7 +91,7 @@ defmodule OliWeb.Delivery.Content.Progress do
                 |> JS.hide(to: "#progress-up-icon")
                 |> JS.show(to: "#progress-down-icon")
               }
-              class="text-center text-neutral-600 text-xs font-semibold leading-none dark:text-white"
+              class="text-center text-[#006CD9] text-xs font-semibold leading-none dark:text-white"
             >
               Cancel
             </button>
@@ -101,7 +101,7 @@ defmodule OliWeb.Delivery.Content.Progress do
                 |> JS.hide(to: "#progress-up-icon")
                 |> JS.show(to: "#progress-down-icon")
               }
-              class="px-4 py-2 bg-blue-500 rounded justify-center items-center gap-2 inline-flex opacity-90 text-right text-white text-xs font-semibold leading-none"
+              class="px-4 py-2 bg-[#0080FF] rounded justify-center items-center gap-2 inline-flex opacity-90 text-right text-white text-xs font-semibold leading-none"
             >
               Apply
             </button>

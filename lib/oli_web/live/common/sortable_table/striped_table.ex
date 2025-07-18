@@ -37,7 +37,7 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
 
     ~H"""
     <th
-      class={"#{@column_spec.th_class} border-b border-r p-2 bg-gray-100 font-semibold #{if @column_spec.sortable, do: "cursor-pointer"}"}
+      class={"#{@column_spec.th_class} pl-2.5 border-b border-r p-2 bg-gray-100 font-semibold #{if @column_spec.sortable, do: "cursor-pointer"}"}
       phx-click={if @column_spec.sortable, do: @sort, else: nil}
       phx-value-sort_by={@column_spec.name}
       data-sortable={if @column_spec.sortable == false, do: "false", else: "true"}
@@ -48,21 +48,23 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
           else: "desc"
       }
     >
-      <%= if @column_spec.tooltip do %>
-        <span id={@column_spec.name} title={@column_spec.tooltip} phx-hook="TooltipInit">
+      <div class="flex items-center gap-1">
+        <%= if @column_spec.tooltip do %>
+          <span id={@column_spec.name} title={@column_spec.tooltip} phx-hook="TooltipInit">
+            <%= @column_spec.label %>
+          </span>
+        <% else %>
           <%= @column_spec.label %>
-        </span>
-      <% else %>
-        <%= @column_spec.label %>
-      <% end %>
+        <% end %>
 
-      <%= if @column_spec.sortable do %>
-        <OliWeb.Icons.chevron_down
-          width="16"
-          height="16"
-          class={"inline fill-black dark:fill-white " <> if @sort_direction_cls == "up", do: "", else: "rotate-180 "}
-        />
-      <% end %>
+        <%= if @column_spec.sortable do %>
+          <OliWeb.Icons.chevron_down
+            width="16"
+            height="16"
+            class={"inline fill-black dark:fill-white " <> if @sort_direction_cls == "up", do: "", else: "rotate-180 "}
+          />
+        <% end %>
+      </div>
     </th>
     """
   end
@@ -92,7 +94,7 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
       phx-value-id={id_field(@row, @model)}
     >
       <%= for column_spec <- @model.column_specs do %>
-        <td class={"#{column_spec.td_class} border-r p-2"}>
+        <td class={"#{column_spec.td_class} border-r p-2 pl-2.5"}>
           <div class={if Map.get(@model.data, :fade_data, false), do: "fade-text", else: ""}>
             <%= if is_nil(column_spec.render_fn) do %>
               <%= ColumnSpec.default_render_fn(column_spec, @row) %>
@@ -127,7 +129,7 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
   def render(assigns) do
     ~H"""
     <table class={"min-w-full border " <> @additional_table_class}>
-      <thead class="sticky top-0 z-10 bg-white dark:bg-[#000000]">
+      <thead class="sticky top-0 bg-white dark:bg-[#000000]">
         <tr>
           <%= for column_spec <- @model.column_specs do %>
             <%= render_th(
@@ -156,8 +158,8 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
                 additional_table_class: @additional_table_class,
                 additional_row_class:
                   if(rem(index, 2) == 0,
-                    do: "bg-[#f3f4f8] dark:bg-[#201D21]",
-                    else: "bg-[#e3e7eb] dark:bg-[#0D0C0F]"
+                    do: "bg-[#f3f4f8] dark:bg-[#0D0C0F]",
+                    else: "bg-[#e3e7eb] dark:bg-[#201D21]"
                   )
               },
               @model.data

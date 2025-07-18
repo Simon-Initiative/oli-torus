@@ -194,7 +194,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.HTMLComponents do
     ~H"""
     <div
       id="student_progress_tooltip_container"
-      class="flex relative cursor-auto"
+      class="flex relative cursor-auto z-9999999999"
       phx-hook="HoverAway"
       mouse-leave-js={
         JS.hide(
@@ -208,7 +208,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.HTMLComponents do
       <div
         id="student_progress_tooltip"
         onclick="event.stopPropagation()"
-        class="absolute z-10 hidden -translate-x-[140px] -translate-y-[73px] w-max flex-col items-start p-3 border border-[#3a3740] rounded-md shadow bg-white dark:bg-[#0d0c0f] font-normal"
+        class="absolute z-50 hidden translate-x-[-10px] translate-y-[2rem] w-max flex-col items-start p-3 border border-[#3a3740] rounded-md shadow bg-white dark:bg-[#0d0c0f] font-normal"
       >
         <span style="text-[#353740] dark:text-[#eeebf5] text-sm leading-normal">
           This is an estimate of student progress.

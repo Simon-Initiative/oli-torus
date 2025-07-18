@@ -45,7 +45,7 @@ defmodule OliWeb.Delivery.Content.MultiSelect do
       </div>
       <div class="relative">
         <div
-          class="py-4 hidden z-50 absolute dark:bg-gray-800 bg-white w-48 border overflow-y-scroll top-1 rounded"
+          class="py-4 px-4 hidden z-50 absolute dark:bg-gray-800 bg-white w-48 border overflow-y-scroll top-1 rounded"
           id={"#{@id}-options-container"}
           phx-click-away={
             JS.hide() |> JS.hide(to: "##{@id}-up-icon") |> JS.show(to: "##{@id}-down-icon")
@@ -54,7 +54,7 @@ defmodule OliWeb.Delivery.Content.MultiSelect do
           <div>
             <.form
               :let={_f}
-              class="flex flex-column gap-y-3 px-4"
+              class="flex flex-column gap-y-3"
               for={%{}}
               as={:options}
               phx-change="toggle_selected"
@@ -74,7 +74,7 @@ defmodule OliWeb.Delivery.Content.MultiSelect do
           <div class="w-full border border-gray-200 my-4"></div>
           <div class="flex flex-row items-center justify-end px-4 gap-x-4">
             <button
-              class="text-center text-neutral-600 text-xs font-semibold leading-none dark:text-white"
+              class="text-center text-[#006CD9] text-xs font-semibold leading-none dark:text-white"
               phx-click={
                 JS.hide(to: "##{@id}-options-container")
                 |> JS.hide(to: "##{@id}-up-icon")
@@ -84,7 +84,7 @@ defmodule OliWeb.Delivery.Content.MultiSelect do
               Cancel
             </button>
             <button
-              class="px-4 py-2 bg-blue-500 rounded justify-center items-center gap-2 inline-flex opacity-90 text-right text-white text-xs font-semibold leading-none"
+              class="px-4 py-2 bg-[#0080FF] rounded justify-center items-center gap-2 inline-flex opacity-90 text-right text-white text-xs font-semibold leading-none"
               phx-click={
                 JS.push("apply_proficiency_filter")
                 |> JS.hide(to: "##{@id}-options-container")

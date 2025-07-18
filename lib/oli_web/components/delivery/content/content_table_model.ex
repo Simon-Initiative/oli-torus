@@ -12,29 +12,24 @@ defmodule OliWeb.Components.Delivery.ContentTableModel do
     column_specs = [
       %ColumnSpec{
         name: :numbering_index,
-        label: "Order",
-        th_class: "pl-10",
-        td_class: "pl-10 text-[#353740] dark:text-[#EEEBF5]"
+        label: "Order"
       },
       %ColumnSpec{
         name: :container_name,
         label: container_column_name,
-        th_class: "text-[#353740]",
-        render_fn: &__MODULE__.render_name_column/3
+        render_fn: &render_name_column/3
       },
       %ColumnSpec{
         name: :student_completion,
-        th_class: "flex items-center gap-1 border-b-0 text-[#353740]",
         label: HTMLComponents.student_progress_label(%{title: "Class Progress"}),
-        render_fn: &__MODULE__.render_student_completion/3
+        render_fn: &render_student_completion/3
       },
       %ColumnSpec{
         name: :student_proficiency,
         label: "Class Proficiency",
-        th_class: "text-[#353740]",
         tooltip:
           "For all students, or one specific student, proficiency for a learning objective will be calculated off the percentage of correct answers for first part attempts within first activity attempts - for those parts that have that learning objective or any of its sub-objectives attached to it.",
-        render_fn: &__MODULE__.render_student_proficiency/3
+        render_fn: &render_student_proficiency/3
       }
     ]
 
@@ -106,7 +101,7 @@ defmodule OliWeb.Components.Delivery.ContentTableModel do
 
     ~H"""
     <div
-      class={"font-bold #{if @progress < 50, do: "text-[#ce2c31]", else: "text-[#353740] dark:text-[#EEEBF5]"}"}
+      class={"font-bold #{if @progress < 50, do: "text-[#FF8787]", else: "text-[#353740] dark:text-[#EEEBF5]"}"}
       data-progress-check={if @progress >= 50, do: "true", else: "false"}
     >
       <%= @progress %>%
