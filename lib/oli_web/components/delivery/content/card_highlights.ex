@@ -13,29 +13,39 @@ defmodule OliWeb.Components.Delivery.CardHighlights do
     <div
       phx-click={@on_click}
       phx-value-selected={@value}
-      class={"w-56 h-auto rounded-md dark:bg-gray-800 flex-col justify-start items-start px-4 py-3 hover:cursor-pointer #{if @is_selected, do: "shadow border-2 border-blue-500 bg-slate-50", else: "bg-white border border-blue-500/30 hover:border-blue-500/80 dark:border-white"}"}
+      class={
+        "inline-flex flex-col justify-start items-start gap-3 p-6 h-32 rounded-2xl shadow-[0px_2px_10px_0px_rgba(0,50,99,0.10)]
+        outline outline-1 outline-offset-[-1px] outline-gray-300 cursor-pointer transition-colors dark:bg-[#000000] dark:outline-[#3B3740] " <>
+        if @is_selected, do: "bg-slate-50 outline-blue-500", else: "bg-white hover:outline-blue-500/70"
+      }
     >
-      <div class="text-slate-500 text-xs font-normal leading-none dark:text-white">
+      <div class="text-gray-700 text-base font-semibold leading-normal dark:text-[#EEEBF5]">
         <%= @title %>
       </div>
-      <div class="flex items-baseline space-x-2 mt-2">
-        <div class={"text-3xl font-semibold leading-10 dark:text-white #{if @is_selected, do: "text-blue-500", else: "text-slate-800"}"}>
+
+      <div class="flex justify-start items-end gap-2 w-full">
+        <div class="text-[32px] font-bold leading-[44px] text-gray-800 dark:text-[#EEEBF5]">
           <%= @count %>
         </div>
-        <div class="text-gray-400 text-xs font-normal leading-none dark:text-white">
-          <%= case @container_filter_by do %>
-            <% :units -> %>
-              Units
-            <% :modules -> %>
-              Modules
-            <% :students -> %>
-              Students
-            <% _ -> %>
-              <%= @container_filter_by %>
-          <% end %>
+        <div class="flex-1 py-2 flex justify-start items-center gap-1">
+          <div class="text-sm text-[#45464c] font-normal leading-none dark:text-[#EEEBF5]">
+            <%= label_for(@container_filter_by, @count) %>
+          </div>
         </div>
       </div>
     </div>
     """
+  end
+
+  defp label_for(type, count) do
+    base =
+      case type do
+        :units -> "Unit"
+        :modules -> "Module"
+        :students -> "Student"
+        _ -> to_string(type || "")
+      end
+
+    if count == 1, do: base, else: "#{base}s"
   end
 end
