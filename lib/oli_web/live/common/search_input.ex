@@ -10,7 +10,7 @@ defmodule OliWeb.Common.SearchInput do
   def render(assigns) do
     ~H"""
     <div class={[
-      "w-56 h-[35px] inline-flex items-center gap-2 px-2 py-1 rounded-md outline outline-1 outline-[#ced1d9] bg-[#ffffff] dark:bg-[#2B282E] dark:outline-[#2B282E]",
+      "w-56 h-[35px] inline-flex items-center gap-2 px-2 py-1 rounded-md outline outline-1 outline-[#ced1d9] bg-[#ffffff] dark:bg-[#2A282E] dark:outline-[#2A282E]",
       @class
     ]}>
       <i class="fa-solid fa-magnifying-glass text-[#757682] w-4 h-4 dark:text-[#BAB8BF]"></i>

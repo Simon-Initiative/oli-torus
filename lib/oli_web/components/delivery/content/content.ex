@@ -1,8 +1,6 @@
 defmodule OliWeb.Components.Delivery.Content do
   use OliWeb, :live_component
 
-  import OliWeb.Components.Delivery.Buttons, only: [toggle_chevron: 1]
-
   alias Phoenix.LiveView.JS
 
   alias Oli.Delivery.Metrics
@@ -10,7 +8,7 @@ defmodule OliWeb.Components.Delivery.Content do
   alias OliWeb.Components.Delivery.{CardHighlights, ContentTableModel}
   alias OliWeb.Common.{StripedPagedTable, Params}
   alias OliWeb.Router.Helpers, as: Routes
-  alias OliWeb.Delivery.Content.Progress
+  alias OliWeb.Delivery.Content.{MultiSelect, Progress}
 
   alias Phoenix.LiveView.JS
   alias OliWeb.Icons
@@ -139,10 +137,10 @@ defmodule OliWeb.Components.Delivery.Content do
   def render(assigns) do
     ~H"""
     <div class="flex flex-col mb-10">
-      <div class="w-full h-9 relative my-7">
+      <div class="w-full h-10 relative my-7">
         <button
           id="filter_units_button"
-          class={"w-[6.5rem] h-9 left-0 top-0 absolute rounded-tl-lg rounded-bl-lg border border-slate-300 #{set_button_background(@params.container_filter_by, :units)} text-xs #{set_button_text(@params.container_filter_by, :units)}"}
+          class={"w-24 h-10 left-0 top-0 absolute rounded-tl-lg rounded-bl-lg border border-[#CED1D9] dark:border-[#3B3740] #{set_button_background(@params.container_filter_by, :units)} text-xs #{set_button_text(@params.container_filter_by, :units)}"}
           phx-click="filter_container"
           phx-value-filter="units"
           phx-target={@myself}
@@ -152,7 +150,7 @@ defmodule OliWeb.Components.Delivery.Content do
         </button>
         <button
           id="filter_modules_button"
-          class={"w-28 h-9 left-[100.52px] top-0 absolute rounded-tr-lg rounded-br-lg border border-slate-300 #{set_button_background(@params.container_filter_by, :modules)} text-xs #{set_button_text(@params.container_filter_by, :modules)}"}
+          class={"w-24 h-10 left-[95px] top-0 absolute rounded-tr-lg rounded-br-lg border border-[#CED1D9] dark:border-[#3B3740] #{set_button_background(@params.container_filter_by, :modules)} text-xs #{set_button_text(@params.container_filter_by, :modules)}"}
           phx-click="filter_container"
           phx-value-filter="modules"
           phx-target={@myself}
@@ -161,8 +159,8 @@ defmodule OliWeb.Components.Delivery.Content do
           Modules
         </button>
       </div>
-      <div class="bg-white dark:bg-gray-800 shadow-sm">
-        <div class="flex justify-between gap-2 items-center px-4 pt-8 pb-4 instructor_dashboard_table">
+      <div class="bg-white dark:bg-[#0D0C0F] shadow-sm">
+        <div class="flex justify-between gap-2 items-center px-4 pt-8 pb-4 instructor_dashboard_table dark:bg-[#0D0C0F]">
           <div class="text-zinc-700 text-lg font-bold leading-none tracking-tight dark:bg-gray-800 dark:text-white">
             Course <%= if @params.container_filter_by == :units, do: "Units", else: "Modules" %>
           </div>
@@ -174,7 +172,7 @@ defmodule OliWeb.Components.Delivery.Content do
                 )
               }
               download="course_content.csv"
-              class="flex items-center justify-center gap-x-2"
+              class="flex items-center justify-center gap-x-2 text-[#006CD9] dark:text-[#4CA6FF] font-bold"
             >
               Download CSV <Icons.download />
             </a>
@@ -211,7 +209,7 @@ defmodule OliWeb.Components.Delivery.Content do
               params_from_url={@params_from_url}
             />
 
-            <.multi_select
+            <MultiSelect.render
               id="proficiency_select"
               options={@proficiency_options}
               selected_values={@selected_proficiency_options}
@@ -243,106 +241,6 @@ defmodule OliWeb.Components.Delivery.Content do
           limit_change={JS.push("paged_table_limit_change", target: @myself)}
           show_limit_change={true}
         />
-      </div>
-    </div>
-    """
-  end
-
-  attr :placeholder, :string, default: "Select an option"
-  attr :disabled, :boolean, default: false
-  attr :options, :list, default: []
-  attr :id, :string
-  attr :target, :map, default: %{}
-  attr :selected_values, :map, default: %{}
-  attr :selected_proficiency_ids, :list, default: []
-
-  def multi_select(assigns) do
-    ~H"""
-    <div class={"flex flex-col relative rounded h-9 #{if @selected_values != %{}, do: "border border-blue-500", else: "outline outline-1 outline-[#ced1d9] dark:outline-[#3B3740]"}"}>
-      <div
-        phx-click={
-          if(!@disabled,
-            do:
-              JS.toggle(to: "##{@id}-options-container")
-              |> JS.toggle(to: "##{@id}-down-icon")
-              |> JS.toggle(to: "##{@id}-up-icon")
-          )
-        }
-        class={[
-          "flex gap-x-2 px-2 h-9 justify-between items-center w-auto hover:cursor-pointer rounded",
-          if(@disabled, do: "bg-gray-300 hover:cursor-not-allowed")
-        ]}
-        id={"#{@id}-selected-options-container"}
-      >
-        <div class="flex gap-1 flex-wrap">
-          <span
-            :if={@selected_values == %{}}
-            class="text-[#353740] text-xs font-semibold leading-none dark:text-[#EEEBF5]"
-          >
-            <%= @placeholder %>
-          </span>
-          <span :if={@selected_values != %{}} class="text-blue-500 text-xs font-semibold leading-none">
-            Proficiency is <%= show_proficiency_selected_values(@selected_values) %>
-          </span>
-        </div>
-        <.toggle_chevron id={@id} map_values={@selected_values} />
-      </div>
-      <div class="relative">
-        <div
-          class="py-4 hidden z-50 absolute dark:bg-gray-800 bg-white w-48 border overflow-y-scroll top-1 rounded"
-          id={"#{@id}-options-container"}
-          phx-click-away={
-            JS.hide() |> JS.hide(to: "##{@id}-up-icon") |> JS.show(to: "##{@id}-down-icon")
-          }
-        >
-          <div>
-            <.form
-              :let={_f}
-              class="flex flex-column gap-y-3 px-4"
-              for={%{}}
-              as={:options}
-              phx-change="toggle_selected"
-              phx-target={@target}
-            >
-              <.input
-                :for={option <- @options}
-                name={option.id}
-                value={option.selected}
-                label={option.name}
-                checked={option.id in @selected_proficiency_ids}
-                type="checkbox"
-                label_class="text-zinc-900 text-xs font-normal leading-none dark:text-white"
-              />
-            </.form>
-          </div>
-          <div class="w-full border border-gray-200 my-4"></div>
-          <div class="flex flex-row items-center justify-end px-4 gap-x-4">
-            <button
-              class="text-center text-neutral-600 text-xs font-semibold leading-none dark:text-white"
-              phx-click={
-                JS.hide(to: "##{@id}-options-container")
-                |> JS.hide(to: "##{@id}-up-icon")
-                |> JS.show(to: "##{@id}-down-icon")
-              }
-            >
-              Cancel
-            </button>
-            <button
-              class="px-4 py-2 bg-blue-500 rounded justify-center items-center gap-2 inline-flex opacity-90 text-right text-white text-xs font-semibold leading-none"
-              phx-click={
-                JS.push("apply_proficiency_filter")
-                |> JS.hide(to: "##{@id}-options-container")
-                |> JS.hide(to: "##{@id}-up-icon")
-                |> JS.show(to: "##{@id}-down-icon")
-              }
-              phx-target={@target}
-              phx-value={@selected_proficiency_ids}
-              disabled={@disabled}
-            >
-              Apply
-            </button>
-          </div>
-        </div>
       </div>
     </div>
     """
@@ -739,15 +637,19 @@ defmodule OliWeb.Components.Delivery.Content do
   defp set_button_background(:pages, _filter), do: "bg-gray-100 dark:bg-gray-800"
 
   defp set_button_background(container_filter_by, filter),
-    do: if(container_filter_by == filter, do: "bg-blue-500 dark:bg-gray-800", else: "bg-white")
+    do:
+      if(container_filter_by == filter,
+        do: "bg-[#0080FF] dark:bg-[#0062F2]",
+        else: "bg-[#F3F4F8] dark:bg-[#0D0C0F]"
+      )
 
   defp set_button_text(:pages, _filter), do: "text-gray-700 dark:text-white cursor-not-allowed"
 
   defp set_button_text(container_filter_by, filter),
     do:
       if(container_filter_by == filter,
-        do: "text-white font-bold",
-        else: "text-zinc-700 font-normal"
+        do: "text-[#FFFFFF] font-semibold",
+        else: "text-[#45464C] font-normal dark:text-[#BAB8BF]"
       )
 
   defp containers_count(containers, container_filter) do
@@ -789,10 +691,6 @@ defmodule OliWeb.Components.Delivery.Content do
       |> Map.put(:was_filtered, MapSet.member?(rows_ids, container.id))
       |> Map.drop([:progress, :student_proficiency, :numbering_index, :numbering_level])
     end)
-  end
-
-  defp show_proficiency_selected_values(values) do
-    Enum.map_join(values, ", ", fn {_id, values} -> values end)
   end
 
   defp update_proficiency_options(selected_proficiency_ids, proficiency_options) do

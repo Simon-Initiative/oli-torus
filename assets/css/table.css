@@ -3,7 +3,7 @@
 }
 
 .instructor_dashboard_table th {
-  @apply h-[50px] border-r-0 border-l-0 bg-white dark:bg-[#000000] dark:text-[#EEEBF5] text-left font-normal text-xs sm:text-sm relative;
+  @apply h-[50px] border-r-0 border-l-0 bg-white dark:bg-[#000000] text-[#353740] dark:text-[#EEEBF5] text-left font-normal text-xs sm:text-sm relative;
 }
 
 .instructor_dashboard_table th[data-sort-column='true'] {
@@ -59,7 +59,7 @@ div:has(.instructor_dashboard_table) #header_paging {
 }
 
 div:has(.instructor_dashboard_table) #footer_paging {
-  @apply sticky left-0 dark:bg-neutral-800;
+  @apply sticky left-0 dark:bg-[#0D0C0F];
 }
 
 div:has(.remix_materials_table) {
