@@ -81,7 +81,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       assert has_element?(
                view,
                "th[phx-value-sort_by=\"student_completion\"]",
-               "STUDENT PROGRESS"
+               "Class Progress"
              )
 
       # Link that triggers the opening of the modal
@@ -946,7 +946,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
         container_filter_by: :units,
         selected_card_value: :zero_student_progress,
         progress_percentage: 100,
-        progress_selector: :is_less_than_or_equal,
         selected_proficiency_ids: Jason.encode!([])
       }
 

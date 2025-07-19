@@ -320,10 +320,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
       assert filtered_links == expected_links
 
       ### "units" button is selected
-      assert has_element?(view, "button.bg-blue-500", "Units")
-      refute has_element?(view, "button.bg-white", "Units")
-      assert has_element?(view, "button.bg-white", "Modules")
-      refute has_element?(view, "button.bg-blue-500", "Modules")
+      assert button_has_class?(view, "filter_units_button", "bg-[#0080FF]")
+      refute button_has_class?(view, "filter_units_button", "bg-white")
+
+      assert button_has_class?(view, "filter_modules_button", "bg-[#F3F4F8]")
+      refute button_has_class?(view, "filter_modules_button", "bg-[#0080FF]")
     end
 
     test "content table gets rendered given a section with only pages",
@@ -486,14 +487,15 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
       ## filtering by modules
       element(view, "#filter_modules_button") |> render_click()
 
-      assert has_element?(view, "button.bg-blue-500", "Modules")
+      assert button_has_class?(view, "filter_modules_button", "bg-[#0080FF]")
+      refute button_has_class?(view, "filter_units_button", "bg-[#0080FF]")
 
       [module_for_tr_1, module_for_tr_2, module_for_tr_3] =
         view
         |> render()
         |> Floki.parse_fragment!()
         |> Floki.find(~s{.instructor_dashboard_table tr a})
-        |> Enum.map(fn a_tag -> Floki.text(a_tag) end)
+        |> Enum.map(&Floki.text/1)
 
       assert module_for_tr_1 =~ "Module 1"
       assert module_for_tr_2 =~ "Module 2"
@@ -502,14 +504,15 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
       ## filtering by units
       element(view, "#filter_units_button") |> render_click()
 
-      assert has_element?(view, "button.bg-blue-500", "Units")
+      assert button_has_class?(view, "filter_units_button", "bg-[#0080FF]")
+      refute button_has_class?(view, "filter_modules_button", "bg-[#0080FF]")
 
       [unit_for_tr_1, unit_for_tr_2] =
         view
         |> render()
         |> Floki.parse_fragment!()
         |> Floki.find(~s{.instructor_dashboard_table tr a})
-        |> Enum.map(fn a_tag -> Floki.text(a_tag) end)
+        |> Enum.map(&Floki.text/1)
 
       assert unit_for_tr_1 =~ "Unit 1"
       assert unit_for_tr_2 =~ "Unit 2"
@@ -792,5 +795,16 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
     filtered_query_params = Map.drop(query_params, ["navigation_data"])
     new_query = URI.encode_query(filtered_query_params)
     URI.to_string(%{uri | query: new_query})
+  end
+
+  defp button_has_class?(view, button_id, expected_class) do
+    view
+    |> render()
+    |> Floki.parse_fragment!()
+    |> Floki.find("##{button_id}")
+    |> Floki.attribute("class")
+    |> List.first()
+    |> to_string()
+    |> String.contains?(expected_class)
   end
 end
