@@ -1014,11 +1014,16 @@ $font-family-sans-serif: var(--font-sans);
 .dark .modal .modal-dialog .modal-body,
 .dark .modal .config-modal .modal-body .font-semibold,
 .dark .modal .modal-dialog.add-screen-modal label,
-.dark .modal .modal-dialog.add-screen-modal button {
+.dark .modal .modal-dialog.add-screen-modal button,
+.dark .modal .modal-dialog .modal-body .media-sidebar li,
+.dark .modal .modal-dialog .modal-body .media-infobar div {
   color: var(--color-body-color-dark) !important;
   background-color: $panel-bg-color-dark !important;
 }
-
+.dark .modal .modal-dialog .modal-body .media-sidebar li.active,
+.dark .modal .modal-dialog .modal-body .media-sidebar li:hover {
+  border: 1px solid white;
+}
 .toast-body {
   .list-group-item {
     margin: 5px;
