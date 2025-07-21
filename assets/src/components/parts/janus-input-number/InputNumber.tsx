@@ -276,6 +276,8 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = ({
   );
 
   const handleOnChange: ReactEventHandler<HTMLInputElement> = (event) => {
+    // We preserve rawInput (user-typed string) to accurately count significant figures.
+    // For example, "5.0" has 2 sigfigs, while "5" has only 1 — this detail is lost after parsing.
     const rawInput = (event.target as HTMLInputElement).value;
     const normalizedValue = sanitizeValue(rawInput);
     setInputNumberValue(normalizedValue);
