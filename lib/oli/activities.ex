@@ -474,4 +474,113 @@ defmodule Oli.Activities do
   def change_registration(%ActivityRegistration{} = registration) do
     ActivityRegistration.changeset(registration, %{})
   end
+
+  @doc """
+  Returns all activities/tools that can be selected for a given project.
+  Each result includes the activity and its project-specific status (if any).
+  Admins see all; non-admins see only globally_visible or enabled ones.
+  """
+  @spec selectable_activities_for_project(integer(), boolean()) :: [
+          %{activity: ActivityRegistration.t(), project_status: atom() | nil}
+        ]
+  def selectable_activities_for_project(project_id, is_admin? \\ false) do
+    from(ar in ActivityRegistration,
+      left_join: arp in ActivityRegistrationProject,
+      on: arp.activity_registration_id == ar.id and arp.project_id == ^project_id,
+      where: (ar.globally_visible or ^is_admin?) and (is_nil(ar.status) or ar.status == :enabled),
+      select: %{
+        activity: ar,
+        project_status: arp.status
+      }
+    )
+    |> Repo.all()
+  end
+
+  @doc """
+  Returns all ActivityRegistration records for a project with their project-specific status (enabled or disabled) and deployment_id.
+  """
+  @spec selected_activities_for_project(integer()) :: [
+          %{activity: ActivityRegistration.t(), project_status: atom() | nil}
+        ]
+  def selected_activities_for_project(project_id) do
+    from(arp in ActivityRegistrationProject,
+      where: arp.project_id == ^project_id,
+      join: ar in ActivityRegistration,
+      on: ar.id == arp.activity_registration_id,
+      left_join: d in LtiExternalToolActivityDeployment,
+      on: d.activity_registration_id == ar.id,
+      order_by: [desc: d.deployment_id, asc: ar.title],
+      select: ar,
+      select_merge: %{project_status: arp.status, deployment_id: d.deployment_id}
+    )
+    |> Repo.all()
+  end
+
+  @doc """
+  Adds an ActivityRegistrationProject with status :enabled for the given project and activity.
+  If a record exists, sets status to :enabled and updates updated_at.
+  """
+  @spec add_activity_to_project(integer(), integer()) ::
+          {:ok, ActivityRegistrationProject.t()} | {:error, Ecto.Changeset.t()}
+  def add_activity_to_project(project_id, activity_id) do
+    %ActivityRegistrationProject{}
+    |> ActivityRegistrationProject.changeset(%{
+      activity_registration_id: activity_id,
+      project_id: project_id,
+      status: :enabled
+    })
+    |> Repo.insert(
+      on_conflict: [set: [status: :enabled, updated_at: NaiveDateTime.utc_now()]],
+      conflict_target: [:activity_registration_id, :project_id]
+    )
+  end
+
+  @doc """
+  Removes the ActivityRegistrationProject record for the given project and activity.
+  """
+  @spec remove_activity_from_project(integer(), integer()) :: {integer(), nil | [term()]}
+  def remove_activity_from_project(project_id, activity_id) do
+    from(arp in ActivityRegistrationProject,
+      where: arp.project_id == ^project_id and arp.activity_registration_id == ^activity_id
+    )
+    |> Repo.delete_all()
+  end
+
+  @doc """
+  Enables an existing ActivityRegistrationProject (sets status to :enabled) for the given project and activity.
+  Returns :ok if updated, {:error, ...} if not found.
+  """
+  @spec enable_activity_for_project(integer(), integer()) :: :ok | {:error, String.t()}
+  def enable_activity_for_project(project_id, activity_id) do
+    {count, _} =
+      from(arp in ActivityRegistrationProject,
+        where: arp.project_id == ^project_id and arp.activity_registration_id == ^activity_id
+      )
+      |> Repo.update_all(set: [status: :enabled, updated_at: NaiveDateTime.utc_now()])
+
+    if count == 0 do
+      {:error, "No ActivityRegistrationProject found"}
+    else
+      :ok
+    end
+  end
+
+  @doc """
+  Disables an existing ActivityRegistrationProject (sets status to :disabled) for the given project and activity.
+  Returns :ok if updated, {:error, ...} if not found.
+  """
+  @spec disable_activity_for_project(integer(), integer()) :: :ok | {:error, String.t()}
+  def disable_activity_for_project(project_id, activity_id) do
+    {count, _} =
+      from(arp in ActivityRegistrationProject,
+        where: arp.project_id == ^project_id and arp.activity_registration_id == ^activity_id
+      )
+      |> Repo.update_all(set: [status: :disabled, updated_at: NaiveDateTime.utc_now()])
+
+    if count == 0 do
+      {:error, "No ActivityRegistrationProject found"}
+    else
+      :ok
+    end
+  end
 end

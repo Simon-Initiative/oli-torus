@@ -21,6 +21,7 @@ defmodule Oli.Activities.ActivityRegistration do
     field :generates_report, :boolean, default: false
 
     field :deployment_id, :string, virtual: true
+    field :project_status, Ecto.Enum, values: [:enabled, :disabled], virtual: true
 
     field :status, Ecto.Enum,
       values: LtiExternalToolActivityDeployment.status_values(),
