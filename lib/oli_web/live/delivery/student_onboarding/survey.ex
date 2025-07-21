@@ -131,7 +131,7 @@ defmodule OliWeb.Delivery.StudentOnboarding.Survey do
                 <%= @title %>
               </h2>
               <span class="text-[14px] leading-[20px] tracking-[0.02px] dark:text-white">
-              Please complete this required survey before beginning your course.
+                Please complete this required survey before beginning your course.
               </span>
             </div>
           </div>
