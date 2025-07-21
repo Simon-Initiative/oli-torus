@@ -261,6 +261,148 @@ defmodule OliWeb.Workspaces.StudentTest do
 
       assert has_element?(view, "h3", "Courses available")
     end
+
+    test "search form has hidden disabled button to prevent submission", %{conn: conn, user: user} do
+      section = insert(:section, %{open_and_free: true, title: "Test Course"})
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      {:ok, view, _html} = live(conn, ~p"/workspaces/student")
+
+      # Verify the hidden disabled button exists in the search form
+      assert has_element?(
+               view,
+               "form[phx-change=search_section] button.hidden[name=submit][value=disabled][disabled]"
+             )
+    end
+
+    test "can search sections with nil instructor names", %{conn: conn, user: user} do
+      section_1 = insert(:section, %{open_and_free: true, title: "Course with Nil Instructor"})
+      section_2 = insert(:section, %{open_and_free: true, title: "Course with Real Instructor"})
+
+      # Create instructor with nil name
+      instructor_nil = insert(:user, %{name: nil})
+      instructor_real = insert(:user, %{name: "John Doe"})
+
+      Sections.enroll(user.id, section_1.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(user.id, section_2.id, [ContextRoles.get_role(:context_learner)])
+
+      Sections.enroll(instructor_nil.id, section_1.id, [
+        ContextRoles.get_role(:context_instructor)
+      ])
+
+      Sections.enroll(instructor_real.id, section_2.id, [
+        ContextRoles.get_role(:context_instructor)
+      ])
+
+      {:ok, view, _html} = live(conn, ~p"/workspaces/student")
+
+      # Both courses should be visible initially
+      assert has_element?(view, "h5", "Course with Nil Instructor")
+      assert has_element?(view, "h5", "Course with Real Instructor")
+
+      # Search should still work for course title even with nil instructor
+      view
+      |> form("form[phx-change=search_section]")
+      |> render_change(%{text_search: "nil"})
+
+      assert has_element?(view, "h5", "Course with Nil Instructor")
+      refute has_element?(view, "h5", "Course with Real Instructor")
+
+      # Search by real instructor name should work
+      view
+      |> form("form[phx-change=search_section]")
+      |> render_change(%{text_search: "doe"})
+
+      refute has_element?(view, "h5", "Course with Nil Instructor")
+      assert has_element?(view, "h5", "Course with Real Instructor")
+    end
+
+    test "can search sections with empty instructor names", %{conn: conn, user: user} do
+      section_1 = insert(:section, %{open_and_free: true, title: "Course with Empty Instructor"})
+      section_2 = insert(:section, %{open_and_free: true, title: "Course with Real Instructor"})
+
+      # Create instructor with empty name
+      instructor_empty = insert(:user, %{name: ""})
+      instructor_real = insert(:user, %{name: "Jane Smith"})
+
+      Sections.enroll(user.id, section_1.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(user.id, section_2.id, [ContextRoles.get_role(:context_learner)])
+
+      Sections.enroll(instructor_empty.id, section_1.id, [
+        ContextRoles.get_role(:context_instructor)
+      ])
+
+      Sections.enroll(instructor_real.id, section_2.id, [
+        ContextRoles.get_role(:context_instructor)
+      ])
+
+      {:ok, view, _html} = live(conn, ~p"/workspaces/student")
+
+      # Both courses should be visible initially
+      assert has_element?(view, "h5", "Course with Empty Instructor")
+      assert has_element?(view, "h5", "Course with Real Instructor")
+
+      # Search should work for course title even with empty instructor
+      view
+      |> form("form[phx-change=search_section]")
+      |> render_change(%{text_search: "empty"})
+
+      assert has_element?(view, "h5", "Course with Empty Instructor")
+      refute has_element?(view, "h5", "Course with Real Instructor")
+
+      # Search by real instructor name should work
+      view
+      |> form("form[phx-change=search_section]")
+      |> render_change(%{text_search: "smith"})
+
+      refute has_element?(view, "h5", "Course with Empty Instructor")
+      assert has_element?(view, "h5", "Course with Real Instructor")
+    end
+
+    test "search handles mixed instructor name types correctly", %{conn: conn, user: user} do
+      section = insert(:section, %{open_and_free: true, title: "Mixed Instructor Course"})
+
+      # Create instructors with different name types
+      instructor_nil = insert(:user, %{name: nil})
+      instructor_empty = insert(:user, %{name: ""})
+      instructor_real = insert(:user, %{name: "Alice Johnson"})
+
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      Sections.enroll(instructor_nil.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      Sections.enroll(instructor_empty.id, section.id, [
+        ContextRoles.get_role(:context_instructor)
+      ])
+
+      Sections.enroll(instructor_real.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, view, _html} = live(conn, ~p"/workspaces/student")
+
+      # Course should be visible initially
+      assert has_element?(view, "h5", "Mixed Instructor Course")
+
+      # Search by course title should work
+      view
+      |> form("form[phx-change=search_section]")
+      |> render_change(%{text_search: "mixed"})
+
+      assert has_element?(view, "h5", "Mixed Instructor Course")
+
+      # Search by real instructor name should work
+      view
+      |> form("form[phx-change=search_section]")
+      |> render_change(%{text_search: "alice"})
+
+      assert has_element?(view, "h5", "Mixed Instructor Course")
+
+      # Search by non-existent term should hide course
+      view
+      |> form("form[phx-change=search_section]")
+      |> render_change(%{text_search: "nonexistent"})
+
+      refute has_element?(view, "h5", "Mixed Instructor Course")
+    end
   end
 
   describe "admin" do
