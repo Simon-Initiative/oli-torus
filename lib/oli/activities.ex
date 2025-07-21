@@ -154,25 +154,43 @@ defmodule Oli.Activities do
   end
 
   @doc """
-  Returns the list of activities visible for author to use in particular project.
+  Creates a map of activity registrations for a project, indicating which activities are enabled for that project (enabledForProject key).
 
   ## Examples
 
-      iex> create_registered_activity_map(philosophy)
-      [%ActivityMapEntry{}, ...]
+      iex> create_registered_activity_map("philosophy")
+      %{
+        "oli_check_all_that_apply" => %Oli.Activities.ActivityMapEntry{
+          enabledForProject: true,
+          ...
+        },
+        "oli_image_coding" => %Oli.Activities.ActivityMapEntry{
+          enabledForProject: true,
+          ...
+        },
+        "oli_likert" => %Oli.Activities.ActivityMapEntry{
+          enabledForProject: false,
+          ...
+        },
+        ...
+      }
 
   """
-  @spec create_registered_activity_map(String.t()) :: %ActivityMapEntry{} | {:error, any}
+  @spec create_registered_activity_map(String.t()) ::
+          %{String.t() => ActivityMapEntry.t()} | {:error, String.t()}
   def create_registered_activity_map(project_slug) do
     with {:ok, project} <-
            Course.get_project_by_slug(project_slug)
            |> trap_nil("The project was not found.") do
-      project = project |> Repo.preload([:activity_registrations])
-
-      project_activities =
-        Enum.reduce(project.activity_registrations, MapSet.new(), fn a, m ->
-          MapSet.put(m, a.slug)
-        end)
+      enabled_project_activities =
+        from(arp in ActivityRegistrationProject,
+          where: arp.project_id == ^project.id and arp.status == :enabled,
+          join: ar in ActivityRegistration,
+          on: ar.id == arp.activity_registration_id,
+          select: ar.slug
+        )
+        |> Repo.all()
+        |> MapSet.new()
 
       list_activity_registrations()
       |> Enum.filter(fn a ->
@@ -181,7 +199,7 @@ defmodule Oli.Activities do
       |> Enum.map(&ActivityMapEntry.from_registration/1)
       |> Enum.reduce(%{}, fn e, m ->
         e =
-          if e.globallyAvailable === true or MapSet.member?(project_activities, e.slug) do
+          if e.globallyAvailable === true or MapSet.member?(enabled_project_activities, e.slug) do
             Map.merge(e, %{enabledForProject: true})
           else
             e
