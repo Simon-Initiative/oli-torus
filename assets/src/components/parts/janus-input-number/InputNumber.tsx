@@ -245,15 +245,15 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = ({
   }, [id, width, onResize]);
 
   const saveInputText = useCallback(
-    (val: number) => {
-      const numberOFSigfigs = countSigFigs(val?.toString());
+    (normalizedValue: number, rawInput: string) => {
+      const numberOFSigfigs = countSigFigs(rawInput);
       onSave({
         id: `${id}`,
         responses: [
           {
             key: 'value',
             type: CapiVariableTypes.NUMBER,
-            value: val,
+            value: normalizedValue,
           },
           {
             key: 'Number of sigfigs',
@@ -269,16 +269,17 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = ({
   const debouncetime = 300;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const debounceSave = useCallback(
-    debounce((val) => {
-      saveInputText(val);
+    debounce((normalizedValue, rawInput) => {
+      saveInputText(normalizedValue, rawInput);
     }, debouncetime),
     [saveInputText],
   );
 
   const handleOnChange: ReactEventHandler<HTMLInputElement> = (event) => {
-    const val = sanitizeValue((event.target as HTMLInputElement).value);
-    setInputNumberValue(val);
-    debounceSave(val);
+    const rawInput = (event.target as HTMLInputElement).value;
+    const normalizedValue = sanitizeValue(rawInput);
+    setInputNumberValue(normalizedValue);
+    debounceSave(normalizedValue, rawInput);
   };
 
   return ready ? (
