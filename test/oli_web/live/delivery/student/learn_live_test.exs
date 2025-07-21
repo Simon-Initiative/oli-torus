@@ -2001,7 +2001,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       group_by_due_by_date_div = element(view, ~s{div[id="pages_grouped_by_due_by_2023-11-03"]})
 
       group_by_not_yet_scheduled_div =
-        element(view, ~s{div[id="pages_grouped_by_Not yet scheduled_Not yet scheduled"]})
+        element(view, ~s{div[id="pages_grouped_by__Not yet scheduled"]})
 
       assert render(group_by_read_by_date_div) =~ "Read by: Fri Nov 3, 2023"
       assert render(group_by_read_by_date_div) =~ "Page 11"
@@ -2009,7 +2009,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert render(group_by_due_by_date_div) =~ "Due by: Fri Nov 3, 2023"
       assert render(group_by_due_by_date_div) =~ "Page 12"
 
-      assert render(group_by_not_yet_scheduled_div) =~ "Not yet scheduled"
+      assert render(group_by_not_yet_scheduled_div) =~ "None"
       assert render(group_by_not_yet_scheduled_div) =~ "Page 13"
       assert render(group_by_not_yet_scheduled_div) =~ "Page 14"
     end

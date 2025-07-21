@@ -1795,7 +1795,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                     Enum.filter(@row["children"], fn row ->
                       case {row["section_resource"].end_date, grouped_due_date,
                             row["section_resource"].scheduling_type, grouped_scheduling_type} do
-                        {nil, "Not yet scheduled", _, _} ->
+                        {nil, "Not yet scheduled", _, nil} ->
                           true
 
                         {end_date, grouped_due_date, sch_type, grouped_sch_type} ->
@@ -2998,7 +2998,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   defp display_module_item?(
          _grouped_due_date,
-         "Not yet scheduled" = _grouped_scheduling_type,
+         nil = _grouped_scheduling_type,
          _student_end_date_exceptions_per_resource_id,
          %{"section_resource" => %{end_date: end_date}} = _child,
          _ctx
@@ -3063,7 +3063,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         scheduling_type_date_keywords
         |> Enum.reject(fn {_st, date} -> is_nil(date) end)
         |> Enum.sort_by(fn {_st, date} -> date end, {:asc, Date})
-        |> Enum.concat([{"Not yet scheduled", "Not yet scheduled"}])
+        |> Enum.concat([{nil, "Not yet scheduled"}])
       else
         Enum.sort_by(scheduling_type_date_keywords, fn {_st, date} -> date end, {:asc, Date})
       end
