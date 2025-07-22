@@ -4640,6 +4640,10 @@ table.table-striped tbody tr:nth-child(even) {
   margin-bottom: 0.5rem;
 }
 
+.mb-2\.5 {
+  margin-bottom: 0.625rem;
+}
+
 .mb-20 {
   margin-bottom: 5rem;
 }
@@ -5503,6 +5507,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .min-h-\[5rem\] {
   min-height: 5rem;
+}
+
+.min-h-\[84px\] {
+  min-height: 84px;
 }
 
 .min-h-full {
@@ -7684,6 +7692,11 @@ table.table-striped tbody tr:nth-child(even) {
   background-color: rgb(129 84 153 / .25);
 }
 
+.bg-\[\#9d9d9d\] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(157 157 157 / var(--tw-bg-opacity));
+}
+
 .bg-\[\#A3A3A3\] {
   --tw-bg-opacity: 1;
   background-color: rgb(163 163 163 / var(--tw-bg-opacity));
@@ -9701,6 +9714,11 @@ table.table-striped tbody tr:nth-child(even) {
   color: rgb(92 93 105 / var(--tw-text-opacity));
 }
 
+.text-\[\#5e5e5e\] {
+  --tw-text-opacity: 1;
+  color: rgb(94 94 94 / var(--tw-text-opacity));
+}
+
 .text-\[\#737373\] {
   --tw-text-opacity: 1;
   color: rgb(115 115 115 / var(--tw-text-opacity));
@@ -9709,6 +9727,11 @@ table.table-striped tbody tr:nth-child(even) {
 .text-\[\#757682\] {
   --tw-text-opacity: 1;
   color: rgb(117 118 130 / var(--tw-text-opacity));
+}
+
+.text-\[\#8e8e8e\] {
+  --tw-text-opacity: 1;
+  color: rgb(142 142 142 / var(--tw-text-opacity));
 }
 
 .text-\[\#9a40a8\] {
