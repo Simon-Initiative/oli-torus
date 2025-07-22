@@ -574,6 +574,23 @@ defmodule OliWeb.RemixSectionLiveTest do
       )
       |> render_click()
 
+      # Verify the hierarchy is displayed correctly before selecting items
+      hierarchy_html = render(view)
+
+      # Check that the hierarchy shows all expected items in the correct order
+      hierarchy_items =
+        hierarchy_html
+        |> Floki.parse_fragment!()
+        |> Floki.find(".hierarchy > div[id^=\"hierarchy_item_\"]")
+        |> Enum.map(&Floki.text/1)
+
+      assert Enum.at(hierarchy_items, 0) =~ "Great Unit 1"
+      assert Enum.at(hierarchy_items, 1) =~ "Elixir Page"
+      assert Enum.at(hierarchy_items, 2) =~ "Another orph. Page"
+
+      # Verify that containers (units) are properly displayed in the hierarchy
+      assert hierarchy_html =~ "Great Unit 1"
+
       # First add the orphan page, which is the last one in the hierarchy
       view
       |> element(".hierarchy > div", "Another orph. Page")
@@ -608,6 +625,273 @@ defmodule OliWeb.RemixSectionLiveTest do
       # Assert the elixir page is before the orphan page
       assert Enum.find_index(entries, &(&1 =~ "Elixir Page")) <
                Enum.find_index(entries, &(&1 =~ "Another orph. Page"))
+    end
+
+    test "remix section - add materials - hierarchy is displayed correctly with multiple units",
+         %{
+           conn: conn,
+           map: %{
+             section_1: section
+           }
+         } do
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/remix")
+
+      # Open the add materials modal
+      view
+      |> element("button[phx-click=\"show_add_materials_modal\"]")
+      |> render_click()
+
+      # Select the project
+      view
+      |> element(
+        ".hierarchy table > tbody tr button[phx-click=\"HierarchyPicker.select_publication\"]",
+        "Project 1"
+      )
+      |> render_click()
+
+      # Get the hierarchy items and verify they are displayed in the correct order
+      hierarchy_html = render(view)
+
+      # Parse the hierarchy to check the order
+      hierarchy_items =
+        hierarchy_html
+        |> Floki.parse_fragment!()
+        |> Floki.find(".hierarchy > div[id^=\"hierarchy_item_\"]")
+        |> Enum.map(&Floki.text/1)
+
+      # Assert that the hierarchy items are displayed in the correct order
+      assert Enum.at(hierarchy_items, 0) =~ "Great Unit 1"
+      assert Enum.at(hierarchy_items, 1) =~ "Elixir Page"
+      assert Enum.at(hierarchy_items, 2) =~ "Another orph. Page"
+
+      # Verify that containers (units) are properly identified
+      hierarchy_elements =
+        hierarchy_html
+        |> Floki.parse_fragment!()
+        |> Floki.find(".hierarchy > div[id^=\"hierarchy_item_\"]")
+
+      unit_element = Enum.at(hierarchy_elements, 0)
+      assert Floki.text(unit_element) =~ "Great Unit 1"
+
+      assert length(hierarchy_elements) == 3
+    end
+
+    test "remix section - add materials - hierarchy preserves nested structure",
+         %{
+           conn: conn,
+           map: %{
+             section_1: section
+           }
+         } do
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/remix")
+
+      # Open the add materials modal
+      view
+      |> element("button[phx-click=\"show_add_materials_modal\"]")
+      |> render_click()
+
+      # Select the project
+      view
+      |> element(
+        ".hierarchy table > tbody tr button[phx-click=\"HierarchyPicker.select_publication\"]",
+        "Project 1"
+      )
+      |> render_click()
+
+      # Verify that the hierarchy shows the correct structure
+      hierarchy_html = render(view)
+
+      # Check that all expected items are present in the hierarchy
+      assert hierarchy_html =~ "Elixir Page"
+      assert hierarchy_html =~ "Another orph. Page"
+      assert hierarchy_html =~ "Great Unit 1"
+
+      # Verify the hierarchy items are selectable and maintain their order
+      hierarchy_items =
+        hierarchy_html
+        |> Floki.parse_fragment!()
+        |> Floki.find(".hierarchy > div[id^=\"hierarchy_item_\"]")
+
+      # Assert that we have exactly 3 items in the hierarchy
+      assert length(hierarchy_items) == 3
+
+      # Verify that each item can be selected (has click functionality)
+      Enum.each(hierarchy_items, fn item ->
+        assert Floki.attribute(item, "phx-click") != []
+      end)
+
+      # Test selecting items in hierarchy order
+      view
+      |> element(".hierarchy > div[id^=\"hierarchy_item_\"]", "Elixir Page")
+      |> render_click()
+
+      view
+      |> element(".hierarchy > div[id^=\"hierarchy_item_\"]", "Great Unit 1")
+      |> render_click()
+
+      # Add the selected materials
+      view
+      |> element("button[phx-click=\"AddMaterialsModal.add\"]", "Add")
+      |> render_click()
+
+      # Verify the materials were added in the correct order
+      assert render(view) =~ "Elixir Page"
+      assert render(view) =~ "Great Unit 1"
+    end
+
+    test "remix section - add materials - complex hierarchy with multiple units displays correctly",
+         %{
+           conn: conn,
+           map: %{
+             section_1: section
+           }
+         } do
+      # Create additional units for a more complex hierarchy
+      author = insert(:author, %{email: "test_author@example.com"})
+
+      # Create Unit 2
+      unit_2_revision =
+        insert(:revision, %{
+          resource_type_id: Oli.Resources.ResourceType.id_for_container(),
+          title: "Unit 2: Advanced Topics",
+          max_attempts: nil
+        })
+
+      # Create Unit 3
+      unit_3_revision =
+        insert(:revision, %{
+          resource_type_id: Oli.Resources.ResourceType.id_for_container(),
+          title: "Unit 3: Final Review",
+          max_attempts: nil
+        })
+
+      # Create a page for Unit 2
+      unit_2_page =
+        insert(:revision, %{
+          resource_type_id: Oli.Resources.ResourceType.id_for_page(),
+          title: "Advanced Page"
+        })
+
+      # Create a page for Unit 3
+      unit_3_page =
+        insert(:revision, %{
+          resource_type_id: Oli.Resources.ResourceType.id_for_page(),
+          title: "Review Page"
+        })
+
+      # Create a new project with complex hierarchy
+      complex_proj = insert(:project, title: "Complex Project", authors: [author])
+
+      # Create a container with all units and pages
+      complex_container =
+        insert(:revision, %{
+          resource: insert(:resource),
+          objectives: %{},
+          resource_type_id: Oli.Resources.ResourceType.id_for_container(),
+          children: [
+            unit_2_revision.resource_id,
+            unit_2_page.resource_id,
+            unit_3_revision.resource_id,
+            unit_3_page.resource_id
+          ],
+          content: %{},
+          deleted: false,
+          title: "Complex Root Container"
+        })
+
+      # Add all resources to the project
+      Enum.each(
+        [unit_2_revision, unit_2_page, unit_3_revision, unit_3_page, complex_container],
+        fn revision ->
+          insert(:project_resource, %{
+            project_id: complex_proj.id,
+            resource_id: revision.resource_id
+          })
+        end
+      )
+
+      # Create publication for the complex project
+      complex_publication =
+        insert(:publication, %{
+          project: complex_proj,
+          published: ~U[2023-06-30 00:36:38.112566Z],
+          root_resource_id: complex_container.resource_id
+        })
+
+      # Add all resources to the publication
+      Enum.each(
+        [unit_2_revision, unit_2_page, unit_3_revision, unit_3_page, complex_container],
+        fn revision ->
+          insert(:published_resource, %{
+            publication: complex_publication,
+            resource: revision.resource,
+            revision: revision,
+            author: author
+          })
+        end
+      )
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/remix")
+
+      # Open the add materials modal
+      view
+      |> element("button[phx-click=\"show_add_materials_modal\"]")
+      |> render_click()
+
+      # Select the complex project
+      view
+      |> element(
+        ".hierarchy table > tbody tr button[phx-click=\"HierarchyPicker.select_publication\"]",
+        "Complex Project"
+      )
+      |> render_click()
+
+      # Verify the hierarchy displays all units in the correct order
+      hierarchy_html = render(view)
+
+      # Parse the hierarchy to check the order
+      hierarchy_items =
+        hierarchy_html
+        |> Floki.parse_fragment!()
+        |> Floki.find(".hierarchy > div[id^=\"hierarchy_item_\"]")
+        |> Enum.map(&Floki.text/1)
+
+      assert Enum.at(hierarchy_items, 0) =~ "Unit 2: Advanced Topics"
+      assert Enum.at(hierarchy_items, 1) =~ "Unit 3: Final Review"
+      assert Enum.at(hierarchy_items, 2) =~ "Advanced Page"
+      assert Enum.at(hierarchy_items, 3) =~ "Review Page"
+
+      # Verify that containers (units) are properly identified
+      hierarchy_elements =
+        hierarchy_html
+        |> Floki.parse_fragment!()
+        |> Floki.find(".hierarchy > div[id^=\"hierarchy_item_\"]")
+
+      # Check that we have exactly 4 items in the hierarchy
+      assert length(hierarchy_elements) == 4
+
+      # Verify that each item can be selected
+      Enum.each(hierarchy_elements, fn item ->
+        assert Floki.attribute(item, "phx-click") != []
+      end)
+
+      # Test selecting a unit and a page
+      view
+      |> element(".hierarchy > div[id^=\"hierarchy_item_\"]", "Unit 2: Advanced Topics")
+      |> render_click()
+
+      view
+      |> element(".hierarchy > div[id^=\"hierarchy_item_\"]", "Review Page")
+      |> render_click()
+
+      # Add the selected materials
+      view
+      |> element("button[phx-click=\"AddMaterialsModal.add\"]", "Add")
+      |> render_click()
+
+      # Verify the materials were added
+      assert render(view) =~ "Unit 2: Advanced Topics"
+      assert render(view) =~ "Review Page"
     end
   end
 
@@ -765,6 +1049,27 @@ defmodule OliWeb.RemixSectionLiveTest do
       )
       |> render_click()
 
+      # Verify the hierarchy displays items in the correct order
+      hierarchy_html = render(view)
+
+      # Check that the hierarchy shows all expected items
+      assert hierarchy_html =~ "#{unit1_container.revision.title}"
+      assert hierarchy_html =~ "#{latest1.title}"
+      assert hierarchy_html =~ "#{latest2.title}"
+
+      # Verify the hierarchy order is maintained
+      hierarchy_items =
+        hierarchy_html
+        |> Floki.parse_fragment!()
+        |> Floki.find(".hierarchy > div[id^=\"hierarchy_item_\"]")
+        |> Enum.map(&Floki.text/1)
+
+      # Assert that units are displayed first in the hierarchy
+      assert Enum.at(hierarchy_items, 0) =~ "#{unit1_container.revision.title}"
+      assert Enum.at(hierarchy_items, 1) =~ "#{latest1.title}"
+      assert Enum.at(hierarchy_items, 2) =~ "#{latest2.title}"
+
+      # Verify that containers (units) are properly identified in the hierarchy
       assert view
              |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-of-type(1)")
              |> render() =~ "#{unit1_container.revision.title}"
