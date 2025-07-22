@@ -471,15 +471,28 @@ defmodule OliWeb.Delivery.RemixSection do
       modal_assigns: %{selection: selection}
     } = socket.assigns
 
-    publication_ids =
-      selection
-      |> Enum.reduce(%{}, fn {pub_id, _resource_id}, acc ->
-        Map.put(acc, pub_id, true)
-      end)
-      |> Map.keys()
+    # Extract selected publication IDs and build lookup maps
+    unique_pub_ids = selection |> Enum.map(&elem(&1, 0)) |> Enum.uniq()
+    pub_by_id = Map.new(available_publications, &{&1.id, &1})
 
+    # Fetch published resources and build hierarchy indexes per publication
     published_resources_by_resource_id_by_pub =
-      Publishing.get_published_resources_for_publications(publication_ids)
+      Publishing.get_published_resources_for_publications(unique_pub_ids)
+
+    hierarchy_resource_index_per_pub =
+      Map.new(unique_pub_ids, fn pub_id ->
+        pub = Map.fetch!(pub_by_id, pub_id)
+        pub_hierarchy = publication_hierarchy(pub)
+
+        index = build_resource_index(pub_hierarchy)
+        {pub_id, index}
+      end)
+
+    # Sort selection by resource order in original publication
+    selection =
+      Enum.sort_by(selection, fn {pub_id, rid} ->
+        Map.get(hierarchy_resource_index_per_pub[pub_id], rid, :infinity)
+      end)
 
     hierarchy =
       Hierarchy.add_materials_to_hierarchy(
@@ -494,7 +507,7 @@ defmodule OliWeb.Delivery.RemixSection do
     pinned_project_publications =
       selection
       |> Enum.reduce(pinned_project_publications, fn {pub_id, _resource_id}, acc ->
-        pub = Enum.find(available_publications, fn p -> p.id == pub_id end)
+        pub = Map.fetch!(pub_by_id, pub_id)
         Map.put_new(acc, pub.project_id, pub)
       end)
 
@@ -1016,4 +1029,12 @@ defmodule OliWeb.Delivery.RemixSection do
 
   defp is_product?(%{assigns: %{live_action: :product_remix}} = _socket), do: true
   defp is_product?(_), do: false
+
+  # Builds a map from resource_id to its position in the flattened hierarchy.
+  defp build_resource_index(hierarchy) do
+    hierarchy
+    |> Hierarchy.flatten_hierarchy()
+    |> Enum.with_index()
+    |> Map.new(fn {%{resource_id: rid}, idx} -> {rid, idx} end)
+  end
 end

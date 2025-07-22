@@ -86,6 +86,34 @@ defmodule OliWeb.PublisherLive.Form do
         />
       </div>
 
+      <div class="form-group mb-0">
+        <%= if @display_labels do %>
+          <label for="publisher_knowledge_base_link">Knowledge Base Link</label>
+        <% end %>
+        <.input
+          id="publisher_knowledge_base_link"
+          class="form-control"
+          type="text"
+          field={@changeset[:knowledge_base_link]}
+          placeholder="Knowledge Base URL"
+          maxlength="255"
+        />
+      </div>
+
+      <div class="form-group mb-0">
+        <%= if @display_labels do %>
+          <label for="publisher_support_email">Support Email</label>
+        <% end %>
+        <.input
+          id="publisher_support_email"
+          class="form-control"
+          type="text"
+          field={@changeset[:support_email]}
+          placeholder="Support Email"
+          maxlength="255"
+        />
+      </div>
+
       <button class="form-button btn btn-md btn-primary btn-block mt-3" type="submit">Save</button>
     </.form>
     """

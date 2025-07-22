@@ -90,6 +90,7 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
             Enable tool for project and course section use
           </text>
           <.toggle_switch
+            id="toggle_tool_switch"
             role="toggle_tool_switch"
             class="ml-4 flex items-center h-9"
             checked={@deployment.status == :enabled}
@@ -100,6 +101,19 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
                 else: "toggle_tool_status"
               )
             }
+          />
+        </div>
+
+        <div class="w-full flex-row flex justify-start text-lg font-normal">
+          <text>
+            Enable deep linking for this tool
+          </text>
+          <.toggle_switch
+            id="toggle_deep_linking_switch"
+            role="toggle_deep_linking_switch"
+            class="ml-4 flex items-center h-9"
+            checked={@deployment.deep_linking_enabled}
+            on_toggle="toggle_deep_linking_enabled"
           />
         </div>
       </div>
@@ -257,6 +271,34 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
          |> assign(:custom_flash, %{
            type: :error,
            message: "There was an error updating the status of the LTI 1.3 External Tool."
+         })}
+    end
+  end
+
+  def handle_event("toggle_deep_linking_enabled", _params, socket) do
+    new_value = !socket.assigns.deployment.deep_linking_enabled
+
+    case PlatformExternalTools.update_lti_external_tool_activity_deployment(
+           socket.assigns.deployment,
+           %{"deep_linking_enabled" => new_value}
+         ) do
+      {:ok, deployment} ->
+        {:noreply,
+         socket
+         |> assign(deployment: deployment)
+         |> assign(:custom_flash, %{
+           type: :success,
+           message:
+             "You have successfully #{if new_value, do: "enabled", else: "disabled"} deep linking for the LTI 1.3 External Tool."
+         })}
+
+      {:error, _} ->
+        {:noreply,
+         socket
+         |> assign(:custom_flash, %{
+           type: :error,
+           message:
+             "There was an error updating the deep linking setting of the LTI 1.3 External Tool."
          })}
     end
   end
