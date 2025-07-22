@@ -3,7 +3,6 @@ import { useAuthoringElementContext } from 'components/activities/AuthoringEleme
 import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';
 import { GradingApproachDropdown } from 'components/activities/common/authoring/GradingApproachDropdown';
 import { MCActions } from 'components/activities/common/authoring/actions/multipleChoiceActions';
-import { usesCustomScoring } from 'components/activities/common/authoring/actions/scoringActions';
 import { ChoicesDelivery } from 'components/activities/common/choices/delivery/ChoicesDelivery';
 import { ActivityScoring } from 'components/activities/common/responses/ActivityScoring';
 import { ResponseCard } from 'components/activities/common/responses/ResponseCard';
@@ -23,7 +22,7 @@ import { InputEntry } from 'components/activities/short_answer/sections/InputEnt
 import { getTargetedResponses } from 'components/activities/short_answer/utils';
 import { GradingApproach, Response, RichText, makeResponse } from 'components/activities/types';
 import { Radio } from 'components/misc/icons/radio/Radio';
-import { getCorrectResponse } from 'data/activities/model/responses';
+import { getCorrectResponse, multiHasCustomScoring } from 'data/activities/model/responses';
 import { containsRule, eqRule, equalsRule } from 'data/activities/model/rules';
 import { getPartById } from 'data/activities/model/utils';
 import { defaultWriterContext } from 'data/content/writers/context';
@@ -79,7 +78,7 @@ export const AnswerKeyTab: React.FC<Props> = (props) => {
         <SimpleFeedback partId={props.input.partId} />
 
         <MultiInputScoringMethod />
-        {usesCustomScoring(model) && (
+        {multiHasCustomScoring(model) && (
           <ActivityScoring partId={props.input.partId} promptForDefault={false} />
         )}
 
@@ -87,6 +86,7 @@ export const AnswerKeyTab: React.FC<Props> = (props) => {
           choices={model.choices.filter((choice) =>
             (props.input as Dropdown).choiceIds.includes(choice.id),
           )}
+          partId={props.input.partId}
           toggleChoice={(choiceId, mapping) => {
             dispatch(MCActions.editTargetedFeedbackChoice(mapping.response.id, choiceId));
           }}
@@ -120,7 +120,7 @@ export const AnswerKeyTab: React.FC<Props> = (props) => {
       />
       <SimpleFeedback partId={props.input.partId} />
       <MultiInputScoringMethod />
-      {usesCustomScoring(model) && (
+      {multiHasCustomScoring(model) && (
         <ActivityScoring partId={props.input.partId} promptForDefault={false} />
       )}
       {getTargetedResponses(model, props.input.partId).map((response: Response) => (
@@ -142,7 +142,7 @@ export const AnswerKeyTab: React.FC<Props> = (props) => {
           updateScore={(_id, score) =>
             dispatch(ResponseActions.editResponseScore(response.id, score))
           }
-          customScoring={usesCustomScoring(model)}
+          customScoring={multiHasCustomScoring(model)}
           removeResponse={(id) => dispatch(ResponseActions.removeResponse(id))}
           key={response.id}
         >
