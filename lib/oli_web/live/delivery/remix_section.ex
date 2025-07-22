@@ -22,7 +22,7 @@ defmodule OliWeb.Delivery.RemixSection do
     Entry
   }
 
-  alias Oli.Publishing.DeliveryResolver
+  alias Oli.Publishing.{AuthoringResolver, DeliveryResolver}
   alias Oli.Delivery.Hierarchy
   alias Oli.Delivery.Hierarchy.HierarchyNode
   alias OliWeb.Common.Hierarchy.HierarchyPicker.TableModel, as: PagesTableModel
@@ -532,7 +532,7 @@ defmodule OliWeb.Delivery.RemixSection do
       Publishing.get_publication!(publication_id)
       |> Repo.preload([:project])
 
-    hierarchy = publication_hierarchy(publication)
+    hierarchy = AuthoringResolver.full_hierarchy(publication.project.slug)
 
     {total_count, section_pages} =
       Publishing.get_published_pages_by_publication(
