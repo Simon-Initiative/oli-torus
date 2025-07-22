@@ -75,4 +75,74 @@ defmodule Oli.UtilsTest do
       assert Utils.stringify_atom(:this_is_a_test) == "this is a test"
     end
   end
+
+  describe "validate_email/1" do
+    test "validates emails with internationalized domains (IDN)" do
+      assert Utils.validate_email("user@exämple.com")
+      assert Utils.validate_email("user@münchen.de")
+      assert Utils.validate_email("user@中国.cn")
+    end
+
+    test "rejects invalid emails" do
+      # Invalid local part
+      refute Utils.validate_email("user..name@example.com")
+      refute Utils.validate_email(".user@example.com")
+      refute Utils.validate_email("user.@example.com")
+      refute Utils.validate_email("user name@example.com")
+      refute Utils.validate_email("user\\@name@example.com")
+
+      # Invalid domain part
+      refute Utils.validate_email("user@-example.com")
+      refute Utils.validate_email("user@example-.com")
+      refute Utils.validate_email("user@.example.com")
+      refute Utils.validate_email("user@example..com")
+      refute Utils.validate_email("user@example.com-")
+      # Single character TLD
+      refute Utils.validate_email("user@example.c")
+      # Missing TLD
+      refute Utils.validate_email("user@example")
+
+      # Length violations
+      # Local part > 64 chars
+      refute Utils.validate_email(String.duplicate("a", 65) <> "@example.com")
+      # Domain label > 63 chars
+      refute Utils.validate_email("user@" <> String.duplicate("a", 64) <> ".com")
+      # Domain > 255 chars
+      refute Utils.validate_email("user@" <> String.duplicate("a.a", 128))
+      # Total > 254 chars
+      refute Utils.validate_email(String.duplicate("a", 255) <> "@example.com")
+
+      # Invalid input types
+      refute Utils.validate_email(nil)
+      refute Utils.validate_email(123)
+      refute Utils.validate_email(%{})
+    end
+
+    test "accepts valid emails" do
+      # Basic valid emails
+      assert Utils.validate_email("user@example.com")
+      assert Utils.validate_email("user.name@example.com")
+      assert Utils.validate_email("user+tag@example.com")
+      assert Utils.validate_email("user123@example.com")
+      assert Utils.validate_email("user@subdomain.example.com")
+
+      # Valid special characters in local part
+      assert Utils.validate_email("!#$%&'*+-/=?^_`{|}~@example.com")
+      assert Utils.validate_email("user.!#$%&'*+-/=?^_`{|}~@example.com")
+
+      # Valid domain variations
+      assert Utils.validate_email("user@example.co.uk")
+      assert Utils.validate_email("user@example.museum")
+      assert Utils.validate_email("user@123.example.com")
+      assert Utils.validate_email("user@sub-domain.example.com")
+
+      # Edge cases that should be valid
+      # Minimal length but valid
+      assert Utils.validate_email("a@b.cd")
+      # Max local part
+      assert Utils.validate_email(String.duplicate("a", 64) <> "@example.com")
+      # Max label length
+      assert Utils.validate_email("user@" <> String.duplicate("a", 63) <> ".com")
+    end
+  end
 end

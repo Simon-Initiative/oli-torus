@@ -562,4 +562,153 @@ defmodule Oli.Utils do
 
   def input_value(%Phoenix.HTML.FormField{value: val}), do: val
   def input_value(_), do: nil
+
+  @doc """
+  Validates an email address according to RFC 3696.
+
+  This function performs a strict validation of email addresses, checking:
+  - Local part length (max 64 characters)
+  - Domain part length (max 255 characters)
+  - Domain labels length (max 63 characters each)
+  - Overall email length (max 254 characters)
+  - Valid characters in local and domain parts
+  - Proper domain structure
+  - No consecutive dots
+  - No leading/trailing dots
+  - No spaces
+
+  ## Examples
+
+      iex> validate_email("user@example.com")
+      true
+
+      iex> validate_email("invalid@-domain.com")
+      false
+
+      iex> validate_email("user@exämple.com")
+      true
+  """
+  @spec validate_email(String.t()) :: boolean
+  def validate_email(email) when is_binary(email) do
+    # Overall email length must not exceed 254 characters
+    # if String.length(email) > 254, do: false
+
+    # Split email into local and domain parts
+    case String.split(email, "@") do
+      [local_part, domain] ->
+        with true <- String.length(email) < 255,
+             true <- validate_local_part(local_part),
+             true <- validate_domain(domain) do
+          true
+        else
+          _ -> false
+        end
+
+      _ ->
+        false
+    end
+  end
+
+  def validate_email(_), do: false
+
+  # Validates the local part of the email (before @)
+  defp validate_local_part(local) do
+    # Local part must not exceed 64 characters
+    # valid_length = if String.length(local) > 64, do: false, else: true
+
+    # Local part rules:
+    # - Can't start or end with dot
+    # - Can't have consecutive dots
+    # - Must only contain valid characters
+    String.length(local) < 65 and
+      not String.starts_with?(local, ".") and
+      not String.ends_with?(local, ".") and
+      not String.contains?(local, "..") and
+      String.match?(local, ~r/^[a-zA-Z0-9!#$%&'*+\-\/=?^_`{|}~.]+$/)
+  end
+
+  # Validates the domain part of the email (after @)
+  defp validate_domain(domain) do
+    # Domain must not exceed 255 characters
+    if String.length(domain) > 255 do
+      false
+    else
+      # Must have at least one dot and a valid TLD
+      case String.split(domain, ".") do
+        [] ->
+          false
+
+        # No TLD
+        [_single] ->
+          false
+
+        parts ->
+          # Get the TLD (last part)
+          tld = List.last(parts)
+
+          # TLD must be at least 2 characters
+          if String.length(tld) < 2 do
+            false
+          else
+            # Convert to punycode for IDN support
+            domain = try_idna_encode(domain)
+
+            # Domain rules:
+            # - Can't start or end with dot or hyphen
+            # - Each part must be 63 characters or less
+            # - Must only contain letters, numbers, dots, and hyphens
+            # - Can't have consecutive dots
+            labels = String.split(domain, ".")
+
+            Enum.all?(labels, fn label ->
+              String.length(label) <= 63 and
+                not String.starts_with?(label, "-") and
+                not String.ends_with?(label, "-") and
+                String.match?(label, ~r/^[a-zA-Z0-9\-]+$/)
+            end)
+          end
+      end
+    end
+  end
+
+  # Attempts to encode an IDN domain to ASCII (punycode)
+  defp try_idna_encode(domain) do
+    # Split domain into labels and check each one
+    labels = String.split(domain, ".")
+
+    # Check if all labels are valid using strict validation rules
+    labels_valid =
+      Enum.all?(labels, fn label ->
+        # First check if label is empty or only contains invalid chars
+        if String.trim(label) == "" do
+          false
+        else
+          try do
+            :idna.check_label(
+              String.to_charlist(label),
+              true,
+              true,
+              true
+            )
+
+            true
+          catch
+            :exit, _ -> false
+          end
+        end
+      end)
+
+    if labels_valid do
+      try do
+        domain
+        |> String.to_charlist()
+        |> :idna.to_ascii()
+        |> List.to_string()
+      catch
+        :exit, _ -> domain
+      end
+    else
+      domain
+    end
+  end
 end
