@@ -532,7 +532,7 @@ defmodule OliWeb.Delivery.RemixSection do
       Publishing.get_publication!(publication_id)
       |> Repo.preload([:project])
 
-    hierarchy = AuthoringResolver.full_hierarchy(publication.project.slug)
+    hierarchy = published_publication_hierarchy(publication)
 
     {total_count, section_pages} =
       Publishing.get_published_pages_by_publication(
@@ -943,6 +943,31 @@ defmodule OliWeb.Delivery.RemixSection do
       published_resources_by_resource_id[publication.root_resource_id]
 
     Hierarchy.create_hierarchy(root_revision, published_resources_by_resource_id)
+  end
+
+  defp published_publication_hierarchy(publication) do
+    published_resources_by_resource_id = Sections.published_resources_map(publication.id)
+
+    published_revisions_by_resource_id =
+      published_resources_by_resource_id
+      |> Enum.map(fn {resource_id, published_resource} ->
+        {resource_id, published_resource.revision}
+      end)
+      |> Enum.into(%{})
+
+    %PublishedResource{revision: root_revision} =
+      published_resources_by_resource_id[publication.root_resource_id]
+
+    {root_node, _numbering_tracker} =
+      AuthoringResolver.hierarchy_node_with_children(
+        root_revision,
+        publication.project,
+        published_revisions_by_resource_id,
+        Oli.Resources.Numbering.init_numbering_tracker(),
+        0
+      )
+
+    root_node
   end
 
   ## used by add container button, disabled for now
