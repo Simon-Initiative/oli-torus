@@ -1122,6 +1122,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
 
     case Regex.run(regex, url) do
       [_, _, video_id] when byte_size(video_id) == 11 ->
+        # `rel=0` limits related videos to same channel
         "https://www.youtube.com/embed/#{video_id}?autoplay=0&rel=0"
 
       _ ->

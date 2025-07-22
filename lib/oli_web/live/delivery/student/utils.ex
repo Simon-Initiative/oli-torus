@@ -282,17 +282,41 @@ defmodule OliWeb.Delivery.Student.Utils do
     """
   end
 
-  defp page_due_term(%{effective_settings: %{end_date: end_date}} = assigns) do
+  defp page_due_term(
+         %{effective_settings: %{end_date: end_date, start_date: start_date}} = assigns
+       ) do
     verb_form =
       case DateTime.compare(DateTime.utc_now(), end_date) do
         :gt -> "was"
         :lt -> "is"
       end
 
-    assigns = assign(assigns, verb_form: verb_form)
+    available_verb_form =
+      cond do
+        is_nil(start_date) -> "is"
+        DateTime.compare(DateTime.utc_now(), start_date) == :gt -> "was"
+        true -> "is"
+      end
+
+    assigns =
+      assigns
+      |> assign(verb_form: verb_form)
+      |> assign(available_verb_form: available_verb_form)
 
     ~H"""
-    <%= "This assignment #{@verb_form} #{scheduling_type(@effective_settings.scheduling_type)}" %>
+    <%= if @effective_settings.start_date do %>
+      This assignment <%= @available_verb_form %> available on
+      <b>
+        <%= FormatDateTime.to_formatted_datetime(
+          @effective_settings.start_date,
+          @ctx,
+          "{WDshort} {Mshort} {D}, {YYYY} at {h12}:{m}{am}."
+        ) %>
+      </b>
+    <% else %>
+      This assignment is available <b>Now</b>
+    <% end %>
+    <%= "and #{@verb_form} #{scheduling_type(@effective_settings.scheduling_type)}" %>
     <b>
       <%= FormatDateTime.to_formatted_datetime(
         @effective_settings.end_date,

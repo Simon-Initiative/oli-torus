@@ -2103,6 +2103,27 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
                "0 minutes"
              )
     end
+
+    test "displays timezone information component", %{
+      conn: conn,
+      section: section
+    } do
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
+
+      # Verify that the timezone_info component is present
+      assert has_element?(view, "#timezone_info")
+
+      # Verify that it contains the timezone world icon
+      assert has_element?(view, "[role='timezone world icon']")
+
+      # Verify that it displays timezone text
+      assert has_element?(view, "#timezone_info span")
+
+      # Verify that the timezone text is not empty (should display actual timezone)
+      timezone_element = element(view, "#timezone_info span")
+      timezone_text = render(timezone_element)
+      assert timezone_text =~ "Etc/UTC"
+    end
   end
 
   describe "student" do

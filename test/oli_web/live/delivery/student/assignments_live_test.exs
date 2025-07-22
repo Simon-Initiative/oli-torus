@@ -546,25 +546,45 @@ defmodule OliWeb.Delivery.Student.AssignmentsLiveTest do
              |> element(
                ~s{div[role="assignment detail"][id="assignment_#{page_1.resource_id}"] span[role="assignment schedule details"]}
              )
-             |> render() =~ "Due by:  Fri Nov 3, 2023"
+             |> render()
+             |> Floki.parse_fragment!()
+             |> Floki.text()
+             |> String.replace(~r/\s+/, " ")
+             |> String.trim() =~
+               "Available: Thu Nov 2, 2023 Due by: Fri Nov 3, 2023"
 
       assert view
              |> element(
                ~s{div[role="assignment detail"][id="assignment_#{page_2.resource_id}"] span[role="assignment schedule details"]}
              )
-             |> render() =~ "Due by:  Sun Nov 5, 2023"
+             |> render()
+             |> Floki.parse_fragment!()
+             |> Floki.text()
+             |> String.replace(~r/\s+/, " ")
+             |> String.trim() =~
+               "Available: Sat Nov 4, 2023 Due by: Sun Nov 5, 2023"
 
       assert view
              |> element(
                ~s{div[role="assignment detail"][id="assignment_#{page_3.resource_id}"] span[role="assignment schedule details"]}
              )
-             |> render() =~ "Due by:  Tue Nov 7, 2023"
+             |> render()
+             |> Floki.parse_fragment!()
+             |> Floki.text()
+             |> String.replace(~r/\s+/, " ")
+             |> String.trim() =~
+               "Available: Mon Nov 6, 2023 Due by: Tue Nov 7, 2023"
 
       assert view
              |> element(
                ~s{div[role="assignment detail"][id="assignment_#{page_4.resource_id}"] span[role="assignment schedule details"]}
              )
-             |> render() =~ "Read by:  Not yet scheduled"
+             |> render()
+             |> Floki.parse_fragment!()
+             |> Floki.text()
+             |> String.replace(~r/\s+/, " ")
+             |> String.trim() =~
+               "Available: Now Read by: Not yet scheduled"
     end
 
     test "can not see schedule details when course has no scheduled resources", %{
@@ -590,6 +610,27 @@ defmodule OliWeb.Delivery.Student.AssignmentsLiveTest do
                  ~s{div[role="assignment detail"][id="assignment_#{page.resource_id}"] span[role="assignment schedule details"]}
                )
       end)
+    end
+
+    test "displays timezone information component", %{
+      conn: conn,
+      section: section
+    } do
+      {:ok, view, _html} = live(conn, live_view_assignments_live_route(section.slug))
+
+      # Verify that the timezone_info component is present
+      assert has_element?(view, "#timezone_info")
+
+      # Verify that it contains the timezone world icon
+      assert has_element?(view, "[role='timezone world icon']")
+
+      # Verify that it displays timezone text
+      assert has_element?(view, "#timezone_info span")
+
+      # Verify that the timezone text is not empty (should display actual timezone)
+      timezone_element = element(view, "#timezone_info span")
+      timezone_text = render(timezone_element)
+      assert timezone_text =~ "Etc/UTC"
     end
   end
 end

@@ -14,7 +14,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
   def new(objectives, :instructor_dashboard) do
     column_specs = [
       %ColumnSpec{
-        name: :objective,
+        name: :objective_instructor_dashboard,
         label: "LEARNING OBJECTIVE",
         render_fn: &custom_render/3,
         th_class: "pl-10"
@@ -22,6 +22,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
       %ColumnSpec{
         name: :student_proficiency_obj,
         label: "STUDENT PROFICIENCY",
+        render_fn: &custom_render/3,
         tooltip:
           "For all students, or one specific student, proficiency for a learning objective will be calculated off the percentage of correct answers for first part attempts within first activity attempts - for those parts that have that learning objective or any of its sub-objectives attached to it."
       },
@@ -76,15 +77,26 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
     )
   end
 
-  defp custom_render(
-         assigns,
-         %{objective: objective, student_proficiency: student_proficiency} = _objectives,
-         %ColumnSpec{
-           name: :objective
-         }
-       ) do
+  defp custom_render(assigns, objectives, %ColumnSpec{name: :student_proficiency_obj}) do
+    student_proficiency =
+      case Map.get(objectives, :student_proficiency_subobj) do
+        nil -> objectives.student_proficiency_obj
+        _ -> objectives.student_proficiency_subobj
+      end
+
+    assigns = Map.put(assigns, :student_proficiency, student_proficiency)
+
+    ~H"""
+    <%= @student_proficiency %>
+    """
+  end
+
+  defp custom_render(assigns, objective, %ColumnSpec{name: :objective}) do
     assigns =
-      Map.merge(assigns, %{objective: objective, student_proficiency: student_proficiency})
+      Map.merge(assigns, %{
+        objective: objective.objective,
+        student_proficiency: Map.get(objective, :student_proficiency)
+      })
 
     ~H"""
     <div
@@ -98,43 +110,44 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
     """
   end
 
-  defp custom_render(assigns, %{objective: objective} = _objectives, %ColumnSpec{
-         name: :objective
-       }) do
+  defp custom_render(assigns, objective, %ColumnSpec{name: :objective_instructor_dashboard}) do
+    objective =
+      case Map.get(objective, :subobjective) do
+        nil -> objective.objective
+        subobjective -> subobjective
+      end
+
     assigns = Map.merge(assigns, %{objective: objective})
 
     ~H"""
     <div class="flex items-center ml-8 gap-x-4">
-      <span></span>
       <span><%= @objective %></span>
     </div>
     """
   end
 
-  defp custom_render(assigns, %{subobjective: subobjective} = _objectives, %ColumnSpec{
-         name: :subobjective
-       }) do
-    assigns = Map.merge(assigns, %{subobjective: subobjective})
+  defp custom_render(assigns, objectives, %ColumnSpec{name: :subobjective}) do
+    assigns = Map.merge(assigns, %{subobjective: objectives[:subobjective]})
 
     ~H"""
     <div><%= if is_nil(@subobjective), do: "-", else: @subobjective %></div>
     """
   end
 
-  defp custom_render(
-         assigns,
-         %{
-           resource_id: objective_id,
-           student_proficiency_obj_dist: student_proficiency_obj_dist
-         },
-         %ColumnSpec{
-           name: :student_proficiency_distribution
-         }
-       ) do
+  defp custom_render(assigns, objective, %ColumnSpec{name: :student_proficiency_distribution}) do
+    %{resource_id: objective_id, student_proficiency_obj_dist: student_proficiency_obj_dist} =
+      objective
+
+    proficiency_distribution =
+      case Map.get(objective, :student_proficiency_subobj_dist) do
+        nil -> student_proficiency_obj_dist
+        student_proficiency_subobj_dist -> student_proficiency_subobj_dist
+      end
+
     assigns =
       Map.merge(assigns, %{
         objective_id: objective_id,
-        proficiency_distribution: student_proficiency_obj_dist
+        proficiency_distribution: proficiency_distribution
       })
 
     ~H"""
