@@ -591,7 +591,6 @@ defmodule Oli.Utils do
   @spec validate_email(String.t()) :: boolean
   def validate_email(email) when is_binary(email) do
     # Overall email length must not exceed 254 characters
-    # if String.length(email) > 254, do: false
 
     # Split email into local and domain parts
     case String.split(email, "@") do
@@ -614,7 +613,6 @@ defmodule Oli.Utils do
   # Validates the local part of the email (before @)
   defp validate_local_part(local) do
     # Local part must not exceed 64 characters
-    # valid_length = if String.length(local) > 64, do: false, else: true
 
     # Local part rules:
     # - Can't start or end with dot
