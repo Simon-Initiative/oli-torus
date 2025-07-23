@@ -510,6 +510,7 @@ defmodule Oli.Activities do
       left_join: d in LtiExternalToolActivityDeployment,
       on: d.activity_registration_id == ar.id,
       where: (ar.globally_visible or ^is_admin?) and (is_nil(d.status) or d.status == :enabled),
+      order_by: [desc: d.deployment_id, asc: ar.title],
       select: ar,
       select_merge: %{project_status: arp.status, deployment_id: d.deployment_id}
     )

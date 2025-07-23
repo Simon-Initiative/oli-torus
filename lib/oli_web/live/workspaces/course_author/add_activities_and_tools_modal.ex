@@ -43,7 +43,28 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal do
        activities: activities,
        initial_selected_items: selected_activity_ids,
        current_selected_items: selected_activity_ids,
-       project_id: project_id
+       project_id: project_id,
+       pending_changes: %{
+         activities_to_add: [],
+         activities_to_remove: [],
+         tools_to_add: [],
+         tools_to_remove: [],
+         has_changes: false
+       }
+     )}
+  end
+
+  def handle_event("reset_modal", _, socket) do
+    {:noreply,
+     assign(socket,
+       pending_changes: %{
+         activities_to_add: [],
+         activities_to_remove: [],
+         tools_to_add: [],
+         tools_to_remove: [],
+         has_changes: false
+       },
+       active_tab: "activities"
      )}
   end
 
@@ -52,27 +73,39 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal do
   end
 
   def handle_event("toggle_selection", %{"activity_id" => activity_id}, socket) do
-    selected_items = socket.assigns.current_selected_items
+    %{
+      activities: activities,
+      tools: tools,
+      initial_selected_items: initial_selected_items,
+      current_selected_items: current_selected_items
+    } = socket.assigns
+
     activity_id = String.to_integer(activity_id)
 
     new_selected_items =
-      if MapSet.member?(selected_items, activity_id) do
-        MapSet.delete(selected_items, activity_id)
+      if MapSet.member?(current_selected_items, activity_id) do
+        MapSet.delete(current_selected_items, activity_id)
       else
-        MapSet.put(selected_items, activity_id)
+        MapSet.put(current_selected_items, activity_id)
       end
 
-    {:noreply, assign(socket, current_selected_items: new_selected_items)}
+    pending_changes =
+      calculate_pending_changes(
+        new_selected_items,
+        initial_selected_items,
+        activities,
+        tools
+      )
+
+    {:noreply,
+     assign(socket, current_selected_items: new_selected_items, pending_changes: pending_changes)}
   end
 
   def handle_event("save_selections", _params, socket) do
-    project_id = socket.assigns.project_id
-    selected_items = socket.assigns.current_selected_items
-    initial_selected_items = socket.assigns.initial_selected_items
+    %{pending_changes: pending_changes, project_id: project_id} = socket.assigns
 
-    # Calculate changes
-    to_add = MapSet.difference(selected_items, initial_selected_items) |> MapSet.to_list()
-    to_remove = MapSet.difference(initial_selected_items, selected_items) |> MapSet.to_list()
+    to_add = pending_changes.activities_to_add ++ pending_changes.tools_to_add
+    to_remove = pending_changes.activities_to_remove ++ pending_changes.tools_to_remove
 
     case Activities.bulk_update_project_activities(project_id, to_add, to_remove) do
       :ok ->
@@ -106,6 +139,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal do
         id={@id <> "-modal"}
         show={true}
         class="!w-[75%] h-[90vh]"
+        on_cancel={JS.push("reset_modal", target: @myself)}
         header_class="flex items-center justify-between p-4 border-b border-[#CED1D9] dark:border-[#3B3740]"
       >
         <:title>Add Advanced Activities & External Tools</:title>
@@ -144,19 +178,28 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal do
             <div>
               <div
                 :for={item <- @activities}
-                class="w-full flex items-center h-10 pl-2 border-b border-[#CED1D9] dark:border-[#3B3740]"
+                class={[
+                  "w-full flex items-center h-10 pl-2 border-b border-[#CED1D9] dark:border-[#3B3740]",
+                  "hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
+                ]}
                 phx-click="toggle_selection"
                 phx-value-activity_id={item.id}
                 phx-target={@myself}
               >
-                <.input
-                  type="checkbox"
-                  class="form-check-input"
-                  name="tool_#{item.id}"
-                  value={item.id}
-                  label={item.title}
-                  checked={MapSet.member?(@current_selected_items, item.id)}
-                />
+                <div class="flex items-center gap-2 flex-1">
+                  <.input
+                    type="checkbox"
+                    class="form-check-input"
+                    name="tool_#{item.id}"
+                    value={item.id}
+                    label=""
+                    checked={MapSet.member?(@current_selected_items, item.id)}
+                  />
+                  <span class="text-sm text-gray-900 dark:text-white"><%= item.title %></span>
+                  <.status_indicator status={
+                    get_item_status(item.id, @initial_selected_items, @current_selected_items)
+                  } />
+                </div>
               </div>
             </div>
 
@@ -185,19 +228,28 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal do
             <div>
               <div
                 :for={item <- @tools}
-                class="w-full flex items-center h-10 pl-2 border-b border-[#CED1D9] dark:border-[#3B3740]"
+                class={[
+                  "w-full flex items-center h-10 pl-2 border-b border-[#CED1D9] dark:border-[#3B3740]",
+                  "hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
+                ]}
                 phx-click="toggle_selection"
                 phx-value-activity_id={item.id}
                 phx-target={@myself}
               >
-                <.input
-                  type="checkbox"
-                  class="form-check-input"
-                  name="tool_#{item.id}"
-                  value={item.id}
-                  label={item.title}
-                  checked={MapSet.member?(@current_selected_items, item.id)}
-                />
+                <div class="flex items-center gap-2 flex-1">
+                  <.input
+                    type="checkbox"
+                    class="form-check-input"
+                    name="tool_#{item.id}"
+                    value={item.id}
+                    label=""
+                    checked={MapSet.member?(@current_selected_items, item.id)}
+                  />
+                  <span class="text-sm text-gray-900 dark:text-white"><%= item.title %></span>
+                  <.status_indicator status={
+                    get_item_status(item.id, @initial_selected_items, @current_selected_items)
+                  } />
+                </div>
               </div>
             </div>
             <div :if={Enum.empty?(@tools)} class="text-center py-12">
@@ -210,24 +262,136 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal do
             </div>
           </div>
         </div>
-        <!-- Action Buttons -->
-        <div class="flex justify-end space-x-3 mt-8 text-sm font-normal leading-none">
-          <button
-            class="px-4 py-2 rounded-md outline outline-1 outline-offset-[-1px] outline-blue-500 hover:opacity-90 text-[#0165DA] dark:text-[#4CA6FF]"
-            phx-click={Modal.hide_modal(@id <> "-modal")}
-          >
-            Cancel
-          </button>
-          <button
-            class="px-4 py-2 rounded-md hover:opacity-90 text-white bg-[#0165DA] dark:bg-[#4CA6FF]"
-            phx-click={JS.push("save_selections") |> Modal.hide_modal(@id <> "-modal")}
-            phx-target={@myself}
-          >
-            <%= if @active_tab == "activities", do: "Add Activities", else: "Add Tools" %>
-          </button>
+        <!-- Changes Summary and Action Buttons -->
+        <div class="flex justify-between items-center mt-8 h-8">
+          <.pending_changes_summary pending_changes={@pending_changes} />
+
+          <div class="flex space-x-3 text-sm font-normal leading-none">
+            <button
+              class="px-4 py-2 rounded-md outline outline-1 outline-offset-[-1px] outline-blue-500 hover:opacity-90 text-[#0165DA] dark:text-[#4CA6FF]"
+              phx-click={Modal.hide_modal(@id <> "-modal") |> JS.push("reset_modal", target: @myself)}
+            >
+              Cancel
+            </button>
+            <button
+              class={[
+                "px-4 py-2 rounded-md hover:opacity-90 text-white",
+                if(@pending_changes.has_changes,
+                  do: "bg-[#0165DA] dark:bg-[#4CA6FF]",
+                  else: "bg-gray-400 dark:bg-gray-600 cursor-not-allowed"
+                )
+              ]}
+              phx-click={JS.push("save_selections") |> Modal.hide_modal(@id <> "-modal")}
+              phx-target={@myself}
+              disabled={!@pending_changes.has_changes}
+            >
+              Apply Changes
+            </button>
+          </div>
         </div>
       </Modal.modal>
     </div>
     """
+  end
+
+  defp calculate_pending_changes(
+         current_selected_items,
+         initial_selected_items,
+         activities,
+         tools
+       ) do
+    to_add = MapSet.difference(current_selected_items, initial_selected_items)
+    to_remove = MapSet.difference(initial_selected_items, current_selected_items)
+
+    # Split changes by type (activities vs tools)
+    {activities_to_add, tools_to_add} =
+      Enum.split_with(MapSet.to_list(to_add), fn id ->
+        Enum.any?(activities, &(&1.id == id))
+      end)
+
+    {activities_to_remove, tools_to_remove} =
+      Enum.split_with(MapSet.to_list(to_remove), fn id ->
+        Enum.any?(activities, &(&1.id == id))
+      end)
+
+    %{
+      activities_to_add: activities_to_add,
+      activities_to_remove: activities_to_remove,
+      tools_to_add: tools_to_add,
+      tools_to_remove: tools_to_remove,
+      has_changes: MapSet.size(to_add) > 0 or MapSet.size(to_remove) > 0
+    }
+  end
+
+  attr :pending_changes, :map, required: true
+
+  def pending_changes_summary(%{pending_changes: %{has_changes: false}} = assigns) do
+    ~H"""
+    <div></div>
+    """
+  end
+
+  def pending_changes_summary(assigns) do
+    ~H"""
+    <div class="flex items-center gap-4 text-sm text-gray-700 dark:text-gray-300">
+      <span class="font-medium">Changes:</span>
+      <div :if={length(@pending_changes.activities_to_add) > 0} class="flex items-center gap-1">
+        <.add />
+        <span><%= change_summary_text(length(@pending_changes.activities_to_add), :activities) %></span>
+      </div>
+      <div :if={length(@pending_changes.activities_to_remove) > 0} class="flex items-center gap-1">
+        <.remove />
+        <span><%= change_summary_text(length(@pending_changes.activities_to_remove), :activities) %></span>
+      </div>
+      <div :if={length(@pending_changes.tools_to_add) > 0} class="flex items-center gap-1">
+        <.add />
+        <span><%= change_summary_text(length(@pending_changes.tools_to_add), :tools) %></span>
+      </div>
+      <div :if={length(@pending_changes.tools_to_remove) > 0} class="flex items-center gap-1">
+        <.remove />
+        <span><%= change_summary_text(length(@pending_changes.tools_to_remove), :tools) %></span>
+      </div>
+    </div>
+    """
+  end
+
+  def status_indicator(assigns) do
+    ~H"""
+    <%= case @status do %>
+      <% :to_add -> %>
+        <.add />
+      <% :to_remove -> %>
+        <.remove />
+      <% :unchanged -> %>
+    <% end %>
+    """
+  end
+
+  def add(assigns) do
+    ~H"""
+    <span class="text-green-600 dark:text-green-400 font-black text-xl">+</span>
+    """
+  end
+
+  def remove(assigns) do
+    ~H"""
+    <span class="text-red-600 dark:text-red-400 font-black text-xl mb-1">-</span>
+    """
+  end
+
+  defp change_summary_text(1, :activities), do: "1 activity"
+  defp change_summary_text(1, :tools), do: "1 tool"
+  defp change_summary_text(count, :activities), do: "#{count} activities"
+  defp change_summary_text(count, :tools), do: "#{count} tools"
+
+  defp get_item_status(item_id, initial_selected_items, current_selected_items) do
+    initial_selected = MapSet.member?(initial_selected_items, item_id)
+    currently_selected = MapSet.member?(current_selected_items, item_id)
+
+    cond do
+      not initial_selected and currently_selected -> :to_add
+      initial_selected and not currently_selected -> :to_remove
+      true -> :unchanged
+    end
   end
 end
