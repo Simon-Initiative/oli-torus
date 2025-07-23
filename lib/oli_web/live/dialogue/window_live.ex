@@ -1,23 +1,24 @@
 defmodule OliWeb.Dialogue.WindowLive do
+
   use Phoenix.LiveView, layout: {OliWeb.LayoutView, :live_no_flash}
   use OliWeb, :verified_routes
   use Phoenix.HTML
 
   require Logger
-  import Ecto.Query, warn: false
 
+  import Ecto.Query, warn: false
   import Phoenix.Component
   import OliWeb.Components.Common
 
-  alias Oli.Delivery.Sections
-  alias OliWeb.Components
-  alias Oli.Conversation.Dialogue
-  alias OliWeb.Dialogue.UserInput
-  alias Oli.Conversation.Message
-  alias Phoenix.LiveView.JS
-  alias Oli.Conversation.Triggers
-
   alias Phoenix.PubSub
+  alias Phoenix.LiveView.JS
+
+  alias Oli.Delivery.Sections
+  alias Oli.Conversation.Triggers
+  alias Oli.GenAI.Dialogue.{Server, Configuration}
+  alias Oli.GenAI.Completions.Message
+  alias OliWeb.Components
+  alias OliWeb.Dialogue.UserInput
 
   defp realize_prompt_template(nil, _), do: ""
 
@@ -60,18 +61,23 @@ defmodule OliWeb.Dialogue.WindowLive do
     realize_prompt_template(section.page_prompt_template, bindings)
   end
 
-  defp build_dialogue(section, project, revision_id, user_id, pid) do
-    if revision_id do
+  defp init_dialogue_server(section, project, revision_id, user_id) do
+
+    system_prompt = if revision_id do
       build_page_prompt(section, project, revision_id, user_id)
     else
       build_course_prompt(section, project, user_id)
     end
-    |> Dialogue.new(
-      fn _d, type, chunk ->
-        send(pid, {:reply_chunk, type, chunk})
-      end,
-      model: :largest_context
-    )
+
+    configuration = %Configuration{
+      service_config: Oli.GenAIFeatureConfig.load_for(section.id, :student_dialogue),
+      messages: [Message.new(:system, system_prompt)],
+      functions: OliWeb.Dialogue.StudentFunctions.functions(),
+      reply_to_pid: self()
+    }
+
+    Server.new(configuration)
+
   end
 
   def mount(
@@ -85,28 +91,36 @@ defmodule OliWeb.Dialogue.WindowLive do
     PubSub.subscribe(Oli.PubSub, "trigger:#{current_user_id}:#{section.id}:#{resource_id}")
 
     if Sections.assistant_enabled?(section) do
+
       project = Oli.Authoring.Course.get_project!(section.base_project_id)
 
-      {:ok,
-       assign(socket,
-         enabled: true,
-         minimized: true,
-         dialogue:
-           build_dialogue(section, project, session["revision_id"], current_user_id, self()),
-         form: to_form(UserInput.changeset(%UserInput{}, %{content: ""})),
-         streaming: false,
-         allow_submission?: true,
-         trigger_queue: [],
-         active_message: nil,
-         function_call: nil,
-         title: "Dot",
-         current_user: Oli.Accounts.get_user!(current_user_id),
-         height: 500,
-         width: 400,
-         section: section,
-         resource_id: session["resource_id"],
-         is_page: session["is_page"] == true || false
-       )}
+      case init_dialogue_server(section, project, session["revision_id"], current_user_id) do
+
+        {:ok, dialogue_server} ->
+          {:ok,
+            assign(socket,
+              enabled: true,
+              minimized: true,
+              dialogue: dialogue_server,
+              form: to_form(UserInput.changeset(%UserInput{}, %{content: ""})),
+              messages: [],
+              streaming: false,
+              allow_submission?: true,
+              trigger_queue: [],
+              active_message: nil,
+              title: "Dot",
+              current_user: Oli.Accounts.get_user!(current_user_id),
+              height: 500,
+              width: 400,
+              section: section,
+              resource_id: session["resource_id"],
+              is_page: session["is_page"] == true || false
+            )}
+
+        {:error, reason} ->
+          Logger.error("Failed to initialize dialogue server: #{inspect(reason)}")
+          {:ok, assign(socket, enabled: false)}
+      end
     else
       {:ok, assign(socket, enabled: false)}
     end
@@ -134,7 +148,7 @@ defmodule OliWeb.Dialogue.WindowLive do
         form={@form}
         allow_submission?={@allow_submission?}
         streaming={@streaming}
-        dialogue={@dialogue}
+        messages={@messages}
         active_message={@active_message}
         height={@height}
         width={@width}
@@ -178,7 +192,7 @@ defmodule OliWeb.Dialogue.WindowLive do
   attr :form, :map
   attr :allow_submission?, :boolean
   attr :streaming, :boolean
-  attr :dialogue, :list
+  attr :messages, :list
   attr :active_message, :any
   attr :height, :integer
   attr :width, :integer
@@ -228,7 +242,7 @@ defmodule OliWeb.Dialogue.WindowLive do
           </button>
         </div>
         <.messages
-          dialogue={@dialogue}
+          messages={@messages}
           streaming={@streaming}
           active_message={@active_message}
           user={@current_user}
@@ -442,7 +456,7 @@ defmodule OliWeb.Dialogue.WindowLive do
     """
   end
 
-  attr :dialogue, :list
+  attr :messages, :list
   attr :active_message, :any
   attr :streaming, :boolean
   attr :user, Oli.Accounts.User
@@ -456,7 +470,7 @@ defmodule OliWeb.Dialogue.WindowLive do
       phx-hook="KeepScrollAtBottom"
     >
       <div class="flex flex-col justify-end items-center px-6 gap-1.5 min-h-full">
-        <%= for {message, index} <- Enum.with_index(@dialogue.rendered_messages, 1), message.role not in [:system, :function] do %>
+        <%= for {message, index} <- Enum.with_index(@messages, 1), message.role not in [:system, :function] do %>
           <Components.Delivery.Dialogue.chat_message
             index={index}
             content={message.content}
@@ -560,29 +574,57 @@ defmodule OliWeb.Dialogue.WindowLive do
   end
 
   def handle_event("update", %{"user_input" => %{"content" => content}}, socket) do
-    %{current_user: current_user, resource_id: resource_id, section: section} = socket.assigns
 
-    dialogue =
-      Dialogue.add_message(
-        socket.assigns.dialogue,
-        Message.new(:user, content),
-        current_user.id,
-        resource_id,
-        section.id
-      )
+    %{dialogue: dialogue, messages: messages} = socket.assigns
 
-    pid = self()
+    message = Message.new(:user, content)
+    messages = messages ++ [message]
 
-    Task.async(fn ->
-      Dialogue.engage(dialogue, :async)
-      send(pid, {:reply_finished})
-    end)
+    # This asynchronously engages the dialogue server with the new message
+    Server.engage(dialogue, message)
 
-    {:noreply, assign(socket, streaming: true, dialogue: dialogue, allow_submission?: false)}
+    {:noreply, assign(socket, streaming: true, messages: messages, allow_submission?: false)}
   end
 
   def handle_event("resize", %{"height" => height, "width" => width}, socket) do
     {:noreply, assign(socket, height: height, width: width)}
+  end
+
+  def handle_info({:tokens_received, content}, socket) do
+    active_message = "#{socket.assigns.active_message}#{content}"
+    {:noreply, assign(socket, active_message: active_message)}
+  end
+
+  def handle_info({:tokens_finished}, socket) do
+
+    message = Message.new(:assistant, Earmark.as_html!(socket.assigns.active_message))
+
+    # Here we check if there are any triggers in the queue
+    # and if so, we process the first one
+    # and remove it from the queue
+    case socket.assigns.trigger_queue do
+      [] ->
+
+        {:noreply,
+          assign(socket,
+            streaming: false,
+            allow_submission?: true,
+            active_message: nil,
+            messages: socket.assigns.messages ++ [message]
+          )}
+
+      [trigger | rest] ->
+        prompt = Oli.Conversation.Triggers.assemble_trigger_prompt(trigger)
+
+        Server.engage(socket.assigns.dialogue, Message.new(:system, prompt))
+
+        {:noreply,
+          assign(socket,
+            active_message: socket.assigns.active_message <> "\n\n",
+            messages: socket.assigns.messages ++ [message],
+            trigger_queue: rest
+          )}
+    end
   end
 
   def handle_info({:trigger, trigger}, socket) do
@@ -601,23 +643,9 @@ defmodule OliWeb.Dialogue.WindowLive do
          )}
 
       false ->
+
         prompt = Triggers.assemble_trigger_prompt(trigger)
-
-        dialogue =
-          Dialogue.add_message(
-            socket.assigns.dialogue,
-            Message.new(:system, prompt),
-            trigger.user_id,
-            trigger.resource_id,
-            trigger.section_id
-          )
-
-        pid = self()
-
-        Task.async(fn ->
-          Dialogue.engage(dialogue, :async)
-          send(pid, {:reply_finished})
-        end)
+        Server.engage(socket.assigns.dialogue, Message.new(:system, prompt))
 
         socket =
           push_event(socket, "wakeup-dot", %{
@@ -626,11 +654,13 @@ defmodule OliWeb.Dialogue.WindowLive do
 
         {:noreply,
          assign(socket,
-           dialogue: dialogue,
            streaming: true
          )}
     end
   end
 
-  use Oli.Conversation.DialogueHandler
+  def handle_info(_item, socket) do
+    {:noreply, socket}
+  end
+
 end

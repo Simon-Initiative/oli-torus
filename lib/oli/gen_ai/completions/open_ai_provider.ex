@@ -1,10 +1,12 @@
 defmodule Oli.GenAI.Completions.OpenAIProvider do
 
+  require Logger
+
   @behaviour Oli.GenAI.Completions.Provider
 
   alias Oli.GenAI.Completions.RegisteredModel
 
-  def generate(messages, functions, %RegisteredModel{} = registered_model, options \\ []) do
+  def generate(messages, functions, %RegisteredModel{model: model} = registered_model, _options \\ []) do
     OpenAI.chat_completion(
       [
         model: model,
@@ -15,7 +17,8 @@ defmodule Oli.GenAI.Completions.OpenAIProvider do
     )
   end
 
-  def stream(messages, functions, %RegisteredModel{} = registered_model, response_handler_fn, options \\ []) do
+  def stream(messages, functions, %RegisteredModel{model: model} = registered_model, response_handler_fn, _options \\ []) do
+
     OpenAI.chat_completion(
       [
         model: model,
@@ -25,25 +28,28 @@ defmodule Oli.GenAI.Completions.OpenAIProvider do
       ],
       config(:async, registered_model)
     )
-    |> Stream.each(fn response ->
-      case delta(response) do
-        {:delta, type, content} ->
-          response_handler_fn.(dialogue, type, content)
-
-        _e ->
-          Logger.info("Response finished")
-      end
-    end)
+    |> Stream.each(fn chunk ->
+        process_stream_chunk(chunk)
+        |> response_handler_fn.()
+      end)
     |> Enum.to_list()
   end
 
-  defp delta(chunk) do
+  defp process_stream_chunk(chunk) do
+
     case chunk["choices"] do
-      [] -> {:finished}
-      [%{"finish_reason" => "stop"}] -> {:finished}
-      [%{"delta" => %{"function_call" => content}}] -> {:delta, :function_call, content}
-      [%{"delta" => %{"content" => content}}] -> {:delta, :content, content}
-      _ -> {:finished}
+      [] ->
+        {:error}
+      [%{"finish_reason" => "stop"}] ->
+        {:tokens_finished}
+      [%{"finish_reason" => "function_call"}] ->
+        {:function_call_finished}
+      [%{"delta" => %{"function_call" => content}}] ->
+        {:function_call, content}
+      [%{"delta" => %{"content" => content}}] ->
+        {:tokens_received, content}
+      _ ->
+        {:error}
     end
   end
 

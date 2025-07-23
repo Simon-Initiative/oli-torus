@@ -13,6 +13,7 @@ defmodule Oli.GenAI.Completions.Message do
     %__MODULE__{
       role: role,
       content: content,
+      name: nil,
       token_length: estimate_token_length(content)
     }
   end
