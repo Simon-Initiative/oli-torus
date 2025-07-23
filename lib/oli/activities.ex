@@ -154,7 +154,8 @@ defmodule Oli.Activities do
   end
 
   @doc """
-  Creates a map of activity registrations for a project, indicating which activities are enabled for that project (enabledForProject key).
+  Creates a map of activity registrations (activities and LTI tools)for a project, indicating which activities are enabled for that project (enabledForProject key).
+  For LTI tools, it only considers the ones that are enabled in the platform (by an admin).
 
   ## Examples
 
@@ -497,6 +498,7 @@ defmodule Oli.Activities do
   Returns all activities/tools that can be selected for a given project.
   Each result includes the activity and its project-specific status (if any).
   Admins see all; non-admins see only globally_visible or enabled ones.
+  For LTI tools, it only considers the ones that are enabled in the platform (by an admin).
   """
   @spec selectable_activities_for_project(integer(), boolean()) :: [
           %{activity: ActivityRegistration.t(), project_status: atom() | nil}
@@ -505,28 +507,31 @@ defmodule Oli.Activities do
     from(ar in ActivityRegistration,
       left_join: arp in ActivityRegistrationProject,
       on: arp.activity_registration_id == ar.id and arp.project_id == ^project_id,
-      where: (ar.globally_visible or ^is_admin?) and (is_nil(ar.status) or ar.status == :enabled),
-      select: %{
-        activity: ar,
-        project_status: arp.status
-      }
+      left_join: d in LtiExternalToolActivityDeployment,
+      on: d.activity_registration_id == ar.id,
+      where: (ar.globally_visible or ^is_admin?) and (is_nil(d.status) or d.status == :enabled),
+      select: ar,
+      select_merge: %{project_status: arp.status, deployment_id: d.deployment_id}
     )
     |> Repo.all()
   end
 
   @doc """
-  Returns all ActivityRegistration records for a project with their project-specific status (enabled or disabled) and deployment_id.
+  Returns all ActivityRegistration records (activities and LTI tools)for a project with their project-specific status (enabled or disabled) and deployment_id.
+  If the activity is an LTI tool, it only considers the ones that are enabled in the platform (by an admin).
+  For non-admins, only considers activities that are globally_visible.
   """
-  @spec selected_activities_for_project(integer()) :: [
+  @spec selected_activities_for_project(integer(), boolean()) :: [
           %{activity: ActivityRegistration.t(), project_status: atom() | nil}
         ]
-  def selected_activities_for_project(project_id) do
+  def selected_activities_for_project(project_id, is_admin? \\ false) do
     from(arp in ActivityRegistrationProject,
       where: arp.project_id == ^project_id,
       join: ar in ActivityRegistration,
       on: ar.id == arp.activity_registration_id,
       left_join: d in LtiExternalToolActivityDeployment,
       on: d.activity_registration_id == ar.id,
+      where: (ar.globally_visible or ^is_admin?) and (is_nil(d.status) or d.status == :enabled),
       order_by: [desc: d.deployment_id, asc: ar.title],
       select: ar,
       select_merge: %{project_status: arp.status, deployment_id: d.deployment_id}
@@ -562,6 +567,50 @@ defmodule Oli.Activities do
       where: arp.project_id == ^project_id and arp.activity_registration_id == ^activity_id
     )
     |> Repo.delete_all()
+  end
+
+  @doc """
+  Bulk update project activities - adds new activities and removes deselected ones
+  """
+  @spec bulk_update_project_activities(integer(), [integer()], [integer()]) ::
+          :ok | {:error, String.t()}
+  def bulk_update_project_activities(project_id, activity_ids_to_add, activity_ids_to_remove) do
+    Repo.transaction(fn ->
+      # Add new activities
+      if Enum.any?(activity_ids_to_add) do
+        now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+        values =
+          Enum.map(activity_ids_to_add, fn activity_id ->
+            %{
+              activity_registration_id: activity_id,
+              project_id: project_id,
+              status: :enabled,
+              inserted_at: now,
+              updated_at: now
+            }
+          end)
+
+        Repo.insert_all(ActivityRegistrationProject, values,
+          on_conflict: [set: [status: :enabled, updated_at: now]],
+          conflict_target: [:activity_registration_id, :project_id]
+        )
+      end
+
+      # Remove deselected activities
+      if Enum.any?(activity_ids_to_remove) do
+        from(arp in ActivityRegistrationProject,
+          where:
+            arp.project_id == ^project_id and
+              arp.activity_registration_id in ^activity_ids_to_remove
+        )
+        |> Repo.delete_all()
+      end
+    end)
+    |> case do
+      {:ok, _} -> :ok
+      {:error, error} -> {:error, "Failed to update project activities: #{inspect(error)}"}
+    end
   end
 
   @doc """

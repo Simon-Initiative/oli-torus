@@ -54,7 +54,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
        collaborators:
          Accounts.authors_projects(project)
          |> Enum.group_by(& &1.author_project_status),
-       project_selected_activities: Activities.selected_activities_for_project(project.id),
+       project_selected_activities:
+         Activities.selected_activities_for_project(project.id, is_admin?),
        can_enable_experiments: is_admin? and Experiments.experiments_enabled?(),
        is_admin: is_admin?,
        changeset: Project.changeset(project),
@@ -343,6 +344,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
           module={OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal}
           id="add-activities-tools"
           project_id={@project.id}
+          is_admin={@is_admin}
         />
       </Overview.section>
 
@@ -683,6 +685,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
 
   def handle_info({:flash_message, {type, message}}, socket) do
     {:noreply, put_flash(socket, type, message)}
+  end
+
+  def handle_info({:refresh_tools_and_activities}, socket) do
+    # Refresh the selected activities data
+    {:noreply,
+     assign(socket,
+       project_selected_activities:
+         Activities.selected_activities_for_project(socket.assigns.project.id)
+     )}
   end
 
   attr :collaborators, :map, required: true
