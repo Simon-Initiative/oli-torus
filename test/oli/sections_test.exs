@@ -1754,7 +1754,7 @@ defmodule Oli.SectionsTest do
     end
   end
 
-  describe "get_student_roles?/2" do
+  describe "get_user_roles?/2" do
     setup do
       user = insert(:user)
       section = insert(:section)
@@ -1769,7 +1769,6 @@ defmodule Oli.SectionsTest do
       other_roles =
         [
           :context_administrator,
-          :context_content_developer,
           :context_mentor,
           :context_manager,
           :context_member,
@@ -1813,6 +1812,16 @@ defmodule Oli.SectionsTest do
       ])
 
       assert %{is_student?: true, is_instructor?: true} ==
+               Sections.get_user_roles(user, section.slug)
+    end
+
+    test "returns true for is_instructor? when user is enrolled as content developer", %{
+      section: section,
+      user: user
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_content_developer)])
+
+      assert %{is_student?: false, is_instructor?: true} ==
                Sections.get_user_roles(user, section.slug)
     end
   end
@@ -2143,6 +2152,67 @@ defmodule Oli.SectionsTest do
       enroll_user_to_section(student, section, :context_learner)
 
       refute Sections.get_latest_visited_page(section.slug, student.id)
+    end
+  end
+
+  describe "has_instructor_role?/2" do
+    setup do
+      user = insert(:user)
+      section = insert(:section)
+      {:ok, %{section: section, user: user}}
+    end
+
+    test "returns true when user is enrolled as content developer", %{
+      section: section,
+      user: user
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_content_developer)])
+
+      assert Sections.has_instructor_role?(user, section.slug)
+    end
+  end
+
+  describe "instructors_per_section/1" do
+    test "returns user name for section if user is enrolled as content developer" do
+      section = insert(:section)
+      user = insert(:user, name: "Content Dev")
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_content_developer)])
+
+      result = Sections.instructors_per_section([section.id])
+      assert Map.has_key?(result, section.id)
+      assert Enum.any?(result[section.id], &(&1 == "Content Dev"))
+    end
+  end
+
+  describe "contains_instructor_role?/1" do
+    alias Lti_1p3.Roles.ContextRoles
+
+    test "returns true if roles include context_instructor" do
+      roles = [ContextRoles.get_role(:context_instructor)]
+      assert Oli.Delivery.Sections.contains_instructor_role?(roles)
+    end
+
+    test "returns true if roles include context_content_developer" do
+      roles = [ContextRoles.get_role(:context_content_developer)]
+      assert Oli.Delivery.Sections.contains_instructor_role?(roles)
+    end
+
+    test "returns true if roles include both instructor and content developer" do
+      roles = [
+        ContextRoles.get_role(:context_instructor),
+        ContextRoles.get_role(:context_content_developer)
+      ]
+
+      assert Oli.Delivery.Sections.contains_instructor_role?(roles)
+    end
+
+    test "returns false if roles do not include any instructor role" do
+      roles = [ContextRoles.get_role(:context_learner)]
+      refute Oli.Delivery.Sections.contains_instructor_role?(roles)
+    end
+
+    test "returns false if roles list is empty" do
+      assert Oli.Delivery.Sections.contains_instructor_role?([]) == false
     end
   end
 end
