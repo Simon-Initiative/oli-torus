@@ -213,58 +213,6 @@ defmodule Oli.Activities do
     end
   end
 
-  def enable_activity_in_project(project_slug, activity_slug) do
-    with {:ok, activity_registration} <-
-           get_registration_by_slug(activity_slug)
-           |> trap_nil("An activity with that slug was not found."),
-         {:ok, project} <-
-           Course.get_project_by_slug(project_slug)
-           |> trap_nil("The project was not found.") do
-      case Repo.get_by(
-             ActivityRegistrationProject,
-             %{
-               activity_registration_id: activity_registration.id,
-               project_id: project.id
-             }
-           ) do
-        nil ->
-          %ActivityRegistrationProject{}
-          |> ActivityRegistrationProject.changeset(%{
-            activity_registration_id: activity_registration.id,
-            project_id: project.id
-          })
-          |> Repo.insert()
-
-        _ ->
-          {:error, "The activity is already enabled in the project."}
-      end
-    else
-      {:error, {message}} -> {:error, message}
-    end
-  end
-
-  def disable_activity_in_project(project_slug, activity_slug) do
-    with {:ok, activity_registration} <-
-           get_registration_by_slug(activity_slug)
-           |> trap_nil("An activity with that slug was not found."),
-         {:ok, project} <-
-           Course.get_project_by_slug(project_slug)
-           |> trap_nil("The project was not found."),
-         {:ok, activity_project} <-
-           Repo.get_by(
-             ActivityRegistrationProject,
-             %{
-               activity_registration_id: activity_registration.id,
-               project_id: project.id
-             }
-           )
-           |> trap_nil("The activity is not enabled on the project.") do
-      Repo.delete(activity_project)
-    else
-      {:error, {message}} -> {:error, message}
-    end
-  end
-
   def activities_for_project(project, is_admin? \\ true) do
     project = project |> Repo.preload([:activity_registrations])
 
