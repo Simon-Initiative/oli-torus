@@ -154,7 +154,7 @@ defmodule Oli.Activities do
   end
 
   @doc """
-  Creates a map of activity registrations (activities and LTI tools)for a project, indicating which activities are enabled for that project (enabledForProject key).
+  Creates a map of activity registrations (activities and LTI tools) for a project, indicating which activities are enabled for that project (enabledForProject key).
   For LTI tools, it only considers the ones that are enabled in the platform (by an admin).
 
   ## Examples
@@ -213,40 +213,53 @@ defmodule Oli.Activities do
     end
   end
 
+  @doc """
+  Returns a list of maps of activities/LTI-tools for the project.
+  - The `enabled` key indicates if the activity/LTI-tool is available for the project.
+      By available, we mean that it is either globally visible or enabled for the project.
+      If the user is an admin, even non-globally visible ones will have the `enabled` key set to true.
+  - For LTI tools, it only considers the ones that are enabled in the platform (by an admin).
+  """
+  @spec activities_for_project(Oli.Authoring.Course.Project.t(), boolean()) :: [map()]
   def activities_for_project(project, is_admin? \\ true) do
-    project = project |> Repo.preload([:activity_registrations])
+    enabled_project_activity_ids =
+      from(arp in ActivityRegistrationProject,
+        where: arp.project_id == ^project.id and arp.status == :enabled,
+        join: ar in ActivityRegistration,
+        on: ar.id == arp.activity_registration_id,
+        select: ar.id
+      )
+      |> Repo.all()
+      |> MapSet.new()
 
-    project_activities =
-      Enum.reduce(project.activity_registrations, MapSet.new(), fn a, m -> MapSet.put(m, a.id) end)
+    list_activity_registrations()
+    |> Enum.filter(fn a ->
+      ## for non-admin users, only return activities that are globally visible
+      ## for LTI tools, only return activities that are enabled in the platform
+      (a.globally_visible || is_admin?) and (is_nil(a.status) or a.status == :enabled)
+    end)
+    |> Enum.reduce([], fn a, m ->
+      enabled_for_project =
+        a.globally_available === true or MapSet.member?(enabled_project_activity_ids, a.id)
 
-    activities_enabled =
-      list_activity_registrations()
-      |> Enum.filter(fn a ->
-        (a.globally_visible || is_admin?) and (is_nil(a.status) or a.status == :enabled)
-      end)
-      |> Enum.reduce([], fn a, m ->
-        enabled_for_project =
-          a.globally_available === true or MapSet.member?(project_activities, a.id)
-
-        m ++
-          [
-            %{
-              id: a.id,
-              authoring_element: a.authoring_element,
-              delivery_element: a.delivery_element,
-              authoring_script: a.authoring_script,
-              delivery_script: a.delivery_script,
-              slug: a.slug,
-              title: a.title,
-              global: a.globally_available,
-              petite_label: a.petite_label,
-              enabled: enabled_for_project,
-              deployment_id: a.deployment_id
-            }
-          ]
-      end)
-
-    Enum.sort_by(activities_enabled, & &1.global, :desc)
+      m ++
+        [
+          %{
+            id: a.id,
+            authoring_element: a.authoring_element,
+            delivery_element: a.delivery_element,
+            authoring_script: a.authoring_script,
+            delivery_script: a.delivery_script,
+            slug: a.slug,
+            title: a.title,
+            global: a.globally_available,
+            petite_label: a.petite_label,
+            enabled: enabled_for_project,
+            deployment_id: a.deployment_id
+          }
+        ]
+    end)
+    |> Enum.sort_by(& &1.global, :desc)
   end
 
   def advanced_activities(project, is_admin? \\ true) do
