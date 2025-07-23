@@ -489,36 +489,6 @@ defmodule Oli.Activities do
   end
 
   @doc """
-  Adds an ActivityRegistrationProject with status :enabled for the given project and activity.
-  If a record exists, sets status to :enabled and updates updated_at.
-  """
-  @spec add_activity_to_project(integer(), integer()) ::
-          {:ok, ActivityRegistrationProject.t()} | {:error, Ecto.Changeset.t()}
-  def add_activity_to_project(project_id, activity_id) do
-    %ActivityRegistrationProject{}
-    |> ActivityRegistrationProject.changeset(%{
-      activity_registration_id: activity_id,
-      project_id: project_id,
-      status: :enabled
-    })
-    |> Repo.insert(
-      on_conflict: [set: [status: :enabled, updated_at: NaiveDateTime.utc_now()]],
-      conflict_target: [:activity_registration_id, :project_id]
-    )
-  end
-
-  @doc """
-  Removes the ActivityRegistrationProject record for the given project and activity.
-  """
-  @spec remove_activity_from_project(integer(), integer()) :: {integer(), nil | [term()]}
-  def remove_activity_from_project(project_id, activity_id) do
-    from(arp in ActivityRegistrationProject,
-      where: arp.project_id == ^project_id and arp.activity_registration_id == ^activity_id
-    )
-    |> Repo.delete_all()
-  end
-
-  @doc """
   Bulk update project activities - adds new activities and removes deselected ones
   """
   @spec bulk_update_project_activities(integer(), [integer()], [integer()]) ::
