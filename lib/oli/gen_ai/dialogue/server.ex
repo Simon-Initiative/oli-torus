@@ -68,17 +68,21 @@ defmodule Oli.GenAI.Dialogue.Server do
   end
 
   def init(%Configuration{} = static_configuration) do
+
+    Logger.debug("Starting dialogue server for client process #{inspect(static_configuration.reply_to_pid)}")
     {:ok, State.new(static_configuration)}
   end
 
   def handle_cast({:engage, message}, %State{} = state) do
 
     # Extract the current dialogue state and configuration
-    %{messages: messages} = state
+    %{messages: messages, configuration: cfg} = state
 
     # spawn a Task so we don’t block the GenServer loop
     server = self()
     Task.start(fn -> do_engage(server, state, message) end)
+
+    Logger.debug("Engaging dialogue for client #{inspect(cfg.reply_to_pid)} with message: #{inspect(message)}")
 
     {:noreply, %State{state | messages: [message | messages]}}
 
@@ -86,11 +90,13 @@ defmodule Oli.GenAI.Dialogue.Server do
 
   defp do_engage(server_pid, %State{configuration: configuration, registered_model: registered_model} = state, %Message{} = message) do
 
+    Logger.debug("do_engage for client #{inspect(configuration.reply_to_pid)}")
+
     process_chunk = fn chunk ->
       case chunk do
         {:error} ->
           send_to_server(server_pid, {:stream_chunk, {:error}})
-          send_to_listener(state, {:error})
+          send_to_listener(state, {:dialogue_server, {:error, "An error occurred while processing the request"}})
 
         {:function_call, function_call} ->
           send_to_server(server_pid, {:stream_chunk, {:function_call, function_call}})
@@ -100,11 +106,11 @@ defmodule Oli.GenAI.Dialogue.Server do
 
         {:tokens_received, content} ->
           send_to_server(server_pid, {:stream_chunk, {:tokens_received, content}})
-          send_to_listener(state, {:tokens_received, content})
+          send_to_listener(state, {:dialogue_server, {:tokens_received, content}})
 
         {:tokens_finished} ->
           send_to_server(server_pid, {:stream_chunk, {:tokens_finished}})
-          send_to_listener(state, {:tokens_finished})
+          send_to_listener(state, {:dialogue_server, {:tokens_finished}})
       end
     end
 
@@ -124,12 +130,21 @@ defmodule Oli.GenAI.Dialogue.Server do
         {:noreply, state}
 
       {:error, error} ->
+        Logger.info("Encountered completions error for client #{inspect(configuration.reply_to_pid)}: #{inspect(error)}")
 
         if should_retry?(state) do
+
+          Logger.info("Falling back to backup for client #{inspect(configuration.reply_to_pid)}")
+
           state = fallback(state)
           do_engage(server_pid, state, message)
         else
-          {:error, error}
+
+          Logger.warning("Failed without backup for client #{inspect(configuration.reply_to_pid)}")
+
+          send_to_listener(state, {:dialogue_server, {:error, "An error occurred while processing the request"}})
+
+          {:noreply, state}
         end
 
     end
@@ -217,7 +232,8 @@ defmodule Oli.GenAI.Dialogue.Server do
     {:noreply, state}
   end
 
-  # This is the entry point for engaging the dialogue server from within the server itself.
+  # This is the entry point for engaging the dialogue server from within the server itself
+  # (e.g., when the server sends a message to itself after executing a function call)
   def handle_info({:engage, message}, %State{} = state) do
 
     %{messages: messages} = state
