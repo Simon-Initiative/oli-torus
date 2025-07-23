@@ -566,8 +566,8 @@ defmodule Oli.Activities do
   Enables an existing ActivityRegistrationProject (sets status to :enabled) for the given project and activity.
   Returns :ok if updated, {:error, ...} if not found.
   """
-  @spec enable_activity_for_project(integer(), integer()) :: :ok | {:error, String.t()}
-  def enable_activity_for_project(project_id, activity_id) do
+  @spec enable_activity_in_project(integer(), integer()) :: :ok | {:error, String.t()}
+  def enable_activity_in_project(project_id, activity_id) do
     {count, _} =
       from(arp in ActivityRegistrationProject,
         where: arp.project_id == ^project_id and arp.activity_registration_id == ^activity_id
@@ -585,8 +585,8 @@ defmodule Oli.Activities do
   Disables an existing ActivityRegistrationProject (sets status to :disabled) for the given project and activity.
   Returns :ok if updated, {:error, ...} if not found.
   """
-  @spec disable_activity_for_project(integer(), integer()) :: :ok | {:error, String.t()}
-  def disable_activity_for_project(project_id, activity_id) do
+  @spec disable_activity_in_project(integer(), integer()) :: :ok | {:error, String.t()}
+  def disable_activity_in_project(project_id, activity_id) do
     {count, _} =
       from(arp in ActivityRegistrationProject,
         where: arp.project_id == ^project_id and arp.activity_registration_id == ^activity_id

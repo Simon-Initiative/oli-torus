@@ -43,7 +43,7 @@ defmodule OliWeb.Components.Project.AdvancedActivityItem do
         },
         socket
       ) do
-    case Activities.disable_activity_for_project(project_id, activity_id) do
+    case Activities.disable_activity_in_project(project_id, activity_id) do
       :ok ->
         send(self(), {:flash_message, {:info, "Activity `#{title}` disabled successfully."}})
 
@@ -67,7 +67,7 @@ defmodule OliWeb.Components.Project.AdvancedActivityItem do
         },
         socket
       ) do
-    case Activities.enable_activity_for_project(project_id, activity_id) do
+    case Activities.enable_activity_in_project(project_id, activity_id) do
       :ok ->
         send(self(), {:flash_message, {:info, "Activity `#{title}` enabled successfully."}})
 
