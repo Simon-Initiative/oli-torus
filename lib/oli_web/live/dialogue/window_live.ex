@@ -581,6 +581,8 @@ defmodule OliWeb.Dialogue.WindowLive do
     message = Message.new(:user, content)
     messages = messages ++ [message]
 
+    persist_message(message, socket)
+
     # This asynchronously engages the dialogue server with the new message
     Server.engage(dialogue, message)
 
@@ -628,6 +630,8 @@ defmodule OliWeb.Dialogue.WindowLive do
       false ->
         message = Message.new(:assistant, Earmark.as_html!(socket.assigns.active_message))
 
+        persist_message(message, socket)
+
         # Here we check if there are any triggers in the queue
         # and if so, we process the first one
         # and remove it from the queue
@@ -656,7 +660,15 @@ defmodule OliWeb.Dialogue.WindowLive do
         end
     end
 
+  end
 
+  def handle_info({:dialogue_server, {:function_called, name, arguments}}, socket) do
+
+    # persist the message to the database
+    Message.new(:function, Jason.encode!(arguments), name)
+    |> persist_message(socket)
+
+    {:noreply, socket}
   end
 
   def handle_info({:trigger, trigger}, socket) do
@@ -677,7 +689,9 @@ defmodule OliWeb.Dialogue.WindowLive do
       false ->
 
         prompt = Triggers.assemble_trigger_prompt(trigger)
-        Server.engage(socket.assigns.dialogue, Message.new(:system, prompt))
+        message = Message.new(:system, prompt)
+
+        Server.engage(socket.assigns.dialogue, message)
 
         socket =
           push_event(socket, "wakeup-dot", %{
@@ -693,6 +707,15 @@ defmodule OliWeb.Dialogue.WindowLive do
 
   def handle_info(_item, socket) do
     {:noreply, socket}
+  end
+
+  def persist_message(message, socket) do
+    Conversation.create_conversation_message(
+      message,
+      socket.assigns.current_user.id,
+      socket.assigns.resource_id,
+      socket.assigns.section.id
+    )
   end
 
 end

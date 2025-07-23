@@ -205,6 +205,10 @@ defmodule Oli.GenAI.Dialogue.Server do
 
             Logger.info("Function #{name} executed successfully with result: #{result}")
 
+            # Let the client know that a function was called, it may want to persist this
+            # or do something with it
+            send_to_listener(state, {:dialogue_server, {:function_called, name, arguments_as_map}})
+
             state = %{state | pending_function_args: nil, pending_function_name: nil, pending_function_message: message}
             {:noreply, state, {:continue, :execute_function}}
 
@@ -225,13 +229,6 @@ defmodule Oli.GenAI.Dialogue.Server do
     {:noreply, state}
   end
 
-  def handle_continue(:execute_function, %{pending_function_message: pending_message} = state) do
-    # We have executed the function successfully, now we want to
-    # engage the dialogue with the result, by posting a message
-    send(self(), {:engage, pending_message})
-    {:noreply, state}
-  end
-
   # This is the entry point for engaging the dialogue server from within the server itself
   # (e.g., when the server sends a message to itself after executing a function call)
   def handle_info({:engage, message}, %State{} = state) do
@@ -243,6 +240,13 @@ defmodule Oli.GenAI.Dialogue.Server do
 
     {:noreply, %State{state | messages: [message | messages]}}
 
+  end
+
+  def handle_continue(:execute_function, %{pending_function_message: pending_message} = state) do
+    # We have executed the function successfully, now we want to
+    # engage the dialogue with the result, by posting a message
+    send(self(), {:engage, pending_message})
+    {:noreply, state}
   end
 
   defp append_token(messages, token) do
