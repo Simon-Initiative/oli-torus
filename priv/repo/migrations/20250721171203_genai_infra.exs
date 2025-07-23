@@ -45,6 +45,15 @@ defmodule Oli.Repo.Migrations.GenaiInfra do
        'OPENAI_API_KEY', 'OPENAI_ORG_KEY', NOW(), NOW());
     """)
 
+    execute("""
+    INSERT INTO registered_models
+      (name, provider, model, url_template, api_key_variable_name,
+       secondary_api_key_variable_name, inserted_at, updated_at)
+    VALUES
+      ('null', 'null', 'null', 'https://www.example.com',
+       '', '', NOW(), NOW());
+    """)
+
     # And now one for a basic service config based strictly on the OpenAI model
     execute("""
     INSERT INTO completions_service_configs

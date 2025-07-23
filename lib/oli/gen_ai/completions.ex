@@ -23,6 +23,7 @@ defmodule Oli.GenAI.Completions do
 
   defp get_provider(%RegisteredModel{} = registered_model) do
     case registered_model.provider do
+      :null -> Oli.GenAI.Completions.NullProvider
       :open_ai -> Oli.GenAI.Completions.OpenAIProvider
       :gemini -> Oli.GenAI.Completions.GeminiProvider
       :claude -> Oli.GenAI.Completions.ClaudeProvider

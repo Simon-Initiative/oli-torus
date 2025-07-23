@@ -15,6 +15,7 @@ defmodule OliWeb.Dialogue.WindowLive do
 
   alias Oli.Delivery.Sections
   alias Oli.Conversation.Triggers
+  alias Oli.Conversation
   alias Oli.GenAI.Dialogue.{Server, Configuration}
   alias Oli.GenAI.Completions.Message
   alias OliWeb.Components

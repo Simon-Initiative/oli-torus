@@ -64,8 +64,10 @@ defmodule Oli.Conversation do
     |> Repo.all()
   end
 
-
-  defp create_conversation_message(message, user_id, resource_id, section_id) do
+  @doc """
+  Persist a new conversation message.
+  """
+  def create_conversation_message(message, user_id, resource_id, section_id) do
     attrs =
       message
       |> Map.from_struct()
