@@ -59,7 +59,7 @@ defmodule Oli.Repo.Migrations.GenaiInfra do
       (name, provider, model, url_template, api_key_variable_name,
        secondary_api_key_variable_name, inserted_at, updated_at)
     VALUES
-      ('claude', 'claude', 'claude-3-opus-20240229', 'https://api.anthropic.com/v1/messages',
+      ('claude', 'claude', 'claude-3-haiku-20240307', 'https://api.anthropic.com/v1/messages',
        'ANTHROPIC_API_KEY', NULL, NOW(), NOW());
     """)
 
