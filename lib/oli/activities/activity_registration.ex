@@ -15,7 +15,11 @@ defmodule Oli.Activities.ActivityRegistration do
     field :title, :string
     field :petite_label, :string
     field :allow_client_evaluation, :boolean, default: false
+
+    # globally_available: Controls whether an activity is enabled by default (true for regular activities), or it must be added and enabled in the project by an author (false for advanced activities)
     field :globally_available, :boolean, default: false
+
+    # globally_visible: Controls whether all authors can see the activity in their authoring interface (when true), or only admins can see it (when false)
     field :globally_visible, :boolean, default: true
     field :variables, {:array, :string}, default: []
     field :generates_report, :boolean, default: false

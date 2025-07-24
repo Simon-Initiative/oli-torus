@@ -154,7 +154,8 @@ defmodule Oli.Activities do
   end
 
   @doc """
-  Creates a map of activity registrations (activities and LTI tools) for a project, indicating which activities are enabled for that project (enabledForProject key).
+  Returns a map of activity registrations (activities, advanced activities and LTI tools) for a project.
+  The enabledForProject key indicates if the activity is available for that project.
   For LTI tools, it only considers the ones that are enabled in the platform (by an admin).
 
   ## Examples
@@ -456,10 +457,11 @@ defmodule Oli.Activities do
   end
 
   @doc """
-  Returns all activities/tools that can be selected for a given project.
-  Each result includes the activity and its project-specific status (if any).
-  Admins see all; non-admins see only globally_visible or enabled ones.
-  For LTI tools, it only considers the ones that are enabled in the platform (by an admin).
+  Returns all advanced activities and LTI tools that can be selected for a given project.
+  - For LTI tools, it only returns the ones that are enabled in the platform (by an admin).
+  - Each result includes the ActivityRegistration record with its project-specific status (enabled/disabled when already selected, or nil if not yet selected)
+  and the deployment_id for LTI tools (for advanced activities this value is nil).
+  - If the is_admin? argument is true, then the list will also include not globally visible activities/tools.
   """
   @spec selectable_activities_for_project(integer(), boolean()) :: [
           %{activity: ActivityRegistration.t(), project_status: atom() | nil}
@@ -470,7 +472,9 @@ defmodule Oli.Activities do
       on: arp.activity_registration_id == ar.id and arp.project_id == ^project_id,
       left_join: d in LtiExternalToolActivityDeployment,
       on: d.activity_registration_id == ar.id,
-      where: (ar.globally_visible or ^is_admin?) and (is_nil(d.status) or d.status == :enabled),
+      where:
+        (ar.globally_visible or ^is_admin?) and (is_nil(d.status) or d.status == :enabled) and
+          not ar.globally_available,
       order_by: [desc: d.deployment_id, asc: ar.title],
       select: ar,
       select_merge: %{project_status: arp.status, deployment_id: d.deployment_id}
@@ -479,9 +483,11 @@ defmodule Oli.Activities do
   end
 
   @doc """
-  Returns all ActivityRegistration records (activities and LTI tools)for a project with their project-specific status (enabled or disabled) and deployment_id.
-  If the activity is an LTI tool, it only considers the ones that are enabled in the platform (by an admin).
-  For non-admins, only considers activities that are globally_visible.
+  Returns all ActivityRegistration records of advanced activities and LTI tools that are already selected for a given project.
+  Note that being selected for a project does not mean that the activity is enabled for that project (it can be selected but disabled).
+  - For LTI tools, it will only return the ones that are enabled in the platform (by an admin).
+  - The returned record also includes the project-specific status (enabled or disabled) and deployment_id for LTI tools (for advanced activities this value is nil).
+  - If the is_admin? argument is true, then the list will also include not globally visible advanced-activities/LTI-tools.
   """
   @spec selected_activities_for_project(integer(), boolean()) :: [
           %{activity: ActivityRegistration.t(), project_status: atom() | nil}
@@ -493,7 +499,9 @@ defmodule Oli.Activities do
       on: ar.id == arp.activity_registration_id,
       left_join: d in LtiExternalToolActivityDeployment,
       on: d.activity_registration_id == ar.id,
-      where: (ar.globally_visible or ^is_admin?) and (is_nil(d.status) or d.status == :enabled),
+      where:
+        (ar.globally_visible or ^is_admin?) and (is_nil(d.status) or d.status == :enabled) and
+          not ar.globally_available,
       order_by: [desc: d.deployment_id, asc: ar.title],
       select: ar,
       select_merge: %{project_status: arp.status, deployment_id: d.deployment_id}

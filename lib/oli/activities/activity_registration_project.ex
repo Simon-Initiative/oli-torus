@@ -1,8 +1,9 @@
 defmodule Oli.Activities.ActivityRegistrationProject do
   @moduledoc """
   This schema is used to join activity registrations to projects.
-  Activities listed here were added by an author to the project.
-  Once added, authors can enable or disable activities at the project level.
+  Activities listed here are advanced activities or LTI tools that were selected/added by an author to the project.
+  Note that being selected does not imply that the activity is enabled for the project.
+  Once added, authors can enable or disable those advanced activities or LTI tools at the project level.
   """
 
   use Ecto.Schema
