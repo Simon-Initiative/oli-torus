@@ -226,6 +226,30 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   end
 
   @impl Phoenix.LiveView
+  def handle_params(
+        %{"view" => "insights", "active_tab" => "advanced_analytics"} = params,
+        _,
+        socket
+      ) do
+    socket =
+      socket
+      |> assign(
+        params: params,
+        view: :insights,
+        active_tab: :advanced_analytics,
+        health_status: nil,
+        query_result: nil,
+        selected_query: "",
+        custom_query: "",
+        executing: false,
+        video_engagement_by_section:
+          Oli.Analytics.AdvancedAnalytics.video_engagement_by_section(socket.assigns.section.id)
+      )
+
+    {:noreply, socket}
+  end
+
+  @impl Phoenix.LiveView
   def handle_params(%{"view" => "insights"} = params, _, socket) do
     active_tab =
       case params["active_tab"] do
@@ -343,6 +367,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       {"insights", "scored_activities"},
       {"insights", "practice_activities"},
       {"insights", "surveys"},
+      {"insights", "advanced_analytics"},
       {"insights", "course_discussion"},
       {"discussions", nil}
     ]
@@ -456,6 +481,12 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         path: path_for(:insights, :surveys, section_slug, preview_mode),
         badge: nil,
         active: is_active_tab?(:surveys, active_tab)
+      },
+      %TabLink{
+        label: "Advanced Analytics",
+        path: path_for(:insights, :advanced_analytics, section_slug, preview_mode),
+        badge: nil,
+        active: is_active_tab?(:advanced_analytics, active_tab)
       }
     ]
   end
@@ -657,6 +688,68 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         view={@view}
         ctx={@ctx}
       />
+    </div>
+    """
+  end
+
+  def render(%{view: :insights, active_tab: :advanced_analytics} = assigns) do
+    ~H"""
+    <InstructorDashboard.tabs tabs={insights_tabs(@section_slug, @preview_mode, @active_tab)} />
+
+    <div class="container mx-auto p-6">
+      <div class="max-w-6xl mx-auto">
+        <h1 class="text-2xl font-bold mb-6 text-gray-900 dark:text-white">
+          Advanced Analytics
+        </h1>
+        <!-- Sample Queries Section -->
+        <div class="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-6 mb-6">
+          <h2 class="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
+            Video Analytics
+          </h2>
+          <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+            Analyze student video engagement patterns for your section.
+          </p>
+          <!-- Results Section -->
+          <%= case @video_engagement_by_section do %>
+            <% {:ok, result} -> %>
+              <div class="text-green-600 dark:text-green-400 mb-3 flex items-center">
+                <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path
+                    fill-rule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                    clip-rule="evenodd"
+                  >
+                  </path>
+                </svg>
+                Query executed successfully
+              </div>
+              <%= if result.body != "" do %>
+                <div class="bg-gray-50 dark:bg-gray-900 border rounded-lg overflow-hidden">
+                  <pre class="p-4 text-sm overflow-x-auto"><%= result.body %></pre>
+                </div>
+              <% else %>
+                <div class="text-gray-500 dark:text-gray-400 italic bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
+                  Query executed successfully (no output)
+                </div>
+              <% end %>
+            <% {:error, reason} -> %>
+              <div class="text-red-600 dark:text-red-400 mb-3 flex items-start">
+                <svg class="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path
+                    fill-rule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                    clip-rule="evenodd"
+                  >
+                  </path>
+                </svg>
+                Query failed
+              </div>
+              <div class="bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                <pre class="text-sm text-red-800 dark:text-red-200 whitespace-pre-wrap"><%= reason %></pre>
+              </div>
+          <% end %>
+        </div>
+      </div>
     </div>
     """
   end
