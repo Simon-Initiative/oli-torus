@@ -129,6 +129,8 @@ defmodule Oli.UtilsTest do
       # Valid special characters in local part
       assert Utils.validate_email("!#$%&'*+-/=?^_`{|}~@example.com")
       assert Utils.validate_email("user.!#$%&'*+-/=?^_`{|}~@example.com")
+      assert Utils.validate_email("\"Fred Bloggs\"@example.com")
+      assert Utils.validate_email("\"Abc@def\"@example.com")
 
       # Valid domain variations
       assert Utils.validate_email("user@example.co.uk")

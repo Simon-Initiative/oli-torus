@@ -116,13 +116,7 @@ defmodule Oli.Accounts.Author do
   defp validate_email(changeset, opts) do
     changeset
     |> validate_required([:email])
-    |> validate_change(:email, fn :email, email ->
-      if Oli.Utils.validate_email(email) do
-        []
-      else
-        [email: "must be a valid email address"]
-      end
-    end)
+    |> validate_change(:email, &Oli.Accounts.validate_email/2)
     |> maybe_validate_unique_email(opts)
   end
 
@@ -289,13 +283,7 @@ defmodule Oli.Accounts.Author do
       :email_confirmed_at
     ])
     |> cast_embed(:preferences)
-    |> validate_change(:email, fn :email, email ->
-      if Oli.Utils.validate_email(email) do
-        []
-      else
-        [email: "must be a valid email address"]
-      end
-    end)
+    |> validate_change(:email, &Oli.Accounts.validate_email/2)
     |> common_name_validations()
     |> unique_constraint(:email)
     |> default_system_role()

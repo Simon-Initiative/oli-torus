@@ -146,13 +146,7 @@ defmodule Oli.Accounts.User do
   defp validate_email(changeset, opts) do
     changeset
     |> validate_required([:email])
-    |> validate_change(:email, fn :email, email ->
-      if Oli.Utils.validate_email(email) do
-        []
-      else
-        [email: "must be a valid email address"]
-      end
-    end)
+    |> validate_change(:email, &Oli.Accounts.validate_email/2)
     |> maybe_validate_unique_email(opts)
   end
 
