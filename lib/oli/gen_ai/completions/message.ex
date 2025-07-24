@@ -5,8 +5,10 @@ defmodule Oli.GenAI.Completions.Message do
   defstruct [
     :role,
     :content,
-    :name,
-    :token_length
+    :token_length,
+    :name,   # name, id and input are used in function tool calling
+    :id,
+    :input
   ]
 
   def new(role, content) do
@@ -14,7 +16,9 @@ defmodule Oli.GenAI.Completions.Message do
       role: role,
       content: content,
       name: nil,
-      token_length: estimate_token_length(content)
+      token_length: estimate_token_length(content),
+      id: nil,
+      input: nil
     }
   end
 
@@ -23,7 +27,10 @@ defmodule Oli.GenAI.Completions.Message do
       role: role,
       content: content,
       name: name,
-      token_length: estimate_token_length(content)
+      token_length: estimate_token_length(content),
+      id: nil,
+      input: nil
     }
   end
+
 end

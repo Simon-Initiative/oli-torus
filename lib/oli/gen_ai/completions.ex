@@ -25,7 +25,6 @@ defmodule Oli.GenAI.Completions do
     case registered_model.provider do
       :null -> Oli.GenAI.Completions.NullProvider
       :open_ai -> Oli.GenAI.Completions.OpenAIProvider
-      :gemini -> Oli.GenAI.Completions.GeminiProvider
       :claude -> Oli.GenAI.Completions.ClaudeProvider
     end
   end

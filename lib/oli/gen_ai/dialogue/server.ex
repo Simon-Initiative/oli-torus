@@ -90,7 +90,7 @@ defmodule Oli.GenAI.Dialogue.Server do
 
     Logger.debug("Engaging dialogue for client #{inspect(cfg.reply_to_pid)} with message: #{inspect(message)}")
 
-    {:noreply, %State{state | messages: [message | messages]}}
+    {:noreply, %State{state | messages: messages ++ [message]}}
 
   end
 
@@ -183,11 +183,12 @@ defmodule Oli.GenAI.Dialogue.Server do
 
     # we are processing a chunk of information regarding a function to call
     case content do
-      %{"name" => name, "arguments" => args} ->
-        {:noreply, %{state | pending_function_args: args, pending_function_name: name}}
+      %{"name" => name, "arguments" => args, "id" => id} = details ->
+
+        {:noreply, %{state | function_args: args, function_name: name, function_id: id}}
 
       %{"arguments" => args} ->
-        {:noreply, %{state | pending_function_args: state.pending_function_args <> args}}
+        {:noreply, %{state | function_args: state.function_args <> args}}
     end
 
   end
@@ -195,7 +196,7 @@ defmodule Oli.GenAI.Dialogue.Server do
   def handle_info({:stream_chunk, {:function_call_finished}}, state) do
 
     # The LLM has finished spitting out the function args, we need to execute it.
-    %{pending_function_name: name, pending_function_args: args, configuration: configuration} = state
+    %{function_name: name, function_args: args, function_id: id, configuration: configuration} = state
     %{functions: functions} = configuration
 
     case Jason.decode(args) do
@@ -206,7 +207,9 @@ defmodule Oli.GenAI.Dialogue.Server do
             message = %Message{
               role: :function,
               content: result,
-              name: name
+              name: name,
+              id: id,
+              input: arguments_as_map
             }
 
             Logger.info("Function #{name} executed successfully with result: #{result}")
@@ -215,7 +218,7 @@ defmodule Oli.GenAI.Dialogue.Server do
             # or do something with it
             send_to_listener(state, {:dialogue_server, {:function_called, name, arguments_as_map}})
 
-            state = %{state | pending_function_args: nil, pending_function_name: nil, pending_function_message: message}
+            state = %{state | function_args: nil, function_name: nil, function_message: message}
             {:noreply, state, {:continue, :execute_function}}
 
           {:error, reason} ->
@@ -244,14 +247,14 @@ defmodule Oli.GenAI.Dialogue.Server do
     server = self()
     Task.start(fn -> do_engage(server, state, message) end)
 
-    {:noreply, %State{state | messages: [message | messages]}}
+    {:noreply, %State{state | messages: messages ++ [message]}}
 
   end
 
-  def handle_continue(:execute_function, %{pending_function_message: pending_message} = state) do
+  def handle_continue(:execute_function, %{function_message: message} = state) do
     # We have executed the function successfully, now we want to
     # engage the dialogue with the result, by posting a message
-    send(self(), {:engage, pending_message})
+    send(self(), {:engage, message})
     {:noreply, state}
   end
 

@@ -54,6 +54,15 @@ defmodule Oli.Repo.Migrations.GenaiInfra do
        '', '', NOW(), NOW());
     """)
 
+    execute("""
+    INSERT INTO registered_models
+      (name, provider, model, url_template, api_key_variable_name,
+       secondary_api_key_variable_name, inserted_at, updated_at)
+    VALUES
+      ('claude', 'claude', 'claude-3-opus-20240229', 'https://api.anthropic.com/v1/messages',
+       'ANTHROPIC_API_KEY', NULL, NOW(), NOW());
+    """)
+
     # And now one for a basic service config based strictly on the OpenAI model
     execute("""
     INSERT INTO completions_service_configs

@@ -128,6 +128,7 @@ defmodule Oli.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:anthropix, "~> 0.6"},
       {:appsignal_phoenix, "~> 2.7"},
       {:assent, "~> 0.2.9"},
       {:base32_crockford, "~> 1.0.0"},

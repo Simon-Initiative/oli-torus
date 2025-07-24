@@ -8,9 +8,10 @@ defmodule Oli.GenAI.Dialogue.State do
     :configuration,
     :messages,
     :registered_model,
-    :pending_function_name,
-    :pending_function_args,
-    :pending_function_message
+    :function_name,
+    :function_args,
+    :function_id,
+    :function_message
   ]
 
   def new(%Configuration{messages: messages, service_config: service_config} = configuration) do
@@ -18,9 +19,10 @@ defmodule Oli.GenAI.Dialogue.State do
       configuration: configuration,
       messages: messages,
       registered_model: service_config.primary_model,
-      pending_function_name: nil,
-      pending_function_args: nil,
-      pending_function_message: nil
+      function_name: nil,
+      function_args: nil,
+      function_id: nil,
+      function_message: nil
     }
   end
 

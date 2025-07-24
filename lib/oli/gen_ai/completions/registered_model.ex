@@ -6,7 +6,7 @@ defmodule Oli.GenAI.Completions.RegisteredModel do
 
   schema "registered_models" do
     field :name, :string
-    field :provider, Ecto.Enum, values: [:null, :open_ai, :gemini, :claude]
+    field :provider, Ecto.Enum, values: [:null, :open_ai, :claude]
     field :model, :string
     field :url_template, :string
     field :api_key_variable_name, :string
