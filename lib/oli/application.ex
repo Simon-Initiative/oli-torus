@@ -87,7 +87,12 @@ defmodule Oli.Application do
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: Oli.Supervisor]
-    Supervisor.start_link(children, opts)
+    result = Supervisor.start_link(children, opts)
+
+    # Initialize ClickHouse schema in development mode
+    maybe_init_clickhouse()
+
+    result
   end
 
   # Tell Phoenix to update the endpoint configuration
@@ -136,5 +141,25 @@ defmodule Oli.Application do
 
   defp log_incomplete_requests?() do
     Application.fetch_env!(:oli, :log_incomplete_requests)
+  end
+
+  # Initialize ClickHouse schema in development mode
+  defp maybe_init_clickhouse() do
+    if Application.get_env(:oli, :env) == :dev do
+      # Run this asynchronously to avoid blocking application startup
+      Task.start(fn ->
+        # Give the application time to fully start
+        Process.sleep(2000)
+
+        case Oli.Analytics.XAPI.ClickHouseSchema.health_check() do
+          {:ok, :healthy} ->
+            Oli.Analytics.XAPI.ClickHouseSchema.create_all_tables()
+
+          {:error, _reason} ->
+            # ClickHouse might not be running, that's ok for development
+            :ok
+        end
+      end)
+    end
   end
 end

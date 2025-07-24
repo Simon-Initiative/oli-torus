@@ -36,7 +36,13 @@ config :oli,
       ),
     favicons: System.get_env("BRANDING_FAVICONS_DIR", "/branding/dev/favicons")
   ],
-  log_incomplete_requests: get_env_as_boolean.("LOG_INCOMPLETE_REQUESTS", "true")
+  log_incomplete_requests: get_env_as_boolean.("LOG_INCOMPLETE_REQUESTS", "true"),
+  # ClickHouse OLAP configuration for local development
+  clickhouse_host: System.get_env("CLICKHOUSE_HOST", "http://localhost"),
+  clickhouse_port: System.get_env("CLICKHOUSE_PORT", "8123") |> String.to_integer(),
+  clickhouse_user: System.get_env("CLICKHOUSE_USER", "default"),
+  clickhouse_password: System.get_env("CLICKHOUSE_PASSWORD", "clickhouse"),
+  clickhouse_database: System.get_env("CLICKHOUSE_DATABASE", "default")
 
 config :oli, :vendor_property,
   workspace_logo:
@@ -203,3 +209,13 @@ config :oli, :recaptcha,
   timeout: 5000,
   site_key: System.get_env("RECAPTCHA_SITE_KEY", "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"),
   secret: System.get_env("RECAPTCHA_PRIVATE_KEY", "6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe")
+
+# Configure xAPI upload pipeline for development
+# Use ClickHouse uploader instead of S3 for local OLAP analytics
+config :oli, :xapi_upload_pipeline,
+  producer_module: Oli.Analytics.XAPI.QueueProducer,
+  uploader_module: Oli.Analytics.XAPI.ClickHouseUploader,
+  batcher_concurrency: 1,
+  batch_size: 10,
+  batch_timeout: 2000,
+  processor_concurrency: 1
