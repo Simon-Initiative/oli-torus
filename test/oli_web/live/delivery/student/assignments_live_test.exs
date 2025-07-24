@@ -584,10 +584,10 @@ defmodule OliWeb.Delivery.Student.AssignmentsLiveTest do
              |> Floki.text()
              |> String.replace(~r/\s+/, " ")
              |> String.trim() =~
-               "Available: Now Read by: Not yet scheduled"
+               "Available: Now Read by: None"
     end
 
-    test "can not see schedule details when course has no scheduled resources", %{
+    test "can see schedule details when course has no scheduled resources", %{
       conn: conn,
       user: user
     } do
@@ -605,7 +605,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLiveTest do
         live(conn, live_view_assignments_live_route(section_without_schedule.slug))
 
       Enum.each([page_1, page_2, page_3, page_4], fn page ->
-        refute has_element?(
+        assert has_element?(
                  view,
                  ~s{div[role="assignment detail"][id="assignment_#{page.resource_id}"] span[role="assignment schedule details"]}
                )
