@@ -1,6 +1,12 @@
 defmodule Oli.GenAI.Completions.NullProvider do
   @moduledoc """
-  A null provider for the completions service that does nothing.
+  A null provider for the completions service that really does nothing.
+
+  This is useful for testing and development purposes, where you want to
+  simulate the behavior of a provider without actually performing any
+  generation or streaming of text. It simply returns a static message
+  when `generate/3` is called and streams a predefined message when
+  `stream/4` is called.
   """
 
   @behaviour Oli.GenAI.Completions.Provider

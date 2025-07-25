@@ -3,16 +3,17 @@ defmodule Oli.GenAI.Dialogue.Server do
   require Logger
 
   @moduledoc """
-  This module implements a dialogue server that manages the interaction
-  between a user and a language model provider using the GenServer behavior.
+  This module implements a dialogue server that manages a multi-turn
+  conversation (or dialogue) between a user and a language model provider
+  using the GenServer behavior.
 
-  The dialogue is stateful and allows for asynchronous message handling,
+  This dialogue is stateful and allows for asynchronous message handling,
   including function calls and streaming responses. It is designed to
   handle user messages, process them through the LLM, and manage the
-  dialogue state effectively.
+  dialogue state entirely.
 
   The server is started with a static configuration that includes
-  the service config to use, existing messages, functions available for calls,
+  the service config to use, existing (i.e. starting) messages, functions available for calls,
   and a reply-to PID for sending responses back to the client.
 
   The server supports engaging in a dialogue by sending messages,
@@ -21,7 +22,7 @@ defmodule Oli.GenAI.Dialogue.Server do
   interaction with the user.
 
   The dialogue server is designed to be resilient, with the ability to
-  retry operations using a backup model if the primary model fails.
+  fallback to a backup model (if one exists) should the primary model fail.
   It maintains a state that includes the current messages, configuration,
   and any pending function calls.
 

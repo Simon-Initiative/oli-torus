@@ -1,6 +1,14 @@
 defmodule Oli.GenAI.Dialogue.State do
   alias Oli.GenAI.Dialogue.Configuration
 
+  @moduledoc """
+  The state of a dialogue session. This contains a snapshot of the dialogue
+  configuration and within it the (initial) messages and the service config.
+
+  It then also contains the active messages of this dialogue, the currently
+  used registered model and information regarding "in flight" function calls.
+  """
+
   @type t :: %__MODULE__{}
 
   defstruct [

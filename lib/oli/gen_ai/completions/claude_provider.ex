@@ -1,6 +1,21 @@
 defmodule Oli.GenAI.Completions.ClaudeProvider do
   require Logger
 
+  @moduledoc """
+  A provider for Claude 3.x models using the Anthropix library.
+
+  This module implements the `Oli.GenAI.Completions.Provider` behaviour
+  and provides functions to generate completions and stream responses
+  from Claude models using the Anthropix client.
+
+  Claude models do not support system messages, so they are converted to user messages.
+
+  Function results are also converted to user messages.
+
+  NOTE: This provider does not support Claude 4 models as those models require
+  a different function calling (tool) mechanism.
+  """
+
   @behaviour Oli.GenAI.Completions.Provider
 
   alias Oli.GenAI.Completions.RegisteredModel
@@ -126,15 +141,16 @@ defmodule Oli.GenAI.Completions.ClaudeProvider do
       %{
         name: function.name,
         description: function.description,
+        # Notice the "input_schema" key here, unique to Claude
         input_schema: function.parameters
       }
     end)
   end
 
+  # Encodes messages for Claude, converting system messages to user messages
+  # and function results to tool results.  This requirese a multi-step transformation
+  # to ensure the messages are in the correct format for Claude.
   defp encode_messages(messages) do
-    # System messages have to become user messages for Claude
-    # because Claude does not support system messages.
-    # Also, function results are converted to user messages also
     {translated, _tool} =
       Enum.map(messages, fn message ->
         case message.role do

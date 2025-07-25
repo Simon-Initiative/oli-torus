@@ -34,7 +34,7 @@ defmodule Oli.Repo.Migrations.GenaiInfra do
 
     create index(:gen_ai_feature_configs, [:section_id, :feature], unique: true)
 
-    # Insert the record for an OpenAI registered model
+    # Insert the record for an OpenAI registered model, the NULL provider, and the Claude model.
     execute("""
     INSERT INTO registered_models
       (name, provider, model, url_template, api_key_variable_name,
@@ -62,7 +62,7 @@ defmodule Oli.Repo.Migrations.GenaiInfra do
        'ANTHROPIC_API_KEY', NULL, NOW(), NOW());
     """)
 
-    # And now one for a basic service config based strictly on the OpenAI model
+    # And now a basic service config based only on the OpenAI model
     execute("""
     INSERT INTO completions_service_configs
       (name, primary_model_id, backup_model_id,
@@ -70,7 +70,7 @@ defmodule Oli.Repo.Migrations.GenaiInfra do
     VALUES
       ('gpt4-no-backup',
         (SELECT id FROM registered_models WHERE name = 'openai-gpt4'),
-        (SELECT id FROM registered_models WHERE name = 'claude'),
+        NULL,
         NOW(), NOW());
     """)
 

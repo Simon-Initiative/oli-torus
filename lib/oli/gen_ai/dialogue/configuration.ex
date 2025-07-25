@@ -1,6 +1,6 @@
 defmodule Oli.GenAI.Dialogue.Configuration do
   @moduledoc """
-  The static configuration for a dialogue session.
+  The immutable configuration for a dialogue session.
   """
 
   @type t :: %__MODULE__{}
