@@ -7,6 +7,8 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
 
   alias Oli.Analytics.XAPI.StatementBundle
   alias Oli.HTTP
+  alias Oli.Analytics.AdvancedAnalytics
+
   require Logger
 
   @doc """
@@ -14,27 +16,16 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
   Parses the JSONL bundle and inserts the video events into the appropriate table.
   """
   def upload(%StatementBundle{body: body, category: category} = bundle) do
-    config = get_clickhouse_config()
+    config = Application.get_env(:oli, :clickhouse) |> Enum.into(%{})
 
-    # Ensure the table exists before attempting to insert data
-    case ensure_tables_exist(config) do
-      :ok ->
-        case parse_and_insert_events(body, category, config) do
-          {:ok, _count} = result ->
-            Logger.debug("Successfully uploaded bundle #{bundle.bundle_id} to ClickHouse")
-            result
-
-          {:error, reason} = error ->
-            Logger.error(
-              "Failed to upload bundle #{bundle.bundle_id} to ClickHouse: #{inspect(reason)}"
-            )
-
-            error
-        end
+    case parse_and_insert_events(body, category, config) do
+      {:ok, _count} = result ->
+        Logger.debug("Successfully uploaded bundle #{bundle.bundle_id} to ClickHouse")
+        result
 
       {:error, reason} = error ->
         Logger.error(
-          "Failed to ensure ClickHouse tables exist for bundle #{bundle.bundle_id}: #{inspect(reason)}"
+          "Failed to upload bundle #{bundle.bundle_id} to ClickHouse: #{inspect(reason)}"
         )
 
         error
@@ -89,8 +80,10 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
   end
 
   defp build_video_insert_query() do
+    video_events_table = AdvancedAnalytics.video_events_table()
+
     """
-    INSERT INTO video_events (
+    INSERT INTO #{video_events_table} (
       event_id,
       timestamp,
       user_id,
@@ -209,16 +202,6 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
       {:error, reason} ->
         {:error, "HTTP request failed: #{inspect(reason)}"}
     end
-  end
-
-  defp get_clickhouse_config() do
-    %{
-      host: Application.get_env(:oli, :clickhouse_host, "http://localhost"),
-      port: Application.get_env(:oli, :clickhouse_port, 8123),
-      user: Application.get_env(:oli, :clickhouse_user, "default"),
-      password: Application.get_env(:oli, :clickhouse_password, ""),
-      database: Application.get_env(:oli, :clickhouse_database, "default")
-    }
   end
 
   defp ensure_tables_exist(config) do

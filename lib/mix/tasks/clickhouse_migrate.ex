@@ -7,6 +7,9 @@ defmodule Mix.Tasks.Clickhouse.Migrate do
     mix clickhouse.migrate up      # Run pending migrations
     mix clickhouse.migrate down    # Rollback one migration
     mix clickhouse.migrate create <name>  # Create new migration
+    mix clickhouse.migrate setup   # Create database and run all migrations
+    mix clickhouse.migrate reset   # Drop and recreate database from scratch
+    mix clickhouse.migrate drop    # Drop the database
   """
 
   use Mix.Task
@@ -24,7 +27,7 @@ defmodule Mix.Tasks.Clickhouse.Migrate do
         [cmd | _] -> cmd
       end
 
-    config = get_clickhouse_config()
+    config = Application.get_env(:oli, :clickhouse) |> Enum.into(%{})
 
     case command do
       "up" ->
@@ -43,8 +46,22 @@ defmodule Mix.Tasks.Clickhouse.Migrate do
         IO.puts("Creating new ClickHouse migration...")
         create_migration(args)
 
+      "setup" ->
+        IO.puts("Setting up ClickHouse database...")
+        setup_database(config)
+
+      "reset" ->
+        IO.puts("Resetting ClickHouse database...")
+        reset_database(config)
+
+      "drop" ->
+        IO.puts("Dropping ClickHouse database...")
+        drop_database_command(config)
+
       _ ->
-        Mix.raise("Unknown command: #{command}. Available commands: up, down, status, create")
+        Mix.raise(
+          "Unknown command: #{command}. Available commands: up, down, status, create, setup, reset, drop"
+        )
     end
   end
 
@@ -147,31 +164,147 @@ defmodule Mix.Tasks.Clickhouse.Migrate do
     Mix.raise("Usage: mix clickhouse.migrate create <migration_name>")
   end
 
-  defp build_database_url(config) do
-    host = config[:hostname] || "localhost"
-    # goose uses TCP port for ClickHouse, not HTTP
-    port = 9090
-    username = config[:username] || "default"
-    password = config[:password] || "clickhouse"
-    database = config[:database] || "default"
+  defp setup_database(config) do
+    IO.puts("🚀 Setting up ClickHouse database...")
 
-    "tcp://#{username}:#{password}@#{host}:#{port}/#{database}"
+    # Test connection first
+    case test_clickhouse_connection(config) do
+      :ok ->
+        # Create database if it doesn't exist
+        create_database_if_needed(config)
+
+        # Create migrations directory if it doesn't exist
+        ensure_migrations_directory()
+
+        # Run all migrations
+        IO.puts("📦 Running all migrations...")
+        run_migrate_command("up", config)
+
+        IO.puts("✅ ClickHouse database setup completed successfully!")
+
+      :error ->
+        Mix.raise("""
+        ❌ Cannot connect to ClickHouse for setup
+
+        Please ensure:
+        1. ClickHouse is running: docker-compose up -d clickhouse
+        2. ClickHouse is accessible at #{config.hostname}:#{config.http_port}
+        3. User '#{config.username}' has proper permissions
+        """)
+    end
   end
 
-  defp get_clickhouse_config do
-    %{
-      hostname: Application.get_env(:oli, :clickhouse_host, "localhost"),
-      # HTTP port for connection test
-      http_port: Application.get_env(:oli, :clickhouse_port, 8123),
-      username: Application.get_env(:oli, :clickhouse_user, "default"),
-      password: Application.get_env(:oli, :clickhouse_password, "clickhouse"),
-      database: Application.get_env(:oli, :clickhouse_database, "default")
-    }
+  defp reset_database(config) do
+    IO.puts("🔥 Resetting ClickHouse database...")
+
+    # Test connection first
+    case test_clickhouse_connection(config) do
+      :ok ->
+        # Drop database
+        drop_database(config)
+
+        # Create database
+        create_database_if_needed(config)
+
+        # Create migrations directory if it doesn't exist
+        ensure_migrations_directory()
+
+        # Run all migrations
+        IO.puts("📦 Running all migrations...")
+        run_migrate_command("up", config)
+
+        IO.puts("✅ ClickHouse database reset completed successfully!")
+
+      :error ->
+        Mix.raise("""
+        ❌ Cannot connect to ClickHouse for reset
+
+        Please ensure:
+        1. ClickHouse is running: docker-compose up -d clickhouse
+        2. ClickHouse is accessible at #{config.hostname}:#{config.http_port}
+        3. User '#{config.username}' has proper permissions
+        """)
+    end
   end
 
-  defp test_clickhouse_connection(config) do
+  defp create_database_if_needed(config) do
+    database = config[:database] || "oli_analytics_dev"
+
+    if database != "default" do
+      IO.puts("📊 Creating database '#{database}' if it doesn't exist...")
+      execute_clickhouse_query(config, "CREATE DATABASE IF NOT EXISTS #{database}")
+    else
+      IO.puts("📊 Using default database")
+    end
+  end
+
+  defp drop_database(config) do
+    database = config[:database] || "oli_analytics_dev"
+
+    if database != "default" do
+      IO.puts("🗑️  Dropping database '#{database}'...")
+      execute_clickhouse_query(config, "DROP DATABASE IF EXISTS #{database}")
+    else
+      IO.puts("⚠️  Cannot drop default database, skipping...")
+    end
+  end
+
+  defp drop_database_command(config) do
+    IO.puts("🗑️  Dropping ClickHouse database...")
+
+    # Test connection first
+    case test_clickhouse_connection(config) do
+      :ok ->
+        database = config[:database] || "oli_analytics_dev"
+
+        if database != "default" do
+          # Confirm the action with user
+          IO.puts(
+            "⚠️  WARNING: This will permanently delete the database '#{database}' and all its data!"
+          )
+
+          IO.puts("Are you sure you want to continue? (y/N)")
+
+          case IO.gets("") |> String.trim() |> String.downcase() do
+            response when response in ["y", "yes"] ->
+              case execute_clickhouse_query(config, "DROP DATABASE IF EXISTS #{database}") do
+                :ok ->
+                  IO.puts("✅ Database '#{database}' dropped successfully")
+
+                :error ->
+                  Mix.raise("❌ Failed to drop database '#{database}'")
+              end
+
+            _ ->
+              IO.puts("❌ Operation cancelled by user")
+          end
+        else
+          Mix.raise("❌ Cannot drop the 'default' database - it's required by ClickHouse")
+        end
+
+      :error ->
+        Mix.raise("""
+        ❌ Cannot connect to ClickHouse for drop operation
+
+        Please ensure:
+        1. ClickHouse is running: docker-compose up -d clickhouse
+        2. ClickHouse is accessible at #{config.hostname}:#{config.http_port}
+        3. User '#{config.username}' has proper permissions
+        """)
+    end
+  end
+
+  defp ensure_migrations_directory do
+    migrations_dir = Path.join([File.cwd!(), "priv", "clickhouse", "migrations"])
+
+    unless File.exists?(migrations_dir) do
+      IO.puts("📁 Creating migrations directory: #{migrations_dir}")
+      File.mkdir_p!(migrations_dir)
+    end
+  end
+
+  defp execute_clickhouse_query(config, query) do
     try do
-      # Use HTTP port for connection test
       host = config[:hostname] || "localhost"
       http_port = config[:http_port] || 8123
       username = config[:username] || "default"
@@ -179,9 +312,50 @@ defmodule Mix.Tasks.Clickhouse.Migrate do
 
       url = "http://#{username}:#{password}@#{host}:#{http_port}/"
 
+      case HTTPoison.post(url, query, [], timeout: 10000, recv_timeout: 10000) do
+        {:ok, %HTTPoison.Response{status_code: 200}} ->
+          IO.puts("✅ Query executed successfully")
+          :ok
+
+        {:ok, %HTTPoison.Response{status_code: code, body: body}} ->
+          IO.puts("⚠️  Query responded with status #{code}: #{body}")
+          :ok
+
+        {:error, %HTTPoison.Error{reason: reason}} ->
+          IO.puts("❌ Query execution failed: #{reason}")
+          :error
+      end
+    rescue
+      e ->
+        IO.puts("❌ Query execution failed: #{inspect(e)}")
+        :error
+    end
+  end
+
+  defp build_database_url(config) do
+    host = config[:hostname]
+    # goose uses TCP port for ClickHouse, not HTTP
+    port = 9090
+    username = config[:username]
+    password = config[:password]
+    database = config[:database]
+
+    "tcp://#{username}:#{password}@#{host}:#{port}/#{database}"
+  end
+
+  defp test_clickhouse_connection(config) do
+    try do
+      # Use HTTP port for connection test
+      host = config[:hostname]
+      http_port = config[:http_port]
+      username = config[:username]
+      password = config[:password]
+
+      url = "http://#{username}:#{password}@#{host}:#{http_port}/"
+
       case HTTPoison.post(url, "SELECT 1", [], timeout: 5000, recv_timeout: 5000) do
         {:ok, %HTTPoison.Response{status_code: 200}} ->
-          IO.puts("✅ ClickHouse connection test successful")
+          IO.puts("✅ ClickHouse connection successful")
           :ok
 
         {:ok, %HTTPoison.Response{status_code: code, body: body}} ->

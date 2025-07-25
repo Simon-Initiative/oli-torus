@@ -24,10 +24,18 @@ defmodule Oli.Analytics.AdvancedAnalytics do
     end
   end
 
+  # Gets the fully qualified video_events table name
+  def video_events_table() do
+    config = Application.get_env(:oli, :clickhouse) |> Enum.into(%{})
+    "#{config.database}.video_events"
+  end
+
   @doc """
   Provides useful analytics queries for video events.
   """
   def sample_video_analytics_queries() do
+    video_events_table = video_events_table()
+
     %{
       video_engagement_by_section: """
         SELECT
@@ -39,7 +47,7 @@ defmodule Oli.Analytics.AdvancedAnalytics do
           avg(video_progress) as avg_progress,
           uniq(user_id) as unique_users,
           uniq(content_element_id) as unique_videos
-        FROM video_events
+        FROM #{video_events_table}
         WHERE section_id IS NOT NULL
         GROUP BY section_id
         ORDER BY total_events DESC
@@ -51,7 +59,7 @@ defmodule Oli.Analytics.AdvancedAnalytics do
           countIf(verb LIKE '%played%') as plays,
           countIf(verb LIKE '%completed%') as completions,
           if(plays > 0, completions / plays * 100, 0) as completion_rate_percent
-        FROM video_events
+        FROM #{video_events_table}
         WHERE content_element_id IS NOT NULL
         GROUP BY content_element_id, video_title
         HAVING plays > 5
@@ -65,7 +73,7 @@ defmodule Oli.Analytics.AdvancedAnalytics do
           sum(video_play_time) as total_watch_time,
           avg(video_progress) as avg_completion_rate,
           max(timestamp) as last_interaction
-        FROM video_events
+        FROM #{video_events_table}
         WHERE user_id IS NOT NULL
         GROUP BY user_id
         ORDER BY total_watch_time DESC
@@ -86,6 +94,8 @@ defmodule Oli.Analytics.AdvancedAnalytics do
   Provides useful analytics queries for video events.
   """
   def video_engagement_by_section(section_id) when is_integer(section_id) do
+    video_events_table = video_events_table()
+
     """
       SELECT
         section_id,
@@ -96,8 +106,8 @@ defmodule Oli.Analytics.AdvancedAnalytics do
         avg(video_progress) as avg_progress,
         uniq(user_id) as unique_users,
         uniq(content_element_id) as unique_videos
-      FROM video_events
-      WHERE section_id = '#{section_id}'
+      FROM #{video_events_table}
+      WHERE section_id = #{section_id}
         AND section_id IS NOT NULL
       GROUP BY section_id
       ORDER BY total_events DESC
@@ -106,8 +116,10 @@ defmodule Oli.Analytics.AdvancedAnalytics do
   end
 
   def execute_query(query, description) when is_binary(query) and byte_size(query) > 0 do
-    config = get_clickhouse_config()
-    url = "#{config.host}:#{config.port}"
+    config = Application.get_env(:oli, :clickhouse) |> Enum.into(%{})
+
+    # Include database in the URL path for ClickHouse HTTP interface
+    url = "#{config.host}:#{config.port}/?database=#{config.database}"
 
     headers = [
       {"Content-Type", "text/plain"},
@@ -151,15 +163,6 @@ defmodule Oli.Analytics.AdvancedAnalytics do
         lines = String.split(result, "\n", trim: true)
         format_tsv_with_alignment(lines)
     end
-  end
-
-  defp get_clickhouse_config() do
-    %{
-      host: Application.get_env(:oli, :clickhouse_host, "http://localhost"),
-      port: Application.get_env(:oli, :clickhouse_port, 8123),
-      user: Application.get_env(:oli, :clickhouse_user, "default"),
-      password: Application.get_env(:oli, :clickhouse_password, "")
-    }
   end
 
   defp format_tsv_with_alignment([]), do: ""

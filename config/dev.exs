@@ -36,13 +36,15 @@ config :oli,
       ),
     favicons: System.get_env("BRANDING_FAVICONS_DIR", "/branding/dev/favicons")
   ],
-  log_incomplete_requests: get_env_as_boolean.("LOG_INCOMPLETE_REQUESTS", "true"),
-  # ClickHouse OLAP configuration for local development
-  clickhouse_host: System.get_env("CLICKHOUSE_HOST", "localhost"),
-  clickhouse_port: System.get_env("CLICKHOUSE_PORT", "8123") |> String.to_integer(),
-  clickhouse_user: System.get_env("CLICKHOUSE_USER", "default"),
-  clickhouse_password: System.get_env("CLICKHOUSE_PASSWORD", "clickhouse"),
-  clickhouse_database: System.get_env("CLICKHOUSE_DATABASE", "default")
+  log_incomplete_requests: get_env_as_boolean.("LOG_INCOMPLETE_REQUESTS", "true")
+
+# ClickHouse OLAP configuration for local development
+config :oli, :clickhouse,
+  host: System.get_env("CLICKHOUSE_HOST", "localhost"),
+  port: System.get_env("CLICKHOUSE_PORT", "8123") |> String.to_integer(),
+  user: System.get_env("CLICKHOUSE_USER", "default"),
+  password: System.get_env("CLICKHOUSE_PASSWORD", "clickhouse"),
+  database: System.get_env("CLICKHOUSE_DATABASE", "oli_analytics_dev")
 
 config :oli, :vendor_property,
   workspace_logo:

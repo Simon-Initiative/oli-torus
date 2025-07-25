@@ -39,13 +39,9 @@ services:
       - "8123:8123" # HTTP interface
       - "9090:9000" # Native client (changed to avoid conflict with minio)
       - "9009:9009" # TCP for inter-server communication
-    environment:
-      CLICKHOUSE_DB: default
-      CLICKHOUSE_USER: default
-      # No password environment variable - let config file handle authentication
     volumes:
       - clickhouse_data:/var/lib/clickhouse
-      - ./config/clickhouse/users.xml:/etc/clickhouse-server/users.d/dev-users.xml
+      - ./clickhouse/users.xml:/etc/clickhouse-server/users.d/dev-users.xml
 
 volumes:
   postgres_data:
