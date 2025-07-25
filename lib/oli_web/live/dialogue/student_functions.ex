@@ -1,22 +1,16 @@
-defmodule Oli.Conversation.Functions do
-  import Oli.Conversation.Common
+defmodule OliWeb.Dialogue.StudentFunctions do
   import Ecto.Query, warn: false
+  import Oli.GenAI.Completions.Utils
 
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.{Section, SectionResourceDepot}
   alias Oli.Resources.ResourceType
   alias OliWeb.Router.Helpers, as: Routes
 
-  @lookup_table %{
-    "avg_score_for" => "Elixir.Oli.Conversation.Functions.avg_score_for",
-    "up_next" => "Elixir.Oli.Conversation.Functions.up_next",
-    "relevant_course_content" => "Elixir.Oli.Conversation.Functions.relevant_course_content",
-    "course_sequence" => "Elixir.Oli.Conversation.Functions.course_sequence"
-  }
-
   @functions [
     %{
       name: "course_sequence",
+      full_name: "Elixir.OliWeb.Dialogue.StudentFunctions.course_sequence",
       description: """
       Returns the full sequence of units, modules, sections and learning pages in this course as a
       list of objects with the following keys: [resource_id, title, url, is_page, graded, level] where
@@ -39,6 +33,7 @@ defmodule Oli.Conversation.Functions do
     },
     %{
       name: "up_next",
+      full_name: "Elixir.OliWeb.Dialogue.StudentFunctions.up_next",
       description:
         "Returns the next scheduled lessons in the course as a list of objects with the following keys: title, url, due_date, num_attempts_taken",
       parameters: %{
@@ -58,6 +53,7 @@ defmodule Oli.Conversation.Functions do
     },
     %{
       name: "avg_score_for",
+      full_name: "Elixir.OliWeb.Dialogue.StudentFunctions.avg_score_for",
       description:
         "Returns average score across all scored assessments, as a floating point number between 0 and 1, for a given user and section",
       parameters: %{
@@ -77,6 +73,7 @@ defmodule Oli.Conversation.Functions do
     },
     %{
       name: "relevant_course_content",
+      full_name: "Elixir.OliWeb.Dialogue.StudentFunctions.relevant_course_content",
       description: """
       Useful when a question asked by a student cannot be adequately answered by the context of the current lesson.
       Allows the retrieval of relevant course content from other lessons in the course based on the student's question.
@@ -102,40 +99,6 @@ defmodule Oli.Conversation.Functions do
       }
     }
   ]
-
-  @doc """
-  Takes a function name as a string in the form of "Elixir.ModuleName.function_name" and a
-  map of arguments, executes that function with the arguments and prepares the returned
-  result for sending back to an LLM based agent.
-  """
-  def call(name, arguments_as_map) do
-    full_name = Map.get(@lookup_table, name)
-
-    if full_name == nil do
-      raise "Invalid function name: #{name}"
-    end
-
-    case String.split(full_name, ".") do
-      parts when is_list(parts) ->
-        module_parts = Enum.take(parts, Enum.count(parts) - 1)
-        name = Enum.at(parts, -1) |> String.to_existing_atom()
-
-        result =
-          Enum.join(module_parts, ".")
-          |> String.to_existing_atom()
-          |> apply(name, [arguments_as_map])
-
-        case result do
-          result when is_binary(result) -> result
-          result when is_map(result) -> Jason.encode!(result)
-          result when is_list(result) -> Jason.encode!(%{result: result})
-          result -> Kernel.to_string(result)
-        end
-
-      _ ->
-        raise "Invalid function name: #{full_name}"
-    end
-  end
 
   def functions, do: @functions
 
