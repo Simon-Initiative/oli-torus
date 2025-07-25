@@ -102,7 +102,6 @@ defmodule OliWeb.Dialogue.WindowLive do
             assign(socket,
               enabled: true,
               minimized: true,
-              encountered_error: false,
               dialogue: dialogue_server,
               form: to_form(UserInput.changeset(%UserInput{}, %{content: ""})),
               messages: [],
@@ -597,38 +596,25 @@ defmodule OliWeb.Dialogue.WindowLive do
   # If we encounter any type of error from the server, have DOT post a message indicating
   # that there was an error, and basically stop responding (until the user refreshes the page)
   def handle_info({:dialogue_server, {:error, _error}}, socket) do
-    case socket.assigns.encountered_error do
-      true ->
-        {:noreply, socket}
 
-      false ->
-        messages = socket.assigns.messages
-        message = Message.new(:assistant, "<span class='text-red-500'>Hmmm, we encountered a problem while processing your last messsage. Maybe try again later.</span>")
-        messages = messages ++ [message]
+    messages = socket.assigns.messages
+    message = Message.new(:assistant, "<span class='text-red-500'>Hmmm, we encountered a problem while processing your last messsage. Maybe try again later.</span>")
+    messages = messages ++ [message]
 
-        {:noreply, assign(socket, streaming: false, messages: messages, allow_submission?: false, encountered_error: true)}
-      end
+    {:noreply, assign(socket, streaming: false, messages: messages, allow_submission?: true, active_message: nil)}
 
   end
 
   def handle_info({:dialogue_server, {:tokens_received, content}}, socket) do
 
-    case socket.assigns.encountered_error do
-      true ->
-        {:noreply, socket}
-      false ->
-        active_message = "#{socket.assigns.active_message}#{content}"
-        {:noreply, assign(socket, active_message: active_message)}
-    end
+    active_message = "#{socket.assigns.active_message}#{content}"
+    {:noreply, assign(socket, active_message: active_message)}
 
   end
 
   def handle_info({:dialogue_server, {:tokens_finished}}, socket) do
 
-    case socket.assigns.encountered_error do
-      true ->
-        {:noreply, socket}
-      false ->
+
         message = Message.new(:assistant, Earmark.as_html!(socket.assigns.active_message))
 
         persist_message(message, socket)
@@ -659,7 +645,7 @@ defmodule OliWeb.Dialogue.WindowLive do
                 trigger_queue: rest
               )}
         end
-    end
+
 
   end
 

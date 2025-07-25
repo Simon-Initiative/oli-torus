@@ -15,12 +15,8 @@ defmodule Oli.Repo.Migrations.GenaiInfra do
 
     create table(:completions_service_configs) do
       add :name, :string, null: false
-
       add :primary_model_id, references(:registered_models, on_delete: :nothing), null: false
       add :backup_model_id,  references(:registered_models, on_delete: :nothing), null: true
-
-      add :temperature, :float
-      add :max_tokens,  :integer
 
       timestamps(type: :timestamptz)
     end
@@ -41,7 +37,7 @@ defmodule Oli.Repo.Migrations.GenaiInfra do
       (name, provider, model, url_template, api_key_variable_name,
        secondary_api_key_variable_name, inserted_at, updated_at)
     VALUES
-      ('openai-gpt4', 'open_ai', 'gpt-4-1106-preview', 'https://api.openai.com/v1/chat/completions',
+      ('openai-gpt4', 'open_ai', 'gpt-4-1106-preview', 'https://api.openai.com',
        'OPENAI_API_KEY', 'OPENAI_ORG_KEY', NOW(), NOW());
     """)
 
@@ -66,13 +62,13 @@ defmodule Oli.Repo.Migrations.GenaiInfra do
     # And now one for a basic service config based strictly on the OpenAI model
     execute("""
     INSERT INTO completions_service_configs
-      (name, primary_model_id, backup_model_id, temperature, max_tokens,
+      (name, primary_model_id, backup_model_id,
         inserted_at, updated_at)
     VALUES
       ('gpt4-no-backup',
         (SELECT id FROM registered_models WHERE name = 'openai-gpt4'),
-        NULL,
-        NULL, NULL, NOW(), NOW());
+        (SELECT id FROM registered_models WHERE name = 'claude'),
+        NOW(), NOW());
     """)
 
     # Finally, insert the feature config defaults for the student dialogue and instructor dashboard

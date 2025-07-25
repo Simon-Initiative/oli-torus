@@ -38,15 +38,29 @@ defmodule Oli.GenAI.Completions.ClaudeProvider do
 
     client = create_client(registered_model.api_key_variable_name)
 
-    {:ok, stream} = Anthropix.chat(client, [
+    case Anthropix.chat(client, [
       model: model,
       messages: encode_messages(messages),
       tools: encode_functions(functions),
       stream: true,
-    ])
+    ]) do
 
-    stream
-    |> Stream.transform(nil, fn chunk, state ->
+      {:ok, stream} ->
+        consume_stream(stream, response_handler_fn)
+        :ok
+
+      # Network-level failure: timeout, DNS error, connection refused, etc.
+      {:error, %Mint.TransportError{reason: reason}} ->
+        Logger.error("Anthropix HTTP failure: #{inspect(reason)}")
+        {:error, reason}
+
+    end
+
+  end
+
+  defp consume_stream(stream, response_handler_fn) do
+
+    Stream.transform(stream, nil, fn chunk, state ->
 
       case chunk["type"] do
         "content_block_start" ->
@@ -103,13 +117,12 @@ defmodule Oli.GenAI.Completions.ClaudeProvider do
       end
 
     end)
-    |> Enum.to_list()
-
+    |> Stream.run()
   end
 
   defp create_client(variable_name) do
     read_var(variable_name)
-    |> Anthropix.init()
+    |> Anthropix.init(receive_timeout: System.get_env("ANTHROPIC_RECV_TIMEOUT", "60000") |> String.to_integer())
   end
 
   defp encode_functions(functions) do
@@ -160,7 +173,7 @@ defmodule Oli.GenAI.Completions.ClaudeProvider do
           message = Map.delete(message, :tool) |> Map.put(:role, :user)
           {[message | all], tool}
 
-        other ->
+        _other ->
           case tool do
             nil ->
               {[message | all], nil}

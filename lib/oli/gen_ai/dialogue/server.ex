@@ -52,7 +52,7 @@ defmodule Oli.GenAI.Dialogue.Server do
 
   The complete set of `:dialogue_server` messages that can be sent to the client are:
   - `{:dialogue_server, {:tokens_received, content}}`: Sent when new tokens are received from the LLM.
-  - `{:dialogue_server, {:tokens_finished}}`: Sent when the LLM has finished sending tokens.
+  - `{:dialogue_server, {:tokens_finished}}`: Sent when the LLM has finished sending tokens (i.e., the assisstant message is complete).
   - `{:dialogue_server, {:function_called, name, arguments}}`: Sent when a function has been requested by the LLM and called by the dialogue server.
   - `{:dialogue_server, {:error, reason}}`: Sent when an error occurs during processing.
 
@@ -86,7 +86,11 @@ defmodule Oli.GenAI.Dialogue.Server do
 
     # spawn a Task so we don’t block the GenServer loop
     server = self()
-    Task.start(fn -> do_engage(server, state, message) end)
+
+    Task.start(fn ->
+      build_notify_fns(server, state)
+      |> do_engage(state, message)
+    end)
 
     Logger.debug("Engaging dialogue for client #{inspect(cfg.reply_to_pid)} with message: #{inspect(message)}")
 
@@ -94,29 +98,40 @@ defmodule Oli.GenAI.Dialogue.Server do
 
   end
 
-  defp do_engage(server_pid, %State{configuration: configuration, registered_model: registered_model} = state, %Message{} = message) do
+  defp build_notify_fns(server_pid, %State{configuration: %Configuration{reply_to_pid: reply_to_pid}}) do
+    {
+      fn message ->
+        send(server_pid, message)
+      end,
+      fn message ->
+        send(reply_to_pid, message)
+      end
+    }
+  end
+
+  def do_engage({notify_server_fn, notify_client_fn}, %State{configuration: configuration, registered_model: registered_model} = state, %Message{} = message) do
 
     Logger.debug("do_engage for client #{inspect(configuration.reply_to_pid)}")
 
     process_chunk = fn chunk ->
       case chunk do
         {:error} ->
-          send_to_server(server_pid, {:stream_chunk, {:error}})
-          send_to_listener(state, {:dialogue_server, {:error, "An error occurred while processing the request"}})
+          notify_server_fn.({:stream_chunk, {:error}})
+          notify_client_fn.({:dialogue_server, {:error, "An error occurred while processing the request"}})
 
         {:function_call, function_call} ->
-          send_to_server(server_pid, {:stream_chunk, {:function_call, function_call}})
+          notify_server_fn.({:stream_chunk, {:function_call, function_call}})
 
         {:function_call_finished} ->
-          send_to_server(server_pid, {:stream_chunk, {:function_call_finished}})
+          notify_server_fn.({:stream_chunk, {:function_call_finished}})
 
         {:tokens_received, content} ->
-          send_to_server(server_pid, {:stream_chunk, {:tokens_received, content}})
-          send_to_listener(state, {:dialogue_server, {:tokens_received, content}})
+          notify_server_fn.({:stream_chunk, {:tokens_received, content}})
+          notify_client_fn.({:dialogue_server, {:tokens_received, content}})
 
         {:tokens_finished} ->
-          send_to_server(server_pid, {:stream_chunk, {:tokens_finished}})
-          send_to_listener(state, {:dialogue_server, {:tokens_finished}})
+          notify_server_fn.({:stream_chunk, {:tokens_finished}})
+          notify_client_fn.({:dialogue_server, {:tokens_finished}})
       end
     end
 
@@ -132,23 +147,23 @@ defmodule Oli.GenAI.Dialogue.Server do
 
     case Completions.stream(state.messages ++ [message], configuration.functions, registered_model, response_handler_fn) do
 
-      valid_results when is_list(valid_results) ->
+      :ok ->
         {:noreply, state}
 
       {:error, error} ->
-        Logger.info("Encountered completions error for client #{inspect(configuration.reply_to_pid)}: #{inspect(error)}")
+        Logger.info("Encountered completions http error for client #{inspect(configuration.reply_to_pid)}: #{inspect(error)}")
 
         if should_retry?(state) do
 
           Logger.info("Falling back to backup for client #{inspect(configuration.reply_to_pid)}")
 
           state = fallback(state)
-          do_engage(server_pid, state, message)
+          do_engage({notify_server_fn, notify_client_fn}, state, message)
         else
 
           Logger.warning("Failed without backup for client #{inspect(configuration.reply_to_pid)}")
 
-          send_to_listener(state, {:dialogue_server, {:error, "An error occurred while processing the request"}})
+          notify_client_fn.({:dialogue_server, {:error, "An error occurred while processing the request"}})
 
           {:noreply, state}
         end
@@ -167,11 +182,20 @@ defmodule Oli.GenAI.Dialogue.Server do
     send(pid, message)
   end
 
-  defp send_to_server(server, message) do
-    send(server, message)
+  # All stream chunks come back here
+
+  def handle_info({:stream_chunk, {:error}}, state) do
+
+    if should_retry?(state) do
+
+      Logger.info("Falling back to backup for client #{inspect(state.configuration.reply_to_pid)}")
+      {:noreply, fallback(state)}
+    else
+
+      {:noreply, state}
+    end
   end
 
-  # All stream chunks come back here
 
   def handle_info({:stream_chunk, {:tokens_received, content}}, state) do
     # Append tokens to the “assistant” draft
@@ -183,7 +207,7 @@ defmodule Oli.GenAI.Dialogue.Server do
 
     # we are processing a chunk of information regarding a function to call
     case content do
-      %{"name" => name, "arguments" => args, "id" => id} = details ->
+      %{"name" => name, "arguments" => args, "id" => id} ->
 
         {:noreply, %{state | function_args: args, function_name: name, function_id: id}}
 
@@ -245,7 +269,10 @@ defmodule Oli.GenAI.Dialogue.Server do
     %{messages: messages} = state
 
     server = self()
-    Task.start(fn -> do_engage(server, state, message) end)
+    Task.start(fn ->
+      build_notify_fns(server, state)
+      |> do_engage(state, message)
+    end)
 
     {:noreply, %State{state | messages: messages ++ [message]}}
 
