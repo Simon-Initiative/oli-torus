@@ -3,6 +3,7 @@ defmodule OliWeb.TechSupportLive do
   alias Oli.Help.HelpContent
   alias Oli.Help.HelpRequest
   alias OliWeb.Components.Modal
+  import OliWeb.Components.Utils, only: [user_is_guest?: 1]
 
   @modal_id "tech-support-modal"
   @base_url Oli.Utils.get_base_url()
@@ -11,14 +12,13 @@ defmodule OliWeb.TechSupportLive do
 
   @impl true
   def mount(_params, session, socket) do
-    requires_sender_data = !Enum.any?(Map.take(session, ["current_user_id", "current_author_id"]))
     publisher = Oli.Inventories.get_publisher_for_context(session)
     knowledge_base_link = Oli.Inventories.knowledge_base_link_for_publisher(publisher)
     support_email = Oli.Inventories.support_email_for_publisher(publisher)
 
     socket =
       socket
-      |> assign(:requires_sender_data, requires_sender_data)
+      |> assign(:requires_sender_data, requires_sender_data?(session))
       |> assign_form(HelpRequest.changeset())
       |> assign(:modal_id, @modal_id)
       |> assign(:recaptcha_error, false)
@@ -390,5 +390,13 @@ defmodule OliWeb.TechSupportLive do
         "#{@base_url}/admin/authors/#{user.id}"
       end
     end
+  end
+
+  defp requires_sender_data?(session) do
+    # if there is no identifiable user,
+    # then the user would have to provide their name and email
+
+    user_is_guest?(session) ||
+      !Enum.any?(Map.take(session, ["current_user_id", "current_author_id"]))
   end
 end
