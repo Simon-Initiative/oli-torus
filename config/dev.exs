@@ -38,7 +38,7 @@ config :oli,
   ],
   log_incomplete_requests: get_env_as_boolean.("LOG_INCOMPLETE_REQUESTS", "true"),
   # ClickHouse OLAP configuration for local development
-  clickhouse_host: System.get_env("CLICKHOUSE_HOST", "http://localhost"),
+  clickhouse_host: System.get_env("CLICKHOUSE_HOST", "localhost"),
   clickhouse_port: System.get_env("CLICKHOUSE_PORT", "8123") |> String.to_integer(),
   clickhouse_user: System.get_env("CLICKHOUSE_USER", "default"),
   clickhouse_password: System.get_env("CLICKHOUSE_PASSWORD", "clickhouse"),

@@ -1,4 +1,4 @@
--- migrate:up
+-- +goose Up
 CREATE TABLE IF NOT EXISTS video_events (
     event_id String,
     timestamp DateTime64(3),
@@ -23,5 +23,5 @@ ORDER BY (timestamp, section_id, user_id)
 PARTITION BY toYYYYMM(timestamp)
 SETTINGS index_granularity = 8192;
 
--- migrate:down
+-- +goose Down
 DROP TABLE IF EXISTS video_events;
