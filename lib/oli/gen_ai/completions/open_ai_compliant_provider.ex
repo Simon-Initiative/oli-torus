@@ -229,17 +229,17 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
     url =
       Oli.GenAI.Completions.Utils.realize_url(registered_model.url_template, %{
         "model" => registered_model.model,
-        "api_key" => read_var(registered_model.api_key_variable_name),
-        "secondary_api_key" => read_var(registered_model.secondary_api_key_variable_name)
+        "api_key" => registered_model.api_key,
+        "secondary_api_key" => registered_model.secondary_api_key
       })
 
     %OpenAI.Config{
       http_options: [
-        timeout: System.get_env("OPENAI_TIMEOUT", "8000") |> String.to_integer(),
-        recv_timeout: System.get_env("OPENAI_RECV_TIMEOUT", "60000") |> String.to_integer()
+        timeout: registered_model.timeout,
+        recv_timeout: registered_model.recv_timeout
       ],
-      api_key: read_var(registered_model.api_key_variable_name),
-      organization_key: read_var(registered_model.secondary_api_key_variable_name),
+      api_key: registered_model.api_key,
+      organization_key: registered_model.secondary_api_key,
       api_url: url
     }
   end
@@ -248,26 +248,20 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
     url =
       Oli.GenAI.Completions.Utils.realize_url(registered_model.url_template, %{
         "model" => registered_model.model,
-        "api_key" => read_var(registered_model.api_key_variable_name),
-        "secondary_api_key" => read_var(registered_model.secondary_api_key_variable_name)
+        "api_key" => registered_model.api_key,
+        "secondary_api_key" => registered_model.secondary_api_key
       })
 
     %OpenAI.Config{
       http_options: [
-        timeout: System.get_env("OPENAI_TIMEOUT", "8000") |> String.to_integer(),
-        recv_timeout: System.get_env("OPENAI_RECV_TIMEOUT", "60000") |> String.to_integer(),
+        timeout: registered_model.timeout,
+        recv_timeout: registered_model.recv_timeout,
         stream_to: self(),
         async: :once
       ],
-      api_key: read_var(registered_model.api_key_variable_name),
-      organization_key: read_var(registered_model.secondary_api_key_variable_name),
+      api_key: registered_model.api_key,
+      organization_key: registered_model.secondary_api_key,
       api_url: url
     }
-  end
-
-  def read_var(nil), do: ""
-
-  def read_var(key) do
-    System.get_env(key)
   end
 end

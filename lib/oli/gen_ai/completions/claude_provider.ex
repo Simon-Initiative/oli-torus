@@ -21,7 +21,7 @@ defmodule Oli.GenAI.Completions.ClaudeProvider do
   alias Oli.GenAI.Completions.RegisteredModel
 
   def generate(messages, functions, %RegisteredModel{model: model} = registered_model) do
-    client = create_client(registered_model.api_key_variable_name)
+    client = create_client(registered_model.api_key)
 
     case Anthropix.chat(client,
            model: model,
@@ -51,7 +51,7 @@ defmodule Oli.GenAI.Completions.ClaudeProvider do
         %RegisteredModel{model: model} = registered_model,
         response_handler_fn
       ) do
-    client = create_client(registered_model.api_key_variable_name)
+    client = create_client(registered_model)
 
     case Anthropix.chat(client,
            model: model,
@@ -129,10 +129,10 @@ defmodule Oli.GenAI.Completions.ClaudeProvider do
     |> Stream.run()
   end
 
-  defp create_client(variable_name) do
-    read_var(variable_name)
-    |> Anthropix.init(
-      receive_timeout: System.get_env("ANTHROPIC_RECV_TIMEOUT", "60000") |> String.to_integer()
+  defp create_client(registered_model) do
+    Anthropix.init(
+      registered_model.api_key,
+      receive_timeout: registered_model.recv_timeout
     )
   end
 
@@ -220,11 +220,5 @@ defmodule Oli.GenAI.Completions.ClaudeProvider do
           %{role: message.role |> Atom.to_string(), content: message.content, name: message.name}
       end
     end)
-  end
-
-  defp read_var(nil), do: ""
-
-  defp read_var(key) do
-    System.get_env(key)
   end
 end

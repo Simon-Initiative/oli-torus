@@ -7,8 +7,10 @@ defmodule Oli.Repo.Migrations.GenaiInfra do
       add :provider, :string, null: false
       add :model, :string, null: false
       add :url_template, :string, null: false
-      add :api_key_variable_name, :string, null: false
-      add :secondary_api_key_variable_name, :string
+      add :api_key, :string
+      add :secondary_api_key, :string
+      add :timeout, :integer, default: 8000, null: false
+      add :recv_timeout, :integer, default: 60000, null: false
 
       timestamps(type: :timestamptz)
     end
@@ -34,32 +36,40 @@ defmodule Oli.Repo.Migrations.GenaiInfra do
 
     create index(:gen_ai_feature_configs, [:section_id, :feature], unique: true)
 
+    open_ai_key = System.get_env("OPENAI_API_KEY")
+    open_ai_org_key = System.get_env("OPENAI_ORG_KEY")
+    anthropic_api_key = System.get_env("ANTHROPIC_API_KEY")
+
     # Insert the record for an OpenAI registered model, the NULL provider, and the Claude model.
-    execute("""
-    INSERT INTO registered_models
-      (name, provider, model, url_template, api_key_variable_name,
-       secondary_api_key_variable_name, inserted_at, updated_at)
-    VALUES
-      ('openai-gpt4', 'open_ai', 'gpt-4-1106-preview', 'https://api.openai.com',
-       'OPENAI_API_KEY', 'OPENAI_ORG_KEY', NOW(), NOW());
-    """)
+    if open_ai_key do
+      execute("""
+      INSERT INTO registered_models
+        (name, provider, model, url_template, api_key,
+        secondary_api_key, inserted_at, updated_at)
+      VALUES
+        ('openai-gpt4', 'open_ai', 'gpt-4-1106-preview', 'https://api.openai.com',
+        '#{open_ai_key}', '#{open_ai_org_key}', NOW(), NOW());
+      """)
+    end
+
+    if anthropic_api_key do
+      execute("""
+      INSERT INTO registered_models
+        (name, provider, model, url_template, api_key,
+        secondary_api_key, inserted_at, updated_at)
+      VALUES
+        ('claude', 'claude', 'claude-3-haiku-20240307', 'https://api.anthropic.com/v1/messages',
+        '#{anthropic_api_key}', NULL, NOW(), NOW());
+      """)
+    end
 
     execute("""
     INSERT INTO registered_models
-      (name, provider, model, url_template, api_key_variable_name,
-       secondary_api_key_variable_name, inserted_at, updated_at)
+      (name, provider, model, url_template, api_key,
+       secondary_api_key, inserted_at, updated_at)
     VALUES
       ('null', 'null', 'null', 'https://www.example.com',
-       '', '', NOW(), NOW());
-    """)
-
-    execute("""
-    INSERT INTO registered_models
-      (name, provider, model, url_template, api_key_variable_name,
-       secondary_api_key_variable_name, inserted_at, updated_at)
-    VALUES
-      ('claude', 'claude', 'claude-3-haiku-20240307', 'https://api.anthropic.com/v1/messages',
-       'ANTHROPIC_API_KEY', NULL, NOW(), NOW());
+       NULL, NULL, NOW(), NOW());
     """)
 
     # And now a basic service config based only on the OpenAI model
@@ -68,8 +78,8 @@ defmodule Oli.Repo.Migrations.GenaiInfra do
       (name, primary_model_id, backup_model_id,
         inserted_at, updated_at)
     VALUES
-      ('gpt4-no-backup',
-        (SELECT id FROM registered_models WHERE name = 'openai-gpt4'),
+      ('standard-no-backup',
+        (SELECT id FROM registered_models WHERE id = 1),
         NULL,
         NOW(), NOW());
     """)
@@ -80,11 +90,11 @@ defmodule Oli.Repo.Migrations.GenaiInfra do
       (feature, service_config_id, section_id, inserted_at, updated_at)
     VALUES
       ('student_dialogue',
-        (SELECT id FROM completions_service_configs WHERE name = 'gpt4-no-backup'),
+        (SELECT id FROM completions_service_configs WHERE name = 'standard-no-backup'),
         NULL,
         NOW(), NOW()),
       ('instructor_dashboard',
-        (SELECT id FROM completions_service_configs WHERE name = 'gpt4-no-backup'),
+        (SELECT id FROM completions_service_configs WHERE name = 'standard-no-backup'),
         NULL,
         NOW(), NOW());
     """)
