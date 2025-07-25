@@ -11,7 +11,14 @@ defmodule Oli.GenAI.Completions.Utils do
   def realize_url(url_template, params) do
     url_template
     |> String.replace(":model", params["model"])
-    |> String.replace(":api_key", params["api_key"])
-    |> String.replace(":secondary_api_key", params["secondary_api_key"])
+    |> safe_replace(":api_key", Map.get(params, "api_key", ""))
+    |> safe_replace(":secondary_api_key",  Map.get(params, "secondary_api_key", ""))
+  end
+
+  defp safe_replace(str, match, value_or_nil) do
+    case value_or_nil do
+      nil -> str
+      value -> String.replace(str, match, value)
+    end
   end
 end
