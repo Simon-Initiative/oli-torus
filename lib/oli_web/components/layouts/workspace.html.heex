@@ -37,7 +37,7 @@
       if(@disable_sidebar?, do: "md:!w-full md:!ml-0")
     ]}
   >
-    <div class="mb-[28px] overview">
+    <div class="mb-[28px] overview sticky top-14 z-50">
       <%= if Phoenix.Flash.get(@flash, :info) do %>
         <div class="alert alert-info flex flex-row" role="alert">
           <div class="flex-1">
