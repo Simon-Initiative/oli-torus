@@ -12,7 +12,7 @@ defmodule Oli.GenAI.Completions.Utils do
     url_template
     |> String.replace(":model", params["model"])
     |> safe_replace(":api_key", Map.get(params, "api_key", ""))
-    |> safe_replace(":secondary_api_key",  Map.get(params, "secondary_api_key", ""))
+    |> safe_replace(":secondary_api_key", Map.get(params, "secondary_api_key", ""))
   end
 
   defp safe_replace(str, match, value_or_nil) do
