@@ -12,8 +12,7 @@ defmodule OliWeb.Delivery.Content.Progress do
   )
 
   def render(assigns) do
-    progress_selector = assigns.progress_selector || :is_less_than_or_equal
-    assigns = assign(assigns, :progress_selector, progress_selector)
+    assigns = assign(assigns, :progress_selector, assigns.progress_selector)
 
     ~H"""
     <div class="relative z-10">
@@ -27,7 +26,7 @@ defmodule OliWeb.Delivery.Content.Progress do
       >
         <button
           data-dropdown-toggle="dropdown"
-          class={"h-full flex-shrink-0 rounded-md z-10 inline-flex items-center py-2.5 px-4 text-zinc-900 text-xs font-semibold leading-none dark:text-white border border-[#B0B0B0] #{if @progress_selector not in ["", nil], do: "!text-blue-500 text-xs font-semibold leading-none"}"}
+          class={"h-full flex-shrink-0 rounded z-10 inline-flex items-center py-2.5 px-2 text-[#353740] text-xs font-semibold leading-none dark:text-[#EEEBF5] outline outline-1 outline-[#ced1d9] dark:outline-[#3B3740] #{if @progress_selector not in ["", nil], do: "!text-blue-500 text-xs font-semibold leading-none"}"}
           type="button"
         >
           Progress <%= progress_filter_text(
@@ -35,7 +34,7 @@ defmodule OliWeb.Delivery.Content.Progress do
             @progress_selector,
             @progress_percentage
           ) %>
-          <div class="ml-3">
+          <div class="ml-2">
             <.toggle_chevron id="progress" map_values={@progress_selector} />
           </div>
         </button>
@@ -47,7 +46,7 @@ defmodule OliWeb.Delivery.Content.Progress do
           |> JS.hide(to: "#progress-up-icon")
           |> JS.show(to: "#progress-down-icon")
         }
-        class="hidden bg-white dark:bg-gray-800 mt-1 rounded border flex flex-col p-2 absolute w-auto"
+        class="hidden bg-white dark:bg-gray-800 mt-1 rounded border flex flex-col p-2 px-4 absolute w-auto"
         phx-submit="apply_progress_filter"
         id="progress_form"
         phx-target={@target}
@@ -92,7 +91,7 @@ defmodule OliWeb.Delivery.Content.Progress do
                 |> JS.hide(to: "#progress-up-icon")
                 |> JS.show(to: "#progress-down-icon")
               }
-              class="text-center text-neutral-600 text-xs font-semibold leading-none dark:text-white"
+              class="text-center text-[#006CD9] text-xs font-semibold leading-none dark:text-white"
             >
               Cancel
             </button>
@@ -102,7 +101,7 @@ defmodule OliWeb.Delivery.Content.Progress do
                 |> JS.hide(to: "#progress-up-icon")
                 |> JS.show(to: "#progress-down-icon")
               }
-              class="px-4 py-2 bg-blue-500 rounded justify-center items-center gap-2 inline-flex opacity-90 text-right text-white text-xs font-semibold leading-none"
+              class="px-4 py-2 bg-[#0080FF] rounded justify-center items-center gap-2 inline-flex opacity-90 text-right text-white text-xs font-semibold leading-none"
             >
               Apply
             </button>
