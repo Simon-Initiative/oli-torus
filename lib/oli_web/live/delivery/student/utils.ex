@@ -188,7 +188,10 @@ defmodule OliWeb.Delivery.Student.Utils do
         TERMS
       </span>
       <ul class="list-disc ml-6">
-        <li :if={@has_scheduled_resources?} id="page_due_terms">
+        <li
+          :if={@has_scheduled_resources? or not is_nil(@effective_settings.end_date)}
+          id="page_due_terms"
+        >
           <.page_due_term effective_settings={@effective_settings} ctx={@ctx} />
         </li>
         <li :if={!@effective_settings.batch_scoring} id="score_as_you_go_term">
