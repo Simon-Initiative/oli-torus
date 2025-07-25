@@ -49,7 +49,7 @@ defmodule OliWeb.Common.StripedPagedTable do
           limit={@limit}
           click={@page_change}
           limit_change={@limit_change}
-          has_shorter_label={true}
+          has_shorter_label={false}
           show_limit_change={true}
           should_add_empty_flex={false}
           is_page_size_right={true}

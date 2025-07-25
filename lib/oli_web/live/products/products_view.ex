@@ -3,14 +3,16 @@ defmodule OliWeb.Products.ProductsView do
 
   import OliWeb.DelegatedEvents
 
-  alias Oli.Repo.{Paging, Sorting}
-  alias OliWeb.Common.{Breadcrumb, Check, PagedTable, Params, TextSearch}
-  alias OliWeb.Products.Create
   alias Oli.Authoring.Course
   alias Oli.Delivery.Sections.Blueprint
-  alias OliWeb.Common.Table.SortableTableModel
-  alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Publishing
+  alias Oli.Repo.{Paging, Sorting}
+  alias OliWeb.Admin.AdminView
+  alias OliWeb.Common.{Breadcrumb, Check, PagingParams, StripedPagedTable, Params, SearchInput}
+  alias OliWeb.Common.Table.SortableTableModel
+  alias OliWeb.Icons
+  alias OliWeb.Products.{Create, DetailsView, ProductsTableModel}
+  alias OliWeb.Router.Helpers, as: Routes
 
   @limit 20
   @text_search_tooltip """
@@ -21,15 +23,13 @@ defmodule OliWeb.Products.ProductsView do
   on_mount OliWeb.LiveSessionPlugs.SetCtx
 
   def live_path(socket, params) do
-    if socket.assigns.is_admin_view do
-      Routes.live_path(socket, OliWeb.Products.ProductsView, params)
-    else
-      Routes.live_path(socket, OliWeb.Products.ProductsView, socket.assigns.project.slug, params)
-    end
+    if socket.assigns.is_admin_view,
+      do: ~p"/admin/products",
+      else: ~p"/authoring/project/#{socket.assigns.project.slug}/products?#{params}"
   end
 
   defp admin_breadcrumbs() do
-    OliWeb.Admin.AdminView.breadcrumb()
+    AdminView.breadcrumb()
     |> breadcrumb()
   end
 
@@ -84,7 +84,7 @@ defmodule OliWeb.Products.ProductsView do
     total_count = determine_total(products)
 
     ctx = socket.assigns.ctx
-    {:ok, table_model} = OliWeb.Products.ProductsTableModel.new(products, ctx)
+    {:ok, table_model} = ProductsTableModel.new(products, ctx)
 
     published? =
       case project do
@@ -117,33 +117,46 @@ defmodule OliWeb.Products.ProductsView do
     ~H"""
     <div>
       <%= if @published? do %>
-        <%= if @is_admin_view do %>
-          <TextSearch.render
-            id="text-search"
-            reset="text_search_reset"
-            change="text_search_change"
-            text={@text_search}
-            event_target={nil}
-            tooltip={@text_search_tooltip}
-          />
-        <% else %>
-          <Create.render title={@creation_title} change="title" click="create" />
-        <% end %>
+        <div class="px-4 text-[#353740] text-2xl font-bold leading-loose">
+          Browse Products
+        </div>
+        <div>
+          <Check.render checked={@include_archived} click="include_archived" class="px-4 mt-2">
+            Include Archived Products
+          </Check.render>
+          <%= if @is_admin_view do %>
+            <div class="flex w-fit gap-4 p-2 pr-8 mx-4 mt-3 mb-2 shadow-[0px_2px_6.099999904632568px_0px_rgba(0,0,0,0.10)] border border-[#ced1d9] dark:border-[#3B3740] dark:bg-[#000000]">
+              <.form for={%{}} phx-change="text_search_change" class="w-56">
+                <SearchInput.render id="text-search" name="project_name" text={@text_search} />
+              </.form>
 
-        <Check.render checked={@include_archived} click="include_archived">
-          Include archived Products
-        </Check.render>
+              <button class="ml-2 text-center text-[#353740] dark:text-[#EEEBF5] text-sm font-normal leading-none flex items-center gap-x-1">
+                <Icons.filter class="stroke-[#353740] dark:stroke-[#EEEBF5]" /> Filter
+              </button>
 
-        <div class="mb-3" />
+              <button
+                class="ml-2 mr-4 text-center text-[#353740] dark:text-[#EEEBF5] text-sm font-normal leading-none flex items-center gap-x-1"
+                phx-click="clear_all_filters"
+              >
+                <Icons.trash class="stroke-[#353740] dark:stroke-[#EEEBF5]" /> Clear All Filters
+              </button>
+            </div>
+          <% else %>
+            <Create.render title={@creation_title} change="title" click="create" />
+          <% end %>
+        </div>
 
-        <PagedTable.render
-          page_change="paged_table_page_change"
-          sort="paged_table_sort"
-          total_count={@total_count}
-          filter={@text_search}
-          limit={@limit}
-          offset={@offset}
+        <StripedPagedTable.render
           table_model={@table_model}
+          total_count={@total_count}
+          offset={@offset}
+          limit={@limit}
+          render_top_info={false}
+          additional_table_class="instructor_dashboard_table"
+          sort="paged_table_sort"
+          page_change="paged_table_page_change"
+          limit_change="paged_table_limit_change"
+          show_limit_change={true}
         />
       <% else %>
         <div>Products cannot be created until project is published.</div>
@@ -156,10 +169,11 @@ defmodule OliWeb.Products.ProductsView do
     offset = Params.get_int_param(params, "offset", 0)
     text_search = Params.get_param(params, "text_search", "")
     include_archived = Params.get_boolean_param(params, "include_archived", false)
+    limit = Params.get_int_param(params, "limit", @limit)
 
     products =
       Blueprint.browse(
-        %Paging{offset: offset, limit: @limit},
+        %Paging{offset: offset, limit: limit},
         %Sorting{
           direction: socket.assigns.table_model.sort_order,
           field: socket.assigns.table_model.sort_by_spec.name
@@ -182,39 +196,13 @@ defmodule OliWeb.Products.ProductsView do
        table_model: table_model,
        total_count: total_count,
        text_search: text_search,
-       include_archived: include_archived
+       include_archived: include_archived,
+       limit: limit
      )}
   end
 
   def handle_event("include_archived", __params, socket) do
-    project_id = if socket.assigns.project === nil, do: nil, else: socket.assigns.project.id
-
     include_archived = !socket.assigns.include_archived
-
-    %{offset: offset, limit: limit, table_model: table_model, text_search: text_search} =
-      socket.assigns
-
-    products =
-      Blueprint.browse(
-        %Paging{offset: offset, limit: limit},
-        %Sorting{direction: table_model.sort_order, field: table_model.sort_by_spec.name},
-        text_search: text_search,
-        include_archived: include_archived,
-        project_id: project_id
-      )
-
-    total_count = length(products)
-
-    table_model = Map.put(table_model, :rows, products)
-
-    socket =
-      assign(socket,
-        include_archived: include_archived,
-        products: products,
-        total_count: total_count,
-        table_model: table_model
-      )
-
     patch_with(socket, %{include_archived: include_archived})
   end
 
@@ -238,7 +226,7 @@ defmodule OliWeb.Products.ProductsView do
         {:noreply,
          socket
          |> put_flash(:info, "Product successfully created.")
-         |> redirect(to: Routes.live_path(socket, OliWeb.Products.DetailsView, blueprint.slug))}
+         |> redirect(to: Routes.live_path(socket, DetailsView, blueprint.slug))}
 
       {:error, _} ->
         {:noreply, put_flash(socket, :error, "Could not create product")}
@@ -249,34 +237,77 @@ defmodule OliWeb.Products.ProductsView do
     {:noreply, assign(socket, show_feature_overview: false)}
   end
 
+  def handle_event("text_search_change", %{"project_name" => project_name}, socket) do
+    patch_with(socket, %{text_search: project_name})
+  end
+
+  def handle_event("paged_table_sort", %{"sort_by" => sort_by_str}, socket) do
+    current_sort_by = socket.assigns.table_model.sort_by_spec.name
+    current_sort_order = socket.assigns.table_model.sort_order
+    new_sort_by = String.to_existing_atom(sort_by_str)
+
+    sort_order =
+      if new_sort_by == current_sort_by, do: toggle_sort_order(current_sort_order), else: :asc
+
+    patch_with(socket, %{sort_by: new_sort_by, sort_order: sort_order})
+  end
+
+  def handle_event("paged_table_page_change", %{"limit" => limit, "offset" => offset}, socket) do
+    patch_with(socket, %{limit: limit, offset: offset})
+  end
+
+  def handle_event(
+        "paged_table_limit_change",
+        params,
+        socket
+      ) do
+    new_limit = Params.get_int_param(params, "limit", 20)
+
+    new_offset =
+      PagingParams.calculate_new_offset(
+        socket.assigns.offset,
+        new_limit,
+        socket.assigns.total_count
+      )
+
+    socket =
+      socket
+      |> assign(:limit, new_limit)
+      |> assign(:offset, new_offset)
+
+    patch_with(socket, %{limit: new_limit, offset: new_offset})
+  end
+
+  def handle_event("clear_all_filters", _params, socket) do
+    {:noreply, push_patch(socket, to: live_path(socket, %{}))}
+  end
+
   def handle_event(event, params, socket) do
     {event, params, socket, &__MODULE__.patch_with/2}
-    |> delegate_to([
-      &TextSearch.handle_delegated/4,
-      &PagedTable.handle_delegated/4
-    ])
+    |> delegate_to([&StripedPagedTable.handle_delegated/4])
   end
 
   def patch_with(socket, changes) do
     {:noreply,
      push_patch(socket,
-       to:
-         live_path(
-           socket,
-           Map.merge(
-             %{
-               sort_by: socket.assigns.table_model.sort_by_spec.name,
-               sort_order: socket.assigns.table_model.sort_order,
-               offset: socket.assigns.offset,
-               text_search: socket.assigns.text_search,
-               include_archived: socket.assigns.include_archived
-             },
-             changes
-           )
-         ),
+       to: Routes.live_path(socket, __MODULE__, Map.merge(current_params(socket), changes)),
        replace: true
      )}
   end
+
+  defp current_params(socket) do
+    %{
+      sort_by: socket.assigns.table_model.sort_by_spec.name,
+      sort_order: socket.assigns.table_model.sort_order,
+      offset: socket.assigns.offset,
+      limit: socket.assigns.limit,
+      include_archived: socket.assigns.include_archived,
+      text_search: socket.assigns.text_search
+    }
+  end
+
+  defp toggle_sort_order(:asc), do: :desc
+  defp toggle_sort_order(_), do: :asc
 
   defp determine_total(products) do
     case products do
