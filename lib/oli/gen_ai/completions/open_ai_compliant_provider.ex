@@ -9,7 +9,7 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
   alias Oli.GenAI.Completions.RegisteredModel
 
 
-  def generate(messages, functions, %RegisteredModel{model: model} = registered_model, _options \\ []) do
+  def generate(messages, functions, %RegisteredModel{model: model} = registered_model) do
     config = config(:sync, registered_model)
 
     api_post(
@@ -23,7 +23,7 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
     )
   end
 
-  def stream(messages, functions, %RegisteredModel{model: model} = registered_model, response_handler_fn, _options \\ []) do
+  def stream(messages, functions, %RegisteredModel{model: model} = registered_model, response_handler_fn) do
 
     config = config(:async, registered_model)
 

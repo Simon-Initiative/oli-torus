@@ -11,14 +11,14 @@ defmodule Oli.GenAI.Completions do
 
   alias Oli.GenAI.Completions.RegisteredModel
 
-  def generate(messages, functions, %RegisteredModel{} = registered_model, options \\ []) do
+  def generate(messages, functions, %RegisteredModel{} = registered_model) do
     get_provider(registered_model)
-    |> apply(:generate, [messages, functions, registered_model, options])
+    |> apply(:generate, [messages, functions, registered_model])
   end
 
-  def stream(messages, functions, %RegisteredModel{} = registered_model, response_handler_fn, options \\ []) do
+  def stream(messages, functions, %RegisteredModel{} = registered_model, response_handler_fn) do
     get_provider(registered_model)
-    |> apply(:stream, [messages, functions, registered_model, response_handler_fn, options])
+    |> apply(:stream, [messages, functions, registered_model, response_handler_fn])
   end
 
   defp get_provider(%RegisteredModel{} = registered_model) do

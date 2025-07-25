@@ -6,12 +6,12 @@ defmodule Oli.GenAI.Completions.NullProvider do
   @behaviour Oli.GenAI.Completions.Provider
 
   @impl true
-  def generate(_messages, _functions, _registered_model, _options) do
+  def generate(_messages, _functions, _registered_model) do
     {:ok, "This is a null provider. No generation performed."}
   end
 
   @impl true
-  def stream(_messages, _functions, _registered_model, stream_fn, _options) do
+  def stream(_messages, _functions, _registered_model, stream_fn) do
     str    = "This is a null provider. No generation performed."
     tokens = String.split(str, " ") ++ ["STOP"]
 
@@ -31,13 +31,13 @@ defmodule Oli.GenAI.Completions.NullProvider do
       # Sleep a random amount milliseconds between 100 and 200
       :rand.seed(:exs64, {System.os_time(:millisecond), System.unique_integer([:positive]), :os.system_time(:millisecond)})
 
-      :rand.uniform(200)
+      :rand.uniform(50)
       |> Kernel.+(100)
       |> :timer.sleep()
 
       stream_fn.(chunk)
     end)
-    |> Enum.to_list()
+    |> Stream.run()
 
   end
 end

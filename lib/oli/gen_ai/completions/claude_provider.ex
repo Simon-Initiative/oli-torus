@@ -6,7 +6,7 @@ defmodule Oli.GenAI.Completions.ClaudeProvider do
 
   alias Oli.GenAI.Completions.RegisteredModel
 
-  def generate(messages, functions, %RegisteredModel{model: model} = registered_model, _options \\ []) do
+  def generate(messages, functions, %RegisteredModel{model: model} = registered_model) do
 
     client = create_client(registered_model.api_key_variable_name)
 
@@ -34,7 +34,7 @@ defmodule Oli.GenAI.Completions.ClaudeProvider do
 
   end
 
-  def stream(messages, functions, %RegisteredModel{model: model} = registered_model, response_handler_fn, _options \\ []) do
+  def stream(messages, functions, %RegisteredModel{model: model} = registered_model, response_handler_fn) do
 
     client = create_client(registered_model.api_key_variable_name)
 
