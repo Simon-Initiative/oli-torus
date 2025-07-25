@@ -213,7 +213,8 @@ defmodule Oli.MixProject do
       {:uuid, "~> 1.1"},
       {:xml_builder, "~> 2.3.0"},
       {:vega_lite, "~> 0.1.9"},
-      {:odgn_json_pointer, "~> 3.0.1"}
+      {:odgn_json_pointer, "~> 3.0.1"},
+      {:idna, "~> 6.1.1"}
     ]
   end
 
