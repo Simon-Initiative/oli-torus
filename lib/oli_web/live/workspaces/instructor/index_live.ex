@@ -11,10 +11,6 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
 
   @default_params %{text_search: "", sidebar_expanded: true}
 
-  @context_instructor_roles [
-    Lti_1p3.Roles.ContextRoles.get_role(:context_instructor)
-  ]
-
   @impl Phoenix.LiveView
   def mount(_params, _session, %{assigns: %{current_user: current_user, ctx: ctx}} = socket)
       when not is_nil(current_user) do
@@ -417,6 +413,7 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
   end
 
   defp sections_where_user_is_instructor(user_id) do
-    Sections.get_open_and_free_active_sections_by_roles(user_id, @context_instructor_roles)
+    context_instructor_roles = Sections.get_instructor_roles()
+    Sections.get_open_and_free_active_sections_by_roles(user_id, context_instructor_roles)
   end
 end
