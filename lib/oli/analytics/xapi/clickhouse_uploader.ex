@@ -16,14 +16,25 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
   def upload(%StatementBundle{body: body, category: category} = bundle) do
     config = get_clickhouse_config()
 
-    case parse_and_insert_events(body, category, config) do
-      {:ok, _count} = result ->
-        Logger.debug("Successfully uploaded bundle #{bundle.bundle_id} to ClickHouse")
-        result
+    # Ensure the table exists before attempting to insert data
+    case ensure_tables_exist(config) do
+      :ok ->
+        case parse_and_insert_events(body, category, config) do
+          {:ok, _count} = result ->
+            Logger.debug("Successfully uploaded bundle #{bundle.bundle_id} to ClickHouse")
+            result
+
+          {:error, reason} = error ->
+            Logger.error(
+              "Failed to upload bundle #{bundle.bundle_id} to ClickHouse: #{inspect(reason)}"
+            )
+
+            error
+        end
 
       {:error, reason} = error ->
         Logger.error(
-          "Failed to upload bundle #{bundle.bundle_id} to ClickHouse: #{inspect(reason)}"
+          "Failed to ensure ClickHouse tables exist for bundle #{bundle.bundle_id}: #{inspect(reason)}"
         )
 
         error
@@ -208,5 +219,24 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
       password: Application.get_env(:oli, :clickhouse_password, ""),
       database: Application.get_env(:oli, :clickhouse_database, "default")
     }
+  end
+
+  defp ensure_tables_exist(config) do
+    # Check if video_events table exists by running a simple query
+    check_query = "SELECT 1 FROM video_events LIMIT 0"
+
+    case execute_clickhouse_query(check_query, config) do
+      {:ok, _} ->
+        :ok
+
+      {:error, reason} ->
+        if String.contains?(to_string(reason), "doesn't exist") do
+          Logger.warning("video_events table doesn't exist. Please run ClickHouse migrations.")
+          Logger.warning("Run: mix clickhouse.migrate up")
+          {:error, "video_events table doesn't exist. Run migrations first."}
+        else
+          {:error, reason}
+        end
+    end
   end
 end
