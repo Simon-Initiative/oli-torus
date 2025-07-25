@@ -18,7 +18,7 @@ defmodule Oli.GenAI.Dialogue.FallbackTest do
       messages: []
     }
 
-    # 5. Start the server and send a user message
+    # Start the server and send a user message
     {:ok, server} = Server.new(config)
     Server.engage(server, %Message{role: :user, content: "Hello"})
 
@@ -29,7 +29,7 @@ defmodule Oli.GenAI.Dialogue.FallbackTest do
     assert state.registered_model.provider == :null
 
     Server.engage(server, %Message{role: :user, content: "Hello"})
-    :timer.sleep(2000) # Allow time for the fallback to process
+    :timer.sleep(2000) # Allow time for the tokens to stream from the NullProvider
 
     # We can verify that the server now has an assistant message from the NullProvider
     state = :sys.get_state(server)
