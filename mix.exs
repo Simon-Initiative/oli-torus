@@ -67,6 +67,7 @@ defmodule Oli.MixProject do
       "guides/design/attempt.md",
       "guides/design/attempt-handling.md",
       "guides/design/locking.md",
+      "guides/design/genai.md",
       "guides/design/page-model.md",
       "guides/design/gdpr.md",
       "guides/design/misc.md",
