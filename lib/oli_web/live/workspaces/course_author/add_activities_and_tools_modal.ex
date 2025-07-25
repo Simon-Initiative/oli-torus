@@ -151,6 +151,17 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal do
           <Common.loading_spinner />
         </div>
       </Modal.modal>
+      <button
+        :if={Mix.env() == :test}
+        id="test-show-modal-button"
+        type="button"
+        class="hidden"
+        phx-click="show_modal"
+        phx-target={@myself}
+        phx-value-project_id={@project_id}
+      >
+        Test Show Modal
+      </button>
     </div>
     """
   end
@@ -172,6 +183,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal do
             phx-value-tab="activities"
             phx-target={@myself}
             data-selected={"#{@active_tab == "activities"}"}
+            role="tab"
+            data-tab="activities"
             class={[
               "flex-1 px-2 py-3 rounded-tl-lg rounded-bl-lg flex justify-center items-center gap-1.5",
               "selected:text-white selected:bg-[#0080FF] selected:hover:bg-[#0075EB] selected:dark:bg-[#0062F2] selected:dark:hover:bg-[#0D70FF]",
@@ -185,6 +198,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal do
             phx-value-tab="tools"
             phx-target={@myself}
             data-selected={"#{@active_tab == "tools"}"}
+            role="tab"
+            data-tab="tools"
             class={[
               "flex-1 px-2 py-3 rounded-tr-lg rounded-br-lg flex justify-center items-center gap-1.5",
               "selected:text-white selected:bg-[#0080FF] selected:hover:bg-[#0075EB] selected:dark:bg-[#0062F2] selected:dark:hover:bg-[#0D70FF]",
@@ -207,13 +222,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal do
           </p>
         </div>
 
-        <Utils.search_box
-          class="w-56 h-9"
-          search_term={@search_term}
-          on_search={JS.push("search", target: @myself)}
-          on_change={JS.push("search", target: @myself)}
-          on_clear_search={JS.push("clear_search", target: @myself)}
-        />
+        <div role="search">
+          <Utils.search_box
+            class="w-56 h-9"
+            search_term={@search_term}
+            on_search={JS.push("search", target: @myself)}
+            on_change={JS.push("search", target: @myself)}
+            on_clear_search={JS.push("clear_search", target: @myself)}
+          />
+        </div>
         <!-- Tab Content -->
         <div class="max-h-96 overflow-y-auto">
           <!-- Advanced Activities Tab -->
@@ -228,6 +245,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal do
                 phx-click="toggle_selection"
                 phx-value-activity_id={item.id}
                 phx-target={@myself}
+                role="activity-item"
+                data-activity-id={item.id}
               >
                 <div class="flex items-center gap-2 flex-1">
                   <.input
@@ -275,6 +294,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal do
                 phx-click="toggle_selection"
                 phx-value-activity_id={item.id}
                 phx-target={@myself}
+                role="tool-item"
+                data-tool-id={item.id}
               >
                 <div class="flex items-center gap-2 flex-1">
                   <.input
@@ -319,6 +340,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal do
             <button
               class="px-4 py-2 rounded-md outline outline-1 outline-offset-[-1px] outline-blue-500 hover:opacity-90 text-[#0165DA] dark:text-[#4CA6FF]"
               phx-click={Modal.hide_modal(@id <> "-modal") |> JS.push("reset_modal", target: @myself)}
+              role="cancel-button"
             >
               Cancel
             </button>
@@ -333,6 +355,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal do
               phx-click={JS.push("save_selections") |> Modal.hide_modal(@id <> "-modal")}
               phx-target={@myself}
               disabled={!@pending_changes.has_changes}
+              role="apply-button"
             >
               Apply Changes
             </button>
