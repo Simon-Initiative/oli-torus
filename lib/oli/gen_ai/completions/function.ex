@@ -1,5 +1,4 @@
 defmodule Oli.GenAI.Completions.Function do
-
   @derive Jason.Encoder
   defstruct [
     :name,
@@ -41,9 +40,10 @@ defmodule Oli.GenAI.Completions.Function do
 
   # Looks up the module for a given function name in the available functions
   defp verify_module_and_function(available_functions, name) do
-    as_map = Enum.reduce(available_functions, %{}, fn function, acc ->
-      Map.put(acc, function.name, function)
-    end)
+    as_map =
+      Enum.reduce(available_functions, %{}, fn function, acc ->
+        Map.put(acc, function.name, function)
+      end)
 
     full_name = Map.get(as_map, name).full_name
 
@@ -57,8 +57,9 @@ defmodule Oli.GenAI.Completions.Function do
         name = Enum.at(parts, -1) |> String.to_existing_atom()
 
         # Join the module parts and convert to an atom
-        module = Enum.join(module_parts, ".")
-        |> String.to_existing_atom()
+        module =
+          Enum.join(module_parts, ".")
+          |> String.to_existing_atom()
 
         # ensure that it is a valid module that is loaded
         if Code.ensure_loaded?(module) do
@@ -71,6 +72,4 @@ defmodule Oli.GenAI.Completions.Function do
         {:error, :invalid_function_name}
     end
   end
-
-
 end

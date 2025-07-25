@@ -1,5 +1,4 @@
 defmodule Oli.GenAI.Dialogue.Configuration do
-
   @moduledoc """
   The static configuration for a dialogue session.
   """
@@ -21,5 +20,4 @@ defmodule Oli.GenAI.Dialogue.Configuration do
       reply_to_pid: reply_to_pid
     }
   end
-
 end

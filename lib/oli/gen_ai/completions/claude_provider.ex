@@ -1,5 +1,4 @@
 defmodule Oli.GenAI.Completions.ClaudeProvider do
-
   require Logger
 
   @behaviour Oli.GenAI.Completions.Provider
@@ -7,23 +6,21 @@ defmodule Oli.GenAI.Completions.ClaudeProvider do
   alias Oli.GenAI.Completions.RegisteredModel
 
   def generate(messages, functions, %RegisteredModel{model: model} = registered_model) do
-
     client = create_client(registered_model.api_key_variable_name)
 
-    case Anthropix.chat(client, [
-      model: model,
-      messages: encode_messages(messages),
-      tools: encode_functions(functions)
-    ]) do
-
+    case Anthropix.chat(client,
+           model: model,
+           messages: encode_messages(messages),
+           tools: encode_functions(functions)
+         ) do
       {:ok, response} ->
-
-        full_text = Enum.reduce(response["content"], "", fn content, acc ->
-          case content do
-            %{"type" => "text", "text" => text} -> acc <> text
-            _ -> acc
-          end
-        end)
+        full_text =
+          Enum.reduce(response["content"], "", fn content, acc ->
+            case content do
+              %{"type" => "text", "text" => text} -> acc <> text
+              _ -> acc
+            end
+          end)
 
         {:ok, full_text}
 
@@ -31,20 +28,22 @@ defmodule Oli.GenAI.Completions.ClaudeProvider do
         Logger.error("Failed to generate response: #{inspect(reason)}")
         {:error, "Failed to generate response"}
     end
-
   end
 
-  def stream(messages, functions, %RegisteredModel{model: model} = registered_model, response_handler_fn) do
-
+  def stream(
+        messages,
+        functions,
+        %RegisteredModel{model: model} = registered_model,
+        response_handler_fn
+      ) do
     client = create_client(registered_model.api_key_variable_name)
 
-    case Anthropix.chat(client, [
-      model: model,
-      messages: encode_messages(messages),
-      tools: encode_functions(functions),
-      stream: true,
-    ]) do
-
+    case Anthropix.chat(client,
+           model: model,
+           messages: encode_messages(messages),
+           tools: encode_functions(functions),
+           stream: true
+         ) do
       {:ok, stream} ->
         consume_stream(stream, response_handler_fn)
         :ok
@@ -53,15 +52,11 @@ defmodule Oli.GenAI.Completions.ClaudeProvider do
       {:error, %Mint.TransportError{reason: reason}} ->
         Logger.error("Anthropix HTTP failure: #{inspect(reason)}")
         {:error, reason}
-
     end
-
   end
 
   defp consume_stream(stream, response_handler_fn) do
-
     Stream.transform(stream, nil, fn chunk, state ->
-
       case chunk["type"] do
         "content_block_start" ->
           case chunk["content_block"] do
@@ -70,7 +65,6 @@ defmodule Oli.GenAI.Completions.ClaudeProvider do
               {[chunk], :in_text}
 
             %{"type" => "tool_use"} = content ->
-
               adjusted_content = %{
                 "name" => content["name"],
                 "arguments" => "",
@@ -82,13 +76,14 @@ defmodule Oli.GenAI.Completions.ClaudeProvider do
 
             _ ->
               {:ignore}
-
           end
+
         "content_block_stop" ->
           case state do
             :in_text ->
               response_handler_fn.({:tokens_finished})
               {[], nil}
+
             :in_function ->
               response_handler_fn.({:function_call_finished})
               {[], nil}
@@ -115,14 +110,15 @@ defmodule Oli.GenAI.Completions.ClaudeProvider do
         _ ->
           {[], state}
       end
-
     end)
     |> Stream.run()
   end
 
   defp create_client(variable_name) do
     read_var(variable_name)
-    |> Anthropix.init(receive_timeout: System.get_env("ANTHROPIC_RECV_TIMEOUT", "60000") |> String.to_integer())
+    |> Anthropix.init(
+      receive_timeout: System.get_env("ANTHROPIC_RECV_TIMEOUT", "60000") |> String.to_integer()
+    )
   end
 
   defp encode_functions(functions) do
@@ -136,79 +132,83 @@ defmodule Oli.GenAI.Completions.ClaudeProvider do
   end
 
   defp encode_messages(messages) do
-
     # System messages have to become user messages for Claude
     # because Claude does not support system messages.
     # Also, function results are converted to user messages also
-    {translated, _tool} = Enum.map(messages, fn message ->
-      case message.role do
-        :system ->
-          %{message | role: :user}
-        :function ->
-          %{
-            role: :tool_result,
-            name: nil,
-            content: [
-              %{
-                type: "tool_result",
-                tool_use_id: message.id,
-                content: Jason.encode!(message.content)
-              }
-            ],
-            tool: %{
-              type: "tool_use",
-              id: message.id,
-              name: message.name,
-              input: message.input
-            }
-          }
-        _ -> message
-      end
-    end)
-    |> Enum.reverse()
-    |> Enum.reduce({[], nil}, fn message, {all, tool} ->
-      case message.role do
-        :tool_result ->
-          tool = message.tool
-          message = Map.delete(message, :tool) |> Map.put(:role, :user)
-          {[message | all], tool}
+    {translated, _tool} =
+      Enum.map(messages, fn message ->
+        case message.role do
+          :system ->
+            %{message | role: :user}
 
-        _other ->
-          case tool do
-            nil ->
-              {[message | all], nil}
-            tool ->
-
-              # We adjust the content of what was the :assistant message preceeding
-              # the function call result - making it an array
-
-              message = Map.put(message, :content, [
+          :function ->
+            %{
+              role: :tool_result,
+              name: nil,
+              content: [
                 %{
-                  type: "text",
-                  text: message.content
-                },
-                tool
-              ])
+                  type: "tool_result",
+                  tool_use_id: message.id,
+                  content: Jason.encode!(message.content)
+                }
+              ],
+              tool: %{
+                type: "tool_use",
+                id: message.id,
+                name: message.name,
+                input: message.input
+              }
+            }
 
-              {[message | all], nil}
-          end
+          _ ->
+            message
+        end
+      end)
+      |> Enum.reverse()
+      |> Enum.reduce({[], nil}, fn message, {all, tool} ->
+        case message.role do
+          :tool_result ->
+            tool = message.tool
+            message = Map.delete(message, :tool) |> Map.put(:role, :user)
+            {[message | all], tool}
 
-      end
+          _other ->
+            case tool do
+              nil ->
+                {[message | all], nil}
 
-    end)
+              tool ->
+                # We adjust the content of what was the :assistant message preceeding
+                # the function call result - making it an array
+
+                message =
+                  Map.put(message, :content, [
+                    %{
+                      type: "text",
+                      text: message.content
+                    },
+                    tool
+                  ])
+
+                {[message | all], nil}
+            end
+        end
+      end)
 
     Enum.map(translated, fn message ->
       case message.name do
-        nil -> %{role: message.role |> Atom.to_string, content: message.content}
-        _ -> %{role: message.role |> Atom.to_string, content: message.content, name: message.name}
+        nil ->
+          %{role: message.role |> Atom.to_string(), content: message.content}
+
+        _ ->
+          %{role: message.role |> Atom.to_string(), content: message.content, name: message.name}
       end
     end)
-
   end
 
   defp read_var(nil), do: ""
+
   defp read_var(key) do
     System.get_env(key)
   end
-
 end

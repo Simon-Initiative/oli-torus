@@ -74,13 +74,14 @@ defmodule Oli.GenAI.Dialogue.Server do
   end
 
   def init(%Configuration{} = static_configuration) do
+    Logger.debug(
+      "Starting dialogue server for client process #{inspect(static_configuration.reply_to_pid)}"
+    )
 
-    Logger.debug("Starting dialogue server for client process #{inspect(static_configuration.reply_to_pid)}")
     {:ok, State.new(static_configuration)}
   end
 
   def handle_cast({:engage, message}, %State{} = state) do
-
     # Extract the current dialogue state and configuration
     %{messages: messages, configuration: cfg} = state
 
@@ -92,13 +93,16 @@ defmodule Oli.GenAI.Dialogue.Server do
       |> do_engage(state, message)
     end)
 
-    Logger.debug("Engaging dialogue for client #{inspect(cfg.reply_to_pid)} with message: #{inspect(message)}")
+    Logger.debug(
+      "Engaging dialogue for client #{inspect(cfg.reply_to_pid)} with message: #{inspect(message)}"
+    )
 
     {:noreply, %State{state | messages: messages ++ [message]}}
-
   end
 
-  defp build_notify_fns(server_pid, %State{configuration: %Configuration{reply_to_pid: reply_to_pid}}) do
+  defp build_notify_fns(server_pid, %State{
+         configuration: %Configuration{reply_to_pid: reply_to_pid}
+       }) do
     {
       fn message ->
         send(server_pid, message)
@@ -109,15 +113,21 @@ defmodule Oli.GenAI.Dialogue.Server do
     }
   end
 
-  def do_engage({notify_server_fn, notify_client_fn}, %State{configuration: configuration, registered_model: registered_model} = state, %Message{} = message) do
-
+  def do_engage(
+        {notify_server_fn, notify_client_fn},
+        %State{configuration: configuration, registered_model: registered_model} = state,
+        %Message{} = message
+      ) do
     Logger.debug("do_engage for client #{inspect(configuration.reply_to_pid)}")
 
     process_chunk = fn chunk ->
       case chunk do
         {:error} ->
           notify_server_fn.({:stream_chunk, {:error}})
-          notify_client_fn.({:dialogue_server, {:error, "An error occurred while processing the request"}})
+
+          notify_client_fn.(
+            {:dialogue_server, {:error, "An error occurred while processing the request"}}
+          )
 
         {:function_call, function_call} ->
           notify_server_fn.({:stream_chunk, {:function_call, function_call}})
@@ -145,29 +155,36 @@ defmodule Oli.GenAI.Dialogue.Server do
       end
     end
 
-    case Completions.stream(state.messages ++ [message], configuration.functions, registered_model, response_handler_fn) do
-
+    case Completions.stream(
+           state.messages ++ [message],
+           configuration.functions,
+           registered_model,
+           response_handler_fn
+         ) do
       :ok ->
         {:noreply, state}
 
       {:error, error} ->
-        Logger.info("Encountered completions http error for client #{inspect(configuration.reply_to_pid)}: #{inspect(error)}")
+        Logger.info(
+          "Encountered completions http error for client #{inspect(configuration.reply_to_pid)}: #{inspect(error)}"
+        )
 
         if should_retry?(state) do
-
           Logger.info("Falling back to backup for client #{inspect(configuration.reply_to_pid)}")
 
           state = fallback(state)
           do_engage({notify_server_fn, notify_client_fn}, state, message)
         else
+          Logger.warning(
+            "Failed without backup for client #{inspect(configuration.reply_to_pid)}"
+          )
 
-          Logger.warning("Failed without backup for client #{inspect(configuration.reply_to_pid)}")
-
-          notify_client_fn.({:dialogue_server, {:error, "An error occurred while processing the request"}})
+          notify_client_fn.(
+            {:dialogue_server, {:error, "An error occurred while processing the request"}}
+          )
 
           {:noreply, state}
         end
-
     end
   end
 
@@ -176,7 +193,8 @@ defmodule Oli.GenAI.Dialogue.Server do
       state.configuration.service_config.backup_model != state.registered_model
   end
 
-  defp fallback(state), do: Map.put(state, :registered_model, state.configuration.service_config.backup_model)
+  defp fallback(state),
+    do: Map.put(state, :registered_model, state.configuration.service_config.backup_model)
 
   defp send_to_listener(%State{configuration: %Configuration{reply_to_pid: pid}}, message) do
     send(pid, message)
@@ -185,17 +203,16 @@ defmodule Oli.GenAI.Dialogue.Server do
   # All stream chunks come back here
 
   def handle_info({:stream_chunk, {:error}}, state) do
-
     if should_retry?(state) do
+      Logger.info(
+        "Falling back to backup for client #{inspect(state.configuration.reply_to_pid)}"
+      )
 
-      Logger.info("Falling back to backup for client #{inspect(state.configuration.reply_to_pid)}")
       {:noreply, fallback(state)}
     else
-
       {:noreply, state}
     end
   end
-
 
   def handle_info({:stream_chunk, {:tokens_received, content}}, state) do
     # Append tokens to the “assistant” draft
@@ -204,30 +221,27 @@ defmodule Oli.GenAI.Dialogue.Server do
   end
 
   def handle_info({:stream_chunk, {:function_call, content}}, state) do
-
     # we are processing a chunk of information regarding a function to call
     case content do
       %{"name" => name, "arguments" => args, "id" => id} ->
-
         {:noreply, %{state | function_args: args, function_name: name, function_id: id}}
 
       %{"arguments" => args} ->
         {:noreply, %{state | function_args: state.function_args <> args}}
     end
-
   end
 
   def handle_info({:stream_chunk, {:function_call_finished}}, state) do
-
     # The LLM has finished spitting out the function args, we need to execute it.
-    %{function_name: name, function_args: args, function_id: id, configuration: configuration} = state
+    %{function_name: name, function_args: args, function_id: id, configuration: configuration} =
+      state
+
     %{functions: functions} = configuration
 
     case Jason.decode(args) do
       {:ok, arguments_as_map} ->
         case Function.call(functions, name, arguments_as_map) do
           {:ok, result} ->
-
             message = %Message{
               role: :function,
               content: result,
@@ -240,7 +254,10 @@ defmodule Oli.GenAI.Dialogue.Server do
 
             # Let the client know that a function was called, it may want to persist this
             # or do something with it
-            send_to_listener(state, {:dialogue_server, {:function_called, name, arguments_as_map}})
+            send_to_listener(
+              state,
+              {:dialogue_server, {:function_called, name, arguments_as_map}}
+            )
 
             state = %{state | function_args: nil, function_name: nil, function_message: message}
             {:noreply, state, {:continue, :execute_function}}
@@ -254,7 +271,6 @@ defmodule Oli.GenAI.Dialogue.Server do
         Logger.error("Failed to decode function arguments: #{args}")
         {:noreply, state}
     end
-
   end
 
   def handle_info({:stream_chunk, {:tokens_finished}}, state) do
@@ -265,17 +281,16 @@ defmodule Oli.GenAI.Dialogue.Server do
   # This is the entry point for engaging the dialogue server from within the server itself
   # (e.g., when the server sends a message to itself after executing a function call)
   def handle_info({:engage, message}, %State{} = state) do
-
     %{messages: messages} = state
 
     server = self()
+
     Task.start(fn ->
       build_notify_fns(server, state)
       |> do_engage(state, message)
     end)
 
     {:noreply, %State{state | messages: messages ++ [message]}}
-
   end
 
   def handle_continue(:execute_function, %{function_message: message} = state) do
@@ -286,9 +301,7 @@ defmodule Oli.GenAI.Dialogue.Server do
   end
 
   defp append_token(messages, token) do
-
     case Enum.reverse(messages) do
-
       [%{role: :assistant, content: old} = last | rest] ->
         updated = %{last | content: old <> token}
         Enum.reverse([updated | rest])
@@ -297,8 +310,6 @@ defmodule Oli.GenAI.Dialogue.Server do
         # If the last message is not from the assistant, we need to create a new one
         new_message = Message.new(:assistant, token)
         Enum.reverse([new_message | list])
-
     end
   end
-
 end

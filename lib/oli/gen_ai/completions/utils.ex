@@ -1,5 +1,4 @@
 defmodule Oli.GenAI.Completions.Utils do
-
   def estimate_token_length(function) when is_map(function) do
     Jason.encode!(function)
     |> estimate_token_length()

@@ -1,5 +1,4 @@
 defmodule Oli.GenAI.Dialogue.State do
-
   alias Oli.GenAI.Dialogue.Configuration
 
   @type t :: %__MODULE__{}
@@ -25,5 +24,4 @@ defmodule Oli.GenAI.Dialogue.State do
       function_message: nil
     }
   end
-
 end

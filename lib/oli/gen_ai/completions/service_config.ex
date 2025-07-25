@@ -16,5 +16,4 @@ defmodule Oli.GenAI.Completions.ServiceConfig do
     |> cast(attrs, [:name, :primary_model_id, :backup_model_id])
     |> validate_required([:name, :primary_model_id, :backup_model_id])
   end
-
 end

@@ -1,5 +1,4 @@
 defmodule OliWeb.Dialogue.StudentFunctions do
-
   import Ecto.Query, warn: false
   import Oli.GenAI.Completions.Utils
 

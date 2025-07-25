@@ -1,5 +1,4 @@
 defmodule OliWeb.Dialogue.WindowLive do
-
   use Phoenix.LiveView, layout: {OliWeb.LayoutView, :live_no_flash}
   use OliWeb, :verified_routes
   use Phoenix.HTML
@@ -63,12 +62,12 @@ defmodule OliWeb.Dialogue.WindowLive do
   end
 
   defp init_dialogue_server(section, project, revision_id, user_id) do
-
-    system_prompt = if revision_id do
-      build_page_prompt(section, project, revision_id, user_id)
-    else
-      build_course_prompt(section, project, user_id)
-    end
+    system_prompt =
+      if revision_id do
+        build_page_prompt(section, project, revision_id, user_id)
+      else
+        build_course_prompt(section, project, user_id)
+      end
 
     configuration = %Configuration{
       service_config: Oli.GenAIFeatureConfig.load_for(section.id, :student_dialogue),
@@ -78,7 +77,6 @@ defmodule OliWeb.Dialogue.WindowLive do
     }
 
     Server.new(configuration)
-
   end
 
   def mount(
@@ -92,31 +90,29 @@ defmodule OliWeb.Dialogue.WindowLive do
     PubSub.subscribe(Oli.PubSub, "trigger:#{current_user_id}:#{section.id}:#{resource_id}")
 
     if Sections.assistant_enabled?(section) do
-
       project = Oli.Authoring.Course.get_project!(section.base_project_id)
 
       case init_dialogue_server(section, project, session["revision_id"], current_user_id) do
-
         {:ok, dialogue_server} ->
           {:ok,
-            assign(socket,
-              enabled: true,
-              minimized: true,
-              dialogue: dialogue_server,
-              form: to_form(UserInput.changeset(%UserInput{}, %{content: ""})),
-              messages: [],
-              streaming: false,
-              allow_submission?: true,
-              trigger_queue: [],
-              active_message: nil,
-              title: "Dot",
-              current_user: Oli.Accounts.get_user!(current_user_id),
-              height: 500,
-              width: 400,
-              section: section,
-              resource_id: session["resource_id"],
-              is_page: session["is_page"] == true || false
-            )}
+           assign(socket,
+             enabled: true,
+             minimized: true,
+             dialogue: dialogue_server,
+             form: to_form(UserInput.changeset(%UserInput{}, %{content: ""})),
+             messages: [],
+             streaming: false,
+             allow_submission?: true,
+             trigger_queue: [],
+             active_message: nil,
+             title: "Dot",
+             current_user: Oli.Accounts.get_user!(current_user_id),
+             height: 500,
+             width: 400,
+             section: section,
+             resource_id: session["resource_id"],
+             is_page: session["is_page"] == true || false
+           )}
 
         {:error, reason} ->
           Logger.error("Failed to initialize dialogue server: #{inspect(reason)}")
@@ -575,7 +571,6 @@ defmodule OliWeb.Dialogue.WindowLive do
   end
 
   def handle_event("update", %{"user_input" => %{"content" => content}}, socket) do
-
     %{dialogue: dialogue, messages: messages} = socket.assigns
 
     message = Message.new(:user, content)
@@ -596,61 +591,63 @@ defmodule OliWeb.Dialogue.WindowLive do
   # If we encounter any type of error from the server, have DOT post a message indicating
   # that there was an error, and basically stop responding (until the user refreshes the page)
   def handle_info({:dialogue_server, {:error, _error}}, socket) do
-
     messages = socket.assigns.messages
-    message = Message.new(:assistant, "<span class='text-red-500'>Hmmm, we encountered a problem while processing your last messsage. Maybe try again later.</span>")
+
+    message =
+      Message.new(
+        :assistant,
+        "<span class='text-red-500'>Hmmm, we encountered a problem while processing your last messsage. Maybe try again later.</span>"
+      )
+
     messages = messages ++ [message]
 
-    {:noreply, assign(socket, streaming: false, messages: messages, allow_submission?: true, active_message: nil)}
-
+    {:noreply,
+     assign(socket,
+       streaming: false,
+       messages: messages,
+       allow_submission?: true,
+       active_message: nil
+     )}
   end
 
   def handle_info({:dialogue_server, {:tokens_received, content}}, socket) do
-
     active_message = "#{socket.assigns.active_message}#{content}"
     {:noreply, assign(socket, active_message: active_message)}
-
   end
 
   def handle_info({:dialogue_server, {:tokens_finished}}, socket) do
+    message = Message.new(:assistant, Earmark.as_html!(socket.assigns.active_message))
 
+    persist_message(message, socket)
 
-        message = Message.new(:assistant, Earmark.as_html!(socket.assigns.active_message))
+    # Here we check if there are any triggers in the queue
+    # and if so, we process the first one
+    # and remove it from the queue
+    case socket.assigns.trigger_queue do
+      [] ->
+        {:noreply,
+         assign(socket,
+           streaming: false,
+           allow_submission?: true,
+           active_message: nil,
+           messages: socket.assigns.messages ++ [message]
+         )}
 
-        persist_message(message, socket)
+      [trigger | rest] ->
+        prompt = Oli.Conversation.Triggers.assemble_trigger_prompt(trigger)
 
-        # Here we check if there are any triggers in the queue
-        # and if so, we process the first one
-        # and remove it from the queue
-        case socket.assigns.trigger_queue do
-          [] ->
+        Server.engage(socket.assigns.dialogue, Message.new(:system, prompt))
 
-            {:noreply,
-              assign(socket,
-                streaming: false,
-                allow_submission?: true,
-                active_message: nil,
-                messages: socket.assigns.messages ++ [message]
-              )}
-
-          [trigger | rest] ->
-            prompt = Oli.Conversation.Triggers.assemble_trigger_prompt(trigger)
-
-            Server.engage(socket.assigns.dialogue, Message.new(:system, prompt))
-
-            {:noreply,
-              assign(socket,
-                active_message: socket.assigns.active_message <> "\n\n",
-                messages: socket.assigns.messages ++ [message],
-                trigger_queue: rest
-              )}
-        end
-
-
+        {:noreply,
+         assign(socket,
+           active_message: socket.assigns.active_message <> "\n\n",
+           messages: socket.assigns.messages ++ [message],
+           trigger_queue: rest
+         )}
+    end
   end
 
   def handle_info({:dialogue_server, {:function_called, name, arguments}}, socket) do
-
     # persist the message to the database
     Message.new(:function, Jason.encode!(arguments), name)
     |> persist_message(socket)
@@ -674,7 +671,6 @@ defmodule OliWeb.Dialogue.WindowLive do
          )}
 
       false ->
-
         prompt = Triggers.assemble_trigger_prompt(trigger)
         message = Message.new(:system, prompt)
 
@@ -704,5 +700,4 @@ defmodule OliWeb.Dialogue.WindowLive do
       socket.assigns.section.id
     )
   end
-
 end

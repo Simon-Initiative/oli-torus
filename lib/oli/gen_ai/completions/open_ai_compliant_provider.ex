@@ -1,5 +1,4 @@
 defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
-
   alias OpenAI.{Config, Stream}
   require Logger
   import HTTPoison, only: [post: 4]
@@ -7,7 +6,6 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
   @behaviour Oli.GenAI.Completions.Provider
 
   alias Oli.GenAI.Completions.RegisteredModel
-
 
   def generate(messages, functions, %RegisteredModel{model: model} = registered_model) do
     config = config(:sync, registered_model)
@@ -23,21 +21,24 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
     )
   end
 
-  def stream(messages, functions, %RegisteredModel{model: model} = registered_model, response_handler_fn) do
-
+  def stream(
+        messages,
+        functions,
+        %RegisteredModel{model: model} = registered_model,
+        response_handler_fn
+      ) do
     config = config(:async, registered_model)
 
     case api_post(
-      config.api_url <> "/v1/chat/completions",
-      [
-        model: model,
-        messages: encode_messages(messages),
-        functions: functions,
-        stream: true
-      ],
-      config
-    ) do
-
+           config.api_url <> "/v1/chat/completions",
+           [
+             model: model,
+             messages: encode_messages(messages),
+             functions: functions,
+             stream: true
+           ],
+           config
+         ) do
       {:error, %HTTPoison.Error{reason: reason}} ->
         Logger.error("OpenAI Provider HTTP failure: #{inspect(reason)}")
         {:error, reason}
@@ -45,7 +46,6 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
       stream ->
         stream
         |> Elixir.Stream.transform(:ok, fn chunk, :ok ->
-
           case process_stream_chunk(chunk) do
             {:error} ->
               response_handler_fn.({:error})
@@ -61,36 +61,36 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
           end
         end)
         |> Elixir.Stream.run()
-
     end
-
   end
 
   def process_stream_chunk(chunk) do
-
     case chunk["choices"] do
       [] ->
         {:error}
+
       [%{"finish_reason" => "stop"}] ->
         {:tokens_finished}
+
       [%{"finish_reason" => "function_call"}] ->
         {:function_call_finished}
-      [%{"delta" => %{"function_call" => content}}] ->
 
+      [%{"delta" => %{"function_call" => content}}] ->
         # open ai doesn't have the notion of an id for the function call
         # so we just the key but use nil
         content = Map.put(content, "id", nil)
 
         {:function_call, content}
+
       [%{"delta" => %{"content" => content}}] ->
         {:tokens_received, content}
+
       _ ->
         {:error}
     end
   end
 
   def encode_messages(messages) do
-
     # Delete the id and input from messages and open ai does not require these
     # for function calling
     Enum.map(messages, fn message ->
@@ -216,17 +216,17 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
   end
 
   defp config(:sync, %RegisteredModel{} = registered_model) do
-
-    url = Oli.GenAI.Completions.Utils.realize_url(registered_model.url_template, %{
-      "model" => registered_model.model,
-      "api_key" => read_var(registered_model.api_key_variable_name),
-      "secondary_api_key" => read_var(registered_model.secondary_api_key_variable_name)
-    })
+    url =
+      Oli.GenAI.Completions.Utils.realize_url(registered_model.url_template, %{
+        "model" => registered_model.model,
+        "api_key" => read_var(registered_model.api_key_variable_name),
+        "secondary_api_key" => read_var(registered_model.secondary_api_key_variable_name)
+      })
 
     %OpenAI.Config{
       http_options: [
         timeout: System.get_env("OPENAI_TIMEOUT", "8000") |> String.to_integer(),
-        recv_timeout: System.get_env("OPENAI_RECV_TIMEOUT", "60000") |> String.to_integer(),
+        recv_timeout: System.get_env("OPENAI_RECV_TIMEOUT", "60000") |> String.to_integer()
       ],
       api_key: read_var(registered_model.api_key_variable_name),
       organization_key: read_var(registered_model.secondary_api_key_variable_name),
@@ -235,12 +235,12 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
   end
 
   defp config(:async, %RegisteredModel{} = registered_model) do
-
-    url = Oli.GenAI.Completions.Utils.realize_url(registered_model.url_template, %{
-      "model" => registered_model.model,
-      "api_key" => read_var(registered_model.api_key_variable_name),
-      "secondary_api_key" => read_var(registered_model.secondary_api_key_variable_name)
-    })
+    url =
+      Oli.GenAI.Completions.Utils.realize_url(registered_model.url_template, %{
+        "model" => registered_model.model,
+        "api_key" => read_var(registered_model.api_key_variable_name),
+        "secondary_api_key" => read_var(registered_model.secondary_api_key_variable_name)
+      })
 
     %OpenAI.Config{
       http_options: [
@@ -256,8 +256,8 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
   end
 
   def read_var(nil), do: ""
+
   def read_var(key) do
     System.get_env(key)
   end
-
 end

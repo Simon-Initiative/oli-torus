@@ -16,17 +16,16 @@ defmodule Oli.GenAIFeatureConfig do
   def changeset(service_config, attrs) do
     service_config
     |> cast(attrs, [:feature, :service_config_id, :section_id])
-    |> validate_required( [:feature, :service_config_id])
+    |> validate_required([:feature, :service_config_id])
   end
 
   def load_for(section_id, feature) do
     case from(
-      g in __MODULE__,
-      where: (g.section_id == ^section_id or is_nil(g.section_id)) and g.feature == ^feature,
-      preload: [service_config: [:primary_model, :backup_model]]
-    )
-    |> Oli.Repo.all() do
-
+           g in __MODULE__,
+           where: (g.section_id == ^section_id or is_nil(g.section_id)) and g.feature == ^feature,
+           preload: [service_config: [:primary_model, :backup_model]]
+         )
+         |> Oli.Repo.all() do
       [] ->
         raise "No configurations found for section #{section_id} and feature #{feature}"
 
@@ -35,8 +34,6 @@ defmodule Oli.GenAIFeatureConfig do
 
       multiple_found ->
         Enum.find(multiple_found, fn config -> config.section_id == section_id end).service_config
-
     end
   end
-
 end

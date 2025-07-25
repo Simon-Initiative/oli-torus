@@ -1,5 +1,4 @@
 defmodule Oli.GenAI.Completions do
-
   @moduledoc """
   This module provides a unified interface for chat completion from any registered
   LLM model and provider.  This is only a chat completion inferface. There
@@ -28,5 +27,4 @@ defmodule Oli.GenAI.Completions do
       :claude -> Oli.GenAI.Completions.ClaudeProvider
     end
   end
-
 end

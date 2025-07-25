@@ -6,7 +6,8 @@ defmodule Oli.GenAI.Completions.Message do
     :role,
     :content,
     :token_length,
-    :name,   # name, id and input are used in function tool calling
+    # name, id and input are used in function tool calling
+    :name,
     :id,
     :input
   ]
@@ -32,5 +33,4 @@ defmodule Oli.GenAI.Completions.Message do
       input: nil
     }
   end
-
 end
