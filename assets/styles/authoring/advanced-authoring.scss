@@ -920,7 +920,8 @@ $font-family-sans-serif: var(--font-sans);
   border: 1px solid black !important;
 }
 .dark #moreComponents-popover .popover-header,
-.dark #advanced-authoring-modals .modal-body > li {
+.dark #advanced-authoring-modals .modal-body > li,
+.dark .advanced-authoring .popover-header {
   color: var(--color-body-dark);
 }
 .dark #advanced-authoring-modals .form-group,
@@ -937,9 +938,24 @@ $font-family-sans-serif: var(--font-sans);
   border-radius: 9px;
 }
 .dark .flowchart-editor .undo-redo-button > svg,
-.dark #advanced-authoring-modals .modal-body .btn-group .btn-link {
+.dark #advanced-authoring-modals .modal-body .btn-group .btn-link,
+.dark .modal-dialog.config-modal .modal-body .btn-group .btn-link {
   background: white;
   border-radius: 0px;
+}
+
+.dark #advanced-authoring-modals .active-selection-toolbar button,
+.dark .modal-dialog.config-modal .active-selection-toolbar button {
+  padding-left: 5px;
+  padding-right: 5px;
+  border: 1px solid #ccc;
+  margin: 0;
+  color: black;
+}
+.dark #advanced-authoring-modals .activity-content,
+.dark .modal-dialog.config-modal formula-editor textarea,
+.dark .modal-dialog.config-modal mjx-container {
+  color: var(--color-body-dark);
 }
 
 .dark #advanced-authoring-modals .invalid-screen-list,
@@ -961,6 +977,10 @@ $font-family-sans-serif: var(--font-sans);
 .dark .flowchart-editor .fixed-right-panel .nav .nav-item:hover,
 .dark .flowchart-right .toolbar-option:active {
   border: 1px solid;
+}
+.dark #aa-variable-picker .dropdown-item:hover {
+  border: 1px solid var(--color-body-color-dark);
+  color: var(--color-body-color-dark);
 }
 .dark .advanced-authoring .aa-panel-tabs .nav-link {
   color: #f5f5f5;
@@ -998,6 +1018,7 @@ $font-family-sans-serif: var(--font-sans);
 }
 
 .dark .modal-dialog.config-modal,
+.dark .modal-dialog.config-modal .modal-body,
 .dark #advanced-authoring-modals .modal-dialog,
 .dark .modal .modal-dialog .modal-body {
   .modal-header {
@@ -1015,6 +1036,7 @@ $font-family-sans-serif: var(--font-sans);
 .dark .modal .config-modal .modal-body .font-semibold,
 .dark .modal .modal-dialog.add-screen-modal label,
 .dark .modal .modal-dialog.add-screen-modal button,
+.dark .modal .modal-dialog.add-screen-modal input,
 .dark .modal .modal-dialog .modal-body .media-sidebar li,
 .dark .modal .modal-dialog .modal-body .media-infobar div {
   color: var(--color-body-color-dark) !important;
