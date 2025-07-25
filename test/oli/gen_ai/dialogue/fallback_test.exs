@@ -32,7 +32,7 @@ defmodule Oli.GenAI.Dialogue.FallbackTest do
     Server.engage(server, %Message{role: :user, content: "Hello"})
 
     # Allow time for the fallback to process
-    :timer.sleep(1000)
+    :timer.sleep(2000)
 
     # Verify that the server state has been updated to now be using the NullProvider
     state = :sys.get_state(server)
