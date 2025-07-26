@@ -117,11 +117,15 @@ defmodule OliWeb.Products.ProductsView do
     ~H"""
     <div>
       <%= if @published? do %>
-        <div class="px-4 text-[#353740] text-2xl font-bold leading-loose">
+        <div class="px-4 text-[#353740] dark:text-[#EEEBF5] text-2xl font-bold leading-loose">
           Browse Products
         </div>
         <div>
-          <Check.render checked={@include_archived} click="include_archived" class="px-4 mt-2">
+          <Check.render
+            checked={@include_archived}
+            click="include_archived"
+            class="text-[#353740] dark:text-[#EEEBF5] px-4 mt-2"
+          >
             Include Archived Products
           </Check.render>
           <%= if @is_admin_view do %>

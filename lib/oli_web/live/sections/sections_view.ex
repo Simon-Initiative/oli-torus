@@ -118,12 +118,14 @@ defmodule OliWeb.Sections.SectionsView do
 
     ~H"""
     <div>
-      <div class="flex flex-row justify-between items-center px-4 text-[#353740]">
+      <div class="flex flex-row justify-between items-center px-4">
         <div class="flex flex-col">
-          <span class="text-2xl font-bold leading-loose">Browse Course Sections</span>
+          <span class="text-2xl font-bold text-[#353740] dark:text-[#EEEBF5] leading-loose">
+            Browse Course Sections
+          </span>
           <div class="flex flex-row gap-4 mt-2 items-center">
             <Check.render checked={@options.active_today} click="active_today">
-              <span class="justify-start text-[#353740] text-base font-normal leading-normal">
+              <span class="justify-start text-[#353740] dark:text-[#EEEBF5] text-base font-normal leading-normal">
                 Active (start/end dates include today)
               </span>
             </Check.render>
@@ -155,7 +157,7 @@ defmodule OliWeb.Sections.SectionsView do
         </div>
         <a
           id="button-new-section"
-          class="btn btn-sm btn-primary rounded-md bg-[#0080FF] shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] px-4 py-2"
+          class="btn btn-sm rounded-md bg-[#0080FF] text-[#FFFFFF] shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] px-4 py-2"
           href={~p"/admin/sections/create"}
         >
           <i class="fa fa-plus pr-2"></i> New Section
