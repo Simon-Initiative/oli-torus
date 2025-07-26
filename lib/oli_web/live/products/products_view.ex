@@ -131,7 +131,7 @@ defmodule OliWeb.Products.ProductsView do
           <%= if @is_admin_view do %>
             <div class="flex w-fit gap-4 p-2 pr-8 mx-4 mt-3 mb-2 shadow-[0px_2px_6.099999904632568px_0px_rgba(0,0,0,0.10)] border border-[#ced1d9] dark:border-[#3B3740] dark:bg-[#000000]">
               <.form for={%{}} phx-change="text_search_change" class="w-56">
-                <SearchInput.render id="text-search" name="project_name" text={@text_search} />
+                <SearchInput.render id="text-search" name="product_name" text={@text_search} />
               </.form>
 
               <button class="ml-2 text-center text-[#353740] dark:text-[#EEEBF5] text-sm font-normal leading-none flex items-center gap-x-1">
@@ -241,8 +241,8 @@ defmodule OliWeb.Products.ProductsView do
     {:noreply, assign(socket, show_feature_overview: false)}
   end
 
-  def handle_event("text_search_change", %{"project_name" => project_name}, socket) do
-    patch_with(socket, %{text_search: project_name})
+  def handle_event("text_search_change", %{"product_name" => product_name}, socket) do
+    patch_with(socket, %{text_search: product_name})
   end
 
   def handle_event("paged_table_sort", %{"sort_by" => sort_by_str}, socket) do

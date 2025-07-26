@@ -188,9 +188,9 @@ defmodule OliWeb.Sections.SectionsView do
           limit={@limit}
           render_top_info={false}
           additional_table_class="instructor_dashboard_table"
-          sort={JS.push("paged_table_sort")}
-          page_change={JS.push("paged_table_page_change")}
-          limit_change={JS.push("paged_table_limit_change")}
+          sort="paged_table_sort"
+          page_change="paged_table_page_change"
+          limit_change="paged_table_limit_change"
           show_limit_change={true}
         />
       </div>
