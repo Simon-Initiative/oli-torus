@@ -1915,12 +1915,20 @@ defmodule OliWeb.Icons do
     """
   end
 
+  attr :class, :string, default: "stroke-[#353740] dark:stroke-[#EEEBF5]"
+
   def filter(assigns) do
     ~H"""
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg
+      width="24"
+      height="24"
+      class={@class}
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
       <path
         d="M4.01001 4H20.01V6.172C20.0099 6.70239 19.7991 7.21101 19.424 7.586L15.01 12V19L9.01001 21V12.5L4.53001 7.572C4.19546 7.20393 4.01006 6.7244 4.01001 6.227V4Z"
-        stroke="#353740"
         stroke-width="2"
         stroke-linecap="round"
         stroke-linejoin="round"

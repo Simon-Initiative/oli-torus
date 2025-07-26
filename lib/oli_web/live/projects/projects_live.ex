@@ -148,11 +148,13 @@ defmodule OliWeb.Projects.ProjectsLive do
     <%= render_modal(assigns) %>
 
     <div>
-      <div class="flex justify-between items-center px-4 text-[#353740] text-2xl font-bold leading-loose">
-        <span>Browse Projects</span>
+      <div class="flex justify-between items-center px-4">
+        <span class="text-[#353740] dark:text-[#EEEBF5] text-2xl font-bold leading-loose">
+          Browse Projects
+        </span>
         <button
           id="button-new-project"
-          class="btn btn-sm btn-primary rounded-md bg-[#0080FF] font-semibold shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] px-4 py-2"
+          class="btn btn-sm rounded-md bg-[#0080FF] text-[#FFFFFF] font-semibold shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] px-4 py-2"
           phx-click="show_create_project_modal"
         >
           <i class="fa fa-plus pr-2"></i> New Project
