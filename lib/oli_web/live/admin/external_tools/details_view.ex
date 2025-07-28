@@ -304,9 +304,8 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
   end
 
   def handle_event("delete_tool", _params, socket) do
-    case PlatformExternalTools.update_lti_external_tool_activity_deployment(
-           socket.assigns.deployment,
-           %{"status" => :deleted}
+    case PlatformExternalTools.soft_delete_activity_deployment_and_platform_instance(
+           socket.assigns.deployment
          ) do
       {:ok, _} ->
         {:noreply,
