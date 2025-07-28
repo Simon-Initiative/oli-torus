@@ -1,7 +1,11 @@
 defmodule Oli.Lti.PlatformInstancesTest do
   use Oli.DataCase
 
+  import Oli.Factory
+
   alias Oli.Lti.PlatformInstances
+  alias Oli.Lti.PlatformExternalTools
+  alias Oli.Lti.PlatformExternalTools.LtiExternalToolActivityDeployment
   alias Lti_1p3.DataProviders.EctoProvider.PlatformInstance
 
   describe "lti_1p3_platform_instances" do
@@ -218,6 +222,54 @@ defmodule Oli.Lti.PlatformInstancesTest do
       final_instance = PlatformInstances.get_platform_instance!(reenabled_instance.id)
       assert final_instance.status == :active
       assert final_instance.id == platform_instance.id
+    end
+
+    test "soft_delete_activity_deployment_and_platform_instance deletes both deployment and platform instance" do
+      # Create a platform instance
+      platform_instance =
+        platform_instance_fixture(%{
+          client_id: "test_delete_client_id",
+          name: "Test Delete Platform",
+          status: :active
+        })
+
+      # Create an activity registration
+      activity_registration = insert(:activity_registration)
+
+      # Create an LTI external tool activity deployment
+      deployment =
+        insert(:lti_external_tool_activity_deployment, %{
+          platform_instance: platform_instance,
+          activity_registration: activity_registration,
+          status: :enabled
+        })
+
+      # Verify both are active initially
+      assert platform_instance.status == :active
+      assert deployment.status == :enabled
+
+      # Soft delete both the deployment and platform instance
+      assert {:ok,
+              %{
+                soft_delete_activity_deployment: updated_deployment,
+                soft_delete_platform_instance: updated_platform_instance
+              }} =
+               PlatformExternalTools.soft_delete_activity_deployment_and_platform_instance(
+                 deployment
+               )
+
+      # Verify the deployment was soft deleted
+      assert updated_deployment.status == :deleted
+
+      # Verify the platform instance was soft deleted
+      assert updated_platform_instance.status == :deleted
+
+      # Verify both still exist in the database but are marked as deleted
+      retrieved_deployment = Repo.get(LtiExternalToolActivityDeployment, deployment.deployment_id)
+      assert retrieved_deployment.status == :deleted
+
+      retrieved_platform_instance = PlatformInstances.get_platform_instance!(platform_instance.id)
+      assert retrieved_platform_instance.status == :deleted
     end
   end
 end
