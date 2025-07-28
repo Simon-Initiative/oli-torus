@@ -298,7 +298,7 @@ defmodule OliWeb.AdminLiveTest do
       assert has_element?(
                view,
                "a[href=\"#{~p"/admin/ingest/upload"}\"]",
-               "V2 Ingest Project"
+               "Ingest Project"
              )
 
       assert has_element?(
@@ -436,7 +436,7 @@ defmodule OliWeb.AdminLiveTest do
       assert has_element?(
                view,
                "a[href=\"#{~p"/admin/ingest/upload"}\"]",
-               "V2 Ingest Project"
+               "Ingest Project"
              )
 
       assert has_element?(
