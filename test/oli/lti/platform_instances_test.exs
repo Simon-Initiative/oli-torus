@@ -174,5 +174,50 @@ defmodule Oli.Lti.PlatformInstancesTest do
         platform_instance_fixture(%{client_id: "unique_client_id", status: :active})
       end
     end
+
+    test "can create, delete, and re-enable LTI platform instance" do
+      # Create a new LTI platform instance
+      platform_instance =
+        platform_instance_fixture(%{
+          client_id: "test_client_id",
+          name: "Test Platform",
+          status: :active
+        })
+
+      # Verify it was created successfully
+      assert platform_instance.status == :active
+      assert platform_instance.client_id == "test_client_id"
+      assert platform_instance.name == "Test Platform"
+
+      # Delete the platform instance (set status to deleted)
+      assert {:ok, deleted_instance} =
+               PlatformInstances.update_platform_instance(
+                 platform_instance,
+                 %{status: :deleted}
+               )
+
+      assert deleted_instance.status == :deleted
+
+      # Verify the deleted instance still exists but is marked as deleted
+      retrieved_instance = PlatformInstances.get_platform_instance!(deleted_instance.id)
+      assert retrieved_instance.status == :deleted
+      assert retrieved_instance.client_id == "test_client_id"
+
+      # Re-enable the platform instance (set status back to active)
+      assert {:ok, reenabled_instance} =
+               PlatformInstances.update_platform_instance(
+                 deleted_instance,
+                 %{status: :active}
+               )
+
+      assert reenabled_instance.status == :active
+      assert reenabled_instance.client_id == "test_client_id"
+      assert reenabled_instance.name == "Test Platform"
+
+      # Verify the re-enabled instance is properly active
+      final_instance = PlatformInstances.get_platform_instance!(reenabled_instance.id)
+      assert final_instance.status == :active
+      assert final_instance.id == platform_instance.id
+    end
   end
 end
