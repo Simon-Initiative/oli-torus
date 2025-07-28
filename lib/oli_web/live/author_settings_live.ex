@@ -1,6 +1,8 @@
 defmodule OliWeb.AuthorSettingsLive do
   use OliWeb, :live_view
 
+  import Oli.Utils
+
   alias Oli.Accounts
   alias Oli.Accounts.Author
   alias Oli.AssentAuth.AuthorAssentAuth
@@ -21,7 +23,13 @@ defmodule OliWeb.AuthorSettingsLive do
               phx-submit="update_author"
               phx-change="validate_author"
             >
-              <.input field={@author_form[:name]} type="text" label="Full name" readonly />
+              <.input
+                field={@author_form[:name]}
+                type="text"
+                label="Full name"
+                value={@author_form[:name].value}
+                readonly
+              />
               <.input field={@author_form[:given_name]} type="text" label="First name" />
               <.input field={@author_form[:family_name]} type="text" label="Last name" />
 
@@ -208,16 +216,22 @@ defmodule OliWeb.AuthorSettingsLive do
     {:ok, socket}
   end
 
-  def handle_event("validate_author", params, socket) do
-    %{"author" => author_params} = params
+  def handle_event("validate_author", %{"author" => author_params}, socket) do
+    %{author_form: author_form} = socket.assigns
+
+    author_data = %Author{
+      name: input_value(author_form[:name]),
+      given_name: input_value(author_form[:given_name]),
+      family_name: input_value(author_form[:family_name])
+    }
 
     author_form =
-      socket.assigns.current_author
+      author_data
       |> Accounts.change_author_details(author_params)
       |> Map.put(:action, :validate)
       |> to_form()
 
-    {:noreply, assign(socket, author_form: author_form)}
+    {:noreply, assign(socket, author_form: author_form) |> clear_flash()}
   end
 
   def handle_event("update_author", params, socket) do

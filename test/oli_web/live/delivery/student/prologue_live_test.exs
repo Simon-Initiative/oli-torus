@@ -1138,7 +1138,8 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
 
       {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
 
-      assert view |> element("#page_due_terms") |> render() =~ "This assignment was due on"
+      assert view |> element("#page_due_terms") |> render() =~
+               "<li id=\"page_due_terms\">\n      \n  This assignment was available on\n  <b>\n    Fri Nov 10, 2023 at 8:00pm.\n  </b>\n\nand was due on\n<b>\n  Tue Nov 14, 2023 by 8:00pm.\n</b></li>"
 
       assert view |> element("#page_due_terms") |> render() =~ "Tue Nov 14, 2023 by 8:00pm."
     end
@@ -1155,7 +1156,37 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
 
       assert view |> element("#page_scoring_terms") |> render() =~
-               "Your overall score for this assignment will be the average score of your attempts."
+               "For this assignment, your score will be the average of your attempts."
+    end
+
+    test "page terms show correct scoring messages for different policies and strategies", ctx do
+      %{conn: conn, user: user, section: section, page_2: page_2} = ctx
+
+      enroll_and_mark_visited(user, section)
+
+      # Test score at the end (batch_scoring: true) with different strategies
+      test_cases = [
+        # {batch_scoring, scoring_strategy_id, expected_message}
+        {true, 1, "For this assignment, your score will be the average of your attempts."},
+        {true, 2, "For this assignment, your score will be determined by your best attempt."},
+        {true, 3, "For this assignment, your score will be determined by your last attempt."},
+        {true, 4,
+         "For this assignment, your score will be determined by the total sum of your attempts."},
+        {false, 1, "For each question, your score will be the average of your attempts."},
+        {false, 2, "For each question, your score will be determined by your best attempt."},
+        {false, 3, "For each question, your score will be determined by your last attempt."},
+        {false, 4,
+         "For each question, your score will be determined by the total sum of your attempts."}
+      ]
+
+      Enum.each(test_cases, fn {batch_scoring, scoring_strategy_id, expected_message} ->
+        params = %{batch_scoring: batch_scoring, scoring_strategy_id: scoring_strategy_id}
+        get_and_update_section_resource(section.id, page_2.resource_id, params)
+
+        {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
+
+        assert view |> element("#page_scoring_terms") |> render() =~ expected_message
+      end)
     end
 
     test "page terms render a time limit message", ctx do
@@ -1170,7 +1201,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
 
       assert view |> element("#page_due_terms") |> render() =~
-               "This assignment was due on"
+               "<li id=\"page_due_terms\">\n      \n  This assignment was available on\n  <b>\n    Fri Nov 10, 2023 at 8:00pm.\n  </b>\n\nand was due on\n<b>\n  Tue Nov 14, 2023 by 8:00pm.\n</b></li>"
 
       assert view |> element("#page_time_limit_term") |> render() =~
                "<li id=\"page_time_limit_term\">\n  You have <b>1 minute</b>\n  to complete the assessment from the time you begin.\n</li>"

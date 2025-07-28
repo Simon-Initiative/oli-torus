@@ -146,6 +146,7 @@ defmodule OliWeb.Components.Delivery.Students do
        add_enrollments_step: :step_1,
        add_enrollments_selected_role: :student,
        add_enrollments_emails: [],
+       add_enrollments_invalid_emails: [],
        add_enrollments_grouped_by_status: %{
          enrolled: [],
          suspended: [],
@@ -330,12 +331,14 @@ defmodule OliWeb.Components.Delivery.Students do
       :name ->
         Enum.sort_by(
           students,
-          fn student -> Utils.name(student.name, student.given_name, student.family_name) end,
+          fn student ->
+            String.downcase(Utils.name(student.name, student.given_name, student.family_name))
+          end,
           sort_order
         )
 
       :email ->
-        Enum.sort_by(students, fn student -> student.email end, sort_order)
+        Enum.sort_by(students, fn student -> String.downcase("#{student.email}") end, sort_order)
 
       :last_interaction ->
         Enum.sort_by(students, & &1.last_interaction, {sort_order, DateTime})
@@ -383,6 +386,7 @@ defmodule OliWeb.Components.Delivery.Students do
   attr(:add_enrollments_step, :atom, default: :step_1)
   attr(:add_enrollments_selected_role, :atom, default: :student)
   attr(:add_enrollments_emails, :list, default: [])
+  attr(:add_enrollments_invalid_emails, :list, default: [])
   attr(:current_user, :any, required: false)
   attr(:current_author, :any, required: false)
   attr(:inviter, :string, required: false)
@@ -428,6 +432,7 @@ defmodule OliWeb.Components.Delivery.Students do
       >
         <.add_enrollments
           add_enrollments_emails={@add_enrollments_emails}
+          add_enrollments_invalid_emails={@add_enrollments_invalid_emails}
           add_enrollments_step={@add_enrollments_step}
           add_enrollments_selected_role={@add_enrollments_selected_role}
           add_enrollments_grouped_by_status={@add_enrollments_grouped_by_status}
@@ -515,12 +520,7 @@ defmodule OliWeb.Components.Delivery.Students do
               <a
                 class="self-end"
                 href={
-                  Routes.metrics_path(
-                    OliWeb.Endpoint,
-                    :download_container_progress,
-                    @section_slug,
-                    @params.container_id || ""
-                  )
+                  ~p(/sections/#{@section_slug}/instructor_dashboard/downloads/progress/#{@params.container_id || ""}/#{@title})
                 }
                 download="progress.csv"
               >
@@ -763,6 +763,7 @@ defmodule OliWeb.Components.Delivery.Students do
       <OliWeb.Components.EmailList.render
         id="enrollments_email_list"
         emails_list={@add_enrollments_emails}
+        invalid_emails={@add_enrollments_invalid_emails}
         on_update="add_enrollments_update_list"
         on_remove="add_enrollments_remove_from_list"
         target={@target}
@@ -1208,20 +1209,40 @@ defmodule OliWeb.Components.Delivery.Students do
   def handle_event("add_enrollments_update_list", %{"value" => list}, socket)
       when is_list(list) do
     current_emails = socket.assigns.add_enrollments_emails
+    current_invalid_emails = socket.assigns.add_enrollments_invalid_emails
 
-    maybe_updated_add_enrollments_emails = remove_duplicates(current_emails, list)
+    {valid_emails, invalid_emails} = Enum.split_with(list, &Oli.Utils.validate_email/1)
 
-    socket = assign(socket, add_enrollments_emails: maybe_updated_add_enrollments_emails)
+    maybe_updated_add_enrollments_invalid_emails =
+      remove_duplicates(current_invalid_emails, invalid_emails)
+
+    maybe_updated_add_enrollments_emails = remove_duplicates(current_emails, valid_emails)
+
+    socket =
+      assign(socket,
+        add_enrollments_emails: maybe_updated_add_enrollments_emails,
+        add_enrollments_invalid_emails: maybe_updated_add_enrollments_invalid_emails
+      )
 
     {:noreply, socket}
   end
 
   def handle_event("add_enrollments_update_list", %{"value" => value}, socket) do
     current_emails = socket.assigns.add_enrollments_emails
+    current_invalid_emails = socket.assigns.add_enrollments_invalid_emails
 
-    maybe_updated_add_enrollments_emails = remove_duplicates(current_emails, value)
+    socket =
+      if Oli.Utils.validate_email(value) do
+        maybe_updated_add_enrollments_emails = remove_duplicates(current_emails, value)
+        assign(socket, add_enrollments_emails: maybe_updated_add_enrollments_emails)
+      else
+        maybe_updated_add_enrollments_invalid_emails =
+          remove_duplicates(current_invalid_emails, value)
 
-    socket = assign(socket, add_enrollments_emails: maybe_updated_add_enrollments_emails)
+        assign(socket,
+          add_enrollments_invalid_emails: maybe_updated_add_enrollments_invalid_emails
+        )
+      end
 
     {:noreply, socket}
   end

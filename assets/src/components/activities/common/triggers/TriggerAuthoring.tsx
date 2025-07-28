@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Button } from 'react-bootstrap';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { HasParts } from 'components/activities/types';
+import { AIIcon } from 'components/misc/AIIcon';
 import { Card } from 'components/misc/Card';
 import { getPartById } from 'data/activities/model/utils';
 import { ActivityTrigger } from 'data/triggers';
@@ -153,7 +154,7 @@ export const TriggerAuthoring: React.FC<Props> = ({ partId }) => {
   return (
     <>
       <h4>
-        <img src="/images/icons/icon-AI.svg" className="inline mr-1" />
+        <AIIcon size="sm" className="inline mr-1" />
         DOT AI Activation Point
       </h4>
       <p className="mt-2">
@@ -186,7 +187,7 @@ export const TriggerAuthoring: React.FC<Props> = ({ partId }) => {
 export const TriggerLabel = () => {
   return (
     <span>
-      <img src="/images/icons/icon-AI.svg" className="inline" />
+      <AIIcon size="sm" className="inline" />
       DOT AI
     </span>
   );

@@ -82,6 +82,11 @@ defmodule Oli.Accounts.User do
     field :enrollments_count, :integer, virtual: true
     field :total_count, :integer, virtual: true
     field :enrollment_date, :utc_datetime, virtual: true
+
+    field :enrollment_status, Ecto.Enum,
+      values: [:enrolled, :suspended, :pending_confirmation, :rejected],
+      virtual: true
+
     field :payment_date, :utc_datetime, virtual: true
     field :payment_id, :integer, virtual: true
     field :payment, :map, virtual: true
@@ -141,8 +146,7 @@ defmodule Oli.Accounts.User do
   defp validate_email(changeset, opts) do
     changeset
     |> validate_required([:email])
-    |> validate_format(:email, ~r/^[^\s]+@[^\s]+$/, message: "must have the @ sign and no spaces")
-    |> validate_length(:email, max: 160)
+    |> validate_change(:email, &Oli.Accounts.validate_email/2)
     |> maybe_validate_unique_email(opts)
   end
 
@@ -329,7 +333,7 @@ defmodule Oli.Accounts.User do
       :hidden
     ])
     |> cast_embed(:preferences)
-    |> validate_required([:given_name, :family_name])
+    |> common_name_validations()
     |> maybe_name_from_given_and_family()
   end
 
@@ -371,6 +375,7 @@ defmodule Oli.Accounts.User do
       :hidden
     ])
     |> cast_embed(:preferences)
+    |> common_name_validations()
     |> validate_email_if(&is_independent_learner_and_not_guest/1)
     |> maybe_name_from_given_and_family()
   end

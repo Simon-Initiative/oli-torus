@@ -762,6 +762,34 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       |> has_element?()
     end
 
+    test "can remove password", ctx do
+      %{conn: conn, section: section, page_1: %{resource_id: resource_id}} = ctx
+
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
+
+      # Set a password to page 1
+      set_password(view, resource_id, "strong_password!")
+
+      # Verify change of password
+      assert view |> element("input[type=password][value='****************']") |> has_element?()
+
+      # Remove password - Set to ""
+      set_password(view, resource_id, "")
+
+      assert view
+             |> element("input[placeholder='Enter password'][name='password-#{resource_id}]")
+             |> has_element?()
+    end
+
+    defp set_password(view, resource_id, password) do
+      view
+      |> form(~s{form[for="settings_table"]})
+      |> render_change(%{
+        "_target" => ["password-#{resource_id}"],
+        "password-#{resource_id}" => password
+      })
+    end
+
     test "exception count links to corresponding student exceptions for that assessment",
          %{
            conn: conn,
@@ -1681,12 +1709,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assert Settings.fetch_all_settings_changes() == []
 
       # we change page 3 password setting to "asdf"
-      view
-      |> form(~s{form[for="settings_table"]})
-      |> render_change(%{
-        "_target" => ["password-#{page_3.resource.id}"],
-        "password-#{page_3.resource.id}" => "asdf"
-      })
+      set_password(view, page_3.resource_id, "asdf")
 
       changes = Settings.fetch_all_settings_changes()
       change_for_page_3 = hd(changes)
@@ -2696,6 +2719,38 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       assert exception.late_start == :disallow
       assert exception.late_submit == :disallow
+    end
+
+    test "defaults to first assessment when none is selected", %{
+      conn: conn,
+      section: section,
+      page_1: page_1,
+      page_2: page_2,
+      student_1: student_1,
+      student_2: student_2
+    } do
+      # set up one exception on each of two assessments
+      set_student_exception(section, page_1.resource, student_1)
+      set_student_exception(section, page_2.resource, student_2)
+
+      # load the student_exceptions tab with no specific assessment selected
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_overview_route(section.slug, "student_exceptions", "all")
+        )
+
+      # verify the first assessment (page_1) is selected by default
+      selected =
+        view
+        |> element(~s{select[id="assessment_select_assessment_id"] option[selected]})
+        |> render()
+
+      assert selected =~ page_1.title
+
+      # and only exceptions for that first assessment are shown
+      [se] = table_as_list_of_maps(view, :student_exceptions)
+      assert se.student =~ student_1.name
     end
   end
 end

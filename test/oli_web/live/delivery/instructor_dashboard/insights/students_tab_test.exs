@@ -203,6 +203,56 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
                |> Timex.format!("{Mshort}. {0D}, {YYYY} - {h12}:{m} {AM}")
     end
 
+    test "students table sorting case insensitive", %{instructor: instructor, conn: conn} do
+      %{section: section} = Oli.Seeder.base_project_with_larger_hierarchy()
+
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      [{"Zach", "zhu"}, {"zach", "Zhao"}, {"Alex", "Bill"}, {"alex", "bell"}, {"Will", "Smith"}]
+      |> Enum.shuffle()
+      |> Enum.each(fn {given_name, family_name} ->
+        insert(:user, %{given_name: given_name, family_name: family_name})
+        |> Map.get(:id)
+        |> Sections.enroll(section.id, [ContextRoles.get_role(:context_learner)])
+      end)
+
+      {:ok, _} = Sections.rebuild_contained_pages(section)
+
+      params = %{sort_order: :asc, sort_by: :name}
+
+      {:ok, view, _html} = live(conn, live_view_students_route(section.slug, params))
+
+      [student_for_tr_1, student_for_tr_2, student_for_tr_3, student_for_tr_4, student_for_tr_5] =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{.instructor_dashboard_table tr a})
+        |> Enum.map(fn a_tag -> Floki.text(a_tag) end)
+
+      assert student_for_tr_1 =~ "bell, alex"
+      assert student_for_tr_2 =~ "Bill, Alex"
+      assert student_for_tr_3 =~ "Smith, Will"
+      assert student_for_tr_4 =~ "Zhao, zach"
+      assert student_for_tr_5 =~ "zhu, Zach"
+
+      params = %{sort_order: :desc, sort_by: :name}
+
+      {:ok, view, _html} = live(conn, live_view_students_route(section.slug, params))
+
+      [student_for_tr_1, student_for_tr_2, student_for_tr_3, student_for_tr_4, student_for_tr_5] =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{.instructor_dashboard_table tr a})
+        |> Enum.map(fn a_tag -> Floki.text(a_tag) end)
+
+      assert student_for_tr_5 =~ "bell, alex"
+      assert student_for_tr_4 =~ "Bill, Alex"
+      assert student_for_tr_3 =~ "Smith, Will"
+      assert student_for_tr_2 =~ "Zhao, zach"
+      assert student_for_tr_1 =~ "zhu, Zach"
+    end
+
     test "students table gets rendered considering the given url params", %{
       instructor: instructor,
       conn: conn
@@ -1793,7 +1843,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
         sub: UUID.uuid4(),
         name: "#{v}",
         given_name: "#{v}",
-        family_name: "#{v}",
+        family_name: "name_#{v}",
         middle_name: "",
         picture: "https://platform.example.edu/jane.jpg",
         email: "test#{v}@example.edu",

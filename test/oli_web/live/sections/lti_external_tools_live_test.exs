@@ -169,6 +169,226 @@ defmodule OliWeb.Sections.LtiExternalToolsLiveTest do
       assert has_element?(view, "div[id='lti_external_tool_#{tool2.id}'] li", "Page One")
       assert has_element?(view, "div[id='lti_external_tool_#{tool2.id}'] li", "Page Two")
     end
+
+    test "shows warning icon and message when tool is removed", %{
+      conn: conn,
+      section: section,
+      instructor: instructor,
+      tool1: tool1
+    } do
+      {:ok, _} =
+        Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      deployment =
+        Oli.Repo.get_by!(Oli.Lti.PlatformExternalTools.LtiExternalToolActivityDeployment,
+          activity_registration_id: tool1.id
+        )
+
+      Ecto.Changeset.change(deployment, status: :deleted) |> Oli.Repo.update!()
+
+      {:ok, view, _html} = live(conn, live_view_lti_external_tools_route(section.slug))
+
+      assert has_element?(view, "#lti_external_tool_#{tool1.id} svg")
+      assert render(view) =~ "This tool is no longer registered in the system"
+    end
+
+    test "filters tools by search term", %{
+      conn: conn,
+      section: section,
+      instructor: instructor,
+      tool1: tool1,
+      tool2: tool2
+    } do
+      {:ok, _} =
+        Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, view, _html} =
+        live(conn, live_view_lti_external_tools_route(section.slug) <> "?search_term=tool+one")
+
+      assert has_element?(view, "#lti_external_tool_#{tool1.id}")
+      refute has_element?(view, "#lti_external_tool_#{tool2.id}")
+    end
+
+    test "filters by child's title", %{
+      conn: conn,
+      section: section,
+      instructor: instructor,
+      tool1: tool1,
+      tool2: tool2
+    } do
+      {:ok, _} =
+        Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      # "Page One" is in both tools, "Page Two" is only in "Tool Two". Search for "Page Two"
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_lti_external_tools_route(section.slug) <> "?search_term=page+two"
+        )
+
+      # Tool 1 should not be present
+      refute has_element?(view, "#lti_external_tool_#{tool1.id}")
+      # Tool 2 should be present
+      assert has_element?(view, "#lti_external_tool_#{tool2.id}")
+      # Tool 2 should only have Page Two as a child
+      assert has_element?(view, "#lti_external_tool_#{tool2.id} li", "Page Two")
+      refute has_element?(view, "#lti_external_tool_#{tool2.id} li", "Page One")
+    end
+
+    test "shows no results message for non-matching search term", %{
+      conn: conn,
+      section: section,
+      instructor: instructor
+    } do
+      {:ok, _} =
+        Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, view, _html} =
+        live(conn, live_view_lti_external_tools_route(section.slug) <> "?search_term=nonexistent")
+
+      assert render(view) =~ "No results found for <strong>nonexistent</strong>"
+    end
+
+    test "expands and collapses all tools", %{
+      conn: conn,
+      section: section,
+      instructor: instructor,
+      tool1: tool1,
+      tool2: tool2
+    } do
+      {:ok, _} =
+        Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, view, _html} = live(conn, live_view_lti_external_tools_route(section.slug))
+
+      # Initially, tools are collapsed.
+      refute has_element?(view, "#collapse-#{tool1.id}.block")
+      refute has_element?(view, "#collapse-#{tool2.id}.block")
+
+      # Expand all
+      html = element(view, "button", "Expand All") |> render_click()
+      assert html =~ "collapse-#{tool1.id}\" class=\"block"
+      assert html =~ "collapse-#{tool2.id}\" class=\"block"
+
+      # Collapse all
+      html = element(view, "button", "Collapse All") |> render_click()
+      refute html =~ "collapse-#{tool1.id}\" class=\"block"
+      refute html =~ "collapse-#{tool2.id}\" class=\"block"
+    end
+
+    test "expands a tool based on URL param", %{
+      conn: conn,
+      section: section,
+      instructor: instructor,
+      tool1: tool1,
+      tool2: tool2
+    } do
+      {:ok, _} =
+        Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_lti_external_tools_route(section.slug) <> "?expanded_tools=#{tool1.id}"
+        )
+
+      assert has_element?(view, "#collapse-#{tool1.id}[class~=\"block\"]")
+      refute has_element?(view, "#collapse-#{tool2.id}[class~=\"block\"]")
+    end
+
+    test "toggles a single tool", %{
+      conn: conn,
+      section: section,
+      instructor: instructor,
+      tool1: tool1
+    } do
+      {:ok, _} =
+        Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, view, _html} = live(conn, live_view_lti_external_tools_route(section.slug))
+
+      # Initially collapsed
+      refute has_element?(view, "#collapse-#{tool1.id}[class~=\"block\"]")
+
+      # Click to expand
+      html = element(view, "#lti_external_tool_#{tool1.id} button") |> render_click()
+      assert html =~ "collapse-#{tool1.id}\" class=\"block"
+
+      # Click to collapse
+      html = element(view, "#lti_external_tool_#{tool1.id} button") |> render_click()
+      refute html =~ "collapse-#{tool1.id}\" class=\"block"
+    end
+
+    test "shows the correct toggle button based on URL param", %{
+      conn: conn,
+      section: section,
+      instructor: instructor,
+      tool1: tool1
+    } do
+      {:ok, _} =
+        Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_lti_external_tools_route(section.slug) <>
+            "?expanded_tools=#{tool1.id}&toggle_expand_button=expand_all"
+        )
+
+      assert has_element?(view, "#expand_all_button")
+      refute has_element?(view, "#collapse_all_button")
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_lti_external_tools_route(section.slug) <>
+            "?expanded_tools=#{tool1.id}&toggle_expand_button=collapse_all"
+        )
+
+      assert has_element?(view, "#collapse_all_button")
+      refute has_element?(view, "#expand_all_button")
+    end
+
+    test "expand/collapse all button state updates when last tool is toggled", %{
+      conn: conn,
+      section: section,
+      instructor: instructor,
+      tool1: tool1,
+      tool2: tool2
+    } do
+      {:ok, _} =
+        Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, view, _html} = live(conn, live_view_lti_external_tools_route(section.slug))
+
+      # Initially, both tools are collapsed, button says "Expand All"
+      assert has_element?(view, "#expand_all_button")
+      refute has_element?(view, "#collapse_all_button")
+
+      # Expand first tool (tool1)
+      element(view, "#lti_external_tool_#{tool1.id} button") |> render_click()
+      # Should still say "Expand All" (not all expanded yet)
+      assert has_element?(view, "#expand_all_button")
+      refute has_element?(view, "#collapse_all_button")
+
+      # Expand second tool (tool2)
+      element(view, "#lti_external_tool_#{tool2.id} button") |> render_click()
+      # Now all tools are expanded, button should say "Collapse All"
+      assert has_element?(view, "#collapse_all_button")
+      refute has_element?(view, "#expand_all_button")
+
+      # Collapse first tool (tool1)
+      element(view, "#lti_external_tool_#{tool1.id} button") |> render_click()
+      # Not all collapsed, button should say "Collapse All"
+      assert has_element?(view, "#collapse_all_button")
+      refute has_element?(view, "#expand_all_button")
+
+      # Collapse second tool (tool2)
+      element(view, "#lti_external_tool_#{tool2.id} button") |> render_click()
+      # Now all tools are collapsed, button should say "Expand All"
+      assert has_element?(view, "#expand_all_button")
+      refute has_element?(view, "#collapse_all_button")
+    end
   end
 
   describe "admin" do

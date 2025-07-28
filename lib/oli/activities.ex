@@ -71,7 +71,7 @@ defmodule Oli.Activities do
       authoring_element: "lti-external-tool-authoring",
       delivery_script: "lti_external_tool_delivery.js",
       authoring_script: "lti_external_tool_authoring.js",
-      allow_client_evaluation: false,
+      allow_client_evaluation: true,
       generates_report: false,
       globally_available: false,
       globally_visible: true,
@@ -377,6 +377,7 @@ defmodule Oli.Activities do
     from(ar in ActivityRegistration,
       join: d in LtiExternalToolActivityDeployment,
       on: d.activity_registration_id == ar.id,
+      preload: [lti_external_tool_activity_deployment: d],
       where: ^maybe_filter_by_ids,
       select: ar
     )

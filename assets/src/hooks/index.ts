@@ -49,8 +49,10 @@ import { ToggleReadMore } from './toggle_read_more';
 import { AutoHideTooltip, TooltipInit, TooltipWithTarget } from './tooltip';
 import { VideoPlayer } from './video_player';
 import { PauseOthersOnSelected, VideoPreview } from './video_preview';
+import { WakeUpDot } from './wakeup_dot';
 
 export const Hooks = {
+  WakeUpDot,
   ExpandContainers,
   ShowTeaser,
   FirePageTrigger,

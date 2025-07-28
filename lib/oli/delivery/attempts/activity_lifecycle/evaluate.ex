@@ -265,9 +265,12 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
     part_inputs =
       Enum.map(client_evaluations, fn %{
                                         attempt_guid: attempt_guid,
-                                        client_evaluation: %ClientEvaluation{input: input}
+                                        client_evaluation: %ClientEvaluation{
+                                          input: input,
+                                          timestamp: timestamp
+                                        }
                                       } ->
-        %{attempt_guid: attempt_guid, input: input}
+        %{attempt_guid: attempt_guid, input: input, timestamp: timestamp}
       end)
 
     %Oli.Activities.ActivityRegistration{allow_client_evaluation: allow_client_evaluation} =
@@ -364,6 +367,32 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
       |> Enum.map(fn {e, %{part_id: part_id}} -> Map.put(e, :part_id, part_id) end)
 
     {:ok, evaluations}
+  end
+
+  def update_part_attempts_for_activity(activity_attempt, datashop_session_id, effective_settings) do
+    part_attempts = get_latest_part_attempts(activity_attempt.attempt_guid)
+
+    part_inputs =
+      part_attempts
+      |> Enum.map(fn pa ->
+        {input, files} =
+          if pa.response,
+            do: {Map.get(pa.response, "input"), Map.get(pa.response, "files", [])},
+            else: {nil, nil}
+
+        %{
+          attempt_guid: pa.attempt_guid,
+          input: %Oli.Delivery.Attempts.Core.StudentInput{input: input, files: files}
+        }
+      end)
+      |> filter_already_evaluated(part_attempts)
+
+    case activity_attempt
+         |> do_evaluate_submissions(part_inputs, part_attempts, effective_settings)
+         |> persist_evaluations(part_inputs, fn result -> result end, datashop_session_id) do
+      {:ok, _} -> {:ok, part_inputs}
+      e -> e
+    end
   end
 
   defp submit_active_part_attempts(part_attempts) do
@@ -489,12 +518,35 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
     end)
   end
 
+  # Retrieving the extrinsic state of the resource attempt must take
+  # into account if the blob storage API is in use for extrinsic state.
+  defp fetch_extrinsic_state(resource_attempt) do
+    if Application.get_env(:oli, :blob_storage)[:use_deprecated_api] do
+      resource_attempt.state
+    else
+      Oli.Delivery.TextBlob.read(
+        resource_attempt.attempt_guid,
+        "{}"
+      )
+      |> case do
+        {:ok, state} ->
+          case Jason.decode(state) do
+            {:ok, decoded_state} -> decoded_state
+            _ -> %{}
+          end
+
+        _ ->
+          %{}
+      end
+    end
+  end
+
   defp assemble_full_adaptive_state(
          resource_attempt,
          activities_required_for_evaluation,
          part_inputs
        ) do
-    extrinsic_state = resource_attempt.state
+    extrinsic_state = fetch_extrinsic_state(resource_attempt)
 
     # if activitiesRequiredForEvaluation is empty, we don't need to get any extra state
     response_state =

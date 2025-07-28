@@ -83,7 +83,7 @@ export const ScoreAsYouGoSubmitReset: React.FC<Props> = ({ onSubmit, onReset, mo
     if (isEvaluated(uiState)) {
       if (!uiState.activityContext.batchScoring) {
         const pointsDisplay =
-          (attemptState.score === undefined || attemptState.score === null) && mode === 'review' ? (
+          (attemptState.outOf === undefined || attemptState.outOf === null) && mode === 'review' ? (
             <i>hidden</i>
           ) : (
             numberFormat(attemptState.score) + ' / ' + numberFormat(attemptState.outOf)
@@ -125,7 +125,7 @@ export const ScoreAsYouGoSubmitReset: React.FC<Props> = ({ onSubmit, onReset, mo
           </div>
         );
       }
-    } else if (!uiState.activityContext.batchScoring || uiState.activityContext.oneAtATime) {
+    } else if (!uiState.activityContext.batchScoring) {
       return (
         <div className="flex justify-center">
           <button

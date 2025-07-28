@@ -270,7 +270,7 @@ const processJanusChildren = (node: JanusMarkupNode, doc: Delta, parentAttrs: an
           line.insert('\n', lineAttrs);
         }
       }
-      const childLine = processJanusChildren(child, new Delta(), attrs);
+      const childLine = processJanusChildren(child, new Delta(), { ...parentAttrs, ...attrs });
       doc = line.compose(childLine).compose(doc);
     });
   }

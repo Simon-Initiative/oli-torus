@@ -273,6 +273,43 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLiveTest do
 
       refute render(view) =~ "View revision history"
     end
+
+    test "edit link uses `href` for adaptive pages and `navigate` for regular pages", %{
+      conn: conn,
+      author: author,
+      project: project,
+      revision1: revision_page_one,
+      adaptive_page_revision: adaptive_page_revision
+    } do
+      conn =
+        recycle(conn)
+        |> log_in_author(author)
+        |> get("/workspaces/course_author/#{project.slug}/curriculum/")
+
+      {:ok, view, _html} = live(conn)
+
+      [edit_link_regular] =
+        view
+        |> element("div[phx-value-slug=\"#{revision_page_one.slug}\"]")
+        |> render()
+        |> Floki.parse_document!()
+        |> Floki.find("a.entry-title.mx-3")
+
+      [edit_link_adaptive] =
+        view
+        |> element("div[phx-value-slug=\"#{adaptive_page_revision.slug}\"]")
+        |> render()
+        |> Floki.parse_document!()
+        |> Floki.find("a.entry-title.mx-3")
+
+      # For regular page, should have data-phx-link="redirect" (navigate)
+      assert Floki.attribute(edit_link_regular, "data-phx-link") == ["redirect"]
+      assert Floki.attribute(edit_link_regular, "href") != []
+
+      # For adaptive page, should NOT have data-phx-link (plain href)
+      assert Floki.attribute(edit_link_adaptive, "data-phx-link") == []
+      assert Floki.attribute(edit_link_adaptive, "href") != []
+    end
   end
 
   describe "curriculum live test (as admin)" do
@@ -392,12 +429,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLiveTest do
          %{
            conn: conn,
            project: project,
-           page_2: page_2
+           page_2: page_2,
+           author_1: author_1,
+           author_2: author_2
          } do
-      {:ok, view, _html} =
-        live(conn, ~p"/workspaces/course_author/#{project.slug}/curriculum")
-
-      assert has_element?(view, "span", "Page 2")
+      author_1_id = author_1.id
+      author_2_id = author_2.id
 
       assert %Oli.Resources.Revision{
                retake_mode: :normal,
@@ -407,13 +444,22 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLiveTest do
                max_attempts: 0,
                purpose: :foundation,
                scoring_strategy_id: 1,
-               explanation_strategy: nil
+               explanation_strategy: nil,
+               author_id: ^author_1_id
              } =
                _initial_revision =
                Oli.Publishing.AuthoringResolver.from_revision_slug(
                  project.slug,
                  page_2.slug
                )
+
+      # author 2 logs in and edits the page
+      conn = recycle_author_session(conn, author_2)
+
+      {:ok, view, _html} =
+        live(conn, ~p"/workspaces/course_author/#{project.slug}/curriculum")
+
+      assert has_element?(view, "span", "Page 2")
 
       view
       |> element(
@@ -481,7 +527,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLiveTest do
                    }
                  ],
                  "type" => "p"
-               }
+               },
+               author_id: ^author_2_id
              } =
                _updated_revision =
                Oli.Publishing.AuthoringResolver.from_revision_slug(
@@ -699,9 +746,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLiveTest do
   end
 
   defp create_project(_) do
-    author = insert(:author)
+    author_1 = insert(:author)
+    author_2 = insert(:author)
 
-    project = insert(:project, authors: [author])
+    project = insert(:project, authors: [author_1, author_2])
 
     page_revision =
       insert(:revision, %{
@@ -712,7 +760,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLiveTest do
         content: %{"model" => []},
         deleted: false,
         title: "Page 1",
-        author_id: author.id
+        author_id: author_1.id
       })
 
     page_2_revision =
@@ -724,7 +772,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLiveTest do
         content: %{"model" => []},
         deleted: false,
         title: "Page 2",
-        author_id: author.id
+        author_id: author_1.id
       })
 
     unit_revision =
@@ -736,7 +784,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLiveTest do
         deleted: false,
         title: "The first unit",
         slug: "first_unit",
-        author_id: author.id
+        author_id: author_1.id
       })
 
     container_revision =
@@ -748,7 +796,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLiveTest do
         deleted: false,
         slug: "root_container",
         title: "Root Container",
-        author_id: author.id
+        author_id: author_1.id
       })
 
     all_revisions =
@@ -781,7 +829,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLiveTest do
         publication: publication,
         resource: revision.resource,
         revision: revision,
-        author: author
+        author: author_1
       })
     end)
 
@@ -790,7 +838,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLiveTest do
       project: project,
       unit: unit_revision,
       page: page_revision,
-      page_2: page_2_revision
+      page_2: page_2_revision,
+      author_1: author_1,
+      author_2: author_2
     }
   end
 

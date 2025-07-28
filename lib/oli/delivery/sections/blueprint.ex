@@ -132,10 +132,33 @@ defmodule Oli.Delivery.Sections.Blueprint do
   end
 
   @doc """
-  Given a base project slug and a title, create a course section blueprint.
+  Creates a course section blueprint from a base project.
 
-  This creates the "section" record and "section resource" records to mirror
-  the current published structure of the course project hierarchy.
+  Given a base project slug and title, this function:
+  1. Validates the project exists
+  2. Creates a blueprint section record with the specified attributes
+  3. Retrieves the latest published publication for the project
+  4. Creates section resource records mirroring the project hierarchy
+  5. Applies post-processing to update section flags (discussions, explorations, etc.)
+  6. Migrates the section resources
+
+  ## Parameters
+  - `base_project_slug` - The slug of the base project to create the blueprint from
+  - `title` - The title for the new blueprint section
+  - `custom_labels` - Custom label configurations for the blueprint
+  - `hierarchy_definition` - Optional custom hierarchy (defaults to project hierarchy)
+  - `attrs` - Additional attributes for the blueprint section
+
+  ## Returns
+  - `{:ok, section}` - The created and processed blueprint section
+  - `{:error, reason}` - Error details if any step fails
+
+  ## Examples
+      iex> create_blueprint("intro-to-elixir", "My Course", %{}, nil, %{"requires_payment" => true})
+      {:ok, %Section{type: :blueprint, ...}}
+
+      iex> create_blueprint("non-existent", "Title", %{})
+      {:error, {:invalid_project}}
   """
   def create_blueprint(
         base_project_slug,
@@ -145,50 +168,61 @@ defmodule Oli.Delivery.Sections.Blueprint do
         attrs \\ %{}
       ) do
     Repo.transaction(fn _ ->
-      case Oli.Authoring.Course.get_project_by_slug(base_project_slug) do
-        nil ->
-          {:error, {:invalid_project}}
-
-        project ->
-          new_blueprint = %{
-            "type" => :blueprint,
-            "status" => :active,
-            "base_project_id" => project.id,
-            "open_and_free" => false,
-            "context_id" => UUID.uuid4(),
-            "start_date" => nil,
-            "end_date" => nil,
-            "title" => title,
-            "requires_payment" => attrs["requires_payment"] || false,
-            "payment_options" => attrs["payment_options"] || "direct_and_deferred",
-            "pay_by_institution" => attrs["pay_by_institution"] || false,
-            "registration_open" => attrs["registration_open"] || false,
-            "grace_period_days" => attrs["grace_period_days"] || 1,
-            "amount" =>
-              Money.new(attrs["amount"]["currency"] || :USD, attrs["amount"]["amount"] || "25.00"),
-            "publisher_id" => project.publisher_id,
-            "customizations" => custom_labels,
-            "welcome_title" => attrs["welcome_title"] || project.welcome_title,
-            "encouraging_subtitle" =>
-              attrs["encouraging_subtitle"] || project.encouraging_subtitle,
-            "certificate_enabled" => attrs["certificate_enabled"] || false
-          }
-
-          case Sections.create_section(new_blueprint) do
-            {:ok, blueprint} ->
-              publication =
-                Oli.Publishing.get_latest_published_publication_by_slug(base_project_slug)
-
-              case Sections.create_section_resources(blueprint, publication, hierarchy_definition) do
-                {:ok, section} -> PostProcessing.apply(section, :all)
-                {:error, e} -> Repo.rollback(e)
-              end
-
-            {:error, e} ->
-              Repo.rollback(e)
-          end
+      with {:ok, project} <- get_project(base_project_slug),
+           new_blueprint = build_blueprint_attrs(project, title, custom_labels, attrs),
+           {:ok, blueprint} <- Sections.create_section(new_blueprint),
+           publication =
+             Oli.Publishing.get_latest_published_publication_by_slug(base_project_slug),
+           {:ok, section} <-
+             Sections.create_section_resources(blueprint, publication, hierarchy_definition),
+           {:ok, _} <- migrate_section_resources(section.id) do
+        PostProcessing.apply(section, :all)
+      else
+        {:error, e} -> Repo.rollback(e)
       end
     end)
+  end
+
+  defp get_project(base_project_slug) do
+    case Oli.Authoring.Course.get_project_by_slug(base_project_slug) do
+      nil -> {:error, {:invalid_project}}
+      project -> {:ok, project}
+    end
+  end
+
+  defp build_blueprint_attrs(project, title, custom_labels, attrs) do
+    %{
+      "type" => :blueprint,
+      "status" => :active,
+      "base_project_id" => project.id,
+      "open_and_free" => false,
+      "context_id" => UUID.uuid4(),
+      "start_date" => nil,
+      "end_date" => nil,
+      "title" => title,
+      "requires_payment" => attrs["requires_payment"] || false,
+      "payment_options" => attrs["payment_options"] || "direct_and_deferred",
+      "pay_by_institution" => attrs["pay_by_institution"] || false,
+      "registration_open" => attrs["registration_open"] || false,
+      "grace_period_days" => attrs["grace_period_days"] || 1,
+      "amount" =>
+        Money.new(
+          attrs["amount"]["currency"] || :USD,
+          attrs["amount"]["amount"] || "25.00"
+        ),
+      "publisher_id" => project.publisher_id,
+      "customizations" => custom_labels,
+      "welcome_title" => attrs["welcome_title"] || project.welcome_title,
+      "encouraging_subtitle" => attrs["encouraging_subtitle"] || project.encouraging_subtitle,
+      "certificate_enabled" => attrs["certificate_enabled"] || false
+    }
+  end
+
+  defp migrate_section_resources(section_id) do
+    case Oli.Delivery.Sections.SectionResourceMigration.migrate(section_id) do
+      {:ok, _count} -> {:ok, :migrated}
+      error -> error
+    end
   end
 
   @doc """
@@ -214,6 +248,7 @@ defmodule Oli.Delivery.Sections.Blueprint do
              ),
            {:ok, duplicated_root_resource} <-
              dupe_section_resources(section, blueprint, cloned_from_project_publication_ids),
+           {:ok, _} <- migrate_section_resources(blueprint.id),
            {:ok, blueprint} <-
              Sections.update_section(blueprint, %{
                root_section_resource_id: duplicated_root_resource.id
@@ -351,14 +386,6 @@ defmodule Oli.Delivery.Sections.Blueprint do
 
       # Update all section resources at the same time
       {_cont, rows} = Sections.bulk_update_section_resource(section_resources, returning: true)
-
-      Task.Supervisor.start_child(Oli.TaskSupervisor, fn ->
-        Oli.Delivery.DepotCoordinator.init_if_necessary(
-          Oli.Delivery.Sections.SectionResourceDepot.depot_desc(),
-          blueprint.id,
-          Oli.Delivery.Sections.SectionResourceDepot
-        )
-      end)
 
       # Return the section resource that corresponds to the original root resource
       Enum.find(rows, &(Map.get(resource_map, root_id) == &1.id))

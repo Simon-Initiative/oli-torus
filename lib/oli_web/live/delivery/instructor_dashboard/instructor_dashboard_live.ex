@@ -80,7 +80,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         %{
           objectives:
             Sections.get_objectives_and_subobjectives(socket.assigns.section,
-              exclude_sub_objectives: true
+              exclude_sub_objectives: false
             ),
           filter_options:
             Sections.get_units_and_modules_from_a_section(socket.assigns.section.slug)
@@ -411,7 +411,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         active: is_active_tab?(:students, active_tab)
       },
       %TabLink{
-        label: "Quiz Scores",
+        label: "Assessment Scores",
         path: path_for(:overview, :quiz_scores, section_slug, preview_mode),
         badge: nil,
         active: is_active_tab?(:quiz_scores, active_tab)

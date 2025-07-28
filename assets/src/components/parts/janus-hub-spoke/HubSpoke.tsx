@@ -7,6 +7,7 @@ import {
 } from '../../../apps/delivery/components/NotificationContext';
 import { contexts } from '../../../types/applicationContext';
 import { PartComponentProps } from '../types/parts';
+import './HubSpoke.scss';
 import { Item, JanusHubSpokeItemProperties, hubSpokeModel } from './schema';
 
 const SpokeItemContentComponent: React.FC<any> = ({ spokeLabel }) => {
@@ -29,50 +30,45 @@ export const SpokeItems: React.FC<JanusHubSpokeItemProperties> = ({
   onSelected,
   val,
   IsCompleted,
+  completedSpokeCount,
 }) => {
-  const spokeItemStyles: CSSProperties = {};
-  if (layoutType === 'horizontalLayout') {
-    if (columns === 1) {
-      spokeItemStyles.width = `calc(${Math.floor(100 / totalItems)}% - 6px)`;
-    } else {
-      spokeItemStyles.width = `calc(100% / ${columns} - 6px)`;
-    }
-    if (idx !== 0) {
-      spokeItemStyles.left = `calc(${(100 / totalItems) * idx}% - 6px)`;
-    }
-    spokeItemStyles.position = `absolute`;
+  const spokeItemStyles: CSSProperties = {
+    display: 'flex',
+    alignItems: 'stretch',
+    flex: layoutType === 'horizontalLayout' ? '1 1 0' : undefined,
+    marginRight: layoutType === 'horizontalLayout' ? '12px' : undefined,
+    maxWidth: '100%',
+  };
 
-    spokeItemStyles.display = `inline-block`;
-  }
   if (layoutType === 'verticalLayout' && overrideHeight) {
     spokeItemStyles.height = `calc(${100 / totalItems}%)`;
   }
+
   if (layoutType === 'verticalLayout' && verticalGap && index > 0) {
     spokeItemStyles.marginTop = `${verticalGap}px`;
   }
-  return (
-    <React.Fragment>
-      <div style={spokeItemStyles} className={` hub-spoke-item`}>
-        <button
-          type="button"
-          style={{ width: '100%' }}
-          onClick={() => {
-            if (onSelected) onSelected(val);
-          }}
-          className="btn btn-primary"
-        >
-          <span
-            style={{ float: 'left', marginLeft: IsCompleted ? '10px' : '23px' }}
-            className={IsCompleted ? 'fa fa-check-circle' : ''}
-          >
-            &nbsp;
-          </span>
 
-          <SpokeItemContent itemId={itemId} spokeLabel={spokeLabel} state={state} />
-        </button>
-      </div>
-      {layoutType !== 'horizontalLayout' && <br style={{ padding: '0px' }} />}
-    </React.Fragment>
+  return (
+    <div style={spokeItemStyles} className="hub-spoke-item">
+      <button
+        type="button"
+        onClick={() => onSelected?.(val)}
+        className="btn btn-primary hub-spoke-button"
+      >
+        <div className="hub-spoke-content">
+          <span className="icon">
+            {IsCompleted ? (
+              <i className="fa fa-check-circle" aria-hidden="true"></i>
+            ) : (
+              <span style={{ width: '18px', height: '18px', display: 'inline-block' }}></span>
+            )}
+          </span>
+          <div className="label">
+            <SpokeItemContent itemId={itemId} spokeLabel={spokeLabel} state={state} />
+          </div>
+        </div>
+      </button>
+    </div>
   );
 };
 
@@ -274,75 +270,55 @@ const HubSpoke: React.FC<PartComponentProps<hubSpokeModel>> = (props) => {
     <React.Fragment>
       {ready ? (
         <>
-          <style>
-            {`
-
-              .spoke-horizontalLayout .hub-spoke-item {
-                box-sizing: border-box;
-                margin-left: 0px;
-                margin-right: 6px;
-              }
-              .spoke-horizontalLayout .progress-bar {
-                width: 25% !important;
-                margin-left: auto;
-                margin-right: 8px !important;
-              }
-              .spoke-horizontalLayout {
-                box-sizing: border-box;
-                margin-left: 0px;
-                margin-right: 0px;
-              }
-              .hub-spoke button {
-                color: white !important;
-                min-width: 100px;
-                height: auto !important;
-                min-height: 44px;
-                background-color: #006586;
-                border-radius: 3px;
-                border: none;
-                padding: 0px 0px 0px 0px;
-                cursor: pointer;
-              }
-              .hub-spoke {
-                border: none !important;
-                padding: 0px;
-
-                > div {
-                  display: block;
-                  position: static !important;
-                  margin: 0 9px 15px 0;
-                  min-height: 20px;
-                }
-                p {
-                  margin: 0px;
-                }
-                > br {
-                  display: none !important;
-                }
-              }
-        `}
-          </style>
           <div data-janus-type={tagName} style={styles} className={`hub-spoke spoke-${layoutType}`}>
-            {options?.map((item, index) => (
-              <SpokeItems
-                idx={index}
-                key={`${id}-item-${index}`}
-                title={item.title}
-                totalItems={options.length}
-                layoutType={layoutType}
-                itemId={`${id}-item-${index}`}
-                groupId={`mcq-${id}`}
-                val={item.value}
-                onSelected={handleButtonPress}
-                {...item}
-                x={0}
-                y={0}
-                overrideHeight={overrideHeight}
-                disabled={!enabled}
-                columns={columns}
-                verticalGap={verticalGap}
-              />
-            ))}
+            {layoutType === 'horizontalLayout' ? (
+              <div className="spoke-items-row">
+                {options.map((item, index) => (
+                  <SpokeItems
+                    idx={index}
+                    key={`${id}-item-${index}`}
+                    title={item.title}
+                    totalItems={options.length}
+                    layoutType={layoutType}
+                    itemId={`${id}-item-${index}`}
+                    groupId={`mcq-${id}`}
+                    val={item.value}
+                    onSelected={handleButtonPress}
+                    {...item}
+                    x={0}
+                    y={0}
+                    overrideHeight={overrideHeight}
+                    disabled={!enabled}
+                    columns={columns}
+                    verticalGap={verticalGap}
+                    completedSpokeCount={completedSpokeCount}
+                  />
+                ))}
+              </div>
+            ) : (
+              options.map((item, index) => (
+                <SpokeItems
+                  idx={index}
+                  key={`${id}-item-${index}`}
+                  title={item.title}
+                  totalItems={options.length}
+                  layoutType={layoutType}
+                  itemId={`${id}-item-${index}`}
+                  groupId={`mcq-${id}`}
+                  val={item.value}
+                  onSelected={handleButtonPress}
+                  {...item}
+                  x={0}
+                  y={0}
+                  overrideHeight={overrideHeight}
+                  disabled={!enabled}
+                  columns={columns}
+                  verticalGap={verticalGap}
+                  completedSpokeCount={completedSpokeCount}
+                />
+              ))
+            )}
+
             {showProgressBar && (
               <div className="space-y-5 progress-bar" style={{ width: '96%' }}>
                 <div>

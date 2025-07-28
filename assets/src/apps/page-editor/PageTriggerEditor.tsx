@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { AIIcon } from 'components/misc/AIIcon';
 import { PageTrigger } from 'data/triggers';
 
 export const PageTriggerEditor: React.FC<{
@@ -34,7 +35,7 @@ export const PageTriggerEditor: React.FC<{
     <div className="mt-3 bg-white dark:bg-gray-600 rounded-lg p-3" contentEditable={false}>
       <div className="flex justify-between">
         <h4>
-          <img src="/images/icons/icon-AI.svg" className="inline mr-1" />
+          <AIIcon size="sm" className="inline mr-1" />
           DOT AI Page Activation Point
         </h4>
         <button onClick={() => onEdit(undefined)} className="btn btn-primary">
@@ -76,7 +77,7 @@ export const PageTriggerEditor: React.FC<{
     <div className="mt-3 bg-white dark:bg-gray-600 rounded-lg p-3" contentEditable={false}>
       <div className="flex justify-between">
         <h4>
-          <img src="/images/icons/icon-AI.svg" className="inline mr-1" />
+          <AIIcon size="sm" className="inline mr-1" />
           DOT AI Page Activation Point
         </h4>
         <button

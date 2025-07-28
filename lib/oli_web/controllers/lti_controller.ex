@@ -2,10 +2,7 @@ defmodule OliWeb.LtiController do
   use OliWeb, :controller
   use OliWeb, :verified_routes
 
-  import Oli.Utils
-
   alias Oli.Accounts
-  alias Oli.Accounts.SystemRole
   alias Oli.Delivery.Sections
   alias Oli.Institutions
   alias Oli.Institutions.PendingRegistration
@@ -17,6 +14,11 @@ defmodule OliWeb.LtiController do
   alias OliWeb.Common.Utils
   alias OliWeb.Common.LtiCommon
   alias Lti_1p3
+  alias Oli.Delivery.Attempts.Core
+  alias Oli.Delivery.Attempts.Core.ResourceAttempt
+  alias Oli.Lti.PlatformInstances
+  alias Oli.Lti.Tokens
+  alias Oli.Lti.PlatformExternalTools
   alias Lti_1p3.Roles.ContextRoles
   alias Lti_1p3.Roles.PlatformRoles
   alias Lti_1p3.Tool.Services.AGS
@@ -79,6 +81,127 @@ defmodule OliWeb.LtiController do
     end
   end
 
+  defp handle_valid_lti_1p3_launch(conn, lti_params) do
+    issuer = lti_params["iss"]
+    client_id = LtiParams.peek_client_id(lti_params)
+    deployment_id = lti_params["https://purl.imsglobal.org/spec/lti/claim/deployment_id"]
+
+    Oli.Repo.transaction(fn ->
+      with {:ok, institution, registration} <-
+             get_institution_and_registration(issuer, client_id, deployment_id),
+           {:ok, user} <- create_or_update_lti_user(lti_params, institution),
+           :ok <- create_or_update_lti_params(user, lti_params),
+           :ok <- update_user_platform_roles(user, lti_params),
+           {:ok, section} <- get_and_update_lti_section_details(lti_params, registration) do
+        # sign in LTI user and redirect to appropriate route
+        conn
+        |> UserAuth.create_session(user)
+        |> LtiCommon.redirect_lti_user(
+          section,
+          lti_params
+        )
+      else
+        error ->
+          error_msg = "Failed to handle valid LTI 1.3 launch: #{inspect(error)}"
+
+          Logger.error(error_msg)
+
+          # render error page
+          conn
+          |> put_status(:bad_request)
+          |> render("lti_error.html", reason: error_msg)
+      end
+    end)
+  end
+
+  defp get_institution_and_registration(issuer, client_id, deployment_id) do
+    case Institutions.get_institution_registration_deployment(issuer, client_id, deployment_id) do
+      nil ->
+        {:error, :invalid_registration}
+
+      {institution, registration, _deployment} ->
+        {:ok, institution, registration}
+    end
+  end
+
+  defp lti_roles_claim(lti_params) do
+    case lti_params["https://purl.imsglobal.org/spec/lti/claim/roles"] do
+      nil -> {:error, :roles_claim_missing}
+      roles -> {:ok, roles}
+    end
+  end
+
+  defp lti_context_claim(lti_params) do
+    case lti_params["https://purl.imsglobal.org/spec/lti/claim/context"] do
+      nil -> {:error, :context_claim_missing}
+      context -> {:ok, context}
+    end
+  end
+
+  defp get_and_update_lti_section_details(lti_params, registration) do
+    case Sections.get_section_from_lti_params(lti_params) do
+      nil ->
+        {:error, :section_not_found}
+
+      section ->
+        Sections.update_section(section, %{
+          grade_passback_enabled: AGS.grade_passback_enabled?(lti_params),
+          line_items_service_url: AGS.get_line_items_url(lti_params, registration),
+          nrps_enabled: NRPS.nrps_enabled?(lti_params),
+          nrps_context_memberships_url: NRPS.get_context_memberships_url(lti_params)
+        })
+    end
+  end
+
+  defp create_or_update_lti_user(lti_params, institution) do
+    Accounts.insert_or_update_lms_user(
+      %{
+        sub: lti_params["sub"],
+        name: lti_params["name"],
+        given_name: lti_params["given_name"],
+        family_name: lti_params["family_name"],
+        middle_name: lti_params["middle_name"],
+        nickname: lti_params["nickname"],
+        preferred_username: lti_params["preferred_username"],
+        profile: lti_params["profile"],
+        picture: lti_params["picture"],
+        website: lti_params["website"],
+        email: lti_params["email"],
+        email_verified: true,
+        gender: lti_params["gender"],
+        birthdate: lti_params["birthdate"],
+        zoneinfo: lti_params["zoneinfo"],
+        locale: lti_params["locale"],
+        phone_number: lti_params["phone_number"],
+        phone_number_verified: lti_params["phone_number_verified"],
+        address: lti_params["address"],
+        lti_institution_id: institution.id
+      },
+      institution.id
+    )
+  end
+
+  defp update_user_platform_roles(user, lti_params) do
+    with {:ok, lti_roles} <- lti_roles_claim(lti_params),
+         platform_roles <- PlatformRoles.get_roles_by_uris(lti_roles) do
+      case Accounts.update_user_platform_roles(user, platform_roles) do
+        {:ok, _user} -> :ok
+        {:error, _changeset} -> {:error, :failed_to_update_platform_roles}
+      end
+    end
+  end
+
+  defp create_or_update_lti_params(user, lti_params) do
+    case LtiParams.create_or_update_lti_params(lti_params, user.id) do
+      {:ok, _lti_params} -> :ok
+      {:error, _changeset} -> {:error, :failed_to_create_or_update_lti_params}
+    end
+  end
+
+  defp enroll_user(user_id, section_id, context_roles) do
+    Sections.enroll(user_id, section_id, context_roles)
+  end
+
   def test(conn, params) do
     session_state = Plug.Conn.get_session(conn, "state")
 
@@ -98,86 +221,44 @@ defmodule OliWeb.LtiController do
           reason: "The current user must be the same user initiating the LTI request"
         )
 
-      %Lti_1p3.Platform.LoginHint{context: context, session_user_id: session_user_id} ->
-        {user, resource_id, roles} =
+      %Lti_1p3.Platform.LoginHint{context: context, session_user_id: _session_user_id} ->
+        client_id = params["client_id"]
+
+        {:ok, platform_instance} =
+          PlatformInstances.get_platform_instance_by_client_id(client_id)
+
+        {user, target_link_uri, activity_resource_id, roles, additional_claims, message_type} =
           case context do
-            "admin" ->
-              with author <- Accounts.get_author!(session_user_id),
-                   true <- Accounts.has_admin_role?(author, SystemRole.role_id().system_admin) do
-                roles = [
-                  Lti_1p3.Roles.PlatformRoles.get_role(:system_administrator),
-                  Lti_1p3.Roles.PlatformRoles.get_role(:institution_administrator),
-                  Lti_1p3.Roles.ContextRoles.get_role(:context_content_developer)
-                ]
+            %{"project" => project_slug, "resource_id" => activity_resource_id} ->
+              build_authorization_for(
+                :authoring,
+                conn,
+                platform_instance,
+                project_slug,
+                activity_resource_id
+              )
 
-                {%Accounts.User{
-                   id: author.id,
-                   sub: "admin",
-                   email: author.email,
-                   email_verified: true,
-                   name: author.name,
-                   given_name: author.given_name,
-                   family_name: author.family_name,
-                   middle_name: "",
-                   nickname: "",
-                   preferred_username: "",
-                   profile: "",
-                   picture: author.picture,
-                   website: "",
-                   gender: "",
-                   birthdate: "",
-                   zoneinfo: "",
-                   locale: "",
-                   phone_number: "",
-                   phone_number_verified: "",
-                   address: ""
-                 }, nil, roles}
-              else
-                _ ->
-                  Logger.error("Author with id #{session_user_id} is not an admin")
+            %{
+              "section" => section_slug,
+              "resource_id" => activity_resource_id,
+              "configure_deep_linking" => "true"
+            } ->
+              build_authorization_for(
+                :configure_deep_linking,
+                conn,
+                platform_instance,
+                section_slug,
+                activity_resource_id
+              )
 
-                  throw("Author is not an admin")
-              end
-
-            %{"project" => _project, "resource_id" => resource_id} ->
-              author = Accounts.get_author!(session_user_id)
-
-              roles = [
-                Lti_1p3.Roles.ContextRoles.get_role(:context_content_developer)
-              ]
-
-              {%Accounts.User{
-                 id: author.id,
-                 sub: "admin",
-                 email: author.email,
-                 email_verified: true,
-                 name: author.name,
-                 given_name: author.given_name,
-                 family_name: author.family_name,
-                 middle_name: "",
-                 nickname: "",
-                 preferred_username: "",
-                 profile: "",
-                 picture: author.picture,
-                 website: "",
-                 gender: "",
-                 birthdate: "",
-                 zoneinfo: "",
-                 locale: "",
-                 phone_number: "",
-                 phone_number_verified: "",
-                 address: ""
-               }, resource_id, roles}
-
-            %{"section" => section_slug, "resource_id" => resource_id} ->
-              user = conn.assigns[:current_user]
-
-              context_roles = Lti_1p3.Roles.Lti_1p3_User.get_context_roles(user, section_slug)
-
-              platform_roles =
-                Lti_1p3.Roles.Lti_1p3_User.get_platform_roles(user)
-
-              {user, resource_id, context_roles ++ platform_roles}
+            %{"section" => section_slug, "resource_id" => activity_resource_id} ->
+              build_authorization_for(
+                :delivery,
+                conn,
+                platform_instance,
+                section_slug,
+                activity_resource_id
+              )
 
             _ ->
               Logger.error("Unsupported context value in login hint: #{Kernel.inspect(context)}")
@@ -187,28 +268,47 @@ defmodule OliWeb.LtiController do
 
         issuer = Oli.Utils.get_base_url()
 
-        client_id = params["client_id"]
-
-        platform_instance =
-          PlatformInstances.get_platform_instance_by_client_id(client_id)
-
         deployment =
           Oli.Lti.PlatformExternalTools.get_lti_external_tool_activity_deployment_by(
             platform_instance_id: platform_instance.id
           )
 
-        resource_link = %{
-          id: resource_id
-        }
+        # Use the message type determined by the context
+        message_type_claim =
+          case message_type do
+            :deep_linking_request ->
+              Lti_1p3.Claims.MessageType.message_type(:lti_deep_linking_request)
+
+            _ ->
+              Lti_1p3.Claims.MessageType.message_type(:lti_resource_link_request)
+          end
 
         claims = [
-          Lti_1p3.Claims.DeploymentId.deployment_id(deployment.deployment_id),
-          Lti_1p3.Claims.MessageType.message_type(:lti_resource_link_request),
+          # Required claims
+          message_type_claim,
           Lti_1p3.Claims.Version.version("1.3.0"),
-          Lti_1p3.Claims.ResourceLink.resource_link(resource_link),
-          Lti_1p3.Claims.TargetLinkUri.target_link_uri(platform_instance.target_link_uri),
-          Lti_1p3.Claims.Roles.roles(roles)
+          Lti_1p3.Claims.DeploymentId.deployment_id(deployment.deployment_id),
+          Lti_1p3.Claims.TargetLinkUri.target_link_uri(target_link_uri),
+          Lti_1p3.Claims.Roles.roles(roles),
+          # Optional claims
+          Lti_1p3.Claims.PlatformInstance.platform_instance(
+            PlatformInstances.platform_instance_guid(platform_instance),
+            contact_email: Oli.VendorProperties.support_email(),
+            description: Oli.VendorProperties.product_description(),
+            name: Oli.VendorProperties.product_full_name(),
+            url: Oli.Utils.get_base_url(),
+            product_family_code: "oli-torus",
+            version: Application.fetch_env!(:oli, :build).version
+          )
+          | additional_claims
         ]
+
+        # Add resource link claim only for resource link requests
+        claims =
+          case message_type do
+            :deep_linking_request -> claims
+            _ -> [Lti_1p3.Claims.ResourceLink.resource_link(activity_resource_id) | claims]
+          end
 
         case Lti_1p3.Platform.AuthorizationRedirect.authorize_redirect(
                params,
@@ -230,110 +330,321 @@ defmodule OliWeb.LtiController do
     end
   end
 
-  def developer_key_json(conn, params) do
-    {:ok, active_jwk} = Lti_1p3.get_active_jwk()
+  defp build_authorization_for(
+         :authoring,
+         conn,
+         platform_instance,
+         project_slug,
+         activity_resource_id
+       ) do
+    author = conn.assigns[:current_author]
+    project = Oli.Authoring.Course.get_project_by_slug(project_slug)
 
-    public_jwk =
-      JOSE.JWK.from_pem(active_jwk.pem)
-      |> JOSE.JWK.to_public()
-      |> JOSE.JWK.to_map()
-      |> (fn {_kty, public_jwk} -> public_jwk end).()
-      |> Map.put("typ", active_jwk.typ)
-      |> Map.put("alg", active_jwk.alg)
-      |> Map.put("kid", active_jwk.kid)
+    roles =
+      [
+        Lti_1p3.Roles.ContextRoles.get_role(:context_content_developer)
+      ] ++
+        if Oli.Accounts.is_admin?(author),
+          do: [
+            Lti_1p3.Roles.PlatformRoles.get_role(:system_administrator),
+            Lti_1p3.Roles.PlatformRoles.get_role(:institution_administrator)
+          ],
+          else: []
 
-    host =
-      Application.get_env(:oli, OliWeb.Endpoint)
-      |> Keyword.get(:url)
-      |> Keyword.get(:host)
+    # Build additional claims
+    additional_claims = [
+      Lti_1p3.Claims.Context.context(project.slug,
+        title: project.title,
+        type: ["http://purl.imsglobal.org/vocab/lis/v2/course#CourseOffering"]
+      )
+    ]
 
-    developer_key_config = %{
-      "title" => Oli.VendorProperties.product_short_name(),
-      "scopes" => [
-        "https://purl.imsglobal.org/spec/lti-ags/scope/lineitem",
-        "https://purl.imsglobal.org/spec/lti-ags/scope/lineitem.readonly",
-        "https://purl.imsglobal.org/spec/lti-ags/scope/result.readonly",
-        "https://purl.imsglobal.org/spec/lti-ags/scope/score",
-        "https://purl.imsglobal.org/spec/lti-nrps/scope/contextmembership.readonly"
-      ],
-      "extensions" => [
-        %{
-          "platform" => "canvas.instructure.com",
-          "settings" => %{
-            "platform" => "canvas.instructure.com",
-            "placements" => [
-              %{
-                "placement" => "link_selection",
-                "message_type" => "LtiResourceLinkRequest",
-                "icon_url" => Oli.VendorProperties.normalized_workspace_logo(host)
-              },
-              %{
-                "placement" => "assignment_selection",
-                "message_type" => "LtiResourceLinkRequest"
-              },
-              %{
-                "placement" => "course_navigation",
-                "message_type" => "LtiResourceLinkRequest",
-                "default" => get_course_navigation_default(params),
-                "windowTarget" => "_blank"
-              }
-              ## TODO: add support for more placement types in the future, possibly configurable by LMS admin
-              # assignment_selection when we support deep linking
-              # %{
-              #   "placement" => "assignment_selection",
-              #   "message_type" => "LtiDeepLinkingRequest",
-              #   "custom_fields" => %{
-              #     "assignment_id" => "$Canvas.assignment.id"
-              #   }
-              # },
-              # %{
-              #   "placement" => "homework_submission",
-              #   "message_type" => "LtiDeepLinkingRequest"
-              # },
-              # %{
-              #   "placement" => "tool_configuration",
-              #   "message_type" => "LtiResourceLinkRequest",
-              #   "target_link_uri" => "https://#{host}/lti/configure"
-              # },
-              # ...
-            ]
-          },
-          "privacy_level" => "public"
-        }
-      ],
-      "public_jwk" => %{
-        "e" => public_jwk["e"],
-        "n" => public_jwk["n"],
-        "alg" => public_jwk["alg"],
-        "kid" => public_jwk["kid"],
-        "kty" => "RSA",
-        "use" => "sig"
-      },
-      "description" => "Create, deliver and iteratively improve course content",
-      "custom_fields" => %{},
-      "public_jwk_url" => "https://#{host}/.well-known/jwks.json",
-      "target_link_uri" => "https://#{host}/lti/launch",
-      "oidc_initiation_url" => "https://#{host}/lti/login"
-    }
-
-    conn
-    |> json(developer_key_config)
+    {%Accounts.User{
+       id: author.id,
+       sub: "author-#{author.id}",
+       email: author.email,
+       email_verified: true,
+       name: author.name,
+       given_name: author.given_name,
+       family_name: author.family_name,
+       picture: author.picture
+     }, platform_instance.target_link_uri, activity_resource_id, roles, additional_claims,
+     :resource_link_request}
   end
 
-  defp get_course_navigation_default(%{"course_navigation_default" => "enabled"}), do: "enabled"
-  defp get_course_navigation_default(_params), do: "disabled"
+  defp build_authorization_for(
+         :delivery,
+         conn,
+         platform_instance,
+         section_slug,
+         activity_resource_id
+       ) do
+    user = conn.assigns[:current_user]
+    author = conn.assigns[:current_author]
+    section = Sections.get_section_by_slug(section_slug)
 
-  def jwks(conn, _params) do
-    conn
-    |> json(Lti_1p3.get_all_public_keys())
+    context_roles =
+      Lti_1p3.Roles.Lti_1p3_User.get_context_roles(user, section.slug)
+
+    platform_roles =
+      Lti_1p3.Roles.Lti_1p3_User.get_platform_roles(user)
+
+    roles =
+      context_roles ++
+        platform_roles ++
+        if Oli.Accounts.is_admin?(author) do
+          [
+            Lti_1p3.Roles.PlatformRoles.get_role(:system_administrator),
+            Lti_1p3.Roles.PlatformRoles.get_role(:institution_administrator)
+          ]
+        else
+          []
+        end
+
+    # If there is a section resource deep link for the activity,
+    # use that as the target link URI. Otherwise, use the platform instance's target link URI.
+    {target_link_uri, additional_claims} =
+      case Oli.Lti.PlatformExternalTools.get_section_resource_deep_link_by(
+             section_id: section.id,
+             resource_id: activity_resource_id
+           ) do
+        nil ->
+          {platform_instance.target_link_uri, []}
+
+        %Oli.Lti.PlatformExternalTools.LtiSectionResourceDeepLink{url: nil, custom: custom} ->
+          {platform_instance.target_link_uri, maybe_add_custom_claims(custom)}
+
+        %Oli.Lti.PlatformExternalTools.LtiSectionResourceDeepLink{url: url, custom: custom} ->
+          {url, maybe_add_custom_claims(custom)}
+      end
+
+    # Build additional claims
+    additional_claims = [
+      Lti_1p3.Claims.Context.context(section.slug,
+        title: section.title,
+        type: ["http://purl.imsglobal.org/vocab/lis/v2/course#CourseSection"]
+      )
+      | additional_claims
+    ]
+
+    # If the user has an activity attempt for the given activity_resource_id,
+    # add the AGS endpoint to the additional claims
+    additional_claims =
+      case Core.get_latest_user_resource_attempt_for_activity(
+             section.slug,
+             user.id,
+             # activity_resource_id is expected to be an database id integer
+             String.to_integer(activity_resource_id)
+           ) do
+        %ResourceAttempt{attempt_guid: page_attempt_guid} ->
+          [
+            Lti_1p3.Claims.AgsEndpoint.endpoint(
+              [
+                "https://purl.imsglobal.org/spec/lti-ags/scope/lineitem",
+                "https://purl.imsglobal.org/spec/lti-ags/scope/result.readonly",
+                "https://purl.imsglobal.org/spec/lti-ags/scope/score"
+              ],
+              lineitem:
+                Oli.Utils.get_base_url() <>
+                  "/lti/lineitems/#{page_attempt_guid}/#{activity_resource_id}"
+            )
+            | additional_claims
+          ]
+
+        _ ->
+          additional_claims
+      end
+
+    {user, target_link_uri, activity_resource_id, roles, additional_claims,
+     :resource_link_request}
   end
 
-  def auth_token(conn, _params) do
-    conn
-    |> put_status(:not_implemented)
-    |> json(%{
-      error: "NOT IMPLEMENTED"
-    })
+  defp build_authorization_for(
+         :configure_deep_linking,
+         conn,
+         platform_instance,
+         section_slug,
+         activity_resource_id
+       ) do
+    user = conn.assigns[:current_user]
+    author = conn.assigns[:current_author]
+    section = Sections.get_section_by_slug(section_slug)
+
+    context_roles =
+      Lti_1p3.Roles.Lti_1p3_User.get_context_roles(user, section.slug)
+
+    platform_roles =
+      Lti_1p3.Roles.Lti_1p3_User.get_platform_roles(user)
+
+    roles =
+      context_roles ++
+        platform_roles ++
+        if Oli.Accounts.is_admin?(author) do
+          [
+            Lti_1p3.Roles.PlatformRoles.get_role(:system_administrator),
+            Lti_1p3.Roles.PlatformRoles.get_role(:institution_administrator)
+          ]
+        else
+          []
+        end
+
+    # Build additional claims for deep linking
+    additional_claims = [
+      Lti_1p3.Claims.Context.context(section.slug,
+        title: section.title,
+        type: ["http://purl.imsglobal.org/vocab/lis/v2/course#CourseSection"]
+      ),
+      Lti_1p3.Claims.DeepLinkingSettings.deep_linking_settings(
+        Oli.Utils.get_base_url() <> "/lti/deep_link/#{section_slug}/#{activity_resource_id}",
+        ["ltiResourceLink"],
+        ["iframe", "window"],
+        accept_multiple: false,
+        auto_create: true
+      )
+    ]
+
+    {user, platform_instance.target_link_uri, nil, roles, additional_claims,
+     :deep_linking_request}
+  end
+
+  defp maybe_add_custom_claims(nil) do
+    []
+  end
+
+  defp maybe_add_custom_claims(custom),
+    do: [
+      Lti_1p3.Claims.Custom.custom(custom)
+    ]
+
+  @doc """
+  Handles the Deep Linking response from the LTI tool.
+  This endpoint receives the JWT containing the content items selected by the user.
+  """
+  def deep_link(
+        conn,
+        %{"JWT" => jwt, "section_slug" => section_slug, "resource_id" => resource_id} = _params
+      ) do
+    with {:ok, claims} <- validate_deep_linking_jwt(jwt),
+         {:ok, content_item} <- require_single_content_item(claims),
+         :ok <- require_lti_resource_link_type(content_item),
+         {:ok, section} <- get_section_by_slug(section_slug),
+         :ok = process_deep_linking_content_item(content_item, section.id, resource_id) do
+      # Render success page with postMessage communication
+      conn
+      |> put_view(OliWeb.LtiHTML)
+      |> put_layout(false)
+      |> put_format("html")
+      |> render(:deep_link_success, content_item: content_item)
+    else
+      {:error, _reason, error_description} ->
+        conn
+        |> put_view(OliWeb.LtiHTML)
+        |> put_layout(false)
+        |> put_format("html")
+        |> put_status(:bad_request)
+        |> render(:deep_link_error, error_description: error_description)
+
+      {:error, reason} ->
+        error_description = to_string(reason)
+
+        conn
+        |> put_view(OliWeb.LtiHTML)
+        |> put_layout(false)
+        |> put_format("html")
+        |> put_status(:bad_request)
+        |> render(:deep_link_error, error_description: error_description)
+    end
+  end
+
+  defp get_section_by_slug(section_slug) do
+    case Sections.get_section_by_slug(section_slug) do
+      %Sections.Section{} = section ->
+        {:ok, section}
+
+      nil ->
+        {:error, :section_not_found}
+    end
+  end
+
+  defp validate_deep_linking_jwt(jwt) do
+    with {:ok, %JOSE.JWT{fields: %{"iss" => client_id, "aud" => audience}}} <-
+           Tokens.peek_jwt(jwt),
+         %JOSE.JWS{fields: %{"kid" => kid}} <- JOSE.JWT.peek_protected(jwt),
+         {:ok, platform_instance} <-
+           PlatformInstances.get_platform_instance_by_client_id(client_id),
+         {:ok, jwk} <- Tokens.get_jwk_for_assertion(platform_instance.keyset_url, kid),
+         {true, jwt, _jws} <- JOSE.JWT.verify(jwk, jwt),
+         jwt_claims <- jwt.fields,
+         :ok <- validate_audience(audience),
+         :ok <- validate_message_type(jwt_claims) do
+      {:ok, jwt_claims}
+    else
+      e ->
+        Logger.error("Failed to validate deep linking JWT: #{inspect(e)}")
+        {:error, :invalid_deep_linking_jwt}
+    end
+  end
+
+  defp validate_audience(audience) when is_list(audience),
+    do: audience |> hd() |> validate_audience()
+
+  defp validate_audience(audience) do
+    expected_audience = Oli.Utils.get_base_url()
+
+    if audience == expected_audience do
+      :ok
+    else
+      {:error, :invalid_audience}
+    end
+  end
+
+  defp validate_message_type(%{
+         "https://purl.imsglobal.org/spec/lti/claim/message_type" => "LtiDeepLinkingResponse"
+       }) do
+    :ok
+  end
+
+  defp validate_message_type(_) do
+    {:error, :invalid_message_type}
+  end
+
+  defp require_single_content_item(%{
+         "https://purl.imsglobal.org/spec/lti-dl/claim/content_items" => content_items
+       }) do
+    if is_list(content_items) and length(content_items) == 1 do
+      {:ok, hd(content_items)}
+    else
+      {:error, :invalid_content_item,
+       "Expected exactly one content item, got #{length(content_items)}"}
+    end
+  end
+
+  defp require_lti_resource_link_type(%{"type" => "ltiResourceLink"}), do: :ok
+
+  defp require_lti_resource_link_type(_),
+    do: {:error, :invalid_content_item_type, "Expected content item type to be 'ltiResourceLink'"}
+
+  defp process_deep_linking_content_item(content_item, section_id, resource_id) do
+    Logger.info("Processing deep linking content item: #{inspect(content_item)}")
+
+    case PlatformExternalTools.upsert_section_resource_deep_link(%{
+           type: content_item["type"],
+           title: content_item["title"],
+           text: content_item["text"],
+           url: content_item["url"],
+           custom: content_item["custom"],
+           resource_id: resource_id,
+           section_id: section_id
+         }) do
+      {:ok, _deep_link} ->
+        :ok
+
+      {:error, reason} ->
+        Logger.error("Failed to create section resource deep link: #{inspect(reason)}")
+        {:error, :failed_to_create_deep_link}
+    end
+
+    :ok
   end
 
   def request_registration(
@@ -446,109 +757,5 @@ defmodule OliWeb.LtiController do
         conn
         |> render("registration_pending.html", pending_registration: pending_registration)
     end
-  end
-
-  defp handle_valid_lti_1p3_launch(conn, lti_params) do
-    issuer = lti_params["iss"]
-    client_id = LtiParams.peek_client_id(lti_params)
-    deployment_id = lti_params["https://purl.imsglobal.org/spec/lti/claim/deployment_id"]
-
-    Oli.Repo.transaction(fn ->
-      case Institutions.get_institution_registration_deployment(issuer, client_id, deployment_id) do
-        {institution, registration, _deployment} ->
-          lti_roles = lti_params["https://purl.imsglobal.org/spec/lti/claim/roles"]
-
-          # update user values defined by the oidc standard per LTI 1.3 standard user identity claims
-          # http://www.imsglobal.org/spec/lti/v1p3/#user-identity-claims
-          case Accounts.insert_or_update_lms_user(
-                 %{
-                   sub: lti_params["sub"],
-                   name: lti_params["name"],
-                   given_name: lti_params["given_name"],
-                   family_name: lti_params["family_name"],
-                   middle_name: lti_params["middle_name"],
-                   nickname: lti_params["nickname"],
-                   preferred_username: lti_params["preferred_username"],
-                   profile: lti_params["profile"],
-                   picture: lti_params["picture"],
-                   website: lti_params["website"],
-                   email: lti_params["email"],
-                   email_verified: true,
-                   gender: lti_params["gender"],
-                   birthdate: lti_params["birthdate"],
-                   zoneinfo: lti_params["zoneinfo"],
-                   locale: lti_params["locale"],
-                   phone_number: lti_params["phone_number"],
-                   phone_number_verified: lti_params["phone_number_verified"],
-                   address: lti_params["address"],
-                   lti_institution_id: institution.id
-                 },
-                 institution.id
-               ) do
-            {:ok, user} ->
-              # Update stored LTI params associated with the current LTI user
-              {:ok, _} =
-                LtiParams.create_or_update_lti_params(lti_params, user.id)
-
-              # Update user platform roles
-              {:ok, user} =
-                Accounts.update_user_platform_roles(
-                  user,
-                  PlatformRoles.get_roles_by_uris(lti_roles)
-                )
-
-              # Sign in user
-              conn =
-                conn
-                |> UserAuth.create_session(user)
-
-              # If a section already exists, enroll the user and update the section details
-              section =
-                case Sections.get_section_from_lti_params(lti_params) do
-                  nil ->
-                    # A section has not been created for this context yet
-                    nil
-
-                  section ->
-                    # transform lti_roles to a list only containing valid context roles (exclude all system and institution roles)
-                    context_roles = ContextRoles.get_roles_by_uris(lti_roles)
-
-                    # if a course section exists, ensure that this user has an enrollment in this section
-                    Sections.enroll(user.id, section.id, context_roles)
-
-                    # update section LTI details
-                    case Sections.update_section(section, %{
-                           grade_passback_enabled: AGS.grade_passback_enabled?(lti_params),
-                           line_items_service_url:
-                             AGS.get_line_items_url(lti_params, registration),
-                           nrps_enabled: NRPS.nrps_enabled?(lti_params),
-                           nrps_context_memberships_url:
-                             NRPS.get_context_memberships_url(lti_params)
-                         }) do
-                      {:ok, section} ->
-                        section
-
-                      {:error, changeset} ->
-                        {_error_id, error_msg} =
-                          log_error("Failed to update section", changeset)
-
-                        render(conn, "lti_error.html", reason: error_msg)
-                    end
-                end
-
-              # Redirect the LTI user to the appropriate route
-              LtiCommon.redirect_lti_user(
-                conn,
-                section,
-                lti_params
-              )
-
-            {:error, changeset} ->
-              {_error_id, error_msg} = log_error("Failed to create or update user", changeset)
-
-              render(conn, "lti_error.html", reason: error_msg)
-          end
-      end
-    end)
   end
 end

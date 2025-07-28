@@ -15,6 +15,21 @@ export const clearSchedule = async (sectionSlug: string) => {
   };
 };
 
+export const updateAgenda = async (sectionSlug: string, agenda: boolean) => {
+  const response = await fetch(apiUrl(sectionSlug) + '/agenda', {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ agenda }),
+  });
+  const data = await response.json();
+  if (!data.result || data.result !== 'success') {
+    throw new Error('Could not update agenda ' + response);
+  }
+  return data;
+};
+
 export const loadSchedule = async (sectionSlug: string): Promise<HierarchyItemSrc[]> => {
   const response = await fetch(apiUrl(sectionSlug));
   const data = await response.json();
@@ -30,6 +45,7 @@ export interface ScheduleUpdate {
   id: number;
   scheduling_type: SchedulingType;
   manually_scheduled: boolean;
+  removed_from_schedule: boolean;
 }
 
 export const updateSchedule = async (sectionSlug: string, updates: ScheduleUpdate[]) => {

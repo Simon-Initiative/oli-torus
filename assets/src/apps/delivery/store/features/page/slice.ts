@@ -24,6 +24,7 @@ export interface PageState {
   activeEverapp: string;
   overviewURL: string;
   finalizeGradedURL: string;
+  blobStorageProvider: 'new' | 'deprecated';
   screenIdleTimeOutInSeconds: number;
   screenIdleExpireTime?: number;
   reviewMode?: boolean;
@@ -50,6 +51,7 @@ const initialState: PageState = {
   activeEverapp: '',
   overviewURL: '',
   finalizeGradedURL: '',
+  blobStorageProvider: 'deprecated',
   screenIdleTimeOutInSeconds: 1800,
   reviewMode: false,
 };
@@ -79,6 +81,7 @@ const pageSlice = createSlice({
       state.graded = !!action.payload.graded;
       state.overviewURL = action.payload.overviewURL;
       state.finalizeGradedURL = action.payload.finalizeGradedURL;
+      state.blobStorageProvider = action.payload.blobStorageProvider || 'deprecated';
       state.screenIdleTimeOutInSeconds = action.payload.screenIdleTimeOutInSeconds;
       state.reviewMode = action.payload.reviewMode;
       if (state.previewMode && !state.resourceAttemptGuid) {
@@ -173,6 +176,11 @@ export const selectOverviewURL = createSelector(
 export const selectFinalizeGradedURL = createSelector(
   selectState,
   (state: PageState) => state.finalizeGradedURL,
+);
+
+export const selectBlobStorageProvider = createSelector(
+  selectState,
+  (state: PageState) => state.blobStorageProvider,
 );
 
 export default pageSlice.reducer;

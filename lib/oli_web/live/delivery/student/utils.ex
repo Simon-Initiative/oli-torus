@@ -188,14 +188,17 @@ defmodule OliWeb.Delivery.Student.Utils do
         TERMS
       </span>
       <ul class="list-disc ml-6">
-        <li :if={@has_scheduled_resources?} id="page_due_terms">
+        <li
+          :if={@has_scheduled_resources? or not is_nil(@effective_settings.end_date)}
+          id="page_due_terms"
+        >
           <.page_due_term effective_settings={@effective_settings} ctx={@ctx} />
         </li>
         <li :if={!@effective_settings.batch_scoring} id="score_as_you_go_term">
           <%= score_as_you_go(@effective_settings) %>
         </li>
         <li id="page_scoring_terms">
-          <%= page_scoring_term(@effective_settings.scoring_strategy_id) %>
+          <%= page_scoring_term(@effective_settings) %>
         </li>
         <li :if={!@effective_settings.batch_scoring} id="question_attempts">
           <%= question_attempts(@effective_settings) %>
@@ -282,17 +285,41 @@ defmodule OliWeb.Delivery.Student.Utils do
     """
   end
 
-  defp page_due_term(%{effective_settings: %{end_date: end_date}} = assigns) do
+  defp page_due_term(
+         %{effective_settings: %{end_date: end_date, start_date: start_date}} = assigns
+       ) do
     verb_form =
       case DateTime.compare(DateTime.utc_now(), end_date) do
         :gt -> "was"
         :lt -> "is"
       end
 
-    assigns = assign(assigns, verb_form: verb_form)
+    available_verb_form =
+      cond do
+        is_nil(start_date) -> "is"
+        DateTime.compare(DateTime.utc_now(), start_date) == :gt -> "was"
+        true -> "is"
+      end
+
+    assigns =
+      assigns
+      |> assign(verb_form: verb_form)
+      |> assign(available_verb_form: available_verb_form)
 
     ~H"""
-    <%= "This assignment #{@verb_form} #{scheduling_type(@effective_settings.scheduling_type)}" %>
+    <%= if @effective_settings.start_date do %>
+      This assignment <%= @available_verb_form %> available on
+      <b>
+        <%= FormatDateTime.to_formatted_datetime(
+          @effective_settings.start_date,
+          @ctx,
+          "{WDshort} {Mshort} {D}, {YYYY} at {h12}:{m}{am}."
+        ) %>
+      </b>
+    <% else %>
+      This assignment is available <b>Now</b>
+    <% end %>
+    <%= "and #{@verb_form} #{scheduling_type(@effective_settings.scheduling_type)}" %>
     <b>
       <%= FormatDateTime.to_formatted_datetime(
         @effective_settings.end_date,
@@ -340,18 +367,21 @@ defmodule OliWeb.Delivery.Student.Utils do
   defp to_hours(1), do: "1 hour"
   defp to_hours(hours), do: "#{hours} hours"
 
-  defp page_scoring_term(1 = _scoring_strategy_id),
-    do: "Your overall score for this assignment will be the average score of your attempts."
+  defp page_scoring_term(effective_settings) do
+    policy_text =
+      if effective_settings.batch_scoring, do: "this assignment", else: "each question"
 
-  defp page_scoring_term(3 = _scoring_strategy_id),
-    do: "Your overall score for this assignment will be the score of your last attempt."
+    strategy_text =
+      case effective_settings.scoring_strategy_id do
+        1 -> "the average of your attempts"
+        2 -> "determined by your best attempt"
+        3 -> "determined by your last attempt"
+        4 -> "determined by the total sum of your attempts"
+        _ -> "determined by your best attempt"
+      end
 
-  defp page_scoring_term(4 = _scoring_strategy_id),
-    do: "Your overall score for this assignment will be the total sum of your attempts."
-
-  # scoring strategy 2 is the default scoring strategy
-  defp page_scoring_term(_scoring_strategy_id),
-    do: "Your overall score for this assignment will be the score of your best attempt."
+    "For #{policy_text}, your score will be #{strategy_text}."
+  end
 
   @doc """
   Returns the scheduling type label for the container.
@@ -361,7 +391,7 @@ defmodule OliWeb.Delivery.Student.Utils do
   def container_label_for_scheduling_type([:read_by]), do: "Read by: "
   def container_label_for_scheduling_type(_), do: "Due by: "
 
-  def label_for_scheduling_type(:due_by), do: "Due by: "
+  def label_for_scheduling_type(type) when type in [:due_by, nil], do: "Due by: "
   def label_for_scheduling_type(:read_by), do: "Read by: "
   def label_for_scheduling_type(:inclass_activity), do: "In-class activity by: "
   def label_for_scheduling_type(_), do: ""
@@ -371,9 +401,9 @@ defmodule OliWeb.Delivery.Student.Utils do
       assign(assigns, %{
         proficiency_levels: [
           {"Not enough data", "Not enough information",
-           "You haven’t completed enough activities for the system to calculate learning proficiency."},
+           "You haven't completed enough activities for the system to calculate learning proficiency."},
           {"Low", "Beginning Proficiency",
-           "You’re beginning to understand key ideas, but there is room to grow."},
+           "You're beginning to understand key ideas, but there is room to grow."},
           {"Medium", "Growing Proficiency",
            "Your understanding and skills are clearly strengthening and expanding."},
           {"High", "Establishing Proficiency",
@@ -809,6 +839,24 @@ defmodule OliWeb.Delivery.Student.Utils do
   end
 
   @doc """
+  Calculates and formats the percentage score based on the given score and out_of value.
+
+  Returns `nil` if the score is `nil`.
+
+  ## Examples
+
+      iex> parse_percentage(45, 50)
+      "90%"
+
+      iex> parse_percentage(nil, 50)
+      nil
+  """
+  @spec parse_percentage(number() | nil, number() | nil) :: String.t() | nil
+  def parse_percentage(nil, _), do: nil
+
+  def parse_percentage(score, out_of), do: parse_score(score / out_of * 100)
+
+  @doc """
   Rounds a given score to two decimal places and converts it to an integer if the result is a whole number.
 
   ## Parameters:
@@ -1072,6 +1120,17 @@ defmodule OliWeb.Delivery.Student.Utils do
       selected_view: selected_view
     ]
   end
+
+  @doc """
+  Parses the enrollment status and returns a human-readable string.
+  """
+
+  @spec parse_enrollment_status(atom()) :: String.t()
+  def parse_enrollment_status(:enrolled), do: "Enrolled"
+  def parse_enrollment_status(:suspended), do: "Suspended"
+  def parse_enrollment_status(:pending_confirmation), do: "Pending confirmation"
+  def parse_enrollment_status(:rejected), do: "Rejected invitation"
+  def parse_enrollment_status(_status), do: "Unknown"
 
   def emit_page_viewed_event(socket) do
     section = socket.assigns.section

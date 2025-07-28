@@ -1,0 +1,36 @@
+{
+  "name": "ww-torus-e2e",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "npx playwright test",
+    "test:ui": "npm run test -- --ui",
+    "test:chromium": "npm run test -- --project=chromium",
+    "test:chrome": "npm run test -- --project=chrome",
+    "test:debug": "npm run test -- --debug",
+    "test:one": "npm run test -- --grep",
+    "codegen": "npx playwright codegen",
+    "show-report": "npx playwright show-report",
+    "lint": "npx eslint src tests"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@eslint/js": "^9.28.0",
+    "@playwright/test": "^1.52.0",
+    "@types/node": "^22.13.10",
+    "eslint": "^9.28.0",
+    "eslint-config-prettier": "^10.1.5",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "typescript-eslint": "^8.33.0"
+  },
+  "dependencies": {
+    "csv-parse": "^5.6.0",
+    "dotenv": "^16.5.0",
+    "eslint": "^9.27.0",
+    "ww-torus-e2e": "file:"
+  }
+}

@@ -28,6 +28,7 @@ import {
   selectSequence,
 } from '../../store/features/groups/selectors/deck';
 import {
+  selectBlobStorageProvider,
   selectPageSlug,
   selectReviewMode,
   selectSectionSlug,
@@ -58,6 +59,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
   const currentLesson = useSelector(selectPageSlug);
   const sectionSlug = useSelector(selectSectionSlug);
   const currentUserId = useSelector(selectUserId);
+  const blobStorageProvider = useSelector(selectBlobStorageProvider);
   const currentUserName = useSelector(selectUserName);
   const historyModeNavigation = useSelector(selectHistoryNavigationActivity);
   const reviewMode = useSelector(selectReviewMode);
@@ -91,6 +93,42 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     }
 
     return className;
+  }, [currentActivityTree]);
+
+  const extractCustomCssClassFactsFromTree = useCallback(async () => {
+    const extractedFacts: any[] = [];
+
+    if (!currentActivityTree) return extractedFacts;
+
+    currentActivityTree.forEach((activity) => {
+      const customFacts = activity?.content?.custom?.facts?.map((fact: any) => {
+        const isCustomCssClass = fact?.target?.includes('customCssClass');
+        const isStageScoped = fact?.target?.startsWith('stage.');
+
+        if (!isCustomCssClass) return;
+
+        if (!isStageScoped) {
+          return { ...fact, value: fact?.value };
+        }
+
+        // this logic is same as we have in deck.ts --> initializeActivity()
+        const [, partId] = fact.target.split('.');
+        const parentActivity = currentActivityTree.find((a) =>
+          a.content?.partsLayout?.some((p: any) => p.id === partId),
+        );
+
+        if (!parentActivity) return { ...fact };
+
+        return {
+          ...fact,
+          target: `${parentActivity.id}|${fact.target}`,
+        };
+      });
+
+      extractedFacts.push(...(customFacts?.filter(Boolean) || []));
+    });
+
+    return extractedFacts;
   }, [currentActivityTree]);
 
   useEffect(() => {
@@ -303,6 +341,16 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
         if (!historyModeNavigation || reviewMode) {
           await initCurrentActivity();
         }
+        if (historyModeNavigation) {
+          // We need to apply the initial state for `customCssClass` because it may contain logic
+          // that dynamically applies styles like `display-none` to components.
+          // In history mode, the initial state isn't applied to the snapshot by default,
+          // so we must manually extract and apply any `customCssClass`-related state.
+          const initState = await extractCustomCssClassFactsFromTree();
+          if (initState?.length) {
+            await bulkApplyState(initState, defaultGlobalEnv);
+          }
+        }
         const currentActivityIds = (currentActivityTree || []).map((a) => a.id);
         const snapshot = getLocalizedStateSnapshot(currentActivityIds);
         const context = {
@@ -445,6 +493,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       partAttemptGuid: string,
       response: StudentResponse,
     ) => {
+      if (reviewMode) return;
       // save before submitting
       const { result, snapshot } = await handleActivitySavePart(
         activityId,
@@ -457,7 +506,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
 
       return { result, snapshot };
     },
-    [dispatch, handleActivitySavePart],
+    [dispatch, handleActivitySavePart, reviewMode],
   );
 
   const handleActivityRequestLatestState = useCallback(async () => {
@@ -623,6 +672,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
           onActivitySubmitPart={handleActivitySubmitPart}
           onActivityReady={handleActivityReady}
           onRequestLatestState={handleActivityRequestLatestState}
+          blobStorageProvider={blobStorageProvider}
         />
       );
     });

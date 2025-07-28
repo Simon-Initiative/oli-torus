@@ -39,6 +39,15 @@ defmodule OliWeb.Router do
     plug(OliWeb.Plugs.SessionContext)
   end
 
+  pipeline :text_api do
+    plug(:accepts, ["text/plain"])
+    plug(:fetch_session)
+    plug(:fetch_current_user)
+    plug(:put_secure_browser_headers)
+    plug(Plug.Telemetry, event_prefix: [:oli, :plug])
+    plug(OliWeb.Plugs.SessionContext)
+  end
+
   # pipeline for LTI launch endpoints
   pipeline :lti do
     plug(:fetch_session)
@@ -379,7 +388,6 @@ defmodule OliWeb.Router do
 
     get("/api/v1/legacy_support", LegacySupportController, :index)
 
-    post("/help/create", HelpController, :create)
     post("/consent/cookie", CookieConsentController, :persist_cookies)
     get("/consent/cookie", CookieConsentController, :retrieve)
 
@@ -398,7 +406,7 @@ defmodule OliWeb.Router do
   scope "/.well-known", OliWeb do
     pipe_through([:api])
 
-    get("/jwks.json", LtiController, :jwks)
+    get("/jwks.json", Api.LtiController, :jwks)
   end
 
   # authorization protected routes
@@ -712,6 +720,7 @@ defmodule OliWeb.Router do
     pipe_through([:api, :require_section, :delivery_protected])
 
     put("/", SchedulingController, :update)
+    put("/agenda", SchedulingController, :update_agenda)
     get("/", SchedulingController, :index)
     delete("/", SchedulingController, :clear)
   end
@@ -805,6 +814,16 @@ defmodule OliWeb.Router do
     delete("/", Api.GlobalStateController, :delete)
   end
 
+  # Raw text blob service
+  scope "/api/v1/blob", OliWeb do
+    pipe_through([:text_api, :delivery_protected])
+
+    get("/user/:key", Api.BlobStorageController, :read_user_key)
+    put("/user/:key", Api.BlobStorageController, :write_user_key)
+    get("/:key", Api.BlobStorageController, :read_key)
+    put("/:key", Api.BlobStorageController, :write_key)
+  end
+
   scope "/api/v1/state/course/:section_slug", OliWeb do
     pipe_through([:api, :require_section, :delivery_protected])
 
@@ -843,7 +862,9 @@ defmodule OliWeb.Router do
     pipe_through([:api])
 
     # LTI platform services access tokens
-    post("/auth/token", LtiController, :auth_token)
+    post("/auth/token", Api.LtiController, :auth_token)
+
+    post("/deep_link/:section_slug/:resource_id", LtiController, :deep_link)
   end
 
   scope "/lti", OliWeb do
@@ -855,11 +876,18 @@ defmodule OliWeb.Router do
     post("/launch", LtiController, :launch)
     post("/test", LtiController, :test)
 
-    get("/developer_key.json", LtiController, :developer_key_json)
+    get("/developer_key.json", Api.LtiController, :developer_key_json)
 
     post("/register", LtiController, :request_registration)
 
     get("/authorize_redirect", LtiController, :authorize_redirect)
+  end
+
+  # LTI 1.3 AGS endpoints
+  scope "/lti/lineitems/:page_attempt_guid/:activity_resource_id", OliWeb.Api do
+    pipe_through([:api])
+    get "/results", LtiAgsController, :get_result
+    post "/scores", LtiAgsController, :post_score
   end
 
   ### Workspaces
@@ -1089,7 +1117,12 @@ defmodule OliWeb.Router do
   scope "/sections/:section_slug/instructor_dashboard", OliWeb do
     pipe_through([:browser, :delivery_protected])
 
-    get("/downloads/progress/:container_id", MetricsController, :download_container_progress)
+    get(
+      "/downloads/progress/:container_id/:title",
+      DeliveryController,
+      :download_container_progress
+    )
+
     get("/downloads/course_content", DeliveryController, :download_course_content_info)
     get("/downloads/students_progress", DeliveryController, :download_students_progress)
     get("/downloads/learning_objectives", DeliveryController, :download_learning_objectives)
@@ -1486,6 +1519,12 @@ defmodule OliWeb.Router do
       Api.LtiController,
       :launch_details
     )
+
+    get(
+      "/deep_linking_launch_details/:activity_id",
+      Api.LtiController,
+      :deep_linking_launch_details
+    )
   end
 
   ### Invitations (to sections or projects)
@@ -1523,14 +1562,6 @@ defmodule OliWeb.Router do
   ###
   # Delivery
   ###
-
-  ### Admin Dashboard / LTI Platform Management
-
-  scope "/admin", OliWeb do
-    pipe_through([:browser, :authoring_protected, :require_authenticated_system_admin, :workspace])
-
-    resources("/platform_instances", PlatformInstanceController)
-  end
 
   ### Admin Dashboard / Telemetry
 

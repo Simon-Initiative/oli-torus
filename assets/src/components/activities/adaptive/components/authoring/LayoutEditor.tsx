@@ -603,7 +603,9 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
         })}
       </div>
     </NotificationContext.Provider>
-  ) : null;
+  ) : (
+    <div className="activity-no-part-content"></div>
+  );
 };
 
 export default LayoutEditor;

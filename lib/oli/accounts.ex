@@ -2054,4 +2054,12 @@ defmodule Oli.Accounts do
   def author_confirmation_pending?(%{email_confirmed_at: nil}), do: true
 
   def author_confirmation_pending?(_user), do: false
+
+  def validate_email(:email, email) do
+    if Oli.Utils.validate_email(email) do
+      []
+    else
+      [email: "must be a valid email address"]
+    end
+  end
 end

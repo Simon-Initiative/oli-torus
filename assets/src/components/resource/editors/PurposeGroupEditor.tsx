@@ -1,6 +1,7 @@
 import React, { PropsWithChildren } from 'react';
 import { Purpose } from 'components/content/Purpose';
 import { TriggerEditorCore } from 'components/editing/elements/trigger/TriggerEditor';
+import { AIIcon } from 'components/misc/AIIcon';
 import { DeleteButton } from 'components/misc/DeleteButton';
 import {
   PurposeGroupContent,
@@ -215,7 +216,7 @@ const GroupTriggerEditorButton = ({
         className="btn btn-link btn-sm"
         onClick={showEditTrigger}
       >
-        <img src="/images/icons/icon-AI.svg" className="inline mr-1" />
+        <AIIcon size="sm" className="inline mr-1" />
         DOT AI
       </button>
     </div>
@@ -238,8 +239,7 @@ const GroupTriggerEditor = ({
         onDelete={() => onEdit(undefined as any)}
         instructions={
           <p>
-            When a student clicks the{' '}
-            <img src="/images/icons/icon-AI.svg" className="inline mr-1"></img> icon within this
+            When a student clicks the <AIIcon size="sm" className="inline mr-1" /> icon within this
             content group, our AI assistant, DOT will appear and follow your custom prompt.
           </p>
         }

@@ -121,8 +121,12 @@ defmodule Oli.Delivery.Sections do
     end)
   end
 
-  def enrolled_students(section_slug) do
+  @valid_contexts ~w(context_administrator context_content_developer context_instructor context_learner context_mentor context_manager context_member context_officer)a
+  def enrolled_students(section_slug, context_roles \\ @valid_contexts)
+      when is_list(context_roles) do
     section = get_section_by_slug(section_slug)
+
+    context_ids = Enum.map(context_roles, &Lti_1p3.Roles.ContextRoles.get_role(&1).id)
 
     from(e in Enrollment,
       join: s in assoc(e, :section),
@@ -131,6 +135,7 @@ defmodule Oli.Delivery.Sections do
       left_join: p in Payment,
       on: p.enrollment_id == e.id and not is_nil(p.application_date),
       where: s.slug == ^section_slug,
+      where: ecr.id in ^context_ids,
       select: {u, ecr.id, e, p},
       preload: [user: :platform_roles],
       distinct: u.id
@@ -247,7 +252,8 @@ defmodule Oli.Delivery.Sections do
         total_count: fragment("count(*) OVER()"),
         enrollment_date: e.inserted_at,
         payment_date: p.application_date,
-        payment_id: p.id
+        payment_id: p.id,
+        enrollment_status: e.status
       })
 
     case field do
@@ -1260,7 +1266,7 @@ defmodule Oli.Delivery.Sections do
     |> Enum.filter(fn e ->
       ContextRoles.contains_role?(e.context_roles, ContextRoles.get_role(:context_learner))
     end)
-    |> Enum.map(fn e -> e.user end)
+    |> Enum.map(fn e -> Map.put(e.user, :enrollment_status, e.status) end)
   end
 
   @doc """
@@ -1310,7 +1316,8 @@ defmodule Oli.Delivery.Sections do
   @doc """
   Returns all scored pages for the given section.
   """
-  def fetch_scored_pages(section_slug), do: fetch_all_pages(section_slug, true)
+  def fetch_scored_pages(section_slug, order_by \\ :resource_id),
+    do: fetch_all_pages(section_slug, true, order_by)
 
   @doc """
   Returns all unscored pages for the given section.
@@ -1320,7 +1327,13 @@ defmodule Oli.Delivery.Sections do
   @doc """
   Returns all pages for the given section.
   """
-  def fetch_all_pages(section_slug, graded \\ nil) do
+  def fetch_all_pages(section_slug, graded \\ nil, order_by \\ :resource_id) do
+    order_by =
+      case order_by do
+        :resource_id -> [asc: dynamic([_, _, _, _, rev], rev.resource_id)]
+        :numbering_index -> [asc: dynamic([sr, _, _, _, _], sr.numbering_index)]
+      end
+
     maybe_filter_by_graded =
       case graded do
         nil -> true
@@ -1343,7 +1356,7 @@ defmodule Oli.Delivery.Sections do
         rev.resource_type_id == ^ResourceType.id_for_page()
     )
     |> where(^maybe_filter_by_graded)
-    |> order_by([_, _, _, _, rev], asc: rev.resource_id)
+    |> order_by(^order_by)
     |> select([_, _, _, _, rev], rev)
     |> Repo.all()
   end
@@ -2055,6 +2068,7 @@ defmodule Oli.Delivery.Sections do
         case section_resource do
           %SectionResource{start_date: nil, end_date: nil} -> false
           %SectionResource{hidden: true} -> false
+          %SectionResource{removed_from_schedule: true} -> false
           _ -> true
         end
       end)
@@ -2114,6 +2128,7 @@ defmodule Oli.Delivery.Sections do
         case section_resource do
           %SectionResource{start_date: nil, end_date: nil} -> false
           %SectionResource{hidden: true} -> false
+          %SectionResource{removed_from_schedule: true} -> false
           _ -> true
         end
       end)
@@ -2828,7 +2843,8 @@ defmodule Oli.Delivery.Sections do
         assessment_mode: revision.assessment_mode,
         batch_scoring: revision.batch_scoring,
         replacement_strategy: revision.replacement_strategy,
-        section_id: section.id
+        section_id: section.id,
+        retake_mode: revision.retake_mode
       }
       |> SectionResource.to_map()
       |> Map.delete(:id)
@@ -3154,6 +3170,7 @@ defmodule Oli.Delivery.Sections do
              :scoring_strategy_id,
              :scheduling_type,
              :manually_scheduled,
+             :removed_from_schedule,
              :start_date,
              :end_date,
              :collab_space_config,
@@ -3718,6 +3735,7 @@ defmodule Oli.Delivery.Sections do
                :scoring_strategy_id,
                :scheduling_type,
                :manually_scheduled,
+               :removed_from_schedule,
                :start_date,
                :end_date,
                :collab_space_config,
@@ -3845,6 +3863,7 @@ defmodule Oli.Delivery.Sections do
                :scoring_strategy_id,
                :scheduling_type,
                :manually_scheduled,
+               :removed_from_schedule,
                :start_date,
                :end_date,
                :collab_space_config,
@@ -4009,6 +4028,7 @@ defmodule Oli.Delivery.Sections do
                  :scoring_strategy_id,
                  :scheduling_type,
                  :manually_scheduled,
+                 :removed_from_schedule,
                  :start_date,
                  :end_date,
                  :collab_space_config,
@@ -4939,15 +4959,9 @@ defmodule Oli.Delivery.Sections do
   directly attached to them.
   """
   def get_objectives_and_subobjectives(%Section{slug: section_slug} = section, opts \\ []) do
-    student_id =
-      if opts[:student_id],
-        do: opts[:student_id],
-        else: nil
+    student_id = if opts[:student_id], do: opts[:student_id], else: nil
 
-    exclude_sub_objectives =
-      if opts[:exclude_sub_objectives],
-        do: true,
-        else: false
+    exclude_sub_objectives = if opts[:exclude_sub_objectives], do: true, else: false
 
     # get the minimal fields for all objectives from the database
     objective_id = Oli.Resources.ResourceType.id_for_objective()
@@ -4963,20 +4977,10 @@ defmodule Oli.Delivery.Sections do
       })
       |> Repo.all()
 
-    id_list =
-      objectives
-      |> Enum.map(& &1.resource_id)
+    id_list = Enum.map(objectives, & &1.resource_id)
 
     proficiencies_for_objectives =
-      case student_id do
-        nil ->
-          Metrics.proficiency_per_student_for_objective(section.id, id_list)
-
-        student_id ->
-          Metrics.proficiency_per_student_for_objective(section.id, id_list,
-            student_id: student_id
-          )
-      end
+      Metrics.proficiency_per_student_for_objective(section.id, id_list, student_id: student_id)
 
     student_ids =
       Sections.enrolled_student_ids(section_slug)
@@ -4992,8 +4996,9 @@ defmodule Oli.Delivery.Sections do
           end)
 
         proficiency_dist =
-          student_proficiency
-          |> Enum.frequencies_by(fn {_student_id, proficiency} -> proficiency end)
+          Enum.frequencies_by(student_proficiency, fn {_student_id, proficiency} ->
+            proficiency
+          end)
 
         proficiency_mode =
           proficiency_dist
@@ -5067,9 +5072,9 @@ defmodule Oli.Delivery.Sections do
               objective_resource_id: objective.resource_id,
               student_proficiency_obj: student_proficiency_obj,
               student_proficiency_obj_dist: student_proficiency_obj_dist,
-              subobjective: "",
+              subobjective: nil,
               subobjective_resource_id: nil,
-              student_proficiency_subobj: ""
+              student_proficiency_subobj: nil
             })
 
           case exclude_sub_objectives do
@@ -5107,7 +5112,7 @@ defmodule Oli.Delivery.Sections do
           end
 
         # this is a subobjective, we do nothing as it will be handled in the context of its parent(s)
-        _ ->
+        _true ->
           all
       end
     end)

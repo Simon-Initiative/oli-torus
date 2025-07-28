@@ -58,7 +58,7 @@ const LTIExternalTool: React.FC = () => {
             <div>
               <AuthoringCheckbox
                 label="Launch tool in new window"
-                id="launchInNewWindow"
+                id={`open-in-new-tab-${activityIdStr}`}
                 value={model.openInNewTab}
                 onChange={(value) => onEdit({ ...model, openInNewTab: value })}
                 editMode={true}

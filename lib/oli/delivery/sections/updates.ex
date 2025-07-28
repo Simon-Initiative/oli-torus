@@ -24,6 +24,7 @@ defmodule Oli.Delivery.Sections.Updates do
                                     :scoring_strategy_id,
                                     :scheduling_type,
                                     :manually_scheduled,
+                                    :removed_from_schedule,
                                     :start_date,
                                     :end_date,
                                     :collab_space_config,

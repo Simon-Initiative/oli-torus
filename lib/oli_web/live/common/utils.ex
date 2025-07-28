@@ -245,17 +245,23 @@ defmodule OliWeb.Common.Utils do
     |> List.flatten()
   end
 
-  defp extract_from_activity_attempt(%{part_attempts: part_attempts}) do
+  @doc """
+  Extracts the feedback text from an activity attempt, which contains multiple part attempts.
+  """
+  def extract_from_activity_attempt(%{part_attempts: part_attempts}) do
     part_attempts
     |> Enum.map(&extract_from_part_attempt/1)
   end
 
-  defp extract_from_part_attempt(%{feedback: %{"content" => content}}) do
+  @doc """
+  Extracts the feedback text from a part attempt.
+  """
+  def extract_from_part_attempt(%{feedback: %{"content" => content}}) do
     content
     |> Enum.map(&extract_text/1)
   end
 
-  defp extract_from_part_attempt(%{feedback: nil}), do: []
+  def extract_from_part_attempt(%{feedback: nil}), do: []
 
   defp extract_text(%{"children" => children}) do
     children
@@ -270,5 +276,38 @@ defmodule OliWeb.Common.Utils do
   defp extract_text(_other_case = other) do
     Logger.error("Could not parse feedback text from #{inspect(other)}")
     []
+  end
+
+  @doc """
+  Helper to highlight search term in text. Returns HTML-safe string with matches wrapped in <em> tags.
+
+  ## Examples
+
+      iex> highlight_search_term("Hello World", "world")
+      "Hello <em>World</em>"
+
+      iex> highlight_search_term("Hello World", nil)
+      "Hello World"
+
+      iex> highlight_search_term("Hello World", "")
+      "Hello World"
+  """
+  def highlight_search_term(text, nil), do: escape_html(text)
+  def highlight_search_term(text, ""), do: escape_html(text)
+
+  def highlight_search_term(text, search_term) do
+    pattern = Regex.escape(search_term)
+    # case insensitive match
+    regex = ~r/#{pattern}/i
+
+    text
+    |> escape_html()
+    |> String.replace(regex, "<em>\\0</em>")
+  end
+
+  defp escape_html(text) do
+    text
+    |> Phoenix.HTML.html_escape()
+    |> Phoenix.HTML.safe_to_string()
   end
 end

@@ -1164,21 +1164,24 @@ defmodule Oli.Delivery.SectionsTest do
                        scheduling_type: "due_by",
                        start_date: "2023-01-25",
                        end_date: "2023-01-27",
-                       manually_scheduled: true
+                       manually_scheduled: true,
+                       removed_from_schedule: false
                      },
                      %{
                        id: scheduled_resources[page4.resource_id].id,
                        scheduling_type: "due_by",
                        start_date: "2023-02-01",
                        end_date: "2023-02-04",
-                       manually_scheduled: true
+                       manually_scheduled: true,
+                       removed_from_schedule: false
                      },
                      %{
                        id: scheduled_resources[page5.resource_id].id,
                        scheduling_type: "due_by",
                        start_date: "2023-02-06",
                        end_date: "2023-02-08",
-                       manually_scheduled: true
+                       manually_scheduled: true,
+                       removed_from_schedule: false
                      }
                    ],
                    "Etc/UTC"
@@ -1232,6 +1235,7 @@ defmodule Oli.Delivery.SectionsTest do
                                resource: %Oli.Delivery.Sections.SectionResource{
                                  scheduling_type: :due_by,
                                  manually_scheduled: true,
+                                 removed_from_schedule: false,
                                  start_date: ~U[2023-01-25 23:59:59Z],
                                  end_date: ~U[2023-01-27 23:59:59Z],
                                  resource_id: ^page3_resource_id,
@@ -1267,6 +1271,7 @@ defmodule Oli.Delivery.SectionsTest do
                               resource: %Oli.Delivery.Sections.SectionResource{
                                 scheduling_type: :due_by,
                                 manually_scheduled: true,
+                                removed_from_schedule: false,
                                 start_date: ~U[2023-02-01 23:59:59Z],
                                 end_date: ~U[2023-02-04 23:59:59Z],
                                 resource_id: ^page4_resource_id,
@@ -1298,6 +1303,7 @@ defmodule Oli.Delivery.SectionsTest do
                               resource: %Oli.Delivery.Sections.SectionResource{
                                 scheduling_type: :due_by,
                                 manually_scheduled: true,
+                                removed_from_schedule: false,
                                 start_date: ~U[2023-02-06 23:59:59Z],
                                 end_date: ~U[2023-02-08 23:59:59Z],
                                 resource_id: ^page5_resource_id,
@@ -1531,21 +1537,24 @@ defmodule Oli.Delivery.SectionsTest do
                      scheduling_type: "due_by",
                      start_date: "2023-02-03",
                      end_date: "2023-02-06",
-                     manually_scheduled: true
+                     manually_scheduled: true,
+                     removed_from_schedule: false
                    },
                    %{
                      id: scheduled_resources[page4.resource_id].id,
                      scheduling_type: "due_by",
                      start_date: "2023-02-04",
                      end_date: "2023-02-06",
-                     manually_scheduled: true
+                     manually_scheduled: true,
+                     removed_from_schedule: false
                    },
                    %{
                      id: scheduled_resources[page5.resource_id].id,
                      scheduling_type: "due_by",
                      start_date: "2023-02-05",
                      end_date: "2023-02-06",
-                     manually_scheduled: true
+                     manually_scheduled: true,
+                     removed_from_schedule: false
                    }
                  ],
                  "Etc/UTC"
@@ -1649,28 +1658,32 @@ defmodule Oli.Delivery.SectionsTest do
                      scheduling_type: "due_by",
                      start_date: "2023-02-04",
                      end_date: "2023-02-06",
-                     manually_scheduled: true
+                     manually_scheduled: true,
+                     removed_from_schedule: false
                    },
                    %{
                      id: scheduled_resources[page4.resource_id].id,
                      scheduling_type: "due_by",
                      start_date: "2023-02-05",
                      end_date: "2023-02-07",
-                     manually_scheduled: true
+                     manually_scheduled: true,
+                     removed_from_schedule: false
                    },
                    %{
                      id: scheduled_resources[page5.resource_id].id,
                      scheduling_type: "due_by",
                      start_date: "2023-02-03",
                      end_date: "2023-02-08",
-                     manually_scheduled: true
+                     manually_scheduled: true,
+                     removed_from_schedule: false
                    },
                    %{
                      id: scheduled_resources[scored_page2.resource_id].id,
                      scheduling_type: "due_by",
                      start_date: "2023-02-02",
                      end_date: "2023-02-09",
-                     manually_scheduled: true
+                     manually_scheduled: true,
+                     removed_from_schedule: false
                    }
                  ],
                  "Etc/UTC"
@@ -1716,28 +1729,32 @@ defmodule Oli.Delivery.SectionsTest do
                      scheduling_type: "due_by",
                      start_date: "2023-02-04",
                      end_date: "2023-02-06",
-                     manually_scheduled: true
+                     manually_scheduled: true,
+                     removed_from_schedule: false
                    },
                    %{
                      id: scheduled_resources[page4.resource_id].id,
                      scheduling_type: "due_by",
                      start_date: "2023-02-05",
                      end_date: "2023-02-07",
-                     manually_scheduled: true
+                     manually_scheduled: true,
+                     removed_from_schedule: false
                    },
                    %{
                      id: scheduled_resources[page5.resource_id].id,
                      scheduling_type: "read_by",
                      start_date: "2023-02-03",
                      end_date: nil,
-                     manually_scheduled: true
+                     manually_scheduled: true,
+                     removed_from_schedule: false
                    },
                    %{
                      id: scheduled_resources[scored_page2.resource_id].id,
                      scheduling_type: "read_by",
                      start_date: "2023-02-02",
                      end_date: nil,
-                     manually_scheduled: true
+                     manually_scheduled: true,
+                     removed_from_schedule: false
                    }
                  ],
                  "Etc/UTC"
@@ -2764,6 +2781,98 @@ defmodule Oli.Delivery.SectionsTest do
       assert is_map(result)
       assert map_size(result) == 1
       assert Map.has_key?(result, activity_registration.id)
+    end
+  end
+
+  describe "create_section_resources/2" do
+    setup do
+      author = insert(:author)
+      project = insert(:project, authors: [author])
+
+      # Create revisions with different retake_mode values
+      page_1_revision =
+        insert(:revision,
+          resource_type_id: ResourceType.get_id_by_type("page"),
+          title: "Page 1",
+          retake_mode: :normal
+        )
+
+      page_2_revision =
+        insert(:revision,
+          resource_type_id: ResourceType.get_id_by_type("page"),
+          title: "Page 2",
+          retake_mode: :targeted
+        )
+
+      module_1_revision =
+        insert(:revision, %{
+          resource_type_id: ResourceType.get_id_by_type("container"),
+          children: [page_1_revision.resource_id, page_2_revision.resource_id],
+          title: "Module 1"
+        })
+
+      container_revision =
+        insert(:revision, %{
+          resource_type_id: ResourceType.get_id_by_type("container"),
+          children: [module_1_revision.resource_id],
+          title: "Root Container"
+        })
+
+      all_revisions = [page_1_revision, page_2_revision, module_1_revision, container_revision]
+
+      Enum.each(all_revisions, fn revision ->
+        insert(:project_resource, %{
+          project_id: project.id,
+          resource_id: revision.resource_id
+        })
+      end)
+
+      publication =
+        insert(:publication, %{project: project, root_resource_id: container_revision.resource_id})
+
+      Enum.each(all_revisions, fn revision ->
+        insert(:published_resource, %{
+          publication: publication,
+          resource: revision.resource,
+          revision: revision,
+          author: author
+        })
+      end)
+
+      section =
+        insert(:section,
+          base_project: project,
+          title: "Test Course"
+        )
+
+      %{
+        section: section,
+        publication: publication,
+        page_1_revision: page_1_revision,
+        page_2_revision: page_2_revision
+      }
+    end
+
+    test "creates all section resources for the section and publication", %{
+      section: section,
+      publication: publication
+    } do
+      {:ok, section} = Sections.create_section_resources(section, publication)
+      section_resources = Sections.get_section_resources(section.id)
+      assert length(section_resources) == 4
+    end
+
+    test "section resources have correct retake_mode from revision", %{
+      section: section,
+      publication: publication,
+      page_1_revision: page_1_revision,
+      page_2_revision: page_2_revision
+    } do
+      {:ok, section} = Sections.create_section_resources(section, publication)
+      sr1 = Sections.get_section_resource(section.id, page_1_revision.resource_id)
+      sr2 = Sections.get_section_resource(section.id, page_2_revision.resource_id)
+      assert sr1.retake_mode == :normal
+      assert sr2.retake_mode == :targeted
     end
   end
 

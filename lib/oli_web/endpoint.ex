@@ -24,10 +24,15 @@ defmodule OliWeb.Endpoint do
     at: "/",
     from: :oli,
     gzip: true,
-    only: ~w(assets css fonts images js custom branding vlab favicon.ico robots.txt flame_graphs)
+    only:
+      ~w(assets css fonts images js custom branding vlab favicon.ico robots.txt flame_graphs ebsco)
   )
 
   plug Plug.Static, at: "/schemas", from: {:oli, "priv/schemas"}, gzip: true
+
+  if Code.ensure_loaded?(Tidewave) do
+    plug Tidewave
+  end
 
   # Code reloading can be explicitly enabled under the
   # :code_reloader configuration of your endpoint.

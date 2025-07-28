@@ -310,7 +310,14 @@ defmodule OliWeb.Delivery.NewCourse do
        to:
          case socket.assigns.context_id do
            nil ->
-             Routes.live_path(socket, OliWeb.Workspaces.Instructor)
+             redirect_path =
+               cond do
+                 socket.assigns.lti_params -> ~p"/sections"
+                 socket.assigns.current_author -> ~p"/admin/sections"
+                 true -> ~p"/workspaces/instructor"
+               end
+
+             {:noreply, push_navigate(socket, to: redirect_path)}
 
            context_id ->
              ~p"/sections/new/#{context_id}"

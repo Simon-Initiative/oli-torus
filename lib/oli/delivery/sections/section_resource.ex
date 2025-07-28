@@ -57,6 +57,7 @@ defmodule Oli.Delivery.Sections.SectionResource do
     field :feedback_mode, Ecto.Enum, values: [:allow, :disallow, :scheduled], default: :allow
     field :feedback_scheduled_date, :utc_datetime
     field :hidden, :boolean, default: false
+    field :removed_from_schedule, :boolean, default: false
 
     # an array of ids to other section resources
     field :children, {:array, :id}, default: []
@@ -128,6 +129,7 @@ defmodule Oli.Delivery.Sections.SectionResource do
       :feedback_mode,
       :feedback_scheduled_date,
       :hidden,
+      :removed_from_schedule,
       :scoring_strategy_id,
       :resource_id,
       :project_id,
@@ -177,7 +179,8 @@ defmodule Oli.Delivery.Sections.SectionResource do
     :scoring_strategy_id,
     :inserted_at,
     :updated_at,
-    :hidden
+    :hidden,
+    :removed_from_schedule
   ]
 
   def to_map(%SectionResource{} = section_resource) do

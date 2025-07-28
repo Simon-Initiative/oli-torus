@@ -83,18 +83,23 @@ export const PageScheduleLine: React.FC<ScheduleLineProps> = ({
   );
   const labelClasses = item.scheduling_type === 'due_by' ? 'font-bold' : '';
 
+  const removedBackgroundColor = item.removed_from_schedule
+    ? { backgroundColor: modeIsDark() ? '#33181A' : '#FFE8E8' }
+    : {};
+
   return (
     <>
       <tr style={rowSelectColor}>
         <td className="w-[1px] p-[2px] border-r-0" style={{ backgroundColor: rowColor }}></td>
-        <td className={`w-64 ${labelClasses}`} onClick={onSelect}>
+        <td className={`w-64 ${labelClasses}`} onClick={onSelect} style={removedBackgroundColor}>
           <div style={{ paddingLeft: 20 + (1 + indent) * 10 }}>{item.title}</div>
         </td>
 
-        <td className="relative p-0">
+        <td className="relative p-0" style={removedBackgroundColor}>
           <ScheduleHeader labels={false} dayGeometry={dayGeometry} />
 
           <PageDragBar
+            item={item}
             onChange={onChange}
             onStartDrag={onSelect}
             startDate={item.startDate}

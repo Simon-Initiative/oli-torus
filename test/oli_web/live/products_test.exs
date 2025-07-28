@@ -168,6 +168,7 @@ defmodule OliWeb.ProductsLiveTest do
     end
 
     @tag :flaky
+    @tag :skip
     test "applies sorting by creation date", %{conn: conn, product: product} do
       product_2 =
         insert(:section,

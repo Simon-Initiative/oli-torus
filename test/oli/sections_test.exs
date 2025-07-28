@@ -1140,6 +1140,7 @@ defmodule Oli.SectionsTest do
           scoring_strategy_id: 2,
           scheduling_type: :due_by,
           manually_scheduled: true,
+          removed_from_schedule: false,
           start_date: one_week_ago,
           end_date: a_day_later,
           collab_space_config: %Oli.Resources.Collaboration.CollabSpaceConfig{
@@ -1312,6 +1313,7 @@ defmodule Oli.SectionsTest do
       assert page1_sr.scoring_strategy_id == 2
       assert page1_sr.scheduling_type == :due_by
       assert page1_sr.manually_scheduled == true
+      assert page1_sr.removed_from_schedule == false
       assert page1_sr.start_date == one_week_ago
       assert page1_sr.end_date == a_day_later
       assert page1_sr.collab_space_config.status == :enabled
@@ -1390,6 +1392,7 @@ defmodule Oli.SectionsTest do
           scoring_strategy_id: 2,
           scheduling_type: :due_by,
           manually_scheduled: true,
+          removed_from_schedule: false,
           start_date: one_week_ago,
           end_date: a_day_later,
           collab_space_config: %Oli.Resources.Collaboration.CollabSpaceConfig{
@@ -1535,6 +1538,7 @@ defmodule Oli.SectionsTest do
       assert page1_sr.scoring_strategy_id == 2
       assert page1_sr.scheduling_type == :due_by
       assert page1_sr.manually_scheduled == true
+      assert page1_sr.removed_from_schedule == false
       assert page1_sr.start_date == one_week_ago
       assert page1_sr.end_date == a_day_later
       assert page1_sr.collab_space_config.status == :enabled
@@ -1612,6 +1616,7 @@ defmodule Oli.SectionsTest do
           scoring_strategy_id: 2,
           scheduling_type: :due_by,
           manually_scheduled: true,
+          removed_from_schedule: false,
           start_date: one_week_ago,
           end_date: a_day_later,
           collab_space_config: %Oli.Resources.Collaboration.CollabSpaceConfig{

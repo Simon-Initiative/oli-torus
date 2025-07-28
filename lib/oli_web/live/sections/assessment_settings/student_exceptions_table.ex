@@ -26,7 +26,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
   end
 
   def update(assigns, socket) do
-    params = decode_params(assigns.params)
+    params = decode_params(assigns.params, assigns.assessments)
 
     selected_assessment =
       Enum.find(assigns.assessments, fn a -> a.resource_id == params.selected_assessment_id end)
@@ -846,7 +846,14 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
     })
   end
 
-  def decode_params(params) do
+  defp default_selected_assessment_id(params, assessments) do
+    case {Params.get_int_param(params, "assessment_id", 0), assessments} do
+      {0, [%{resource_id: assessment_id} | _]} -> assessment_id
+      {assessment_id, _} -> assessment_id
+    end
+  end
+
+  defp decode_params(params, assessments) do
     %{
       offset: Params.get_int_param(params, "offset", @default_params.offset),
       limit: Params.get_int_param(params, "limit", @default_params.limit),
@@ -874,7 +881,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
           ],
           @default_params.sort_by
         ),
-      selected_assessment_id: Params.get_int_param(params, "assessment_id", 0)
+      selected_assessment_id: default_selected_assessment_id(params, assessments)
     }
   end
 
@@ -887,7 +894,8 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
 
     Delivery.get_delivery_setting_by(%{
       resource_id: socket.assigns.params.selected_assessment_id,
-      user_id: user_id
+      user_id: user_id,
+      section_id: socket.assigns.section.id
     })
     |> StudentException.changeset(changes)
     |> Repo.update()

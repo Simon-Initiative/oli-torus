@@ -105,7 +105,7 @@ defmodule Oli.Interop.Ingest.Processor.Products do
 
     {certificate_params, new_product_attrs} =
       case Map.get(product, "certificate") do
-        nil ->
+        cert when cert in [nil, "null"] ->
           {nil, new_product_attrs}
 
         cert ->

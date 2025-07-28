@@ -17,7 +17,8 @@ defmodule Oli.Help.HelpContent do
     :browser_info,
     :screenshots,
     :course_data,
-    :requester_data
+    :requester_data,
+    :support_email
   ]
 
   @subjects %{
@@ -64,7 +65,8 @@ defmodule Oli.Help.HelpContent do
         "browser_info" => browser_info,
         "course_data" => course_data,
         "screenshots" => screenshots,
-        "requester_data" => %Oli.Help.RequesterData{} = requester_data
+        "requester_data" => %Oli.Help.RequesterData{} = requester_data,
+        "support_email" => support_email
       }) do
     help_content = %Oli.Help.HelpContent{
       subject: subject,
@@ -84,7 +86,8 @@ defmodule Oli.Help.HelpContent do
       browser_info: browser_info,
       course_data: course_data,
       screenshots: screenshots,
-      requester_data: requester_data
+      requester_data: requester_data,
+      support_email: support_email
     }
 
     {:ok, help_content}

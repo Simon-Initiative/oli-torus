@@ -229,22 +229,37 @@ defmodule Oli.Lti.PlatformExternalTools do
         field when field in [:name, :description, :inserted_at] ->
           order_by(query, [p], {^direction, field(p, ^field)})
 
-        :usage_count ->
-          order_by(query, [p, lad], {^direction, fragment("usage_count")})
-
         :status ->
           order_by(query, [_p, lad], {^direction, lad.status})
+
+        _ ->
+          query
       end
 
-    query
-    |> Repo.all()
-    |> Enum.map(fn p ->
-      Map.put(
-        p,
-        :usage_count,
-        length(get_sections_with_lti_activities_for_platform_instance_id(p.id))
-      )
-    end)
+    platform_instances = Repo.all(query)
+
+    platform_instances_usage_count =
+      platform_instances
+      |> Enum.map(& &1.id)
+      |> get_sections_grouped_by_platform_instance_ids()
+      |> Enum.map(fn {id, sections} -> {id, length(sections)} end)
+      |> Enum.into(%{})
+
+    platform_instances =
+      platform_instances
+      |> Enum.map(fn p ->
+        Map.put(
+          p,
+          :usage_count,
+          Map.get(platform_instances_usage_count, p.id, 0)
+        )
+      end)
+
+    if field == :usage_count do
+      Enum.sort_by(platform_instances, & &1.usage_count, direction)
+    else
+      platform_instances
+    end
   end
 
   @doc """
@@ -361,40 +376,51 @@ defmodule Oli.Lti.PlatformExternalTools do
 
   @spec get_sections_with_lti_activities_for_platform_instance_id(integer()) :: [Section.t()]
   def get_sections_with_lti_activities_for_platform_instance_id(platform_instance_id) do
-    # Step 1: Find all LTI activity registrations for the given platform instance ID
-    lti_activity_registrations =
-      from(ar in ActivityRegistration,
-        join: d in assoc(ar, :lti_external_tool_activity_deployment),
-        where: d.platform_instance_id == ^platform_instance_id,
-        select: ar.id
-      )
-      |> Repo.all()
-
-    # Step 2: Get IDs of all section resources that are LTI activities
-    lti_activity_ids =
-      from(sr in SectionResource,
-        join: r in Revision,
-        on: sr.revision_id == r.id,
-        where: r.activity_type_id in ^lti_activity_registrations,
-        select: r.resource_id
-      )
-      |> Repo.all()
-
-    # Step 3: Find all sections that reference these LTI activities
-    page_type_id = ResourceType.id_for_page()
-
-    from(sr in SectionResource,
-      join: r in Revision,
-      on: sr.revision_id == r.id,
+    from(ar in ActivityRegistration,
+      join: d in assoc(ar, :lti_external_tool_activity_deployment),
+      join: sr in SectionResource,
+      on: sr.activity_type_id == ar.id,
       join: s in Section,
       on: sr.section_id == s.id,
-      where:
-        r.resource_type_id == ^page_type_id and
-          fragment("? && ?", r.activity_refs, ^lti_activity_ids),
-      distinct: true,
-      select: s
+      where: d.platform_instance_id == ^platform_instance_id,
+      select: s,
+      distinct: true
     )
     |> Repo.all()
+  end
+
+  @doc """
+  Fetches all sections that include LTI activities registered under the given list of
+  `platform_instance_ids`, and groups them by platform ID.
+
+  ## Example
+
+      iex> get_sections_grouped_by_platform_instance_ids([id1, id2])
+      %{
+        ^id1 => [%Section{...}, ...],
+        ^id2 => [%Section{...}]
+      }
+
+  Returns a map of `platform_instance_id => list_of_sections`.
+  """
+  @spec get_sections_grouped_by_platform_instance_ids([integer()]) ::
+          %{integer() => [Section.t()]}
+  def get_sections_grouped_by_platform_instance_ids(platform_instance_ids) do
+    from(ar in ActivityRegistration,
+      join: d in assoc(ar, :lti_external_tool_activity_deployment),
+      join: sr in SectionResource,
+      on: sr.activity_type_id == ar.id,
+      join: s in Section,
+      on: sr.section_id == s.id,
+      where: d.platform_instance_id in ^platform_instance_ids,
+      select: {d.platform_instance_id, s},
+      distinct: true
+    )
+    |> Repo.all()
+    |> Enum.group_by(
+      fn {platform_instance_id, _section} -> platform_instance_id end,
+      fn {_platform_instance_id, section} -> section end
+    )
   end
 
   @doc """
@@ -419,5 +445,59 @@ defmodule Oli.Lti.PlatformExternalTools do
       select: {p, lad}
     )
     |> Repo.one()
+  end
+
+  @doc """
+  Creates a new LtiSectionResourceDeepLink record.
+  This function is used to store deep link resources associated with a particular section resource.
+  """
+  def create_section_resource_deep_link(attrs) do
+    %Oli.Lti.PlatformExternalTools.LtiSectionResourceDeepLink{}
+    |> Oli.Lti.PlatformExternalTools.LtiSectionResourceDeepLink.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Upserts a LtiSectionResourceDeepLink record.
+  If a record with the same section_id and resource_id exists, it will be updated.
+  If it does not exist, a new record will be created.
+  """
+  def upsert_section_resource_deep_link(attrs) do
+    %Oli.Lti.PlatformExternalTools.LtiSectionResourceDeepLink{}
+    |> Oli.Lti.PlatformExternalTools.LtiSectionResourceDeepLink.changeset(attrs)
+    |> Repo.insert(
+      on_conflict: {:replace_all_except, [:id, :inserted_at]},
+      conflict_target: [:section_id, :resource_id]
+    )
+  end
+
+  @doc """
+  Retrieves a LtiSectionResourceDeepLink by its attributes.
+  """
+  def get_section_resource_deep_link_by(attrs) do
+    Oli.Lti.PlatformExternalTools.LtiSectionResourceDeepLink
+    |> where(^attrs)
+    |> Repo.one()
+  end
+
+  @doc """
+  Updates an existing LtiSectionResourceDeepLink record.
+  """
+  def update_section_resource_deep_link(
+        %Oli.Lti.PlatformExternalTools.LtiSectionResourceDeepLink{} = deep_link,
+        attrs
+      ) do
+    deep_link
+    |> Oli.Lti.PlatformExternalTools.LtiSectionResourceDeepLink.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Deletes a LtiSectionResourceDeepLink record.
+  """
+  def delete_section_resource_deep_link(
+        %Oli.Lti.PlatformExternalTools.LtiSectionResourceDeepLink{} = deep_link
+      ) do
+    Repo.delete(deep_link)
   end
 end
