@@ -732,7 +732,8 @@ defmodule Oli.Factory do
       keyset_url: "some keyset_url",
       login_url: "some login_url",
       redirect_uris: "some redirect_uris",
-      target_link_uri: "some target_link_uri"
+      target_link_uri: "some target_link_uri",
+      status: :active
     }
   end
 

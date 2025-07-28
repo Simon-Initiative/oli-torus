@@ -143,5 +143,36 @@ defmodule Oli.Lti.PlatformInstancesTest do
       platform_instance = platform_instance_fixture()
       assert %Ecto.Changeset{} = PlatformInstances.change_platform_instance(platform_instance)
     end
+
+    test "partial unique index on client_id allows multiple deleted instances with same client_id" do
+      # Create first platform instance with active status
+      active_instance =
+        platform_instance_fixture(%{client_id: "same_client_id", status: :active})
+
+      # Create second platform instance with deleted status and same client_id - should succeed
+      deleted_instance =
+        platform_instance_fixture(%{client_id: "same_client_id", status: :deleted})
+
+      # Verify both instances exist
+      assert active_instance.id != deleted_instance.id
+      assert active_instance.client_id == deleted_instance.client_id
+      assert active_instance.status == :active
+      assert deleted_instance.status == :deleted
+
+      # Try to create another active instance with same client_id - should fail due to unique constraint
+      assert_raise Ecto.ConstraintError, fn ->
+        platform_instance_fixture(%{client_id: "same_client_id", status: :active})
+      end
+    end
+
+    test "partial unique index on client_id prevents multiple active instances with same client_id" do
+      # Create first platform instance with active status
+      platform_instance_fixture(%{client_id: "unique_client_id", status: :active})
+
+      # Try to create second platform instance with active status and same client_id - should fail
+      assert_raise Ecto.ConstraintError, fn ->
+        platform_instance_fixture(%{client_id: "unique_client_id", status: :active})
+      end
+    end
   end
 end
