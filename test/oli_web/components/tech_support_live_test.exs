@@ -61,6 +61,26 @@ defmodule OliWeb.Components.TechSupportLiveTest do
     end
   end
 
+  describe "with a guest user account" do
+    test "includes requester name and email fields since the user is a guest", %{conn: conn} do
+      guest_user = insert(:user, guest: true)
+      session = %{"user" => guest_user}
+
+      {:ok, view, _} = live_isolated(conn, OliWeb.TechSupportLive, session: session)
+
+      # Extra fields are added when user is a guest
+      assert view
+             |> has_element?(
+               ~s|form div[phx-feedback-for="help[name]"] input[required="required"][name="help[name]"][placeholder="Enter Name"]|
+             )
+
+      assert view
+             |> has_element?(
+               ~s|form div[phx-feedback-for="help[email_address]"] input[required="required"][name="help[email_address]"][placeholder="Enter Email"]|
+             )
+    end
+  end
+
   describe "publisher-specific support and knowledge base link logic" do
     setup do
       # Set global default
@@ -118,6 +138,63 @@ defmodule OliWeb.Components.TechSupportLiveTest do
       {:ok, view, _} = live_isolated(conn, OliWeb.TechSupportLive, session: session)
 
       assert view |> has_element?(~s|a[href="https://default.kb.example.com"]|)
+    end
+  end
+
+  describe "requires_sender_data?/1 behavior" do
+    test "shows name and email fields when user is guest" do
+      guest_user = insert(:user, guest: true)
+      session = %{"user" => guest_user}
+
+      {:ok, view, _} = live_isolated(build_conn(), OliWeb.TechSupportLive, session: session)
+
+      # Check that the form includes name and email fields
+      assert view
+             |> has_element?(
+               ~s|form div[phx-feedback-for="help[name]"] input[required="required"][name="help[name]"][placeholder="Enter Name"]|
+             )
+
+      assert view
+             |> has_element?(
+               ~s|form div[phx-feedback-for="help[email_address]"] input[required="required"][name="help[email_address]"][placeholder="Enter Email"]|
+             )
+    end
+
+    test "shows name and email fields when no user identifiers in session" do
+      session = %{}
+
+      {:ok, view, _} = live_isolated(build_conn(), OliWeb.TechSupportLive, session: session)
+
+      assert view
+             |> has_element?(
+               ~s|form div[phx-feedback-for="help[name]"] input[required="required"][name="help[name]"][placeholder="Enter Name"]|
+             )
+
+      assert view
+             |> has_element?(
+               ~s|form div[phx-feedback-for="help[email_address]"] input[required="required"][name="help[email_address]"][placeholder="Enter Email"]|
+             )
+    end
+
+    test "hides name and email fields when user is not guest and has identifiers" do
+      regular_user = insert(:user, guest: false)
+
+      session = %{
+        "user" => regular_user,
+        "current_user_id" => regular_user.id
+      }
+
+      {:ok, view, _} = live_isolated(build_conn(), OliWeb.TechSupportLive, session: session)
+
+      refute view
+             |> has_element?(
+               ~s|form div[phx-feedback-for="help[name]"] input[required="required"][name="help[name]"][placeholder="Enter Name"]|
+             )
+
+      refute view
+             |> has_element?(
+               ~s|form div[phx-feedback-for="help[email_address]"] input[required="required"][name="help[email_address]"][placeholder="Enter Email"]|
+             )
     end
   end
 

@@ -46,6 +46,15 @@ defmodule OliWeb.Components.Utils do
   end
 
   @doc """
+  Returns true if a user is signed in as guest.
+  Can be called with either the assigns (socket.assigns) or the session.
+  """
+  @spec user_is_guest?(map()) :: boolean()
+  def user_is_guest?(%{current_user: %User{guest: true}} = _socket_assigns), do: true
+  def user_is_guest?(%{"user" => %User{guest: true}} = _session), do: true
+  def user_is_guest?(_), do: false
+
+  @doc """
   Returns true if the section is open and free
   """
   def is_open_and_free_section?(section) do
