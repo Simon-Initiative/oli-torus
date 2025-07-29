@@ -1047,7 +1047,7 @@ defmodule OliWeb.Delivery.RemixSection do
 
   defp transform_section_pages(section_pages) do
     section_pages
-    # Sort by title to ensure it matches the default order in all pages authoring view
+    # Sort by title to ensure it matches the default order in the "all pages" authoring view
     |> Enum.sort_by(fn rev -> rev.title end, :asc)
     |> Enum.map(fn rev ->
       %HierarchyNode{uuid: UUID.uuid4(), revision: rev}
