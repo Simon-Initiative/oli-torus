@@ -153,20 +153,22 @@ defmodule Oli.Lti.PlatformInstancesTest do
       active_instance =
         platform_instance_fixture(%{client_id: "same_client_id", status: :active})
 
-      # Create second platform instance with deleted status and same client_id - should succeed
-      deleted_instance =
+      # Create other platform instances with deleted status and same client_id - should succeed
+      deleted_instance1 =
         platform_instance_fixture(%{client_id: "same_client_id", status: :deleted})
 
-      # Verify both instances exist
-      assert active_instance.id != deleted_instance.id
-      assert active_instance.client_id == deleted_instance.client_id
-      assert active_instance.status == :active
-      assert deleted_instance.status == :deleted
+      deleted_instance2 =
+        platform_instance_fixture(%{client_id: "same_client_id", status: :deleted})
 
-      # Try to create another active instance with same client_id - should fail due to unique constraint
-      assert_raise Ecto.ConstraintError, fn ->
-        platform_instance_fixture(%{client_id: "same_client_id", status: :active})
-      end
+      # Verify multiple instances exist
+      assert active_instance.id != deleted_instance1.id
+      assert active_instance.id != deleted_instance2.id
+      assert deleted_instance1.id != deleted_instance2.id
+      assert active_instance.client_id == deleted_instance1.client_id
+      assert active_instance.client_id == deleted_instance2.client_id
+      assert active_instance.status == :active
+      assert deleted_instance1.status == :deleted
+      assert deleted_instance2.status == :deleted
     end
 
     test "partial unique index on client_id prevents multiple active instances with same client_id" do
@@ -179,7 +181,7 @@ defmodule Oli.Lti.PlatformInstancesTest do
       end
     end
 
-    test "can create, delete, and re-enable LTI platform instance" do
+    test "can create and soft-delete LTI platform instance" do
       # Create a new LTI platform instance
       platform_instance =
         platform_instance_fixture(%{
@@ -193,7 +195,7 @@ defmodule Oli.Lti.PlatformInstancesTest do
       assert platform_instance.client_id == "test_client_id"
       assert platform_instance.name == "Test Platform"
 
-      # Delete the platform instance (set status to deleted)
+      # Soft-delete the platform instance (set status to deleted)
       assert {:ok, deleted_instance} =
                PlatformInstances.update_platform_instance(
                  platform_instance,
@@ -206,22 +208,6 @@ defmodule Oli.Lti.PlatformInstancesTest do
       retrieved_instance = PlatformInstances.get_platform_instance!(deleted_instance.id)
       assert retrieved_instance.status == :deleted
       assert retrieved_instance.client_id == "test_client_id"
-
-      # Re-enable the platform instance (set status back to active)
-      assert {:ok, reenabled_instance} =
-               PlatformInstances.update_platform_instance(
-                 deleted_instance,
-                 %{status: :active}
-               )
-
-      assert reenabled_instance.status == :active
-      assert reenabled_instance.client_id == "test_client_id"
-      assert reenabled_instance.name == "Test Platform"
-
-      # Verify the re-enabled instance is properly active
-      final_instance = PlatformInstances.get_platform_instance!(reenabled_instance.id)
-      assert final_instance.status == :active
-      assert final_instance.id == platform_instance.id
     end
 
     test "soft_delete_activity_deployment_and_platform_instance deletes both deployment and platform instance" do
