@@ -1234,8 +1234,8 @@ defmodule OliWeb.Components.Common do
     include: ~w(autocomplete name rel action enctype method novalidate target multipart),
     doc: "the arbitrary HTML attributes to apply to the form tag"
 
-  slot :title, default: nil, doc: "the title of the form"
-  slot :subtitle, default: nil, doc: "the subtitle of the form"
+  slot :title, doc: "the title of the form"
+  slot :subtitle, doc: "the subtitle of the form"
 
   slot :inner_block, required: true
   slot :actions, doc: "the slot for form actions, such as a submit button"
