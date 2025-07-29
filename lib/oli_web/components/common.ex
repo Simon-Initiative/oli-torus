@@ -309,9 +309,11 @@ defmodule OliWeb.Components.Common do
   slot(:inner_block)
 
   def input(%{field: %Phoenix.HTML.FormField{} = field} = assigns) do
+    errors = if Phoenix.Component.used_input?(field), do: field.errors, else: []
+
     assigns
     |> assign(field: nil, id: assigns.id || field.id, field_value: field.value)
-    |> assign(:errors, Enum.map(field.errors, &translate_error(&1)))
+    |> assign(:errors, Enum.map(errors, &translate_error(&1)))
     |> assign_new(:name, fn -> if assigns.multiple, do: field.name <> "[]", else: field.name end)
     |> assign_new(:value, fn -> field.value end)
     |> assign_new(:class, fn -> assigns[:class] end)
