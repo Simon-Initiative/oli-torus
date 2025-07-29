@@ -5,15 +5,46 @@ defmodule OliWeb.ActivityBankControllerTest do
 
   setup [:project_seed]
 
+  describe "index" do
+    test "can launch activity bank editor", %{conn: conn, project: project} do
+      conn = get(conn, Routes.activity_bank_path(conn, :index, project.slug))
+
+      assert html_response(conn, 200) =~
+               "<div data-react-class=\"Components.ActivityBank\" data-react-props=\""
+    end
+
+    test "shows revision history link for admin users", %{conn: conn, project: project} do
+      admin_author =
+        insert(:author, system_role_id: Oli.Accounts.SystemRole.role_id().system_admin)
+
+      conn = conn |> log_in_author(admin_author)
+      conn = get(conn, Routes.activity_bank_path(conn, :index, project.slug))
+
+      assert html_response(conn, 200) =~ ~s[&quot;revisionHistoryLink&quot;:true]
+    end
+
+    test "does not show revision history link for non-admin users", %{
+      conn: conn,
+      project: project
+    } do
+      conn = get(conn, Routes.activity_bank_path(conn, :index, project.slug))
+
+      assert html_response(conn, 200) =~ ~s[&quot;revisionHistoryLink&quot;:false]
+    end
+
+    test "returns not found for non-existent project", %{conn: conn} do
+      conn = get(conn, Routes.activity_bank_path(conn, :index, "non-existent-project"))
+
+      assert response(conn, 302)
+    end
+  end
+
   describe "preview" do
     test "can preview activity bank selection", %{conn: conn, project: project} do
-      # Preload the authors association
       project = Oli.Repo.preload(project, :authors)
 
-      # Create a section for the project
       section = insert(:section, base_project: project, open_and_free: true)
 
-      # Create a page with a selection
       page_revision =
         insert(:revision,
           resource_type_id: Oli.Resources.ResourceType.id_for_page(),
@@ -30,10 +61,8 @@ defmodule OliWeb.ActivityBankControllerTest do
           }
         )
 
-      # Associate page to the project
       insert(:project_resource, %{project_id: project.id, resource_id: page_revision.resource.id})
 
-      # Create some banked activities
       mcq_reg = Oli.Activities.get_registration_by_slug("oli_multiple_choice")
 
       activity1 =
@@ -54,11 +83,9 @@ defmodule OliWeb.ActivityBankControllerTest do
           scope: :banked
         )
 
-      # Associate activities to the project
       insert(:project_resource, %{project_id: project.id, resource_id: activity1.resource.id})
       insert(:project_resource, %{project_id: project.id, resource_id: activity2.resource.id})
 
-      # Create publication and publish resources
       publication =
         insert(:publication, %{project: project, root_resource_id: page_revision.resource.id})
 
@@ -83,10 +110,8 @@ defmodule OliWeb.ActivityBankControllerTest do
         author: project.authors |> List.first()
       })
 
-      # Create section resources
       {:ok, section} = Oli.Delivery.Sections.create_section_resources(section, publication)
 
-      # Make the author an instructor of the section
       author = project.authors |> List.first()
       user = insert(:user, author: author)
 
@@ -108,18 +133,17 @@ defmodule OliWeb.ActivityBankControllerTest do
           )
         )
 
-      # This should fail with the KeyError for :has_scheduled_resources?
       assert html_response(conn, 200)
+
+      assert html_response(conn, 200) =~ "Activity Bank Selection"
+      assert html_response(conn, 200) =~ "2 activities"
     end
 
     test "returns error when not authorized", %{conn: conn, project: project} do
-      # Preload the authors association
       project = Oli.Repo.preload(project, :authors)
 
-      # Create a section for the project
       section = insert(:section, base_project: project, open_and_free: true)
 
-      # Create a page with a selection
       page_revision =
         insert(:revision,
           resource_type_id: Oli.Resources.ResourceType.id_for_page(),
@@ -136,10 +160,8 @@ defmodule OliWeb.ActivityBankControllerTest do
           }
         )
 
-      # Associate page to the project
       insert(:project_resource, %{project_id: project.id, resource_id: page_revision.resource.id})
 
-      # Create publication and publish resources
       publication =
         insert(:publication, %{project: project, root_resource_id: page_revision.resource.id})
 
@@ -150,10 +172,8 @@ defmodule OliWeb.ActivityBankControllerTest do
         author: project.authors |> List.first()
       })
 
-      # Create section resources
       {:ok, section} = Oli.Delivery.Sections.create_section_resources(section, publication)
 
-      # Don't make the author an instructor
       conn =
         get(
           conn,
