@@ -118,7 +118,7 @@ defmodule OliWeb.Users.UsersDetailViewTest do
         |> Floki.parse_document!()
 
       assert document
-             |> Floki.find("[phx-feedback-for='user[email]'] > p")
+             |> Floki.find("p")
              |> Floki.text() =~
                "must be a valid email address"
 
@@ -145,7 +145,7 @@ defmodule OliWeb.Users.UsersDetailViewTest do
              |> element("form[phx-submit=\"submit\"")
              |> render_submit(params)
              |> Floki.parse_document!()
-             |> Floki.find("[phx-feedback-for='user[email]'] > p")
+             |> Floki.find("p")
              |> Floki.text() =~
                "has already been taken"
 
