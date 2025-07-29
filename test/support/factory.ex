@@ -1,4 +1,35 @@
 defmodule Oli.Factory do
+  @moduledoc """
+    Provides test data factories for use across the application, based on `ExMachina`.
+
+    This module is the canonical and preferred way to generate test data.
+
+    ### Purpose
+
+    `Oli.Factory` centralizes and standardizes test data generation using clear, composable patterns.
+    It replaces the previously used `Oli.Seeder` module, which is now deprecated.
+
+    ### What this module provides
+
+    - Reusable factory functions for key entities like users, projects, sections, etc.
+    - Clean and minimal setup code for tests.
+    - Integration with `ExMachina` to support `insert/1`, `insert/2`, `build/1`, `build/2`, etc.
+
+    ### Example usage
+
+        insert(:user)
+        insert(:project, title: "Intro to Elixir")
+        insert(:section_with_associations)
+
+    ### Notes
+
+    - Use this module exclusively for generating test data.
+    - Avoid using `Oli.Seeder`, as it is deprecated and will be removed.
+    - Factories live in `test/support/factory.ex` and are available throughout the test suite.
+
+    For more complex setups, consider composing multiple factory calls or defining new factories.
+  """
+
   use ExMachina.Ecto, repo: Oli.Repo
 
   alias Oli.Accounts.VrUserAgent
