@@ -427,7 +427,7 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
 
       _ ->
         # default sort by resource type, containers first
-        Enum.sort(children, &sort_containers_first/2)
+        children
     end
   end
 
