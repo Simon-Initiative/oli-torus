@@ -323,7 +323,7 @@ defmodule OliWeb.Components.Common do
       assign_new(assigns, :checked, fn -> Phoenix.HTML.Form.normalize_value("checkbox", value) end)
 
     ~H"""
-    <div class="contents" phx-feedback-for={@name}>
+    <div class="contents">
       <label class={"flex gap-2 items-center #{@label_class}"}>
         <input type="hidden" name={@name} value="false" disabled={@rest[:disabled]} />
         <input
@@ -346,7 +346,7 @@ defmodule OliWeb.Components.Common do
     assigns = assigns |> set_input_classes() |> set_input_placeholder()
 
     ~H"""
-    <div class={@group_class} phx-feedback-for={@name}>
+    <div class={@group_class}>
       <.label :if={@label && @label_position == :top} class={@label_class} for={@id}>
         <%= @label %>
       </.label>
@@ -368,7 +368,7 @@ defmodule OliWeb.Components.Common do
 
   def input(%{type: "textarea"} = assigns) do
     ~H"""
-    <div class={@group_class} phx-feedback-for={@name}>
+    <div class={@group_class}>
       <.label :if={@label} for={@id}><%= @label %></.label>
       <%= if @additional_text do %>
         <%= @additional_text %>
@@ -398,7 +398,7 @@ defmodule OliWeb.Components.Common do
       end
 
     ~H"""
-    <div class="contents" phx-feedback-for={@name}>
+    <div class="contents">
       <.label :if={@label} for={@id}><%= @label %></.label>
       <input
         type={@type}
@@ -493,7 +493,7 @@ defmodule OliWeb.Components.Common do
     assigns = assigns |> set_input_classes() |> set_input_placeholder()
 
     ~H"""
-    <div class={@group_class} phx-feedback-for={@name}>
+    <div class={@group_class}>
       <.label :if={@label && @label_position == :top} class={@label_class} for={@id}>
         <%= @label %>
         <%= if @additional_text do %>
@@ -574,8 +574,7 @@ defmodule OliWeb.Components.Common do
   def error(assigns) do
     ~H"""
     <p
-      class="flex gap-3 text-sm leading-6 text-rose-600 phx-no-feedback:hidden"
-      phx-feedback-for={@for}
+      class="flex gap-3 text-sm leading-6 text-rose-600"
     >
       <%= render_slot(@inner_block) %>
     </p>
