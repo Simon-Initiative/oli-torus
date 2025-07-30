@@ -777,6 +777,14 @@ defmodule Oli.Factory do
     }
   end
 
+  def activity_registration_project_factory() do
+    %Oli.Activities.ActivityRegistrationProject{
+      activity_registration_id: build(:activity_registration).id,
+      project_id: build(:project).id,
+      status: :enabled
+    }
+  end
+
   # HELPERS
 
   defp anonymous_build(entity_name, attrs \\ %{}),
