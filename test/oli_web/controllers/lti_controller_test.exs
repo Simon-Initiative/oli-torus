@@ -214,7 +214,7 @@ defmodule OliWeb.LtiControllerTest do
 
       conn = post(conn, Routes.lti_path(conn, :launch, %{state: state, id_token: id_token}))
 
-      assert html_response(conn, 200) =~ "Your instructor has not configured this course section"
+      assert html_response(conn, 200) =~ "This course section is not available"
     end
 
     test "launch successful for valid params and updates lms user", %{
@@ -265,7 +265,7 @@ defmodule OliWeb.LtiControllerTest do
 
       conn = post(conn, Routes.lti_path(conn, :launch, %{state: state, id_token: id_token}))
 
-      assert html_response(conn, 200) =~ "Your instructor has not configured this course section"
+      assert html_response(conn, 200) =~ "This course section is not available"
 
       # Check that the user is the same as lti_user, but has some new field defined (it was
       # updated).
@@ -309,7 +309,7 @@ defmodule OliWeb.LtiControllerTest do
 
       conn = post(conn, Routes.lti_path(conn, :launch, %{state: state, id_token: id_token}))
 
-      assert html_response(conn, 200) =~ "Your instructor has not configured this course section"
+      assert html_response(conn, 200) =~ "This course section is not available"
     end
 
     test "launch successful for valid params with no email", %{
@@ -341,7 +341,7 @@ defmodule OliWeb.LtiControllerTest do
 
       conn = post(conn, Routes.lti_path(conn, :launch, %{state: state, id_token: id_token}))
 
-      assert html_response(conn, 200) =~ "Your instructor has not configured this course section"
+      assert html_response(conn, 200) =~ "This course section is not available"
     end
 
     test "launch handles invalid registration and shows registration form", %{conn: conn} do

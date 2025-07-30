@@ -21,7 +21,7 @@ defmodule OliWeb.DeliveryControllerTest do
         |> get(Routes.delivery_path(conn, :index))
 
       assert html_response(conn, 200) =~
-               "This course section is not yet available"
+               "This course section is not available"
     end
 
     test "handles user with student and instructor roles with no section", %{
@@ -36,7 +36,7 @@ defmodule OliWeb.DeliveryControllerTest do
         conn
         |> get(Routes.delivery_path(conn, :index))
 
-      assert html_response(conn, 200) =~ "This course section is not yet available"
+      assert html_response(conn, 200) =~ "This course section is not available"
     end
 
     test "handles instructor with no section or linked account", %{
@@ -48,7 +48,7 @@ defmodule OliWeb.DeliveryControllerTest do
         |> log_in_user(instructor_no_section)
         |> get(Routes.delivery_path(conn, :index))
 
-      assert html_response(conn, 200) =~ "This course section is not yet available"
+      assert html_response(conn, 200) =~ "This course section is not available"
     end
 
     test "handles LMS instructor with section and redirects to instructor dashboard", %{

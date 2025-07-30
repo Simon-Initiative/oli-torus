@@ -193,12 +193,19 @@ defmodule OliWeb.LtiController do
   end
 
   defp enroll_user(user, section, lti_params) do
-    context_roles =
-      ContextRoles.get_roles_by_uris(
-        lti_params["https://purl.imsglobal.org/spec/lti/claim/roles"]
-      )
+    case section do
+      nil ->
+        # No section to enroll in, return :ok
+        :ok
 
-    Sections.enroll(user.id, section.id, context_roles)
+      section ->
+        context_roles =
+          ContextRoles.get_roles_by_uris(
+            lti_params["https://purl.imsglobal.org/spec/lti/claim/roles"]
+          )
+
+        Sections.enroll(user.id, section.id, context_roles)
+    end
   end
 
   def test(conn, params) do
