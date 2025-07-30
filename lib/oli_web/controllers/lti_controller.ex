@@ -54,14 +54,27 @@ defmodule OliWeb.LtiController do
 
     case Lti_1p3.Tool.LaunchValidation.validate(params, session_state) do
       {:ok, lti_params} ->
-        case handle_valid_lti_1p3_launch(conn, lti_params) do
-          {:ok, conn} ->
+        case handle_valid_lti_1p3_launch(lti_params) do
+          {:ok, {user, section}} ->
+            # sign in LTI user and redirect to appropriate route
             conn
+            |> UserAuth.create_session(user)
+            |> LtiCommon.redirect_lti_user(
+              section,
+              lti_params,
+              allow_new_section_creation: true
+            )
 
-          {:error, e} ->
-            Logger.error("Failed to handle valid LTI 1.3 launch: #{Kernel.inspect(e)}")
+          {:error, error} ->
+            # Log the error for debugging purposes
+            error_msg = "Failed to handle valid LTI 1.3 launch: #{inspect(error)}"
 
-            render(conn, "lti_error.html", reason: "Failed to handle valid LTI 1.3 launch")
+            Logger.error(error_msg)
+
+            # render error page
+            conn
+            |> put_status(:bad_request)
+            |> render("lti_error.html", reason: error_msg)
         end
 
       {:error, %{reason: :invalid_registration, msg: _msg, issuer: issuer, client_id: client_id}} ->
@@ -81,7 +94,7 @@ defmodule OliWeb.LtiController do
     end
   end
 
-  defp handle_valid_lti_1p3_launch(conn, lti_params) do
+  defp handle_valid_lti_1p3_launch(lti_params) do
     issuer = lti_params["iss"]
     client_id = LtiParams.peek_client_id(lti_params)
     deployment_id = lti_params["https://purl.imsglobal.org/spec/lti/claim/deployment_id"]
@@ -92,24 +105,12 @@ defmodule OliWeb.LtiController do
            {:ok, user} <- create_or_update_lti_user(lti_params, institution),
            :ok <- create_or_update_lti_params(user, lti_params),
            :ok <- update_user_platform_roles(user, lti_params),
-           {:ok, section} <- get_and_update_lti_section_details(lti_params, registration) do
-        # sign in LTI user and redirect to appropriate route
-        conn
-        |> UserAuth.create_session(user)
-        |> LtiCommon.redirect_lti_user(
-          section,
-          lti_params
-        )
+           {:ok, section} <- get_and_update_lti_section_details(lti_params, registration),
+           :ok <- enroll_user(user, section, lti_params) do
+        {user, section}
       else
-        error ->
-          error_msg = "Failed to handle valid LTI 1.3 launch: #{inspect(error)}"
-
-          Logger.error(error_msg)
-
-          # render error page
-          conn
-          |> put_status(:bad_request)
-          |> render("lti_error.html", reason: error_msg)
+        {:error, error} ->
+          Oli.Repo.rollback(error)
       end
     end)
   end
@@ -131,17 +132,10 @@ defmodule OliWeb.LtiController do
     end
   end
 
-  defp lti_context_claim(lti_params) do
-    case lti_params["https://purl.imsglobal.org/spec/lti/claim/context"] do
-      nil -> {:error, :context_claim_missing}
-      context -> {:ok, context}
-    end
-  end
-
   defp get_and_update_lti_section_details(lti_params, registration) do
     case Sections.get_section_from_lti_params(lti_params) do
       nil ->
-        {:error, :section_not_found}
+        {:ok, nil}
 
       section ->
         Sections.update_section(section, %{
@@ -198,8 +192,13 @@ defmodule OliWeb.LtiController do
     end
   end
 
-  defp enroll_user(user_id, section_id, context_roles) do
-    Sections.enroll(user_id, section_id, context_roles)
+  defp enroll_user(user, section, lti_params) do
+    context_roles =
+      ContextRoles.get_roles_by_uris(
+        lti_params["https://purl.imsglobal.org/spec/lti/claim/roles"]
+      )
+
+    Sections.enroll(user.id, section.id, context_roles)
   end
 
   def test(conn, params) do

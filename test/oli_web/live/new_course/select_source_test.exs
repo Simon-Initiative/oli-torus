@@ -21,7 +21,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
 
     test "redirects to new session when accessing the lms instructor view", %{conn: conn} do
       {:error, {:redirect, %{to: "/users/log_in"}}} =
-        live(conn, ~p"/sections/lti/new")
+        live(conn, ~p"/sections/new")
     end
   end
 
@@ -153,7 +153,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
     setup [:lms_instructor_conn]
 
     test "loads correctly when there are no sections", %{conn: conn} do
-      {:ok, view, _html} = live(conn, ~p"/sections/lti/new")
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
 
       assert has_element?(view, "p", "None exist")
       assert has_element?(view, "button[disabled]", "Next step")

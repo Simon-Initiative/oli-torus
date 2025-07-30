@@ -16,7 +16,9 @@ defmodule OliWeb.Common.LtiCommon do
 
   @roles_claims "https://purl.imsglobal.org/spec/lti/claim/roles"
 
-  def redirect_lti_user(conn, section, lti_params) do
+  def redirect_lti_user(conn, section, lti_params, opts \\ []) do
+    allow_new_section_creation = Keyword.get(opts, :allow_new_section_creation, false)
+
     # Context claim is considered optional according to IMS http://www.imsglobal.org/spec/lti/v1p3/#context-claim
     # so we must safeguard against the case that context is missing
     case lti_params["https://purl.imsglobal.org/spec/lti/claim/context"] do
@@ -28,21 +30,25 @@ defmodule OliWeb.Common.LtiCommon do
         allow_configure_section_roles = MapSet.new(@allow_configure_section_roles)
 
         # allow section configuration if user has any of the allowed roles
-        allow_configure_section =
+        can_configure_section =
           MapSet.intersection(roles, allow_configure_section_roles) |> MapSet.size() > 0
 
+        can_create_section = allow_new_section_creation and can_configure_section
+
         case section do
-          # Section has not been configured, redirect to LTI new course creation wizard
-          nil when allow_configure_section ->
+          # Section has not been configured yet, redirect to LTI new course creation wizard
+          nil when can_create_section ->
             conn
             |> redirect(to: ~p"/sections/new/#{context_id}")
 
           # Section has not been configured, but student is not allowed to configure
           nil ->
-            render(conn, "course_not_configured.html")
+            conn
+            |> put_view(OliWeb.DeliveryView)
+            |> render("course_not_configured.html")
 
           # Section has already been configured, redirect to manage view
-          section when allow_configure_section ->
+          section when can_configure_section ->
             conn
             |> redirect(to: ~p"/sections/#{section.slug}/manage")
 
