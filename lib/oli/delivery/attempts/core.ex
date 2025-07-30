@@ -1085,4 +1085,29 @@ defmodule Oli.Delivery.Attempts.Core do
       activity_attempts: [:part_attempts]
     )
   end
+
+  @doc """
+  Retrieves the extrinsic state of the resource attempt must take
+  into account if the blob storage API is in use for extrinsic state.
+  """
+  def fetch_extrinsic_state(resource_attempt) do
+    if Application.get_env(:oli, :blob_storage)[:use_deprecated_api] do
+      resource_attempt.state
+    else
+      Oli.Delivery.TextBlob.read(
+        resource_attempt.attempt_guid,
+        "{}"
+      )
+      |> case do
+        {:ok, state} ->
+          case Jason.decode(state) do
+            {:ok, decoded_state} -> decoded_state
+            _ -> %{}
+          end
+
+        _ ->
+          %{}
+      end
+    end
+  end
 end
