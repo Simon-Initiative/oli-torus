@@ -55,11 +55,9 @@ defmodule OliWeb.AuthorSettingsLive do
               <.input
                 :if={@has_password}
                 field={@email_form[:current_password]}
-                name="current_password"
                 id="current_password_for_email"
                 type="password"
                 label="Current password"
-                value={@email_form_current_password}
                 required
               />
 
@@ -202,7 +200,6 @@ defmodule OliWeb.AuthorSettingsLive do
       socket
       |> assign(:active_workspace, :course_author)
       |> assign(:current_password, nil)
-      |> assign(:email_form_current_password, nil)
       |> assign(:current_email, author.email)
       |> assign(:author_form, to_form(author_changeset))
       |> assign(:email_form, to_form(email_changeset))
@@ -255,23 +252,23 @@ defmodule OliWeb.AuthorSettingsLive do
     end
   end
 
-  def handle_event("validate_email", params, socket) do
-    %{"current_password" => password, "author" => author_params} = params
-
+  def handle_event("validate_email", %{"author" => author_params}, socket) do
     email_form =
       socket.assigns.current_author
       |> Accounts.change_author_email(author_params)
-      |> Map.put(:action, :validate)
-      |> to_form()
+      |> to_form(action: :validate)
+      |> IO.inspect(label: "email_form")
 
-    {:noreply, assign(socket, email_form: email_form, email_form_current_password: password)}
+    {:noreply, assign(socket, email_form: email_form)}
   end
 
   def handle_event("update_email", params, socket) do
-    %{"current_password" => password, "author" => author_params} = params
+    %{"author" => %{"current_password" => current_password} = author_params} =
+      params
+
     author = socket.assigns.current_author
 
-    case Accounts.apply_author_email(author, password, author_params) do
+    case Accounts.apply_author_email(author, current_password, author_params) do
       {:ok, applied_author} ->
         Accounts.deliver_author_update_email_instructions(
           applied_author,
@@ -279,11 +276,15 @@ defmodule OliWeb.AuthorSettingsLive do
           &url(~p"/authors/settings/confirm_email/#{&1}")
         )
 
-        info = "A link to confirm your email change has been sent to the new address."
-        {:noreply, socket |> put_flash(:info, info) |> assign(email_form_current_password: nil)}
+        {:noreply,
+         socket
+         |> put_flash(
+           :info,
+           "A link to confirm your email change has been sent to the new address."
+         )}
 
       {:error, changeset} ->
-        {:noreply, assign(socket, :email_form, to_form(Map.put(changeset, :action, :insert)))}
+        {:noreply, assign(socket, :email_form, to_form(changeset))}
     end
   end
 

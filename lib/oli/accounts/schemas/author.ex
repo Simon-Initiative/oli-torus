@@ -10,6 +10,7 @@ defmodule Oli.Accounts.Author do
     field :email, :string
     field :email_verified, :boolean, virtual: true
     field :password, :string, virtual: true, redact: true
+    field :current_password, :string, virtual: true, redact: true
     field :password_hash, :string, redact: true
     field :email_confirmed_at, :utc_datetime
 
@@ -165,7 +166,7 @@ defmodule Oli.Accounts.Author do
   """
   def email_changeset(author, attrs, opts \\ []) do
     author
-    |> cast(attrs, [:email])
+    |> cast(attrs, [:email, :current_password])
     |> validate_email(opts)
     |> case do
       %{changes: %{email: _}} = changeset -> changeset

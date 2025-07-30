@@ -1661,7 +1661,7 @@ defmodule Oli.Accounts do
 
   """
   def change_author_email(author, attrs \\ %{}) do
-    Author.email_changeset(author, attrs, validate_email: false)
+    Author.email_changeset(author, attrs)
   end
 
   @doc """
