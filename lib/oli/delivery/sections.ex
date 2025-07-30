@@ -903,32 +903,6 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
-  Gets a section corresponding to the latest LTI launch for a given user_id
-
-  ## Examples
-      iex> get_section_from_latest_lti_launch(user_id)
-      %Section{}
-      iex> get_section_from_latest_lti_launch(user_id)
-      nil
-  """
-  def get_section_from_latest_lti_launch(user_id) do
-    Repo.one(
-      from(s in Section,
-        join: d in Deployment,
-        on: s.lti_1p3_deployment_id == d.id,
-        join: r in Registration,
-        on: d.registration_id == r.id,
-        join: p in LtiParams,
-        on: r.id == p.registration_id,
-        where: s.status == :active and p.user_id == ^user_id,
-        order_by: [desc: p.updated_at],
-        limit: 1,
-        select: s
-      )
-    )
-  end
-
-  @doc """
   Gets the associated deployment and registration from the given section
 
   ## Examples
