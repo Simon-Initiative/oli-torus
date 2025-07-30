@@ -27,19 +27,6 @@ defmodule OliWeb.Components.Delivery.Utils do
   end
 
   @doc """
-  Returns true if a user is signed in as guest
-  """
-  def user_is_guest?(assigns) do
-    case assigns[:current_user] do
-      %User{guest: true} ->
-        true
-
-      _ ->
-        false
-    end
-  end
-
-  @doc """
   Returns true if a user is signed in as an independent learner
   """
   def user_is_independent_learner?(current_user) do

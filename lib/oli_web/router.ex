@@ -1628,7 +1628,6 @@ defmodule OliWeb.Router do
     get("/:project_slug/import/download", IngestController, :download_current)
     live("/:project_slug/import/csv", Import.CSVImportView)
 
-    live("/ingest", Admin.Ingest)
     live("/ingest/process", Admin.IngestV2)
 
     # Branding
