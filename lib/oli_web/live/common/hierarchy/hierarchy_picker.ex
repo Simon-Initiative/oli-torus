@@ -430,15 +430,4 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
         children
     end
   end
-
-  defp sort_containers_first(%HierarchyNode{revision: a}, %HierarchyNode{revision: b}) do
-    case {
-      Oli.Resources.ResourceType.get_type_by_id(a.resource_type_id),
-      Oli.Resources.ResourceType.get_type_by_id(b.resource_type_id)
-    } do
-      {"container", _} -> true
-      {type_a, type_b} when type_a == type_b -> true
-      _ -> false
-    end
-  end
 end
