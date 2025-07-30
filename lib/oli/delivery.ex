@@ -40,6 +40,20 @@ defmodule Oli.Delivery do
 
   """
   def create_section(changeset, source, user, section_spec) do
+    # Check if section already exists for LTI specifications
+    case section_spec do
+      %SectionSpecification.Lti{lti_params: lti_params} ->
+        case Sections.get_section_from_lti_params(lti_params) do
+          nil -> create_new_section(changeset, source, user, section_spec)
+          existing_section -> {:ok, existing_section.id, existing_section.slug}
+        end
+
+      _ ->
+        create_new_section(changeset, source, user, section_spec)
+    end
+  end
+
+  defp create_new_section(changeset, source, user, section_spec) do
     case from_source_identifier(source) do
       {:project, project} ->
         %{id: project_id, has_experiments: has_experiments} =

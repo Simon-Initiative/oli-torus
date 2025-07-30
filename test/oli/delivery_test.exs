@@ -2,6 +2,7 @@ defmodule Oli.DeliveryTest do
   use Oli.DataCase
 
   import Oli.Factory
+  import Oli.TestHelpers
 
   alias Oli.Delivery
   alias Oli.Delivery.Sections
@@ -52,6 +53,10 @@ defmodule Oli.DeliveryTest do
     # Note: Activity X does not have objectives
     setup do
       map = create_full_project_with_objectives()
+
+      # Publish the publication so it can be found by get_latest_published_publication_by_slug
+      {:ok, _published} = Oli.Publishing.publish_project(map.project, "ensure published", 1)
+
       institution = insert(:institution)
       user = insert(:user)
       jwk = jwk_fixture()
@@ -96,14 +101,22 @@ defmodule Oli.DeliveryTest do
         insert(:section, %{
           institution: context.institution,
           base_project: context.project,
-          lti_1p3_deployment: context.deployment
+          lti_1p3_deployment: context.deployment,
+          title: "Existing Section"
         })
 
-      changeset = Sections.change_section(%Section{})
+      # Create LTI parameters with the section's context_id
+      lti_params =
+        context.lti_params
+        |> put_in(["https://purl.imsglobal.org/spec/lti/claim/context", "id"], section.context_id)
+
+      cache_lti_params(lti_params, context.user.id)
+
+      changeset = Sections.change_section(%Section{title: "New Section"})
 
       section_spec = SectionSpecification.lti(context.user, section.context_id)
 
-      assert {:ok, returned_section} =
+      assert {:ok, returned_section_id, returned_section_slug} =
                Delivery.create_section(
                  changeset,
                  "publication:#{context.publication.id}",
@@ -111,7 +124,9 @@ defmodule Oli.DeliveryTest do
                  section_spec
                )
 
-      assert returned_section.id == section.id
+      # Should return the existing section
+      assert returned_section_id == section.id
+      assert returned_section_slug == section.slug
     end
 
     test "creates section with contained objectives from publication if it does not exist",
@@ -119,17 +134,27 @@ defmodule Oli.DeliveryTest do
       context_id = "123"
       title = "Intro to Math"
 
+      # Create LTI parameters with the specific context_id for this test
+      lti_params =
+        context.lti_params
+        |> put_in(["https://purl.imsglobal.org/spec/lti/claim/context", "id"], context_id)
+
+      cache_lti_params(lti_params, context.user.id)
+
       changeset = Sections.change_section(%Section{title: title})
 
       section_spec = SectionSpecification.lti(context.user, context_id)
 
-      assert {:ok, returned_section} =
+      assert {:ok, returned_section_id, _returned_section_slug} =
                Delivery.create_section(
                  changeset,
                  "publication:#{context.publication.id}",
                  context.user,
                  section_spec
                )
+
+      # Get the created section for verification
+      returned_section = Sections.get_section!(returned_section_id)
 
       # Check section fields
       assert returned_section.type == :enrollable
@@ -214,17 +239,30 @@ defmodule Oli.DeliveryTest do
     end
 
     test "creates section with contained objectives from product if it does not exist", context do
+      # Create LTI parameters with the product's context_id
+      lti_params =
+        context.lti_params
+        |> put_in(
+          ["https://purl.imsglobal.org/spec/lti/claim/context", "id"],
+          context.product.context_id
+        )
+
+      cache_lti_params(lti_params, context.user.id)
+
       changeset = Sections.change_section(%Section{title: context.product.title})
 
       section_spec = SectionSpecification.lti(context.user, context.product.context_id)
 
-      assert {:ok, returned_section} =
+      assert {:ok, returned_section_id, _returned_section_slug} =
                Delivery.create_section(
                  changeset,
                  "publication:#{context.publication.id}",
                  context.user,
                  section_spec
                )
+
+      # Get the created section for verification
+      returned_section = Sections.get_section!(returned_section_id)
 
       # Check section fields
       assert returned_section.type == :enrollable

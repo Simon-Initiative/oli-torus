@@ -68,6 +68,7 @@ defmodule Oli.Delivery.Sections.SectionSpecification do
         section_params,
         %SectionSpecification.Lti{
           lti_params: lti_params,
+          institution: institution,
           registration: registration,
           deployment: deployment
         }
@@ -77,6 +78,7 @@ defmodule Oli.Delivery.Sections.SectionSpecification do
         |> Map.merge(%{
           open_and_free: false,
           context_id: lti_params[@context_claims]["id"],
+          institution_id: institution.id,
           lti_1p3_deployment_id: deployment.id,
           grade_passback_enabled: AGS.grade_passback_enabled?(lti_params),
           line_items_service_url: AGS.get_line_items_url(lti_params, registration),
