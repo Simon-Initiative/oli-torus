@@ -61,7 +61,7 @@ defmodule OliWeb.AuthorSettingsLiveTest do
         })
 
       assert result =~ "Change Email"
-      assert result =~ "must have the @ sign and no spaces"
+      assert result =~ "must be a valid email address"
     end
 
     test "renders errors with invalid data (phx-submit)", %{conn: conn, author: author} do
