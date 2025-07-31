@@ -307,19 +307,16 @@ defmodule OliWeb.Delivery.NewCourse do
 
   def handle_event("redirect_to_courses", _, socket) do
     {:noreply,
-     redirect(socket,
+     push_navigate(socket,
        to:
          case socket.assigns.context_id do
            nil ->
-             redirect_path =
-               if Oli.Accounts.is_admin?(socket.assigns.current_author) do
-                 ~p"/admin/sections"
-               else
-                 # If the user is not an author, redirect to the instructor workspace
-                 ~p"/workspaces/instructor"
-               end
-
-             {:noreply, push_navigate(socket, to: redirect_path)}
+             if Oli.Accounts.is_admin?(socket.assigns.current_author) do
+               ~p"/admin/sections"
+             else
+               # If the user is not an author, redirect to the instructor workspace
+               ~p"/workspaces/instructor"
+             end
 
            context_id ->
              ~p"/sections/new/#{context_id}"
