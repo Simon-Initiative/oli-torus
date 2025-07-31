@@ -2185,8 +2185,6 @@ defmodule Oli.SectionsTest do
   end
 
   describe "contains_instructor_role?/1" do
-    alias Lti_1p3.Roles.ContextRoles
-
     test "returns true if roles include context_instructor" do
       roles = [ContextRoles.get_role(:context_instructor)]
       assert Oli.Delivery.Sections.contains_instructor_role?(roles)
