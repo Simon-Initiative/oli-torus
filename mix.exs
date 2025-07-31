@@ -144,7 +144,7 @@ defmodule Oli.MixProject do
       {:ecto_sql, "~> 3.10"},
       {:eflame, "~> 1.0"},
       {:ecto_psql_extras, "~> 0.2"},
-      {:ex_aws, ">= 2.5.10"},
+      {:ex_aws, "~> 2.5"},
       {:ex_aws_s3, "~> 2.3"},
       {:ex_aws_lambda, "~> 2.0"},
       {:ex_cldr, "~> 2.42"},
