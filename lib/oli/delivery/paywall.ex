@@ -312,7 +312,7 @@ defmodule Oli.Delivery.Paywall do
     do: {:ok, amount}
 
   def section_cost_from_product(%Section{requires_payment: false}, _),
-    do: {:ok, Money.new(:USD, 0)}
+    do: {:ok, Money.new(0, "USD")}
 
   @doc """
   Redeems a payment code for a given course section.

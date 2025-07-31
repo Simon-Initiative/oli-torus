@@ -63,7 +63,7 @@ defmodule Oli.Delivery.Sections.EnrollmentsBrowseTest do
             type: :direct,
             generation_date: DateTime.utc_now(),
             application_date: DateTime.utc_now(),
-            amount: "$100.00",
+            amount: Money.new(100, "USD"),
             provider_type: :stripe,
             provider_id: "1",
             provider_payload: %{},

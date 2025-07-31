@@ -23,14 +23,14 @@ defmodule OliWeb.ProductsLiveTest do
 
   defp create_product(_conn) do
     product =
-      insert(:section, type: :blueprint, requires_payment: true, amount: Money.new(:USD, 10))
+      insert(:section, type: :blueprint, requires_payment: true, amount: Money.new(10, "USD"))
 
     [product: product]
   end
 
   defp create_product_with_payment_codes(_conn) do
     product =
-      insert(:section, type: :blueprint, requires_payment: true, amount: Money.new(:USD, 10))
+      insert(:section, type: :blueprint, requires_payment: true, amount: Money.new(10, "USD"))
 
     stub_real_current_time()
     Paywall.create_payment_codes(product.slug, 20)
@@ -144,7 +144,7 @@ defmodule OliWeb.ProductsLiveTest do
 
       {:ok, product_2} =
         Sections.update_section(product_2, %{
-          amount: Money.new(:USD, 25)
+          amount: Money.new(25, "USD")
         })
 
       {:ok, view, _html} = live(conn, @live_view_all_products)
@@ -174,7 +174,7 @@ defmodule OliWeb.ProductsLiveTest do
         insert(:section,
           type: :blueprint,
           requires_payment: true,
-          amount: Money.new(:USD, 10),
+          amount: Money.new(10, "USD"),
           inserted_at: yesterday(product.inserted_at)
         )
 
@@ -210,7 +210,7 @@ defmodule OliWeb.ProductsLiveTest do
         insert(:section,
           type: :blueprint,
           requires_payment: true,
-          amount: Money.new(:USD, 10),
+          amount: Money.new(10, "USD"),
           inserted_at: yesterday(),
           status: :archived
         )
@@ -450,7 +450,7 @@ defmodule OliWeb.ProductsLiveTest do
       conn: conn
     } do
       product =
-        insert(:section, type: :blueprint, requires_payment: true, amount: Money.new(:USD, 10))
+        insert(:section, type: :blueprint, requires_payment: true, amount: Money.new(10, "USD"))
 
       allow_transfer_payment_codes(product.base_project)
 
@@ -467,7 +467,7 @@ defmodule OliWeb.ProductsLiveTest do
         insert(:section,
           type: :blueprint,
           requires_payment: true,
-          amount: Money.new(:USD, 10),
+          amount: Money.new(10, "USD"),
           base_project: product.base_project,
           base_project_id: product.base_project_id
         )
@@ -515,7 +515,7 @@ defmodule OliWeb.ProductsLiveTest do
         insert(:section,
           type: :blueprint,
           requires_payment: true,
-          amount: Money.new(:USD, 10),
+          amount: Money.new(10, "USD"),
           base_project: product.base_project,
           base_project_id: product.base_project_id
         )

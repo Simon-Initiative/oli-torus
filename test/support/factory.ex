@@ -465,7 +465,7 @@ defmodule Oli.Factory do
   def payment_factory() do
     %Payment{
       type: :direct,
-      amount: Money.new(:USD, 25),
+      amount: Money.new(25, "USD"),
       provider_type: :stripe,
       section: anonymous_build(:section),
       enrollment: anonymous_build(:enrollment),
