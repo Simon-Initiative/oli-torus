@@ -12,7 +12,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal do
       |> assign(
         loading?: true,
         tools: [],
-        activities: []
+        activities: [],
+        test_env?: test_env?()
       )
       |> reset_modal()
 
@@ -152,7 +153,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal do
         </div>
       </Modal.modal>
       <button
-        :if={Mix.env() == :test}
+        :if={@test_env?}
         id="test-show-modal-button"
         type="button"
         class="hidden"
@@ -516,4 +517,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal do
       search_term: ""
     )
   end
+
+  defp test_env?, do: Application.get_env(:oli, :env) == :test
 end
