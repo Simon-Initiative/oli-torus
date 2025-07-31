@@ -79,6 +79,7 @@ defmodule OliWeb.Delivery.NewCourse do
     {:ok,
      assign(socket,
        form_id: @form_id,
+       context_id: params["context_id"],
        steps: steps,
        current_step: 0,
        current_user: current_user,
@@ -311,10 +312,11 @@ defmodule OliWeb.Delivery.NewCourse do
          case socket.assigns.context_id do
            nil ->
              redirect_path =
-               cond do
-                 socket.assigns.lti_params -> ~p"/sections"
-                 socket.assigns.current_author -> ~p"/admin/sections"
-                 true -> ~p"/workspaces/instructor"
+               if Oli.Accounts.is_admin?(socket.assigns.current_author) do
+                 ~p"/admin/sections"
+               else
+                 # If the user is not an author, redirect to the instructor workspace
+                 ~p"/workspaces/instructor"
                end
 
              {:noreply, push_navigate(socket, to: redirect_path)}

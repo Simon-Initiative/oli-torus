@@ -410,15 +410,6 @@ defmodule Oli.Accounts do
   end
 
   @doc """
-  Preloads the user's linked author.
-  """
-  def preload_author(%User{} = user) do
-    Repo.preload(user, :author)
-  end
-
-  def preload_author(_), do: nil
-
-  @doc """
   Updates the platform roles associated with a user
   ## Examples
       iex> update_user_platform_roles(user, roles)

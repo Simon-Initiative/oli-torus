@@ -67,14 +67,12 @@ defmodule OliWeb.LtiController do
 
           {:error, error} ->
             # Log the error for debugging purposes
-            error_msg = "Failed to handle valid LTI 1.3 launch: #{inspect(error)}"
-
-            Logger.error(error_msg)
+            Logger.error("Failed to handle valid LTI 1.3 launch: #{inspect(error)}")
 
             # render error page
             conn
             |> put_status(:bad_request)
-            |> render("lti_error.html", reason: error_msg)
+            |> render("lti_error.html", reason: "Failed to handle valid LTI 1.3 launch")
         end
 
       {:error, %{reason: :invalid_registration, msg: _msg, issuer: issuer, client_id: client_id}} ->
