@@ -265,7 +265,7 @@ defmodule OliWeb.LtiControllerTest do
 
       conn = post(conn, Routes.lti_path(conn, :launch, %{state: state, id_token: id_token}))
 
-      assert html_response(conn, 200) =~ "This course section is not available"
+      assert redirected_to(conn) =~ "/workspaces/student"
 
       # Check that the user is the same as lti_user, but has some new field defined (it was
       # updated).

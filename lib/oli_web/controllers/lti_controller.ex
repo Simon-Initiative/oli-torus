@@ -12,7 +12,7 @@ defmodule OliWeb.LtiController do
   alias Oli.Lti.PlatformInstances
   alias OliWeb.UserAuth
   alias OliWeb.Common.Utils
-  alias OliWeb.Common.LtiCommon
+  alias OliWeb.DeliveryWeb
   alias Lti_1p3
   alias Oli.Delivery.Attempts.Core
   alias Oli.Delivery.Attempts.Core.ResourceAttempt
@@ -55,15 +55,12 @@ defmodule OliWeb.LtiController do
     case Lti_1p3.Tool.LaunchValidation.validate(params, session_state) do
       {:ok, lti_params} ->
         case handle_valid_lti_1p3_launch(lti_params) do
-          {:ok, {user, section}} ->
+          {:ok, user} ->
             # sign in LTI user and redirect to appropriate route
             conn
             |> UserAuth.create_session(user)
-            |> LtiCommon.redirect_lti_user(
-              section,
-              lti_params,
-              allow_new_section_creation: true
-            )
+            |> assign(:current_user, user)
+            |> DeliveryWeb.redirect_user(allow_new_section_creation: true)
 
           {:error, error} ->
             # Log the error for debugging purposes
@@ -105,7 +102,7 @@ defmodule OliWeb.LtiController do
            :ok <- update_user_platform_roles(user, lti_params),
            {:ok, section} <- get_and_update_lti_section_details(lti_params, registration),
            :ok <- enroll_user(user, section, lti_params) do
-        {user, section}
+        user
       else
         {:error, error} ->
           Oli.Repo.rollback(error)
@@ -202,7 +199,13 @@ defmodule OliWeb.LtiController do
             lti_params["https://purl.imsglobal.org/spec/lti/claim/roles"]
           )
 
-        Sections.enroll(user.id, section.id, context_roles)
+        case Sections.enroll(user.id, section.id, context_roles) do
+          {:ok, _enrollment} ->
+            :ok
+
+          {:error, _changeset} ->
+            {:error, :failed_to_enroll_user_in_section}
+        end
     end
   end
 

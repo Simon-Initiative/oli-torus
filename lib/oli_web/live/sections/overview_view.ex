@@ -14,6 +14,7 @@ defmodule OliWeb.Sections.OverviewView do
   alias Oli.Resources.Collaboration
   alias OliWeb.Projects.RequiredSurvey
   alias OliWeb.Common.MonacoEditor
+  alias OliWeb.DeliveryWeb
   alias Oli.Utils.S3Storage
   alias Oli.Repo
 
@@ -576,18 +577,9 @@ defmodule OliWeb.Sections.OverviewView do
 
         case action_function.(socket.assigns.section) do
           {:ok, _section} ->
-            is_admin = socket.assigns.is_admin
-
-            redirect_path =
-              if is_admin do
-                Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.SectionsView)
-              else
-                ~p"/workspaces/instructor"
-              end
-
             socket
             |> put_flash(:info, "Section successfully #{action}.")
-            |> redirect(to: redirect_path)
+            |> redirect(to: ~p"/sections")
 
           {:error, %Ecto.Changeset{}} ->
             put_flash(

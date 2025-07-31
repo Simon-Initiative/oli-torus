@@ -11,13 +11,12 @@ defmodule OliWeb.DeliveryController do
   alias Oli.Delivery.Sections.EnrollmentBrowseOptions
   alias Oli.Institutions
   alias Oli.Institutions.Institution
-  alias Oli.Lti.LtiParams
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
   alias OliWeb.UserAuth
   alias OliWeb.Common.Params
   alias OliWeb.Delivery.InstructorDashboard.Helpers
-  alias OliWeb.Common.LtiCommon
+  alias OliWeb.DeliveryWeb
   alias OliWeb.Delivery.Student.Utils
 
   require Logger
@@ -34,18 +33,8 @@ defmodule OliWeb.DeliveryController do
   page delivery.
   """
   def index(conn, _params) do
-    user = conn.assigns.current_user
-
-    with false <- user.independent_learner,
-         %LtiParams{params: lti_params} <- LtiParams.get_latest_user_lti_params(user.id) do
-      section = Sections.get_section_from_lti_params(lti_params)
-
-      conn
-      |> LtiCommon.redirect_lti_user(section, lti_params)
-    else
-      _ ->
-        redirect(conn, to: ~p"/workspaces/student")
-    end
+    conn
+    |> DeliveryWeb.redirect_user()
   end
 
   def show_research_consent(conn, params) do
