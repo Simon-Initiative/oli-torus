@@ -5,6 +5,7 @@ defmodule Oli.Delivery.Sections.Browse do
   alias Lti_1p3.Roles.ContextRoles
   alias Oli.Accounts.User
   alias Oli.Delivery.Sections.{Section, Enrollment, BrowseOptions}
+  alias Oli.Delivery.Sections
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
 
@@ -83,15 +84,13 @@ defmodule Oli.Delivery.Sections.Browse do
         do: true,
         else: dynamic([s, _], s.base_project_id == ^options.project_id)
 
-    instructor_role_id = ContextRoles.get_role(:context_instructor).id
-
     instructor =
       from u in User,
         join: e in Enrollment,
         on: e.user_id == u.id,
         join: ecr in "enrollments_context_roles",
         on:
-          ecr.enrollment_id == e.id and ecr.context_role_id == ^instructor_role_id and
+          ecr.enrollment_id == e.id and ecr.context_role_id in ^Sections.get_instructor_role_ids() and
             e.status == :enrolled,
         select: %{
           name: fragment("array_to_string((array_agg(?)), ', ')", u.name),

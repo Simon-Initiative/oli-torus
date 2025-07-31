@@ -235,7 +235,8 @@ defmodule OliWeb.Components.Delivery.Utils do
 
   @instructor_roles [
     PlatformRoles.get_role(:institution_instructor),
-    ContextRoles.get_role(:context_instructor)
+    ContextRoles.get_role(:context_instructor),
+    ContextRoles.get_role(:context_content_developer)
   ]
 
   @student_roles [
