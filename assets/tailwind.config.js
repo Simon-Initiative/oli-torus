@@ -28,6 +28,10 @@ module.exports = {
     plugin(({ addVariant }) =>
       addVariant('phx-change-loading', ['&.phx-change-loading', '.phx-change-loading &']),
     ),
+
+    // example:<button data-selected={"#{@active_tab == "activities"}"} class="selected:text-white not-selected:text-black">...</button>
+    plugin(({ addVariant }) => addVariant('selected', '&[data-selected="true"]')),
+    plugin(({ addVariant }) => addVariant('not-selected', '&[data-selected="false"]')),
     require('@tailwindcss/container-queries'),
   ],
   safelist: ['mb-24'],

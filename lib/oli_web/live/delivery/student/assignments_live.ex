@@ -381,7 +381,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
               true
 
             {:due_by, end_date, :disallow} ->
-              !DateTime.compare(DateTime.utc_now(), end_date) == :gt
+              !(DateTime.compare(DateTime.utc_now(), end_date) == :gt)
 
             _ ->
               true

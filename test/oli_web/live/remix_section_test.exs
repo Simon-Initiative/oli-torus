@@ -1628,7 +1628,7 @@ defmodule OliWeb.RemixSectionLiveTest do
       project: project
     } =
       Seeder.base_project_with_resource2()
-      |> Seeder.create_product(%{title: "My 1st product", amount: Money.new(:USD, 100)}, :prod1)
+      |> Seeder.create_product(%{title: "My 1st product", amount: Money.new(100, "USD")}, :prod1)
 
     {:ok, _prod} = Sections.create_section_resources(prod, publication)
 
