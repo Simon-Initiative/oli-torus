@@ -111,7 +111,7 @@ defmodule OliWeb.Dialogue.WindowLive do
              width: 400,
              section: section,
              resource_id: session["resource_id"],
-             is_page: session["is_page"] == true || false
+             is_page: session["is_page"] == true
            )}
 
         {:error, reason} ->

@@ -1,7 +1,7 @@
 defmodule Oli.Repo.Migrations.GenaiInfra do
   use Ecto.Migration
 
-  def change do
+  def up do
     create table(:registered_models) do
       add :name, :string, null: false
       add :provider, :string, null: false
@@ -99,4 +99,10 @@ defmodule Oli.Repo.Migrations.GenaiInfra do
         NOW(), NOW());
     """)
   end
+
+  def down do
+    drop table(:gen_ai_feature_configs)
+    drop table(:completions_service_configs)
+    drop table(:registered_models)
+ end
 end

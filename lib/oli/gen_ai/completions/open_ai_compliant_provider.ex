@@ -101,7 +101,7 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
   end
 
   def encode_messages(messages) do
-    # Delete the id and input from messages and open ai does not require these
+    # Delete the id and input from messages as open ai does not require these
     # for function calling
     Enum.map(messages, fn message ->
       Map.delete(message, :id)

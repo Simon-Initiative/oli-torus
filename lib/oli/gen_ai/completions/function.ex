@@ -45,31 +45,32 @@ defmodule Oli.GenAI.Completions.Function do
         Map.put(acc, function.name, function)
       end)
 
-    full_name = Map.get(as_map, name).full_name
-
-    if full_name == nil do
-      {:error, :invalid_function_name}
-    end
-
-    case String.split(full_name, ".") do
-      parts when is_list(parts) ->
-        module_parts = Enum.take(parts, Enum.count(parts) - 1)
-        name = Enum.at(parts, -1) |> String.to_existing_atom()
-
-        # Join the module parts and convert to an atom
-        module =
-          Enum.join(module_parts, ".")
-          |> String.to_existing_atom()
-
-        # ensure that it is a valid module that is loaded
-        if Code.ensure_loaded?(module) do
-          {:ok, module, name}
-        else
-          {:error, :invalid_function_name}
-        end
-
-      _ ->
+    case Map.get(as_map, name).full_name do
+      nil ->
         {:error, :invalid_function_name}
+
+      full_name ->
+        case String.split(full_name, ".") do
+          parts when is_list(parts) ->
+            module_parts = Enum.take(parts, Enum.count(parts) - 1)
+            name = Enum.at(parts, -1) |> String.to_existing_atom()
+
+            # Join the module parts and convert to an atom
+            module =
+              Enum.join(module_parts, ".")
+              |> String.to_existing_atom()
+
+            # ensure that it is a valid module that is loaded
+            if Code.ensure_loaded?(module) do
+              {:ok, module, name}
+            else
+              {:error, :invalid_function_name}
+            end
+
+          _ ->
+            {:error, :invalid_function_name}
+        end
     end
+
   end
 end
