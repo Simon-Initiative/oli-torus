@@ -14,16 +14,23 @@ import { InputEntry } from 'components/activities/short_answer/sections/InputEnt
 import { getTargetedResponses, shortAnswerOptions } from 'components/activities/short_answer/utils';
 import {
   GradingApproach,
+  HasParts,
   Manifest,
   Response,
   RichText,
   makeResponse,
 } from 'components/activities/types';
 import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
-import { getCorrectResponse, hasCustomScoring } from 'data/activities/model/responses';
+import {
+  Responses,
+  getCorrectResponse,
+  getIncorrectResponse,
+  hasCustomScoring,
+} from 'data/activities/model/responses';
 import { containsRule, eqRule } from 'data/activities/model/rules';
 import { defaultWriterContext } from 'data/content/writers/context';
 import { configureStore } from 'state/store';
+import { clone } from 'utils/common';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
 import { RespondedUsersList } from '../common/authoring/RespondedUsersList';
@@ -192,7 +199,26 @@ const ShortAnswer = () => {
   );
 };
 
+const ensureCatchAll = (model: HasParts) => {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+    getIncorrectResponse(model, model.authoring.parts[0].id);
+    return model;
+  } catch (ex) {
+    const newModel = clone(model);
+    newModel.authoring.parts[0].responses.push(Responses.catchAll());
+    return newModel;
+  }
+};
+
 export class ShortAnswerAuthoring extends AuthoringElement<ShortAnswerModelSchema> {
+  migrateModelVersion(model: ShortAnswerModelSchema) {
+    // Some questions desiring legacy submit and compare behavior (no incorrect answer)
+    // may have wound up with .* as correct response rule and no catch-all.
+    // But authoring requires a catchAll, so add one to model if needed
+    return ensureCatchAll(model) as ShortAnswerModelSchema;
+  }
+
   render(mountPoint: HTMLDivElement, props: AuthoringElementProps<ShortAnswerModelSchema>) {
     ReactDOM.render(
       <Provider store={store}>
