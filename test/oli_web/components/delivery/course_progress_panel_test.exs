@@ -46,13 +46,17 @@ defmodule OliWeb.Components.Delivery.CourseProgressPanelTest do
       assert html =~ "dark:border-gray-700"
     end
 
-    test "renders progress bar component" do
+    test "renders progress bar with percentage text and styling" do
       assigns = %{progress: 25}
 
       html = render_component(&CourseProgressPanel.progress_panel/1, assigns)
 
-      # Should include progress bar component
+      # Should include progress bar component with percentage text
       assert html =~ "25%"
+      # Should include progress bar styling classes
+      assert html =~ "rounded-full"
+      assert html =~ "bg-gray-200"
+      assert html =~ "bg-green-600"
     end
 
     test "renders with correct styling classes" do

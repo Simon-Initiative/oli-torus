@@ -124,8 +124,8 @@ defmodule OliWeb.Components.Delivery.DialogueTest do
     end
   end
 
-  describe "helper functions" do
-    test "is_assistant? returns true for :assistant" do
+  describe "helper function behavior through public interface" do
+    test "is_assistant? behavior returns true for :assistant" do
       # Test through the public interface instead
       assigns = %{
         index: 1,
@@ -137,7 +137,7 @@ defmodule OliWeb.Components.Delivery.DialogueTest do
       assert html =~ "assistant/footer_dot_ai.png"
     end
 
-    test "is_assistant? returns false for other values" do
+    test "is_assistant? behavior returns false for other values" do
       # Test through the public interface instead
       assigns = %{
         index: 1,
@@ -149,7 +149,7 @@ defmodule OliWeb.Components.Delivery.DialogueTest do
       refute html =~ "assistant/footer_dot_ai.png"
     end
 
-    test "to_initials returns BOT AI for assistant" do
+    test "to_initials behavior returns BOT AI for assistant" do
       # Test through the public interface instead
       assigns = %{
         index: 1,
@@ -161,7 +161,7 @@ defmodule OliWeb.Components.Delivery.DialogueTest do
       assert html =~ "assistant/footer_dot_ai.png"
     end
 
-    test "to_initials returns G for user with nil name" do
+    test "to_initials behavior returns G for user with nil name" do
       # Test through the public interface instead
       assigns = %{
         index: 1,
@@ -173,7 +173,7 @@ defmodule OliWeb.Components.Delivery.DialogueTest do
       assert html =~ "G"
     end
 
-    test "to_initials returns initials for user with name" do
+    test "to_initials behavior returns initials for user with name" do
       # Test through the public interface instead
       assigns = %{
         index: 1,
@@ -185,7 +185,7 @@ defmodule OliWeb.Components.Delivery.DialogueTest do
       assert html =~ "JD"
     end
 
-    test "to_initials returns ? for unknown user type" do
+    test "to_initials behavior returns ? for unknown user type" do
       # Test through the public interface instead
       assigns = %{
         index: 1,

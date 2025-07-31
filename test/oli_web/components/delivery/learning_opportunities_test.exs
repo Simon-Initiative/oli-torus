@@ -198,8 +198,8 @@ defmodule OliWeb.Components.Delivery.LearningOpportunitiesTest do
     end
   end
 
-  describe "helper functions" do
-    test "badge_name returns correct names for different types" do
+  describe "helper function behavior through public interface" do
+    test "badge_name behavior returns correct names for different types" do
       # Test through the public interface instead
       course_content = %LearningOpportunities.LearningOpportunity{
         type: :course_content,
@@ -214,7 +214,7 @@ defmodule OliWeb.Components.Delivery.LearningOpportunitiesTest do
       assert html =~ "Course Content"
     end
 
-    test "badge_bg_color returns correct colors for different types" do
+    test "badge_bg_color behavior returns correct colors for different types" do
       # Test through the public interface instead
       course_content = %LearningOpportunities.LearningOpportunity{
         type: :course_content,

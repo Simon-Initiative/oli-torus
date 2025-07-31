@@ -92,7 +92,7 @@ defmodule OliWeb.Components.Delivery.AdaptiveIFrameTest do
       assert result =~ "height=\"675\""
     end
 
-    test "handles nil custom content gracefully" do
+    test "handles zero custom content dimensions gracefully" do
       content = %{"custom" => %{"defaultScreenHeight" => 0, "defaultScreenWidth" => 0}}
 
       result = AdaptiveIFrame.delivery("section", "revision", content)
