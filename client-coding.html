@@ -4,35 +4,22 @@
     <meta charset="utf-8">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="ExDoc v0.34.2">
+    <meta name="generator" content="ExDoc v0.38.2">
     <meta name="project" content="OLI Torus v0.31.1">
 
 
     <title>Client-side coding standard — OLI Torus v0.31.1</title>
-    <link rel="stylesheet" href="dist/html-elixir-F2VRIOKR.css" />
 
+    <link rel="stylesheet" href="dist/html-elixir-KV3YOVJ3.css" />
 
-    <script src="dist/handlebars.runtime-NWIB6V2M.js"></script>
-    <script src="dist/handlebars.templates-K7URE6B4.js"></script>
-    <script src="dist/sidebar_items-36299CD5.js"></script>
-    <script src="docs_config.js"></script>
-    <script async src="dist/html-YIPIRHGU.js"></script>
+    <script defer src="dist/sidebar_items-829A150D.js"></script>
+    <script defer src="docs_config.js"></script>
+    <script defer src="dist/html-DPJLHKSM.js"></script>
 
   </head>
-  <body data-type="extras" class="page-extra">
-    <script>
-
-      try {
-        var settings = JSON.parse(localStorage.getItem('ex_doc:settings') || '{}');
-
-        if (settings.theme === 'dark' ||
-           ((settings.theme === 'system' || settings.theme == null) &&
-             window.matchMedia('(prefers-color-scheme: dark)').matches)
-           ) {
-          document.body.classList.add('dark')
-        }
-      } catch (error) { }
-    </script>
+  <body>
+    <script>(()=>{var t="ex_doc:settings",e="dark";var o="dark",s="light";var E="sidebar_state",n="closed";var r="sidebar_width";var a="sidebar-open";var i=new URLSearchParams(window.location.search),S=i.get("theme")||JSON.parse(localStorage.getItem(t)||"{}").theme;(S===o||S!==s&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&document.body.classList.add(e);var d=sessionStorage.getItem(E),A=d!==n&&!window.matchMedia(`screen and (max-width: ${768}px)`).matches;document.body.classList.toggle(a,A);var c=sessionStorage.getItem(r);c&&document.body.style.setProperty("--sidebarWidth",`${c}px`);var p=/(Macintosh|iPhone|iPad|iPod)/.test(window.navigator.userAgent);document.documentElement.classList.toggle("apple-os",p);})();
+</script>
 
 <div class="body-wrapper">
 
@@ -58,27 +45,13 @@ OLI Torus
         </div>
       </div>
     </div>
-    <ul id="sidebar-listNav" class="sidebar-listNav" role="tablist">
-      <li>
-        <button id="extras-list-tab-button" role="tab" data-type="extras" aria-controls="extras-tab-panel" aria-selected="true" tabindex="0">
-GUIDES
-        </button>
-      </li>
-
-
-    </ul>
+    <ul id="sidebar-list-nav" class="sidebar-list-nav" role="tablist" data-extras="GUIDES"></ul>
   </div>
-
-  <div id="extras-tab-panel" class="sidebar-tabpanel" role="tabpanel" aria-labelledby="extras-list-tab-button">
-    <ul id="extras-full-list" class="full-list"></ul>
-  </div>
-
-
 </nav>
 
-<main class="content">
-  <output role="status" id="toast"></output>
+<output role="status" id="toast"></output>
 
+<main class="content page-extra" id="main" data-type="extras">
   <div id="content" class="content-inner">
     <div class="top-search">
       <div class="search-settings">
@@ -87,8 +60,8 @@ GUIDES
             <span class="sr-only">Search documentation of OLI Torus</span>
             <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
           </label>
-          <button type="submit" class="search-button" aria-label="Submit Search">
-            <i class="ri-search-2-line ri-lg" aria-hidden="true" title="Submit search"></i>
+          <button type="submit" class="search-button" aria-label="Submit Search" tabindex="-1">
+            <i class="ri-search-2-line ri-lg" aria-hidden="true"></i>
           </button>
           <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
             <i class="ri-close-line ri-lg" title="Cancel search"></i>
@@ -104,82 +77,30 @@ GUIDES
     </div>
 
 <div id="top-content">
-  <h1>
+  <div class="heading-with-actions top-heading">
+    <h1>Client-side coding standard</h1>
+
 
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/main/guides/process/client-coding.md#L1" title="View Source" class="icon-action" rel="help">
         <i class="ri-code-s-slash-line" aria-hidden="true"></i>
         <span class="sr-only">View Source</span>
       </a>
 
+  </div>
 
-    <span>Client-side coding standard</span>
-  </h1>
 
-<p>This document outlines the rules and guidelines for client-side code development in Torus.</p><p>Client-side code here refers to any code written by Torus developers that runs client-side in the browser. This includes complete standalone React applications and small snippets of code that run in the context of a server-rendered page.</p><p>Each item here is categorized as either a rule (required) or a guideline (recommended but not absolutely required). Guidelines recognize that there are always unique circumstances where it makes sense to depart from the recommendation. Rules will include words like <code class="inline">must</code> and <code class="inline">always</code> and guidelines include words like <code class="inline">should</code> and <code class="inline">can</code>.</p><h2 id="core-language" class="section-heading">
-  <a href="#core-language" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">Core language</span>
-</h2>
-<p>All client-side code must be written in Typescript as opposed to being written directly in JavaScript.</p><p>All code must be formatted using <a href="https://prettier.io">Prettier</a> and pass <a href="https://eslint.org/">ESLint</a> checks. A GitHub build step will fail for any PR that includes code that triggers an ESLint error.</p><h3 id="types" class="section-heading">
-  <a href="#types" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">Types</span>
-</h3>
-<p>Developers should leverage the TypeScript type system to model the domain as much as possible. This includes using type aliases, union and intersection types, discriminated union types, and utility types (<code class="inline">Partial&lt;Type&gt;</code>, <code class="inline">Readonly&lt;Type&gt;</code>, etc).</p><p>Developers should add TypeScript type annotations to all new code.</p><p>Developers should use the TypeScript <code class="inline">type</code> construct over an <code class="inline">interface</code> for all cases except for when extensibility is needed. For example, a <code class="inline">type</code> cannot be used in the following:</p><pre><code class="javascript">interface Identifiable {
+<p>This document outlines the rules and guidelines for client-side code development in Torus.</p><p>Client-side code here refers to any code written by Torus developers that runs client-side in the browser. This includes complete standalone React applications and small snippets of code that run in the context of a server-rendered page.</p><p>Each item here is categorized as either a rule (required) or a guideline (recommended but not absolutely required). Guidelines recognize that there are always unique circumstances where it makes sense to depart from the recommendation. Rules will include words like <code class="inline">must</code> and <code class="inline">always</code> and guidelines include words like <code class="inline">should</code> and <code class="inline">can</code>.</p><h2 id="core-language" class="section-heading"><a href="#core-language" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Core language</span></h2><p>All client-side code must be written in Typescript as opposed to being written directly in JavaScript.</p><p>All code must be formatted using <a href="https://prettier.io">Prettier</a> and pass <a href="https://eslint.org/">ESLint</a> checks. A GitHub build step will fail for any PR that includes code that triggers an ESLint error.</p><h3 id="types" class="section-heading"><a href="#types" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Types</span></h3><p>Developers should leverage the TypeScript type system to model the domain as much as possible. This includes using type aliases, union and intersection types, discriminated union types, and utility types (<code class="inline">Partial&lt;Type&gt;</code>, <code class="inline">Readonly&lt;Type&gt;</code>, etc).</p><p>Developers should add TypeScript type annotations to all new code.</p><p>Developers should use the TypeScript <code class="inline">type</code> construct over an <code class="inline">interface</code> for all cases except for when extensibility is needed. For example, a <code class="inline">type</code> cannot be used in the following:</p><pre><code class="javascript">interface Identifiable {
   id: string;
 }
 
 export interface Paragraph extends Identifiable {
   type: &quot;p&quot;;
-}</code></pre><h3 id="async-code" class="section-heading">
-  <a href="#async-code" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">Async code</span>
-</h3>
-<p>Async code should be written using standard ES6 Promise support or async/await features.</p><h3 id="functional-programming" class="section-heading">
-  <a href="#functional-programming" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">Functional programming</span>
-</h3>
-<p>Code should be written in a functional programming style, leveraging first-class functions, programming as transformation, immutability, pure functions, etc.</p><h4>Immutability</h4><p>Code should be written leveraging immutable data structures and techniques as must as possible, this is particular importance in React-based UI code.</p><p>Legacy Echo code that ports existing Immutable.js code can stay as-is, but new code that needs immutable data structures should be written using Immer.js.</p><p>Developers can use the <code class="inline">Object.assign({}, current, update)</code> pattern as well.</p><h4>Programming as transformation</h4><p>For conciseness and readability, Code should make heavy use of <code class="inline">map</code> and <code class="inline">reduce</code> style data transformations instead of imperative loops and similar constructs. For example:</p><pre><code class="javascript">return Object.keys(textEntity)
+}</code></pre><h3 id="async-code" class="section-heading"><a href="#async-code" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Async code</span></h3><p>Async code should be written using standard ES6 Promise support or async/await features.</p><h3 id="functional-programming" class="section-heading"><a href="#functional-programming" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Functional programming</span></h3><p>Code should be written in a functional programming style, leveraging first-class functions, programming as transformation, immutability, pure functions, etc.</p><h4>Immutability</h4><p>Code should be written leveraging immutable data structures and techniques as must as possible, this is particular importance in React-based UI code.</p><p>Legacy Echo code that ports existing Immutable.js code can stay as-is, but new code that needs immutable data structures should be written using Immer.js.</p><p>Developers can use the <code class="inline">Object.assign({}, current, update)</code> pattern as well.</p><h4>Programming as transformation</h4><p>For conciseness and readability, Code should make heavy use of <code class="inline">map</code> and <code class="inline">reduce</code> style data transformations instead of imperative loops and similar constructs. For example:</p><pre><code class="javascript">return Object.keys(textEntity)
   .filter((attr) =&gt; textEntity[attr] === true)
   .map((attr) =&gt; supportedMarkTags[attr])
   .filter((mark) =&gt; mark)
-  .reduce((acc, mark) =&gt; `&lt;${mark}&gt;${acc}&lt;/${mark}&gt;`, text);</code></pre><h2 id="ui" class="section-heading">
-  <a href="#ui" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">UI</span>
-</h2>
-<h3 id="library-framework" class="section-heading">
-  <a href="#library-framework" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">Library/framework</span>
-</h3>
-<p>User interfaces must be built using React.</p><p>Developers should seek first to implement a React component as a functional stateless component. State, if needed, should be added via <code class="inline">useState</code> or <code class="inline">useReducer</code> hooks. Side effects should be incorporated via <code class="inline">useEffect</code>. For more complicated use cases it is acceptable to fall back to a traditional, class-based React component.</p><h3 id="state-management" class="section-heading">
-  <a href="#state-management" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">State management</span>
-</h3>
-<p>Developers should strive to use the simplest approach possible for global state management. The simplest approach being not using any third-party state management library and instead just maintaining all top-level state in a component (via <code class="inline">useReducer</code> or one or more <code class="inline">useState</code> hooks) and passing it down through properties. This approach only scales so far, thus for more complicated applications developers should fall back to a third-party library for global state management.</p><p>Our team's experience with Redux overall has been positive, but we recognize that there is a substantial amount of boilerplate in a type-safe Redux implementation. Given that Torus client tends to have smaller, more focused apps we are seeking lighter-weight Redux alternatives including <code class="inline">useReducer</code> and up and coming new libraries such as <a href="https://recoiljs.org/">https://recoiljs.org/</a></p><h3 id="styling" class="section-heading">
-  <a href="#styling" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">Styling</span>
-</h3>
-<p>Components should leverage Bootstrap 4 and be written in a way that works with the Torus theming approach. TODO add more details here, but a main takeaway is that any custom CSS should be captured in a <code class="inline">.scss</code> definition file.</p><h2 id="testing" class="section-heading">
-  <a href="#testing" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">Testing</span>
-</h2>
-<p>Code should be unit tested using the existing <code class="inline">jest</code> based unit testing infrastructure.</p><p>UI code should be structured in a way that allows the implementation of the logic to be decoupled from the UI implementation, so that this logic can be easily unit tested.</p>
+  .reduce((acc, mark) =&gt; `&lt;${mark}&gt;${acc}&lt;/${mark}&gt;`, text);</code></pre><h2 id="ui" class="section-heading"><a href="#ui" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">UI</span></h2><h3 id="library-framework" class="section-heading"><a href="#library-framework" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Library/framework</span></h3><p>User interfaces must be built using React.</p><p>Developers should seek first to implement a React component as a functional stateless component. State, if needed, should be added via <code class="inline">useState</code> or <code class="inline">useReducer</code> hooks. Side effects should be incorporated via <code class="inline">useEffect</code>. For more complicated use cases it is acceptable to fall back to a traditional, class-based React component.</p><h3 id="state-management" class="section-heading"><a href="#state-management" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">State management</span></h3><p>Developers should strive to use the simplest approach possible for global state management. The simplest approach being not using any third-party state management library and instead just maintaining all top-level state in a component (via <code class="inline">useReducer</code> or one or more <code class="inline">useState</code> hooks) and passing it down through properties. This approach only scales so far, thus for more complicated applications developers should fall back to a third-party library for global state management.</p><p>Our team's experience with Redux overall has been positive, but we recognize that there is a substantial amount of boilerplate in a type-safe Redux implementation. Given that Torus client tends to have smaller, more focused apps we are seeking lighter-weight Redux alternatives including <code class="inline">useReducer</code> and up and coming new libraries such as <a href="https://recoiljs.org/">https://recoiljs.org/</a></p><h3 id="styling" class="section-heading"><a href="#styling" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Styling</span></h3><p>Components should leverage Bootstrap 4 and be written in a way that works with the Torus theming approach. TODO add more details here, but a main takeaway is that any custom CSS should be captured in a <code class="inline">.scss</code> definition file.</p><h2 id="testing" class="section-heading"><a href="#testing" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Testing</span></h2><p>Code should be unit tested using the existing <code class="inline">jest</code> based unit testing infrastructure.</p><p>UI code should be structured in a way that allows the implementation of the logic to be decoupled from the UI implementation, so that this logic can be easily unit tested.</p>
+
 </div>
 
 <div class="bottom-actions" id="bottom-actions">
@@ -225,7 +146,7 @@ Server-side coding standard
 
       <p class="built-using">
         Built using
-        <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.34.2) for the
+        <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.38.2) for the
 
           <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
 

@@ -4,35 +4,22 @@
     <meta charset="utf-8">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="ExDoc v0.34.2">
+    <meta name="generator" content="ExDoc v0.38.2">
     <meta name="project" content="OLI Torus v0.31.1">
 
 
     <title>As a developer — OLI Torus v0.31.1</title>
-    <link rel="stylesheet" href="dist/html-elixir-F2VRIOKR.css" />
 
+    <link rel="stylesheet" href="dist/html-elixir-KV3YOVJ3.css" />
 
-    <script src="dist/handlebars.runtime-NWIB6V2M.js"></script>
-    <script src="dist/handlebars.templates-K7URE6B4.js"></script>
-    <script src="dist/sidebar_items-36299CD5.js"></script>
-    <script src="docs_config.js"></script>
-    <script async src="dist/html-YIPIRHGU.js"></script>
+    <script defer src="dist/sidebar_items-829A150D.js"></script>
+    <script defer src="docs_config.js"></script>
+    <script defer src="dist/html-DPJLHKSM.js"></script>
 
   </head>
-  <body data-type="extras" class="page-extra">
-    <script>
-
-      try {
-        var settings = JSON.parse(localStorage.getItem('ex_doc:settings') || '{}');
-
-        if (settings.theme === 'dark' ||
-           ((settings.theme === 'system' || settings.theme == null) &&
-             window.matchMedia('(prefers-color-scheme: dark)').matches)
-           ) {
-          document.body.classList.add('dark')
-        }
-      } catch (error) { }
-    </script>
+  <body>
+    <script>(()=>{var t="ex_doc:settings",e="dark";var o="dark",s="light";var E="sidebar_state",n="closed";var r="sidebar_width";var a="sidebar-open";var i=new URLSearchParams(window.location.search),S=i.get("theme")||JSON.parse(localStorage.getItem(t)||"{}").theme;(S===o||S!==s&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&document.body.classList.add(e);var d=sessionStorage.getItem(E),A=d!==n&&!window.matchMedia(`screen and (max-width: ${768}px)`).matches;document.body.classList.toggle(a,A);var c=sessionStorage.getItem(r);c&&document.body.style.setProperty("--sidebarWidth",`${c}px`);var p=/(Macintosh|iPhone|iPad|iPod)/.test(window.navigator.userAgent);document.documentElement.classList.toggle("apple-os",p);})();
+</script>
 
 <div class="body-wrapper">
 
@@ -58,27 +45,13 @@ OLI Torus
         </div>
       </div>
     </div>
-    <ul id="sidebar-listNav" class="sidebar-listNav" role="tablist">
-      <li>
-        <button id="extras-list-tab-button" role="tab" data-type="extras" aria-controls="extras-tab-panel" aria-selected="true" tabindex="0">
-GUIDES
-        </button>
-      </li>
-
-
-    </ul>
+    <ul id="sidebar-list-nav" class="sidebar-list-nav" role="tablist" data-extras="GUIDES"></ul>
   </div>
-
-  <div id="extras-tab-panel" class="sidebar-tabpanel" role="tabpanel" aria-labelledby="extras-list-tab-button">
-    <ul id="extras-full-list" class="full-list"></ul>
-  </div>
-
-
 </nav>
 
-<main class="content">
-  <output role="status" id="toast"></output>
+<output role="status" id="toast"></output>
 
+<main class="content page-extra" id="main" data-type="extras">
   <div id="content" class="content-inner">
     <div class="top-search">
       <div class="search-settings">
@@ -87,8 +60,8 @@ GUIDES
             <span class="sr-only">Search documentation of OLI Torus</span>
             <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
           </label>
-          <button type="submit" class="search-button" aria-label="Submit Search">
-            <i class="ri-search-2-line ri-lg" aria-hidden="true" title="Submit search"></i>
+          <button type="submit" class="search-button" aria-label="Submit Search" tabindex="-1">
+            <i class="ri-search-2-line ri-lg" aria-hidden="true"></i>
           </button>
           <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
             <i class="ri-close-line ri-lg" title="Cancel search"></i>
@@ -104,31 +77,20 @@ GUIDES
     </div>
 
 <div id="top-content">
-  <h1>
+  <div class="heading-with-actions top-heading">
+    <h1>As a developer</h1>
+
 
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/main/guides/starting/developer.md#L1" title="View Source" class="icon-action" rel="help">
         <i class="ri-code-s-slash-line" aria-hidden="true"></i>
         <span class="sr-only">View Source</span>
       </a>
 
+  </div>
 
-    <span>As a developer</span>
-  </h1>
 
 <p>These instructions will set up a development environment
-with the Torus server running directly on the host machine.</p><h2 id="mostly-automated-steps" class="section-heading">
-  <a href="#mostly-automated-steps" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">Mostly Automated Steps</span>
-</h2>
-<ol><li><p>Install dependencies:</p><ul><li><a href="https://www.docker.com/">Docker</a> and docker-compose</li><li><a href="https://elixir-lang.org/">Elixir</a> (<code class="inline">$ brew install elixir</code>)</li><li><a href="https://www.phoenixframework.org/">Phoenix</a> (<code class="inline">$ mix archive.install hex phx_new 1.5.9</code>)</li></ul></li><li><p>Clone this repository <code class="inline">$ git clone https://github.com/Simon-Initiative/oli-torus</code></p></li><li><p>Run <code class="inline">$ sh ./devmode.sh</code></p></li><li><p>Run <code class="inline">$ mix phx.server</code></p></li><li><p>Open your web browser to <code class="inline">https://localhost</code>.</p></li></ol><h2 id="mostly-manual-steps" class="section-heading">
-  <a href="#mostly-manual-steps" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">Mostly Manual Steps</span>
-</h2>
-<ol><li><p>Install dependencies:</p><ul><li><a href="https://www.docker.com/">Docker</a> and docker-compose</li><li><a href="https://elixir-lang.org/">Elixir</a> (<code class="inline">$ brew install elixir</code>)</li><li><a href="https://www.phoenixframework.org/">Phoenix</a> (<code class="inline">$ mix archive.install hex phx_new 1.5.9</code>)</li></ul></li><li><p>Clone this repository <code class="inline">$ git clone https://github.com/Simon-Initiative/oli-torus</code></p></li><li><p>Create configuration env files:</p><pre><code class="makeup shell" translate="no"><span class="gp unselectable">$ </span><span class="">cp oli.example.env oli.env
+with the Torus server running directly on the host machine.</p><h2 id="mostly-automated-steps" class="section-heading"><a href="#mostly-automated-steps" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Mostly Automated Steps</span></h2><ol><li><p>Install dependencies:</p><ul><li><a href="https://www.docker.com/">Docker</a> and docker-compose</li><li><a href="https://elixir-lang.org/">Elixir</a> (<code class="inline">$ brew install elixir</code>)</li><li><a href="https://www.phoenixframework.org/">Phoenix</a> (<code class="inline">$ mix archive.install hex phx_new 1.5.9</code>)</li></ul></li><li><p>Clone this repository <code class="inline">$ git clone https://github.com/Simon-Initiative/oli-torus</code></p></li><li><p>Run <code class="inline">$ sh ./devmode.sh</code></p></li><li><p>Run <code class="inline">$ mix phx.server</code></p></li><li><p>Open your web browser to <code class="inline">https://localhost</code>.</p></li></ol><h2 id="mostly-manual-steps" class="section-heading"><a href="#mostly-manual-steps" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Mostly Manual Steps</span></h2><ol><li><p>Install dependencies:</p><ul><li><a href="https://www.docker.com/">Docker</a> and docker-compose</li><li><a href="https://elixir-lang.org/">Elixir</a> (<code class="inline">$ brew install elixir</code>)</li><li><a href="https://www.phoenixframework.org/">Phoenix</a> (<code class="inline">$ mix archive.install hex phx_new 1.5.9</code>)</li></ul></li><li><p>Clone this repository <code class="inline">$ git clone https://github.com/Simon-Initiative/oli-torus</code></p></li><li><p>Create configuration env files:</p><pre><code class="makeup shell" translate="no"><span class="gp unselectable">$ </span><span class="">cp oli.example.env oli.env
 </span><span class="gp unselectable">$ </span><span class="">cp postgres.example.env postgres.env
 </span></code></pre></li><li><p>Configure <code class="inline">oli.env</code> for running natively:</p><p>Make sure <code class="inline">DB_HOST</code> is set to <code class="inline">localhost</code> (as opposed to <code class="inline">postgress</code>).</p><pre><code class="makeup elixir" translate="no"><span class="nc">DB_HOST</span><span class="o">=</span><span class="n">localhost</span></code></pre></li><li><p>Start dockerized postgres 12 via the included docker-compose file:</p><pre><code class="makeup shell" translate="no"><span class="gp unselectable">$ </span><span class="">docker-compose up -d postgres
 </span></code></pre></li><li><p>Install server and client dependencies:</p><pre><code class="makeup shell" translate="no"><span class="gp unselectable">$ </span><span class="">mix deps.get
@@ -140,39 +102,16 @@ with the Torus server running directly on the host machine.</p><h2 id="mostly-au
 </span></code></pre></li><li><p>Configure bash to properly source environment variable configurations</p><pre><code class="makeup shell" translate="no"><span class="gp unselectable">$ </span><span class="">set -a
 </span></code></pre></li><li><p>Load phoenix app configuration from environment file. This step is necessary anytime you change a configuration variable</p><pre><code class="makeup shell" translate="no"><span class="gp unselectable">$ </span><span class="">source oli.env
 </span></code></pre></li><li><p>Start Phoenix server</p><pre><code class="makeup shell" translate="no"><span class="gp unselectable">$ </span><span class="">mix phx.server
-</span></code></pre><blockquote><p><strong>Note</strong>: Use Ctrl+c to stop the Phoenix server</p></blockquote></li><li><p>Open your web browser to <code class="inline">https://localhost</code>.</p></li></ol><h3 id="notes" class="section-heading">
-  <a href="#notes" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">Notes</span>
-</h3>
-<blockquote><p>In order to sign in, you must use <strong>https</strong> and accept the self-signed cert browser warning to avoid CSRF issues. If you would like to provide your own cert instead of accepting the included one, simply replace <code class="inline">priv/ssl/localhost.crt</code> -or- use the localhost tunneling method below to generate a public URL with SSL enabled.</p></blockquote><blockquote><p>To access email verification message and activate your locally-created account, visit <code class="inline">http://localhost/dev/sent_emails</code>.</p></blockquote><blockquote><p>Default administrator credentials are defined in <code class="inline">oli.env</code> as <code class="inline">ADMIN_EMAIL</code> and <code class="inline">ADMIN_PASSWORD</code>. These values are only used to seed the database during <code class="inline">mix ecto.setup</code> / <code class="inline">mix ecto.reset</code>.</p></blockquote><blockquote><p>Docker is not a strict dependency. We use it here to simplify the install and running of Postgres. You can choose to install and run Postgres bare-metal, but you will not be able to use the <strong>Mostly Automated Steps</strong> above (since the <code class="inline">./devmode.sh</code> script depends on Docker).</p></blockquote><h2 id="running-tests" class="section-heading">
-  <a href="#running-tests" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">Running Tests</span>
-</h2>
-<blockquote><p><strong>Note</strong>: If you are running using docker-compose as described in <a href="Quick-Start"><strong>Quick Start</strong></a>, you can create a bash session to execute any of the following commands using <code class="inline">docker-compose exec app bash</code></p></blockquote><ol><li><p>Run JavaScript tests</p><pre><code class="makeup shell" translate="no"><span class="gp unselectable">$ </span><span class="">cd assets &amp;&amp; yarn test
+</span></code></pre><blockquote><p><strong>Note</strong>: Use Ctrl+c to stop the Phoenix server</p></blockquote></li><li><p>Open your web browser to <code class="inline">https://localhost</code>.</p></li></ol><h3 id="notes" class="section-heading"><a href="#notes" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Notes</span></h3><blockquote><p>In order to sign in, you must use <strong>https</strong> and accept the self-signed cert browser warning to avoid CSRF issues. If you would like to provide your own cert instead of accepting the included one, simply replace <code class="inline">priv/ssl/localhost.crt</code> -or- use the localhost tunneling method below to generate a public URL with SSL enabled.</p></blockquote><blockquote><p>To access email verification message and activate your locally-created account, visit <code class="inline">http://localhost/dev/sent_emails</code>.</p></blockquote><blockquote><p>Default administrator credentials are defined in <code class="inline">oli.env</code> as <code class="inline">ADMIN_EMAIL</code> and <code class="inline">ADMIN_PASSWORD</code>. These values are only used to seed the database during <code class="inline">mix ecto.setup</code> / <code class="inline">mix ecto.reset</code>.</p></blockquote><blockquote><p>Docker is not a strict dependency. We use it here to simplify the install and running of Postgres. You can choose to install and run Postgres bare-metal, but you will not be able to use the <strong>Mostly Automated Steps</strong> above (since the <code class="inline">./devmode.sh</code> script depends on Docker).</p></blockquote><h2 id="running-tests" class="section-heading"><a href="#running-tests" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Running Tests</span></h2><blockquote><p><strong>Note</strong>: If you are running using docker-compose as described in <a href="Quick-Start"><strong>Quick Start</strong></a>, you can create a bash session to execute any of the following commands using <code class="inline">docker-compose exec app bash</code></p></blockquote><ol><li><p>Run JavaScript tests</p><pre><code class="makeup shell" translate="no"><span class="gp unselectable">$ </span><span class="">cd assets &amp;&amp; yarn test
 </span></code></pre></li><li><p>Run elixir tests</p><pre><code class="makeup shell" translate="no"><span class="gp unselectable">$ </span><span class="">mix test
 </span></code></pre></li><li><p>Run elixir tests for a specific file, watch for changes and automatically re-run tests</p><pre><code class="makeup shell" translate="no"><span class="gp unselectable">$ </span><span class="">mix test.watch --stale --max-failures 1 --trace --seed 0 lib/some_dir/file_to_watch.ex
 </span></code></pre><p>Re-run only failed tests</p><pre><code class="makeup shell" translate="no"><span class="gp unselectable">$ </span><span class="">mix test.watch --failed --trace --seed 0 lib/some_dir/file_to_watch.ex
 </span></code></pre><p>Using fswatch, re-run only the test files that have changed as well as the tests that have gone stale due to changes in lib and pause on any failures</p><pre><code class="makeup shell" translate="no"><span class="gp unselectable">$ </span><span class="">fswatch lib test | mix test --listen-on-stdin --stale --seed 0 --trace --max-failures 1
 </span></code></pre></li><li><p>Generate an html coverage report</p><pre><code class="makeup shell" translate="no"><span class="gp unselectable">$ </span><span class="">mix coveralls.html
 </span></code></pre></li><li><p>Occasionally the test database will need to be reset (e.g. if tests were cancelled partway through)</p><pre><code class="makeup shell" translate="no"><span class="gp unselectable">$ </span><span class="">MIX_ENV=test mix ecto.reset
-</span></code></pre></li></ol><h2 id="tunneling-localhost-connection-for-lti-development" class="section-heading">
-  <a href="#tunneling-localhost-connection-for-lti-development" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">Tunneling localhost connection for LTI development</span>
-</h2>
-<p>When making an LTI connection from an LMS such as Canvas, we need an internet accessible FQDN with SSL to properly configure a connection. The service ngrok offers an easy to use command line tool that does just this.</p><ol><li><a href="https://ngrok.com/">Download ngrok</a> and install using their instructions (Create a free account if required)</li><li>Run ngrok locally to tunnel to phoenix app on port 4000
-<code class="inline">ngrok http 4000</code></li><li>Access your running webapp using the generated https address (shown in console after <code class="inline">Forwarding</code>). This will be the same address used to configure the LMS LTI connection</li></ol><h2 id="configuring-an-lti-1-3-connection" class="section-heading">
-  <a href="#configuring-an-lti-1-3-connection" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">Configuring an LTI 1.3 Connection</span>
-</h2>
-<p>Torus supports LTI 1.3 integration and leverages the Learning Management System for course delivery.</p><p>To configure an LTI connection, refer to the <a href="https://github.com/Simon-Initiative/oli-torus/wiki/Torus-LTI-1.3-Configuration">Torus LTI 1.3 Manual Configuration</a>.</p>
+</span></code></pre></li></ol><h2 id="tunneling-localhost-connection-for-lti-development" class="section-heading"><a href="#tunneling-localhost-connection-for-lti-development" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Tunneling localhost connection for LTI development</span></h2><p>When making an LTI connection from an LMS such as Canvas, we need an internet accessible FQDN with SSL to properly configure a connection. The service ngrok offers an easy to use command line tool that does just this.</p><ol><li><a href="https://ngrok.com/">Download ngrok</a> and install using their instructions (Create a free account if required)</li><li>Run ngrok locally to tunnel to phoenix app on port 4000
+<code class="inline">ngrok http 4000</code></li><li>Access your running webapp using the generated https address (shown in console after <code class="inline">Forwarding</code>). This will be the same address used to configure the LMS LTI connection</li></ol><h2 id="configuring-an-lti-1-3-connection" class="section-heading"><a href="#configuring-an-lti-1-3-connection" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Configuring an LTI 1.3 Connection</span></h2><p>Torus supports LTI 1.3 integration and leverages the Learning Management System for course delivery.</p><p>To configure an LTI connection, refer to the <a href="https://github.com/Simon-Initiative/oli-torus/wiki/Torus-LTI-1.3-Configuration">Torus LTI 1.3 Manual Configuration</a>.</p>
+
 </div>
 
 <div class="bottom-actions" id="bottom-actions">
@@ -218,7 +157,7 @@ self-hosted
 
       <p class="built-using">
         Built using
-        <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.34.2) for the
+        <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.38.2) for the
 
           <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
 

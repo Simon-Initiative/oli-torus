@@ -4,35 +4,22 @@
     <meta charset="utf-8">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="ExDoc v0.34.2">
+    <meta name="generator" content="ExDoc v0.38.2">
     <meta name="project" content="OLI Torus v0.31.1">
 
 
     <title>High-level design — OLI Torus v0.31.1</title>
-    <link rel="stylesheet" href="dist/html-elixir-F2VRIOKR.css" />
 
+    <link rel="stylesheet" href="dist/html-elixir-KV3YOVJ3.css" />
 
-    <script src="dist/handlebars.runtime-NWIB6V2M.js"></script>
-    <script src="dist/handlebars.templates-K7URE6B4.js"></script>
-    <script src="dist/sidebar_items-36299CD5.js"></script>
-    <script src="docs_config.js"></script>
-    <script async src="dist/html-YIPIRHGU.js"></script>
+    <script defer src="dist/sidebar_items-829A150D.js"></script>
+    <script defer src="docs_config.js"></script>
+    <script defer src="dist/html-DPJLHKSM.js"></script>
 
   </head>
-  <body data-type="extras" class="page-extra">
-    <script>
-
-      try {
-        var settings = JSON.parse(localStorage.getItem('ex_doc:settings') || '{}');
-
-        if (settings.theme === 'dark' ||
-           ((settings.theme === 'system' || settings.theme == null) &&
-             window.matchMedia('(prefers-color-scheme: dark)').matches)
-           ) {
-          document.body.classList.add('dark')
-        }
-      } catch (error) { }
-    </script>
+  <body>
+    <script>(()=>{var t="ex_doc:settings",e="dark";var o="dark",s="light";var E="sidebar_state",n="closed";var r="sidebar_width";var a="sidebar-open";var i=new URLSearchParams(window.location.search),S=i.get("theme")||JSON.parse(localStorage.getItem(t)||"{}").theme;(S===o||S!==s&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&document.body.classList.add(e);var d=sessionStorage.getItem(E),A=d!==n&&!window.matchMedia(`screen and (max-width: ${768}px)`).matches;document.body.classList.toggle(a,A);var c=sessionStorage.getItem(r);c&&document.body.style.setProperty("--sidebarWidth",`${c}px`);var p=/(Macintosh|iPhone|iPad|iPod)/.test(window.navigator.userAgent);document.documentElement.classList.toggle("apple-os",p);})();
+</script>
 
 <div class="body-wrapper">
 
@@ -58,27 +45,13 @@ OLI Torus
         </div>
       </div>
     </div>
-    <ul id="sidebar-listNav" class="sidebar-listNav" role="tablist">
-      <li>
-        <button id="extras-list-tab-button" role="tab" data-type="extras" aria-controls="extras-tab-panel" aria-selected="true" tabindex="0">
-GUIDES
-        </button>
-      </li>
-
-
-    </ul>
+    <ul id="sidebar-list-nav" class="sidebar-list-nav" role="tablist" data-extras="GUIDES"></ul>
   </div>
-
-  <div id="extras-tab-panel" class="sidebar-tabpanel" role="tabpanel" aria-labelledby="extras-list-tab-button">
-    <ul id="extras-full-list" class="full-list"></ul>
-  </div>
-
-
 </nav>
 
-<main class="content">
-  <output role="status" id="toast"></output>
+<output role="status" id="toast"></output>
 
+<main class="content page-extra" id="main" data-type="extras">
   <div id="content" class="content-inner">
     <div class="top-search">
       <div class="search-settings">
@@ -87,8 +60,8 @@ GUIDES
             <span class="sr-only">Search documentation of OLI Torus</span>
             <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
           </label>
-          <button type="submit" class="search-button" aria-label="Submit Search">
-            <i class="ri-search-2-line ri-lg" aria-hidden="true" title="Submit search"></i>
+          <button type="submit" class="search-button" aria-label="Submit Search" tabindex="-1">
+            <i class="ri-search-2-line ri-lg" aria-hidden="true"></i>
           </button>
           <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
             <i class="ri-close-line ri-lg" title="Cancel search"></i>
@@ -104,80 +77,22 @@ GUIDES
     </div>
 
 <div id="top-content">
-  <h1>
+  <div class="heading-with-actions top-heading">
+    <h1>High-level design</h1>
+
 
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/main/guides/design/high-level.md#L1" title="View Source" class="icon-action" rel="help">
         <i class="ri-code-s-slash-line" aria-hidden="true"></i>
         <span class="sr-only">View Source</span>
       </a>
 
+  </div>
 
-    <span>High-level design</span>
-  </h1>
 
-<p>This page outlines fundamental system design choices</p><h2 id="roles" class="section-heading">
-  <a href="#roles" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">Roles</span>
-</h2>
-<p>System roles are divided into two categories. A user can be represented by a single role in each category.</p><h3 id="authoring" class="section-heading">
-  <a href="#authoring" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">Authoring</span>
-</h3>
-<table><thead><tr><th style="text-align: left;">Role</th><th style="text-align: center;">Description</th></tr></thead><tbody><tr><td style="text-align: left;"><strong>Author</strong></td><td style="text-align: center;">Someone who owns and/or contributes to the creation of course content</td></tr><tr><td style="text-align: left;"><strong>Administrator</strong></td><td style="text-align: center;">Someone who is in charge of administering the entire system. Administrators have complete access to all content and administrative tools.</td></tr></tbody></table><h3 id="delivery" class="section-heading">
-  <a href="#delivery" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">Delivery</span>
-</h3>
-<table><thead><tr><th style="text-align: left;">Role</th><th style="text-align: center;">Description</th></tr></thead><tbody><tr><td style="text-align: left;"><strong>Student</strong></td><td style="text-align: center;">Someone who has accessed the system from an LMS as a student. Students have the ability to view course content, complete coursework and earn assignment grades.</td></tr><tr><td style="text-align: left;"><strong>Instructor</strong></td><td style="text-align: center;">Someone who has accessed the system from an LMS as an instructor. Instructors can create/edit a course section and modify content for that section.</td></tr><tr><td style="text-align: left;"><strong>Administrator</strong></td><td style="text-align: center;">Someone who has accessed the system from an LMS as an administrator. Administrators have all the same capabilities as instructors as well as the ability change institution-wide settings such as LTI integration or policies.</td></tr></tbody></table><h2 id="system-ontology" class="section-heading">
-  <a href="#system-ontology" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">System Ontology</span>
-</h2>
-<h3 id="resource" class="section-heading">
-  <a href="#resource" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">Resource</span>
-</h3>
-<p>A resource is an organized collection of content that is versioned and tracks content changes over time. Resources have a globally unique identifier across projects so that even if their content has diverged (different HEAD revision), they have the ability to diff and merge content with the same resource in other projects. Content within the system that is intended to track/diff/merge changes over time and provide rich versioning support is most likely using a resource to do this. Some examples of resource types are Page, Assessment, Activity, Learning Objective, etc...</p><h3 id="resource-revision" class="section-heading">
-  <a href="#resource-revision" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">Resource Revision</span>
-</h3>
-<p>A resource revision represents a resource at a specific moment in it's revision history. A revision points to it's parent revision and therefore links to all of it's previous ancestors. The latest revision for a resource is referred to as the HEAD revision and it is referenced by the resource as it's last revision. If a revision's parent is null, then it is the initial revision of a resource. Revisions also track a resource's slug which is described in another section below.</p><pre><code class="makeup elixir" translate="no"><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="o">-</span><span class="w">    </span><span class="nc">HEAD</span><span class="w">                                </span><span class="nc">INITIAL</span><span class="w">
+<p>This page outlines fundamental system design choices</p><h2 id="roles" class="section-heading"><a href="#roles" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Roles</span></h2><p>System roles are divided into two categories. A user can be represented by a single role in each category.</p><h3 id="authoring" class="section-heading"><a href="#authoring" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Authoring</span></h3><table><thead><tr><th style="text-align: left;">Role</th><th style="text-align: center;">Description</th></tr></thead><tbody><tr><td style="text-align: left;"><strong>Author</strong></td><td style="text-align: center;">Someone who owns and/or contributes to the creation of course content</td></tr><tr><td style="text-align: left;"><strong>Administrator</strong></td><td style="text-align: center;">Someone who is in charge of administering the entire system. Administrators have complete access to all content and administrative tools.</td></tr></tbody></table><h3 id="delivery" class="section-heading"><a href="#delivery" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Delivery</span></h3><table><thead><tr><th style="text-align: left;">Role</th><th style="text-align: center;">Description</th></tr></thead><tbody><tr><td style="text-align: left;"><strong>Student</strong></td><td style="text-align: center;">Someone who has accessed the system from an LMS as a student. Students have the ability to view course content, complete coursework and earn assignment grades.</td></tr><tr><td style="text-align: left;"><strong>Instructor</strong></td><td style="text-align: center;">Someone who has accessed the system from an LMS as an instructor. Instructors can create/edit a course section and modify content for that section.</td></tr><tr><td style="text-align: left;"><strong>Administrator</strong></td><td style="text-align: center;">Someone who has accessed the system from an LMS as an administrator. Administrators have all the same capabilities as instructors as well as the ability change institution-wide settings such as LTI integration or policies.</td></tr></tbody></table><h2 id="system-ontology" class="section-heading"><a href="#system-ontology" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">System Ontology</span></h2><h3 id="resource" class="section-heading"><a href="#resource" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Resource</span></h3><p>A resource is an organized collection of content that is versioned and tracks content changes over time. Resources have a globally unique identifier across projects so that even if their content has diverged (different HEAD revision), they have the ability to diff and merge content with the same resource in other projects. Content within the system that is intended to track/diff/merge changes over time and provide rich versioning support is most likely using a resource to do this. Some examples of resource types are Page, Assessment, Activity, Learning Objective, etc...</p><h3 id="resource-revision" class="section-heading"><a href="#resource-revision" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Resource Revision</span></h3><p>A resource revision represents a resource at a specific moment in it's revision history. A revision points to it's parent revision and therefore links to all of it's previous ancestors. The latest revision for a resource is referred to as the HEAD revision and it is referenced by the resource as it's last revision. If a revision's parent is null, then it is the initial revision of a resource. Revisions also track a resource's slug which is described in another section below.</p><pre><code class="makeup elixir" translate="no"><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="o">-</span><span class="w">    </span><span class="nc">HEAD</span><span class="w">                                </span><span class="nc">INITIAL</span><span class="w">
 </span><span class="o">|</span><span class="w"> </span><span class="nc">Resource</span><span class="w">  </span><span class="o">|</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nc">Revision</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nc">Revision</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nc">Revision</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nc">Revision</span><span class="w">
-</span><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="o">-</span></code></pre><h3 id="project" class="section-heading">
-  <a href="#project" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">Project</span>
-</h3>
-<p>A project is an organized container of all the resources that comprise a course and it's curriculum. These resources include pages, assessments, learning objectives, and media.</p><h3 id="publication" class="section-heading">
-  <a href="#publication" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">Publication</span>
-</h3>
-<p>A publication is a snapshot of a project at some point in time. Publications serve as an update, version or milestone of a project that an author deems ready for production use. Publications are created when a package is published which then become available for instructors to use for creating or updating a course section.</p><h3 id="section" class="section-heading">
-  <a href="#section" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">Section</span>
-</h3>
-<p>A section is an instance of a course publication that is configured by an instructor and delivered to students. A new section will be created for each LMS context or cohort of students intended to access course content. A section tracks learner progress and reports grades back to the connected LMS.</p><h2 id="resource-slug" class="section-heading">
-  <a href="#resource-slug" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">Resource Slug</span>
-</h2>
-<p>When a resource is created, a slug will be generated based on some semantic meaning for the resource (e.g. using the resource title). This slug is actually stored at the revision level because it can change over time as the resource changes. For example, if a resource with title &quot;Introduction to Linear Algebra&quot; is created, then it's slug might be introduction-linear-algebra-55jl2k. As changes are made to the content, but not the title, this slug may remain the same for each new revision that gets created. If at some point the title is changed to &quot;Basic Linear Algebra Concepts&quot;, the slug might change to basic-linear-algebra-conc-w8s25t. This slug is now related to the new semantic meaning of it's resource at that revision. It's important to understand however, that even though there are two different slugs for multiple different revisions, they are really just identifiers for the parent resource and both can be used to find a specific resource.</p><p>To summarize, a slug is a resource identifier that is stored at the revision level. Slugs do not have to change across revisions, but they can. Multiple slugs can point to a single resource.</p>
+</span><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="o">-</span></code></pre><h3 id="project" class="section-heading"><a href="#project" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Project</span></h3><p>A project is an organized container of all the resources that comprise a course and it's curriculum. These resources include pages, assessments, learning objectives, and media.</p><h3 id="publication" class="section-heading"><a href="#publication" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Publication</span></h3><p>A publication is a snapshot of a project at some point in time. Publications serve as an update, version or milestone of a project that an author deems ready for production use. Publications are created when a package is published which then become available for instructors to use for creating or updating a course section.</p><h3 id="section" class="section-heading"><a href="#section" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Section</span></h3><p>A section is an instance of a course publication that is configured by an instructor and delivered to students. A new section will be created for each LMS context or cohort of students intended to access course content. A section tracks learner progress and reports grades back to the connected LMS.</p><h2 id="resource-slug" class="section-heading"><a href="#resource-slug" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Resource Slug</span></h2><p>When a resource is created, a slug will be generated based on some semantic meaning for the resource (e.g. using the resource title). This slug is actually stored at the revision level because it can change over time as the resource changes. For example, if a resource with title &quot;Introduction to Linear Algebra&quot; is created, then it's slug might be introduction-linear-algebra-55jl2k. As changes are made to the content, but not the title, this slug may remain the same for each new revision that gets created. If at some point the title is changed to &quot;Basic Linear Algebra Concepts&quot;, the slug might change to basic-linear-algebra-conc-w8s25t. This slug is now related to the new semantic meaning of it's resource at that revision. It's important to understand however, that even though there are two different slugs for multiple different revisions, they are really just identifiers for the parent resource and both can be used to find a specific resource.</p><p>To summarize, a slug is a resource identifier that is stored at the revision level. Slugs do not have to change across revisions, but they can. Multiple slugs can point to a single resource.</p>
+
 </div>
 
 <div class="bottom-actions" id="bottom-actions">
@@ -223,7 +138,7 @@ Publication Model
 
       <p class="built-using">
         Built using
-        <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.34.2) for the
+        <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.38.2) for the
 
           <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
 

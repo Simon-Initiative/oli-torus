@@ -4,35 +4,22 @@
     <meta charset="utf-8">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="ExDoc v0.34.2">
+    <meta name="generator" content="ExDoc v0.38.2">
     <meta name="project" content="OLI Torus v0.31.1">
 
 
     <title>Course material ingestion — OLI Torus v0.31.1</title>
-    <link rel="stylesheet" href="dist/html-elixir-F2VRIOKR.css" />
 
+    <link rel="stylesheet" href="dist/html-elixir-KV3YOVJ3.css" />
 
-    <script src="dist/handlebars.runtime-NWIB6V2M.js"></script>
-    <script src="dist/handlebars.templates-K7URE6B4.js"></script>
-    <script src="dist/sidebar_items-36299CD5.js"></script>
-    <script src="docs_config.js"></script>
-    <script async src="dist/html-YIPIRHGU.js"></script>
+    <script defer src="dist/sidebar_items-829A150D.js"></script>
+    <script defer src="docs_config.js"></script>
+    <script defer src="dist/html-DPJLHKSM.js"></script>
 
   </head>
-  <body data-type="extras" class="page-extra">
-    <script>
-
-      try {
-        var settings = JSON.parse(localStorage.getItem('ex_doc:settings') || '{}');
-
-        if (settings.theme === 'dark' ||
-           ((settings.theme === 'system' || settings.theme == null) &&
-             window.matchMedia('(prefers-color-scheme: dark)').matches)
-           ) {
-          document.body.classList.add('dark')
-        }
-      } catch (error) { }
-    </script>
+  <body>
+    <script>(()=>{var t="ex_doc:settings",e="dark";var o="dark",s="light";var E="sidebar_state",n="closed";var r="sidebar_width";var a="sidebar-open";var i=new URLSearchParams(window.location.search),S=i.get("theme")||JSON.parse(localStorage.getItem(t)||"{}").theme;(S===o||S!==s&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&document.body.classList.add(e);var d=sessionStorage.getItem(E),A=d!==n&&!window.matchMedia(`screen and (max-width: ${768}px)`).matches;document.body.classList.toggle(a,A);var c=sessionStorage.getItem(r);c&&document.body.style.setProperty("--sidebarWidth",`${c}px`);var p=/(Macintosh|iPhone|iPad|iPod)/.test(window.navigator.userAgent);document.documentElement.classList.toggle("apple-os",p);})();
+</script>
 
 <div class="body-wrapper">
 
@@ -58,27 +45,13 @@ OLI Torus
         </div>
       </div>
     </div>
-    <ul id="sidebar-listNav" class="sidebar-listNav" role="tablist">
-      <li>
-        <button id="extras-list-tab-button" role="tab" data-type="extras" aria-controls="extras-tab-panel" aria-selected="true" tabindex="0">
-GUIDES
-        </button>
-      </li>
-
-
-    </ul>
+    <ul id="sidebar-list-nav" class="sidebar-list-nav" role="tablist" data-extras="GUIDES"></ul>
   </div>
-
-  <div id="extras-tab-panel" class="sidebar-tabpanel" role="tabpanel" aria-labelledby="extras-list-tab-button">
-    <ul id="extras-full-list" class="full-list"></ul>
-  </div>
-
-
 </nav>
 
-<main class="content">
-  <output role="status" id="toast"></output>
+<output role="status" id="toast"></output>
 
+<main class="content page-extra" id="main" data-type="extras">
   <div id="content" class="content-inner">
     <div class="top-search">
       <div class="search-settings">
@@ -87,8 +60,8 @@ GUIDES
             <span class="sr-only">Search documentation of OLI Torus</span>
             <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
           </label>
-          <button type="submit" class="search-button" aria-label="Submit Search">
-            <i class="ri-search-2-line ri-lg" aria-hidden="true" title="Submit search"></i>
+          <button type="submit" class="search-button" aria-label="Submit Search" tabindex="-1">
+            <i class="ri-search-2-line ri-lg" aria-hidden="true"></i>
           </button>
           <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
             <i class="ri-close-line ri-lg" title="Cancel search"></i>
@@ -104,50 +77,27 @@ GUIDES
     </div>
 
 <div id="top-content">
-  <h1>
+  <div class="heading-with-actions top-heading">
+    <h1>Course material ingestion</h1>
+
 
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/main/guides/ingest/overview.md#L1" title="View Source" class="icon-action" rel="help">
         <i class="ri-code-s-slash-line" aria-hidden="true"></i>
         <span class="sr-only">View Source</span>
       </a>
 
+  </div>
 
-    <span>Course material ingestion</span>
-  </h1>
 
-<p>Torus supports importing, or ingesting, externally developed course material.</p><h2 id="overview" class="section-heading">
-  <a href="#overview" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">Overview</span>
-</h2>
-<p>The Torus ingestion feature takes as input a <em>course digest archive</em> and converts that into a course project.</p><p>Course digest archives can be produced from a variety of different sources, either manually or via automated tools.</p><p>There is an automated tool that produces course digest
-archives from the legacy OLI XML course format.</p><p><a href="https://github.com/Simon-Initiative/course-digest">https://github.com/Simon-Initiative/course-digest</a></p><p>[[assets/ingest.png]]</p><h2 id="course-digest-format" class="section-heading">
-  <a href="#course-digest-format" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">Course Digest Format</span>
-</h2>
-<p>Course digest archives are <code class="inline">zip</code> files that contain
-<code class="inline">JSON</code> files corresponding to curriculum resources.</p><p>In a course digest, the following are the minimally
-required files:</p><h3 id="_project-json" class="section-heading">
-  <a href="#_project-json" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text"><code class="inline">_project.json</code></span>
-</h3>
-<p>This file describes high level course meta data.</p><pre><code class="json">{
+<p>Torus supports importing, or ingesting, externally developed course material.</p><h2 id="overview" class="section-heading"><a href="#overview" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Overview</span></h2><p>The Torus ingestion feature takes as input a <em>course digest archive</em> and converts that into a course project.</p><p>Course digest archives can be produced from a variety of different sources, either manually or via automated tools.</p><p>There is an automated tool that produces course digest
+archives from the legacy OLI XML course format.</p><p><a href="https://github.com/Simon-Initiative/course-digest">https://github.com/Simon-Initiative/course-digest</a></p><p>[[assets/ingest.png]]</p><h2 id="course-digest-format" class="section-heading"><a href="#course-digest-format" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Course Digest Format</span></h2><p>Course digest archives are <code class="inline">zip</code> files that contain
+<a href="https://hexdocs.pm/elixir/JSON.html"><code class="inline">JSON</code></a> files corresponding to curriculum resources.</p><p>In a course digest, the following are the minimally
+required files:</p><h3 id="_project-json" class="section-heading"><a href="#_project-json" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text"><code class="inline">_project.json</code></span></h3><p>This file describes high level course meta data.</p><pre><code class="json">{
   &quot;slug&quot;: &quot;edx_bio_1&quot;,
   &quot;title&quot;: &quot;Introduction to Biology&quot;,
   &quot;description&quot;: &quot;An introductory biology course suitable for non-majors&quot;,
   &quot;type&quot;: &quot;Manifest&quot;
-}</code></pre><h3 id="_hierarchy_-json" class="section-heading">
-  <a href="#_hierarchy_-json" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text"><code class="inline">_hierarchy_.json</code></span>
-</h3>
-<p>This file describes the course outline, or hierarchy,
+}</code></pre><h3 id="_hierarchy_-json" class="section-heading"><a href="#_hierarchy_-json" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text"><code class="inline">_hierarchy_.json</code></span></h3><p>This file describes the course outline, or hierarchy,
 defining the units and modules of a course and the
 pages that they contain. The following is an excerpt
 of a sample hierarchy file:</p><pre><code class="json">{
@@ -175,13 +125,7 @@ of a sample hierarchy file:</p><pre><code class="json">{
               &quot;type&quot;: &quot;item&quot;,</code></pre><p>The hierarchy file is essential a nested collection of children, that are of either type &quot;container&quot; (to represent a unit or module) or of type &quot;item&quot; (to
 represent a page reference). For &quot;item&quot; instances, the
 <code class="inline">idref</code> attribute is a reference to the <code class="inline">id</code> attribute
-of resource <code class="inline">JSON</code> file.</p><h3 id="_media-manifest_-json" class="section-heading">
-  <a href="#_media-manifest_-json" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text"><code class="inline">_media-manifest_.json</code></span>
-</h3>
-<p>This file is a listing of all media assets that this
+of resource <a href="https://hexdocs.pm/elixir/JSON.html"><code class="inline">JSON</code></a> file.</p><h3 id="_media-manifest_-json" class="section-heading"><a href="#_media-manifest_-json" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text"><code class="inline">_media-manifest_.json</code></span></h3><p>This file is a listing of all media assets that this
 course has prestaged into Torus S3 storage.</p><pre><code class="json">{
   &quot;mediaItems&quot;: [
     {
@@ -197,13 +141,7 @@ course has prestaged into Torus S3 storage.</p><pre><code class="json">{
       &quot;fileSize&quot;: 3671,
       &quot;mimeType&quot;: &quot;image/png&quot;,
       &quot;md5&quot;: &quot;0c084906e4502a6e93739b20a4ac119f&quot;
-    },</code></pre><h3 id="resource-files" class="section-heading">
-  <a href="#resource-files" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">Resource Files</span>
-</h3>
-<p>Beyond the three require metadata files, a course digest
+    },</code></pre><h3 id="resource-files" class="section-heading"><a href="#resource-files" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Resource Files</span></h3><p>Beyond the three require metadata files, a course digest
 archive also contains any number of resource specific
 JSON files. These files must be named <code class="inline">&lt;id&gt;.json</code> where the <code class="inline">id</code> is the
 string identifier used to reference the resource from <code class="inline">idref</code> attributes
@@ -266,6 +204,7 @@ and Objective. All three follow the same format of requiring <code class="inline
                     &quot;text&quot;: &quot; &quot;
                   },
                   {</code></pre>
+
 </div>
 
 <div class="bottom-actions" id="bottom-actions">
@@ -311,7 +250,7 @@ Media assets
 
       <p class="built-using">
         Built using
-        <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.34.2) for the
+        <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.38.2) for the
 
           <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
 

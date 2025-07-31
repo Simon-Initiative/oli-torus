@@ -4,35 +4,22 @@
     <meta charset="utf-8">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="ExDoc v0.34.2">
+    <meta name="generator" content="ExDoc v0.38.2">
     <meta name="project" content="OLI Torus v0.31.1">
 
 
     <title>LTI 1.3 — OLI Torus v0.31.1</title>
-    <link rel="stylesheet" href="dist/html-elixir-F2VRIOKR.css" />
 
+    <link rel="stylesheet" href="dist/html-elixir-KV3YOVJ3.css" />
 
-    <script src="dist/handlebars.runtime-NWIB6V2M.js"></script>
-    <script src="dist/handlebars.templates-K7URE6B4.js"></script>
-    <script src="dist/sidebar_items-36299CD5.js"></script>
-    <script src="docs_config.js"></script>
-    <script async src="dist/html-YIPIRHGU.js"></script>
+    <script defer src="dist/sidebar_items-829A150D.js"></script>
+    <script defer src="docs_config.js"></script>
+    <script defer src="dist/html-DPJLHKSM.js"></script>
 
   </head>
-  <body data-type="extras" class="page-extra">
-    <script>
-
-      try {
-        var settings = JSON.parse(localStorage.getItem('ex_doc:settings') || '{}');
-
-        if (settings.theme === 'dark' ||
-           ((settings.theme === 'system' || settings.theme == null) &&
-             window.matchMedia('(prefers-color-scheme: dark)').matches)
-           ) {
-          document.body.classList.add('dark')
-        }
-      } catch (error) { }
-    </script>
+  <body>
+    <script>(()=>{var t="ex_doc:settings",e="dark";var o="dark",s="light";var E="sidebar_state",n="closed";var r="sidebar_width";var a="sidebar-open";var i=new URLSearchParams(window.location.search),S=i.get("theme")||JSON.parse(localStorage.getItem(t)||"{}").theme;(S===o||S!==s&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&document.body.classList.add(e);var d=sessionStorage.getItem(E),A=d!==n&&!window.matchMedia(`screen and (max-width: ${768}px)`).matches;document.body.classList.toggle(a,A);var c=sessionStorage.getItem(r);c&&document.body.style.setProperty("--sidebarWidth",`${c}px`);var p=/(Macintosh|iPhone|iPad|iPod)/.test(window.navigator.userAgent);document.documentElement.classList.toggle("apple-os",p);})();
+</script>
 
 <div class="body-wrapper">
 
@@ -58,27 +45,13 @@ OLI Torus
         </div>
       </div>
     </div>
-    <ul id="sidebar-listNav" class="sidebar-listNav" role="tablist">
-      <li>
-        <button id="extras-list-tab-button" role="tab" data-type="extras" aria-controls="extras-tab-panel" aria-selected="true" tabindex="0">
-GUIDES
-        </button>
-      </li>
-
-
-    </ul>
+    <ul id="sidebar-list-nav" class="sidebar-list-nav" role="tablist" data-extras="GUIDES"></ul>
   </div>
-
-  <div id="extras-tab-panel" class="sidebar-tabpanel" role="tabpanel" aria-labelledby="extras-list-tab-button">
-    <ul id="extras-full-list" class="full-list"></ul>
-  </div>
-
-
 </nav>
 
-<main class="content">
-  <output role="status" id="toast"></output>
+<output role="status" id="toast"></output>
 
+<main class="content page-extra" id="main" data-type="extras">
   <div id="content" class="content-inner">
     <div class="top-search">
       <div class="search-settings">
@@ -87,8 +60,8 @@ GUIDES
             <span class="sr-only">Search documentation of OLI Torus</span>
             <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
           </label>
-          <button type="submit" class="search-button" aria-label="Submit Search">
-            <i class="ri-search-2-line ri-lg" aria-hidden="true" title="Submit search"></i>
+          <button type="submit" class="search-button" aria-label="Submit Search" tabindex="-1">
+            <i class="ri-search-2-line ri-lg" aria-hidden="true"></i>
           </button>
           <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
             <i class="ri-close-line ri-lg" title="Cancel search"></i>
@@ -104,24 +77,19 @@ GUIDES
     </div>
 
 <div id="top-content">
-  <h1>
+  <div class="heading-with-actions top-heading">
+    <h1>LTI 1.3</h1>
+
 
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/main/guides/lti/implementing.md#L1" title="View Source" class="icon-action" rel="help">
         <i class="ri-code-s-slash-line" aria-hidden="true"></i>
         <span class="sr-only">View Source</span>
       </a>
 
+  </div>
 
-    <span>LTI 1.3</span>
-  </h1>
 
-<h2 id="lti-1-3-launch-overview" class="section-heading">
-  <a href="#lti-1-3-launch-overview" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">LTI 1.3 Launch Overview</span>
-</h2>
-<p>This is a summary of the LTI 1.3 handshake outlined in the IMS Security Framework 1.0 Specification (<a href="https://www.imsglobal.org/spec/security/v1p0/#platform-originating-messages">5.1 Platform-Originating Messages</a>) geared toward elixir developers who wish to implement LTI 1.3 in their apps. This page assumes that both the tool and platform have been registered with each other.</p><p>Remember that registering requires a tool and platform to store important details about each other, such as:</p><p><strong>Example tool details</strong> registered with the platform:</p><pre><code class="makeup elixir" translate="no"><span class="ss">client_id</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;1000000000001&quot;</span><span class="w">
+<h2 id="lti-1-3-launch-overview" class="section-heading"><a href="#lti-1-3-launch-overview" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">LTI 1.3 Launch Overview</span></h2><p>This is a summary of the LTI 1.3 handshake outlined in the IMS Security Framework 1.0 Specification (<a href="https://www.imsglobal.org/spec/security/v1p0/#platform-originating-messages">5.1 Platform-Originating Messages</a>) geared toward elixir developers who wish to implement LTI 1.3 in their apps. This page assumes that both the tool and platform have been registered with each other.</p><p>Remember that registering requires a tool and platform to store important details about each other, such as:</p><p><strong>Example tool details</strong> registered with the platform:</p><pre><code class="makeup elixir" translate="no"><span class="ss">client_id</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;1000000000001&quot;</span><span class="w">
 </span><span class="ss">keyset_url</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;https://tool.example.edu/.well-known/jwks.json&quot;</span><span class="w">
 </span><span class="ss">oidc_login_url</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;https://tool.example.edu/login&quot;</span><span class="w">
 </span><span class="ss">redirect_uris</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;https://tool.example.edu/launch&quot;</span><span class="w">
@@ -129,19 +97,7 @@ GUIDES
 </span><span class="ss">client_id</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;1000000000001&quot;</span><span class="w">
 </span><span class="ss">key_set_url</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;https://platform.example.edu/.well-known/jwks.json&quot;</span><span class="w">
 </span><span class="ss">auth_token_url</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;https://platform.example.edu/access_tokens&quot;</span><span class="w">
-</span><span class="ss">auth_login_url</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;https://platform.example.edu/authorize_redirect&quot;</span></code></pre><p>This registration process happens out-of-band before the LTI launch itself can be performed. Typically this information is exchanged between two parties through some external form of communication (e.g. email) or automatic registration and approval process.</p><h3 id="lti-1-3-process" class="section-heading">
-  <a href="#lti-1-3-process" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">LTI 1.3 Process</span>
-</h3>
-<p><img src="https://www.imsglobal.org/sites/default/files/specs/images/security/1p0/fig5p2-oidcflowv1.jpg" alt="LTI 1.3 Launch Flow"/></p><h3 id="step-1-third-party-initiated-login" class="section-heading">
-  <a href="#step-1-third-party-initiated-login" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">Step 1: Third-party Initiated Login</span>
-</h3>
-<p><a href="https://www.imsglobal.org/spec/security/v1p0/#step-1-third-party-initiated-login">https://www.imsglobal.org/spec/security/v1p0/#step-1-third-party-initiated-login</a></p><p>An LTI launch begins with a form submission (GET or POST) from a platform webpage. The <strong>platform</strong> crafts the form using the pre-registered tool configuration and platform details. The form can either target the current window by default or an iframe embedded in the page. For example, this form will target the iframe below it:</p><p><em>controller.ex</em></p><pre><code class="makeup elixir" translate="no"><span class="n">launch_params</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="9872257095-1">%{</span><span class="w">
+</span><span class="ss">auth_login_url</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;https://platform.example.edu/authorize_redirect&quot;</span></code></pre><p>This registration process happens out-of-band before the LTI launch itself can be performed. Typically this information is exchanged between two parties through some external form of communication (e.g. email) or automatic registration and approval process.</p><h3 id="lti-1-3-process" class="section-heading"><a href="#lti-1-3-process" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">LTI 1.3 Process</span></h3><p><img src="https://www.imsglobal.org/sites/default/files/specs/images/security/1p0/fig5p2-oidcflowv1.jpg" alt="LTI 1.3 Launch Flow"/></p><h3 id="step-1-third-party-initiated-login" class="section-heading"><a href="#step-1-third-party-initiated-login" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Step 1: Third-party Initiated Login</span></h3><p><a href="https://www.imsglobal.org/spec/security/v1p0/#step-1-third-party-initiated-login">https://www.imsglobal.org/spec/security/v1p0/#step-1-third-party-initiated-login</a></p><p>An LTI launch begins with a form submission (GET or POST) from a platform webpage. The <strong>platform</strong> crafts the form using the pre-registered tool configuration and platform details. The form can either target the current window by default or an iframe embedded in the page. For example, this form will target the iframe below it:</p><p><em>controller.ex</em></p><pre><code class="makeup elixir" translate="no"><span class="n">launch_params</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="6135829751-1">%{</span><span class="w">
   </span><span class="c1"># client_id must match the value registered with the tool</span><span class="w">
   </span><span class="ss">client_id</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;1000000000001&quot;</span><span class="p">,</span><span class="w">
 
@@ -156,9 +112,9 @@ GUIDES
 
   </span><span class="c1"># unique token used later by the platform to associate the request with this user session</span><span class="w">
   </span><span class="ss">login_hint</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;ac5cdc6e-1dd2-97f2-e2c8-0d4236e9b092&quot;</span><span class="p">,</span><span class="w">
-</span><span class="p" data-group-id="9872257095-1">}</span><span class="w">
+</span><span class="p" data-group-id="6135829751-1">}</span><span class="w">
 
-</span><span class="n">render</span><span class="p" data-group-id="9872257095-2">(</span><span class="n">conn</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;lti_launch.html&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">launch_params</span><span class="p">:</span><span class="w"> </span><span class="n">launch_params</span><span class="p" data-group-id="9872257095-2">)</span></code></pre><p><em>lti_launch.html.eex</em></p><pre><code class="html">&lt;form
+</span><span class="n">render</span><span class="p" data-group-id="6135829751-2">(</span><span class="n">conn</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;lti_launch.html&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">launch_params</span><span class="p">:</span><span class="w"> </span><span class="n">launch_params</span><span class="p" data-group-id="6135829751-2">)</span></code></pre><p><em>lti_launch.html.eex</em></p><pre><code class="html">&lt;form
   action=&quot;&lt;%= @launch_params.oidc_login_url %&gt;&quot;
   method=&quot;post&quot;
   target=&quot;tool_content&quot;
@@ -186,13 +142,7 @@ GUIDES
   &lt;button type=&quot;submit&quot;&gt;Launch LTI 1.3 Tool&lt;/button&gt;
 &lt;/form&gt;
 
-&lt;iframe src=&quot;about:blank&quot; name=&quot;tool_content&quot; title=&quot;Tool Content&quot;&gt;&lt;/iframe&gt;</code></pre><p>When a user clicks the &quot;Launch LTI 1.3 Tool&quot; button the form request will be sent to the tool's OIDC login endpoint and the LTI 1.3 handshake will begin.</p><h3 id="step-2-authentication-request" class="section-heading">
-  <a href="#step-2-authentication-request" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">Step 2: Authentication Request</span>
-</h3>
-<p><a href="https://www.imsglobal.org/spec/security/v1p0/#step-2-authentication-request">https://www.imsglobal.org/spec/security/v1p0/#step-2-authentication-request</a></p><p>When the request is recieved, the <strong>tool</strong> will validate the issuer and client_id match the registered platform, validate the login_hint param is present and issue a redirect to the platform's OIDC (OpenID Connect) endpoint to authenticate the user.</p><p>If validation is successful, the tool will craft the OIDC request with the following parameters:</p><pre><code class="makeup elixir" translate="no"><span class="p" data-group-id="3211870415-1">%{</span><span class="w">
+&lt;iframe src=&quot;about:blank&quot; name=&quot;tool_content&quot; title=&quot;Tool Content&quot;&gt;&lt;/iframe&gt;</code></pre><p>When a user clicks the &quot;Launch LTI 1.3 Tool&quot; button the form request will be sent to the tool's OIDC login endpoint and the LTI 1.3 handshake will begin.</p><h3 id="step-2-authentication-request" class="section-heading"><a href="#step-2-authentication-request" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Step 2: Authentication Request</span></h3><p><a href="https://www.imsglobal.org/spec/security/v1p0/#step-2-authentication-request">https://www.imsglobal.org/spec/security/v1p0/#step-2-authentication-request</a></p><p>When the request is recieved, the <strong>tool</strong> will validate the issuer and client_id match the registered platform, validate the login_hint param is present and issue a redirect to the platform's OIDC (OpenID Connect) endpoint to authenticate the user.</p><p>If validation is successful, the tool will craft the OIDC request with the following parameters:</p><pre><code class="makeup elixir" translate="no"><span class="p" data-group-id="8816736211-1">%{</span><span class="w">
   </span><span class="c1"># OIDC and LTI 1.3 required params</span><span class="w">
   </span><span class="s">&quot;scope&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;openid&quot;</span><span class="p">,</span><span class="w">
   </span><span class="s">&quot;response_type&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;id_token&quot;</span><span class="p">,</span><span class="w">
@@ -213,18 +163,12 @@ GUIDES
 
   </span><span class="c1"># opaque string used by the platform to validate the user session associated with the request</span><span class="w">
   </span><span class="s">&quot;login_hint&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;some-login-hint&quot;</span><span class="p">,</span><span class="w">
-</span><span class="p" data-group-id="3211870415-1">}</span></code></pre><p>For example, the final request using GET to the platform will look something like:
-<code class="inline">GET /authorize_redirect?scope=openid&amp;response_type=id_token&amp;... etc.</code></p><h3 id="step-3-authentication-response" class="section-heading">
-  <a href="#step-3-authentication-response" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">Step 3: Authentication Response</span>
-</h3>
-<p><a href="https://www.imsglobal.org/spec/security/v1p0/#step-3-authentication-response">https://www.imsglobal.org/spec/security/v1p0/#step-3-authentication-response</a></p><p>The <strong>platform</strong> will recieve the authorize_redirect request from the tool and it will validate the required OIDC params are present, validate the login_hint is associated with the current user session, validate the client_id is associated with a registered tool, validate the redirect_url matches one of the registered urls, and finally validate the nonce has not been used before. If valid, the platform will issue one final POST request to the tool's specified redirect_uri with the recieved state token and an id_token JWT containing the LTI 1.3 claims such as user details, context info, and any other LTI specific or custom claims that may be supported by the platform.</p><p>Here is an example of the LTI params within the id_token JWT. <a href="http://www.imsglobal.org/spec/lti/v1p3/#examplelinkrequest">Full example resource link request</a>.</p><pre><code class="makeup elixir" translate="no"><span class="p" data-group-id="4663813055-1">%{</span><span class="w">
+</span><span class="p" data-group-id="8816736211-1">}</span></code></pre><p>For example, the final request using GET to the platform will look something like:
+<code class="inline">GET /authorize_redirect?scope=openid&amp;response_type=id_token&amp;... etc.</code></p><h3 id="step-3-authentication-response" class="section-heading"><a href="#step-3-authentication-response" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Step 3: Authentication Response</span></h3><p><a href="https://www.imsglobal.org/spec/security/v1p0/#step-3-authentication-response">https://www.imsglobal.org/spec/security/v1p0/#step-3-authentication-response</a></p><p>The <strong>platform</strong> will recieve the authorize_redirect request from the tool and it will validate the required OIDC params are present, validate the login_hint is associated with the current user session, validate the client_id is associated with a registered tool, validate the redirect_url matches one of the registered urls, and finally validate the nonce has not been used before. If valid, the platform will issue one final POST request to the tool's specified redirect_uri with the recieved state token and an id_token JWT containing the LTI 1.3 claims such as user details, context info, and any other LTI specific or custom claims that may be supported by the platform.</p><p>Here is an example of the LTI params within the id_token JWT. <a href="http://www.imsglobal.org/spec/lti/v1p3/#examplelinkrequest">Full example resource link request</a>.</p><pre><code class="makeup elixir" translate="no"><span class="p" data-group-id="2355929463-1">%{</span><span class="w">
   </span><span class="c1"># security claims</span><span class="w">
   </span><span class="s">&quot;iss&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;https://platform.example.edu&quot;</span><span class="p">,</span><span class="w">
   </span><span class="s">&quot;sub&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;a6d5c443-1f51-4783-ba1a-7686ffe3b54a&quot;</span><span class="p">,</span><span class="w">
-  </span><span class="s">&quot;aud&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p" data-group-id="4663813055-2">[</span><span class="s">&quot;962fa4d8-bcbf-49a0-94b2-2de05ad274af&quot;</span><span class="p" data-group-id="4663813055-2">]</span><span class="p">,</span><span class="w">
+  </span><span class="s">&quot;aud&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p" data-group-id="2355929463-2">[</span><span class="s">&quot;962fa4d8-bcbf-49a0-94b2-2de05ad274af&quot;</span><span class="p" data-group-id="2355929463-2">]</span><span class="p">,</span><span class="w">
   </span><span class="s">&quot;exp&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="mi">1510185728</span><span class="p">,</span><span class="w">
   </span><span class="s">&quot;iat&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="mi">1510185228</span><span class="p">,</span><span class="w">
   </span><span class="s">&quot;azp&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;962fa4d8-bcbf-49a0-94b2-2de05ad274af&quot;</span><span class="p">,</span><span class="w">
@@ -244,28 +188,28 @@ GUIDES
     </span><span class="s">&quot;07940580-b309-415e-a37c-914d387c1150&quot;</span><span class="p">,</span><span class="w">
   </span><span class="s">&quot;https://purl.imsglobal.org/spec/lti/claim/message_type&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;LtiResourceLinkRequest&quot;</span><span class="p">,</span><span class="w">
   </span><span class="s">&quot;https://purl.imsglobal.org/spec/lti/claim/version&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;1.3.0&quot;</span><span class="p">,</span><span class="w">
-  </span><span class="s">&quot;https://purl.imsglobal.org/spec/lti/claim/roles&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p" data-group-id="4663813055-3">[</span><span class="w">
+  </span><span class="s">&quot;https://purl.imsglobal.org/spec/lti/claim/roles&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p" data-group-id="2355929463-3">[</span><span class="w">
     </span><span class="s">&quot;http://purl.imsglobal.org/vocab/lis/v2/institution/person#Student&quot;</span><span class="p">,</span><span class="w">
     </span><span class="s">&quot;http://purl.imsglobal.org/vocab/lis/v2/membership#Learner&quot;</span><span class="p">,</span><span class="w">
     </span><span class="s">&quot;http://purl.imsglobal.org/vocab/lis/v2/membership#Mentor&quot;</span><span class="w">
-  </span><span class="p" data-group-id="4663813055-3">]</span><span class="p">,</span><span class="w">
-  </span><span class="s">&quot;https://purl.imsglobal.org/spec/lti/claim/role_scope_mentor&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p" data-group-id="4663813055-4">[</span><span class="w">
+  </span><span class="p" data-group-id="2355929463-3">]</span><span class="p">,</span><span class="w">
+  </span><span class="s">&quot;https://purl.imsglobal.org/spec/lti/claim/role_scope_mentor&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p" data-group-id="2355929463-4">[</span><span class="w">
     </span><span class="s">&quot;fad5fb29-a91c-770-3c110-1e687120efd9&quot;</span><span class="p">,</span><span class="w">
     </span><span class="s">&quot;5d7373de-c76c-e2b-01214-69e487e2bd33&quot;</span><span class="p">,</span><span class="w">
     </span><span class="s">&quot;d779cfd4-bc7b-019-9bf1a-04bf1915d4d0&quot;</span><span class="w">
-  </span><span class="p" data-group-id="4663813055-4">]</span><span class="p">,</span><span class="w">
-  </span><span class="s">&quot;https://purl.imsglobal.org/spec/lti/claim/context&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p" data-group-id="4663813055-5">{</span><span class="w">
+  </span><span class="p" data-group-id="2355929463-4">]</span><span class="p">,</span><span class="w">
+  </span><span class="s">&quot;https://purl.imsglobal.org/spec/lti/claim/context&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p" data-group-id="2355929463-5">{</span><span class="w">
       </span><span class="s">&quot;id&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;c1d887f0-a1a3-4bca-ae25-c375edcc131a&quot;</span><span class="p">,</span><span class="w">
       </span><span class="s">&quot;label&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;ECON 1010&quot;</span><span class="p">,</span><span class="w">
       </span><span class="s">&quot;title&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;Economics as a Social Science&quot;</span><span class="p">,</span><span class="w">
-      </span><span class="s">&quot;type&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p" data-group-id="4663813055-6">[</span><span class="s">&quot;http://purl.imsglobal.org/vocab/lis/v2/course#CourseOffering&quot;</span><span class="p" data-group-id="4663813055-6">]</span><span class="w">
-  </span><span class="p" data-group-id="4663813055-5">}</span><span class="p">,</span><span class="w">
-  </span><span class="s">&quot;https://purl.imsglobal.org/spec/lti/claim/resource_link&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p" data-group-id="4663813055-7">{</span><span class="w">
+      </span><span class="s">&quot;type&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p" data-group-id="2355929463-6">[</span><span class="s">&quot;http://purl.imsglobal.org/vocab/lis/v2/course#CourseOffering&quot;</span><span class="p" data-group-id="2355929463-6">]</span><span class="w">
+  </span><span class="p" data-group-id="2355929463-5">}</span><span class="p">,</span><span class="w">
+  </span><span class="s">&quot;https://purl.imsglobal.org/spec/lti/claim/resource_link&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p" data-group-id="2355929463-7">{</span><span class="w">
       </span><span class="s">&quot;id&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;200d101f-2c14-434a-a0f3-57c2a42369fd&quot;</span><span class="p">,</span><span class="w">
       </span><span class="s">&quot;description&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;Assignment to introduce who you are&quot;</span><span class="p">,</span><span class="w">
       </span><span class="s">&quot;title&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;Introduction Assignment&quot;</span><span class="w">
-  </span><span class="p" data-group-id="4663813055-7">}</span><span class="p">,</span><span class="w">
-  </span><span class="s">&quot;https://purl.imsglobal.org/spec/lti/claim/tool_platform&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p" data-group-id="4663813055-8">{</span><span class="w">
+  </span><span class="p" data-group-id="2355929463-7">}</span><span class="p">,</span><span class="w">
+  </span><span class="s">&quot;https://purl.imsglobal.org/spec/lti/claim/tool_platform&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p" data-group-id="2355929463-8">{</span><span class="w">
       </span><span class="s">&quot;guid&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;ex/48bbb541-ce55-456e-8b7d-ebc59a38d435&quot;</span><span class="p">,</span><span class="w">
       </span><span class="s">&quot;contact_email&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;support@platform.example.edu&quot;</span><span class="p">,</span><span class="w">
       </span><span class="s">&quot;description&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;An Example Tool Platform&quot;</span><span class="p">,</span><span class="w">
@@ -273,32 +217,32 @@ GUIDES
       </span><span class="s">&quot;url&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;https://platform.example.edu&quot;</span><span class="p">,</span><span class="w">
       </span><span class="s">&quot;product_family_code&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;ExamplePlatformVendor-Product&quot;</span><span class="p">,</span><span class="w">
       </span><span class="s">&quot;version&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;1.0&quot;</span><span class="w">
-  </span><span class="p" data-group-id="4663813055-8">}</span><span class="p">,</span><span class="w">
+  </span><span class="p" data-group-id="2355929463-8">}</span><span class="p">,</span><span class="w">
   </span><span class="ss">&quot;https://purl.imsglobal.org/spec/lti/claim/target_link_uri&quot;</span><span class="p">:</span><span class="w">
       </span><span class="s">&quot;https://tool.example.com/lti/48320/ruix8782rs&quot;</span><span class="p">,</span><span class="w">
-  </span><span class="s">&quot;https://purl.imsglobal.org/spec/lti/claim/launch_presentation&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p" data-group-id="4663813055-9">{</span><span class="w">
+  </span><span class="s">&quot;https://purl.imsglobal.org/spec/lti/claim/launch_presentation&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p" data-group-id="2355929463-9">{</span><span class="w">
       </span><span class="s">&quot;document_target&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;iframe&quot;</span><span class="p">,</span><span class="w">
       </span><span class="s">&quot;height&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="mi">320</span><span class="p">,</span><span class="w">
       </span><span class="s">&quot;width&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="mi">240</span><span class="p">,</span><span class="w">
       </span><span class="s">&quot;return_url&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;https://platform.example.edu/terms/201601/courses/7/sections/1/resources/2&quot;</span><span class="w">
-  </span><span class="p" data-group-id="4663813055-9">}</span><span class="p">,</span><span class="w">
-  </span><span class="s">&quot;https://purl.imsglobal.org/spec/lti/claim/lis&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p" data-group-id="4663813055-10">{</span><span class="w">
+  </span><span class="p" data-group-id="2355929463-9">}</span><span class="p">,</span><span class="w">
+  </span><span class="s">&quot;https://purl.imsglobal.org/spec/lti/claim/lis&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p" data-group-id="2355929463-10">{</span><span class="w">
       </span><span class="s">&quot;person_sourcedid&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;example.edu:71ee7e42-f6d2-414a-80db-b69ac2defd4&quot;</span><span class="p">,</span><span class="w">
       </span><span class="s">&quot;course_offering_sourcedid&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;example.edu:SI182-F16&quot;</span><span class="p">,</span><span class="w">
       </span><span class="s">&quot;course_section_sourcedid&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;example.edu:SI182-001-F16&quot;</span><span class="w">
-  </span><span class="p" data-group-id="4663813055-10">}</span><span class="p">,</span><span class="w">
+  </span><span class="p" data-group-id="2355929463-10">}</span><span class="p">,</span><span class="w">
 
   </span><span class="c1"># additional custom claims</span><span class="w">
-  </span><span class="s">&quot;https://purl.imsglobal.org/spec/lti/claim/custom&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p" data-group-id="4663813055-11">{</span><span class="w">
+  </span><span class="s">&quot;https://purl.imsglobal.org/spec/lti/claim/custom&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p" data-group-id="2355929463-11">{</span><span class="w">
     </span><span class="s">&quot;xstart&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;2017-04-21T01:00:00Z&quot;</span><span class="p">,</span><span class="w">
     </span><span class="s">&quot;request_url&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;https://tool.com/link/123&quot;</span><span class="w">
-  </span><span class="p" data-group-id="4663813055-11">}</span><span class="p">,</span><span class="w">
+  </span><span class="p" data-group-id="2355929463-11">}</span><span class="p">,</span><span class="w">
 
   </span><span class="c1"># additional extensions claims</span><span class="w">
-  </span><span class="s">&quot;http://www.ExamplePlatformVendor.com/session&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p" data-group-id="4663813055-12">{</span><span class="w">
+  </span><span class="s">&quot;http://www.ExamplePlatformVendor.com/session&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p" data-group-id="2355929463-12">{</span><span class="w">
       </span><span class="s">&quot;id&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;89023sj890dju080&quot;</span><span class="w">
-  </span><span class="p" data-group-id="4663813055-12">}</span><span class="w">
-</span><span class="p" data-group-id="4663813055-1">}</span></code></pre><p>These params are encoded and signed as a JWT using RSA256 and the platform's private JWK, which can later be verfied by the tool using the platforms publicly accessible JWK.</p><p>This redirect POST can be accomplished by rendering an html form and (if enabled) using javascript to submit on the user's behalf.</p><pre><code class="html">&lt;!DOCTYPE html&gt;
+  </span><span class="p" data-group-id="2355929463-12">}</span><span class="w">
+</span><span class="p" data-group-id="2355929463-1">}</span></code></pre><p>These params are encoded and signed as a JWT using RSA256 and the platform's private JWK, which can later be verfied by the tool using the platforms publicly accessible JWK.</p><p>This redirect POST can be accomplished by rendering an html form and (if enabled) using javascript to submit on the user's behalf.</p><pre><code class="html">&lt;!DOCTYPE html&gt;
 &lt;html lang=&quot;en&quot;&gt;
   &lt;head&gt;
     &lt;title&gt;You are being redirected...&lt;/title&gt;
@@ -321,19 +265,8 @@ GUIDES
       };
     &lt;/script&gt;
   &lt;/body&gt;
-&lt;/html&gt;</code></pre><h3 id="step-4-resource-is-displayed" class="section-heading">
-  <a href="#step-4-resource-is-displayed" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">Step 4: Resource is displayed</span>
-</h3>
-<p><a href="https://www.imsglobal.org/spec/security/v1p0/#step-4-resource-is-displayed">https://www.imsglobal.org/spec/security/v1p0/#step-4-resource-is-displayed</a></p><p>Finally, if all validations have passed and the launch was successful, the LTI 1.3 resource will be displayed in the user's browser.</p><h3 id="references-and-useful-links" class="section-heading">
-  <a href="#references-and-useful-links" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">References and Useful Links</span>
-</h3>
-<ul><li>Learning Tools Interoperability Core Specification - <a href="http://www.imsglobal.org/spec/lti/v1p3/">http://www.imsglobal.org/spec/lti/v1p3/</a></li><li>IMS Security Framework - <a href="https://www.imsglobal.org/spec/security/v1p0">https://www.imsglobal.org/spec/security/v1p0</a></li><li>Canvas Platform Implementaion (authentication_controller.rb) - <a href="https://github.com/instructure/canvas-lms/blob/master/app/controllers/lti/ims/authentication_controller.rb">https://github.com/instructure/canvas-lms/blob/master/app/controllers/lti/ims/authentication_controller.rb</a></li><li>IMS PHP Tool Library <a href="https://github.com/IMSGlobal/lti-1-3-php-library">https://github.com/IMSGlobal/lti-1-3-php-library</a></li></ul>
+&lt;/html&gt;</code></pre><h3 id="step-4-resource-is-displayed" class="section-heading"><a href="#step-4-resource-is-displayed" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Step 4: Resource is displayed</span></h3><p><a href="https://www.imsglobal.org/spec/security/v1p0/#step-4-resource-is-displayed">https://www.imsglobal.org/spec/security/v1p0/#step-4-resource-is-displayed</a></p><p>Finally, if all validations have passed and the launch was successful, the LTI 1.3 resource will be displayed in the user's browser.</p><h3 id="references-and-useful-links" class="section-heading"><a href="#references-and-useful-links" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">References and Useful Links</span></h3><ul><li>Learning Tools Interoperability Core Specification - <a href="http://www.imsglobal.org/spec/lti/v1p3/">http://www.imsglobal.org/spec/lti/v1p3/</a></li><li>IMS Security Framework - <a href="https://www.imsglobal.org/spec/security/v1p0">https://www.imsglobal.org/spec/security/v1p0</a></li><li>Canvas Platform Implementaion (authentication_controller.rb) - <a href="https://github.com/instructure/canvas-lms/blob/master/app/controllers/lti/ims/authentication_controller.rb">https://github.com/instructure/canvas-lms/blob/master/app/controllers/lti/ims/authentication_controller.rb</a></li><li>IMS PHP Tool Library <a href="https://github.com/IMSGlobal/lti-1-3-php-library">https://github.com/IMSGlobal/lti-1-3-php-library</a></li></ul>
+
 </div>
 
 <div class="bottom-actions" id="bottom-actions">
@@ -379,7 +312,7 @@ LTI 1.3 Configuration
 
       <p class="built-using">
         Built using
-        <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.34.2) for the
+        <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.38.2) for the
 
           <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
 

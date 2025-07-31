@@ -4,35 +4,22 @@
     <meta charset="utf-8">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="ExDoc v0.34.2">
+    <meta name="generator" content="ExDoc v0.38.2">
     <meta name="project" content="OLI Torus v0.31.1">
 
 
     <title>self-hosted — OLI Torus v0.31.1</title>
-    <link rel="stylesheet" href="dist/html-elixir-F2VRIOKR.css" />
 
+    <link rel="stylesheet" href="dist/html-elixir-KV3YOVJ3.css" />
 
-    <script src="dist/handlebars.runtime-NWIB6V2M.js"></script>
-    <script src="dist/handlebars.templates-K7URE6B4.js"></script>
-    <script src="dist/sidebar_items-36299CD5.js"></script>
-    <script src="docs_config.js"></script>
-    <script async src="dist/html-YIPIRHGU.js"></script>
+    <script defer src="dist/sidebar_items-829A150D.js"></script>
+    <script defer src="docs_config.js"></script>
+    <script defer src="dist/html-DPJLHKSM.js"></script>
 
   </head>
-  <body data-type="extras" class="page-extra">
-    <script>
-
-      try {
-        var settings = JSON.parse(localStorage.getItem('ex_doc:settings') || '{}');
-
-        if (settings.theme === 'dark' ||
-           ((settings.theme === 'system' || settings.theme == null) &&
-             window.matchMedia('(prefers-color-scheme: dark)').matches)
-           ) {
-          document.body.classList.add('dark')
-        }
-      } catch (error) { }
-    </script>
+  <body>
+    <script>(()=>{var t="ex_doc:settings",e="dark";var o="dark",s="light";var E="sidebar_state",n="closed";var r="sidebar_width";var a="sidebar-open";var i=new URLSearchParams(window.location.search),S=i.get("theme")||JSON.parse(localStorage.getItem(t)||"{}").theme;(S===o||S!==s&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&document.body.classList.add(e);var d=sessionStorage.getItem(E),A=d!==n&&!window.matchMedia(`screen and (max-width: ${768}px)`).matches;document.body.classList.toggle(a,A);var c=sessionStorage.getItem(r);c&&document.body.style.setProperty("--sidebarWidth",`${c}px`);var p=/(Macintosh|iPhone|iPad|iPod)/.test(window.navigator.userAgent);document.documentElement.classList.toggle("apple-os",p);})();
+</script>
 
 <div class="body-wrapper">
 
@@ -58,27 +45,13 @@ OLI Torus
         </div>
       </div>
     </div>
-    <ul id="sidebar-listNav" class="sidebar-listNav" role="tablist">
-      <li>
-        <button id="extras-list-tab-button" role="tab" data-type="extras" aria-controls="extras-tab-panel" aria-selected="true" tabindex="0">
-GUIDES
-        </button>
-      </li>
-
-
-    </ul>
+    <ul id="sidebar-list-nav" class="sidebar-list-nav" role="tablist" data-extras="GUIDES"></ul>
   </div>
-
-  <div id="extras-tab-panel" class="sidebar-tabpanel" role="tabpanel" aria-labelledby="extras-list-tab-button">
-    <ul id="extras-full-list" class="full-list"></ul>
-  </div>
-
-
 </nav>
 
-<main class="content">
-  <output role="status" id="toast"></output>
+<output role="status" id="toast"></output>
 
+<main class="content page-extra" id="main" data-type="extras">
   <div id="content" class="content-inner">
     <div class="top-search">
       <div class="search-settings">
@@ -87,8 +60,8 @@ GUIDES
             <span class="sr-only">Search documentation of OLI Torus</span>
             <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
           </label>
-          <button type="submit" class="search-button" aria-label="Submit Search">
-            <i class="ri-search-2-line ri-lg" aria-hidden="true" title="Submit search"></i>
+          <button type="submit" class="search-button" aria-label="Submit Search" tabindex="-1">
+            <i class="ri-search-2-line ri-lg" aria-hidden="true"></i>
           </button>
           <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
             <i class="ri-close-line ri-lg" title="Cancel search"></i>
@@ -104,72 +77,43 @@ GUIDES
     </div>
 
 <div id="top-content">
-  <h1>
+  <div class="heading-with-actions top-heading">
+    <h1>self-hosted</h1>
+
 
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/main/guides/starting/self-hosted.md#L1" title="View Source" class="icon-action" rel="help">
         <i class="ri-code-s-slash-line" aria-hidden="true"></i>
         <span class="sr-only">View Source</span>
       </a>
 
+  </div>
 
-    <span>self-hosted</span>
-  </h1>
 
-<h2 id="with-self-hosting" class="section-heading">
-  <a href="#with-self-hosting" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">With self-hosting</span>
-</h2>
-<p>There are many different ways to structure your own production instance of Torus. This guide will outline a simple, single-app server method for getting a production instance of torus up-and-running on a linux environment of your choice. These instructions are geared specifically for and tested on Amazon Linux 2 machine, but should be easily adaptable to other linux distros such as Debian or Ubuntu.</p><p>If this all seems a bit too technical and you just want to use or try out Torus without maintaining all the infrastructure, check out the Open Learning Initiative's production instance at <a href="https://proton.oli.cmu.edu">proton.oli.cmu.edu</a> where you can easily get started by creating an authoring account for free.</p><h2 id="prerequisites" class="section-heading">
-  <a href="#prerequisites" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">Prerequisites</span>
-</h2>
-<p>Torus requires a few services that are necessary for it to run, the setup of which however is mostly outside the scope of this guide. The following list outlines these prerequisite services and how they should be configured for Torus:</p><ol><li><p>VPS (e.g. AWS, Azure, DigitalOcean, Self-hosted) linux server with SSH access</p><ul><li>Torus requires NodeJS 15+ to be installed on the deployment machine. If <code class="inline">node</code> is not available in the torus path, you can use the <code class="inline">NODE_PATH</code> environment variable to configure the path.</li><li>Releases are built using openssl11-devel for erlang which means that OpenSSL 1.1.1 is required to be installed on the deployment target.<pre><code class="makeup elixir" translate="no"><span class="n">sudo</span><span class="w"> </span><span class="n">yum</span><span class="w"> </span><span class="n">install</span><span class="w"> </span><span class="n">openssl11</span></code></pre></li></ul></li><li><p>S3-Compliant bucket (e.g. AWS S3, Backblaze B2, Self-hosted MinIO), public read-accessible</p><ul><li>Torus will need the <strong>Access Key ID</strong> and the <strong>Secret Access Key</strong> for writable access</li><li>Access: <strong>Public</strong>, Block <em>all</em> public access: <strong>Off</strong></li><li>Bucket Policy: (replace <code class="inline">&lt;bucket_name&gt;</code> with the name of your bucket)<pre><code class="makeup elixir" translate="no"><span class="p" data-group-id="5491111584-1">{</span><span class="w">
+<h2 id="with-self-hosting" class="section-heading"><a href="#with-self-hosting" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">With self-hosting</span></h2><p>There are many different ways to structure your own production instance of Torus. This guide will outline a simple, single-app server method for getting a production instance of torus up-and-running on a linux environment of your choice. These instructions are geared specifically for and tested on Amazon Linux 2 machine, but should be easily adaptable to other linux distros such as Debian or Ubuntu.</p><p>If this all seems a bit too technical and you just want to use or try out Torus without maintaining all the infrastructure, check out the Open Learning Initiative's production instance at <a href="https://proton.oli.cmu.edu">proton.oli.cmu.edu</a> where you can easily get started by creating an authoring account for free.</p><h2 id="prerequisites" class="section-heading"><a href="#prerequisites" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Prerequisites</span></h2><p>Torus requires a few services that are necessary for it to run, the setup of which however is mostly outside the scope of this guide. The following list outlines these prerequisite services and how they should be configured for Torus:</p><ol><li><p>VPS (e.g. AWS, Azure, DigitalOcean, Self-hosted) linux server with SSH access</p><ul><li>Torus requires NodeJS 15+ to be installed on the deployment machine. If <code class="inline">node</code> is not available in the torus path, you can use the <code class="inline">NODE_PATH</code> environment variable to configure the path.</li><li>Releases are built using openssl11-devel for erlang which means that OpenSSL 1.1.1 is required to be installed on the deployment target.<pre><code class="makeup elixir" translate="no"><span class="n">sudo</span><span class="w"> </span><span class="n">yum</span><span class="w"> </span><span class="n">install</span><span class="w"> </span><span class="n">openssl11</span></code></pre></li></ul></li><li><p>S3-Compliant bucket (e.g. AWS S3, Backblaze B2, Self-hosted MinIO), public read-accessible</p><ul><li>Torus will need the <strong>Access Key ID</strong> and the <strong>Secret Access Key</strong> for writable access</li><li>Access: <strong>Public</strong>, Block <em>all</em> public access: <strong>Off</strong></li><li>Bucket Policy: (replace <code class="inline">&lt;bucket_name&gt;</code> with the name of your bucket)<pre><code class="makeup elixir" translate="no"><span class="p" data-group-id="7575037799-1">{</span><span class="w">
     </span><span class="ss">&quot;Version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;2012-10-17&quot;</span><span class="p">,</span><span class="w">
-    </span><span class="ss">&quot;Statement&quot;</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="5491111584-2">[</span><span class="w">
-        </span><span class="p" data-group-id="5491111584-3">{</span><span class="w">
+    </span><span class="ss">&quot;Statement&quot;</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="7575037799-2">[</span><span class="w">
+        </span><span class="p" data-group-id="7575037799-3">{</span><span class="w">
             </span><span class="ss">&quot;Sid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;PublicRead&quot;</span><span class="p">,</span><span class="w">
             </span><span class="ss">&quot;Effect&quot;</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Allow&quot;</span><span class="p">,</span><span class="w">
             </span><span class="ss">&quot;Principal&quot;</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;*&quot;</span><span class="p">,</span><span class="w">
             </span><span class="ss">&quot;Action&quot;</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;s3:GetObject&quot;</span><span class="p">,</span><span class="w">
             </span><span class="ss">&quot;Resource&quot;</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;arn:aws:s3:::&lt;bucket_name&gt;/*&quot;</span><span class="w">
-        </span><span class="p" data-group-id="5491111584-3">}</span><span class="w">
-    </span><span class="p" data-group-id="5491111584-2">]</span><span class="w">
-</span><span class="p" data-group-id="5491111584-1">}</span></code></pre></li><li>Cross-origin resource sharing (CORS):<pre><code class="makeup elixir" translate="no"><span class="p" data-group-id="0920812684-1">[</span><span class="w">
-    </span><span class="p" data-group-id="0920812684-2">{</span><span class="w">
-        </span><span class="ss">&quot;AllowedHeaders&quot;</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="0920812684-3">[</span><span class="w">
+        </span><span class="p" data-group-id="7575037799-3">}</span><span class="w">
+    </span><span class="p" data-group-id="7575037799-2">]</span><span class="w">
+</span><span class="p" data-group-id="7575037799-1">}</span></code></pre></li><li>Cross-origin resource sharing (CORS):<pre><code class="makeup elixir" translate="no"><span class="p" data-group-id="0783615016-1">[</span><span class="w">
+    </span><span class="p" data-group-id="0783615016-2">{</span><span class="w">
+        </span><span class="ss">&quot;AllowedHeaders&quot;</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="0783615016-3">[</span><span class="w">
             </span><span class="s">&quot;*&quot;</span><span class="w">
-        </span><span class="p" data-group-id="0920812684-3">]</span><span class="p">,</span><span class="w">
-        </span><span class="ss">&quot;AllowedMethods&quot;</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="0920812684-4">[</span><span class="w">
+        </span><span class="p" data-group-id="0783615016-3">]</span><span class="p">,</span><span class="w">
+        </span><span class="ss">&quot;AllowedMethods&quot;</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="0783615016-4">[</span><span class="w">
             </span><span class="s">&quot;GET&quot;</span><span class="w">
-        </span><span class="p" data-group-id="0920812684-4">]</span><span class="p">,</span><span class="w">
-        </span><span class="ss">&quot;AllowedOrigins&quot;</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="0920812684-5">[</span><span class="w">
+        </span><span class="p" data-group-id="0783615016-4">]</span><span class="p">,</span><span class="w">
+        </span><span class="ss">&quot;AllowedOrigins&quot;</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="0783615016-5">[</span><span class="w">
             </span><span class="s">&quot;*&quot;</span><span class="w">
-        </span><span class="p" data-group-id="0920812684-5">]</span><span class="p">,</span><span class="w">
-        </span><span class="ss">&quot;ExposeHeaders&quot;</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="0920812684-6">[</span><span class="p" data-group-id="0920812684-6">]</span><span class="w">
-    </span><span class="p" data-group-id="0920812684-2">}</span><span class="w">
-</span><span class="p" data-group-id="0920812684-1">]</span></code></pre></li></ul></li><li><p>Postgres 9 or later, network accessible from the VPS/server</p><ul><li>Torus will need a database <strong>db_username</strong> and <strong>db_password</strong> to access the database.</li><li>The configured user must have database create permissions for initial setup. Alternatively, the database can be manually created and use the <code class="inline">Oli.ReleaseTasks.migrate_and_seed()</code> command instead of <code class="inline">Oli.ReleaseTasks.setup()</code> in the instructions below.</li></ul></li></ol><h2 id="initial-setup" class="section-heading">
-  <a href="#initial-setup" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">Initial Setup</span>
-</h2>
-<h3 id="torus-user-and-directory" class="section-heading">
-  <a href="#torus-user-and-directory" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">Torus User and Directory</span>
-</h3>
-<p>Once you have provisioned a linux server, it is recommended you set up a specific user and directory from which to deploy Torus. This guide will assume a user <code class="inline">torus</code> and a directory <code class="inline">/torus</code> from where the app will be deployed.</p><h3 id="configuration" class="section-heading">
-  <a href="#configuration" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">Configuration</span>
-</h3>
-<p>Get started by opening an SSH session and configuring Torus env.</p><pre><code class="makeup elixir" translate="no"><span class="n">cd</span><span class="w"> </span><span class="o">/</span><span class="n">torus</span><span class="w">
+        </span><span class="p" data-group-id="0783615016-5">]</span><span class="p">,</span><span class="w">
+        </span><span class="ss">&quot;ExposeHeaders&quot;</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="0783615016-6">[</span><span class="p" data-group-id="0783615016-6">]</span><span class="w">
+    </span><span class="p" data-group-id="0783615016-2">}</span><span class="w">
+</span><span class="p" data-group-id="0783615016-1">]</span></code></pre></li></ul></li><li><p>Postgres 9 or later, network accessible from the VPS/server</p><ul><li>Torus will need a database <strong>db_username</strong> and <strong>db_password</strong> to access the database.</li><li>The configured user must have database create permissions for initial setup. Alternatively, the database can be manually created and use the <code class="inline">Oli.ReleaseTasks.migrate_and_seed()</code> command instead of <code class="inline">Oli.ReleaseTasks.setup()</code> in the instructions below.</li></ul></li></ol><h2 id="initial-setup" class="section-heading"><a href="#initial-setup" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Initial Setup</span></h2><h3 id="torus-user-and-directory" class="section-heading"><a href="#torus-user-and-directory" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Torus User and Directory</span></h3><p>Once you have provisioned a linux server, it is recommended you set up a specific user and directory from which to deploy Torus. This guide will assume a user <code class="inline">torus</code> and a directory <code class="inline">/torus</code> from where the app will be deployed.</p><h3 id="configuration" class="section-heading"><a href="#configuration" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Configuration</span></h3><p>Get started by opening an SSH session and configuring Torus env.</p><pre><code class="makeup elixir" translate="no"><span class="n">cd</span><span class="w"> </span><span class="o">/</span><span class="n">torus</span><span class="w">
 </span><span class="n">vim</span><span class="w"> </span><span class="n">oli</span><span class="o">.</span><span class="n">env</span></code></pre><p>This file will define the necessary configs for torus to run and can also be used to modify various other aspects of the system. Make sure to replace any values in <code class="inline">&lt;brackets&gt;</code> below. At a minimum, this file should contain:</p><pre><code class="makeup elixir" translate="no"><span class="c1">## default administrator</span><span class="w">
 </span><span class="nc">ADMIN_EMAIL</span><span class="o">=</span><span class="o">&lt;</span><span class="n">admin</span><span class="na">@example</span><span class="o">.</span><span class="n">edu</span><span class="o">&gt;</span><span class="w">
 </span><span class="nc">ADMIN_PASSWORD</span><span class="o">=</span><span class="o">&lt;</span><span class="n">admin</span><span class="w"> </span><span class="n">password</span><span class="o">&gt;</span><span class="w">
@@ -210,92 +154,26 @@ GUIDES
 </span><span class="c1">## Live view salt</span><span class="w">
 </span><span class="c1">## A random 64 byte string. You can generate one by calling: openssl rand -base64 64</span><span class="w">
 </span><span class="nc">LIVE_VIEW_SALT</span><span class="o">=</span><span class="o">&lt;</span><span class="n">your_liveview_salt</span><span class="o">&gt;</span><span class="w">
-</span></code></pre><p>For more configuration variables, see <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/oli.example.env">oli.example.env</a>.</p><h3 id="deploying-a-release" class="section-heading">
-  <a href="#deploying-a-release" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">Deploying a release</span>
-</h3>
-<p>Torus releases are built automatically on each new commit to master. These prebuilt releases are created specifically for Amazon Linux 2, but Torus can also be built for any other platform using the <a href="Building-Releases-for-Production-Deployments">Building Releases and Production Deployments</a> guide and continuing at Step 2.</p><h3 id="using-a-prebuilt-release-with-amazon-linux-2-recommended" class="section-heading">
-  <a href="#using-a-prebuilt-release-with-amazon-linux-2-recommended" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">Using a Prebuilt Release with Amazon Linux 2 (Recommended)</span>
-</h3>
-<ol><li>Download a prebuilt release by first identifying the version number and first 7 digits of the release SHA you wish to deploy. These can be found on the <a href="https://github.com/Simon-Initiative/oli-torus/releases">releases page</a> on the left side of each release (recommended), or alternatively for unstable bleeding-edge builds the <a href="https://github.com/Simon-Initiative/oli-torus/commits/master">master commit history</a> can be used in combination with whichever version is set in mix.exs for that particular commit.</li></ol><pre><code class="makeup elixir" translate="no"><span class="nc">RELEASE_VERSION</span><span class="o">=</span><span class="mf">0.18</span><span class="o">.</span><span class="mi">3</span><span class="w">
+</span></code></pre><p>For more configuration variables, see <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/oli.example.env">oli.example.env</a>.</p><h3 id="deploying-a-release" class="section-heading"><a href="#deploying-a-release" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Deploying a release</span></h3><p>Torus releases are built automatically on each new commit to master. These prebuilt releases are created specifically for Amazon Linux 2, but Torus can also be built for any other platform using the <a href="Building-Releases-for-Production-Deployments">Building Releases and Production Deployments</a> guide and continuing at Step 2.</p><h3 id="using-a-prebuilt-release-with-amazon-linux-2-recommended" class="section-heading"><a href="#using-a-prebuilt-release-with-amazon-linux-2-recommended" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Using a Prebuilt Release with Amazon Linux 2 (Recommended)</span></h3><ol><li>Download a prebuilt release by first identifying the version number and first 7 digits of the release SHA you wish to deploy. These can be found on the <a href="https://github.com/Simon-Initiative/oli-torus/releases">releases page</a> on the left side of each release (recommended), or alternatively for unstable bleeding-edge builds the <a href="https://github.com/Simon-Initiative/oli-torus/commits/master">master commit history</a> can be used in combination with whichever version is set in mix.exs for that particular commit.</li></ol><pre><code class="makeup elixir" translate="no"><span class="nc">RELEASE_VERSION</span><span class="o">=</span><span class="mf">0.18</span><span class="o">.</span><span class="mi">3</span><span class="w">
 </span><span class="nc">RELEASE_SHA</span><span class="o">=</span><span class="n">c9d615b</span><span class="w">
 
 </span><span class="c1"># fetch the release package from the official torus builds S3 bucket</span><span class="w">
-</span><span class="n">curl</span><span class="w"> </span><span class="o">--</span><span class="n">fail</span><span class="w"> </span><span class="o">-</span><span class="nc">L</span><span class="w"> </span><span class="n">https</span><span class="ss">://</span><span class="n">oli</span><span class="o">-</span><span class="n">torus</span><span class="o">-</span><span class="n">releases</span><span class="o">.</span><span class="n">s3</span><span class="o">.</span><span class="n">amazonaws</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">oli</span><span class="o">-</span><span class="err">$</span><span class="p" data-group-id="3894639121-1">{</span><span class="nc">RELEASE_VERSION</span><span class="p" data-group-id="3894639121-1">}</span><span class="o">-</span><span class="err">$</span><span class="p" data-group-id="3894639121-2">{</span><span class="nc">RELEASE_SHA</span><span class="p" data-group-id="3894639121-2">}</span><span class="o">.</span><span class="n">zip</span><span class="w"> </span><span class="o">-</span><span class="n">o</span><span class="w">
-</span><span class="n">oli</span><span class="o">-</span><span class="err">$</span><span class="p" data-group-id="3894639121-3">{</span><span class="nc">RELEASE_VERSION</span><span class="p" data-group-id="3894639121-3">}</span><span class="o">-</span><span class="err">$</span><span class="p" data-group-id="3894639121-4">{</span><span class="nc">RELEASE_SHA</span><span class="p" data-group-id="3894639121-4">}</span><span class="o">.</span><span class="n">zip</span><span class="w">
+</span><span class="n">curl</span><span class="w"> </span><span class="o">--</span><span class="n">fail</span><span class="w"> </span><span class="o">-</span><span class="nc">L</span><span class="w"> </span><span class="n">https</span><span class="ss">://</span><span class="n">oli</span><span class="o">-</span><span class="n">torus</span><span class="o">-</span><span class="n">releases</span><span class="o">.</span><span class="n">s3</span><span class="o">.</span><span class="n">amazonaws</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">oli</span><span class="o">-</span><span class="err">$</span><span class="p" data-group-id="2715168608-1">{</span><span class="nc">RELEASE_VERSION</span><span class="p" data-group-id="2715168608-1">}</span><span class="o">-</span><span class="err">$</span><span class="p" data-group-id="2715168608-2">{</span><span class="nc">RELEASE_SHA</span><span class="p" data-group-id="2715168608-2">}</span><span class="o">.</span><span class="n">zip</span><span class="w"> </span><span class="o">-</span><span class="n">o</span><span class="w">
+</span><span class="n">oli</span><span class="o">-</span><span class="err">$</span><span class="p" data-group-id="2715168608-3">{</span><span class="nc">RELEASE_VERSION</span><span class="p" data-group-id="2715168608-3">}</span><span class="o">-</span><span class="err">$</span><span class="p" data-group-id="2715168608-4">{</span><span class="nc">RELEASE_SHA</span><span class="p" data-group-id="2715168608-4">}</span><span class="o">.</span><span class="n">zip</span><span class="w">
 
 </span><span class="c1"># unzip release</span><span class="w">
 </span><span class="n">unzip</span><span class="w"> </span><span class="n">oli</span><span class="o">-</span><span class="o">*</span><span class="o">.</span><span class="n">zip</span><span class="w"> </span><span class="o">-</span><span class="n">d</span><span class="w"> </span><span class="n">oli</span><span class="w">
 </span><span class="n">chmod</span><span class="w"> </span><span class="o">-</span><span class="nc">R</span><span class="w"> </span><span class="o">+</span><span class="n">x</span><span class="w"> </span><span class="o">.</span><span class="o">/</span><span class="n">oli</span><span class="w">
 
 </span><span class="c1"># cleanup release zip</span><span class="w">
-</span><span class="n">rm</span><span class="w"> </span><span class="o">-</span><span class="n">rf</span><span class="w"> </span><span class="o">.</span><span class="o">/</span><span class="n">oli</span><span class="o">-</span><span class="o">*</span><span class="o">.</span><span class="n">zip</span></code></pre><ol start="2"><li>Import configs</li></ol><pre><code class="makeup elixir" translate="no"><span class="n">set</span><span class="w"> </span><span class="o">-</span><span class="n">a</span><span class="p">;</span><span class="w"> </span><span class="n">source</span><span class="w"> </span><span class="o">.</span><span class="o">/</span><span class="n">oli</span><span class="o">.</span><span class="n">env</span></code></pre><ol start="3"><li>Initialize the Database</li></ol><pre><code class="makeup elixir" translate="no"><span class="o">.</span><span class="o">/</span><span class="n">oli</span><span class="o">/</span><span class="n">bin</span><span class="o">/</span><span class="n">oli</span><span class="w"> </span><span class="n">eval</span><span class="w"> </span><span class="s">&quot;Oli.ReleaseTasks.setup()&quot;</span></code></pre><ol start="4"><li>Start Torus</li></ol><pre><code class="makeup elixir" translate="no"><span class="o">.</span><span class="o">/</span><span class="n">oli</span><span class="o">/</span><span class="n">bin</span><span class="o">/</span><span class="n">oli</span><span class="w"> </span><span class="n">start</span></code></pre><h3 id="command-reference" class="section-heading">
-  <a href="#command-reference" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">Command Reference</span>
-</h3>
-<p>Start</p><pre><code class="makeup elixir" translate="no"><span class="o">.</span><span class="o">/</span><span class="n">oli</span><span class="o">/</span><span class="n">bin</span><span class="o">/</span><span class="n">oli</span><span class="w"> </span><span class="n">start</span></code></pre><p>Stop</p><pre><code class="makeup elixir" translate="no"><span class="o">.</span><span class="o">/</span><span class="n">oli</span><span class="o">/</span><span class="n">bin</span><span class="o">/</span><span class="n">oli</span><span class="w"> </span><span class="n">stop</span></code></pre><p>Daemonize</p><pre><code class="makeup elixir" translate="no"><span class="o">.</span><span class="o">/</span><span class="n">oli</span><span class="o">/</span><span class="n">bin</span><span class="o">/</span><span class="n">oli</span><span class="w"> </span><span class="n">daemon</span></code></pre><p>To learn more about these and other elixir release commands, see <a href="https://hexdocs.pm/mix/Mix.Tasks.Release.html">https://hexdocs.pm/mix/Mix.Tasks.Release.html</a></p><h3 id="attach-to-remote-iex-shell" class="section-heading">
-  <a href="#attach-to-remote-iex-shell" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">Attach to Remote iex Shell</span>
-</h3>
-<p>This will open a remote iex shell in a running instance</p><pre><code class="makeup elixir" translate="no"><span class="o">.</span><span class="o">/</span><span class="n">oli</span><span class="o">/</span><span class="n">bin</span><span class="o">/</span><span class="n">oli</span><span class="w"> </span><span class="n">remote</span></code></pre><p>You can also execute a single command using rpc</p><pre><code class="makeup elixir" translate="no"><span class="o">.</span><span class="o">/</span><span class="n">oli</span><span class="o">/</span><span class="n">bin</span><span class="o">/</span><span class="n">oli</span><span class="w"> </span><span class="n">rpc</span><span class="w"> </span><span class="s">&quot;IO.puts(:hello)&quot;</span></code></pre><p><strong>NOTE:</strong> Since all Torus modules are available and any public function can be executed, be sure to take care in which functions you call so that you do not put the system into an unstable state. Try to avoid calls that involve the database but if necessary, be sure the function you are calling utilizes transactions in case of failure.</p><p>See <a href="https://hexdocs.pm/mix/Mix.Tasks.Release.html#module-one-off-commands-eval-and-rpc">https://hexdocs.pm/mix/Mix.Tasks.Release.html#module-one-off-commands-eval-and-rpc</a> for more information.</p><h2 id="useful-release-tasks" class="section-heading">
-  <a href="#useful-release-tasks" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">Useful Release Tasks</span>
-</h2>
-<p><strong>***IMPORTANT - RUN THIS BEFORE RUNNING ANY TASK***</strong></p><p>All of the following tasks require environment configs before running:</p><pre><code class="makeup elixir" translate="no"><span class="n">set</span><span class="w"> </span><span class="o">-</span><span class="n">a</span><span class="p">;</span><span class="w"> </span><span class="n">source</span><span class="w"> </span><span class="o">.</span><span class="o">/</span><span class="n">oli</span><span class="o">.</span><span class="n">env</span></code></pre><h3 id="initial-setup-1" class="section-heading">
-  <a href="#initial-setup-1" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">Initial setup</span>
-</h3>
-<p>Create, migrate, and seed the database before first run</p><pre><code class="makeup elixir" translate="no"><span class="o">.</span><span class="o">/</span><span class="n">oli</span><span class="o">/</span><span class="n">bin</span><span class="o">/</span><span class="n">oli</span><span class="w"> </span><span class="n">eval</span><span class="w"> </span><span class="s">&quot;Oli.ReleaseTasks.setup&quot;</span></code></pre><h3 id="seed-the-database" class="section-heading">
-  <a href="#seed-the-database" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">Seed the database</span>
-</h3>
-<p>After a new release is deployed, it is a good idea to run this task to apply any migrations</p><pre><code class="makeup elixir" translate="no"><span class="o">.</span><span class="o">/</span><span class="n">oli</span><span class="o">/</span><span class="n">bin</span><span class="o">/</span><span class="n">oli</span><span class="w"> </span><span class="n">eval</span><span class="w"> </span><span class="s">&quot;Oli.ReleaseTasks.seed&quot;</span></code></pre><h3 id="migrate-the-database" class="section-heading">
-  <a href="#migrate-the-database" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">Migrate the database</span>
-</h3>
-<p>After a new release is deployed, it is a good idea to run this task to apply any migrations</p><pre><code class="makeup elixir" translate="no"><span class="o">.</span><span class="o">/</span><span class="n">oli</span><span class="o">/</span><span class="n">bin</span><span class="o">/</span><span class="n">oli</span><span class="w"> </span><span class="n">eval</span><span class="w"> </span><span class="s">&quot;Oli.ReleaseTasks.migrate&quot;</span></code></pre><h3 id="rollback-a-database-migration" class="section-heading">
-  <a href="#rollback-a-database-migration" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">Rollback a database migration</span>
-</h3>
-<p>After a new release is deployed, it is a good idea to run this task to apply any migrations</p><pre><code class="makeup elixir" translate="no"><span class="o">.</span><span class="o">/</span><span class="n">oli</span><span class="o">/</span><span class="n">bin</span><span class="o">/</span><span class="n">oli</span><span class="w"> </span><span class="n">eval</span><span class="w"> </span><span class="s">&quot;Oli.ReleaseTasks.rollback(:oli, &quot;</span><span class="o">&lt;</span><span class="n">migration_version_to_rollback_to</span><span class="o">&gt;</span><span class="s">&quot;)&quot;</span></code></pre><h3 id="reset-the-database" class="section-heading">
-  <a href="#reset-the-database" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">Reset the database</span>
-</h3>
-<pre><code class="makeup elixir" translate="no"><span class="c1">############################################################################################</span><span class="w">
+</span><span class="n">rm</span><span class="w"> </span><span class="o">-</span><span class="n">rf</span><span class="w"> </span><span class="o">.</span><span class="o">/</span><span class="n">oli</span><span class="o">-</span><span class="o">*</span><span class="o">.</span><span class="n">zip</span></code></pre><ol start="2"><li>Import configs</li></ol><pre><code class="makeup elixir" translate="no"><span class="n">set</span><span class="w"> </span><span class="o">-</span><span class="n">a</span><span class="p">;</span><span class="w"> </span><span class="n">source</span><span class="w"> </span><span class="o">.</span><span class="o">/</span><span class="n">oli</span><span class="o">.</span><span class="n">env</span></code></pre><ol start="3"><li>Initialize the Database</li></ol><pre><code class="makeup elixir" translate="no"><span class="o">.</span><span class="o">/</span><span class="n">oli</span><span class="o">/</span><span class="n">bin</span><span class="o">/</span><span class="n">oli</span><span class="w"> </span><span class="n">eval</span><span class="w"> </span><span class="s">&quot;Oli.ReleaseTasks.setup()&quot;</span></code></pre><ol start="4"><li>Start Torus</li></ol><pre><code class="makeup elixir" translate="no"><span class="o">.</span><span class="o">/</span><span class="n">oli</span><span class="o">/</span><span class="n">bin</span><span class="o">/</span><span class="n">oli</span><span class="w"> </span><span class="n">start</span></code></pre><h3 id="command-reference" class="section-heading"><a href="#command-reference" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Command Reference</span></h3><p>Start</p><pre><code class="makeup elixir" translate="no"><span class="o">.</span><span class="o">/</span><span class="n">oli</span><span class="o">/</span><span class="n">bin</span><span class="o">/</span><span class="n">oli</span><span class="w"> </span><span class="n">start</span></code></pre><p>Stop</p><pre><code class="makeup elixir" translate="no"><span class="o">.</span><span class="o">/</span><span class="n">oli</span><span class="o">/</span><span class="n">bin</span><span class="o">/</span><span class="n">oli</span><span class="w"> </span><span class="n">stop</span></code></pre><p>Daemonize</p><pre><code class="makeup elixir" translate="no"><span class="o">.</span><span class="o">/</span><span class="n">oli</span><span class="o">/</span><span class="n">bin</span><span class="o">/</span><span class="n">oli</span><span class="w"> </span><span class="n">daemon</span></code></pre><p>To learn more about these and other elixir release commands, see <a href="https://hexdocs.pm/mix/Mix.Tasks.Release.html">https://hexdocs.pm/mix/Mix.Tasks.Release.html</a></p><h3 id="attach-to-remote-iex-shell" class="section-heading"><a href="#attach-to-remote-iex-shell" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Attach to Remote iex Shell</span></h3><p>This will open a remote iex shell in a running instance</p><pre><code class="makeup elixir" translate="no"><span class="o">.</span><span class="o">/</span><span class="n">oli</span><span class="o">/</span><span class="n">bin</span><span class="o">/</span><span class="n">oli</span><span class="w"> </span><span class="n">remote</span></code></pre><p>You can also execute a single command using rpc</p><pre><code class="makeup elixir" translate="no"><span class="o">.</span><span class="o">/</span><span class="n">oli</span><span class="o">/</span><span class="n">bin</span><span class="o">/</span><span class="n">oli</span><span class="w"> </span><span class="n">rpc</span><span class="w"> </span><span class="s">&quot;IO.puts(:hello)&quot;</span></code></pre><p><strong>NOTE:</strong> Since all Torus modules are available and any public function can be executed, be sure to take care in which functions you call so that you do not put the system into an unstable state. Try to avoid calls that involve the database but if necessary, be sure the function you are calling utilizes transactions in case of failure.</p><p>See <a href="https://hexdocs.pm/mix/Mix.Tasks.Release.html#module-one-off-commands-eval-and-rpc">https://hexdocs.pm/mix/Mix.Tasks.Release.html#module-one-off-commands-eval-and-rpc</a> for more information.</p><h2 id="useful-release-tasks" class="section-heading"><a href="#useful-release-tasks" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Useful Release Tasks</span></h2><p><strong>***IMPORTANT - RUN THIS BEFORE RUNNING ANY TASK***</strong></p><p>All of the following tasks require environment configs before running:</p><pre><code class="makeup elixir" translate="no"><span class="n">set</span><span class="w"> </span><span class="o">-</span><span class="n">a</span><span class="p">;</span><span class="w"> </span><span class="n">source</span><span class="w"> </span><span class="o">.</span><span class="o">/</span><span class="n">oli</span><span class="o">.</span><span class="n">env</span></code></pre><h3 id="initial-setup-1" class="section-heading"><a href="#initial-setup-1" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Initial setup</span></h3><p>Create, migrate, and seed the database before first run</p><pre><code class="makeup elixir" translate="no"><span class="o">.</span><span class="o">/</span><span class="n">oli</span><span class="o">/</span><span class="n">bin</span><span class="o">/</span><span class="n">oli</span><span class="w"> </span><span class="n">eval</span><span class="w"> </span><span class="s">&quot;Oli.ReleaseTasks.setup&quot;</span></code></pre><h3 id="seed-the-database" class="section-heading"><a href="#seed-the-database" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Seed the database</span></h3><p>After a new release is deployed, it is a good idea to run this task to apply any migrations</p><pre><code class="makeup elixir" translate="no"><span class="o">.</span><span class="o">/</span><span class="n">oli</span><span class="o">/</span><span class="n">bin</span><span class="o">/</span><span class="n">oli</span><span class="w"> </span><span class="n">eval</span><span class="w"> </span><span class="s">&quot;Oli.ReleaseTasks.seed&quot;</span></code></pre><h3 id="migrate-the-database" class="section-heading"><a href="#migrate-the-database" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Migrate the database</span></h3><p>After a new release is deployed, it is a good idea to run this task to apply any migrations</p><pre><code class="makeup elixir" translate="no"><span class="o">.</span><span class="o">/</span><span class="n">oli</span><span class="o">/</span><span class="n">bin</span><span class="o">/</span><span class="n">oli</span><span class="w"> </span><span class="n">eval</span><span class="w"> </span><span class="s">&quot;Oli.ReleaseTasks.migrate&quot;</span></code></pre><h3 id="rollback-a-database-migration" class="section-heading"><a href="#rollback-a-database-migration" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Rollback a database migration</span></h3><p>After a new release is deployed, it is a good idea to run this task to apply any migrations</p><pre><code class="makeup elixir" translate="no"><span class="o">.</span><span class="o">/</span><span class="n">oli</span><span class="o">/</span><span class="n">bin</span><span class="o">/</span><span class="n">oli</span><span class="w"> </span><span class="n">eval</span><span class="w"> </span><span class="s">&quot;Oli.ReleaseTasks.rollback(:oli, &quot;</span><span class="o">&lt;</span><span class="n">migration_version_to_rollback_to</span><span class="o">&gt;</span><span class="s">&quot;)&quot;</span></code></pre><h3 id="reset-the-database" class="section-heading"><a href="#reset-the-database" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Reset the database</span></h3><pre><code class="makeup elixir" translate="no"><span class="c1">############################################################################################</span><span class="w">
 </span><span class="c1">## WARNING! The following command will wipe all data in the database. Please use caution! ##</span><span class="w">
 </span><span class="c1">############################################################################################</span><span class="w">
 </span><span class="c1">## reset the database (requires interactive confirmation)</span><span class="w">
 </span><span class="o">.</span><span class="o">/</span><span class="n">oli</span><span class="o">/</span><span class="n">bin</span><span class="o">/</span><span class="n">oli</span><span class="w"> </span><span class="n">eval</span><span class="w"> </span><span class="s">&quot;Oli.ReleaseTasks.reset()&quot;</span><span class="w">
 
 </span><span class="c1">## reset the database (no interactive confirmation for scripting purposes, you better know what you are doing)</span><span class="w">
-</span><span class="o">.</span><span class="o">/</span><span class="n">oli</span><span class="o">/</span><span class="n">bin</span><span class="o">/</span><span class="n">oli</span><span class="w"> </span><span class="n">eval</span><span class="w"> </span><span class="s">&quot;Oli.ReleaseTasks.reset(%{ force: true })&quot;</span></code></pre><p>Other public functions defined in <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/release.ex">lib/oli/release.ex</a> are also available as tasks in this way.</p><h2 id="haproxy-configuration-and-ssl-certificates" class="section-heading">
-  <a href="#haproxy-configuration-and-ssl-certificates" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">HAProxy Configuration and SSL Certificates</span>
-</h2>
-<p>It is recommended you run torus behind a load balancer or proxy that supports SSL termination and use that to manage SSL certificates. For convenience, a default certificate is provided by torus for development mode only but it is self-signed and therefore will show browser warnings when used.</p><p>Torus can either be configured to terminate SSL certificates using <code class="inline">SSL_CERT_PATH</code> and <code class="inline">SSL_KEY_PATH</code> or can be hosted behind a proxy. The most flexible and straightforward solution is to configure Torus behind a proxy using the <code class="inline">HTTP_PORT</code> config set to whichever port you intend to point to from your proxy. You can also <a href="https://www.digitalocean.com/community/tutorials/how-to-secure-haproxy-with-let-s-encrypt-on-centos-7">setup LetsEncrypt certbot</a> to automatically renew SSL certificates before they expire. For example, with <code class="inline">HTTP_PORT=8080</code> set in <code class="inline">oli.env</code>, your HAProxy <code class="inline">haproxy.cfg</code> might look something like this:</p><pre><code class="makeup elixir" translate="no"><span class="n">global</span><span class="w">
+</span><span class="o">.</span><span class="o">/</span><span class="n">oli</span><span class="o">/</span><span class="n">bin</span><span class="o">/</span><span class="n">oli</span><span class="w"> </span><span class="n">eval</span><span class="w"> </span><span class="s">&quot;Oli.ReleaseTasks.reset(%{ force: true })&quot;</span></code></pre><p>Other public functions defined in <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/release.ex">lib/oli/release.ex</a> are also available as tasks in this way.</p><h2 id="haproxy-configuration-and-ssl-certificates" class="section-heading"><a href="#haproxy-configuration-and-ssl-certificates" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">HAProxy Configuration and SSL Certificates</span></h2><p>It is recommended you run torus behind a load balancer or proxy that supports SSL termination and use that to manage SSL certificates. For convenience, a default certificate is provided by torus for development mode only but it is self-signed and therefore will show browser warnings when used.</p><p>Torus can either be configured to terminate SSL certificates using <code class="inline">SSL_CERT_PATH</code> and <code class="inline">SSL_KEY_PATH</code> or can be hosted behind a proxy. The most flexible and straightforward solution is to configure Torus behind a proxy using the <code class="inline">HTTP_PORT</code> config set to whichever port you intend to point to from your proxy. You can also <a href="https://www.digitalocean.com/community/tutorials/how-to-secure-haproxy-with-let-s-encrypt-on-centos-7">setup LetsEncrypt certbot</a> to automatically renew SSL certificates before they expire. For example, with <code class="inline">HTTP_PORT=8080</code> set in <code class="inline">oli.env</code>, your HAProxy <code class="inline">haproxy.cfg</code> might look something like this:</p><pre><code class="makeup elixir" translate="no"><span class="n">global</span><span class="w">
     </span><span class="c1"># SSL options</span><span class="w">
     </span><span class="n">ssl</span><span class="o">-</span><span class="n">default</span><span class="o">-</span><span class="n">bind</span><span class="o">-</span><span class="n">ciphers</span><span class="w"> </span><span class="nc">AES256</span><span class="o">+</span><span class="nc">EECDH</span><span class="ss">:AES256</span><span class="o">+</span><span class="nc">EDH</span><span class="ss">:!</span><span class="n">aNULL</span><span class="p">;</span><span class="w">
     </span><span class="n">tune</span><span class="o">.</span><span class="n">ssl</span><span class="o">.</span><span class="n">default</span><span class="o">-</span><span class="n">dh</span><span class="o">-</span><span class="n">param</span><span class="w"> </span><span class="mi">4096</span><span class="w">
@@ -317,7 +195,7 @@ GUIDES
     </span><span class="c1"># if this is an ACME request to proof the domain owner, then redirect to certbot server</span><span class="w">
     </span><span class="n">acl</span><span class="w"> </span><span class="n">is_acme_challenge</span><span class="w"> </span><span class="n">path_beg</span><span class="w"> </span><span class="o">-</span><span class="n">i</span><span class="w"> </span><span class="o">/</span><span class="o">.</span><span class="n">well</span><span class="o">-</span><span class="n">known</span><span class="o">/</span><span class="n">acme</span><span class="o">-</span><span class="n">challenge</span><span class="o">/</span><span class="w">
 
-    </span><span class="n">redirect</span><span class="w"> </span><span class="n">scheme</span><span class="w"> </span><span class="n">https</span><span class="w"> </span><span class="n">code</span><span class="w"> </span><span class="mi">301</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="o">!</span><span class="n">is_acme_challenge</span><span class="w"> </span><span class="o">!</span><span class="p" data-group-id="3943563974-1">{</span><span class="w"> </span><span class="n">ssl_fc</span><span class="w"> </span><span class="p" data-group-id="3943563974-1">}</span><span class="w">
+    </span><span class="n">redirect</span><span class="w"> </span><span class="n">scheme</span><span class="w"> </span><span class="n">https</span><span class="w"> </span><span class="n">code</span><span class="w"> </span><span class="mi">301</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="o">!</span><span class="n">is_acme_challenge</span><span class="w"> </span><span class="o">!</span><span class="p" data-group-id="9458615056-1">{</span><span class="w"> </span><span class="n">ssl_fc</span><span class="w"> </span><span class="p" data-group-id="9458615056-1">}</span><span class="w">
 
     </span><span class="n">use_backend</span><span class="w"> </span><span class="n">letsencrypt</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">is_acme_challenge</span><span class="w">
 
@@ -325,7 +203,7 @@ GUIDES
     </span><span class="n">bind</span><span class="w"> </span><span class="o">*</span><span class="p">:</span><span class="mi">443</span><span class="w"> </span><span class="n">ssl</span><span class="w"> </span><span class="n">crt</span><span class="w"> </span><span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">haproxy</span><span class="o">/</span><span class="n">certs</span><span class="o">/</span><span class="w"> </span><span class="n">no</span><span class="o">-</span><span class="n">sslv3</span><span class="w"> </span><span class="n">no</span><span class="o">-</span><span class="n">tls</span><span class="o">-</span><span class="n">tickets</span><span class="w"> </span><span class="n">no</span><span class="o">-</span><span class="n">tlsv10</span><span class="w"> </span><span class="n">no</span><span class="o">-</span><span class="n">tlsv11</span><span class="w">
     </span><span class="n">http</span><span class="o">-</span><span class="n">response</span><span class="w"> </span><span class="n">set</span><span class="o">-</span><span class="n">header</span><span class="w"> </span><span class="nc">Strict</span><span class="o">-</span><span class="nc">Transport</span><span class="o">-</span><span class="nc">Security</span><span class="w"> </span><span class="s">&quot;max-age=16000000; includeSubDomains; preload;&quot;</span><span class="w">
 
-    </span><span class="n">acl</span><span class="w"> </span><span class="n">no_server</span><span class="w"> </span><span class="n">nbsrv</span><span class="p" data-group-id="3943563974-2">(</span><span class="n">www</span><span class="p" data-group-id="3943563974-2">)</span><span class="w"> </span><span class="n">lt</span><span class="w"> </span><span class="mi">1</span><span class="w">
+    </span><span class="n">acl</span><span class="w"> </span><span class="n">no_server</span><span class="w"> </span><span class="n">nbsrv</span><span class="p" data-group-id="9458615056-2">(</span><span class="n">www</span><span class="p" data-group-id="9458615056-2">)</span><span class="w"> </span><span class="n">lt</span><span class="w"> </span><span class="mi">1</span><span class="w">
     </span><span class="n">use_backend</span><span class="w"> </span><span class="n">maintenance</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">no_server</span><span class="w">
 
     </span><span class="n">default_backend</span><span class="w"> </span><span class="n">www</span><span class="w">
@@ -335,41 +213,24 @@ GUIDES
 
 </span><span class="n">backend</span><span class="w"> </span><span class="n">www</span><span class="w">
     </span><span class="n">server</span><span class="w"> </span><span class="n">www</span><span class="w"> </span><span class="mf">127.0</span><span class="o">.</span><span class="mf">0.1</span><span class="p">:</span><span class="mi">8080</span><span class="w"> </span><span class="n">check</span><span class="w">
-    </span><span class="n">http</span><span class="o">-</span><span class="n">request</span><span class="w"> </span><span class="n">add</span><span class="o">-</span><span class="n">header</span><span class="w"> </span><span class="nc">X</span><span class="o">-</span><span class="nc">Forwarded</span><span class="o">-</span><span class="nc">Proto</span><span class="w"> </span><span class="n">https</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p" data-group-id="3943563974-3">{</span><span class="w"> </span><span class="n">ssl_fc</span><span class="w"> </span><span class="p" data-group-id="3943563974-3">}</span><span class="w">
-</span></code></pre><h2 id="firewall-configuration" class="section-heading">
-  <a href="#firewall-configuration" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">Firewall Configuration</span>
-</h2>
-<p>If your server has a firewall, be sure to open the necessary tcp ports. If using HAProxy, these will probably be <code class="inline">80/tcp</code> and <code class="inline">443/tcp</code>. If using a load balancer and you have <code class="inline">HTTP_PORT</code> configured, then that should be the port you expose.</p><h2 id="systemd-and-autostart-on-reboot" class="section-heading">
-  <a href="#systemd-and-autostart-on-reboot" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">Systemd and autostart on reboot</span>
-</h2>
-<p>You may want to configure torus as a systemd service to take full advantage of automatic start on reboot, logging, and other facilities.</p><p>Here is an example of <code class="inline">/etc/systemd/system/torus.service</code> configured as a systemd service</p><pre><code class="makeup elixir" translate="no"><span class="p" data-group-id="7957271913-1">[</span><span class="nc">Unit</span><span class="p" data-group-id="7957271913-1">]</span><span class="w">
+    </span><span class="n">http</span><span class="o">-</span><span class="n">request</span><span class="w"> </span><span class="n">add</span><span class="o">-</span><span class="n">header</span><span class="w"> </span><span class="nc">X</span><span class="o">-</span><span class="nc">Forwarded</span><span class="o">-</span><span class="nc">Proto</span><span class="w"> </span><span class="n">https</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p" data-group-id="9458615056-3">{</span><span class="w"> </span><span class="n">ssl_fc</span><span class="w"> </span><span class="p" data-group-id="9458615056-3">}</span><span class="w">
+</span></code></pre><h2 id="firewall-configuration" class="section-heading"><a href="#firewall-configuration" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Firewall Configuration</span></h2><p>If your server has a firewall, be sure to open the necessary tcp ports. If using HAProxy, these will probably be <code class="inline">80/tcp</code> and <code class="inline">443/tcp</code>. If using a load balancer and you have <code class="inline">HTTP_PORT</code> configured, then that should be the port you expose.</p><h2 id="systemd-and-autostart-on-reboot" class="section-heading"><a href="#systemd-and-autostart-on-reboot" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Systemd and autostart on reboot</span></h2><p>You may want to configure torus as a systemd service to take full advantage of automatic start on reboot, logging, and other facilities.</p><p>Here is an example of <code class="inline">/etc/systemd/system/torus.service</code> configured as a systemd service</p><pre><code class="makeup elixir" translate="no"><span class="p" data-group-id="4140095446-1">[</span><span class="nc">Unit</span><span class="p" data-group-id="4140095446-1">]</span><span class="w">
 </span><span class="nc">Description</span><span class="o">=</span><span class="n">torus</span><span class="w">
 
-</span><span class="p" data-group-id="7957271913-2">[</span><span class="nc">Service</span><span class="p" data-group-id="7957271913-2">]</span><span class="w">
+</span><span class="p" data-group-id="4140095446-2">[</span><span class="nc">Service</span><span class="p" data-group-id="4140095446-2">]</span><span class="w">
 </span><span class="nc">ExecStart</span><span class="o">=</span><span class="o">/</span><span class="n">app</span><span class="o">/</span><span class="n">oli</span><span class="o">/</span><span class="n">bin</span><span class="o">/</span><span class="n">oli</span><span class="w"> </span><span class="n">start</span><span class="w">
 </span><span class="nc">ExecStop</span><span class="o">=</span><span class="o">/</span><span class="n">app</span><span class="o">/</span><span class="n">oli</span><span class="o">/</span><span class="n">bin</span><span class="o">/</span><span class="n">oli</span><span class="w"> </span><span class="n">stop</span><span class="w">
 
 
-</span><span class="p" data-group-id="7957271913-3">[</span><span class="nc">Install</span><span class="p" data-group-id="7957271913-3">]</span><span class="w">
-</span><span class="nc">WantedBy</span><span class="o">=</span><span class="n">multi</span><span class="o">-</span><span class="n">user</span><span class="o">.</span><span class="n">target</span></code></pre><p>This will also require a duplicate of oli.env config file in <code class="inline">/etc/systemd/system/torus.service.d/torusenv.conf</code> in the format:</p><pre><code class="makeup elixir" translate="no"><span class="p" data-group-id="3455084785-1">[</span><span class="nc">Service</span><span class="p" data-group-id="3455084785-1">]</span><span class="w">
+</span><span class="p" data-group-id="4140095446-3">[</span><span class="nc">Install</span><span class="p" data-group-id="4140095446-3">]</span><span class="w">
+</span><span class="nc">WantedBy</span><span class="o">=</span><span class="n">multi</span><span class="o">-</span><span class="n">user</span><span class="o">.</span><span class="n">target</span></code></pre><p>This will also require a duplicate of oli.env config file in <code class="inline">/etc/systemd/system/torus.service.d/torusenv.conf</code> in the format:</p><pre><code class="makeup elixir" translate="no"><span class="p" data-group-id="6896597171-1">[</span><span class="nc">Service</span><span class="p" data-group-id="6896597171-1">]</span><span class="w">
 </span><span class="nc">Environment</span><span class="o">=</span><span class="s">&quot;HOST=mydomain.example.edu&quot;</span><span class="w">
 </span><span class="nc">Environment</span><span class="o">=</span><span class="s">&quot;PORT=80&quot;</span><span class="w">
-</span></code></pre><h2 id="appsignal" class="section-heading">
-  <a href="#appsignal" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">AppSignal</span>
-</h2>
-<p>APM for Ruby, Elixir &amp; Node.js that includes error, performance, host, dashboards, anomalies and uptime monitoring. By default it is disabled and is not required for application to run. However, you can choose to activate AppSignal by adding the following ENV variables:</p><pre><code class="makeup elixir" translate="no"><span class="nc">APPSIGNAL_OTP_APP</span><span class="o">=</span><span class="s">&quot;oli&quot;</span><span class="w">
+</span></code></pre><h2 id="appsignal" class="section-heading"><a href="#appsignal" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">AppSignal</span></h2><p>APM for Ruby, Elixir &amp; Node.js that includes error, performance, host, dashboards, anomalies and uptime monitoring. By default it is disabled and is not required for application to run. However, you can choose to activate AppSignal by adding the following ENV variables:</p><pre><code class="makeup elixir" translate="no"><span class="nc">APPSIGNAL_OTP_APP</span><span class="o">=</span><span class="s">&quot;oli&quot;</span><span class="w">
 </span><span class="nc">APPSIGNAL_PUSH_API_KEY</span><span class="o">=</span><span class="s">&quot;your-push-api-key&quot;</span><span class="w">
 </span><span class="nc">APPSIGNAL_APP_NAME</span><span class="o">=</span><span class="s">&quot;Torus&quot;</span><span class="w">
 </span><span class="nc">APPSIGNAL_APP_ENV</span><span class="o">=</span><span class="s">&quot;prod&quot;</span></code></pre>
+
 </div>
 
 <div class="bottom-actions" id="bottom-actions">
@@ -415,7 +276,7 @@ Client-side coding standard
 
       <p class="built-using">
         Built using
-        <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.34.2) for the
+        <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.38.2) for the
 
           <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
 

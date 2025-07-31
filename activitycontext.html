@@ -4,35 +4,22 @@
     <meta charset="utf-8">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="ExDoc v0.34.2">
+    <meta name="generator" content="ExDoc v0.38.2">
     <meta name="project" content="OLI Torus v0.31.1">
 
 
     <title>ActivityContext — OLI Torus v0.31.1</title>
-    <link rel="stylesheet" href="dist/html-elixir-F2VRIOKR.css" />
 
+    <link rel="stylesheet" href="dist/html-elixir-KV3YOVJ3.css" />
 
-    <script src="dist/handlebars.runtime-NWIB6V2M.js"></script>
-    <script src="dist/handlebars.templates-K7URE6B4.js"></script>
-    <script src="dist/sidebar_items-36299CD5.js"></script>
-    <script src="docs_config.js"></script>
-    <script async src="dist/html-YIPIRHGU.js"></script>
+    <script defer src="dist/sidebar_items-829A150D.js"></script>
+    <script defer src="docs_config.js"></script>
+    <script defer src="dist/html-DPJLHKSM.js"></script>
 
   </head>
-  <body data-type="extras" class="page-extra">
-    <script>
-
-      try {
-        var settings = JSON.parse(localStorage.getItem('ex_doc:settings') || '{}');
-
-        if (settings.theme === 'dark' ||
-           ((settings.theme === 'system' || settings.theme == null) &&
-             window.matchMedia('(prefers-color-scheme: dark)').matches)
-           ) {
-          document.body.classList.add('dark')
-        }
-      } catch (error) { }
-    </script>
+  <body>
+    <script>(()=>{var t="ex_doc:settings",e="dark";var o="dark",s="light";var E="sidebar_state",n="closed";var r="sidebar_width";var a="sidebar-open";var i=new URLSearchParams(window.location.search),S=i.get("theme")||JSON.parse(localStorage.getItem(t)||"{}").theme;(S===o||S!==s&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&document.body.classList.add(e);var d=sessionStorage.getItem(E),A=d!==n&&!window.matchMedia(`screen and (max-width: ${768}px)`).matches;document.body.classList.toggle(a,A);var c=sessionStorage.getItem(r);c&&document.body.style.setProperty("--sidebarWidth",`${c}px`);var p=/(Macintosh|iPhone|iPad|iPod)/.test(window.navigator.userAgent);document.documentElement.classList.toggle("apple-os",p);})();
+</script>
 
 <div class="body-wrapper">
 
@@ -58,27 +45,13 @@ OLI Torus
         </div>
       </div>
     </div>
-    <ul id="sidebar-listNav" class="sidebar-listNav" role="tablist">
-      <li>
-        <button id="extras-list-tab-button" role="tab" data-type="extras" aria-controls="extras-tab-panel" aria-selected="true" tabindex="0">
-GUIDES
-        </button>
-      </li>
-
-
-    </ul>
+    <ul id="sidebar-list-nav" class="sidebar-list-nav" role="tablist" data-extras="GUIDES"></ul>
   </div>
-
-  <div id="extras-tab-panel" class="sidebar-tabpanel" role="tabpanel" aria-labelledby="extras-list-tab-button">
-    <ul id="extras-full-list" class="full-list"></ul>
-  </div>
-
-
 </nav>
 
-<main class="content">
-  <output role="status" id="toast"></output>
+<output role="status" id="toast"></output>
 
+<main class="content page-extra" id="main" data-type="extras">
   <div id="content" class="content-inner">
     <div class="top-search">
       <div class="search-settings">
@@ -87,8 +60,8 @@ GUIDES
             <span class="sr-only">Search documentation of OLI Torus</span>
             <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
           </label>
-          <button type="submit" class="search-button" aria-label="Submit Search">
-            <i class="ri-search-2-line ri-lg" aria-hidden="true" title="Submit search"></i>
+          <button type="submit" class="search-button" aria-label="Submit Search" tabindex="-1">
+            <i class="ri-search-2-line ri-lg" aria-hidden="true"></i>
           </button>
           <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
             <i class="ri-close-line ri-lg" title="Cancel search"></i>
@@ -104,168 +77,20 @@ GUIDES
     </div>
 
 <div id="top-content">
-  <h1>
+  <div class="heading-with-actions top-heading">
+    <h1>ActivityContext</h1>
+
 
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/main/assets/typedocs/interfaces/ActivityContext.md#L1" title="View Source" class="icon-action" rel="help">
         <i class="ri-code-s-slash-line" aria-hidden="true"></i>
         <span class="sr-only">View Source</span>
       </a>
 
+  </div>
 
-    <span>ActivityContext</span>
-  </h1>
 
-<p><a href="../README.md">oli</a> / <a href="modules.html">Exports</a> / ActivityContext</p><h1>Interface: ActivityContext</h1><h2 id="table-of-contents" class="section-heading">
-  <a href="#table-of-contents" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">Table of contents</span>
-</h2>
-<h3 id="properties" class="section-heading">
-  <a href="#properties" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">Properties</span>
-</h3>
-<ul><li><a href="activitycontext.html#allowhints">allowHints</a></li><li><a href="activitycontext.html#batchscoring">batchScoring</a></li><li><a href="activitycontext.html#bibparams">bibParams</a></li><li><a href="activitycontext.html#graded">graded</a></li><li><a href="activitycontext.html#groupid">groupId</a></li><li><a href="activitycontext.html#isannotationlevel">isAnnotationLevel</a></li><li><a href="activitycontext.html#learninglanguage">learningLanguage</a></li><li><a href="activitycontext.html#maxattempts">maxAttempts</a></li><li><a href="activitycontext.html#oneatatime">oneAtATime</a></li><li><a href="activitycontext.html#ordinal">ordinal</a></li><li><a href="activitycontext.html#pageattemptguid">pageAttemptGuid</a></li><li><a href="activitycontext.html#pagelinkparams">pageLinkParams</a></li><li><a href="activitycontext.html#pagestate">pageState</a></li><li><a href="activitycontext.html#projectslug">projectSlug</a></li><li><a href="activitycontext.html#renderpointmarkers">renderPointMarkers</a></li><li><a href="activitycontext.html#resourceid">resourceId</a></li><li><a href="activitycontext.html#scoringstrategyid">scoringStrategyId</a></li><li><a href="activitycontext.html#sectionslug">sectionSlug</a></li><li><a href="activitycontext.html#showfeedback">showFeedback</a></li><li><a href="activitycontext.html#surveyid">surveyId</a></li><li><a href="activitycontext.html#userid">userId</a></li><li><a href="activitycontext.html#variables">variables</a></li></ul><h2 id="properties-1" class="section-heading">
-  <a href="#properties-1" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">Properties</span>
-</h2>
-<h3 id="allowhints" class="section-heading">
-  <a href="#allowhints" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">allowHints</span>
-</h3>
-<p>• <strong>allowHints</strong>: <code class="inline">boolean</code></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/0573ce2/assets/src/components/activities/DeliveryElement.ts#L73">src/components/activities/DeliveryElement.ts:73</a></p><hr class="medium"/><h3 id="batchscoring" class="section-heading">
-  <a href="#batchscoring" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">batchScoring</span>
-</h3>
-<p>• <strong>batchScoring</strong>: <code class="inline">boolean</code></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/0573ce2/assets/src/components/activities/DeliveryElement.ts#L53">src/components/activities/DeliveryElement.ts:53</a></p><hr class="medium"/><h3 id="bibparams" class="section-heading">
-  <a href="#bibparams" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">bibParams</span>
-</h3>
-<p>• <strong>bibParams</strong>: <code class="inline">any</code></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/0573ce2/assets/src/components/activities/DeliveryElement.ts#L64">src/components/activities/DeliveryElement.ts:64</a></p><hr class="medium"/><h3 id="graded" class="section-heading">
-  <a href="#graded" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">graded</span>
-</h3>
-<p>• <strong>graded</strong>: <code class="inline">boolean</code></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/0573ce2/assets/src/components/activities/DeliveryElement.ts#L52">src/components/activities/DeliveryElement.ts:52</a></p><hr class="medium"/><h3 id="groupid" class="section-heading">
-  <a href="#groupid" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">groupId</span>
-</h3>
-<p>• <strong>groupId</strong>: <code class="inline">null</code> \| <code class="inline">string</code></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/0573ce2/assets/src/components/activities/DeliveryElement.ts#L62">src/components/activities/DeliveryElement.ts:62</a></p><hr class="medium"/><h3 id="isannotationlevel" class="section-heading">
-  <a href="#isannotationlevel" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">isAnnotationLevel</span>
-</h3>
-<p>• <strong>isAnnotationLevel</strong>: <code class="inline">boolean</code></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/0573ce2/assets/src/components/activities/DeliveryElement.ts#L70">src/components/activities/DeliveryElement.ts:70</a></p><hr class="medium"/><h3 id="learninglanguage" class="section-heading">
-  <a href="#learninglanguage" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">learningLanguage</span>
-</h3>
-<p>• <code class="inline">Optional</code> <strong>learningLanguage</strong>: <code class="inline">string</code></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/0573ce2/assets/src/components/activities/DeliveryElement.ts#L61">src/components/activities/DeliveryElement.ts:61</a></p><hr class="medium"/><h3 id="maxattempts" class="section-heading">
-  <a href="#maxattempts" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">maxAttempts</span>
-</h3>
-<p>• <strong>maxAttempts</strong>: <code class="inline">number</code></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/0573ce2/assets/src/components/activities/DeliveryElement.ts#L55">src/components/activities/DeliveryElement.ts:55</a></p><hr class="medium"/><h3 id="oneatatime" class="section-heading">
-  <a href="#oneatatime" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">oneAtATime</span>
-</h3>
-<p>• <strong>oneAtATime</strong>: <code class="inline">boolean</code></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/0573ce2/assets/src/components/activities/DeliveryElement.ts#L54">src/components/activities/DeliveryElement.ts:54</a></p><hr class="medium"/><h3 id="ordinal" class="section-heading">
-  <a href="#ordinal" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">ordinal</span>
-</h3>
-<p>• <strong>ordinal</strong>: <code class="inline">number</code></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/0573ce2/assets/src/components/activities/DeliveryElement.ts#L57">src/components/activities/DeliveryElement.ts:57</a></p><hr class="medium"/><h3 id="pageattemptguid" class="section-heading">
-  <a href="#pageattemptguid" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">pageAttemptGuid</span>
-</h3>
-<p>• <strong>pageAttemptGuid</strong>: <code class="inline">string</code></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/0573ce2/assets/src/components/activities/DeliveryElement.ts#L65">src/components/activities/DeliveryElement.ts:65</a></p><hr class="medium"/><h3 id="pagelinkparams" class="section-heading">
-  <a href="#pagelinkparams" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">pageLinkParams</span>
-</h3>
-<p>• <strong>pageLinkParams</strong>: <code class="inline">any</code></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/0573ce2/assets/src/components/activities/DeliveryElement.ts#L72">src/components/activities/DeliveryElement.ts:72</a></p><hr class="medium"/><h3 id="pagestate" class="section-heading">
-  <a href="#pagestate" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">pageState</span>
-</h3>
-<p>• <code class="inline">Optional</code> <strong>pageState</strong>: <code class="inline">any</code></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/0573ce2/assets/src/components/activities/DeliveryElement.ts#L66">src/components/activities/DeliveryElement.ts:66</a></p><hr class="medium"/><h3 id="projectslug" class="section-heading">
-  <a href="#projectslug" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">projectSlug</span>
-</h3>
-<p>• <strong>projectSlug</strong>: <code class="inline">string</code></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/0573ce2/assets/src/components/activities/DeliveryElement.ts#L59">src/components/activities/DeliveryElement.ts:59</a></p><hr class="medium"/><h3 id="renderpointmarkers" class="section-heading">
-  <a href="#renderpointmarkers" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">renderPointMarkers</span>
-</h3>
-<p>• <strong>renderPointMarkers</strong>: <code class="inline">boolean</code></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/0573ce2/assets/src/components/activities/DeliveryElement.ts#L69">src/components/activities/DeliveryElement.ts:69</a></p><hr class="medium"/><h3 id="resourceid" class="section-heading">
-  <a href="#resourceid" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">resourceId</span>
-</h3>
-<p>• <code class="inline">Optional</code> <strong>resourceId</strong>: <code class="inline">number</code></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/0573ce2/assets/src/components/activities/DeliveryElement.ts#L68">src/components/activities/DeliveryElement.ts:68</a></p><hr class="medium"/><h3 id="scoringstrategyid" class="section-heading">
-  <a href="#scoringstrategyid" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">scoringStrategyId</span>
-</h3>
-<p>• <strong>scoringStrategyId</strong>: <code class="inline">number</code></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/0573ce2/assets/src/components/activities/DeliveryElement.ts#L56">src/components/activities/DeliveryElement.ts:56</a></p><hr class="medium"/><h3 id="sectionslug" class="section-heading">
-  <a href="#sectionslug" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">sectionSlug</span>
-</h3>
-<p>• <strong>sectionSlug</strong>: <code class="inline">string</code></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/0573ce2/assets/src/components/activities/DeliveryElement.ts#L58">src/components/activities/DeliveryElement.ts:58</a></p><hr class="medium"/><h3 id="showfeedback" class="section-heading">
-  <a href="#showfeedback" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">showFeedback</span>
-</h3>
-<p>• <strong>showFeedback</strong>: <code class="inline">null</code> \| <code class="inline">boolean</code></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/0573ce2/assets/src/components/activities/DeliveryElement.ts#L67">src/components/activities/DeliveryElement.ts:67</a></p><hr class="medium"/><h3 id="surveyid" class="section-heading">
-  <a href="#surveyid" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">surveyId</span>
-</h3>
-<p>• <strong>surveyId</strong>: <code class="inline">null</code> \| <code class="inline">string</code></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/0573ce2/assets/src/components/activities/DeliveryElement.ts#L63">src/components/activities/DeliveryElement.ts:63</a></p><hr class="medium"/><h3 id="userid" class="section-heading">
-  <a href="#userid" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">userId</span>
-</h3>
-<p>• <strong>userId</strong>: <code class="inline">number</code></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/0573ce2/assets/src/components/activities/DeliveryElement.ts#L60">src/components/activities/DeliveryElement.ts:60</a></p><hr class="medium"/><h3 id="variables" class="section-heading">
-  <a href="#variables" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">variables</span>
-</h3>
-<p>• <strong>variables</strong>: <code class="inline">any</code></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/0573ce2/assets/src/components/activities/DeliveryElement.ts#L71">src/components/activities/DeliveryElement.ts:71</a></p>
+<p><a href="../README.md">oli</a> / <a href="modules.html">Exports</a> / ActivityContext</p><h1>Interface: ActivityContext</h1><h2 id="table-of-contents" class="section-heading"><a href="#table-of-contents" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Table of contents</span></h2><h3 id="properties" class="section-heading"><a href="#properties" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Properties</span></h3><ul><li><a href="activitycontext.html#allowhints">allowHints</a></li><li><a href="activitycontext.html#batchscoring">batchScoring</a></li><li><a href="activitycontext.html#bibparams">bibParams</a></li><li><a href="activitycontext.html#graded">graded</a></li><li><a href="activitycontext.html#groupid">groupId</a></li><li><a href="activitycontext.html#isannotationlevel">isAnnotationLevel</a></li><li><a href="activitycontext.html#learninglanguage">learningLanguage</a></li><li><a href="activitycontext.html#maxattempts">maxAttempts</a></li><li><a href="activitycontext.html#oneatatime">oneAtATime</a></li><li><a href="activitycontext.html#ordinal">ordinal</a></li><li><a href="activitycontext.html#pageattemptguid">pageAttemptGuid</a></li><li><a href="activitycontext.html#pagelinkparams">pageLinkParams</a></li><li><a href="activitycontext.html#pagestate">pageState</a></li><li><a href="activitycontext.html#projectslug">projectSlug</a></li><li><a href="activitycontext.html#renderpointmarkers">renderPointMarkers</a></li><li><a href="activitycontext.html#resourceid">resourceId</a></li><li><a href="activitycontext.html#scoringstrategyid">scoringStrategyId</a></li><li><a href="activitycontext.html#sectionslug">sectionSlug</a></li><li><a href="activitycontext.html#showfeedback">showFeedback</a></li><li><a href="activitycontext.html#surveyid">surveyId</a></li><li><a href="activitycontext.html#userid">userId</a></li><li><a href="activitycontext.html#variables">variables</a></li></ul><h2 id="properties-1" class="section-heading"><a href="#properties-1" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Properties</span></h2><h3 id="allowhints" class="section-heading"><a href="#allowhints" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">allowHints</span></h3><p>• <strong>allowHints</strong>: <code class="inline">boolean</code></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/97255b6/assets/src/components/activities/DeliveryElement.ts#L73">src/components/activities/DeliveryElement.ts:73</a></p><hr class="medium"/><h3 id="batchscoring" class="section-heading"><a href="#batchscoring" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">batchScoring</span></h3><p>• <strong>batchScoring</strong>: <code class="inline">boolean</code></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/97255b6/assets/src/components/activities/DeliveryElement.ts#L53">src/components/activities/DeliveryElement.ts:53</a></p><hr class="medium"/><h3 id="bibparams" class="section-heading"><a href="#bibparams" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">bibParams</span></h3><p>• <strong>bibParams</strong>: <code class="inline">any</code></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/97255b6/assets/src/components/activities/DeliveryElement.ts#L64">src/components/activities/DeliveryElement.ts:64</a></p><hr class="medium"/><h3 id="graded" class="section-heading"><a href="#graded" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">graded</span></h3><p>• <strong>graded</strong>: <code class="inline">boolean</code></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/97255b6/assets/src/components/activities/DeliveryElement.ts#L52">src/components/activities/DeliveryElement.ts:52</a></p><hr class="medium"/><h3 id="groupid" class="section-heading"><a href="#groupid" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">groupId</span></h3><p>• <strong>groupId</strong>: <code class="inline">null</code> \| <code class="inline">string</code></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/97255b6/assets/src/components/activities/DeliveryElement.ts#L62">src/components/activities/DeliveryElement.ts:62</a></p><hr class="medium"/><h3 id="isannotationlevel" class="section-heading"><a href="#isannotationlevel" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">isAnnotationLevel</span></h3><p>• <strong>isAnnotationLevel</strong>: <code class="inline">boolean</code></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/97255b6/assets/src/components/activities/DeliveryElement.ts#L70">src/components/activities/DeliveryElement.ts:70</a></p><hr class="medium"/><h3 id="learninglanguage" class="section-heading"><a href="#learninglanguage" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">learningLanguage</span></h3><p>• <code class="inline">Optional</code> <strong>learningLanguage</strong>: <code class="inline">string</code></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/97255b6/assets/src/components/activities/DeliveryElement.ts#L61">src/components/activities/DeliveryElement.ts:61</a></p><hr class="medium"/><h3 id="maxattempts" class="section-heading"><a href="#maxattempts" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">maxAttempts</span></h3><p>• <strong>maxAttempts</strong>: <code class="inline">number</code></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/97255b6/assets/src/components/activities/DeliveryElement.ts#L55">src/components/activities/DeliveryElement.ts:55</a></p><hr class="medium"/><h3 id="oneatatime" class="section-heading"><a href="#oneatatime" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">oneAtATime</span></h3><p>• <strong>oneAtATime</strong>: <code class="inline">boolean</code></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/97255b6/assets/src/components/activities/DeliveryElement.ts#L54">src/components/activities/DeliveryElement.ts:54</a></p><hr class="medium"/><h3 id="ordinal" class="section-heading"><a href="#ordinal" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">ordinal</span></h3><p>• <strong>ordinal</strong>: <code class="inline">number</code></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/97255b6/assets/src/components/activities/DeliveryElement.ts#L57">src/components/activities/DeliveryElement.ts:57</a></p><hr class="medium"/><h3 id="pageattemptguid" class="section-heading"><a href="#pageattemptguid" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">pageAttemptGuid</span></h3><p>• <strong>pageAttemptGuid</strong>: <code class="inline">string</code></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/97255b6/assets/src/components/activities/DeliveryElement.ts#L65">src/components/activities/DeliveryElement.ts:65</a></p><hr class="medium"/><h3 id="pagelinkparams" class="section-heading"><a href="#pagelinkparams" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">pageLinkParams</span></h3><p>• <strong>pageLinkParams</strong>: <code class="inline">any</code></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/97255b6/assets/src/components/activities/DeliveryElement.ts#L72">src/components/activities/DeliveryElement.ts:72</a></p><hr class="medium"/><h3 id="pagestate" class="section-heading"><a href="#pagestate" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">pageState</span></h3><p>• <code class="inline">Optional</code> <strong>pageState</strong>: <code class="inline">any</code></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/97255b6/assets/src/components/activities/DeliveryElement.ts#L66">src/components/activities/DeliveryElement.ts:66</a></p><hr class="medium"/><h3 id="projectslug" class="section-heading"><a href="#projectslug" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">projectSlug</span></h3><p>• <strong>projectSlug</strong>: <code class="inline">string</code></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/97255b6/assets/src/components/activities/DeliveryElement.ts#L59">src/components/activities/DeliveryElement.ts:59</a></p><hr class="medium"/><h3 id="renderpointmarkers" class="section-heading"><a href="#renderpointmarkers" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">renderPointMarkers</span></h3><p>• <strong>renderPointMarkers</strong>: <code class="inline">boolean</code></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/97255b6/assets/src/components/activities/DeliveryElement.ts#L69">src/components/activities/DeliveryElement.ts:69</a></p><hr class="medium"/><h3 id="resourceid" class="section-heading"><a href="#resourceid" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">resourceId</span></h3><p>• <code class="inline">Optional</code> <strong>resourceId</strong>: <code class="inline">number</code></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/97255b6/assets/src/components/activities/DeliveryElement.ts#L68">src/components/activities/DeliveryElement.ts:68</a></p><hr class="medium"/><h3 id="scoringstrategyid" class="section-heading"><a href="#scoringstrategyid" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">scoringStrategyId</span></h3><p>• <strong>scoringStrategyId</strong>: <code class="inline">number</code></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/97255b6/assets/src/components/activities/DeliveryElement.ts#L56">src/components/activities/DeliveryElement.ts:56</a></p><hr class="medium"/><h3 id="sectionslug" class="section-heading"><a href="#sectionslug" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">sectionSlug</span></h3><p>• <strong>sectionSlug</strong>: <code class="inline">string</code></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/97255b6/assets/src/components/activities/DeliveryElement.ts#L58">src/components/activities/DeliveryElement.ts:58</a></p><hr class="medium"/><h3 id="showfeedback" class="section-heading"><a href="#showfeedback" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">showFeedback</span></h3><p>• <strong>showFeedback</strong>: <code class="inline">null</code> \| <code class="inline">boolean</code></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/97255b6/assets/src/components/activities/DeliveryElement.ts#L67">src/components/activities/DeliveryElement.ts:67</a></p><hr class="medium"/><h3 id="surveyid" class="section-heading"><a href="#surveyid" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">surveyId</span></h3><p>• <strong>surveyId</strong>: <code class="inline">null</code> \| <code class="inline">string</code></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/97255b6/assets/src/components/activities/DeliveryElement.ts#L63">src/components/activities/DeliveryElement.ts:63</a></p><hr class="medium"/><h3 id="userid" class="section-heading"><a href="#userid" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">userId</span></h3><p>• <strong>userId</strong>: <code class="inline">number</code></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/97255b6/assets/src/components/activities/DeliveryElement.ts#L60">src/components/activities/DeliveryElement.ts:60</a></p><hr class="medium"/><h3 id="variables" class="section-heading"><a href="#variables" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">variables</span></h3><p>• <strong>variables</strong>: <code class="inline">any</code></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/97255b6/assets/src/components/activities/DeliveryElement.ts#L71">src/components/activities/DeliveryElement.ts:71</a></p>
+
 </div>
 
 <div class="bottom-actions" id="bottom-actions">
@@ -311,7 +136,7 @@ ActivityLevelScoring
 
       <p class="built-using">
         Built using
-        <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.34.2) for the
+        <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.38.2) for the
 
           <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
 

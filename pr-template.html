@@ -4,35 +4,22 @@
     <meta charset="utf-8">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="ExDoc v0.34.2">
+    <meta name="generator" content="ExDoc v0.38.2">
     <meta name="project" content="OLI Torus v0.31.1">
 
 
     <title>Pull Request Template — OLI Torus v0.31.1</title>
-    <link rel="stylesheet" href="dist/html-elixir-F2VRIOKR.css" />
 
+    <link rel="stylesheet" href="dist/html-elixir-KV3YOVJ3.css" />
 
-    <script src="dist/handlebars.runtime-NWIB6V2M.js"></script>
-    <script src="dist/handlebars.templates-K7URE6B4.js"></script>
-    <script src="dist/sidebar_items-36299CD5.js"></script>
-    <script src="docs_config.js"></script>
-    <script async src="dist/html-YIPIRHGU.js"></script>
+    <script defer src="dist/sidebar_items-829A150D.js"></script>
+    <script defer src="docs_config.js"></script>
+    <script defer src="dist/html-DPJLHKSM.js"></script>
 
   </head>
-  <body data-type="extras" class="page-extra">
-    <script>
-
-      try {
-        var settings = JSON.parse(localStorage.getItem('ex_doc:settings') || '{}');
-
-        if (settings.theme === 'dark' ||
-           ((settings.theme === 'system' || settings.theme == null) &&
-             window.matchMedia('(prefers-color-scheme: dark)').matches)
-           ) {
-          document.body.classList.add('dark')
-        }
-      } catch (error) { }
-    </script>
+  <body>
+    <script>(()=>{var t="ex_doc:settings",e="dark";var o="dark",s="light";var E="sidebar_state",n="closed";var r="sidebar_width";var a="sidebar-open";var i=new URLSearchParams(window.location.search),S=i.get("theme")||JSON.parse(localStorage.getItem(t)||"{}").theme;(S===o||S!==s&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&document.body.classList.add(e);var d=sessionStorage.getItem(E),A=d!==n&&!window.matchMedia(`screen and (max-width: ${768}px)`).matches;document.body.classList.toggle(a,A);var c=sessionStorage.getItem(r);c&&document.body.style.setProperty("--sidebarWidth",`${c}px`);var p=/(Macintosh|iPhone|iPad|iPod)/.test(window.navigator.userAgent);document.documentElement.classList.toggle("apple-os",p);})();
+</script>
 
 <div class="body-wrapper">
 
@@ -58,27 +45,13 @@ OLI Torus
         </div>
       </div>
     </div>
-    <ul id="sidebar-listNav" class="sidebar-listNav" role="tablist">
-      <li>
-        <button id="extras-list-tab-button" role="tab" data-type="extras" aria-controls="extras-tab-panel" aria-selected="true" tabindex="0">
-GUIDES
-        </button>
-      </li>
-
-
-    </ul>
+    <ul id="sidebar-list-nav" class="sidebar-list-nav" role="tablist" data-extras="GUIDES"></ul>
   </div>
-
-  <div id="extras-tab-panel" class="sidebar-tabpanel" role="tabpanel" aria-labelledby="extras-list-tab-button">
-    <ul id="extras-full-list" class="full-list"></ul>
-  </div>
-
-
 </nav>
 
-<main class="content">
-  <output role="status" id="toast"></output>
+<output role="status" id="toast"></output>
 
+<main class="content page-extra" id="main" data-type="extras">
   <div id="content" class="content-inner">
     <div class="top-search">
       <div class="search-settings">
@@ -87,8 +60,8 @@ GUIDES
             <span class="sr-only">Search documentation of OLI Torus</span>
             <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
           </label>
-          <button type="submit" class="search-button" aria-label="Submit Search">
-            <i class="ri-search-2-line ri-lg" aria-hidden="true" title="Submit search"></i>
+          <button type="submit" class="search-button" aria-label="Submit Search" tabindex="-1">
+            <i class="ri-search-2-line ri-lg" aria-hidden="true"></i>
           </button>
           <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
             <i class="ri-close-line ri-lg" title="Cancel search"></i>
@@ -104,49 +77,21 @@ GUIDES
     </div>
 
 <div id="top-content">
-  <h1>
+  <div class="heading-with-actions top-heading">
+    <h1>Pull Request Template</h1>
+
 
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/main/guides/process/pr-template.md#L1" title="View Source" class="icon-action" rel="help">
         <i class="ri-code-s-slash-line" aria-hidden="true"></i>
         <span class="sr-only">View Source</span>
       </a>
 
+  </div>
 
-    <span>Pull Request Template</span>
-  </h1>
 
-<ul><li>Fill out the template below as the body of your pull request. Any pull request that does not include enough information to be reviewed in a timely manner may be closed at the maintainers' discretion.</li><li>The pull request must update the test suite to demonstrate the changed functionality.</li><li>After you create the pull request, all status checks must be pass before a maintainer reviews your contribution.</li></ul><h2 id="identify-the-issue" class="section-heading">
-  <a href="#identify-the-issue" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">Identify the Issue</span>
-</h2>
-<p>Link to the issue describing the bug that you're fixing or the enhancement that you are implemening.</p><p>If there is not yet an issue that your work targets, please open a new issue and then link to that issue in your pull request.
-Note: In some cases, one person's &quot;bug&quot; is another person's &quot;feature.&quot; If the pull request does not address an existing issue with the &quot;bug&quot; label, the maintainers have the final say on whether the current behavior is a bug.</p><h2 id="description-of-the-change" class="section-heading">
-  <a href="#description-of-the-change" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">Description of the Change</span>
-</h2>
-<p>We must be able to understand the design of your change from this description. If we can't get a good idea of what the code will be doing from the description here, the pull request may be closed at the maintainers' discretion. Keep in mind that the maintainer reviewing this PR may not be familiar with or have worked with the code here recently, so please walk us through the concepts.</p><h2 id="alternate-designs" class="section-heading">
-  <a href="#alternate-designs" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">Alternate Designs</span>
-</h2>
-<p>Explain what other alternates were considered and why the proposed version was selected</p><h2 id="possible-drawbacks" class="section-heading">
-  <a href="#possible-drawbacks" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">Possible Drawbacks</span>
-</h2>
-<p>What are the possible side-effects or negative impacts of the code change?</p><h2 id="verification-process" class="section-heading">
-  <a href="#verification-process" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">Verification Process</span>
-</h2>
-<p>What process did you follow to verify that the change has not introduced any regressions? Describe the actions you performed (including buttons you clicked, text you typed, commands you ran, etc.), and describe the results you observed.</p>
+<ul><li>Fill out the template below as the body of your pull request. Any pull request that does not include enough information to be reviewed in a timely manner may be closed at the maintainers' discretion.</li><li>The pull request must update the test suite to demonstrate the changed functionality.</li><li>After you create the pull request, all status checks must be pass before a maintainer reviews your contribution.</li></ul><h2 id="identify-the-issue" class="section-heading"><a href="#identify-the-issue" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Identify the Issue</span></h2><p>Link to the issue describing the bug that you're fixing or the enhancement that you are implemening.</p><p>If there is not yet an issue that your work targets, please open a new issue and then link to that issue in your pull request.
+Note: In some cases, one person's &quot;bug&quot; is another person's &quot;feature.&quot; If the pull request does not address an existing issue with the &quot;bug&quot; label, the maintainers have the final say on whether the current behavior is a bug.</p><h2 id="description-of-the-change" class="section-heading"><a href="#description-of-the-change" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Description of the Change</span></h2><p>We must be able to understand the design of your change from this description. If we can't get a good idea of what the code will be doing from the description here, the pull request may be closed at the maintainers' discretion. Keep in mind that the maintainer reviewing this PR may not be familiar with or have worked with the code here recently, so please walk us through the concepts.</p><h2 id="alternate-designs" class="section-heading"><a href="#alternate-designs" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Alternate Designs</span></h2><p>Explain what other alternates were considered and why the proposed version was selected</p><h2 id="possible-drawbacks" class="section-heading"><a href="#possible-drawbacks" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Possible Drawbacks</span></h2><p>What are the possible side-effects or negative impacts of the code change?</p><h2 id="verification-process" class="section-heading"><a href="#verification-process" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Verification Process</span></h2><p>What process did you follow to verify that the change has not introduced any regressions? Describe the actions you performed (including buttons you clicked, text you typed, commands you ran, etc.), and describe the results you observed.</p>
+
 </div>
 
 <div class="bottom-actions" id="bottom-actions">
@@ -192,7 +137,7 @@ PR processes
 
       <p class="built-using">
         Built using
-        <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.34.2) for the
+        <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.38.2) for the
 
           <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
 
