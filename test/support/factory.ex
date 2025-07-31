@@ -465,7 +465,7 @@ defmodule Oli.Factory do
   def payment_factory() do
     %Payment{
       type: :direct,
-      amount: Money.new(:USD, 25),
+      amount: Money.new(25, "USD"),
       provider_type: :stripe,
       section: anonymous_build(:section),
       enrollment: anonymous_build(:enrollment),
@@ -773,6 +773,14 @@ defmodule Oli.Factory do
       deployment_id: Ecto.UUID.generate(),
       activity_registration: build(:activity_registration),
       platform_instance: build(:platform_instance),
+      status: :enabled
+    }
+  end
+
+  def activity_registration_project_factory() do
+    %Oli.Activities.ActivityRegistrationProject{
+      activity_registration_id: build(:activity_registration).id,
+      project_id: build(:project).id,
       status: :enabled
     }
   end

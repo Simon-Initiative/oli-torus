@@ -13,7 +13,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Resources.Collaboration
   alias OliWeb.Common.Utils
-  alias OliWeb.Components.{Common, Overview}
+  alias OliWeb.Components.{Common, Modal, Overview}
   alias OliWeb.Components.Project.{AdvancedActivityItem, AsyncExporter}
   alias OliWeb.Projects.{RequiredSurvey, TransferPaymentCodes}
 
@@ -54,7 +54,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
        collaborators:
          Accounts.authors_projects(project)
          |> Enum.group_by(& &1.author_project_status),
-       activities_enabled: Activities.advanced_activities(project, is_admin?),
+       project_selected_activities:
+         Activities.selected_activities_for_project(project.id, is_admin?),
        can_enable_experiments: is_admin? and Experiments.experiments_enabled?(),
        is_admin: is_admin?,
        changeset: Project.changeset(project),
@@ -315,11 +316,36 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
 
       <Overview.section
         title="Advanced Activities"
-        description="Enable advanced activity types for your project to include in your curriculum."
+        description="Add advanced activity types and LTI 1.3 external tools to the content type selector. Removing a tool or activity at the project level prevents new inserts but does not remove existing instances."
       >
-        <%= for activity_enabled <- @activities_enabled do %>
-          <AdvancedActivityItem.render activity_enabled={activity_enabled} project={@project} />
+        <%= for activity <- @project_selected_activities do %>
+          <.live_component
+            module={AdvancedActivityItem}
+            id={"advanced-activity-item-#{activity.id}"}
+            activity={activity}
+            project_id={@project.id}
+          />
         <% end %>
+        <button
+          type="button"
+          class="btn btn-primary mt-4"
+          phx-click={
+            JS.push("show_modal",
+              target: "#add-activities-tools",
+              value: %{project_id: @project.id}
+            )
+            |> Modal.show_modal("add-activities-tools-modal")
+          }
+        >
+          + Add Activities and Tools
+        </button>
+
+        <.live_component
+          module={OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal}
+          id="add-activities-tools"
+          project_id={@project.id}
+          is_admin={@is_admin}
+        />
       </Overview.section>
 
       <%= live_render(@socket, OliWeb.Projects.VisibilityLive,
@@ -655,6 +681,19 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
 
   def handle_info({:project_export_status, {status}}, socket) do
     {:noreply, assign(socket, project_export_status: status)}
+  end
+
+  def handle_info({:flash_message, {type, message}}, socket) do
+    {:noreply, put_flash(socket, type, message)}
+  end
+
+  def handle_info({:refresh_tools_and_activities}, socket) do
+    # Refresh the selected activities data
+    {:noreply,
+     assign(socket,
+       project_selected_activities:
+         Activities.selected_activities_for_project(socket.assigns.project.id)
+     )}
   end
 
   attr :collaborators, :map, required: true

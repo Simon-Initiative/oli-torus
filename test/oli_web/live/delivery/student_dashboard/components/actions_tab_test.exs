@@ -40,7 +40,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ActionsTabTest do
     section =
       insert(:section, %{
         requires_payment: true,
-        amount: %{amount: "1000", currency: "USD"}
+        amount: Money.new(1000, "USD")
       })
 
     [section: section]
@@ -393,7 +393,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ActionsTabTest do
       {:ok, updated_section} =
         Sections.update_section(section, %{
           requires_payment: true,
-          amount: %{amount: "1000", currency: "USD"}
+          amount: Money.new(1000, "USD")
         })
 
       {:ok, view, _html} =
