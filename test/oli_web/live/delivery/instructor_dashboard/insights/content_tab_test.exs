@@ -190,7 +190,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
              |> Floki.text() =~ "Module 3"
 
       assert element(view, "#footer_paging > div:first-child") |> render() =~
-               "3 - 3 of 3 results"
+               "Showing result 3 - 3 of 3 total"
 
       selected_page =
         view

@@ -136,7 +136,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ContentTabTest do
              |> Floki.find(~s{.instructor_dashboard_table tbody tr td})
              |> Floki.text() =~ "Module 3"
 
-      assert element(view, "#footer_paging") |> render() =~ "3 - 3 of 3 results"
+      assert element(view, "#footer_paging") |> render() =~ "Showing result 3 - 3 of 3 total"
 
       assert view
              |> render()
