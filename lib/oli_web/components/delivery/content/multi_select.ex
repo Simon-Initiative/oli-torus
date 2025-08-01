@@ -14,7 +14,7 @@ defmodule OliWeb.Delivery.Content.MultiSelect do
 
   def render(assigns) do
     ~H"""
-    <div class={"flex flex-col relative rounded h-9 #{if @selected_values != %{}, do: "border border-blue-500", else: "outline outline-1 outline-[#ced1d9] dark:outline-[#3B3740]"}"}>
+    <div class={"flex flex-col relative rounded outline outline-1 h-9 #{if @selected_values != %{}, do: "outline-[#006CD9] dark:outline-[#4CA6FF]", else: "outline outline-1 outline-[#ced1d9] dark:outline-[#3B3740]"}"}>
       <div
         phx-click={
           if(!@disabled,
@@ -37,7 +37,10 @@ defmodule OliWeb.Delivery.Content.MultiSelect do
           >
             <%= @placeholder %>
           </span>
-          <span :if={@selected_values != %{}} class="text-blue-500 text-xs font-semibold leading-none">
+          <span
+            :if={@selected_values != %{}}
+            class="text-[#006CD9] dark:text-[#4CA6FF] text-xs font-semibold leading-none"
+          >
             Proficiency is <%= show_proficiency_selected_values(@selected_values) %>
           </span>
         </div>

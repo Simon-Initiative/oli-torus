@@ -131,14 +131,14 @@ defmodule OliWeb.Components.Delivery.Buttons do
     <div>
       <div id={"#{@id}-down-icon"}>
         <Icons.chevron_down
-          class={"dark:fill-white " <> if @map_values not in [%{}, nil], do: "fill-blue-400 dark:fill-blue-400", else: ""}
+          class={"dark:fill-white " <> if @map_values not in [%{}, nil], do: "fill-[#006CD9] dark:fill-[#4CA6FF]", else: ""}
           width="16"
           height="16"
         />
       </div>
       <div class="hidden" id={"#{@id}-up-icon"}>
         <Icons.chevron_down
-          class={"rotate-180 dark:fill-white " <> if(@map_values not in [%{}, nil], do: "fill-blue-400 dark:fill-blue-400", else: "")}
+          class={"rotate-180 dark:fill-white " <> if(@map_values not in [%{}, nil], do: "fill-[#006CD9] dark:fill-[#4CA6FF]", else: "")}
           width="16"
           height="16"
         />
