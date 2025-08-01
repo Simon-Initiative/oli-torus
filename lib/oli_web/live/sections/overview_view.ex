@@ -14,7 +14,6 @@ defmodule OliWeb.Sections.OverviewView do
   alias Oli.Resources.Collaboration
   alias OliWeb.Projects.RequiredSurvey
   alias OliWeb.Common.MonacoEditor
-  alias OliWeb.DeliveryWeb
   alias Oli.Utils.S3Storage
   alias Oli.Repo
 
