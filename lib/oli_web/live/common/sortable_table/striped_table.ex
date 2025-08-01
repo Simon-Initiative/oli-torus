@@ -1,22 +1,22 @@
 defmodule OliWeb.Common.SortableTable.StripedTable do
   use Phoenix.Component
 
+  require Integer
+
   alias OliWeb.Common.Table.ColumnSpec
 
   @spec id_field(any, %{:id_field => any, optional(any) => any}) :: any
   def id_field(row, %{id_field: id_field}) when is_list(id_field) do
     id_field
-    |> Enum.reduce("", fn field, acc ->
-      cond do
-        is_atom(field) ->
-          "#{acc}-#{Map.get(row, field)}"
+    |> Enum.reduce("", fn
+      field, acc when is_atom(field) ->
+        "#{acc}-#{Map.get(row, field)}"
 
-        is_binary(field) ->
-          "#{acc}-#{field}"
+      field, acc when is_binary(field) ->
+        "#{acc}-#{field}"
 
-        true ->
-          acc
-      end
+      _field, acc ->
+        acc
     end)
     |> String.trim("-")
   end
@@ -157,7 +157,7 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
                 select: @select,
                 additional_table_class: @additional_table_class,
                 additional_row_class:
-                  if(rem(index, 2) == 0,
+                  if(Integer.is_even(index),
                     do: "bg-[#f3f4f8] dark:bg-[#0D0C0F]",
                     else: "bg-[#e3e7eb] dark:bg-[#201D21]"
                   )
