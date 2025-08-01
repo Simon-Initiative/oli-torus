@@ -203,23 +203,4 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
         {:error, "HTTP request failed: #{inspect(reason)}"}
     end
   end
-
-  defp ensure_tables_exist(config) do
-    # Check if video_events table exists by running a simple query
-    check_query = "SELECT 1 FROM video_events LIMIT 0"
-
-    case execute_clickhouse_query(check_query, config) do
-      {:ok, _} ->
-        :ok
-
-      {:error, reason} ->
-        if String.contains?(to_string(reason), "doesn't exist") do
-          Logger.warning("video_events table doesn't exist. Please run ClickHouse migrations.")
-          Logger.warning("Run: mix clickhouse.migrate up")
-          {:error, "video_events table doesn't exist. Run migrations first."}
-        else
-          {:error, reason}
-        end
-    end
-  end
 end
