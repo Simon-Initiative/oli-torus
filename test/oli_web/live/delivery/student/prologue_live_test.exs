@@ -1095,6 +1095,8 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
         view
         |> element(~s{div[role="back_link"] a})
         |> render()
+        |> Floki.parse_document!()
+        |> Floki.find("a")
         |> Floki.attribute("href")
 
       assert href ==

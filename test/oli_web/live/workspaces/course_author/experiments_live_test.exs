@@ -434,6 +434,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       view
       |> element("button[phx-click=\"show_edit_group_modal\"]")
       |> render()
+      |> Floki.parse_document!()
+      |> Floki.find("button[phx-click=\"show_edit_group_modal\"]")
       |> Floki.attribute("phx-value-resource-id")
 
     {view, Map.put(ctx, :resource_id, resource_id)}

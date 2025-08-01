@@ -287,11 +287,15 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
       first_image = element(lcd, "button[phx-click=select-resource]:first-of-type img")
 
       assert render(first_image)
+             |> Floki.parse_document!()
+             |> Floki.find("img")
              |> Floki.attribute("src")
              |> hd() =~
                "b.jpg"
 
       assert render(first_image)
+             |> Floki.parse_document!()
+             |> Floki.find("img")
              |> Floki.attribute("class")
              |> hd() =~ "!outline-[7px] outline-blue-400"
     end
@@ -384,6 +388,8 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
 
       assert element(lcd, "img[role=`poster_image`]")
              |> render()
+             |> Floki.parse_document!()
+             |> Floki.find("img")
              |> Floki.attribute("src")
              |> hd() =~
                "/images/course_default.png"
@@ -429,6 +435,8 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
 
       refute element(lcd, "img[role=`poster_image`]")
              |> render()
+             |> Floki.parse_document!()
+             |> Floki.find("img")
              |> Floki.attribute("src")
              |> hd() =~
                "/images/course_default.png"
@@ -543,6 +551,8 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
         element(lcd, "button[data-filename='c.jpg'] img")
 
       refute render(not_yet_selected_image)
+             |> Floki.parse_document!()
+             |> Floki.find("img")
              |> Floki.attribute("class")
              |> hd() =~ "!outline-[7px] outline-blue-400"
 
@@ -555,6 +565,8 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
         element(lcd, "button[data-filename='c.jpg'] img")
 
       assert render(selected_image)
+             |> Floki.parse_document!()
+             |> Floki.find("img")
              |> Floki.attribute("class")
              |> hd() =~ "!outline-[7px] outline-blue-400"
 
@@ -914,11 +926,15 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
       first_video = element(lcd, "button[phx-click=select-resource]:first-of-type video")
 
       assert render(first_video)
+             |> Floki.parse_document!()
+             |> Floki.find("video")
              |> Floki.attribute("data-filename")
              |> hd() =~
                "b.mp4"
 
       assert render(first_video)
+             |> Floki.parse_document!()
+             |> Floki.find("video")
              |> Floki.attribute("class")
              |> hd() =~ "!outline-[7px] outline-blue-400"
     end
@@ -1225,6 +1241,8 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
         element(lcd, "button[data-filename='c.mp4'] video")
 
       refute render(not_yet_selected_video)
+             |> Floki.parse_document!()
+             |> Floki.find("video")
              |> Floki.attribute("class")
              |> hd() =~ "!outline-[7px] outline-blue-400"
 
@@ -1237,6 +1255,8 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
         element(lcd, "button[data-filename='c.mp4'] video")
 
       assert render(selected_video)
+             |> Floki.parse_document!()
+             |> Floki.find("video")
              |> Floki.attribute("class")
              |> hd() =~ "!outline-[7px] outline-blue-400"
 
