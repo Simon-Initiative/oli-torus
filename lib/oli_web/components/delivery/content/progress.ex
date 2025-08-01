@@ -26,7 +26,15 @@ defmodule OliWeb.Delivery.Content.Progress do
       >
         <button
           data-dropdown-toggle="dropdown"
-          class={"h-full flex-shrink-0 rounded z-10 inline-flex items-center py-2.5 px-2 text-[#353740] text-xs font-semibold leading-none dark:text-[#EEEBF5] outline outline-1 outline-[#ced1d9] dark:outline-[#3B3740] #{if @progress_selector not in ["", nil], do: "!text-blue-500 text-xs font-semibold leading-none"}"}
+          class={[
+            "h-full flex-shrink-0 rounded z-10 inline-flex items-center py-2.5 px-2 text-[#353740] text-xs font-semibold leading-none",
+            "outline outline-1",
+            if @progress_selector not in ["", nil] do
+              "outline-[#006CD9] text-[#006CD9] dark:outline-[#4CA6FF] dark:text-[#4CA6FF]"
+            else
+              "outline-[#ced1d9] dark:text-[#EEEBF5] dark:outline-[#3B3740]"
+            end
+          ]}
           type="button"
         >
           Progress <%= progress_filter_text(

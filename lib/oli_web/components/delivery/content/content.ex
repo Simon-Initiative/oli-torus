@@ -220,11 +220,11 @@ defmodule OliWeb.Components.Delivery.Content do
             />
 
             <button
-              class="ml-2 mr-6 text-center text-[#353740] dark:text-[#EEEBF5] text-sm font-normal leading-none flex items-center gap-x-2"
+              class="ml-2 mr-6 text-center text-[#353740] dark:text-[#EEEBF5] hover:text-[#006CD9] dark:hover:text-[#4CA6FF] text-sm font-normal leading-none flex items-center gap-x-2"
               phx-click="clear_all_filters"
               phx-target={@myself}
             >
-              <Icons.trash class="stroke-[#353740] dark:stroke-[#EEEBF5]" /> Clear All Filters
+              <Icons.trash /> Clear All Filters
             </button>
           </div>
         </div>
