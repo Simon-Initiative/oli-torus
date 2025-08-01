@@ -6,8 +6,15 @@ export type LTIExternalToolDetails = {
     client_id: string;
     target_link_uri: string;
     login_url: string;
-    status: string;
   };
+  status: string;
+  deep_linking_enabled: boolean;
+  deep_link?: {
+    type: string;
+    title: string;
+    text: string;
+  };
+  can_configure_tool: boolean;
 };
 
 export function getLtiExternalToolDetails(
@@ -19,6 +26,20 @@ export function getLtiExternalToolDetails(
     method: 'GET',
   }).then((response) => {
     if (!response.ok) return Promise.reject(new Error('Failed to fetch external tool details'));
+
+    return response.json();
+  });
+}
+
+export function getLtiExternalToolDeepLinkingDetails(
+  slug: string,
+  activityId: string,
+): Promise<LTIExternalToolDetails> {
+  return fetch(`/api/v1/lti/sections/${slug}/deep_linking_launch_details/${activityId}`, {
+    method: 'GET',
+  }).then((response) => {
+    if (!response.ok)
+      return Promise.reject(new Error('Failed to fetch external tool deep linking details'));
 
     return response.json();
   });

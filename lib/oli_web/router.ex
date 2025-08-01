@@ -522,19 +522,6 @@ defmodule OliWeb.Router do
     put("/:project_id/collaborators/:author_email", CollaboratorController, :update)
     delete("/:project_id/collaborators/:author_email", CollaboratorController, :delete)
 
-    # Activities
-    put(
-      "/:project_id/activities/enable/:activity_slug",
-      ProjectActivityController,
-      :enable_activity
-    )
-
-    put(
-      "/:project_id/activities/disable/:activity_slug",
-      ProjectActivityController,
-      :disable_activity
-    )
-
     # Insights
     live "/:project_id/insights", Insights
   end
@@ -859,6 +846,8 @@ defmodule OliWeb.Router do
 
     # LTI platform services access tokens
     post("/auth/token", Api.LtiController, :auth_token)
+
+    post("/deep_link/:section_slug/:resource_id", LtiController, :deep_link)
   end
 
   scope "/lti", OliWeb do
@@ -877,7 +866,7 @@ defmodule OliWeb.Router do
     get("/authorize_redirect", LtiController, :authorize_redirect)
   end
 
-  # LTI 1.3 AGS endpoints for migrated LTI 1.1 Basic Outcomes
+  # LTI 1.3 AGS endpoints
   scope "/lti/lineitems/:page_attempt_guid/:activity_resource_id", OliWeb.Api do
     pipe_through([:api])
     get "/results", LtiAgsController, :get_result
@@ -1502,6 +1491,12 @@ defmodule OliWeb.Router do
       Api.LtiController,
       :launch_details
     )
+
+    get(
+      "/deep_linking_launch_details/:activity_id",
+      Api.LtiController,
+      :deep_linking_launch_details
+    )
   end
 
   ### Invitations (to sections or projects)
@@ -1607,7 +1602,6 @@ defmodule OliWeb.Router do
     get("/:project_slug/import/download", IngestController, :download_current)
     live("/:project_slug/import/csv", Import.CSVImportView)
 
-    live("/ingest", Admin.Ingest)
     live("/ingest/process", Admin.IngestV2)
 
     # Branding

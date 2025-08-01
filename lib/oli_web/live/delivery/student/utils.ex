@@ -188,7 +188,10 @@ defmodule OliWeb.Delivery.Student.Utils do
         TERMS
       </span>
       <ul class="list-disc ml-6">
-        <li :if={@has_scheduled_resources?} id="page_due_terms">
+        <li
+          :if={@has_scheduled_resources? or not is_nil(@effective_settings.end_date)}
+          id="page_due_terms"
+        >
           <.page_due_term effective_settings={@effective_settings} ctx={@ctx} />
         </li>
         <li :if={!@effective_settings.batch_scoring} id="score_as_you_go_term">
@@ -388,7 +391,7 @@ defmodule OliWeb.Delivery.Student.Utils do
   def container_label_for_scheduling_type([:read_by]), do: "Read by: "
   def container_label_for_scheduling_type(_), do: "Due by: "
 
-  def label_for_scheduling_type(:due_by), do: "Due by: "
+  def label_for_scheduling_type(type) when type in [:due_by, nil], do: "Due by: "
   def label_for_scheduling_type(:read_by), do: "Read by: "
   def label_for_scheduling_type(:inclass_activity), do: "In-class activity by: "
   def label_for_scheduling_type(_), do: ""

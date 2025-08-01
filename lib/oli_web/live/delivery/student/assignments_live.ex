@@ -286,7 +286,6 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
           <%= @assignment.title %>
         </.link>
         <span
-          :if={@has_scheduled_resources?}
           role="assignment schedule details"
           class="text-[#757682] dark:text-[#eeebf5]/75 text-xs font-semibold leading-3 whitespace-nowrap truncate"
         >
@@ -304,11 +303,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
           </span>
           <span class="ml-6">
             <%= Utils.label_for_scheduling_type(@assignment.scheduling_type) %>
-            <%= FormatDateTime.to_formatted_datetime(
-              @assignment.end_date,
-              @ctx,
-              "{WDshort} {Mshort} {D}, {YYYY}"
-            ) %>
+            <%= format_date(@assignment.end_date, @ctx, "{WDshort} {Mshort} {D}, {YYYY}") %>
           </span>
         </span>
       </div>
@@ -386,7 +381,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
               true
 
             {:due_by, end_date, :disallow} ->
-              !DateTime.compare(DateTime.utc_now(), end_date) == :gt
+              !(DateTime.compare(DateTime.utc_now(), end_date) == :gt)
 
             _ ->
               true
@@ -515,4 +510,9 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
     do:
       certificate.assessments_apply_to == :all or
         assignment.id in certificate.custom_assessments
+
+  defp format_date(nil, _ctx, _format), do: "None"
+
+  defp format_date(date, ctx, _format),
+    do: FormatDateTime.to_formatted_datetime(date, ctx, "{WDshort} {Mshort} {D}, {YYYY}")
 end

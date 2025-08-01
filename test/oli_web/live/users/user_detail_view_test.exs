@@ -120,7 +120,7 @@ defmodule OliWeb.Users.UsersDetailViewTest do
       assert document
              |> Floki.find("[phx-feedback-for='user[email]'] > p")
              |> Floki.text() =~
-               "must have the @ sign and no spaces"
+               "must be a valid email address"
 
       assert has_element?(view, "[type='submit'][disabled]")
 
