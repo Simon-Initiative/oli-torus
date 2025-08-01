@@ -1,7 +1,3 @@
-<%# <script src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.2/dropzone.js" integrity="sha512-4p9OjnfBk18Aavg91853yEZCA7ywJYcZpFt+YB+p+gLNPFIAlt2zMBGzTxREYh+sHFsttK0CTYephWaY7I3Wbw==" crossorigin="anonymous"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.2/dropzone.css" integrity="sha512-7uSoC3grlnRktCWoO4LjHMjotq8gf9XDFQerPuaph+cqR7JC9XKGdvN+UwZMC14aAaBDItdRj3DcSDs4kMWUgg==" crossorigin="anonymous" /> %>
-
-
 <%= form_for @changeset, @action, [multipart: true], fn f -> %>
   <%= if @changeset.action do %>
     <div class="alert alert-danger">
@@ -28,10 +24,6 @@
     <%= file_input f, :logo_dark, class: "form-control-file", accept: ".png,.gif" %>
     <%= error_tag f, :logo_dark %>
   </div>
-
-  <%# <script>
-    new Dropzone("#logoDropZone", {url: '<%= Routes.brand_path(@conn, :upload) ', paramName: 'upload'});
-  </script> %>
 
   <hr class="mt-4" />
 

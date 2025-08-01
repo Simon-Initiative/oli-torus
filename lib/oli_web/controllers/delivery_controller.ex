@@ -25,7 +25,8 @@ defmodule OliWeb.DeliveryController do
     PlatformRoles.get_role(:system_administrator),
     PlatformRoles.get_role(:institution_administrator),
     ContextRoles.get_role(:context_administrator),
-    ContextRoles.get_role(:context_instructor)
+    ContextRoles.get_role(:context_instructor),
+    ContextRoles.get_role(:context_content_developer)
   ]
 
   @doc """

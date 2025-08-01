@@ -841,7 +841,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
           type: :blueprint,
           registration_open: true,
           requires_payment: true,
-          amount: Money.new(:USD, 10),
+          amount: Money.new(10, "USD"),
           has_grace_period: true,
           grace_period_days: 18,
           start_date: ~U[2024-10-15 20:00:00Z],

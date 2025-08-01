@@ -14,7 +14,6 @@ defmodule Oli.Delivery.Paywall do
   alias Oli.Delivery.Sections.Blueprint
   alias Oli.Institutions.Institution
   alias Oli.Delivery.Paywall.AccessSummary
-  alias Lti_1p3.Roles.ContextRoles
 
   @maximum_batch_size 500
 
@@ -74,9 +73,7 @@ defmodule Oli.Delivery.Paywall do
         enrollment,
         payment
       ) do
-    instructor_context_role_id = ContextRoles.get_role(:context_instructor).id
-
-    if user_role_id == instructor_context_role_id or Sections.is_admin?(user, slug) do
+    if user_role_id in Sections.get_instructor_role_ids() or Sections.is_admin?(user, slug) do
       AccessSummary.instructor()
     else
       if is_nil(enrollment) and section.requires_enrollment do
@@ -315,7 +312,7 @@ defmodule Oli.Delivery.Paywall do
     do: {:ok, amount}
 
   def section_cost_from_product(%Section{requires_payment: false}, _),
-    do: {:ok, Money.new(:USD, 0)}
+    do: {:ok, Money.new(0, "USD")}
 
   @doc """
   Redeems a payment code for a given course section.
