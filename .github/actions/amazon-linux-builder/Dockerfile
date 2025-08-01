@@ -13,7 +13,7 @@ WORKDIR /tmp
 RUN wget --tries=1 --timeout=30 "http://erlang.org/download/otp_src_${OTP_VERSION}.tar.gz" -O otp_src_${OTP_VERSION}.tar.gz || wget "https://github.com/erlang/otp/releases/download/OTP-${OTP_VERSION}/otp_src_${OTP_VERSION}.tar.gz" -O otp_src_${OTP_VERSION}.tar.gz
 RUN tar xfz otp_src_${OTP_VERSION}.tar.gz
 WORKDIR /tmp/otp_src_${OTP_VERSION}/
-RUN ./configure
+RUN ./configure --disable-jit
 RUN make && make install
 
 WORKDIR /tmp
