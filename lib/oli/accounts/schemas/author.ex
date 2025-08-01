@@ -11,6 +11,7 @@ defmodule Oli.Accounts.Author do
     field :email_verified, :boolean, virtual: true
     field :password, :string, virtual: true, redact: true
     field :current_password, :string, virtual: true, redact: true
+    field :password_confirmation, :string, virtual: true, redact: true
     field :password_hash, :string, redact: true
     field :email_confirmed_at, :utc_datetime
 
@@ -165,8 +166,14 @@ defmodule Oli.Accounts.Author do
   It requires the email to change otherwise an error is added.
   """
   def email_changeset(author, attrs, opts \\ []) do
+    required_fields =
+      if Keyword.get(opts, :require_current_password, false),
+        do: [:email, :current_password],
+        else: [:email]
+
     author
     |> cast(attrs, [:email, :current_password])
+    |> validate_required(required_fields)
     |> validate_email(opts)
     |> case do
       %{changes: %{email: _}} = changeset -> changeset
@@ -188,8 +195,9 @@ defmodule Oli.Accounts.Author do
   """
   def password_changeset(author, attrs, opts \\ []) do
     author
-    |> cast(attrs, [:password])
-    |> validate_confirmation(:password, message: "does not match password")
+    |> cast(attrs, [:current_password, :password, :password_confirmation])
+    |> validate_required([:current_password, :password, :password_confirmation])
+    |> validate_confirmation(:password, message: "does not match new password")
     |> validate_password(opts)
   end
 

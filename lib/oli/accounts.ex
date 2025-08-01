@@ -1661,7 +1661,7 @@ defmodule Oli.Accounts do
 
   """
   def change_author_email(author, attrs \\ %{}) do
-    Author.email_changeset(author, attrs)
+    Author.email_changeset(author, attrs, validate_email: false)
   end
 
   @doc """
@@ -1679,7 +1679,7 @@ defmodule Oli.Accounts do
   """
   def apply_author_email(author, password, attrs) do
     author
-    |> Author.email_changeset(attrs)
+    |> Author.email_changeset(attrs, require_current_password: true)
     |> Author.validate_current_password(password)
     |> Ecto.Changeset.apply_action(:update)
   end

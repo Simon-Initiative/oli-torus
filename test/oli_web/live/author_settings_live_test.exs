@@ -94,8 +94,8 @@ defmodule OliWeb.AuthorSettingsLiveTest do
 
       form =
         form(lv, "#password_form", %{
-          "current_password" => password,
           "author" => %{
+            "current_password" => password,
             "email" => author.email,
             "password" => new_password,
             "password_confirmation" => new_password
@@ -123,8 +123,8 @@ defmodule OliWeb.AuthorSettingsLiveTest do
         lv
         |> element("#password_form")
         |> render_change(%{
-          "current_password" => "invalid",
           "author" => %{
+            "current_password" => "invalid",
             "password" => "too short",
             "password_confirmation" => "does not match"
           }
@@ -132,7 +132,7 @@ defmodule OliWeb.AuthorSettingsLiveTest do
 
       assert result =~ "Change Password"
       assert result =~ "should be at least 12 character(s)"
-      assert result =~ "does not match password"
+      assert result =~ "does not match new password"
     end
 
     test "renders errors with invalid data (phx-submit)", %{conn: conn} do
@@ -141,8 +141,8 @@ defmodule OliWeb.AuthorSettingsLiveTest do
       result =
         lv
         |> form("#password_form", %{
-          "current_password" => "invalid",
           "author" => %{
+            "current_password" => "invalid",
             "password" => "too short",
             "password_confirmation" => "does not match"
           }
@@ -151,7 +151,7 @@ defmodule OliWeb.AuthorSettingsLiveTest do
 
       assert result =~ "Change Password"
       assert result =~ "should be at least 12 character(s)"
-      assert result =~ "does not match password"
+      assert result =~ "does not match new password"
       assert result =~ "is not valid"
     end
   end
