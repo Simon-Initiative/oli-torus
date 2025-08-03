@@ -134,15 +134,15 @@ defmodule OliWeb.Products.ProductsView do
                 <SearchInput.render id="text-search" name="product_name" text={@text_search} />
               </.form>
 
-              <button class="ml-2 text-center text-[#353740] dark:text-[#EEEBF5] text-sm font-normal leading-none flex items-center gap-x-1">
+              <button class="ml-2 text-center text-[#353740] dark:text-[#EEEBF5] text-sm font-normal leading-none flex items-center gap-x-1 opacity-50 hover:cursor-not-allowed">
                 <Icons.filter class="stroke-[#353740] dark:stroke-[#EEEBF5]" /> Filter
               </button>
 
               <button
-                class="ml-2 mr-4 text-center text-[#353740] dark:text-[#EEEBF5] text-sm font-normal leading-none flex items-center gap-x-1"
+                class="ml-2 mr-4 text-center text-[#353740] dark:text-[#EEEBF5] text-sm font-normal leading-none flex items-center gap-x-1 hover:text-[#006CD9] dark:hover:text-[#4CA6FF]"
                 phx-click="clear_all_filters"
               >
-                <Icons.trash class="stroke-[#353740] dark:stroke-[#EEEBF5]" /> Clear All Filters
+                <Icons.trash /> Clear All Filters
               </button>
             </div>
           <% else %>

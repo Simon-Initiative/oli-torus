@@ -19,7 +19,7 @@ defmodule OliWeb.Projects.ProjectsLive do
   alias OliWeb.Projects.{CreateProjectModal, TableModel}
   alias OliWeb.Router.Helpers, as: Routes
 
-  @limit 25
+  @limit 20
 
   on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
   on_mount OliWeb.LiveSessionPlugs.SetCtx
@@ -196,15 +196,15 @@ defmodule OliWeb.Projects.ProjectsLive do
           <SearchInput.render id="text-search" name="project_name" text={@text_search} />
         </.form>
 
-        <button class="ml-2 text-center text-[#353740] dark:text-[#EEEBF5] text-sm font-normal leading-none flex items-center gap-x-1">
+        <button class="ml-2 text-center text-[#353740] dark:text-[#EEEBF5] text-sm font-normal leading-none flex items-center gap-x-1 opacity-50 hover:cursor-not-allowed">
           <Icons.filter class="stroke-[#353740] dark:stroke-[#EEEBF5]" /> Filter
         </button>
 
         <button
-          class="ml-2 mr-4 text-center text-[#353740] dark:text-[#EEEBF5] text-sm font-normal leading-none flex items-center gap-x-1"
+          class="ml-2 mr-4 text-center text-[#353740] dark:text-[#EEEBF5] text-sm font-normal leading-none flex items-center gap-x-1 hover:text-[#006CD9] dark:hover:text-[#4CA6FF]"
           phx-click="clear_all_filters"
         >
-          <Icons.trash class="stroke-[#353740] dark:stroke-[#EEEBF5]" /> Clear All Filters
+          <Icons.trash /> Clear All Filters
         </button>
       </div>
 
