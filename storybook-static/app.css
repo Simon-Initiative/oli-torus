@@ -6716,6 +6716,11 @@ table.table-striped tbody tr:nth-child(even) {
        column-gap: 0.25rem;
 }
 
+.gap-x-1\.5 {
+  -moz-column-gap: 0.375rem;
+       column-gap: 0.375rem;
+}
+
 .gap-x-2 {
   -moz-column-gap: 0.5rem;
        column-gap: 0.5rem;
@@ -9722,6 +9727,11 @@ table.table-striped tbody tr:nth-child(even) {
   color: rgb(33 131 88 / var(--tw-text-opacity));
 }
 
+.text-\[\#245D45\] {
+  --tw-text-opacity: 1;
+  color: rgb(36 93 69 / var(--tw-text-opacity));
+}
+
 .text-\[\#2db767\] {
   --tw-text-opacity: 1;
   color: rgb(45 183 103 / var(--tw-text-opacity));
@@ -9825,6 +9835,11 @@ table.table-striped tbody tr:nth-child(even) {
 .text-\[\#A3A3A3\] {
   --tw-text-opacity: 1;
   color: rgb(163 163 163 / var(--tw-text-opacity));
+}
+
+.text-\[\#A42327\] {
+  --tw-text-opacity: 1;
+  color: rgb(164 35 39 / var(--tw-text-opacity));
 }
 
 .text-\[\#CE2C31\] {
@@ -16375,6 +16390,10 @@ Not supports in Firefox and IE */
 
 .dark .dark\:stroke-\[\#BAB8BF\] {
   stroke: #BAB8BF;
+}
+
+.dark .dark\:stroke-\[\#EEEBF5\] {
+  stroke: #EEEBF5;
 }
 
 .dark .dark\:stroke-gray-200 {
