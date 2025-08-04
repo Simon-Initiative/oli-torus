@@ -68,9 +68,8 @@ jobs:
       - name: 🔨 Build project
         run: set -a; source oli.env && mix compile --warnings-as-errors
 
-      # temporarily disabled to facilitate code review of MER-4732 (will be re-enabled in step 2 of the PR)
-      # - name: 📋 Check Formatting
-      #   run: mix format --check-formatted
+      - name: 📋 Check Formatting
+        run: mix format --check-formatted
 
       - name: ▶️ Run unit tests
         run: |
@@ -122,9 +121,8 @@ jobs:
       - name: 📦 Install node_module dependencies
         run: yarn --cwd assets --frozen-lockfile
 
-      # temporarily disabled to facilitate code review of MER-4732 (will be re-enabled in step 2 of the PR)
-      # - name: 🤖 Auto format Elixir
-      #   run: mix format
+      - name: 🤖 Auto format Elixir
+        run: mix format
 
       - name: 🤖 Auto format Typescript
         run: yarn --cwd assets run format
