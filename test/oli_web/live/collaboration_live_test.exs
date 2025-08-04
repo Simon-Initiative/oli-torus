@@ -396,17 +396,12 @@ defmodule OliWeb.CollaborationLiveTest do
           }
         )
 
-      assert view
-             |> element(
-               "#collab_space_config_form #section_resource_collab_space_config_0_auto_accept"
-             )
-             |> render() =~ "checked"
+      assert has_element?(view, "#collab_space_config_form #main_auto_accept[checked=checked]")
 
-      assert view
-             |> element(
-               "#collab_space_config_form #section_resource_collab_space_config_0_anonymous_posting"
+      assert has_element?(
+               view,
+               "#collab_space_config_form #main_anonymous_posting[checked=checked]"
              )
-             |> render() =~ "checked"
     end
 
     test "can enable Collab spaces for all pages in course", %{
@@ -578,17 +573,12 @@ defmodule OliWeb.CollaborationLiveTest do
       assert has_element?(view, "h3", "Notes")
       assert has_element?(view, "span", "Enabled")
 
-      assert view
-             |> element("#collab_space_config_form #revision_collab_space_config_0_auto_accept")
-             |> render() =~
-               "checked"
+      assert has_element?(view, "#collab_space_config_form #main_auto_accept[checked=checked]")
 
-      assert view
-             |> element(
-               "#collab_space_config_form #revision_collab_space_config_0_anonymous_posting"
+      assert has_element?(
+               view,
+               "#collab_space_config_form #main_anonymous_posting[checked=checked]"
              )
-             |> render() =~
-               "checked"
     end
 
     test "can enable Collab spaces for all pages in course", %{
