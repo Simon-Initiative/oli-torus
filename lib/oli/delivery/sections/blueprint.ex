@@ -14,6 +14,7 @@ defmodule Oli.Delivery.Sections.Blueprint do
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
 
+  @default_amount 25
   @doc """
   From a slug, retrieve a valid section blueprint.  A section is a
   valid blueprint when that section is of type :blueprint and the status
@@ -206,16 +207,24 @@ defmodule Oli.Delivery.Sections.Blueprint do
       "registration_open" => attrs["registration_open"] || false,
       "grace_period_days" => attrs["grace_period_days"] || 1,
       "amount" =>
-        Money.new(
-          attrs["amount"]["currency"] || :USD,
-          attrs["amount"]["amount"] || "25.00"
-        ),
+        Money.new(parse_amount(attrs["amount"]["amount"]), attrs["amount"]["currency"] || "USD"),
       "publisher_id" => project.publisher_id,
       "customizations" => custom_labels,
       "welcome_title" => attrs["welcome_title"] || project.welcome_title,
       "encouraging_subtitle" => attrs["encouraging_subtitle"] || project.encouraging_subtitle,
       "certificate_enabled" => attrs["certificate_enabled"] || false
     }
+  end
+
+  defp parse_amount(nil), do: @default_amount
+
+  defp parse_amount(amount) when is_integer(amount), do: amount
+
+  defp parse_amount(amount) when is_binary(amount) do
+    case Integer.parse(amount) do
+      {amount, ""} -> amount
+      _ -> @default_amount
+    end
   end
 
   defp migrate_section_resources(section_id) do

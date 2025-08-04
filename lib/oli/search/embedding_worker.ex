@@ -94,7 +94,9 @@ defmodule Oli.Search.EmbeddingWorker do
             # apply the returned embeddings and combine with the already calculated embeddings
             all =
               Enum.zip(have_nots, data)
-              |> Enum.map(fn {re, %{"embedding" => embedding}} -> %{re | embedding: embedding} end)
+              |> Enum.map(fn {re, %{"embedding" => embedding}} ->
+                %{re | embedding: embedding}
+              end)
               |> Enum.concat(haves)
 
             {:ok, all}

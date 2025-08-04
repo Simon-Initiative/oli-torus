@@ -1,5 +1,5 @@
 defmodule Oli.Interop.CustomActivities.Authorizations do
-  alias Lti_1p3.Roles.ContextRoles
+  alias Oli.Delivery.Sections
 
   import XmlBuilder
 
@@ -9,16 +9,8 @@ defmodule Oli.Interop.CustomActivities.Authorizations do
     element(
       :authorizations,
       %{
-        grade_responses:
-          ContextRoles.contains_role?(
-            context.enrollment.context_roles,
-            ContextRoles.get_role(:context_instructor)
-          ),
-        instruct_material:
-          ContextRoles.contains_role?(
-            context.enrollment.context_roles,
-            ContextRoles.get_role(:context_instructor)
-          ),
+        grade_responses: Sections.contains_instructor_role?(context.enrollment.context_roles),
+        instruct_material: Sections.contains_instructor_role?(context.enrollment.context_roles),
         view_material: "true",
         view_responses: "true"
       }

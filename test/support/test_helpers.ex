@@ -550,7 +550,7 @@ defmodule Oli.TestHelpers do
             base_project_id: project.id,
             customizations: project.customizations,
             requires_payment: true,
-            amount: "$100.00",
+            amount: Money.new(100, "USD"),
             grace_period_days: 5,
             has_grace_period: true
           },

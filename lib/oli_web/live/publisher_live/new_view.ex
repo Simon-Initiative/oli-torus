@@ -23,12 +23,13 @@ defmodule OliWeb.PublisherLive.NewView do
   def mount(_, _, socket) do
     {:ok,
      assign(socket,
-       breadcrumbs: breadcrumb()
+       breadcrumbs: breadcrumb(),
+       publisher: Inventories.change_publisher(%Publisher{})
      )}
   end
 
   attr(:title, :string, default: "New Publisher")
-  attr(:publisher, :any, default: Inventories.change_publisher(%Publisher{}))
+  attr(:publisher, :any)
   attr(:breadcrumbs, :list)
 
   def render(assigns) do

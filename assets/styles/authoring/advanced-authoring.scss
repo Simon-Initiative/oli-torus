@@ -870,11 +870,117 @@ $font-family-sans-serif: var(--font-sans);
 .dark .aa-sequence-editor .aa-panel-section-title-bar,
 .dark .aa-adaptivity-rules .aa-panel-section-title-bar,
 .dark .aa-panel.bottom-panel .aa-panel-section-title-bar,
-.dark .aa-panel.right-panel .aa-panel-section-title-bar {
+.dark .aa-panel.right-panel .aa-panel-section-title-bar,
+.dark .aa-condition .aa-condition-header > div,
+.dark .advance-author-scoring-overview .input-group-text,
+.dark .flowchart-editor .screen-list-container,
+.dark .flowchart-editor .flowchart-order-note,
+.dark .flowchart-editor .sidebar-header,
+.dark .flowchart-editor .component-toolbar,
+.dark .flowchart-editor .component-toolbar .toolbar-column,
+.dark .flowchart-right,
+.dark .flowchart-editor .flowchart-sidebar,
+.dark .flowchart-editor .flowchart-sidebar .path-editor-completed select,
+.dark .flowchart-editor .flowchart-sidebar .destination-section select,
+.dark .flowchart-editor .flowchart-sidebar .none-selected,
+.dark .flowchart-editor .flowchart-sidebar .screen-title,
+.dark .flowchart-editor .flowchart-sidebar .path-editor-completed,
+.dark .flowchart-editor .flowchart-sidebar .path-editor-completed .path-param,
+.dark .flowchart-editor .flowchart-sidebar .path-editor-incomplete,
+.dark .flowchart-editor .flowchart-sidebar .path-editor-incomplete > select,
+.dark .flowchart-editor .flowchart-sidebar .path-editor-incomplete .path-param,
+.dark .flowchart-editor .fixed-right-panel,
+.dark .flowchart-editor .fixed-right-panel .nav,
+.dark .flowchart-editor .fixed-right-panel .nav .nav-item:hover,
+.dark .flowchart-right .toolbar-option,
+.dark .flowchart-editor .screen-list-container ul.screen-list li.active,
+.dark .flowchart-editor .screen-list-container ul.screen-list li:hover,
+.dark .flowchart-editor .react-flow,
+.dark .flowchart-editor .react-flow .react-flow__pane,
+.dark .flowchart-editor .react-flow > div,
+.dark #aa-variable-picker,
+.dark #aa-variable-picker .popover-header,
+.dark #aa-variable-picker .target-select-container,
+.dark #aa-variable-picker .variable-picker-dropdown,
+.dark #aa-variable-picker .popover-body,
+.dark #aa-variable-picker .activity-tree .part-type,
+.dark #aa-variable-picker .text-btn,
+.dark #aa-variable-picker .dropdown-header,
+.dark .bottom-panel .dropdown-item:hover,
+.dark .aa-panel-inner .dropdown-menu .dropdown-item.list-group-item:hover {
   background-color: var(--color-body-dark);
   color: var(--color-body-color-dark);
   box-shadow: 1px 1px 8px 1px var(--color-gray-900);
   border-color: var(--color-gray-600);
+}
+.dark .flowchart-editor .node-box {
+  background-color: darkgray;
+}
+.dark .flowchart-editor .node-box .screen-button {
+  border: 1px solid black !important;
+}
+.dark #moreComponents-popover .popover-header,
+.dark #advanced-authoring-modals .modal-body > li,
+.dark .advanced-authoring .popover-header {
+  color: var(--color-body-dark);
+}
+.dark #advanced-authoring-modals .form-group,
+.dark .flowchart-editor .component-tab label,
+.dark .flowchart-editor .component-tab small {
+  color: var(--color-body-color-dark);
+}
+.dark .flowchart-editor .flowchart-sidebar .none-selected > svg {
+  background: white;
+  border-radius: 9px;
+}
+.dark .flowchart-editor .flowchart-order-note > svg {
+  background: white;
+  border-radius: 9px;
+}
+.dark .flowchart-editor .undo-redo-button > svg,
+.dark #advanced-authoring-modals .modal-body .btn-group .btn-link,
+.dark .modal-dialog.config-modal .modal-body .btn-group .btn-link {
+  background: white;
+  border-radius: 0px;
+}
+
+.dark #advanced-authoring-modals .active-selection-toolbar button,
+.dark .modal-dialog.config-modal .active-selection-toolbar button {
+  padding-left: 5px;
+  padding-right: 5px;
+  border: 1px solid #ccc;
+  margin: 0;
+  color: black;
+}
+.dark #advanced-authoring-modals .activity-content,
+.dark .modal-dialog.config-modal formula-editor textarea,
+.dark .modal-dialog.config-modal mjx-container {
+  color: var(--color-body-dark);
+}
+
+.dark #advanced-authoring-modals .invalid-screen-list,
+.dark #advanced-authoring-modals .modal-body > p {
+  color: var(--color-body-color-dark);
+}
+.dark #advanced-authoring-modals .screen-context-menu {
+  background-color: var(--color-body-dark);
+}
+.dark .flowchart-right .toolbar-option:hover {
+  background-color: var(--color-body-dark) !important;
+  border: 1px solid;
+}
+.dark #advanced-authoring-modals .screen-context-menu {
+  background-color: var(--color-body-dark);
+}
+.dark .flowchart-editor .screen-list-container ul.screen-list li.active,
+.dark .flowchart-editor .screen-list-container ul.screen-list li:hover,
+.dark .flowchart-editor .fixed-right-panel .nav .nav-item:hover,
+.dark .flowchart-right .toolbar-option:active {
+  border: 1px solid;
+}
+.dark #aa-variable-picker .dropdown-item:hover {
+  border: 1px solid var(--color-body-color-dark);
+  color: var(--color-body-color-dark);
 }
 .dark .advanced-authoring .aa-panel-tabs .nav-link {
   color: #f5f5f5;
@@ -888,6 +994,10 @@ $font-family-sans-serif: var(--font-sans);
   color: inherit;
 }
 
+.dark .flowchart-editor .activity-content,
+.dark .advanced-authoring .activity-content {
+  color: $panel-bg-color-dark;
+}
 .dark .dark\:text-white .activity-content {
   --tw-text-opacity: 0;
   color: rgb(55, 58, 68);
@@ -908,7 +1018,9 @@ $font-family-sans-serif: var(--font-sans);
 }
 
 .dark .modal-dialog.config-modal,
-.dark #advanced-authoring-modals .modal-dialog {
+.dark .modal-dialog.config-modal .modal-body,
+.dark #advanced-authoring-modals .modal-dialog,
+.dark .modal .modal-dialog .modal-body {
   .modal-header {
     background-color: $panel-bg-color-dark;
     color: #f5f6f7;
@@ -920,10 +1032,28 @@ $font-family-sans-serif: var(--font-sans);
     color: $panel-bg-color-dark;
   }
 }
+.dark .modal .modal-dialog .modal-body,
+.dark .modal .config-modal .modal-body .font-semibold,
+.dark .modal .modal-dialog.add-screen-modal label,
+.dark .modal .modal-dialog.add-screen-modal button,
+.dark .modal .modal-dialog.add-screen-modal input,
+.dark .modal .modal-dialog .modal-body .media-sidebar li,
+.dark .modal .modal-dialog .modal-body .media-infobar div {
+  color: var(--color-body-color-dark) !important;
+  background-color: $panel-bg-color-dark !important;
+}
+.dark .modal .modal-dialog .modal-body .media-sidebar li.active,
+.dark .modal .modal-dialog .modal-body .media-sidebar li:hover {
+  border: 1px solid white;
+}
 .toast-body {
   .list-group-item {
     margin: 5px;
   }
+}
+
+.dark #advanced-authoring-modals .modal-body li {
+  color: var(--color-body-color-dark);
 }
 
 // Responsive behavior
