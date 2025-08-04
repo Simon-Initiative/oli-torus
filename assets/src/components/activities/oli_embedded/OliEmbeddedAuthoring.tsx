@@ -7,13 +7,13 @@ import { OliEmbeddedModelSchema } from 'components/activities/oli_embedded/schem
 import { lastPart } from 'components/activities/oli_embedded/utils';
 import * as ActivityTypes from 'components/activities/types';
 import { MediaItemRequest, ScoringStrategy } from 'components/activities/types';
-import { XmlEditor } from 'components/common/XmlEditor';
 import { uploadFiles } from 'components/media/manager/upload';
 import { CloseButton } from 'components/misc/CloseButton';
 import { Modal } from 'components/modal/Modal';
 import { configureStore } from 'state/store';
 import guid from 'utils/guid';
 import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
+import { WrappedMonaco } from '../common/variables/WrappedMonaco';
 
 const store = configureStore();
 
@@ -135,11 +135,13 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
 
   return (
     <>
-      <XmlEditor
-        value={model.modelXml}
-        disabled={false}
-        onChange={(newValue: string) => dispatch(OliEmbeddedActions.editActivityXml(newValue))}
+      <WrappedMonaco
+        model={model.modelXml}
+        editMode={true}
+        language="xml"
+        onEdit={(s: string) => dispatch(OliEmbeddedActions.editActivityXml(s))}
       />
+
       <div className="m-2">
         <input
           id={id}
