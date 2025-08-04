@@ -138,7 +138,7 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
       <WrappedMonaco
         model={model.modelXml}
         editMode={editMode}
-        language="xml"
+        language="XML"
         onEdit={(s: string) => dispatch(OliEmbeddedActions.editActivityXml(s))}
       />
 
