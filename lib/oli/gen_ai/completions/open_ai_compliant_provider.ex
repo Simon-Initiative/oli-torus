@@ -61,10 +61,6 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
               response_handler_fn.({:error})
               {:halt, {:error}}
 
-            {:error, _reason} ->
-              response_handler_fn.({:error})
-              {:halt, {:error}}
-
             other ->
               response_handler_fn.(other)
               {[], :ok}
