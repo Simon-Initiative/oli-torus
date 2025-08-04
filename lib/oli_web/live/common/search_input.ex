@@ -9,13 +9,16 @@ defmodule OliWeb.Common.SearchInput do
 
   def render(assigns) do
     ~H"""
-    <div class="w-full">
-      <i id={"#{@id}-icon"} class="absolute fa-solid fa-magnifying-glass pl-3 pt-3 h-4 w-4 "></i>
+    <div class={[
+      "w-56 h-[35px] inline-flex items-center gap-2 px-2 py-1 rounded-md outline outline-1 outline-[#ced1d9] bg-[#ffffff] dark:bg-[#2A282E] dark:outline-[#2A282E]",
+      @class
+    ]}>
+      <i class="fa-solid fa-magnifying-glass text-[#757682] w-4 h-4 dark:text-[#BAB8BF]"></i>
       <input
         id={"#{@id}-input"}
         phx-debounce="300"
         type="text"
-        class="h-9 w-full rounded border pl-9 focus:ring-1 focus:ring-delivery-primary animate-none focus:outline-2 dark:bg-[#0F0D0F] dark:text-violet-100 text-base font-normal font-['Roboto']"
+        class="w-full p-0 bg-transparent border-none outline-none ring-0 focus:outline-none focus:ring-0 text-[#353740] text-base font-normal placeholder:text-[#757682]"
         placeholder={@placeholder}
         value={@text}
         name={@name}

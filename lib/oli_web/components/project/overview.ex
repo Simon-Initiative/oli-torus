@@ -8,7 +8,7 @@ defmodule OliWeb.Components.Overview do
 
   def section(assigns) do
     ~H"""
-    <div class={"grid grid-cols-12 #{if !assigns[:is_last], do: "border-b dark:border-gray-700"}"}>
+    <div class={"grid grid-cols-12 py-5 #{if !assigns[:is_last], do: "border-b dark:border-gray-700"}"}>
       <div class="col-span-4 mr-4">
         <h4><%= @title %></h4>
         <%= if assigns[:description] do %>

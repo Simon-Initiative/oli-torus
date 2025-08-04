@@ -25,7 +25,8 @@ defmodule OliWeb.DeliveryController do
     PlatformRoles.get_role(:system_administrator),
     PlatformRoles.get_role(:institution_administrator),
     ContextRoles.get_role(:context_administrator),
-    ContextRoles.get_role(:context_instructor)
+    ContextRoles.get_role(:context_instructor),
+    ContextRoles.get_role(:context_content_developer)
   ]
 
   @doc """
@@ -388,19 +389,27 @@ defmodule OliWeb.DeliveryController do
 
       section ->
         contents =
-          Sections.get_objectives_and_subobjectives(section)
+          Sections.get_objectives_and_subobjectives(section, exclude_sub_objectives: false)
           |> Enum.map(fn objective ->
             %{
-              objective: objective.objective,
-              subobjective: objective.subobjective,
-              student_proficiency_obj: objective.student_proficiency_obj,
-              student_proficiency_subobj: objective.student_proficiency_subobj
+              subobjective: subobjective,
+              student_proficiency_subobj: student_proficiency_subobj,
+              student_proficiency_obj: student_proficiency_obj
+            } =
+              objective
+
+            %{
+              objective: (!subobjective && objective.title) || nil,
+              subobjective: subobjective,
+              student_proficiency_obj:
+                (!student_proficiency_subobj && student_proficiency_obj) || nil,
+              student_proficiency_subobj: student_proficiency_subobj
             }
           end)
           |> DataTable.new()
           |> DataTable.headers([
             :objective,
-            :subojective,
+            :subobjective,
             :student_proficiency_obj,
             :student_proficiency_subobj
           ])

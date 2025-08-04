@@ -4,8 +4,8 @@ defmodule Oli.MixProject do
   def project do
     [
       app: :oli,
-      version: "0.31.0",
-      elixir: "~> 1.17.2",
+      version: "0.31.1",
+      elixir: "~> 1.18.4",
       elixirc_paths: elixirc_paths(Mix.env()),
       elixirc_options: elixirc_options(Mix.env()),
       compilers: Mix.compilers(),
@@ -147,14 +147,14 @@ defmodule Oli.MixProject do
       {:ecto_sql, "~> 3.10"},
       {:eflame, "~> 1.0"},
       {:ecto_psql_extras, "~> 0.2"},
-      {:ex_aws, "~> 2.2"},
+      {:ex_aws, "~> 2.5"},
       {:ex_aws_s3, "~> 2.3"},
       {:ex_aws_lambda, "~> 2.0"},
-      {:ex_cldr, "~> 2.34"},
-      {:ex_cldr_plugs, "~> 1.2"},
-      {:ex_cldr_calendars, "~> 1.21"},
-      {:ex_cldr_dates_times, "~> 2.0"},
-      {:ex_json_schema, "~> 0.9.1"},
+      {:ex_cldr, "~> 2.42"},
+      {:ex_cldr_plugs, "~> 1.3"},
+      {:ex_cldr_calendars, "~> 1.26"},
+      {:ex_cldr_dates_times, "~> 2.20"},
+      {:ex_json_schema, "~> 0.11.0"},
       {:ex_machina, "~> 2.7.0", only: [:test]},
       {:ex_money, "~> 5.17"},
       {:ex_money_sql, "~> 1.7"},
@@ -170,11 +170,11 @@ defmodule Oli.MixProject do
       {:jason, "~> 1.3"},
       {:joken, "~> 2.2.0"},
       {:jose, "~> 1.10"},
-      {:lti_1p3, "~> 0.8"},
-      {:lti_1p3_ecto_provider, "~> 0.8"},
+      {:lti_1p3, "~> 0.9"},
+      {:lti_1p3_ecto_provider, "~> 0.9"},
       {:libcluster, "~> 3.3"},
       {:libcluster_ec2, "~> 0.6"},
-      {:mime, "~> 1.2"},
+      {:mime, "~> 2.0"},
       {:mix_test_watch, "~> 1.0", only: :dev, runtime: false},
       {:monocle, "~> 0.0.1"},
       {:mox, "~> 0.5", only: [:test]},
@@ -216,7 +216,8 @@ defmodule Oli.MixProject do
       {:uuid, "~> 1.1"},
       {:xml_builder, "~> 2.3.0"},
       {:vega_lite, "~> 0.1.9"},
-      {:odgn_json_pointer, "~> 3.0.1"}
+      {:odgn_json_pointer, "~> 3.0.1"},
+      {:idna, "~> 6.1.1"}
     ]
   end
 

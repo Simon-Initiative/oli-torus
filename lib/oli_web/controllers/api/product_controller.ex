@@ -39,7 +39,7 @@ defmodule OliWeb.Api.ProductController do
             "status" => "active",
             "requires_payment" => true,
             "pay_by_institution" => false,
-            "amount" => "$100.00",
+            "amount" => Money.new(100, "USD"),
             "has_grace_period" => true,
             "grace_period_days" => 10,
             "grace_period_strategy" => "relative_to_student",
