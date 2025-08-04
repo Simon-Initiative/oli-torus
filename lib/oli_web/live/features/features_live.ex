@@ -133,9 +133,9 @@ defmodule OliWeb.Features.FeaturesLive do
             <tbody>
               <%= for {feature, status} <- @features do %>
                 <tr>
-                  <td><%= feature.label %></td>
-                  <td><%= feature.description %></td>
-                  <td><%= current(status) %></td>
+                  <td>{feature.label}</td>
+                  <td>{feature.description}</td>
+                  <td>{current(status)}</td>
                   <td>
                     <button
                       type="button"
@@ -144,7 +144,7 @@ defmodule OliWeb.Features.FeaturesLive do
                       phx-value-label={feature.label}
                       phx-value-action={action(status)}
                     >
-                      <%= action(status) %>
+                      {action(status)}
                     </button>
                   </td>
                 </tr>

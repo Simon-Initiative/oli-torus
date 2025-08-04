@@ -86,7 +86,7 @@ defmodule OliWeb.RevisionHistory.Details do
           }
           on_cancel={Modal.hide_modal("edit_attribute_modal")}
         >
-          <:title>Edit <i><%= String.capitalize(@modal_assigns[:title]) %></i> attribute</:title>
+          <:title>Edit <i>{String.capitalize(@modal_assigns[:title])}</i> attribute</:title>
           <MonacoEditor.render
             id="attribute-monaco-editor"
             height="200px"
@@ -141,11 +141,11 @@ defmodule OliWeb.RevisionHistory.Details do
             <tbody>
               <tr id="revision-table-title-attr">
                 <td class="w-52"><strong>Title</strong></td>
-                <td><%= @revision.title %></td>
+                <td>{@revision.title}</td>
               </tr>
               <tr :for={{key, value} <- revision_details(@revision)} id={"revision-table-#{key}-attr"}>
                 <td class="w-52">
-                  <strong><%= Phoenix.Naming.humanize(key) %></strong>
+                  <strong>{Phoenix.Naming.humanize(key)}</strong>
                 </td>
                 <td>
                   <button
@@ -194,24 +194,24 @@ defmodule OliWeb.RevisionHistory.Details do
           assigns = %{parsed_list: parse_list(list, project_slug, slug_mapper)}
 
           ~H"""
-          <%= raw(@parsed_list) %>
+          {raw(@parsed_list)}
           """
 
         map when is_map(map) ->
           assigns = %{parsed_map: parse_map(map, project_slug, slug_mapper)}
 
           ~H"""
-          <%= raw(@parsed_map) %>
+          {raw(@parsed_map)}
           """
 
         _other ->
           ~H"""
-          <%= json_encode_pretty(@value) %>
+          {json_encode_pretty(@value)}
           """
       end
     else
       ~H"""
-      <%= json_encode_pretty(@value) %>
+      {json_encode_pretty(@value)}
       """
     end
   end

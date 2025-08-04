@@ -91,7 +91,7 @@ defmodule OliWeb.Grades.GradebookTableModel do
 
     ~H"""
     <div class="ml-8">
-      <%= @row.index %>
+      {@row.index}
     </div>
     """
   end
@@ -101,7 +101,7 @@ defmodule OliWeb.Grades.GradebookTableModel do
 
     ~H"""
     <div class="ml-8">
-      <%= @row.label %>
+      {@row.label}
     </div>
     """
   end
@@ -139,7 +139,7 @@ defmodule OliWeb.Grades.GradebookTableModel do
         }
       >
         <%= if @has_score? do %>
-          <%= "#{@score}/#{@out_of}" %>
+          {"#{@score}/#{@out_of}"}
         <% else %>
           Not Finished
         <% end %>
@@ -166,7 +166,7 @@ defmodule OliWeb.Grades.GradebookTableModel do
       class="ml-8 text-gray-800 dark:text-gray-300"
       data-score-check={if @disapproved_count > 0, do: "false", else: "true"}
     >
-      <%= OliWeb.Common.Utils.name(@row.user) %>
+      {OliWeb.Common.Utils.name(@row.user)}
     </div>
     """
   end
@@ -270,7 +270,7 @@ defmodule OliWeb.Grades.GradebookTableModel do
           )
         }
       >
-        <span><%= "#{@score}/#{@out_of}" %></span>
+        <span>{"#{@score}/#{@out_of}"}</span>
       </a>
       """
     else
@@ -306,7 +306,7 @@ defmodule OliWeb.Grades.GradebookTableModel do
           )
         }
       >
-        <%= "#{@safe_score}/#{@safe_out_of}" %>
+        {"#{@safe_score}/#{@safe_out_of}"}
       </a>
       <%= if @was_late do %>
         <span class="ml-2 badge badge-xs badge-pill badge-danger">LATE</span>

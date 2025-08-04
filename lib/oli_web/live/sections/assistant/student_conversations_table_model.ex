@@ -38,7 +38,7 @@ defmodule OliWeb.Sections.Assistant.StudentConversationsTableModel do
 
     ~H"""
     <div>
-      <%= @name %>
+      {@name}
     </div>
     """
   end
@@ -55,7 +55,7 @@ defmodule OliWeb.Sections.Assistant.StudentConversationsTableModel do
 
     ~H"""
     <div>
-      <%= resource_title(@resource_id, @resource_titles) %>
+      {resource_title(@resource_id, @resource_titles)}
     </div>
     """
   end
@@ -72,7 +72,7 @@ defmodule OliWeb.Sections.Assistant.StudentConversationsTableModel do
 
     ~H"""
     <div>
-      <%= @num_messages %>
+      {@num_messages}
     </div>
     """
   end

@@ -54,7 +54,7 @@ defmodule OliWeb.PublisherLive.ShowView do
     assigns = assign(assigns, :changeset, to_form(assigns.changeset))
 
     ~H"""
-    <%= render_modal(assigns) %>
+    {render_modal(assigns)}
     <div id="publisher-overview" class="overview container">
       <ShowSection.render
         section_title="Details"

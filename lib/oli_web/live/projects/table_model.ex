@@ -47,7 +47,7 @@ defmodule OliWeb.Projects.TableModel do
       :title ->
         ~H"""
         <a href={~p"/workspaces/course_author/#{@project.slug}/overview"}>
-          <%= @project.title %>
+          {@project.title}
         </a>
         """
 
@@ -62,7 +62,7 @@ defmodule OliWeb.Projects.TableModel do
 
       :name ->
         ~H"""
-        <span><%= @project.name %></span> <small class="text-muted"><%= @project.email %></small>
+        <span>{@project.name}</span> <small class="text-muted">{@project.email}</small>
         """
     end
   end

@@ -55,7 +55,7 @@ defmodule OliWeb.Common.Stepper do
           )
         ]}>
           <div id="stepper_content" class="flex flex-col h-[calc(100%-64px)] w-full">
-            <%= @selected_step.render_fn.(@data) %>
+            {@selected_step.render_fn.(@data)}
           </div>
 
           <div class={"p-3 flex items-center bg-gray-100/50 dark:bg-black #{if is_nil(@on_cancel), do: "justify-end", else: "justify-between"}"}>
@@ -64,7 +64,7 @@ defmodule OliWeb.Common.Stepper do
                 phx-click={@on_cancel}
                 class="torus-button secondary !py-[10px] !px-5 !rounded-[3px] !text-sm flex items-center justify-center  dark:!text-white dark:!bg-black dark:hover:!bg-gray-900"
               >
-                <%= @cancel_button_label %>
+                {@cancel_button_label}
               </button>
             <% end %>
             <div class="flex gap-2">
@@ -84,7 +84,7 @@ defmodule OliWeb.Common.Stepper do
                 phx-click={@selected_step.on_next_step |> fade_out_transition("stepper_content")}
                 class="torus-button primary !py-[10px] !px-5 !rounded-[3px] !text-sm flex items-center justify-center"
               >
-                <%= @selected_step.next_button_label || "Next step" %>
+                {@selected_step.next_button_label || "Next step"}
 
                 <div :if={@show_spinner} class="ml-1" role="status">
                   <.loader />
@@ -110,14 +110,14 @@ defmodule OliWeb.Common.Stepper do
     ]}>
       <div class={"flex flex-col text-white #{if !@active, do: "opacity-50"}"}>
         <h4 class="font-bold text-md md:text-[20px] tracking-[0.02px] md:leading-5 mb-[9px]">
-          <%= @step.title %>
+          {@step.title}
         </h4>
         <p class="font-normal text-sm md:text-[16px] tracking-[0.02px] md:leading-[24px]">
-          <%= @step.description %>
+          {@step.description}
         </p>
       </div>
       <div class={"flex self-start shrink-0 items-center justify-center font-extrabold text-lg h-[30px] w-[30px] sm:text-xl sm:h-[60px] sm:w-[60px] rounded-full shadow-sm #{if @active, do: "bg-primary text-white", else: "bg-white dark:bg-black border text-gray-400 border-gray-300 dark:border-gray-600"}"}>
-        <%= @index %>
+        {@index}
       </div>
     </div>
     """

@@ -64,13 +64,13 @@ defmodule OliWeb.RevisionHistory.Table do
       <tbody id="revisions">
         <%= for rev <- @to_display do %>
           <tr id={"revision-#{rev.id}"} {@tr_props.(rev.id)}>
-            <td><%= rev.id %></td>
-            <td><%= Map.get(@tree, rev.id).project_id %></td>
-            <td><%= Utils.render_date(rev, :inserted_at, @ctx) %></td>
-            <td><%= Utils.render_date(rev, :updated_at, @ctx) %></td>
-            <td><%= rev.author.email %></td>
-            <td><%= rev.slug %></td>
-            <td><%= publication_state(assigns, rev.id) %></td>
+            <td>{rev.id}</td>
+            <td>{Map.get(@tree, rev.id).project_id}</td>
+            <td>{Utils.render_date(rev, :inserted_at, @ctx)}</td>
+            <td>{Utils.render_date(rev, :updated_at, @ctx)}</td>
+            <td>{rev.author.email}</td>
+            <td>{rev.slug}</td>
+            <td>{publication_state(assigns, rev.id)}</td>
           </tr>
         <% end %>
       </tbody>

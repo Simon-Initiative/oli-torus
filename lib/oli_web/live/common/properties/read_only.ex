@@ -10,15 +10,15 @@ defmodule OliWeb.Common.Properties.ReadOnly do
   def render(assigns) do
     ~H"""
     <div class="form-group">
-      <label><%= @label %></label>
-      <%= render_property(assigns) %>
+      <label>{@label}</label>
+      {render_property(assigns)}
     </div>
     """
   end
 
   defp render_property(%{type: "link"} = assigns) do
     ~H"""
-    <.link href={@value} class="form-control"><%= @link_label %></.link>
+    <.link href={@value} class="form-control">{@link_label}</.link>
     """
   end
 

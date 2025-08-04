@@ -62,7 +62,7 @@ defmodule OliWeb.Components.Delivery.Actions do
           on_confirm={JS.push("unenroll", target: @myself) |> Modal.hide_modal("unenroll_user_modal")}
         >
           <:title>Unenroll student</:title>
-          <%= "Are you sure you want to unenroll #{@user.name} from the course #{@section.title}" %>
+          {"Are you sure you want to unenroll #{@user.name} from the course #{@section.title}"}
           <:confirm>Confirm</:confirm>
         </Modal.modal>
 
@@ -74,7 +74,7 @@ defmodule OliWeb.Components.Delivery.Actions do
           }
         >
           <:title>Re-enroll student</:title>
-          <%= "Are you sure you want to re-enroll #{@user.name} in the course #{@section.title}" %>
+          {"Are you sure you want to re-enroll #{@user.name} in the course #{@section.title}"}
           <:confirm>Confirm</:confirm>
         </Modal.modal>
 
@@ -92,7 +92,7 @@ defmodule OliWeb.Components.Delivery.Actions do
           }
         >
           <:title>Update payment status</:title>
-          <%= "Are you sure you want to change the payment status of #{@user.name} in the course #{@section.title} to NOT PAID?" %>
+          {"Are you sure you want to change the payment status of #{@user.name} in the course #{@section.title} to NOT PAID?"}
           <:cancel>Cancel</:cancel>
           <:confirm>Confirm</:confirm>
         </Modal.modal>
@@ -123,7 +123,7 @@ defmodule OliWeb.Components.Delivery.Actions do
                 <select class="torus-select pr-32" name="filter_by_role_id">
                   <%= for elem <- @user_role_data do %>
                     <option selected={elem.id == @user_role_id} value={elem.id}>
-                      <%= elem.title %>
+                      {elem.title}
                     </option>
                   <% end %>
                 </select>
@@ -295,7 +295,7 @@ defmodule OliWeb.Components.Delivery.Actions do
         cancel={@modal_assigns.cancel}
         id={@modal_assigns.id}
       >
-        <%= "Are you sure you want to change user role to #{@given_name} #{@family_name}?" %>
+        {"Are you sure you want to change user role to #{@given_name} #{@family_name}?"}
       </Confirm.render>
       """
     end
@@ -368,7 +368,7 @@ defmodule OliWeb.Components.Delivery.Actions do
         cancel={@modal_assigns.cancel}
         id={@modal_assigns.id}
       >
-        <%= "Are you sure you want to bypass payment for #{@given_name} #{@family_name}?" %>
+        {"Are you sure you want to bypass payment for #{@given_name} #{@family_name}?"}
       </Confirm.render>
       """
     end

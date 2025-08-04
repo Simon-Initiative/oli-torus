@@ -140,7 +140,7 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
       <div class={"flex flex-shrink-0 rounded-full w-2 h-2 #{if @progress < 50, do: "bg-red-600", else: "bg-gray-500"}"}>
       </div>
       <.link class="ml-6 underline" navigate={@link}>
-        <%= if @name, do: Utils.name(@name, @given_name, @family_name), else: "N/A" %>
+        {if @name, do: Utils.name(@name, @given_name, @family_name), else: "N/A"}
       </.link>
     </div>
     """
@@ -155,7 +155,7 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
 
     ~H"""
     <div class={if @payment_status == :not_paid, do: "text-red-600 font-bold"}>
-      <%= render_label(@payment_status, @payment_date, @section, @ctx) %>
+      {render_label(@payment_status, @payment_date, @section, @ctx)}
     </div>
     """
   end
@@ -168,7 +168,7 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
       class={if @progress < 50, do: "text-red-600 font-bold"}
       data-progress-check={if @progress >= 50, do: "true", else: "false"}
     >
-      <%= @progress %>%
+      {@progress}%
     </div>
     """
   end
@@ -188,7 +188,7 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
       })
 
     ~H"""
-    <%= parse_last_interaction(@last_interaction, @ctx) %>
+    {parse_last_interaction(@last_interaction, @ctx)}
     """
   end
 
@@ -197,7 +197,7 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
 
     ~H"""
     <div class={if @overall_proficiency == "Low", do: "text-red-600 font-bold"}>
-      <%= @overall_proficiency %>
+      {@overall_proficiency}
     </div>
     """
   end
@@ -206,7 +206,7 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
     assigns = Map.merge(assigns, %{email: Map.get(user, :email)})
 
     ~H"""
-    <div><%= @email %></div>
+    <div>{@email}</div>
     """
   end
 

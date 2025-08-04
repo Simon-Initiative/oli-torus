@@ -17,7 +17,7 @@ defmodule OliWeb.Curriculum.HyperlinkDependencyModal do
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title">
-              Delete "<%= @revision.title %>"
+              Delete "{@revision.title}"
             </h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
             </button>
@@ -26,7 +26,7 @@ defmodule OliWeb.Curriculum.HyperlinkDependencyModal do
             This resource cannot be deleted because it contains hyperlinks to other resources. Please check the following list and modify it accordingly:
             <ul class="pl-5 pt-3 max-w-md space-y-1 text-gray-500 list-disc list-inside dark:text-gray-400">
               <li :for={hyperlink <- @hyperlinks}>
-                <%= hyperlink.title %>
+                {hyperlink.title}
                 <.link
                   class="entry-title mx-3"
                   href={~p"/authoring/project/#{@project.slug}/resource/#{hyperlink.slug}"}

@@ -58,14 +58,14 @@ defmodule OliWeb.Discussion.TableModel do
     <div class="flex flex-col px-10 py-5">
       <div class="flex justify-between mb-6">
         <a class="text-delivery-primary hover:text-delivery-primary" href={href(@section_slug, @post)}>
-          <%= @post.title %>
+          {@post.title}
         </a>
         <span class="torus-span">
-          <%= FormatDateTime.format_datetime(@post.inserted_at, show_timezone: false) %>
+          {FormatDateTime.format_datetime(@post.inserted_at, show_timezone: false)}
         </span>
       </div>
       <div class="flex justify-between gap-2">
-        <h6 class="torus-h6 font-extrabold"><%= @post.user_name %></h6>
+        <h6 class="torus-h6 font-extrabold">{@post.user_name}</h6>
         <%= if @post.status == :submitted do %>
           <div class="flex gap-2">
             <button
@@ -98,7 +98,7 @@ defmodule OliWeb.Discussion.TableModel do
           </div>
         <% end %>
       </div>
-      <p class="torus-p"><%= @post.content.message %></p>
+      <p class="torus-p">{@post.content.message}</p>
     </div>
     """
   end

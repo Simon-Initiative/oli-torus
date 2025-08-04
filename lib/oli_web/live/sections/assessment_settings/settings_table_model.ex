@@ -166,7 +166,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
     assigns = Map.merge(assigns, %{name: assessment.name})
 
     ~H"""
-    <div class="pr-4"><%= @name %></div>
+    <div class="pr-4">{@name}</div>
     """
   end
 
@@ -187,7 +187,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
       <%= if is_nil(@available_date) do %>
         Always available
       <% else %>
-        <%= value_from_datetime(@available_date, @ctx) %>
+        {value_from_datetime(@available_date, @ctx)}
       <% end %>
     </button>
     """
@@ -209,7 +209,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
       phx-value-assessment_id={@id}
     >
       <%= if @due_date != nil and @scheduling_type == :due_by do %>
-        <%= value_from_datetime(@due_date, @ctx) %>
+        {value_from_datetime(@due_date, @ctx)}
       <% else %>
         No due date
       <% end %>
@@ -469,7 +469,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
           )
         }
       >
-        <%= @exceptions_count %>
+        {@exceptions_count}
       </.link>
     </div>
     """
