@@ -166,13 +166,19 @@ defmodule Oli.Accounts.Author do
   It requires the email to change otherwise an error is added.
   """
   def email_changeset(author, attrs, opts \\ []) do
-    required_fields =
+    fields =
       if Keyword.get(opts, :require_current_password, false),
         do: [:email, :current_password],
         else: [:email]
 
+    # :email is already required in validate_email/2
+    required_fields =
+      if Keyword.get(opts, :require_current_password, false),
+        do: [:current_password],
+        else: []
+
     author
-    |> cast(attrs, [:email, :current_password])
+    |> cast(attrs, fields)
     |> validate_required(required_fields)
     |> validate_email(opts)
     |> case do
@@ -194,9 +200,20 @@ defmodule Oli.Accounts.Author do
       Defaults to `true`.
   """
   def password_changeset(author, attrs, opts \\ []) do
+    fields =
+      if Keyword.get(opts, :require_current_password, false),
+        do: [:current_password, :password, :password_confirmation],
+        else: [:password]
+
+    # :password is already required in validate_password/2
+    required_fields =
+      if Keyword.get(opts, :require_current_password, false),
+        do: [:current_password, :password_confirmation],
+        else: []
+
     author
-    |> cast(attrs, [:current_password, :password, :password_confirmation])
-    |> validate_required([:current_password, :password, :password_confirmation])
+    |> cast(attrs, fields)
+    |> validate_required(required_fields)
     |> validate_confirmation(:password, message: "does not match new password")
     |> validate_password(opts)
   end

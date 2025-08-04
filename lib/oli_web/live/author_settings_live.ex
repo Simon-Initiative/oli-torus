@@ -295,12 +295,13 @@ defmodule OliWeb.AuthorSettingsLive do
 
   def handle_event(
         "update_password",
-        %{"author" => author_params},
+        %{"author" => %{"current_password" => current_password} = author_params},
         socket
       ) do
+    # this handles the case where the author has a password already
     author = socket.assigns.current_author
 
-    case Accounts.update_author_password(author, author_params["current_password"], author_params) do
+    case Accounts.update_author_password(author, current_password, author_params) do
       {:ok, author} ->
         password_form =
           author
@@ -308,6 +309,25 @@ defmodule OliWeb.AuthorSettingsLive do
           |> to_form()
 
         {:noreply, assign(socket, trigger_submit: true, password_form: password_form)}
+
+      {:error, changeset} ->
+        {:noreply, assign(socket, password_form: to_form(changeset))}
+    end
+  end
+
+  def handle_event("update_password", %{"author" => author_params}, socket) do
+    # this handles the case where the author has no password yet
+    author = socket.assigns.current_author
+
+    case Accounts.create_author_password(author, author_params) do
+      {:ok, author} ->
+        password_form =
+          author
+          |> Accounts.change_author_password(author_params)
+          |> to_form()
+
+        {:noreply,
+         assign(socket, trigger_submit: true, password_form: password_form, has_password: true)}
 
       {:error, changeset} ->
         {:noreply, assign(socket, password_form: to_form(changeset))}
