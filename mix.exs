@@ -67,6 +67,7 @@ defmodule Oli.MixProject do
       "guides/design/attempt.md",
       "guides/design/attempt-handling.md",
       "guides/design/locking.md",
+      "guides/design/genai.md",
       "guides/design/page-model.md",
       "guides/design/gdpr.md",
       "guides/design/misc.md",
@@ -128,6 +129,7 @@ defmodule Oli.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:anthropix, "~> 0.6"},
       {:appsignal_phoenix, "~> 2.7"},
       {:assent, "~> 0.2.9"},
       {:base32_crockford, "~> 1.0.0"},
@@ -136,6 +138,7 @@ defmodule Oli.MixProject do
       {:broadway, "~> 1.0.7"},
       {:broadway_dashboard, "~> 0.4.0"},
       {:cachex, "~> 3.5"},
+      {:cloak_ecto, "~> 1.2.0"},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
       {:csv, "~> 3.0.5"},
       {:decimal, "~> 2.0"},
