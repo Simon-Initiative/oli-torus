@@ -8,8 +8,8 @@ defmodule Oli.GenAI.Completions.RegisteredModel do
     field :provider, Ecto.Enum, values: [:null, :open_ai, :claude]
     field :model, :string
     field :url_template, :string
-    field :api_key, :string
-    field :secondary_api_key, :string
+    field :api_key, Oli.Encrypted.Binary
+    field :secondary_api_key, Oli.Encrypted.Binary
     field :timeout, :integer, default: 8000
     field :recv_timeout, :integer, default: 60000
 

@@ -138,6 +138,7 @@ defmodule Oli.MixProject do
       {:broadway, "~> 1.0.7"},
       {:broadway_dashboard, "~> 0.4.0"},
       {:cachex, "~> 3.5"},
+      {:cloak_ecto, "~> 1.2.0"},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
       {:csv, "~> 3.0.5"},
       {:decimal, "~> 2.0"},

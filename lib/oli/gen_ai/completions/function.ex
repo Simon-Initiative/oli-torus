@@ -71,6 +71,5 @@ defmodule Oli.GenAI.Completions.Function do
             {:error, :invalid_function_name}
         end
     end
-
   end
 end
