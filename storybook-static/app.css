@@ -8331,6 +8331,10 @@ table.table-striped tbody tr:nth-child(even) {
   fill: #0062F2;
 }
 
+.fill-\[\#006CD9\] {
+  fill: #006CD9;
+}
+
 .fill-\[\#0165DA\] {
   fill: #0165DA;
 }
@@ -9623,11 +9627,6 @@ table.table-striped tbody tr:nth-child(even) {
   color: rgb(155 155 155 / var(--tw-text-opacity)) !important;
 }
 
-.\!text-blue-500 {
-  --tw-text-opacity: 1 !important;
-  color: rgb(59 118 211 / var(--tw-text-opacity)) !important;
-}
-
 .\!text-danger {
   --tw-text-opacity: 1 !important;
   color: rgb(231 76 60 / var(--tw-text-opacity)) !important;
@@ -9841,11 +9840,6 @@ table.table-striped tbody tr:nth-child(even) {
 .text-\[\#F68E2E\] {
   --tw-text-opacity: 1;
   color: rgb(246 142 46 / var(--tw-text-opacity));
-}
-
-.text-\[\#FF8787\] {
-  --tw-text-opacity: 1;
-  color: rgb(255 135 135 / var(--tw-text-opacity));
 }
 
 .text-\[\#FFFFFF\] {
@@ -10466,6 +10460,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .outline-offset-\[-1px\] {
   outline-offset: -1px;
+}
+
+.outline-\[\#006CD9\] {
+  outline-color: #006CD9;
 }
 
 .outline-\[\#ced1d9\] {
@@ -11565,7 +11563,7 @@ a {
   font-size: 0.8rem;
   font-weight: 600;
   --tw-text-opacity: 1;
-  color: rgb(115 115 115 / var(--tw-text-opacity));
+  color: rgb(53 55 64 / var(--tw-text-opacity));
 }
 
 .dark .instructor_dashboard_table tr {
@@ -11767,7 +11765,7 @@ div:has(.remix_materials_table) {
   font-size: 0.8rem;
   font-weight: 600;
   --tw-text-opacity: 1;
-  color: rgb(115 115 115 / var(--tw-text-opacity));
+  color: rgb(53 55 64 / var(--tw-text-opacity));
 }
 
 .dark .remix_materials_table tr {
@@ -11927,7 +11925,7 @@ div:has(.remix_materials_table) #footer_paging {
   font-size: 0.8rem;
   font-weight: 600;
   --tw-text-opacity: 1;
-  color: rgb(115 115 115 / var(--tw-text-opacity));
+  color: rgb(53 55 64 / var(--tw-text-opacity));
 }
 
 .dark .remix_materials_publications_table tr {
@@ -14816,6 +14814,11 @@ Not supports in Firefox and IE */
   font-weight: 500;
 }
 
+.hover\:text-\[\#006CD9\]:hover {
+  --tw-text-opacity: 1;
+  color: rgb(0 108 217 / var(--tw-text-opacity));
+}
+
 .hover\:text-\[\#0165da\]:hover {
   --tw-text-opacity: 1;
   color: rgb(1 101 218 / var(--tw-text-opacity));
@@ -15040,8 +15043,8 @@ Not supports in Firefox and IE */
   outline-width: 3px;
 }
 
-.hover\:outline-blue-500\/70:hover {
-  outline-color: rgb(59 118 211 / 0.7);
+.hover\:outline-\[\#006CD9\]:hover {
+  outline-color: #006CD9;
 }
 
 .hover\:checked\:bg-blue-600:checked:hover {
@@ -15913,6 +15916,11 @@ Not supports in Firefox and IE */
   background-color: rgb(10 10 23 / var(--tw-bg-opacity));
 }
 
+.dark .dark\:bg-\[\#0A203A\] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(10 32 58 / var(--tw-bg-opacity));
+}
+
 .dark .dark\:bg-\[\#0B0C11\] {
   --tw-bg-opacity: 1;
   background-color: rgb(11 12 17 / var(--tw-bg-opacity));
@@ -16317,10 +16325,6 @@ Not supports in Firefox and IE */
   fill: #000;
 }
 
-.dark .dark\:fill-blue-400 {
-  fill: #5D8DDB;
-}
-
 .dark .dark\:fill-gray-200 {
   fill: #e5e5e5;
 }
@@ -16371,10 +16375,6 @@ Not supports in Firefox and IE */
 
 .dark .dark\:stroke-\[\#BAB8BF\] {
   stroke: #BAB8BF;
-}
-
-.dark .dark\:stroke-\[\#EEEBF5\] {
-  stroke: #EEEBF5;
 }
 
 .dark .dark\:stroke-gray-200 {
@@ -16789,6 +16789,10 @@ Not supports in Firefox and IE */
   outline-color: #3B3740;
 }
 
+.dark .dark\:outline-\[\#4CA6FF\] {
+  outline-color: #4CA6FF;
+}
+
 .dark .dark\:outline-neutral-700 {
   outline-color: #404040;
 }
@@ -17030,6 +17034,11 @@ Not supports in Firefox and IE */
   color: rgb(1 101 218 / var(--tw-text-opacity));
 }
 
+.dark .dark\:hover\:text-\[\#4CA6FF\]:hover {
+  --tw-text-opacity: 1;
+  color: rgb(76 166 255 / var(--tw-text-opacity));
+}
+
 .dark .dark\:hover\:text-\[\#99CCFF\]:hover {
   --tw-text-opacity: 1;
   color: rgb(153 204 255 / var(--tw-text-opacity));
@@ -17114,6 +17123,10 @@ Not supports in Firefox and IE */
 
 .dark .dark\:hover\:opacity-80:hover {
   opacity: 0.8;
+}
+
+.dark .hover\:dark\:outline-\[\#4CA6FF\]:hover {
+  outline-color: #4CA6FF;
 }
 
 .dark .hover\:dark\:outline-zinc-600:hover {
