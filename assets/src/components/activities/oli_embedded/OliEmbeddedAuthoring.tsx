@@ -18,7 +18,7 @@ import { WrappedMonaco } from '../common/variables/WrappedMonaco';
 const store = configureStore();
 
 const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
-  const { dispatch, model } = useAuthoringElementContext<OliEmbeddedModelSchema>();
+  const { dispatch, model, editMode } = useAuthoringElementContext<OliEmbeddedModelSchema>();
 
   const { projectSlug } = props;
 
@@ -137,7 +137,7 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
     <>
       <WrappedMonaco
         model={model.modelXml}
-        editMode={true}
+        editMode={editMode}
         language="xml"
         onEdit={(s: string) => dispatch(OliEmbeddedActions.editActivityXml(s))}
       />
