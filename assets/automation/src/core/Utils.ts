@@ -40,6 +40,12 @@ export class Utils {
     });
   }
 
+  async scrollToBottom() {
+    await this.page.evaluate(() => {
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'instant' });
+    });
+  }
+
   async paintElement(locator: Locator) {
     await locator.evaluate((lo) => {
       lo.style.outline = '3px solid red';
@@ -51,3 +57,4 @@ export class Utils {
     await this.page.waitForTimeout(seconds * 1000);
   }
 }
+

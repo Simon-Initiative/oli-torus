@@ -1,7 +1,7 @@
 import { Locator, Page, expect } from '@playwright/test';
-import { NavbarCO } from './NavbarCO';
-import { Utils } from '../../../../core/Utils';
-import { USER_TYPES, UserType } from '../types/user-type';
+import { Utils } from '@core/Utils';
+import { NavbarCO } from '@pom/component/NavbarCO';
+import { USER_TYPES, UserType } from '@pom/types/user-type';
 
 export class LoginPO {
   private acceptCookiesButton: Locator;
@@ -21,7 +21,9 @@ export class LoginPO {
   }
 
   async acceptCookies() {
-    await this.acceptCookiesButton.click();
+    if (await this.acceptCookiesButton.isVisible()) {
+      await this.acceptCookiesButton.click();
+    }
   }
 
   async verifyTitle(expectedTitle: string) {
@@ -51,18 +53,17 @@ export class LoginPO {
     await this.signInButton.click();
   }
 
-
   async selectRoleAccount(role: UserType) {
     const navbarco = new NavbarCO(this.page);
 
     if (role === USER_TYPES.STUDENT) {
-      await navbarco.selectStudentLogin();
+      await navbarco.clickLogo();
     } else if (role === USER_TYPES.INSTRUCTOR) {
-      await navbarco.selectInstructorLogin();
+      await navbarco.goToInstructorsLogin();
     } else if (role === USER_TYPES.AUTHOR) {
-      await navbarco.selectCourseAuthorLogin();
+      await navbarco.goToAuthorsLogin();
     } else if (role === USER_TYPES.ADMIN) {
-      await navbarco.selectAdministratorLogin();
+      await navbarco.goToAdministratorLogin();
     }
   }
 }
