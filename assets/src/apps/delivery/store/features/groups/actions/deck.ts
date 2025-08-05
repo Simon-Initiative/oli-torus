@@ -42,6 +42,7 @@ import {
 import { loadActivityAttemptState, updateExtrinsicState } from '../../attempt/slice';
 import {
   selectActivityTypes,
+  selectBlobStorageProvider,
   selectIsInstructor,
   selectNavigationSequence,
   selectPreviewMode,
@@ -63,6 +64,7 @@ export const initializeActivity = createAsyncThunk(
     const rootState = thunkApi.getState() as DeliveryRootState;
     const isPreviewMode = selectPreviewMode(rootState);
     const sectionSlug = selectSectionSlug(rootState);
+    const blobStorageProvider = selectBlobStorageProvider(rootState);
     const resourceAttemptGuid = selectResourceAttemptGuid(rootState);
     const sequence = selectSequence(rootState);
     const isReviewMode = selectReviewMode(rootState);
@@ -175,7 +177,6 @@ export const initializeActivity = createAsyncThunk(
       applyState(targetIsResumeModeOp, defaultGlobalEnv);
     }
     const sessionOps = [
-      resumeTarget,
       timeStartOp,
       timeOnQuestion,
       timeExceededOp,
@@ -196,6 +197,7 @@ export const initializeActivity = createAsyncThunk(
     };
     if (!isReviewMode && !isHistoryMode) {
       sessionOps.push(targetVisitTimeStampOp);
+      sessionOps.push(resumeTarget);
     }
     // init state is always "local" but the parts may come from parent layers
     // in that case they actually need to be written to the parent layer values
@@ -265,11 +267,17 @@ export const initializeActivity = createAsyncThunk(
       return { result: status };
     }
 
-    await writePageAttemptState(sectionSlug, resourceAttemptGuid, sessionState);
+    await writePageAttemptState(
+      blobStorageProvider,
+      sectionSlug,
+      resourceAttemptGuid,
+      sessionState,
+    );
   },
 );
 
 const getSessionVisitHistory = async (
+  blobStorageProvider: 'deprecated' | 'new',
   sectionSlug: string,
   resourceAttemptGuid: string,
   isPreviewMode = false,
@@ -279,7 +287,11 @@ const getSessionVisitHistory = async (
     const allState = getEnvState(defaultGlobalEnv);
     pageAttemptState = allState;
   } else {
-    const { result } = await getPageAttemptState(sectionSlug, resourceAttemptGuid);
+    const { result } = await getPageAttemptState(
+      blobStorageProvider,
+      sectionSlug,
+      resourceAttemptGuid,
+    );
     pageAttemptState = result;
   }
   return Object.keys(pageAttemptState)
@@ -296,12 +308,14 @@ export const findNextSequenceId = createAsyncThunk(
     const rootState = thunkApi.getState() as DeliveryRootState;
     const isPreviewMode = selectPreviewMode(rootState);
     const sectionSlug = selectSectionSlug(rootState);
+    const blobStorageProvider = selectBlobStorageProvider(rootState);
     const resourceAttemptGuid = selectResourceAttemptGuid(rootState);
     const sequence = selectSequence(rootState);
     let nextSequenceEntry: SequenceEntry<SequenceEntryType> | null = null;
     let navError = '';
 
     const visitHistory = await getSessionVisitHistory(
+      blobStorageProvider,
       sectionSlug,
       resourceAttemptGuid,
       isPreviewMode,
@@ -358,6 +372,7 @@ export const findNextSequenceId = createAsyncThunk(
     if (navError) {
       throw new Error(navError);
     }
+
     return nextSequenceEntry?.custom.sequenceId;
   },
 );

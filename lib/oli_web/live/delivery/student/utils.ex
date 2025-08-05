@@ -195,7 +195,7 @@ defmodule OliWeb.Delivery.Student.Utils do
           <%= score_as_you_go(@effective_settings) %>
         </li>
         <li id="page_scoring_terms">
-          <%= page_scoring_term(@effective_settings.scoring_strategy_id) %>
+          <%= page_scoring_term(@effective_settings) %>
         </li>
         <li :if={!@effective_settings.batch_scoring} id="question_attempts">
           <%= question_attempts(@effective_settings) %>
@@ -340,18 +340,21 @@ defmodule OliWeb.Delivery.Student.Utils do
   defp to_hours(1), do: "1 hour"
   defp to_hours(hours), do: "#{hours} hours"
 
-  defp page_scoring_term(1 = _scoring_strategy_id),
-    do: "Your overall score for this assignment will be the average score of your attempts."
+  defp page_scoring_term(effective_settings) do
+    policy_text =
+      if effective_settings.batch_scoring, do: "this assignment", else: "each question"
 
-  defp page_scoring_term(3 = _scoring_strategy_id),
-    do: "Your overall score for this assignment will be the score of your last attempt."
+    strategy_text =
+      case effective_settings.scoring_strategy_id do
+        1 -> "the average of your attempts"
+        2 -> "determined by your best attempt"
+        3 -> "determined by your last attempt"
+        4 -> "determined by the total sum of your attempts"
+        _ -> "determined by your best attempt"
+      end
 
-  defp page_scoring_term(4 = _scoring_strategy_id),
-    do: "Your overall score for this assignment will be the total sum of your attempts."
-
-  # scoring strategy 2 is the default scoring strategy
-  defp page_scoring_term(_scoring_strategy_id),
-    do: "Your overall score for this assignment will be the score of your best attempt."
+    "For #{policy_text}, your score will be #{strategy_text}."
+  end
 
   @doc """
   Returns the scheduling type label for the container.
@@ -371,9 +374,9 @@ defmodule OliWeb.Delivery.Student.Utils do
       assign(assigns, %{
         proficiency_levels: [
           {"Not enough data", "Not enough information",
-           "You haven’t completed enough activities for the system to calculate learning proficiency."},
+           "You haven't completed enough activities for the system to calculate learning proficiency."},
           {"Low", "Beginning Proficiency",
-           "You’re beginning to understand key ideas, but there is room to grow."},
+           "You're beginning to understand key ideas, but there is room to grow."},
           {"Medium", "Growing Proficiency",
            "Your understanding and skills are clearly strengthening and expanding."},
           {"High", "Establishing Proficiency",
@@ -809,6 +812,24 @@ defmodule OliWeb.Delivery.Student.Utils do
   end
 
   @doc """
+  Calculates and formats the percentage score based on the given score and out_of value.
+
+  Returns `nil` if the score is `nil`.
+
+  ## Examples
+
+      iex> parse_percentage(45, 50)
+      "90%"
+
+      iex> parse_percentage(nil, 50)
+      nil
+  """
+  @spec parse_percentage(number() | nil, number() | nil) :: String.t() | nil
+  def parse_percentage(nil, _), do: nil
+
+  def parse_percentage(score, out_of), do: parse_score(score / out_of * 100)
+
+  @doc """
   Rounds a given score to two decimal places and converts it to an integer if the result is a whole number.
 
   ## Parameters:
@@ -1072,6 +1093,17 @@ defmodule OliWeb.Delivery.Student.Utils do
       selected_view: selected_view
     ]
   end
+
+  @doc """
+  Parses the enrollment status and returns a human-readable string.
+  """
+
+  @spec parse_enrollment_status(atom()) :: String.t()
+  def parse_enrollment_status(:enrolled), do: "Enrolled"
+  def parse_enrollment_status(:suspended), do: "Suspended"
+  def parse_enrollment_status(:pending_confirmation), do: "Pending confirmation"
+  def parse_enrollment_status(:rejected), do: "Rejected invitation"
+  def parse_enrollment_status(_status), do: "Unknown"
 
   def emit_page_viewed_event(socket) do
     section = socket.assigns.section

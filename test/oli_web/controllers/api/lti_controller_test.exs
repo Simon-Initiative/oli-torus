@@ -1,10 +1,16 @@
 defmodule OliWeb.Api.LtiControllerTest do
   use OliWeb.ConnCase
 
+  import Oli.Factory
+  import Mox
+
+  setup :verify_on_exit!
+
   alias Oli.Lti.PlatformExternalTools
   alias Oli.Authoring.Editing.{ActivityEditor, PageEditor}
   alias Oli.Publishing
   alias Oli.Delivery.Sections
+  alias Oli.Test.MockHTTP
 
   defp accept_json(%{conn: conn}) do
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
@@ -47,6 +53,100 @@ defmodule OliWeb.Api.LtiControllerTest do
       assert json_response(conn, 200)["launch_params"]["login_url"] == "some login_url"
       assert json_response(conn, 200)["launch_params"]["login_hint"] != nil
       assert json_response(conn, 200)["launch_params"]["status"] != nil
+    end
+  end
+
+  describe "auth_token" do
+    setup [:accept_json]
+
+    defp generate_client_assertion(client_id, key, kid) do
+      now = DateTime.utc_now() |> DateTime.to_unix()
+
+      claims = %{
+        "iss" => client_id,
+        "sub" => client_id,
+        "aud" => client_id,
+        "iat" => now,
+        "exp" => now + 3600,
+        "jti" => UUID.uuid4()
+      }
+
+      jwk = JOSE.JWK.from_pem(key)
+
+      {_, jwt} =
+        JOSE.JWT.sign(
+          jwk,
+          %{"alg" => "RS256", "kid" => kid},
+          claims
+        )
+        |> JOSE.JWS.compact()
+
+      jwt
+    end
+
+    test "returns access token for valid client_assertion", %{conn: conn} do
+      client_id = "test-client-id"
+      key_pem = File.read!("test/support/fixtures/test_rsa_private.pem")
+
+      public_jwk =
+        JOSE.JWK.from_pem(key_pem)
+        |> JOSE.JWK.to_public()
+        |> JOSE.JWK.to_map()
+        |> elem(1)
+        |> Map.put("kid", "test-kid")
+
+      keyset_url = "https://some-tool.example.edu/.well-known/jwks.json"
+
+      # Insert a platform instance using Oli.Factory
+      insert(:platform_instance, %{
+        client_id: client_id,
+        keyset_url: keyset_url
+      })
+
+      # Expect HTTP request to fetch the keyset using Mox
+      MockHTTP
+      |> expect(:get, fn ^keyset_url ->
+        {:ok,
+         %HTTPoison.Response{
+           status_code: 200,
+           body: Jason.encode!(%{"keys" => [public_jwk]})
+         }}
+      end)
+
+      client_assertion = generate_client_assertion(client_id, key_pem, "test-kid")
+
+      params = %{
+        "grant_type" => "client_credentials",
+        "client_assertion" => client_assertion,
+        "scope" =>
+          "https://purl.imsglobal.org/spec/lti-ags/scope/result.readonly https://purl.imsglobal.org/spec/lti-ags/scope/score"
+      }
+
+      conn = post(conn, ~p"/lti/auth/token", params)
+      resp = json_response(conn, 200)
+      assert resp["access_token"]
+      assert resp["token_type"] == "bearer"
+      assert resp["expires_in"] == 3600
+
+      assert resp["scope"] ==
+               "https://purl.imsglobal.org/spec/lti-ags/scope/result.readonly https://purl.imsglobal.org/spec/lti-ags/scope/score"
+    end
+
+    @tag capture_log: true
+    test "returns 401 for invalid client_assertion", %{conn: conn} do
+      params = %{
+        "grant_type" => "client_credentials",
+        "client_assertion" => "invalid.jwt.token",
+        "scope" => "scope1"
+      }
+
+      conn = post(conn, ~p"/lti/auth/token", params)
+      assert json_response(conn, 401)["error"] == "invalid_request"
+    end
+
+    test "returns 400 for missing params", %{conn: conn} do
+      conn = post(conn, ~p"/lti/auth/token", %{})
+      assert json_response(conn, 400)["error"] == "invalid_request"
     end
   end
 

@@ -161,6 +161,17 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
       refute duplicate.slug == section.slug
       refute duplicate.root_section_resource_id == section.root_section_resource_id
 
+      # Verify section resources were created and migrated
+      section_resources = Sections.get_section_resources(duplicate.id)
+      assert length(section_resources) > 0
+
+      section_resources
+      |> Enum.each(fn sr ->
+        assert sr.section_id == duplicate.id
+        # revision_id is a field that is populated by the migration
+        assert sr.revision_id != nil
+      end)
+
       duped =
         get_resources(id)
         |> Enum.map(fn s -> s.id end)
@@ -312,6 +323,104 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
         )
 
       Repo.all(query)
+    end
+  end
+
+  describe "create_blueprint/5" do
+    setup do
+      Seeder.base_project_with_resource2()
+    end
+
+    test "successfully creates a blueprint from a valid project", %{
+      project: project,
+      author: author
+    } do
+      {:ok, _publication} = Publishing.publish_project(project, "initial publication", author.id)
+
+      custom_labels = %{"unit" => "Module", "lesson" => "Section"}
+
+      attrs = %{
+        "requires_payment" => true,
+        "payment_options" => "direct",
+        "amount" => %{"currency" => "USD", "amount" => "50.00"}
+      }
+
+      {:ok, blueprint} =
+        Blueprint.create_blueprint(
+          project.slug,
+          "Test Blueprint",
+          custom_labels,
+          nil,
+          attrs
+        )
+
+      # Verify blueprint basic properties
+      assert blueprint.type == :blueprint
+      assert blueprint.status == :active
+      assert blueprint.title == "Test Blueprint"
+      assert blueprint.base_project_id == project.id
+      assert blueprint.requires_payment == true
+      assert blueprint.payment_options == :direct
+      assert blueprint.amount == Money.new(:USD, "50.00")
+      assert blueprint.customizations.unit == "Module"
+      refute blueprint.open_and_free
+
+      # Verify section resources were created and migrated
+      section_resources = Sections.get_section_resources(blueprint.id)
+      assert length(section_resources) > 0
+
+      section_resources
+      |> Enum.each(fn sr ->
+        assert sr.section_id == blueprint.id
+        # revision_id is a field that is populated by the migration
+        assert sr.revision_id != nil
+      end)
+
+      # Verify root section resource is set
+      assert blueprint.root_section_resource_id != nil
+
+      # Verify section project publication was created
+      section_project_publications =
+        from(spp in Oli.Delivery.Sections.SectionsProjectsPublications,
+          where: spp.section_id == ^blueprint.id,
+          select: spp
+        )
+        |> Repo.all()
+
+      assert length(section_project_publications) == 1
+      assert Enum.at(section_project_publications, 0).project_id == project.id
+    end
+
+    test "creates blueprint with default values when attrs not provided", %{
+      project: project,
+      author: author
+    } do
+      {:ok, _publication} = Publishing.publish_project(project, "initial publication", author.id)
+
+      {:ok, blueprint} =
+        Blueprint.create_blueprint(
+          project.slug,
+          "Default Blueprint",
+          %{}
+        )
+
+      # Verify default values
+      assert blueprint.requires_payment == false
+      assert blueprint.payment_options == :direct_and_deferred
+      assert blueprint.pay_by_institution == false
+      assert blueprint.registration_open == false
+      assert blueprint.grace_period_days == 1
+      assert blueprint.amount == Money.new(:USD, "25.00")
+      assert blueprint.certificate_enabled == false
+    end
+
+    test "returns error when project does not exist" do
+      assert {:error, {:invalid_project}} =
+               Blueprint.create_blueprint(
+                 "non-existent-project",
+                 "Test Blueprint",
+                 %{}
+               )
     end
   end
 

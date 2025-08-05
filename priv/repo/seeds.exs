@@ -112,7 +112,8 @@ Oli.Registrar.register_local_part_components(
     "janus_capi_iframe",
     "janus_fill_blanks",
     "janus_hub_spoke",
-    "janus-text-slider"
+    "janus-text-slider",
+    "janus-formula"
   ])
 )
 

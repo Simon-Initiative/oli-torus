@@ -204,11 +204,15 @@ defmodule Oli.Resources.Numbering do
           revision_id => %__MODULE__{}
         }
   def number_full_tree(resolver, project_or_section_slug, labels) do
+    root = resolver.root_container(project_or_section_slug)
+
     full_tree =
       number_tree_from(
-        resolver.root_container(project_or_section_slug),
+        root,
         resolver.all_revisions_in_hierarchy(project_or_section_slug)
       )
+      # include numbering for root container, used on initial container add
+      |> Map.put(root.id, %__MODULE__{level: 0, index: 1})
 
     case labels do
       nil ->

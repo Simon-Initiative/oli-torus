@@ -66,6 +66,7 @@ interface MathJaxFormulaProps {
   style?: Record<string, string>;
   pointMarkerContext?: PointMarkerContext;
   onClick?: () => void;
+  formulaAltText?: string;
 }
 
 export const MathJaxMathMLFormula: React.FC<MathJaxFormulaProps> = ({
@@ -75,10 +76,12 @@ export const MathJaxMathMLFormula: React.FC<MathJaxFormulaProps> = ({
   style,
   pointMarkerContext,
   onClick,
+  formulaAltText = '',
 }) => {
   const ref = useMathJax(src);
   return (
     <span
+      aria-label={formulaAltText}
       onClick={onClick}
       style={style}
       className={cssClass(inline)}
@@ -105,6 +108,7 @@ export const MathJaxLatexFormula: React.FC<MathJaxFormulaProps> = ({
   style,
   onClick,
   pointMarkerContext,
+  formulaAltText = '',
 }) => {
   const ref = useMathJax(src);
   const fixed = fixNL(src);
@@ -112,6 +116,7 @@ export const MathJaxLatexFormula: React.FC<MathJaxFormulaProps> = ({
 
   return (
     <span
+      aria-label={formulaAltText}
       onClick={onClick}
       style={style}
       className={cssClass(inline)}

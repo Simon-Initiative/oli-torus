@@ -265,9 +265,12 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
     part_inputs =
       Enum.map(client_evaluations, fn %{
                                         attempt_guid: attempt_guid,
-                                        client_evaluation: %ClientEvaluation{input: input}
+                                        client_evaluation: %ClientEvaluation{
+                                          input: input,
+                                          timestamp: timestamp
+                                        }
                                       } ->
-        %{attempt_guid: attempt_guid, input: input}
+        %{attempt_guid: attempt_guid, input: input, timestamp: timestamp}
       end)
 
     %Oli.Activities.ActivityRegistration{allow_client_evaluation: allow_client_evaluation} =
@@ -489,12 +492,35 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
     end)
   end
 
+  # Retrieving the extrinsic state of the resource attempt must take
+  # into account if the blob storage API is in use for extrinsic state.
+  defp fetch_extrinsic_state(resource_attempt) do
+    if Application.get_env(:oli, :blob_storage)[:use_deprecated_api] do
+      resource_attempt.state
+    else
+      Oli.Delivery.TextBlob.read(
+        resource_attempt.attempt_guid,
+        "{}"
+      )
+      |> case do
+        {:ok, state} ->
+          case Jason.decode(state) do
+            {:ok, decoded_state} -> decoded_state
+            _ -> %{}
+          end
+
+        _ ->
+          %{}
+      end
+    end
+  end
+
   defp assemble_full_adaptive_state(
          resource_attempt,
          activities_required_for_evaluation,
          part_inputs
        ) do
-    extrinsic_state = resource_attempt.state
+    extrinsic_state = fetch_extrinsic_state(resource_attempt)
 
     # if activitiesRequiredForEvaluation is empty, we don't need to get any extra state
     response_state =

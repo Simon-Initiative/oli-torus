@@ -67,7 +67,11 @@ export const loadInitialPageState = createAsyncThunk(
       //As per the current implementation, the readGlobalUserState gives the Ever App state of the logged in user. However, in review mode, we need to
       //state of the student whose attempt is being review by the instructor. We get this info from the resource attempt state so no need to call this method in REVIEW mode
       if (!isReviewMode && everAppIds && Array.isArray(everAppIds)) {
-        const userState = await readGlobalUserState(everAppIds, params.previewMode);
+        const userState = await readGlobalUserState(
+          params.blobStorageProvider,
+          everAppIds,
+          params.previewMode,
+        );
         if (typeof userState === 'object') {
           const everAppState = Object.keys(userState).reduce((acc: any, key) => {
             const subState = userState[key];
@@ -104,7 +108,12 @@ export const loadInitialPageState = createAsyncThunk(
       const { result: _scriptResult } = evalScript(assignScript, defaultGlobalEnv);
       //No need to wite anything to server in REVIEW mode
       if (!params.previewMode && !isReviewMode) {
-        await writePageAttemptState(params.sectionSlug, resourceAttemptGuid, sessionState);
+        await writePageAttemptState(
+          params.blobStorageProvider,
+          params.sectionSlug,
+          resourceAttemptGuid,
+          sessionState,
+        );
       }
 
       dispatch(setExtrinsicState({ state: sessionState }));
@@ -148,7 +157,12 @@ export const loadInitialPageState = createAsyncThunk(
         updateSessionState['session.currentQuestionScore'] = 0;
         //No need to wite anything to server in REVIEW mode
         if (!params.previewMode && !isReviewMode) {
-          await writePageAttemptState(params.sectionSlug, resourceAttemptGuid, updateSessionState);
+          await writePageAttemptState(
+            params.blobStorageProvider,
+            params.sectionSlug,
+            resourceAttemptGuid,
+            updateSessionState,
+          );
         }
 
         let resumeSequenceId = sequence[0].custom.sequenceId;

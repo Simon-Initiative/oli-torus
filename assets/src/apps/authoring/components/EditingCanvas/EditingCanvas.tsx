@@ -36,6 +36,7 @@ const EditingCanvas: React.FC = () => {
   const [customInterfaceSettings, setCustomInterfaceSettings] = useState<string>('default');
   const [showConfigModal, setShowConfigModal] = useState<boolean>(false);
   const [configModalFullscreen, setConfigModalFullscreen] = useState<boolean>(false);
+  const [configModalCustomClassName, setConfigModalCustomClassName] = useState<string>('');
   const [configPartId, setConfigPartId] = useState<string>('');
   const [currentSelectedPartId, setCurrentSelectedPartId] = useState<string>('');
   const [notificationStream, setNotificationStream] = useState<{
@@ -140,8 +141,9 @@ const EditingCanvas: React.FC = () => {
   const handlePartConfigure = async (part: any, context: any) => {
     /* console.log('[handlePartConfigure]', { part, context }); */
     dispatch(setCurrentPartPropertyFocus({ focus: false }));
-    const { fullscreen = false } = context;
+    const { fullscreen = false, customClassName = '' } = context;
     setConfigModalFullscreen(fullscreen);
+    setConfigModalCustomClassName(customClassName);
     setConfigPartId(part);
     setShowConfigModal(true);
   };
@@ -228,6 +230,7 @@ const EditingCanvas: React.FC = () => {
         headerText={`Configure: ${configPartId}`}
         bodyId={configEditorId}
         isOpen={showConfigModal}
+        customClassName={configModalCustomClassName}
         onClose={() => {
           setShowConfigModal(false);
           setNotificationStream({
