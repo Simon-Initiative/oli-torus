@@ -191,7 +191,7 @@ defmodule Oli.Interop.ExportTest do
         base_project: project,
         status: :active,
         type: :blueprint,
-        amount: Money.new(:USD, "88.00"),
+        amount: Money.new(88, "USD"),
         grace_period_days: 12,
         welcome_title: %{test: "Product welcome title test"},
         encouraging_subtitle: "Product encouraging subtitle test",

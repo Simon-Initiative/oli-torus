@@ -1,7 +1,0 @@
-<div class="container">
-  <h1>Edit Platform instance</h1>
-
-  <%= render "form.html", Map.put(assigns, :action, Routes.platform_instance_path(@conn, :update, @platform_instance)) %>
-
-  <span><%= link "Back", to: Routes.platform_instance_path(@conn, :index) %></span>
-</div>

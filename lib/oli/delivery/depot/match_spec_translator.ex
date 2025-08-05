@@ -150,7 +150,7 @@ defmodule Oli.Delivery.Depot.MatchSpecTranslator do
         or_else =
           Enum.drop(value, 2)
           |> Enum.reduce(initial, fn value, acc ->
-            Tuple.append({:orelse, {:==, field(v), encode(value, type)}}, acc)
+            Tuple.insert_at({:orelse, {:==, field(v), encode(value, type)}}, 2, acc)
           end)
 
         {m, [or_else | c], v}

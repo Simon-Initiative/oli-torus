@@ -239,9 +239,31 @@ defmodule OliWeb.LegacySuperactivityController do
     case purse_score(score_type, score_value) do
       {:non_numeric, score_value} ->
         custom_scores =
-          Map.merge(context.activity_attempt.custom_scores, %{score_type => score_value})
+          case context.activity_attempt.custom_scores do
+            nil ->
+              %{score_type => score_value}
 
-        Attempts.update_activity_attempt(context.activity_attempt, %{custom_scores: custom_scores})
+            custom_scores ->
+              Map.merge(custom_scores, %{score_type => score_value})
+          end
+
+        case Attempts.update_activity_attempt(context.activity_attempt, %{
+               custom_scores: custom_scores
+             }) do
+          {:ok, _} ->
+            attempt_history(
+              fetch_context(
+                context.host,
+                context.user,
+                context.activity_attempt.attempt_guid,
+                context.datashop_session_id
+              )
+            )
+
+          {:error, message} ->
+            Logger.error("Error when processing help message #{inspect(message)}")
+            {:error, "server error", 500}
+        end
 
       {:numeric, score, out_of} ->
         eval_numeric_score(context, score, out_of, part_attempt)

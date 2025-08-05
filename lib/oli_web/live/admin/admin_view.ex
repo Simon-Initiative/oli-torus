@@ -87,10 +87,7 @@ defmodule OliWeb.Admin.AdminView do
                 Browse all Course Sections
               </a>
             </li>
-            <li>
-              <a href={~p"/admin/ingest"}>Ingest Project</a>
-            </li>
-            <li><a href={~p"/admin/ingest/upload"}>V2 Ingest Project</a></li>
+            <li><a href={~p"/admin/ingest/upload"}>Ingest Project</a></li>
             <li><a href={~p"/admin/brands"}>Manage Branding</a></li>
             <li>
               <a href={~p"/admin/publishers"}>

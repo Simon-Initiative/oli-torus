@@ -1,7 +1,0 @@
-<div class="container">
-  <h1>New Platform instance</h1>
-
-  <%= render "form.html", Map.put(assigns, :action, Routes.platform_instance_path(@conn, :create)) %>
-
-  <span><%= link "Back", to: Routes.platform_instance_path(@conn, :index) %></span>
-</div>

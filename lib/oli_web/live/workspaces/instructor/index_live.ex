@@ -3,20 +3,16 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
 
   alias Oli.Delivery.Sections
   alias OliWeb.Backgrounds
-  alias OliWeb.Common.{Params, SearchInput}
+  alias OliWeb.Common.{FormatDateTime, Params, SearchInput}
   alias OliWeb.Icons
 
-  import Ecto.Query, warn: false
   import OliWeb.Common.SourceImage
+  import OliWeb.Components.Utils
 
   @default_params %{text_search: "", sidebar_expanded: true}
 
-  @context_instructor_roles [
-    Lti_1p3.Roles.ContextRoles.get_role(:context_instructor)
-  ]
-
   @impl Phoenix.LiveView
-  def mount(_params, _session, %{assigns: %{current_user: current_user}} = socket)
+  def mount(_params, _session, %{assigns: %{current_user: current_user, ctx: ctx}} = socket)
       when not is_nil(current_user) do
     sections =
       current_user.id
@@ -27,7 +23,8 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
      assign(socket,
        sections: sections,
        filtered_sections: sections,
-       active_workspace: :instructor
+       active_workspace: :instructor,
+       ctx: ctx
      )}
   end
 
@@ -53,13 +50,14 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
   end
 
   @impl Phoenix.LiveView
-  def handle_params(params, _uri, %{assigns: %{sections: sections}} = socket) do
+  def handle_params(params, _uri, %{assigns: %{sections: sections, ctx: ctx}} = socket) do
     params = decode_params(params)
 
     {:noreply,
      assign(socket,
        filtered_sections: maybe_filter_by_text(sections, params.text_search),
-       params: params
+       params: params,
+       ctx: ctx
      )}
   end
 
@@ -279,6 +277,7 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
                 index={index}
                 section={section}
                 params={@params}
+                ctx={@ctx}
               />
               <p :if={length(@filtered_sections) == 0} class="mt-4">
                 No course found matching <strong>"<%= @params.text_search %>"</strong>
@@ -294,6 +293,7 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
   attr :section, :map
   attr :index, :integer
   attr :params, :map
+  attr :ctx, :map
 
   def instructor_course_card(assigns) do
     ~H"""
@@ -312,7 +312,17 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
         style={"background-image: url('#{cover_image(@section)}');"}
       >
       </div>
-      <div class="flex-col justify-start items-start gap-6 inline-flex p-8">
+      <div class="flex-col justify-start items-start gap-2 inline-flex p-8">
+        <div
+          class="justify-center text-[#757682] text-xs font-bold uppercase leading-3"
+          role="start_end_date"
+        >
+          <%= FormatDateTime.to_formatted_datetime(@section.start_date, @ctx, "{Mshort} {YYYY}") %> - <%= FormatDateTime.to_formatted_datetime(
+            @section.end_date,
+            @ctx,
+            "{Mshort} {YYYY}"
+          ) %>
+        </div>
         <h5
           class="text-black text-base font-bold font-['Inter'] leading-normal overflow-hidden"
           style="display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical;"
@@ -320,6 +330,17 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
         >
           <%= @section.title %>
         </h5>
+        <div
+          class="justify-center text-[#757682] text-base font-bold leading-normal"
+          role="instructors"
+        >
+          <%= if length(Sections.get_instructors_for_section(@section.id)) == 1 do %>
+            Instructor:
+          <% else %>
+            Instructors:
+          <% end %>
+          <%= list_instructors(Sections.get_instructors_for_section(@section.id)) %>
+        </div>
         <div class="text-black text-base font-normal leading-normal h-[100px] overflow-hidden">
           <p
             role="course description"
@@ -392,6 +413,7 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
   end
 
   defp sections_where_user_is_instructor(user_id) do
-    Sections.get_open_and_free_active_sections_by_roles(user_id, @context_instructor_roles)
+    context_instructor_roles = Sections.get_instructor_roles()
+    Sections.get_open_and_free_active_sections_by_roles(user_id, context_instructor_roles)
   end
 end

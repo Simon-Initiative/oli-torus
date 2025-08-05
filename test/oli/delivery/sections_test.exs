@@ -2783,4 +2783,96 @@ defmodule Oli.Delivery.SectionsTest do
       assert Map.has_key?(result, activity_registration.id)
     end
   end
+
+  describe "create_section_resources/2" do
+    setup do
+      author = insert(:author)
+      project = insert(:project, authors: [author])
+
+      # Create revisions with different retake_mode values
+      page_1_revision =
+        insert(:revision,
+          resource_type_id: ResourceType.get_id_by_type("page"),
+          title: "Page 1",
+          retake_mode: :normal
+        )
+
+      page_2_revision =
+        insert(:revision,
+          resource_type_id: ResourceType.get_id_by_type("page"),
+          title: "Page 2",
+          retake_mode: :targeted
+        )
+
+      module_1_revision =
+        insert(:revision, %{
+          resource_type_id: ResourceType.get_id_by_type("container"),
+          children: [page_1_revision.resource_id, page_2_revision.resource_id],
+          title: "Module 1"
+        })
+
+      container_revision =
+        insert(:revision, %{
+          resource_type_id: ResourceType.get_id_by_type("container"),
+          children: [module_1_revision.resource_id],
+          title: "Root Container"
+        })
+
+      all_revisions = [page_1_revision, page_2_revision, module_1_revision, container_revision]
+
+      Enum.each(all_revisions, fn revision ->
+        insert(:project_resource, %{
+          project_id: project.id,
+          resource_id: revision.resource_id
+        })
+      end)
+
+      publication =
+        insert(:publication, %{project: project, root_resource_id: container_revision.resource_id})
+
+      Enum.each(all_revisions, fn revision ->
+        insert(:published_resource, %{
+          publication: publication,
+          resource: revision.resource,
+          revision: revision,
+          author: author
+        })
+      end)
+
+      section =
+        insert(:section,
+          base_project: project,
+          title: "Test Course"
+        )
+
+      %{
+        section: section,
+        publication: publication,
+        page_1_revision: page_1_revision,
+        page_2_revision: page_2_revision
+      }
+    end
+
+    test "creates all section resources for the section and publication", %{
+      section: section,
+      publication: publication
+    } do
+      {:ok, section} = Sections.create_section_resources(section, publication)
+      section_resources = Sections.get_section_resources(section.id)
+      assert length(section_resources) == 4
+    end
+
+    test "section resources have correct retake_mode from revision", %{
+      section: section,
+      publication: publication,
+      page_1_revision: page_1_revision,
+      page_2_revision: page_2_revision
+    } do
+      {:ok, section} = Sections.create_section_resources(section, publication)
+      sr1 = Sections.get_section_resource(section.id, page_1_revision.resource_id)
+      sr2 = Sections.get_section_resource(section.id, page_2_revision.resource_id)
+      assert sr1.retake_mode == :normal
+      assert sr2.retake_mode == :targeted
+    end
+  end
 end

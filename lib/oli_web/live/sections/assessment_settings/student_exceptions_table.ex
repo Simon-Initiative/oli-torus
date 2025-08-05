@@ -894,7 +894,8 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
 
     Delivery.get_delivery_setting_by(%{
       resource_id: socket.assigns.params.selected_assessment_id,
-      user_id: user_id
+      user_id: user_id,
+      section_id: socket.assigns.section.id
     })
     |> StudentException.changeset(changes)
     |> Repo.update()

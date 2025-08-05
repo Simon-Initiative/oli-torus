@@ -93,6 +93,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
         <div class="inline-flex py-2 mb-2 border-b dark:border-gray-700">
           <span>Enable Notes for all pages in the course</span>
           <.toggle_switch
+            id="toggle_notes_switch"
             class="ml-4"
             role="collab_space_toggle_all_pages"
             checked={@collab_space_pages_count > 0}
@@ -115,6 +116,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
         <div class="inline-flex py-2 mb-2 border-b dark:border-gray-700">
           <span>Enable Course Discussions</span>
           <.toggle_switch
+            id="toggle_discussions_switch"
             class="ml-4"
             checked={@collab_space_status == :enabled}
             on_toggle="toggle_discussions"

@@ -40,9 +40,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLiveTest do
   end
 
   defp create_project(_) do
-    author = insert(:author)
+    author_1 = insert(:author)
+    author_2 = insert(:author)
 
-    project = insert(:project, authors: [author])
+    project = insert(:project, authors: [author_1, author_2])
 
     nested_page_revision =
       insert(:revision, %{
@@ -53,7 +54,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLiveTest do
         content: %{"model" => []},
         deleted: false,
         title: "Nested page 1",
-        author_id: author.id
+        author_id: author_1.id
       })
 
     nested_page_revision_2 =
@@ -66,7 +67,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLiveTest do
         deleted: false,
         title: "Nested page 2",
         graded: true,
-        author_id: author.id
+        author_id: author_1.id
       })
 
     unit_one_revision =
@@ -78,7 +79,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLiveTest do
         deleted: false,
         title: "The first unit",
         slug: "first_unit",
-        author_id: author.id
+        author_id: author_1.id
       })
 
     container_revision =
@@ -90,7 +91,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLiveTest do
         deleted: false,
         slug: "root_container",
         title: "Root Container",
-        author_id: author.id
+        author_id: author_1.id
       })
 
     all_revisions =
@@ -123,13 +124,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLiveTest do
         publication: publication,
         resource: revision.resource,
         revision: revision,
-        author: author
+        author: author_1
       })
     end)
 
     %{
       publication: publication,
       project: project,
+      author_1: author_1,
+      author_2: author_2,
       unit_one_revision: unit_one_revision,
       nested_page_revision: nested_page_revision,
       nested_page_revision_2: nested_page_revision_2
@@ -411,12 +414,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLiveTest do
          %{
            conn: conn,
            project: project,
-           nested_page_revision: nested_page_revision
+           nested_page_revision: nested_page_revision,
+           author_1: author_1,
+           author_2: author_2
          } do
-      {:ok, view, _html} =
-        live(conn, live_view_all_pages_route(project.slug))
-
-      assert has_element?(view, "a", "Nested page 1")
+      author_1_id = author_1.id
+      author_2_id = author_2.id
 
       assert %Oli.Resources.Revision{
                retake_mode: :normal,
@@ -426,13 +429,22 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLiveTest do
                max_attempts: 0,
                purpose: :foundation,
                scoring_strategy_id: 1,
-               explanation_strategy: nil
+               explanation_strategy: nil,
+               author_id: ^author_1_id
              } =
                _initial_revision =
                Oli.Publishing.AuthoringResolver.from_revision_slug(
                  project.slug,
                  nested_page_revision.slug
                )
+
+      # author 2 logs in and edits the page
+      conn = recycle_author_session(conn, author_2)
+
+      {:ok, view, _html} =
+        live(conn, live_view_all_pages_route(project.slug))
+
+      assert has_element?(view, "a", "Nested page 1")
 
       view
       |> element(
@@ -479,7 +491,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLiveTest do
                  type: :after_max_resource_attempts_exhausted,
                  set_num_attempts: nil
                },
-               poster_image: "some_poster_image_url"
+               poster_image: "some_poster_image_url",
+               author_id: ^author_2_id
              } =
                _updated_revision =
                Oli.Publishing.AuthoringResolver.from_revision_slug(

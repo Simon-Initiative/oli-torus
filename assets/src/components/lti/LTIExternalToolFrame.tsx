@@ -10,11 +10,16 @@ type LTIExternalToolFrameProps = {
   openInNewTab?: boolean;
   height?: number;
   onEditHeight?: (height: number | undefined) => void;
+  onDeepLinkingComplete?: () => void;
+  onCloseModal?: () => void;
 };
 
 /**
  * LTIExternalToolFrame renders an LTI external tool link which can be launched in a new tab or in
- * an iframe.
+ * an iframe. It includes automatic detection of deep linking completion through the PostMessage API.
+ *
+ * When deep linking completes, the onDeepLinkingComplete callback is triggered to reload
+ * tool details and update the UI.
  */
 export const LTIExternalToolFrame = ({
   mode,
@@ -24,6 +29,8 @@ export const LTIExternalToolFrame = ({
   openInNewTab,
   height,
   onEditHeight,
+  onDeepLinkingComplete,
+  onCloseModal,
 }: LTIExternalToolFrameProps) => {
   const frameName = `tool-content-${resourceId}`;
   const target = openInNewTab ? '_blank' : frameName;
@@ -47,6 +54,31 @@ export const LTIExternalToolFrame = ({
       }
     }
   }, []);
+
+  // Listen for postMessage events from the iframe for deep linking responses
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      // Verify the message is from the iframe
+      if (frameRef.current && event.source === frameRef.current.contentWindow) {
+        // Check if this is a deep linking completion message
+        if (event.data && event.data.type === 'lti_deep_linking_response') {
+          console.log('Deep linking response received:', event.data);
+          onDeepLinkingComplete?.();
+        }
+        // Check if this is a modal close request
+        else if (event.data && event.data.type === 'lti_close_modal') {
+          console.log('Modal close requested:', event.data);
+          onCloseModal?.();
+        }
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+
+    return () => {
+      window.removeEventListener('message', handleMessage);
+    };
+  }, [onDeepLinkingComplete, onCloseModal]);
 
   // Reset the iframe any time the openInNewTab setting changes
   useEffect(() => {

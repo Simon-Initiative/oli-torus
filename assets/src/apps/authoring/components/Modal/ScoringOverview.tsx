@@ -172,7 +172,12 @@ const ScoringOverview: React.FC<{
 
   return (
     <Fragment>
-      <AdvancedAuthoringModal show={true} size="xl" onHide={handleClose}>
+      <AdvancedAuthoringModal
+        className="advance-author-scoring-overview"
+        show={true}
+        size="xl"
+        onHide={handleClose}
+      >
         <Modal.Header closeButton={true}>
           <h3 className="modal-title">Scoring Overview</h3>
         </Modal.Header>
@@ -206,7 +211,7 @@ const ScoringOverview: React.FC<{
             </tbody>
           </Table>
           <hr />
-          <div>Sum of All Scores: {scoreSum}</div>
+          <InputGroup.Text>Sum of All Scores: {scoreSum}</InputGroup.Text>
           <InputGroup className="mb-3">
             <InputGroup.Prepend>
               <InputGroup.Text>Lesson Max</InputGroup.Text>

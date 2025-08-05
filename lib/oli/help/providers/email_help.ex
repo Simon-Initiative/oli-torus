@@ -5,14 +5,18 @@ defmodule Oli.Help.Providers.EmailHelp do
   alias Oli.Help.RequesterData
 
   @impl Oli.Help.Dispatcher
-  def dispatch(%HelpContent{requester_data: %RequesterData{} = requester_data} = contents) do
-    help_desk_email = System.get_env("HELP_DESK_EMAIL", "test@example.edu")
+  def dispatch(
+        %HelpContent{
+          requester_data: %RequesterData{} = requester_data,
+          support_email: support_email
+        } = contents
+      ) do
     subject = HelpContent.get_subject(contents.subject)
     message = %{message: build_help_message(contents)}
     requester_email = requester_data.requester_email
 
     email =
-      Oli.Email.help_desk_email(requester_email, help_desk_email, subject, :help_email, message)
+      Oli.Email.help_desk_email(requester_email, support_email, subject, :help_email, message)
 
     Oli.Mailer.deliver(email)
   end

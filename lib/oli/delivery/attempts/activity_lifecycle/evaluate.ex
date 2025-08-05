@@ -369,6 +369,32 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
     {:ok, evaluations}
   end
 
+  def update_part_attempts_for_activity(activity_attempt, datashop_session_id, effective_settings) do
+    part_attempts = get_latest_part_attempts(activity_attempt.attempt_guid)
+
+    part_inputs =
+      part_attempts
+      |> Enum.map(fn pa ->
+        {input, files} =
+          if pa.response,
+            do: {Map.get(pa.response, "input"), Map.get(pa.response, "files", [])},
+            else: {nil, nil}
+
+        %{
+          attempt_guid: pa.attempt_guid,
+          input: %Oli.Delivery.Attempts.Core.StudentInput{input: input, files: files}
+        }
+      end)
+      |> filter_already_evaluated(part_attempts)
+
+    case activity_attempt
+         |> do_evaluate_submissions(part_inputs, part_attempts, effective_settings)
+         |> persist_evaluations(part_inputs, fn result -> result end, datashop_session_id) do
+      {:ok, _} -> {:ok, part_inputs}
+      e -> e
+    end
+  end
+
   defp submit_active_part_attempts(part_attempts) do
     now = Timex.now()
 

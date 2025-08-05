@@ -1129,6 +1129,7 @@ defmodule OliWeb.Components.Common do
     """
   end
 
+  attr :id, :string, required: true
   attr :on_toggle, :string, required: true
   attr :label, :string, default: nil
   attr :name, :string, default: nil
@@ -1140,10 +1141,10 @@ defmodule OliWeb.Components.Common do
   def toggle_switch(assigns) do
     ~H"""
     <div {@rest}>
-      <form id="toggle_switch_form" phx-change={@on_toggle} phx-target={@phx_target}>
+      <form id={@id} phx-change={@on_toggle} phx-target={@phx_target}>
         <label class="inline-flex items-center cursor-pointer">
           <input
-            id="toggle_switch_checkbox"
+            id={"#{@id}_checkbox"}
             type="checkbox"
             name={@name}
             class="sr-only peer"

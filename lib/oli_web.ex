@@ -141,11 +141,6 @@ defmodule OliWeb do
       import OliWeb.ViewHelpers
       import OliWeb.Common.FormatDateTime
 
-      import OliWeb.Components.Delivery.Utils,
-        only: [
-          user_is_guest?: 1
-        ]
-
       import Oli.Utils
       import Oli.Branding
 

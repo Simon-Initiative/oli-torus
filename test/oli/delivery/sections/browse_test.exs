@@ -48,13 +48,13 @@ defmodule Oli.Delivery.Sections.BrowseTest do
       assert length(results) == 3
       assert hd(results).total_count == 30
       refute hd(results).requires_payment
-      assert Enum.at(results, 1).amount == Money.new(:USD, 1)
+      assert Enum.at(results, 1).amount == Money.new(1, "USD")
 
       results = browse(0, :requires_payment, :desc, @default_opts)
       assert length(results) == 3
       assert hd(results).total_count == 30
       assert hd(results).requires_payment
-      assert hd(results).amount == Money.new(:USD, "100.00")
+      assert hd(results).amount == Money.new(100, "USD")
 
       results = browse(0, :base, :asc, @default_opts)
       assert length(results) == 3
@@ -224,12 +224,12 @@ defmodule Oli.Delivery.Sections.BrowseTest do
       end_date: tomorrow(),
       open_and_free: true,
       requires_payment: false,
-      amount: Money.new(:USD, 10_000_000)
+      amount: Money.new(10_000_000, "USD")
     })
 
     # There is only one section that differs in the amount
     Sections.update_section(Enum.at(sections, 1), %{
-      amount: Money.new(:USD, 1)
+      amount: Money.new(1, "USD")
     })
 
     # Enroll an instructor to first section

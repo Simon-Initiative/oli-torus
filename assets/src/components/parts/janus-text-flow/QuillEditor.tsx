@@ -33,7 +33,8 @@ const supportedFonts = ['Initial', 'Arial', 'Times New Roman', 'Sans Serif'];
 const getFontName = (font: string) => {
   return font.toLowerCase().replace(/\s/g, '-');
 };
-Quill.import('ui/icons')['insertFIBOption'] = '<i class="fa-solid fa-square-caret-down"></i>';
+Quill.import('ui/icons')['insertFIBOption'] =
+  '<i class="fa-solid fa-square-caret-down" style="color:rgb(55, 58, 68)"></i>';
 
 const FontAttributor = Quill.import('attributors/class/font');
 FontAttributor.whitelist = supportedFonts.map(getFontName);

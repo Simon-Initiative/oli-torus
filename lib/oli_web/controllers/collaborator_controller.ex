@@ -21,11 +21,13 @@ defmodule OliWeb.CollaboratorController do
 
     case Oli.Utils.Recaptcha.verify(g_recaptcha_response) do
       {:success, true} ->
-        emails =
+        all_emails =
           collaborator_emails
           |> String.split(",")
           |> Enum.map(&String.trim/1)
           |> Enum.filter(fn e -> e != "" end)
+
+        {valid_emails, invalid_emails} = Enum.split_with(all_emails, &Oli.Utils.validate_email/1)
 
         authors =
           authors_emails
@@ -34,7 +36,7 @@ defmodule OliWeb.CollaboratorController do
           |> Enum.filter(fn e -> e != "" end)
 
         is_collaborator? =
-          Enum.all?(emails, fn elem ->
+          Enum.all?(valid_emails, fn elem ->
             Enum.member?(authors, elem)
           end)
 
@@ -43,7 +45,7 @@ defmodule OliWeb.CollaboratorController do
             conn
             |> put_flash(
               :error,
-              if(Enum.count(emails) > 1,
+              if(Enum.count(valid_emails) > 1,
                 do: "These people are already collaborators in this project.",
                 else: "This person is already a collaborator in this project."
               )
@@ -51,7 +53,7 @@ defmodule OliWeb.CollaboratorController do
             |> redirect(to: ~p"/workspaces/course_author/#{project_id}/overview")
 
           false ->
-            if Enum.count(emails) > @max_invitation_emails do
+            if Enum.count(valid_emails) > @max_invitation_emails do
               conn
               |> put_flash(
                 :error,
@@ -59,18 +61,32 @@ defmodule OliWeb.CollaboratorController do
               )
               |> redirect(to: ~p"/workspaces/course_author/#{project_id}/overview")
             else
-              emails
+              valid_emails
               |> Enum.reduce({conn, []}, fn email, {conn, failures} ->
                 invite_collaborator(conn, email, project_id, failures)
               end)
               |> case do
                 {conn, []} ->
-                  conn
-                  |> put_flash(:info, "Collaborator invitations sent!")
-                  |> redirect(to: ~p"/workspaces/course_author/#{project_id}/overview")
+                  if !Enum.empty?(invalid_emails) do
+                    log_error(
+                      "Failed to invite some collaborators due to invalid email(s)",
+                      invalid_emails
+                    )
+
+                    conn
+                    |> put_flash(
+                      :error,
+                      "Failed to invite some collaborators due to invalid email(s): #{Enum.join(invalid_emails, ", ")}"
+                    )
+                    |> redirect(to: ~p"/workspaces/course_author/#{project_id}/overview")
+                  else
+                    conn
+                    |> put_flash(:info, "Collaborator invitations sent!")
+                    |> redirect(to: ~p"/workspaces/course_author/#{project_id}/overview")
+                  end
 
                 {conn, failures} ->
-                  if Enum.count(failures) == Enum.count(emails) do
+                  if Enum.count(failures) == Enum.count(valid_emails) do
                     log_error("Failed to invite collaborators", failures)
 
                     conn
@@ -79,15 +95,24 @@ defmodule OliWeb.CollaboratorController do
                   else
                     failed_emails = Enum.map(failures, fn {email, _msg} -> email end)
 
+                    invalid_email_msg =
+                      if Enum.empty?(invalid_emails) do
+                        ""
+                      else
+                        " Invalid email(s): #{Enum.join(invalid_emails, ", ")}"
+                      end
+
                     log_error(
-                      "Failed to invite some collaborators: #{Enum.join(failed_emails, ", ")}",
+                      "Failed to invite some collaborators: #{Enum.join(failed_emails, ", ")}" <>
+                        invalid_email_msg,
                       failures
                     )
 
                     conn
                     |> put_flash(
                       :error,
-                      "Failed to invite some collaborators: #{Enum.join(failed_emails, ", ")}"
+                      "Failed to invite some collaborators: #{Enum.join(failed_emails, ", ")}" <>
+                        invalid_email_msg
                     )
                     |> redirect(to: ~p"/workspaces/course_author/#{project_id}/overview")
                   end

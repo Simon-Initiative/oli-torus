@@ -198,5 +198,31 @@ defmodule Oli.Delivery.Attempts.ActivityResetTest do
       attempt = Core.get_activity_attempt_by(attempt_guid: attempt_state.attemptGuid)
       refute attempt.transformed_model == activity1_attempt.transformed_model
     end
+
+    test "ensure resetting preserves selection id", %{
+      ungraded_page_user1_activity1_attempt1: activity1_attempt,
+      section: section
+    } do
+      datashop_session_id_user1 = UUID.uuid4()
+
+      # Edit the attempt to set a selection_id
+      Core.update_activity_attempt(
+        activity1_attempt,
+        %{selection_id: "test_selection_id"}
+      )
+
+      # now reset the activity, this should not have a transform - we can softly assert
+      # that by ensuring that the transformed_models are the same
+      {:ok, {attempt_state, _}} =
+        ActivityLifecycle.reset_activity(
+          section.slug,
+          activity1_attempt.attempt_guid,
+          datashop_session_id_user1
+        )
+
+      attempt = Core.get_activity_attempt_by(attempt_guid: attempt_state.attemptGuid)
+      assert attempt.transformed_model == activity1_attempt.transformed_model
+      assert attempt.selection_id == "test_selection_id"
+    end
   end
 end

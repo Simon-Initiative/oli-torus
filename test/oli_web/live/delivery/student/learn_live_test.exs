@@ -841,7 +841,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
           type: :blueprint,
           registration_open: true,
           requires_payment: true,
-          amount: Money.new(:USD, 10),
+          amount: Money.new(10, "USD"),
           has_grace_period: true,
           grace_period_days: 18,
           start_date: ~U[2024-10-15 20:00:00Z],
@@ -1546,10 +1546,10 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert view
              |> element(~s{div[role="unit_2"] div[role="schedule_details"]})
              |> render() =~
-               "Due by:\n              </span><span class=\"whitespace-nowrap\">\n                Not yet scheduled"
+               "Due by:\n              </span><span class=\"whitespace-nowrap\">\n                None"
     end
 
-    test "can not see the 'Not yet scheduled' label when the instructor has not set a schedule",
+    test "can see the 'None' label when the instructor has not set a schedule",
          %{conn: conn, user: user} do
       %{section: section_without_schedule} = create_elixir_project(%{}, false)
 
@@ -1561,8 +1561,9 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section_without_schedule.slug))
 
-      refute has_element?(view, ~s{div[role="unit_1"] div[role="schedule_details"]})
-      refute has_element?(view, ~s{div[role="unit_2"] div[role="schedule_details"]})
+      assert has_element?(view, ~s{div[role="unit_1"] div[role="schedule_details"]}, "None")
+
+      assert has_element?(view, ~s{div[role="unit_2"] div[role="schedule_details"]}, "None")
     end
 
     @tag :flaky
@@ -1734,7 +1735,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
              |> element(
                ~s{div[id="top_level_page_#{top_level_page.resource_id}"] div[role="schedule_details"]}
              )
-             |> render() =~ "Not yet scheduled"
+             |> render() =~ "None"
 
       assert view
              |> element(~s{div[id="page_#{top_level_page.resource_id}"][role="resource card 1"]})
@@ -2000,7 +2001,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       group_by_due_by_date_div = element(view, ~s{div[id="pages_grouped_by_due_by_2023-11-03"]})
 
       group_by_not_yet_scheduled_div =
-        element(view, ~s{div[id="pages_grouped_by_Not yet scheduled_Not yet scheduled"]})
+        element(view, ~s{div[id="pages_grouped_by__Not yet scheduled"]})
 
       assert render(group_by_read_by_date_div) =~ "Read by: Fri Nov 3, 2023"
       assert render(group_by_read_by_date_div) =~ "Page 11"
@@ -2008,7 +2009,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert render(group_by_due_by_date_div) =~ "Due by: Fri Nov 3, 2023"
       assert render(group_by_due_by_date_div) =~ "Page 12"
 
-      assert render(group_by_not_yet_scheduled_div) =~ "Not yet scheduled"
+      assert render(group_by_not_yet_scheduled_div) =~ "None"
       assert render(group_by_not_yet_scheduled_div) =~ "Page 13"
       assert render(group_by_not_yet_scheduled_div) =~ "Page 14"
     end
@@ -2102,6 +2103,27 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
                ~s{div[id="module_#{module_3.resource_id}"] div[role="card badge"]},
                "0 minutes"
              )
+    end
+
+    test "displays timezone information component", %{
+      conn: conn,
+      section: section
+    } do
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
+
+      # Verify that the timezone_info component is present
+      assert has_element?(view, "#timezone_info")
+
+      # Verify that it contains the timezone world icon
+      assert has_element?(view, "[role='timezone world icon']")
+
+      # Verify that it displays timezone text
+      assert has_element?(view, "#timezone_info span")
+
+      # Verify that the timezone text is not empty (should display actual timezone)
+      timezone_element = element(view, "#timezone_info span")
+      timezone_text = render(timezone_element)
+      assert timezone_text =~ "Etc/UTC"
     end
   end
 
@@ -2513,7 +2535,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert view
              |> element(~s{div[role="unit #{unit_2.resource_id} scheduling details"]})
-             |> render() =~ "Not yet scheduled"
+             |> render() =~ "None"
 
       assert view
              |> element(~s{div[role="module #{module_1.resource_id} scheduling details"]})
@@ -2526,7 +2548,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
              |> render() =~ "Read by: Fri Nov 3, 2023"
     end
 
-    test "does not see scheduling details when course has no scheduled resources", %{
+    test "does see scheduling details when course has no scheduled resources", %{
       conn: conn,
       user: user
     } do
@@ -2539,16 +2561,16 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       {:ok, view, _html} =
         live(conn, Utils.learn_live_path(section_without_schedule.slug, selected_view: :outline))
 
-      refute view
+      assert view
              |> has_element?(~s{div[role="unit #{unit_1.resource_id} scheduling details"]})
 
-      refute view
+      assert view
              |> has_element?(~s{div[role="unit #{unit_2.resource_id} scheduling details"]})
 
-      refute view
+      assert view
              |> has_element?(~s{div[role="module #{module_1.resource_id} scheduling details"]})
 
-      refute view
+      assert view
              |> has_element?(
                ~s{button[role="page 4 details"] div[role="due date and score"] span[role="page due date"]}
              )

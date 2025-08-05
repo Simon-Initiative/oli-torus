@@ -200,4 +200,78 @@ defmodule Oli.Inventories do
   def change_publisher(%Publisher{} = publisher, attrs \\ %{}) do
     Publisher.changeset(publisher, attrs)
   end
+
+  @doc """
+  Determines the publisher for a given context map.
+
+  Accepts a map with either a `"section"` or `"project"` key, each pointing to their respective structs.
+  Returns the associated publisher for the section or project, or the default publisher if not found.
+
+  ## Examples
+
+      iex> get_publisher_for_context(%{"section" => %Oli.Delivery.Sections.Section{id: 1}})
+      %Publisher{} # the publisher for the section
+
+      iex> get_publisher_for_context(%{"project" => %Oli.Authoring.Course.Project{id: 1}})
+      %Publisher{} # the publisher for the project
+
+      iex> get_publisher_for_context(%{})
+      %Publisher{} # the default publisher
+  """
+  @spec get_publisher_for_context(map()) :: Publisher.t()
+  def get_publisher_for_context(%{"section" => %Oli.Delivery.Sections.Section{id: section_id}}) do
+    from(s in Oli.Delivery.Sections.Section,
+      join: p in Oli.Authoring.Course.Project,
+      on: s.base_project_id == p.id,
+      join: pub in Oli.Inventories.Publisher,
+      on: p.publisher_id == pub.id,
+      where: s.id == ^section_id,
+      select: pub
+    )
+    |> Oli.Repo.one() || default_publisher()
+  end
+
+  def get_publisher_for_context(%{"project" => %Oli.Authoring.Course.Project{id: project_id}}) do
+    from(p in Oli.Inventories.Publisher,
+      join: proj in Oli.Authoring.Course.Project,
+      on: proj.publisher_id == p.id,
+      where: proj.id == ^project_id,
+      select: p
+    )
+    |> Oli.Repo.one() || default_publisher()
+  end
+
+  def get_publisher_for_context(_), do: default_publisher()
+
+  @doc """
+  Returns the knowledge base link for the given publisher.
+
+  - If the publisher has a non-empty `knowledge_base_link` field, it is returned.
+  - Otherwise, returns the global default from `Oli.VendorProperties.knowledgebase_url/0`.
+
+  This function is used by the help modal and other support features to determine the appropriate knowledge base link for a given context.
+  """
+  @spec knowledge_base_link_for_publisher(Publisher.t() | nil) :: String.t()
+  def knowledge_base_link_for_publisher(%Publisher{knowledge_base_link: kb})
+      when is_binary(kb) and kb != "" do
+    kb
+  end
+
+  def knowledge_base_link_for_publisher(_), do: Oli.VendorProperties.knowledgebase_url()
+
+  @doc """
+  Returns the support email for the given publisher.
+
+  - If the publisher has a non-empty `support_email` field, it is returned.
+  - Otherwise, returns the value of the `HELP_DESK_EMAIL` environment variable, or "test@example.edu" if not set.
+
+  This function is used by the help modal and other support features to determine the appropriate support email for a given context.
+  """
+  @spec support_email_for_publisher(Publisher.t() | nil) :: String.t()
+  def support_email_for_publisher(%Publisher{support_email: email})
+      when is_binary(email) and email != "" do
+    email
+  end
+
+  def support_email_for_publisher(_), do: System.get_env("HELP_DESK_EMAIL", "test@example.edu")
 end

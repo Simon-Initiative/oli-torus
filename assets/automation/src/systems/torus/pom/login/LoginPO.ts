@@ -53,6 +53,7 @@ export class LoginPO {
     await this.signInButton.click();
   }
 
+
   async selectRoleAccount(role: UserType) {
     const navbarco = new NavbarCO(this.page);
 

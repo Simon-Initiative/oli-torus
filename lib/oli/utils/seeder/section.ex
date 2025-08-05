@@ -217,7 +217,7 @@ defmodule Oli.Utils.Seeder.Section do
     [section, user, revision] = unpack(seeds, [section, user, revision])
 
     attrs =
-      Conversation.Message.new(
+      Oli.GenAI.Completions.Message.new(
         role,
         message_content
       )

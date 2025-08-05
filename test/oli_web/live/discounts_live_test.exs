@@ -136,7 +136,7 @@ defmodule OliWeb.DiscountsLiveTest do
 
     test "loads correctly when there are discounts", %{conn: conn, product: product} do
       first_discount =
-        insert(:discount, section: product, type: :fixed_amount, amount: Money.new(:USD, 25))
+        insert(:discount, section: product, type: :fixed_amount, amount: Money.new(25, "USD"))
 
       second_discount = insert(:discount, section: product, percentage: 20)
 
@@ -380,7 +380,7 @@ defmodule OliWeb.DiscountsLiveTest do
       discount =
         insert(:discount,
           type: :fixed_amount,
-          amount: Money.new(:USD, 25),
+          amount: Money.new(25, "USD"),
           percentage: nil,
           section: nil,
           institution: institution

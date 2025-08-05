@@ -106,7 +106,11 @@ defmodule Oli.Delivery.Gating do
       |> Enum.filter(fn gc -> is_nil(gc.parent_id) end)
       |> Enum.each(fn gc ->
         Map.take(gc, [:type, :graded_resource_policy, :resource_id])
-        |> Map.merge(%{parent_id: nil, section_id: destination.id, data: Map.from_struct(gc.data)})
+        |> Map.merge(%{
+          parent_id: nil,
+          section_id: destination.id,
+          data: Map.from_struct(gc.data)
+        })
         |> create_gating_condition()
       end)
     end)

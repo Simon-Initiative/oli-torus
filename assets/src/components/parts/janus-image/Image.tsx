@@ -98,7 +98,7 @@ const Image: React.FC<PartComponentProps<ImageModel>> = (props) => {
     props.onReady({ id, responses: [] });
   }, [ready]);
 
-  const { width, height, src, imageSrc, alt } = model;
+  const { width, height, src, imageSrc, defaultSrc, alt } = model;
   const imageStyles: CSSProperties = {
     width,
     height,
@@ -118,7 +118,7 @@ const Image: React.FC<PartComponentProps<ImageModel>> = (props) => {
   }, [width, height]);
   useEffect(() => {
     //Image Source will take precedence ( if there is an image link present in it). If Image Sorce is blank then it will display image link from src.
-    const imageSource = imageSrc?.length ? imageSrc : src;
+    const imageSource = imageSrc?.length && imageSrc != defaultSrc ? imageSrc : src;
     setImgSrc(imageSource);
   }, [model]);
   return ready ? (

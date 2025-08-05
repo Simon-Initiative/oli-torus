@@ -623,15 +623,42 @@ defmodule OliWeb.Icons do
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
-      <path d="M3 6H5H21" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
       <path
+        d="M3 6H5H21"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke="currentColor"
+      />
+      <path
+        d="M3 6H5H21"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke="currentColor"
+      />
+      <path
+        stroke="currentColor"
         d="M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6"
         stroke-width="2"
         stroke-linecap="round"
         stroke-linejoin="round"
+        stroke="currentColor"
       />
-      <path d="M10 11V17" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-      <path d="M14 11V17" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+      <path
+        d="M10 11V17"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke="currentColor"
+      />
+      <path
+        d="M14 11V17"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke="currentColor"
+      />
     </svg>
     """
   end
@@ -1194,12 +1221,14 @@ defmodule OliWeb.Icons do
     """
   end
 
+  attr :stroke_class, :string, default: "stroke-[#006CD9] dark:stroke-[#4CA6FF]"
+
   def download(assigns) do
     ~H"""
     <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path
         d="M3.56934 14.9318V16.6791C3.56934 17.1425 3.75343 17.587 4.08111 17.9147C4.4088 18.2423 4.85324 18.4264 5.31666 18.4264H15.8006C16.264 18.4264 16.7084 18.2423 17.0361 17.9147C17.3638 17.587 17.5479 17.1425 17.5479 16.6791V14.9318M6.19032 9.68984L10.5586 14.0581M10.5586 14.0581L14.9269 9.68984M10.5586 14.0581V3.57422"
-        stroke="#5B8FF9"
+        class={@stroke_class}
         stroke-width="1.74732"
         stroke-linecap="round"
         stroke-linejoin="round"
@@ -1621,6 +1650,27 @@ defmodule OliWeb.Icons do
     """
   end
 
+  def timezone_world(assigns) do
+    ~H"""
+    <svg
+      role="timezone world icon"
+      width="20"
+      height="20"
+      viewBox="0 0 20 20"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M16.4033 7.795C16.1815 6.43279 15.5881 5.15819 14.6885 4.11153C13.7889 3.06486 12.618 2.28673 11.3045 1.86278C9.99111 1.43884 8.58618 1.38553 7.24442 1.70873C5.90265 2.03192 4.67608 2.71909 3.69974 3.69457C2.72341 4.67006 2.03517 5.89603 1.71081 7.23751C1.38644 8.579 1.43853 9.98398 1.86133 11.2978C2.28413 12.6116 3.06124 13.7832 4.10712 14.6837C5.153 15.5842 6.42709 16.1787 7.7891 16.4017M1.99994 6.5H15.9999M1.99994 11.5H7.74994M8.58327 1.5C7.43345 3.34227 6.72256 5.42423 6.50553 7.585C6.2885 9.74578 6.57114 11.9275 7.3316 13.9617M9.4166 1.5C10.6112 3.41454 11.3312 5.58677 11.5166 7.83583M13.9999 12.75V14L14.4166 14.4167M10.6666 14C10.6666 14.8841 11.0178 15.7319 11.6429 16.357C12.268 16.9821 13.1159 17.3333 13.9999 17.3333C14.884 17.3333 15.7318 16.9821 16.357 16.357C16.9821 15.7319 17.3333 14.8841 17.3333 14C17.3333 13.1159 16.9821 12.2681 16.357 11.643C15.7318 11.0179 14.884 10.6667 13.9999 10.6667C13.1159 10.6667 12.268 11.0179 11.6429 11.643C11.0178 12.2681 10.6666 13.1159 10.6666 14Z"
+        stroke="currentColor"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </svg>
+    """
+  end
+
   ########## Student Delivery Icons (end) ##########
 
   ########## Instructor Navigation Bar Icons (start) ##########
@@ -1869,6 +1919,28 @@ defmodule OliWeb.Icons do
           <rect width="16" height="16" fill="white" transform="translate(0.476807)" />
         </clipPath>
       </defs>
+    </svg>
+    """
+  end
+
+  attr :class, :string, default: "stroke-[#353740] dark:stroke-[#EEEBF5]"
+
+  def filter(assigns) do
+    ~H"""
+    <svg
+      width="24"
+      height="24"
+      class={@class}
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M4.01001 4H20.01V6.172C20.0099 6.70239 19.7991 7.21101 19.424 7.586L15.01 12V19L9.01001 21V12.5L4.53001 7.572C4.19546 7.20393 4.01006 6.7244 4.01001 6.227V4Z"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
     </svg>
     """
   end

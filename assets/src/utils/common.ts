@@ -306,3 +306,52 @@ export const padLeft = (inp: string | number, length: number, char = '0') => {
 export function isDefined<T>(value: T | undefined): value is T {
   return value !== undefined;
 }
+
+/**
+ * Calculates the number of significant figures in a numeric string input.
+ *
+ * ✅ Rules handled:
+ * - Leading zeros are **not significant** (e.g., "0.003" → 1 sig fig).
+ * - All **non-zero digits** are significant.
+ * - Zeros **between non-zero digits** are significant (e.g., "1002" → 4 sig figs).
+ * - Trailing zeros in **decimal numbers** are significant (e.g., "5.00" → 3 sig figs).
+ * - Trailing zeros in **whole numbers** are **not significant** unless a decimal point is present (e.g., "100" → 1, "100." → 3).
+ * - **Scientific notation** is handled correctly (e.g., "1.20e4" → 3 sig figs).
+ * - Handles both signed numbers and numbers without leading digits (e.g., "-.003").
+ *
+ * @param input - The number input as a string (e.g., "0.01230", "100", "3.00", "1.23e4").
+ * @returns The count of significant figures as a number.
+ */
+export const countSigFigs = (input: string): number => {
+  if (!input || isNaN(Number(input))) return 0;
+
+  const trimmed = input.trim();
+
+  // Handle scientific notation
+  if (/e/i.test(trimmed)) {
+    const [base] = trimmed.toLowerCase().split('e');
+    const cleaned = base.replace(/^[-+]?0+/, ''); // Remove leading zeros
+    const digits = cleaned.replace('.', '');
+    return digits.length;
+  }
+
+  // Handle decimal numbers
+  if (trimmed.includes('.')) {
+    const cleaned = trimmed.replace(/^[-+]/, ''); // remove sign
+    const digits = cleaned.replace('.', '');
+
+    // Remove leading zeros before the first non-zero digit
+    const sigStart = digits.search(/[1-9]/);
+    if (sigStart === -1) return 0; // all zeros
+
+    return digits.slice(sigStart).length;
+  }
+
+  // Integer (no decimal)
+  const hasDot = trimmed.endsWith('.');
+  const digits = trimmed.replace(/^[-+]?0+/, ''); // remove leading zeros
+
+  return hasDot
+    ? digits.length // e.g., 100. → all significant
+    : digits.replace(/0+$/, '').length; // e.g., 100 → trailing zeros not significant
+};

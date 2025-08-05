@@ -1,6 +1,4 @@
 defmodule Oli.Interop.CustomActivities.Registration do
-  alias Lti_1p3.Roles.ContextRoles
-
   import XmlBuilder
 
   def setup(%{
@@ -11,11 +9,7 @@ defmodule Oli.Interop.CustomActivities.Registration do
       %{
         date_created: DateTime.to_unix(context.enrollment.inserted_at),
         guid: context.enrollment.id,
-        role:
-          ContextRoles.contains_role?(
-            context.enrollment.context_roles,
-            ContextRoles.get_role(:context_instructor)
-          ),
+        role: Oli.Delivery.Sections.contains_instructor_role?(context.enrollment.context_roles),
         section_guid: context.section.slug,
         status: "valid",
         user_guid: context.user.email

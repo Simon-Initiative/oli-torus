@@ -33,7 +33,7 @@ defmodule OliWeb.Api.LtiControllerTest do
 
       assert json_response(conn, 200)["launch_params"]["login_url"] == "some login_url"
       assert json_response(conn, 200)["launch_params"]["login_hint"] != nil
-      assert json_response(conn, 200)["launch_params"]["status"] != nil
+      assert json_response(conn, 200)["status"] != nil
     end
   end
 
@@ -52,7 +52,7 @@ defmodule OliWeb.Api.LtiControllerTest do
 
       assert json_response(conn, 200)["launch_params"]["login_url"] == "some login_url"
       assert json_response(conn, 200)["launch_params"]["login_hint"] != nil
-      assert json_response(conn, 200)["launch_params"]["status"] != nil
+      assert json_response(conn, 200)["status"] != nil
     end
   end
 
@@ -119,7 +119,7 @@ defmodule OliWeb.Api.LtiControllerTest do
         "grant_type" => "client_credentials",
         "client_assertion" => client_assertion,
         "scope" =>
-          "https://purl.imsglobal.org/spec/lti-ags/scope/result.readonly https://purl.imsglobal.org/spec/lti-ags/scope/score"
+          "https://purl.imsglobal.org/spec/lti-ags/scope/result.readonly https://purl.imsglobal.org/spec/lti-ags/scope/score https://purl.imsglobal.org/spec/lti-ags/scope/lineitem"
       }
 
       conn = post(conn, ~p"/lti/auth/token", params)
@@ -129,7 +129,7 @@ defmodule OliWeb.Api.LtiControllerTest do
       assert resp["expires_in"] == 3600
 
       assert resp["scope"] ==
-               "https://purl.imsglobal.org/spec/lti-ags/scope/result.readonly https://purl.imsglobal.org/spec/lti-ags/scope/score"
+               "https://purl.imsglobal.org/spec/lti-ags/scope/result.readonly https://purl.imsglobal.org/spec/lti-ags/scope/score https://purl.imsglobal.org/spec/lti-ags/scope/lineitem"
     end
 
     @tag capture_log: true
@@ -144,9 +144,109 @@ defmodule OliWeb.Api.LtiControllerTest do
       assert json_response(conn, 401)["error"] == "invalid_request"
     end
 
+    @tag capture_log: true
     test "returns 400 for missing params", %{conn: conn} do
       conn = post(conn, ~p"/lti/auth/token", %{})
       assert json_response(conn, 400)["error"] == "invalid_request"
+    end
+  end
+
+  describe "developer key json" do
+    test "returns developer key json", %{conn: conn} do
+      conn = get(conn, Routes.lti_path(conn, :developer_key_json))
+
+      {:ok, active_jwk} = Lti_1p3.get_active_jwk()
+
+      public_jwk =
+        JOSE.JWK.from_pem(active_jwk.pem)
+        |> JOSE.JWK.to_public()
+        |> JOSE.JWK.to_map()
+        |> (fn {_kty, public_jwk} -> public_jwk end).()
+        |> Map.put("kid", active_jwk.kid)
+
+      assert json_response(conn, 200) != nil
+
+      assert json_response(conn, 200)
+             |> Map.get("extensions")
+             |> Enum.find(fn %{"platform" => p} -> p == "canvas.instructure.com" end)
+             |> Map.get("privacy_level") =~ "public"
+
+      assert json_response(conn, 200) |> Map.get("title") =~ "OLI Torus"
+
+      assert json_response(conn, 200) |> Map.get("description") =~
+               "Create, deliver and iteratively improve course content"
+
+      assert json_response(conn, 200) |> Map.get("oidc_initiation_url") =~
+               "https://localhost/lti/login"
+
+      assert json_response(conn, 200) |> Map.get("target_link_uri") =~
+               "https://localhost/lti/launch"
+
+      assert json_response(conn, 200) |> Map.get("public_jwk_url") =~
+               "https://localhost/.well-known/jwks.json"
+
+      assert json_response(conn, 200) |> Map.get("scopes") == [
+               "https://purl.imsglobal.org/spec/lti-ags/scope/lineitem",
+               "https://purl.imsglobal.org/spec/lti-ags/scope/lineitem.readonly",
+               "https://purl.imsglobal.org/spec/lti-ags/scope/result.readonly",
+               "https://purl.imsglobal.org/spec/lti-ags/scope/score",
+               "https://purl.imsglobal.org/spec/lti-nrps/scope/contextmembership.readonly"
+             ]
+
+      %{"extensions" => [%{"settings" => %{"placements" => placements}} | _]} =
+        json_response(conn, 200)
+
+      assert placements == [
+               %{
+                 "icon_url" => "https://localhost/branding/prod/oli_torus_icon.png",
+                 "message_type" => "LtiResourceLinkRequest",
+                 "placement" => "link_selection"
+               },
+               %{
+                 "message_type" => "LtiResourceLinkRequest",
+                 "placement" => "assignment_selection"
+               },
+               %{
+                 "message_type" => "LtiResourceLinkRequest",
+                 "placement" => "course_navigation",
+                 "default" => "disabled",
+                 "windowTarget" => "_blank"
+               }
+             ]
+
+      assert json_response(conn, 200) |> Map.get("public_jwk") |> Map.get("kid") ==
+               public_jwk["kid"]
+
+      assert json_response(conn, 200) |> Map.get("public_jwk") |> Map.get("n") == public_jwk["n"]
+    end
+
+    test "with course navigation enabled", %{conn: conn} do
+      conn =
+        get(
+          conn,
+          Routes.lti_path(conn, :developer_key_json, course_navigation_default: "enabled")
+        )
+
+      %{"extensions" => [%{"settings" => %{"placements" => placements}} | _]} =
+        json_response(conn, 200)
+
+      assert placements == [
+               %{
+                 "icon_url" => "https://localhost/branding/prod/oli_torus_icon.png",
+                 "message_type" => "LtiResourceLinkRequest",
+                 "placement" => "link_selection"
+               },
+               %{
+                 "message_type" => "LtiResourceLinkRequest",
+                 "placement" => "assignment_selection"
+               },
+               %{
+                 "message_type" => "LtiResourceLinkRequest",
+                 "placement" => "course_navigation",
+                 "default" => "enabled",
+                 "windowTarget" => "_blank"
+               }
+             ]
     end
   end
 

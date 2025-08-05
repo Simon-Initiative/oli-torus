@@ -317,7 +317,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       {:ok, section} =
         Sections.update_section(section, %{
           requires_payment: true,
-          amount: Money.new(:USD, 100),
+          amount: Money.new(100, "USD"),
           has_grace_period: false,
           requires_enrollment: true
         })
@@ -339,7 +339,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       {:ok, section} =
         Sections.update_section(section, %{
           requires_payment: true,
-          amount: Money.new(:USD, 100),
+          amount: Money.new(100, "USD"),
           has_grace_period: false
         })
 
@@ -363,7 +363,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       {:ok, section} =
         Sections.update_section(section, %{
           requires_payment: true,
-          amount: Money.new(:USD, 100),
+          amount: Money.new(100, "USD"),
           has_grace_period: false,
           pay_by_institution: true
         })
@@ -1588,7 +1588,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       {:ok, section} =
         Sections.update_section(section, %{
           requires_payment: true,
-          amount: Money.new(:USD, 100),
+          amount: Money.new(100, "USD"),
           has_grace_period: false
         })
 
@@ -1608,7 +1608,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       {:ok, section} =
         Sections.update_section(section, %{
           requires_payment: true,
-          amount: Money.new(:USD, 100),
+          amount: Money.new(100, "USD"),
           has_grace_period: false,
           requires_enrollment: true
         })
@@ -1630,7 +1630,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       {:ok, section} =
         Sections.update_section(section, %{
           requires_payment: true,
-          amount: Money.new(:USD, 100),
+          amount: Money.new(100, "USD"),
           has_grace_period: false,
           requires_enrollment: true
         })
@@ -1820,7 +1820,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
           type: :blueprint,
           institution: institution,
           requires_payment: true,
-          amount: Money.new(:USD, 100)
+          amount: Money.new(100, "USD")
         })
 
       insert(:discount, section: product, institution: institution)
@@ -1852,14 +1852,14 @@ defmodule OliWeb.PageDeliveryControllerTest do
           type: :blueprint,
           institution: institution,
           requires_payment: true,
-          amount: Money.new(:USD, 100)
+          amount: Money.new(100, "USD")
         })
 
       insert(:discount,
         section: product,
         institution: institution,
         type: :fixed_amount,
-        amount: Money.new(:USD, 100)
+        amount: Money.new(100, "USD")
       )
 
       tool_jwk = jwk_fixture()
@@ -1889,7 +1889,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
           type: :blueprint,
           institution: institution,
           requires_payment: true,
-          amount: Money.new(:USD, 100)
+          amount: Money.new(100, "USD")
         })
 
       insert(:discount, institution: institution, section: nil)

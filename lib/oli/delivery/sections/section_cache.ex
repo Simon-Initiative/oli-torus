@@ -6,7 +6,22 @@ defmodule Oli.Delivery.Sections.SectionCache do
     Keys are set to expire after 1 year as that is the longest a section is expected to be active.
     This is to prevent data from building up in the cache over a long time period. It is more than
     likely that the cache will be restarted/cleared before the 1 year expiration.
+
+    ### DEPRECATION NOTICE
+
+    This module is deprecated and replaced by `Oli.Delivery.Sections.SectionResourceDepot`.
+
+    The current keys still cached here (`:ordered_container_labels`, `:contained_scheduling_types`, and `:page_to_container_map`)
+    are being migrated to `SectionResourceDepot` in upcoming work.
+
+    Once those migrations are completed, this module will be removed entirely.
+
+    ### DO NOT USE THIS MODULE
+
+    Do not introduce new keys or functionality in this module. Use `Oli.Delivery.Sections.SectionResourceDepot` instead.
   """
+
+  @deprecated "Use Oli.Delivery.Sections.SectionResourceDepot instead"
 
   use GenServer
 

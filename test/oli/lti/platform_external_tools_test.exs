@@ -650,4 +650,387 @@ defmodule Oli.Lti.PlatformExternalToolsTest do
              )
     end
   end
+
+  defp create_section_resource(_) do
+    section = insert(:section)
+    resource = insert(:resource)
+
+    %{
+      section: section,
+      resource: resource,
+      valid_attrs: %{
+        type: :ltiResourceLink,
+        url: "https://example.com/resource",
+        title: "Test Resource",
+        text: "Test resource description",
+        custom: %{"param1" => "value1"},
+        section_id: section.id,
+        resource_id: resource.id
+      }
+    }
+  end
+
+  describe "create_section_resource_deep_link/1" do
+    setup [:create_section_resource]
+
+    test "creates a deep link with valid attributes", %{valid_attrs: valid_attrs} do
+      assert {:ok, deep_link} =
+               PlatformExternalTools.create_section_resource_deep_link(valid_attrs)
+
+      assert deep_link.type == :ltiResourceLink
+      assert deep_link.url == "https://example.com/resource"
+      assert deep_link.title == "Test Resource"
+      assert deep_link.text == "Test resource description"
+      assert deep_link.custom == %{"param1" => "value1"}
+      assert deep_link.section_id == valid_attrs.section_id
+      assert deep_link.resource_id == valid_attrs.resource_id
+    end
+
+    test "creates a deep link with minimal required attributes", %{
+      section: section,
+      resource: resource
+    } do
+      minimal_attrs = %{
+        type: :ltiLink,
+        section_id: section.id,
+        resource_id: resource.id
+      }
+
+      assert {:ok, deep_link} =
+               PlatformExternalTools.create_section_resource_deep_link(minimal_attrs)
+
+      assert deep_link.type == :ltiLink
+      assert deep_link.section_id == section.id
+      assert deep_link.resource_id == resource.id
+      assert deep_link.url == nil
+      assert deep_link.title == nil
+      assert deep_link.text == nil
+      assert deep_link.custom == %{}
+    end
+
+    test "fails when required attributes are missing" do
+      invalid_attrs = %{
+        url: "https://example.com/resource",
+        title: "Test Resource"
+        # missing type, section_id, resource_id
+      }
+
+      assert {:error, changeset} =
+               PlatformExternalTools.create_section_resource_deep_link(invalid_attrs)
+
+      refute changeset.valid?
+      # type has a default value, so only section_id and resource_id should have errors
+      assert changeset.errors[:section_id]
+      assert changeset.errors[:resource_id]
+    end
+
+    test "fails with invalid type" do
+      invalid_attrs = %{
+        type: :invalidType,
+        section_id: 1,
+        resource_id: 1
+      }
+
+      assert {:error, changeset} =
+               PlatformExternalTools.create_section_resource_deep_link(invalid_attrs)
+
+      refute changeset.valid?
+      assert changeset.errors[:type]
+    end
+  end
+
+  describe "upsert_section_resource_deep_link/1" do
+    setup [:create_section_resource]
+
+    test "creates a new deep link when none exists", %{valid_attrs: valid_attrs} do
+      assert {:ok, deep_link} =
+               PlatformExternalTools.upsert_section_resource_deep_link(valid_attrs)
+
+      assert deep_link.type == :ltiResourceLink
+      assert deep_link.url == "https://example.com/resource"
+      assert deep_link.title == "Test Resource"
+    end
+
+    test "updates existing deep link when one exists", %{valid_attrs: valid_attrs} do
+      # Create initial deep link
+      {:ok, initial_deep_link} =
+        PlatformExternalTools.create_section_resource_deep_link(valid_attrs)
+
+      # Upsert with updated attributes
+      updated_attrs =
+        Map.merge(valid_attrs, %{
+          url: "https://updated.com/resource",
+          title: "Updated Resource",
+          custom: %{"updated" => "value"}
+        })
+
+      assert {:ok, updated_deep_link} =
+               PlatformExternalTools.upsert_section_resource_deep_link(updated_attrs)
+
+      # Should have same ID (updated, not created new)
+      assert updated_deep_link.id == initial_deep_link.id
+      assert updated_deep_link.url == "https://updated.com/resource"
+      assert updated_deep_link.title == "Updated Resource"
+      assert updated_deep_link.custom == %{"updated" => "value"}
+
+      # Verify only one record exists
+      count =
+        Repo.aggregate(Oli.Lti.PlatformExternalTools.LtiSectionResourceDeepLink, :count, :id)
+
+      assert count == 1
+    end
+
+    test "handles conflict on section_id and resource_id combination", %{
+      section: section,
+      resource: resource
+    } do
+      attrs1 = %{
+        type: :ltiResourceLink,
+        url: "https://first.com",
+        title: "First",
+        section_id: section.id,
+        resource_id: resource.id
+      }
+
+      attrs2 = %{
+        type: :ltiResourceLink,
+        url: "https://second.com",
+        title: "Second",
+        section_id: section.id,
+        resource_id: resource.id
+      }
+
+      # Create first record
+      {:ok, first_deep_link} =
+        PlatformExternalTools.upsert_section_resource_deep_link(attrs1)
+
+      # Upsert second record with same section_id and resource_id
+      {:ok, second_deep_link} =
+        PlatformExternalTools.upsert_section_resource_deep_link(attrs2)
+
+      # Should be same record ID (updated)
+      assert first_deep_link.id == second_deep_link.id
+      assert second_deep_link.type == :ltiResourceLink
+      assert second_deep_link.url == "https://second.com"
+      assert second_deep_link.title == "Second"
+    end
+  end
+
+  describe "get_section_resource_deep_link_by/1" do
+    setup [:create_section_resource]
+
+    test "returns deep link when found", %{valid_attrs: valid_attrs} do
+      {:ok, created_deep_link} =
+        PlatformExternalTools.create_section_resource_deep_link(valid_attrs)
+
+      result =
+        PlatformExternalTools.get_section_resource_deep_link_by(
+          section_id: valid_attrs.section_id,
+          resource_id: valid_attrs.resource_id
+        )
+
+      assert result.id == created_deep_link.id
+      assert result.type == :ltiResourceLink
+      assert result.url == "https://example.com/resource"
+    end
+
+    test "returns nil when not found" do
+      result =
+        PlatformExternalTools.get_section_resource_deep_link_by(
+          section_id: 999,
+          resource_id: 999
+        )
+
+      assert result == nil
+    end
+
+    test "can search by different attributes", %{valid_attrs: valid_attrs} do
+      {:ok, created_deep_link} =
+        PlatformExternalTools.create_section_resource_deep_link(valid_attrs)
+
+      # Search by ID
+      result =
+        PlatformExternalTools.get_section_resource_deep_link_by(id: created_deep_link.id)
+
+      assert result.id == created_deep_link.id
+
+      # Search by type
+      result =
+        PlatformExternalTools.get_section_resource_deep_link_by(type: :ltiResourceLink)
+
+      assert result.id == created_deep_link.id
+
+      # Search by URL
+      result =
+        PlatformExternalTools.get_section_resource_deep_link_by(
+          url: "https://example.com/resource"
+        )
+
+      assert result.id == created_deep_link.id
+    end
+  end
+
+  describe "update_section_resource_deep_link/2" do
+    setup [:create_section_resource]
+
+    test "successfully updates deep link", %{valid_attrs: valid_attrs} do
+      {:ok, deep_link} = PlatformExternalTools.create_section_resource_deep_link(valid_attrs)
+
+      update_attrs = %{
+        type: :ltiAssignmentAndGradeServices,
+        url: "https://updated.com/resource",
+        title: "Updated Title",
+        text: "Updated description",
+        custom: %{"new_param" => "new_value"}
+      }
+
+      assert {:ok, updated_deep_link} =
+               PlatformExternalTools.update_section_resource_deep_link(deep_link, update_attrs)
+
+      assert updated_deep_link.id == deep_link.id
+      assert updated_deep_link.type == :ltiAssignmentAndGradeServices
+      assert updated_deep_link.url == "https://updated.com/resource"
+      assert updated_deep_link.title == "Updated Title"
+      assert updated_deep_link.text == "Updated description"
+      assert updated_deep_link.custom == %{"new_param" => "new_value"}
+    end
+
+    test "returns error changeset for invalid updates", %{valid_attrs: valid_attrs} do
+      {:ok, deep_link} = PlatformExternalTools.create_section_resource_deep_link(valid_attrs)
+
+      invalid_attrs = %{
+        type: :invalidType
+      }
+
+      assert {:error, changeset} =
+               PlatformExternalTools.update_section_resource_deep_link(deep_link, invalid_attrs)
+
+      refute changeset.valid?
+      assert changeset.errors[:type]
+    end
+
+    test "can partially update fields", %{valid_attrs: valid_attrs} do
+      {:ok, deep_link} = PlatformExternalTools.create_section_resource_deep_link(valid_attrs)
+
+      update_attrs = %{
+        title: "Only Title Updated"
+      }
+
+      assert {:ok, updated_deep_link} =
+               PlatformExternalTools.update_section_resource_deep_link(deep_link, update_attrs)
+
+      # Only title should be updated
+      assert updated_deep_link.title == "Only Title Updated"
+      # Other fields should remain the same
+      assert updated_deep_link.type == deep_link.type
+      assert updated_deep_link.url == deep_link.url
+      assert updated_deep_link.text == deep_link.text
+      assert updated_deep_link.custom == deep_link.custom
+    end
+  end
+
+  describe "delete_section_resource_deep_link/1" do
+    setup [:create_section_resource]
+
+    test "successfully deletes deep link", %{valid_attrs: valid_attrs} do
+      {:ok, deep_link} = PlatformExternalTools.create_section_resource_deep_link(valid_attrs)
+
+      assert {:ok, deleted_deep_link} =
+               PlatformExternalTools.delete_section_resource_deep_link(deep_link)
+
+      assert deleted_deep_link.id == deep_link.id
+
+      # Verify it's actually deleted
+      result = PlatformExternalTools.get_section_resource_deep_link_by(id: deep_link.id)
+      assert result == nil
+    end
+
+    test "returns error when trying to delete non-existent record", %{
+      section: section,
+      resource: resource
+    } do
+      # Create and delete a deep link first
+      {:ok, deep_link} =
+        PlatformExternalTools.create_section_resource_deep_link(%{
+          type: :ltiResourceLink,
+          section_id: section.id,
+          resource_id: resource.id
+        })
+
+      {:ok, _} = PlatformExternalTools.delete_section_resource_deep_link(deep_link)
+
+      # Try to delete the same record again - this should raise a stale entry error
+      assert_raise Ecto.StaleEntryError, fn ->
+        PlatformExternalTools.delete_section_resource_deep_link(deep_link)
+      end
+    end
+  end
+
+  describe "integration scenarios" do
+    setup [:create_section_resource]
+
+    test "complete lifecycle: create, read, update, delete", %{
+      section: section,
+      resource: resource
+    } do
+      # Create
+      attrs = %{
+        type: :ltiResourceLink,
+        url: "https://example.com",
+        title: "Original Title",
+        section_id: section.id,
+        resource_id: resource.id
+      }
+
+      {:ok, deep_link} = PlatformExternalTools.create_section_resource_deep_link(attrs)
+      assert deep_link.title == "Original Title"
+
+      # Read
+      found = PlatformExternalTools.get_section_resource_deep_link_by(id: deep_link.id)
+      assert found.id == deep_link.id
+
+      # Update
+      {:ok, updated} =
+        PlatformExternalTools.update_section_resource_deep_link(deep_link, %{
+          title: "Updated Title"
+        })
+
+      assert updated.title == "Updated Title"
+
+      # Delete
+      {:ok, _} = PlatformExternalTools.delete_section_resource_deep_link(updated)
+
+      # Verify deletion
+      refute PlatformExternalTools.get_section_resource_deep_link_by(id: deep_link.id)
+    end
+
+    test "upsert behavior maintains referential integrity", %{
+      section: section,
+      resource: resource
+    } do
+      attrs = %{
+        type: :ltiResourceLink,
+        url: "https://example.com",
+        section_id: section.id,
+        resource_id: resource.id
+      }
+
+      # First upsert creates
+      {:ok, first} = PlatformExternalTools.upsert_section_resource_deep_link(attrs)
+
+      # Second upsert updates
+      updated_attrs = Map.put(attrs, :title, "Updated")
+      {:ok, second} = PlatformExternalTools.upsert_section_resource_deep_link(updated_attrs)
+
+      # Should be same record
+      assert first.id == second.id
+      assert second.title == "Updated"
+
+      # Should only have one record total
+      count =
+        Repo.aggregate(Oli.Lti.PlatformExternalTools.LtiSectionResourceDeepLink, :count, :id)
+
+      assert count == 1
+    end
+  end
 end

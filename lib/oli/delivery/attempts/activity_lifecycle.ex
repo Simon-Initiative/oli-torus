@@ -152,6 +152,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
                      revision_id: revision.id,
                      resource_attempt_id: activity_attempt.resource_attempt_id,
                      survey_id: survey_id,
+                     selection_id: activity_attempt.selection_id,
                      out_of: activity_attempt.out_of,
                      aggregate_score: activity_attempt.aggregate_score,
                      aggregate_out_of: activity_attempt.aggregate_out_of

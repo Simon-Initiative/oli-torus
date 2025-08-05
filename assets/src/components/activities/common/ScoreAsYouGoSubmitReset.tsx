@@ -125,7 +125,7 @@ export const ScoreAsYouGoSubmitReset: React.FC<Props> = ({ onSubmit, onReset, mo
           </div>
         );
       }
-    } else if (!uiState.activityContext.batchScoring || uiState.activityContext.oneAtATime) {
+    } else if (!uiState.activityContext.batchScoring) {
       return (
         <div className="flex justify-center">
           <button

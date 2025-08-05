@@ -56,4 +56,53 @@ defmodule Oli.Lti.Tokens do
         {:error, :invalid_token}
     end
   end
+
+  def peek_jwt(token) do
+    try do
+      jwt = JOSE.JWT.peek(token)
+
+      {:ok, jwt}
+    rescue
+      _ ->
+        {:error, :invalid_jwt}
+    end
+  end
+
+  def get_jwk_for_assertion(keyset_url, kid) do
+    keys =
+      fetch_public_keyset(keyset_url)
+      |> Map.get("keys", [])
+
+    cond do
+      is_nil(kid) ->
+        # If no kid is provided, assume the first key in the set is the active one
+        Logger.warning(
+          "No 'kid' provided in client_assertion, using first key in keyset from #{keyset_url}"
+        )
+
+        case keys do
+          [] ->
+            {:error, :no_keys_available}
+
+          [first_key | _] ->
+            {:ok, JOSE.JWK.from_map(first_key)}
+        end
+
+      true ->
+        case Enum.find(keys, fn key -> key["kid"] == kid end) do
+          nil -> {:error, :key_not_found}
+          key -> {:ok, JOSE.JWK.from_map(key)}
+        end
+    end
+  end
+
+  defp fetch_public_keyset(keyset_url) do
+    case Oli.HTTP.http().get(keyset_url) do
+      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
+        Jason.decode!(body)
+
+      error ->
+        error
+    end
+  end
 end
