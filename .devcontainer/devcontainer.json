@@ -2,20 +2,35 @@
 // README at: https://github.com/devcontainers/templates/tree/main/src/debian
 {
   "name": "oli-torus",
-  // Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
-  // "image": "mcr.microsoft.com/devcontainers/base:bookworm",
   "dockerComposeFile": ["docker-compose.yml"],
-  "workspaceFolder": "/workspaces/oli-torus",
   "service": "app",
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "shutdownAction": "stopCompose",
+
+  // Commands to run
   "initializeCommand": "sh .devcontainer/scripts/init.sh",
+  "postCreateCommand": "mix deps.get && yarn",
+  "postStartCommand": "mix ecto.setup",
 
-  // Features to add to the dev container. More info: https://containers.dev/features.
-  // "features": {},
+  // Port forwarding
+  "forwardPorts": [80, 5432, 9000, 9001],
+  "portsAttributes": {
+    "80": {
+      "label": "Phoenix Server",
+      "onAutoForward": "openPreview"
+    },
+    "5432": {
+      "label": "PostgreSQL"
+    },
+    "9000": {
+      "label": "MinIO API"
+    },
+    "9001": {
+      "label": "MinIO Console"
+    }
+  },
 
-  // Use 'forwardPorts' to make a list of ports inside the container available locally.
-  // "forwardPorts": [80, 443]
-
-  // Configure tool-specific properties.
+  // Configure tool-specific properties
   "customizations": {
     "vscode": {
       "extensions": [
@@ -33,10 +48,11 @@
         "esbenp.prettier-vscode",
         "fabiospampinato.vscode-diff",
         "usernamehw.errorlens"
-      ]
+      ],
+      "settings": {
+        "elixir.projectPath": "/workspaces/${localWorkspaceFolderBasename}",
+        "elixir.mixPath": "/usr/local/bin/mix"
+      }
     }
   }
-
-  // // Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
-  // "remoteUser": "root"
 }
