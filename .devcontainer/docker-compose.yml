@@ -15,8 +15,6 @@ services:
     environment:
       MIX_ENV: dev
       DB_HOST: postgres
-    volumes:
-      - ../:/workspace/oli-torus
     # Overrides default command so things don't shut down after the process ends.
     command: bash -c "sleep infinity"
 
