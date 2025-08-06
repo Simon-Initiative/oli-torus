@@ -1471,11 +1471,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       |> render_click()
 
       assert view
-             |> element(~s{#student_attempts_summary})
+             |> element(~s{div[role="student attempts summary"]})
              |> render() =~ "1 student has completed 1 attempt."
 
       assert view
-             |> element(~s{#student_attempts_summary})
+             |> element(~s{div[role="student attempts summary"]})
              |> render() =~ "3 students have not completed any attempt"
     end
 
@@ -1531,11 +1531,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       |> render_click()
 
       assert view
-             |> element(~s{#student_attempts_summary})
+             |> element(~s{div[role="student attempts summary"]})
              |> render() =~ "3 students have completed 3 attempts."
 
       assert view
-             |> element(~s{#student_attempts_summary})
+             |> element(~s{div[role="student attempts summary"]})
              |> render() =~ "1 student has not completed any attempt"
     end
 
@@ -1625,11 +1625,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       |> render_click()
 
       assert view
-             |> element(~s{#student_attempts_summary})
+             |> element(~s{div[role="student attempts summary"]})
              |> render() =~ "4 students have completed 6 attempts."
 
       refute view
-             |> element(~s{#student_attempts_summary})
+             |> element(~s{div[role="student attempts summary"]})
              |> render() =~ "not completed"
 
       refute view
@@ -1676,7 +1676,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       |> render_click()
 
       assert view
-             |> has_element?("#copy_emails_button", "Copy email addresses")
+             |> has_element?(~s{button[role="copy emails button"]}, "Copy email addresses")
     end
   end
 

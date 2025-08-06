@@ -81,7 +81,7 @@ defmodule OliWeb.Grades.GradebookTableModel do
       rows: graded_pages,
       column_specs: column_specs,
       event_suffix: "",
-      id_field: [:id],
+      id_field: [:resource_id],
       data: %{section_slug: section_slug, student_id: student_id}
     )
   end

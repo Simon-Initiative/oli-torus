@@ -110,7 +110,7 @@ defmodule OliWeb.Components.Delivery.Surveys do
                   <div role="activity_title">{activity.title} - Question details</div>
                   <div
                     :if={@current_assessment != nil and @activities not in [nil, []]}
-                    id="student_attempts_summary"
+                    id={"student_attempts_summary_#{activity.id}"}
                     class="flex flex-row gap-x-2 lowercase"
                   >
                     <span class="text-xs">

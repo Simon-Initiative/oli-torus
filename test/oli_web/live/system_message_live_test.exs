@@ -45,7 +45,9 @@ defmodule OliWeb.SystemMessageLiveTest do
       {:ok, view, _html} = live(conn, @live_view_index_route)
 
       assert view
-             |> element("form[phx-submit=\"save\"] textarea[id=\"system_message_message\"]")
+             |> element(
+               "form[phx-submit=\"save\"] textarea[id=\"system_message_message_#{system_message.id}\"]"
+             )
              |> render() =~ system_message.message
     end
 

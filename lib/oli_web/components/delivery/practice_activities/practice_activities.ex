@@ -140,8 +140,9 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
                 <div role="activity_title">{activity.title} - Question details</div>
                 <div
                   :if={@current_assessment != nil and @activities not in [nil, []]}
-                  id="student_attempts_summary"
+                  id={"student_attempts_summary_#{activity.id}"}
                   class="flex flex-row gap-x-2 lowercase"
+                  role="student attempts summary"
                 >
                   <span class="text-xs">
                     <%= if activity.students_with_attempts_count == 0 do %>
@@ -162,16 +163,17 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
                     </span>
                     <input
                       type="text"
-                      id="email_inputs"
+                      id={"email_inputs_#{activity.id}"}
                       class="form-control hidden"
                       value={Enum.join(activity.student_emails_without_attempts, "; ")}
                       readonly
                     />
                     <button
-                      id="copy_emails_button"
+                      id={"copy_emails_button_#{activity.id}"}
                       class="text-xs text-primary underline ml-auto"
                       phx-hook="CopyListener"
-                      data-clipboard-target="#email_inputs"
+                      role="copy emails button"
+                      data-clipboard-target={"#email_inputs_#{activity.id}"}
                     >
                       <i class="fa-solid fa-copy mr-2" />{Gettext.ngettext(
                         OliWeb.Gettext,
@@ -185,7 +187,7 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
               </div>
               <div
                 class="bg-white dark:bg-gray-800 dark:text-white shadow-sm px-6 -mt-5"
-                id="activity_detail"
+                id={"activity_detail_#{activity.id}"}
                 phx-hook="LoadSurveyScripts"
               >
                 <%= if Map.get(activity, :preview_rendered) != nil do %>
