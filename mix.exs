@@ -158,7 +158,7 @@ defmodule Oli.MixProject do
       {:ex_machina, "~> 2.7.0", only: [:test]},
       {:ex_money, "~> 5.17"},
       {:ex_money_sql, "~> 1.7"},
-      {:excoveralls, "~> 0.14.4", only: [:test]},
+      {:excoveralls, "~> 0.18.5", only: [:test]},
       {:ex_doc, "~> 0.28", only: :dev, runtime: false},
       {:floki, ">= 0.30.0"},
       {:gen_smtp, "~> 1.2"},
