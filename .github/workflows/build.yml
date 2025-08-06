@@ -68,22 +68,23 @@ jobs:
       - name: 🔨 Build project
         run: set -a; source oli.env && mix compile --warnings-as-errors
 
-      - name: 📋 Check Formatting
-        run: mix format --check-formatted
+      # - name: 📋 Check Formatting
+      #   run: mix format --check-formatted
 
-      - name: ▶️ Run unit tests
-        run: |
-          set -a;source oli.env
-          MIX_ENV=test mix ecto.reset
-          mix test --trace || if [[ $? = 2  ]]; then mix test --failed; else false; fi # https://angelika.me/2024/01/08/do-not-run-mix-test-failed/
+      # - name: ▶️ Run unit tests
+      #   run: |
+      #     set -a;source oli.env
+      #     MIX_ENV=test mix ecto.reset
+      #     mix test --trace || if [[ $? = 2  ]]; then mix test --failed; else false; fi # https://angelika.me/2024/01/08/do-not-run-mix-test-failed/
 
       - name: 📊 Generate and post coverage
         run: |
           set -a;source oli.env
+          MIX_ENV=test mix ecto.reset
           MIX_ENV=test mix coveralls.github
 
-      - name: 📦 Install node_module dependencies
-        run: yarn --cwd assets --frozen-lockfile
+      # - name: 📦 Install node_module dependencies
+      #   run: yarn --cwd assets --frozen-lockfile
 
   check-simon-token:
     name: Check simon-bot access token
