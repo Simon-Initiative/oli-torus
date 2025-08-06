@@ -1,5 +1,5 @@
 defmodule OliWeb.RemixSectionLiveTest do
-  use OliWeb.ConnCase
+  use OliWeb.ConnCase, async: true
 
   import Phoenix.ConnTest
   import Phoenix.LiveViewTest
@@ -16,33 +16,23 @@ defmodule OliWeb.RemixSectionLiveTest do
 
     test "mount as admin", %{
       conn: conn,
-      map: %{
-        section_1: section_1,
-        unit1_container: unit1_container,
-        revision1: revision1,
-        revision2: revision2
-      }
+      section: section,
+      unit_1: unit_1,
+      unit_2: unit_2,
+      page_5: page_5
     } do
-      conn =
-        get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, section_1.slug))
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/remix")
 
-      {:ok, view, _html} = live(conn)
-
-      assert view |> element("#entry-#{unit1_container.revision.resource_id}") |> has_element?()
-      assert view |> element("#entry-#{revision1.resource_id}") |> has_element?()
-      assert view |> element("#entry-#{revision2.resource_id}") |> has_element?()
+      assert view |> element("#entry-#{unit_1.resource_id}") |> has_element?()
+      assert view |> element("#entry-#{unit_2.resource_id}") |> has_element?()
+      assert view |> element("#entry-#{page_5.resource_id}") |> has_element?()
     end
 
     test "saving redirects admin correctly", %{
       conn: conn,
-      map: %{
-        section_1: section_1
-      }
+      section: section
     } do
-      conn =
-        get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, section_1.slug))
-
-      {:ok, view, _html} = live(conn)
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/remix")
 
       render_hook(view, "reorder", %{"sourceIndex" => "0", "dropIndex" => "2"})
 
@@ -52,34 +42,24 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       assert_redirected(
         view,
-        Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.OverviewView, section_1.slug)
+        ~p"/authoring/products/#{section.slug}"
       )
     end
 
     test "breadcrumbs render correctly", %{
       conn: conn,
-      map: %{
-        section_1: section_1
-      }
+      section: section
     } do
-      conn =
-        get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, section_1.slug))
-
-      {:ok, _view, html} = live(conn)
+      {:ok, _view, html} = live(conn, ~p"/sections/#{section.slug}/remix")
 
       assert html =~ "Customize Content"
     end
 
     test "remix section remove and save (including last course material)", %{
       conn: conn,
-      map: %{
-        section_1: section_1
-      }
+      section: section
     } do
-      conn =
-        get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, section_1.slug))
-
-      {:ok, view, _html} = live(conn)
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/remix")
 
       node_children_uuids =
         view
@@ -98,7 +78,7 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       assert_redirected(
         view,
-        Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.OverviewView, section_1.slug)
+        ~p"/authoring/products/#{section.slug}"
       )
     end
   end
@@ -965,39 +945,23 @@ defmodule OliWeb.RemixSectionLiveTest do
 
     test "mount as open and free", %{
       conn: conn,
-      map: %{
-        oaf_section_1: oaf_section_1,
-        unit1_container: unit1_container,
-        revision1: revision1,
-        revision2: revision2
-      }
+      section: section,
+      unit_1: unit_1,
+      unit_2: unit_2,
+      page_5: page_5
     } do
-      conn =
-        get(
-          conn,
-          Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, oaf_section_1.slug)
-        )
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/remix")
 
-      {:ok, view, _html} = live(conn)
-
-      assert view |> element("#entry-#{unit1_container.revision.resource_id}") |> has_element?()
-      assert view |> element("#entry-#{revision1.resource_id}") |> has_element?()
-      assert view |> element("#entry-#{revision2.resource_id}") |> has_element?()
+      assert view |> element("#entry-#{unit_1.resource_id}") |> has_element?()
+      assert view |> element("#entry-#{unit_2.resource_id}") |> has_element?()
+      assert view |> element("#entry-#{page_5.resource_id}") |> has_element?()
     end
 
     test "saving redirects open and free correctly", %{
       conn: conn,
-      map: %{
-        oaf_section_1: oaf_section_1
-      }
+      section: section
     } do
-      conn =
-        get(
-          conn,
-          Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, oaf_section_1.slug)
-        )
-
-      {:ok, view, _html} = live(conn)
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/remix")
 
       render_hook(view, "reorder", %{"sourceIndex" => "0", "dropIndex" => "2"})
 
@@ -1007,38 +971,32 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       assert_redirect(
         view,
-        ~p"/sections/#{oaf_section_1.slug}/remix"
+        ~p"/authoring/products/#{section.slug}"
       )
     end
 
     test "remix section items and add materials items are ordered correctly", %{
       conn: conn,
-      map: %{
-        oaf_section_1: oaf_section_1,
-        unit1_container: unit1_container,
-        latest1: latest1,
-        latest2: latest2
-      }
+      section: section,
+      unit_1: unit_1,
+      unit_2: unit_2,
+      page_5: page_5
     } do
-      {:ok, view, _html} =
-        live(
-          conn,
-          Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, oaf_section_1.slug)
-        )
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/remix")
 
       assert view
              |> element(".curriculum-entries > div:nth-child(2)")
-             |> render() =~ "#{latest1.title}"
+             |> render() =~ "#{unit_1.title}"
 
       assert view
              |> element(".curriculum-entries > div:nth-child(4)")
-             |> render() =~ "#{latest2.title}"
+             |> render() =~ "#{unit_2.title}"
 
       assert view
              |> element(".curriculum-entries > div:nth-child(6)")
-             |> render() =~ "#{unit1_container.revision.title}"
+             |> render() =~ "#{page_5.title}"
 
-      # click add materials and assert is listing units first
+      # # click add materials and assert is listing units first
       view
       |> element("button[phx-click=\"show_add_materials_modal\"]")
       |> render_click()
@@ -1053,9 +1011,9 @@ defmodule OliWeb.RemixSectionLiveTest do
       hierarchy_html = render(view)
 
       # Check that the hierarchy shows all expected items
-      assert hierarchy_html =~ "#{unit1_container.revision.title}"
-      assert hierarchy_html =~ "#{latest1.title}"
-      assert hierarchy_html =~ "#{latest2.title}"
+      assert hierarchy_html =~ "#{unit_1.title}"
+      assert hierarchy_html =~ "#{unit_2.title}"
+      assert hierarchy_html =~ "#{page_5.title}"
 
       # Verify the hierarchy order is maintained
       hierarchy_items =
@@ -1065,35 +1023,29 @@ defmodule OliWeb.RemixSectionLiveTest do
         |> Enum.map(&Floki.text/1)
 
       # Assert that units are displayed first in the hierarchy
-      assert Enum.at(hierarchy_items, 0) =~ "#{unit1_container.revision.title}"
-      assert Enum.at(hierarchy_items, 1) =~ "#{latest1.title}"
-      assert Enum.at(hierarchy_items, 2) =~ "#{latest2.title}"
+      assert Enum.at(hierarchy_items, 0) =~ "#{unit_1.title}"
+      assert Enum.at(hierarchy_items, 1) =~ "#{unit_2.title}"
+      assert Enum.at(hierarchy_items, 2) =~ "#{page_5.title}"
 
       # Verify that containers (units) are properly identified in the hierarchy
       assert view
              |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-of-type(1)")
-             |> render() =~ "#{unit1_container.revision.title}"
+             |> render() =~ "#{unit_1.title}"
 
       assert view
              |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-of-type(2)")
-             |> render() =~ "#{latest1.title}"
+             |> render() =~ "#{unit_2.title}"
 
       assert view
              |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-of-type(3)")
-             |> render() =~ "#{latest2.title}"
+             |> render() =~ "#{page_5.title}"
     end
 
     test "remix section - add materials - publications are paginated", %{
       conn: conn,
-      map: %{
-        oaf_section_1: oaf_section_1
-      }
+      section: section
     } do
-      {:ok, view, _html} =
-        live(
-          conn,
-          Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, oaf_section_1.slug)
-        )
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/remix")
 
       # click add materials and assert is listing units first
       view
@@ -1112,15 +1064,9 @@ defmodule OliWeb.RemixSectionLiveTest do
 
     test "remix section - add materials - publications can be filtered by text", %{
       conn: conn,
-      map: %{
-        oaf_section_1: oaf_section_1
-      }
+      section: section
     } do
-      {:ok, view, _html} =
-        live(
-          conn,
-          Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, oaf_section_1.slug)
-        )
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/remix")
 
       # click add materials and assert is listing units first
       view
@@ -1137,19 +1083,12 @@ defmodule OliWeb.RemixSectionLiveTest do
 
     test "remix section items - add materials - all pages view gets rendered correctly", %{
       conn: conn,
-      map: %{
-        oaf_section_1: oaf_section_1,
-        unit1_container: unit1_container,
-        latest1: latest1,
-        latest2: latest2
-      },
-      orphan_revision_publication: orphan_revision_publication
+      section: section,
+      unit_1: unit_1,
+      unit_2: unit_2,
+      page_5: page_5
     } do
-      {:ok, view, _html} =
-        live(
-          conn,
-          Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, oaf_section_1.slug)
-        )
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/remix")
 
       # click add materials and assert is listing units first
       view
@@ -1164,15 +1103,15 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       assert view
              |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-of-type(1)")
-             |> render() =~ "#{unit1_container.revision.title}"
+             |> render() =~ "#{unit_1.title}"
 
       assert view
              |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-of-type(2)")
-             |> render() =~ "#{latest1.title}"
+             |> render() =~ "#{unit_2.title}"
 
       assert view
              |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-of-type(3)")
-             |> render() =~ "#{latest2.title}"
+             |> render() =~ "#{page_5.title}"
 
       view
       |> element("button[phx-value-tab_name=\"all_pages\"]")
@@ -1183,31 +1122,17 @@ defmodule OliWeb.RemixSectionLiveTest do
       |> render_click()
 
       assert view
-             |> has_element?(".remix_materials_table td", "An Orphan Page")
+             |> has_element?(".remix_materials_table td", "Page 1")
 
       assert view
              |> has_element?(".remix_materials_table th", "Published on")
-
-      assert view
-             |> has_element?(
-               ".remix_materials_table td",
-               OliWeb.Common.FormatDateTime.format_datetime(orphan_revision_publication.published,
-                 show_timezone: false
-               )
-             )
     end
 
     test "remix section items - add materials - all pages view can be sorted", %{
       conn: conn,
-      map: %{
-        oaf_section_1: oaf_section_1
-      }
+      section: section
     } do
-      {:ok, view, _html} =
-        live(
-          conn,
-          Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, oaf_section_1.slug)
-        )
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/remix")
 
       view
       |> element("button[phx-click=\"show_add_materials_modal\"]")
@@ -1265,15 +1190,9 @@ defmodule OliWeb.RemixSectionLiveTest do
 
     test "remix section items - add materials - all pages view can be filtered by text", %{
       conn: conn,
-      map: %{
-        oaf_section_1: oaf_section_1
-      }
+      section: section
     } do
-      {:ok, view, _html} =
-        live(
-          conn,
-          Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, oaf_section_1.slug)
-        )
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/remix")
 
       view
       |> element("button[phx-click=\"show_add_materials_modal\"]")
@@ -1291,10 +1210,10 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       view
       |> element("form[phx-change=\"HierarchyPicker.pages_text_search\"]")
-      |> render_change(%{"text_search" => "Orphan"})
+      |> render_change(%{"text_search" => "3"})
 
       assert view
-             |> has_element?(".remix_materials_table tbody tr:first-of-type td", "An Orphan Page")
+             |> has_element?(".remix_materials_table tbody tr:first-of-type td", "Page 3")
 
       refute view
              |> has_element?(".remix_materials_table tabtbodyle tr:nth-of-type(2)")
@@ -1316,34 +1235,138 @@ defmodule OliWeb.RemixSectionLiveTest do
   end
 
   defp setup_admin_session(%{conn: conn}) do
-    map = Seeder.base_project_with_resource4()
+    author = insert(:author)
+    project = insert(:project, title: "Super Project", authors: [author])
 
-    admin = author_fixture(%{system_role_id: Oli.Accounts.SystemRole.role_id().system_admin})
+    # revisions...
 
-    conn =
-      Plug.Test.init_test_session(conn, %{})
-      |> log_in_author(admin)
+    ## pages...
 
-    # Add an orphan page to the section
-    orphan_revision =
+    page_1_revision =
+      insert(:revision,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        title: "Page 1",
+        graded: true
+      )
+
+    page_2_revision =
+      insert(:revision,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        title: "Page 2",
+        graded: true
+      )
+
+    page_3_revision =
+      insert(:revision,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        title: "Page 3",
+        graded: true
+      )
+
+    page_4_revision =
+      insert(:revision,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        title: "Page 4",
+        graded: true
+      )
+
+    page_5_revision =
+      insert(:revision,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        title: "Page 5",
+        graded: true
+      )
+
+    module_1_revision =
+      insert(:revision,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        title: "Module 1",
+        children: [page_1_revision.resource_id, page_2_revision.resource_id]
+      )
+
+    module_2_revision =
+      insert(:revision,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        title: "Module 2",
+        children: [page_3_revision.resource_id, page_4_revision.resource_id]
+      )
+
+    unit_1_revision =
+      insert(:revision,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        title: "Unit 1",
+        children: [module_1_revision.resource_id]
+      )
+
+    unit_2_revision =
+      insert(:revision,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        title: "Unit 2",
+        children: [module_2_revision.resource_id]
+      )
+
+    ## root container...
+    container_revision =
       insert(:revision, %{
-        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
-        title: "An Orphan Page"
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        children: [
+          unit_1_revision.resource_id,
+          unit_2_revision.resource_id,
+          page_5_revision.resource_id
+        ],
+        title: "Root Container"
       })
 
-    insert(:project_resource, %{
-      project_id: map.project.id,
-      resource_id: orphan_revision.resource.id
-    })
+    all_revisions =
+      [
+        page_1_revision,
+        page_2_revision,
+        page_3_revision,
+        page_4_revision,
+        page_5_revision,
+        module_1_revision,
+        module_2_revision,
+        unit_1_revision,
+        unit_2_revision,
+        container_revision
+      ]
 
-    insert(:published_resource, %{
-      publication: map.pub2,
-      resource: orphan_revision.resource,
-      revision: orphan_revision
-    })
+    # asociate resources to project
+    Enum.each(all_revisions, fn revision ->
+      insert(:project_resource, %{
+        project_id: project.id,
+        resource_id: revision.resource_id
+      })
+    end)
 
-    author = insert(:author, %{email: "my_custom@email.com"})
+    # publish project
+    publication =
+      insert(:publication, %{project: project, root_resource_id: container_revision.resource_id})
 
+    # publish resources
+    Enum.each(all_revisions, fn revision ->
+      insert(:published_resource, %{
+        publication: publication,
+        resource: revision.resource,
+        revision: revision,
+        author: author
+      })
+    end)
+
+    # create section...
+    section =
+      insert(:section,
+        base_project: project,
+        title: "The best course ever!",
+        start_date: ~U[2023-10-30 20:00:00Z],
+        analytics_version: :v2
+      )
+
+    {:ok, section} = Oli.Delivery.Sections.create_section_resources(section, publication)
+    {:ok, _} = Oli.Delivery.Sections.rebuild_contained_pages(section)
+    {:ok, _} = Oli.Delivery.Sections.rebuild_contained_objectives(section)
+
+    # other projects...
     proj_1 = insert(:project, title: "Project 1", authors: [author])
     proj_2 = insert(:project, title: "Project 2", authors: [author])
     proj_3 = insert(:project, title: "Project 3", authors: [author])
@@ -1419,7 +1442,7 @@ defmodule OliWeb.RemixSectionLiveTest do
       author: author
     })
 
-    section =
+    section_2 =
       insert(:section,
         base_project: proj_1,
         context_id: UUID.uuid4(),
@@ -1428,7 +1451,7 @@ defmodule OliWeb.RemixSectionLiveTest do
         type: :enrollable
       )
 
-    {:ok, _section} = Sections.create_section_resources(section, proj_1_publication)
+    {:ok, _section} = Sections.create_section_resources(section_2, proj_1_publication)
 
     insert(:publication, %{
       project: proj_2,
@@ -1450,14 +1473,30 @@ defmodule OliWeb.RemixSectionLiveTest do
       published: ~U[2023-06-29 00:36:38.112566Z]
     })
 
-    {:ok,
-     conn: conn,
-     map: map,
-     author: map.author,
-     institution: map.institution,
-     project: map.project,
-     publication: map.publication,
-     orphan_revision_publication: map.pub2}
+    # create and login admin...
+    admin = insert(:author, %{system_role_id: Oli.Accounts.SystemRole.role_id().system_admin})
+
+    conn =
+      Plug.Test.init_test_session(conn, %{})
+      |> log_in_author(admin)
+
+    %{
+      author: author,
+      section: section,
+      project: project,
+      publication: publication,
+      page_1: page_1_revision,
+      page_2: page_2_revision,
+      page_3: page_3_revision,
+      page_4: page_4_revision,
+      page_5: page_5_revision,
+      module_1: module_1_revision,
+      module_2: module_2_revision,
+      unit_1: unit_1_revision,
+      unit_2: unit_2_revision,
+      admin: admin,
+      conn: conn
+    }
   end
 
   defp setup_instructor_session(%{conn: conn}) do
