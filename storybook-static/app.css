@@ -16476,6 +16476,11 @@ Not supports in Firefox and IE */
   color: rgb(135 215 224 / var(--tw-text-opacity));
 }
 
+.dark .dark\:text-\[\#99CCFF\] {
+  --tw-text-opacity: 1;
+  color: rgb(153 204 255 / var(--tw-text-opacity));
+}
+
 .dark .dark\:text-\[\#99ccff\] {
   --tw-text-opacity: 1;
   color: rgb(153 204 255 / var(--tw-text-opacity));
