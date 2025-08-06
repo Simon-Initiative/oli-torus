@@ -1792,6 +1792,7 @@ defmodule OliWeb.Router do
 
       get("/flame_graphs", DevController, :flame_graphs)
       live("/icons", Dev.IconsLive)
+      live("/tokens", Dev.TokensLive)
     end
   end
 end
