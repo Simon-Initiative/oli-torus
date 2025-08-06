@@ -80,7 +80,7 @@ jobs:
       - name: 📊 Generate and post coverage
         run: |
           set -a;source oli.env
-          mix coveralls.github
+          MIX_ENV=test mix coveralls.github
 
       - name: 📦 Install node_module dependencies
         run: yarn --cwd assets --frozen-lockfile
