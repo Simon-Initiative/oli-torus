@@ -5,7 +5,7 @@
   // Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
   // "image": "mcr.microsoft.com/devcontainers/base:bookworm",
   "dockerComposeFile": ["docker-compose.yml"],
-  "workspaceFolder": "/workspace/oli-torus",
+  "workspaceFolder": "/workspaces/oli-torus",
   "service": "app",
   "initializeCommand": "sh .devcontainer/scripts/init.sh",
 
