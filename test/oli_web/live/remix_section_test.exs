@@ -119,12 +119,12 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       ## add Unit 1
       view
-      |> element("button[phx-click=\"show_add_materials_modal\"]")
+      |> element("button[phx-click='show_add_materials_modal']")
       |> render_click()
 
       view
       |> element(
-        ".hierarchy table > tbody tr button[phx-click=\"HierarchyPicker.select_publication\"]",
+        ".hierarchy table > tbody tr button[phx-click='HierarchyPicker.select_publication']",
         "Project 1"
       )
       |> render_click()
@@ -138,7 +138,7 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       view
       |> element(
-        "button[phx-click=\"AddMaterialsModal.add\"]",
+        "button[phx-click='AddMaterialsModal.add']",
         "Add"
       )
       |> render_click()
@@ -201,12 +201,12 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       ## add the Elixir Page
       view
-      |> element("button[phx-click=\"show_add_materials_modal\"]")
+      |> element("button[phx-click='show_add_materials_modal']")
       |> render_click()
 
       view
       |> element(
-        ".hierarchy table > tbody tr:first-of-type button[phx-click=\"HierarchyPicker.select_publication\"]"
+        ".hierarchy table > tbody tr:first-of-type button[phx-click='HierarchyPicker.select_publication']"
       )
       |> render_click()
 
@@ -215,7 +215,7 @@ defmodule OliWeb.RemixSectionLiveTest do
       |> render_click()
 
       view
-      |> element("button[phx-click=\"AddMaterialsModal.add\"]", "Add")
+      |> element("button[phx-click='AddMaterialsModal.add']", "Add")
       |> render_click()
 
       ## Elixir Page exists
@@ -227,7 +227,7 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       ## cancel the modal that shows the cancel button
       view
-      |> element("button[phx-click=\"cancel_modal\"]")
+      |> element("button[phx-click='cancel_modal']")
       |> render_click()
 
       ## nothing happens and the Elixir Page still exists
@@ -239,7 +239,7 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       ## click on the ok that shows the cancel button
       view
-      |> element("button[phx-click=\"ok_cancel_modal\"]")
+      |> element("button[phx-click='ok_cancel_modal']")
       |> render_click()
 
       ## expect to be redirected
@@ -371,12 +371,12 @@ defmodule OliWeb.RemixSectionLiveTest do
         |> hd()
 
       # Assert the button is showing "Hide", as the page is not hidden
-      assert has_element?(view, "button[phx-value-uuid=\"#{node_uuid}\"]", "Hide")
+      assert has_element?(view, "button[phx-value-uuid='#{node_uuid}']", "Hide")
 
       # Click the button to show the modal to hide the page
       view
       |> element(
-        "button[phx-click=\"show_hide_resource_modal\"][phx-value-uuid=\"#{node_uuid}\"]"
+        "button[phx-click='show_hide_resource_modal'][phx-value-uuid='#{node_uuid}']"
       )
       |> render_click()
 
@@ -389,7 +389,7 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       # Click the button to hide the page and confirm the action
       view
-      |> element("button[phx-click=\"HideResourceModal.toggle\"]", "Hide")
+      |> element("button[phx-click='HideResourceModal.toggle']", "Hide")
       |> render_click()
 
       # Find again the uuid of the first node
@@ -402,7 +402,7 @@ defmodule OliWeb.RemixSectionLiveTest do
         |> hd()
 
       # Assert the button is showing "Show", as the page is hidden
-      assert has_element?(view, "button[phx-value-uuid=\"#{node_uuid}\"]", "Show")
+      assert has_element?(view, "button[phx-value-uuid='#{node_uuid}']", "Show")
 
       # Save the changes
       view |> element("#save") |> render_click()
@@ -432,12 +432,12 @@ defmodule OliWeb.RemixSectionLiveTest do
         |> hd()
 
       # Assert the button is showing "Hide", as the page is not hidden
-      assert has_element?(view, "button[phx-value-uuid=\"#{node_uuid}\"]", "Hide")
+      assert has_element?(view, "button[phx-value-uuid='#{node_uuid}']", "Hide")
 
       # Click the button to show the modal to hide the page
       view
       |> element(
-        "button[phx-click=\"show_hide_resource_modal\"][phx-value-uuid=\"#{node_uuid}\"]"
+        "button[phx-click='show_hide_resource_modal'][phx-value-uuid='#{node_uuid}']"
       )
       |> render_click()
 
@@ -450,7 +450,7 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       # Click the button to cancel
       view
-      |> element("button[phx-click=\"HideResourceModal.cancel\"]", "Cancel")
+      |> element("button[phx-click='HideResourceModal.cancel']", "Cancel")
       |> render_click()
 
       # Find again the uuid of the first node
@@ -463,7 +463,7 @@ defmodule OliWeb.RemixSectionLiveTest do
         |> hd()
 
       # Assert the button is showing "Hide", as the page is not hidden
-      assert has_element?(view, "button[phx-value-uuid=\"#{node_uuid}\"]", "Hide")
+      assert has_element?(view, "button[phx-value-uuid='#{node_uuid}']", "Hide")
 
       # Check the page is not hidden
       sr_updated = Sections.get_section_resource(section.id, revision1.resource_id)
@@ -490,12 +490,12 @@ defmodule OliWeb.RemixSectionLiveTest do
         |> hd()
 
       # Assert the button is showing "Hide", as the page is not hidden
-      assert has_element?(view, "button[phx-value-uuid=\"#{node_uuid}\"]", "Hide")
+      assert has_element?(view, "button[phx-value-uuid='#{node_uuid}']", "Hide")
 
       # Click the button to show the modal to hide the page
       view
       |> element(
-        "button[phx-click=\"show_hide_resource_modal\"][phx-value-uuid=\"#{node_uuid}\"]"
+        "button[phx-click='show_hide_resource_modal'][phx-value-uuid='#{node_uuid}']"
       )
       |> render_click()
 
@@ -508,7 +508,7 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       # Click the button to hide the page and confirm the action
       view
-      |> element("button[phx-click=\"HideResourceModal.toggle\"]", "Hide")
+      |> element("button[phx-click='HideResourceModal.toggle']", "Hide")
       |> render_click()
 
       # Find again the uuid of the first node
@@ -521,7 +521,7 @@ defmodule OliWeb.RemixSectionLiveTest do
         |> hd()
 
       # Assert the button is showing "Show", as the page is hidden
-      assert has_element?(view, "button[phx-value-uuid=\"#{node_uuid}\"]", "Show")
+      assert has_element?(view, "button[phx-value-uuid='#{node_uuid}']", "Show")
 
       # Cancel the changes
       view |> element("#cancel") |> render_click()
@@ -543,13 +543,13 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       # Open the add materials modal
       view
-      |> element("button[phx-click=\"show_add_materials_modal\"]")
+      |> element("button[phx-click='show_add_materials_modal']")
       |> render_click()
 
       # Select the project
       view
       |> element(
-        ".hierarchy table > tbody tr button[phx-click=\"HierarchyPicker.select_publication\"]",
+        ".hierarchy table > tbody tr button[phx-click='HierarchyPicker.select_publication']",
         "Project 1"
       )
       |> render_click()
@@ -583,7 +583,7 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       # Add the resources
       view
-      |> element("button[phx-click=\"AddMaterialsModal.add\"]", "Add")
+      |> element("button[phx-click='AddMaterialsModal.add']", "Add")
       |> render_click()
 
       # Save the changes
@@ -618,13 +618,13 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       # Open the add materials modal
       view
-      |> element("button[phx-click=\"show_add_materials_modal\"]")
+      |> element("button[phx-click='show_add_materials_modal']")
       |> render_click()
 
       # Select the project
       view
       |> element(
-        ".hierarchy table > tbody tr button[phx-click=\"HierarchyPicker.select_publication\"]",
+        ".hierarchy table > tbody tr button[phx-click='HierarchyPicker.select_publication']",
         "Project 1"
       )
       |> render_click()
@@ -667,13 +667,13 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       # Open the add materials modal
       view
-      |> element("button[phx-click=\"show_add_materials_modal\"]")
+      |> element("button[phx-click='show_add_materials_modal']")
       |> render_click()
 
       # Select the project
       view
       |> element(
-        ".hierarchy table > tbody tr button[phx-click=\"HierarchyPicker.select_publication\"]",
+        ".hierarchy table > tbody tr button[phx-click='HierarchyPicker.select_publication']",
         "Project 1"
       )
       |> render_click()
@@ -711,7 +711,7 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       # Add the selected materials
       view
-      |> element("button[phx-click=\"AddMaterialsModal.add\"]", "Add")
+      |> element("button[phx-click='AddMaterialsModal.add']", "Add")
       |> render_click()
 
       # Verify the materials were added in the correct order
@@ -815,13 +815,13 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       # Open the add materials modal
       view
-      |> element("button[phx-click=\"show_add_materials_modal\"]")
+      |> element("button[phx-click='show_add_materials_modal']")
       |> render_click()
 
       # Select the complex project
       view
       |> element(
-        ".hierarchy table > tbody tr button[phx-click=\"HierarchyPicker.select_publication\"]",
+        ".hierarchy table > tbody tr button[phx-click='HierarchyPicker.select_publication']",
         "Complex Project"
       )
       |> render_click()
@@ -866,7 +866,7 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       # Add the selected materials
       view
-      |> element("button[phx-click=\"AddMaterialsModal.add\"]", "Add")
+      |> element("button[phx-click='AddMaterialsModal.add']", "Add")
       |> render_click()
 
       # Verify the materials were added
@@ -998,12 +998,12 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       # # click add materials and assert is listing units first
       view
-      |> element("button[phx-click=\"show_add_materials_modal\"]")
+      |> element("button[phx-click='show_add_materials_modal']")
       |> render_click()
 
       view
       |> element(
-        ".hierarchy table > tbody tr:first-of-type button[phx-click=\"HierarchyPicker.select_publication\"]"
+        ".hierarchy table > tbody tr:first-of-type button[phx-click='HierarchyPicker.select_publication']"
       )
       |> render_click()
 
@@ -1049,14 +1049,14 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       # click add materials and assert is listing units first
       view
-      |> element("button[phx-click=\"show_add_materials_modal\"]")
+      |> element("button[phx-click='show_add_materials_modal']")
       |> render_click()
 
       assert has_element?(view, "nav[aria-label=\"Paging\"]")
       refute has_element?(view, "button", "Project 5")
 
       view
-      |> element("button[phx-click=\"HierarchyPicker.publications_page_change\"]", "2")
+      |> element("button[phx-click='HierarchyPicker.publications_page_change']", "2")
       |> render_click()
 
       assert has_element?(view, "button", "Project 5")
@@ -1070,11 +1070,11 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       # click add materials and assert is listing units first
       view
-      |> element("button[phx-click=\"show_add_materials_modal\"]")
+      |> element("button[phx-click='show_add_materials_modal']")
       |> render_click()
 
       view
-      |> element("form[phx-change=\"HierarchyPicker.publications_text_search\"]")
+      |> element("form[phx-change='HierarchyPicker.publications_text_search']")
       |> render_change(%{"text_search" => "Project 2"})
 
       assert has_element?(view, "button", "Project 2")
@@ -1092,12 +1092,12 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       # click add materials and assert is listing units first
       view
-      |> element("button[phx-click=\"show_add_materials_modal\"]")
+      |> element("button[phx-click='show_add_materials_modal']")
       |> render_click()
 
       view
       |> element(
-        ".hierarchy table > tbody tr:first-of-type button[phx-click=\"HierarchyPicker.select_publication\"]"
+        ".hierarchy table > tbody tr:first-of-type button[phx-click='HierarchyPicker.select_publication']"
       )
       |> render_click()
 
@@ -1114,11 +1114,11 @@ defmodule OliWeb.RemixSectionLiveTest do
              |> render() =~ "#{page_5.title}"
 
       view
-      |> element("button[phx-value-tab_name=\"all_pages\"]")
+      |> element("button[phx-value-tab_name='all_pages']")
       |> render_click()
 
       view
-      |> element("th[phx-value-sort_by=\"title\"]")
+      |> element("th[phx-value-sort_by='title']")
       |> render_click()
 
       assert view
@@ -1135,22 +1135,22 @@ defmodule OliWeb.RemixSectionLiveTest do
       {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/remix")
 
       view
-      |> element("button[phx-click=\"show_add_materials_modal\"]")
+      |> element("button[phx-click='show_add_materials_modal']")
       |> render_click()
 
       view
       |> element(
-        ".hierarchy table > tbody tr button[phx-click=\"HierarchyPicker.select_publication\"]",
+        ".hierarchy table > tbody tr button[phx-click='HierarchyPicker.select_publication']",
         "Project 1"
       )
       |> render_click()
 
       view
-      |> element("button[phx-value-tab_name=\"all_pages\"]")
+      |> element("button[phx-value-tab_name='all_pages']")
       |> render_click()
 
       view
-      |> element("th[phx-value-sort_by=\"title\"]")
+      |> element("th[phx-value-sort_by='title']")
       |> render_click()
 
       # "Another orph. Page" is the first element after sorting
@@ -1167,7 +1167,7 @@ defmodule OliWeb.RemixSectionLiveTest do
              )
 
       view
-      |> element("th[phx-value-sort_by=\"title\"]")
+      |> element("th[phx-value-sort_by='title']")
       |> render_click()
 
       # "Elixir Page" is the first element after sorting
@@ -1195,21 +1195,21 @@ defmodule OliWeb.RemixSectionLiveTest do
       {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/remix")
 
       view
-      |> element("button[phx-click=\"show_add_materials_modal\"]")
+      |> element("button[phx-click='show_add_materials_modal']")
       |> render_click()
 
       view
       |> element(
-        ".hierarchy table > tbody tr:first-of-type button[phx-click=\"HierarchyPicker.select_publication\"]"
+        ".hierarchy table > tbody tr:first-of-type button[phx-click='HierarchyPicker.select_publication']"
       )
       |> render_click()
 
       view
-      |> element("button[phx-value-tab_name=\"all_pages\"]")
+      |> element("button[phx-value-tab_name='all_pages']")
       |> render_click()
 
       view
-      |> element("form[phx-change=\"HierarchyPicker.pages_text_search\"]")
+      |> element("form[phx-change='HierarchyPicker.pages_text_search']")
       |> render_change(%{"text_search" => "3"})
 
       assert view

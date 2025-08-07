@@ -347,7 +347,7 @@ defmodule OliWeb.Users.AuthorsDetailViewTest do
 
       # Start edit author
       view
-      |> element("button[phx-click=\"start_edit\"]")
+      |> element("button[phx-click='start_edit']")
       |> render_click()
 
       # Assert that the author has author role
@@ -358,7 +358,7 @@ defmodule OliWeb.Users.AuthorsDetailViewTest do
 
       # Change author role to account admin
       view
-      |> element("#edit_author[phx-submit=\"submit\"")
+      |> element("#edit_author[phx-submit='submit']")
       |> render_submit(%{"author" => %{"system_role_id" => "3"}})
 
       # Assert that the author has account admin role
@@ -395,7 +395,7 @@ defmodule OliWeb.Users.AuthorsDetailViewTest do
 
       # Start edit author
       view
-      |> element("button[phx-click=\"start_edit\"]")
+      |> element("button[phx-click='start_edit']")
       |> render_click()
 
       # Assert that the author role select is disabled

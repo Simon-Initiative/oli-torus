@@ -266,7 +266,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLiveTest do
              )
 
       view
-      |> element("form[phx-change=\"change_graded\"")
+      |> element("form[phx-change='change_graded']")
       |> render_change(%{"graded" => true})
 
       assert has_element?(
@@ -334,7 +334,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLiveTest do
 
       # Sort by title desc
       view
-      |> element("th[phx-click=\"paged_table_sort\"]:first-of-type")
+      |> element("th[phx-click='paged_table_sort']:first-of-type")
       |> render_click(%{sort_by: "title"})
 
       assert view
@@ -368,7 +368,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLiveTest do
                last_page.revision.title
 
       view
-      |> element("#header_paging button[phx-click=\"paged_table_page_change\"]", "2")
+      |> element("#header_paging button[phx-click='paged_table_page_change']", "2")
       |> render_click()
 
       refute view
@@ -508,7 +508,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLiveTest do
       ## Create a new practice page
       view
       |> element(
-        "button[phx-click=\"create_page\"][phx-value-scored=\"Unscored\"][phx-value-type=\"Basic\"",
+        "button[phx-click='create_page'][phx-value-scored='Unscored'][phx-value-type='Basic']",
         "Practice Page"
       )
       |> render_click()
@@ -543,7 +543,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLiveTest do
       ## Create a new scored page
       view
       |> element(
-        "button[phx-click=\"create_page\"][phx-value-scored=\"Scored\"][phx-value-type=\"Basic\"",
+        "button[phx-click='create_page'][phx-value-scored='Scored'][phx-value-type='Basic']",
         "Scored Assessment"
       )
       |> render_click()
@@ -580,7 +580,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLiveTest do
       ## Create a new adaptive page
       view
       |> element(
-        "button[phx-click=\"create_page\"][phx-value-scored=\"Unscored\"][phx-value-type=\"Adaptive\"",
+        "button[phx-click='create_page'][phx-value-scored='Unscored'][phx-value-type='Adaptive']",
         "Adaptive Page"
       )
       |> render_click()
@@ -619,7 +619,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLiveTest do
       ## Create a new page
       view
       |> element(
-        "button[phx-click=\"create_page\"][phx-value-scored=\"Unscored\"]",
+        "button[phx-click='create_page'][phx-value-scored='Unscored']",
         "Practice Page"
       )
       |> render_click()

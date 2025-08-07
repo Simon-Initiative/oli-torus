@@ -48,7 +48,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       {:ok, view, _html} = live(conn, @live_view_admin_route)
 
       assert has_element?(view, "h2", "Select source")
-      assert has_element?(view, "button[phx-click=\"source_selection\"]")
+      assert has_element?(view, "button[phx-click='source_selection']")
       refute has_element?(view, "img[alt=\"course image\"]")
       refute has_element?(view, "form#update_view_type")
 
@@ -89,7 +89,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       {:ok, view, _html} = live(conn, @live_view_admin_route)
 
       view
-      |> element("th[phx-value-sort_by=\"title\"]")
+      |> element("th[phx-value-sort_by='title']")
       |> render_click(%{sort_by: "title"})
 
       assert view
@@ -97,7 +97,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
              |> render() =~ "Testing A"
 
       view
-      |> element("th[phx-value-sort_by=\"title\"")
+      |> element("th[phx-value-sort_by='title'")
       |> render_click(%{sort_by: "title"})
 
       assert view
@@ -114,7 +114,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       {:ok, view, _html} = live(conn, @live_view_admin_route)
 
       view
-      |> element("th[phx-value-sort_by=\"title\"")
+      |> element("th[phx-value-sort_by='title'")
       |> render_click(%{sort_by: "title"})
 
       assert has_element?(view, "div", first_s.title)
@@ -136,7 +136,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       assert has_element?(view, "button[disabled]", "Next step")
 
       view
-      |> element("button[phx-click=\"source_selection\"]")
+      |> element("button[phx-click='source_selection']")
       |> render_click(%{id: "product:#{section.id}"})
 
       refute has_element?(view, "h2", "Select source")
@@ -173,7 +173,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       {:ok, view, _html} = live(conn, @live_view_independent_learner_route)
 
       assert has_element?(view, "h2", "Select source")
-      refute has_element?(view, "button[phx-click=\"source_selection\"]")
+      refute has_element?(view, "button[phx-click='source_selection']")
       assert has_element?(view, "img[alt=\"course image\"]")
       assert has_element?(view, "form#update_view_type")
       refute has_element?(view, "a[href=\"#{details_view(section)}\"]")
@@ -216,7 +216,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       |> element("form#update_view_type")
       |> render_change(%{"view" => %{"type" => "list"}})
 
-      assert has_element?(view, "button[phx-click=\"source_selection\"]")
+      assert has_element?(view, "button[phx-click='source_selection']")
       refute has_element?(view, "img[alt=\"course image\"]")
     end
 
@@ -258,15 +258,15 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       |> element("form#sort")
       |> render_change(%{sort_by: "title"})
 
-      assert has_element?(view, "a[phx-value-id=\"publication:#{publication_id}\"]")
-      refute has_element?(view, "a[phx-value-id=\"product:#{last_s.id}\"]")
+      assert has_element?(view, "a[phx-value-id='publication:#{publication_id}']")
+      refute has_element?(view, "a[phx-value-id='product:#{last_s.id}']")
 
       view
       |> element(".page-item button", "2")
       |> render_click()
 
-      refute has_element?(view, "a[phx-value-id=\"publication:#{publication_id}\"]")
-      assert has_element?(view, "a[phx-value-id=\"product:#{last_s.id}\"]")
+      refute has_element?(view, "a[phx-value-id='publication:#{publication_id}']")
+      assert has_element?(view, "a[phx-value-id='product:#{last_s.id}']")
     end
 
     test "successfully goes to the next step", %{conn: conn} do
@@ -317,7 +317,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       {:ok, view, _html} = live(conn, @live_view_independent_learner_route)
 
       assert has_element?(view, "h2", "Select source")
-      refute has_element?(view, "button[phx-click=\"source_selection\"]")
+      refute has_element?(view, "button[phx-click='source_selection']")
       assert has_element?(view, "img[alt=\"course image\"]")
       assert has_element?(view, "form#update_view_type")
       refute has_element?(view, "a[href=\"#{details_view(section)}\"]")
@@ -360,7 +360,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       |> element("form#update_view_type")
       |> render_change(%{"view" => %{"type" => "list"}})
 
-      assert has_element?(view, "button[phx-click=\"source_selection\"]")
+      assert has_element?(view, "button[phx-click='source_selection']")
       refute has_element?(view, "img[alt=\"course image\"]")
     end
 
@@ -402,15 +402,15 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       |> element("form#sort")
       |> render_change(%{sort_by: "title"})
 
-      assert has_element?(view, "a[phx-value-id=\"publication:#{publication_id}\"]")
-      refute has_element?(view, "a[phx-value-id=\"product:#{last_s.id}\"]")
+      assert has_element?(view, "a[phx-value-id='publication:#{publication_id}']")
+      refute has_element?(view, "a[phx-value-id='product:#{last_s.id}']")
 
       view
       |> element(".page-item button", "2")
       |> render_click()
 
-      refute has_element?(view, "a[phx-value-id=\"publication:#{publication_id}\"]")
-      assert has_element?(view, "a[phx-value-id=\"product:#{last_s.id}\"]")
+      refute has_element?(view, "a[phx-value-id='publication:#{publication_id}']")
+      assert has_element?(view, "a[phx-value-id='product:#{last_s.id}']")
     end
 
     test "successfully goes to the next step", %{conn: conn} do

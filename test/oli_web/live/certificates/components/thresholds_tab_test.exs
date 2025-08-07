@@ -170,7 +170,7 @@ defmodule OliWeb.Certificates.Components.ThresholdsTabTest do
 
       ## select all graded pages
       lcd
-      |> element("button[phx-click=\"select_all_pages\"]")
+      |> element("button[phx-click='select_all_pages']")
       |> render_click()
 
       # all checkboxes are checked
@@ -179,7 +179,7 @@ defmodule OliWeb.Certificates.Components.ThresholdsTabTest do
 
       ## deselect all graded pages
       lcd
-      |> element("button[phx-click=\"deselect_all_pages\"]")
+      |> element("button[phx-click='deselect_all_pages']")
       |> render_click()
 
       # all checkboxes are unchecked

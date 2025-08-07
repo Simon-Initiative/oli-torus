@@ -221,7 +221,7 @@ defmodule OliWeb.Admin.Institutions.IndexLiveTest do
       })
 
       view
-      |> element("select[phx-change=\"select_existing_institution\"]")
+      |> element("select[phx-change='select_existing_institution']")
       |> render_change(%{
         "_target" => ["registration", "institution_id"],
         "registration" => %{"institution_id" => ""}

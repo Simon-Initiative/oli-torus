@@ -82,7 +82,7 @@ defmodule OliWeb.Workspaces.CourseAuthorTest do
       refute has_element?(view, "##{last_p.id}")
 
       view
-      |> element("#header_paging button[phx-click=\"paged_table_page_change\"]", "2")
+      |> element("#header_paging button[phx-click='paged_table_page_change']", "2")
       |> render_click()
 
       refute has_element?(view, "##{first_p.id}")
@@ -101,7 +101,7 @@ defmodule OliWeb.Workspaces.CourseAuthorTest do
                "Testing A"
 
       view
-      |> element("th[phx-click=\"paged_table_sort\"]:first-of-type")
+      |> element("th[phx-click='paged_table_sort']:first-of-type")
       |> render_click(%{sort_by: "title"})
 
       assert view
@@ -199,7 +199,7 @@ defmodule OliWeb.Workspaces.CourseAuthorTest do
       refute has_element?(view, "##{last_p.id}")
 
       view
-      |> element("#header_paging button[phx-click=\"paged_table_page_change\"]", "2")
+      |> element("#header_paging button[phx-click='paged_table_page_change']", "2")
       |> render_click()
 
       refute has_element?(view, "##{first_p.id}")
@@ -218,7 +218,7 @@ defmodule OliWeb.Workspaces.CourseAuthorTest do
                "Testing A"
 
       view
-      |> element("th[phx-click=\"paged_table_sort\"]:first-of-type")
+      |> element("th[phx-click='paged_table_sort']:first-of-type")
       |> render_click(%{sort_by: "title"})
 
       assert view

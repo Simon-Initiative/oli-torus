@@ -266,7 +266,7 @@ defmodule OliWeb.AllPagesLiveTest do
              )
 
       view
-      |> element("form[phx-change=\"change_graded\"")
+      |> element("form[phx-change='change_graded']")
       |> render_change(%{"graded" => true})
 
       assert has_element?(
@@ -334,7 +334,7 @@ defmodule OliWeb.AllPagesLiveTest do
 
       # Sort by title desc
       view
-      |> element("th[phx-click=\"paged_table_sort\"]:first-of-type")
+      |> element("th[phx-click='paged_table_sort']:first-of-type")
       |> render_click(%{sort_by: "title"})
 
       assert view
@@ -368,7 +368,7 @@ defmodule OliWeb.AllPagesLiveTest do
                last_page.revision.title
 
       view
-      |> element("#header_paging button[phx-click=\"paged_table_page_change\"]", "2")
+      |> element("#header_paging button[phx-click='paged_table_page_change']", "2")
       |> render_click()
 
       refute view

@@ -1154,7 +1154,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       {:ok, view, _html} = live(conn, live_view_practice_activities_route(section.slug))
 
       view
-      |> element("form[phx-change=\"change_container\"")
+      |> element("form[phx-change='change_container']")
       |> render_change(%{container_id: module_1.resource_id})
 
       [page0, page1] = table_as_list_of_maps(view)
@@ -1167,7 +1167,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
 
       assert element(
                view,
-               "table tbody tr td div[phx-value-id=\"#{page_2.id}\"]",
+               "table tbody tr td div[phx-value-id='#{page_2.id}']",
                page1.title
              )
 
@@ -1180,7 +1180,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       # unit 1 does not have any direct practice page attached
       # (the filter only shows direct children pages of the selected container)
       view
-      |> element("form[phx-change=\"change_container\"")
+      |> element("form[phx-change='change_container']")
       |> render_change(%{container_id: unit_1.resource_id})
 
       refute has_element?(

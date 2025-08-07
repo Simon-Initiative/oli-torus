@@ -102,7 +102,7 @@ defmodule OliWeb.BrowseUpdatesLiveTest do
 
       # Sort by inserted_at asc
       view
-      |> element("th[phx-click=\"paged_table_sort\"]:first-of-type")
+      |> element("th[phx-click='paged_table_sort']:first-of-type")
       |> render_click(%{sort_by: "inserted_at"})
 
       assert has_element?(view, "tbody tr:first-child.##{old_update.id}")
@@ -125,7 +125,7 @@ defmodule OliWeb.BrowseUpdatesLiveTest do
       refute has_element?(view, "##{old_update.id}")
 
       view
-      |> element("#header_paging button[phx-click=\"paged_table_page_change\"]", "2")
+      |> element("#header_paging button[phx-click='paged_table_page_change']", "2")
       |> render_click()
 
       refute has_element?(view, "##{first_u.id}")

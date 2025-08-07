@@ -1135,7 +1135,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       # click on the next page button
       view
-      |> element("button[phx-value-offset=\"2\"][phx-value-limit=\"2\"]", "2")
+      |> element("button[phx-value-offset='2'][phx-value-limit='2']", "2")
       |> render_click()
 
       # assert that the next two assessments are shown
@@ -2550,7 +2550,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       # click on the next page button
       view
-      |> element("button[phx-value-offset=\"2\"][phx-value-limit=\"2\"]", "2")
+      |> element("button[phx-value-offset='2'][phx-value-limit='2']", "2")
       |> render_click()
 
       # assert that the next two assessments are shown

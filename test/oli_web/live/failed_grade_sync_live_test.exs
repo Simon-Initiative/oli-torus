@@ -73,7 +73,7 @@ defmodule OliWeb.FailedGradeSyncLiveTest do
       {:ok, view, _html} = live(conn, live_view_failed_grade_sync_view_route(section.slug))
 
       assert has_element?(view, "#failed-sync-grades-table")
-      assert has_element?(view, "button[phx-click=\"bulk-retry\"", "Retry all")
+      assert has_element?(view, "button[phx-click='bulk-retry']", "Retry all")
       assert has_element?(view, "##{resource_access_1.id}")
       assert has_element?(view, "##{resource_access_2.id}")
     end
@@ -89,7 +89,7 @@ defmodule OliWeb.FailedGradeSyncLiveTest do
       {:ok, view, _html} = live(conn, live_view_failed_grade_sync_view_route(section.slug))
 
       view
-      |> element("button[phx-click=\"retry\"][phx-value-user-id=\"#{user_id}\"")
+      |> element("button[phx-click='retry'][phx-value-user-id='#{user_id}'")
       |> render_click(%{"resource-id" => resource_id, "user-id" => user_id})
 
       flash = assert_redirected(view, live_view_overview_view_route(section.slug))
@@ -111,7 +111,7 @@ defmodule OliWeb.FailedGradeSyncLiveTest do
       {:ok, view, _html} = live(conn, live_view_failed_grade_sync_view_route(section.slug))
 
       assert has_element?(view, "#failed-sync-grades-table")
-      assert has_element?(view, "button[phx-click=\"bulk-retry\"", "Retry all")
+      assert has_element?(view, "button[phx-click='bulk-retry']", "Retry all")
       assert has_element?(view, "##{resource_access_1.id}")
       assert has_element?(view, "##{resource_access_2.id}")
     end
@@ -128,7 +128,7 @@ defmodule OliWeb.FailedGradeSyncLiveTest do
                "AAAA Name"
 
       view
-      |> element("th[phx-click=\"sort\"]:first-of-type")
+      |> element("th[phx-click='sort']:first-of-type")
       |> render_click(%{sort_by: "user_name"})
 
       assert view
@@ -150,14 +150,14 @@ defmodule OliWeb.FailedGradeSyncLiveTest do
       |> render_blur(%{value: "aaaa"})
 
       view
-      |> element("button[phx-click=\"apply_search\"]")
+      |> element("button[phx-click='apply_search']")
       |> render_click()
 
       assert has_element?(view, "##{resource_access_1.id}")
       refute has_element?(view, "##{resource_access_2.id}")
 
       view
-      |> element("button[phx-click=\"reset_search\"]")
+      |> element("button[phx-click='reset_search']")
       |> render_click()
 
       assert has_element?(view, "##{resource_access_1.id}")
@@ -188,7 +188,7 @@ defmodule OliWeb.FailedGradeSyncLiveTest do
                "AAAA Name"
 
       view
-      |> element("button[phx-click=\"page_change\"]", "2")
+      |> element("button[phx-click='page_change']", "2")
       |> render_click()
 
       refute view
@@ -207,7 +207,7 @@ defmodule OliWeb.FailedGradeSyncLiveTest do
                  live(conn, live_view_failed_grade_sync_view_route(section.slug))
 
                view
-               |> element("button[phx-click=\"retry\"][phx-value-user-id=\"#{user_id}\"")
+               |> element("button[phx-click='retry'][phx-value-user-id='#{user_id}'")
                |> render_click(%{"resource-id" => -1, "user-id" => user_id})
 
                assert view
@@ -226,7 +226,7 @@ defmodule OliWeb.FailedGradeSyncLiveTest do
       {:ok, view, _html} = live(conn, live_view_failed_grade_sync_view_route(section.slug))
 
       view
-      |> element("button[phx-click=\"retry\"][phx-value-user-id=\"#{user_id}\"")
+      |> element("button[phx-click='retry'][phx-value-user-id='#{user_id}'")
       |> render_click(%{"resource-id" => resource_id, "user-id" => user_id})
 
       flash = assert_redirected(view, live_view_observe_grade_updates_view_route(section.slug))
@@ -249,7 +249,7 @@ defmodule OliWeb.FailedGradeSyncLiveTest do
       {:ok, view, _html} = live(conn, live_view_failed_grade_sync_view_route(section.slug))
 
       view
-      |> element("button[phx-click=\"bulk-retry\"")
+      |> element("button[phx-click='bulk-retry']")
       |> render_click()
 
       flash = assert_redirected(view, live_view_observe_grade_updates_view_route(section.slug))
