@@ -7,18 +7,11 @@ defmodule OliWeb.NewCourse.NameCourseTest do
   import Phoenix.LiveViewTest
   import Oli.Factory
 
-  @live_view_admin_route Routes.select_source_path(OliWeb.Endpoint, :admin)
-  @live_view_independent_learner_route Routes.select_source_path(
-                                         OliWeb.Endpoint,
-                                         :independent_learner
-                                       )
-  @live_view_lms_instructor_route Routes.select_source_path(OliWeb.Endpoint, :lms_instructor)
-
   describe "Admin - Name your course" do
     setup [:admin_conn, :create_sources]
 
     test "renders the \"name your course\" form", %{conn: conn, section: section} do
-      {:ok, view, _html} = live(conn, @live_view_admin_route)
+      {:ok, view, _html} = live(conn, ~p"/admin/sections/create")
 
       select_section(:admin, view, section)
 
@@ -36,7 +29,7 @@ defmodule OliWeb.NewCourse.NameCourseTest do
       conn: conn,
       section: section
     } do
-      {:ok, view, _html} = live(conn, @live_view_admin_route)
+      {:ok, view, _html} = live(conn, ~p"/admin/sections/create")
 
       select_section(:admin, view, section)
 
@@ -51,7 +44,7 @@ defmodule OliWeb.NewCourse.NameCourseTest do
       conn: conn,
       section: section
     } do
-      {:ok, view, _html} = live(conn, @live_view_admin_route)
+      {:ok, view, _html} = live(conn, ~p"/admin/sections/create")
 
       select_section(:admin, view, section)
 
@@ -76,7 +69,7 @@ defmodule OliWeb.NewCourse.NameCourseTest do
     setup [:instructor_conn, :create_sources]
 
     test "renders the \"name your course\" form", %{conn: conn, section: section} do
-      {:ok, view, _html} = live(conn, @live_view_independent_learner_route)
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
 
       select_section(:instructor, view, section)
 
@@ -94,7 +87,7 @@ defmodule OliWeb.NewCourse.NameCourseTest do
       conn: conn,
       section: section
     } do
-      {:ok, view, _html} = live(conn, @live_view_independent_learner_route)
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
 
       select_section(:instructor, view, section)
 
@@ -122,7 +115,7 @@ defmodule OliWeb.NewCourse.NameCourseTest do
       conn: conn,
       section: section
     } do
-      {:ok, view, _html} = live(conn, @live_view_independent_learner_route)
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
 
       select_section(:instructor, view, section)
 
@@ -147,7 +140,7 @@ defmodule OliWeb.NewCourse.NameCourseTest do
     setup [:lms_instructor_conn, :create_sources]
 
     test "renders the \"name your course\" form", %{conn: conn, section: section} do
-      {:ok, view, _html} = live(conn, @live_view_lms_instructor_route)
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
 
       select_section(:lms, view, section)
 
@@ -165,7 +158,7 @@ defmodule OliWeb.NewCourse.NameCourseTest do
       conn: conn,
       section: section
     } do
-      {:ok, view, _html} = live(conn, @live_view_lms_instructor_route)
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
 
       select_section(:lms, view, section)
 
@@ -180,7 +173,7 @@ defmodule OliWeb.NewCourse.NameCourseTest do
       conn: conn,
       section: section
     } do
-      {:ok, view, _html} = live(conn, @live_view_lms_instructor_route)
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
 
       select_section(:lms, view, section)
 
