@@ -39,4 +39,37 @@ defmodule Oli.GenAI do
     |> RegisteredModel.changeset(attrs)
     |> Repo.insert()
   end
+
+  def service_configs do
+    query =
+      from r in ServiceConfig,
+        order_by: r.id,
+        preload: [:primary_model, :backup_model],
+        select_merge: %{
+          usage_count:
+            fragment(
+              "(SELECT count(*) FROM gen_ai_feature_configs fc
+                WHERE fc.service_config_id = ?)",
+              r.id
+            )
+        }
+
+    Repo.all(query)
+  end
+
+  def delete_service_config(%ServiceConfig{} = service_config) do
+    Repo.delete(service_config)
+  end
+
+  def update_service_config(%ServiceConfig{} = service_config, attrs) do
+    service_config
+    |> ServiceConfig.changeset(attrs)
+    |> Repo.update()
+  end
+
+  def create_service_config(attrs) do
+    %ServiceConfig{}
+    |> ServiceConfig.changeset(attrs)
+    |> Repo.insert()
+  end
 end
