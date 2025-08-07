@@ -204,6 +204,10 @@ module.exports = {
     light: '#CE2C31',
     dark: '#FF8787',
   },
+  'Text-text-danger-hover': {
+    light: '#B21D1D',
+    dark: '#EF4444',
+  },
   'Text-text-accent-green': {
     light: '#218358',
     dark: '#39E581',
