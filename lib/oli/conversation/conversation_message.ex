@@ -2,7 +2,7 @@ defmodule Oli.Conversation.ConversationMessage do
   use Ecto.Schema
 
   import Ecto.Changeset
-  import Oli.Conversation.Common
+  import Oli.GenAI.Completions.Utils
 
   @derive {Jason.Encoder, only: [:role, :content, :token_length, :user_id, :resource_id]}
   schema "assistant_conversation_messages" do

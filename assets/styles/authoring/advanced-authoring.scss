@@ -921,7 +921,9 @@ $font-family-sans-serif: var(--font-sans);
 }
 .dark #moreComponents-popover .popover-header,
 .dark #advanced-authoring-modals .modal-body > li,
-.dark .advanced-authoring .popover-header {
+.dark .advanced-authoring .popover-header,
+.dark .modal-dialog.config-modal .modal-body .ql-editor,
+.dark .modal-dialog.config-modal .modal-body .activity-content {
   color: var(--color-body-dark);
 }
 .dark #advanced-authoring-modals .form-group,
@@ -1043,7 +1045,9 @@ $font-family-sans-serif: var(--font-sans);
   background-color: $panel-bg-color-dark !important;
 }
 .dark .modal .modal-dialog .modal-body .media-sidebar li.active,
-.dark .modal .modal-dialog .modal-body .media-sidebar li:hover {
+.dark .modal .modal-dialog .modal-body .media-sidebar li:hover,
+.dark .modal .modal-dialog.add-screen-modal .screen-type.active,
+.dark .modal .modal-dialog.add-screen-modal .screen-type:hover {
   border: 1px solid white;
 }
 .toast-body {
