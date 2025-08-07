@@ -22,13 +22,18 @@ defmodule OliWeb.AuthorAuth do
   def log_in_author(conn, author, params \\ %{}) do
     token = Accounts.generate_author_session_token(author)
 
+    # Renew session before linking author account
+    conn = renew_session(conn)
+
     conn = maybe_link_user_author_account(conn, author)
 
+    # Get the return path AFTER account linking to respect any changes made
     author_return_to =
       params["request_path"] || get_session(conn, :author_return_to) || signed_in_path(conn)
 
     conn
-    |> create_session(author)
+    |> put_token_in_session(token)
+    |> put_author_id_in_session(author.id)
     |> maybe_write_remember_me_cookie(token, params)
     |> redirect(to: author_return_to)
   end
@@ -95,7 +100,8 @@ defmodule OliWeb.AuthorAuth do
         "user_live_socket_id",
         "current_user_id",
         "datashop_session_id",
-        "link_account_user_id"
+        "link_account_user_id",
+        "author_return_to"
       ])
 
     conn
@@ -138,7 +144,12 @@ defmodule OliWeb.AuthorAuth do
   """
   def fetch_current_author(conn, _opts) do
     {author_token, conn} = ensure_author_token(conn)
-    author = author_token && Accounts.get_author_by_session_token(author_token)
+
+    author =
+      case author_token do
+        nil -> nil
+        token -> Accounts.get_author_by_session_token(token)
+      end
 
     conn
     |> assign(:current_author, author)
@@ -147,17 +158,32 @@ defmodule OliWeb.AuthorAuth do
 
   defp ensure_author_token(conn) do
     if token = get_session(conn, :author_token) do
-      {token, conn}
+      # Add basic token format validation
+      if valid_token_format?(token) do
+        {token, conn}
+      else
+        {nil, delete_session(conn, :author_token)}
+      end
     else
       conn = fetch_cookies(conn, signed: [@remember_me_cookie])
 
       if token = conn.cookies[@remember_me_cookie] do
-        {token, put_token_in_session(conn, token)}
+        if valid_token_format?(token) do
+          {token, put_token_in_session(conn, token)}
+        else
+          {nil, delete_resp_cookie(conn, @remember_me_cookie)}
+        end
       else
         {nil, conn}
       end
     end
   end
+
+  defp valid_token_format?(token) when is_binary(token) do
+    byte_size(token) >= 32 and byte_size(token) <= 255
+  end
+
+  defp valid_token_format?(_), do: false
 
   @doc """
   Handles mounting and authenticating the current_author in LiveViews.
@@ -227,7 +253,11 @@ defmodule OliWeb.AuthorAuth do
     socket
     |> Phoenix.Component.assign_new(:current_author, fn ->
       if author_token = session["author_token"] do
-        Accounts.get_author_by_session_token(author_token)
+        if valid_token_format?(author_token) do
+          Accounts.get_author_by_session_token(author_token)
+        else
+          nil
+        end
       end
     end)
     |> maybe_is_admin()
@@ -380,18 +410,20 @@ defmodule OliWeb.AuthorAuth do
   Stores the link_account_user_id (if specified) of the user account to link an
   author account to after subsequent successful login.
   """
-  def maybe_store_link_account_user_id(conn, %{"link_account_user_id" => link_account_user_id}) do
+  def maybe_store_link_account_user_id(conn, %{"link_account_user_id" => link_account_user_id})
+      when is_binary(link_account_user_id) and byte_size(link_account_user_id) <= 20 do
     # Do some validation to ensure the user_id is a valid integer and that
     # the user_id is the same as the current_user_id
     with {user_id, ""} <- Integer.parse(link_account_user_id),
+         # Ensure positive integer
+         true <- user_id > 0,
          %User{id: current_user_id} <- conn.assigns[:current_user],
          true <- current_user_id == user_id do
       conn
       |> put_session(:link_account_user_id, user_id)
     else
-      e ->
-        Logger.error("Error storing link_account_user_id: #{inspect(e)}")
-
+      _ ->
+        # Don't log detailed error information to prevent information disclosure
         conn
     end
   end
