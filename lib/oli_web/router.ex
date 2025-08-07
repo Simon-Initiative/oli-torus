@@ -1566,6 +1566,9 @@ defmodule OliWeb.Router do
     live("/products", Products.ProductsView)
     live("/datasets", Workspaces.CourseAuthor.DatasetsLive)
 
+    # Gen AI
+    live("/gen_ai/registered_models", GenAI.RegisteredModelsView)
+
     live("/products/:product_id/discounts", Products.Payments.Discounts.ProductsIndexView)
 
     live(
