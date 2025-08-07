@@ -89,7 +89,7 @@ defmodule OliWeb.FailedGradeSyncLiveTest do
       {:ok, view, _html} = live(conn, live_view_failed_grade_sync_view_route(section.slug))
 
       view
-      |> element("button[phx-click='retry'][phx-value-user-id='#{user_id}'")
+      |> element("button[phx-click='retry'][phx-value-user-id='#{user_id}']")
       |> render_click(%{"resource-id" => resource_id, "user-id" => user_id})
 
       flash = assert_redirected(view, live_view_overview_view_route(section.slug))

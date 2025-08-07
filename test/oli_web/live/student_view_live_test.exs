@@ -90,11 +90,11 @@ defmodule OliWeb.StudentViewLiveTest do
         assert html =~ "Progress Details for #{user.family_name}, #{user.given_name}"
 
         assert view
-               |> element("tr[id=\"0\" phx-value-id='0']")
+               |> element("tr[id='0'][phx-value-id='0']")
                |> render =~ "#{@expected_score} / #{@out_of}"
 
         assert view
-               |> element("tr[id=\"0\" phx-value-id='0']")
+               |> element("tr[id='0'][phx-value-id='0']")
                |> render =~
                  "<a href=\"/sections/#{section.slug}/progress/#{user.id}/#{page_revision.resource.id}\">#{page_revision.title}</a>"
       end

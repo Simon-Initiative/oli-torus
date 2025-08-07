@@ -777,7 +777,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       set_password(view, resource_id, "")
 
       assert view
-             |> element("input[placeholder='Enter password'][name='password-#{resource_id}]")
+             |> element("input[placeholder='Enter password'][name='password-#{resource_id}']")
              |> has_element?()
     end
 
@@ -2017,7 +2017,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       |> form(~s{form[id=assessment_select]})
       |> render_change(%{"assessment_id" => page_2.resource.id})
 
-      target_element = ~s{select[id=assessment_select_assessment_id] > option[selected=selected]}
+      target_element = ~s{select[id=assessment_select_assessment_id] > option[selected]}
 
       assert view |> element(target_element) |> render() =~ "Page 2"
 

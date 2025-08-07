@@ -396,11 +396,11 @@ defmodule OliWeb.CollaborationLiveTest do
           }
         )
 
-      assert has_element?(view, "#collab_space_config_form #main_auto_accept[checked=checked]")
+      assert has_element?(view, "#collab_space_config_form #main_auto_accept[checked]")
 
       assert has_element?(
                view,
-               "#collab_space_config_form #main_anonymous_posting[checked=checked]"
+               "#collab_space_config_form #main_anonymous_posting[checked]"
              )
     end
 
@@ -883,7 +883,7 @@ defmodule OliWeb.CollaborationLiveTest do
       assert has_element?(view, "#postsList > div:nth-child(2)", "#{test_post.content.message}")
 
       view
-      |> element("button[phx-value-sort_by='replies_count'")
+      |> element("button[phx-value-sort_by='replies_count']")
       |> render_click(%{"sort_by" => "replies_count", "sort_order" => "desc"})
 
       assert has_element?(view, "#postsList > div:first-child", "#{test_post.content.message}")
@@ -1255,7 +1255,7 @@ defmodule OliWeb.CollaborationLiveTest do
       |> render_click()
 
       view
-      |> element("form#edit_post_form_#{reply.id}}")
+      |> element("form[id='edit_post_form_#{reply.id}']")
       |> render_submit(%{"post" => %{content: %{message: "Testing reply"}}})
 
       assert view
@@ -1317,17 +1317,17 @@ defmodule OliWeb.CollaborationLiveTest do
 
       assert has_element?(
                view,
-               "button[role=\"display_delete_modal\"][phx-value-id='#{parent_post.id}']:disabled"
+               "button[role='display_delete_modal'][phx-value-id='#{parent_post.id}']:disabled"
              )
 
       assert has_element?(view, ".post-content", "#{reply.content.message}")
 
       view
-      |> element("button[role=\"display_delete_modal\"][phx-value-id='#{reply_id}']")
+      |> element("button[role='display_delete_modal'][phx-value-id='#{reply_id}']")
       |> render_click()
 
       view
-      |> element("button[id=\"delete_post_modal-confirm\"")
+      |> element("button[id='delete_post_modal-confirm'")
       |> render_click()
 
       assert view
@@ -1349,7 +1349,7 @@ defmodule OliWeb.CollaborationLiveTest do
 
       refute has_element?(
                view,
-               "button[role=\"display_delete_modal\"][phx-value-id='#{parent_post.id}']:disabled"
+               "button[role='display_delete_modal'][phx-value-id='#{parent_post.id}']:disabled"
              )
 
       refute has_element?(view, ".post-content", "#{reply.content.message}")

@@ -1208,13 +1208,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       assert has_element?(view, "p", "Please select the one to use as an inviter:")
 
       # when logged in under two accounts, "author" selected by default
-      assert view |> element("fieldset input#author") |> render() =~ "checked=\"checked\""
-      refute view |> element("fieldset input#user") |> render() =~ "checked=\"checked\""
+      assert view |> element("fieldset input#author") |> render() =~ "checked=\"\""
+      refute view |> element("fieldset input#user") |> render() =~ "checked=\"\""
 
       # can change to "user" account
       view |> element("fieldset input#user") |> render_click()
-      refute view |> element("fieldset input#author") |> render() =~ "checked=\"checked\""
-      assert view |> element("fieldset input#user") |> render() =~ "checked=\"checked\""
+      refute view |> element("fieldset input#author") |> render() =~ "checked=\"\""
+      assert view |> element("fieldset input#user") |> render() =~ "checked=\"\""
 
       stub_real_current_time()
       # Send the invitations (this mocks the POST request made by the form)
@@ -1497,7 +1497,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
 
       ## Approve the certificate for student 1
       view
-      |> element(~s{tr[id=#{student_1.id}] button[phx-value-required_state="earned"]})
+      |> element(~s{tr[id='#{student_1.id}'] button[phx-value-required_state='earned']})
       |> render_click()
 
       # the pending count should decrease in 1
@@ -1515,7 +1515,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
 
       ## Deny the certificate for student 2
       view
-      |> element(~s{tr[id=#{student_2.id}] button[phx-value-required_state="denied"]})
+      |> element(~s{tr[id='#{student_2.id}'] button[phx-value-required_state='denied']})
       |> render_click()
 
       # the pending count should decrease in 1, so the bagde should not be visible anymore
@@ -1552,7 +1552,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
 
       ## Approve the certificate for student 1
       view
-      |> element(~s{tr[id=#{student_1.id}] button[phx-value-required_state="earned"]})
+      |> element(~s{tr[id='#{student_1.id}'] button[phx-value-required_state='earned']})
       |> render_click()
 
       # Confirm "Send Email"
@@ -1581,7 +1581,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
 
       ## Deny the certificate for student 2
       view
-      |> element(~s{tr[id=#{student_2.id}] button[phx-value-required_state="denied"]})
+      |> element(~s{tr[id='#{student_2.id}'] button[phx-value-required_state='denied']})
       |> render_click()
 
       # Confirm "Send Email"
