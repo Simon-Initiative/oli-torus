@@ -205,11 +205,7 @@ defmodule OliWeb.ExperimentsLiveTest do
   defp step(_view_and_ctx, _operation, assert_or_refute \\ :assert)
 
   defp step({view, ctx}, :test_has_button_download_experiment_json, assert_or_refute) do
-    to_evaluate =
-      view
-      |> render()
-      |> Floki.find("a:fl-contains('Download Experiment JSON')")
-      |> Floki.text() =~ "Download Experiment JSON"
+    to_evaluate = has_element?(view, "a", "Download Experiment JSON")
 
     evaluate_assertion(to_evaluate, assert_or_refute)
 
@@ -217,11 +213,7 @@ defmodule OliWeb.ExperimentsLiveTest do
   end
 
   defp step({view, ctx}, :test_has_button_download_segment_json, assert_or_refute) do
-    to_evaluate =
-      view
-      |> render()
-      |> Floki.find("a:fl-contains('Download Segment JSON')")
-      |> Floki.text() =~ "Download Segment JSON"
+    to_evaluate = has_element?(view, "a", "Download Segment JSON")
 
     evaluate_assertion(to_evaluate, assert_or_refute)
 
