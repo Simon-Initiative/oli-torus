@@ -50,6 +50,9 @@ RUN asdf plugin-add nodejs https://github.com/asdf-vm/asdf-nodejs.git && \
     asdf install nodejs ${NODE_VERSION} && \
     asdf global nodejs ${NODE_VERSION}
 
+# Install yarn globally
+RUN npm install -g yarn
+
 # Install Hex and Rebar
 RUN mix local.hex --force
 RUN mix local.rebar --force
