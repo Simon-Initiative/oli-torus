@@ -107,7 +107,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
           />
         </div>
         <div role="collab_space_page_summary">
-          <%= ~s{#{if @pages_count == @collab_space_pages_count, do: "All"} #{@collab_space_pages_count} #{Gettext.ngettext(OliWeb.Gettext, "page currently has", "pages currently have", @collab_space_pages_count)}} %> Notes enabled.
+          {~s{#{if @pages_count == @collab_space_pages_count, do: "All"} #{@collab_space_pages_count} #{Gettext.ngettext(OliWeb.Gettext, "page currently has", "pages currently have", @collab_space_pages_count)}}} Notes enabled.
         </div>
       </section>
     </Group.render>
@@ -166,7 +166,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
           <% end %>
           <div>
             <span class="bg-delivery-primary-200 badge badge-info">
-              <%= humanize(@collab_space_status) %>
+              {humanize(@collab_space_status)}
             </span>
           </div>
         </div>
@@ -178,7 +178,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
       <%= if  @collab_space_status == :enabled do %>
         <div class="card-footer bg-transparent flex mt-8">
           <.form id="collab_space_config_form" for={@form} phx-change="save">
-            <.collab_space_form_content form={@form} />
+            <.collab_space_form_content form={@form} id_prefix="main_" />
           </.form>
         </div>
       <% end %>
@@ -224,7 +224,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
       Notes for all pages in the course?
       <br />The following configuration will be bulk-applied to all pages:
       <.form class="w-full" for={@form} phx-submit="enable_all_page_collab_spaces">
-        <.collab_space_form_content form={@form} />
+        <.collab_space_form_content form={@form} id_prefix="modal_" />
         <button id="enable_collab_submit_button" class="hidden" type="submit" />
       </.form>
 
@@ -248,16 +248,27 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
   end
 
   attr :form, :map
+  attr :id_prefix, :string, default: ""
 
   def collab_space_form_content(assigns) do
     ~H"""
     <.inputs_for :let={cs} field={@form[:collab_space_config]}>
-      <.input type="hidden" field={cs[:status]} />
+      <.input type="hidden" field={cs[:status]} id={@id_prefix <> "status"} />
 
-      <.input type="hidden" field={cs[:threaded]} />
-      <.input type="hidden" field={cs[:show_full_history]} />
-      <.input type="hidden" field={cs[:participation_min_replies]} value={0} />
-      <.input type="hidden" field={cs[:participation_min_posts]} value={0} />
+      <.input type="hidden" field={cs[:threaded]} id={@id_prefix <> "threaded"} />
+      <.input type="hidden" field={cs[:show_full_history]} id={@id_prefix <> "show_full_history"} />
+      <.input
+        type="hidden"
+        field={cs[:participation_min_replies]}
+        value={0}
+        id={@id_prefix <> "participation_min_replies"}
+      />
+      <.input
+        type="hidden"
+        field={cs[:participation_min_posts]}
+        value={0}
+        id={@id_prefix <> "participation_min_posts"}
+      />
 
       <div class="form-check mt-1">
         <.input
@@ -265,6 +276,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
           field={cs[:auto_accept]}
           class="form-check-input"
           label="Allow posts to be visible without approval"
+          id={@id_prefix <> "auto_accept"}
         />
       </div>
 
@@ -274,6 +286,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
           field={cs[:anonymous_posting]}
           class="form-check-input"
           label="Allow anonymous posts"
+          id={@id_prefix <> "anonymous_posting"}
         />
       </div>
     </.inputs_for>

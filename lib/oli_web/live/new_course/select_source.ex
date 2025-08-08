@@ -110,6 +110,7 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
                   <label class={"#{if @view_type == :card, do: "shadow-inner bg-delivery-primary-200 text-white", else: "shadow bg-white dark:bg-gray-600 text-black dark:text-white"} cursor-pointer text-center block rounded-l-sm py-1 h-8 w-10"}>
                     <.input
                       field={@changeset[:type]}
+                      id="card-view-type"
                       type="radio"
                       class="hidden"
                       value="card"
@@ -120,6 +121,7 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
                   <label class={"#{if @view_type == :list, do: "shadow-inner bg-delivery-primary-200 text-white", else: "shadow bg-white dark:bg-gray-600 text-black dark:text-white"} cursor-pointer text-center block rounded-r-sm py-1 h-8 w-10"}>
                     <.input
                       field={@changeset[:type]}
+                      id="list-view-type"
                       type="radio"
                       class="hidden"
                       value="list"

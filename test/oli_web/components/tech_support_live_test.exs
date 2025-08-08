@@ -10,24 +10,20 @@ defmodule OliWeb.Components.TechSupportLiveTest do
       # Extra fields are added when no user account is present
       assert view
              |> has_element?(
-               ~s|form div[phx-feedback-for="help[name]"] input[required="required"][name="help[name]"][placeholder="Enter Name"]|
+               ~s|form div input[required="required"][name="help[name]"][placeholder="Enter Name"]|
              )
 
       assert view
              |> has_element?(
-               ~s|form div[phx-feedback-for="help[email_address]"] input[required="required"][name="help[email_address]"][placeholder="Enter Email"]|
+               ~s|form div input[required="required"][name="help[email_address]"][placeholder="Enter Email"]|
              )
 
       #  Remaining fields
       assert view
-             |> has_element?(
-               ~s|form div[phx-feedback-for="help[subject]"] select[required="required"][name="help[subject]"]|
-             )
+             |> has_element?(~s|form div select[required="required"][name="help[subject]"]|)
 
       assert view
-             |> has_element?(
-               ~s|form div[phx-feedback-for="help[message]"] textarea[required="required"][name="help[message]"]|
-             )
+             |> has_element?(~s|form div textarea[required="required"][name="help[message]"]|)
     end
   end
 
@@ -40,24 +36,20 @@ defmodule OliWeb.Components.TechSupportLiveTest do
       # Extra fields are omitted when accessing a user account
       refute view
              |> has_element?(
-               ~s|form div[phx-feedback-for="help[name]"] input[required="required"][name="help[name]"][placeholder="Enter Name"]|
+               ~s|form div input[required="required"][name="help[name]"][placeholder="Enter Name"]|
              )
 
       refute view
              |> has_element?(
-               ~s|form div[phx-feedback-for="help[email_address]"] input[required="required"][name="help[email_address]"][placeholder="Enter Email"]|
+               ~s|form div input[required="required"][name="help[email_address]"][placeholder="Enter Email"]|
              )
 
       #  Remaining fields
       assert view
-             |> has_element?(
-               ~s|form div[phx-feedback-for="help[subject]"] select[required="required"][name="help[subject]"]|
-             )
+             |> has_element?(~s|form div select[required="required"][name="help[subject]"]|)
 
       assert view
-             |> has_element?(
-               ~s|form div[phx-feedback-for="help[message]"] textarea[required="required"][name="help[message]"]|
-             )
+             |> has_element?(~s|form div textarea[required="required"][name="help[message]"]|)
     end
   end
 
@@ -71,12 +63,12 @@ defmodule OliWeb.Components.TechSupportLiveTest do
       # Extra fields are added when user is a guest
       assert view
              |> has_element?(
-               ~s|form div[phx-feedback-for="help[name]"] input[required="required"][name="help[name]"][placeholder="Enter Name"]|
+               ~s|form div input[required="required"][name="help[name]"][placeholder="Enter Name"]|
              )
 
       assert view
              |> has_element?(
-               ~s|form div[phx-feedback-for="help[email_address]"] input[required="required"][name="help[email_address]"][placeholder="Enter Email"]|
+               ~s|form div input[required="required"][name="help[email_address]"][placeholder="Enter Email"]|
              )
     end
   end
@@ -151,12 +143,12 @@ defmodule OliWeb.Components.TechSupportLiveTest do
       # Check that the form includes name and email fields
       assert view
              |> has_element?(
-               ~s|form div[phx-feedback-for="help[name]"] input[required="required"][name="help[name]"][placeholder="Enter Name"]|
+               ~s|form div input[required="required"][name="help[name]"][placeholder="Enter Name"]|
              )
 
       assert view
              |> has_element?(
-               ~s|form div[phx-feedback-for="help[email_address]"] input[required="required"][name="help[email_address]"][placeholder="Enter Email"]|
+               ~s|form div input[required="required"][name="help[email_address]"][placeholder="Enter Email"]|
              )
     end
 
@@ -167,12 +159,12 @@ defmodule OliWeb.Components.TechSupportLiveTest do
 
       assert view
              |> has_element?(
-               ~s|form div[phx-feedback-for="help[name]"] input[required="required"][name="help[name]"][placeholder="Enter Name"]|
+               ~s|form div input[required="required"][name="help[name]"][placeholder="Enter Name"]|
              )
 
       assert view
              |> has_element?(
-               ~s|form div[phx-feedback-for="help[email_address]"] input[required="required"][name="help[email_address]"][placeholder="Enter Email"]|
+               ~s|form div input[required="required"][name="help[email_address]"][placeholder="Enter Email"]|
              )
     end
 
@@ -188,12 +180,12 @@ defmodule OliWeb.Components.TechSupportLiveTest do
 
       refute view
              |> has_element?(
-               ~s|form div[phx-feedback-for="help[name]"] input[required="required"][name="help[name]"][placeholder="Enter Name"]|
+               ~s|form div input[required="required"][name="help[name]"][placeholder="Enter Name"]|
              )
 
       refute view
              |> has_element?(
-               ~s|form div[phx-feedback-for="help[email_address]"] input[required="required"][name="help[email_address]"][placeholder="Enter Email"]|
+               ~s|form div input[required="required"][name="help[email_address]"][placeholder="Enter Email"]|
              )
     end
   end

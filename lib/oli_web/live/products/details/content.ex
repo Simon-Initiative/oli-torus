@@ -22,7 +22,7 @@ defmodule OliWeb.Products.Details.Content do
           </.link>
         </div>
         <div :if={Enum.count(@updates) not in [0, 1]}>
-          <p>There are <b>{update_count}</b> updates available for this product.</p>
+          <p>There are <b>{Enum.count(@updates)}</b> updates available for this product.</p>
           <.link href={
             Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.ManageSourceMaterials, @product.slug)
           }>

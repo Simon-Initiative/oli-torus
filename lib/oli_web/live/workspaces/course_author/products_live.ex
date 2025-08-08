@@ -68,7 +68,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProductsLive do
         class="full flex items-end w-full gap-1"
         phx-submit="create"
       >
-        <div class="flex flex-col-reverse phx-no-feedback w-[40%]">
+        <div class="flex flex-col-reverse w-[40%]">
           <.input
             class="full"
             field={f[:product_title]}

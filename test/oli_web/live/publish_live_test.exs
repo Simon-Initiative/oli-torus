@@ -428,10 +428,10 @@ defmodule OliWeb.PublishLiveTest do
                "End Date"
              ] ==
                html
-               |> Floki.find("#active-course-sections-table thead tr > th")
+               |> Floki.find("#active-course-sections-table table thead tr th")
                |> Enum.map(&text/1)
 
-      [row_1, row_2] = Floki.find(html, "#active-course-sections-table tbody > tr ")
+      [row_1, row_2] = Floki.find(html, "#active-course-sections-table table tbody tr")
       [_, _, row_1_creator, row_1_instructors | _rest] = Floki.find(row_1, "td > div")
 
       # Checking creator and instructors for section 1

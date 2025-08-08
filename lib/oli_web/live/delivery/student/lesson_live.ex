@@ -1218,7 +1218,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   attr :active_sidebar_panel, :atom, default: nil
   slot :header, required: true
   slot :inner_block, required: true
-  slot :point_markers, default: nil
+  slot :point_markers
 
   defp page_content_with_sidebar_layout(assigns) do
     ~H"""

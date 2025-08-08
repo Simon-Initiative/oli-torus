@@ -55,11 +55,9 @@ defmodule OliWeb.UserSettingsLive do
               <.input
                 :if={@has_password}
                 field={@email_form[:current_password]}
-                name="current_password"
                 id="current_password_for_email"
                 type="password"
                 label="Current password"
-                value={@email_form_current_password}
                 required
               />
 
@@ -87,11 +85,9 @@ defmodule OliWeb.UserSettingsLive do
               <.input
                 :if={@has_password}
                 field={@password_form[:current_password]}
-                name="current_password"
                 type="password"
                 label="Current password"
                 id="current_password_for_password"
-                value={@current_password}
                 required
               />
 
@@ -152,7 +148,7 @@ defmodule OliWeb.UserSettingsLive do
                   </.link>
                 <% %Author{email: linked_author_account_email} -> %>
                   <div class="overflow-hidden text-ellipsis" role="linked authoring account email">
-                    <%= linked_author_account_email %>
+                    {linked_author_account_email}
                   </div>
 
                   <.link href={~p"/users/link_account"}>
@@ -192,8 +188,6 @@ defmodule OliWeb.UserSettingsLive do
     socket =
       socket
       |> assign(:active_workspace, :student)
-      |> assign(:current_password, nil)
-      |> assign(:email_form_current_password, nil)
       |> assign(:current_email, user.email)
       |> assign(:user_form, to_form(user_changeset))
       |> assign(:email_form, to_form(email_changeset))
@@ -246,23 +240,22 @@ defmodule OliWeb.UserSettingsLive do
     end
   end
 
-  def handle_event("validate_email", params, socket) do
-    %{"current_password" => password, "user" => user_params} = params
-
+  def handle_event("validate_email", %{"user" => user_params}, socket) do
     email_form =
       socket.assigns.current_user
       |> Accounts.change_user_email(user_params)
-      |> Map.put(:action, :validate)
-      |> to_form()
+      |> to_form(action: :validate)
 
-    {:noreply, assign(socket, email_form: email_form, email_form_current_password: password)}
+    {:noreply, assign(socket, email_form: email_form)}
   end
 
   def handle_event("update_email", params, socket) do
-    %{"current_password" => password, "user" => user_params} = params
+    %{"user" => %{"current_password" => current_password} = user_params} =
+      params
+
     user = socket.assigns.current_user
 
-    case Accounts.apply_user_email(user, password, user_params) do
+    case Accounts.apply_user_email(user, current_password, user_params) do
       {:ok, applied_user} ->
         Accounts.deliver_user_update_email_instructions(
           applied_user,
@@ -270,35 +263,36 @@ defmodule OliWeb.UserSettingsLive do
           &url(~p"/users/settings/confirm_email/#{&1}")
         )
 
-        info = "A link to confirm your email change has been sent to the new address."
-        {:noreply, socket |> put_flash(:info, info) |> assign(email_form_current_password: nil)}
+        {:noreply,
+         socket
+         |> put_flash(
+           :info,
+           "A link to confirm your email change has been sent to the new address."
+         )}
 
       {:error, changeset} ->
         {:noreply, assign(socket, :email_form, to_form(Map.put(changeset, :action, :insert)))}
     end
   end
 
-  def handle_event("validate_password", params, socket) do
-    %{"user" => user_params} = params
-
+  def handle_event("validate_password", %{"user" => user_params}, socket) do
     password_form =
       socket.assigns.current_user
       |> Accounts.change_user_password(user_params)
-      |> Map.put(:action, :validate)
-      |> to_form()
+      |> to_form(action: :validate)
 
-    {:noreply,
-     assign(socket, password_form: password_form, current_password: params["current_password"])}
+    {:noreply, assign(socket, password_form: password_form)}
   end
 
   def handle_event(
         "update_password",
-        %{"current_password" => password, "user" => user_params},
+        %{"user" => %{"current_password" => current_password} = user_params},
         socket
       ) do
+    # this handles the case where the user has a password already
     user = socket.assigns.current_user
 
-    case Accounts.update_user_password(user, password, user_params) do
+    case Accounts.update_user_password(user, current_password, user_params) do
       {:ok, user} ->
         password_form =
           user
@@ -313,6 +307,7 @@ defmodule OliWeb.UserSettingsLive do
   end
 
   def handle_event("update_password", %{"user" => user_params}, socket) do
+    # this handles the case where the user has no password yet
     user = socket.assigns.current_user
 
     case Accounts.create_user_password(user, user_params) do

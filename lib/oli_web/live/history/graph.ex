@@ -68,9 +68,7 @@ defmodule OliWeb.RevisionHistory.Graph do
               width={node.width}
               height={node.height}
               class={"node #{@active_current_class.(node)}"}
-              phx-click="select"
-              phx-value-rev={"#{node.value.revision.id}"}
-              phx-page-loading
+              phx-click={Phoenix.LiveView.JS.push("select", value: %{rev: "#{node.value.revision.id}"}, page_loading: true)}
             />
             <text
               id={node.label}

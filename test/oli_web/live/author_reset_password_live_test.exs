@@ -43,7 +43,7 @@ defmodule OliWeb.AuthorResetPasswordLiveTest do
         )
 
       assert result =~ "should be at least 12 character"
-      assert result =~ "does not match password"
+      assert result =~ "does not match new password"
     end
   end
 
@@ -86,7 +86,7 @@ defmodule OliWeb.AuthorResetPasswordLiveTest do
 
       assert result =~ "Reset Password"
       assert result =~ "should be at least 12 character(s)"
-      assert result =~ "does not match password"
+      assert result =~ "does not match new password"
     end
   end
 end
