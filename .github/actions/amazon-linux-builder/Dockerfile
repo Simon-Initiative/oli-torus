@@ -26,7 +26,7 @@ RUN yum update -y && \
     glibc-langpack-en --allowerasing
 
 # Install ASDF
-RUN git clone https://github.com/asdf-vm/asdf.git ~/.asdf && \
+RUN git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.18.0 && \
     echo '. "$HOME/.asdf/asdf.sh"' >> ~/.bashrc && \
     echo '. "$HOME/.asdf/completions/asdf.bash"' >> ~/.bashrc
 
