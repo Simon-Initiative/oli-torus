@@ -4,6 +4,9 @@ export PATH="/root/.asdf/bin:/root/.asdf/shims:$PATH"
 export ASDF_DIR="/root/.asdf"
 export ASDF_DATA_DIR="/root/.asdf"
 
+# Ensure ASDF shims are refreshed for the Go-based version
+asdf reshim
+
 set -e
 set -x
 
