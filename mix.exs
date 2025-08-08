@@ -185,7 +185,7 @@ defmodule Oli.MixProject do
       {:open_api_spex, "~> 3.9"},
       {:openai, "~> 0.5.4"},
       {:pgvector, "~> 0.2.0"},
-      {:phoenix, "~> 1.7"},
+      {:phoenix, "~> 1.8"},
       {:phoenix_ecto, "~> 4.5"},
       {:phoenix_html, "~> 3.3"},
       {:phoenix_live_dashboard, "~> 0.8.4"},
