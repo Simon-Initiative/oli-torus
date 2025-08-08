@@ -30,23 +30,29 @@ RUN git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.18.0 && \
     echo '. "$HOME/.asdf/asdf.sh"' >> ~/.bashrc && \
     echo '. "$HOME/.asdf/completions/asdf.bash"' >> ~/.bashrc
 
+# Add ASDF to PATH and set up environment variables
+ENV PATH="/root/.asdf/bin:/root/.asdf/shims:$PATH"
+ENV ASDF_DIR="/root/.asdf"
+ENV ASDF_DATA_DIR="/root/.asdf"
+
 # Install Erlang plugin and latest version
-RUN source ~/.asdf/asdf.sh && \
-    asdf plugin-add erlang https://github.com/asdf-vm/asdf-erlang.git && \
+RUN asdf plugin-add erlang https://github.com/asdf-vm/asdf-erlang.git && \
     asdf install erlang ${ERLANG_VERSION} && \
     asdf global erlang ${ERLANG_VERSION}
 
 # Install Elixir plugin and latest version
-RUN source ~/.asdf/asdf.sh && \
-    asdf plugin-add elixir https://github.com/asdf-vm/asdf-elixir.git && \
+RUN asdf plugin-add elixir https://github.com/asdf-vm/asdf-elixir.git && \
     asdf install elixir ${ELIXIR_VERSION} && \
     asdf global elixir ${ELIXIR_VERSION}
 
 # Install Node plugin and latest version
-RUN source ~/.asdf/asdf.sh && \
-    asdf plugin-add nodejs https://github.com/asdf-vm/asdf-nodejs.git && \
+RUN asdf plugin-add nodejs https://github.com/asdf-vm/asdf-nodejs.git && \
     asdf install nodejs ${NODE_VERSION} && \
     asdf global nodejs ${NODE_VERSION}
+
+# Install Hex and Rebar
+RUN mix local.hex --force
+RUN mix local.rebar --force
 
 # Set the working directory inside the container
 WORKDIR /app
