@@ -144,7 +144,7 @@ defmodule OliWeb.Sections.SectionsView do
                 value={type_opt}
                 selected={@options.filter_type == type_opt}
               >
-                <%= humanize_type_opt(type_opt) %>
+                {humanize_type_opt(type_opt)}
               </option>
             </select>
           </form>
@@ -157,7 +157,7 @@ defmodule OliWeb.Sections.SectionsView do
                 value={status_opt}
                 selected={@options.filter_status == status_opt}
               >
-                <%= Phoenix.Naming.humanize(status_opt) %>
+                {Phoenix.Naming.humanize(status_opt)}
               </option>
             </select>
           </form>

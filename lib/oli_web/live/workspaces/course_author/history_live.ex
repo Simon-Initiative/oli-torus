@@ -308,11 +308,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.HistoryLive do
   def render(assigns) do
     ~H"""
     <div class="container flex flex-col gap-y-6 p-8">
-      <%= render_modal(assigns) %>
+      {render_modal(assigns)}
 
       <div class="container">
         <h2>Revision History</h2>
-        <h4>Resource ID: <%= @resource_id %></h4>
+        <h4>Resource ID: {@resource_id}</h4>
         <.link
           :if={@selected.slug != @revision_root_slug}
           id="root_hierarchy_link"
@@ -405,7 +405,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.HistoryLive do
                   </div>
                   <%= for error <- @edit_errors do %>
                     <div class="alert alert-warning d-flex" role="alert">
-                      <div class="flex-grow-1"><%= error %></div>
+                      <div class="flex-grow-1">{error}</div>
                       <div>
                         <a href={@resource_schema.schema["$id"]} target="_blank">
                           JSON Schema <i class="fas fa-external-link-alt"></i>
@@ -458,8 +458,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.HistoryLive do
 
                     <%= for entry <- @uploads.json.entries do %>
                       <div class="flex space-x-2 items-center">
-                        <span><%= entry.client_name %></span>
-                        <progress value={entry.progress} max="100"><%= entry.progress %>%</progress>
+                        <span>{entry.client_name}</span>
+                        <progress value={entry.progress} max="100">{entry.progress}%</progress>
                         <button
                           type="button"
                           phx-click="cancel-upload"
@@ -470,7 +470,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.HistoryLive do
                         </button>
                         <%= for err <- upload_errors(@uploads.json, entry) do %>
                           <p class="alert alert-danger">
-                            <%= friendly_error(err) %>
+                            {friendly_error(err)}
                           </p>
                         <% end %>
                       </div>
@@ -478,7 +478,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.HistoryLive do
 
                     <%= for {msg, el} <- @upload_errors do %>
                       <div class="alert alert-danger" role="alert">
-                        JSON validation failed: <%= ~s{"#{msg} #{el}"} %>
+                        JSON validation failed: {~s{"#{msg} #{el}"}}
                       </div>
                     <% end %>
                   </section>

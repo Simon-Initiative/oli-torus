@@ -55,7 +55,7 @@ defmodule OliWeb.Delivery.Remix.AddMaterialsModal do
           <div class="modal-footer">
             <%= if Enum.count(@selection) > 0 do %>
               <span class="mr-2">
-                <%= Enum.count(@selection) %> items selected
+                {Enum.count(@selection)} items selected
               </span>
             <% end %>
             <button

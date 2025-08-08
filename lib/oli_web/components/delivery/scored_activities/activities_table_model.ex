@@ -48,8 +48,8 @@ defmodule OliWeb.Delivery.ScoredActivities.ActivitiesTableModel do
 
     ~H"""
     <div class="flex flex-col">
-      <span class="font-bold"><%= @header %>:</span>
-      <span class="text-ellipsis"><%= @title %></span>
+      <span class="font-bold">{@header}:</span>
+      <span class="text-ellipsis">{@title}</span>
     </div>
     """
   end
@@ -63,7 +63,7 @@ defmodule OliWeb.Delivery.ScoredActivities.ActivitiesTableModel do
     ~H"""
     <ul class="flex flex-col space-y-2">
       <%= for objective <- @objectives do %>
-        <li><%= objective.title %></li>
+        <li>{objective.title}</li>
       <% end %>
     </ul>
     """
@@ -74,7 +74,7 @@ defmodule OliWeb.Delivery.ScoredActivities.ActivitiesTableModel do
 
     ~H"""
     <div class={if @avg_score < 0.40, do: "text-red-600 font-bold"}>
-      <%= format_value(@avg_score) %>
+      {format_value(@avg_score)}
     </div>
     """
   end
@@ -83,7 +83,7 @@ defmodule OliWeb.Delivery.ScoredActivities.ActivitiesTableModel do
     assigns = Map.merge(assigns, %{total_attempts: assessment.total_attempts})
 
     ~H"""
-    <%= @total_attempts || "-" %>
+    {@total_attempts || "-"}
     """
   end
 
@@ -97,7 +97,7 @@ defmodule OliWeb.Delivery.ScoredActivities.ActivitiesTableModel do
     ~H"""
     <%= if @avg_score != nil do %>
       <div class={if @students_completion < 0.40, do: "text-red-600 font-bold"}>
-        <%= format_value(@students_completion) %>
+        {format_value(@students_completion)}
       </div>
     <% else %>
       -

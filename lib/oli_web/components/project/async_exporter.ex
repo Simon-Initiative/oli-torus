@@ -46,7 +46,7 @@ defmodule OliWeb.Components.Project.AsyncExporter do
             <div class="flex flex-col">
               <div>Download raw analytics snapshot.</div>
               <div class="text-sm text-gray-500">
-                Created <%= date(@analytics_export_timestamp, @ctx) %>.
+                Created {date(@analytics_export_timestamp, @ctx)}.
                 <.button variant={:link} phx-click={@on_generate_analytics_snapshot}>
                   <i class="fa-solid fa-rotate-right mr-1"></i>Regenerate
                 </.button>
@@ -99,7 +99,7 @@ defmodule OliWeb.Components.Project.AsyncExporter do
             <i class="fa-solid fa-circle-notch fa-spin text-primary"></i>
             Generating datashop snapshot... this might take a while.
             <div :if={@datashop_export_current_batch && @datashop_export_batch_count}>
-              Processing Batch <%= @datashop_export_current_batch %> of <%= @datashop_export_batch_count %>
+              Processing Batch {@datashop_export_current_batch} of {@datashop_export_batch_count}
             </div>
           </div>
         </div>
@@ -109,7 +109,7 @@ defmodule OliWeb.Components.Project.AsyncExporter do
             <i class="fa-solid fa-download mr-1"></i> Datashop
           </.button>
           <div class="text-xs text-gray-500">
-            Created <%= date(@datashop_export_timestamp, @ctx) %>.
+            Created {date(@datashop_export_timestamp, @ctx)}.
           </div>
         </div>
         <.datashop_button
@@ -169,7 +169,7 @@ defmodule OliWeb.Components.Project.AsyncExporter do
       phx-click={@on_datashop_action}
       disabled={@disabled}
     >
-      <%= render_slot(@inner_block) %>
+      {render_slot(@inner_block)}
     </button>
     """
   end
@@ -219,7 +219,7 @@ defmodule OliWeb.Components.Project.AsyncExporter do
         <div class="flex flex-col">
           <div>Download this project and its contents.</div>
           <div class="text-sm text-gray-500">
-            Created <%= date(@project_export_timestamp, @ctx) %>.
+            Created {date(@project_export_timestamp, @ctx)}.
             <.button
               variant={:link}
               class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline pl-0 pr-3 py-2"

@@ -21,7 +21,7 @@ defmodule OliWeb.UserLoginLive do
                 Welcome to
               </span>
               <span class="text-white text-4xl font-bold font-['Open Sans'] leading-10">
-                <%= product_short_name() %>
+                {product_short_name()}
               </span>
             </div>
             <div class="w-48 h-11 justify-start items-end gap-1 inline-flex">

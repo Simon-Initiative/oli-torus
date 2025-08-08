@@ -68,7 +68,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
-    <%= render_modal(assigns) %>
+    {render_modal(assigns)}
 
     <FilterBox.render
       table_model={@table_model}

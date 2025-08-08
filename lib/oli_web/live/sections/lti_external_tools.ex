@@ -244,7 +244,7 @@ defmodule OliWeb.Sections.LtiExternalToolsView do
             </div>
           <% end %>
           <div class="search-result">
-            <%= Phoenix.HTML.raw(Utils.highlight_search_term(@tool.title, @search_term)) %>
+            {Phoenix.HTML.raw(Utils.highlight_search_term(@tool.title, @search_term))}
           </div>
         </div>
         <div
@@ -267,10 +267,10 @@ defmodule OliWeb.Sections.LtiExternalToolsView do
             class="flex flex-row items-center space-x-4 text-black dark:text-white hover:no-underline hover:text-black/75 dark:hover:text-white/75"
           >
             <span class="w-6 text-sm font-semibold leading-none text-[#757682] dark:text-[#EEEBF5]/75">
-              <%= child.numbering_index %>
+              {child.numbering_index}
             </span>
             <span class="search-result text-base font-semibold leading-normal">
-              <%= Phoenix.HTML.raw(Utils.highlight_search_term(child.title, @search_term)) %>
+              {Phoenix.HTML.raw(Utils.highlight_search_term(child.title, @search_term))}
             </span>
           </.link>
         </li>

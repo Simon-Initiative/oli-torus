@@ -162,7 +162,7 @@ defmodule OliWeb.Components.Delivery.Content do
       <div class="bg-white dark:bg-[#262626] shadow-sm">
         <div class="flex justify-between gap-2 items-center px-4 pt-8 pb-4 instructor_dashboard_table dark:bg-[#262626]">
           <div class="text-zinc-700 text-lg font-bold leading-none tracking-tight dark:bg-gray-800 dark:text-white">
-            Course <%= if @params.container_filter_by == :units, do: "Units", else: "Modules" %>
+            Course {if @params.container_filter_by == :units, do: "Units", else: "Modules"}
           </div>
           <div>
             <a

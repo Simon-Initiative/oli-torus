@@ -142,7 +142,7 @@ defmodule OliWeb.SystemMessageLiveTest do
       assert view
              |> element("#dialog")
              |> render() =~
-               "Are you sure that you wish to\n    <b>hide</b>\n    this message to all users in the system?"
+               "Are you sure that you wish to <b>hide</b>\n    this message to all users in the system?"
     end
 
     test "deletes the system message successfully", %{

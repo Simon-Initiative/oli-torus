@@ -37,11 +37,11 @@ defmodule OliWeb.Delivery.Content.Progress do
           ]}
           type="button"
         >
-          Progress <%= progress_filter_text(
+          Progress {progress_filter_text(
             @params_from_url,
             @progress_selector,
             @progress_percentage
-          ) %>
+          )}
           <div class="ml-2">
             <.toggle_chevron id="progress" map_values={@progress_selector} />
           </div>
@@ -60,24 +60,24 @@ defmodule OliWeb.Delivery.Content.Progress do
         phx-target={@target}
       >
         <div class="progress-options mt-2">
-          <%= radio_button(:progress, :option, "is_equal_to",
+          {radio_button(:progress, :option, "is_equal_to",
             field: "is_equal_to",
             checked: @progress_selector == :is_equal_to,
             id: "is_equal_to"
-          ) %>
-          <label for="is_equal_to"><%= "is =" %></label>
-          <%= radio_button(:progress, :option, "is_less_than_or_equal",
+          )}
+          <label for="is_equal_to">{"is ="}</label>
+          {radio_button(:progress, :option, "is_less_than_or_equal",
             field: "is_less_than_or_equal",
             checked: @progress_selector == :is_less_than_or_equal,
             id: "is_less_than_or_equal"
-          ) %>
-          <label for="is_less_than_or_equal"><%= "< =" %></label>
-          <%= radio_button(:progress, :option, "is_greather_than_or_equal",
+          )}
+          <label for="is_less_than_or_equal">{"< ="}</label>
+          {radio_button(:progress, :option, "is_greather_than_or_equal",
             field: "is_greather_than_or_equal",
             checked: @progress_selector == :is_greather_than_or_equal,
             id: "is_greather_than_or_equal"
-          ) %>
-          <label for="is_greather_than_or_equal"><%= "> =" %></label>
+          )}
+          <label for="is_greather_than_or_equal">{"> ="}</label>
         </div>
         <div class="flex items-center gap-2 mt-4">
           <.input

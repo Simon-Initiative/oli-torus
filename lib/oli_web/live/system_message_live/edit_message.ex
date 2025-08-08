@@ -39,7 +39,7 @@ defmodule OliWeb.SystemMessageLive.EditMessage do
             maxlength="140"
           />
           <.error :for={error <- Keyword.get_values(@changeset.errors || [], :message)}>
-            <%= translate_error(error) %>
+            {translate_error(error)}
           </.error>
         </div>
       </div>
@@ -54,7 +54,7 @@ defmodule OliWeb.SystemMessageLive.EditMessage do
             class="form-control w-75"
           />
           <.error :for={error <- Keyword.get_values(@changeset.errors || [], :start)}>
-            <%= translate_error(error) %>
+            {translate_error(error)}
           </.error>
         </div>
         <div class="form-group d-flex align-items-center">
@@ -67,7 +67,7 @@ defmodule OliWeb.SystemMessageLive.EditMessage do
             class="form-control w-75"
           />
           <.error :for={error <- Keyword.get_values(@changeset.errors || [], :end)}>
-            <%= translate_error(error) %>
+            {translate_error(error)}
           </.error>
         </div>
       </div>

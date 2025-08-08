@@ -20,12 +20,12 @@ defmodule OliWeb.Common.FilterBox do
   def render(assigns) do
     ~H"""
     <div class="mb-3 w-full">
-      <h2 id="header_id" class="pb-2"><%= @card_header_text %></h2>
+      <h2 id="header_id" class="pb-2">{@card_header_text}</h2>
       <div>
-        <p class="mt-1 mb-4"><%= @card_body_text %></p>
+        <p class="mt-1 mb-4">{@card_body_text}</p>
         <div class="filter-opts flex flex-wrap items-center gap-2">
           <div class="w-full">
-            <%= render_slot(@inner_block) %>
+            {render_slot(@inner_block)}
           </div>
 
           <%= if @show_sort do %>
@@ -39,7 +39,7 @@ defmodule OliWeb.Common.FilterBox do
                         value={column_spec.name}
                         selected={@table_model.sort_by_spec == column_spec}
                       >
-                        <%= column_spec.label %>
+                        {column_spec.label}
                       </option>
                     <% end %>
                   <% end %>
@@ -62,7 +62,7 @@ defmodule OliWeb.Common.FilterBox do
           <% end %>
 
           <%= if @show_more_opts do %>
-            <%= render_slot(@extra_opts) %>
+            {render_slot(@extra_opts)}
           <% end %>
         </div>
       </div>

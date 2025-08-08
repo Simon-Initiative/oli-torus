@@ -103,7 +103,7 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker.TableModel do
     assigns = Map.merge(assigns, %{title: data.revision.title})
 
     ~H"""
-    <%= @title %>
+    {@title}
     """
   end
 
@@ -111,7 +111,7 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker.TableModel do
     assigns = Map.merge(assigns, %{graded: data.revision.graded})
 
     ~H"""
-    <%= if @graded, do: "Scored", else: "Practice" %>
+    {if @graded, do: "Scored", else: "Practice"}
     """
   end
 
@@ -119,7 +119,7 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker.TableModel do
     assigns = Map.merge(assigns, %{updated_at: data.revision.updated_at})
 
     ~H"""
-    <%= OliWeb.Common.FormatDateTime.format_datetime(@updated_at, show_timezone: false) %>
+    {OliWeb.Common.FormatDateTime.format_datetime(@updated_at, show_timezone: false)}
     """
   end
 
@@ -127,7 +127,7 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker.TableModel do
     assigns = Map.merge(assigns, %{publication_date: data.revision.publication_date})
 
     ~H"""
-    <%= OliWeb.Common.FormatDateTime.format_datetime(@publication_date, show_timezone: false) %>
+    {OliWeb.Common.FormatDateTime.format_datetime(@publication_date, show_timezone: false)}
     """
   end
 end

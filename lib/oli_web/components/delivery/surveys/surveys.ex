@@ -107,7 +107,7 @@ defmodule OliWeb.Components.Delivery.Surveys do
             <div class="mt-9">
               <div :for={activity <- @activities} class="px-10">
                 <div class="flex flex-col bg-white dark:bg-gray-800 dark:text-white w-min whitespace-nowrap rounded-t-md block font-medium text-sm leading-tight uppercase border-x-1 border-t-1 border-b-0 border-gray-300 px-6 py-4 my-4 gap-y-2">
-                  <div role="activity_title"><%= activity.title %> - Question details</div>
+                  <div role="activity_title">{activity.title} - Question details</div>
                   <div
                     :if={@current_assessment != nil and @activities not in [nil, []]}
                     id="student_attempts_summary"
@@ -117,7 +117,7 @@ defmodule OliWeb.Components.Delivery.Surveys do
                       <%= if activity.students_with_attempts_count == 0 do %>
                         No student has completed any attempts.
                       <% else %>
-                        <%= ~s{#{activity.students_with_attempts_count} #{Gettext.ngettext(OliWeb.Gettext, "student has", "students have", activity.students_with_attempts_count)} completed #{activity.total_attempts_count} #{Gettext.ngettext(OliWeb.Gettext, "attempt", "attempts", activity.total_attempts_count)}.} %>
+                        {~s{#{activity.students_with_attempts_count} #{Gettext.ngettext(OliWeb.Gettext, "student has", "students have", activity.students_with_attempts_count)} completed #{activity.total_attempts_count} #{Gettext.ngettext(OliWeb.Gettext, "attempt", "attempts", activity.total_attempts_count)}.}}
                       <% end %>
                     </span>
                     <div
@@ -125,10 +125,10 @@ defmodule OliWeb.Components.Delivery.Surveys do
                       class="flex flex-col gap-x-2 items-center"
                     >
                       <span class="text-xs">
-                        <%= ~s{#{Enum.count(activity.student_emails_without_attempts)} #{Gettext.ngettext(OliWeb.Gettext,
+                        {~s{#{Enum.count(activity.student_emails_without_attempts)} #{Gettext.ngettext(OliWeb.Gettext,
                         "student has",
                         "students have",
-                        Enum.count(activity.student_emails_without_attempts))} not completed any attempt.} %>
+                        Enum.count(activity.student_emails_without_attempts))} not completed any attempt.}}
                       </span>
                       <input
                         type="text"
@@ -143,12 +143,12 @@ defmodule OliWeb.Components.Delivery.Surveys do
                         phx-hook="CopyListener"
                         data-clipboard-target="#email_inputs"
                       >
-                        <i class="fa-solid fa-copy mr-2" /><%= Gettext.ngettext(
+                        <i class="fa-solid fa-copy mr-2" />{Gettext.ngettext(
                           OliWeb.Gettext,
                           "Copy email address",
                           "Copy email addresses",
                           Enum.count(activity.student_emails_without_attempts)
-                        ) %>
+                        )}
                       </button>
                     </div>
                   </div>

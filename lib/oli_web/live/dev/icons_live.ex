@@ -26,9 +26,9 @@ defmodule OliWeb.Dev.IconsLive do
       <div class="flex flex-col mb-4">
         <div class="flex justify-between items-center h-20">
           <h1 class="text-3xl">Icons</h1>
-          <%= React.component(@ctx, "Components.DarkModeSelector", %{showLabels: false},
+          {React.component(@ctx, "Components.DarkModeSelector", %{showLabels: false},
             id: "dark_mode_selector"
-          ) %>
+          )}
         </div>
         <p class="text-lg">
           This page renders all icons defined at <code>OliWeb.Icons</code>.
@@ -39,9 +39,9 @@ defmodule OliWeb.Dev.IconsLive do
       </div>
       <div class="grid grid-cols-5 gap-10 p-10 justify-center">
         <div :for={icon_name <- @icons} class="flex flex-col gap-4">
-          <span><%= icon_name %></span>
+          <span>{icon_name}</span>
           <div class="w-min min-w-[48px] h-12 flex justify-center items-center">
-            <span><%= apply(OliWeb.Icons, icon_name, [%{}]) %></span>
+            <span>{apply(OliWeb.Icons, icon_name, [%{}])}</span>
           </div>
         </div>
       </div>

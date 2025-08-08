@@ -139,7 +139,7 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
               )
             ]}>
               <div>
-                <%= month_name(month) %>
+                {month_name(month)}
               </div>
             </div>
             <div class="flex-1 flex flex-col">

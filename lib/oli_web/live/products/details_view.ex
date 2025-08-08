@@ -71,7 +71,7 @@ defmodule OliWeb.Products.DetailsView do
 
   def render(assigns) do
     ~H"""
-    <%= render_modal(assigns) %>
+    {render_modal(assigns)}
     <div class="overview container">
       <div class="grid grid-cols-12 py-5 border-b">
         <div class="md:col-span-4">
@@ -139,7 +139,7 @@ defmodule OliWeb.Products.DetailsView do
         </div>
         <div class="flex flex-col md:col-span-8 gap-2">
           <div>
-            This product <b>does <%= unless @product.certificate_enabled, do: "not" %></b>
+            This product <b>does {unless @product.certificate_enabled, do: "not"}</b>
             currently produce a certificate.
           </div>
           <div>

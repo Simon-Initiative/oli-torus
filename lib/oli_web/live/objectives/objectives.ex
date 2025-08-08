@@ -153,7 +153,7 @@ defmodule OliWeb.ObjectivesLive.Objectives do
 
   def render(assigns) do
     ~H"""
-    <%= render_modal(assigns) %>
+    {render_modal(assigns)}
 
     <div class="container mx-auto">
       <FilterBox.render

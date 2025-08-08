@@ -937,7 +937,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           role="no search results warning"
         >
           There are no results for the search term
-          <span class="font-bold italic"><%= @params["search_term"] %></span>
+          <span class="font-bold italic">{@params["search_term"]}</span>
         </div>
 
         <.outline_row
@@ -1061,30 +1061,30 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       <div class="md:p-[25px] md:pl-[50px]" role={"top_level_page_#{@unit["numbering"]["index"]}"}>
         <div role="header" class="flex flex-col md:flex-row md:gap-[30px]">
           <div class="text-[14px] leading-[19px] tracking-[1.4px] uppercase mt-[7px] mb-1 whitespace-nowrap opacity-60">
-            <%= "PAGE #{@unit["numbering"]["index"]}" %>
+            {"PAGE #{@unit["numbering"]["index"]}"}
           </div>
           <div class="mb-6 flex flex-col items-start gap-[6px] w-full">
             <div class="flex flex-col md:flex-row w-full">
               <h3 class="text-[26px] leading-[32px] tracking-[0.02px] font-normal dark:text-[#DDD]">
-                <%= @unit["title"] %>
+                {@unit["title"]}
               </h3>
               <div class="ml-auto flex items-center gap-3" role="schedule_details">
                 <div class="text-[14px] leading-[32px] tracking-[0.02px] font-semibold">
                   <span>
-                    Available: <%= get_available_date(
+                    Available: {get_available_date(
                       @unit["section_resource"].start_date,
                       @ctx,
                       "{WDshort}, {Mshort} {D}, {YYYY} ({h12}:{m}{am})"
-                    ) %>
+                    )}
                   </span>
                   <span class="text-gray-400 opacity-80 dark:text-[#696974] dark:opacity-100 mr-1">
-                    <%= Utils.label_for_scheduling_type(@unit["section_resource"].scheduling_type) %>
+                    {Utils.label_for_scheduling_type(@unit["section_resource"].scheduling_type)}
                   </span>
-                  <%= format_date(
+                  {format_date(
                     @unit["section_resource"].end_date,
                     @ctx,
                     "{WDshort}, {Mshort} {D}, {YYYY} ({h12}:{m}{am})"
-                  ) %>
+                  )}
                 </div>
               </div>
             </div>
@@ -1131,16 +1131,16 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       <div class="md:p-[25px] md:pl-[50px]" role={"unit_#{@unit["numbering"]["index"]}"}>
         <div class="flex flex-col md:flex-row md:gap-[30px]">
           <div class="text-[14px] leading-[19px] tracking-[1.4px] uppercase mt-[7px] mb-1 whitespace-nowrap opacity-60">
-            <%= container_label_and_numbering(
+            {container_label_and_numbering(
               @unit["numbering"]["level"],
               @unit["numbering"]["index"],
               @section.customizations
-            ) %>
+            )}
           </div>
           <div class="mb-6 flex flex-col items-start gap-[6px] w-full">
             <div class="flex flex-col md:flex-row w-full justify-between gap-2">
               <h3 class="text-[26px] leading-[32px] tracking-[0.02px] font-normal dark:text-[#DDD]">
-                <%= @unit["title"] %>
+                {@unit["title"]}
               </h3>
               <div class="flex items-center gap-3" role="schedule_details">
                 <div class="text-[14px] leading-[32px] tracking-[0.02px] font-semibold">
@@ -1148,26 +1148,26 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                     <span class="text-gray-400 opacity-80 dark:text-[#696974] dark:opacity-100 mr-1">
                       Available:
                     </span>
-                    <%= get_available_date(
+                    {get_available_date(
                       @unit["section_resource"].start_date,
                       @ctx,
                       "{WDshort}, {Mshort} {D}, {YYYY} ({h12}:{m}{am})"
-                    ) %>
+                    )}
                   </span>
                   <span class="ml-6 text-gray-400 opacity-80 dark:text-[#696974] dark:opacity-100 mr-1">
-                    <%= if @unit["section_resource"].end_date in [nil, "Not yet scheduled"],
+                    {if @unit["section_resource"].end_date in [nil, "Not yet scheduled"],
                       do: "Due by:",
                       else:
                         Utils.container_label_for_scheduling_type(
                           Map.get(@contained_scheduling_types, @unit["resource_id"])
-                        ) %>
+                        )}
                   </span>
                   <span class="whitespace-nowrap">
-                    <%= format_date(
+                    {format_date(
                       @unit["section_resource"].end_date,
                       @ctx,
                       "{WDshort}, {Mshort} {D}, {YYYY} ({h12}:{m}{am})"
-                    ) %>
+                    )}
                   </span>
                 </div>
               </div>
@@ -1282,7 +1282,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           >
             <div class="justify-start items-start gap-1 inline-flex">
               <div class="opacity-60 dark:text-white text-sm font-bold uppercase tracking-tight">
-                <%= container_label_and_numbering(
+                {container_label_and_numbering(
                   selected_module["numbering"][
                     "level"
                   ],
@@ -1290,34 +1290,34 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                     "index"
                   ],
                   @section.customizations
-                ) %>
+                )}
               </div>
             </div>
             <h2 class="self-stretch opacity-90 text-center text-xl md:text-[26px] font-normal md:leading-loose tracking-tight dark:text-white">
-              <%= selected_module[
+              {selected_module[
                 "title"
-              ] %>
+              ]}
             </h2>
             <span class="opacity-50 dark:text-white text-xs font-normal">
               <span>
-                Available: <%= get_available_date(
+                Available: {get_available_date(
                   selected_module[
                     "section_resource"
                   ].start_date,
                   @ctx,
                   "{WDshort} {Mshort} {D}, {YYYY}"
-                ) %>
+                )}
               </span>
               <span class="ml-6">
-                <%= Utils.container_label_for_scheduling_type(
+                {Utils.container_label_for_scheduling_type(
                   Map.get(@contained_scheduling_types, selected_module["resource_id"])
-                ) %><%= format_date(
+                )}{format_date(
                   selected_module[
                     "section_resource"
                   ].end_date,
                   @ctx,
                   "{WDshort} {Mshort} {D}, {YYYY}"
-                ) %>
+                )}
               </span>
             </span>
           </div>
@@ -1341,13 +1341,13 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 class="text-sm font-normal leading-[30px] max-w-[760px] overflow-hidden dark:text-white"
                 style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;"
               >
-                <%= render_intro_content(
+                {render_intro_content(
                   selected_module[
                     "intro_content"
                   ][
                     "children"
                   ]
-                ) %>
+                )}
               </span>
               <div id={"toggle_read_more_#{selected_module["resource_id"]}"} class="ml-auto">
                 <button
@@ -1480,20 +1480,20 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             id={"header-#{@row["resource_id"]}"}
           >
             <h6 class="dark:text-[#eeebf5]/75 text-sm font-bold font-['Open Sans'] uppercase leading-none">
-              <%= "#{String.upcase(Sections.get_container_label_and_numbering(1, @row["numbering"]["index"], @section.customizations))}" %>
+              {"#{String.upcase(Sections.get_container_label_and_numbering(1, @row["numbering"]["index"], @section.customizations))}"}
             </h6>
             <div class="flex justify-between items-center mt-3 mb-1">
               <div
                 role="unit title"
                 class="search-result grow shrink basis-0 dark:text-white md:text-2xl font-semibold font-['Open Sans'] md:leading-loose"
               >
-                <%= Phoenix.HTML.raw(CommonUtils.highlight_search_term(@row["title"], @search_term)) %>
+                {Phoenix.HTML.raw(CommonUtils.highlight_search_term(@row["title"], @search_term))}
               </div>
               <div class="flex flex-row gap-x-2">
                 <%= if @progress == 100 do %>
                   Completed <Icons.check />
                 <% else %>
-                  <%= @progress %> %
+                  {@progress} %
                 <% end %>
               </div>
             </div>
@@ -1503,24 +1503,24 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 class="dark:text-[#eeebf5]/75 text-sm font-semibold font-['Open Sans'] leading-none"
               >
                 <span>
-                  Available: <%= get_available_date(
+                  Available: {get_available_date(
                     @row["section_resource"].start_date,
                     @ctx,
                     "{WDshort}, {Mshort} {D}, {YYYY} ({h12}:{m}{am})"
-                  ) %>
+                  )}
                 </span>
                 <span class="ml-6">
-                  <%= if @row["section_resource"].end_date in [nil, "Not yet scheduled"],
+                  {if @row["section_resource"].end_date in [nil, "Not yet scheduled"],
                     do: "Due by:",
                     else:
                       Utils.container_label_for_scheduling_type(
                         Map.get(@contained_scheduling_types, @row["resource_id"])
-                      ) %>
-                  <%= format_date(
+                      )}
+                  {format_date(
                     @row["section_resource"].end_date,
                     @ctx,
                     "{WDshort}, {Mshort} {D}, {YYYY} ({h12}:{m}{am})"
-                  ) %>
+                  )}
                 </span>
               </div>
               <div class="ml-auto">
@@ -1632,7 +1632,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         "w-full pl-16 py-2.5 justify-start items-center gap-5 flex rounded-lg"
       ]}>
         <span class="search-result opacity-60 dark:text-white text-base font-semibold font-['Open Sans']">
-          <%= Phoenix.HTML.raw(CommonUtils.highlight_search_term(@row["title"], @search_term)) %>
+          {Phoenix.HTML.raw(CommonUtils.highlight_search_term(@row["title"], @search_term))}
         </span>
       </div>
       <.outline_row
@@ -1682,14 +1682,14 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             id={"header-#{@row["resource_id"]}"}
           >
             <h6 class="dark:text-[#eeebf5]/75 text-sm font-bold font-['Open Sans'] uppercase leading-none">
-              <%= "#{String.upcase(Sections.get_container_label_and_numbering(@row["numbering"]["level"], @row["numbering"]["index"], @section.customizations))}" %>
+              {"#{String.upcase(Sections.get_container_label_and_numbering(@row["numbering"]["level"], @row["numbering"]["index"], @section.customizations))}"}
             </h6>
             <div class="flex justify-between items-center h-8 mt-3 mb-1">
               <div
                 role="module title"
                 class="search-result grow shrink basis-0 dark:text-white md:text-2xl font-semibold font-['Open Sans'] md:leading-loose"
               >
-                <%= Phoenix.HTML.raw(CommonUtils.highlight_search_term(@row["title"], @search_term)) %>
+                {Phoenix.HTML.raw(CommonUtils.highlight_search_term(@row["title"], @search_term))}
               </div>
             </div>
             <div class="flex justify-between items-center h-6 mb-3 w-full">
@@ -1698,24 +1698,24 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 class="dark:text-[#eeebf5]/75 text-sm font-semibold font-['Open Sans'] leading-none"
               >
                 <span>
-                  Available: <%= get_available_date(
+                  Available: {get_available_date(
                     @row["section_resource"].start_date,
                     @ctx,
                     "{WDshort}, {Mshort} {D}, {YYYY} ({h12}:{m}{am})"
-                  ) %>
+                  )}
                 </span>
                 <span class="ml-6">
-                  <%= if @row["section_resource"].end_date in [nil, "Not yet scheduled"],
+                  {if @row["section_resource"].end_date in [nil, "Not yet scheduled"],
                     do: "Due by:",
                     else:
                       Utils.container_label_for_scheduling_type(
                         Map.get(@contained_scheduling_types, @row["resource_id"])
-                      ) %>
-                  <%= format_date(
+                      )}
+                  {format_date(
                     @row["section_resource"].end_date,
                     @ctx,
                     "{WDshort}, {Mshort} {D}, {YYYY} ({h12}:{m}{am})"
-                  ) %>
+                  )}
                 </span>
               </div>
               <div class="ml-auto">
@@ -1750,7 +1750,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               :if={@type == :module and @row["intro_content"]["children"] not in ["", nil]}
               class="mt-12 dark:text-white text-base font-normal font-['Open Sans'] grow shrink basis-0 leading-loose"
             >
-              <%= render_intro_content(@row["intro_content"]["children"]) %>
+              {render_intro_content(@row["intro_content"]["children"])}
             </div>
           </div>
 
@@ -1770,7 +1770,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 <div class="w-34 h-8 pl-1 flex gap-1.5">
                   <div class="flex gap-0.5 items-center">
                     <span class="opacity-80 dark:text-white text-[13px] font-normal font-['Open Sans'] leading-loose">
-                      <%= case @page_metrics do
+                      {case @page_metrics do
                         %{total_pages_count: 1, completed_pages_count: 1} ->
                           "1 of 1 Page"
 
@@ -1779,7 +1779,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
                         _ ->
                           "0 of 0 Pages"
-                      end %>
+                      end}
                     </span>
                   </div>
                 </div>
@@ -1809,7 +1809,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                     class="h-[19px] mb-5"
                   >
                     <span :if={@has_scheduled_resources?} class="dark:text-white text-sm font-bold">
-                      <%= "#{Utils.label_for_scheduling_type(grouped_scheduling_type)}#{format_date(grouped_due_date, @ctx, "{WDshort} {Mshort} {D}, {YYYY}")}" %>
+                      {"#{Utils.label_for_scheduling_type(grouped_scheduling_type)}#{format_date(grouped_due_date, @ctx, "{WDshort} {Mshort} {D}, {YYYY}")}"}
                     </span>
                   </div>
                   <.outline_row
@@ -1851,7 +1851,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 class="pl-5 pr-4 rounded-[82px] border border-white/20 dark:text-[#bab8bf] opacity-80 hover:opacity-100 hoverjustify-center items-center gap-3 flex text-sm font-medium"
               >
                 <div class="text-[13px] font-semibold font-['Open Sans'] leading-loose tracking-tight">
-                  Collapse <%= String.capitalize(Atom.to_string(@type)) %>
+                  Collapse {String.capitalize(Atom.to_string(@type))}
                 </div>
                 <Icons.chevron_down class="w-4 h-4 opacity-90 rotate-180 fill-black dark:fill-white" />
               </button>
@@ -1922,7 +1922,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                   ]
                 }
               >
-                <%= Phoenix.HTML.raw(CommonUtils.highlight_search_term(@row["title"], @search_term)) %>
+                {Phoenix.HTML.raw(CommonUtils.highlight_search_term(@row["title"], @search_term))}
               </span>
 
               <Student.duration_in_minutes
@@ -1936,18 +1936,18 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 class="opacity-60 text-[13px] font-normal font-['Open Sans'] !font-normal opacity-60 dark:text-white"
               >
                 <span>
-                  Available: <%= get_available_date(
+                  Available: {get_available_date(
                     @row["section_resource"].start_date,
                     @ctx,
                     "{WDshort} {Mshort} {D}, {YYYY}"
-                  ) %>
+                  )}
                 </span>
                 <span class="ml-6">
-                  <%= Utils.label_for_scheduling_type(@row["section_resource"].scheduling_type) %><%= format_date(
+                  {Utils.label_for_scheduling_type(@row["section_resource"].scheduling_type)}{format_date(
                     @row["section_resource"].end_date,
                     @ctx,
                     "{WDshort} {Mshort} {D}, {YYYY}"
-                  ) %>
+                  )}
                 </span>
               </span>
               <Student.score_summary raw_avg_score={
@@ -1974,13 +1974,13 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         <div class="w-34 h-8 pl-1 flex gap-1.5">
           <div class="flex gap-0.5 items-center">
             <span class="opacity-80 dark:text-white text-[13px] font-normal leading-loose">
-              <%= case @page_metrics do
+              {case @page_metrics do
                 %{total_pages_count: 1, completed_pages_count: 1} ->
                   "1 of 1 Page"
 
                 %{total_pages_count: total_count, completed_pages_count: completed_count} ->
                   "#{completed_count} of #{total_count} Pages"
-              end %>
+              end}
             </span>
           </div>
         </div>
@@ -2033,7 +2033,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       >
         <div :if={@has_scheduled_resources?} class="h-[19px] mb-5">
           <span class="dark:text-white text-sm font-bold">
-            <%= "#{Utils.label_for_scheduling_type(grouped_scheduling_type)}#{format_date(grouped_due_date, @ctx, "{WDshort} {Mshort} {D}, {YYYY}")}" %>
+            {"#{Utils.label_for_scheduling_type(grouped_scheduling_type)}#{format_date(grouped_due_date, @ctx, "{WDshort} {Mshort} {D}, {YYYY}")}"}
           </span>
         </div>
         <.index_item
@@ -2167,7 +2167,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         <div class="flex flex-col gap-1 w-full">
           <div class={["flex", left_indentation(@numbering_level)]}>
             <span class="opacity-90 dark:text-white text-base font-semibold">
-              <%= "#{@title}" %>
+              {"#{@title}"}
             </span>
           </div>
         </div>
@@ -2283,7 +2283,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 if(@was_visited, do: "opacity-60")
               ]
             }>
-              <%= @title %>
+              {@title}
             </span>
 
             <Student.duration_in_minutes duration_minutes={@duration_minutes} graded={@graded} />
@@ -2291,18 +2291,18 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           <div :if={@graded} role="due date and score" class="flex">
             <span class="opacity-60 text-[13px] font-normal !font-normal opacity-60 dark:text-white">
               <span>
-                Available: <%= get_available_date(
+                Available: {get_available_date(
                   @available_date,
                   @ctx,
                   "{WDshort} {Mshort} {D}, {YYYY}"
-                ) %>
+                )}
               </span>
               <span class="ml-6">
-                <%= Utils.label_for_scheduling_type(@parent_scheduling_type) %><%= format_date(
+                {Utils.label_for_scheduling_type(@parent_scheduling_type)}{format_date(
                   @due_date,
                   @ctx,
                   "{WDshort} {Mshort} {D}, {YYYY}"
-                ) %>
+                )}
               </span>
             </span>
             <Student.score_summary raw_avg_score={@raw_avg_score} />
@@ -2452,7 +2452,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           role="card top label"
           class="pointer-events-none text-[12px] leading-[16px] font-bold opacity-60 text-white dark:text-opacity-50 self-start"
         >
-          <%= @title %>
+          {@title}
         </span>
         <div class="absolute bottom-4 right-3 h-[26px] pointer-events-none">
           <.card_badge
@@ -2524,7 +2524,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           role="card top label"
           class="pointer-events-none text-[12px] leading-[16px] font-bold opacity-60 text-white dark:text-opacity-50 self-start"
         >
-          <%= @title %>
+          {@title}
         </span>
         <div class="absolute bottom-4 right-3 h-[26px] pointer-events-none">
           <.card_badge
@@ -2625,17 +2625,17 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             role="card top label"
             class="pointer-events-none text-[12px] leading-[16px] font-bold opacity-60 text-white dark:text-opacity-50"
           >
-            <%= if @is_page,
+            {if @is_page,
               do: "PAGE",
               else:
                 container_label_and_numbering(
                   @card["numbering"]["level"],
                   @module_index,
                   @section_customizations
-                ) %>
+                )}
           </span>
           <h5 class="pointer-events-none text-[18px] leading-[25px] font-bold text-white z-10">
-            <%= @card["title"] %>
+            {@card["title"]}
           </h5>
           <div class="absolute bottom-4 right-3 h-[26px] pointer-events-none">
             <.module_card_badge
@@ -2682,7 +2682,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         id={"card_badge_details_#{@resource_id}"}
         class="hidden dark:text-white text-[13px] font-semibold pointer-events-none"
       >
-        <%= parsed_minutes %>
+        {parsed_minutes}
       </div>
     </div>
     """
@@ -2698,7 +2698,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       class="h-[26px] px-2 py-1 dark:bg-white/10 rounded-xl shadow justify-end items-center gap-1 inline-flex overflow-hidden"
     >
       <div class="dark:text-white text-[13px] font-semibold pointer-events-none">
-        <%= parsed_minutes %>
+        {parsed_minutes}
       </div>
     </div>
     """
@@ -2725,8 +2725,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       class="ml-auto h-[26px] px-2 py-1 dark:bg-white/10 rounded-xl shadow justify-end items-center gap-1 inline-flex"
     >
       <div class="dark:text-white text-[13px] font-semibold">
-        <%= parse_module_total_pages(@page_metrics.total_pages_count) <>
-          maybe_add_separator(@page_metrics.total_pages_count, parsed_minutes) <> "#{parsed_minutes}" %>
+        {parse_module_total_pages(@page_metrics.total_pages_count) <>
+          maybe_add_separator(@page_metrics.total_pages_count, parsed_minutes) <> "#{parsed_minutes}"}
       </div>
     </div>
     """
@@ -2754,8 +2754,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         id={"card_badge_details_#{@resource_id}"}
         class="hidden dark:text-white text-[13px] font-semibold pointer-events-none"
       >
-        <%= parse_module_total_pages(@page_metrics.total_pages_count) <>
-          maybe_add_separator(@page_metrics.total_pages_count, parsed_minutes) <> "#{parsed_minutes}" %>
+        {parse_module_total_pages(@page_metrics.total_pages_count) <>
+          maybe_add_separator(@page_metrics.total_pages_count, parsed_minutes) <> "#{parsed_minutes}"}
       </div>
     </div>
     """
@@ -2781,7 +2781,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   defp numbering_index(assigns) do
     ~H"""
     <span class="opacity-60 text-black dark:text-white text-[13px] font-semibold capitalize">
-      <%= if @type == "page", do: "#{@index}", else: " " %>
+      {if @type == "page", do: "#{@index}", else: " "}
     </span>
     """
   end

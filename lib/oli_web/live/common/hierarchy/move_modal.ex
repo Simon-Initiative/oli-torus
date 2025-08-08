@@ -21,7 +21,7 @@ defmodule OliWeb.Common.Hierarchy.MoveModal do
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title">
-              Move <%= resource_type_label(@node.revision) |> String.capitalize() %>
+              Move {resource_type_label(@node.revision) |> String.capitalize()}
             </h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
             </button>
@@ -37,9 +37,9 @@ defmodule OliWeb.Common.Hierarchy.MoveModal do
 
             <div class="text-center text-secondary mt-2">
               <%= if already_exists_in_container?(@from_container, @active) do %>
-                <b><%= @node.revision.title %></b> already exists here
+                <b>{@node.revision.title}</b> already exists here
               <% else %>
-                <b><%= @node.revision.title %></b> will be placed here
+                <b>{@node.revision.title}</b> will be placed here
               <% end %>
             </div>
           </div>

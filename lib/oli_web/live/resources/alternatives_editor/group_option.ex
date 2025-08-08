@@ -7,7 +7,7 @@ defmodule OliWeb.Resources.AlternativesEditor.GroupOption do
     ~H"""
     <li class="list-group-item">
       <div class="d-flex flex-row align-items-center">
-        <div><%= @option["name"] %></div>
+        <div>{@option["name"]}</div>
         <div class="flex-grow-1"></div>
         <%= if @show_actions do %>
           <.icon_button

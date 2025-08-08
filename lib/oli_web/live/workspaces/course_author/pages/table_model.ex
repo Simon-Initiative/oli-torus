@@ -68,7 +68,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Pages.TableModel do
 
     ~H"""
     <a href={Routes.live_path(OliWeb.Endpoint, EditorLive, @project_slug, @slug)}>
-      <%= @title %>
+      {@title}
     </a>
     """
   end
@@ -80,7 +80,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Pages.TableModel do
     ~H"""
     <%= if @parent do %>
       <a href={Routes.live_path(OliWeb.Endpoint, CurriculumLive, @project_slug, @parent.slug)}>
-        <%= @parent.title %>
+        {@parent.title}
       </a>
     <% end %>
     """

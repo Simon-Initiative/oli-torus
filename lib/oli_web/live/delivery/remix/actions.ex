@@ -24,9 +24,9 @@ defmodule OliWeb.Delivery.Remix.Actions do
         phx-click="show_hide_resource_modal"
         phx-value-uuid={@uuid}
       >
-        <i class={"fa-solid #{if @hidden, do: "fa-eye", else: "fa-eye-slash"}"}></i> <%= if @hidden,
+        <i class={"fa-solid #{if @hidden, do: "fa-eye", else: "fa-eye-slash"}"}></i> {if @hidden,
           do: "Show",
-          else: "Hide" %>
+          else: "Hide"}
       </button>
       <button
         type="button"
