@@ -1996,12 +1996,13 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       |> element(~s{div[role="unit_5"] div[role="resource card 4"]})
       |> render_click()
 
-      group_by_read_by_date_div = element(view, ~s{div[id="pages_grouped_by_read_by_2023-11-03"]})
+      group_by_read_by_date_div =
+        element(view, ~s{div[role="pages_grouped_by_read_by_2023-11-03"]})
 
-      group_by_due_by_date_div = element(view, ~s{div[id="pages_grouped_by_due_by_2023-11-03"]})
+      group_by_due_by_date_div = element(view, ~s{div[role="pages_grouped_by_due_by_2023-11-03"]})
 
       group_by_not_yet_scheduled_div =
-        element(view, ~s{div[id="pages_grouped_by__Not yet scheduled"]})
+        element(view, ~s{div[role="pages_grouped_by__Not yet scheduled"]})
 
       assert render(group_by_read_by_date_div) =~ "Read by: Fri Nov 3, 2023"
       assert render(group_by_read_by_date_div) =~ "Page 11"
@@ -2037,11 +2038,20 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       |> element(~s{div[role="unit_5"] div[role="resource card 4"]})
       |> render_click()
 
-      group_by_due_date_div = element(view, ~s{div[id="pages_grouped_by_read_by_2023-11-10"]})
+      group_by_due_date_div = element(view, ~s{div[role="pages_grouped_by_read_by_2023-11-10"]})
 
-      # page 13 is due on Nov 10, 2023 as defined in the student exception
+      group_by_not_yet_scheduled_div =
+        element(view, ~s{div[role="pages_grouped_by__Not yet scheduled"]})
+
+      # page 13 is due on Nov 10, 2023 as defined in the student exception,
+      # and it is only listed in the "Read by" group (not in the "Not yet scheduled" group)
       assert render(group_by_due_date_div) =~ "Read by: Fri Nov 10, 2023"
       assert render(group_by_due_date_div) =~ "Page 13"
+      refute render(group_by_not_yet_scheduled_div) =~ "Page 13"
+
+      # page 14 is not due on Nov 10, 2023 so it is only listed in the "Not yet scheduled" group
+      assert render(group_by_not_yet_scheduled_div) =~ "Page 14"
+      refute render(group_by_due_date_div) =~ "Page 14"
     end
 
     test "in class activities pages are not listed in the module index", %{
@@ -2863,7 +2873,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert has_element?(view, ~s{nav[id=desktop-nav-menu][aria-expanded=false]})
 
       view
-      |> element(~s{nav[id="desktop-nav-menu"] a[id="schedule_nav_link"])})
+      |> element(~s{nav[id="desktop-nav-menu"] a[id="desktop_schedule_nav_link"])})
       |> render_click()
 
       assert_redirect(view, "/sections/#{section.slug}/student_schedule?sidebar_expanded=false")
@@ -2921,7 +2931,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       {:ok, view, _html} = live(conn, "/sections/#{section.slug}/preview")
 
       view
-      |> element(~s{nav[id="desktop-nav-menu"] a[id="discussions_nav_link"])})
+      |> element(~s{nav[id="desktop-nav-menu"] a[id="desktop_discussions_nav_link"])})
       |> render_click()
 
       redirect_path = "/sections/#{section.slug}/preview/discussions"
@@ -2946,7 +2956,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       {:ok, view, _html} = live(conn, "/sections/#{section.slug}/preview")
 
       view
-      |> element(~s{nav[id="desktop-nav-menu"] a[id="practice_nav_link"])})
+      |> element(~s{nav[id="desktop-nav-menu"] a[id="desktop_practice_nav_link"])})
       |> render_click()
 
       redirect_path = "/sections/#{section.slug}/preview/practice"

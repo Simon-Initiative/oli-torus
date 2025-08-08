@@ -32,7 +32,7 @@ defmodule OliWeb.SystemMessageLive.EditMessage do
           <.input
             type="textarea"
             field={@changeset[:message]}
-            id="system_message_message"
+            id={"system_message_message_#{@system_message.id}"}
             class="form-control"
             rows="4"
             placeholder="Type a message for all users in the system"
