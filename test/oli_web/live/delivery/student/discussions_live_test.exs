@@ -665,7 +665,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLiveTest do
       |> render_click
 
       view
-      |> element("form[id=\"new_discussion_form\"")
+      |> element("form[id=\"new_discussion_form\"]")
       |> render_submit(%{
         "post" => %{"anonymous" => "false", "content" => %{"message" => "New Discussion Post"}}
       })
@@ -691,7 +691,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLiveTest do
       |> render_click
 
       view
-      |> element("form[id=\"new_discussion_form\"")
+      |> element("form[id=\"new_discussion_form\"]")
       |> render_submit(%{
         "post" => %{"anonymous" => "false", "content" => %{"message" => "New Discussion Post"}}
       })
@@ -730,7 +730,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLiveTest do
       |> render_click
 
       view
-      |> element("form[phx-value-parent-post-id='#{post.id}'")
+      |> element("form[phx-value-parent-post-id='#{post.id}']")
       |> render_submit(%{
         "anonymous" => "false",
         "content" => "Child Post",

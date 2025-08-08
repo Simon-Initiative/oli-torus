@@ -113,21 +113,21 @@ defmodule OliWeb.Sections.EditLiveTest do
 
       assert section.requires_payment == true
 
-      assert has_element?(view, "#section_requires_payment[checked=\"checked\"]")
+      assert has_element?(view, "#section_requires_payment[checked]")
 
       view
       |> element("form[phx-change='validate']")
       |> render_change(section: %{title: "New title"})
 
       # Validate event shouldn't change section_requires_payment
-      assert has_element?(view, "#section_requires_payment[checked=\"checked\"]")
+      assert has_element?(view, "#section_requires_payment[checked]")
 
       view
       |> element("form[phx-submit='save']")
       |> render_submit(section: %{title: "New title"})
 
       # Save event shouldn't change section_requires_payment
-      assert has_element?(view, "#section_requires_payment[checked=\"checked\"]")
+      assert has_element?(view, "#section_requires_payment[checked]")
       assert Oli.Repo.get(Section, section.id).requires_payment == true
     end
 
@@ -149,21 +149,21 @@ defmodule OliWeb.Sections.EditLiveTest do
       {:ok, view, _html} = live(conn, live_view_edit_route(section.slug))
 
       assert Oli.Repo.get(Section, section.id).has_grace_period == true
-      assert has_element?(view, "#section_has_grace_period[checked=\"checked\"]")
+      assert has_element?(view, "#section_has_grace_period[checked]")
 
       # Handle event "validate" shouldn't change has_grace_period
       view
       |> element("form[phx-change='validate']")
       |> render_change(section: %{title: "New title"})
 
-      assert has_element?(view, "#section_has_grace_period[checked=\"checked\"]")
+      assert has_element?(view, "#section_has_grace_period[checked]")
 
       # Handle event "save" shouldn't change has_grace_period
       view
       |> element("form[phx-submit='save']")
       |> render_submit(section: %{title: "New title"})
 
-      assert has_element?(view, "#section_has_grace_period[checked=\"checked\"]")
+      assert has_element?(view, "#section_has_grace_period[checked]")
       assert Oli.Repo.get(Section, section.id).has_grace_period == true
     end
   end
@@ -178,19 +178,19 @@ defmodule OliWeb.Sections.EditLiveTest do
 
       assert section.requires_payment == true
 
-      assert has_element?(view, "#section_requires_payment[checked=\"checked\"]")
+      assert has_element?(view, "#section_requires_payment[checked]")
 
       view
       |> element("form[phx-change='validate']")
       |> render_change(section: %{requires_payment: "false"})
 
-      refute has_element?(view, "#section_requires_payment[checked=\"checked\"]")
+      refute has_element?(view, "#section_requires_payment[checked]")
 
       view
       |> element("form[phx-submit='save']")
       |> render_submit(section: %{requires_payment: "false"})
 
-      refute has_element?(view, "#section_requires_payment[checked=\"checked\"]")
+      refute has_element?(view, "#section_requires_payment[checked]")
       assert Oli.Repo.get(Section, section.id).requires_payment == false
     end
   end
@@ -240,9 +240,9 @@ defmodule OliWeb.Sections.EditLiveTest do
       assert html =~ "Manage the course section settings"
       assert html =~ "Direct Delivery"
       assert html =~ "Direct Delivery section settings"
-      assert has_element?(view, "input[value=\"#{section.title}\"]")
-      assert has_element?(view, "input[value=\"#{section.description}\"]")
-      assert has_element?(view, "input[value=\"#{section.encouraging_subtitle}\"]")
+      assert has_element?(view, "input[value='#{section.title}']")
+      assert has_element?(view, "input[value='#{section.description}']")
+      assert has_element?(view, "input[value='#{section.encouraging_subtitle}']")
 
       # Loads the welcome title
       view
@@ -254,13 +254,13 @@ defmodule OliWeb.Sections.EditLiveTest do
 
       assert view
              |> element(
-               "select[id=section_brand_id] option[selected=selected][value=#{section.brand_id}]"
+               "select[id=section_brand_id] option[selected][value='#{section.brand_id}']"
              )
              |> has_element?()
 
       assert view
              |> element(
-               "select[id=section_institution_id] option[selected=selected][value=#{section.institution_id}]"
+               "select[id=section_institution_id] option[selected][value='#{section.institution_id}']"
              )
              |> has_element?()
     end
@@ -271,7 +271,7 @@ defmodule OliWeb.Sections.EditLiveTest do
       {:ok, view, _html} = live(conn, live_view_edit_route(section.slug))
 
       assert view
-             |> element("select[id=section_institution_id][disabled=disabled]")
+             |> element("select[id=section_institution_id][disabled]")
              |> has_element?()
     end
 
@@ -321,7 +321,7 @@ defmodule OliWeb.Sections.EditLiveTest do
       assert render(view) =~ "Settings"
 
       assert view
-             |> element("option[selected=\"selected\"][value=\"#{section.brand_id}\"]")
+             |> element("option[selected][value=\"#{section.brand_id}\"]")
              |> render() =~
                "#{brand.name}"
     end

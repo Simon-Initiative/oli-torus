@@ -386,7 +386,7 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
         {:ok, %{status_code: 200, body: %{contents: [%{key: "a.jpg"}, %{key: "b.jpg"}]}}}
       end)
 
-      assert element(lcd, "img[role=`poster_image`]")
+      assert element(lcd, "img[role='poster_image']")
              |> render()
              |> Floki.parse_document!()
              |> Floki.find("img")
@@ -433,7 +433,7 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
       |> element("button[phx-click=change_step]", "Select")
       |> render_click()
 
-      refute element(lcd, "img[role=`poster_image`]")
+      refute element(lcd, "img[role='poster_image']")
              |> render()
              |> Floki.parse_document!()
              |> Floki.find("img")

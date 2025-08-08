@@ -98,14 +98,14 @@ defmodule OliWeb.BrowseUpdatesLiveTest do
         live(conn, live_view_index_route(old_update.resource_access.section.slug))
 
       # newest first by default
-      assert has_element?(view, "tbody tr:first-child.##{new_update.id}")
+      assert has_element?(view, "tbody tr:first-child[id='#{new_update.id}']")
 
       # Sort by inserted_at asc
       view
       |> element("th[phx-click='paged_table_sort']:first-of-type")
       |> render_click(%{sort_by: "inserted_at"})
 
-      assert has_element?(view, "tbody tr:first-child.##{old_update.id}")
+      assert has_element?(view, "tbody tr:first-child[id='#{old_update.id}']")
     end
 
     test "applies paging", %{conn: conn} do

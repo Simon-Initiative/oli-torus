@@ -97,7 +97,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
              |> render() =~ "Testing A"
 
       view
-      |> element("th[phx-value-sort_by='title'")
+      |> element("th[phx-value-sort_by='title']")
       |> render_click(%{sort_by: "title"})
 
       assert view
@@ -114,7 +114,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       {:ok, view, _html} = live(conn, @live_view_admin_route)
 
       view
-      |> element("th[phx-value-sort_by='title'")
+      |> element("th[phx-value-sort_by='title']")
       |> render_click(%{sort_by: "title"})
 
       assert has_element?(view, "div", first_s.title)

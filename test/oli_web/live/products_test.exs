@@ -381,7 +381,7 @@ defmodule OliWeb.ProductsLiveTest do
       assert render_upload(image, "myfile.jpeg") =~ "100%"
 
       assert view
-             |> has_element?("#img-upload-form div[role=\"progressbar\"")
+             |> has_element?("#img-upload-form div[role='progressbar']")
 
       view
       |> element("button[phx-click='cancel_upload']")

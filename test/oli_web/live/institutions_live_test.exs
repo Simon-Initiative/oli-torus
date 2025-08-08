@@ -63,7 +63,7 @@ defmodule OliWeb.InstitutionsLiveTest do
       {:ok, view, _html} = live(conn, live_view_route(institution.id))
 
       assert has_element?(view, "h5", "Manage Research Consent")
-      assert has_element?(view, "input[value=\"oli_form\"][checked=\"checked\"]")
+      assert has_element?(view, "input[value=\"oli_form\"][checked]")
       assert has_element?(view, "input[value=\"no_form\"]")
       assert has_element?(view, "form[phx-submit='save']")
     end
@@ -75,7 +75,7 @@ defmodule OliWeb.InstitutionsLiveTest do
 
       assert has_element?(view, "h5", "Manage Research Consent")
       assert has_element?(view, "input[value=\"oli_form\"]")
-      assert has_element?(view, "input[value=\"no_form\"][checked=\"checked\"]")
+      assert has_element?(view, "input[value=\"no_form\"][checked]")
       assert has_element?(view, "form[phx-submit='save']")
     end
 

@@ -1841,7 +1841,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       assert has_element?(
                view,
-               ~s{button[phx-click=show_modal][disabled=disabled]},
+               ~s{button[phx-click=show_modal][disabled]},
                "Remove Selected"
              )
     end
@@ -2063,7 +2063,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       assert has_element?(
                view,
-               ~s{button[disabled=disabled][phx-value-modal_name=add_student_exception]},
+               ~s{button[disabled][phx-value-modal_name=add_student_exception]},
                "Add New"
              )
     end

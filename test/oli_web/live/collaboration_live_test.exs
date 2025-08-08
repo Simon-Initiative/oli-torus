@@ -573,11 +573,11 @@ defmodule OliWeb.CollaborationLiveTest do
       assert has_element?(view, "h3", "Notes")
       assert has_element?(view, "span", "Enabled")
 
-      assert has_element?(view, "#collab_space_config_form #main_auto_accept[checked=checked]")
+      assert has_element?(view, "#collab_space_config_form #main_auto_accept[checked]")
 
       assert has_element?(
                view,
-               "#collab_space_config_form #main_anonymous_posting[checked=checked]"
+               "#collab_space_config_form #main_anonymous_posting[checked]"
              )
     end
 
@@ -1140,7 +1140,7 @@ defmodule OliWeb.CollaborationLiveTest do
       |> render_click()
 
       view
-      |> element("button[id=\"delete_post_modal-confirm\"")
+      |> element("button[id=\"delete_post_modal-confirm\"]")
       |> render_click()
 
       assert view
@@ -1327,7 +1327,7 @@ defmodule OliWeb.CollaborationLiveTest do
       |> render_click()
 
       view
-      |> element("button[id='delete_post_modal-confirm'")
+      |> element("button[id='delete_post_modal-confirm']")
       |> render_click()
 
       assert view

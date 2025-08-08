@@ -277,6 +277,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLiveTest do
 
       refute has_element?(
                view,
+               "table tbody tr:nth-child(2) td:nth-child(1)",
                nested_page_revision.title
              )
     end
@@ -314,6 +315,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLiveTest do
 
       refute has_element?(
                view,
+               "table tbody tr:nth-child(2) td:nth-child(1)",
                nested_page_revision_2.title
              )
     end

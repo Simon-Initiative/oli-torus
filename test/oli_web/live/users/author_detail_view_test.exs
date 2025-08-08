@@ -399,7 +399,7 @@ defmodule OliWeb.Users.AuthorsDetailViewTest do
       |> render_click()
 
       # Assert that the author role select is disabled
-      assert has_element?(view, "select[name=\"author[system_role_id]\"][disabled=\"disabled\"]")
+      assert has_element?(view, "select[name='author[system_role_id]'][disabled]")
     end
   end
 

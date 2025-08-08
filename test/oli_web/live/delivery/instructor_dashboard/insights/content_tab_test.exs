@@ -676,16 +676,16 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
       ## Filtering by zero student progress card
       element(view, "div[phx-value-selected='zero_student_progress']") |> render_click()
 
-      assert has_element?(view, "table tr td div a", unit_for_tr_2)
-      refute has_element?(view, "table tr td div a", unit_for_tr_1)
+      assert has_element?(view, "table tr td div a", "Unit 2")
+      refute has_element?(view, "table tr td div a", "Unit 1")
 
       ## Search for "Unit" string
       view
       |> element("form[phx-change='search_container']")
       |> render_change(%{container_name: "Unit"})
 
-      assert has_element?(view, "table tr td div a", unit_for_tr_2)
-      refute has_element?(view, "table tr td div a", unit_for_tr_1)
+      assert has_element?(view, "table tr td div a", "Unit 2")
+      refute has_element?(view, "table tr td div a", "Unit 1")
     end
 
     test "filter by progress works correctly", %{

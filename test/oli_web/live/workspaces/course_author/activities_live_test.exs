@@ -86,7 +86,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ActivitiesLiveTest do
                revisions.act_revision_w.title
 
       assert view
-             |> element("tr:last-child(2) td:nth-child(2) > div")
+             |> element("tr:last-child td:nth-child(2) > div")
              |> render() =~
                revisions.act_revision_z.title
 
@@ -101,7 +101,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ActivitiesLiveTest do
                revisions.act_revision_z.title
 
       assert view
-             |> element("tr:last-child(2) td:nth-child(2) > div")
+             |> element("tr:last-child td:nth-child(2) > div")
              |> render() =~
                revisions.act_revision_w.title
     end

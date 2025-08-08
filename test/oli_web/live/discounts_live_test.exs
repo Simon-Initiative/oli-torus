@@ -145,11 +145,11 @@ defmodule OliWeb.DiscountsLiveTest do
       assert has_element?(view, "#discounts-table")
 
       assert view
-             |> element("tbody tr.##{first_discount.id}")
+             |> element("tbody tr[id='#{first_discount.id}']")
              |> render() =~ "Fixed price"
 
       assert view
-             |> element("tbody tr.##{second_discount.id}")
+             |> element("tbody tr[id='#{second_discount.id}']")
              |> render() =~ "Percentage"
     end
 
@@ -163,13 +163,13 @@ defmodule OliWeb.DiscountsLiveTest do
       |> element("th[phx-click='sort']:first-of-type")
       |> render_click(%{sort_by: "value"})
 
-      assert has_element?(view, "tbody tr:first-child.##{first_discount.id}")
+      assert has_element?(view, "tbody tr:first-child[id='#{first_discount.id}']")
 
       view
       |> element("th[phx-click='sort']:first-of-type")
       |> render_click(%{sort_by: "value"})
 
-      assert has_element?(view, "tbody tr:first-child.##{second_discount.id}")
+      assert has_element?(view, "tbody tr:first-child[id='#{second_discount.id}']")
     end
 
     test "applies paging", %{conn: conn, product: product} do
@@ -209,7 +209,7 @@ defmodule OliWeb.DiscountsLiveTest do
       {:ok, view, _html} = live(conn, live_view_products_index_route(product.slug))
 
       assert view
-             |> element("tbody tr:first-child.##{discount.id}")
+             |> element("tbody tr:first-child[id='#{discount.id}']")
              |> render() =~
                OliWeb.Common.Utils.render_date(discount, :inserted_at, session_context)
     end
@@ -237,10 +237,10 @@ defmodule OliWeb.DiscountsLiveTest do
       assert has_element?(view, "label", "Price")
       assert has_element?(view, "label", "Percentage")
       assert has_element?(view, "form[phx-submit='save']")
-      assert has_element?(view, "input[value=\"#{discount.institution.name}\"")
+      assert has_element?(view, "input[value='#{discount.institution.name}']")
       # type is percentage
-      assert has_element?(view, "input[name=\"discount[amount]\"][disabled=\"disabled\"]")
-      assert has_element?(view, "input[value=\"#{discount.percentage}\"")
+      assert has_element?(view, "input[name='discount[amount]'][disabled]")
+      assert has_element?(view, "input[value='#{discount.percentage}']")
     end
 
     test "displays error message when data is invalid", %{conn: conn, product: product} do
@@ -313,7 +313,7 @@ defmodule OliWeb.DiscountsLiveTest do
       assert has_element?(view, "label", "Price")
       assert has_element?(view, "label", "Percentage")
       assert has_element?(view, "form[phx-submit='save']")
-      assert has_element?(view, "option[value=\"#{institution.id}\"", "#{institution.name}")
+      assert has_element?(view, "option[value='#{institution.id}']", "#{institution.name}")
       refute has_element?(view, "button[phx-click='clear']")
     end
 
@@ -371,7 +371,7 @@ defmodule OliWeb.DiscountsLiveTest do
       assert has_element?(view, "label", "Price")
       assert has_element?(view, "label", "Percentage")
       assert has_element?(view, "form[phx-submit='save']")
-      assert has_element?(view, "input[value=\"#{institution.name}\"")
+      assert has_element?(view, "input[value='#{institution.name}']")
     end
 
     test "loads correctly with discount", %{conn: conn} do
@@ -394,10 +394,10 @@ defmodule OliWeb.DiscountsLiveTest do
       assert has_element?(view, "label", "Price")
       assert has_element?(view, "label", "Percentage")
       assert has_element?(view, "form[phx-submit='save']")
-      assert has_element?(view, "input[value=\"#{institution.name}\"")
-      assert has_element?(view, "input[value=\"#{discount.amount}\"")
+      assert has_element?(view, "input[value='#{institution.name}']")
+      assert has_element?(view, "input[value='#{discount.amount}']")
       # type is fixed_amount
-      assert has_element?(view, "input[name=\"discount[percentage]\"][disabled=\"disabled\"]")
+      assert has_element?(view, "input[name='discount[percentage]'][disabled]")
     end
 
     test "displays error message when data is invalid", %{conn: conn} do
