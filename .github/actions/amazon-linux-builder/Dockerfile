@@ -25,15 +25,18 @@ RUN yum update -y && \
     nano \
     glibc-langpack-en --allowerasing
 
-# Install ASDF
-RUN git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.18.0 && \
-    echo '. "$HOME/.asdf/asdf.sh"' >> ~/.bashrc && \
-    echo '. "$HOME/.asdf/completions/asdf.bash"' >> ~/.bashrc
+# Install ASDF v0.18.0 (Go-based version)
+RUN git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.18.0
 
 # Add ASDF to PATH and set up environment variables
 ENV PATH="/root/.asdf/bin:/root/.asdf/shims:$PATH"
 ENV ASDF_DIR="/root/.asdf"
 ENV ASDF_DATA_DIR="/root/.asdf"
+
+# Ensure Go-based ASDF is used in interactive shells
+RUN echo 'export PATH="/root/.asdf/bin:/root/.asdf/shims:$PATH"' >> /root/.bashrc && \
+    echo 'export ASDF_DIR="/root/.asdf"' >> /root/.bashrc && \
+    echo 'export ASDF_DATA_DIR="/root/.asdf"' >> /root/.bashrc
 
 # Install Erlang plugin and latest version
 RUN asdf plugin-add erlang https://github.com/asdf-vm/asdf-erlang.git && \
@@ -61,10 +64,6 @@ RUN command -v node && node --version && \
 
 # Install yarn globally
 RUN npm install -g yarn
-
-# Install Hex and Rebar
-RUN mix local.hex --force
-RUN mix local.rebar --force
 
 # Set the working directory inside the container
 WORKDIR /app
