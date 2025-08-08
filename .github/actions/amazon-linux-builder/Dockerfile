@@ -1,37 +1,54 @@
-FROM amazonlinux:2
+# Use Amazon Linux 2023 as the base image
+FROM amazonlinux:2023
 
-ARG ELIXIR_VERSION=1.18.4
-ARG OTP_VERSION=28.0
+ARG ERLANG_VERSION=28.0.2
+ARG ELIXIR_VERSION=1.18.4-otp-28
+ARG NODE_VERSION=16.14.2
 
-RUN yum update -y
-RUN yum install -y tar wget git
+# Install system dependencies with --allowerasing to handle conflicts
+RUN yum update -y && \
+    yum install -y \
+    git \
+    curl \
+    tar \
+    gzip \
+    zip \
+    gcc \
+    gcc-c++ \
+    make \
+    autoconf \
+    openssl \
+    openssl-devel \
+    ncurses-devel \
+    wget \
+    gnupg \
+    nano \
+    glibc-langpack-en --allowerasing
 
-RUN yum install ncurses-devel openssl11-devel -y
-RUN yum groupinstall "Development Tools" -y
+# Install ASDF
+RUN git clone https://github.com/asdf-vm/asdf.git ~/.asdf && \
+    echo '. "$HOME/.asdf/asdf.sh"' >> ~/.bashrc && \
+    echo '. "$HOME/.asdf/completions/asdf.bash"' >> ~/.bashrc
 
-WORKDIR /tmp
-RUN wget --tries=1 --timeout=30 "http://erlang.org/download/otp_src_${OTP_VERSION}.tar.gz" -O otp_src_${OTP_VERSION}.tar.gz || wget "https://github.com/erlang/otp/releases/download/OTP-${OTP_VERSION}/otp_src_${OTP_VERSION}.tar.gz" -O otp_src_${OTP_VERSION}.tar.gz
-RUN tar xfz otp_src_${OTP_VERSION}.tar.gz
-WORKDIR /tmp/otp_src_${OTP_VERSION}/
-RUN ./configure --disable-jit
-RUN make && make install
+# Install Erlang plugin and latest version
+RUN source ~/.asdf/asdf.sh && \
+    asdf plugin-add erlang https://github.com/asdf-vm/asdf-erlang.git && \
+    asdf install erlang ${ERLANG_VERSION} && \
+    asdf global erlang ${ERLANG_VERSION}
 
-WORKDIR /tmp
-RUN wget "https://github.com/elixir-lang/elixir/archive/v${ELIXIR_VERSION}.tar.gz"
-RUN tar xfz v${ELIXIR_VERSION}.tar.gz
-WORKDIR /tmp/elixir-${ELIXIR_VERSION}/
-ENV PATH="${PATH}:/usr/local/bin"
-RUN make && make install
+# Install Elixir plugin and latest version
+RUN source ~/.asdf/asdf.sh && \
+    asdf plugin-add elixir https://github.com/asdf-vm/asdf-elixir.git && \
+    asdf install elixir ${ELIXIR_VERSION} && \
+    asdf global elixir ${ELIXIR_VERSION}
 
-RUN mix local.hex --force
-RUN mix local.rebar --force
+# Install Node plugin and latest version
+RUN source ~/.asdf/asdf.sh && \
+    asdf plugin-add nodejs https://github.com/asdf-vm/asdf-nodejs.git && \
+    asdf install nodejs ${NODE_VERSION} && \
+    asdf global nodejs ${NODE_VERSION}
 
-# install node
-RUN yum install -y gcc-c++ make
-RUN yum install https://rpm.nodesource.com/pub_16.x/nodistro/repo/nodesource-release-nodistro-1.noarch.rpm -y
-RUN yum install nodejs -y --setopt=nodesource-nodejs.module_hotfixes=1
-RUN npm install -g yarn
-
+# Set the working directory inside the container
 WORKDIR /app
 
 # fix elixir encoding warning
