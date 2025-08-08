@@ -1,5 +1,9 @@
 #!/bin/sh
 
+export PATH="/root/.asdf/bin:/root/.asdf/shims:$PATH"
+export ASDF_DIR="/root/.asdf"
+export ASDF_DATA_DIR="/root/.asdf"
+
 set -e
 set -x
 
