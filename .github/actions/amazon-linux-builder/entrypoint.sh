@@ -28,9 +28,16 @@ mix local.rebar --force
 mix deps.get --only prod
 MIX_ENV=prod SHA=$RELEASE_SHA mix compile
 
-yarn --cwd ./assets
-cd ./assets && NODE_ENV=production node --max-old-space-size=8192 node_modules/webpack/bin/webpack.js --mode production
-cd ./assets && NODE_ENV=production npx webpack --mode production --config webpack.config.node.js
+cd ./assets
+# Use yarn to install dependencies
+yarn
+
+# Build client assets
+NODE_ENV=production node --max-old-space-size=8192 node_modules/webpack/bin/webpack.js --mode production
+
+# Build node assets
+NODE_ENV=production npx webpack --mode production --config webpack.config.node.js
+
 cd ..
 
 MIX_ENV=prod mix assets.deploy
