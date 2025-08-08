@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 export PATH="/root/.asdf/bin:/root/.asdf/shims:$PATH"
 export ASDF_DIR="/root/.asdf"
