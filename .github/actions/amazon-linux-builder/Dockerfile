@@ -38,17 +38,26 @@ ENV ASDF_DATA_DIR="/root/.asdf"
 # Install Erlang plugin and latest version
 RUN asdf plugin-add erlang https://github.com/asdf-vm/asdf-erlang.git && \
     asdf install erlang ${ERLANG_VERSION} && \
-    asdf global erlang ${ERLANG_VERSION}
+    asdf global erlang ${ERLANG_VERSION} && \
+    asdf reshim erlang
 
 # Install Elixir plugin and latest version
 RUN asdf plugin-add elixir https://github.com/asdf-vm/asdf-elixir.git && \
     asdf install elixir ${ELIXIR_VERSION} && \
-    asdf global elixir ${ELIXIR_VERSION}
+    asdf global elixir ${ELIXIR_VERSION} && \
+    asdf reshim elixir
 
 # Install Node plugin and latest version
 RUN asdf plugin-add nodejs https://github.com/asdf-vm/asdf-nodejs.git && \
     asdf install nodejs ${NODE_VERSION} && \
-    asdf global nodejs ${NODE_VERSION}
+    asdf global nodejs ${NODE_VERSION} && \
+    asdf reshim nodejs
+
+# Verify installations
+RUN command -v node && node --version && \
+    command -v npm && npm --version && \
+    command -v mix && mix --version && \
+    command -v elixir && elixir --version
 
 # Install yarn globally
 RUN npm install -g yarn
