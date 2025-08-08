@@ -1,9 +1,13 @@
 defmodule Oli.Interop.Ingest do
+  @moduledoc """
+    v1 ingest apis for non-interactive use. Now implemented using v2 ingest methods
+  """
   alias Oli.Interop.Ingest
 
-  # v1 ingest apis in use now implemented using v2 ingest methods
-
-  # ingest project from file for author
+  @doc """
+  ingest project from file for author
+  Returns {:ok, project} on success and {:error, first_error_string} on failure
+  """
   def ingest(file, as_author) do
     %{
       Ingest.State.new()
@@ -14,7 +18,10 @@ defmodule Oli.Interop.Ingest do
     |> do_ingest()
   end
 
-  # ingest project from unzipped entry list
+  @doc """
+  ingest project from unzipped entry list for author
+  Returns {:ok, project} on success and {:error, first_error_string} on failure
+  """
   def process(entries, author) do
     %{
       Ingest.State.new()
@@ -31,7 +38,7 @@ defmodule Oli.Interop.Ingest do
       |> Ingest.Preprocessor.preprocess()
       |> Ingest.Processor.process()
 
-    # v1 ingest returned {:ok, project} on success
+    # convert to v1 return
     case result do
       {:ok, %Ingest.State{project: project}} -> {:ok, project}
       {:error, %Ingest.State{errors: [err1 | _rest]}} -> {:error, err1}
