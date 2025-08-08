@@ -66,7 +66,7 @@ defmodule OliWeb.Certificates.CertificateSettingsLiveTest do
       ## Content - initial content is the Thresholds component
       assert has_element?(
                view,
-               "div[data-phx-component='1'",
+               "div[data-phx-component='1']",
                "Customize the conditions students must meet to receive a certificate."
              )
     end
@@ -93,7 +93,7 @@ defmodule OliWeb.Certificates.CertificateSettingsLiveTest do
       ## No Content - initial content is the Thresholds component
       refute has_element?(
                view,
-               "div[data-phx-component='1'",
+               "div[data-phx-component='1']",
                "Customize the conditions students must meet to receive a certificate."
              )
     end
@@ -130,7 +130,7 @@ defmodule OliWeb.Certificates.CertificateSettingsLiveTest do
       ## Content - initial content is the Thresholds component
       assert has_element?(
                view,
-               "div[data-phx-component='1'",
+               "div[data-phx-component='1']",
                "Customize the conditions students must meet to receive a certificate."
              )
     end
@@ -157,7 +157,7 @@ defmodule OliWeb.Certificates.CertificateSettingsLiveTest do
       ## Content - initial content is the Thresholds component
       refute has_element?(
                view,
-               "div[data-phx-component='1'",
+               "div[data-phx-component='1']",
                "Customize the conditions students must meet to receive a certificate."
              )
     end

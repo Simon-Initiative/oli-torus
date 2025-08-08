@@ -115,37 +115,37 @@ defmodule OliWeb.AdminLiveTest do
 
       assert has_element?(
                view,
-               "a[href=\"#{~p"/admin/users"}\"]"
+               "a[href='#{~p"/admin/users"}']"
              )
 
       assert has_element?(
                view,
-               "a[href=\"#{~p"/admin/authors"}\"]"
+               "a[href='#{~p"/admin/authors"}']"
              )
 
       assert has_element?(
                view,
-               "a[href=\"#{~p"/admin/institutions"}\"]"
+               "a[href='#{~p"/admin/institutions"}']"
              )
 
       assert has_element?(
                view,
-               "a[href=\"#{~p"/admin/invite"}\"]"
+               "a[href='#{~p"/admin/invite"}']"
              )
 
       assert has_element?(
                view,
-               "a[href=\"#{~p"/authoring/communities"}\"]"
+               "a[href='#{~p"/authoring/communities"}']"
              )
 
       assert has_element?(
                view,
-               "a[href=\"#{~p"/admin/registrations"}\"]"
+               "a[href='#{~p"/admin/registrations"}']"
              )
 
       assert has_element?(
                view,
-               "a[href=\"#{~p"/admin/external_tools"}\"]"
+               "a[href='#{~p"/admin/external_tools"}']"
              )
     end
 
@@ -157,22 +157,22 @@ defmodule OliWeb.AdminLiveTest do
 
       assert has_element?(
                view,
-               "a[href=\"#{~p"/authoring/projects"}\"]"
+               "a[href='#{~p"/authoring/projects"}']"
              )
 
       assert has_element?(
                view,
-               "a[href=\"#{~p"/admin/products"}\"]"
+               "a[href='#{~p"/admin/products"}']"
              )
 
       assert has_element?(
                view,
-               "a[href=\"#{~p"/admin/sections"}\"]"
+               "a[href='#{~p"/admin/sections"}']"
              )
 
       assert has_element?(
                view,
-               "a[href=\"#{~p"/admin/brands"}\"]"
+               "a[href='#{~p"/admin/brands"}']"
              )
     end
 
@@ -184,31 +184,31 @@ defmodule OliWeb.AdminLiveTest do
 
       assert has_element?(
                view,
-               "a[href=\"#{~p"/admin/manage_activities"}\"]",
+               "a[href='#{~p"/admin/manage_activities"}']",
                "Manage Activities"
              )
 
       assert has_element?(
                view,
-               "a[href=\"#{~p"/admin/system_messages"}\"]",
+               "a[href='#{~p"/admin/system_messages"}']",
                "Manage System Message Banner"
              )
 
       assert has_element?(
                view,
-               "a[href=\"#{~p"/admin/features"}\"]",
+               "a[href='#{~p"/admin/features"}']",
                "Feature Flags and Logging"
              )
 
       assert has_element?(
                view,
-               "a[href=\"#{~p"/admin/api_keys"}\"]",
+               "a[href='#{~p"/admin/api_keys"}']",
                "Manage Third-Party API Keys"
              )
 
       assert has_element?(
                view,
-               "a[href=\"#{~p"/admin/dashboard/home"}\"]",
+               "a[href='#{~p"/admin/dashboard/home"}']",
                "View System Performance Dashboard"
              )
     end
@@ -230,43 +230,43 @@ defmodule OliWeb.AdminLiveTest do
 
       assert has_element?(
                view,
-               "a[href=\"#{~p"/admin/users"}\"]",
+               "a[href='#{~p"/admin/users"}']",
                "Manage Students and Instructor Accounts"
              )
 
       assert has_element?(
                view,
-               "a[href=\"#{~p"/admin/authors"}\"]",
+               "a[href='#{~p"/admin/authors"}']",
                "Manage Authoring Accounts"
              )
 
       assert has_element?(
                view,
-               "a[href=\"#{~p"/admin/institutions"}\"]",
+               "a[href='#{~p"/admin/institutions"}']",
                "Manage Institutions"
              )
 
       assert has_element?(
                view,
-               "a[href=\"#{~p"/admin/invite"}\"]",
+               "a[href='#{~p"/admin/invite"}']",
                "Invite New Authors"
              )
 
       assert has_element?(
                view,
-               "a[href=\"#{~p"/authoring/communities"}\"]",
+               "a[href='#{~p"/authoring/communities"}']",
                "Manage Communities"
              )
 
       assert has_element?(
                view,
-               "a[href=\"#{~p"/admin/registrations"}\"]",
+               "a[href='#{~p"/admin/registrations"}']",
                "Manage LTI 1.3 Registrations"
              )
 
       assert has_element?(
                view,
-               "a[href=\"#{~p"/admin/external_tools"}\"]",
+               "a[href='#{~p"/admin/external_tools"}']",
                "Manage LTI 1.3 External Tools"
              )
     end
@@ -279,37 +279,37 @@ defmodule OliWeb.AdminLiveTest do
 
       assert has_element?(
                view,
-               "a[href=\"#{~p"/authoring/projects"}\"]",
+               "a[href='#{~p"/authoring/projects"}']",
                "Browse all Projects"
              )
 
       assert has_element?(
                view,
-               "a[href=\"#{~p"/admin/products"}\"]",
+               "a[href='#{~p"/admin/products"}']",
                "Browse all Products"
              )
 
       assert has_element?(
                view,
-               "a[href=\"#{~p"/admin/sections"}\"]",
+               "a[href='#{~p"/admin/sections"}']",
                "Browse all Course Sections"
              )
 
       assert has_element?(
                view,
-               "a[href=\"#{~p"/admin/ingest/upload"}\"]",
+               "a[href='#{~p"/admin/ingest/upload"}']",
                "Ingest Project"
              )
 
       assert has_element?(
                view,
-               "a[href=\"#{~p"/admin/brands"}\"]",
+               "a[href='#{~p"/admin/brands"}']",
                "Manage Branding"
              )
 
       assert has_element?(
                view,
-               "a[href=\"#{~p"/admin/publishers"}\"]",
+               "a[href='#{~p"/admin/publishers"}']",
                "Manage Publishers"
              )
     end
@@ -322,31 +322,31 @@ defmodule OliWeb.AdminLiveTest do
 
       refute has_element?(
                view,
-               "a[href=\"#{~p"/admin/manage_activities"}\"]",
+               "a[href='#{~p"/admin/manage_activities"}']",
                "Manage Activities"
              )
 
       refute has_element?(
                view,
-               "a[href=\"#{~p"/admin/system_messages"}\"]",
+               "a[href='#{~p"/admin/system_messages"}']",
                "Manage System Message Banner"
              )
 
       refute has_element?(
                view,
-               "a[href=\"#{~p"/admin/features"}\"]",
+               "a[href='#{~p"/admin/features"}']",
                "Feature Flags and Logging"
              )
 
       refute has_element?(
                view,
-               "a[href=\"#{~p"/admin/api_keys"}\"]",
+               "a[href='#{~p"/admin/api_keys"}']",
                "Manage Third-Party API Keys"
              )
 
       refute has_element?(
                view,
-               "a[href=\"#{~p"/admin/dashboard/home"}\"]",
+               "a[href='#{~p"/admin/dashboard/home"}']",
                "View System Performance Dashboard "
              )
     end
@@ -368,43 +368,43 @@ defmodule OliWeb.AdminLiveTest do
 
       refute has_element?(
                view,
-               "a[href=\"#{~p"/admin/users"}\"]",
+               "a[href='#{~p"/admin/users"}']",
                "Manage Students and Instructor Accounts"
              )
 
       refute has_element?(
                view,
-               "a[href=\"#{~p"/admin/authors"}\"]",
+               "a[href='#{~p"/admin/authors"}']",
                "Manage Authoring Accounts"
              )
 
       refute has_element?(
                view,
-               "a[href=\"#{~p"/admin/institutions"}\"]",
+               "a[href='#{~p"/admin/institutions"}']",
                "Manage Institutions"
              )
 
       refute has_element?(
                view,
-               "a[href=\"#{~p"/admin/invite"}\"]",
+               "a[href='#{~p"/admin/invite"}']",
                "Invite New Authors"
              )
 
       refute has_element?(
                view,
-               "a[href=\"#{~p"/authoring/communities"}\"]",
+               "a[href='#{~p"/authoring/communities"}']",
                "Manage Communities"
              )
 
       refute has_element?(
                view,
-               "a[href=\"#{~p"/admin/registrations"}\"]",
+               "a[href='#{~p"/admin/registrations"}']",
                "Manage LTI 1.3 Registrations"
              )
 
       refute has_element?(
                view,
-               "a[href=\"#{~p"/admin/external_tools"}\"]",
+               "a[href='#{~p"/admin/external_tools"}']",
                "Manage LTI 1.3 External Tools"
              )
     end
@@ -417,37 +417,37 @@ defmodule OliWeb.AdminLiveTest do
 
       assert has_element?(
                view,
-               "a[href=\"#{~p"/authoring/projects"}\"]",
+               "a[href='#{~p"/authoring/projects"}']",
                "Browse all Projects"
              )
 
       assert has_element?(
                view,
-               "a[href=\"#{~p"/admin/products"}\"]",
+               "a[href='#{~p"/admin/products"}']",
                "Browse all Products"
              )
 
       assert has_element?(
                view,
-               "a[href=\"#{~p"/admin/sections"}\"]",
+               "a[href='#{~p"/admin/sections"}']",
                "Browse all Course Sections"
              )
 
       assert has_element?(
                view,
-               "a[href=\"#{~p"/admin/ingest/upload"}\"]",
+               "a[href='#{~p"/admin/ingest/upload"}']",
                "Ingest Project"
              )
 
       assert has_element?(
                view,
-               "a[href=\"#{~p"/admin/brands"}\"]",
+               "a[href='#{~p"/admin/brands"}']",
                "Manage Branding"
              )
 
       assert has_element?(
                view,
-               "a[href=\"#{~p"/admin/publishers"}\"]",
+               "a[href='#{~p"/admin/publishers"}']",
                "Manage Publishers"
              )
     end
@@ -460,31 +460,31 @@ defmodule OliWeb.AdminLiveTest do
 
       refute has_element?(
                view,
-               "a[href=\"#{~p"/admin/manage_activities"}\"]",
+               "a[href='#{~p"/admin/manage_activities"}']",
                "Manage Activities"
              )
 
       refute has_element?(
                view,
-               "a[href=\"#{~p"/admin/system_messages"}\"]",
+               "a[href='#{~p"/admin/system_messages"}']",
                "Manage System Message Banner"
              )
 
       refute has_element?(
                view,
-               "a[href=\"#{~p"/admin/features"}\"]",
+               "a[href='#{~p"/admin/features"}']",
                "Feature Flags and Logging"
              )
 
       refute has_element?(
                view,
-               "a[href=\"#{~p"/admin/api_keys"}\"]",
+               "a[href='#{~p"/admin/api_keys"}']",
                "Manage Third-Party API Keys"
              )
 
       refute has_element?(
                view,
-               "a[href=\"#{~p"/admin/dashboard"}\"]",
+               "a[href='#{~p"/admin/dashboard"}']",
                "View System Performance Dashboard "
              )
     end
@@ -521,7 +521,7 @@ defmodule OliWeb.AdminLiveTest do
       {:ok, view, _html} = live(conn, @live_view_users_route)
 
       assert view
-             |> element("a[href=\"#{live_view_author_detail_route(author.id)}\"]")
+             |> element("a[href='#{live_view_author_detail_route(author.id)}']")
              |> render() =~
                "lio@messi.com"
     end
@@ -536,7 +536,7 @@ defmodule OliWeb.AdminLiveTest do
       refute has_element?(view, "##{user_2.id}")
 
       view
-      |> element("input[phx-click=\"include_guests\"]")
+      |> element("input[phx-click='include_guests']")
       |> render_click()
 
       assert has_element?(view, "##{user_1.id}")
@@ -575,7 +575,7 @@ defmodule OliWeb.AdminLiveTest do
 
       # Sort by email asc
       view
-      |> element("th[phx-click=\"paged_table_sort\"]:first-of-type")
+      |> element("th[phx-click='paged_table_sort']:first-of-type")
       |> render_click(%{sort_by: "email"})
 
       assert view
@@ -585,7 +585,7 @@ defmodule OliWeb.AdminLiveTest do
 
       # Sort by email desc
       view
-      |> element("th[phx-click=\"paged_table_sort\"]:first-of-type")
+      |> element("th[phx-click='paged_table_sort']:first-of-type")
       |> render_click(%{sort_by: "email"})
 
       assert view
@@ -611,7 +611,7 @@ defmodule OliWeb.AdminLiveTest do
                last_user.given_name
 
       view
-      |> element("#header_paging button[phx-click=\"paged_table_page_change\"]", "2")
+      |> element("#header_paging button[phx-click='paged_table_page_change']", "2")
       |> render_click()
 
       refute view
@@ -645,29 +645,29 @@ defmodule OliWeb.AdminLiveTest do
       {:ok, conn: conn, ctx: session_context} = set_timezone(map)
       {:ok, view, _} = live(conn, live_view_user_detail_route(user.id))
 
-      assert has_element?(view, "input[value=\"#{user.sub}\"]")
-      assert has_element?(view, "input[value=\"#{user.name}\"]")
-      assert has_element?(view, "input[value=\"#{user.given_name}\"]")
-      assert has_element?(view, "input[value=\"#{user.family_name}\"]")
-      assert has_element?(view, "input[value=\"#{user.email}\"]")
-      assert has_element?(view, "input[value=\"#{boolean(user.guest)}\"]")
+      assert has_element?(view, "input[value='#{user.sub}']")
+      assert has_element?(view, "input[value='#{user.name}']")
+      assert has_element?(view, "input[value='#{user.given_name}']")
+      assert has_element?(view, "input[value='#{user.family_name}']")
+      assert has_element?(view, "input[value='#{user.email}']")
+      assert has_element?(view, "input[value='#{boolean(user.guest)}']")
       assert has_element?(view, "#user_independent_learner")
       assert has_element?(view, "#user_can_create_sections")
-      assert has_element?(view, "input[value=\"#{boolean(user.research_opt_out)}\"]")
+      assert has_element?(view, "input[value='#{boolean(user.research_opt_out)}']")
 
       assert has_element?(
                view,
-               "input[value=\"#{Utils.render_date(user, :email_confirmed_at, session_context)}\"]"
+               "input[value='#{Utils.render_date(user, :email_confirmed_at, session_context)}']"
              )
 
       assert has_element?(
                view,
-               "input[value=\"#{Utils.render_date(user, :inserted_at, session_context)}\"]"
+               "input[value='#{Utils.render_date(user, :inserted_at, session_context)}']"
              )
 
       assert has_element?(
                view,
-               "input[value=\"#{Utils.render_date(user, :updated_at, session_context)}\"]"
+               "input[value='#{Utils.render_date(user, :updated_at, session_context)}']"
              )
     end
 
@@ -685,7 +685,7 @@ defmodule OliWeb.AdminLiveTest do
       {:ok, view, _html} = live(conn, live_view_user_detail_route(id))
 
       view
-      |> element("button[phx-click=\"show_delete_account_modal\"]")
+      |> element("button[phx-click='show_delete_account_modal']")
       |> render_click()
 
       assert view
@@ -701,11 +701,11 @@ defmodule OliWeb.AdminLiveTest do
       {:ok, view, _html} = live(conn, live_view_user_detail_route(id))
 
       view
-      |> element("button[phx-click=\"show_delete_account_modal\"]")
+      |> element("button[phx-click='show_delete_account_modal']")
       |> render_click()
 
       view
-      |> element("button[phx-click=\"delete_account\"]")
+      |> element("button[phx-click='delete_account']")
       |> render_click()
 
       flash = assert_redirected(view, @live_view_users_route)
@@ -723,11 +723,11 @@ defmodule OliWeb.AdminLiveTest do
       {:ok, view, _html} = live(conn, live_view_user_detail_route(id))
 
       view
-      |> element("button[phx-click=\"show_lock_account_modal\"]")
+      |> element("button[phx-click='show_lock_account_modal']")
       |> render_click()
 
       view
-      |> element("button[phx-click=\"lock_account\"]")
+      |> element("button[phx-click='lock_account']")
       |> render_click()
 
       %User{locked_at: date} = Accounts.get_user!(id)
@@ -743,11 +743,11 @@ defmodule OliWeb.AdminLiveTest do
       {:ok, view, _html} = live(conn, live_view_user_detail_route(id))
 
       view
-      |> element("button[phx-click=\"show_unlock_account_modal\"]")
+      |> element("button[phx-click='show_unlock_account_modal']")
       |> render_click()
 
       view
-      |> element("button[phx-click=\"unlock_account\"]")
+      |> element("button[phx-click='unlock_account']")
       |> render_click()
 
       assert %User{locked_at: nil} = Accounts.get_user!(id)
@@ -761,11 +761,11 @@ defmodule OliWeb.AdminLiveTest do
       {:ok, view, _html} = live(conn, live_view_user_detail_route(id))
 
       view
-      |> element("button[phx-click=\"show_confirm_email_modal\"]")
+      |> element("button[phx-click='show_confirm_email_modal']")
       |> render_click()
 
       view
-      |> element("button[phx-click=\"confirm_email\"]")
+      |> element("button[phx-click='confirm_email']")
       |> render_click()
 
       %User{email_confirmed_at: date} = Accounts.get_user!(id)
@@ -814,7 +814,7 @@ defmodule OliWeb.AdminLiveTest do
                "Administrator"
 
       view
-      |> element("th[phx-click=\"paged_table_sort\"]:first-of-type")
+      |> element("th[phx-click='paged_table_sort']:first-of-type")
       |> render_click(%{sort_by: "name"})
 
       refute view
@@ -836,7 +836,7 @@ defmodule OliWeb.AdminLiveTest do
       assert render(view) =~ first_author.given_name
 
       view
-      |> element("#header_paging button[phx-click=\"paged_table_page_change\"]", "2")
+      |> element("#header_paging button[phx-click='paged_table_page_change']", "2")
       |> render_click()
 
       refute render(view) =~ first_author.given_name
@@ -849,7 +849,7 @@ defmodule OliWeb.AdminLiveTest do
       {:ok, view, _html} = live(conn, @live_view_authors_route)
 
       assert view
-             |> element("##{confirmed_author.id} span[data-bs-toggle=\"tooltip\"")
+             |> element("##{confirmed_author.id} span[data-bs-toggle='tooltip']")
              |> render() =~ "Email Confirmed"
     end
 
@@ -861,7 +861,7 @@ defmodule OliWeb.AdminLiveTest do
       {:ok, view, _html} = live(conn, @live_view_authors_route)
 
       assert view
-             |> element("##{invited_and_not_accepted_author.id} span[data-bs-toggle=\"tooltip\"")
+             |> element("##{invited_and_not_accepted_author.id} span[data-bs-toggle='tooltip']")
              |> render() =~ "Confirmation Pending"
     end
 
@@ -874,7 +874,7 @@ defmodule OliWeb.AdminLiveTest do
       {:ok, view, _html} = live(conn, @live_view_authors_route)
 
       assert view
-             |> element("##{invited_author.id} span[data-bs-toggle=\"tooltip\"")
+             |> element("##{invited_author.id} span[data-bs-toggle='tooltip']")
              |> render() =~ "Invitation Accepted"
     end
 
@@ -891,7 +891,7 @@ defmodule OliWeb.AdminLiveTest do
 
       assert view
              |> element(
-               "##{accepted_with_different_email_author.id} span[data-bs-toggle=\"tooltip\""
+               "##{accepted_with_different_email_author.id} span[data-bs-toggle='tooltip']"
              )
              |> render() =~ "Confirmation Pending"
     end
@@ -908,7 +908,7 @@ defmodule OliWeb.AdminLiveTest do
 
       assert view
              |> element(
-               "##{accepted_and_confirmed_with_different_email_author.id} span[data-bs-toggle=\"tooltip\""
+               "##{accepted_and_confirmed_with_different_email_author.id} span[data-bs-toggle='tooltip']"
              )
              |> render() =~ "Invitation Accepted"
     end
@@ -937,11 +937,11 @@ defmodule OliWeb.AdminLiveTest do
     test "loads correctly with author data", %{conn: conn, author: author} do
       {:ok, view, _html} = live(conn, live_view_author_detail_route(author.id))
 
-      assert has_element?(view, "input[value=\"#{author.name}\"]")
-      assert has_element?(view, "input[value=\"#{author.given_name}\"]")
-      assert has_element?(view, "input[value=\"#{author.family_name}\"]")
-      assert has_element?(view, "input[value=\"#{author.email}\"]")
-      assert has_element?(view, "select option[value=\"#{author.system_role_id}\"]")
+      assert has_element?(view, "input[value='#{author.name}']")
+      assert has_element?(view, "input[value='#{author.given_name}']")
+      assert has_element?(view, "input[value='#{author.family_name}']")
+      assert has_element?(view, "input[value='#{author.email}']")
+      assert has_element?(view, "select option[value='#{author.system_role_id}']")
     end
 
     test "redirects to index view and displays error message when author does not exist", %{
@@ -959,7 +959,7 @@ defmodule OliWeb.AdminLiveTest do
       {:ok, view, _html} = live(conn, live_view_author_detail_route(id))
 
       view
-      |> element("button[phx-click=\"show_delete_account_modal\"]")
+      |> element("button[phx-click='show_delete_account_modal']")
       |> render_click()
 
       assert view
@@ -975,11 +975,11 @@ defmodule OliWeb.AdminLiveTest do
       {:ok, view, _html} = live(conn, live_view_author_detail_route(id))
 
       view
-      |> element("button[phx-click=\"show_delete_account_modal\"]")
+      |> element("button[phx-click='show_delete_account_modal']")
       |> render_click()
 
       view
-      |> element("button[phx-click=\"delete_account\"]")
+      |> element("button[phx-click='delete_account']")
       |> render_click()
 
       flash = assert_redirected(view, @live_view_authors_route)
@@ -999,11 +999,11 @@ defmodule OliWeb.AdminLiveTest do
       {:ok, view, _html} = live(conn, live_view_author_detail_route(id))
 
       view
-      |> element("button[phx-click=\"show_lock_account_modal\"]")
+      |> element("button[phx-click='show_lock_account_modal']")
       |> render_click()
 
       view
-      |> element("button[phx-click=\"lock_account\"]")
+      |> element("button[phx-click='lock_account']")
       |> render_click()
 
       %Author{locked_at: date} = Accounts.get_author!(id)
@@ -1022,11 +1022,11 @@ defmodule OliWeb.AdminLiveTest do
       {:ok, view, _html} = live(conn, live_view_author_detail_route(id))
 
       view
-      |> element("button[phx-click=\"show_unlock_account_modal\"]")
+      |> element("button[phx-click='show_unlock_account_modal']")
       |> render_click()
 
       view
-      |> element("button[phx-click=\"unlock_account\"]")
+      |> element("button[phx-click='unlock_account']")
       |> render_click()
 
       assert %Author{locked_at: nil} = Accounts.get_author!(id)
@@ -1040,11 +1040,11 @@ defmodule OliWeb.AdminLiveTest do
       {:ok, view, _html} = live(conn, live_view_author_detail_route(id))
 
       view
-      |> element("button[phx-click=\"show_confirm_email_modal\"]")
+      |> element("button[phx-click='show_confirm_email_modal']")
       |> render_click()
 
       view
-      |> element("button[phx-click=\"confirm_email\"]")
+      |> element("button[phx-click='confirm_email']")
       |> render_click()
 
       %Author{email_confirmed_at: date} = Accounts.get_author!(id)
@@ -1147,24 +1147,24 @@ defmodule OliWeb.AdminLiveTest do
       {:ok, view, _html} = live(conn, live_view_author_detail_route(author.id))
 
       # Assert that fields are disabled
-      assert has_element?(view, "input[value=\"#{author.given_name}\"][disabled]")
-      assert has_element?(view, "input[value=\"#{author.family_name}\"][disabled]")
-      assert has_element?(view, "input[value=\"#{author.email}\"][disabled]")
+      assert has_element?(view, "input[value='#{author.given_name}'][disabled]")
+      assert has_element?(view, "input[value='#{author.family_name}'][disabled]")
+      assert has_element?(view, "input[value='#{author.email}'][disabled]")
 
       view
-      |> element("button[phx-click=\"start_edit\"]", "Edit")
+      |> element("button[phx-click='start_edit']", "Edit")
       |> render_click()
 
       # Assert that there is a save button
-      assert has_element?(view, "button[type=\"submit\"]", "Save")
+      assert has_element?(view, "button[type='submit']", "Save")
 
       # Refute that fields are disabled
-      refute has_element?(view, "input[value=\"#{author.given_name}\"][disabled]")
-      refute has_element?(view, "input[value=\"#{author.family_name}\"][disabled]")
-      refute has_element?(view, "input[value=\"#{author.email}\"][disabled]")
+      refute has_element?(view, "input[value='#{author.given_name}'][disabled]")
+      refute has_element?(view, "input[value='#{author.family_name}'][disabled]")
+      refute has_element?(view, "input[value='#{author.email}'][disabled]")
 
       view
-      |> element("form[phx-submit=\"submit\"")
+      |> element("form[phx-submit='submit']")
       |> render_submit(%{
         "author" => %{
           "given_name" => new_first_name,
@@ -1174,17 +1174,17 @@ defmodule OliWeb.AdminLiveTest do
       })
 
       # Assert that fields are updated correctly
-      assert view |> element("input[value=\"#{new_first_name}\"][disabled]") |> render() =~
+      assert view |> element("input[value='#{new_first_name}'][disabled]") |> render() =~
                new_first_name
 
-      assert view |> element("input[value=\"#{new_last_name}\"][disabled]") |> render() =~
+      assert view |> element("input[value='#{new_last_name}'][disabled]") |> render() =~
                new_last_name
 
-      assert view |> element("input[value=\"#{new_email}\"][disabled]") |> render() =~ new_email
+      assert view |> element("input[value='#{new_email}'][disabled]") |> render() =~ new_email
 
       # Assert that the name field was updated correctly
       assert view
-             |> element("input[value=\"#{new_first_name} #{new_last_name}\"][disabled]")
+             |> element("input[value='#{new_first_name} #{new_last_name}'][disabled]")
              |> render() =~ "#{new_first_name} #{new_last_name}"
     end
 
@@ -1192,11 +1192,11 @@ defmodule OliWeb.AdminLiveTest do
       {:ok, view, _html} = live(conn, live_view_author_detail_route(author.id))
 
       view
-      |> element("button[phx-click=\"start_edit\"]", "Edit")
+      |> element("button[phx-click='start_edit']", "Edit")
       |> render_click()
 
       view
-      |> element("form[phx-submit=\"submit\"")
+      |> element("form[phx-submit='submit']")
       |> render_submit(%{
         "author" => %{
           "given_name" => "",
@@ -1215,11 +1215,11 @@ defmodule OliWeb.AdminLiveTest do
       {:ok, view, _html} = live(conn, live_view_author_detail_route(author.id))
 
       view
-      |> element("button[phx-click=\"start_edit\"]", "Edit")
+      |> element("button[phx-click='start_edit']", "Edit")
       |> render_click()
 
       view
-      |> element("form[phx-submit=\"submit\"")
+      |> element("form[phx-submit='submit']")
       |> render_submit(%{
         "author" => %{
           "given_name" => author.given_name,
@@ -1236,11 +1236,11 @@ defmodule OliWeb.AdminLiveTest do
       {:ok, view, _html} = live(conn, live_view_author_detail_route(author.id))
 
       view
-      |> element("button[phx-click=\"start_edit\"]", "Edit")
+      |> element("button[phx-click='start_edit']", "Edit")
       |> render_click()
 
       view
-      |> element("form[phx-submit=\"submit\"")
+      |> element("form[phx-submit='submit']")
       |> render_submit(%{
         "author" => %{
           "given_name" => "",

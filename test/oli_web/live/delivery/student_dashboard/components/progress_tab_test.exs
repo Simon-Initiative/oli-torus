@@ -369,6 +369,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ProgressTabTest do
 
       assert view
              |> render()
+             |> Floki.parse_document!()
              |> Floki.find("table.instructor_dashboard_table > tbody > tr")
              |> Enum.count() == 2
 
@@ -388,6 +389,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ProgressTabTest do
 
       assert view
              |> render()
+             |> Floki.parse_document!()
              |> Floki.find("table.instructor_dashboard_table > tbody > tr")
              |> Enum.count() == 2
 

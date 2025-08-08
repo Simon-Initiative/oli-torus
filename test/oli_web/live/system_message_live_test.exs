@@ -46,7 +46,7 @@ defmodule OliWeb.SystemMessageLiveTest do
 
       assert view
              |> element(
-               "form[phx-submit=\"save\"] textarea[id=\"system_message_message_#{system_message.id}\"]"
+               "form[phx-submit='save'] textarea[id=\"system_message_message_#{system_message.id}\"]"
              )
              |> render() =~ system_message.message
     end
@@ -75,7 +75,7 @@ defmodule OliWeb.SystemMessageLiveTest do
       params = params_for(:system_message)
 
       view
-      |> element("form[phx-submit=\"create\"")
+      |> element("form[phx-submit='create']")
       |> render_submit(%{
         system_message: params
       })
@@ -94,7 +94,7 @@ defmodule OliWeb.SystemMessageLiveTest do
       {:ok, view, _html} = live(conn, @live_view_index_route)
 
       view
-      |> element("form[phx-submit=\"create\"")
+      |> element("form[phx-submit='create']")
       |> render_submit(%{system_message: %{message: ""}})
 
       assert view
@@ -114,7 +114,7 @@ defmodule OliWeb.SystemMessageLiveTest do
       new_attributes = params_for(:system_message)
 
       view
-      |> element("form[phx-submit=\"save\"")
+      |> element("form[phx-submit='save']")
       |> render_submit(%{system_message: new_attributes})
 
       assert view
@@ -136,7 +136,7 @@ defmodule OliWeb.SystemMessageLiveTest do
       new_attributes = params_for(:system_message, active: false)
 
       view
-      |> element("form[phx-submit=\"save\"")
+      |> element("form[phx-submit='save']")
       |> render_submit(%{system_message: new_attributes})
 
       assert has_element?(view, "#dialog")
@@ -154,7 +154,7 @@ defmodule OliWeb.SystemMessageLiveTest do
       {:ok, view, _html} = live(conn, @live_view_index_route)
 
       view
-      |> element("button[phx-click=\"delete\"]")
+      |> element("button[phx-click='delete']")
       |> render_click()
 
       assert view

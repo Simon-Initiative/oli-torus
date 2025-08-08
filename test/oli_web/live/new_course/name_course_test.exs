@@ -203,7 +203,7 @@ defmodule OliWeb.NewCourse.NameCourseTest do
 
   defp select_section(:admin, view, section) do
     view
-    |> element("tr:first-child button[phx-click=\"source_selection\"]")
+    |> element("tr:first-child button[phx-click='source_selection']")
     |> render_click(%{id: "publication:#{section.id}"})
 
     view

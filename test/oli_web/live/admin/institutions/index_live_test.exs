@@ -27,6 +27,7 @@ defmodule OliWeb.Admin.Institutions.IndexLiveTest do
 
       assert view
              |> render()
+             |> Floki.parse_document!()
              |> Floki.find("#institutions table tbody tr")
              |> length() == 5
 
@@ -56,6 +57,7 @@ defmodule OliWeb.Admin.Institutions.IndexLiveTest do
 
       assert view
              |> render()
+             |> Floki.parse_document!()
              |> Floki.find("#pending_registrations table tbody tr")
              |> length() == 5
 
@@ -90,57 +92,57 @@ defmodule OliWeb.Admin.Institutions.IndexLiveTest do
 
       assert has_element?(
                view,
-               "input[value=\"#{pending_registration.name}\"][placeholder=\"Institution Name\"]"
+               "input[value='#{pending_registration.name}'][placeholder='Institution Name']"
              )
 
       assert has_element?(
                view,
-               "input[value=\"#{pending_registration.institution_url}\"][placeholder=\"Institution URL\"]"
+               "input[value='#{pending_registration.institution_url}'][placeholder='Institution URL']"
              )
 
       assert has_element?(
                view,
-               "input[value=\"#{pending_registration.institution_email}\"][placeholder=\"Contact Email\"]"
+               "input[value='#{pending_registration.institution_email}'][placeholder='Contact Email']"
              )
 
       assert has_element?(
                view,
-               "select[name=\"registration[country_code]\"] option[value=\"US\"][selected=\"selected\"]"
+               "select[name='registration[country_code]'] option[value='US'][selected]"
              )
 
       assert has_element?(
                view,
-               "input[value=\"#{pending_registration.client_id}\"][placeholder=\"Client ID\"]"
+               "input[value='#{pending_registration.client_id}'][placeholder='Client ID']"
              )
 
       assert has_element?(
                view,
-               "input[value=\"#{pending_registration.issuer}\"][placeholder=\"Issuer\"]"
+               "input[value='#{pending_registration.issuer}'][placeholder='Issuer']"
              )
 
       assert has_element?(
                view,
-               "input[value=\"#{pending_registration.deployment_id}\"][placeholder=\"Deployment ID\"]"
+               "input[value='#{pending_registration.deployment_id}'][placeholder='Deployment ID']"
              )
 
       assert has_element?(
                view,
-               "input[value=\"#{pending_registration.key_set_url}\"][placeholder=\"Keyset URL\"]"
+               "input[value='#{pending_registration.key_set_url}'][placeholder='Keyset URL']"
              )
 
       assert has_element?(
                view,
-               "input[value=\"#{pending_registration.auth_token_url}\"][placeholder=\"Auth Token URL\"]"
+               "input[value='#{pending_registration.auth_token_url}'][placeholder='Auth Token URL']"
              )
 
       assert has_element?(
                view,
-               "input[value=\"#{pending_registration.auth_login_url}\"][placeholder=\"Auth Login URL\"]"
+               "input[value='#{pending_registration.auth_login_url}'][placeholder='Auth Login URL']"
              )
 
       assert has_element?(
                view,
-               "input[value=\"#{pending_registration.auth_server}\"][placeholder=\"Auth Server URL\"]"
+               "input[value='#{pending_registration.auth_server}'][placeholder='Auth Server URL']"
              )
     end
 
@@ -221,7 +223,7 @@ defmodule OliWeb.Admin.Institutions.IndexLiveTest do
       })
 
       view
-      |> element("select[phx-change=\"select_existing_institution\"]")
+      |> element("select[phx-change='select_existing_institution']")
       |> render_change(%{
         "_target" => ["registration", "institution_id"],
         "registration" => %{"institution_id" => ""}
@@ -286,7 +288,7 @@ defmodule OliWeb.Admin.Institutions.IndexLiveTest do
 
       assert has_element?(
                view,
-               "select[name=\"registration[institution_id]\"] option[value=\"#{existing_institution.id}\"][selected=\"selected\"]"
+               "select[name='registration[institution_id]'] option[value='#{existing_institution.id}'][selected]"
              )
 
       view

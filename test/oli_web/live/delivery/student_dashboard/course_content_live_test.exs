@@ -41,7 +41,7 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLiveTest do
 
       assert has_element?(
                view,
-               "button[phx-click=\"previous_node\"].grayscale.pointer-events-none"
+               "button[phx-click='previous_node'].grayscale.pointer-events-none"
              )
     end
 
@@ -53,7 +53,7 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLiveTest do
       {:ok, view, _html} = isolated_live_view_course_content(conn, section.slug, user.id)
 
       assert breadcrumbs_length(view) == 1
-      assert has_element?(view, "button[phx-click=\"breadcrumb-navigate\"]", "Curriculum")
+      assert has_element?(view, "button[phx-click='breadcrumb-navigate']", "Curriculum")
     end
 
     test "navigates left and right", %{conn: conn, user: user, section: section} do
@@ -62,29 +62,29 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLiveTest do
       assert has_element?(view, "#course_browser_node_title", "Page 1: Page one")
 
       view
-      |> element("button[phx-click=\"next_node\"]")
+      |> element("button[phx-click='next_node']")
       |> render_click()
 
       assert has_element?(view, "#course_browser_node_title", "Page 2: Page two")
 
       view
-      |> element("button[phx-click=\"next_node\"]")
+      |> element("button[phx-click='next_node']")
       |> render_click()
 
       assert has_element?(view, "#course_browser_node_title", "Unit 1: Unit 1")
 
       view
-      |> element("button[phx-click=\"next_node\"]")
+      |> element("button[phx-click='next_node']")
       |> render_click()
 
       assert has_element?(view, "#course_browser_node_title", "Unit 2: Unit 2")
 
       view
-      |> element("button[phx-click=\"next_node\"].grayscale.pointer-events-none")
+      |> element("button[phx-click='next_node'].grayscale.pointer-events-none")
       |> has_element?()
 
       view
-      |> element("button[phx-click=\"previous_node\"]")
+      |> element("button[phx-click='previous_node']")
       |> render_click()
 
       assert has_element?(view, "#course_browser_node_title", "Unit 1: Unit 1")
@@ -553,11 +553,11 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLiveTest do
   defp navigate_to_unit_1(view) do
     # navigate in right direction to unit 1 resource
     view
-    |> element("button[phx-click=\"next_node\"]")
+    |> element("button[phx-click='next_node']")
     |> render_click()
 
     view
-    |> element("button[phx-click=\"next_node\"]")
+    |> element("button[phx-click='next_node']")
     |> render_click()
 
     view
@@ -565,7 +565,7 @@ defmodule OliWeb.Delivery.StudentDashboard.CourseContentLiveTest do
 
   defp drill_down_to_module_1(view) do
     view
-    |> element("h4[phx-click=\"go_down\"]", "1.1 Module 1")
+    |> element("h4[phx-click='go_down']", "1.1 Module 1")
     |> render_click()
 
     view

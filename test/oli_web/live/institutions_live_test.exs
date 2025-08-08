@@ -63,9 +63,9 @@ defmodule OliWeb.InstitutionsLiveTest do
       {:ok, view, _html} = live(conn, live_view_route(institution.id))
 
       assert has_element?(view, "h5", "Manage Research Consent")
-      assert has_element?(view, "input[value=\"oli_form\"][checked=\"checked\"]")
+      assert has_element?(view, "input[value=\"oli_form\"][checked]")
       assert has_element?(view, "input[value=\"no_form\"]")
-      assert has_element?(view, "form[phx-submit=\"save\"]")
+      assert has_element?(view, "form[phx-submit='save']")
     end
 
     test "loads correctly with no form", %{conn: conn} do
@@ -75,15 +75,15 @@ defmodule OliWeb.InstitutionsLiveTest do
 
       assert has_element?(view, "h5", "Manage Research Consent")
       assert has_element?(view, "input[value=\"oli_form\"]")
-      assert has_element?(view, "input[value=\"no_form\"][checked=\"checked\"]")
-      assert has_element?(view, "form[phx-submit=\"save\"]")
+      assert has_element?(view, "input[value=\"no_form\"][checked]")
+      assert has_element?(view, "form[phx-submit='save']")
     end
 
     test "displays error message when data is invalid", %{conn: conn, institution: institution} do
       {:ok, view, _html} = live(conn, live_view_route(institution.id))
 
       view
-      |> element("form[phx-submit=\"save\"")
+      |> element("form[phx-submit='save']")
       |> render_submit(%{"institution" => %{"research_consent" => "invalid"}})
 
       assert view
@@ -101,7 +101,7 @@ defmodule OliWeb.InstitutionsLiveTest do
       {:ok, view, _html} = live(conn, live_view_route(institution.id))
 
       view
-      |> element("form[phx-submit=\"save\"")
+      |> element("form[phx-submit='save']")
       |> render_submit(%{"institution" => %{"research_consent" => "no_form"}})
 
       flash =
@@ -120,7 +120,7 @@ defmodule OliWeb.InstitutionsLiveTest do
       {:ok, view, _html} = live(conn, live_view_route(institution.id))
 
       view
-      |> element("form[phx-submit=\"save\"")
+      |> element("form[phx-submit='save']")
       |> render_submit(%{"institution" => %{"research_consent" => "oli_form"}})
 
       flash =

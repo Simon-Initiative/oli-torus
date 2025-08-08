@@ -349,7 +349,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
       assert has_element?(view, "h6", "There are no objectives to show")
 
       ## Click on Clear All Filters button
-      element(view, "button[phx-click=\"clear_all_filters\"]") |> render_click()
+      element(view, "button[phx-click='clear_all_filters']") |> render_click()
 
       ## Checks that all objectives are displayed again
       assert has_element?(view, "span", "#{revisions.obj_revision_a.title}")

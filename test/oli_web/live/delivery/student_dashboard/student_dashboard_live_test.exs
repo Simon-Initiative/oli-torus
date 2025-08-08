@@ -148,7 +148,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLiveTest do
              )
 
       # Renders correct column title
-      assert has_element?(view, "th[phx-value-sort_by=\"progress\"]", "COURSE PROGRESS")
+      assert has_element?(view, "th[phx-value-sort_by='progress']", "COURSE PROGRESS")
 
       # Link that triggers the opening of the modal
       assert view |> has_element?("button#student_progress_tooltip_link", "Learn more")
@@ -177,7 +177,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLiveTest do
       # Renders correct column title
       assert has_element?(
                view,
-               "th[phx-value-sort_by=\"student_completion\"]",
+               "th[phx-value-sort_by='student_completion']",
                "Class Progress"
              )
 

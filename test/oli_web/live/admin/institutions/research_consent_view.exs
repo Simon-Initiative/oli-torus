@@ -45,7 +45,7 @@ defmodule OliWeb.Admin.Institutions.ResearchConsentViewTest do
         )
 
       view
-      |> form("form[phx-submit=\"save\"]")
+      |> form("form[phx-submit='save']")
       |> render_submit(%{
         institution: %{
           research_consent: :no_form

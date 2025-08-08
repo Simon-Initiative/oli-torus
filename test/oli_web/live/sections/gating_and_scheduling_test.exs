@@ -33,7 +33,7 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
 
   defp create_gating_condition_through_ui(view, type, start_date, end_date) do
     view
-    |> element("button[phx-click=\"show-resource-picker\"]")
+    |> element("button[phx-click='show-resource-picker']")
     |> render_click()
 
     # Since Oli.Publishing.DeliveryResolver.find_in_hierarchy generates dynamic uuids every
@@ -42,7 +42,7 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
 
     element_splitted =
       view
-      |> element("div[phx-click=\"HierarchyPicker.select\"]", "Page one")
+      |> element("div[phx-click='HierarchyPicker.select']", "Page one")
       |> render()
       |> String.split("\"")
 
@@ -59,7 +59,7 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
     render_hook(view, "schedule_end_date_changed", %{value: end_date})
 
     view
-    |> element("button[phx-click=\"create_gate\"]")
+    |> element("button[phx-click='create_gate']")
     |> render_click()
   end
 
@@ -137,7 +137,7 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
 
       # sort by title to check that the sorting is working
       view
-      |> element("th[phx-click=\"paged_table_sort\"]:first-of-type")
+      |> element("th[phx-click='paged_table_sort']:first-of-type")
       |> render_click(%{sort_by: :title})
 
       # assert that the resources are ordered by title
@@ -275,7 +275,7 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
         )
 
       view
-      |> element("button[phx-click=\"show-delete-gating-condition\"]")
+      |> element("button[phx-click='show-delete-gating-condition']")
       |> render_click()
 
       assert view
@@ -296,11 +296,11 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
         )
 
       view
-      |> element("button[phx-click=\"show-delete-gating-condition\"]")
+      |> element("button[phx-click='show-delete-gating-condition']")
       |> render_click()
 
       view
-      |> element("button[phx-click=\"delete-gating-condition\"]")
+      |> element("button[phx-click='delete-gating-condition']")
       |> render_click()
 
       flash =
@@ -331,7 +331,7 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
       render_hook(view, "schedule_end_date_changed", %{value: "2022-01-10T13:48"})
 
       view
-      |> element("button[phx-click=\"update_gate\"]")
+      |> element("button[phx-click='update_gate']")
       |> render_click()
 
       assert view
@@ -355,7 +355,7 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
       render_hook(view, "schedule_end_date_changed", %{value: "2022-01-13T13:48"})
 
       view
-      |> element("button[phx-click=\"update_gate\"]")
+      |> element("button[phx-click='update_gate']")
       |> render_click()
 
       flash =
@@ -386,7 +386,7 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
       render_hook(view, "schedule_end_date_changed", %{value: input_end_date})
 
       view
-      |> element("button[phx-click=\"update_gate\"]")
+      |> element("button[phx-click='update_gate']")
       |> render_click()
 
       updated_gating_condition = Gating.get_gating_condition!(gating_condition.id)
@@ -424,7 +424,7 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
       render_hook(view, "schedule_end_date_changed", %{value: input_end_date})
 
       view
-      |> element("button[phx-click=\"update_gate\"]")
+      |> element("button[phx-click='update_gate']")
       |> render_click()
 
       updated_gating_condition = Gating.get_gating_condition!(gating_condition.id)
@@ -485,7 +485,7 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
       # click on the "Manage Student Exceptions" button
       view
       |> element(
-        "~s(a[href='/sections/#{section.slug}/gating_and_scheduling/exceptions/#{gating_condition.id}'])",
+        "a[href='/sections/#{section.slug}/gating_and_scheduling/exceptions/#{gating_condition.id}']",
         "Manage Student Exceptions"
       )
       |> render_click()
@@ -644,66 +644,66 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
 
       # change select option to "schedule"
       view
-      |> element("select[phx-change=\"select-condition\"]")
+      |> element("select[phx-change='select-condition']")
       |> render_change(%{"value" => "schedule"})
 
       assert view
-             |> element("div[id=\"start_date\"]")
+             |> element("div[id='start_date']")
 
       assert view
-             |> element("div[id=\"end_date\"]")
+             |> element("div[id='end_date']")
 
       # change select option to "always open"
       view
-      |> element("select[phx-change=\"select-condition\"]")
+      |> element("select[phx-change='select-condition']")
       |> render_change(%{"value" => "always_open"})
 
       assert view
-             |> element("div[class=\"alert alert-secondary\"][role=\"alert\"]")
+             |> element("div[class='alert alert-secondary'][role='alert']")
              |> render() =~
                "This will always be open to this student."
 
       # change select option to "started"
       view
-      |> element("select[phx-change=\"select-condition\"]")
+      |> element("select[phx-change='select-condition']")
       |> render_change(%{"value" => "started"})
 
       assert view
-             |> element("label[for=\"source\"]")
+             |> element("label[for='source']")
              |> render() =~
                "Resource That Must Be Started"
 
       # change select option to "finished"
       view
-      |> element("select[phx-change=\"select-condition\"]")
+      |> element("select[phx-change='select-condition']")
       |> render_change(%{"value" => "finished"})
 
       assert view
-             |> element("label[for=\"source\"]")
+             |> element("label[for='source']")
              |> render() =~
                "Resource That Must Be Finished"
 
       assert view
-             |> element("input[phx-click=\"toggle-min-score\"]")
+             |> element("input[phx-click='toggle-min-score']")
 
       assert view
-             |> element("input[phx-value-change=\"change-min-score\"]")
+             |> element("input[phx-value-change='change-min-score']")
 
       # change select option to "progress"
       view
-      |> element("select[phx-change=\"select-condition\"]")
+      |> element("select[phx-change='select-condition']")
       |> render_change(%{"value" => "progress"})
 
       assert view
-             |> element("label[for=\"source\"]")
+             |> element("label[for='source']")
              |> render() =~
                "Resource That Must Have Progress"
 
       assert view
-             |> element("input[phx-click=\"toggle-min-score\"]")
+             |> element("input[phx-click='toggle-min-score']")
 
       assert view
-             |> element("input[phx-value-change=\"change-min-score\"]")
+             |> element("input[phx-value-change='change-min-score']")
     end
   end
 

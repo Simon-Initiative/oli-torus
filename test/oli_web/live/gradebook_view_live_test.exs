@@ -87,7 +87,7 @@ defmodule OliWeb.GradebookViewLiveTest do
 
         assert view
                |> element(
-                 "tr[phx-value-id=\"#{user.id}\"] a[href=\"/sections/#{section.slug}/progress/#{user.id}/#{page_revision.resource.id}\"]"
+                 "tr[phx-value-id='#{user.id}'] a[href=\"/sections/#{section.slug}/progress/#{user.id}/#{page_revision.resource.id}\"]"
                )
                |> render =~ "#{@expected_score}/#{@out_of}"
       end

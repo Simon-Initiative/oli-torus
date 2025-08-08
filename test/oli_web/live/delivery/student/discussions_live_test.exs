@@ -19,7 +19,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLiveTest do
 
   defp toggle_post_replies(view, post_id) do
     view
-    |> element("div[id=\"post-#{post_id}\"] button[phx-click=\"toggle_post_replies\"]")
+    |> element("div[id=\"post-#{post_id}\"] button[phx-click='toggle_post_replies']")
     |> render_click
   end
 
@@ -622,7 +622,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLiveTest do
       assert render(view) =~ "Discussion 10 :)"
       assert render(view) =~ "Discussion 11 :)"
 
-      render_click(element(view, "button[phx-click=\"load_more_posts\"]"))
+      render_click(element(view, "button[phx-click='load_more_posts']"))
 
       refute render(view) =~ "Discussion 1 :)"
       assert render(view) =~ "Discussion 2 :)"
@@ -635,7 +635,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLiveTest do
       assert render(view) =~ "Discussion 10 :)"
       assert render(view) =~ "Discussion 11 :)"
 
-      render_click(element(view, "button[phx-click=\"load_more_posts\"]"))
+      render_click(element(view, "button[phx-click='load_more_posts']"))
 
       assert render(view) =~ "Discussion 1 :)"
       assert render(view) =~ "Discussion 2 :)"
@@ -648,7 +648,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLiveTest do
       assert render(view) =~ "Discussion 10 :)"
       assert render(view) =~ "Discussion 11 :)"
 
-      refute has_element?(view, "button[phx-click=\"load_more_posts\"]", "Load more posts")
+      refute has_element?(view, "button[phx-click='load_more_posts']", "Load more posts")
     end
 
     test "skips CheckCertification if require_certification_check is false when creating a post",
@@ -665,7 +665,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLiveTest do
       |> render_click
 
       view
-      |> element("form[id=\"new_discussion_form\"")
+      |> element("form[id=\"new_discussion_form\"]")
       |> render_submit(%{
         "post" => %{"anonymous" => "false", "content" => %{"message" => "New Discussion Post"}}
       })
@@ -691,7 +691,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLiveTest do
       |> render_click
 
       view
-      |> element("form[id=\"new_discussion_form\"")
+      |> element("form[id=\"new_discussion_form\"]")
       |> render_submit(%{
         "post" => %{"anonymous" => "false", "content" => %{"message" => "New Discussion Post"}}
       })
@@ -730,7 +730,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLiveTest do
       |> render_click
 
       view
-      |> element("form[phx-value-parent-post-id='#{post.id}'")
+      |> element("form[phx-value-parent-post-id='#{post.id}']")
       |> render_submit(%{
         "anonymous" => "false",
         "content" => "Child Post",

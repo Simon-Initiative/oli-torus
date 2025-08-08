@@ -59,7 +59,7 @@ defmodule OliWeb.Admin.VrUserAgentsViewTest do
 
       # Adds back the user agent 2
       view
-      |> element("form[phx-submit=\"add_user_agent\"]")
+      |> element("form[phx-submit='add_user_agent']")
       |> render_submit(%{"vr_user_agent" => %{"user_agent" => user_agent_value_2}})
 
       assert [[_new_id_2, ^user_agent_value_2, "Delete"], [^id_1, ^user_agent_value_1, "Delete"]] =

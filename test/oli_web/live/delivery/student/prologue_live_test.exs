@@ -852,7 +852,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
                "You have no attempts remaining out of 2 total attempts."
              )
 
-      assert has_element?(view, "button[id='begin_attempt_button'][disabled='disabled']")
+      assert has_element?(view, "button[id='begin_attempt_button'][disabled]")
     end
 
     test "can see page info on header", %{
