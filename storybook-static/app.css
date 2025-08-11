@@ -16250,17 +16250,18 @@ a {
 }
 
 .instructor_dashboard_table tr {
+  color: #353740;
+}
+
+.dark .instructor_dashboard_table tr {
+  color: #EEEBF5;
+}
+
+.instructor_dashboard_table tr {
   height: 50px;
   border-top-width: 1px;
   font-size: 0.8rem;
   font-weight: 600;
-  --tw-text-opacity: 1;
-  color: rgb(115 115 115 / var(--tw-text-opacity));
-}
-
-.dark .instructor_dashboard_table tr {
-  --tw-text-opacity: 1;
-  color: rgb(255 255 255 / var(--tw-text-opacity));
 }
 
 @media (min-width: 640px) {
@@ -16459,17 +16460,18 @@ div:has(.remix_materials_table) {
 }
 
 .remix_materials_table tr {
+  color: #353740;
+}
+
+.dark .remix_materials_table tr {
+  color: #EEEBF5;
+}
+
+.remix_materials_table tr {
   height: 50px;
   border-top-width: 1px;
   font-size: 0.8rem;
   font-weight: 600;
-  --tw-text-opacity: 1;
-  color: rgb(115 115 115 / var(--tw-text-opacity));
-}
-
-.dark .remix_materials_table tr {
-  --tw-text-opacity: 1;
-  color: rgb(255 255 255 / var(--tw-text-opacity));
 }
 
 @media (min-width: 640px) {
@@ -16632,17 +16634,18 @@ div:has(.remix_materials_table) #footer_paging {
 }
 
 .remix_materials_publications_table tr {
+  color: #353740;
+}
+
+.dark .remix_materials_publications_table tr {
+  color: #EEEBF5;
+}
+
+.remix_materials_publications_table tr {
   height: 50px;
   border-top-width: 1px;
   font-size: 0.8rem;
   font-weight: 600;
-  --tw-text-opacity: 1;
-  color: rgb(115 115 115 / var(--tw-text-opacity));
-}
-
-.dark .remix_materials_publications_table tr {
-  --tw-text-opacity: 1;
-  color: rgb(255 255 255 / var(--tw-text-opacity));
 }
 
 @media (min-width: 640px) {
