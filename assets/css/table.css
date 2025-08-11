@@ -15,7 +15,7 @@
 }
 
 .instructor_dashboard_table tr {
-  @apply h-[50px] text-gray-500 dark:text-white font-semibold text-xs sm:text-sm border-t border-Border-border-default;
+  @apply h-[50px] text-Text-text-high font-semibold text-xs sm:text-sm border-t border-Border-border-default;
 }
 
 .instructor_dashboard_table td {
