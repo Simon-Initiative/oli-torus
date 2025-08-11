@@ -1,78 +1,86 @@
-# Use Amazon Linux 2023 as the base image
 FROM amazonlinux:2023
 
-ARG ERLANG_VERSION=28.0.2
-ARG ELIXIR_VERSION=1.18.4-otp-28
-ARG NODE_VERSION=16.14.2
+# Set environment variables to prevent TTY issues during build
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TERM=dumb
 
-# Install system dependencies with --allowerasing to handle conflicts
-RUN yum update -y && \
-    yum install -y \
-    git \
-    curl \
-    tar \
-    gzip \
-    zip \
-    gcc \
-    gcc-c++ \
-    make \
-    autoconf \
-    openssl \
-    openssl-devel \
+ARG ELIXIR_VERSION=1.18.4
+ARG OTP_VERSION=27.2
+
+# Set locale early to prevent encoding issues
+ENV LANG="en_US.UTF-8"
+ENV LANGUAGE="en_US:"
+ENV LC_ALL=en_US.UTF-8
+
+RUN yum update -y
+RUN yum install -y tar wget git
+
+# Install essential build dependencies for OTP
+RUN yum install -y \
     ncurses-devel \
-    wget \
-    gnupg \
-    nano \
-    glibc-langpack-en --allowerasing
+    openssl-devel \
+    libxslt \
+    java-1.8.0-openjdk-devel \
+    glibc-locale-source \
+    glibc-langpack-en
 
-# Install ASDF v0.18.0 (Go-based version)
-RUN git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.18.0
+RUN yum groupinstall "Development Tools" -y
 
-# Add ASDF to PATH and set up environment variables
-ENV PATH="/root/.asdf/bin:/root/.asdf/shims:$PATH"
-ENV ASDF_DIR="/root/.asdf"
-ENV ASDF_DATA_DIR="/root/.asdf"
+# Generate locale
+RUN localedef -i en_US -f UTF-8 en_US.UTF-8
 
-# Ensure Go-based ASDF is used in interactive shells
-RUN echo 'export PATH="/root/.asdf/bin:/root/.asdf/shims:$PATH"' >> /root/.bashrc && \
-    echo 'export ASDF_DIR="/root/.asdf"' >> /root/.bashrc && \
-    echo 'export ASDF_DATA_DIR="/root/.asdf"' >> /root/.bashrc
+WORKDIR /tmp
 
-# Install Erlang plugin and latest version
-RUN asdf plugin-add erlang https://github.com/asdf-vm/asdf-erlang.git && \
-    asdf install erlang ${ERLANG_VERSION} && \
-    asdf global erlang ${ERLANG_VERSION} && \
-    asdf reshim erlang
+RUN cd /tmp && \
+        wget --tries=1 --timeout=30 "http://erlang.org/download/otp_src_${OTP_VERSION}.tar.gz" -O otp_src_${OTP_VERSION}.tar.gz || \
+        wget "https://github.com/erlang/otp/releases/download/OTP-${OTP_VERSION}/otp_src_${OTP_VERSION}.tar.gz" -O otp_src_${OTP_VERSION}.tar.gz && \
+        tar xfz otp_src_${OTP_VERSION}.tar.gz && \
+        cd otp_src_${OTP_VERSION} && \
+        ./configure \
+            --prefix=/usr/local \
+            --enable-smp-support \
+            --enable-threads \
+            --enable-kernel-poll \
+            --disable-hipe \
+            --without-javac \
+            --without-odbc \
+            --without-wx \
+            --without-debugger \
+            --without-observer \
+            --without-et \
+            --without-termcap && \
+        export ERL_TOP=/tmp/otp_src_${OTP_VERSION} && \
+        export HOME=/tmp && \
+        make && make install && \
+        cd /tmp && rm -rf otp_src_${OTP_VERSION} otp_src_${OTP_VERSION}.tar.gz
 
-# Install Elixir plugin and latest version
-RUN asdf plugin-add elixir https://github.com/asdf-vm/asdf-elixir.git && \
-    asdf install elixir ${ELIXIR_VERSION} && \
-    asdf global elixir ${ELIXIR_VERSION} && \
-    asdf reshim elixir
+WORKDIR /tmp
 
-# Install Node plugin and latest version
-RUN asdf plugin-add nodejs https://github.com/asdf-vm/asdf-nodejs.git && \
-    asdf install nodejs ${NODE_VERSION} && \
-    asdf global nodejs ${NODE_VERSION} && \
-    asdf reshim nodejs
+# Install Elixir
+RUN set -xe \
+	&& ELIXIR_DOWNLOAD_URL="https://github.com/elixir-lang/elixir/archive/v${ELIXIR_VERSION}.tar.gz" \
+	&& ELIXIR_DOWNLOAD_SHA256="8e136c0a92160cdad8daa74560e0e9c6810486bd232fbce1709d40fcc426b5e0" \
+	&& curl -fSL -o elixir-src.tar.gz $ELIXIR_DOWNLOAD_URL \
+	&& echo "$ELIXIR_DOWNLOAD_SHA256  elixir-src.tar.gz" | sha256sum -c - \
+	&& mkdir -p /usr/local/src/elixir \
+	&& tar -xzC /usr/local/src/elixir --strip-components=1 -f elixir-src.tar.gz \
+	&& rm elixir-src.tar.gz \
+	&& cd /usr/local/src/elixir \
+	&& make install clean \
+	&& find /usr/local/src/elixir/ -type f -not -regex "/usr/local/src/elixir/lib/[^\/]*/lib.*" -exec rm -rf {} + \
+	&& find /usr/local/src/elixir/ -type d -depth -empty -delete
 
-# Verify installations
-RUN command -v node && node --version && \
-    command -v npm && npm --version && \
-    command -v mix && mix --version && \
-    command -v elixir && elixir --version
+RUN mix local.hex --force
+RUN mix local.rebar --force
 
-# Install yarn globally
+# install node
+RUN yum install -y gcc-c++ make
+RUN yum install https://rpm.nodesource.com/pub_16.x/nodistro/repo/nodesource-release-nodistro-1.noarch.rpm -y
+RUN yum install nodejs -y --setopt=nodesource-nodejs.module_hotfixes=1
 RUN npm install -g yarn
 
 # Set the working directory inside the container
 WORKDIR /app
-
-# fix elixir encoding warning
-# https://stackoverflow.com/questions/32407164/the-vm-is-running-with-native-name-encoding-of-latin1-which-may-cause-elixir-to
-ENV LANG="en_US.utf8"
-ENV LANGUAGE="en_US:"
-ENV LC_ALL=en_US.UTF-8
 
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
