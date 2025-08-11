@@ -1,16 +1,9 @@
 FROM amazonlinux:2023
 
-# Set environment variables to prevent TTY issues during build
-ENV DEBIAN_FRONTEND=noninteractive
-ENV TERM=dumb
-
 ARG ELIXIR_VERSION=1.18.4
-ARG OTP_VERSION=27.2
-
-# Set locale early to prevent encoding issues
-ENV LANG="en_US.UTF-8"
-ENV LANGUAGE="en_US:"
-ENV LC_ALL=en_US.UTF-8
+ARG OTP_VERSION=28.0.2
+ARG OTP_DOWNLOAD_SHA256=ce43dc8a29ad6bc1b6dbfc97f053d2e850b4a4c290eca065058d6b33ce476db5
+ARG REBAR3_VERSION=3.25.0
 
 RUN yum update -y
 RUN yum install -y tar wget git
@@ -26,37 +19,61 @@ RUN yum install -y \
 
 RUN yum groupinstall "Development Tools" -y
 
-# Generate locale
-RUN localedef -i en_US -f UTF-8 en_US.UTF-8
-
 WORKDIR /tmp
 
-RUN cd /tmp && \
-        wget --tries=1 --timeout=30 "http://erlang.org/download/otp_src_${OTP_VERSION}.tar.gz" -O otp_src_${OTP_VERSION}.tar.gz || \
-        wget "https://github.com/erlang/otp/releases/download/OTP-${OTP_VERSION}/otp_src_${OTP_VERSION}.tar.gz" -O otp_src_${OTP_VERSION}.tar.gz && \
-        tar xfz otp_src_${OTP_VERSION}.tar.gz && \
-        cd otp_src_${OTP_VERSION} && \
-        ./configure \
-            --prefix=/usr/local \
-            --enable-smp-support \
-            --enable-threads \
-            --enable-kernel-poll \
-            --disable-hipe \
-            --without-javac \
-            --without-odbc \
-            --without-wx \
-            --without-debugger \
-            --without-observer \
-            --without-et \
-            --without-termcap && \
-        export ERL_TOP=/tmp/otp_src_${OTP_VERSION} && \
-        export HOME=/tmp && \
-        make && make install && \
-        cd /tmp && rm -rf otp_src_${OTP_VERSION} otp_src_${OTP_VERSION}.tar.gz
+# Install Erlang/OTP. Steps modified from official image https://github.com/erlang/docker-erlang-otp
+RUN set -xe \
+	&& OTP_DOWNLOAD_URL="https://github.com/erlang/otp/releases/download/OTP-${OTP_VERSION}/otp_src_${OTP_VERSION}.tar.gz" \
+	&& OTP_DOWNLOAD_SHA256="${OTP_DOWNLOAD_SHA256}" \
+	&& curl -fSL -o otp-src.tar.gz "$OTP_DOWNLOAD_URL" \
+	&& echo "$OTP_DOWNLOAD_SHA256  otp-src.tar.gz" | sha256sum -c - \
+	&& export ERL_TOP="/usr/src/otp_src_${OTP_VERSION%%@*}" \
+	&& mkdir -vp $ERL_TOP \
+	&& tar -xzf otp-src.tar.gz -C $ERL_TOP --strip-components=1 \
+	&& rm otp-src.tar.gz \
+	&& ( cd $ERL_TOP \
+	  && ./otp_build autoconf \
+      && gnuArch="$(rpm --eval '%{_target_platform}')" \
+	  && ./configure --build="$gnuArch" \
+      && make -j$(nproc) \
+	  && make -j$(nproc) docs DOC_TARGETS=chunks \
+	  && make install install-docs DOC_TARGETS=chunks ) \
+	&& find /usr/local -name examples | xargs rm -rf
 
-WORKDIR /tmp
+# Install Rebar
+ENV REBAR_VERSION="2.6.4"
 
-# Install Elixir
+RUN set -xe \
+	&& REBAR_DOWNLOAD_URL="https://github.com/rebar/rebar/archive/${REBAR_VERSION}.tar.gz" \
+	&& REBAR_DOWNLOAD_SHA256="577246bafa2eb2b2c3f1d0c157408650446884555bf87901508ce71d5cc0bd07" \
+	&& mkdir -p /usr/src/rebar-src \
+	&& curl -fSL -o rebar-src.tar.gz "$REBAR_DOWNLOAD_URL" \
+	&& echo "$REBAR_DOWNLOAD_SHA256 rebar-src.tar.gz" | sha256sum -c - \
+	&& tar -xzf rebar-src.tar.gz -C /usr/src/rebar-src --strip-components=1 \
+	&& rm rebar-src.tar.gz \
+	&& cd /usr/src/rebar-src \
+	&& ./bootstrap \
+	&& install -v ./rebar /usr/local/bin/ \
+	&& rm -rf /usr/src/rebar-src
+
+RUN set -xe \
+	&& REBAR3_DOWNLOAD_URL="https://github.com/erlang/rebar3/archive/${REBAR3_VERSION}.tar.gz" \
+	&& REBAR3_DOWNLOAD_SHA256="7d3f42dc0e126e18fb73e4366129f11dd37bad14d404f461e0a3129ce8903440" \
+	&& mkdir -p /usr/src/rebar3-src \
+	&& curl -fSL -o rebar3-src.tar.gz "$REBAR3_DOWNLOAD_URL" \
+	&& echo "$REBAR3_DOWNLOAD_SHA256 rebar3-src.tar.gz" | sha256sum -c - \
+	&& tar -xzf rebar3-src.tar.gz -C /usr/src/rebar3-src --strip-components=1 \
+	&& rm rebar3-src.tar.gz \
+	&& cd /usr/src/rebar3-src \
+	&& HOME=$PWD ./bootstrap \
+	&& install -v ./rebar3 /usr/local/bin/ \
+	&& rm -rf /usr/src/rebar3-src
+
+# Install Elixir. Steps modified from official image https://github.com/erlef/docker-elixir
+
+# elixir expects utf8.
+ENV LANG=C.UTF-8
+
 RUN set -xe \
 	&& ELIXIR_DOWNLOAD_URL="https://github.com/elixir-lang/elixir/archive/v${ELIXIR_VERSION}.tar.gz" \
 	&& ELIXIR_DOWNLOAD_SHA256="8e136c0a92160cdad8daa74560e0e9c6810486bd232fbce1709d40fcc426b5e0" \
@@ -73,7 +90,7 @@ RUN set -xe \
 RUN mix local.hex --force
 RUN mix local.rebar --force
 
-# install node
+# Install NodeJS
 RUN yum install -y gcc-c++ make
 RUN yum install https://rpm.nodesource.com/pub_16.x/nodistro/repo/nodesource-release-nodistro-1.noarch.rpm -y
 RUN yum install nodejs -y --setopt=nodesource-nodejs.module_hotfixes=1

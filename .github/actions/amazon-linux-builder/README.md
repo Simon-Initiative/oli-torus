@@ -8,11 +8,10 @@ This will build a docker image named amazon-linux-builder:localdev that you can 
 
 # Running the image locally
 
-A command like this in the root of the torus repo should run it.
+Run from the root of the repository (where mix.exs is located). Make sure there are no pre-existing
+deps or builds e.g. `rm -rf _build deps` or the architecture will not match and the docker build
+will fail.
 
-Note:
-
-- Edit `/home/projects/oli-torus-1` to an absolute path of wherever your oli-torus is located.
-- We're specifying `amazon-linux-builder:localdev` that must match the tag from the build step above.
-
-> docker run --name torusbuildertest --label ef7d85 --workdir /github/workspace --rm -e GITHUB_ACTIONS=true -e CI=true -v "/var/run/docker.sock":"/var/run/docker.sock" -v "/home/runner/work/\_temp/\_github_home":"/github/home" -v "/home/runner/work/\_temp/\_github_workflow":"/github/workflow" -v "/home/runner/work/\_temp/\_runner_file_commands":"/github/file_commands" -v "/home/projects/oli-torus-1":"/github/workspace" amazon-linux-builder:localdev "996927d" build
+```bash
+> docker run -it --workdir /github/workspace -v `pwd`:/github/workspace --rm -e GITHUB_ACTIONS=true -e CI=true amazon-linux-builder:localdev "$(git rev-parse --short HEAD)"
+```
