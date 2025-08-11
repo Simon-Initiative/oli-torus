@@ -3,7 +3,7 @@ export const DebouncedTextInputListener = {
     const changeEvent = this.el.getAttribute('phx-value-change') || 'change';
     const target = this.el.getAttribute('phx-hook-target') || 'live_view';
 
-    let timeoutId : any = null;
+    let timeoutId: any = null;
 
     const push = (value: any) => {
       const payload = { id: this.el.id, value };
@@ -29,5 +29,5 @@ export const DebouncedTextInputListener = {
 
     this.el.addEventListener('input', onInput);
     this.el.addEventListener('blur', onBlur);
-  }
+  },
 };
