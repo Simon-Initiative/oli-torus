@@ -24,7 +24,6 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
     {:ok,
      assign(socket,
        editing: false,
-       test_results: "",
        form: to_form(changeset),
        changeset: changeset,
        selected: selected,
@@ -76,7 +75,6 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
           selected={@selected}
           changeset={@changeset}
           editing={@editing}
-          test_results={@test_results}
         />
       </div>
     </div>
@@ -112,16 +110,23 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
         <div class="flex">
           <div class="mr-5">
             <span class="text-gray-800 text-xs py-0.5">Primary: </span>
-            <span class="text-gray-800 text-xs font-mono py-0.5 "><%= @service_config.primary_model.name %></span>
+            <span class="text-gray-800 text-xs font-mono py-0.5 ">
+              <%= @service_config.primary_model.name %>
+            </span>
           </div>
           <div>
             <span class="text-gray-800 text-xs py-0.5">Backup: </span>
-            <span class="text-gray-800 text-xs font-mono py-0.5"><%= if is_nil(@service_config.backup_model) do "None" else @service_config.backup_model.name end %></span>
+            <span class="text-gray-800 text-xs font-mono py-0.5">
+              <%= if is_nil(@service_config.backup_model) do
+                "None"
+              else
+                @service_config.backup_model.name
+              end %>
+            </span>
           </div>
         </div>
       </div>
       <div class="hidden shrink-0 sm:flex sm:flex-col sm:items-end">
-
         <%= if @service_config.usage_count > 0 do %>
           <p class="mt-0 text-xs text-gray-500">
             Used by <strong><%= @service_config.usage_count %></strong> feature config(s)
@@ -282,16 +287,15 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
         selected = Enum.find(all, &(&1.id == service_config.id))
         changeset = ServiceConfig.changeset(selected, %{})
 
-        {:noreply,
-         assign(socket, selected: selected, service_configs: all, changeset: changeset)}
+        {:noreply, assign(socket, selected: selected, service_configs: all, changeset: changeset)}
 
       {:error, changeset} ->
         # Handle error (e.g., show a flash message)
-        Logger.error("Failed to create new registered model: #{inspect(changeset)}")
+        Logger.error("Failed to create new service config: #{inspect(changeset)}")
 
         socket =
           socket
-          |> put_flash(:error, "Failed to create new registered model. Please try again.")
+          |> put_flash(:error, "Failed to create new service config. Please try again.")
           |> assign(selected: nil)
 
         {:noreply, socket}
@@ -302,7 +306,7 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
     do: [
       Breadcrumb.new(%{
         link: ~p"/admin/gen_ai/service_configs",
-        full_title: "Completions Service Configurations",
+        full_title: "Completions Service Configurations"
       })
     ]
 

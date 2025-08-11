@@ -103,6 +103,19 @@ defmodule OliWeb.Admin.AdminView do
         </Group.render>
       <% end %>
       <%= if Accounts.has_admin_role?(@author, :system_admin) do %>
+        <Group.render label="GenAI Features" description="Manage and support GenAI based features">
+          <ul class="link-list">
+            <li>
+              <a href={~p"/admin/gen_ai/registered_models"}>Manage registered LLM models</a>
+            </li>
+            <li>
+              <a href={~p"/admin/gen_ai/service_configs"}>Manage service configurations</a>
+            </li>
+            <li>
+              <a href={~p"/admin/gen_ai/feature_configs"}>Manage feature configurations</a>
+            </li>
+          </ul>
+        </Group.render>
         <Group.render
           label="System Management"
           description="Manage and support system level functionality"

@@ -15,6 +15,7 @@ import { DisableSubmitted } from './disable_submitted';
 import { DragSource, DropTarget } from './dragdrop';
 import { EmailList } from './email_list';
 import { EndDateTimer } from './end_date_timer';
+import { DebouncedTextInputListener } from './debounced_text_input_listener';
 import { EvaluateMathJaxExpressions } from './evaluate_mathjax_expressions';
 import { ExpandContainers } from './expand_containers';
 import { FixedNavigationBar } from './fixed_navigation_bar';
@@ -52,6 +53,7 @@ import { PauseOthersOnSelected, VideoPreview } from './video_preview';
 import { WakeUpDot } from './wakeup_dot';
 
 export const Hooks = {
+  DebouncedTextInputListener,
   WakeUpDot,
   ExpandContainers,
   ShowTeaser,

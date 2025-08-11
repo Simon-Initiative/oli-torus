@@ -1569,6 +1569,7 @@ defmodule OliWeb.Router do
     # Gen AI
     live("/gen_ai/registered_models", GenAI.RegisteredModelsView)
     live("/gen_ai/service_configs", GenAI.ServiceConfigsView)
+    live("/gen_ai/feature_configs", GenAI.FeatureConfigsView)
 
     live("/products/:product_id/discounts", Products.Payments.Discounts.ProductsIndexView)
 

@@ -1,5 +1,6 @@
 defmodule Oli.GenAI do
   alias Oli.GenAI.Completions.{RegisteredModel, ServiceConfig}
+  alias Oli.GenAI.FeatureConfig
   alias Oli.Repo
 
   import Ecto.Query, warn: false
@@ -70,6 +71,39 @@ defmodule Oli.GenAI do
   def create_service_config(attrs) do
     %ServiceConfig{}
     |> ServiceConfig.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  def feature_config_exists?(feature, section_id) do
+    from(
+      g in FeatureConfig,
+      where: g.section_id == ^section_id and g.feature == ^feature
+    )
+    |> Oli.Repo.exists?()
+  end
+
+  def feature_configs do
+    query =
+      from r in FeatureConfig,
+        order_by: r.id,
+        preload: [:service_config, :section]
+
+    Repo.all(query)
+  end
+
+  def delete_feature_config(%FeatureConfig{} = feature_config) do
+    Repo.delete(feature_config)
+  end
+
+  def update_feature_config(%FeatureConfig{} = feature_config, attrs) do
+    feature_config
+    |> FeatureConfig.changeset(attrs)
+    |> Repo.update()
+  end
+
+  def create_feature_config(attrs) do
+    %FeatureConfig{}
+    |> FeatureConfig.changeset(attrs)
     |> Repo.insert()
   end
 end
