@@ -355,5 +355,4 @@ test.describe('Course authoring', () => {
       await torus.project().deletePage(nameProject);
     });
     });
-  
 });

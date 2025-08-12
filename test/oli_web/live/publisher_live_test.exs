@@ -338,7 +338,11 @@ defmodule OliWeb.PublisherLiveTest do
     } do
       {:ok, view, _html} = live(conn, live_view_show_route(id))
 
-      new_attributes = params_for(:publisher)
+      new_attributes =
+        params_for(:publisher,
+          knowledge_base_link: "https://updated.kb.com",
+          support_email: "updated-support@example.com"
+        )
 
       view
       |> element("form[phx-submit=\"save\"")
@@ -349,9 +353,15 @@ defmodule OliWeb.PublisherLiveTest do
              |> render() =~
                "Publisher successfully updated."
 
-      %Publisher{name: new_name} = Inventories.get_publisher(id)
+      %Publisher{
+        name: new_name,
+        knowledge_base_link: new_kb,
+        support_email: new_email
+      } = Inventories.get_publisher(id)
 
       assert new_attributes.name == new_name
+      assert new_attributes.knowledge_base_link == new_kb
+      assert new_attributes.support_email == new_email
     end
 
     test "displays error message when updating a publisher and the name already exists with leading or trailing whitespaces",
@@ -522,6 +532,26 @@ defmodule OliWeb.PublisherLiveTest do
                "Publisher successfully updated."
 
       assert %Publisher{available_via_api: false} = Inventories.get_publisher(id)
+    end
+
+    test "displays error message when updating with invalid support_email", %{
+      conn: conn,
+      publisher: %Publisher{id: id}
+    } do
+      {:ok, view, _html} = live(conn, live_view_show_route(id))
+
+      invalid_attributes = params_for(:publisher, support_email: "invalid-email")
+
+      view
+      |> element("form[phx-submit=\"save\"")
+      |> render_submit(%{publisher: invalid_attributes})
+
+      assert view
+             |> element("div.alert.alert-danger")
+             |> render() =~
+               "Publisher couldn&#39;t be updated. Please check the errors below."
+
+      assert has_element?(view, "p", "must have the @ sign and no spaces")
     end
   end
 end

@@ -10,21 +10,19 @@ defmodule OliWeb.Products.ProductsTableModel do
         %ColumnSpec{
           name: :title,
           label: "Product Title",
-          render_fn:
-            &__MODULE__.render_title_column(Map.put(&1, :project_slug, project_slug), &2, &3)
+          render_fn: &render_title_column(Map.put(&1, :project_slug, project_slug), &2, &3)
         },
-        %ColumnSpec{name: :status, label: "Status"},
+        %ColumnSpec{name: :status, label: "Status", render_fn: &render_status_column/3},
         %ColumnSpec{
           name: :requires_payment,
           label: "Requires Payment",
-          render_fn: &__MODULE__.render_payment_column/3,
+          render_fn: &render_payment_column/3,
           sort_fn: &sort_payment_column/2
         },
         %ColumnSpec{
           name: :base_project_id,
           label: "Base Project",
-          render_fn:
-            &__MODULE__.render_project_column(Map.put(&1, :project_slug, project_slug), &2, &3)
+          render_fn: &render_project_column(Map.put(&1, :project_slug, project_slug), &2, &3)
         },
         %ColumnSpec{
           name: :inserted_at,
@@ -54,7 +52,12 @@ defmodule OliWeb.Products.ProductsTableModel do
         project_slug -> ~p"/workspaces/course_author/#{project_slug}/products/#{slug}"
       end
 
-    SortableTableModel.render_link_column(assigns, title, route_path)
+    SortableTableModel.render_link_column(
+      assigns,
+      title,
+      route_path,
+      "text-[#1B67B2] dark:text-[#99CCFF]"
+    )
   end
 
   def render_project_column(assigns, %{base_project: base_project}, _) do
@@ -64,7 +67,28 @@ defmodule OliWeb.Products.ProductsTableModel do
         _project_slug -> ~p"/workspaces/course_author/#{base_project}/overview"
       end
 
-    SortableTableModel.render_link_column(assigns, base_project.title, route_path)
+    SortableTableModel.render_link_column(
+      assigns,
+      base_project.title,
+      route_path,
+      "text-[#1B67B2] dark:text-[#99CCFF]"
+    )
+  end
+
+  def render_status_column(assigns, %{status: :active}, _) do
+    SortableTableModel.render_span_column(
+      assigns,
+      "Active",
+      "text-[#245D45] dark:text-[#39E581]"
+    )
+  end
+
+  def render_status_column(assigns, %{status: :archived}, _) do
+    SortableTableModel.render_span_column(
+      assigns,
+      "Archived",
+      "text-[#A42327] dark:text-[#FF8787]"
+    )
   end
 
   defp sort_payment_column(order, _spec) do

@@ -29,7 +29,7 @@
   <div
     id="content"
     class={[
-      "transition-all duration-100  min-h-screen dark:bg-[#0F0D0F] bg-[#F3F4F8]",
+      "transition-all duration-100  min-h-screen bg-Background-bg-primary",
       if(@sidebar_expanded,
         do: "md:w-[calc(100%-200px)] md:ml-[200px]",
         else: "md:w-[calc(100%-60px)] md:ml-[60px]"
@@ -37,7 +37,7 @@
       if(@disable_sidebar?, do: "md:!w-full md:!ml-0")
     ]}
   >
-    <div class="mb-[28px] overview">
+    <div class="mb-[28px] overview sticky top-14 z-50">
       <%= if Phoenix.Flash.get(@flash, :info) do %>
         <div class="alert alert-info flex flex-row" role="alert">
           <div class="flex-1">
@@ -74,11 +74,18 @@
           </button>
         </div>
       <% end %>
+
+      <%= if assigns[:is_advanced_authoring] && assigns[:breadcrumbs] do %>
+        <Components.Delivery.Layouts.breadcrumb_trail
+          breadcrumbs={assigns[:breadcrumbs]}
+          socket={@socket}
+        />
+      <% end %>
     </div>
     <div class={OliWeb.Workspaces.Utils.maybe_add_padding(assigns[:uri])}>
       <div class="-mt-[28px]">
         <Components.Delivery.Layouts.breadcrumb_trail
-          :if={assigns[:breadcrumbs]}
+          :if={assigns[:breadcrumbs] && !assigns[:is_advanced_authoring]}
           breadcrumbs={assigns[:breadcrumbs]}
           socket={@socket}
         />

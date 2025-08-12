@@ -64,6 +64,12 @@ defmodule Oli.Delivery.Sections do
   @instructor_context_role_id ContextRoles.get_role(:context_instructor).id
   @student_role_id ContextRoles.get_role(:context_learner).id
 
+  @instructor_roles [
+    ContextRoles.get_role(:context_instructor),
+    ContextRoles.get_role(:context_content_developer)
+  ]
+
+  @instructor_role_ids Enum.map(@instructor_roles, & &1.id)
   @doc """
   Fetches the hidden instructor for a given section. If no hidden instructor exists,
   it creates one.  The "hidden" instructor is a special user account that is used to
@@ -189,8 +195,6 @@ defmodule Oli.Delivery.Sections do
         %Sorting{field: field, direction: direction},
         %EnrollmentBrowseOptions{} = options
       ) do
-    instructor_role_id = ContextRoles.get_role(:context_instructor).id
-
     filter_by_role =
       case options do
         %EnrollmentBrowseOptions{is_instructor: true, is_student: true} ->
@@ -200,9 +204,9 @@ defmodule Oli.Delivery.Sections do
           dynamic(
             [u, e],
             fragment(
-              "(NOT EXISTS (SELECT 1 FROM enrollments_context_roles r WHERE r.enrollment_id = ? AND r.context_role_id = ?))",
+              "(NOT EXISTS (SELECT 1 FROM enrollments_context_roles r WHERE r.enrollment_id = ? AND r.context_role_id = ANY(?)))",
               e.id,
-              ^instructor_role_id
+              ^@instructor_role_ids
             )
           )
 
@@ -210,9 +214,9 @@ defmodule Oli.Delivery.Sections do
           dynamic(
             [u, e],
             fragment(
-              "(EXISTS (SELECT 1 FROM enrollments_context_roles r WHERE r.enrollment_id = ? AND r.context_role_id = ?))",
+              "(EXISTS (SELECT 1 FROM enrollments_context_roles r WHERE r.enrollment_id = ? AND r.context_role_id = ANY(?)))",
               e.id,
-              ^instructor_role_id
+              ^@instructor_role_ids
             )
           )
 
@@ -335,7 +339,7 @@ defmodule Oli.Delivery.Sections do
   defp reduce_to_roles(%Enrollment{} = enrollment, roles) do
     Enum.reduce(enrollment.context_roles, roles, fn context_role, acum ->
       case context_role do
-        %Lti_1p3.DataProviders.EctoProvider.ContextRole{id: 3} ->
+        %Lti_1p3.DataProviders.EctoProvider.ContextRole{id: id} when id in @instructor_role_ids ->
           Map.put(acum, :is_instructor?, true)
 
         %Lti_1p3.DataProviders.EctoProvider.ContextRole{id: 4} ->
@@ -360,13 +364,12 @@ defmodule Oli.Delivery.Sections do
 
   @doc """
   Determines if user has instructor role.
+  Instructor roles are:
+  - context_instructor
+  - context_content_developer
   """
   def has_instructor_role?(%User{} = user, section_slug) do
-    ContextRoles.has_role?(
-      user,
-      section_slug,
-      ContextRoles.get_role(:context_instructor)
-    )
+    ContextRoles.has_roles?(user, section_slug, @instructor_roles, :any)
   end
 
   @doc """
@@ -1003,7 +1006,7 @@ defmodule Oli.Delivery.Sections do
         join: ecr in EnrollmentContextRole,
         on: ecr.enrollment_id == e.id,
         where: e.section_id == parent_as(:section).id,
-        where: ecr.context_role_id == ^@instructor_context_role_id,
+        where: ecr.context_role_id in ^@instructor_role_ids,
         group_by: e.section_id,
         select:
           fragment("array_agg(concat(?, '|', ?, '|', ?))", u.name, u.given_name, u.family_name)
@@ -1244,18 +1247,18 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
-  Returns the set of all instructors with :context_instructor role in the given section.
+  Returns the set of all instructors with :context_instructor or :context_content_developer role in the given section.
   """
   def fetch_instructors(section_slug) do
     list_enrollments(section_slug)
     |> Enum.filter(fn e ->
-      ContextRoles.contains_role?(e.context_roles, ContextRoles.get_role(:context_instructor))
+      contains_instructor_role?(e.context_roles)
     end)
     |> Enum.map(fn e -> e.user end)
   end
 
   @doc """
-  Returns the names of all instructors with :context_instructor role for the given section ids.
+  Returns the names of all instructors with :context_instructor or :context_content_developer role for the given section ids.
 
   %{
     section_id_1: [inst_1, inst_2],
@@ -1265,8 +1268,6 @@ defmodule Oli.Delivery.Sections do
   """
 
   def instructors_per_section(section_ids) do
-    instructor_context_role_id = ContextRoles.get_role(:context_instructor).id
-
     query =
       from(
         e in Enrollment,
@@ -1276,7 +1277,7 @@ defmodule Oli.Delivery.Sections do
         on: e.id == ecr.enrollment_id,
         where:
           s.id in ^section_ids and e.status == :enrolled and
-            ecr.context_role_id == ^instructor_context_role_id,
+            ecr.context_role_id in ^@instructor_role_ids,
         preload: [:user],
         select: {s.id, e}
       )
@@ -2817,7 +2818,8 @@ defmodule Oli.Delivery.Sections do
         assessment_mode: revision.assessment_mode,
         batch_scoring: revision.batch_scoring,
         replacement_strategy: revision.replacement_strategy,
-        section_id: section.id
+        section_id: section.id,
+        retake_mode: revision.retake_mode
       }
       |> SectionResource.to_map()
       |> Map.delete(:id)
@@ -4932,15 +4934,9 @@ defmodule Oli.Delivery.Sections do
   directly attached to them.
   """
   def get_objectives_and_subobjectives(%Section{slug: section_slug} = section, opts \\ []) do
-    student_id =
-      if opts[:student_id],
-        do: opts[:student_id],
-        else: nil
+    student_id = if opts[:student_id], do: opts[:student_id], else: nil
 
-    exclude_sub_objectives =
-      if opts[:exclude_sub_objectives],
-        do: true,
-        else: false
+    exclude_sub_objectives = if opts[:exclude_sub_objectives], do: true, else: false
 
     # get the minimal fields for all objectives from the database
     objective_id = Oli.Resources.ResourceType.id_for_objective()
@@ -4956,20 +4952,10 @@ defmodule Oli.Delivery.Sections do
       })
       |> Repo.all()
 
-    id_list =
-      objectives
-      |> Enum.map(& &1.resource_id)
+    id_list = Enum.map(objectives, & &1.resource_id)
 
     proficiencies_for_objectives =
-      case student_id do
-        nil ->
-          Metrics.proficiency_per_student_for_objective(section.id, id_list)
-
-        student_id ->
-          Metrics.proficiency_per_student_for_objective(section.id, id_list,
-            student_id: student_id
-          )
-      end
+      Metrics.proficiency_per_student_for_objective(section.id, id_list, student_id: student_id)
 
     student_ids =
       Sections.enrolled_student_ids(section_slug)
@@ -4985,8 +4971,9 @@ defmodule Oli.Delivery.Sections do
           end)
 
         proficiency_dist =
-          student_proficiency
-          |> Enum.frequencies_by(fn {_student_id, proficiency} -> proficiency end)
+          Enum.frequencies_by(student_proficiency, fn {_student_id, proficiency} ->
+            proficiency
+          end)
 
         proficiency_mode =
           proficiency_dist
@@ -5060,9 +5047,9 @@ defmodule Oli.Delivery.Sections do
               objective_resource_id: objective.resource_id,
               student_proficiency_obj: student_proficiency_obj,
               student_proficiency_obj_dist: student_proficiency_obj_dist,
-              subobjective: "",
+              subobjective: nil,
               subobjective_resource_id: nil,
-              student_proficiency_subobj: ""
+              student_proficiency_subobj: nil
             })
 
           case exclude_sub_objectives do
@@ -5100,7 +5087,7 @@ defmodule Oli.Delivery.Sections do
           end
 
         # this is a subobjective, we do nothing as it will be handled in the context of its parent(s)
-        _ ->
+        _true ->
           all
       end
     end)
@@ -5392,8 +5379,6 @@ defmodule Oli.Delivery.Sections do
     Get all instructors for a given section.
   """
   def get_instructors_for_section(section_id) do
-    instructor_context_role_id = ContextRoles.get_role(:context_instructor).id
-
     Repo.all(
       from(enrollment in Enrollment,
         join: enrollment_context_role in EnrollmentContextRole,
@@ -5402,7 +5387,7 @@ defmodule Oli.Delivery.Sections do
         on: enrollment.user_id == user.id,
         where:
           enrollment.section_id == ^section_id and
-            enrollment_context_role.context_role_id == ^instructor_context_role_id,
+            enrollment_context_role.context_role_id in ^@instructor_role_ids,
         select: user
       )
     )
@@ -5600,6 +5585,29 @@ defmodule Oli.Delivery.Sections do
           inner_acc
         end
       end)
+    end)
+  end
+
+  @doc """
+  Returns the list of instructor roles
+  """
+  @spec get_instructor_roles() :: list(%Lti_1p3.DataProviders.EctoProvider.ContextRole{})
+  def get_instructor_roles(), do: @instructor_roles
+
+  @doc """
+  Returns the list of instructor role ids
+  """
+  @spec get_instructor_role_ids() :: list(integer())
+  def get_instructor_role_ids(), do: @instructor_role_ids
+
+  @doc """
+  Returns true if the list of roles contains any instructor role
+  """
+  @spec contains_instructor_role?(list(%Lti_1p3.DataProviders.EctoProvider.ContextRole{})) ::
+          boolean()
+  def contains_instructor_role?(roles) do
+    Enum.any?(@instructor_roles, fn r ->
+      ContextRoles.contains_role?(roles, r)
     end)
   end
 end

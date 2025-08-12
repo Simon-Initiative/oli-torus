@@ -1,7 +1,7 @@
 FROM amazonlinux:2
 
-ARG ELIXIR_VERSION=1.17.2
-ARG OTP_VERSION=26.1
+ARG ELIXIR_VERSION=1.18.4
+ARG OTP_VERSION=28.0
 
 RUN yum update -y
 RUN yum install -y tar wget git
@@ -13,7 +13,7 @@ WORKDIR /tmp
 RUN wget --tries=1 --timeout=30 "http://erlang.org/download/otp_src_${OTP_VERSION}.tar.gz" -O otp_src_${OTP_VERSION}.tar.gz || wget "https://github.com/erlang/otp/releases/download/OTP-${OTP_VERSION}/otp_src_${OTP_VERSION}.tar.gz" -O otp_src_${OTP_VERSION}.tar.gz
 RUN tar xfz otp_src_${OTP_VERSION}.tar.gz
 WORKDIR /tmp/otp_src_${OTP_VERSION}/
-RUN ./configure
+RUN ./configure --disable-jit
 RUN make && make install
 
 WORKDIR /tmp
