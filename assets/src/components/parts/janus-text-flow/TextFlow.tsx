@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import chroma from 'chroma-js';
 import { Environment } from 'janus-script';
+import { parsePaddingShorthand } from 'components/activities/adaptive/components/common/util';
 import guid from 'utils/guid';
 import {
   NotificationType,
@@ -203,6 +204,7 @@ const TextFlow: React.FC<PartComponentProps<TextFlowModel>> = (props: any) => {
     height,
     overrideWidth = true,
     overrideHeight = false,
+    padding = '',
   } = model;
 
   const styles: any = {
@@ -215,6 +217,15 @@ const TextFlow: React.FC<PartComponentProps<TextFlowModel>> = (props: any) => {
   if (overrideHeight) {
     styles.height = height;
   }
+
+  if (padding) {
+    // Parse the padding value
+    const paddingValue = parsePaddingShorthand(padding);
+    if (paddingValue?.length) {
+      styles.padding = paddingValue;
+    }
+  }
+
   if (fontSize) {
     styles.fontSize = `${fontSize}px`;
   }

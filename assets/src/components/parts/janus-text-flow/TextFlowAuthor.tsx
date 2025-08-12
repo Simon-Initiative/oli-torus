@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
 import chroma from 'chroma-js';
+import { parsePaddingShorthand } from 'components/activities/adaptive/components/common/util';
 import {
   NotificationType,
   subscribeToNotification,
@@ -158,6 +159,7 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
     height,
     overrideWidth = true,
     overrideHeight = false,
+    padding = '',
   } = model;
 
   const styles: any = {
@@ -166,6 +168,13 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
   };
   if (overrideWidth) {
     styles.width = width;
+  }
+  if (padding) {
+    // Parse the padding value
+    const paddingValue = parsePaddingShorthand(padding);
+    if (paddingValue?.length) {
+      styles.padding = paddingValue;
+    }
   }
   if (overrideHeight) {
     styles.height = height;
