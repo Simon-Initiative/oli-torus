@@ -281,12 +281,16 @@ defmodule OliWeb.Common.FormatDateTime do
   end
 
   defp get_section_or_browser_tz(section, browser_timezone) do
-    if not is_nil(section) and Map.has_key?(section, :timezone) and not is_nil(section.timezone) do
-      section.timezone
-    else
-      browser_timezone
+    cond do
+      not is_nil(section) and Map.has_key?(section, :timezone) and not is_nil(section.timezone) ->
+        section.timezone
+      
+      not is_nil(browser_timezone) ->
+        browser_timezone
+      
+      true ->
+        @utc_timezone
     end
-    |> value_or(@utc_timezone)
   end
 
   def to_formatted_datetime(datetime, ctx, format \\ "{WDshort} {Mshort} {D}, {YYYY}")

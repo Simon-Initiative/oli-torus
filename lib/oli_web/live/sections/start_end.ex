@@ -1,15 +1,15 @@
 defmodule OliWeb.Sections.StartEnd do
   use OliWeb, :html
 
-  attr(:form, :any, required: true)
-  attr(:disabled, :boolean, required: true)
-  attr(:is_admin, :boolean, required: true)
-  attr(:ctx, :map, required: true)
-
   defp timezone_options do
     Tzdata.zone_list()
     |> Enum.map(&{&1, &1})
   end
+
+  attr(:form, :any, required: true)
+  attr(:disabled, :boolean, required: true)
+  attr(:is_admin, :boolean, required: true)
+  attr(:ctx, :map, required: true)
 
   def render(assigns) do
     ~H"""
