@@ -56,6 +56,14 @@ module.exports = {
     light: '#0FB863',
     dark: '#0FB863',
   },
+  'Fill-Chip-Green': {
+    light: '#E7FCF3',
+    dark: '#3D4F47',
+  },
+  'Fill-Chip-Gray': {
+    light: '#CED1D9',
+    dark: '#353740',
+  },
   // Fill/Buttons
   'Fill-Buttons-fill-primary': {
     light: '#0080FF',
@@ -227,6 +235,18 @@ module.exports = {
   'Text-text-accent-purple': {
     light: '#9A40A8',
     dark: '#EBAAF2',
+  },
+  'Text-Chip-Orange': {
+    light: '#91450E',
+    dark: '#FFB387',
+  },
+  'Text-Chip-Green': {
+    light: '#175A3D',
+    dark: '#39E581',
+  },
+  'Text-Chip-Gray': {
+    light: '#000000',
+    dark: '#FFFFFF',
   },
   // Table
   'Table-table-row-1': {
