@@ -57,7 +57,7 @@ defmodule Oli.Delivery.Sections.SectionTest do
       section = build(:section, @valid_section_attrs)
 
       changeset =
-        Section.changeset(section, %{requires_payment: true, amount: Money.new(:USD, -1)})
+        Section.changeset(section, %{requires_payment: true, amount: Money.new(-1, "USD")})
 
       assert changeset.errors[:amount] ==
                {"must be greater than or equal to one", []}

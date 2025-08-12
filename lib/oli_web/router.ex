@@ -522,19 +522,6 @@ defmodule OliWeb.Router do
     put("/:project_id/collaborators/:author_email", CollaboratorController, :update)
     delete("/:project_id/collaborators/:author_email", CollaboratorController, :delete)
 
-    # Activities
-    put(
-      "/:project_id/activities/enable/:activity_slug",
-      ProjectActivityController,
-      :enable_activity
-    )
-
-    put(
-      "/:project_id/activities/disable/:activity_slug",
-      ProjectActivityController,
-      :disable_activity
-    )
-
     # Insights
     live "/:project_id/insights", Insights
   end
@@ -1615,7 +1602,6 @@ defmodule OliWeb.Router do
     get("/:project_slug/import/download", IngestController, :download_current)
     live("/:project_slug/import/csv", Import.CSVImportView)
 
-    live("/ingest", Admin.Ingest)
     live("/ingest/process", Admin.IngestV2)
 
     # Branding
@@ -1806,6 +1792,7 @@ defmodule OliWeb.Router do
 
       get("/flame_graphs", DevController, :flame_graphs)
       live("/icons", Dev.IconsLive)
+      live("/tokens", Dev.TokensLive)
     end
   end
 end

@@ -105,7 +105,7 @@ defmodule Oli.Search.Embeddings do
   def embedding_for_input(input) do
     case Oli.OpenAIClient.embeddings(
            [model: "text-embedding-ada-002", input: input],
-           Oli.Conversation.Dialogue.config(:sync)
+           config()
          ) do
       {:ok, %{data: [result]}} ->
         {:ok, result["embedding"]}
@@ -219,5 +219,16 @@ defmodule Oli.Search.Embeddings do
       [p, r, re],
       p.publication_id == ^publication_id and r.resource_type_id == ^page_type_id
     )
+  end
+
+  def config() do
+    %OpenAI.Config{
+      http_options: [
+        timeout: System.get_env("OPENAI_TIMEOUT", "8000") |> String.to_integer(),
+        recv_timeout: System.get_env("OPENAI_RECV_TIMEOUT", "60000") |> String.to_integer()
+      ],
+      api_key: System.get_env("OPENAI_API_KEY"),
+      organization_key: System.get_env("OPENAI_ORG_KEY")
+    }
   end
 end

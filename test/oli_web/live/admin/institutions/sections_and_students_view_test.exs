@@ -66,10 +66,7 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsViewTest do
         type: :enrollable,
         institution: institution_1,
         requires_payment: true,
-        amount: %{
-          "amount" => "40.00",
-          "currency" => "USD"
-        }
+        amount: Money.new(40, "USD")
       )
 
     section_2 =
@@ -81,10 +78,7 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsViewTest do
         type: :enrollable,
         institution: institution_1,
         requires_payment: true,
-        amount: %{
-          "amount" => "10.00",
-          "currency" => "USD"
-        }
+        amount: Money.new(10, "USD")
       )
 
     [section_3, section_4] =
@@ -96,10 +90,7 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsViewTest do
         type: :enrollable,
         institution: institution_1,
         requires_payment: true,
-        amount: %{
-          "amount" => "30.00",
-          "currency" => "USD"
-        }
+        amount: Money.new(30, "USD")
       )
 
     {:ok, section_1} = Sections.create_section_resources(section_1, publication)
