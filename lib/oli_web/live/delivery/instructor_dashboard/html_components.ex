@@ -278,6 +278,17 @@ defmodule OliWeb.Delivery.InstructorDashboard.HTMLComponents do
     """
   end
 
+  attr :title, :string, required: true
+
+  def render_proficiency_label(assigns) do
+    ~H"""
+    <div class="flex items-center gap-x-2">
+      <%= Icons.info(assigns) %>
+      <span><%= @title %></span>
+    </div>
+    """
+  end
+
   attr :entry, :string, required: true
   slot :inner_block, required: true
 

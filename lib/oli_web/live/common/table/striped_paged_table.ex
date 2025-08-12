@@ -16,6 +16,7 @@ defmodule OliWeb.Common.StripedPagedTable do
   attr :show_bottom_paging, :boolean, default: true
 
   attr :additional_table_class, :string, default: ""
+  attr :additional_row_class, :string, default: ""
   attr :render_top_info, :boolean, default: true
   attr :scrollable, :boolean, default: true
   attr :show_limit_change, :boolean, default: false
@@ -39,8 +40,9 @@ defmodule OliWeb.Common.StripedPagedTable do
             table_model: @table_model,
             sort: @sort,
             selection_change: @selection_change,
-            additional_table_class: @additional_table_class
-          })}
+            additional_table_class: @additional_table_class,
+            additional_row_class: @additional_row_class
+          }) %>
         </div>
         <Paging.render
           id="footer_paging"
@@ -71,6 +73,7 @@ defmodule OliWeb.Common.StripedPagedTable do
         sort={@sort}
         select={@selection_change}
         additional_table_class={@additional_table_class}
+        additional_row_class={@additional_row_class}
       />
       """
     else
@@ -79,6 +82,7 @@ defmodule OliWeb.Common.StripedPagedTable do
         model={@table_model}
         sort={@sort}
         additional_table_class={@additional_table_class}
+        additional_row_class={@additional_row_class}
       />
       """
     end
