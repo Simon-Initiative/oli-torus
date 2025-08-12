@@ -23,20 +23,23 @@ export class OverviewProjectPO {
     };
   }
 
-  get advancedActivities() {
+   get advancedActivities() {
     return {
-      clickEnableAllActivities: async (projectId: string, activity: ActivityType) => {
+      enableActivity: async (projectId: string, activity: ActivityType) => {
         const enableLink = this.page.locator(
           `a[data-to="/authoring/project/${projectId}/activities/enable/${ACTIVITY_TYPE[activity]['data-to']}"]`,
         );
-        await enableLink.click();
+        await enableLink.scrollIntoViewIfNeeded();
+        await enableLink.click({ force: true });
         await expect(this.toolbar).toBeVisible();
       },
-      clickDisableAllActivities: async (projectId: string, activity: ActivityType) => {
+
+      disableActivity: async (projectId: string, activity: ActivityType) => {
         const disableLink = this.page.locator(
           `a[data-to="/authoring/project/${projectId}/activities/disable/${ACTIVITY_TYPE[activity]['data-to']}"]`,
         );
-        await disableLink.click();
+        await disableLink.scrollIntoViewIfNeeded();
+        await disableLink.click({ force: true });
         await expect(this.toolbar).toBeVisible();
       },
     };

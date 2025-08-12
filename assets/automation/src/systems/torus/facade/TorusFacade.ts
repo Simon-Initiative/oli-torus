@@ -11,6 +11,7 @@ import { LoginPO } from '@pom/login/LoginPO';
 import { BasicPracticePagePO } from '@pom/page/BasicPracticePagePO';
 import { BasicScoredPagePO } from '@pom/page/BasicScoredPagePO';
 import { CurriculumPO } from '@pom/project/CurriculumPO';
+import { ActivityType } from '@pom/types/activity-types';
 import { LanguageCodeType } from '@pom/types/language-code-types';
 import { LanguageType } from '@pom/types/language-types';
 import { USER_TYPES, UserType } from '@pom/types/user-type';
@@ -244,8 +245,25 @@ export class TorusFacade {
     await this.wsi.newCourseSetup.step1.verifyTextStepperContent(textToVerify);
   }
 
+  sidebar() {
+    return {
+      clickCourseAuthor: async () => await this.wsa.sidebar.workspace.clickAuthor(),
+      clickInstructor: async () => await this.wsa.sidebar.workspace.clickInstructor(),
+      clickStudent: async () => await this.wsa.sidebar.workspace.clickStudent(),
+    };
+  }
+
   project() {
     return {
+       overview: {
+        enableActivity: async (projectId: string, activity: ActivityType) => {
+          await this.wsa.overviewProject.advancedActivities.enableActivity(projectId, activity);
+        },
+        disableActivity: async (projectId: string, activity: ActivityType) => {
+          await this.wsa.overviewProject.advancedActivities.disableActivity(projectId, activity);
+        },
+      },
+
       addPageAndEnter: async (type: 'basic-practice' | 'basic-scored', projectName: string) => {
         const s = this.wsa.dashboard.search;
         const t = this.wsa.dashboard.table;
@@ -566,6 +584,13 @@ export class TorusFacade {
           await this.wsa.sidebar.workspace.clickAuthor();
         },
         activity: {
+          add: async (activity: ActivityType) => {
+            await this.bpp.visibleTitlePage();
+            await this.bpp.clickInsertButtonIcon();
+            await this.bpp.selectActivity(activity);
+            await this.bpp.waitForChangesSaved();
+            await this.bpp.expectActivityVisible(activity);
+          },
           addCataVerify: async (questionText: string) => {
             const activityType = 'cata';
             await this.bpp.clickInsertButtonIcon();
