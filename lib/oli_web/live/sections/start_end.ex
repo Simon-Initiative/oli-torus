@@ -6,6 +6,11 @@ defmodule OliWeb.Sections.StartEnd do
   attr(:is_admin, :boolean, required: true)
   attr(:ctx, :map, required: true)
 
+  defp timezone_options do
+    Tzdata.zone_list()
+    |> Enum.map(&{&1, &1})
+  end
+
   def render(assigns) do
     ~H"""
     <div class="flex flex-col gap-2 mt-4">
@@ -37,6 +42,16 @@ defmodule OliWeb.Sections.StartEnd do
           class="form-control"
           disabled={@disabled}
           ctx={@ctx}
+        />
+      </div>
+      <div class="form-label-group">
+        <.input
+          type="select"
+          field={@form[:timezone]}
+          label="Course Timezone"
+          class="form-control"
+          disabled={@disabled}
+          options={timezone_options()}
         />
       </div>
       <div class="mt-3">

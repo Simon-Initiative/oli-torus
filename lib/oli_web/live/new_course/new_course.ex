@@ -353,7 +353,8 @@ defmodule OliWeb.Delivery.NewCourse do
               :class_days,
               :start_date,
               :end_date,
-              :preferred_scheduling_time
+              :preferred_scheduling_time,
+              :timezone
             ])
             |> Map.merge(%{
               blueprint_id: blueprint.id,
