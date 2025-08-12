@@ -270,10 +270,18 @@ defmodule OliWeb.Common.FormatDateTime do
   def tz_preference_or_default(author, user, section \\ nil, browser_timezone) do
     cond do
       not is_nil(author) ->
-        Accounts.get_author_preference(author, :timezone, get_section_or_browser_tz(section, browser_timezone))
+        Accounts.get_author_preference(
+          author,
+          :timezone,
+          get_section_or_browser_tz(section, browser_timezone)
+        )
 
       not is_nil(user) ->
-        Accounts.get_user_preference(user, :timezone, get_section_or_browser_tz(section, browser_timezone))
+        Accounts.get_user_preference(
+          user,
+          :timezone,
+          get_section_or_browser_tz(section, browser_timezone)
+        )
 
       true ->
         get_section_or_browser_tz(section, browser_timezone)
