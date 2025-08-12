@@ -172,7 +172,9 @@ defmodule OliWeb.Delivery.RemixSection do
     params = %{
       text_filter: "",
       limit: 5,
-      offset: 0
+      offset: 0,
+      sort_by: :title,
+      sort_order: :asc
     }
 
     {:ok, pages_table_model} = PagesTableModel.new([])
@@ -1047,8 +1049,6 @@ defmodule OliWeb.Delivery.RemixSection do
 
   defp transform_section_pages(section_pages) do
     section_pages
-    # Sort by title to ensure it matches the default order in the "all pages" authoring view
-    |> Enum.sort_by(fn rev -> rev.title end, :asc)
     |> Enum.map(fn rev ->
       %HierarchyNode{uuid: UUID.uuid4(), revision: rev}
     end)
