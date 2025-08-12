@@ -282,12 +282,12 @@ defmodule OliWeb.Common.FormatDateTime do
 
   defp get_section_or_browser_tz(section, browser_timezone) do
     cond do
-      not is_nil(section) and Map.has_key?(section, :timezone) and not is_nil(section.timezone) ->
-        section.timezone
-      
       not is_nil(browser_timezone) ->
         browser_timezone
-      
+
+      not is_nil(section) and Map.has_key?(section, :timezone) and not is_nil(section.timezone) ->
+        section.timezone
+
       true ->
         @utc_timezone
     end
