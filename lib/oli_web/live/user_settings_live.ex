@@ -8,11 +8,6 @@ defmodule OliWeb.UserSettingsLive do
   alias Oli.AssentAuth.UserAssentAuth
   alias OliWeb.Common.Properties.{Groups, Group}
 
-  ### TODO lunes:
-  # hay 8 tests que fallan, revisarlos y arreglarlos
-  # Algunos son de este modulo, el fix debería ser análogo al de AuthorSettingsLive,
-  # también correr mix test -> cambia como 350 archivos, quizá ese cambio hacerlo en otro PR que parta de este
-
   def render(assigns) do
     ~H"""
     <h2 class="text-3xl mb-8">Account Settings</h2>
