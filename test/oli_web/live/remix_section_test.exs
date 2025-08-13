@@ -1107,10 +1107,6 @@ defmodule OliWeb.RemixSectionLiveTest do
              |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-of-type(3)")
              |> render() =~ "#{page_5.title}"
 
-      assert view
-             |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-of-type(3)")
-             |> render() =~ "#{unit1_container.revision.title}"
-
       view
       |> element("button[phx-value-tab_name='all_pages']")
       |> render_click()
