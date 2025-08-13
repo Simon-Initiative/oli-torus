@@ -234,7 +234,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.HTMLComponents do
       </button>
     </div>
     <div class="ml-1">
-      <%= @title %>
+      {@title}
     </div>
     """
   end
@@ -272,7 +272,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.HTMLComponents do
             <Icons.chevron_down class="fill-black dark:fill-dark -rotate-180" />
           </div>
         </div>
-        <%= render_slot(@inner_block) %>
+        {render_slot(@inner_block)}
       </div>
     </div>
     """
@@ -283,9 +283,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.HTMLComponents do
 
   defp view_example_bullet_entry(assigns) do
     ~H"""
-    <span class="text-[#383a44] text-base font-bold dark:text-white"><%= @entry %>:</span>
+    <span class="text-[#383a44] text-base font-bold dark:text-white">{@entry}:</span>
     <span class="text-[#383a44] text-base font-medium dark:text-white">
-      <%= render_slot(@inner_block) %>
+      {render_slot(@inner_block)}
     </span>
     """
   end
@@ -295,7 +295,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.HTMLComponents do
   defp view_example_blue_item(assigns) do
     ~H"""
     <div class="self-stretch text-[#0165da] text-base font-bold dark:text-white">
-      <%= @content %>
+      {@content}
     </div>
     """
   end

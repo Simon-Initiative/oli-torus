@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <Phoenix.Component.live_title>
-      <%= assigns[:page_title] || assigns[:title] || Oli.VendorProperties.product_short_name() %>
+      {assigns[:page_title] || assigns[:title] || Oli.VendorProperties.product_short_name()}
     </Phoenix.Component.live_title>
 
     <link
@@ -137,9 +137,9 @@
       window.cite = require('citation-js')
     </script>
 
-    <%= OliWeb.Common.MathJaxScript.render(@conn) %>
+    {OliWeb.Common.MathJaxScript.render(@conn)}
 
-    <%= csrf_meta_tag() %>
+    {csrf_meta_tag()}
     <script type="text/javascript" src={Routes.static_path(@conn, "/js/vendor.js")}>
     </script>
     <script type="text/javascript" src={Routes.static_path(@conn, "/js/app.js")}>
@@ -156,14 +156,14 @@
   <body class="min-h-screen flex flex-col bg-delivery-body text-delivery-body-color dark:bg-delivery-body-dark dark:text-delivery-body-color-dark">
     <input type="hidden" id="layout-id" data-layout-id="delivery" />
 
-    <%= live_render(@conn, OliWeb.SystemMessageLive.ShowView) %>
+    {live_render(@conn, OliWeb.SystemMessageLive.ShowView)}
 
-    <%= Map.get(assigns, :inner_layout) || @inner_content %>
+    {Map.get(assigns, :inner_layout) || @inner_content}
 
-    <%= react_component("Components.ModalDisplay") %>
+    {react_component("Components.ModalDisplay")}
 
-    <%= live_render(@conn, OliWeb.TechSupportLive,
+    {live_render(@conn, OliWeb.TechSupportLive,
       session: OliWeb.CollectHelpRequestInfo.collect(@conn)
-    ) %>
+    )}
   </body>
 </html>

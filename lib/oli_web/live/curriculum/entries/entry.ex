@@ -46,11 +46,11 @@ defmodule OliWeb.Curriculum.Entry do
     >
       <div class="flex-grow-1 d-flex flex-column self-center">
         <div class="flex-1">
-          <%= entry_icon(assigns) %>
+          {entry_icon(assigns)}
           <%= if Oli.Resources.ResourceType.get_type_by_id(@child.resource_type_id) == "container" do %>
-            <%= Links.resource_link(@child, [], @project, @numberings, "ml-1 mr-1 entry-title") %>
+            {Links.resource_link(@child, [], @project, @numberings, "ml-1 mr-1 entry-title")}
           <% else %>
-            <span class="ml-1 mr-1 entry-title"><%= @child.title %></span>
+            <span class="ml-1 mr-1 entry-title">{@child.title}</span>
             <.link
               class="entry-title mx-3"
               href={
@@ -66,7 +66,7 @@ defmodule OliWeb.Curriculum.Entry do
             </.link>
           <% end %>
           <span :if={@editor} class="badge">
-            <%= Map.get(@editor, :name) || "Someone" %> is editing this
+            {Map.get(@editor, :name) || "Someone"} is editing this
           </span>
         </div>
 

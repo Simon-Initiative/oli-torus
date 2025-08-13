@@ -52,7 +52,7 @@ defmodule OliWeb.ObjectivesLive.SelectExistingSubModal do
                 <%= for sub_objective <- @filtered_sub_objectives do %>
                   <div class="my-2 d-flex">
                     <div class="p-1 mr-3 flex-grow-1 overflow-auto text-truncate">
-                      <%= sub_objective.title %>
+                      {sub_objective.title}
                     </div>
                     <button
                       class="btn btn-outline-primary py-1"

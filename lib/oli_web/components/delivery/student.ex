@@ -20,9 +20,7 @@ defmodule OliWeb.Components.Delivery.Student do
         />
       </svg>
       <span class="text-[12px] leading-[16px] tracking-[0.02px] text-[#0CAF61] dark:text-[#12E56A] font-semibold whitespace-nowrap">
-        <%= Utils.parse_score(@raw_avg_score[:score]) %> / <%= Utils.parse_score(
-          @raw_avg_score[:out_of]
-        ) %>
+        {Utils.parse_score(@raw_avg_score[:score])} / {Utils.parse_score(@raw_avg_score[:out_of])}
       </span>
     </div>
     """
@@ -35,9 +33,7 @@ defmodule OliWeb.Components.Delivery.Student do
     <div role="score summary" class="flex gap-[6px] ml-auto">
       <Icons.score_as_you_go />
       <span class="text-[12px] leading-[16px] tracking-[0.02px] text-[#0CAF61] dark:text-[#12E56A] font-semibold whitespace-nowrap">
-        <%= Utils.format_score(@raw_avg_score[:score]) %> / <%= Utils.format_score(
-          @raw_avg_score[:out_of]
-        ) %>
+        {Utils.format_score(@raw_avg_score[:score])} / {Utils.format_score(@raw_avg_score[:out_of])}
       </span>
     </div>
     """
@@ -98,7 +94,7 @@ defmodule OliWeb.Components.Delivery.Student do
       >
         <div class="flex flex-row gap-1">
           <div>
-            <%= @label %>
+            {@label}
             <span><i class="fa-solid fa-caret-down"></i></span>
           </div>
         </div>
@@ -138,7 +134,7 @@ defmodule OliWeb.Components.Delivery.Student do
       class={"hidden absolute top-[50px] right-0 z-50 whitespace-nowrap bg-white dark:bg-black p-2 rounded-lg shadow-lg #{@class}"}
     >
       <ul>
-        <%= render_slot(@inner_block) %>
+        {render_slot(@inner_block)}
       </ul>
     </div>
     """
@@ -192,9 +188,9 @@ defmodule OliWeb.Components.Delivery.Student do
         <div>
           <Icons.score_as_you_go />
           <span class="text-[12px] leading-[16px] tracking-[0.02px] text-[#0CAF61] dark:text-[#12E56A] font-semibold whitespace-nowrap">
-            <%= Utils.format_score(@raw_avg_score[:score]) %> / <%= Utils.format_score(
+            {Utils.format_score(@raw_avg_score[:score])} / {Utils.format_score(
               @raw_avg_score[:out_of]
-            ) %>
+            )}
           </span>
         </div>
       </div>
@@ -289,7 +285,7 @@ defmodule OliWeb.Components.Delivery.Student do
     <div class="flex flex-col">
       <div class="flex flex-row justify-between gap-10 text-xs">
         <div class="flex flex-row gap-10 text-xs font-semibold w-full">
-          <div class="font-semibold uppercase text-gray-500 mr-1">Attempt <%= @index %>:</div>
+          <div class="font-semibold uppercase text-gray-500 mr-1">Attempt {@index}:</div>
           <div class="ml-auto flex flex-col gap-1 items-end">
             <.time_remaining
               :if={attempt_expires?(@attempt, @effective_settings)}
@@ -320,25 +316,25 @@ defmodule OliWeb.Components.Delivery.Student do
     <div class="flex flex-col">
       <div class="flex flex-row justify-between gap-10 text-xs">
         <div class="flex flex-row gap-1 text-xs font-semibold text-green-700 dark:text-green-500">
-          <div class="font-semibold uppercase text-gray-500 mr-1">Attempt <%= @index %>:</div>
+          <div class="font-semibold uppercase text-gray-500 mr-1">Attempt {@index}:</div>
           <div class="w-4 h-4 relative"><Icons.star /></div>
 
           <div role="attempt score" class="tracking-tight">
-            <%= Float.round(@attempt.score, 2) %>
+            {Float.round(@attempt.score, 2)}
           </div>
           <div class="text-emerald-600">
             /
           </div>
           <div role="attempt out of" class="tracking-tight">
-            <%= Float.round(@attempt.out_of, 2) %>
+            {Float.round(@attempt.out_of, 2)}
           </div>
         </div>
         <div>
-          <%= FormatDateTime.to_formatted_datetime(
+          {FormatDateTime.to_formatted_datetime(
             @attempt.date_submitted,
             @ctx,
             "{WDshort} {Mshort} {D}, {YYYY}"
-          ) %>
+          )}
         </div>
       </div>
       <div class="flex flex-row justify-end">
@@ -402,7 +398,7 @@ defmodule OliWeb.Components.Delivery.Student do
         Time Remaining:
       </span>
       <div role="countdown">
-        <%= Utils.format_time_remaining(@end_date) %>
+        {Utils.format_time_remaining(@end_date)}
       </div>
     </div>
     """
@@ -421,7 +417,7 @@ defmodule OliWeb.Components.Delivery.Student do
       </div>
       <div class="text-right dark:text-white opacity-60 whitespace-nowrap">
         <span class="text-sm font-semibold" role="duration in minutes">
-          <%= @duration_minutes %>
+          {@duration_minutes}
           <span class="w-[25px] self-stretch text-[13px] font-semibold">
             min
           </span>

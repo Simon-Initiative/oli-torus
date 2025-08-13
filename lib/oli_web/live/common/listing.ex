@@ -21,7 +21,7 @@ defmodule OliWeb.Common.Listing do
     ~H"""
     <div class="pb-5">
       <%= if @filter != "" do %>
-        <strong><%= ~s[Results filtered on "#{@filter}"] %></strong>
+        <strong>{~s[Results filtered on "#{@filter}"]}</strong>
       <% end %>
 
       <%= if @total_count > 0 and @total_count > @limit do %>
@@ -31,7 +31,7 @@ defmodule OliWeb.Common.Listing do
           offset={@offset}
           limit={@limit}
           click={@page_change}
-        /> <%= render_table(assigns) %>
+        /> {render_table(assigns)}
         <%= if @show_bottom_paging do %>
           <Paging.render
             id="footer_paging"
@@ -43,8 +43,8 @@ defmodule OliWeb.Common.Listing do
         <% end %>
       <% else %>
         <%= if @total_count > 0 do %>
-          <div><%= "Showing all results (#{@total_count} total)" %></div>
-          <br /> <%= render_table(assigns) %>
+          <div>{"Showing all results (#{@total_count} total)"}</div>
+          <br /> {render_table(assigns)}
         <% else %>
           <p>None exist</p>
         <% end %>
@@ -59,7 +59,7 @@ defmodule OliWeb.Common.Listing do
       <CardListing.render model={@table_model} selected={@selected} ctx={@table_model.data.ctx} />
     <% else %>
       <%= if @with_body do %>
-        <%= render_slot(@inner_block) %>
+        {render_slot(@inner_block)}
       <% else %>
         <Table.render
           model={@table_model}

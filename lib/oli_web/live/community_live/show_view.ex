@@ -71,7 +71,7 @@ defmodule OliWeb.CommunityLive.ShowView do
   def render(assigns) do
     ~H"""
     <div id="community-overview" class="overview container">
-      <%= render_modal(assigns) %>
+      {render_modal(assigns)}
       <ShowSection.render
         section_title="Details"
         section_description="Main community fields that will be shown to system admins and community admins."

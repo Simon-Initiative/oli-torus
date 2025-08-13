@@ -32,7 +32,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
 
       <div class="flex-1 flex flex-col">
         <div class="relative flex-1 flex flex-col pb-[60px]">
-          <%= render_slot(@inner_block) %>
+          {render_slot(@inner_block)}
           <OliWeb.Components.Footer.delivery_footer license={
             Map.get(assigns, :has_license) && assigns[:license]
           } />
@@ -112,10 +112,10 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
                     #{if active, do: "border-delivery-primary", else: "border-transparent"}
                   "}
               >
-                <%= label %>
+                {label}
                 <%= if badge do %>
                   <span class="text-xs inline-block py-1 px-2 ml-2 leading-none text-center whitespace-nowrap align-baseline font-bold bg-delivery-primary text-white rounded">
-                    <%= badge %>
+                    {badge}
                   </span>
                 <% end %>
               </.link>
@@ -156,7 +156,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
             class="navbar-brand dark torus-logo shrink-0 my-1 mr-auto"
             href={logo_link(@section, @student.id, @preview_mode)}
           >
-            <%= brand_logo(Map.merge(assigns, %{class: "d-inline-block align-top mr-2"})) %>
+            {brand_logo(Map.merge(assigns, %{class: "d-inline-block align-top mr-2"}))}
           </a>
         </div>
         <div class="p-3">
@@ -203,12 +203,12 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
         <%= if @student.picture do %>
           <div class="text-center">
             <img src={@student.picture} class="rounded-full h-52 w-52" referrerPolicy="no-referrer" />
-            <p class="text-gray-500 mt-2"><%= @student.email %></p>
+            <p class="text-gray-500 mt-2">{@student.email}</p>
           </div>
         <% else %>
           <div class="text-center">
             <i class="fa-solid fa-circle-user text-[208px] text-gray-200"></i>
-            <p class="text-gray-500 mt-2"><%= @student.email %></p>
+            <p class="text-gray-500 mt-2">{@student.email}</p>
           </div>
         <% end %>
       </div>
@@ -219,7 +219,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
               average score
             </h4>
             <span class={"text-base font-semibold tracking-wide flex items-center mt-2 #{text_color(:avg_score, @student.avg_score)}"}>
-              <%= format_student_score(@student.avg_score) %>
+              {format_student_score(@student.avg_score)}
             </span>
           </div>
           <div class="flex flex-col justify-between">
@@ -227,7 +227,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
               course completion
             </h4>
             <span class={"text-base font-semibold tracking-wide flex items-center mt-2 #{text_color(:progress, @student.progress)}"}>
-              <%= format_percentage(@student.progress) %>
+              {format_percentage(@student.progress)}
             </span>
           </div>
         </div>
@@ -236,10 +236,10 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
             <%= for response <- @survey_responses do %>
               <div class="flex flex-col justify-between">
                 <h4 class="text-xs uppercase text-gray-800 dark:text-white font-normal flex items-center">
-                  <%= response.title %>
+                  {response.title}
                 </h4>
                 <span class="text-base font-semibold tracking-wide text-gray-800 dark:text-white flex items-center mt-2">
-                  <%= response.response || "-" %>
+                  {response.response || "-"}
                 </span>
               </div>
             <% end %>

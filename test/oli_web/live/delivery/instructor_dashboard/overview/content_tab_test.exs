@@ -30,13 +30,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.Overview.Content do
       assert has_element?(view, "h4", "Page 1")
 
       view
-      |> element("button[phx-click=\"next_node\"]")
+      |> element("button[phx-click='next_node']")
       |> render_click()
 
       assert has_element?(view, "h4", "Page 2")
 
       view
-      |> element("button[phx-click=\"next_node\"]")
+      |> element("button[phx-click='next_node']")
       |> render_click()
 
       assert has_element?(view, "h4", "Unit 1")

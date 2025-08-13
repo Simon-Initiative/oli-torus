@@ -1,4 +1,4 @@
-<%= render_modal(assigns) %>
+{render_modal(assigns)}
 
 <div
   data-saved={if @has_unsaved_changes, do: "false", else: "true"}
@@ -6,7 +6,7 @@
   id="curriculum-container"
   class="container curriculum-editor"
 >
-  <h3><%= @section.title %></h3>
+  <h3>{@section.title}</h3>
 
   <div class="grid grid-cols-12 mt-3">
     <div class="col-span-12">
@@ -43,7 +43,7 @@
   </div>
 
   <div class="curriculum-navigation">
-    <%= render_breadcrumb(assigns) %>
+    {render_breadcrumb(assigns)}
   </div>
 
   <div class="grid grid-cols-12" phx-window-keydown="keydown">
@@ -68,15 +68,11 @@
       <div class="mt-5">
         <button
           phx-click="show_add_materials_modal"
-          `
           class="btn btn-xs btn-primary p-2 mr-1"
           type="button"
         >
           Add Materials
         </button>
-        <% # <button phx-click="add_container" class="btn btn-xs btn-outline-primary p-2 mr-1" type="button">
-        #  <%= new_container_name(@active)
-        # </button> %>
       </div>
     </div>
   </div>

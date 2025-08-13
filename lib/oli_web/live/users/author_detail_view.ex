@@ -82,7 +82,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
   def render(assigns) do
     ~H"""
     <div>
-      <%= render_modal(assigns) %>
+      {render_modal(assigns)}
 
       <Groups.render>
         <Group.render label="Details" description="User details">

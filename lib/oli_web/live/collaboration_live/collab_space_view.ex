@@ -127,7 +127,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
         on_cancel={JS.push("cancel_confirm_modal")}
       >
         <:title>Delete Post</:title>
-        <%= "Are you sure you want to delete post #{@modal_assigns[:index]}?" %>
+        {"Are you sure you want to delete post #{@modal_assigns[:index]}?"}
         <:confirm>OK</:confirm>
         <:cancel>Cancel</:cancel>
       </Modal.modal>
@@ -138,7 +138,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
         on_cancel={JS.push("cancel_confirm_modal")}
       >
         <:title>Archive Post</:title>
-        <%= "Are you sure you want to archive post #{@modal_assigns[:index]}?" %>
+        {"Are you sure you want to archive post #{@modal_assigns[:index]}?"}
         <:confirm>OK</:confirm>
         <:cancel>Cancel</:cancel>
       </Modal.modal>
@@ -149,7 +149,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
         on_cancel={JS.push("cancel_confirm_modal")}
       >
         <:title>Unarchive Post</:title>
-        <%= "Are you sure you want to unarchive post #{@modal_assigns[:index]}?" %>
+        {"Are you sure you want to unarchive post #{@modal_assigns[:index]}?"}
         <:confirm>OK</:confirm>
         <:cancel>Cancel</:cancel>
       </Modal.modal>
@@ -160,7 +160,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
         on_cancel={JS.push("cancel_confirm_modal")}
       >
         <:title>Accept Post</:title>
-        <%= "Are you sure you want to accept post #{@modal_assigns[:index]}?" %>
+        {"Are you sure you want to accept post #{@modal_assigns[:index]}?"}
         <:confirm>OK</:confirm>
         <:cancel>Cancel</:cancel>
       </Modal.modal>
@@ -171,14 +171,14 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
         on_cancel={JS.push("cancel_confirm_modal")}
       >
         <:title>Reject Post</:title>
-        <%= "Are you sure you want to reject post #{@modal_assigns[:index]}? This will also reject the replies if there is any." %>
+        {"Are you sure you want to reject post #{@modal_assigns[:index]}? This will also reject the replies if there is any."}
         <:confirm>OK</:confirm>
         <:cancel>Cancel</:cancel>
       </Modal.modal>
 
       <div class="bg-white dark:bg-gray-800 dark:text-delivery-body-color-dark shadow">
         <div class="flex items-center justify-between p-5 w-full">
-          <h3 class="text-xl font-bold"><%= @title %></h3>
+          <h3 class="text-xl font-bold">{@title}</h3>
           <span :if={is_archived?(@collab_space_config.status)} class="badge badge-info ml-2">
             Archived
           </span>

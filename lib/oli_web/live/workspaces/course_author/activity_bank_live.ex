@@ -42,12 +42,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.ActivityBankLive do
       <%= if connected?(@socket) and assigns[:maybe_scripts_loaded] do %>
         <.maybe_show_error error={@error} />
         <div id="editor">
-          <%= React.component(
+          {React.component(
             @ctx,
             "Components.ActivityBank",
             Map.merge(@context, %{revisionHistoryLink: @revision_history_link}),
             id: "activity-bank"
-          ) %>
+          )}
         </div>
       <% else %>
         <.loader />

@@ -27,21 +27,21 @@ defmodule OliWeb.Grades.GradeSync do
     ~H"""
     <div class="card">
       <div class="card-body">
-        <h5 class="card-title"><%= dgettext("grades", "Synchronize Grades") %></h5>
+        <h5 class="card-title">{dgettext("grades", "Synchronize Grades")}</h5>
 
         <p class="card-text">
-          <%= dgettext(
+          {dgettext(
             "grades",
             "If an instructor changes the maximum score for an LMS gradebook line item after students
           have submitted an attempt, it is necessary to synchronize the grades for that LMS gradebook item."
-          ) %>
+          )}
         </p>
 
         <div class="alert alert-danger" role="alert">
-          <strong><%= dgettext("grades", "Warning!") %></strong>
+          <strong>{dgettext("grades", "Warning!")}</strong>
 
-          <%= dgettext("grades", "This operation will overwrite any grades in the LMS gradebook that
-          were manually adjusted or overridden by the instructor.") %>
+          {dgettext("grades", "This operation will overwrite any grades in the LMS gradebook that
+          were manually adjusted or overridden by the instructor.")}
         </div>
 
         <form id="grade_sync_form" />
@@ -54,24 +54,24 @@ defmodule OliWeb.Grades.GradeSync do
         >
           <%= for page <- @graded_pages do %>
             <option value={page.resource_id} selected={@selected_page == page.resource_id}>
-              <%= page.title %>
+              {page.title}
             </option>
           <% end %>
         </select>
 
         <%= if !is_nil(assigns.total_jobs) do %>
           <p>
-            Pending grade updates: <%= assigns.total_jobs -
-              (assigns.failed_jobs + assigns.succeeded_jobs) %>
+            Pending grade updates: {assigns.total_jobs -
+              (assigns.failed_jobs + assigns.succeeded_jobs)}
           </p>
-          <p>Succeeded: <%= assigns.succeeded_jobs %></p>
-          <p>Failed: <%= assigns.failed_jobs %></p>
+          <p>Succeeded: {assigns.succeeded_jobs}</p>
+          <p>Failed: {assigns.failed_jobs}</p>
         <% end %>
       </div>
 
       <div class="card-footer mt-4">
         <a class="btn btn-primary" phx-click="send_grades" phx-throttle={3000} {@disabled}>
-          <%= dgettext("grades", "Synchronize Grades") %>
+          {dgettext("grades", "Synchronize Grades")}
         </a>
       </div>
     </div>

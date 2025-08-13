@@ -72,7 +72,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.TableModel do
     <.link href={
       Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.GatingAndScheduling.Edit, @section_slug, @id)
     }>
-      <%= @title %>
+      {@title}
     </.link>
     """
   end
@@ -87,7 +87,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.TableModel do
     assigns = Map.merge(assigns, %{type: type})
 
     ~H"""
-    <%= @type |> Atom.to_string() |> String.capitalize() %>
+    {@type |> Atom.to_string() |> String.capitalize()}
     """
   end
 
@@ -114,12 +114,12 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.TableModel do
     ~H"""
     <%= if @start_datetime do %>
       <div>
-        <b>Start:</b> <%= Utils.render_precise_date(@data, :start_datetime, @ctx) %>
+        <b>Start:</b> {Utils.render_precise_date(@data, :start_datetime, @ctx)}
       </div>
     <% end %>
     <%= if @end_datetime do %>
       <div>
-        <b>End:</b> <%= Utils.render_precise_date(@data, :end_datetime, @ctx) %>
+        <b>End:</b> {Utils.render_precise_date(@data, :end_datetime, @ctx)}
       </div>
     <% end %>
     """
@@ -237,7 +237,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.TableModel do
             @id
           )
         }>
-          <%= OliWeb.Common.Utils.name(@user) %>
+          {OliWeb.Common.Utils.name(@user)}
         </.link>
       </div>
     <% end %>

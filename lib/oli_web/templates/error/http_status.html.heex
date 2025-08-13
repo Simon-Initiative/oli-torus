@@ -1,9 +1,9 @@
 <div class="text-center mt-[50px] px-5">
   <div class="mx-auto max-w-[300px] mb-8">
-    <%= brand_logo(Map.merge(assigns, %{class: "d-inline-block align-top mr-2"})) %>
+    {brand_logo(Map.merge(assigns, %{class: "d-inline-block align-top mr-2"}))}
   </div>
 
-  <h1 class="text-3xl mb-5"><%= status_code(@reason) %> <%= status_message(@reason) %></h1>
+  <h1 class="text-3xl mb-5">{status_code(@reason)} {status_message(@reason)}</h1>
 
-  <%= Map.get(assigns, :inner_content, "") %>
+  {Map.get(assigns, :inner_content, "")}
 </div>

@@ -141,7 +141,7 @@ defmodule OliWeb.Workspace.CourseAuthor.ProductsLiveTest do
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
 
       # Check archived products checkbox is not checked
-      refute view |> element("input[type=\"checkbox\"]") |> render() =~ "checked=\"checked\""
+      refute view |> element("input[type=\"checkbox\"]") |> render() =~ "checked=\"\""
 
       # Total count message
       assert render(view) =~ "Showing all results (1 total)"
@@ -163,7 +163,7 @@ defmodule OliWeb.Workspace.CourseAuthor.ProductsLiveTest do
       view |> element("input[type='checkbox']") |> render_click()
 
       # Check archived products checkbox is checked
-      assert view |> element("input[type=\"checkbox\"]") |> render() =~ "checked=\"checked\""
+      assert view |> element("input[type=\"checkbox\"]") |> render() =~ "checked=\"\""
 
       # Total count message
       assert render(view) =~ "Showing all results (2 total)"

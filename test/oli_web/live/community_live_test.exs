@@ -131,14 +131,14 @@ defmodule OliWeb.CommunityLiveTest do
       |> render_blur(%{value: "testing"})
 
       view
-      |> element("button[phx-click=\"apply_search\"]")
+      |> element("button[phx-click='apply_search']")
       |> render_click()
 
       assert has_element?(view, "##{c1.id}")
       refute has_element?(view, "##{c2.id}")
 
       view
-      |> element("button[phx-click=\"reset_search\"]")
+      |> element("button[phx-click='reset_search']")
       |> render_click()
 
       assert has_element?(view, "##{c1.id}")
@@ -157,7 +157,7 @@ defmodule OliWeb.CommunityLiveTest do
                "Testing A"
 
       view
-      |> element("th[phx-click=\"sort\"]:first-of-type")
+      |> element("th[phx-click='sort']:first-of-type")
       |> render_click(%{sort_by: "name"})
 
       assert view
@@ -184,7 +184,7 @@ defmodule OliWeb.CommunityLiveTest do
 
       # sort by created ascending
       view
-      |> element("th[phx-click=\"sort\"][phx-value-sort_by=\"inserted_at\"]")
+      |> element("th[phx-click='sort'][phx-value-sort_by='inserted_at']")
       |> render_click(%{sort_by: "inserted_at"})
 
       assert view
@@ -197,7 +197,7 @@ defmodule OliWeb.CommunityLiveTest do
 
       # sort by created descending
       view
-      |> element("th[phx-click=\"sort\"][phx-value-sort_by=\"inserted_at\"]")
+      |> element("th[phx-click='sort'][phx-value-sort_by='inserted_at']")
       |> render_click(%{sort_by: "inserted_at"})
 
       assert view
@@ -220,7 +220,7 @@ defmodule OliWeb.CommunityLiveTest do
       refute has_element?(view, "##{last_c.id}")
 
       view
-      |> element("button[phx-click=\"page_change\"]", "2")
+      |> element("button[phx-click='page_change']", "2")
       |> render_click()
 
       refute has_element?(view, "##{first_c.id}")
@@ -249,14 +249,14 @@ defmodule OliWeb.CommunityLiveTest do
       {:ok, view, _html} = live(conn, @live_view_new_route)
 
       assert has_element?(view, "h5", "New Community")
-      assert has_element?(view, "form[phx-submit=\"save\"")
+      assert has_element?(view, "form[phx-submit='save']")
     end
 
     test "displays error message when data is invalid", %{conn: conn} do
       {:ok, view, _html} = live(conn, @live_view_new_route)
 
       view
-      |> element("form[phx-submit=\"save\"")
+      |> element("form[phx-submit='save']")
       |> render_submit(%{community: %{name: ""}})
 
       assert view
@@ -275,7 +275,7 @@ defmodule OliWeb.CommunityLiveTest do
       community = insert(:community)
 
       view
-      |> element("form[phx-submit=\"save\"")
+      |> element("form[phx-submit='save']")
       |> render_submit(%{community: %{name: community.name <> " "}})
 
       assert view
@@ -293,7 +293,7 @@ defmodule OliWeb.CommunityLiveTest do
       params = params_for(:community)
 
       view
-      |> element("form[phx-submit=\"save\"")
+      |> element("form[phx-submit='save']")
       |> render_submit(%{
         community: params
       })
@@ -312,7 +312,7 @@ defmodule OliWeb.CommunityLiveTest do
 
     defp render_delete_modal(view) do
       view
-      |> element("button[phx-click=\"show_delete_modal\"]")
+      |> element("button[phx-click='show_delete_modal']")
       |> render_click()
     end
 
@@ -341,7 +341,7 @@ defmodule OliWeb.CommunityLiveTest do
       {:ok, view, _html} = live(conn, live_view_show_route(id))
 
       view
-      |> element("form[phx-submit=\"save\"")
+      |> element("form[phx-submit='save']")
       |> render_submit(%{community: %{name: ""}})
 
       assert view
@@ -362,7 +362,7 @@ defmodule OliWeb.CommunityLiveTest do
       new_attributes = params_for(:community)
 
       view
-      |> element("form[phx-submit=\"save\"")
+      |> element("form[phx-submit='save']")
       |> render_submit(%{community: new_attributes})
 
       assert view
@@ -383,7 +383,7 @@ defmodule OliWeb.CommunityLiveTest do
       new_attributes = params_for(:community, name: community.name <> " ")
 
       view
-      |> element("form[phx-submit=\"save\"")
+      |> element("form[phx-submit='save']")
       |> render_submit(%{community: new_attributes})
 
       assert view
@@ -501,7 +501,7 @@ defmodule OliWeb.CommunityLiveTest do
       assert 1 == length(Groups.list_community_admins(community.id))
 
       view
-      |> element("form[phx-submit=\"add_admin\"")
+      |> element("form[phx-submit='add_admin']")
       |> render_submit(%{email: author.email})
 
       assert view
@@ -522,7 +522,7 @@ defmodule OliWeb.CommunityLiveTest do
       {:ok, view, _html} = live(conn, live_view_show_route(community.id))
 
       view
-      |> element("form[phx-submit=\"add_admin\"")
+      |> element("form[phx-submit='add_admin']")
       |> render_submit(%{email: author.email})
 
       error_message =
@@ -533,7 +533,7 @@ defmodule OliWeb.CommunityLiveTest do
              |> render() =~ error_message
 
       view
-      |> element("form[phx-submit=\"add_admin\"")
+      |> element("form[phx-submit='add_admin']")
       |> render_submit(%{email: "wrong@example.com"})
 
       assert view
@@ -555,7 +555,7 @@ defmodule OliWeb.CommunityLiveTest do
       assert 1 == length(Groups.list_community_admins(community.id))
 
       view
-      |> element("form[phx-submit=\"add_admin\"")
+      |> element("form[phx-submit='add_admin']")
       |> render_submit(%{email: Enum.join(emails, ",")})
 
       assert view
@@ -578,7 +578,7 @@ defmodule OliWeb.CommunityLiveTest do
       assert 1 == length(Groups.list_community_admins(community.id))
 
       view
-      |> element("button[phx-click=\"remove_admin\"")
+      |> element("button[phx-click='remove_admin']")
       |> render_click(%{"collaborator-id" => author.id})
 
       assert view
@@ -601,7 +601,7 @@ defmodule OliWeb.CommunityLiveTest do
       assert 1 == length(Groups.list_community_admins(community.id))
 
       view
-      |> element("button[phx-click=\"remove_admin\"")
+      |> element("button[phx-click='remove_admin']")
       |> render_click(%{"collaborator-id" => 12345})
 
       assert view
@@ -621,7 +621,7 @@ defmodule OliWeb.CommunityLiveTest do
       {:ok, view, _html} = live(conn, live_view_show_route(community.id))
 
       view
-      |> element("form[phx-change=\"suggest_admin\"")
+      |> element("form[phx-change='suggest_admin']")
       |> render_change(%{email: author.name})
 
       assert view
@@ -630,7 +630,7 @@ defmodule OliWeb.CommunityLiveTest do
                author.email
 
       view
-      |> element("form[phx-change=\"suggest_admin\"")
+      |> element("form[phx-change='suggest_admin']")
       |> render_change(%{email: "other_name"})
 
       refute view
@@ -651,7 +651,7 @@ defmodule OliWeb.CommunityLiveTest do
       assert 1 == length(Groups.list_community_members(community.id))
 
       view
-      |> element("form[phx-submit=\"add_member\"")
+      |> element("form[phx-submit='add_member']")
       |> render_submit(%{email: user.email})
 
       assert view
@@ -672,7 +672,7 @@ defmodule OliWeb.CommunityLiveTest do
       {:ok, view, _html} = live(conn, live_view_show_route(community.id))
 
       view
-      |> element("form[phx-submit=\"add_member\"")
+      |> element("form[phx-submit='add_member']")
       |> render_submit(%{email: user.email})
 
       error_message =
@@ -683,7 +683,7 @@ defmodule OliWeb.CommunityLiveTest do
              |> render() =~ error_message
 
       view
-      |> element("form[phx-submit=\"add_member\"")
+      |> element("form[phx-submit='add_member']")
       |> render_submit(%{email: "wrong@example.com"})
 
       assert view
@@ -705,7 +705,7 @@ defmodule OliWeb.CommunityLiveTest do
       assert 1 == length(Groups.list_community_members(community.id))
 
       view
-      |> element("button[phx-click=\"remove_member\"")
+      |> element("button[phx-click='remove_member']")
       |> render_click(%{"collaborator-id" => user.id})
 
       assert view
@@ -728,7 +728,7 @@ defmodule OliWeb.CommunityLiveTest do
       assert 1 == length(Groups.list_community_members(community.id))
 
       view
-      |> element("button[phx-click=\"remove_member\"")
+      |> element("button[phx-click='remove_member']")
       |> render_click(%{"collaborator-id" => 12345})
 
       assert view
@@ -748,7 +748,7 @@ defmodule OliWeb.CommunityLiveTest do
       {:ok, view, _html} = live(conn, live_view_show_route(community.id))
 
       view
-      |> element("form[phx-change=\"suggest_member\"")
+      |> element("form[phx-change='suggest_member']")
       |> render_change(%{email: user.name})
 
       assert view
@@ -757,7 +757,7 @@ defmodule OliWeb.CommunityLiveTest do
                user.email
 
       view
-      |> element("form[phx-change=\"suggest_member\"")
+      |> element("form[phx-change='suggest_member']")
       |> render_change(%{email: "other_name"})
 
       refute view
@@ -779,11 +779,11 @@ defmodule OliWeb.CommunityLiveTest do
       assert Enum.empty?(Groups.list_community_members(community.id))
 
       view
-      |> element("form[phx-change=\"suggest_member\"")
+      |> element("form[phx-change='suggest_member']")
       |> render_change(%{email: email})
 
       view
-      |> element("form[phx-submit=\"add_member\"")
+      |> element("form[phx-submit='add_member']")
       |> render_submit(%{email: email})
 
       assert has_element?(view, ".modal-title", "Select user")
@@ -791,7 +791,7 @@ defmodule OliWeb.CommunityLiveTest do
       assert has_element?(view, ".modal-body", "Sub: #{user_2.sub}")
 
       view
-      |> element("button[phx-click=\"add_member\"][phx-value-collaborator-id=\"#{user_1.id}\"]")
+      |> element("button[phx-click='add_member'][phx-value-collaborator-id='#{user_1.id}']")
       |> render_click(%{"collaborator-id": user_1.id})
 
       assert view
@@ -814,7 +814,7 @@ defmodule OliWeb.CommunityLiveTest do
       assert 1 == length(Groups.list_community_institutions(community.id))
 
       view
-      |> element("form[phx-submit=\"add_institution\"")
+      |> element("form[phx-submit='add_institution']")
       |> render_submit(%{institution_id: institution.id})
 
       assert view
@@ -835,7 +835,7 @@ defmodule OliWeb.CommunityLiveTest do
       {:ok, view, _html} = live(conn, live_view_show_route(community.id))
 
       view
-      |> element("form[phx-submit=\"add_institution\"")
+      |> element("form[phx-submit='add_institution']")
       |> render_submit(%{institution_id: "0"})
 
       assert view
@@ -856,7 +856,7 @@ defmodule OliWeb.CommunityLiveTest do
       {:ok, view, _html} = live(conn, live_view_show_route(community.id))
 
       view
-      |> element("form[phx-submit=\"add_institution\"")
+      |> element("form[phx-submit='add_institution']")
       |> render_submit(%{institution_id: institution.id})
 
       assert view
@@ -874,7 +874,7 @@ defmodule OliWeb.CommunityLiveTest do
       {:ok, view, _html} = live(conn, live_view_show_route(community.id))
 
       view
-      |> element("form[phx-submit=\"add_institution\"")
+      |> element("form[phx-submit='add_institution']")
       |> render_submit(%{institution_id: ""})
 
       assert view
@@ -897,7 +897,7 @@ defmodule OliWeb.CommunityLiveTest do
       assert 1 == length(Groups.list_community_institutions(community.id))
 
       view
-      |> element("button[phx-click=\"remove_institution\"")
+      |> element("button[phx-click='remove_institution']")
       |> render_click(%{"collaborator-id" => institution.id})
 
       assert view
@@ -920,7 +920,7 @@ defmodule OliWeb.CommunityLiveTest do
       assert 1 == length(Groups.list_community_institutions(community.id))
 
       view
-      |> element("button[phx-click=\"remove_institution\"")
+      |> element("button[phx-click='remove_institution']")
       |> render_click(%{"collaborator-id" => 12345})
 
       assert view
@@ -985,14 +985,14 @@ defmodule OliWeb.CommunityLiveTest do
       |> render_blur(%{value: "testing"})
 
       view
-      |> element("button[phx-click=\"apply_search\"]")
+      |> element("button[phx-click='apply_search']")
       |> render_click()
 
       assert has_element?(view, "##{cv1.id}")
       refute has_element?(view, "##{cv2.id}")
 
       view
-      |> element("button[phx-click=\"reset_search\"]")
+      |> element("button[phx-click='reset_search']")
       |> render_click()
 
       assert has_element?(view, "##{cv1.id}")
@@ -1013,7 +1013,7 @@ defmodule OliWeb.CommunityLiveTest do
                "Testing A"
 
       view
-      |> element("th[phx-click=\"sort\"]:first-of-type")
+      |> element("th[phx-click='sort']:first-of-type")
       |> render_click(%{sort_by: "title"})
 
       assert view
@@ -1035,7 +1035,7 @@ defmodule OliWeb.CommunityLiveTest do
       refute has_element?(view, "##{last_cv.id}")
 
       view
-      |> element("button[phx-click=\"page_change\"]", "2")
+      |> element("button[phx-click='page_change']", "2")
       |> render_click()
 
       refute has_element?(view, "##{first_cv.id}")
@@ -1084,7 +1084,7 @@ defmodule OliWeb.CommunityLiveTest do
       {:ok, view, _html} = live(conn, live_view_associated_new_route(community.id))
 
       view
-      |> element("th[phx-click=\"sort\"]:first-of-type")
+      |> element("th[phx-click='sort']:first-of-type")
       |> render_click(%{sort_by: "title"})
 
       assert view
@@ -1126,7 +1126,7 @@ defmodule OliWeb.CommunityLiveTest do
       |> render_blur(%{value: "testing"})
 
       view
-      |> element("button[phx-click=\"apply_search\"]")
+      |> element("button[phx-click='apply_search']")
       |> render_click()
 
       assert view
@@ -1140,7 +1140,7 @@ defmodule OliWeb.CommunityLiveTest do
                project_2.title
 
       view
-      |> element("button[phx-click=\"reset_search\"]")
+      |> element("button[phx-click='reset_search']")
       |> render_click()
 
       assert view
@@ -1165,7 +1165,7 @@ defmodule OliWeb.CommunityLiveTest do
                "Example Course"
 
       view
-      |> element("th[phx-click=\"sort\"]:first-of-type")
+      |> element("th[phx-click='sort']:first-of-type")
       |> render_click(%{sort_by: "title"})
 
       assert view
@@ -1191,7 +1191,7 @@ defmodule OliWeb.CommunityLiveTest do
                last_p.title
 
       view
-      |> element("button[phx-click=\"page_change\"]", "2")
+      |> element("button[phx-click='page_change']", "2")
       |> render_click()
 
       assert view
@@ -1282,11 +1282,11 @@ defmodule OliWeb.CommunityLiveTest do
       |> render_blur(%{value: "testing"})
 
       view
-      |> element("button[phx-click=\"apply_search\"]")
+      |> element("button[phx-click='apply_search']")
       |> render_click()
 
       view
-      |> element("button[phx-click=\"apply_search\"]")
+      |> element("button[phx-click='apply_search']")
       |> render_click()
 
       assert view
@@ -1300,7 +1300,7 @@ defmodule OliWeb.CommunityLiveTest do
                user_2.name
 
       view
-      |> element("button[phx-click=\"reset_search\"]")
+      |> element("button[phx-click='reset_search']")
       |> render_click()
 
       assert view
@@ -1328,7 +1328,7 @@ defmodule OliWeb.CommunityLiveTest do
                "Testing A"
 
       view
-      |> element("th[phx-click=\"sort\"]:first-of-type")
+      |> element("th[phx-click='sort']:first-of-type")
       |> render_click(%{sort_by: "name"})
 
       assert view
@@ -1357,7 +1357,7 @@ defmodule OliWeb.CommunityLiveTest do
                last_cma.user.name
 
       view
-      |> element("button[phx-click=\"page_change\"]", "2")
+      |> element("button[phx-click='page_change']", "2")
       |> render_click()
 
       refute view

@@ -345,25 +345,25 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestionTest do
 
       assert lcd
              |> element("#question_1_button")
-             |> render() =~ ~s{disabled="disabled"}
+             |> render() =~ ~s{disabled}
 
       refute lcd
              |> element("#question_2_button")
-             |> render() =~ ~s{disabled="disabled"}
+             |> render() =~ ~s{disabled}
 
       refute lcd
              |> element("#question_3_button")
-             |> render() =~ ~s{disabled="disabled"}
+             |> render() =~ ~s{disabled}
 
       # and previous button is disabled (since we are at the first question)
 
       assert lcd
              |> element("#previous_question_button")
-             |> render() =~ ~s{disabled="disabled"}
+             |> render() =~ ~s{disabled}
 
       refute lcd
              |> element("#next_question_button")
-             |> render() =~ ~s{disabled="disabled"}
+             |> render() =~ ~s{disabled}
 
       # We navigate to question 2 through the menu
       lcd
@@ -373,25 +373,25 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestionTest do
       # initial state: question 2 button is disabled on menu
       refute lcd
              |> element("#question_1_button")
-             |> render() =~ ~s{disabled="disabled"}
+             |> render() =~ ~s{disabled}
 
       assert lcd
              |> element("#question_2_button")
-             |> render() =~ ~s{disabled="disabled"}
+             |> render() =~ ~s{disabled}
 
       refute lcd
              |> element("#question_3_button")
-             |> render() =~ ~s{disabled="disabled"}
+             |> render() =~ ~s{disabled}
 
       # and previous button is enabled (since we are at the second question)
 
       refute lcd
              |> element("#previous_question_button")
-             |> render() =~ ~s{disabled="disabled"}
+             |> render() =~ ~s{disabled}
 
       refute lcd
              |> element("#next_question_button")
-             |> render() =~ ~s{disabled="disabled"}
+             |> render() =~ ~s{disabled}
     end
 
     test "shows the correct question points on the header", %{
