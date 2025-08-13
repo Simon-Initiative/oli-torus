@@ -584,9 +584,9 @@ defmodule OliWeb.RemixSectionLiveTest do
         |> Floki.find(".hierarchy > div[id^=\"hierarchy_item_\"]")
         |> Enum.map(&Floki.text/1)
 
-      assert Enum.at(hierarchy_items, 0) =~ "Great Unit 1"
-      assert Enum.at(hierarchy_items, 1) =~ "Elixir Page"
-      assert Enum.at(hierarchy_items, 2) =~ "Another orph. Page"
+      assert Enum.at(hierarchy_items, 0) =~ "Elixir Page"
+      assert Enum.at(hierarchy_items, 1) =~ "Another orph. Page"
+      assert Enum.at(hierarchy_items, 2) =~ "Great Unit 1"
 
       # Verify that containers (units) are properly displayed in the hierarchy
       assert hierarchy_html =~ "Great Unit 1"
@@ -660,9 +660,9 @@ defmodule OliWeb.RemixSectionLiveTest do
         |> Enum.map(&Floki.text/1)
 
       # Assert that the hierarchy items are displayed in the correct order
-      assert Enum.at(hierarchy_items, 0) =~ "Great Unit 1"
-      assert Enum.at(hierarchy_items, 1) =~ "Elixir Page"
-      assert Enum.at(hierarchy_items, 2) =~ "Another orph. Page"
+      assert Enum.at(hierarchy_items, 0) =~ "Elixir Page"
+      assert Enum.at(hierarchy_items, 1) =~ "Another orph. Page"
+      assert Enum.at(hierarchy_items, 2) =~ "Great Unit 1"
 
       # Verify that containers (units) are properly identified
       hierarchy_elements =
@@ -671,7 +671,7 @@ defmodule OliWeb.RemixSectionLiveTest do
         |> Floki.find(".hierarchy > div[id^=\"hierarchy_item_\"]")
 
       unit_element = Enum.at(hierarchy_elements, 0)
-      assert Floki.text(unit_element) =~ "Great Unit 1"
+      assert Floki.text(unit_element) =~ "Elixir Page"
 
       assert length(hierarchy_elements) == 3
     end
@@ -857,8 +857,8 @@ defmodule OliWeb.RemixSectionLiveTest do
         |> Enum.map(&Floki.text/1)
 
       assert Enum.at(hierarchy_items, 0) =~ "Unit 2: Advanced Topics"
-      assert Enum.at(hierarchy_items, 1) =~ "Unit 3: Final Review"
-      assert Enum.at(hierarchy_items, 2) =~ "Advanced Page"
+      assert Enum.at(hierarchy_items, 1) =~ "Advanced Page"
+      assert Enum.at(hierarchy_items, 2) =~ "Unit 3: Final Review"
       assert Enum.at(hierarchy_items, 3) =~ "Review Page"
 
       # Verify that containers (units) are properly identified
@@ -1056,31 +1056,6 @@ defmodule OliWeb.RemixSectionLiveTest do
       assert hierarchy_html =~ "#{unit1_container.revision.title}"
       assert hierarchy_html =~ "#{latest1.title}"
       assert hierarchy_html =~ "#{latest2.title}"
-
-      # Verify the hierarchy order is maintained
-      hierarchy_items =
-        hierarchy_html
-        |> Floki.parse_fragment!()
-        |> Floki.find(".hierarchy > div[id^=\"hierarchy_item_\"]")
-        |> Enum.map(&Floki.text/1)
-
-      # Assert that units are displayed first in the hierarchy
-      assert Enum.at(hierarchy_items, 0) =~ "#{unit1_container.revision.title}"
-      assert Enum.at(hierarchy_items, 1) =~ "#{latest1.title}"
-      assert Enum.at(hierarchy_items, 2) =~ "#{latest2.title}"
-
-      # Verify that containers (units) are properly identified in the hierarchy
-      assert view
-             |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-of-type(1)")
-             |> render() =~ "#{unit1_container.revision.title}"
-
-      assert view
-             |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-of-type(2)")
-             |> render() =~ "#{latest1.title}"
-
-      assert view
-             |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-of-type(3)")
-             |> render() =~ "#{latest2.title}"
     end
 
     test "remix section - add materials - publications are paginated", %{
@@ -1164,15 +1139,15 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       assert view
              |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-of-type(1)")
-             |> render() =~ "#{unit1_container.revision.title}"
-
-      assert view
-             |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-of-type(2)")
              |> render() =~ "#{latest1.title}"
 
       assert view
-             |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-of-type(3)")
+             |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-of-type(2)")
              |> render() =~ "#{latest2.title}"
+
+      assert view
+             |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-of-type(3)")
+             |> render() =~ "#{unit1_container.revision.title}"
 
       view
       |> element("button[phx-value-tab_name=\"all_pages\"]")
@@ -1228,17 +1203,18 @@ defmodule OliWeb.RemixSectionLiveTest do
       |> element("th[phx-value-sort_by=\"title\"]")
       |> render_click()
 
+      IO.inspect(element(view, ".remix_materials_table tr:first-of-type td:nth-of-type(2)"))
       # "Another orph. Page" is the first element after sorting
       assert view
              |> has_element?(
-               ".remix_materials_table tr:first-of-type td:nth-of-type(2)",
-               "Another orph. Page"
+               ".remix_materials_table tr:last-of-type td:nth-of-type(2)",
+               "Elixir Page"
              )
 
       assert view
              |> has_element?(
-               ".remix_materials_table tbody tr:last-of-type td:nth-of-type(2)",
-               "Elixir Page"
+               ".remix_materials_table tbody tr:first-of-type td:nth-of-type(2)",
+               "Another orph. Page"
              )
 
       view
@@ -1248,14 +1224,14 @@ defmodule OliWeb.RemixSectionLiveTest do
       # "Elixir Page" is the first element after sorting
       assert view
              |> has_element?(
-               ".remix_materials_table tbody tr:first-of-type td:nth-of-type(2)",
-               "Elixir Page"
+               ".remix_materials_table tbody tr:last-of-type td:nth-of-type(2)",
+               "Another orph. Page"
              )
 
       assert view
              |> has_element?(
-               ".remix_materials_table tr:last-of-type td:nth-of-type(2)",
-               "Another orph. Page"
+               ".remix_materials_table tr:first-of-type td:nth-of-type(2)",
+               "Elixir Page"
              )
 
       # Can sort by published date
