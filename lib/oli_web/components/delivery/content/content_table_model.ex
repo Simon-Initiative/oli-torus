@@ -112,10 +112,10 @@ defmodule OliWeb.Components.Delivery.ContentTableModel do
   def render_student_proficiency(assigns, container, _) do
     {bg_color, text_color} =
       case container.student_proficiency do
-        "High" -> {"bg-[#e6fcf2] dark:bg-[#3D4F47]", "text-[#175a3d] dark:text-[#39E581]"}
-        "Medium" -> {"bg-[#ffecde] dark:bg-[#4C3F39]", "text-[#91450e] dark:text-[#FFB387]"}
-        "Low" -> {"bg-[#feebed] dark:bg-[#33181A]", "text-[#ce2c31] dark:text-[#FF8787]"}
-        _ -> {"bg-[#ced1d9] dark:bg-[#353740]", "text-[#000000] dark:text-[#FFFFFF]"}
+        "High" -> {"bg-Fill-Chip-Green", "text-Text-Chip-Green"}
+        "Medium" -> {"bg-Fill-Accent-fill-accent-orange", "text-Text-Chip-Orange"}
+        "Low" -> {"bg-Fill-fill-danger", "text-Text-text-danger"}
+        _ -> {"bg-Fill-Chip-Gray", "text-Text-Chip-Gray"}
       end
 
     assigns =

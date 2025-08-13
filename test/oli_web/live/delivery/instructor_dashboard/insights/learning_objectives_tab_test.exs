@@ -136,26 +136,31 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
       {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug))
 
       assert view
-             |> element("table.instructor_dashboard_table > tbody > tr:first-child")
+             |> element(
+               "#objectives-table table.instructor_dashboard_table > tbody > tr[data-row-id='#{obj_revision_1.resource_id}'] > td:nth-child(2)"
+             )
              |> render() =~ obj_revision_1.title
 
       assert view
-             |> element("table.instructor_dashboard_table > tbody > tr:nth-child(2)")
+             |> element(
+               "#objectives-table table.instructor_dashboard_table > tbody > tr[data-row-id='#{obj_revision_2.resource_id}'] > td:nth-child(2)"
+             )
              |> render() =~ obj_revision_2.title
 
       ## sorting by objective
-      params = %{
-        sort_order: :desc
-      }
-
+      params = %{sort_order: :desc}
       {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug, params))
 
       assert view
-             |> element("table.instructor_dashboard_table > tbody > tr:first-child")
+             |> element(
+               "#objectives-table table.instructor_dashboard_table > tbody > tr[data-row-id='#{obj_revision_2.resource_id}'] > td:nth-child(2)"
+             )
              |> render() =~ obj_revision_2.title
 
       assert view
-             |> element("table.instructor_dashboard_table > tbody > tr:nth-child(2)")
+             |> element(
+               "#objectives-table table.instructor_dashboard_table > tbody > tr[data-row-id='#{obj_revision_1.resource_id}'] > td:nth-child(2)"
+             )
              |> render() =~ obj_revision_1.title
     end
 
