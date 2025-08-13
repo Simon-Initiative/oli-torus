@@ -217,10 +217,8 @@ const TextFlow: React.FC<PartComponentProps<TextFlowModel>> = (props: any) => {
     styles.height = height;
   }
 
-  if (padding) {
-    if (padding?.length) {
-      styles.padding = padding;
-    }
+  if (padding?.trim()?.length) {
+    styles.padding = padding;
   }
 
   if (fontSize) {

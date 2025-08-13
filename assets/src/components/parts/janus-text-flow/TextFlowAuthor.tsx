@@ -168,10 +168,8 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
   if (overrideWidth) {
     styles.width = width;
   }
-  if (padding) {
-    if (padding?.length) {
-      styles.padding = padding;
-    }
+  if (padding?.trim()?.length) {
+    styles.padding = padding;
   }
   if (overrideHeight) {
     styles.height = height;
