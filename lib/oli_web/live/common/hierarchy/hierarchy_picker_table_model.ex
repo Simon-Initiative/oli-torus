@@ -41,7 +41,7 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker.TableModel do
       rows: pages,
       column_specs: column_specs,
       event_suffix: "",
-      id_field: [:id]
+      id_field: [:uuid]
     )
   end
 

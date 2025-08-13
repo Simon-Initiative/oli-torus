@@ -54,6 +54,7 @@ defmodule OliWeb.Workspaces.Instructor.DashboardLiveTest do
       data_obtained =
         view
         |> render()
+        |> Floki.parse_document!()
         |> Floki.find("#sub_menu a")
         |> Enum.reduce({0, %{}}, fn anchor, {index, acc} ->
           text = String.trim(Floki.text(anchor))
@@ -68,6 +69,7 @@ defmodule OliWeb.Workspaces.Instructor.DashboardLiveTest do
       assert "Exit Section" =
                view
                |> render()
+               |> Floki.parse_document!()
                |> Floki.find("#exit_course_button")
                |> Floki.text()
                |> String.trim()

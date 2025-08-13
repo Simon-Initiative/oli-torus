@@ -2086,7 +2086,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       # Submit form
       view
-      |> element("form[phx-submit='create_annotation'")
+      |> element("form[phx-submit='create_annotation']")
       |> render_submit(%{"content" => "New Note"})
 
       refute_enqueued(
@@ -2135,7 +2135,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       # Submit form
       view
-      |> element("form[phx-submit='create_annotation'")
+      |> element("form[phx-submit='create_annotation']")
       |> render_submit(%{"content" => "New Note"})
 
       assert_enqueued(

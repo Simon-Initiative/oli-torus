@@ -38,7 +38,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
       rows: objectives,
       column_specs: column_specs,
       event_suffix: "",
-      id_field: [:id]
+      id_field: [:resource_id]
     )
   end
 
@@ -73,7 +73,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
       rows: objectives,
       column_specs: column_specs,
       event_suffix: "",
-      id_field: [:id]
+      id_field: [:resource_id]
     )
   end
 

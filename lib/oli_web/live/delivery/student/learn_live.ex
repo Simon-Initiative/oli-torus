@@ -1473,7 +1473,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       class="flex flex-col"
       phx-update="replace"
     >
-      <div class="accordion my-2" id="accordionExample">
+      <div class="accordion my-2">
         <div class="card py-4 bg-white/20 dark:bg-[#0d0c0e] shadow-none">
           <div
             class={"card-header border-b-[1px] #{if @progress == 100, do: "border-b-[#39E581]", else: "border-b-gray-300 dark:border-b-gray-700"} pb-1"}
@@ -1560,7 +1560,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               <div class="flex flex-col mt-6">
                 <.outline_row
                   :for={row <- @row["children"]}
-                  id={"node-#{row["uuid"]}"}
+                  id={"node-#{row["uuid"]}-unit"}
                   section={@section}
                   row={row}
                   type={child_type(row)}
@@ -1603,7 +1603,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           <.outline_row
             section={@section}
             row={@row}
-            id={"node-#{@row["uuid"]}"}
+            id={"node-#{@row["uuid"]}-top-level-page"}
             type={:page}
             student_progress_per_resource_id={@student_progress_per_resource_id}
             student_raw_avg_score_per_page_id={@student_raw_avg_score_per_page_id}
@@ -1637,7 +1637,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       </div>
       <.outline_row
         :for={row <- @row["children"]}
-        id={"node-#{row["uuid"]}"}
+        id={"node-#{row["uuid"]}-section"}
         section={@section}
         row={row}
         type={child_type(row)}
@@ -1675,7 +1675,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       class="flex flex-col"
       phx-update="replace"
     >
-      <div class="accordion my-2" id="accordionExample">
+      <div class="accordion my-2">
         <div class="card bg-white/20 dark:bg-[#0d0c0e] py-4 pr-0 shadow-none">
           <div
             class="card-header border-b-[1px] border-b-gray-300 dark:border-b-gray-700 pb-2"
@@ -1788,7 +1788,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 <div
                   :for={{grouped_scheduling_type, grouped_due_date} <- @page_due_dates}
                   class="flex flex-col w-full"
-                  id={"pages_grouped_by_#{grouped_scheduling_type}_#{grouped_due_date}"}
+                  id={UUID.uuid4()}
+                  role={"pages_grouped_by_#{grouped_scheduling_type}_#{grouped_due_date}"}
                   phx-update="replace"
                 >
                   <% grouped_pages =
@@ -1814,7 +1815,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                   </div>
                   <.outline_row
                     :for={row <- grouped_pages}
-                    id={"node-#{row["uuid"]}"}
+                    id={"node-#{row["uuid"]}-module"}
                     section={@section}
                     row={row}
                     type={child_type(row)}
@@ -2029,7 +2030,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       <div
         :for={{grouped_scheduling_type, grouped_due_date} <- @page_due_dates}
         class="flex flex-col w-full"
-        id={"pages_grouped_by_#{grouped_scheduling_type}_#{grouped_due_date}"}
+        role={"pages_grouped_by_#{grouped_scheduling_type}_#{grouped_due_date}"}
       >
         <div :if={@has_scheduled_resources?} class="h-[19px] mb-5">
           <span class="dark:text-white text-sm font-bold">
@@ -2174,7 +2175,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       </div>
     </div>
     <div
-      id={"section_group_#{@resource_id}_#{@parent_due_date}"}
+      role={"section_group_#{@resource_id}_#{@parent_due_date}"}
       class="flex relative flex-col items-center w-full"
     >
       <.index_item
@@ -2999,12 +3000,16 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   defp display_module_item?(
          _grouped_due_date,
          nil = _grouped_scheduling_type,
-         _student_end_date_exceptions_per_resource_id,
-         %{"section_resource" => %{end_date: end_date}} = _child,
+         student_end_date_exceptions_per_resource_id,
+         %{"section_resource" => %{end_date: end_date}} = child,
          _ctx
        )
-       when end_date in [nil, ""],
-       do: true
+       when end_date in [nil, ""] do
+    # This logic will evaluate if a page has to be included in the "Not yet scheduled" group.
+    # We need to exclude those pages without end date BUT with an end date exception for the student.
+    # If we do not exclude it, the page will be listed twice (in the "Not yet scheduled" group AND in the corresponding due dategroup)
+    is_nil(Map.get(student_end_date_exceptions_per_resource_id, child["resource_id"]))
+  end
 
   defp display_module_item?(
          grouped_due_date,

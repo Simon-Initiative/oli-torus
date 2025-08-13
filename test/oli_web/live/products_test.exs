@@ -49,7 +49,7 @@ defmodule OliWeb.ProductsLiveTest do
              |> render() =~ "checked"
 
       view
-      |> element("#content-form form[phx-change=\"save\"")
+      |> element("#content-form form[phx-change='save']")
       |> render_change(%{
         "section" => %{"display_curriculum_item_numbering" => "false"}
       })
@@ -70,7 +70,7 @@ defmodule OliWeb.ProductsLiveTest do
              |> render() =~ "checked"
 
       view
-      |> element("#content-form form[phx-change=\"save\"")
+      |> element("#content-form form[phx-change='save']")
       |> render_change(%{
         "section" => %{"apply_major_updates" => "true"}
       })
@@ -110,7 +110,7 @@ defmodule OliWeb.ProductsLiveTest do
       refute has_element?(view, "a", product_2.title)
 
       view
-      |> element("button[phx-click=\"text_search_reset\"]")
+      |> element("button[phx-click='text_search_reset']")
       |> render_click()
 
       assert has_element?(view, "a", product.title)
@@ -131,7 +131,7 @@ defmodule OliWeb.ProductsLiveTest do
       assert has_element?(view, "a", product_2.base_project.title)
 
       view
-      |> element("button[phx-click=\"text_search_reset\"]")
+      |> element("button[phx-click='text_search_reset']")
       |> render_click()
 
       assert has_element?(view, "a", product.base_project.title)
@@ -160,7 +160,7 @@ defmodule OliWeb.ProductsLiveTest do
       assert has_element?(view, "a", product_2.title)
 
       view
-      |> element("button[phx-click=\"text_search_reset\"]")
+      |> element("button[phx-click='text_search_reset']")
       |> render_click()
 
       assert has_element?(view, "a", product.title)
@@ -181,7 +181,7 @@ defmodule OliWeb.ProductsLiveTest do
       {:ok, view, _html} = live(conn, @live_view_all_products)
 
       view
-      |> element("th[phx-click=\"paged_table_sort\"][phx-value-sort_by=\"inserted_at\"]")
+      |> element("th[phx-click='paged_table_sort'][phx-value-sort_by='inserted_at']")
       |> render_click()
 
       assert view
@@ -193,7 +193,7 @@ defmodule OliWeb.ProductsLiveTest do
              |> render() =~ product.title
 
       view
-      |> element("th[phx-click=\"paged_table_sort\"][phx-value-sort_by=\"inserted_at\"]")
+      |> element("th[phx-click='paged_table_sort'][phx-value-sort_by='inserted_at']")
       |> render_click()
 
       assert view
@@ -221,7 +221,7 @@ defmodule OliWeb.ProductsLiveTest do
       refute has_element?(view, "a", product_2.base_project.title)
 
       view
-      |> element("input[phx-click=\"include_archived\"]")
+      |> element("input[phx-click='include_archived']")
       |> render_click()
 
       assert has_element?(view, "a", product.base_project.title)
@@ -238,7 +238,7 @@ defmodule OliWeb.ProductsLiveTest do
       refute has_element?(view, "##{last_p.id}")
 
       view
-      |> element("#header_paging button[phx-click=\"paged_table_page_change\"]", "2")
+      |> element("#header_paging button[phx-click='paged_table_page_change']", "2")
       |> render_click()
 
       refute has_element?(view, "##{first_p.id}")
@@ -381,10 +381,10 @@ defmodule OliWeb.ProductsLiveTest do
       assert render_upload(image, "myfile.jpeg") =~ "100%"
 
       assert view
-             |> has_element?("#img-upload-form div[role=\"progressbar\"")
+             |> has_element?("#img-upload-form div[role='progressbar']")
 
       view
-      |> element("button[phx-click=\"cancel_upload\"]")
+      |> element("button[phx-click='cancel_upload']")
       |> render_click()
 
       assert view
@@ -429,7 +429,7 @@ defmodule OliWeb.ProductsLiveTest do
       {:ok, view, _html} = live(conn, ~p"/authoring/products/#{product.slug}")
 
       assert view
-             |> element("button[phx-click=\"show_products_to_transfer\"]")
+             |> element("button[phx-click='show_products_to_transfer']")
              |> render() =~ "Transfer Payment Codes"
 
       assert has_element?(view, "div", "Allow transfer of payment codes to another product.")
@@ -477,7 +477,7 @@ defmodule OliWeb.ProductsLiveTest do
       {:ok, view, _html} = live(conn, ~p"/authoring/products/#{product.slug}")
 
       view
-      |> element("button[phx-click=\"show_products_to_transfer\"]")
+      |> element("button[phx-click='show_products_to_transfer']")
       |> render_click()
 
       assert has_element?(view, "h5", "Transfer Payment Codes")
@@ -500,7 +500,7 @@ defmodule OliWeb.ProductsLiveTest do
       {:ok, view, _html} = live(conn, ~p"/authoring/products/#{product.slug}")
 
       view
-      |> element("button[phx-click=\"show_products_to_transfer\"]")
+      |> element("button[phx-click='show_products_to_transfer']")
       |> render_click()
 
       assert has_element?(
@@ -525,11 +525,11 @@ defmodule OliWeb.ProductsLiveTest do
       {:ok, view, _html} = live(conn, ~p"/authoring/products/#{product.slug}")
 
       view
-      |> element("button[phx-click=\"show_products_to_transfer\"]")
+      |> element("button[phx-click='show_products_to_transfer']")
       |> render_click()
 
       view
-      |> element("form[phx-submit=\"submit_transfer_payment_codes\"]")
+      |> element("form[phx-submit='submit_transfer_payment_codes']")
       |> render_submit(%{
         "product_id" => product_2.id
       })

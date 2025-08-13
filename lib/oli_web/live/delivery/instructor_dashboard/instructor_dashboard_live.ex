@@ -584,7 +584,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
     <div class="container mx-auto">
       <.live_component
-        id="objectives_table_#{@section_slug}"
+        id={"objectives_table_#{@section_slug}"}
         module={OliWeb.Components.Delivery.LearningObjectives}
         params={@params}
         view={@view}

@@ -170,14 +170,14 @@ defmodule OliWeb.ObjectivesLiveTest do
       |> render_blur(%{value: "first"})
 
       view
-      |> element("button[phx-click=\"apply_search\"]")
+      |> element("button[phx-click='apply_search']")
       |> render_click()
 
       assert has_element?(view, "##{first_obj.slug}")
       refute has_element?(view, "##{second_obj.slug}")
 
       view
-      |> element("button[phx-click=\"reset_search\"]")
+      |> element("button[phx-click='reset_search']")
       |> render_click()
 
       assert has_element?(view, "##{first_obj.slug}")
@@ -201,7 +201,7 @@ defmodule OliWeb.ObjectivesLiveTest do
                "First Objective"
 
       view
-      |> element("form[phx-change=\"sort\"")
+      |> element("form[phx-change='sort']")
       |> render_change(%{sort_by: "title"})
 
       assert view
@@ -298,11 +298,11 @@ defmodule OliWeb.ObjectivesLiveTest do
       refute has_element?(view, "#{title}")
 
       view
-      |> element("button[phx-click=\"display_new_modal\"]")
+      |> element("button[phx-click='display_new_modal']")
       |> render_click(%{})
 
       view
-      |> element("form[phx-submit=\"new\"")
+      |> element("form[phx-submit='new']")
       |> render_submit(%{"revision" => %{"title" => title, "parent_slug" => ""}})
 
       assert view
@@ -329,11 +329,11 @@ defmodule OliWeb.ObjectivesLiveTest do
       assert has_element?(view, "button[phx-value-slug=#{obj.slug}]", "#{obj.title}")
 
       view
-      |> element("button[phx-click=\"display_edit_modal\"]")
+      |> element("button[phx-click='display_edit_modal']")
       |> render_click(%{"slug" => obj.slug})
 
       view
-      |> element("form[phx-submit=\"edit\"")
+      |> element("form[phx-submit='edit']")
       |> render_submit(%{"revision" => %{"title" => title, "slug" => obj.slug}})
 
       assert view
@@ -365,11 +365,11 @@ defmodule OliWeb.ObjectivesLiveTest do
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
 
       view
-      |> element("button[phx-click=\"set_selected\"][phx-value-slug=#{obj_a.slug}]")
+      |> element("button[phx-click='set_selected'][phx-value-slug=#{obj_a.slug}]")
       |> render_click(%{"slug" => obj_a.slug})
 
       view
-      |> element("button[phx-click=\"display_delete_modal\"][phx-value-slug=#{obj_a.slug}]")
+      |> element("button[phx-click='display_delete_modal'][phx-value-slug=#{obj_a.slug}]")
       |> render_click(%{"slug" => obj_a.slug})
 
       assert view
@@ -378,11 +378,11 @@ defmodule OliWeb.ObjectivesLiveTest do
                "Could not remove objective if it has sub-objectives associated"
 
       view
-      |> element("button[phx-click=\"set_selected\"][phx-value-slug=#{obj_b.slug}]")
+      |> element("button[phx-click='set_selected'][phx-value-slug=#{obj_b.slug}]")
       |> render_click(%{"slug" => obj_b.slug})
 
       view
-      |> element("button[phx-click=\"display_delete_modal\"][phx-value-slug=#{obj_b.slug}]")
+      |> element("button[phx-click='display_delete_modal'][phx-value-slug=#{obj_b.slug}]")
       |> render_click(%{"slug" => obj_b.slug})
 
       assert has_element?(
@@ -407,15 +407,15 @@ defmodule OliWeb.ObjectivesLiveTest do
       assert has_element?(view, "#delete_objective_modal", "#{page.title}")
 
       view
-      |> element("button[phx-click=\"set_selected\"][phx-value-slug=#{obj_c.slug}]")
+      |> element("button[phx-click='set_selected'][phx-value-slug=#{obj_c.slug}]")
       |> render_click(%{"slug" => obj_c.slug})
 
       view
-      |> element("button[phx-click=\"display_delete_modal\"][phx-value-slug=#{obj_c.slug}]")
+      |> element("button[phx-click='display_delete_modal'][phx-value-slug=#{obj_c.slug}]")
       |> render_click(%{"slug" => obj_c.slug})
 
       view
-      |> element("button[phx-click=\"delete\"][phx-value-slug=#{obj_c.slug}]")
+      |> element("button[phx-click='delete'][phx-value-slug=#{obj_c.slug}]")
       |> render_click(%{"slug" => obj_c.slug, "parent_slug" => ""})
 
       assert view
@@ -457,25 +457,25 @@ defmodule OliWeb.ObjectivesLiveTest do
 
       view
       |> element(
-        "button[phx-click=\"display_add_existing_sub_modal\"][phx-value-slug=#{first_obj.slug}]"
+        "button[phx-click='display_add_existing_sub_modal'][phx-value-slug=#{first_obj.slug}]"
       )
       |> render_click(%{slug: first_obj.slug})
 
       refute has_element?(
                view,
-               "button[phx-click=\"add_existing_sub\"][phx-value-slug=#{sub_obj_a.slug}]",
+               "button[phx-click='add_existing_sub'][phx-value-slug=#{sub_obj_a.slug}]",
                "Add"
              )
 
       assert has_element?(
                view,
-               "button[phx-click=\"add_existing_sub\"][phx-value-slug=#{sub_obj_b.slug}]",
+               "button[phx-click='add_existing_sub'][phx-value-slug=#{sub_obj_b.slug}]",
                "Add"
              )
 
       assert has_element?(
                view,
-               "button[phx-click=\"add_existing_sub\"][phx-value-slug=#{sub_obj_c.slug}]",
+               "button[phx-click='add_existing_sub'][phx-value-slug=#{sub_obj_c.slug}]",
                "Add"
              )
 
@@ -485,19 +485,19 @@ defmodule OliWeb.ObjectivesLiveTest do
 
       assert has_element?(
                view,
-               "button[phx-click=\"add_existing_sub\"][phx-value-slug=#{sub_obj_b.slug}]",
+               "button[phx-click='add_existing_sub'][phx-value-slug=#{sub_obj_b.slug}]",
                "Add"
              )
 
       refute has_element?(
                view,
-               "button[phx-click=\"add_existing_sub\"][phx-value-slug=#{sub_obj_c.slug}]",
+               "button[phx-click='add_existing_sub'][phx-value-slug=#{sub_obj_c.slug}]",
                "Add"
              )
 
       view
       |> element(
-        "button[phx-click=\"add_existing_sub\"][phx-value-slug=#{sub_obj_b.slug}]",
+        "button[phx-click='add_existing_sub'][phx-value-slug=#{sub_obj_b.slug}]",
         "Add"
       )
       |> render_click(%{"slug" => sub_obj_b.slug, "parent_slug" => first_obj.slug})
@@ -526,11 +526,11 @@ defmodule OliWeb.ObjectivesLiveTest do
       {:ok, view, _html} = live(conn, live_view_route(project.slug, %{selected: obj.slug}))
 
       view
-      |> element("button[phx-click=\"display_new_sub_modal\"][phx-value-slug=#{obj.slug}]")
+      |> element("button[phx-click='display_new_sub_modal'][phx-value-slug=#{obj.slug}]")
       |> render_click(%{slug: obj.slug})
 
       view
-      |> element("form[phx-submit=\"new\"")
+      |> element("form[phx-submit='new']")
       |> render_submit(%{"revision" => %{"title" => title, "parent_slug" => obj.slug}})
 
       assert view
@@ -562,11 +562,11 @@ defmodule OliWeb.ObjectivesLiveTest do
       assert has_element?(view, ".collapse", "#{sub_obj.title}")
 
       view
-      |> element("button[phx-click=\"display_edit_modal\"][phx-value-slug=#{sub_obj.slug}]")
+      |> element("button[phx-click='display_edit_modal'][phx-value-slug=#{sub_obj.slug}]")
       |> render_click(%{"slug" => sub_obj.slug})
 
       view
-      |> element("form[phx-submit=\"edit\"")
+      |> element("form[phx-submit='edit']")
       |> render_submit(%{"revision" => %{"title" => title, "slug" => sub_obj.slug}})
 
       assert view
@@ -603,7 +603,7 @@ defmodule OliWeb.ObjectivesLiveTest do
       assert has_element?(view, ".collapse", "#{sub_obj.title}")
 
       view
-      |> element("button[phx-click=\"delete\"][phx-value-slug=#{sub_obj.slug}]")
+      |> element("button[phx-click='delete'][phx-value-slug=#{sub_obj.slug}]")
       |> render_click(%{"slug" => sub_obj.slug, "parent_slug" => obj.slug})
 
       assert view
@@ -645,7 +645,7 @@ defmodule OliWeb.ObjectivesLiveTest do
 
       view
       |> element(
-        "button[phx-click=\"delete\"][phx-value-slug=#{sub_obj.slug}][phx-value-parent_slug=#{obj_a.slug}]"
+        "button[phx-click='delete'][phx-value-slug=#{sub_obj.slug}][phx-value-parent_slug=#{obj_a.slug}]"
       )
       |> render_click(%{"slug" => sub_obj.slug, "parent_slug" => obj_a.slug})
 

@@ -128,7 +128,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
               phx-hook="ReactToLiveView"
               class="flex h-[400px] border-b border-[#c8c8c8]"
             >
-              <div id="eventIntercept" phx-update="ignore">
+              <div id="eventIntercept_one_at_a_time_question" phx-update="ignore">
                 <div
                   :for={question <- @questions}
                   id={"question_#{question.number}"}

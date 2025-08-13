@@ -178,6 +178,11 @@ config :phoenix, :stacktrace_depth, 20
 # Initialize plugs at runtime for faster development compilation
 config :phoenix, :plug_init_mode, :runtime
 
+config :phoenix_live_view,
+  debug_heex_annotations: true,
+  debug_attributes: true,
+  enable_expensive_runtime_checks: true
+
 # Configure Joken for jwt signing and verification
 config :joken, default_signer: "secret"
 
