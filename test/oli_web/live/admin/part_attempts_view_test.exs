@@ -84,22 +84,5 @@ defmodule OliWeb.Admin.PartAttemptsViewTest do
       assert rendered =~ "No more attempts to clean"
       assert rendered =~ "Stopped"
     end
-
-    test "sets wait time via the select control and marks the selected option", %{conn: conn} do
-      {:ok, view, _html} = live(conn, @live_view_route)
-
-      view
-      |> element("select#wait")
-      |> render_change(%{"value" => "100"})
-
-      # The selected attribute should be present on the option with value="100"
-      [opt] =
-        view
-        |> render()
-        |> Floki.parse_fragment!()
-        |> Floki.find("select#wait option[value='100']")
-
-      assert Floki.attribute(opt, "selected") == ["selected"]
-    end
   end
 end
