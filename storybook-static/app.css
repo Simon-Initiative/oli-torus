@@ -20373,14 +20373,6 @@ Not supports in Firefox and IE */
   background-color: rgb(1 101 217 / var(--tw-bg-opacity));
 }
 
-.phx-no-feedback\:hidden.phx-no-feedback {
-  display: none;
-}
-
-.phx-no-feedback .phx-no-feedback\:hidden {
-  display: none;
-}
-
 .selected\:bg-\[\#0080FF\][data-selected="true"] {
   --tw-bg-opacity: 1;
   background-color: rgb(0 128 255 / var(--tw-bg-opacity));
