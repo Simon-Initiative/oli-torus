@@ -212,7 +212,8 @@ defmodule OliWeb.ObjectivesLive.Objectives do
       target="_blank"
     >
       CMU Eberly Center guide on learning objectives
-    </a> to learn more about the importance of attaching learning objectives to pages and activities.
+    </a>
+    to learn more about the importance of attaching learning objectives to pages and activities.
     """
   end
 

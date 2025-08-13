@@ -76,7 +76,11 @@ defmodule OliWeb.Sections.SectionsTableModel do
     assigns = Map.merge(assigns, %{section: section})
 
     ~H"""
-    <a href={~p"/sections/#{@section.slug}/manage"} class="text-[#1B67B2] dark:text-[#99CCFF]" target="_blank">
+    <a
+      href={~p"/sections/#{@section.slug}/manage"}
+      class="text-[#1B67B2] dark:text-[#99CCFF]"
+      target="_blank"
+    >
       {@section.title}
     </a>
     """
@@ -125,7 +129,7 @@ defmodule OliWeb.Sections.SectionsTableModel do
 
     ~H"""
     <span class={@class}>
-      <%= Phoenix.Naming.humanize(@section.status) %>
+      {Phoenix.Naming.humanize(@section.status)}
     </span>
     """
   end

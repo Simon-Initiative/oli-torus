@@ -1035,8 +1035,7 @@ defmodule OliWeb.Delivery.Student.Utils do
           </p>
 
           <p class="mt-4">
-            If you think this is an error or would like more information, please
-            <OliWeb.Components.Common.tech_support_link
+            If you think this is an error or would like more information, please <OliWeb.Components.Common.tech_support_link
               id="tech_support_lti_error"
               class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline text-base font-['Open Sans'] tracking-tight cursor-pointer"
             >
