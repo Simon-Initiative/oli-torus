@@ -158,8 +158,8 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
                 additional_table_class: @additional_table_class,
                 additional_row_class:
                   if(Integer.is_even(index),
-                    do: "bg-[#f3f4f8] dark:bg-[#0D0C0F]",
-                    else: "bg-[#e3e7eb] dark:bg-[#201D21]"
+                    do: "bg-Table-table-row-1",
+                    else: "bg-Table-table-row-2"
                   )
               },
               @model.data

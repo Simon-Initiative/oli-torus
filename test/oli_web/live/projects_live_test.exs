@@ -90,7 +90,7 @@ defmodule OliWeb.Projects.ProjectsLiveTest do
       refute has_element?(view, "##{last_p.id}")
 
       view
-      |> element("#header_paging button[phx-click='paged_table_page_change']", "2")
+      |> element("#footer_paging button[phx-click='paged_table_page_change']", "2")
       |> render_click()
 
       refute has_element?(view, "##{first_p.id}")
@@ -182,7 +182,7 @@ defmodule OliWeb.Projects.ProjectsLiveTest do
       refute has_element?(view, "##{last_p.id}")
 
       view
-      |> element("#header_paging button[phx-click='paged_table_page_change']", "2")
+      |> element("#footer_paging button[phx-click='paged_table_page_change']", "2")
       |> render_click()
 
       refute has_element?(view, "##{first_p.id}")

@@ -171,7 +171,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
 
             <.link
               :if={@project.has_experiments}
-              class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
+              class="text-Text-text-button hover:text-Text-text-button-hover hover:underline"
               navigate={~p"/workspaces/course_author/#{@project.slug}/experiments"}
             >
               Manage Experiments
@@ -225,7 +225,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
             <div>
               <.link
                 navigate={~p"/workspaces/course_author/#{@project.slug}/alternatives"}
-                class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
+                class="text-Text-text-button hover:text-Text-text-button-hover hover:underline"
               >
                 Manage Alternatives
               </.link>
@@ -395,7 +395,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
         <%= if @is_admin do %>
           <div class="flex items-center">
             <.link
-              class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline pr-3 py-2"
+              class="text-Text-text-button hover:text-Text-text-button-hover hover:underline pr-3 py-2"
               href={~p"/workspaces/course_author/#{@project.slug}/index_csv"}
             >
               Bulk Resource Attribute Edit
@@ -410,7 +410,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
               to: Routes.project_path(@socket, :clone_project, @project),
               method: :post,
               class:
-                "text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline pr-3 py-2",
+                "text-Text-text-button hover:text-Text-text-button-hover hover:underline pr-3 py-2",
               data_confirm: "Are you sure you want to duplicate this project?"
             )}
           </div>
@@ -429,7 +429,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
         <div class="flex items-center mt-8">
           <button
             type="button"
-            class="text-[#ef4444] hover:text-[#dc2626] dark:text-[#dc2626] dark:hover:text-[#ef4444] hover:underline pr-3 py-2"
+            class="text-Text-text-danger hover:text-Text-text-danger-hover hover:underline pr-3 py-2"
             onclick="OLI.showModal('delete-package-modal')"
           >
             Delete
@@ -509,8 +509,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
         {button("Enable AI Activation Points",
           to: Routes.project_path(@socket, :enable_triggers, @project),
           method: :post,
-          class:
-            "text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline pr-3 py-2",
+          class: "text-Text-text-button hover:text-Text-text-button-hover hover:underline pr-3 py-2",
           data_confirm:
             "The AI Activation Points authoring feature cannot be disabled once it is enabled. Do you want to proceed with enabling AI Activation Points??"
         )}

@@ -190,7 +190,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
              |> Floki.text() =~ "Module 3"
 
       assert element(view, "#footer_paging > div:first-child") |> render() =~
-               "3 - 3 of 3 results"
+               "Showing result 3 - 3 of 3 total"
 
       selected_page =
         view
@@ -320,11 +320,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
       assert filtered_links == expected_links
 
       ### "units" button is selected
-      assert button_has_class?(view, "filter_units_button", "bg-[#0080FF]")
+      assert button_has_class?(view, "filter_units_button", "bg-Fill-Buttons-fill-primary")
       refute button_has_class?(view, "filter_units_button", "bg-white")
 
-      assert button_has_class?(view, "filter_modules_button", "bg-[#F3F4F8]")
-      refute button_has_class?(view, "filter_modules_button", "bg-[#0080FF]")
+      assert button_has_class?(view, "filter_modules_button", "bg-Background-bg-primary")
+      refute button_has_class?(view, "filter_modules_button", "bg-Fill-Buttons-fill-primary")
     end
 
     test "content table gets rendered given a section with only pages",
@@ -487,8 +487,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
       ## filtering by modules
       element(view, "#filter_modules_button") |> render_click()
 
-      assert button_has_class?(view, "filter_modules_button", "bg-[#0080FF]")
-      refute button_has_class?(view, "filter_units_button", "bg-[#0080FF]")
+      assert button_has_class?(view, "filter_modules_button", "bg-Fill-Buttons-fill-primary")
+      refute button_has_class?(view, "filter_units_button", "bg-Fill-Buttons-fill-primary")
 
       [module_for_tr_1, module_for_tr_2, module_for_tr_3] =
         view
@@ -504,8 +504,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
       ## filtering by units
       element(view, "#filter_units_button") |> render_click()
 
-      assert button_has_class?(view, "filter_units_button", "bg-[#0080FF]")
-      refute button_has_class?(view, "filter_modules_button", "bg-[#0080FF]")
+      assert button_has_class?(view, "filter_units_button", "bg-Fill-Buttons-fill-primary")
+      refute button_has_class?(view, "filter_modules_button", "bg-Fill-Buttons-fill-primary")
 
       [unit_for_tr_1, unit_for_tr_2] =
         view

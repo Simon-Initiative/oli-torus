@@ -3,29 +3,29 @@ defmodule OliWeb.Projects.TableModel do
   use OliWeb, :verified_routes
 
   alias OliWeb.Common.SessionContext
-  alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
+  alias OliWeb.Common.Table.{ColumnSpec, Common, SortableTableModel}
 
   def new(%SessionContext{} = ctx, sections) do
     column_specs = [
       %ColumnSpec{
         name: :title,
         label: "Title",
-        render_fn: &__MODULE__.custom_render/3
+        render_fn: &custom_render/3
       },
       %ColumnSpec{
         name: :inserted_at,
         label: "Created",
-        render_fn: &OliWeb.Common.Table.Common.render_date/3
+        render_fn: &Common.render_date/3
       },
       %ColumnSpec{
         name: :name,
         label: "Created By",
-        render_fn: &__MODULE__.custom_render/3
+        render_fn: &custom_render/3
       },
       %ColumnSpec{
         name: :status,
         label: "Status",
-        render_fn: &__MODULE__.custom_render/3
+        render_fn: &custom_render/3
       }
     ]
 
@@ -54,15 +54,24 @@ defmodule OliWeb.Projects.TableModel do
       :status ->
         case project.status do
           :active ->
-            SortableTableModel.render_span_column(%{}, "Active", "text-success")
+            SortableTableModel.render_span_column(
+              %{},
+              "Active",
+              "text-[#245D45] dark:text-[#39E581]"
+            )
 
           :deleted ->
-            SortableTableModel.render_span_column(%{}, "Deleted", "text-danger")
+            SortableTableModel.render_span_column(
+              %{},
+              "Deleted",
+              "text-[#A42327] dark:text-[#FF8787]"
+            )
         end
 
       :name ->
         ~H"""
-        <span>{@project.name}</span> <small class="text-muted">{@project.email}</small>
+        <span class="text-[#1B67B2] dark:text-[#99CCFF]">{@project.name}</span>
+        <small class="text-[#45464C] dark:text-[#BAB8BF]">{@project.email}</small>
         """
     end
   end

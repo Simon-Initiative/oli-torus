@@ -9,7 +9,7 @@ defmodule OliWeb.Common.Check do
 
   def render(assigns) do
     ~H"""
-    <div class={"form-check #{@class}"} style="display: inline;">
+    <div class={"form-check inline-flex items-center gap-x-1.5 #{@class}"}>
       <input id={@id} type="checkbox" class="form-check-input" checked={@checked} phx-click={@click} />
       <label for={@id} class="form-check-label">
         {render_slot(@inner_block)}

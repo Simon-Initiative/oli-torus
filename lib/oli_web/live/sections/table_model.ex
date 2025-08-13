@@ -3,7 +3,7 @@ defmodule OliWeb.Sections.SectionsTableModel do
   use OliWeb, :verified_routes
 
   alias OliWeb.Common.SessionContext
-  alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
+  alias OliWeb.Common.Table.{ColumnSpec, Common, SortableTableModel}
   alias OliWeb.Router.Helpers, as: Routes
 
   def new(%SessionContext{} = ctx, sections, render_institution_action \\ false) do
@@ -13,12 +13,12 @@ defmodule OliWeb.Sections.SectionsTableModel do
         %ColumnSpec{
           name: :title,
           label: "Title",
-          render_fn: &__MODULE__.custom_render/3
+          render_fn: &custom_render/3
         },
         %ColumnSpec{
           name: :type,
           label: "Type",
-          render_fn: &__MODULE__.custom_render/3
+          render_fn: &custom_render/3
         },
         %ColumnSpec{
           name: :enrollments_count,
@@ -27,39 +27,39 @@ defmodule OliWeb.Sections.SectionsTableModel do
         %ColumnSpec{
           name: :requires_payment,
           label: "Cost",
-          render_fn: &__MODULE__.custom_render/3
+          render_fn: &custom_render/3
         },
         %ColumnSpec{
           name: :start_date,
           label: "Start",
-          render_fn: &OliWeb.Common.Table.Common.render_date/3,
-          sort_fn: &OliWeb.Common.Table.Common.sort_date/2
+          render_fn: &Common.render_date/3,
+          sort_fn: &Common.sort_date/2
         },
         %ColumnSpec{
           name: :end_date,
           label: "End",
-          render_fn: &OliWeb.Common.Table.Common.render_date/3,
-          sort_fn: &OliWeb.Common.Table.Common.sort_date/2
+          render_fn: &Common.render_date/3,
+          sort_fn: &Common.sort_date/2
         },
         %ColumnSpec{
           name: :status,
           label: "Status",
-          render_fn: &__MODULE__.custom_render/3
+          render_fn: &custom_render/3
         },
         %ColumnSpec{
           name: :base,
           label: "Base Project/Product",
-          render_fn: &__MODULE__.custom_render/3
+          render_fn: &custom_render/3
         },
         %ColumnSpec{
           name: :instructor,
           label: "Instructors",
-          render_fn: &__MODULE__.custom_render/3
+          render_fn: &custom_render/3
         },
         %ColumnSpec{
           name: :institution,
           label: "Institution",
-          render_fn: &__MODULE__.custom_render/3
+          render_fn: &custom_render/3
         }
       ],
       event_suffix: "",
@@ -76,7 +76,7 @@ defmodule OliWeb.Sections.SectionsTableModel do
     assigns = Map.merge(assigns, %{section: section})
 
     ~H"""
-    <a href={~p"/sections/#{@section.slug}/manage"} target="_blank">
+    <a href={~p"/sections/#{@section.slug}/manage"} class="text-[#1B67B2] dark:text-[#99CCFF]" target="_blank">
       {@section.title}
     </a>
     """
@@ -113,19 +113,43 @@ defmodule OliWeb.Sections.SectionsTableModel do
     """
   end
 
-  def custom_render(_assigns, section, %ColumnSpec{name: :status}),
-    do: Phoenix.Naming.humanize(section.status)
+  def custom_render(assigns, section, %ColumnSpec{name: :status}) do
+    class =
+      case section.status do
+        :active -> "text-[#245D45] dark:text-[#39E581]"
+        :deleted -> "text-[#A42327] dark:text-[#FF8787]"
+        _ -> "text-[#1B67B2] dark:text-[#99CCFF]"
+      end
+
+    assigns = Map.merge(assigns, %{section: section, class: class})
+
+    ~H"""
+    <span class={@class}>
+      <%= Phoenix.Naming.humanize(@section.status) %>
+    </span>
+    """
+  end
 
   def custom_render(assigns, section, %ColumnSpec{name: :base}) do
     if section.blueprint_id do
       route_path =
         Routes.live_path(OliWeb.Endpoint, OliWeb.Products.DetailsView, section.blueprint.slug)
 
-      SortableTableModel.render_link_column(assigns, section.blueprint.title, route_path)
+      SortableTableModel.render_link_column(
+        assigns,
+        section.blueprint.title,
+        route_path,
+        "text-[#1B67B2] dark:text-[#99CCFF]"
+      )
     else
       route_path = ~p"/workspaces/course_author/#{section.base_project.slug}/overview"
 
-      SortableTableModel.render_link_column(assigns, section.base_project.title, route_path)
+      SortableTableModel.render_link_column(
+        assigns,
+        section.base_project.title,
+        route_path,
+        "text-[#1B67B2] dark:text-[#99CCFF]"
+      )
     end
   end
 
