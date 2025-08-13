@@ -107,7 +107,7 @@ config :oli, :dataset_generation,
 
 config :oli, :xapi_upload_pipeline,
   producer_module: Oli.Analytics.XAPI.QueueProducer,
-  uploader_module: Oli.Analytics.XAPI.Uploader
+  uploader_module: Oli.Analytics.XAPI.S3Uploader
 
 rule_evaluator_provider =
   case System.get_env("RULE_EVALUATOR_PROVIDER") do

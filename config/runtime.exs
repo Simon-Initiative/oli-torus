@@ -433,6 +433,35 @@ if config_env() == :prod do
   config :oli, :student_sign_in,
     background_color: System.get_env("STUDENT_SIGNIN_BACKGROUND_COLOR", "#FF82E4")
 
+  # ClickHouse configuration for XAPI analytics
+  config :oli, :clickhouse,
+    host: System.get_env("CLICKHOUSE_HOST", "localhost"),
+    port: String.to_integer(System.get_env("CLICKHOUSE_PORT", "8123")),
+    user: System.get_env("CLICKHOUSE_USER", "default"),
+    password: System.get_env("CLICKHOUSE_PASSWORD", "clickhouse"),
+    database: System.get_env("CLICKHOUSE_DATABASE", "default")
+
+  # Lambda ETL configuration for XAPI analytics
+  config :oli, :xapi_lambda_etl,
+    function_name: System.get_env("XAPI_LAMBDA_FUNCTION_NAME", "xapi-etl-processor"),
+    aws_region: System.get_env("AWS_REGION", "us-east-1")
+
+  # Configure xAPI upload pipeline based on ETL mode
+  xapi_etl_mode = System.get_env("XAPI_ETL_MODE", "s3")
+
+  uploader_module =
+    case xapi_etl_mode do
+      "lambda" -> Oli.Analytics.XAPI.LambdaUploader
+      "file" -> Oli.Analytics.XAPI.FileUploader
+      "clickhouse" -> Oli.Analytics.XAPI.ClickHouseUploader
+      # Default S3 uploader
+      _ -> Oli.Analytics.XAPI.S3Uploader
+    end
+
+  config :oli, :xapi_upload_pipeline,
+    producer_module: Oli.Analytics.XAPI.QueueProducer,
+    uploader_module: uploader_module
+
   config :oli, Oban,
     repo: Oli.Repo,
     plugins: [

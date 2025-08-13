@@ -1,7 +1,7 @@
 defmodule Oli.Delivery.Snapshots.S3UploaderWorker do
   use Oban.Worker, queue: :s3_uploader, max_attempts: 3
 
-  alias Oli.Analytics.XAPI.{StatementBundle, Uploader}
+  alias Oli.Analytics.XAPI.{StatementBundle, S3Uploader}
 
   @moduledoc """
   An Oban worker to upload a bundy of xAPI events.
@@ -23,7 +23,7 @@ defmodule Oli.Delivery.Snapshots.S3UploaderWorker do
       bundle_id: bundle_id,
       body: body
     }
-    |> Uploader.upload()
+    |> S3Uploader.upload()
   end
 
   @impl Oban.Worker
@@ -39,6 +39,6 @@ defmodule Oli.Delivery.Snapshots.S3UploaderWorker do
       bundle_id: bundle_id,
       body: body
     }
-    |> Uploader.upload()
+    |> S3Uploader.upload()
   end
 end

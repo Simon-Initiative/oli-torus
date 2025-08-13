@@ -14,7 +14,7 @@ defmodule Mix.Tasks.Clickhouse.Migrate do
 
   use Mix.Task
 
-  @shortdoc "Manage ClickHouse migrations using goose"
+  @shortdoc "Manage ClickHouse migrations using mix"
 
   @doc false
   def run(args) do
@@ -81,7 +81,7 @@ defmodule Mix.Tasks.Clickhouse.Migrate do
 
       goose_path ->
         database_url = build_database_url(config)
-        migrations_dir = Path.join([File.cwd!(), "priv", "clickhouse", "migrations"])
+        migrations_dir = Path.join([File.cwd!(), "clickhouse", "migrations"])
 
         IO.puts("Migrations directory: #{migrations_dir}")
 
@@ -126,8 +126,8 @@ defmodule Mix.Tasks.Clickhouse.Migrate do
 
             Please ensure:
             1. ClickHouse is running: docker-compose up -d clickhouse
-            2. ClickHouse is accessible at #{config.hostname}:#{config.http_port}
-            3. User '#{config.username}' has proper permissions
+            2. ClickHouse is accessible at #{config.host}:#{config.port}
+            3. User '#{config.user}' has proper permissions
             """)
         end
     end
@@ -139,7 +139,7 @@ defmodule Mix.Tasks.Clickhouse.Migrate do
         Mix.raise("❌ goose executable not found in PATH")
 
       goose_path ->
-        migrations_dir = Path.join([File.cwd!(), "priv", "clickhouse", "migrations"])
+        migrations_dir = Path.join([File.cwd!(), "clickhouse", "migrations"])
 
         goose_args = [
           "-dir",
@@ -188,8 +188,8 @@ defmodule Mix.Tasks.Clickhouse.Migrate do
 
         Please ensure:
         1. ClickHouse is running: docker-compose up -d clickhouse
-        2. ClickHouse is accessible at #{config.hostname}:#{config.http_port}
-        3. User '#{config.username}' has proper permissions
+        2. ClickHouse is accessible at #{config.host}:#{config.port}
+        3. User '#{config.user}' has proper permissions
         """)
     end
   end
@@ -221,8 +221,8 @@ defmodule Mix.Tasks.Clickhouse.Migrate do
 
         Please ensure:
         1. ClickHouse is running: docker-compose up -d clickhouse
-        2. ClickHouse is accessible at #{config.hostname}:#{config.http_port}
-        3. User '#{config.username}' has proper permissions
+        2. ClickHouse is accessible at #{config.host}:#{config.port}
+        3. User '#{config.user}' has proper permissions
         """)
     end
   end
@@ -288,14 +288,14 @@ defmodule Mix.Tasks.Clickhouse.Migrate do
 
         Please ensure:
         1. ClickHouse is running: docker-compose up -d clickhouse
-        2. ClickHouse is accessible at #{config.hostname}:#{config.http_port}
-        3. User '#{config.username}' has proper permissions
+        2. ClickHouse is accessible at #{config.host}:#{config.port}
+        3. User '#{config.user}' has proper permissions
         """)
     end
   end
 
   defp ensure_migrations_directory do
-    migrations_dir = Path.join([File.cwd!(), "priv", "clickhouse", "migrations"])
+    migrations_dir = Path.join([File.cwd!(), "clickhouse", "migrations"])
 
     unless File.exists?(migrations_dir) do
       IO.puts("📁 Creating migrations directory: #{migrations_dir}")
@@ -305,12 +305,12 @@ defmodule Mix.Tasks.Clickhouse.Migrate do
 
   defp execute_clickhouse_query(config, query) do
     try do
-      host = config[:hostname] || "localhost"
-      http_port = config[:http_port] || 8123
-      username = config[:username] || "default"
+      host = config[:host] || "localhost"
+      port = config[:port] || 8123
+      user = config[:user] || "default"
       password = config[:password] || "clickhouse"
 
-      url = "http://#{username}:#{password}@#{host}:#{http_port}/"
+      url = "http://#{user}:#{password}@#{host}:#{port}/"
 
       case HTTPoison.post(url, query, [], timeout: 10000, recv_timeout: 10000) do
         {:ok, %HTTPoison.Response{status_code: 200}} ->
@@ -333,25 +333,25 @@ defmodule Mix.Tasks.Clickhouse.Migrate do
   end
 
   defp build_database_url(config) do
-    host = config[:hostname]
+    host = config[:host]
     # goose uses TCP port for ClickHouse, not HTTP
     port = 9090
-    username = config[:username]
+    user = config[:user]
     password = config[:password]
     database = config[:database]
 
-    "tcp://#{username}:#{password}@#{host}:#{port}/#{database}"
+    "tcp://#{user}:#{password}@#{host}:#{port}/#{database}"
   end
 
   defp test_clickhouse_connection(config) do
     try do
       # Use HTTP port for connection test
-      host = config[:hostname]
-      http_port = config[:http_port]
-      username = config[:username]
+      host = config[:host]
+      port = config[:port]
+      user = config[:user]
       password = config[:password]
 
-      url = "http://#{username}:#{password}@#{host}:#{http_port}/"
+      url = "http://#{user}:#{password}@#{host}:#{port}/"
 
       case HTTPoison.post(url, "SELECT 1", [], timeout: 5000, recv_timeout: 5000) do
         {:ok, %HTTPoison.Response{status_code: 200}} ->

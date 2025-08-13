@@ -213,11 +213,26 @@ config :oli, :recaptcha,
   secret: System.get_env("RECAPTCHA_PRIVATE_KEY", "6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe")
 
 # Configure xAPI upload pipeline for development
-# Use ClickHouse uploader instead of S3 for local OLAP analytics
+# Default: Use ClickHouse uploader for local development
+# Set XAPI_ETL_MODE=lambda to test production ETL pipeline with AWS Lambda
+xapi_etl_mode = System.get_env("XAPI_ETL_MODE", "direct")
+
+uploader_module =
+  case xapi_etl_mode do
+    "s3" -> Oli.Analytics.XAPI.S3Uploader
+    "lambda" -> Oli.Analytics.XAPI.LambdaUploader
+    _ -> Oli.Analytics.XAPI.ClickHouseUploader
+  end
+
 config :oli, :xapi_upload_pipeline,
   producer_module: Oli.Analytics.XAPI.QueueProducer,
-  uploader_module: Oli.Analytics.XAPI.ClickHouseUploader,
+  uploader_module: uploader_module,
   batcher_concurrency: 1,
   batch_size: 10,
   batch_timeout: 2000,
   processor_concurrency: 1
+
+# Configure Lambda ETL when XAPI_ETL_MODE=lambda
+config :oli, :xapi_lambda_etl,
+  function_name: System.get_env("XAPI_LAMBDA_FUNCTION_NAME", "xapi-etl-processor-dev"),
+  aws_region: System.get_env("AWS_REGION", "us-east-1")

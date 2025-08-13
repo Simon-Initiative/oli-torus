@@ -1,0 +1,184 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "XAPI ETL Pipeline Infrastructure - Lambda functions, IAM roles, and S3 event triggers"
+
+Parameters:
+  Environment:
+    Type: Str  # CloudWatch Log Groups
+  XAPIETLProcessorLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/xapi-etl-processor-${Environment}"
+      RetentionInDays: 14ult: dev
+    AllowedValues: [dev, staging, prod]
+    Description: Environment name
+
+  ClickHouseHost:
+    Type: String
+    Description: ClickHouse server hostname
+    Default: localhost
+
+  ClickHousePort:
+    Type: String
+    Description: ClickHouse HTTP port
+    Default: "8123"
+
+  ClickHouseUser:
+    Type: String
+    Description: ClickHouse username
+    Default: default
+
+  ClickHousePassword:
+    Type: String
+    Description: ClickHouse password
+    NoEcho: true
+    Default: clickhouse
+
+  ClickHouseDatabase:
+    Type: String
+    Description: ClickHouse database name
+    Default: oli_analytics_dev
+
+  S3XAPIBucketName:
+    Type: String
+    Description: S3 bucket name for XAPI data
+    MinLength: 3
+    MaxLength: 63
+
+Resources:
+  # IAM Role for Lambda Functions
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "xapi-etl-lambda-role-${Environment}"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: S3AccessPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:ListBucket
+                Resource:
+                  - !Sub "arn:aws:s3:::${S3XAPIBucketName}"
+                  - !Sub "arn:aws:s3:::${S3XAPIBucketName}/*"
+        - PolicyName: CloudWatchLogsPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - logs:DescribeLogGroups
+                  - logs:DescribeLogStreams
+                  - logs:FilterLogEvents
+                Resource: "*"
+
+  # Process XAPI Events Lambda Function
+  XAPIETLProcessorFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "xapi-etl-processor-${Environment}"
+      Runtime: python3.9
+      Handler: lambda_function.lambda_handler
+      Role: !GetAtt XAPILambdaRole.Arn
+      Code:
+        ZipFile: |
+          def lambda_handler(event, context):
+              return {'statusCode': 200, 'body': 'Placeholder - deploy actual code'}
+      Timeout: 900  # 15 minutes to handle both event and bulk processing
+      MemorySize: 512
+      Environment:
+        Variables:
+          CLICKHOUSE_HOST: !Ref ClickHouseHost
+          CLICKHOUSE_PORT: !Ref ClickHousePort
+          CLICKHOUSE_DATABASE: !Ref ClickHouseDatabase
+          CLICKHOUSE_USERNAME: !Ref ClickHouseUsername
+          CLICKHOUSE_PASSWORD: !Ref ClickHousePassword
+          S3_XAPI_BUCKET_NAME: !Ref XAPIDataBucket
+          ENVIRONMENT: !Ref Environment
+      DeadLetterConfig:
+        TargetArn: !GetAtt XAPIDeadLetterQueue.Arn
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: "Torus XAPI Analytics"
+
+  # Lambda permission for S3 to invoke XAPIETLProcessorFunction
+  S3InvokeLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref XAPIETLProcessorFunction
+      Action: lambda:InvokeFunction
+      Principal: s3.amazonaws.com
+      SourceArn: !Sub "arn:aws:s3:::${S3XAPIBucketName}"
+
+  # EventBridge Rule for S3 events (alternative to direct S3 notification)
+  S3EventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: !Sub "xapi-s3-events-${Environment}"
+      Description: "Trigger XAPI processing when JSONL files are uploaded to S3"
+      EventPattern:
+        source:
+          - aws.s3
+        detail-type:
+          - Object Created
+        detail:
+          bucket:
+            name:
+              - !Ref S3XAPIBucketName
+          object:
+            key:
+              - suffix: ".jsonl"
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt XAPIETLProcessorFunction.Arn
+          Id: XAPIETLProcessorTarget
+
+  # EventBridge permission for Lambda
+  EventBridgeInvokeLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref XAPIETLProcessorFunction
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt S3EventRule.Arn
+
+  # CloudWatch Log Groups
+  XAPIETLProcessorLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/xapi-etl-processor-${Environment}"
+      RetentionInDays: 30
+
+Outputs:
+  XAPIETLProcessorFunctionArn:
+    Description: "ARN of the XAPI ETL Processor Lambda function"
+    Value: !GetAtt XAPIETLProcessorFunction.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-XAPIETLProcessorFunction"
+
+  LambdaExecutionRoleArn:
+    Description: "ARN of the Lambda execution role"
+    Value: !GetAtt LambdaExecutionRole.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-LambdaExecutionRole"
+
+  S3EventRuleArn:
+    Description: "ARN of the S3 event rule"
+    Value: !GetAtt S3EventRule.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-S3EventRule"
