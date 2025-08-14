@@ -38,7 +38,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
       rows: objectives,
       column_specs: column_specs,
       event_suffix: "",
-      id_field: [:id]
+      id_field: [:resource_id]
     )
   end
 
@@ -73,7 +73,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
       rows: objectives,
       column_specs: column_specs,
       event_suffix: "",
-      id_field: [:id]
+      id_field: [:resource_id]
     )
   end
 
@@ -87,7 +87,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
     assigns = Map.put(assigns, :student_proficiency, student_proficiency)
 
     ~H"""
-    <%= @student_proficiency %>
+    {@student_proficiency}
     """
   end
 
@@ -105,7 +105,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
     >
       <span class={"flex flex-shrink-0 rounded-full w-2 h-2 #{if @student_proficiency == "Low", do: "bg-red-600", else: "bg-gray-500"}"}>
       </span>
-      <span><%= @objective %></span>
+      <span>{@objective}</span>
     </div>
     """
   end
@@ -121,7 +121,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
 
     ~H"""
     <div class="flex items-center ml-8 gap-x-4">
-      <span><%= @objective %></span>
+      <span>{@objective}</span>
     </div>
     """
   end
@@ -130,7 +130,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
     assigns = Map.merge(assigns, %{subobjective: objectives[:subobjective]})
 
     ~H"""
-    <div><%= if is_nil(@subobjective), do: "-", else: @subobjective %></div>
+    <div>{if is_nil(@subobjective), do: "-", else: @subobjective}</div>
     """
   end
 
@@ -152,10 +152,10 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
 
     ~H"""
     <div class="group flex relative">
-      <%= render_proficiency_data_chart(@objective_id, @proficiency_distribution) %>
+      {render_proficiency_data_chart(@objective_id, @proficiency_distribution)}
       <div class="-translate-y-[calc(100%-90px)] absolute left-1/2 -translate-x-1/2 bg-black text-white text-sm px-4 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity shadow-lg whitespace-nowrap inline-block z-50">
         <%= for {label, value} <- calc_percentages(@proficiency_distribution) do %>
-          <p><%= label %>: <%= value %>%</p>
+          <p>{label}: {value}%</p>
         <% end %>
       </div>
     </div>

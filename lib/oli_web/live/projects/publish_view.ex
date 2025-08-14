@@ -151,7 +151,7 @@ defmodule OliWeb.Projects.PublishView do
 
   def render(assigns) do
     ~H"""
-    <%= render_modal(assigns) %>
+    {render_modal(assigns)}
     <div class="publish container">
       <div class="flex flex-row">
         <div class="flex-1">
@@ -186,7 +186,7 @@ defmodule OliWeb.Projects.PublishView do
 
           <hr class="mt-3 mb-5" />
           <%= if length(@active_sections) > 0 do %>
-            <h5>This project has <%= length(@active_sections) %> active course sections</h5>
+            <h5>This project has {length(@active_sections)} active course sections</h5>
             <div id="active-course-sections-table">
               <Listing.render
                 filter={@query}
@@ -307,7 +307,7 @@ defmodule OliWeb.Projects.PublishView do
         cancel={@modal_assigns.cancel}
         id={@modal_assigns.id}
       >
-        Please confirm that you <b><%= if @auto_update_sections, do: "want", else: "don't want" %></b>
+        Please confirm that you <b>{if @auto_update_sections, do: "want", else: "don't want"}</b>
         to push this publication update to all sections
       </Confirm.render>
       """

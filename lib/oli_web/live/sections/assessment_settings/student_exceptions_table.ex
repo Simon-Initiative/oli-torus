@@ -93,9 +93,9 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
   def render(assigns) do
     ~H"""
     <div id="student_exceptions_table" class="bg-white dark:bg-gray-800 shadow-sm">
-      <%= due_date_modal(assigns) %>
-      <%= available_date_modal(assigns) %>
-      <%= modal(@modal_assigns) %>
+      {due_date_modal(assigns)}
+      {available_date_modal(assigns)}
+      {modal(@modal_assigns)}
       <div class="flex flex-col sm:flex-row sm:items-center pr-6 mb-4">
         <div class="flex flex-col pl-9 mr-auto">
           <h4 class="torus-h4">Student Exceptions</h4>
@@ -121,7 +121,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
             <p class={
               if @total_exceptions > 0, do: "bg-blue-100 p-3 mr-auto rounded-lg bg-opacity-50"
             }>
-              Current exceptions: <%= exceptions_text(@total_count, @total_exceptions) %>
+              Current exceptions: {exceptions_text(@total_count, @total_exceptions)}
             </p>
           <% end %>
         </div>
@@ -300,8 +300,8 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
               phx-target={@myself}
             >
               <div class="flex flex-col space-y-2">
-                <%= label(f, :student, "Select Student", class: "control-label") %>
-                <%= select(f, :student_id, @student_options) %>
+                {label(f, :student, "Select Student", class: "control-label")}
+                {select(f, :student_id, @student_options)}
               </div>
               <div class="flex space-x-3 mt-6 justify-end">
                 <button
@@ -414,9 +414,9 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
               phx-target={@myself}
             >
               <div class="flex flex-col space-y-2">
-                <%= label(f, :feedback_scheduled_date, "Scheduled Date", class: "control-label") %>
-                <%= datetime_local_input(f, :feedback_scheduled_date, class: "mr-auto") %>
-                <%= error_tag(f, :feedback_scheduled_date, true) %>
+                {label(f, :feedback_scheduled_date, "Scheduled Date", class: "control-label")}
+                {datetime_local_input(f, :feedback_scheduled_date, class: "mr-auto")}
+                {error_tag(f, :feedback_scheduled_date, true)}
               </div>
               <div class="flex space-x-3 mt-6 justify-end">
                 <button

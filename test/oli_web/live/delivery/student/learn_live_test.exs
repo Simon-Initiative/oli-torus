@@ -1689,11 +1689,11 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
       assert view
-             |> element(~s{div[role="unit_1"] div[role="resource card 1"]"})
+             |> element(~s{div[role='unit_1'] div[role='resource card 1']})
              |> render =~ "style=\"background-image: url(&#39;module_1_custom_image_url&#39;)"
 
       assert view
-             |> element(~s{div[role="unit_1"] div[role="resource card 2"]"})
+             |> element(~s{div[role='unit_1'] div[role='resource card 2']})
              |> render =~ "style=\"background-image: url(&#39;/images/course_default.png&#39;)"
     end
 
@@ -1702,13 +1702,13 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
       assert view
-             |> element(~s{div[role="unit_1"] div[role="youtube_intro_video_card"]"})
+             |> element(~s{div[role='unit_1'] div[role='youtube_intro_video_card']})
              |> render =~
                "style=\"background-image: url(&#39;https://img.youtube.com/vi/123456789ab/hqdefault.jpg&#39;)"
 
       # S3 video
       assert view
-             |> has_element?(~s{div[role="unit_4"] div[role="intro_video_card"]"})
+             |> has_element?(~s{div[role='unit_4'] div[role='intro_video_card']})
     end
 
     test "can see pages at the top level of the curriculum (at unit level) with it's header and corresponding card",
@@ -1721,24 +1721,24 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert view
              |> element(
-               ~s{div[id="top_level_page_#{top_level_page.resource_id}"] div[role="header"]}
+               ~s{div[id='top_level_page_#{top_level_page.resource_id}'] div[role='header']}
              )
              |> render() =~ "PAGE 20"
 
       assert view
              |> element(
-               ~s{div[id="top_level_page_#{top_level_page.resource_id}"] div[role="header"]}
+               ~s{div[id='top_level_page_#{top_level_page.resource_id}'] div[role='header']}
              )
              |> render() =~ "Top Level Page"
 
       assert view
              |> element(
-               ~s{div[id="top_level_page_#{top_level_page.resource_id}"] div[role="schedule_details"]}
+               ~s{div[id='top_level_page_#{top_level_page.resource_id}'] div[role='schedule_details']}
              )
              |> render() =~ "None"
 
       assert view
-             |> element(~s{div[id="page_#{top_level_page.resource_id}"][role="resource card 1"]})
+             |> element(~s{div[id='page_#{top_level_page.resource_id}'][role='resource card 1']})
              |> render() =~ "Top Level Page"
     end
 
@@ -1800,7 +1800,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
                "Installing Elixir, OTP and Phoenix"
              )
 
-      assert has_element?(view, ~s{div[id="index_for_#{module_3.resource_id}"]}, "Page 5")
+      assert has_element?(view, ~s{div[id='index_for_#{module_3.resource_id}']}, "Page 5")
     end
 
     test "can navigate to a page at top level (at unit level) through url params",
@@ -1996,12 +1996,13 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       |> element(~s{div[role="unit_5"] div[role="resource card 4"]})
       |> render_click()
 
-      group_by_read_by_date_div = element(view, ~s{div[id="pages_grouped_by_read_by_2023-11-03"]})
+      group_by_read_by_date_div =
+        element(view, ~s{div[role="pages_grouped_by_read_by_2023-11-03"]})
 
-      group_by_due_by_date_div = element(view, ~s{div[id="pages_grouped_by_due_by_2023-11-03"]})
+      group_by_due_by_date_div = element(view, ~s{div[role="pages_grouped_by_due_by_2023-11-03"]})
 
       group_by_not_yet_scheduled_div =
-        element(view, ~s{div[id="pages_grouped_by__Not yet scheduled"]})
+        element(view, ~s{div[role="pages_grouped_by__Not yet scheduled"]})
 
       assert render(group_by_read_by_date_div) =~ "Read by: Fri Nov 3, 2023"
       assert render(group_by_read_by_date_div) =~ "Page 11"
@@ -2037,11 +2038,20 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       |> element(~s{div[role="unit_5"] div[role="resource card 4"]})
       |> render_click()
 
-      group_by_due_date_div = element(view, ~s{div[id="pages_grouped_by_read_by_2023-11-10"]})
+      group_by_due_date_div = element(view, ~s{div[role="pages_grouped_by_read_by_2023-11-10"]})
 
-      # page 13 is due on Nov 10, 2023 as defined in the student exception
+      group_by_not_yet_scheduled_div =
+        element(view, ~s{div[role="pages_grouped_by__Not yet scheduled"]})
+
+      # page 13 is due on Nov 10, 2023 as defined in the student exception,
+      # and it is only listed in the "Read by" group (not in the "Not yet scheduled" group)
       assert render(group_by_due_date_div) =~ "Read by: Fri Nov 10, 2023"
       assert render(group_by_due_date_div) =~ "Page 13"
+      refute render(group_by_not_yet_scheduled_div) =~ "Page 13"
+
+      # page 14 is not due on Nov 10, 2023 so it is only listed in the "Not yet scheduled" group
+      assert render(group_by_not_yet_scheduled_div) =~ "Page 14"
+      refute render(group_by_due_date_div) =~ "Page 14"
     end
 
     test "in class activities pages are not listed in the module index", %{
@@ -2811,7 +2821,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       {:ok, view, _html} =
         live(conn, Utils.learn_live_path(section.slug, sidebar_expanded: true))
 
-      assert has_element?(view, ~s{nav[id=desktop-nav-menu][aria-expanded=true]})
+      assert has_element?(view, ~s{nav[id='desktop-nav-menu'][aria-expanded=true]})
 
       labels = [
         "Home",
@@ -2826,18 +2836,18 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       Enum.each(labels, fn label ->
         assert view
-               |> element(~s{nav[id=desktop-nav-menu]})
+               |> element(~s{nav[id='desktop-nav-menu']})
                |> render() =~ label
       end)
 
       {:ok, view, _html} =
         live(conn, Utils.learn_live_path(section.slug, sidebar_expanded: false))
 
-      assert has_element?(view, ~s{nav[id=desktop-nav-menu][aria-expanded=false]})
+      assert has_element?(view, ~s{nav[id='desktop-nav-menu'][aria-expanded=false]})
 
       Enum.each(labels, fn label ->
         refute view
-               |> element(~s{nav[id=desktop-nav-menu]})
+               |> element(~s{nav[id='desktop-nav-menu']})
                |> render() =~ label
       end)
     end
@@ -2849,10 +2859,10 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       {:ok, view, _html} =
         live(conn, Utils.learn_live_path(section.slug, sidebar_expanded: true))
 
-      assert has_element?(view, ~s{nav[id=desktop-nav-menu][aria-expanded=true]})
+      assert has_element?(view, ~s{nav[id='desktop-nav-menu'][aria-expanded=true]})
 
       view
-      |> element(~s{nav[id=desktop-nav-menu] a}, "Schedule")
+      |> element(~s{nav[id='desktop-nav-menu'] a}, "Schedule")
       |> render_click()
 
       assert_redirect(view, "/sections/#{section.slug}/student_schedule?sidebar_expanded=true")
@@ -2860,10 +2870,10 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       {:ok, view, _html} =
         live(conn, Utils.learn_live_path(section.slug, sidebar_expanded: false))
 
-      assert has_element?(view, ~s{nav[id=desktop-nav-menu][aria-expanded=false]})
+      assert has_element?(view, ~s{nav[id='desktop-nav-menu'][aria-expanded=false]})
 
       view
-      |> element(~s{nav[id="desktop-nav-menu"] a[id="schedule_nav_link"])})
+      |> element(~s{nav[id='desktop-nav-menu'] a[id='desktop_schedule_nav_link']})
       |> render_click()
 
       assert_redirect(view, "/sections/#{section.slug}/student_schedule?sidebar_expanded=false")
@@ -2877,7 +2887,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         live(conn, Utils.learn_live_path(section.slug))
 
       view
-      |> element(~s{nav[id=desktop-nav-menu] a[id="exit_course_button"]}, "Exit Course")
+      |> element(~s{nav[id='desktop-nav-menu'] a[id="exit_course_button"]}, "Exit Course")
       |> render_click()
 
       assert_redirect(view, "/workspaces/student?sidebar_expanded=true")
@@ -2891,7 +2901,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         live(conn, Utils.learn_live_path(section.slug))
 
       view
-      |> element(~s{nav[id=desktop-nav-menu] a[id="logo_button"]})
+      |> element(~s{nav[id='desktop-nav-menu'] a[id="logo_button"]})
       |> render_click()
 
       assert_redirect(view, "/sections/#{section.slug}?sidebar_expanded=true")
@@ -2921,7 +2931,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       {:ok, view, _html} = live(conn, "/sections/#{section.slug}/preview")
 
       view
-      |> element(~s{nav[id="desktop-nav-menu"] a[id="discussions_nav_link"])})
+      |> element(~s{nav[id='desktop-nav-menu'] a[id='desktop_discussions_nav_link']})
       |> render_click()
 
       redirect_path = "/sections/#{section.slug}/preview/discussions"
@@ -2946,7 +2956,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       {:ok, view, _html} = live(conn, "/sections/#{section.slug}/preview")
 
       view
-      |> element(~s{nav[id="desktop-nav-menu"] a[id="practice_nav_link"])})
+      |> element(~s{nav[id='desktop-nav-menu'] a[id='desktop_practice_nav_link']})
       |> render_click()
 
       redirect_path = "/sections/#{section.slug}/preview/practice"

@@ -16,7 +16,7 @@ defmodule OliWeb.Delivery.StudentOnboarding.Intro do
     />
     <div class="flex flex-col gap-3 px-[50px] hvsm:px-[70px] hvxl:px-[84px] py-9 dark:text-white">
       <h2 class="font-semibold text-[18xl] leading-[24px] hvsm:text-[30px] hvsm:leading-[40px] hvxl:text-[40px] hvxl:leading-[54px] tracking-[0.02px]">
-        Welcome to <%= @section.title %>!
+        Welcome to {@section.title}!
       </h2>
       <div class="text-[14px] leading-5 tracking-[0.02px] dark:text-opacity-80">
         <p class="font-bold mb-0">Here's what to expect:</p>
@@ -31,7 +31,7 @@ defmodule OliWeb.Delivery.StudentOnboarding.Intro do
               Learning about the new ‘Exploration’ activities that provide real-world examples
             </li>
           <% end %>
-          <li>A personalized <%= @section.title %> experience based on your skillsets</li>
+          <li>A personalized {@section.title} experience based on your skillsets</li>
         </ul>
       </div>
     </div>

@@ -20,7 +20,7 @@
           <%= if Phoenix.Flash.get(@flash, :info) do %>
             <div class="alert alert-info flex flex-row" role="alert">
               <div class="flex-1">
-                <%= Phoenix.Flash.get(@flash, :info) %>
+                {Phoenix.Flash.get(@flash, :info)}
               </div>
 
               <button
@@ -39,7 +39,7 @@
           <%= if Phoenix.Flash.get(@flash, :error) do %>
             <div class="alert alert-danger flex flex-row" role="alert">
               <div class="flex-1">
-                <%= Phoenix.Flash.get(@flash, :error) %>
+                {Phoenix.Flash.get(@flash, :error)}
               </div>
               <button
                 type="button"
@@ -76,10 +76,10 @@
             :if={@view in [:graded_page, :practice_page] and @page_progress_state == :in_progress}
             id="offline_detector"
           >
-            <%= react_component("Components.OfflineDetector") %>
+            {react_component("Components.OfflineDetector")}
           </div>
 
-          <%= @inner_content %>
+          {@inner_content}
         </div>
       </div>
 
@@ -91,7 +91,7 @@
             class="absolute z-50 system-banner flex flex-row alert alert-warning ml-32 m-6"
             role="alert"
           >
-            <%= OliWeb.LayoutView.pay_early_message(@paywall_summary) %>
+            {OliWeb.LayoutView.pay_early_message(@paywall_summary)}
             <div class="flex whitespace-nowrap items-center">
               <.link class="ml-8" href={Routes.payment_path(@socket, :guard, @section.slug)}>
                 Pay Now
@@ -133,7 +133,7 @@
         </div>
 
         <%= if @section && !@page_context.page.graded do %>
-          <%= live_render(@socket, OliWeb.Dialogue.WindowLive,
+          {live_render(@socket, OliWeb.Dialogue.WindowLive,
             session: %{
               "section_slug" => @section.slug,
               "resource_id" => @page_context.page.resource_id,
@@ -141,7 +141,7 @@
               "is_page" => true
             },
             id: "dialogue-window"
-          ) %>
+          )}
         <% end %>
       </div>
     </div>

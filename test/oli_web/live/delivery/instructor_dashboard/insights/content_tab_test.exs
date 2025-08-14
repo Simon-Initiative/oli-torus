@@ -320,11 +320,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
       assert filtered_links == expected_links
 
       ### "units" button is selected
-      assert button_has_class?(view, "filter_units_button", "bg-[#0080FF]")
+      assert button_has_class?(view, "filter_units_button", "bg-Fill-Buttons-fill-primary")
       refute button_has_class?(view, "filter_units_button", "bg-white")
 
-      assert button_has_class?(view, "filter_modules_button", "bg-[#F3F4F8]")
-      refute button_has_class?(view, "filter_modules_button", "bg-[#0080FF]")
+      assert button_has_class?(view, "filter_modules_button", "bg-Background-bg-primary")
+      refute button_has_class?(view, "filter_modules_button", "bg-Fill-Buttons-fill-primary")
     end
 
     test "content table gets rendered given a section with only pages",
@@ -487,8 +487,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
       ## filtering by modules
       element(view, "#filter_modules_button") |> render_click()
 
-      assert button_has_class?(view, "filter_modules_button", "bg-[#0080FF]")
-      refute button_has_class?(view, "filter_units_button", "bg-[#0080FF]")
+      assert button_has_class?(view, "filter_modules_button", "bg-Fill-Buttons-fill-primary")
+      refute button_has_class?(view, "filter_units_button", "bg-Fill-Buttons-fill-primary")
 
       [module_for_tr_1, module_for_tr_2, module_for_tr_3] =
         view
@@ -504,8 +504,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
       ## filtering by units
       element(view, "#filter_units_button") |> render_click()
 
-      assert button_has_class?(view, "filter_units_button", "bg-[#0080FF]")
-      refute button_has_class?(view, "filter_modules_button", "bg-[#0080FF]")
+      assert button_has_class?(view, "filter_units_button", "bg-Fill-Buttons-fill-primary")
+      refute button_has_class?(view, "filter_modules_button", "bg-Fill-Buttons-fill-primary")
 
       [unit_for_tr_1, unit_for_tr_2] =
         view
@@ -572,15 +572,15 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
       assert unit_for_tr_2 =~ "Unit 2"
 
       ## Filtering by zero student progress card
-      element(view, "div[phx-value-selected=\"zero_student_progress\"]") |> render_click()
+      element(view, "div[phx-value-selected='zero_student_progress']") |> render_click()
 
-      refute has_element?(view, "table tr td div a", unit_for_tr_1)
-      assert has_element?(view, "table tr td div a", unit_for_tr_2)
+      refute has_element?(view, "table tr td div a", "Unit 1")
+      assert has_element?(view, "table tr td div a", "Unit 2")
 
       ## Filtering by High Progress, Low Proficiency card
-      element(view, "div[phx-value-selected=\"high_progress_low_proficiency\"]") |> render_click()
-      refute has_element?(view, "table tr td div a", unit_for_tr_1)
-      refute has_element?(view, "table tr td div a", unit_for_tr_2)
+      element(view, "div[phx-value-selected='high_progress_low_proficiency']") |> render_click()
+      refute has_element?(view, "table tr td div a", "Unit 1")
+      refute has_element?(view, "table tr td div a", "Unit 2")
     end
 
     test "cards to filter works correctly when there are no containers", %{
@@ -601,7 +601,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
       assert has_element?(view, "button[id=filter_modules_button][disabled]", "Modules")
 
       ## Filtering by zero student progress card
-      element(view, "div[phx-value-selected=\"zero_student_progress\"]") |> render_click()
+      element(view, "div[phx-value-selected='zero_student_progress']") |> render_click()
 
       results =
         view
@@ -614,7 +614,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
       assert length(results) == count_of_pages
 
       ## Filtering by High Progress, Low Proficiency card
-      element(view, "div[phx-value-selected=\"high_progress_low_proficiency\"]") |> render_click()
+      element(view, "div[phx-value-selected='high_progress_low_proficiency']") |> render_click()
 
       ## Assert that filtering by High Progress, Low Proficiency card returns no pages
       assert has_element?(view, "p", "None exist")
@@ -674,18 +674,18 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
       assert unit_for_tr_2 =~ "Unit 2"
 
       ## Filtering by zero student progress card
-      element(view, "div[phx-value-selected=\"zero_student_progress\"]") |> render_click()
+      element(view, "div[phx-value-selected='zero_student_progress']") |> render_click()
 
-      assert has_element?(view, "table tr td div a", unit_for_tr_2)
-      refute has_element?(view, "table tr td div a", unit_for_tr_1)
+      assert has_element?(view, "table tr td div a", "Unit 2")
+      refute has_element?(view, "table tr td div a", "Unit 1")
 
       ## Search for "Unit" string
       view
-      |> element("form[phx-change=\"search_container\"]")
+      |> element("form[phx-change='search_container']")
       |> render_change(%{container_name: "Unit"})
 
-      assert has_element?(view, "table tr td div a", unit_for_tr_2)
-      refute has_element?(view, "table tr td div a", unit_for_tr_1)
+      assert has_element?(view, "table tr td div a", "Unit 2")
+      refute has_element?(view, "table tr td div a", "Unit 1")
     end
 
     test "filter by progress works correctly", %{

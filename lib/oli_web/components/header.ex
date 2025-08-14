@@ -30,7 +30,7 @@ defmodule OliWeb.Components.Header do
             end
           }
         >
-          <%= brand_logo(Map.merge(assigns, %{class: "d-inline-block align-top mr-2"})) %>
+          {brand_logo(Map.merge(assigns, %{class: "d-inline-block align-top mr-2"}))}
         </a>
 
         <%= if not is_preview_mode?(assigns) do %>
@@ -73,7 +73,7 @@ defmodule OliWeb.Components.Header do
                   </div>
                 </div>
                 <div class="user-icon">
-                  <%= user_icon(%{}) %>
+                  {user_icon(%{})}
                 </div>
               </button>
             </div>
@@ -107,7 +107,7 @@ defmodule OliWeb.Components.Header do
     ~H"""
     <nav class="bg-primary-24 dark h-[111px] flex items-center pl-4 pr-10">
       <a class="navbar-brand torus-logo shrink-0 my-1 mr-auto" href={~p"/"}>
-        <%= brand_logo(Map.merge(assigns, %{class: "d-inline-block align-top mr-2"})) %>
+        {brand_logo(Map.merge(assigns, %{class: "d-inline-block align-top mr-2"}))}
       </a>
       <div class="hidden md:flex">
         <.sign_in_button href="/instructors/log_in" request_path={assigns.conn.request_path}>
@@ -138,7 +138,7 @@ defmodule OliWeb.Components.Header do
       href={@href}
       class={"pt-[12px] text-high-24 hover:text-high-24 hover:underline hover:underline-offset-8" <> maybe_add_underlined_classes(@request_path, @href)}
     >
-      <%= render_slot(@inner_block) %>
+      {render_slot(@inner_block)}
     </.button>
     """
   end
@@ -152,10 +152,10 @@ defmodule OliWeb.Components.Header do
       <div class="container mx-auto my-2">
         <nav class="breadcrumb-bar d-flex align-items-center mt-3 mb-1">
           <div class="flex-1">
-            <%= live_render(@socket_or_conn, BreadcrumbTrailLive,
+            {live_render(@socket_or_conn, BreadcrumbTrailLive,
               id: "breadcrumb-trail",
               session: %{"breadcrumbs" => @breadcrumbs}
-            ) %>
+            )}
           </div>
         </nav>
       </div>

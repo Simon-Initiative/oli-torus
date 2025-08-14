@@ -8,10 +8,10 @@
 
     <main role="main" id="main-content">
       <div class="relative">
-        <%= @inner_content %>
+        {@inner_content}
       </div>
     </main>
 
-    <%= if !assigns[:hide_footer], do: OliWeb.Components.Footer.login_footer(%{}) %>
+    {if !assigns[:hide_footer], do: OliWeb.Components.Footer.login_footer(%{})}
   </div>
 <% end %>

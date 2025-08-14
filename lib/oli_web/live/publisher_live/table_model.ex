@@ -66,7 +66,7 @@ defmodule OliWeb.PublisherLive.TableModel do
 
     ~H"""
     <div>
-      <%= @name %>
+      {@name}
       <%= if @default do %>
         <span class="badge badge-info">default</span>
       <% end %>

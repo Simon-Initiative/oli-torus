@@ -96,7 +96,7 @@ defmodule OliWeb.PaymentsLiveTest do
       {:ok, view, _html} = live(conn, live_view_payments_route(product.slug))
 
       view
-      |> element("button[phx-click=\"create\"]")
+      |> element("button[phx-click='create']")
       |> render_click()
 
       refute has_element?(
@@ -122,7 +122,7 @@ defmodule OliWeb.PaymentsLiveTest do
 
       # Simulate clicking on the button to create payment codes
       view
-      |> element("button[phx-click=\"create\"]")
+      |> element("button[phx-click='create']")
       |> render_click()
 
       # Get the payment codes generated for a current product
@@ -193,7 +193,7 @@ defmodule OliWeb.PaymentsLiveTest do
       refute has_element?(view, "div", code2)
 
       view
-      |> element("button[phx-click=\"text_search_reset\"]")
+      |> element("button[phx-click='text_search_reset']")
       |> render_click()
 
       assert has_element?(view, "div", code1)
@@ -230,7 +230,7 @@ defmodule OliWeb.PaymentsLiveTest do
                code1
 
       view
-      |> element("th[phx-click=\"paged_table_sort\"]:first-of-type")
+      |> element("th[phx-click='paged_table_sort']:first-of-type")
       |> render_click(%{sort_by: "user"})
 
       assert view

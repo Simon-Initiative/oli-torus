@@ -10,6 +10,8 @@ defmodule Oli.Accounts.User do
   schema "users" do
     field :email, :string
     field :password, :string, virtual: true, redact: true
+    field :current_password, :string, virtual: true, redact: true
+    field :password_confirmation, :string, virtual: true, redact: true
     field :password_hash, :string, redact: true
     field :email_confirmed_at, :utc_datetime
 
@@ -209,8 +211,20 @@ defmodule Oli.Accounts.User do
   It requires the email to change otherwise an error is added.
   """
   def email_changeset(user, attrs, opts \\ []) do
+    fields =
+      if Keyword.get(opts, :require_current_password, false),
+        do: [:email, :current_password],
+        else: [:email]
+
+    # :email is already required in validate_email/2
+    required_fields =
+      if Keyword.get(opts, :require_current_password, false),
+        do: [:current_password],
+        else: []
+
     user
-    |> cast(attrs, [:email])
+    |> cast(attrs, fields)
+    |> validate_required(required_fields)
     |> validate_email(opts)
     |> case do
       %{changes: %{email: _}} = changeset -> changeset
@@ -231,8 +245,20 @@ defmodule Oli.Accounts.User do
       Defaults to `true`.
   """
   def password_changeset(user, attrs, opts \\ []) do
+    fields =
+      if Keyword.get(opts, :require_current_password, false),
+        do: [:current_password, :password, :password_confirmation],
+        else: [:password]
+
+    # :password is already required in validate_password/2
+    required_fields =
+      if Keyword.get(opts, :require_current_password, false),
+        do: [:current_password, :password_confirmation],
+        else: []
+
     user
-    |> cast(attrs, [:password])
+    |> cast(attrs, fields)
+    |> validate_required(required_fields)
     |> validate_confirmation(:password, message: "does not match password")
     |> validate_password(opts)
   end

@@ -311,7 +311,7 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
           <% end %>
         </Group.render>
         <Group.render>
-          <%= render_parts(assigns) %>
+          {render_parts(assigns)}
           <Apply.render disabled={scoring_remains(assigns)} apply="apply" />
         </Group.render>
       <% else %>

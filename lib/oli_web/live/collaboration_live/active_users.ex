@@ -6,12 +6,12 @@ defmodule OliWeb.CollaborationLive.ActiveUsers do
   def render(assigns) do
     ~H"""
     <div>
-      <h3 class="text-xl font-bold mb-5"><%= "Active users (#{length(@users)})" %></h3>
+      <h3 class="text-xl font-bold mb-5">{"Active users (#{length(@users)})"}</h3>
 
       <ul class="collab-space__active-users rounded-sm">
         <%= for user <- @users do %>
           <li>
-            <%= name(user) %><strong><%= if user.typing do
+            {name(user)}<strong><%= if user.typing do
                 " is typing..."
               end %></strong>
           </li>

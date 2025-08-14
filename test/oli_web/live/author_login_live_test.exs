@@ -64,7 +64,7 @@ defmodule OliWeb.AuthorLoginLiveTest do
 
       {:ok, conn} =
         lv
-        |> element(~s|a:fl-contains("Create an account")|)
+        |> element("a", "Create an account")
         |> render_click()
         |> follow_redirect(conn, ~p"/authors/register")
 
@@ -78,7 +78,7 @@ defmodule OliWeb.AuthorLoginLiveTest do
 
       {:ok, conn} =
         lv
-        |> element(~s|a:fl-contains("Forgot password?")|)
+        |> element("a", "Forgot password?")
         |> render_click()
         |> follow_redirect(conn, ~p"/authors/reset_password")
 

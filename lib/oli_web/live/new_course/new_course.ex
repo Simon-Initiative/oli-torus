@@ -139,7 +139,7 @@ defmodule OliWeb.Delivery.NewCourse do
       New course set up
     </h5>
     <div class="overflow-y-auto scrollbar-hide relative h-full">
-      <%= render_slot(@inner_block) %>
+      {render_slot(@inner_block)}
     </div>
     """
   end
@@ -150,7 +150,7 @@ defmodule OliWeb.Delivery.NewCourse do
     ~H"""
     <%= if Phoenix.Flash.get(@flash, :form_error) do %>
       <div class="alert alert-danger m-0 flex flex-row justify-between w-full" role="alert">
-        <%= Phoenix.Flash.get(@flash, :form_error) %>
+        {Phoenix.Flash.get(@flash, :form_error)}
 
         <button
           type="button"
