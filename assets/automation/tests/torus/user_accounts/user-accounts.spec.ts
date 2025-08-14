@@ -17,7 +17,7 @@ test.describe('User Accounts', () => {
   });
 
   test('Sign into an authoring account with valid details', async () => {
-    await torus.login(
+    await torus.log_in(
       loginData.author.type,
       loginData.author.pageTitle,
       loginData.author.role,
@@ -29,7 +29,7 @@ test.describe('User Accounts', () => {
   });
 
   test('Sign in as a student with valid details', async () => {
-    await torus.login(
+    await torus.log_in(
       loginData.student.type,
       loginData.student.pageTitle,
       loginData.student.role,
@@ -41,19 +41,19 @@ test.describe('User Accounts', () => {
   });
 
   test('Sign in as an instructor with valid details', async () => {
-    await torus.login(
-      loginData.intructor.type,
-      loginData.intructor.pageTitle,
-      loginData.intructor.role,
-      loginData.intructor.welcomeText,
-      loginData.intructor.email,
-      loginData.intructor.pass,
-      loginData.intructor.header,
+    await torus.log_in(
+      loginData.instructor.type,
+      loginData.instructor.pageTitle,
+      loginData.instructor.role,
+      loginData.instructor.welcomeText,
+      loginData.instructor.email,
+      loginData.instructor.pass,
+      loginData.instructor.header,
     );
   });
 
   test('As an administrator, go to a users profile, allow the user to create sections, and then, as that user, log in and verify you can create sections', async () => {
-    await torus.login(
+    await torus.log_in(
       loginData.author.type,
       loginData.author.pageTitle,
       loginData.author.role,
@@ -63,7 +63,7 @@ test.describe('User Accounts', () => {
       loginData.author.header,
     );
     await torus.canCreateSections(loginData.student.email, `Argos, ${loginData.student.name}`);
-    await torus.login(
+    await torus.log_in(
       loginData.student.type,
       loginData.student.pageTitle,
       loginData.student.role,
