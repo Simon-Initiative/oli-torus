@@ -6,18 +6,9 @@ defmodule Mix.Tasks.GenerateGenAiInfraSeedsTest do
   alias Oli.GenAIFeatureConfig
 
   describe "run/1" do
-    setup do
-      # Clean up environment variables
-      System.delete_env("OPENAI_API_KEY")
-      System.delete_env("OPENAI_ORG_KEY")
-      System.delete_env("ANTHROPIC_API_KEY")
-    end
-
     test "creates null provider when no API keys are available" do
       # Ensure no API keys are set
-      System.delete_env("OPENAI_API_KEY")
-      System.delete_env("ANTHROPIC_API_KEY")
-
+      cleanup()
       assert :ok == GenerateGenAiInfraSeeds.run([])
 
       # Verify null model was created
@@ -31,7 +22,7 @@ defmodule Mix.Tasks.GenerateGenAiInfraSeedsTest do
       service_config = Oli.Repo.get_by(ServiceConfig, name: "standard-no-backup")
       assert service_config != nil
       assert service_config.primary_model_id == null_model.id
-      assert service_config.backup_model_id == nil
+      refute service_config.backup_model_id
 
       # Verify feature configs were created
       student_dialogue_config = Oli.Repo.get_by(GenAIFeatureConfig, feature: :student_dialogue)
@@ -49,6 +40,9 @@ defmodule Mix.Tasks.GenerateGenAiInfraSeedsTest do
     end
 
     test "creates OpenAI model when OPENAI_API_KEY is available" do
+      # Ensure no API keys are set
+      cleanup()
+
       # Set OpenAI API key
       System.put_env("OPENAI_API_KEY", "sk-test-openai-key")
       System.put_env("OPENAI_ORG_KEY", "org-test-key")
@@ -75,6 +69,9 @@ defmodule Mix.Tasks.GenerateGenAiInfraSeedsTest do
     end
 
     test "creates Claude model when ANTHROPIC_API_KEY is available" do
+      # Ensure no API keys are set
+      cleanup()
+
       # Set Anthropic API key
       System.put_env("ANTHROPIC_API_KEY", "sk-ant-test-claude-key")
 
@@ -100,6 +97,9 @@ defmodule Mix.Tasks.GenerateGenAiInfraSeedsTest do
     end
 
     test "creates both OpenAI and Claude models when both API keys are available" do
+      # Ensure no API keys are set
+      cleanup()
+
       # Set both API keys
       System.put_env("OPENAI_API_KEY", "sk-test-openai-key")
       System.put_env("ANTHROPIC_API_KEY", "sk-ant-test-claude-key")
@@ -125,6 +125,9 @@ defmodule Mix.Tasks.GenerateGenAiInfraSeedsTest do
     end
 
     test "does not create duplicate data when run multiple times" do
+      # Ensure no API keys are set
+      cleanup()
+
       # Set API key
       System.put_env("OPENAI_API_KEY", "sk-test-openai-key")
 
@@ -144,5 +147,11 @@ defmodule Mix.Tasks.GenerateGenAiInfraSeedsTest do
       assert Oli.Repo.aggregate(ServiceConfig, :count, :id) == initial_service_count
       assert Oli.Repo.aggregate(GenAIFeatureConfig, :count, :id) == initial_feature_count
     end
+  end
+
+  def cleanup do
+    System.delete_env("OPENAI_API_KEY")
+    System.delete_env("OPENAI_ORG_KEY")
+    System.delete_env("ANTHROPIC_API_KEY")
   end
 end
