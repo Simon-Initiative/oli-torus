@@ -253,6 +253,14 @@ module.exports = {
     light: '#FFFFFF',
     dark: '#000000',
   },
+  'Table-text-accent-green': {
+    light: '#245D45',
+    dark: '#39E581',
+  },
+  'Table-text-danger': {
+    light: '#A42327',
+    dark: '#FF8787',
+  },
   // Icon
   'Icon-icon-white': {
     light: '#FFFFFF',
