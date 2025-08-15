@@ -8,12 +8,14 @@ defmodule Oli.GenAI.Completions.ServiceConfig do
     belongs_to :primary_model, Oli.GenAI.Completions.RegisteredModel
     belongs_to :backup_model, Oli.GenAI.Completions.RegisteredModel
 
+    field :usage_count, :integer, virtual: true
+
     timestamps(type: :utc_datetime)
   end
 
   def changeset(service_config, attrs) do
     service_config
     |> cast(attrs, [:name, :primary_model_id, :backup_model_id])
-    |> validate_required([:name, :primary_model_id, :backup_model_id])
+    |> validate_required([:name, :primary_model_id])
   end
 end

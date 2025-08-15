@@ -17,6 +17,7 @@ defmodule OliWeb.Dialogue.WindowLive do
   alias Oli.Conversation
   alias Oli.GenAI.Dialogue.{Server, Configuration}
   alias Oli.GenAI.Completions.Message
+  alias Oli.GenAI.FeatureConfig
   alias OliWeb.Components
   alias OliWeb.Dialogue.UserInput
 
@@ -70,7 +71,7 @@ defmodule OliWeb.Dialogue.WindowLive do
       end
 
     configuration = %Configuration{
-      service_config: Oli.GenAIFeatureConfig.load_for(section.id, :student_dialogue),
+      service_config: FeatureConfig.load_for(section.id, :student_dialogue),
       messages: [Message.new(:system, system_prompt)],
       functions: OliWeb.Dialogue.StudentFunctions.functions(),
       reply_to_pid: self()
