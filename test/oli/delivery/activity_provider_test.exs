@@ -117,6 +117,7 @@ defmodule Oli.Delivery.ActivityProviderTest do
           page.revision.content,
           source,
           [],
+          [],
           user,
           section.slug,
           Oli.Publishing.DeliveryResolver
@@ -255,6 +256,7 @@ defmodule Oli.Delivery.ActivityProviderTest do
           content,
           source,
           [],
+          [],
           user,
           section.slug,
           Oli.Publishing.DeliveryResolver
@@ -331,6 +333,7 @@ defmodule Oli.Delivery.ActivityProviderTest do
         ActivityProvider.provide(
           content,
           source,
+          [],
           [%AttemptPrototype{revision: activity1.revision, selection_id: "2"}],
           user,
           section.slug,
@@ -382,6 +385,7 @@ defmodule Oli.Delivery.ActivityProviderTest do
         ActivityProvider.provide(
           content,
           source,
+          [],
           [
             %AttemptPrototype{revision: activity1.revision, selection_id: "2"},
             %AttemptPrototype{revision: activity2.revision, selection_id: "2"}
@@ -469,6 +473,7 @@ defmodule Oli.Delivery.ActivityProviderTest do
         ActivityProvider.provide(
           content,
           source,
+          [],
           [],
           user,
           section.slug,
@@ -560,6 +565,7 @@ defmodule Oli.Delivery.ActivityProviderTest do
         ActivityProvider.provide(
           content,
           source,
+          [],
           [],
           user,
           section.slug,
@@ -665,6 +671,7 @@ defmodule Oli.Delivery.ActivityProviderTest do
         ActivityProvider.provide(
           content,
           source,
+          [],
           [],
           user,
           section.slug,

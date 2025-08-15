@@ -4,7 +4,7 @@ defmodule Oli.Rendering.Content.Selection do
           section_slug: section_slug,
           revision_slug: revision_slug,
           activity_types_map: activity_types_map
-        },
+        } = context,
         %{"logic" => logic, "count" => count, "id" => id} = selection,
         include_link?
       ) do
@@ -29,6 +29,16 @@ defmodule Oli.Rendering.Content.Selection do
         [
           "<p class=\"lead my-3\">",
           "<a class=\"btn btn-primary\" href=\"#{url}\" target=\"_blank\">Preview activities</a>",
+          # Check if we're in instructor preview mode and have page_id
+          if context.mode == :instructor_preview and context.page_id do
+            review_url = "/sections/#{section_slug}/instructor_dashboard/review_activities/#{context.page_id}/#{id}"
+            [
+              " ",
+              "<a class=\"btn btn-secondary\" href=\"#{review_url}\" target=\"_blank\">Review Activities</a>"
+            ]
+          else
+            ""
+          end,
           "</p>"
         ]
       else

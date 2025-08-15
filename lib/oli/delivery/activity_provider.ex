@@ -43,6 +43,7 @@ defmodule Oli.Delivery.ActivityProvider do
   def provide(
         %{"advancedDelivery" => true} = content,
         %Source{} = source,
+        _blacklisted_activities,
         _constraining_attempt_prototypes,
         _user,
         _section_slug,
@@ -103,6 +104,7 @@ defmodule Oli.Delivery.ActivityProvider do
   def provide(
         %{"model" => model} = content,
         %Source{} = source,
+        blacklisted_activities,
         constraining_attempt_prototypes,
         user,
         section_slug,
@@ -111,7 +113,9 @@ defmodule Oli.Delivery.ActivityProvider do
     %{
       prototypes: prototypes,
       errors: errors
-    } = fulfill(model, source, user, section_slug, constraining_attempt_prototypes)
+    } = fulfill(model, source, blacklisted_activities, user, section_slug, constraining_attempt_prototypes)
+
+
 
     prototypes_with_revisions =
       resolve_activity_ids(source.section_slug, prototypes, resolver)
@@ -152,7 +156,7 @@ defmodule Oli.Delivery.ActivityProvider do
   # In order to prevent multiple selections on the page potentially realizing the same activity more
   # than once, we update the blacklisted activity ids within the source as we proceed through the
   # collection of activity references.
-  defp fulfill(model, %Source{} = source, user, section_slug, existing_attempt_prototypes) do
+  defp fulfill(model, %Source{} = source, blacklisted_activities, user, section_slug, existing_attempt_prototypes) do
     # Create a map of selection ids to a list of their existing prototypes
     prototypes_by_selection = build_prototypes_by_selection_map(existing_attempt_prototypes)
 
@@ -174,7 +178,7 @@ defmodule Oli.Delivery.ActivityProvider do
     }
 
     Enum.reduce(model, fulfillment_state, fn e, state ->
-      do_fulfill(state, e, nil, nil, user, section_slug)
+      do_fulfill(state, e, nil, nil, blacklisted_activities, user, section_slug)
     end)
   end
 
@@ -183,6 +187,7 @@ defmodule Oli.Delivery.ActivityProvider do
          %{"type" => "activity-reference"} = model_component,
          group_id,
          survey_id,
+         _blacklisted_activities,
          _user,
          _section_slug
        ) do
@@ -209,12 +214,13 @@ defmodule Oli.Delivery.ActivityProvider do
          %{"type" => "selection"} = model_component,
          group_id,
          survey_id,
+         blacklisted_activities,
          user,
          section_slug
        ) do
     fulfillment_state = populate_bank(fulfillment_state, publication_id)
 
-    do_fulfill(fulfillment_state, model_component, group_id, survey_id, user, section_slug)
+    do_fulfill(fulfillment_state, model_component, group_id, survey_id, blacklisted_activities, user, section_slug)
   end
 
   defp do_fulfill(
@@ -222,6 +228,7 @@ defmodule Oli.Delivery.ActivityProvider do
          %{"type" => "selection"} = model_component,
          group_id,
          survey_id,
+         blacklisted_activities,
          _user,
          _section_slug
        ) do
@@ -236,6 +243,20 @@ defmodule Oli.Delivery.ActivityProvider do
       {:ok, %Selection{points_per_activity: points_per_activity}} = result ->
         {:ok, %Selection{id: id} = selection} =
           decrement_for_prototypes(result, fulfillment_state.prototypes_by_selection)
+
+        # Exclude any section specific blacklisted activities
+        blacklisted_activity_ids = Enum.filter(blacklisted_activities, fn ba -> ba.selection_id == id end)
+        |> Enum.map(fn ba -> ba.activity_id end)
+
+        original_blacklisted_activity_ids =
+          fulfillment_state.source.blacklisted_activity_ids
+
+        fulfillment_state =
+          fulfillment_state
+          |> Map.put(:source, %Source{
+            fulfillment_state.source
+            | blacklisted_activity_ids: fulfillment_state.source.blacklisted_activity_ids ++ blacklisted_activity_ids
+          })
 
         # Add any existing prototypes to the prototypes list for this selection and to the blacklist
         fulfillment_state = add_existing_for_selection(fulfillment_state, id)
@@ -255,7 +276,7 @@ defmodule Oli.Delivery.ActivityProvider do
 
               fulfillment_state
               |> Map.put(:prototypes, new_prototypes ++ fulfillment_state.prototypes)
-              |> Map.put(:source, merge_blacklist(fulfillment_state.source, result.rows))
+              |> Map.put(:source, merge_blacklist(fulfillment_state.source, original_blacklisted_activity_ids, result.rows))
 
             {:partial, %Result{} = result} ->
               missing = selection.count - result.rowCount
@@ -270,7 +291,7 @@ defmodule Oli.Delivery.ActivityProvider do
 
               fulfillment_state
               |> Map.put(:prototypes, new_prototypes ++ fulfillment_state.prototypes)
-              |> Map.put(:source, merge_blacklist(fulfillment_state.source, result.rows))
+              |> Map.put(:source, merge_blacklist(fulfillment_state.source, original_blacklisted_activity_ids, result.rows))
               |> Map.put(:errors, [error | fulfillment_state.errors])
 
             e ->
@@ -289,6 +310,7 @@ defmodule Oli.Delivery.ActivityProvider do
          %{"type" => type} = model_component,
          group_id,
          survey_id,
+         blacklisted_activities,
          user,
          section_slug
        ) do
@@ -296,17 +318,17 @@ defmodule Oli.Delivery.ActivityProvider do
       case type do
         "group" ->
           Enum.reduce(model_component["children"], fulfillment_state, fn c, s ->
-            do_fulfill(s, c, model_component["id"], survey_id, user, section_slug)
+            do_fulfill(s, c, model_component["id"], survey_id, blacklisted_activities, user, section_slug)
           end)
 
         "survey" ->
           Enum.reduce(model_component["children"], fulfillment_state, fn c, s ->
-            do_fulfill(s, c, group_id, model_component["id"], user, section_slug)
+            do_fulfill(s, c, group_id, model_component["id"], blacklisted_activities, user, section_slug)
           end)
 
         _ ->
           Enum.reduce(model_component["children"], fulfillment_state, fn c, s ->
-            do_fulfill(s, c, group_id, survey_id, user, section_slug)
+            do_fulfill(s, c, group_id, survey_id, blacklisted_activities, user, section_slug)
           end)
       end
     else
@@ -323,7 +345,7 @@ defmodule Oli.Delivery.ActivityProvider do
     |> Map.put(:prototypes, prototypes ++ fulfillment_state.prototypes)
     |> Map.put(
       :source,
-      merge_blacklist(fulfillment_state.source, Enum.map(prototypes, fn p -> p.revision end))
+      merge_blacklist(fulfillment_state.source, fulfillment_state.source.blacklisted_activity_ids, Enum.map(prototypes, fn p -> p.revision end))
     )
   end
 
@@ -448,6 +470,7 @@ defmodule Oli.Delivery.ActivityProvider do
   # Replace all bank selections with activity-references that represent the fulfilled
   # activities for those selections
   defp transform_content(content, prototypes) do
+
     prototypes_by_selection = build_prototypes_by_selection_map(prototypes)
 
     mapped_model =
@@ -502,10 +525,10 @@ defmodule Oli.Delivery.ActivityProvider do
 
   # Merge the blacklisted activity ids of the given source with the resource ids of the
   # given list of revisions
-  defp merge_blacklist(%Source{blacklisted_activity_ids: ids} = source, revisions) do
+  defp merge_blacklist(%Source{} = source, original, revisions) do
     %{
       source
-      | blacklisted_activity_ids: Enum.map(revisions, fn r -> r.resource_id end) ++ ids
+      | blacklisted_activity_ids: Enum.map(revisions, fn r -> r.resource_id end) ++ original
     }
   end
 end

@@ -186,6 +186,7 @@ defmodule OliWeb.ResourceController do
               publication_id: Oli.Publishing.project_working_publication(project_slug).id
             },
             [],
+            [],
             nil,
             nil,
             Oli.Publishing.AuthoringResolver

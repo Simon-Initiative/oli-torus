@@ -1321,7 +1321,19 @@ defmodule OliWeb.Router do
       pipe_through([:put_license])
       get("/page/:revision_slug", PageDeliveryController, :page_preview)
       get("/page/:revision_slug/page/:page", PageDeliveryController, :page_preview)
-      get("/page/:revision_slug/selection/:selection_id", ActivityBankController, :preview)
+    end
+
+    # Review Activities LiveView for instructors in preview mode
+    live_session :instructor_review_activities_preview,
+      on_mount: [
+        {OliWeb.UserAuth, :ensure_authenticated},
+        OliWeb.LiveSessionPlugs.SetCtx,
+        OliWeb.LiveSessionPlugs.SetSection,
+        OliWeb.LiveSessionPlugs.SetBrand,
+        OliWeb.LiveSessionPlugs.SetPreviewMode
+      ],
+      layout: {OliWeb.Layouts, :instructor_dashboard} do
+      live("/page/:page_id/selection/:selection_id", Instructor.ReviewActivitiesLive)
     end
   end
 

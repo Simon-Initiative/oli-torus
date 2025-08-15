@@ -56,6 +56,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
           section_slug: context.section_slug,
           publication_id: context.publication_id
         },
+        context.blacklisted_activities,
         constraining_attempt_prototypes,
         context.user,
         context.section_slug,

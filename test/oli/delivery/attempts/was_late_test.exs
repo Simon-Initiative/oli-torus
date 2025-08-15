@@ -80,7 +80,7 @@ defmodule Oli.Delivery.Attempts.WasLateTest do
 
       Oli.Delivery.Attempts.Core.track_access(page.resource.id, section.id, user.id)
 
-      activity_provider = &Oli.Delivery.ActivityProvider.provide/6
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/7
 
       {:ok, %AttemptState{resource_attempt: ra}} =
         PageLifecycle.start(
@@ -123,7 +123,7 @@ defmodule Oli.Delivery.Attempts.WasLateTest do
 
       Oli.Delivery.Attempts.Core.track_access(page.resource.id, section.id, user.id)
 
-      activity_provider = &Oli.Delivery.ActivityProvider.provide/6
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/7
 
       {:ok, %AttemptState{resource_attempt: ra}} =
         PageLifecycle.start(
@@ -175,7 +175,7 @@ defmodule Oli.Delivery.Attempts.WasLateTest do
 
       Oli.Delivery.Attempts.Core.track_access(page.resource.id, section.id, user.id)
 
-      activity_provider = &Oli.Delivery.ActivityProvider.provide/6
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/7
 
       {:ok, %AttemptState{resource_attempt: ra}} =
         PageLifecycle.start(
@@ -220,7 +220,7 @@ defmodule Oli.Delivery.Attempts.WasLateTest do
 
       Oli.Delivery.Attempts.Core.track_access(page.resource.id, section.id, user.id)
 
-      activity_provider = &Oli.Delivery.ActivityProvider.provide/6
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/7
 
       {:ok, %AttemptState{resource_attempt: ra}} =
         PageLifecycle.start(
@@ -260,7 +260,7 @@ defmodule Oli.Delivery.Attempts.WasLateTest do
 
       Oli.Delivery.Attempts.Core.track_access(page.resource.id, section.id, user.id)
 
-      activity_provider = &Oli.Delivery.ActivityProvider.provide/6
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/7
 
       scheduling_types =
         Ecto.Enum.values(SectionResource, :scheduling_type) |> List.delete(:read_by)
