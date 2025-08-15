@@ -265,19 +265,40 @@ defmodule OliWeb.Common.FormatDateTime do
   @doc """
   Returns an author or users preferred timezone or the browser_timezone if none is set.
   Author takes precedence over user. If browser_timezone is nil, then UTC is returned.
+  Fallback order: Author/User timezone -> Section timezone -> Browser timezone -> UTC
   """
-  def tz_preference_or_default(author, user, browser_timezone) do
+  def tz_preference_or_default(author, user, section \\ nil, browser_timezone) do
     cond do
       not is_nil(author) ->
-        Accounts.get_author_preference(author, :timezone, browser_timezone)
+        Accounts.get_author_preference(
+          author,
+          :timezone,
+          get_section_or_browser_tz(section, browser_timezone)
+        )
 
       not is_nil(user) ->
-        Accounts.get_user_preference(user, :timezone, browser_timezone)
+        Accounts.get_user_preference(
+          user,
+          :timezone,
+          get_section_or_browser_tz(section, browser_timezone)
+        )
 
       true ->
-        browser_timezone
+        get_section_or_browser_tz(section, browser_timezone)
     end
-    |> value_or(@utc_timezone)
+  end
+
+  defp get_section_or_browser_tz(section, browser_timezone) do
+    cond do
+      not is_nil(browser_timezone) ->
+        browser_timezone
+
+      not is_nil(section) and Map.has_key?(section, :timezone) and not is_nil(section.timezone) ->
+        section.timezone
+
+      true ->
+        @utc_timezone
+    end
   end
 
   def to_formatted_datetime(datetime, ctx, format \\ "{WDshort} {Mshort} {D}, {YYYY}")

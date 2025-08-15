@@ -353,7 +353,8 @@ defmodule OliWeb.Delivery.NewCourse do
               :class_days,
               :start_date,
               :end_date,
-              :preferred_scheduling_time
+              :preferred_scheduling_time,
+              :timezone
             ])
             |> Map.merge(%{
               blueprint_id: blueprint.id,
@@ -526,9 +527,9 @@ defmodule OliWeb.Delivery.NewCourse do
 
         fields_to_validate =
           if class_modality != :never do
-            [:class_days, :start_date, :end_date, :preferred_scheduling_time]
+            [:class_days, :start_date, :end_date, :preferred_scheduling_time, :timezone]
           else
-            [:start_date, :end_date, :preferred_scheduling_time]
+            [:start_date, :end_date, :preferred_scheduling_time, :timezone]
           end
 
         if validate_fields(changeset, fields_to_validate) do
