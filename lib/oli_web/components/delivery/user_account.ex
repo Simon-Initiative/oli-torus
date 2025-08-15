@@ -11,6 +11,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   alias OliWeb.Common.SessionContext
   alias OliWeb.Common.React
   alias OliWeb.Components.Timezone
+  alias OliWeb.Common.Links
 
   attr(:id, :string, required: true)
   attr(:ctx, SessionContext)
@@ -410,10 +411,12 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   attr(:user, User, required: true)
 
   def maybe_my_courses_menu_item_link(assigns) do
+    assigns = assign(assigns, :my_courses_path, Links.my_courses_path(assigns[:user]))
+
     ~H"""
     <%= if is_independent_learner?(@user) do %>
       <.menu_item>
-        <.menu_item_link href={~p"/workspaces/student"}>
+        <.menu_item_link href={@my_courses_path}>
           My Courses
         </.menu_item_link>
       </.menu_item>

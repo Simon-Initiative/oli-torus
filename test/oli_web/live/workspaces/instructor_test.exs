@@ -338,7 +338,7 @@ defmodule OliWeb.Workspaces.InstructorTest do
                "contact support."
              )
 
-      assert has_element?(view, "a[href='/sections/independent/create']", "Create New Section")
+      assert has_element?(view, "a[href='/sections/new']", "Create New Section")
     end
 
     test "sees the instructor label on user menu", %{conn: conn} do
