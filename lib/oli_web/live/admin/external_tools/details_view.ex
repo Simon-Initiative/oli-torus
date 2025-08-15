@@ -54,11 +54,11 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
         action={:delete}
         id="delete_tool_modal"
       />
-      <%= render_custom_flash(@custom_flash) %>
+      {render_custom_flash(@custom_flash)}
       <div class="w-full inline-flex flex-col justify-start items-start gap-3">
         <div class="w-full flex flex-row justify-between items-center">
           <div class="justify-center text-2xl font-normal leading-9">
-            <%= @platform_instance.name %>
+            {@platform_instance.name}
           </div>
           <div :if={!@edit_mode and @deployment.status != :deleted} class="flex flex-row gap-2">
             <.button
@@ -142,10 +142,10 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
         |> Modal.hide_modal(@id)
       }
     >
-      <:title><%= stringify_action(@action) %> <%= @tool_name %>?</:title>
+      <:title>{stringify_action(@action)} {@tool_name}?</:title>
       <.modal_message action={@action} />
       <:cancel>Cancel</:cancel>
-      <:confirm><%= stringify_action(@action) %> Tool</:confirm>
+      <:confirm>{stringify_action(@action)} Tool</:confirm>
     </Modal.modal>
     """
   end
@@ -350,7 +350,7 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
               <Icons.alert />
           <% end %>
           <span class={"text-[#{@text_color}] text-base font-semibold"}>
-            <%= @label %>
+            {@label}
           </span>
         </div>
         <button
@@ -360,7 +360,7 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
           ✕
         </button>
       </div>
-      <p class="mt-1 text-[#353740] text-sm font-normal"><%= @message %></p>
+      <p class="mt-1 text-[#353740] text-sm font-normal">{@message}</p>
     </div>
     """
   end

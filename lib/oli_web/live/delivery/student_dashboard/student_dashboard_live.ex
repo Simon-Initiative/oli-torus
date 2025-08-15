@@ -130,7 +130,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
-    <%= render_modal(assigns) %>
+    {render_modal(assigns)}
     <Helpers.student_details survey_responses={@survey_responses || []} student={@student} />
     <Helpers.tabs
       active_tab={@active_tab}
@@ -138,7 +138,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
       student_id={@student.id}
       preview_mode={@preview_mode}
     />
-    <%= render_tab(assigns) %>
+    {render_tab(assigns)}
     <HTMLComponents.view_example_student_progress_modal />
     """
   end

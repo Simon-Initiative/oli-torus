@@ -41,7 +41,7 @@ defmodule OliWeb.Sections.OpenFreeSettings do
 
         <div class="form-row">
           <small class="text-nowrap form-text text-muted">
-            Timezone: <%= @ctx.local_tz %>
+            Timezone: {@ctx.local_tz}
           </small>
         </div>
 

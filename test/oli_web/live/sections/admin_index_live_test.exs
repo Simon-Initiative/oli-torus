@@ -82,7 +82,7 @@ defmodule OliWeb.Sections.AdminIndexLiveTest do
 
       # by active date
       view
-      |> element("input[phx-click=\"active_today\"]")
+      |> element("input[phx-click='active_today']")
       |> render_click()
 
       assert has_element?(view, "td", s1.title)
@@ -90,19 +90,19 @@ defmodule OliWeb.Sections.AdminIndexLiveTest do
 
       # reset filter active date
       view
-      |> element("input[phx-click=\"active_today\"]")
+      |> element("input[phx-click='active_today']")
       |> render_click()
 
       # by type
       view
-      |> element("form[phx-change=\"change_type\"]")
+      |> element("form[phx-change='change_type']")
       |> render_change(%{"type" => "open"})
 
       assert has_element?(view, "td", s1.title)
       refute has_element?(view, "td", s2.title)
 
       view
-      |> element("form[phx-change=\"change_type\"]")
+      |> element("form[phx-change='change_type']")
       |> render_change(%{"type" => "lms"})
 
       refute has_element?(view, "td", s1.title)
@@ -110,26 +110,26 @@ defmodule OliWeb.Sections.AdminIndexLiveTest do
 
       # reset filter type
       view
-      |> element("form[phx-change=\"change_type\"]")
+      |> element("form[phx-change='change_type']")
       |> render_change(%{"type" => ""})
 
       # by status
       view
-      |> element("form[phx-change=\"change_status\"]")
+      |> element("form[phx-change='change_status']")
       |> render_change(%{"status" => "active"})
 
       assert has_element?(view, "td", s1.title)
       refute has_element?(view, "td", s2.title)
 
       view
-      |> element("form[phx-change=\"change_status\"]")
+      |> element("form[phx-change='change_status']")
       |> render_change(%{"status" => "deleted"})
 
       refute has_element?(view, "td", s1.title)
       assert has_element?(view, "td", s2.title)
 
       view
-      |> element("form[phx-change=\"change_status\"]")
+      |> element("form[phx-change='change_status']")
       |> render_change(%{"status" => "archived"})
 
       refute has_element?(view, "td", s1.title)
@@ -226,7 +226,7 @@ defmodule OliWeb.Sections.AdminIndexLiveTest do
              |> render() =~ s1.title
 
       view
-      |> element("th[phx-click=\"paged_table_sort\"]", "Title")
+      |> element("th[phx-click='paged_table_sort']", "Title")
       |> render_click(%{sort_by: "title"})
 
       assert view
@@ -235,7 +235,7 @@ defmodule OliWeb.Sections.AdminIndexLiveTest do
 
       # by cost
       view
-      |> element("th[phx-click=\"paged_table_sort\"]", "Cost")
+      |> element("th[phx-click='paged_table_sort']", "Cost")
       |> render_click(%{sort_by: "requires_payment"})
 
       assert view
@@ -243,7 +243,7 @@ defmodule OliWeb.Sections.AdminIndexLiveTest do
              |> render() =~ s2.title
 
       view
-      |> element("th[phx-click=\"paged_table_sort\"]", "Cost")
+      |> element("th[phx-click='paged_table_sort']", "Cost")
       |> render_click(%{sort_by: "requires_payment"})
 
       assert view
@@ -255,7 +255,7 @@ defmodule OliWeb.Sections.AdminIndexLiveTest do
       Sections.enroll(user.id, s1.id, [ContextRoles.get_role(:context_instructor)])
 
       view
-      |> element("th[phx-click=\"paged_table_sort\"]", "Instructor")
+      |> element("th[phx-click='paged_table_sort']", "Instructor")
       |> render_click(%{sort_by: "instructor"})
 
       assert view
@@ -263,7 +263,7 @@ defmodule OliWeb.Sections.AdminIndexLiveTest do
              |> render() =~ s2.title
 
       view
-      |> element("th[phx-click=\"paged_table_sort\"]", "Instructor")
+      |> element("th[phx-click='paged_table_sort']", "Instructor")
       |> render_click(%{sort_by: "instructor"})
 
       assert view
@@ -281,7 +281,7 @@ defmodule OliWeb.Sections.AdminIndexLiveTest do
       refute has_element?(view, "td", last_s.title)
 
       view
-      |> element("#footer_paging button[phx-click=\"paged_table_page_change\"]", "2")
+      |> element("#footer_paging button[phx-click='paged_table_page_change']", "2")
       |> render_click()
 
       refute has_element?(view, "td", first_s.title)

@@ -191,7 +191,7 @@ defmodule OliWeb.Certificates.Components.ThresholdsTab do
                     />
                   </div>
                   <% errors = f.errors[:custom_assessments] %>
-                  <.error :if={errors}><%= elem(errors, 0) %></.error>
+                  <.error :if={errors}>{elem(errors, 0)}</.error>
                 </div>
               </div>
               <div class="flex flex-row justify-start items-start gap-[152px]">
@@ -347,7 +347,7 @@ defmodule OliWeb.Certificates.Components.ThresholdsTab do
             :if={@selected_values == %{}}
             class="px-3 text-[#383a44] text-base font-medium leading-none dark:text-white"
           >
-            <%= @placeholder %>
+            {@placeholder}
           </span>
           <span :if={@selected_values != %{}}>
             <.show_selected_pages
@@ -432,7 +432,7 @@ defmodule OliWeb.Certificates.Components.ThresholdsTab do
       :for={{id, title} <- @selected_values}
       class="text-white inline-flex items-center text-xs font-medium bg-[#0165da] border rounded-full px-2 py-0.5 m-0.5"
     >
-      <span><%= title %></span>
+      <span>{title}</span>
       <button
         type="button"
         class={[

@@ -58,7 +58,7 @@ defmodule OliWeb.Admin.ExternalTools.TableModel do
         _ -> ""
       end
     ]}>
-      <%= String.capitalize(Atom.to_string(@status)) %>
+      {String.capitalize(Atom.to_string(@status))}
     </span>
     """
   end
@@ -67,7 +67,7 @@ defmodule OliWeb.Admin.ExternalTools.TableModel do
     assigns = Map.merge(assigns, %{inserted_at: row.inserted_at})
 
     ~H"""
-    <%= FormatDateTime.parse_datetime(@inserted_at, @ctx, "{0M}/{D}/{YY}") %>
+    {FormatDateTime.parse_datetime(@inserted_at, @ctx, "{0M}/{D}/{YY}")}
     """
   end
 
@@ -79,7 +79,7 @@ defmodule OliWeb.Admin.ExternalTools.TableModel do
       href={~p"/admin/external_tools/#{@platform_instance_id}/usage"}
       class="text-base font-bold underline"
     >
-      <%= @usage_count %>
+      {@usage_count}
     </.link>
     """
   end

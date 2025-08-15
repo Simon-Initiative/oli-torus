@@ -70,7 +70,7 @@ defmodule OliWeb.Delivery.ManageSourceMaterials do
 
   def render(assigns) do
     ~H"""
-    <%= render_modal(assigns) %>
+    {render_modal(assigns)}
     <div class="container mx-auto pb-5">
       <ProjectCard.render
         id={"project_info_#{@base_project_details.id}"}
@@ -92,9 +92,9 @@ defmodule OliWeb.Delivery.ManageSourceMaterials do
           tooltip="Information about the product on which this section is based"
         >
           <div class="card-title">
-            <h5><%= @section.blueprint.title %></h5>
+            <h5>{@section.blueprint.title}</h5>
           </div>
-          <p class="card-text"><%= @section.blueprint.description %></p>
+          <p class="card-text">{@section.blueprint.description}</p>
         </ProjectCard.render>
       <% end %>
 

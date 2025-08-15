@@ -50,7 +50,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewTableModel do
           navigate={~p"/workspaces/course_author/#{@project.slug}/overview"}
           class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
         >
-          <%= @project.title %>
+          {@project.title}
         </.link>
         """
 
@@ -65,7 +65,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewTableModel do
 
       :name ->
         ~H"""
-        <span><%= @project.name %></span> <small class="text-muted"><%= @project.email %></small>
+        <span>{@project.name}</span> <small class="text-muted">{@project.email}</small>
         """
     end
   end

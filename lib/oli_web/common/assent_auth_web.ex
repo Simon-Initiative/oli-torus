@@ -53,7 +53,7 @@ defmodule OliWeb.Common.AssentAuthWeb do
     provider_config = provider_config!(provider, config)
 
     provider_config
-    |> Assent.Config.put(:session_params, session_params)
+    |> Keyword.put(:session_params, session_params)
     |> provider_config[:strategy].callback(params)
   end
 
@@ -203,7 +203,7 @@ defmodule OliWeb.Common.AssentAuthWeb do
 
     config.authentication_providers
     |> Keyword.get(provider)
-    |> Assent.Config.put(
+    |> Keyword.put(
       :redirect_uri,
       unverified_url(OliWeb.Endpoint, redirect_uri(provider, config))
     )

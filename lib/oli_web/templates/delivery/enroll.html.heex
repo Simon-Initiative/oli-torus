@@ -9,8 +9,8 @@
       <div class="course-card-link h-100 mb-4">
         <img src={cover_image(@section)} class="card-img-top" alt="course image" />
         <div class="text-center">
-          <h5 class="text-lg font-semibold my-1"><%= @section.title %></h5>
-          <p class="text-sm my-1"><%= @section.description %></p>
+          <h5 class="text-lg font-semibold my-1">{@section.title}</h5>
+          <p class="text-sm my-1">{@section.description}</p>
         </div>
       </div>
 
@@ -30,18 +30,18 @@
 
           <%= case assigns[:error] do %>
             <% error -> %>
-              <span class="help-block text-danger"><%= error %></span>
+              <span class="help-block text-danger">{error}</span>
           <% end %>
         </div>
 
         <%= if user_is_guest?(assigns) or assigns.current_user == nil do %>
-          <%= submit(
+          {submit(
             if(assigns[:auto_enroll_as_guest],
               do: "Begin Lesson",
               else: "Enroll as Guest"
             ),
             class: "btn btn-md btn-primary btn-block"
-          ) %>
+          )}
           <a
             :if={!assigns[:auto_enroll_as_guest]}
             href={
@@ -61,7 +61,7 @@
             Sign Up
           </a>
         <% else %>
-          <%= submit("Enroll", class: "btn btn-md btn-primary btn-block") %>
+          {submit("Enroll", class: "btn btn-md btn-primary btn-block")}
         <% end %>
       <% end %>
     <% end %>

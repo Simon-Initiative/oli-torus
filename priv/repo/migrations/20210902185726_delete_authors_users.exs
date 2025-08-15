@@ -12,7 +12,7 @@ defmodule Oli.Repo.Migrations.DeleteAuthorsUsers do
     drop(constraint(:enrollments, "enrollments_user_id_fkey"))
 
     alter table(:enrollments) do
-      modify(:user_id, references(:users, primary_key: true, on_delete: :delete_all))
+      modify(:user_id, references(:users, on_delete: :delete_all))
     end
 
     drop(constraint(:enrollments_context_roles, "enrollments_context_roles_enrollment_id_fkey"))
@@ -60,7 +60,7 @@ defmodule Oli.Repo.Migrations.DeleteAuthorsUsers do
     drop(constraint(:authors_projects, "authors_projects_author_id_fkey"))
 
     alter table(:authors_projects) do
-      modify :author_id, references(:authors, primary_key: true, on_delete: :delete_all)
+      modify :author_id, references(:authors, on_delete: :delete_all)
     end
 
     drop(constraint(:project_visibilities, "project_visibilities_author_id_fkey"))
@@ -81,7 +81,7 @@ defmodule Oli.Repo.Migrations.DeleteAuthorsUsers do
     drop(constraint(:enrollments, "enrollments_user_id_fkey"))
 
     alter table(:enrollments) do
-      modify(:user_id, references(:users, primary_key: true, on_delete: :nothing))
+      modify(:user_id, references(:users, on_delete: :nothing))
     end
 
     drop(constraint(:enrollments_context_roles, "enrollments_context_roles_enrollment_id_fkey"))
@@ -129,7 +129,7 @@ defmodule Oli.Repo.Migrations.DeleteAuthorsUsers do
     drop(constraint(:authors_projects, "authors_projects_author_id_fkey"))
 
     alter table(:authors_projects) do
-      modify :author_id, references(:authors, primary_key: true, on_delete: :nothing)
+      modify :author_id, references(:authors, on_delete: :nothing)
     end
 
     drop(constraint(:project_visibilities, "project_visibilities_author_id_fkey"))

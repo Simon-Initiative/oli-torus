@@ -26,7 +26,7 @@ defmodule OliWeb.Components.EmailList do
         <div id="email-list-container">
           <%= for email <- @emails_list do %>
             <div class="rounded-md bg-gray-100 dark:bg-neutral-600 cursor-default p-2 shadow-md flex items-center gap-2 user-email max-h-80 scroll-y-overflow">
-              <p><%= email %></p>
+              <p>{email}</p>
               <button
                 phx-click={@on_remove}
                 phx-target={if @target, do: "##{@target}"}
@@ -53,7 +53,7 @@ defmodule OliWeb.Components.EmailList do
       <div id="invalid-email-list-container" class="flex flex-wrap gap-2">
         <%= for email <- @invalid_emails do %>
           <div class="rounded-md bg-gray-100 dark:bg-neutral-600 cursor-default p-2 shadow-md flex items-center gap-2 user-email max-h-80 scroll-y-overflow">
-            <p class="text-sm text-rose-600"><%= email %></p>
+            <p class="text-sm text-rose-600">{email}</p>
           </div>
         <% end %>
       </div>

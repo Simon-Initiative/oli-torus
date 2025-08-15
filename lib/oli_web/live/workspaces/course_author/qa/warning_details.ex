@@ -16,11 +16,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.Qa.WarningDetails do
     <div class="review-card active" id={"#{@selected.id}"}>
       <h4 class="d-flex">
         <div>
-          Improvement opportunity on <%= Links.resource_link(
+          Improvement opportunity on {Links.resource_link(
             @selected.revision,
             @parent_pages,
             @project
-          ) %>
+          )}
         </div>
         <div class="flex-fill"></div>
         <button class="btn btn-sm btn-secondary" phx-click="dismiss">
@@ -29,14 +29,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.Qa.WarningDetails do
       </h4>
       <div class="bd-callout bd-callout-info">
         <h3>
-          <%= String.capitalize(@selected.subtype) %> on <%= @selected.revision.resource_type.type %>
+          {String.capitalize(@selected.subtype)} on {@selected.revision.resource_type.type}
         </h3>
-        <%= explanatory_text(@selected.subtype, %{graded: @selected.revision.graded}) %>
+        {explanatory_text(@selected.subtype, %{graded: @selected.revision.graded})}
       </div>
       <div class="alert alert-info">
-        <strong>Action item</strong> <%= action_item(@selected.subtype, %{
+        <strong>Action item</strong> {action_item(@selected.subtype, %{
           graded: @selected.revision.graded
-        }) %>
+        })}
         <div class="delivery-container">
           <.warning
             :if={@selected.content}
@@ -96,13 +96,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.Qa.WarningDetails do
 
   def warning(assigns) do
     ~H"""
-    <%= Phoenix.HTML.raw(
+    {Phoenix.HTML.raw(
       Oli.Rendering.Content.render(
         %Oli.Rendering.Context{user: @author},
         @selected.content,
         Oli.Rendering.Content.Html
       )
-    ) %>
+    )}
     """
   end
 end

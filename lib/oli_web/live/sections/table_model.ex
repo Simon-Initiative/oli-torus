@@ -78,10 +78,10 @@ defmodule OliWeb.Sections.SectionsTableModel do
     ~H"""
     <a
       href={~p"/sections/#{@section.slug}/manage"}
-      target="_blank"
       class="text-[#1B67B2] dark:text-[#99CCFF]"
+      target="_blank"
     >
-      <%= @section.title %>
+      {@section.title}
     </a>
     """
   end
@@ -106,7 +106,7 @@ defmodule OliWeb.Sections.SectionsTableModel do
     ~H"""
     <div class="flex space-x-2 items-center">
       <div>
-        <%= @section.institution && @section.institution.name %>
+        {@section.institution && @section.institution.name}
       </div>
       <%= if @render_institution_action do %>
         <button class="btn btn-primary my-6" phx-click="edit_section" value={@section.id}>
@@ -129,7 +129,7 @@ defmodule OliWeb.Sections.SectionsTableModel do
 
     ~H"""
     <span class={@class}>
-      <%= Phoenix.Naming.humanize(@section.status) %>
+      {Phoenix.Naming.humanize(@section.status)}
     </span>
     """
   end

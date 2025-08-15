@@ -42,18 +42,18 @@ defmodule OliWeb.Components.LiveModal do
           <div class={"bg-white dark:bg-neutral-800 rounded max-w-xl w-full p-4 #{@class}"}>
             <div class={"flex items-cent #{if assigns[:title], do: "justify-between", else: "justify-end"} p-4"}>
               <%= if @title do %>
-                <h5><%= @title %></h5>
+                <h5>{@title}</h5>
               <% end %>
               <button phx-target={@myself} phx-click="close">
                 <i class="fa-solid fa-xmark" />
               </button>
             </div>
-            <%= render_slot(@inner_block) %>
+            {render_slot(@inner_block)}
             <%= if @show_actions do %>
               <div class="flex items-center justify-end gap-2 mt-12">
                 <%= if @on_cancel do %>
                   <button phx-click={@on_cancel} class="torus-button secondary">
-                    <%= @on_cancel_label %>
+                    {@on_cancel_label}
                   </button>
                 <% end %>
                 <%= if @on_confirm do %>
@@ -62,7 +62,7 @@ defmodule OliWeb.Components.LiveModal do
                     phx-click={@on_confirm}
                     class="torus-button primary"
                   >
-                    <%= @on_confirm_label %>
+                    {@on_confirm_label}
                   </button>
                 <% end %>
               </div>

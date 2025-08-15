@@ -74,7 +74,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Insights.ActivityTableModel do
 
     ~H"""
     <a href={Routes.resource_path(OliWeb.Endpoint, :edit, @project_slug, @parent_page.slug)}>
-      <%= @row.title %>
+      {@row.title}
     </a>
     """
   end

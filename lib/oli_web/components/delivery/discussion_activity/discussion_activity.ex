@@ -54,7 +54,7 @@ defmodule OliWeb.Components.Delivery.DiscussionActivity do
         on_cancel={JS.push("cancel_confirm_modal", target: @myself)}
       >
         <:title>Accept Post</:title>
-        <%= "Are you sure you want to accept this post?" %>
+        {"Are you sure you want to accept this post?"}
         <:confirm>OK</:confirm>
         <:cancel>Cancel</:cancel>
       </Modal.modal>
@@ -65,7 +65,7 @@ defmodule OliWeb.Components.Delivery.DiscussionActivity do
         on_cancel={JS.push("cancel_confirm_modal", target: @myself)}
       >
         <:title>Reject Post</:title>
-        <%= "Are you sure you want to reject this post? This will also reject the replies if there is any." %>
+        {"Are you sure you want to reject this post? This will also reject the replies if there is any."}
         <:confirm>OK</:confirm>
         <:cancel>Cancel</:cancel>
       </Modal.modal>

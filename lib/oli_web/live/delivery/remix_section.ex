@@ -994,7 +994,7 @@ defmodule OliWeb.Delivery.RemixSection do
       </button>
 
       <%= for {breadcrumb, index} <- Enum.with_index(@breadcrumbs) do %>
-        <%= render_breadcrumb_item(
+        {render_breadcrumb_item(
           Enum.into(
             %{
               breadcrumb: breadcrumb,
@@ -1003,7 +1003,7 @@ defmodule OliWeb.Delivery.RemixSection do
             },
             assigns
           )
-        ) %>
+        )}
       <% end %>
     </div>
     """
@@ -1028,7 +1028,7 @@ defmodule OliWeb.Delivery.RemixSection do
       phx-click="set_active"
       phx-value-uuid={@breadcrumb.slug}
     >
-      <%= get_title(@breadcrumb, @show_short) %>
+      {get_title(@breadcrumb, @show_short)}
     </button>
     """
   end

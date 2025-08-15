@@ -107,7 +107,7 @@
       window.cite = require('citation-js')
     </script>
 
-    <%= csrf_meta_tag() %>
+    {csrf_meta_tag()}
     <script type="text/javascript" src={Routes.static_path(@conn, "/js/vendor.js")}>
     </script>
     <script type="text/javascript" src={Routes.static_path(@conn, "/js/app.js")}>
@@ -122,6 +122,6 @@
     </script>
   </head>
   <body class="min-h-screen flex flex-col bg-delivery-body text-delivery-body-color dark:bg-delivery-body-dark dark:text-delivery-body-color-dark">
-    <%= @inner_content %>
+    {@inner_content}
   </body>
 </html>

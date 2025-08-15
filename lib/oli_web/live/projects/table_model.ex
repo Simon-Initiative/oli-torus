@@ -46,11 +46,8 @@ defmodule OliWeb.Projects.TableModel do
     case name do
       :title ->
         ~H"""
-        <a
-          href={~p"/workspaces/course_author/#{@project.slug}/overview"}
-          class="text-[#1B67B2] dark:text-[#99CCFF]"
-        >
-          <%= @project.title %>
+        <a href={~p"/workspaces/course_author/#{@project.slug}/overview"}>
+          {@project.title}
         </a>
         """
 
@@ -73,8 +70,8 @@ defmodule OliWeb.Projects.TableModel do
 
       :name ->
         ~H"""
-        <span class="text-[#1B67B2] dark:text-[#99CCFF]"><%= @project.name %></span>
-        <small class="text-[#45464C] dark:text-[#BAB8BF]"><%= @project.email %></small>
+        <span class="text-[#1B67B2] dark:text-[#99CCFF]">{@project.name}</span>
+        <small class="text-[#45464C] dark:text-[#BAB8BF]">{@project.email}</small>
         """
     end
   end

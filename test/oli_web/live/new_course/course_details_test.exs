@@ -370,7 +370,7 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
 
   defp select_source(:admin, view, source) do
     view
-    |> element("tr:first-child button[phx-click=\"source_selection\"]")
+    |> element("tr:first-child button[phx-click='source_selection']")
     |> render_click(%{
       id:
         "#{if Map.get(source, :type) == :blueprint, do: "product", else: "publication"}:#{Map.get(source, :id) || Map.get(source, :publication_id)}"

@@ -58,11 +58,11 @@ defmodule OliWeb.Admin.UploadPipelineView do
         <div class="flex-col justify-start items-start gap-5 inline-flex grow">
           <div class="justify-start items-start gap-2.5 inline-flex">
             <div class="text-2xl font-bold leading-loose tracking-tight">
-              <%= @title %>
+              {@title}
             </div>
           </div>
           <div class="flex-col justify-start items-start flex">
-            <%= render_stats(assigns) %>
+            {render_stats(assigns)}
           </div>
         </div>
       </div>
@@ -83,7 +83,7 @@ defmodule OliWeb.Admin.UploadPipelineView do
             </div>
           </div>
           <div class="flex-col justify-start items-start flex">
-            <%= @pending_count %> total bundles
+            {@pending_count} total bundles
           </div>
           <%= if @pending_count > 0 do %>
             <div class="flex-col justify-start items-start flex">
@@ -103,13 +103,13 @@ defmodule OliWeb.Admin.UploadPipelineView do
     ~H"""
     <div>
       <div class="text-sm text-gray-400">Mean</div>
-      <div class="text-2xl font-bold text-gray-100"><%= format(@stats.mean, @suffix) %></div>
+      <div class="text-2xl font-bold text-gray-100">{format(@stats.mean, @suffix)}</div>
       <div class="text-sm text-gray-400">Min</div>
-      <div class="text-2xl font-bold text-gray-100"><%= format(@stats.min, @suffix) %></div>
+      <div class="text-2xl font-bold text-gray-100">{format(@stats.min, @suffix)}</div>
       <div class="text-sm text-gray-400">Max</div>
-      <div class="text-2xl font-bold text-gray-100"><%= format(@stats.max, @suffix) %></div>
+      <div class="text-2xl font-bold text-gray-100">{format(@stats.max, @suffix)}</div>
       <div class="text-sm text-gray-400">StdDev</div>
-      <div class="text-2xl font-bold text-gray-100"><%= format(@stats.std_dev, @suffix) %></div>
+      <div class="text-2xl font-bold text-gray-100">{format(@stats.std_dev, @suffix)}</div>
     </div>
     """
   end
@@ -123,7 +123,7 @@ defmodule OliWeb.Admin.UploadPipelineView do
   defp render_stats(assigns) do
     ~H"""
     <div>
-      <div class="text-2xl font-bold text-gray-100"><%= format(@stats, " statements/s") %></div>
+      <div class="text-2xl font-bold text-gray-100">{format(@stats, " statements/s")}</div>
     </div>
     """
   end
