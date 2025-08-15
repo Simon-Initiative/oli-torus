@@ -24,13 +24,15 @@ defmodule OliWeb.Instructor.ReviewActivitiesLive do
 
     case load_selection_and_activities(section, page_id, selection_id) do
       {:ok, selection, activities, revision} ->
+        blacklisted_ids =
+          BlacklistedActivities.get_blacklisted_activity_ids(section.id, selection.id)
 
-        blacklisted_ids = BlacklistedActivities.get_blacklisted_activity_ids(section.id, selection.id)
         activity_types = Activities.list_activity_registrations()
         activity_types_map = Enum.reduce(activity_types, %{}, fn e, m -> Map.put(m, e.id, e) end)
 
         # Get additional scripts for rendering activities
         part_components = Oli.PartComponents.get_part_component_scripts(:delivery_script)
+
         additional_scripts =
           Enum.map(activity_types, fn a -> a.authoring_script end) |> Enum.concat(part_components)
 
@@ -59,7 +61,8 @@ defmodule OliWeb.Instructor.ReviewActivitiesLive do
            additional_scripts: additional_scripts,
            revision: revision,
            breadcrumbs: set_breadcrumbs(section, revision)
-         ) |> update_can_disable()}
+         )
+         |> update_can_disable()}
 
       {:error, reason} ->
         {:ok,
@@ -72,7 +75,9 @@ defmodule OliWeb.Instructor.ReviewActivitiesLive do
   # We only allow the user to disable (i.e. blacklist) activities
   # if the number of availalbe (non-blacklisted) activities exceeds the selection count.
   defp update_can_disable(socket) do
-    available_count = Enum.count(socket.assigns.activities) - MapSet.size(socket.assigns.blacklisted_ids)
+    available_count =
+      Enum.count(socket.assigns.activities) - MapSet.size(socket.assigns.blacklisted_ids)
+
     assign(socket, can_disable?: available_count > socket.assigns.selection.count)
   end
 
@@ -81,20 +86,26 @@ defmodule OliWeb.Instructor.ReviewActivitiesLive do
     activity_id = socket.assigns.selected_activity.resource_id
     section = socket.assigns.section
 
-    case BlacklistedActivities.toggle_blacklist(section.id, socket.assigns.selection.id, activity_id) do
+    case BlacklistedActivities.toggle_blacklist(
+           section.id,
+           socket.assigns.selection.id,
+           activity_id
+         ) do
       {:ok, :added} ->
         {:noreply,
          assign(socket,
            count_disabled: socket.assigns.count_disabled + 1,
            blacklisted_ids: MapSet.put(socket.assigns.blacklisted_ids, activity_id)
-         ) |> update_can_disable()}
+         )
+         |> update_can_disable()}
 
       {:ok, :removed} ->
         {:noreply,
          assign(socket,
            count_disabled: socket.assigns.count_disabled - 1,
            blacklisted_ids: MapSet.delete(socket.assigns.blacklisted_ids, activity_id)
-         ) |> update_can_disable()}
+         )
+         |> update_can_disable()}
 
       _ ->
         {:noreply, put_flash(socket, :error, "Failed to update blacklist")}
@@ -128,8 +139,6 @@ defmodule OliWeb.Instructor.ReviewActivitiesLive do
 
     paged_activities = Enum.slice(socket.assigns.activities, offset, limit)
 
-
-
     {:noreply,
      assign(socket,
        selected_activity: nil,
@@ -150,24 +159,34 @@ defmodule OliWeb.Instructor.ReviewActivitiesLive do
       </script>
     <% end %>
     <div class="container mt-4">
-
       <div class="card mb-3">
         <div class="card-body">
-
           <p class="card-text">
-
-            This activity bank selection needs to select <strong><%= @selection.count %></strong>
-            <%= if @selection.count > 1, do: "activities", else: "activity" %>
-            from the follwing bank of <strong><%= @total_count %></strong> <%= if @total_count > 1 do "activities" else "activity" end %>,
-            with <%= if @count_disabled == 0 do "no" else @count_disabled end %> <%= if @count_disabled == 1 do "activity" else "activities" end %> currently excluded.
+            This activity bank selection needs to select <strong>{@selection.count}</strong>
+            {if @selection.count > 1, do: "activities", else: "activity"} from the follwing bank of
+            <strong>{@total_count}</strong> {if @total_count > 1 do
+              "activities"
+            else
+              "activity"
+            end},
+            with {if @count_disabled == 0 do
+              "no"
+            else
+              @count_disabled
+            end} {if @count_disabled == 1 do
+              "activity"
+            else
+              "activities"
+            end} currently excluded.
           </p>
 
-           <p class="card-text mt-4">
+          <p class="card-text mt-4">
             <%= if @can_disable? do %>
               The activities in the bank are listed below. You can select an activity to see its details and exclude it by unchecking it.
-
             <% else %>
-              <span class="alert-warning p-2 rounded-sm">You cannot disable any more activities, as the number of available activities is already at the selection count.</span>
+              <span class="alert-warning p-2 rounded-sm">
+                You cannot disable any more activities, as the number of available activities is already at the selection count.
+              </span>
             <% end %>
           </p>
         </div>
@@ -175,48 +194,51 @@ defmodule OliWeb.Instructor.ReviewActivitiesLive do
 
       <div class="flex">
         <div class="basis-1/3">
-            <table>
-              <thead>
-                <tr>
-                  <th>Activity</th>
-                </tr>
-              </thead>
-              <tbody>
+          <table>
+            <thead>
+              <tr>
+                <th>Activity</th>
+              </tr>
+            </thead>
+            <tbody>
               <%= for activity <- @paged_activities do %>
                 <tr
                   class={"#{if @selected_activity && @selected_activity.resource_id == activity.resource_id, do: "bg-indigo-100 dark:bg-gray-700", else: ""}"}
                   phx-click="select_activity"
                   phx-value-activity_id={activity.resource_id}
-                  style="cursor: pointer;">
+                  style="cursor: pointer;"
+                >
                   <td>
                     <input
                       type="checkbox"
-                      disabled={!@can_disable? and !MapSet.member?(@blacklisted_ids, activity.resource_id)}
+                      disabled={
+                        !@can_disable? and !MapSet.member?(@blacklisted_ids, activity.resource_id)
+                      }
                       checked={!MapSet.member?(@blacklisted_ids, activity.resource_id)}
                       id={"blacklist-checkbox-#{activity.resource_id}"}
                       phx-hook="CheckboxListener"
                       phx-value-change="toggle_blacklist"
                       phx-value-activity_id={activity.resource_id}
                     />
-                    <%= activity.stem %>
+                    {activity.stem}
                   </td>
                 </tr>
               <% end %>
-              </tbody>
-            </table>
+            </tbody>
+          </table>
 
-            <Paging.render
-              id="paging"
-              offset={@paging.offset}
-              limit={@paging.limit}
-              total_count={@paging.total}
-              click="paged"
-            />
+          <Paging.render
+            id="paging"
+            offset={@paging.offset}
+            limit={@paging.limit}
+            total_count={@paging.total}
+            click="paged"
+          />
         </div>
         <div class="basis-2/3 m-2">
           <%= if @selected_activity do %>
             <div class="rendered-activity" id={@selected_activity.resource_id |> Integer.to_string()}>
-              <%= raw(@rendered_activity) %>
+              {raw(@rendered_activity)}
             </div>
           <% end %>
         </div>
@@ -228,7 +250,6 @@ defmodule OliWeb.Instructor.ReviewActivitiesLive do
   # Private functions
 
   defp load_selection_and_activities(section, page_slug, selection_id) do
-
     # Get the published revision for the page
     case DeliveryResolver.from_revision_slug(section.slug, page_slug) do
       nil ->
@@ -245,7 +266,11 @@ defmodule OliWeb.Instructor.ReviewActivitiesLive do
             case Selection.parse(selection_json) do
               {:ok, selection} ->
                 # Get all activities that match the selection logic
-                publication_id = Oli.Publishing.get_publication_id_for_resource(section.slug, revision.resource_id)
+                publication_id =
+                  Oli.Publishing.get_publication_id_for_resource(
+                    section.slug,
+                    revision.resource_id
+                  )
 
                 # Populate the bank activities
                 activity_type_id = ResourceType.id_for_activity()
@@ -284,7 +309,8 @@ defmodule OliWeb.Instructor.ReviewActivitiesLive do
                 # Now fetch the full revisions for the matched activities
                 activity_ids = Enum.map(bank_entries_matched, & &1.resource_id)
 
-                entry_by_id = Enum.into(bank_entries_matched, %{}, fn be -> {be.resource_id, be} end)
+                entry_by_id =
+                  Enum.into(bank_entries_matched, %{}, fn be -> {be.resource_id, be} end)
 
                 activities =
                   if length(activity_ids) > 0 do
@@ -293,12 +319,13 @@ defmodule OliWeb.Instructor.ReviewActivitiesLive do
                       # Add the BankEntry data to the revision for display
                       bank_entry = Map.get(entry_by_id, revision.resource_id)
 
-                      revision = Map.merge(revision, %{
-                        tags: bank_entry.tags,
-                        objectives: bank_entry.objectives,
-                        activity_type_id: bank_entry.activity_type_id,
-                        transformed_model: revision.content
-                      })
+                      revision =
+                        Map.merge(revision, %{
+                          tags: bank_entry.tags,
+                          objectives: bank_entry.objectives,
+                          activity_type_id: bank_entry.activity_type_id,
+                          transformed_model: revision.content
+                        })
 
                       Map.put(revision, :stem, get_activity_stem(revision))
                     end)
@@ -318,6 +345,7 @@ defmodule OliWeb.Instructor.ReviewActivitiesLive do
   defp find_selection_in_content(%{"model" => model}, selection_id) do
     find_selection_in_model(model, selection_id)
   end
+
   defp find_selection_in_content(_, _), do: nil
 
   defp find_selection_in_model(model, selection_id) when is_list(model) do
@@ -325,18 +353,25 @@ defmodule OliWeb.Instructor.ReviewActivitiesLive do
       find_selection_in_item(item, selection_id)
     end)
   end
+
   defp find_selection_in_model(_, _), do: nil
 
   defp find_selection_in_item(%{"type" => "selection", "id" => id} = selection, selection_id)
        when id == selection_id do
     selection
   end
+
   defp find_selection_in_item(%{"type" => "group", "children" => children}, selection_id) do
     find_selection_in_model(children, selection_id)
   end
-  defp find_selection_in_item(%{"type" => "activity-reference", "children" => children}, selection_id) do
+
+  defp find_selection_in_item(
+         %{"type" => "activity-reference", "children" => children},
+         selection_id
+       ) do
     find_selection_in_model(children, selection_id)
   end
+
   defp find_selection_in_item(_, _), do: nil
 
   defp render_activity(activity, assigns) do
@@ -362,8 +397,10 @@ defmodule OliWeb.Instructor.ReviewActivitiesLive do
     case activity.transformed_model do
       %{"stem" => %{"content" => content}} ->
         extract_text_from_content(content) |> truncate(100)
+
       %{"authoring" => %{"previewText" => preview}} when is_binary(preview) ->
         preview
+
       _ ->
         "No preview available"
     end
@@ -375,11 +412,13 @@ defmodule OliWeb.Instructor.ReviewActivitiesLive do
     |> Enum.join(" ")
     |> String.trim()
   end
+
   defp extract_text_from_content(_), do: ""
 
   defp extract_text_from_item(%{"type" => "p", "children" => children}) do
     extract_text_from_content(children)
   end
+
   defp extract_text_from_item(%{"text" => text}) when is_binary(text), do: text
   defp extract_text_from_item(_), do: ""
 

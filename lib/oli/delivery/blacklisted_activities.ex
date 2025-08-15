@@ -17,7 +17,7 @@ defmodule Oli.Delivery.BlacklistedActivities do
     |> Repo.all()
   end
 
-    @doc """
+  @doc """
   Gets all blacklisted activities for the entire section.
   """
   def get_blacklisted_activities(section_id) do
@@ -31,7 +31,11 @@ defmodule Oli.Delivery.BlacklistedActivities do
   """
   def is_blacklisted?(section_id, selection_id, activity_id) do
     BlacklistedActivity
-    |> where([b], b.section_id == ^section_id and b.activity_id == ^activity_id and b.selection_id == ^selection_id)
+    |> where(
+      [b],
+      b.section_id == ^section_id and b.activity_id == ^activity_id and
+        b.selection_id == ^selection_id
+    )
     |> Repo.exists?()
   end
 
@@ -70,7 +74,11 @@ defmodule Oli.Delivery.BlacklistedActivities do
   """
   def remove_from_blacklist(section_id, selection_id, activity_id) do
     BlacklistedActivity
-    |> where([b], b.section_id == ^section_id and b.activity_id == ^activity_id and b.selection_id == ^selection_id)
+    |> where(
+      [b],
+      b.section_id == ^section_id and b.activity_id == ^activity_id and
+        b.selection_id == ^selection_id
+    )
     |> Repo.delete_all()
   end
 
