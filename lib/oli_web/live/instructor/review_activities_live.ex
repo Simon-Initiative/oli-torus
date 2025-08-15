@@ -13,6 +13,7 @@ defmodule OliWeb.Instructor.ReviewActivitiesLive do
   alias Oli.Activities
   alias Oli.Resources.ResourceType
   alias OliWeb.Common.Breadcrumb
+  alias OliWeb.Common.Paging
   alias OliWeb.Router.Helpers, as: Routes
   import Ecto.Query, warn: false
   alias Oli.Repo
@@ -33,6 +34,12 @@ defmodule OliWeb.Instructor.ReviewActivitiesLive do
         additional_scripts =
           Enum.map(activity_types, fn a -> a.authoring_script end) |> Enum.concat(part_components)
 
+        # Initialize paging
+        limit = 10
+        offset = 0
+        total_count = length(activities)
+        paged_activities = Enum.slice(activities, offset, limit)
+
         {:ok,
          assign(socket,
            section: section,
@@ -40,12 +47,14 @@ defmodule OliWeb.Instructor.ReviewActivitiesLive do
            selection_id: selection_id,
            selection: selection,
            activities: activities,
+           paged_activities: paged_activities,
+           paging: %{offset: offset, limit: limit, total: total_count},
            blacklisted_ids: MapSet.new(blacklisted_ids),
            selected_activity: nil,
            rendered_activity: nil,
            can_disable?: true,
            count_disabled: Enum.count(blacklisted_ids),
-           total_count: length(activities),
+           total_count: total_count,
            activity_types_map: activity_types_map,
            additional_scripts: additional_scripts,
            revision: revision,
@@ -113,6 +122,27 @@ defmodule OliWeb.Instructor.ReviewActivitiesLive do
   end
 
   @impl Phoenix.LiveView
+  def handle_event("paged", %{"offset" => offset, "limit" => limit}, socket) do
+    offset = String.to_integer(offset)
+    limit = String.to_integer(limit)
+
+    paged_activities = Enum.slice(socket.assigns.activities, offset, limit)
+
+
+
+    {:noreply,
+     assign(socket,
+       selected_activity: nil,
+       paged_activities: paged_activities,
+       paging: %{
+         offset: offset,
+         limit: limit,
+         total: socket.assigns.total_count
+       }
+     )}
+  end
+
+  @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
     <%= for script <- @additional_scripts do %>
@@ -152,7 +182,7 @@ defmodule OliWeb.Instructor.ReviewActivitiesLive do
                 </tr>
               </thead>
               <tbody>
-              <%= for activity <- @activities do %>
+              <%= for activity <- @paged_activities do %>
                 <tr
                   class={"#{if @selected_activity && @selected_activity.resource_id == activity.resource_id, do: "bg-indigo-100 dark:bg-gray-700", else: ""}"}
                   phx-click="select_activity"
@@ -174,6 +204,14 @@ defmodule OliWeb.Instructor.ReviewActivitiesLive do
               <% end %>
               </tbody>
             </table>
+
+            <Paging.render
+              id="paging"
+              offset={@paging.offset}
+              limit={@paging.limit}
+              total_count={@paging.total}
+              click="paged"
+            />
         </div>
         <div class="basis-2/3 m-2">
           <%= if @selected_activity do %>
