@@ -16,6 +16,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
   alias Oli.Resources.Revision
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Publishing
+  alias Oli.Delivery.BlacklistedActivities
 
   alias Oli.Delivery.Attempts.Core.{
     ResourceAccess,
@@ -70,9 +71,12 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
           publication_id =
             Publishing.get_publication_id_for_resource(section_slug, page_revision.resource_id)
 
+          section = Oli.Delivery.Sections.get_section_by_slug(section_slug)
+          blacklisted_activities = BlacklistedActivities.get_blacklisted_activities(section.id)
+
           context = %VisitContext{
             publication_id: publication_id,
-            blacklisted_activity_ids: [],
+            blacklisted_activities: blacklisted_activities,
             latest_resource_attempt: latest_resource_attempt,
             page_revision: page_revision,
             section_slug: section_slug,
@@ -140,9 +144,12 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
       publication_id =
         Publishing.get_publication_id_for_resource(section_slug, page_revision.resource_id)
 
+      section = Oli.Delivery.Sections.get_section_by_slug(section_slug)
+      blacklisted_activities = BlacklistedActivities.get_blacklisted_activities(section.id)
+
       context = %VisitContext{
         publication_id: publication_id,
-        blacklisted_activity_ids: [],
+        blacklisted_activities: blacklisted_activities,
         latest_resource_attempt: latest_resource_attempt,
         page_revision: page_revision,
         section_slug: section_slug,
