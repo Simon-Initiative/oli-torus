@@ -1571,6 +1571,7 @@ defmodule OliWeb.Router do
     live("/vr_user_agents", Admin.VrUserAgentsView)
     live("/products", Products.ProductsView)
     live("/datasets", Workspaces.CourseAuthor.DatasetsLive)
+    live("/agent_monitor", Admin.AgentMonitorView)
 
     live("/products/:product_id/discounts", Products.Payments.Discounts.ProductsIndexView)
 

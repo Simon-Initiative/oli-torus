@@ -13,13 +13,20 @@ defmodule Oli.GenAI.Tools.CreateActivityTool do
   alias Oli.Accounts
   alias Oli.Accounts.SystemRole
   alias Hermes.Server.Response
+  alias Oli.GenAI.Agent.MCPToolRegistry
 
   import Ecto.Query
 
+  # Get field descriptions from MCPToolRegistry at compile time
+  @tool_schema MCPToolRegistry.get_tool_schema("create_activity")
+  @project_slug_desc get_in(@tool_schema, ["properties", "project_slug", "description"])
+  @activity_json_desc get_in(@tool_schema, ["properties", "activity_json", "description"])
+  @activity_type_slug_desc get_in(@tool_schema, ["properties", "activity_type_slug", "description"])
+
   schema do
-    field :project_slug, :string, required: true, description: "The project slug where the activity will be created"
-    field :activity_json, :string, required: true, description: "JSON string containing the activity model to create"
-    field :activity_type_slug, :string, required: true, description: "The activity type slug (e.g., 'oli_multiple_choice')"
+    field :project_slug, :string, required: true, description: @project_slug_desc
+    field :activity_json, :string, required: true, description: @activity_json_desc
+    field :activity_type_slug, :string, required: true, description: @activity_type_slug_desc
   end
 
   @impl true

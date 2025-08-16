@@ -10,11 +10,18 @@ defmodule Oli.GenAI.Tools.ActivityTestEvalTool do
 
   alias Oli.Delivery.Attempts.ActivityLifecycle.Evaluate
   alias Hermes.Server.Response
+  alias Oli.GenAI.Agent.MCPToolRegistry
+
+  # Get field descriptions from MCPToolRegistry at compile time
+  @tool_schema MCPToolRegistry.get_tool_schema("activity_test_eval")
+  @activity_json_desc get_in(@tool_schema, ["properties", "activity_json", "description"])
+  @activity_type_desc get_in(@tool_schema, ["properties", "activity_type", "description"])
+  @part_inputs_desc get_in(@tool_schema, ["properties", "part_inputs", "description"])
 
   schema do
-    field :activity_json, :string, required: true, description: "JSON string containing the activity model to test"
-    field :activity_type, :string, required: true, description: "The activity type slug (e.g., 'oli_multiple_choice')"
-    field :part_inputs, :string, required: true, description: "JSON encoded strin of a list of objects containing part inputs to evaluate. Each object should have 'part_id' and 'input' fields"
+    field :activity_json, :string, required: true, description: @activity_json_desc
+    field :activity_type, :string, required: true, description: @activity_type_desc
+    field :part_inputs, :string, required: true, description: @part_inputs_desc
   end
 
   @impl true

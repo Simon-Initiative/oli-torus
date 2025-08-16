@@ -11,9 +11,14 @@ defmodule Oli.GenAI.Tools.ActivityValidationTool do
   
   alias Oli.Validation
   alias Hermes.Server.Response
+  alias Oli.GenAI.Agent.MCPToolRegistry
+
+  # Get field descriptions from MCPToolRegistry at compile time
+  @tool_schema MCPToolRegistry.get_tool_schema("activity_validation")
+  @activity_json_desc get_in(@tool_schema, ["properties", "activity_json", "description"])
 
   schema do
-    field :activity_json, :string, required: true, description: "JSON string containing the activity to validate"
+    field :activity_json, :string, required: true, description: @activity_json_desc
   end
 
   @impl true

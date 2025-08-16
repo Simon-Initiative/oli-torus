@@ -29,15 +29,7 @@ defmodule Oli.GenAI.Completions.ClaudeProvider do
            tools: encode_functions(functions)
          ) do
       {:ok, response} ->
-        full_text =
-          Enum.reduce(response["content"], "", fn content, acc ->
-            case content do
-              %{"type" => "text", "text" => text} -> acc <> text
-              _ -> acc
-            end
-          end)
-
-        {:ok, full_text}
+        {:ok, normalize_response(response)}
 
       {:error, reason} ->
         Logger.error("Failed to generate response: #{inspect(reason)}")
@@ -220,5 +212,63 @@ defmodule Oli.GenAI.Completions.ClaudeProvider do
           %{role: message.role |> Atom.to_string(), content: message.content, name: message.name}
       end
     end)
+  end
+
+  # Normalize Claude response to consistent format (OpenAI-style)
+  defp normalize_response(response) do
+    # Claude returns in format: %{"content" => [...], "role" => "assistant", ...}
+    # Convert to OpenAI-style format: %{"choices" => [%{"message" => ...}], ...}
+    
+    content = Map.get(response, "content", [])
+    
+    # Check if there are any tool_use blocks
+    tool_calls = Enum.filter(content, fn item ->
+      Map.get(item, "type") == "tool_use"
+    end)
+    
+    message = if Enum.empty?(tool_calls) do
+      # No tool calls, extract text content
+      text_content = Enum.find_value(content, "", fn item ->
+        case item do
+          %{"type" => "text", "text" => text} -> text
+          _ -> nil
+        end
+      end)
+      
+      %{
+        "role" => "assistant",
+        "content" => text_content
+      }
+    else
+      # Convert tool_use blocks to OpenAI-style tool_calls
+      openai_tool_calls = Enum.map(tool_calls, fn tool_use ->
+        %{
+          "id" => Map.get(tool_use, "id", "call_" <> Ecto.UUID.generate()),
+          "type" => "function",
+          "function" => %{
+            "name" => Map.get(tool_use, "name"),
+            "arguments" => Jason.encode!(Map.get(tool_use, "input", %{}))
+          }
+        }
+      end)
+      
+      %{
+        "role" => "assistant",
+        "content" => nil,
+        "tool_calls" => openai_tool_calls
+      }
+    end
+    
+    # Return in OpenAI format
+    %{
+      "choices" => [
+        %{
+          "index" => 0,
+          "message" => message,
+          "finish_reason" => if(Enum.empty?(tool_calls), do: "stop", else: "tool_calls")
+        }
+      ],
+      "usage" => Map.get(response, "usage", %{})
+    }
   end
 end

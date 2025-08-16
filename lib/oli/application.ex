@@ -77,6 +77,11 @@ defmodule Oli.Application do
 
         # MCP (Model Context Protocol) server for AI agents
         Hermes.Server.Registry,
+
+        # AI Agent system
+        Oli.GenAI.Agent.Registry,
+        Oli.GenAI.Agent.ToolBroker,
+        Oli.GenAI.Agent.RunSupervisor,
         {Oli.GenAI.MCPServer, transport: :streamable_http}
       ] ++ maybe_node_js_config()
 

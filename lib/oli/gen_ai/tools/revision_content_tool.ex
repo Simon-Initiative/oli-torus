@@ -10,10 +10,16 @@ defmodule Oli.GenAI.Tools.RevisionContentTool do
   
   alias Oli.Publishing.AuthoringResolver
   alias Hermes.Server.Response
+  alias Oli.GenAI.Agent.MCPToolRegistry
+
+  # Get field descriptions from MCPToolRegistry at compile time
+  @tool_schema MCPToolRegistry.get_tool_schema("revision_content")
+  @project_slug_desc get_in(@tool_schema, ["properties", "project_slug", "description"])
+  @revision_slug_desc get_in(@tool_schema, ["properties", "revision_slug", "description"])
 
   schema do
-    field :project_slug, :string, required: true, description: "The slug of the project containing the revision"
-    field :revision_slug, :string, required: true, description: "The slug of the revision to retrieve content from"
+    field :project_slug, :string, required: true, description: @project_slug_desc
+    field :revision_slug, :string, required: true, description: @revision_slug_desc
   end
 
   @impl true

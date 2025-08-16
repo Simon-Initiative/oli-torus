@@ -11,8 +11,12 @@ defmodule Oli.GenAI.Tools.ContentSchemaTool do
 
   alias Hermes.Server.Response
 
+  # Schema definition maintained in MCPToolRegistry for consistency
+  # (content_schema tool requires no input parameters)
+
   schema do
     # No input parameters required - always returns the same schema
+    # Schema definition maintained in MCPToolRegistry for consistency
   end
 
   @impl true

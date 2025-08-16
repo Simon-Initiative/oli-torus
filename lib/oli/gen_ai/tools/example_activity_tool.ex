@@ -9,9 +9,14 @@ defmodule Oli.GenAI.Tools.ExampleActivityTool do
   use Hermes.Server.Component, type: :tool
 
   alias Hermes.Server.Response
+  alias Oli.GenAI.Agent.MCPToolRegistry
+
+  # Get field descriptions from MCPToolRegistry at compile time
+  @tool_schema MCPToolRegistry.get_tool_schema("example_activity")
+  @activity_type_desc get_in(@tool_schema, ["properties", "activity_type", "description"])
 
   schema do
-    field :activity_type, :string, required: true, description: "The activity type slug (e.g., 'oli_multiple_choice', 'oli_short_answer')"
+    field :activity_type, :string, required: true, description: @activity_type_desc
   end
 
   @impl true
