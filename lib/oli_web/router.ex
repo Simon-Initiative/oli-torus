@@ -220,6 +220,14 @@ defmodule OliWeb.Router do
 
   ### ROUTES ###
 
+  ## MCP (Model Context Protocol) routes
+  scope "/mcp" do
+    pipe_through [:api]
+    
+    forward "/", Hermes.Server.Transport.StreamableHTTP.Plug, 
+      server: Oli.GenAI.MCPServer
+  end
+
   ## Authentication routes
 
   # allow access to non-authenticated users or guest users for sign in and account creation

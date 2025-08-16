@@ -671,6 +671,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
         objective_map \\ %{},
         tags \\ []
       ) do
+
     with {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
          {:ok} <- authorize_user(author, project),
          {:ok, publication} <-
@@ -694,7 +695,9 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
         _ -> {:ok, {activity, nil}}
       end
     else
-      error -> error
+      error ->
+        IO.inspect(error, label: "Activity creation error")
+        error
     end
   end
 

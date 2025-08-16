@@ -73,7 +73,11 @@ defmodule Oli.Application do
         Oli.Delivery.Sections.SectionCache,
 
         # a supervisor which can be used to dynamically supervise tasks
-        {Task.Supervisor, name: Oli.TaskSupervisor}
+        {Task.Supervisor, name: Oli.TaskSupervisor},
+
+        # MCP (Model Context Protocol) server for AI agents
+        Hermes.Server.Registry,
+        {Oli.GenAI.MCPServer, transport: :streamable_http}
       ] ++ maybe_node_js_config()
 
     if log_incomplete_requests?() do
@@ -139,4 +143,5 @@ defmodule Oli.Application do
   defp log_incomplete_requests?() do
     Application.fetch_env!(:oli, :log_incomplete_requests)
   end
+
 end
