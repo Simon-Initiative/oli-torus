@@ -213,7 +213,7 @@ defmodule Oli.MixProject do
       {:telemetry, "~> 1.2"},
       {:telemetry_poller, "~> 0.4"},
       {:telemetry_metrics, "~> 0.4"},
-      {:tidewave, "~> 0.1", only: :dev},
+      {:tidewave, "~> 0.2", only: :dev},
       {:timex, "~> 3.5"},
       {:tzdata, "~> 1.1.2"},
       {:uuid, "~> 1.1"},
