@@ -9,6 +9,9 @@ defmodule Oli.MCP.Tools.RevisionContentToolTest do
 
   describe "RevisionContentTool" do
     setup do
+      # Ensure system roles exist before creating authors
+      Oli.TestHelpers.ensure_system_roles()
+      
       # Create test data
       author = insert(:author)
       project = insert(:project, authors: [author])

@@ -7,6 +7,8 @@ defmodule Oli.MCP.Tools.CreateActivityToolTest do
   import Oli.Factory
 
   setup do
+      # Ensure system roles exist before creating authors
+      Oli.TestHelpers.ensure_system_roles()
     # Create a system admin author directly using system_role_id
     admin_author = insert(:author, %{system_role_id: SystemRole.role_id().system_admin})
 

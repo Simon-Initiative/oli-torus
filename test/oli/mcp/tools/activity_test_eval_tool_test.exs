@@ -7,6 +7,8 @@ defmodule Oli.MCP.Tools.ActivityTestEvalToolTest do
   import Oli.Factory
 
   setup do
+      # Ensure system roles exist before creating authors
+      Oli.TestHelpers.ensure_system_roles()
     # Ensure activity registrations exist (they might already be seeded)
     unless Oli.Activities.get_registration_by_slug("oli_multiple_choice") do
       insert(:activity_registration, %{

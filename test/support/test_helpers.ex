@@ -4074,4 +4074,60 @@ defmodule Oli.TestHelpers do
     )
     |> Repo.all()
   end
+
+  @doc """
+  Ensures system roles, scoring strategies, and resource types exist in the test database.
+  This should be called in test setup when creating authors or activities.
+  """
+  def ensure_system_roles() do
+    alias Oli.Accounts.SystemRole
+    alias Oli.Resources.ScoringStrategy
+    alias Oli.Resources.ResourceType
+
+    # Create system roles if they don't exist
+    unless Repo.get_by(SystemRole, id: 1) do
+      Repo.insert!(%SystemRole{id: 1, type: "author"})
+    end
+
+    unless Repo.get_by(SystemRole, id: 2) do
+      Repo.insert!(%SystemRole{id: 2, type: "admin"})
+    end
+
+    unless Repo.get_by(SystemRole, id: 3) do
+      Repo.insert!(%SystemRole{id: 3, type: "account_admin"})
+    end
+
+    unless Repo.get_by(SystemRole, id: 4) do
+      Repo.insert!(%SystemRole{id: 4, type: "content_admin"})
+    end
+
+    # Create scoring strategies if they don't exist
+    unless Repo.get_by(ScoringStrategy, id: 1) do
+      Repo.insert!(%ScoringStrategy{id: 1, type: "average"})
+    end
+
+    unless Repo.get_by(ScoringStrategy, id: 2) do
+      Repo.insert!(%ScoringStrategy{id: 2, type: "best"})
+    end
+
+    unless Repo.get_by(ScoringStrategy, id: 3) do
+      Repo.insert!(%ScoringStrategy{id: 3, type: "most_recent"})
+    end
+
+    unless Repo.get_by(ScoringStrategy, id: 4) do
+      Repo.insert!(%ScoringStrategy{id: 4, type: "total"})
+    end
+
+    # Create resource types if they don't exist
+    resource_types = ~w(page container activity objective secondary tag bibentry alternatives)
+
+    Enum.with_index(resource_types, 1)
+    |> Enum.each(fn {type, id} ->
+      unless Repo.get_by(ResourceType, id: id) do
+        Repo.insert!(%ResourceType{id: id, type: type})
+      end
+    end)
+
+    :ok
+  end
 end
