@@ -14,6 +14,8 @@ import { configureStore } from 'state/store';
 import guid from 'utils/guid';
 import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
 import { WrappedMonaco } from '../common/variables/WrappedMonaco';
+import { prettyPrintXml } from 'utils/xmlPretty';
+
 
 const store = configureStore();
 
@@ -136,7 +138,7 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
   return (
     <>
       <WrappedMonaco
-        model={model.modelXml}
+        model={prettyPrintXml(model.modelXml, { indent: 2, inlineTextMax: 80 })}
         editMode={editMode}
         language="XML"
         onEdit={(s: string) => dispatch(OliEmbeddedActions.editActivityXml(s))}

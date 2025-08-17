@@ -111,7 +111,8 @@ defmodule OliWeb.LegacySuperactivityController do
       Attempts.get_activity_attempt_by(attempt_guid: attempt_guid)
       |> Repo.preload([:part_attempts, revision: [:scoring_strategy]])
 
-    %{"base" => base, "src" => src} = activity_attempt.revision.content
+    %{"base" => base, "src" => src, "resourceBase" => resource_base} =
+      activity_attempt.revision.content
 
     resource_attempt = Attempts.get_resource_attempt_by(id: activity_attempt.resource_attempt_id)
 
@@ -130,7 +131,13 @@ defmodule OliWeb.LegacySuperactivityController do
       Sections.get_enrollment(section.slug, user.id)
       |> Repo.preload([:context_roles])
 
-    path = "super_media"
+      path =
+        if String.starts_with?(resource_base, "bundles/") do
+          "super_media/#{resource_base}"
+        else
+          "super_media"
+        end
+
     web_content_url = "https://#{host}/#{path}/"
 
     host_url = "https://#{host}"
