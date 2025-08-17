@@ -131,12 +131,12 @@ defmodule OliWeb.LegacySuperactivityController do
       Sections.get_enrollment(section.slug, user.id)
       |> Repo.preload([:context_roles])
 
-      path =
-        if String.starts_with?(resource_base, "bundles/") do
-          "super_media/#{resource_base}"
-        else
-          "super_media"
-        end
+    path =
+      if String.starts_with?(resource_base, "bundles/") do
+        "super_media/#{resource_base}"
+      else
+        "super_media"
+      end
 
     web_content_url = "https://#{host}/#{path}/"
 
