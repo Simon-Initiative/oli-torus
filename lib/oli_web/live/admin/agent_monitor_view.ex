@@ -2,7 +2,7 @@ defmodule OliWeb.Admin.AgentMonitorView do
   use OliWeb, :live_view
 
   alias Oli.GenAI.Agent
-  alias Oli.GenAI.Agent.PubSub
+  alias Oli.GenAI.Agent.{PubSub, DemoPolicy}
   alias OliWeb.Common.Properties.Groups
   alias OliWeb.Common.Breadcrumb
 
@@ -18,7 +18,9 @@ defmodule OliWeb.Admin.AgentMonitorView do
        breadcrumbs: breadcrumb(),
        current_run_id: nil,
        messages: [],
-       agent_status: :idle
+       agent_status: :idle,
+       policy_constraints: DemoPolicy.constraints(),
+       policy_status: nil
      )}
   end
 
@@ -48,7 +50,8 @@ defmodule OliWeb.Admin.AgentMonitorView do
     args = %{
       goal: goal,
       run_id: run_id,
-      service_config: service_config
+      service_config: service_config,
+      policy: DemoPolicy
     }
 
     case Agent.start_run(args) do
@@ -107,6 +110,7 @@ defmodule OliWeb.Admin.AgentMonitorView do
       socket
       |> assign(:agent_status, status.status)
       |> add_message(message)
+      |> maybe_update_policy_status()
 
     {:noreply, socket}
   end
@@ -130,6 +134,25 @@ defmodule OliWeb.Admin.AgentMonitorView do
     # Keep only last 50 messages
     messages = [new_message | socket.assigns.messages] |> Enum.take(50)
     assign(socket, :messages, messages)
+  end
+  
+  # Update policy status if we have an active run
+  defp maybe_update_policy_status(socket) do
+    case socket.assigns.current_run_id do
+      nil -> socket
+      run_id ->
+        case Agent.info(run_id) do
+          {:ok, info} ->
+            policy_status = DemoPolicy.status(%{
+              steps: info.last_step && [info.last_step] || [],
+              tokens_used: info.tokens_used || 0,
+              cost_cents: info.cost_cents || 0,
+              start_time: DateTime.utc_now() |> DateTime.add(-5, :minute) # Rough estimate since we don't have exact start time
+            })
+            assign(socket, :policy_status, policy_status)
+          {:error, _} -> socket
+        end
+    end
   end
 
   def render(assigns) do
@@ -192,6 +215,26 @@ defmodule OliWeb.Admin.AgentMonitorView do
               <div class="bg-gray-50 p-3 rounded">
                 <h3 class="text-sm font-medium mb-2">Current Task:</h3>
                 <p class="text-sm text-gray-700">Write a multiple choice question about birds</p>
+              </div>
+
+              <!-- Policy Constraints -->
+              <div class="bg-blue-50 p-3 rounded border border-blue-200">
+                <h3 class="text-sm font-medium mb-2 text-blue-800">Policy Constraints</h3>
+                <div class="space-y-1 text-xs text-blue-700">
+                  <div>Max Steps: {@policy_constraints.max_steps}</div>
+                  <div>Max Tokens: {number_format(@policy_constraints.max_tokens)}</div>
+                  <div>Max Cost: ${@policy_constraints.max_cost_cents / 100}</div>
+                  <div>Max Runtime: {@policy_constraints.max_runtime_minutes} min</div>
+                  <%= if @policy_status do %>
+                    <div class="mt-2 pt-2 border-t border-blue-300">
+                      <div class="font-medium">Current Usage:</div>
+                      <div>Steps: {@policy_status.steps_used}/{@policy_constraints.max_steps}</div>
+                      <div>Tokens: {number_format(@policy_status.tokens_used)}</div>
+                      <div>Cost: ${@policy_status.cost_used / 100}</div>
+                      <div>Runtime: {@policy_status.runtime_minutes} min</div>
+                    </div>
+                  <% end %>
+                </div>
               </div>
             </div>
           </div>
@@ -294,4 +337,14 @@ defmodule OliWeb.Admin.AgentMonitorView do
   end
 
   defp format_tool_args(_), do: ""
+  
+  defp number_format(number) when is_integer(number) do
+    number
+    |> Integer.to_string()
+    |> String.reverse()
+    |> String.replace(~r/(\d{3})(?=\d)/, "\\1,")
+    |> String.reverse()
+  end
+  
+  defp number_format(number), do: inspect(number)
 end

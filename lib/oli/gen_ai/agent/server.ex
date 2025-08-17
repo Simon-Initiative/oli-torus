@@ -406,13 +406,6 @@ defmodule Oli.GenAI.Agent.Server do
       send(parent, {:tool_result, call_id, result})
     end)
 
-    # Broadcast that we're executing a tool
-    PubSub.broadcast_step(state.id, %{
-      num: length(state.steps) + 1,
-      action: %{type: "tool", name: decision.tool_name, args: decision.arguments},
-      status: "executing"
-    })
-
     {:noreply, new_state}
   end
 
@@ -478,7 +471,9 @@ defmodule Oli.GenAI.Agent.Server do
     {observation, tokens} =
       case result do
         {:ok, %{content: content, token_cost: cost}} ->
-          {content, cost}
+          # Ensure observation is always a map
+          obs = if is_map(content), do: content, else: %{content: content}
+          {obs, cost}
 
         {:error, error} ->
           {%{error: error}, 0}

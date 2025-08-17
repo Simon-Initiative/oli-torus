@@ -65,9 +65,27 @@ defmodule Oli.GenAI.Agent.Schema.Step do
     timestamps(updated_at: false, type: :utc_datetime_usec)
   end
 
-  def changeset(step, attrs),
-    do:
-      step |> cast(attrs, __schema__(:fields)) |> validate_required([:run_id, :step_num, :phase])
+  def changeset(step, attrs) do
+    # Normalize observation to always be a map
+    attrs = normalize_observation(attrs)
+    
+    step
+    |> cast(attrs, __schema__(:fields))
+    |> validate_required([:run_id, :step_num, :phase])
+  end
+  
+  defp normalize_observation(%{observation: obs} = attrs) when not is_map(obs) and not is_nil(obs) do
+    # Wrap non-map, non-nil observations in a map
+    normalized_obs = %{content: obs}
+    Map.put(attrs, :observation, normalized_obs)
+  end
+  
+  defp normalize_observation(%{observation: nil} = attrs) do
+    # Convert nil to empty map
+    Map.put(attrs, :observation, %{})
+  end
+  
+  defp normalize_observation(attrs), do: attrs
 end
 
 defmodule Oli.GenAI.Agent.Schema.Draft do
