@@ -218,47 +218,51 @@ defmodule Oli.GenAI.Completions.ClaudeProvider do
   defp normalize_response(response) do
     # Claude returns in format: %{"content" => [...], "role" => "assistant", ...}
     # Convert to OpenAI-style format: %{"choices" => [%{"message" => ...}], ...}
-    
+
     content = Map.get(response, "content", [])
-    
+
     # Check if there are any tool_use blocks
-    tool_calls = Enum.filter(content, fn item ->
-      Map.get(item, "type") == "tool_use"
-    end)
-    
-    message = if Enum.empty?(tool_calls) do
-      # No tool calls, extract text content
-      text_content = Enum.find_value(content, "", fn item ->
-        case item do
-          %{"type" => "text", "text" => text} -> text
-          _ -> nil
-        end
+    tool_calls =
+      Enum.filter(content, fn item ->
+        Map.get(item, "type") == "tool_use"
       end)
-      
-      %{
-        "role" => "assistant",
-        "content" => text_content
-      }
-    else
-      # Convert tool_use blocks to OpenAI-style tool_calls
-      openai_tool_calls = Enum.map(tool_calls, fn tool_use ->
+
+    message =
+      if Enum.empty?(tool_calls) do
+        # No tool calls, extract text content
+        text_content =
+          Enum.find_value(content, "", fn item ->
+            case item do
+              %{"type" => "text", "text" => text} -> text
+              _ -> nil
+            end
+          end)
+
         %{
-          "id" => Map.get(tool_use, "id", "call_" <> Ecto.UUID.generate()),
-          "type" => "function",
-          "function" => %{
-            "name" => Map.get(tool_use, "name"),
-            "arguments" => Jason.encode!(Map.get(tool_use, "input", %{}))
-          }
+          "role" => "assistant",
+          "content" => text_content
         }
-      end)
-      
-      %{
-        "role" => "assistant",
-        "content" => nil,
-        "tool_calls" => openai_tool_calls
-      }
-    end
-    
+      else
+        # Convert tool_use blocks to OpenAI-style tool_calls
+        openai_tool_calls =
+          Enum.map(tool_calls, fn tool_use ->
+            %{
+              "id" => Map.get(tool_use, "id", "call_" <> Ecto.UUID.generate()),
+              "type" => "function",
+              "function" => %{
+                "name" => Map.get(tool_use, "name"),
+                "arguments" => Jason.encode!(Map.get(tool_use, "input", %{}))
+              }
+            }
+          end)
+
+        %{
+          "role" => "assistant",
+          "content" => nil,
+          "tool_calls" => openai_tool_calls
+        }
+      end
+
     # Return in OpenAI format
     %{
       "choices" => [

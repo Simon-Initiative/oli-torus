@@ -1,189 +1,164 @@
 defmodule Oli.GenAI.Agent.Critic do
-  @moduledoc "Optional loop/quality checks and replan hints."
+  @moduledoc """
+  Provides loop detection, state analysis, and replanning recommendations for agents.
 
-  @spec looping?(steps :: list()) :: boolean
-  def looping?(steps) when is_list(steps) do
-    cond do
-      # Need at least 6 steps to detect meaningful loops
-      length(steps) < 6 ->
-        false
-        
-      # Check for identical consecutive tool calls (real loop indicator)
-      has_identical_consecutive_tool_calls?(steps) ->
-        true
-        
-      # Check for alternating pattern loops (tool A -> tool B -> tool A -> tool B)
-      has_alternating_pattern_loop?(steps) ->
-        true
-        
-      # Check for same tool called repeatedly with same arguments
-      has_repeated_identical_tool_calls?(steps) ->
-        true
-        
-      true ->
-        false
-    end
+  This module analyzes agent execution patterns to detect problematic behaviors
+  like infinite loops, excessive failures, or inefficient execution paths.
+  """
+
+  alias Oli.GenAI.Agent.LoopDetectors.{
+    ConsecutiveIdentical,
+    AlternatingPattern,
+    RepeatedIdentical
+  }
+
+  alias Oli.GenAI.Agent.StateAnalyzer
+
+  # Configuration constants
+  @min_steps_for_loop_detection 6
+  @max_recent_failures 3
+  @max_steps_before_concern 20
+  @plan_complexity_multiplier 2
+  @recent_steps_window 5
+
+  # Loop detectors to apply
+  @loop_detectors [
+    ConsecutiveIdentical,
+    AlternatingPattern,
+    RepeatedIdentical
+  ]
+
+  @type step :: map()
+  @type state :: map()
+
+  @doc """
+  Detects if the agent is stuck in a loop based on recent step patterns.
+
+  Returns true if any loop detector identifies a problematic pattern.
+  Requires at least #{@min_steps_for_loop_detection} steps for meaningful detection.
+  """
+  @spec looping?(steps :: [step()]) :: boolean()
+  def looping?(steps) when is_list(steps) and length(steps) >= @min_steps_for_loop_detection do
+    Enum.any?(@loop_detectors, & &1.detect(steps))
   end
 
   def looping?(_), do: false
 
-  @spec should_replan?(state :: map()) :: boolean
-  def should_replan?(state) do
-    steps = Map.get(state, :steps, [])
-    
-    cond do
-      # If we've been looping
-      looping?(steps) ->
-        true
-      
-      # If we have many failed tool calls
-      recent_failures = count_recent_failures(steps) ->
-        recent_failures >= 3
-      
-      # If we're far from completing the plan
-      true ->
-        steps_completed = length(steps)
-        plan_size = Map.get(state, :plan, []) |> length()
-        plan_size > 0 and steps_completed > plan_size * 2
-    end
+  @doc """
+  Determines if the agent should replan based on current state.
+
+  Triggers replanning when:
+  - Loop detected
+  - Too many recent failures (>= #{@max_recent_failures})
+  - Execution exceeds planned complexity
+  """
+  @spec should_replan?(state()) :: boolean()
+  def should_replan?(%{steps: steps} = state)
+      when length(steps) >= @min_steps_for_loop_detection do
+    looping?(steps) or
+      too_many_failures?(steps) or
+      exceeds_plan_complexity?(state)
   end
 
-  @spec critique(state :: map()) :: String.t()
+  def should_replan?(_), do: false
+
+  @doc """
+  Provides a human-readable critique of the current execution state.
+
+  Returns a string describing any issues detected or "Progress appears normal".
+  """
+  @spec critique(state()) :: String.t()
   def critique(state) do
+    state
+    |> collect_issues()
+    |> format_critique()
+  end
+
+  @doc """
+  Performs comprehensive state analysis.
+
+  Returns a structured analysis including health status, issues, and recommendations.
+  Delegates to StateAnalyzer for detailed analysis.
+  """
+  @spec analyze(state()) :: StateAnalyzer.analysis()
+  defdelegate analyze(state), to: StateAnalyzer
+
+  @doc """
+  Counts the number of failures in recent steps.
+
+  Used by StateAnalyzer and other modules for failure rate analysis.
+  """
+  @spec count_recent_failures([step()]) :: non_neg_integer()
+  def count_recent_failures(steps) do
+    steps
+    |> Enum.take(@recent_steps_window)
+    |> Enum.count(&is_failure?/1)
+  end
+
+  # Private functions
+
+  @spec collect_issues(state()) :: [String.t()]
+  defp collect_issues(state) do
     steps = Map.get(state, :steps, [])
-    _goal = Map.get(state, :goal, "")
-    
-    issues = []
-    
-    issues = if looping?(steps) do
+
+    []
+    |> maybe_add_loop_issue(steps)
+    |> maybe_add_failure_issue(steps)
+    |> maybe_add_complexity_issue(steps)
+  end
+
+  @spec maybe_add_loop_issue([String.t()], [step()]) :: [String.t()]
+  defp maybe_add_loop_issue(issues, steps) do
+    if looping?(steps) do
       ["Appears to be stuck in a loop of repetitive actions" | issues]
     else
       issues
     end
-    
-    issues = if count_recent_failures(steps) >= 2 do
+  end
+
+  @spec maybe_add_failure_issue([String.t()], [step()]) :: [String.t()]
+  defp maybe_add_failure_issue(issues, steps) do
+    failure_count = count_recent_failures(steps)
+
+    if failure_count >= 2 do
       ["Multiple recent tool failures suggest approach may need adjustment" | issues]
     else
       issues
     end
-    
-    issues = if length(steps) > 20 do
+  end
+
+  @spec maybe_add_complexity_issue([String.t()], [step()]) :: [String.t()]
+  defp maybe_add_complexity_issue(issues, steps) do
+    if length(steps) > @max_steps_before_concern do
       ["Taking many steps - consider if goal is too broad or approach inefficient" | issues]
     else
       issues
     end
-    
-    if issues == [] do
-      "Progress appears normal"
-    else
-      "Issues detected: " <> Enum.join(issues, "; ")
-    end
   end
 
-  defp count_recent_failures(steps) do
-    steps
-    |> Enum.take(5)
-    |> Enum.count(fn step ->
-      case step do
-        %{observation: %{error: _}} -> true
-        %{observation: observation} when is_binary(observation) ->
-          String.contains?(observation, "error") or String.contains?(observation, "failed")
-        _ -> false
-      end
-    end)
+  @spec format_critique([String.t()]) :: String.t()
+  defp format_critique([]), do: "Progress appears normal"
+  defp format_critique(issues), do: "Issues detected: " <> Enum.join(issues, "; ")
+
+  @spec too_many_failures?([step()]) :: boolean()
+  defp too_many_failures?(steps) do
+    count_recent_failures(steps) >= @max_recent_failures
   end
 
-  # Check for identical consecutive tool calls (same tool, same args back-to-back)
-  defp has_identical_consecutive_tool_calls?(steps) do
-    steps
-    |> Enum.take(4)  # Check last 4 steps
-    |> Enum.chunk_every(2, 1, :discard)
-    |> Enum.any?(fn [step1, step2] ->
-      actions_identical?(step1.action, step2.action)
-    end)
+  @spec exceeds_plan_complexity?(state()) :: boolean()
+  defp exceeds_plan_complexity?(state) do
+    steps_completed = length(Map.get(state, :steps, []))
+    plan_size = length(Map.get(state, :plan, []))
+
+    plan_size > 0 and steps_completed > plan_size * @plan_complexity_multiplier
   end
 
-  # Check for alternating pattern (A -> B -> A -> B)
-  defp has_alternating_pattern_loop?(steps) do
-    case Enum.take(steps, 4) do
-      [s1, s2, s3, s4] ->
-        actions_identical?(s1.action, s3.action) and 
-        actions_identical?(s2.action, s4.action) and
-        not actions_identical?(s1.action, s2.action)
-      _ -> false
-    end
+  @spec is_failure?(step()) :: boolean()
+  defp is_failure?(%{observation: %{error: _}}), do: true
+
+  defp is_failure?(%{observation: observation}) when is_binary(observation) do
+    String.contains?(observation, "error") or String.contains?(observation, "failed")
   end
 
-  # Check for same tool called multiple times with identical arguments
-  defp has_repeated_identical_tool_calls?(steps) do
-    tool_calls = steps
-    |> Enum.take(6)
-    |> Enum.filter(fn step -> 
-      case step.action do
-        %{type: "tool"} -> true
-        _ -> false
-      end
-    end)
-    |> Enum.map(fn step -> step.action end)
-
-    # If we have the same tool call 3+ times in recent history, it's likely a loop
-    if length(tool_calls) >= 3 do
-      tool_calls
-      |> Enum.frequencies_by(&normalize_action/1)
-      |> Enum.any?(fn {_action, count} -> count >= 3 end)
-    else
-      false
-    end
-  end
-
-  # Check if two actions are identical (same type, tool name, and key arguments)
-  defp actions_identical?(%{type: "tool", name: name1, args: args1}, %{type: "tool", name: name2, args: args2}) do
-    name1 == name2 and key_args_match?(args1, args2)
-  end
-  
-  defp actions_identical?(action1, action2) do
-    normalize_action(action1) == normalize_action(action2)
-  end
-
-  # Compare key arguments (ignore large JSON payloads that might differ slightly)
-  defp key_args_match?(args1, args2) when is_map(args1) and is_map(args2) do
-    # Compare all args except large JSON strings
-    filtered_args1 = Map.reject(args1, fn {_k, v} -> is_large_json?(v) end)
-    filtered_args2 = Map.reject(args2, fn {_k, v} -> is_large_json?(v) end)
-    filtered_args1 == filtered_args2
-  end
-  
-  defp key_args_match?(args1, args2), do: args1 == args2
-
-  defp is_large_json?(value) when is_binary(value) and byte_size(value) > 200 do
-    String.starts_with?(value, "{") and String.ends_with?(value, "}")
-  end
-  
-  defp is_large_json?(_), do: false
-
-  # Create a normalized representation of an action for comparison
-  defp normalize_action(%{type: "tool", name: name, args: args}) do
-    # Normalize args by removing large JSON payloads
-    normalized_args = case args do
-      args when is_map(args) ->
-        Map.reject(args, fn {_k, v} -> is_large_json?(v) end)
-      args -> args
-    end
-    {:tool, name, normalized_args}
-  end
-
-  defp normalize_action(%{type: type, content: content}) when type in ["message"] do
-    # For messages, just use first few words to avoid false positives from minor variations
-    normalized_content = case content do
-      content when is_binary(content) -> String.slice(content, 0, 50)
-      content -> content
-    end
-    {:message, normalized_content}
-  end
-
-  defp normalize_action(%{type: type} = action) do
-    {type, Map.drop(action, [:type])}
-  end
-
-  defp normalize_action(action), do: action
+  defp is_failure?(_), do: false
 end

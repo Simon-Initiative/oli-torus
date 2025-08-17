@@ -72,7 +72,9 @@ defmodule Oli.GenAI.Tools.ActivityTestEvalToolTest do
                   "score" => 0,
                   "correct" => false,
                   "feedback" => %{
-                    "content" => [%{"type" => "p", "children" => [%{"text" => "Incorrect. Try again."}]}],
+                    "content" => [
+                      %{"type" => "p", "children" => [%{"text" => "Incorrect. Try again."}]}
+                    ],
                     "editor" => "slate",
                     "id" => "feedback2",
                     "textDirection" => "ltr"
@@ -92,6 +94,7 @@ defmodule Oli.GenAI.Tools.ActivityTestEvalToolTest do
       }
 
       activity_json = Jason.encode!(activity)
+
       part_inputs = [
         %{
           "part_id" => "1",
@@ -153,7 +156,9 @@ defmodule Oli.GenAI.Tools.ActivityTestEvalToolTest do
                   "score" => 0,
                   "correct" => false,
                   "feedback" => %{
-                    "content" => [%{"type" => "p", "children" => [%{"text" => "Incorrect. Try again."}]}],
+                    "content" => [
+                      %{"type" => "p", "children" => [%{"text" => "Incorrect. Try again."}]}
+                    ],
                     "editor" => "slate",
                     "id" => "feedback2",
                     "textDirection" => "ltr"
@@ -173,6 +178,7 @@ defmodule Oli.GenAI.Tools.ActivityTestEvalToolTest do
       }
 
       activity_json = Jason.encode!(activity)
+
       part_inputs = [
         %{
           "part_id" => "1",
@@ -186,7 +192,6 @@ defmodule Oli.GenAI.Tools.ActivityTestEvalToolTest do
       assert [evaluation] = evaluations
       assert evaluation.part_id == "1"
       assert evaluation.score == 0
-
     end
 
     test "handles invalid activity type" do
@@ -195,11 +200,16 @@ defmodule Oli.GenAI.Tools.ActivityTestEvalToolTest do
       part_inputs = [%{"part_id" => "1", "input" => %{}}]
 
       frame = %{}
-      result = ActivityTestEvalTool.execute(%{
-        activity_json: activity_json,
-        activity_type: "invalid_type",
-        part_inputs: part_inputs
-      }, frame)
+
+      result =
+        ActivityTestEvalTool.execute(
+          %{
+            activity_json: activity_json,
+            activity_type: "invalid_type",
+            part_inputs: part_inputs
+          },
+          frame
+        )
 
       assert {:reply, response, ^frame} = result
       assert response.isError == true
@@ -225,6 +235,7 @@ defmodule Oli.GenAI.Tools.ActivityTestEvalToolTest do
       }
 
       activity_json = Jason.encode!(activity)
+
       part_inputs = [
         %{
           "part_id" => "nonexistent",
@@ -233,11 +244,16 @@ defmodule Oli.GenAI.Tools.ActivityTestEvalToolTest do
       ]
 
       frame = %{}
-      result = ActivityTestEvalTool.execute(%{
-        activity_json: activity_json,
-        activity_type: "oli_multiple_choice",
-        part_inputs: part_inputs
-      }, frame)
+
+      result =
+        ActivityTestEvalTool.execute(
+          %{
+            activity_json: activity_json,
+            activity_type: "oli_multiple_choice",
+            part_inputs: part_inputs
+          },
+          frame
+        )
 
       assert {:reply, response, ^frame} = result
       assert [%{"type" => "text", "text" => text}] = response.content
@@ -290,6 +306,7 @@ defmodule Oli.GenAI.Tools.ActivityTestEvalToolTest do
       }
 
       activity_json = Jason.encode!(activity)
+
       part_inputs = [
         %{
           "part_id" => "1",
@@ -309,7 +326,6 @@ defmodule Oli.GenAI.Tools.ActivityTestEvalToolTest do
       result = Evaluate.perform_test_eval("invalid json", "oli_multiple_choice", [])
 
       assert {:error, _reason} = result
-
     end
 
     test "returns error for non-existent activity type" do

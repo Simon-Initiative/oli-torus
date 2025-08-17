@@ -1,14 +1,14 @@
 defmodule Oli.GenAI.Tools.ActivityValidationTool do
   @moduledoc """
   MCP tool for validating activity JSON.
-  
+
   This tool allows external AI agents to validate activity JSON content
   using the Oli.Validation module to ensure it meets the expected schema
   and structure requirements.
   """
-  
+
   use Hermes.Server.Component, type: :tool
-  
+
   alias Oli.Validation
   alias Hermes.Server.Response
   alias Oli.GenAI.Agent.MCPToolRegistry
@@ -26,7 +26,7 @@ defmodule Oli.GenAI.Tools.ActivityValidationTool do
     case validate_activity_json(activity_json) do
       {:ok, _parsed_model} ->
         {:reply, Response.text(Response.tool(), "Activity JSON is valid"), frame}
-        
+
       {:error, reason} ->
         error_message = format_error(reason)
         {:reply, Response.error(Response.tool(), "Validation failed: #{error_message}"), frame}
@@ -38,7 +38,7 @@ defmodule Oli.GenAI.Tools.ActivityValidationTool do
     case Jason.decode(json_string) do
       {:ok, activity_map} ->
         Validation.validate_activity(activity_map)
-        
+
       {:error, reason} ->
         {:error, "Invalid JSON: #{inspect(reason)}"}
     end

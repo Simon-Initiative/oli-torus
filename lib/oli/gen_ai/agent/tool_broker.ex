@@ -7,7 +7,7 @@ defmodule Oli.GenAI.Agent.ToolBroker do
   @behaviour Oli.GenAI.Agent.Tool
   use GenServer
   require Logger
-  
+
   alias Oli.GenAI.Agent.MCPToolRegistry
 
   @type tool_spec :: %{name: String.t(), desc: String.t(), schema: map()}
@@ -18,12 +18,12 @@ defmodule Oli.GenAI.Agent.ToolBroker do
   @spec start_link(keyword) :: {:ok, pid} | {:error, term}
   def start_link(opts \\ []) do
     case GenServer.start_link(__MODULE__, opts, name: __MODULE__) do
-      {:ok, _pid} = result -> 
+      {:ok, _pid} = result ->
         # Register some default tools
         register_default_tools()
         result
 
-      error -> 
+      error ->
         error
     end
   end
@@ -81,10 +81,10 @@ defmodule Oli.GenAI.Agent.ToolBroker do
   @impl true
   def call(name, args, ctx) do
     case GenServer.whereis(__MODULE__) do
-      nil -> 
+      nil ->
         {:error, "ToolBroker not initialized"}
 
-      _pid -> 
+      _pid ->
         GenServer.call(__MODULE__, {:call_tool, name, args, ctx}, 30_000)
     end
   end
@@ -99,7 +99,7 @@ defmodule Oli.GenAI.Agent.ToolBroker do
   @impl true
   def handle_call({:register, spec}, _from, state) do
     name = Map.get(spec, :name)
-    
+
     case Map.has_key?(state.tools, name) do
       true ->
         {:reply, {:error, "Tool '#{name}' already registered"}, state}
@@ -121,9 +121,11 @@ defmodule Oli.GenAI.Agent.ToolBroker do
   end
 
   def handle_call(:tools_for_completion, _from, state) do
-    specs = Enum.map(state.tools, fn {_name, spec} ->
-      to_openai_function_spec(spec)
-    end)
+    specs =
+      Enum.map(state.tools, fn {_name, spec} ->
+        to_openai_function_spec(spec)
+      end)
+
     {:reply, specs, state}
   end
 
@@ -146,8 +148,8 @@ defmodule Oli.GenAI.Agent.ToolBroker do
 
   # Private functions
 
-  defp validate_tool_spec(%{name: name, desc: desc, schema: schema}) 
-    when is_binary(name) and is_binary(desc) and is_map(schema) do
+  defp validate_tool_spec(%{name: name, desc: desc, schema: schema})
+       when is_binary(name) and is_binary(desc) and is_map(schema) do
     :ok
   end
 
@@ -158,10 +160,10 @@ defmodule Oli.GenAI.Agent.ToolBroker do
   defp validate_tool_args(tool_spec, args) do
     schema = Map.get(tool_spec, :schema, %{})
     required = get_in(schema, ["required"]) || []
-    
+
     # Check required arguments
     missing = Enum.filter(required, fn req -> not Map.has_key?(args, req) end)
-    
+
     if missing == [] do
       :ok
     else
@@ -185,11 +187,10 @@ defmodule Oli.GenAI.Agent.ToolBroker do
     MCPToolRegistry.execute_mcp_tool(name, args, ctx)
   end
 
-
   defp register_default_tools do
     # Register all MCP tools dynamically
     mcp_tools = MCPToolRegistry.get_all_tools()
-    
+
     Enum.each(mcp_tools, fn tool ->
       case register(tool) do
         :ok -> :ok

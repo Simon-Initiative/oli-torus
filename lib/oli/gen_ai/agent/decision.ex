@@ -16,7 +16,14 @@ defmodule Oli.GenAI.Agent.Decision do
           rationale_summary: String.t() | nil
         }
 
-  defstruct [:next_action, :tool_name, :arguments, :assistant_message, :updated_plan, :rationale_summary]
+  defstruct [
+    :next_action,
+    :tool_name,
+    :arguments,
+    :assistant_message,
+    :updated_plan,
+    :rationale_summary
+  ]
 
   @valid_actions ~w(tool message replan done)
 
@@ -166,6 +173,7 @@ defmodule Oli.GenAI.Agent.Decision do
       _ ->
         # Try to extract text content
         text = extract_anthropic_text(content)
+
         %__MODULE__{
           next_action: "message",
           assistant_message: text

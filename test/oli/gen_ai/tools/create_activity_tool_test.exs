@@ -19,11 +19,14 @@ defmodule Oli.GenAI.Tools.CreateActivityToolTest do
     # Ensure activity registration exists (might already be seeded)
     activity_registration =
       case Oli.Activities.get_registration_by_slug("oli_multiple_choice") do
-        nil -> insert(:activity_registration, %{
-          slug: "oli_multiple_choice",
-          title: "Multiple Choice"
-        })
-        existing -> existing
+        nil ->
+          insert(:activity_registration, %{
+            slug: "oli_multiple_choice",
+            title: "Multiple Choice"
+          })
+
+        existing ->
+          existing
       end
 
     %{
@@ -127,11 +130,16 @@ defmodule Oli.GenAI.Tools.CreateActivityToolTest do
       activity_json = Jason.encode!(valid_activity)
 
       frame = %{}
-      result = CreateActivityTool.execute(%{
-        project_slug: project.slug,
-        activity_json: activity_json,
-        activity_type_slug: "oli_multiple_choice"
-      }, frame)
+
+      result =
+        CreateActivityTool.execute(
+          %{
+            project_slug: project.slug,
+            activity_json: activity_json,
+            activity_type_slug: "oli_multiple_choice"
+          },
+          frame
+        )
 
       assert {:reply, response, ^frame} = result
       assert [%{"type" => "text", "text" => success_text}] = response.content
@@ -153,11 +161,16 @@ defmodule Oli.GenAI.Tools.CreateActivityToolTest do
       invalid_json = "{ invalid json"
 
       frame = %{}
-      result = CreateActivityTool.execute(%{
-        project_slug: project.slug,
-        activity_json: invalid_json,
-        activity_type_slug: "oli_multiple_choice"
-      }, frame)
+
+      result =
+        CreateActivityTool.execute(
+          %{
+            project_slug: project.slug,
+            activity_json: invalid_json,
+            activity_type_slug: "oli_multiple_choice"
+          },
+          frame
+        )
 
       assert {:reply, response, ^frame} = result
       assert response.isError == true
@@ -174,11 +187,16 @@ defmodule Oli.GenAI.Tools.CreateActivityToolTest do
       activity_json = Jason.encode!(invalid_activity)
 
       frame = %{}
-      result = CreateActivityTool.execute(%{
-        project_slug: project.slug,
-        activity_json: activity_json,
-        activity_type_slug: "oli_multiple_choice"
-      }, frame)
+
+      result =
+        CreateActivityTool.execute(
+          %{
+            project_slug: project.slug,
+            activity_json: activity_json,
+            activity_type_slug: "oli_multiple_choice"
+          },
+          frame
+        )
 
       assert {:reply, response, ^frame} = result
       assert response.isError == true
@@ -210,11 +228,16 @@ defmodule Oli.GenAI.Tools.CreateActivityToolTest do
       activity_json = Jason.encode!(valid_activity)
 
       frame = %{}
-      result = CreateActivityTool.execute(%{
-        project_slug: "non-existent-project",
-        activity_json: activity_json,
-        activity_type_slug: "oli_multiple_choice"
-      }, frame)
+
+      result =
+        CreateActivityTool.execute(
+          %{
+            project_slug: "non-existent-project",
+            activity_json: activity_json,
+            activity_type_slug: "oli_multiple_choice"
+          },
+          frame
+        )
 
       assert {:reply, response, ^frame} = result
       assert response.isError == true
@@ -246,11 +269,16 @@ defmodule Oli.GenAI.Tools.CreateActivityToolTest do
       activity_json = Jason.encode!(activity_with_preview)
 
       frame = %{}
-      result = CreateActivityTool.execute(%{
-        project_slug: project.slug,
-        activity_json: activity_json,
-        activity_type_slug: "oli_multiple_choice"
-      }, frame)
+
+      result =
+        CreateActivityTool.execute(
+          %{
+            project_slug: project.slug,
+            activity_json: activity_json,
+            activity_type_slug: "oli_multiple_choice"
+          },
+          frame
+        )
 
       assert {:reply, response, ^frame} = result
       assert [%{"type" => "text", "text" => success_text}] = response.content
@@ -284,11 +312,16 @@ defmodule Oli.GenAI.Tools.CreateActivityToolTest do
       activity_json = Jason.encode!(activity_without_preview)
 
       frame = %{}
-      result = CreateActivityTool.execute(%{
-        project_slug: project.slug,
-        activity_json: activity_json,
-        activity_type_slug: "oli_multiple_choice"
-      }, frame)
+
+      result =
+        CreateActivityTool.execute(
+          %{
+            project_slug: project.slug,
+            activity_json: activity_json,
+            activity_type_slug: "oli_multiple_choice"
+          },
+          frame
+        )
 
       assert {:reply, response, ^frame} = result
       assert [%{"type" => "text", "text" => success_text}] = response.content
@@ -322,11 +355,16 @@ defmodule Oli.GenAI.Tools.CreateActivityToolTest do
       activity_json = Jason.encode!(valid_activity)
 
       frame = %{}
-      result = CreateActivityTool.execute(%{
-        project_slug: project.slug,
-        activity_json: activity_json,
-        activity_type_slug: "oli_multiple_choice"
-      }, frame)
+
+      result =
+        CreateActivityTool.execute(
+          %{
+            project_slug: project.slug,
+            activity_json: activity_json,
+            activity_type_slug: "oli_multiple_choice"
+          },
+          frame
+        )
 
       assert {:reply, response, ^frame} = result
       assert response.isError == true

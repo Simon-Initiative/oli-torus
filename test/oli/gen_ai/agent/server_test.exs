@@ -7,33 +7,37 @@ defmodule Oli.GenAI.Agent.ServerTest do
     def next_decision(messages, _opts) do
       # Simulate different decisions based on message content
       last_message = List.last(messages)
-      
+
       cond do
         last_message.content =~ "search" ->
-          {:ok, %Decision{
-            next_action: "tool",
-            tool_name: "search_codebase",
-            arguments: %{"query" => "main function", "path" => "src/"}
-          }}
-        
+          {:ok,
+           %Decision{
+             next_action: "tool",
+             tool_name: "search_codebase",
+             arguments: %{"query" => "main function", "path" => "src/"}
+           }}
+
         last_message.content =~ "done" ->
-          {:ok, %Decision{
-            next_action: "done",
-            rationale_summary: "Task completed successfully"
-          }}
-        
+          {:ok,
+           %Decision{
+             next_action: "done",
+             rationale_summary: "Task completed successfully"
+           }}
+
         last_message.content =~ "replan" ->
-          {:ok, %Decision{
-            next_action: "replan",
-            updated_plan: ["new step 1", "new step 2"],
-            rationale_summary: "Adjusting approach"
-          }}
-        
+          {:ok,
+           %Decision{
+             next_action: "replan",
+             updated_plan: ["new step 1", "new step 2"],
+             rationale_summary: "Adjusting approach"
+           }}
+
         true ->
-          {:ok, %Decision{
-            next_action: "message",
-            assistant_message: "Processing your request..."
-          }}
+          {:ok,
+           %Decision{
+             next_action: "message",
+             assistant_message: "Processing your request..."
+           }}
       end
     end
   end
@@ -43,17 +47,19 @@ defmodule Oli.GenAI.Agent.ServerTest do
 
     @impl true
     def call("search_codebase", args, _ctx) do
-      {:ok, %{
-        content: "Found 3 matches for '#{args["query"]}' in #{args["path"]}",
-        token_cost: 50
-      }}
+      {:ok,
+       %{
+         content: "Found 3 matches for '#{args["query"]}' in #{args["path"]}",
+         token_cost: 50
+       }}
     end
 
     def call("read_file", %{"path" => path}, _ctx) do
-      {:ok, %{
-        content: "Contents of #{path}: function main() { ... }",
-        token_cost: 30
-      }}
+      {:ok,
+       %{
+         content: "Contents of #{path}: function main() { ... }",
+         token_cost: 30
+       }}
     end
 
     def call("error_tool", _args, _ctx) do
@@ -90,7 +96,7 @@ defmodule Oli.GenAI.Agent.ServerTest do
 
     @impl true
     def allowed_action?(%{tool_name: "dangerous_tool"}, _state) do
-      {:false, "Tool 'dangerous_tool' is not allowed"}
+      {false, "Tool 'dangerous_tool' is not allowed"}
     end
 
     def allowed_action?(_decision, _state), do: true
@@ -151,7 +157,7 @@ defmodule Oli.GenAI.Agent.ServerTest do
 
       # Simulate tool execution
       {:ok, result} = MockToolBroker.call(decision.tool_name, decision.arguments, %{})
-      
+
       step = %Server.Step{
         num: 1,
         action: %{type: "tool", name: decision.tool_name, args: decision.arguments},
@@ -160,10 +166,7 @@ defmodule Oli.GenAI.Agent.ServerTest do
         tokens_out: 50
       }
 
-      new_state = %{state | 
-        steps: [step | state.steps],
-        status: :idle
-      }
+      new_state = %{state | steps: [step | state.steps], status: :idle}
 
       assert length(new_state.steps) == 1
       assert hd(new_state.steps).observation =~ "Found 3 matches"
@@ -176,10 +179,7 @@ defmodule Oli.GenAI.Agent.ServerTest do
       }
 
       message = %{role: :assistant, content: decision.assistant_message}
-      new_state = %{state | 
-        short_window: [message | state.short_window],
-        status: :idle
-      }
+      new_state = %{state | short_window: [message | state.short_window], status: :idle}
 
       assert length(new_state.short_window) == 1
       assert hd(new_state.short_window).content == "I'll help you with that"
@@ -192,10 +192,7 @@ defmodule Oli.GenAI.Agent.ServerTest do
         rationale_summary: "Found better approach"
       }
 
-      new_state = %{state | 
-        plan: decision.updated_plan,
-        status: :idle
-      }
+      new_state = %{state | plan: decision.updated_plan, status: :idle}
 
       assert new_state.plan == ["new task 1", "new task 2", "new task 3"]
     end
@@ -219,26 +216,25 @@ defmodule Oli.GenAI.Agent.ServerTest do
 
       case MockPolicy.allowed_action?(decision, state) do
         true -> assert false, "Should have blocked dangerous tool"
-        {:false, reason} -> assert reason =~ "not allowed"
+        {false, reason} -> assert reason =~ "not allowed"
       end
     end
 
     test "checks stop conditions", %{state: state} do
       # Test step limit
-      state_with_many_steps = %{state | 
-        steps: Enum.map(1..11, fn i -> 
-          %Server.Step{num: i, action: %{}, observation: "step #{i}"}
-        end)
+      state_with_many_steps = %{
+        state
+        | steps:
+            Enum.map(1..11, fn i ->
+              %Server.Step{num: i, action: %{}, observation: "step #{i}"}
+            end)
       }
 
       assert {:done, reason} = MockPolicy.stop_reason?(state_with_many_steps)
       assert reason =~ "Step limit"
 
       # Test token budget
-      state_over_budget = %{state | 
-        budgets: %{max_tokens: 1000},
-        tokens_used: 1001
-      }
+      state_over_budget = %{state | budgets: %{max_tokens: 1000}, tokens_used: 1001}
 
       assert {:done, reason} = MockPolicy.stop_reason?(state_over_budget)
       assert reason =~ "Token budget"
@@ -252,17 +248,14 @@ defmodule Oli.GenAI.Agent.ServerTest do
       }
 
       {:error, error_msg} = MockToolBroker.call(decision.tool_name, decision.arguments, %{})
-      
+
       step = %Server.Step{
         num: 1,
         action: %{type: "tool", name: decision.tool_name, error: true},
         observation: "Error: #{error_msg}"
       }
 
-      new_state = %{state | 
-        steps: [step | state.steps],
-        status: :idle
-      }
+      new_state = %{state | steps: [step | state.steps], status: :idle}
 
       assert hd(new_state.steps).observation =~ "Error: Tool execution failed"
     end
@@ -296,12 +289,13 @@ defmodule Oli.GenAI.Agent.ServerTest do
       assert decision.tool_name == "search_codebase"
 
       # Step 2: Execute tool
-      {:ok, tool_result} = MockToolBroker.call(
-        decision.tool_name, 
-        decision.arguments, 
-        %{run_id: state.id}
-      )
-      
+      {:ok, tool_result} =
+        MockToolBroker.call(
+          decision.tool_name,
+          decision.arguments,
+          %{run_id: state.id}
+        )
+
       # Step 3: Create observation and update state
       step = %Server.Step{
         num: length(state.steps) + 1,
@@ -316,13 +310,16 @@ defmodule Oli.GenAI.Agent.ServerTest do
         latency_ms: 234
       }
 
-      new_state = %{state | 
-        steps: [step | state.steps],
-        short_window: state.short_window ++ [
-          %{role: :assistant, content: "Using #{decision.tool_name}"},
-          %{role: :tool, content: tool_result.content}
-        ],
-        status: :idle
+      new_state = %{
+        state
+        | steps: [step | state.steps],
+          short_window:
+            state.short_window ++
+              [
+                %{role: :assistant, content: "Using #{decision.tool_name}"},
+                %{role: :tool, content: tool_result.content}
+              ],
+          status: :idle
       }
 
       # Verify the cycle completed correctly
@@ -345,41 +342,48 @@ defmodule Oli.GenAI.Agent.ServerTest do
       }
 
       # Simulate multiple step cycles
-      state = Enum.reduce(1..3, initial_state, fn step_num, acc_state ->
-        # Determine what message to send based on step
-        message = case step_num do
-          1 -> %{role: :user, content: "search for patterns"}
-          2 -> %{role: :tool, content: "Found patterns: A, B, C"}
-          3 -> %{role: :user, content: "done with analysis"}
-        end
+      state =
+        Enum.reduce(1..3, initial_state, fn step_num, acc_state ->
+          # Determine what message to send based on step
+          message =
+            case step_num do
+              1 -> %{role: :user, content: "search for patterns"}
+              2 -> %{role: :tool, content: "Found patterns: A, B, C"}
+              3 -> %{role: :user, content: "done with analysis"}
+            end
 
-        window = acc_state.short_window ++ [message]
-        {:ok, decision} = MockLLMBridge.next_decision(window, %{})
+          window = acc_state.short_window ++ [message]
+          {:ok, decision} = MockLLMBridge.next_decision(window, %{})
 
-        case decision.next_action do
-          "done" ->
-            %{acc_state | status: :done, short_window: window}
+          case decision.next_action do
+            "done" ->
+              %{acc_state | status: :done, short_window: window}
 
-          "tool" ->
-            {:ok, result} = MockToolBroker.call(decision.tool_name, decision.arguments, %{})
-            step = %Server.Step{
-              num: step_num,
-              action: %{type: "tool", name: decision.tool_name},
-              observation: result.content
-            }
-            %{acc_state | 
-              steps: [step | acc_state.steps],
-              short_window: window ++ [%{role: :tool, content: result.content}],
-              status: :idle
-            }
+            "tool" ->
+              {:ok, result} = MockToolBroker.call(decision.tool_name, decision.arguments, %{})
 
-          "message" ->
-            %{acc_state | 
-              short_window: window ++ [%{role: :assistant, content: decision.assistant_message}],
-              status: :idle
-            }
-        end
-      end)
+              step = %Server.Step{
+                num: step_num,
+                action: %{type: "tool", name: decision.tool_name},
+                observation: result.content
+              }
+
+              %{
+                acc_state
+                | steps: [step | acc_state.steps],
+                  short_window: window ++ [%{role: :tool, content: result.content}],
+                  status: :idle
+              }
+
+            "message" ->
+              %{
+                acc_state
+                | short_window:
+                    window ++ [%{role: :assistant, content: decision.assistant_message}],
+                  status: :idle
+              }
+          end
+        end)
 
       assert state.status == :done
       assert length(state.steps) >= 1
@@ -399,7 +403,8 @@ defmodule Oli.GenAI.Agent.ServerTest do
       assert paused_state.status == :paused
 
       # Try to step while paused (should be ignored)
-      assert paused_state.status == :paused  # Still paused
+      # Still paused
+      assert paused_state.status == :paused
 
       # Resume
       resumed_state = %{paused_state | status: :idle}
@@ -420,9 +425,10 @@ defmodule Oli.GenAI.Agent.ServerTest do
       # Cancel
       cancelled_state = %{state | status: :cancelled}
       assert cancelled_state.status == :cancelled
-      
+
       # Verify no further processing occurs
-      assert cancelled_state.status == :cancelled  # Status doesn't change
+      # Status doesn't change
+      assert cancelled_state.status == :cancelled
     end
   end
 

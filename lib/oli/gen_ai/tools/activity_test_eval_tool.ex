@@ -25,18 +25,21 @@ defmodule Oli.GenAI.Tools.ActivityTestEvalTool do
   end
 
   @impl true
-  def execute(%{activity_json: activity_json, activity_type: activity_type, part_inputs: part_inputs}, frame) do
-
+  def execute(
+        %{activity_json: activity_json, activity_type: activity_type, part_inputs: part_inputs},
+        frame
+      ) do
     part_inputs = Jason.decode!(part_inputs)
 
     case test_activity_evaluation(activity_json, activity_type, part_inputs) do
       {:ok, evaluations} ->
-
         response_text = format_evaluations(evaluations)
         {:reply, Response.text(Response.tool(), response_text), frame}
 
       {:error, reason} ->
-        {:reply, Response.error(Response.tool(), "Test evaluation failed: #{format_error(reason)}"), frame}
+        {:reply,
+         Response.error(Response.tool(), "Test evaluation failed: #{format_error(reason)}"),
+         frame}
     end
   end
 
@@ -66,27 +69,30 @@ defmodule Oli.GenAI.Tools.ActivityTestEvalTool do
   defp format_evaluations(evaluations) do
     evaluations_json = Jason.encode!(evaluations, pretty: true)
 
-    summary = Enum.map(evaluations, fn eval ->
-      part_id = Map.get(eval, :part_id)
+    summary =
+      Enum.map(evaluations, fn eval ->
+        part_id = Map.get(eval, :part_id)
 
-      if Map.has_key?(eval, :error) do
-        "Part #{part_id}: ERROR - #{Map.get(eval, :error)}"
-      else
-        score = Map.get(eval, :score, 0)
-        out_of = Map.get(eval, :out_of, 1)
-        feedback = Map.get(eval, :feedback)
+        if Map.has_key?(eval, :error) do
+          "Part #{part_id}: ERROR - #{Map.get(eval, :error)}"
+        else
+          score = Map.get(eval, :score, 0)
+          out_of = Map.get(eval, :out_of, 1)
+          feedback = Map.get(eval, :feedback)
 
-        feedback_text = case feedback do
-          %{"content" => content} when is_list(content) ->
-            extract_text_from_content(content)
-          _ ->
-            inspect(feedback)
+          feedback_text =
+            case feedback do
+              %{"content" => content} when is_list(content) ->
+                extract_text_from_content(content)
+
+              _ ->
+                inspect(feedback)
+            end
+
+          "Part #{part_id}: Score #{score}/#{out_of} - Feedback: #{feedback_text}"
         end
-
-        "Part #{part_id}: Score #{score}/#{out_of} - Feedback: #{feedback_text}"
-      end
-    end)
-    |> Enum.join("\n")
+      end)
+      |> Enum.join("\n")
 
     """
     Test Evaluation Results:
@@ -109,12 +115,15 @@ defmodule Oli.GenAI.Tools.ActivityTestEvalTool do
     |> Enum.map(&extract_text_from_node/1)
     |> Enum.join("")
   end
+
   defp extract_text_from_element(_), do: ""
 
   defp extract_text_from_node(%{"text" => text}), do: text
+
   defp extract_text_from_node(%{"children" => children}) when is_list(children) do
     extract_text_from_content(children)
   end
+
   defp extract_text_from_node(_), do: ""
 
   # Format error messages

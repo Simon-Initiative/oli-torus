@@ -148,5 +148,4 @@ defmodule Oli.Application do
   defp log_incomplete_requests?() do
     Application.fetch_env!(:oli, :log_incomplete_requests)
   end
-
 end

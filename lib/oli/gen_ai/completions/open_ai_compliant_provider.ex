@@ -30,7 +30,8 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
         functions: functions
       ],
       config
-    ) |> IO.inspect()
+    )
+    |> IO.inspect()
   end
 
   def stream(
@@ -107,11 +108,12 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
     end)
     |> Enum.map(fn message ->
       # Map :tool role to :function for OpenAI compatibility
-      role = case message.role do
-        :tool -> "function"
-        "tool" -> "function"
-        other -> other
-      end
+      role =
+        case message.role do
+          :tool -> "function"
+          "tool" -> "function"
+          other -> other
+        end
 
       case message.name do
         nil -> %{role: role, content: message.content}
@@ -288,9 +290,10 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
           "function" => function_call
         }
 
-        normalized_message = message
-        |> Map.delete("function_call")
-        |> Map.put("tool_calls", [tool_call])
+        normalized_message =
+          message
+          |> Map.delete("function_call")
+          |> Map.put("tool_calls", [tool_call])
 
         put_in(response, ["choices", Access.at(0), "message"], normalized_message)
 

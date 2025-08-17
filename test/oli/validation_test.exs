@@ -178,8 +178,8 @@ defmodule Oli.ValidationTest do
         }
       }
 
-      assert {:error, {"authoring.parts[0].hints[0].content[0]", _errors}} = 
-        Validation.validate_activity(activity)
+      assert {:error, {"authoring.parts[0].hints[0].content[0]", _errors}} =
+               Validation.validate_activity(activity)
     end
 
     test "rejects invalid content schema in feedback" do
@@ -208,8 +208,8 @@ defmodule Oli.ValidationTest do
         }
       }
 
-      assert {:error, {"authoring.parts[0].responses[0].feedback.content[0]", _errors}} = 
-        Validation.validate_activity(activity)
+      assert {:error, {"authoring.parts[0].responses[0].feedback.content[0]", _errors}} =
+               Validation.validate_activity(activity)
     end
 
     test "handles missing content gracefully" do
@@ -221,12 +221,14 @@ defmodule Oli.ValidationTest do
             %{
               "id" => "part_1",
               "hints" => [%{"id" => "hint_1", "content" => []}],
-              "responses" => [%{
-                "id" => "response_1", 
-                "rule" => "input like %{.*}", 
-                "score" => 1,
-                "feedback" => %{"id" => "feedback_1", "content" => []}
-              }]
+              "responses" => [
+                %{
+                  "id" => "response_1",
+                  "rule" => "input like %{.*}",
+                  "score" => 1,
+                  "feedback" => %{"id" => "feedback_1", "content" => []}
+                }
+              ]
             }
           ]
         }
@@ -242,8 +244,8 @@ defmodule Oli.ValidationTest do
         }
       }
 
-      assert {:error, {"stem.content", ["Content must be a list"]}} = 
-        Validation.validate_activity(activity)
+      assert {:error, {"stem.content", ["Content must be a list"]}} =
+               Validation.validate_activity(activity)
     end
 
     test "handles empty content lists" do
@@ -262,5 +264,4 @@ defmodule Oli.ValidationTest do
       assert {:ok, %Oli.Activities.Model{}} = Validation.validate_activity(activity)
     end
   end
-
 end

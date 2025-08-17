@@ -26,19 +26,20 @@ defmodule OliWeb.Admin.AgentMonitorView do
     # Start a new agent with a hardcoded goal
     run_id = Ecto.UUID.generate()
 
-    service_config = Oli.Repo.get(Oli.GenAI.Completions.ServiceConfig, 1)
-    |> Oli.Repo.preload(:primary_model)
-    |> Oli.Repo.preload(:backup_model)
+    service_config =
+      Oli.Repo.get(Oli.GenAI.Completions.ServiceConfig, 1)
+      |> Oli.Repo.preload(:primary_model)
+      |> Oli.Repo.preload(:backup_model)
 
     goal = """
-  Write a multiple choice question about birds in example_course project.
-1) Seek to understand the structure and schema for the mcq activity type.
-2) Author a question stem, then a correct answer, then think hard to generate 2 or 3 useful distractors that likely represent common misconceptions.
-3) Author three hints, with the third hint being a "bottom out" hint which basically gives away the answer.
-4) Create a response and feedback for the correct answer and each of the distrctors.  IT IS IMPORTANT to also
-include one extra response as a "catch all" whose rule is "input like {.*}" with generic feedback of "Incorrect."
-5) Validate the JSON
-6) Create the activity.
+    Write a multiple choice question about birds in example_course project.
+    1) Seek to understand the structure and schema for the mcq activity type.
+    2) Author a question stem, then a correct answer, then think hard to generate 2 or 3 useful distractors that likely represent common misconceptions.
+    3) Author three hints, with the third hint being a "bottom out" hint which basically gives away the answer.
+    4) Create a response and feedback for the correct answer and each of the distrctors.  IT IS IMPORTANT to also
+    include one extra response as a "catch all" whose rule is "input like {.*}" with generic feedback of "Incorrect."
+    5) Validate the JSON
+    6) Create the activity.
     """
 
     args = %{
@@ -75,10 +76,12 @@ include one extra response as a "catch all" whose rule is "input like {.*}" with
 
       run_id ->
         Agent.cancel(run_id)
+
         socket =
           socket
           |> assign(:agent_status, :cancelled)
           |> add_message("Agent cancelled: #{run_id}")
+
         {:noreply, socket}
     end
   end
@@ -96,10 +99,12 @@ include one extra response as a "catch all" whose rule is "input like {.*}" with
 
   def handle_info({:agent_status, status}, socket) do
     message = "Status: #{status.status} (#{status.rationale || "no rationale"})"
+
     socket =
       socket
       |> assign(:agent_status, status.status)
       |> add_message(message)
+
     {:noreply, socket}
   end
 
@@ -119,7 +124,8 @@ include one extra response as a "catch all" whose rule is "input like {.*}" with
   defp add_message(socket, content) do
     timestamp = DateTime.utc_now() |> DateTime.to_string()
     new_message = %{timestamp: timestamp, content: content}
-    messages = [new_message | socket.assigns.messages] |> Enum.take(50) # Keep only last 50 messages
+    # Keep only last 50 messages
+    messages = [new_message | socket.assigns.messages] |> Enum.take(50)
     assign(socket, :messages, messages)
   end
 
@@ -144,14 +150,14 @@ include one extra response as a "catch all" whose rule is "input like {.*}" with
                   "px-2 py-1 rounded text-sm font-medium",
                   status_class(@agent_status)
                 ]}>
-                  <%= format_status(@agent_status) %>
+                  {format_status(@agent_status)}
                 </span>
               </div>
 
               <div class="flex items-center space-x-4">
                 <span class="text-sm font-medium">Current Run:</span>
                 <span class="text-sm text-gray-600">
-                  <%= @current_run_id || "None" %>
+                  {@current_run_id || "None"}
                 </span>
               </div>
 
@@ -186,8 +192,8 @@ include one extra response as a "catch all" whose rule is "input like {.*}" with
               </div>
             </div>
           </div>
-
-          <!-- Message Feed -->
+          
+    <!-- Message Feed -->
           <div class="bg-white shadow rounded-lg p-6">
             <h2 class="text-xl font-semibold mb-4">Live Messages</h2>
 
@@ -198,10 +204,10 @@ include one extra response as a "catch all" whose rule is "input like {.*}" with
                 <%= for message <- @messages do %>
                   <div class="border-l-2 border-blue-200 pl-3 py-1">
                     <div class="text-xs text-gray-500 mb-1">
-                      <%= message.timestamp %>
+                      {message.timestamp}
                     </div>
                     <div class="text-sm">
-                      <%= message.content %>
+                      {message.content}
                     </div>
                   </div>
                 <% end %>
@@ -223,7 +229,9 @@ include one extra response as a "catch all" whose rule is "input like {.*}" with
   defp status_class(:cancelled), do: "bg-gray-100 text-gray-800"
   defp status_class(_), do: "bg-gray-100 text-gray-800"
 
-  defp format_status(status) when is_atom(status), do: status |> to_string() |> String.capitalize()
+  defp format_status(status) when is_atom(status),
+    do: status |> to_string() |> String.capitalize()
+
   defp format_status(status), do: inspect(status)
 
   defp breadcrumb do
@@ -260,17 +268,24 @@ include one extra response as a "catch all" whose rule is "input like {.*}" with
 
   defp format_tool_args(args) when is_map(args) do
     case Enum.take(args, 3) do
-      [] -> ""
+      [] ->
+        ""
+
       small_args ->
-        arg_strings = Enum.map(small_args, fn {key, value} ->
-          formatted_value = case value do
-            val when is_binary(val) and byte_size(val) > 30 ->
-              String.slice(val, 0, 30) <> "..."
-            val ->
-              inspect(val) |> String.slice(0, 30)
-          end
-          "#{key}: #{formatted_value}"
-        end)
+        arg_strings =
+          Enum.map(small_args, fn {key, value} ->
+            formatted_value =
+              case value do
+                val when is_binary(val) and byte_size(val) > 30 ->
+                  String.slice(val, 0, 30) <> "..."
+
+                val ->
+                  inspect(val) |> String.slice(0, 30)
+              end
+
+            "#{key}: #{formatted_value}"
+          end)
+
         " (#{Enum.join(arg_strings, ", ")})"
     end
   end

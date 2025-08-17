@@ -14,10 +14,10 @@ defmodule Oli.GenAI.MCPServer do
     capabilities: [:tools]
 
   # Register our tools
-  component Oli.GenAI.Tools.RevisionContentTool
-  component Oli.GenAI.Tools.ActivityValidationTool
-  component Oli.GenAI.Tools.ActivityTestEvalTool
-  component Oli.GenAI.Tools.ExampleActivityTool
-  component Oli.GenAI.Tools.CreateActivityTool
-  component Oli.GenAI.Tools.ContentSchemaTool
+  component(Oli.GenAI.Tools.RevisionContentTool)
+  component(Oli.GenAI.Tools.ActivityValidationTool)
+  component(Oli.GenAI.Tools.ActivityTestEvalTool)
+  component(Oli.GenAI.Tools.ExampleActivityTool)
+  component(Oli.GenAI.Tools.CreateActivityTool)
+  component(Oli.GenAI.Tools.ContentSchemaTool)
 end

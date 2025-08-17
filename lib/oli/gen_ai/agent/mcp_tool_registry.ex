@@ -1,7 +1,7 @@
 defmodule Oli.GenAI.Agent.MCPToolRegistry do
   @moduledoc """
   Registry that provides MCP tools to the ToolBroker in a standardized format.
-  
+
   This avoids duplication by mapping MCP tool definitions to ToolBroker format
   and providing execution through the actual MCP tool modules.
   """
@@ -48,8 +48,14 @@ defmodule Oli.GenAI.Agent.MCPToolRegistry do
         schema: %{
           "type" => "object",
           "properties" => %{
-            "project_slug" => %{"type" => "string", "description" => "The slug of the project containing the revision"},
-            "revision_slug" => %{"type" => "string", "description" => "The slug of the revision to retrieve content from"}
+            "project_slug" => %{
+              "type" => "string",
+              "description" => "The slug of the project containing the revision"
+            },
+            "revision_slug" => %{
+              "type" => "string",
+              "description" => "The slug of the revision to retrieve content from"
+            }
           },
           "required" => ["project_slug", "revision_slug"]
         }
@@ -58,9 +64,12 @@ defmodule Oli.GenAI.Agent.MCPToolRegistry do
         name: "activity_validation",
         desc: "Validate activity JSON content against schema requirements",
         schema: %{
-          "type" => "object", 
+          "type" => "object",
           "properties" => %{
-            "activity_json" => %{"type" => "string", "description" => "JSON string containing the activity to validate"}
+            "activity_json" => %{
+              "type" => "string",
+              "description" => "JSON string containing the activity to validate"
+            }
           },
           "required" => ["activity_json"]
         }
@@ -71,9 +80,19 @@ defmodule Oli.GenAI.Agent.MCPToolRegistry do
         schema: %{
           "type" => "object",
           "properties" => %{
-            "activity_type" => %{"type" => "string", "description" => "The activity type slug (e.g., 'oli_multiple_choice')"},
-            "activity_json" => %{"type" => "string", "description" => "JSON string containing the activity model to test"},
-            "part_inputs" => %{"type" => "string", "description" => "JSON encoded string of a list of objects containing part inputs to evaluate"}
+            "activity_type" => %{
+              "type" => "string",
+              "description" => "The activity type slug (e.g., 'oli_multiple_choice')"
+            },
+            "activity_json" => %{
+              "type" => "string",
+              "description" => "JSON string containing the activity model to test"
+            },
+            "part_inputs" => %{
+              "type" => "string",
+              "description" =>
+                "JSON encoded string of a list of objects containing part inputs to evaluate"
+            }
           },
           "required" => ["activity_type", "activity_json", "part_inputs"]
         }
@@ -84,7 +103,11 @@ defmodule Oli.GenAI.Agent.MCPToolRegistry do
         schema: %{
           "type" => "object",
           "properties" => %{
-            "activity_type" => %{"type" => "string", "description" => "The activity type slug (e.g., 'oli_multiple_choice', 'oli_short_answer')"}
+            "activity_type" => %{
+              "type" => "string",
+              "description" =>
+                "The activity type slug (e.g., 'oli_multiple_choice', 'oli_short_answer')"
+            }
           },
           "required" => ["activity_type"]
         }
@@ -95,9 +118,18 @@ defmodule Oli.GenAI.Agent.MCPToolRegistry do
         schema: %{
           "type" => "object",
           "properties" => %{
-            "project_slug" => %{"type" => "string", "description" => "The project slug where the activity will be created"},
-            "activity_json" => %{"type" => "string", "description" => "JSON string containing the activity model to create"},
-            "activity_type_slug" => %{"type" => "string", "description" => "The activity type slug (e.g., 'oli_multiple_choice')"}
+            "project_slug" => %{
+              "type" => "string",
+              "description" => "The project slug where the activity will be created"
+            },
+            "activity_json" => %{
+              "type" => "string",
+              "description" => "JSON string containing the activity model to create"
+            },
+            "activity_type_slug" => %{
+              "type" => "string",
+              "description" => "The activity type slug (e.g., 'oli_multiple_choice')"
+            }
           },
           "required" => ["project_slug", "activity_json", "activity_type_slug"]
         }
@@ -118,20 +150,27 @@ defmodule Oli.GenAI.Agent.MCPToolRegistry do
   defp convert_schema_to_fields(schema) do
     properties = Map.get(schema, "properties", %{})
     required_fields = Map.get(schema, "required", [])
-    
+
     Enum.map(properties, fn {field_name, field_spec} ->
       field_atom = String.to_atom(field_name)
-      field_type = case Map.get(field_spec, "type") do
-        "string" -> :string
-        "integer" -> :integer
-        "boolean" -> :boolean
-        _ -> :string  # default to string
-      end
-      
+
+      field_type =
+        case Map.get(field_spec, "type") do
+          "string" -> :string
+          "integer" -> :integer
+          "boolean" -> :boolean
+          # default to string
+          _ -> :string
+        end
+
       opts = []
       opts = if field_name in required_fields, do: [{:required, true} | opts], else: opts
-      opts = if desc = Map.get(field_spec, "description"), do: [{:description, desc} | opts], else: opts
-      
+
+      opts =
+        if desc = Map.get(field_spec, "description"),
+          do: [{:description, desc} | opts],
+          else: opts
+
       {field_atom, field_type, opts}
     end)
   end
@@ -144,12 +183,12 @@ defmodule Oli.GenAI.Agent.MCPToolRegistry do
     case find_mcp_tool_module(tool_name) do
       nil ->
         {:error, "MCP tool '#{tool_name}' not found"}
-        
+
       module ->
         try do
           # Convert args to the format expected by MCP tools (atom keys)
           mcp_args = convert_args_to_atoms(args)
-          
+
           # Execute the MCP tool
           # Note: We pass a mock frame since we're calling this directly
           case module.execute(mcp_args, %{}) do
@@ -157,45 +196,51 @@ defmodule Oli.GenAI.Agent.MCPToolRegistry do
               case response do
                 # Handle Hermes.Server.Response struct
                 %Hermes.Server.Response{isError: true, content: content} when is_list(content) ->
-                  error_text = content
-                  |> Enum.filter(&(Map.get(&1, "type") == "text"))
-                  |> Enum.map(&Map.get(&1, "text"))
-                  |> Enum.join(" ")
+                  error_text =
+                    content
+                    |> Enum.filter(&(Map.get(&1, "type") == "text"))
+                    |> Enum.map(&Map.get(&1, "text"))
+                    |> Enum.join(" ")
+
                   {:error, error_text}
-                
+
                 %Hermes.Server.Response{isError: false, content: content} when is_list(content) ->
                   # Extract text content from MCP response
-                  text_content = content
-                  |> Enum.filter(&(Map.get(&1, "type") == "text"))
-                  |> Enum.map(&Map.get(&1, "text"))
-                  |> Enum.join(" ")
+                  text_content =
+                    content
+                    |> Enum.filter(&(Map.get(&1, "type") == "text"))
+                    |> Enum.map(&Map.get(&1, "text"))
+                    |> Enum.join(" ")
+
                   {:ok, %{content: text_content, token_cost: estimate_tokens(text_content)}}
-                
+
                 %Hermes.Server.Response{} = hermes_response ->
                   # Fallback for other Hermes response types
                   content_text = inspect(hermes_response.content)
                   {:ok, %{content: content_text, token_cost: estimate_tokens(content_text)}}
-                
+
                 # Legacy response formats
                 %{text: text} ->
                   {:ok, %{content: text, token_cost: estimate_tokens(text)}}
-                  
+
                 %{error: error} ->
                   {:error, error}
-                  
+
                 %{isError: true, content: content} when is_list(content) ->
                   # Handle MCP error response format
-                  error_text = content
-                  |> Enum.filter(&(Map.get(&1, "type") == "text"))
-                  |> Enum.map(&Map.get(&1, "text"))
-                  |> Enum.join(" ")
+                  error_text =
+                    content
+                    |> Enum.filter(&(Map.get(&1, "type") == "text"))
+                    |> Enum.map(&Map.get(&1, "text"))
+                    |> Enum.join(" ")
+
                   {:error, error_text}
-                  
+
                 other ->
                   Logger.warning("Unexpected MCP response format: #{inspect(other)}")
                   {:error, "Unexpected tool response format"}
               end
-              
+
             other ->
               Logger.warning("Unexpected MCP tool response: #{inspect(other)}")
               {:error, "Unexpected tool response format"}
@@ -226,19 +271,21 @@ defmodule Oli.GenAI.Agent.MCPToolRegistry do
     args
     |> Enum.into(%{}, fn {key, value} ->
       atom_key = if is_binary(key), do: String.to_atom(key), else: key
-      
+
       # Handle special cases where MCP tools expect JSON strings
-      converted_value = case {atom_key, value} do
-        {:activity_json, val} when is_map(val) ->
-          # If activity_json is a map, encode it as JSON string
-          case Jason.encode(val) do
-            {:ok, json_string} -> json_string
-            {:error, _} -> inspect(val)
-          end
-        
-        {_, val} -> val
-      end
-      
+      converted_value =
+        case {atom_key, value} do
+          {:activity_json, val} when is_map(val) ->
+            # If activity_json is a map, encode it as JSON string
+            case Jason.encode(val) do
+              {:ok, json_string} -> json_string
+              {:error, _} -> inspect(val)
+            end
+
+          {_, val} ->
+            val
+        end
+
       {atom_key, converted_value}
     end)
   end

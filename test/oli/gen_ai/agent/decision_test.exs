@@ -75,7 +75,8 @@ defmodule Oli.GenAI.Agent.DecisionTest do
           %{
             "message" => %{
               "role" => "assistant",
-              "content" => ~s({"action": "replan", "updated_plan": ["step1", "step2", "step3"], "rationale": "Need to adjust approach"})
+              "content" =>
+                ~s({"action": "replan", "updated_plan": ["step1", "step2", "step3"], "rationale": "Need to adjust approach"})
             }
           }
         ]
@@ -140,6 +141,7 @@ defmodule Oli.GenAI.Agent.DecisionTest do
         tool_name: "search",
         arguments: %{}
       }
+
       assert :ok = Decision.validate(valid_tool)
 
       invalid_tool = %Decision{
@@ -147,6 +149,7 @@ defmodule Oli.GenAI.Agent.DecisionTest do
         tool_name: nil,
         arguments: %{}
       }
+
       assert {:error, errors} = Decision.validate(invalid_tool)
       assert "tool_name is required for tool action" in errors
     end
@@ -156,12 +159,14 @@ defmodule Oli.GenAI.Agent.DecisionTest do
         next_action: "message",
         assistant_message: "Hello"
       }
+
       assert :ok = Decision.validate(valid_message)
 
       invalid_message = %Decision{
         next_action: "message",
         assistant_message: nil
       }
+
       assert {:error, errors} = Decision.validate(invalid_message)
       assert "assistant_message is required for message action" in errors
     end
@@ -172,12 +177,14 @@ defmodule Oli.GenAI.Agent.DecisionTest do
         updated_plan: ["step1", "step2"],
         rationale_summary: "Adjusting approach"
       }
+
       assert :ok = Decision.validate(valid_replan)
 
       invalid_replan = %Decision{
         next_action: "replan",
         updated_plan: nil
       }
+
       assert {:error, errors} = Decision.validate(invalid_replan)
       assert "updated_plan is required for replan action" in errors
     end
@@ -187,6 +194,7 @@ defmodule Oli.GenAI.Agent.DecisionTest do
         next_action: "done",
         rationale_summary: "Completed"
       }
+
       assert :ok = Decision.validate(valid_done)
     end
 
@@ -194,6 +202,7 @@ defmodule Oli.GenAI.Agent.DecisionTest do
       invalid_action = %Decision{
         next_action: "invalid_action"
       }
+
       assert {:error, errors} = Decision.validate(invalid_action)
       assert "invalid action type: invalid_action" in errors
     end

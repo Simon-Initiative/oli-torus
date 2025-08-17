@@ -76,5 +76,4 @@ defmodule OliWeb.Endpoint do
   plug(Plug.Session, @session_options)
 
   plug(OliWeb.Router)
-
 end

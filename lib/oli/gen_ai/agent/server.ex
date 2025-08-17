@@ -6,17 +6,25 @@ defmodule Oli.GenAI.Agent.Server do
 
   defmodule Step do
     @enforce_keys [:num, :action, :observation]
-    defstruct [:num, :action, :observation, :rationale_summary, :latency_ms, :tokens_in, :tokens_out]
+    defstruct [
+      :num,
+      :action,
+      :observation,
+      :rationale_summary,
+      :latency_ms,
+      :tokens_in,
+      :tokens_out
+    ]
 
     @type t :: %__MODULE__{
-      num: integer(),
-      action: map(),
-      observation: term(),
-      rationale_summary: String.t() | nil,
-      latency_ms: integer() | nil,
-      tokens_in: integer() | nil,
-      tokens_out: integer() | nil
-    }
+            num: integer(),
+            action: map(),
+            observation: term(),
+            rationale_summary: String.t() | nil,
+            latency_ms: integer() | nil,
+            tokens_in: integer() | nil,
+            tokens_out: integer() | nil
+          }
   end
 
   defmodule State do
@@ -24,7 +32,8 @@ defmodule Oli.GenAI.Agent.Server do
       :id,
       :goal,
       :plan,
-      :status,                     # :idle | :thinking | :acting | :awaiting_tool | :done | :error | :paused | :cancelled
+      # :idle | :thinking | :acting | :awaiting_tool | :done | :error | :paused | :cancelled
+      :status,
       :budgets,
       :service_config,
       :policy,
@@ -39,22 +48,22 @@ defmodule Oli.GenAI.Agent.Server do
     ]
 
     @type t :: %__MODULE__{
-      id: String.t(),
-      goal: String.t(),
-      plan: [String.t()],
-      status: atom(),
-      budgets: map(),
-      service_config: map() | nil,
-      policy: module() | nil,
-      context_summary: String.t(),
-      short_window: [map()],
-      steps: [Step.t()],
-      inflight: map(),
-      metadata: map(),
-      tokens_used: integer(),
-      cost_cents: integer(),
-      start_time: DateTime.t()
-    }
+            id: String.t(),
+            goal: String.t(),
+            plan: [String.t()],
+            status: atom(),
+            budgets: map(),
+            service_config: map() | nil,
+            policy: module() | nil,
+            context_summary: String.t(),
+            short_window: [map()],
+            steps: [Step.t()],
+            inflight: map(),
+            metadata: map(),
+            tokens_used: integer(),
+            cost_cents: integer(),
+            start_time: DateTime.t()
+          }
   end
 
   # Client API
@@ -115,14 +124,15 @@ defmodule Oli.GenAI.Agent.Server do
     }
 
     # Persist the run
-    {:ok, _run} = Persistence.create_run(%{
-      id: id,
-      goal: state.goal,
-      plan: %{steps: state.plan},
-      status: "running",
-      budgets: state.budgets,
-      metadata: state.metadata
-    })
+    {:ok, _run} =
+      Persistence.create_run(%{
+        id: id,
+        goal: state.goal,
+        plan: %{steps: state.plan},
+        status: "running",
+        budgets: state.budgets,
+        metadata: state.metadata
+      })
 
     # Start the loop
     Process.send_after(self(), :step, 0)
@@ -163,6 +173,7 @@ defmodule Oli.GenAI.Agent.Server do
       plan: state.plan,
       steps_completed: length(state.steps)
     }
+
     {:reply, {:ok, status_info}, state}
   end
 
@@ -180,11 +191,13 @@ defmodule Oli.GenAI.Agent.Server do
       tokens_used: state.tokens_used,
       cost_cents: state.cost_cents
     }
+
     {:reply, {:ok, info}, state}
   end
 
   @impl true
-  def handle_info(:step, %{status: status} = state) when status in [:paused, :cancelled, :done, :error] do
+  def handle_info(:step, %{status: status} = state)
+      when status in [:paused, :cancelled, :done, :error] do
     # Don't process steps when paused, cancelled, done, or in error
     {:noreply, state}
   end
@@ -209,7 +222,6 @@ defmodule Oli.GenAI.Agent.Server do
   end
 
   def handle_info({:tool_result, call_id, result}, %{inflight: inflight} = state) do
-
     case Map.get(inflight, call_id) do
       nil ->
         Logger.warning("Received result for unknown tool call: #{call_id}")
@@ -318,20 +330,22 @@ defmodule Oli.GenAI.Agent.Server do
     ]
 
     # Add context summary if present
-    messages = if state.context_summary != "" do
-      messages ++ [%{role: :system, content: "Context: #{state.context_summary}"}]
-    else
-      messages
-    end
+    messages =
+      if state.context_summary != "" do
+        messages ++ [%{role: :system, content: "Context: #{state.context_summary}"}]
+      else
+        messages
+      end
 
     # Add short window messages
     messages ++ state.short_window
   end
 
   defp build_system_prompt(state) do
-    tools_desc = ToolBroker.describe()
-    |> Enum.map(fn tool -> "- #{tool.name}: #{tool.desc}" end)
-    |> Enum.join("\n")
+    tools_desc =
+      ToolBroker.describe()
+      |> Enum.map(fn tool -> "- #{tool.name}: #{tool.desc}" end)
+      |> Enum.join("\n")
 
     """
     You are an AI agent working to achieve the following goal:
@@ -373,7 +387,10 @@ defmodule Oli.GenAI.Agent.Server do
   defp execute_tool_action(state, decision, _latency_ms) do
     call_id = generate_call_id()
 
-    IO.inspect("about to execute tool: #{decision.tool_name} with args: #{inspect(decision.arguments)}", label: "Executing Tool")
+    IO.inspect(
+      "about to execute tool: #{decision.tool_name} with args: #{inspect(decision.arguments)}",
+      label: "Executing Tool"
+    )
 
     # Store inflight tool call
     tool_info = %{
@@ -387,6 +404,7 @@ defmodule Oli.GenAI.Agent.Server do
 
     # Execute tool asynchronously
     parent = self()
+
     Task.start(fn ->
       result = ToolBroker.call(decision.tool_name, decision.arguments, %{run_id: state.id})
       send(parent, {:tool_result, call_id, result})
@@ -412,10 +430,14 @@ defmodule Oli.GenAI.Agent.Server do
     }
 
     new_state = update_state_with_step(state, step)
-    new_state = %{new_state |
-      short_window: new_state.short_window ++ [
-        %{role: :assistant, content: decision.assistant_message}
-      ]
+
+    new_state = %{
+      new_state
+      | short_window:
+          new_state.short_window ++
+            [
+              %{role: :assistant, content: decision.assistant_message}
+            ]
     }
 
     # Schedule next step
@@ -457,13 +479,14 @@ defmodule Oli.GenAI.Agent.Server do
   end
 
   defp handle_tool_observation(state, tool_info, result) do
-    {observation, tokens} = case result do
-      {:ok, %{content: content, token_cost: cost}} ->
-        {content, cost}
+    {observation, tokens} =
+      case result do
+        {:ok, %{content: content, token_cost: cost}} ->
+          {content, cost}
 
-      {:error, error} ->
-        {%{error: error}, 0}
-    end
+        {:error, error} ->
+          {%{error: error}, 0}
+      end
 
     step = %Step{
       num: length(state.steps) + 1,
@@ -476,24 +499,24 @@ defmodule Oli.GenAI.Agent.Server do
 
     # Add tool result to short window in proper format
     tool_message = format_tool_result_message(tool_info, observation)
-    %{new_state |
-      short_window: new_state.short_window ++ [tool_message]
-    }
+    %{new_state | short_window: new_state.short_window ++ [tool_message]}
   end
 
   defp update_state_with_step(state, step) do
-    new_steps = [step | state.steps] |> Enum.take(20)  # Keep last 20 steps
+    # Keep last 20 steps
+    new_steps = [step | state.steps] |> Enum.take(20)
 
     # Update tokens and cost
     new_tokens = state.tokens_used + (step.tokens_in || 0) + (step.tokens_out || 0)
     new_cost = state.cost_cents + estimate_cost(step)
 
     # Update context summary if needed
-    new_summary = if rem(length(new_steps), 5) == 0 do
-      Summarizer.rollup(state.context_summary, step.observation)
-    else
-      state.context_summary
-    end
+    new_summary =
+      if rem(length(new_steps), 5) == 0 do
+        Summarizer.rollup(state.context_summary, step.observation)
+      else
+        state.context_summary
+      end
 
     # Prune short window
     new_window = Summarizer.prune_window(state.short_window, 12)
@@ -514,12 +537,13 @@ defmodule Oli.GenAI.Agent.Server do
     # Broadcast step
     PubSub.broadcast_step(state.id, step)
 
-    %{state |
-      steps: new_steps,
-      tokens_used: new_tokens,
-      cost_cents: new_cost,
-      context_summary: new_summary,
-      short_window: new_window
+    %{
+      state
+      | steps: new_steps,
+        tokens_used: new_tokens,
+        cost_cents: new_cost,
+        context_summary: new_summary,
+        short_window: new_window
     }
   end
 
@@ -549,35 +573,41 @@ defmodule Oli.GenAI.Agent.Server do
   defp estimate_cost(%Step{tokens_in: t_in, tokens_out: t_out}) do
     # Rough estimate: $0.01 per 1K tokens
     total_tokens = (t_in || 0) + (t_out || 0)
-    div(total_tokens, 100)  # cents
+    # cents
+    div(total_tokens, 100)
   end
 
   defp format_tool_result_message(tool_info, observation) do
     # Format tool result for LLM consumption - encode as JSON string for API
-    content = case observation do
-      content when is_binary(content) ->
-        # If it's already a string, assume it's JSON and validate it
-        case Jason.decode(content) do
-          {:ok, _parsed} -> content  # Valid JSON string, keep as-is
-          {:error, _} -> content     # Not JSON, keep as plain string
-        end
+    content =
+      case observation do
+        content when is_binary(content) ->
+          # If it's already a string, assume it's JSON and validate it
+          case Jason.decode(content) do
+            # Valid JSON string, keep as-is
+            {:ok, _parsed} -> content
+            # Not JSON, keep as plain string
+            {:error, _} -> content
+          end
 
-      other ->
-        # If it's not a string, encode it as JSON
-        case Jason.encode(other) do
-          {:ok, json_string} -> json_string
-          {:error, _} -> inspect(other)
-        end
-    end
+        other ->
+          # If it's not a string, encode it as JSON
+          case Jason.encode(other) do
+            {:ok, json_string} -> json_string
+            {:error, _} -> inspect(other)
+          end
+      end
 
     %{role: :tool, content: content, tool_call_id: "call_#{tool_info.name}", name: tool_info.name}
   end
 
   defp summarize_activity_json(%{"stem" => stem, "choices" => choices}) do
     stem_text = extract_text_from_content(stem)
-    choice_texts = Enum.map(choices, fn choice ->
-      extract_text_from_content(choice)
-    end)
+
+    choice_texts =
+      Enum.map(choices, fn choice ->
+        extract_text_from_content(choice)
+      end)
 
     """
     Example Multiple Choice Activity:
@@ -600,7 +630,9 @@ defmodule Oli.GenAI.Agent.Server do
           Enum.find_value(children, fn child ->
             Map.get(child, "text")
           end)
-        _ -> nil
+
+        _ ->
+          nil
       end
     end)
   end

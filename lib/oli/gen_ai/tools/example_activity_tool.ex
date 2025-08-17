@@ -43,8 +43,12 @@ defmodule Oli.GenAI.Tools.ExampleActivityTool do
     }
 
     case Map.get(examples, activity_type) do
-      nil -> {:error, "Unknown activity type: #{activity_type}. Supported types: #{Map.keys(examples) |> Enum.join(", ")}"}
-      example -> {:ok, example}
+      nil ->
+        {:error,
+         "Unknown activity type: #{activity_type}. Supported types: #{Map.keys(examples) |> Enum.join(", ")}"}
+
+      example ->
+        {:ok, example}
     end
   end
 
@@ -154,7 +158,9 @@ defmodule Oli.GenAI.Tools.ExampleActivityTool do
                   "content" => [
                     %{
                       "type" => "p",
-                      "children" => [%{"text" => "That's not correct. The capital of France is Paris."}]
+                      "children" => [
+                        %{"text" => "That's not correct. The capital of France is Paris."}
+                      ]
                     }
                   ],
                   "editor" => "slate",
@@ -184,7 +190,9 @@ defmodule Oli.GenAI.Tools.ExampleActivityTool do
         "content" => [
           %{
             "type" => "p",
-            "children" => [%{"text" => "What year did Christopher Columbus first arrive in the Americas?"}]
+            "children" => [
+              %{"text" => "What year did Christopher Columbus first arrive in the Americas?"}
+            ]
           }
         ],
         "editor" => "slate",
@@ -239,7 +247,12 @@ defmodule Oli.GenAI.Tools.ExampleActivityTool do
                   "content" => [
                     %{
                       "type" => "p",
-                      "children" => [%{"text" => "That's not correct. Columbus arrived in the Americas in 1492."}]
+                      "children" => [
+                        %{
+                          "text" =>
+                            "That's not correct. Columbus arrived in the Americas in 1492."
+                        }
+                      ]
                     }
                   ],
                   "editor" => "slate",
@@ -262,7 +275,9 @@ defmodule Oli.GenAI.Tools.ExampleActivityTool do
         "content" => [
           %{
             "type" => "p",
-            "children" => [%{"text" => "Which of the following are primary colors? (Select all that apply)"}]
+            "children" => [
+              %{"text" => "Which of the following are primary colors? (Select all that apply)"}
+            ]
           }
         ],
         "editor" => "slate",
@@ -343,7 +358,9 @@ defmodule Oli.GenAI.Tools.ExampleActivityTool do
                 "content" => [
                   %{
                     "type" => "p",
-                    "children" => [%{"text" => "Primary colors cannot be created by mixing other colors."}]
+                    "children" => [
+                      %{"text" => "Primary colors cannot be created by mixing other colors."}
+                    ]
                   }
                 ],
                 "editor" => "slate",
@@ -353,7 +370,8 @@ defmodule Oli.GenAI.Tools.ExampleActivityTool do
             "responses" => [
               %{
                 "id" => "response_correct",
-                "rule" => "input contains {choice_red} && input contains {choice_blue} && !(input contains {choice_green}) && !(input contains {choice_yellow}) && !(input contains {choice_purple})",
+                "rule" =>
+                  "input contains {choice_red} && input contains {choice_blue} && !(input contains {choice_green}) && !(input contains {choice_yellow}) && !(input contains {choice_purple})",
                 "score" => 1,
                 "correct" => true,
                 "feedback" => %{
@@ -378,7 +396,9 @@ defmodule Oli.GenAI.Tools.ExampleActivityTool do
                   "content" => [
                     %{
                       "type" => "p",
-                      "children" => [%{"text" => "Not quite. The primary colors are Red and Blue."}]
+                      "children" => [
+                        %{"text" => "Not quite. The primary colors are Red and Blue."}
+                      ]
                     }
                   ],
                   "editor" => "slate",
@@ -401,7 +421,9 @@ defmodule Oli.GenAI.Tools.ExampleActivityTool do
         "content" => [
           %{
             "type" => "p",
-            "children" => [%{"text" => "Please rate your agreement with the following statements:"}]
+            "children" => [
+              %{"text" => "Please rate your agreement with the following statements:"}
+            ]
           }
         ],
         "editor" => "slate",
@@ -630,7 +652,10 @@ defmodule Oli.GenAI.Tools.ExampleActivityTool do
                 "feedback" => %{
                   "id" => "feedback_1_correct",
                   "content" => [
-                    %{"type" => "p", "children" => [%{"text" => "Correct! H2O is the formula for water."}]}
+                    %{
+                      "type" => "p",
+                      "children" => [%{"text" => "Correct! H2O is the formula for water."}]
+                    }
                   ],
                   "editor" => "slate",
                   "textDirection" => "ltr"
@@ -666,7 +691,10 @@ defmodule Oli.GenAI.Tools.ExampleActivityTool do
                 "feedback" => %{
                   "id" => "feedback_2_correct",
                   "content" => [
-                    %{"type" => "p", "children" => [%{"text" => "Correct! Water has 2 hydrogen atoms."}]}
+                    %{
+                      "type" => "p",
+                      "children" => [%{"text" => "Correct! Water has 2 hydrogen atoms."}]
+                    }
                   ],
                   "editor" => "slate",
                   "textDirection" => "ltr"
@@ -702,7 +730,10 @@ defmodule Oli.GenAI.Tools.ExampleActivityTool do
                 "feedback" => %{
                   "id" => "feedback_3_correct",
                   "content" => [
-                    %{"type" => "p", "children" => [%{"text" => "Correct! Water has 1 oxygen atom."}]}
+                    %{
+                      "type" => "p",
+                      "children" => [%{"text" => "Correct! Water has 1 oxygen atom."}]
+                    }
                   ],
                   "editor" => "slate",
                   "textDirection" => "ltr"
@@ -826,7 +857,9 @@ defmodule Oli.GenAI.Tools.ExampleActivityTool do
                   "content" => [
                     %{
                       "type" => "p",
-                      "children" => [%{"text" => "Correct! The events are in chronological order."}]
+                      "children" => [
+                        %{"text" => "Correct! The events are in chronological order."}
+                      ]
                     }
                   ],
                   "editor" => "slate",
@@ -843,7 +876,12 @@ defmodule Oli.GenAI.Tools.ExampleActivityTool do
                   "content" => [
                     %{
                       "type" => "p",
-                      "children" => [%{"text" => "Not quite. The correct order is: Civil War (1861), WWII ends (1945), Moon landing (1969), Berlin Wall falls (1989)."}]
+                      "children" => [
+                        %{
+                          "text" =>
+                            "Not quite. The correct order is: Civil War (1861), WWII ends (1945), Moon landing (1969), Berlin Wall falls (1989)."
+                        }
+                      ]
                     }
                   ],
                   "editor" => "slate",

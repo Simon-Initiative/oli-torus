@@ -18,7 +18,13 @@ defmodule Oli.GenAI.Tools.ExampleActivityToolTest do
       assert Map.has_key?(activity, "stem")
       assert Map.has_key?(activity, "choices")
       assert Map.has_key?(activity, "authoring")
-      assert activity["stem"]["content"] |> hd() |> get_in(["children"]) |> hd() |> Map.get("text") == "What is the capital of France?"
+
+      assert activity["stem"]["content"]
+             |> hd()
+             |> get_in(["children"])
+             |> hd()
+             |> Map.get("text") == "What is the capital of France?"
+
       assert length(activity["choices"]) >= 2
     end
 

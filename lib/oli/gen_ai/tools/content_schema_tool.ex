@@ -33,17 +33,18 @@ defmodule Oli.GenAI.Tools.ContentSchemaTool do
   # Reads and returns the content element schema
   defp get_content_schema do
     schema_path = Application.app_dir(:oli, "priv/schemas/v0-1-0/content-element.schema.json")
-    
+
     case File.read(schema_path) do
       {:ok, content} ->
         # Validate it's proper JSON and pretty-format it
         case Jason.decode(content) do
           {:ok, schema} ->
             {:ok, Jason.encode!(schema, pretty: true)}
+
           {:error, reason} ->
             {:error, "Failed to parse schema file as JSON: #{inspect(reason)}"}
         end
-        
+
       {:error, reason} ->
         {:error, "Failed to read content schema file: #{inspect(reason)}"}
     end

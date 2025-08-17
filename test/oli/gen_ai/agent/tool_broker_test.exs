@@ -8,17 +8,19 @@ defmodule Oli.GenAI.Agent.ToolBrokerTest do
 
     @impl true
     def call("mcp_search", args, _ctx) do
-      {:ok, %{
-        content: "Found #{args["count"]} results for '#{args["query"]}'",
-        token_cost: 50
-      }}
+      {:ok,
+       %{
+         content: "Found #{args["count"]} results for '#{args["query"]}'",
+         token_cost: 50
+       }}
     end
 
     def call("mcp_read", %{"path" => path}, _ctx) do
-      {:ok, %{
-        content: "Content of #{path}",
-        token_cost: 30
-      }}
+      {:ok,
+       %{
+         content: "Content of #{path}",
+         token_cost: 30
+       }}
     end
 
     def call(_name, _args, _ctx) do
@@ -33,17 +35,20 @@ defmodule Oli.GenAI.Agent.ToolBrokerTest do
     @impl true
     def call("calculate", %{"expression" => expr}, _ctx) do
       result = eval_expression(expr)
-      {:ok, %{
-        content: "Result: #{result}",
-        token_cost: 10
-      }}
+
+      {:ok,
+       %{
+         content: "Result: #{result}",
+         token_cost: 10
+       }}
     end
 
     def call("format_code", %{"code" => code, "language" => lang}, _ctx) do
-      {:ok, %{
-        content: "Formatted #{lang} code: #{code}",
-        token_cost: 20
-      }}
+      {:ok,
+       %{
+         content: "Formatted #{lang} code: #{code}",
+         token_cost: 20
+       }}
     end
 
     def call(_name, _args, _ctx) do
@@ -179,14 +184,14 @@ defmodule Oli.GenAI.Agent.ToolBrokerTest do
 
     test "returns all tool descriptions", %{registered_tools: _registered_tools} do
       descriptions = ToolBroker.describe()
-      
+
       assert length(descriptions) >= 2
-      
+
       code_search = Enum.find(descriptions, &(&1.name == "code_search"))
       assert code_search
       assert code_search.desc == "Search for code patterns"
       assert code_search.schema.properties.pattern
-      
+
       file_read = Enum.find(descriptions, &(&1.name == "file_read"))
       assert file_read
       assert file_read.desc == "Read file contents"
@@ -202,19 +207,23 @@ defmodule Oli.GenAI.Agent.ToolBrokerTest do
 
     test "returns OpenAI-style function specs" do
       tools = ToolBroker.tools_for_completion()
-      
+
       assert is_list(tools)
       assert length(tools) >= 2
-      
+
       # Check structure matches OpenAI format - use actual MCP tools
-      revision_tool = Enum.find(tools, fn t -> 
-        get_in(t, [:function, :name]) == "revision_content"
-      end)
-      
+      revision_tool =
+        Enum.find(tools, fn t ->
+          get_in(t, [:function, :name]) == "revision_content"
+        end)
+
       assert revision_tool
       assert revision_tool.type == "function"
       assert revision_tool.function.name == "revision_content"
-      assert revision_tool.function.description == "Retrieve JSON content of a resource revision from any project"
+
+      assert revision_tool.function.description ==
+               "Retrieve JSON content of a resource revision from any project"
+
       assert revision_tool.function.parameters["type"] == "object"
       assert revision_tool.function.parameters["properties"]["project_slug"]
       assert revision_tool.function.parameters["required"] == ["project_slug", "revision_slug"]
@@ -223,16 +232,17 @@ defmodule Oli.GenAI.Agent.ToolBrokerTest do
     test "converts to Anthropic-style tool specs when needed" do
       # This would be handled by LLMBridge based on provider
       tools = ToolBroker.tools_for_completion()
-      
+
       # Can be converted to Anthropic format
-      anthropic_tools = Enum.map(tools, fn tool ->
-        %{
-          name: tool.function.name,
-          description: tool.function.description,
-          input_schema: tool.function.parameters
-        }
-      end)
-      
+      anthropic_tools =
+        Enum.map(tools, fn tool ->
+          %{
+            name: tool.function.name,
+            description: tool.function.description,
+            input_schema: tool.function.parameters
+          }
+        end)
+
       revision_tool = Enum.find(anthropic_tools, &(&1.name == "revision_content"))
       assert revision_tool
       assert revision_tool.input_schema["properties"]["project_slug"]
@@ -242,7 +252,7 @@ defmodule Oli.GenAI.Agent.ToolBrokerTest do
   describe "call/3" do
     setup do
       ToolBroker.start()
-      
+
       # Register MCP tools
       mcp_tools = [
         %{
@@ -267,7 +277,7 @@ defmodule Oli.GenAI.Agent.ToolBrokerTest do
           }
         }
       ]
-      
+
       # Register local tools
       local_tools = [
         %{
@@ -292,9 +302,9 @@ defmodule Oli.GenAI.Agent.ToolBrokerTest do
           }
         }
       ]
-      
+
       Enum.each(mcp_tools ++ local_tools, &ToolBroker.register/1)
-      
+
       # Mock the tool routing (in real implementation, this would be internal)
       # For testing, we'll assume ToolBroker routes to our mock implementations
       :ok
@@ -303,7 +313,7 @@ defmodule Oli.GenAI.Agent.ToolBrokerTest do
     test "returns error for unimplemented MCP tool" do
       args = %{"query" => "test search", "count" => 10}
       ctx = %{user_id: "123", project_id: "456"}
-      
+
       assert {:error, reason} = ToolBroker.call("mcp_search", args, ctx)
       assert reason == "MCP tool 'mcp_search' not found"
     end
@@ -311,7 +321,7 @@ defmodule Oli.GenAI.Agent.ToolBrokerTest do
     test "returns error for unimplemented local tool" do
       args = %{"expression" => "2+2"}
       ctx = %{}
-      
+
       assert {:error, reason} = ToolBroker.call("calculate", args, ctx)
       assert reason == "MCP tool 'calculate' not found"
     end
@@ -323,8 +333,9 @@ defmodule Oli.GenAI.Agent.ToolBrokerTest do
 
     test "returns error for unregistered tools when validating arguments" do
       # Missing required argument for a tool that's not in built-in tools
-      args = %{}  # Missing 'query' which would be required if tool existed
-      
+      # Missing 'query' which would be required if tool existed
+      args = %{}
+
       assert {:error, reason} = ToolBroker.call("mcp_search", args, %{})
       assert reason == "MCP tool 'mcp_search' not found"
     end
@@ -332,7 +343,7 @@ defmodule Oli.GenAI.Agent.ToolBrokerTest do
     test "returns error for unimplemented format_code tool" do
       args = %{"code" => "function test() {}", "language" => "javascript"}
       ctx = %{user_id: "user123", session_id: "sess456"}
-      
+
       assert {:error, reason} = ToolBroker.call("format_code", args, ctx)
       assert reason == "MCP tool 'format_code' not found"
     end
@@ -341,10 +352,10 @@ defmodule Oli.GenAI.Agent.ToolBrokerTest do
       # Test with an actual MCP tool that will fail
       args = %{"activity_json" => "invalid json"}
       ctx = %{}
-      
+
       # This should return an error for invalid JSON
       result = ToolBroker.call("activity_validation", args, ctx)
-      
+
       case result do
         {:error, reason} -> assert reason =~ "execution failed" || reason =~ "Invalid JSON"
         {:ok, _} -> assert false, "Expected error for invalid JSON"

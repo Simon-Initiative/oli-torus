@@ -15,7 +15,7 @@ defmodule Oli.GenAI.Tools.ActivityValidationToolTest do
         "choices" => [
           %{
             "content" => [%{"type" => "p", "children" => [%{"text" => "Choice A"}]}],
-            "editor" => "slate", 
+            "editor" => "slate",
             "id" => "456",
             "textDirection" => "ltr"
           }
@@ -52,20 +52,20 @@ defmodule Oli.GenAI.Tools.ActivityValidationToolTest do
       }
 
       json_string = Jason.encode!(valid_activity)
-      
+
       frame = %{}
       result = ActivityValidationTool.execute(%{activity_json: json_string}, frame)
-      
+
       assert {:reply, response, ^frame} = result
       assert response.content == [%{"type" => "text", "text" => "Activity JSON is valid"}]
     end
 
     test "returns error for invalid JSON" do
       invalid_json = "{ invalid json"
-      
+
       frame = %{}
       result = ActivityValidationTool.execute(%{activity_json: invalid_json}, frame)
-      
+
       assert {:reply, response, ^frame} = result
       assert response.isError == true
       assert [%{"type" => "text", "text" => error_text}] = response.content
@@ -84,10 +84,10 @@ defmodule Oli.GenAI.Tools.ActivityValidationToolTest do
       }
 
       json_string = Jason.encode!(invalid_activity)
-      
+
       frame = %{}
       result = ActivityValidationTool.execute(%{activity_json: json_string}, frame)
-      
+
       assert {:reply, response, ^frame} = result
       assert response.isError == true
       assert [%{"type" => "text", "text" => error_text}] = response.content

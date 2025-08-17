@@ -4,8 +4,22 @@ defmodule Oli.GenAI.Agent.Schema.Run do
   import Ecto.Changeset
 
   @primary_key {:id, :binary_id, autogenerate: true}
-  @derive {Jason.Encoder, only: [:id, :goal, :run_type, :status, :plan, :context_summary, :budgets, :model,
-                                 :cost_cents, :tokens_in, :tokens_out, :inserted_at, :updated_at]}
+  @derive {Jason.Encoder,
+           only: [
+             :id,
+             :goal,
+             :run_type,
+             :status,
+             :plan,
+             :context_summary,
+             :budgets,
+             :model,
+             :cost_cents,
+             :tokens_in,
+             :tokens_out,
+             :inserted_at,
+             :updated_at
+           ]}
   schema "agent_runs" do
     field :user_id, :id
     field :project_id, :id
@@ -52,7 +66,8 @@ defmodule Oli.GenAI.Agent.Schema.Step do
   end
 
   def changeset(step, attrs),
-    do: step |> cast(attrs, __schema__(:fields)) |> validate_required([:run_id, :step_num, :phase])
+    do:
+      step |> cast(attrs, __schema__(:fields)) |> validate_required([:run_id, :step_num, :phase])
 end
 
 defmodule Oli.GenAI.Agent.Schema.Draft do
@@ -94,13 +109,15 @@ defmodule Oli.GenAI.Agent.Persistence do
     {:ok, run}
   end
 
-  @spec update_run(Run.t() | String.t(), map) :: {:ok, Run.t()} | {:error, Ecto.Changeset.t() | term}
+  @spec update_run(Run.t() | String.t(), map) ::
+          {:ok, Run.t()} | {:error, Ecto.Changeset.t() | term}
   def update_run(run_or_id, attrs) do
-    id = case run_or_id do
-      %Run{id: id} -> id
-      id when is_binary(id) -> id
-    end
-    
+    id =
+      case run_or_id do
+        %Run{id: id} -> id
+        id when is_binary(id) -> id
+      end
+
     Logger.debug("Mock: Updated run #{id} with #{inspect(attrs)}")
     {:ok, struct(Run, Map.put(attrs, :id, id))}
   end

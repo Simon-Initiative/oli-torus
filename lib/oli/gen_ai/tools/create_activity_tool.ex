@@ -21,7 +21,11 @@ defmodule Oli.GenAI.Tools.CreateActivityTool do
   @tool_schema MCPToolRegistry.get_tool_schema("create_activity")
   @project_slug_desc get_in(@tool_schema, ["properties", "project_slug", "description"])
   @activity_json_desc get_in(@tool_schema, ["properties", "activity_json", "description"])
-  @activity_type_slug_desc get_in(@tool_schema, ["properties", "activity_type_slug", "description"])
+  @activity_type_slug_desc get_in(@tool_schema, [
+                             "properties",
+                             "activity_type_slug",
+                             "description"
+                           ])
 
   schema do
     field :project_slug, :string, required: true, description: @project_slug_desc
@@ -30,7 +34,14 @@ defmodule Oli.GenAI.Tools.CreateActivityTool do
   end
 
   @impl true
-  def execute(%{project_slug: project_slug, activity_json: activity_json, activity_type_slug: activity_type_slug}, frame) do
+  def execute(
+        %{
+          project_slug: project_slug,
+          activity_json: activity_json,
+          activity_type_slug: activity_type_slug
+        },
+        frame
+      ) do
     case create_activity(project_slug, activity_json, activity_type_slug) do
       {:ok, activity_info} ->
         response_text = format_success_response(activity_info)
@@ -38,7 +49,9 @@ defmodule Oli.GenAI.Tools.CreateActivityTool do
 
       {:error, reason} ->
         error_message = format_error(reason)
-        {:reply, Response.error(Response.tool(), "Activity creation failed: #{error_message}"), frame}
+
+        {:reply, Response.error(Response.tool(), "Activity creation failed: #{error_message}"),
+         frame}
     end
   end
 
@@ -46,15 +59,21 @@ defmodule Oli.GenAI.Tools.CreateActivityTool do
   defp create_activity(project_slug, activity_json, activity_type_slug) do
     with {:ok, activity_model} <- validate_activity_json(activity_json),
          {:ok, admin_author} <- get_system_admin_author(),
-         {:ok, {activity_revision, _content}} <- create_activity_in_project(project_slug, activity_type_slug, admin_author, activity_model) do
-      {:ok, %{
-        resource_id: activity_revision.resource_id,
-        revision_id: activity_revision.id,
-        slug: activity_revision.slug,
-        title: activity_revision.title
-      }}
+         {:ok, {activity_revision, _content}} <-
+           create_activity_in_project(
+             project_slug,
+             activity_type_slug,
+             admin_author,
+             activity_model
+           ) do
+      {:ok,
+       %{
+         resource_id: activity_revision.resource_id,
+         revision_id: activity_revision.id,
+         slug: activity_revision.slug,
+         title: activity_revision.title
+       }}
     else
-
       {:error, reason} -> {:error, reason}
       error -> {:error, inspect(error)}
     end
@@ -68,8 +87,10 @@ defmodule Oli.GenAI.Tools.CreateActivityTool do
     else
       {:error, %Jason.DecodeError{} = error} ->
         {:error, "Invalid JSON: #{Exception.message(error)}"}
+
       {:error, reason} ->
         {:error, "Activity validation failed: #{format_validation_error(reason)}"}
+
       error ->
         {:error, "Validation error: #{inspect(error)}"}
     end
@@ -79,10 +100,11 @@ defmodule Oli.GenAI.Tools.CreateActivityTool do
   defp get_system_admin_author do
     system_admin_role_id = SystemRole.role_id().system_admin
 
-    query = from(author in Accounts.Author,
-      where: author.system_role_id == ^system_admin_role_id,
-      limit: 1
-    )
+    query =
+      from(author in Accounts.Author,
+        where: author.system_role_id == ^system_admin_role_id,
+        limit: 1
+      )
 
     case Oli.Repo.one(query) do
       nil -> {:error, "No system admin author found"}
@@ -102,21 +124,28 @@ defmodule Oli.GenAI.Tools.CreateActivityTool do
       activity_type_slug,
       author,
       activity_model,
-      [], # all_parts_objectives - empty for now
-      "banked", # scope
+      # all_parts_objectives - empty for now
+      [],
+      # scope
+      "banked",
       title,
-      %{}, # objective_map - empty for now
-      [] # tags - empty for now
+      # objective_map - empty for now
+      %{},
+      # tags - empty for now
+      []
     )
   end
 
   # Extracts title from activity model
   defp get_activity_title(activity_model) do
     case activity_model do
-      %{"authoring" => %{"previewText" => preview_text}} when is_binary(preview_text) and preview_text != "" ->
+      %{"authoring" => %{"previewText" => preview_text}}
+      when is_binary(preview_text) and preview_text != "" ->
         preview_text
+
       %{"stem" => %{"content" => content}} when is_list(content) ->
         extract_text_from_content(content) |> String.slice(0, 50)
+
       _ ->
         "Generated Activity"
     end
@@ -135,23 +164,32 @@ defmodule Oli.GenAI.Tools.CreateActivityTool do
     |> Enum.map(&extract_text_from_node/1)
     |> Enum.join("")
   end
+
   defp extract_text_from_element(_), do: ""
 
   defp extract_text_from_node(%{"text" => text}), do: text
+
   defp extract_text_from_node(%{"children" => children}) when is_list(children) do
     extract_text_from_content(children)
   end
+
   defp extract_text_from_node(_), do: ""
 
   # Formats validation error messages
   defp format_validation_error({path, errors}) when is_binary(path) and is_list(errors) do
     "At #{path}: #{Enum.join(errors, ", ")}"
   end
+
   defp format_validation_error(error) when is_binary(error), do: error
   defp format_validation_error(error), do: inspect(error)
 
   # Formats success response as JSON
-  defp format_success_response(%{resource_id: resource_id, revision_id: revision_id, slug: slug, title: title}) do
+  defp format_success_response(%{
+         resource_id: resource_id,
+         revision_id: revision_id,
+         slug: slug,
+         title: title
+       }) do
     response = %{
       "success" => true,
       "message" => "Activity created successfully",
