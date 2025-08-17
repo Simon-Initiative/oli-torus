@@ -344,6 +344,18 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
         />
       </Overview.section>
 
+      <Overview.section
+        title="MCP Access Tokens"
+        description="Generate Bearer tokens for external AI agents to access this project's content via the Model Context Protocol (MCP)."
+      >
+        <.live_component
+          module={OliWeb.Projects.MCPTokenManager}
+          id="mcp-token-manager"
+          project={@project}
+          current_author={@current_author}
+        />
+      </Overview.section>
+
       {live_render(@socket, OliWeb.Projects.VisibilityLive,
         id: "project_visibility",
         session: %{"project_slug" => @project.slug}
