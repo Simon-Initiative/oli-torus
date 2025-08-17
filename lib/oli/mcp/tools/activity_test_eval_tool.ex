@@ -1,4 +1,4 @@
-defmodule Oli.GenAI.Tools.ActivityTestEvalTool do
+defmodule Oli.MCP.Tools.ActivityTestEvalTool do
   @moduledoc """
   MCP tool for testing activity evaluation.
 

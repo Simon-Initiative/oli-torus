@@ -1,4 +1,4 @@
-defmodule Oli.GenAI.Tools.CreateActivityTool do
+defmodule Oli.MCP.Tools.CreateActivityTool do
   @moduledoc """
   MCP tool for creating activities in projects.
 

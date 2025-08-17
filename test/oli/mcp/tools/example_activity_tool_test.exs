@@ -1,7 +1,7 @@
-defmodule Oli.GenAI.Tools.ExampleActivityToolTest do
+defmodule Oli.MCP.Tools.ExampleActivityToolTest do
   use ExUnit.Case, async: true
 
-  alias Oli.GenAI.Tools.ExampleActivityTool
+  alias Oli.MCP.Tools.ExampleActivityTool
 
   describe "example activity tool" do
     test "returns multiple choice example" do

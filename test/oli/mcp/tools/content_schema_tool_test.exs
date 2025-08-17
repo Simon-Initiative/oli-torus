@@ -1,7 +1,7 @@
-defmodule Oli.GenAI.Tools.ContentSchemaToolTest do
+defmodule Oli.MCP.Tools.ContentSchemaToolTest do
   use Oli.DataCase
 
-  alias Oli.GenAI.Tools.ContentSchemaTool
+  alias Oli.MCP.Tools.ContentSchemaTool
 
   describe "content schema tool" do
     test "returns the content element schema successfully" do

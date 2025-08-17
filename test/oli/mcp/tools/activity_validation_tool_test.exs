@@ -1,7 +1,7 @@
-defmodule Oli.GenAI.Tools.ActivityValidationToolTest do
+defmodule Oli.MCP.Tools.ActivityValidationToolTest do
   use ExUnit.Case, async: true
 
-  alias Oli.GenAI.Tools.ActivityValidationTool
+  alias Oli.MCP.Tools.ActivityValidationTool
 
   describe "activity validation tool" do
     test "validates valid activity JSON" do

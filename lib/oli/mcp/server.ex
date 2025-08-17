@@ -1,4 +1,4 @@
-defmodule Oli.GenAI.MCPServer do
+defmodule Oli.MCP.Server do
   @moduledoc """
   MCP (Model Context Protocol) server for external AI agents to interact with Torus.
 
@@ -14,10 +14,10 @@ defmodule Oli.GenAI.MCPServer do
     capabilities: [:tools]
 
   # Register our tools
-  component(Oli.GenAI.Tools.RevisionContentTool)
-  component(Oli.GenAI.Tools.ActivityValidationTool)
-  component(Oli.GenAI.Tools.ActivityTestEvalTool)
-  component(Oli.GenAI.Tools.ExampleActivityTool)
-  component(Oli.GenAI.Tools.CreateActivityTool)
-  component(Oli.GenAI.Tools.ContentSchemaTool)
+  component(Oli.MCP.Tools.RevisionContentTool)
+  component(Oli.MCP.Tools.ActivityValidationTool)
+  component(Oli.MCP.Tools.ActivityTestEvalTool)
+  component(Oli.MCP.Tools.ExampleActivityTool)
+  component(Oli.MCP.Tools.CreateActivityTool)
+  component(Oli.MCP.Tools.ContentSchemaTool)
 end

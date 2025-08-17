@@ -191,7 +191,7 @@ defmodule Oli.GenAI.Agent.MCPToolRegistry do
 
           # Execute the MCP tool
           # Note: We pass a mock frame since we're calling this directly
-          case module.execute(mcp_args, %{}) do
+          case apply(module, :execute, [mcp_args, %{}]) do
             {:reply, response, _frame} ->
               case response do
                 # Handle Hermes.Server.Response struct
@@ -261,12 +261,12 @@ defmodule Oli.GenAI.Agent.MCPToolRegistry do
 
   defp find_mcp_tool_module(tool_name) do
     case tool_name do
-      "revision_content" -> Oli.GenAI.Tools.RevisionContentTool
-      "activity_validation" -> Oli.GenAI.Tools.ActivityValidationTool
-      "activity_test_eval" -> Oli.GenAI.Tools.ActivityTestEvalTool
-      "example_activity" -> Oli.GenAI.Tools.ExampleActivityTool
-      "create_activity" -> Oli.GenAI.Tools.CreateActivityTool
-      "content_schema" -> Oli.GenAI.Tools.ContentSchemaTool
+      "revision_content" -> Oli.MCP.Tools.RevisionContentTool
+      "activity_validation" -> Oli.MCP.Tools.ActivityValidationTool
+      "activity_test_eval" -> Oli.MCP.Tools.ActivityTestEvalTool
+      "example_activity" -> Oli.MCP.Tools.ExampleActivityTool
+      "create_activity" -> Oli.MCP.Tools.CreateActivityTool
+      "content_schema" -> Oli.MCP.Tools.ContentSchemaTool
       _ -> nil
     end
   end

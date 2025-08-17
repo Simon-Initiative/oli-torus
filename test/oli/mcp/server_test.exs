@@ -1,35 +1,35 @@
-defmodule Oli.GenAI.MCPServerTest do
+defmodule Oli.MCP.ServerTest do
   use ExUnit.Case, async: true
 
-  alias Oli.GenAI.MCPServer
+  alias Oli.MCP.Server
 
   describe "Hermes MCP Server" do
     test "server has correct server info" do
-      server_info = MCPServer.server_info()
+      server_info = Server.server_info()
 
       assert %{"name" => "oli-torus", "version" => "1.0.0"} = server_info
     end
 
     test "server has tools capability" do
-      capabilities = MCPServer.server_capabilities()
+      capabilities = Server.server_capabilities()
 
       assert %{"tools" => %{}} = capabilities
     end
 
     test "server has all expected tool components registered" do
       # Get components using the public function
-      components = MCPServer.__components__()
+      components = Server.__components__()
 
       # Extract handler modules from the component structs
       handler_modules = Enum.map(components, & &1.handler)
 
       expected_handlers = [
-        Oli.GenAI.Tools.RevisionContentTool,
-        Oli.GenAI.Tools.ActivityValidationTool,
-        Oli.GenAI.Tools.ActivityTestEvalTool,
-        Oli.GenAI.Tools.ExampleActivityTool,
-        Oli.GenAI.Tools.CreateActivityTool,
-        Oli.GenAI.Tools.ContentSchemaTool
+        Oli.MCP.Tools.RevisionContentTool,
+        Oli.MCP.Tools.ActivityValidationTool,
+        Oli.MCP.Tools.ActivityTestEvalTool,
+        Oli.MCP.Tools.ExampleActivityTool,
+        Oli.MCP.Tools.CreateActivityTool,
+        Oli.MCP.Tools.ContentSchemaTool
       ]
 
       for handler <- expected_handlers do
@@ -41,7 +41,7 @@ defmodule Oli.GenAI.MCPServerTest do
     end
 
     test "all tools have proper structure" do
-      components = MCPServer.__components__()
+      components = Server.__components__()
 
       for component <- components do
         # Each component should be a Hermes Tool struct
@@ -57,7 +57,7 @@ defmodule Oli.GenAI.MCPServerTest do
     end
 
     test "server supports MCP protocol version" do
-      versions = MCPServer.supported_protocol_versions()
+      versions = Server.supported_protocol_versions()
 
       # Should support at least one version
       assert is_list(versions)

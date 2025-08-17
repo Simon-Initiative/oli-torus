@@ -1,7 +1,7 @@
-defmodule Oli.GenAI.Tools.ActivityTestEvalToolTest do
+defmodule Oli.MCP.Tools.ActivityTestEvalToolTest do
   use Oli.DataCase
 
-  alias Oli.GenAI.Tools.ActivityTestEvalTool
+  alias Oli.MCP.Tools.ActivityTestEvalTool
   alias Oli.Delivery.Attempts.ActivityLifecycle.Evaluate
 
   import Oli.Factory

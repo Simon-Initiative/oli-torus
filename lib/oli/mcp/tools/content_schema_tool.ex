@@ -1,4 +1,4 @@
-defmodule Oli.GenAI.Tools.ContentSchemaTool do
+defmodule Oli.MCP.Tools.ContentSchemaTool do
   @moduledoc """
   MCP tool for retrieving the content element JSON schema.
 

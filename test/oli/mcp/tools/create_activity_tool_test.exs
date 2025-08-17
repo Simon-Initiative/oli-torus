@@ -1,7 +1,7 @@
-defmodule Oli.GenAI.Tools.CreateActivityToolTest do
+defmodule Oli.MCP.Tools.CreateActivityToolTest do
   use Oli.DataCase
 
-  alias Oli.GenAI.Tools.CreateActivityTool
+  alias Oli.MCP.Tools.CreateActivityTool
   alias Oli.Accounts.SystemRole
 
   import Oli.Factory

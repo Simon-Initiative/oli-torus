@@ -82,7 +82,7 @@ defmodule Oli.Application do
         Oli.GenAI.Agent.Registry,
         Oli.GenAI.Agent.ToolBroker,
         Oli.GenAI.Agent.RunSupervisor,
-        {Oli.GenAI.MCPServer, transport: :streamable_http}
+        {Oli.MCP.Server, transport: :streamable_http}
       ] ++ maybe_node_js_config()
 
     if log_incomplete_requests?() do

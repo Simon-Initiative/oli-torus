@@ -1,4 +1,4 @@
-defmodule Oli.GenAI.Tools.ExampleActivityTool do
+defmodule Oli.MCP.Tools.ExampleActivityTool do
   @moduledoc """
   MCP tool for retrieving example activities by type.
 

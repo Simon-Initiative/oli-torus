@@ -1,10 +1,10 @@
-defmodule Oli.GenAI.Tools.RevisionContentToolTest do
+defmodule Oli.MCP.Tools.RevisionContentToolTest do
   use ExUnit.Case, async: true
   use Oli.DataCase
 
   import Oli.Factory
 
-  alias Oli.GenAI.Tools.RevisionContentTool
+  alias Oli.MCP.Tools.RevisionContentTool
   alias Hermes.Server.Frame
 
   describe "RevisionContentTool" do

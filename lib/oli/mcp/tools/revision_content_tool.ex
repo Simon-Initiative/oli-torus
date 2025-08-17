@@ -1,4 +1,4 @@
-defmodule Oli.GenAI.Tools.RevisionContentTool do
+defmodule Oli.MCP.Tools.RevisionContentTool do
   @moduledoc """
   MCP tool for retrieving JSON content of a resource revision.
 

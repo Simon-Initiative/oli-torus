@@ -1,4 +1,4 @@
-defmodule Oli.GenAI.Tools.ActivityValidationTool do
+defmodule Oli.MCP.Tools.ActivityValidationTool do
   @moduledoc """
   MCP tool for validating activity JSON.
 
