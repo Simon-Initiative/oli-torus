@@ -101,6 +101,7 @@ defmodule Oli.GenAI.Agent.Persistence do
   alias Oli.GenAI.Agent.Schema.{Run, Step, Draft}
   alias Oli.Repo
   import Ecto.Query
+  import Ecto.Changeset
   require Logger
 
   @spec create_run(map) :: {:ok, Run.t()} | {:error, Ecto.Changeset.t()}
@@ -136,20 +137,11 @@ defmodule Oli.GenAI.Agent.Persistence do
 
   @spec append_step(map) :: {:ok, Step.t()} | {:error, Ecto.Changeset.t()}
   def append_step(attrs) do
-    # Auto-set step_num if not provided by finding the next available step number
-    attrs = 
-      case Map.get(attrs, :step_num) do
-        nil ->
-          next_step_num = get_next_step_num(attrs[:run_id])
-          Map.put(attrs, :step_num, next_step_num)
-        _ ->
-          attrs
-      end
-
     attrs = Map.put_new(attrs, :inserted_at, DateTime.utc_now())
 
     %Step{}
     |> Step.changeset(attrs)
+    |> unique_constraint(:step_num, name: :agent_steps_pkey, message: "Step already exists for this run")
     |> Repo.insert()
   end
 
@@ -184,13 +176,4 @@ defmodule Oli.GenAI.Agent.Persistence do
   end
 
   # Private helper functions
-
-  defp get_next_step_num(run_id) do
-    query = from(s in Step, where: s.run_id == ^run_id, select: max(s.step_num))
-    
-    case Repo.one(query) do
-      nil -> 1
-      max_step -> max_step + 1
-    end
-  end
 end

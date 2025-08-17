@@ -517,18 +517,29 @@ defmodule Oli.GenAI.Agent.Server do
     # Prune short window
     new_window = Summarizer.prune_window(state.short_window, 12)
 
-    # Persist step
-    Persistence.append_step(%{
-      run_id: state.id,
-      step_num: step.num,
-      phase: Atom.to_string(state.status),
-      action: step.action,
-      observation: step.observation,
-      rationale_summary: step.rationale_summary,
-      tokens_in: step.tokens_in,
-      tokens_out: step.tokens_out,
-      latency_ms: step.latency_ms
-    })
+    # Persist step (check for duplicates first)
+    if Enum.any?(state.steps, fn s -> s.num == step.num end) do
+      require Logger
+      Logger.warning("Attempting to persist duplicate step #{step.num} for run #{state.id}, skipping")
+    else
+      case Persistence.append_step(%{
+        run_id: state.id,
+        step_num: step.num,
+        phase: Atom.to_string(state.status),
+        action: step.action,
+        observation: step.observation,
+        rationale_summary: step.rationale_summary,
+        tokens_in: step.tokens_in,
+        tokens_out: step.tokens_out,
+        latency_ms: step.latency_ms
+      }) do
+        {:ok, _} -> :ok
+        {:error, changeset} ->
+          # Log the error but don't crash the agent
+          require Logger
+          Logger.warning("Failed to persist step #{step.num} for run #{state.id}: #{inspect(changeset.errors)}")
+      end
+    end
 
     # Broadcast step
     PubSub.broadcast_step(state.id, step)

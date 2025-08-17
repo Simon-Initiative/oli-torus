@@ -32,14 +32,17 @@ defmodule OliWeb.Admin.AgentMonitorView do
       |> Oli.Repo.preload(:backup_model)
 
     goal = """
-    Write a multiple choice question about birds in example_course project.
-    1) Seek to understand the structure and schema for the mcq activity type.
+    Write a multiple choice question about birds in example_course project. Build a TODO list
+    of steps to complete this task, then execute the steps one by one.
+
+    Steps to complete this task:
+    1. Understand the structure of a multiple choice question in OLI. (tools: example_activity, json_schema)
     2) Author a question stem, then a correct answer, then think hard to generate 2 or 3 useful distractors that likely represent common misconceptions.
     3) Author three hints, with the third hint being a "bottom out" hint which basically gives away the answer.
     4) Create a response and feedback for the correct answer and each of the distrctors.  IT IS IMPORTANT to also
     include one extra response as a "catch all" whose rule is "input like {.*}" with generic feedback of "Incorrect."
-    5) Validate the JSON
-    6) Create the activity.
+    5) Validate the JSON (tool: activity_validation)
+    6) Create the activity (tool: create_activity)
     """
 
     args = %{
@@ -98,7 +101,7 @@ defmodule OliWeb.Admin.AgentMonitorView do
   end
 
   def handle_info({:agent_status, status}, socket) do
-    message = "Status: #{status.status} (#{status.rationale || "no rationale"})"
+    message = "Status: #{status.status} (#{status.reason || "no reason"})"
 
     socket =
       socket
@@ -192,7 +195,7 @@ defmodule OliWeb.Admin.AgentMonitorView do
               </div>
             </div>
           </div>
-          
+
     <!-- Message Feed -->
           <div class="bg-white shadow rounded-lg p-6">
             <h2 class="text-xl font-semibold mb-4">Live Messages</h2>
