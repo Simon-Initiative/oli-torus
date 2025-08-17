@@ -3,6 +3,7 @@ defmodule Oli.MCP.Tools.RevisionContentToolTest do
   use Oli.DataCase
 
   import Oli.Factory
+  import Oli.MCPTestHelpers
 
   alias Oli.MCP.Tools.RevisionContentTool
   alias Hermes.Server.Frame
@@ -62,24 +63,27 @@ defmodule Oli.MCP.Tools.RevisionContentToolTest do
 
     test "execute/2 successfully retrieves revision content", %{
       project: project,
-      page_revision: page_revision
+      page_revision: page_revision,
+      author: author
     } do
-      frame = %Frame{}
-      params = %{project_slug: project.slug, revision_slug: page_revision.slug}
+      with_mcp_auth(author.id, project.id, fn ->
+        frame = %Frame{}
+        params = %{project_slug: project.slug, revision_slug: page_revision.slug}
 
-      assert {:reply, response, ^frame} = RevisionContentTool.execute(params, frame)
+        assert {:reply, response, ^frame} = RevisionContentTool.execute(params, frame)
 
-      # The response should be a properly formatted Hermes response
-      assert %Hermes.Server.Response{} = response
-      assert response.type == :tool
-      assert response.isError == false
+        # The response should be a properly formatted Hermes response
+        assert %Hermes.Server.Response{} = response
+        assert response.type == :tool
+        assert response.isError == false
 
-      # Should contain the JSON content in the first content item
-      [content_item] = response.content
-      assert content_item["type"] == "text"
-      json_text = content_item["text"]
-      assert json_text =~ "This is test content"
-      assert json_text =~ "\"type\": \"p\""
+        # Should contain the JSON content in the first content item
+        [content_item] = response.content
+        assert content_item["type"] == "text"
+        json_text = content_item["text"]
+        assert json_text =~ "This is test content"
+        assert json_text =~ "\"type\": \"p\""
+      end)
     end
 
     test "execute/2 returns error for non-existent project" do
@@ -88,37 +92,39 @@ defmodule Oli.MCP.Tools.RevisionContentToolTest do
 
       assert {:reply, response, ^frame} = RevisionContentTool.execute(params, frame)
 
-      # Should be an error response
+      # Should be an error response due to missing authentication
       assert %Hermes.Server.Response{} = response
       assert response.type == :tool
       assert response.isError == true
 
       [content_item] = response.content
       error_text = content_item["text"]
-      assert error_text =~ "Revision not found"
-      assert error_text =~ "non-existent-project"
+      assert error_text =~ "Authorization failed: No MCP Bearer token found in request context"
     end
 
-    test "execute/2 returns error for non-existent revision", %{project: project} do
-      frame = %Frame{}
-      params = %{project_slug: project.slug, revision_slug: "non-existent-page"}
+    test "execute/2 returns error for non-existent revision", %{project: project, author: author} do
+      with_mcp_auth(author.id, project.id, fn ->
+        frame = %Frame{}
+        params = %{project_slug: project.slug, revision_slug: "non-existent-page"}
 
-      assert {:reply, response, ^frame} = RevisionContentTool.execute(params, frame)
+        assert {:reply, response, ^frame} = RevisionContentTool.execute(params, frame)
 
-      # Should be an error response
-      assert %Hermes.Server.Response{} = response
-      assert response.type == :tool
-      assert response.isError == true
+        # Should be an error response
+        assert %Hermes.Server.Response{} = response
+        assert response.type == :tool
+        assert response.isError == true
 
-      [content_item] = response.content
-      error_text = content_item["text"]
-      assert error_text =~ "Revision not found"
-      assert error_text =~ "non-existent-page"
+        [content_item] = response.content
+        error_text = content_item["text"]
+        assert error_text =~ "Revision not found"
+        assert error_text =~ "non-existent-page"
+      end)
     end
 
     test "execute/2 returns error for deleted revision", %{
       project: project,
-      publication: publication
+      publication: publication,
+      author: author
     } do
       # Create a deleted revision
       deleted_resource = insert(:resource)
@@ -140,24 +146,27 @@ defmodule Oli.MCP.Tools.RevisionContentToolTest do
         author: insert(:author)
       })
 
-      frame = %Frame{}
-      params = %{project_slug: project.slug, revision_slug: deleted_revision.slug}
+      with_mcp_auth(author.id, project.id, fn ->
+        frame = %Frame{}
+        params = %{project_slug: project.slug, revision_slug: deleted_revision.slug}
 
-      assert {:reply, response, ^frame} = RevisionContentTool.execute(params, frame)
+        assert {:reply, response, ^frame} = RevisionContentTool.execute(params, frame)
 
-      # Should be an error response
-      assert %Hermes.Server.Response{} = response
-      assert response.type == :tool
-      assert response.isError == true
+        # Should be an error response
+        assert %Hermes.Server.Response{} = response
+        assert response.type == :tool
+        assert response.isError == true
 
-      [content_item] = response.content
-      error_text = content_item["text"]
-      assert error_text =~ "Revision has been deleted"
+        [content_item] = response.content
+        error_text = content_item["text"]
+        assert error_text =~ "Revision has been deleted"
+      end)
     end
 
     test "execute/2 handles complex content structure", %{
       project: project,
-      publication: publication
+      publication: publication,
+      author: author
     } do
       # Create revision with complex content
       complex_resource = insert(:resource)
@@ -196,21 +205,23 @@ defmodule Oli.MCP.Tools.RevisionContentToolTest do
         author: insert(:author)
       })
 
-      frame = %Frame{}
-      params = %{project_slug: project.slug, revision_slug: complex_revision.slug}
+      with_mcp_auth(author.id, project.id, fn ->
+        frame = %Frame{}
+        params = %{project_slug: project.slug, revision_slug: complex_revision.slug}
 
-      assert {:reply, response, ^frame} = RevisionContentTool.execute(params, frame)
+        assert {:reply, response, ^frame} = RevisionContentTool.execute(params, frame)
 
-      # Should contain the complex content
-      assert %Hermes.Server.Response{} = response
-      assert response.type == :tool
-      assert response.isError == false
+        # Should contain the complex content
+        assert %Hermes.Server.Response{} = response
+        assert response.type == :tool
+        assert response.isError == false
 
-      [content_item] = response.content
-      json_text = content_item["text"]
-      assert json_text =~ "bold"
-      assert json_text =~ "Test image"
-      assert json_text =~ "0.1.0"
+        [content_item] = response.content
+        json_text = content_item["text"]
+        assert json_text =~ "bold"
+        assert json_text =~ "Test image"
+        assert json_text =~ "0.1.0"
+      end)
     end
   end
 end

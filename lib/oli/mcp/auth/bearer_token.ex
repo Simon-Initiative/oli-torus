@@ -25,7 +25,7 @@ defmodule Oli.MCP.Auth.BearerToken do
     belongs_to :author, Oli.Accounts.Author
     belongs_to :project, Oli.Authoring.Course.Project
 
-    timestamps()
+    timestamps(type: :utc_datetime)
   end
 
   @doc false
