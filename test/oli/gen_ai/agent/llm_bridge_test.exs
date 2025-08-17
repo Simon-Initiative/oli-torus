@@ -93,7 +93,10 @@ defmodule Oli.GenAI.Agent.LLMBridgeTest do
     end
 
     @tag :skip
-    test "successfully calls provider with real completions", %{model: _model, messages: _messages} do
+    test "successfully calls provider with real completions", %{
+      model: _model,
+      messages: _messages
+    } do
       # This test would require actual provider setup and mocking
       # Skipping as it requires integration with the real Completions module
       _opts = %{temperature: 0.7}

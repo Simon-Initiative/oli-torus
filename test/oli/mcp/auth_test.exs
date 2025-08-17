@@ -11,7 +11,8 @@ defmodule Oli.MCP.AuthTest do
       author = insert(:author)
       project = insert(:project)
 
-      assert {:ok, {token_record, token_string}} = Auth.create_token(author.id, project.id, "Test token")
+      assert {:ok, {token_record, token_string}} =
+               Auth.create_token(author.id, project.id, "Test token")
 
       assert %BearerToken{} = token_record
       assert token_record.author_id == author.id
@@ -41,7 +42,9 @@ defmodule Oli.MCP.AuthTest do
 
       {:ok, {_token_record, token_string}} = Auth.create_token(author.id, project.id)
 
-      assert {:ok, %{author_id: author_id, project_id: project_id}} = Auth.validate_token(token_string)
+      assert {:ok, %{author_id: author_id, project_id: project_id}} =
+               Auth.validate_token(token_string)
+
       assert author_id == author.id
       assert project_id == project.id
     end
@@ -86,7 +89,8 @@ defmodule Oli.MCP.AuthTest do
       author = insert(:author)
       project = insert(:project)
 
-      assert {:ok, {token_record, token_string}} = Auth.regenerate_token(author.id, project.id, "New token")
+      assert {:ok, {token_record, token_string}} =
+               Auth.regenerate_token(author.id, project.id, "New token")
 
       assert token_record.hint == "New token"
       assert String.starts_with?(token_string, "mcp_")
@@ -96,7 +100,9 @@ defmodule Oli.MCP.AuthTest do
       author = insert(:author)
       project = insert(:project)
 
-      {:ok, {original_token, original_string}} = Auth.create_token(author.id, project.id, "Original")
+      {:ok, {original_token, original_string}} =
+        Auth.create_token(author.id, project.id, "Original")
+
       {:ok, {new_token, new_string}} = Auth.regenerate_token(author.id, project.id, "Regenerated")
 
       assert original_token.id == new_token.id

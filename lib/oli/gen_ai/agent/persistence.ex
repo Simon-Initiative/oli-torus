@@ -68,23 +68,24 @@ defmodule Oli.GenAI.Agent.Schema.Step do
   def changeset(step, attrs) do
     # Normalize observation to always be a map
     attrs = normalize_observation(attrs)
-    
+
     step
     |> cast(attrs, __schema__(:fields))
     |> validate_required([:run_id, :step_num, :phase])
   end
-  
-  defp normalize_observation(%{observation: obs} = attrs) when not is_map(obs) and not is_nil(obs) do
+
+  defp normalize_observation(%{observation: obs} = attrs)
+       when not is_map(obs) and not is_nil(obs) do
     # Wrap non-map, non-nil observations in a map
     normalized_obs = %{content: obs}
     Map.put(attrs, :observation, normalized_obs)
   end
-  
+
   defp normalize_observation(%{observation: nil} = attrs) do
     # Convert nil to empty map
     Map.put(attrs, :observation, %{})
   end
-  
+
   defp normalize_observation(attrs), do: attrs
 end
 
@@ -125,7 +126,7 @@ defmodule Oli.GenAI.Agent.Persistence do
   @spec create_run(map) :: {:ok, Run.t()} | {:error, Ecto.Changeset.t()}
   def create_run(attrs) do
     attrs = Map.put_new(attrs, :started_at, DateTime.utc_now())
-    
+
     %Run{}
     |> Run.changeset(attrs)
     |> Repo.insert()
@@ -159,7 +160,10 @@ defmodule Oli.GenAI.Agent.Persistence do
 
     %Step{}
     |> Step.changeset(attrs)
-    |> unique_constraint(:step_num, name: :agent_steps_pkey, message: "Step already exists for this run")
+    |> unique_constraint(:step_num,
+      name: :agent_steps_pkey,
+      message: "Step already exists for this run"
+    )
     |> Repo.insert()
   end
 
@@ -182,10 +186,13 @@ defmodule Oli.GenAI.Agent.Persistence do
     |> Repo.all()
   end
 
-  @spec update_draft(String.t(), map) :: {:ok, Draft.t()} | {:error, Ecto.Changeset.t() | :not_found}
+  @spec update_draft(String.t(), map) ::
+          {:ok, Draft.t()} | {:error, Ecto.Changeset.t() | :not_found}
   def update_draft(draft_id, attrs) do
     case Repo.get(Draft, draft_id) do
-      nil -> {:error, :not_found}
+      nil ->
+        {:error, :not_found}
+
       draft ->
         draft
         |> Draft.changeset(attrs)

@@ -23,7 +23,10 @@ defmodule Oli.Repo.Migrations.CreateAgentTables do
     end
 
     create table(:agent_steps, primary_key: false) do
-      add :run_id, references(:agent_runs, type: :binary_id, on_delete: :delete_all), null: false, primary_key: true
+      add :run_id, references(:agent_runs, type: :binary_id, on_delete: :delete_all),
+        null: false,
+        primary_key: true
+
       add :step_num, :integer, null: false, primary_key: true
       add :phase, :string, null: false
       add :action, :jsonb

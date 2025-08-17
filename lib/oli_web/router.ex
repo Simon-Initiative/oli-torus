@@ -75,6 +75,12 @@ defmodule OliWeb.Router do
     plug(OliWeb.Plugs.SessionContext)
   end
 
+  # pipeline for MCP (Model Context Protocol) endpoints
+  pipeline :mcp_api do
+    plug(:accepts, ["json"])
+    plug(OliWeb.Plugs.ValidateMCPBearerToken)
+  end
+
   ### PIPELINE EXTENSIONS ###
   # Extend the base pipelines specific routes
 
@@ -222,7 +228,7 @@ defmodule OliWeb.Router do
 
   ## MCP (Model Context Protocol) routes
   scope "/mcp" do
-    pipe_through [:api]
+    pipe_through [:mcp_api]
 
     forward "/", Hermes.Server.Transport.StreamableHTTP.Plug, server: Oli.MCP.Server
   end

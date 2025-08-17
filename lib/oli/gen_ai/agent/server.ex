@@ -515,24 +515,32 @@ defmodule Oli.GenAI.Agent.Server do
     # Persist step (check for duplicates first)
     if Enum.any?(state.steps, fn s -> s.num == step.num end) do
       require Logger
-      Logger.warning("Attempting to persist duplicate step #{step.num} for run #{state.id}, skipping")
+
+      Logger.warning(
+        "Attempting to persist duplicate step #{step.num} for run #{state.id}, skipping"
+      )
     else
       case Persistence.append_step(%{
-        run_id: state.id,
-        step_num: step.num,
-        phase: Atom.to_string(state.status),
-        action: step.action,
-        observation: step.observation,
-        rationale_summary: step.rationale_summary,
-        tokens_in: step.tokens_in,
-        tokens_out: step.tokens_out,
-        latency_ms: step.latency_ms
-      }) do
-        {:ok, _} -> :ok
+             run_id: state.id,
+             step_num: step.num,
+             phase: Atom.to_string(state.status),
+             action: step.action,
+             observation: step.observation,
+             rationale_summary: step.rationale_summary,
+             tokens_in: step.tokens_in,
+             tokens_out: step.tokens_out,
+             latency_ms: step.latency_ms
+           }) do
+        {:ok, _} ->
+          :ok
+
         {:error, changeset} ->
           # Log the error but don't crash the agent
           require Logger
-          Logger.warning("Failed to persist step #{step.num} for run #{state.id}: #{inspect(changeset.errors)}")
+
+          Logger.warning(
+            "Failed to persist step #{step.num} for run #{state.id}: #{inspect(changeset.errors)}"
+          )
       end
     end
 
@@ -602,5 +610,4 @@ defmodule Oli.GenAI.Agent.Server do
 
     %{role: :tool, content: content, tool_call_id: "call_#{tool_info.name}", name: tool_info.name}
   end
-
 end

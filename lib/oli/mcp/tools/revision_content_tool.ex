@@ -11,6 +11,7 @@ defmodule Oli.MCP.Tools.RevisionContentTool do
   alias Oli.Publishing.AuthoringResolver
   alias Hermes.Server.Response
   alias Oli.GenAI.Agent.MCPToolRegistry
+  alias Oli.MCP.Auth.Authorization
 
   # Get field descriptions from MCPToolRegistry at compile time
   @tool_schema MCPToolRegistry.get_tool_schema("revision_content")
@@ -24,12 +25,19 @@ defmodule Oli.MCP.Tools.RevisionContentTool do
 
   @impl true
   def execute(%{project_slug: project_slug, revision_slug: revision_slug}, frame) do
-    case get_revision_content(project_slug, revision_slug) do
-      {:ok, json_content} ->
-        {:reply, Response.text(Response.tool(), json_content), frame}
+    # Validate project access before proceeding
+    case Authorization.validate_project_access(project_slug) do
+      {:ok, _auth_context} ->
+        case get_revision_content(project_slug, revision_slug) do
+          {:ok, json_content} ->
+            {:reply, Response.text(Response.tool(), json_content), frame}
+
+          {:error, reason} ->
+            {:reply, Response.error(Response.tool(), reason), frame}
+        end
 
       {:error, reason} ->
-        {:reply, Response.error(Response.tool(), reason), frame}
+        {:reply, Response.error(Response.tool(), "Authorization failed: #{reason}"), frame}
     end
   end
 

@@ -11,11 +11,9 @@ defmodule Oli.MCP.Tools.CreateActivityTool do
   alias Oli.Validation
   alias Oli.Authoring.Editing.ActivityEditor
   alias Oli.Accounts
-  alias Oli.Accounts.SystemRole
   alias Hermes.Server.Response
   alias Oli.GenAI.Agent.MCPToolRegistry
-
-  import Ecto.Query
+  alias Oli.MCP.Auth.Authorization
 
   # Get field descriptions from MCPToolRegistry at compile time
   @tool_schema MCPToolRegistry.get_tool_schema("create_activity")
@@ -42,28 +40,35 @@ defmodule Oli.MCP.Tools.CreateActivityTool do
         },
         frame
       ) do
-    case create_activity(project_slug, activity_json, activity_type_slug) do
-      {:ok, activity_info} ->
-        response_text = format_success_response(activity_info)
-        {:reply, Response.text(Response.tool(), response_text), frame}
+    # Validate project access before proceeding
+    case Authorization.validate_project_access(project_slug) do
+      {:ok, %{author_id: author_id}} ->
+        case create_activity(project_slug, activity_json, activity_type_slug, author_id) do
+          {:ok, activity_info} ->
+            response_text = format_success_response(activity_info)
+            {:reply, Response.text(Response.tool(), response_text), frame}
+
+          {:error, reason} ->
+            error_message = format_error(reason)
+
+            {:reply,
+             Response.error(Response.tool(), "Activity creation failed: #{error_message}"), frame}
+        end
 
       {:error, reason} ->
-        error_message = format_error(reason)
-
-        {:reply, Response.error(Response.tool(), "Activity creation failed: #{error_message}"),
-         frame}
+        {:reply, Response.error(Response.tool(), "Authorization failed: #{reason}"), frame}
     end
   end
 
   # Creates the activity after validation
-  defp create_activity(project_slug, activity_json, activity_type_slug) do
+  defp create_activity(project_slug, activity_json, activity_type_slug, author_id) do
     with {:ok, activity_model} <- validate_activity_json(activity_json),
-         {:ok, admin_author} <- get_system_admin_author(),
+         {:ok, author} <- get_author(author_id),
          {:ok, {activity_revision, _content}} <-
            create_activity_in_project(
              project_slug,
              activity_type_slug,
-             admin_author,
+             author,
              activity_model
            ) do
       {:ok,
@@ -96,18 +101,10 @@ defmodule Oli.MCP.Tools.CreateActivityTool do
     end
   end
 
-  # Gets the first system admin author
-  defp get_system_admin_author do
-    system_admin_role_id = SystemRole.role_id().system_admin
-
-    query =
-      from(author in Accounts.Author,
-        where: author.system_role_id == ^system_admin_role_id,
-        limit: 1
-      )
-
-    case Oli.Repo.one(query) do
-      nil -> {:error, "No system admin author found"}
+  # Gets the author by ID
+  defp get_author(author_id) do
+    case Accounts.get_author(author_id) do
+      nil -> {:error, "Author not found: #{author_id}"}
       author -> {:ok, author}
     end
   end

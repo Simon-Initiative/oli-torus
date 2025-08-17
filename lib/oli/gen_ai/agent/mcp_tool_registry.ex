@@ -252,7 +252,10 @@ defmodule Oli.GenAI.Agent.MCPToolRegistry do
         end
 
       invalid_module ->
-        Logger.error("Invalid module returned for tool '#{tool_name}': #{inspect(invalid_module)}")
+        Logger.error(
+          "Invalid module returned for tool '#{tool_name}': #{inspect(invalid_module)}"
+        )
+
         {:error, "Invalid tool module for '#{tool_name}'"}
     end
   end

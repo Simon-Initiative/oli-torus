@@ -121,7 +121,8 @@ defmodule Oli.MCP.Auth do
   Returns true if the token is valid and has access to the project,
   false otherwise.
   """
-  def validate_project_access(token, project_slug) when is_binary(token) and is_binary(project_slug) do
+  def validate_project_access(token, project_slug)
+      when is_binary(token) and is_binary(project_slug) do
     with {:ok, %{project_id: project_id}} <- validate_token(token),
          %Project{slug: ^project_slug} <- Repo.get(Project, project_id) do
       true

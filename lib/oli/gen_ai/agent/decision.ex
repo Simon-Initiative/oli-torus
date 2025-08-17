@@ -131,7 +131,6 @@ defmodule Oli.GenAI.Agent.Decision do
     end
   end
 
-
   defp parse_json_content(content) when is_binary(content) do
     case Jason.decode(content) do
       {:ok, json} ->
@@ -173,7 +172,6 @@ defmodule Oli.GenAI.Agent.Decision do
 
   defp parse_arguments(args) when is_map(args), do: args
   defp parse_arguments(_), do: %{}
-
 
   @spec tool?(t) :: boolean
   def tool?(%__MODULE__{next_action: "tool"}), do: true

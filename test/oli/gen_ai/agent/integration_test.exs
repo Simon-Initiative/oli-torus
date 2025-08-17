@@ -8,7 +8,7 @@ defmodule Oli.GenAI.Agent.IntegrationTest do
     # Allow database access for spawned processes (Agent Servers)
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Oli.Repo)
     Ecto.Adapters.SQL.Sandbox.mode(Oli.Repo, {:shared, self()})
-    
+
     # These are already started by the application supervision tree
     # Just ensure ToolBroker is started
     ToolBroker.start()
@@ -40,7 +40,7 @@ defmodule Oli.GenAI.Agent.IntegrationTest do
 
   test "can start and query an agent run", %{service_config: service_config} do
     run_id = Ecto.UUID.generate()
-    
+
     # Start an agent run
     {:ok, _pid} =
       Agent.start_run(%{
@@ -82,9 +82,9 @@ defmodule Oli.GenAI.Agent.IntegrationTest do
   test "agent runs with basic loop functionality", %{service_config: service_config} do
     # This test is skipped because it requires real LLM calls
     # The agent will fail when trying to make LLM calls with test API keys
-    
+
     run_id = Ecto.UUID.generate()
-    
+
     # Start an agent run that should execute a few steps
     {:ok, _pid} =
       Agent.start_run(%{
@@ -116,7 +116,7 @@ defmodule Oli.GenAI.Agent.IntegrationTest do
 
   test "can pause and resume agent runs", %{service_config: service_config} do
     run_id = Ecto.UUID.generate()
-    
+
     # Start an agent run
     {:ok, _pid} =
       Agent.start_run(%{

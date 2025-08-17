@@ -6,6 +6,9 @@ defmodule Oli.MCP.Server do
   Torus content, enabling them to author course materials.
 
   Uses Hermes MCP v0.14.1 for MCP protocol implementation.
+
+  Authentication is handled by the ValidateMCPBearerToken plug which sets
+  authentication context in the connection assigns.
   """
 
   use Hermes.Server,

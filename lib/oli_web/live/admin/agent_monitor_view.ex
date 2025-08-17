@@ -135,22 +135,29 @@ defmodule OliWeb.Admin.AgentMonitorView do
     messages = [new_message | socket.assigns.messages] |> Enum.take(50)
     assign(socket, :messages, messages)
   end
-  
+
   # Update policy status if we have an active run
   defp maybe_update_policy_status(socket) do
     case socket.assigns.current_run_id do
-      nil -> socket
+      nil ->
+        socket
+
       run_id ->
         case Agent.info(run_id) do
           {:ok, info} ->
-            policy_status = DemoPolicy.status(%{
-              steps: info.last_step && [info.last_step] || [],
-              tokens_used: info.tokens_used || 0,
-              cost_cents: info.cost_cents || 0,
-              start_time: DateTime.utc_now() |> DateTime.add(-5, :minute) # Rough estimate since we don't have exact start time
-            })
+            policy_status =
+              DemoPolicy.status(%{
+                steps: (info.last_step && [info.last_step]) || [],
+                tokens_used: info.tokens_used || 0,
+                cost_cents: info.cost_cents || 0,
+                # Rough estimate since we don't have exact start time
+                start_time: DateTime.utc_now() |> DateTime.add(-5, :minute)
+              })
+
             assign(socket, :policy_status, policy_status)
-          {:error, _} -> socket
+
+          {:error, _} ->
+            socket
         end
     end
   end
@@ -216,8 +223,8 @@ defmodule OliWeb.Admin.AgentMonitorView do
                 <h3 class="text-sm font-medium mb-2">Current Task:</h3>
                 <p class="text-sm text-gray-700">Write a multiple choice question about birds</p>
               </div>
-
-              <!-- Policy Constraints -->
+              
+    <!-- Policy Constraints -->
               <div class="bg-blue-50 p-3 rounded border border-blue-200">
                 <h3 class="text-sm font-medium mb-2 text-blue-800">Policy Constraints</h3>
                 <div class="space-y-1 text-xs text-blue-700">
@@ -238,7 +245,7 @@ defmodule OliWeb.Admin.AgentMonitorView do
               </div>
             </div>
           </div>
-
+          
     <!-- Message Feed -->
           <div class="lg:col-span-2 bg-white shadow rounded-lg p-6">
             <h2 class="text-xl font-semibold mb-4">Live Messages (Debug View)</h2>
@@ -289,43 +296,45 @@ defmodule OliWeb.Admin.AgentMonitorView do
 
   defp format_step_message(step) do
     # Build the main action line
-    action_line = case step.action do
-      %{type: "tool", name: name, args: args} ->
-        args_summary = format_tool_args(args)
-        "Step #{step.num}: 🔧 #{name}#{args_summary}"
+    action_line =
+      case step.action do
+        %{type: "tool", name: name, args: args} ->
+          args_summary = format_tool_args(args)
+          "Step #{step.num}: 🔧 #{name}#{args_summary}"
 
-      %{type: "message", content: content} ->
-        preview = String.slice(content || "", 0, 80)
-        preview = if String.length(content || "") > 80, do: preview <> "...", else: preview
-        "Step #{step.num}: 💬 #{preview}"
+        %{type: "message", content: content} ->
+          preview = String.slice(content || "", 0, 80)
+          preview = if String.length(content || "") > 80, do: preview <> "...", else: preview
+          "Step #{step.num}: 💬 #{preview}"
 
-      %{type: "replan", new_plan: plan} when is_list(plan) ->
-        "Step #{step.num}: 📋 Replan (#{length(plan)} steps)"
+        %{type: "replan", new_plan: plan} when is_list(plan) ->
+          "Step #{step.num}: 📋 Replan (#{length(plan)} steps)"
 
-      %{type: "done"} ->
-        "Step #{step.num}: ✅ Completed"
+        %{type: "done"} ->
+          "Step #{step.num}: ✅ Completed"
 
-      %{type: type} ->
-        "Step #{step.num}: #{type}"
+        %{type: type} ->
+          "Step #{step.num}: #{type}"
 
-      _ ->
-        "Step #{step.num}: Unknown action"
-    end
+        _ ->
+          "Step #{step.num}: Unknown action"
+      end
 
     # Add performance metrics if available
     perf_info = build_performance_info(step)
-    
+
     # Add observation info if available and relevant
     obs_info = build_observation_info(step)
-    
+
     # Add rationale if available
     rationale_info = build_rationale_info(step)
-    
+
     # Combine all parts
-    parts = [action_line, perf_info, obs_info, rationale_info]
-    |> Enum.filter(&(&1 != ""))
-    |> Enum.join("\n")
-    
+    parts =
+      [action_line, perf_info, obs_info, rationale_info]
+      |> Enum.filter(&(&1 != ""))
+      |> Enum.join("\n")
+
     parts
   end
 
@@ -354,7 +363,7 @@ defmodule OliWeb.Admin.AgentMonitorView do
   end
 
   defp format_tool_args(_), do: ""
-  
+
   defp number_format(number) when is_integer(number) do
     number
     |> Integer.to_string()
@@ -362,66 +371,82 @@ defmodule OliWeb.Admin.AgentMonitorView do
     |> String.replace(~r/(\d{3})(?=\d)/, "\\1,")
     |> String.reverse()
   end
-  
+
   defp number_format(number), do: inspect(number)
-  
+
   defp build_performance_info(step) do
     metrics = []
-    
-    metrics = if step.latency_ms do
-      ["⏱️ #{step.latency_ms}ms" | metrics]
-    else
-      metrics
-    end
-    
-    metrics = if step.tokens_in && step.tokens_in > 0 do
-      ["📥 #{step.tokens_in} tokens in" | metrics]
-    else
-      metrics
-    end
-    
-    metrics = if step.tokens_out && step.tokens_out > 0 do
-      ["📤 #{step.tokens_out} tokens out" | metrics]
-    else
-      metrics
-    end
-    
+
+    metrics =
+      if step.latency_ms do
+        ["⏱️ #{step.latency_ms}ms" | metrics]
+      else
+        metrics
+      end
+
+    metrics =
+      if step.tokens_in && step.tokens_in > 0 do
+        ["📥 #{step.tokens_in} tokens in" | metrics]
+      else
+        metrics
+      end
+
+    metrics =
+      if step.tokens_out && step.tokens_out > 0 do
+        ["📤 #{step.tokens_out} tokens out" | metrics]
+      else
+        metrics
+      end
+
     if Enum.empty?(metrics) do
       ""
     else
       "  └─ " <> Enum.join(metrics, " | ")
     end
   end
-  
+
   defp build_observation_info(step) do
     case step.observation do
-      nil -> ""
+      nil ->
+        ""
+
       obs when is_map(obs) ->
         case obs do
           %{error: error} ->
             "  ❌ Error: #{inspect(error)}"
+
           %{content: content} when is_binary(content) ->
             preview = String.slice(content, 0, 120)
             preview = if String.length(content) > 120, do: preview <> "...", else: preview
             "  ✅ Result: #{preview}"
+
           %{content: content} ->
             "  ✅ Result: #{inspect(content) |> String.slice(0, 100)}..."
+
           other ->
             formatted = inspect(other) |> String.slice(0, 100)
-            formatted = if String.length(inspect(other)) > 100, do: formatted <> "...", else: formatted
+
+            formatted =
+              if String.length(inspect(other)) > 100, do: formatted <> "...", else: formatted
+
             "  📊 Data: #{formatted}"
         end
+
       obs ->
         formatted = inspect(obs) |> String.slice(0, 100)
         formatted = if String.length(inspect(obs)) > 100, do: formatted <> "...", else: formatted
         "  📋 #{formatted}"
     end
   end
-  
+
   defp build_rationale_info(step) do
     case step.rationale_summary do
-      nil -> ""
-      "" -> ""
+      nil ->
+        ""
+
+      "" ->
+        ""
+
       rationale ->
         preview = String.slice(rationale, 0, 150)
         preview = if String.length(rationale) > 150, do: preview <> "...", else: preview
