@@ -5,6 +5,10 @@ defmodule Oli.GenAI.Agent.IntegrationTest do
   alias Oli.GenAI.Completions.{ServiceConfig, RegisteredModel}
 
   setup do
+    # Allow database access for spawned processes (Agent Servers)
+    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Oli.Repo)
+    Ecto.Adapters.SQL.Sandbox.mode(Oli.Repo, {:shared, self()})
+    
     # These are already started by the application supervision tree
     # Just ensure ToolBroker is started
     ToolBroker.start()
@@ -35,12 +39,15 @@ defmodule Oli.GenAI.Agent.IntegrationTest do
   end
 
   test "can start and query an agent run", %{service_config: service_config} do
+    run_id = Ecto.UUID.generate()
+    
     # Start an agent run
     {:ok, _pid} =
       Agent.start_run(%{
         goal: "Test basic agent functionality",
+        run_type: "test",
         plan: ["analyze task", "execute steps", "report results"],
-        run_id: "test-run-123",
+        run_id: run_id,
         service_config: service_config
       })
 
@@ -48,26 +55,26 @@ defmodule Oli.GenAI.Agent.IntegrationTest do
     Process.sleep(100)
 
     # Check status
-    {:ok, status} = Agent.status("test-run-123")
+    {:ok, status} = Agent.status(run_id)
 
-    assert status.id == "test-run-123"
+    assert status.id == run_id
     assert status.goal == "Test basic agent functionality"
     assert status.status in [:idle, :thinking, :acting, :awaiting_tool, :done]
     assert length(status.plan) == 3
 
     # Get detailed info
-    {:ok, info} = Agent.info("test-run-123")
+    {:ok, info} = Agent.info(run_id)
 
-    assert info.id == "test-run-123"
+    assert info.id == run_id
     assert info.goal == "Test basic agent functionality"
     assert is_integer(info.steps_completed)
     assert is_map(info.budgets)
 
     # Cancel the run
-    :ok = Agent.cancel("test-run-123")
+    :ok = Agent.cancel(run_id)
 
     # Verify it's cancelled
-    {:ok, final_status} = Agent.status("test-run-123")
+    {:ok, final_status} = Agent.status(run_id)
     assert final_status.status == :cancelled
   end
 
@@ -76,12 +83,15 @@ defmodule Oli.GenAI.Agent.IntegrationTest do
     # This test is skipped because it requires real LLM calls
     # The agent will fail when trying to make LLM calls with test API keys
     
+    run_id = Ecto.UUID.generate()
+    
     # Start an agent run that should execute a few steps
     {:ok, _pid} =
       Agent.start_run(%{
         goal: "Search for and analyze main function",
+        run_type: "test",
         plan: ["search codebase", "read relevant files", "summarize findings"],
-        run_id: "test-run-456",
+        run_id: run_id,
         service_config: service_config,
         initial_messages: [
           %{role: :user, content: "search for main function"}
@@ -92,7 +102,7 @@ defmodule Oli.GenAI.Agent.IntegrationTest do
     Process.sleep(500)
 
     # Check that it has made some progress
-    {:ok, info} = Agent.info("test-run-456")
+    {:ok, info} = Agent.info(run_id)
 
     # Should have executed at least one step
     assert info.steps_completed >= 1
@@ -101,16 +111,19 @@ defmodule Oli.GenAI.Agent.IntegrationTest do
     assert info.tokens_used >= 0
 
     # Cancel to clean up
-    Agent.cancel("test-run-456")
+    Agent.cancel(run_id)
   end
 
   test "can pause and resume agent runs", %{service_config: service_config} do
+    run_id = Ecto.UUID.generate()
+    
     # Start an agent run
     {:ok, _pid} =
       Agent.start_run(%{
         goal: "Test pause/resume functionality",
+        run_type: "test",
         plan: ["step 1", "step 2", "step 3"],
-        run_id: "test-run-789",
+        run_id: run_id,
         service_config: service_config
       })
 
@@ -118,19 +131,19 @@ defmodule Oli.GenAI.Agent.IntegrationTest do
     Process.sleep(100)
 
     # Pause it
-    :ok = Agent.pause("test-run-789")
+    :ok = Agent.pause(run_id)
 
-    {:ok, status} = Agent.status("test-run-789")
+    {:ok, status} = Agent.status(run_id)
     assert status.status == :paused
 
     # Resume it
-    :ok = Agent.resume("test-run-789")
+    :ok = Agent.resume(run_id)
 
-    {:ok, status} = Agent.status("test-run-789")
+    {:ok, status} = Agent.status(run_id)
     assert status.status == :idle
 
     # Cancel to clean up
-    Agent.cancel("test-run-789")
+    Agent.cancel(run_id)
   end
 
   test "handles non-existent runs gracefully" do

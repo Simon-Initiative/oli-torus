@@ -231,14 +231,27 @@ defmodule Oli.GenAI.Agent.LLMBridgeTest do
       assert decision.assistant_message == "I'll help you with that."
     end
 
-    test "parses Anthropic-style tool use response" do
+    test "parses normalized tool use response (formerly Anthropic-style)" do
+      # This is what the Claude provider would return after normalization
       response = %{
-        "role" => "assistant",
-        "content" => [
+        "choices" => [
           %{
-            "type" => "tool_use",
-            "name" => "read_file",
-            "input" => %{"file_path" => "/src/main.ex"}
+            "index" => 0,
+            "message" => %{
+              "role" => "assistant",
+              "content" => nil,
+              "tool_calls" => [
+                %{
+                  "id" => "call_123",
+                  "type" => "function",
+                  "function" => %{
+                    "name" => "read_file",
+                    "arguments" => ~s({"file_path":"/src/main.ex"})
+                  }
+                }
+              ]
+            },
+            "finish_reason" => "tool_calls"
           }
         ]
       }

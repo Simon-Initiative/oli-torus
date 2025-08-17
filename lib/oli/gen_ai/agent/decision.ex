@@ -1,7 +1,8 @@
 defmodule Oli.GenAI.Agent.Decision do
   @moduledoc """
-  Structured next action. Includes helpers to decode provider-specific function-calling
-  outputs from Oli.GenAI.Completions into a normalized decision.
+  Structured next action. Parses normalized OpenAI-style responses from providers
+  into a decision structure. All providers are expected to normalize their responses
+  to OpenAI format before returning from generate/3.
   """
 
   @typedoc "One of: 'tool' | 'message' | 'replan' | 'done'"
@@ -78,48 +79,22 @@ defmodule Oli.GenAI.Agent.Decision do
   end
 
   @spec from_completion(map) :: {:ok, t} | {:error, term}
-  def from_completion(provider_payload) do
+  def from_completion(normalized_payload) do
     try do
-      decision = parse_provider_response(provider_payload)
+      decision = parse_normalized_response(normalized_payload)
       {:ok, decision}
     rescue
       e -> {:error, Exception.message(e)}
     end
   end
 
-  defp parse_provider_response(payload) do
-    cond do
-      # OpenAI-style response
-      openai_response?(payload) ->
-        parse_openai(payload)
-
-      # Anthropic-style response
-      anthropic_response?(payload) ->
-        parse_anthropic(payload)
-
-      # Structured JSON response in content
-      structured_response?(payload) ->
-        parse_structured(payload)
-
-      true ->
-        raise "Unknown provider response format"
+  defp parse_normalized_response(payload) do
+    # All providers now return OpenAI-style normalized format with "choices" array
+    unless Map.has_key?(payload, "choices") do
+      raise "Provider must return normalized response with 'choices' key"
     end
-  end
 
-  defp openai_response?(payload) do
-    Map.has_key?(payload, "choices")
-  end
-
-  defp anthropic_response?(payload) do
-    Map.has_key?(payload, "content") and Map.has_key?(payload, "role")
-  end
-
-  defp structured_response?(payload) do
-    case get_in(payload, ["choices", Access.at(0), "message", "content"]) do
-      nil -> false
-      content when is_binary(content) -> String.starts_with?(String.trim(content), "{")
-      _ -> false
-    end
+    parse_openai(payload)
   end
 
   defp parse_openai(payload) do
@@ -156,32 +131,6 @@ defmodule Oli.GenAI.Agent.Decision do
     end
   end
 
-  defp parse_anthropic(payload) do
-    content = Map.get(payload, "content", [])
-
-    case List.first(content) do
-      %{"type" => "tool_use", "name" => name, "input" => input} ->
-        %__MODULE__{
-          next_action: "tool",
-          tool_name: name,
-          arguments: input
-        }
-
-      _ ->
-        # Try to extract text content
-        text = extract_anthropic_text(content)
-
-        %__MODULE__{
-          next_action: "message",
-          assistant_message: text
-        }
-    end
-  end
-
-  defp parse_structured(payload) do
-    content = get_in(payload, ["choices", Access.at(0), "message", "content"])
-    parse_json_content(content)
-  end
 
   defp parse_json_content(content) when is_binary(content) do
     case Jason.decode(content) do
@@ -225,14 +174,6 @@ defmodule Oli.GenAI.Agent.Decision do
   defp parse_arguments(args) when is_map(args), do: args
   defp parse_arguments(_), do: %{}
 
-  defp extract_anthropic_text(content) when is_list(content) do
-    Enum.find_value(content, "", fn
-      %{"type" => "text", "text" => text} -> text
-      _ -> nil
-    end)
-  end
-
-  defp extract_anthropic_text(_), do: ""
 
   @spec tool?(t) :: boolean
   def tool?(%__MODULE__{next_action: "tool"}), do: true

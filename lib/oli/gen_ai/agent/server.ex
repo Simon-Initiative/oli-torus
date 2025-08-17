@@ -128,6 +128,7 @@ defmodule Oli.GenAI.Agent.Server do
       Persistence.create_run(%{
         id: id,
         goal: state.goal,
+        run_type: Map.get(args, :run_type, "general"),
         plan: %{steps: state.plan},
         status: "running",
         budgets: state.budgets,

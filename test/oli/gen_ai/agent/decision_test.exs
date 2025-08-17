@@ -31,20 +31,32 @@ defmodule Oli.GenAI.Agent.DecisionTest do
       assert decision.arguments == %{"query" => "find main function", "path" => "src/"}
     end
 
-    test "parses Anthropic-style function call" do
-      anthropic_payload = %{
-        "content" => [
+    test "parses normalized function call (formerly Anthropic-style)" do
+      # This is what the Claude provider would return after normalization
+      normalized_payload = %{
+        "choices" => [
           %{
-            "type" => "tool_use",
-            "id" => "toolu_123",
-            "name" => "get_weather",
-            "input" => %{"location" => "San Francisco", "unit" => "celsius"}
+            "index" => 0,
+            "message" => %{
+              "role" => "assistant",
+              "content" => nil,
+              "tool_calls" => [
+                %{
+                  "id" => "toolu_123",
+                  "type" => "function",
+                  "function" => %{
+                    "name" => "get_weather",
+                    "arguments" => ~s({"location":"San Francisco","unit":"celsius"})
+                  }
+                }
+              ]
+            },
+            "finish_reason" => "tool_calls"
           }
-        ],
-        "role" => "assistant"
+        ]
       }
 
-      assert {:ok, decision} = Decision.from_completion(anthropic_payload)
+      assert {:ok, decision} = Decision.from_completion(normalized_payload)
       assert decision.next_action == "tool"
       assert decision.tool_name == "get_weather"
       assert decision.arguments == %{"location" => "San Francisco", "unit" => "celsius"}

@@ -99,46 +99,98 @@ end
 defmodule Oli.GenAI.Agent.Persistence do
   @moduledoc "Context: durable storage for runs/steps/drafts."
   alias Oli.GenAI.Agent.Schema.{Run, Step, Draft}
+  alias Oli.Repo
+  import Ecto.Query
   require Logger
 
   @spec create_run(map) :: {:ok, Run.t()} | {:error, Ecto.Changeset.t()}
   def create_run(attrs) do
-    # For now, just return success with the attrs as a mock run
-    run = struct(Run, Map.put(attrs, :id, attrs[:id] || Ecto.UUID.generate()))
-    Logger.debug("Mock: Created run #{run.id}")
-    {:ok, run}
+    attrs = Map.put_new(attrs, :started_at, DateTime.utc_now())
+    
+    %Run{}
+    |> Run.changeset(attrs)
+    |> Repo.insert()
   end
 
   @spec update_run(Run.t() | String.t(), map) ::
-          {:ok, Run.t()} | {:error, Ecto.Changeset.t() | term}
+          {:ok, Run.t()} | {:error, Ecto.Changeset.t() | :not_found}
   def update_run(run_or_id, attrs) do
-    id =
-      case run_or_id do
-        %Run{id: id} -> id
-        id when is_binary(id) -> id
-      end
+    case run_or_id do
+      %Run{} = run ->
+        run
+        |> Run.changeset(attrs)
+        |> Repo.update()
 
-    Logger.debug("Mock: Updated run #{id} with #{inspect(attrs)}")
-    {:ok, struct(Run, Map.put(attrs, :id, id))}
+      id when is_binary(id) ->
+        case Repo.get(Run, id) do
+          nil -> {:error, :not_found}
+          run -> update_run(run, attrs)
+        end
+    end
+  end
+
+  @spec get_run(String.t()) :: Run.t() | nil
+  def get_run(id) do
+    Repo.get(Run, id)
   end
 
   @spec append_step(map) :: {:ok, Step.t()} | {:error, Ecto.Changeset.t()}
   def append_step(attrs) do
-    step = struct(Step, attrs)
-    Logger.debug("Mock: Appended step #{attrs[:step_num]} for run #{attrs[:run_id]}")
-    {:ok, step}
+    # Auto-set step_num if not provided by finding the next available step number
+    attrs = 
+      case Map.get(attrs, :step_num) do
+        nil ->
+          next_step_num = get_next_step_num(attrs[:run_id])
+          Map.put(attrs, :step_num, next_step_num)
+        _ ->
+          attrs
+      end
+
+    attrs = Map.put_new(attrs, :inserted_at, DateTime.utc_now())
+
+    %Step{}
+    |> Step.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @spec get_steps(String.t()) :: [Step.t()]
+  def get_steps(run_id) do
+    from(s in Step, where: s.run_id == ^run_id, order_by: s.step_num)
+    |> Repo.all()
   end
 
   @spec create_draft(map) :: {:ok, Draft.t()} | {:error, Ecto.Changeset.t()}
   def create_draft(attrs) do
-    draft = struct(Draft, Map.put(attrs, :id, Ecto.UUID.generate()))
-    Logger.debug("Mock: Created draft #{draft.id}")
-    {:ok, draft}
+    %Draft{}
+    |> Draft.changeset(attrs)
+    |> Repo.insert()
   end
 
   @spec list_drafts(String.t()) :: [Draft.t()]
   def list_drafts(run_id) do
-    Logger.debug("Mock: Listed drafts for run #{run_id}")
-    []
+    from(d in Draft, where: d.run_id == ^run_id, order_by: [desc: d.inserted_at])
+    |> Repo.all()
+  end
+
+  @spec update_draft(String.t(), map) :: {:ok, Draft.t()} | {:error, Ecto.Changeset.t() | :not_found}
+  def update_draft(draft_id, attrs) do
+    case Repo.get(Draft, draft_id) do
+      nil -> {:error, :not_found}
+      draft ->
+        draft
+        |> Draft.changeset(attrs)
+        |> Repo.update()
+    end
+  end
+
+  # Private helper functions
+
+  defp get_next_step_num(run_id) do
+    query = from(s in Step, where: s.run_id == ^run_id, select: max(s.step_num))
+    
+    case Repo.one(query) do
+      nil -> 1
+      max_step -> max_step + 1
+    end
   end
 end
