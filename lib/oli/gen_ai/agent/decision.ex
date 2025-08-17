@@ -43,9 +43,6 @@ defmodule Oli.GenAI.Agent.Decision do
         ["invalid action type: #{action}" | errors]
       end
 
-    IO.inspect(action)
-    IO.inspect(d)
-
     errors =
       case action do
         "tool" ->

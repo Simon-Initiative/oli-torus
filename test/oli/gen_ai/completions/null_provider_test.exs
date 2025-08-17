@@ -12,7 +12,16 @@ defmodule Oli.GenAI.Completions.NullProviderTest do
       registered_model = %RegisteredModel{name: "test_model", provider: :null}
 
       assert NullProvider.generate(messages, functions, registered_model) ==
-               {:ok, "This is a null provider. No generation performed."}
+               {:ok, %{
+                 "choices" => [
+                   %{
+                     "message" => %{
+                       "role" => "assistant",
+                       "content" => "This is a null provider. No generation performed."
+                     }
+                   }
+                 ]
+               }}
     end
   end
 

@@ -20,8 +20,6 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
   def generate(messages, functions, %RegisteredModel{model: model} = registered_model) do
     config = config(:sync, registered_model)
 
-    IO.inspect(encode_messages(messages), label: "Messages to OpenAI Compliant Provider")
-
     api_post(
       config.api_url <> "/v1/chat/completions",
       [
@@ -31,7 +29,6 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
       ],
       config
     )
-    |> IO.inspect()
   end
 
   def stream(

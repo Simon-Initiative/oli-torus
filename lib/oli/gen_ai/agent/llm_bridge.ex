@@ -40,7 +40,7 @@ defmodule Oli.GenAI.Agent.LLMBridge do
   def select_models(%ServiceConfig{primary_model: primary, backup_model: backup})
       when not is_nil(primary) do
     fallbacks = if backup, do: [backup], else: []
-    {:ok, primary, fallbacks} |> IO.inspect(label: "Selected Models")
+    {:ok, primary, fallbacks}
   end
 
   def select_models(%ServiceConfig{}) do

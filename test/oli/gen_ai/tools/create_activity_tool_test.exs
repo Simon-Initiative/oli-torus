@@ -180,8 +180,11 @@ defmodule Oli.GenAI.Tools.CreateActivityToolTest do
     end
 
     test "returns error for invalid activity structure", %{project: project} do
+      # Create an activity with malformed content that should fail content validation
       invalid_activity = %{
-        "invalid" => "structure"
+        "stem" => %{
+          "content" => "this should be a list, not a string"
+        }
       }
 
       activity_json = Jason.encode!(invalid_activity)

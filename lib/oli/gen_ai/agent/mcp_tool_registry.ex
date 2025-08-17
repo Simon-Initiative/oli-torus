@@ -184,7 +184,7 @@ defmodule Oli.GenAI.Agent.MCPToolRegistry do
       nil ->
         {:error, "MCP tool '#{tool_name}' not found"}
 
-      module ->
+      module when not is_nil(module) and is_atom(module) ->
         try do
           # Convert args to the format expected by MCP tools (atom keys)
           mcp_args = convert_args_to_atoms(args)
@@ -250,6 +250,10 @@ defmodule Oli.GenAI.Agent.MCPToolRegistry do
             Logger.error("MCP tool execution failed: #{Exception.message(e)}")
             {:error, "Tool execution failed: #{Exception.message(e)}"}
         end
+
+      invalid_module ->
+        Logger.error("Invalid module returned for tool '#{tool_name}': #{inspect(invalid_module)}")
+        {:error, "Invalid tool module for '#{tool_name}'"}
     end
   end
 

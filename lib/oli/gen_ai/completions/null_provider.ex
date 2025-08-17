@@ -13,7 +13,16 @@ defmodule Oli.GenAI.Completions.NullProvider do
 
   @impl true
   def generate(_messages, _functions, _registered_model) do
-    {:ok, "This is a null provider. No generation performed."}
+    {:ok, %{
+      "choices" => [
+        %{
+          "message" => %{
+            "role" => "assistant",
+            "content" => "This is a null provider. No generation performed."
+          }
+        }
+      ]
+    }}
   end
 
   @impl true

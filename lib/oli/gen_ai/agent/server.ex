@@ -387,11 +387,6 @@ defmodule Oli.GenAI.Agent.Server do
   defp execute_tool_action(state, decision, _latency_ms) do
     call_id = generate_call_id()
 
-    IO.inspect(
-      "about to execute tool: #{decision.tool_name} with args: #{inspect(decision.arguments)}",
-      label: "Executing Tool"
-    )
-
     # Store inflight tool call
     tool_info = %{
       name: decision.tool_name,
@@ -601,41 +596,4 @@ defmodule Oli.GenAI.Agent.Server do
     %{role: :tool, content: content, tool_call_id: "call_#{tool_info.name}", name: tool_info.name}
   end
 
-  defp summarize_activity_json(%{"stem" => stem, "choices" => choices}) do
-    stem_text = extract_text_from_content(stem)
-
-    choice_texts =
-      Enum.map(choices, fn choice ->
-        extract_text_from_content(choice)
-      end)
-
-    """
-    Example Multiple Choice Activity:
-    Question: #{stem_text}
-    Choices: #{Enum.join(choice_texts, ", ")}
-
-    This is a complete activity structure with grading, feedback, and hints included.
-    """
-  end
-
-  defp summarize_activity_json(other) do
-    "Tool returned activity data: #{inspect(other) |> String.slice(0, 200)}..."
-  end
-
-  defp extract_text_from_content(%{"content" => content}) when is_list(content) do
-    content
-    |> Enum.find_value("", fn item ->
-      case item do
-        %{"children" => children} when is_list(children) ->
-          Enum.find_value(children, fn child ->
-            Map.get(child, "text")
-          end)
-
-        _ ->
-          nil
-      end
-    end)
-  end
-
-  defp extract_text_from_content(_), do: "No text found"
 end

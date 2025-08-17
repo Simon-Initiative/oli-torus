@@ -198,6 +198,7 @@ defmodule Oli.GenAI.Tools.ActivityTestEvalToolTest do
       activity = %{"invalid" => "structure"}
       activity_json = Jason.encode!(activity)
       part_inputs = [%{"part_id" => "1", "input" => %{}}]
+      part_inputs_json = Jason.encode!(part_inputs)
 
       frame = %{}
 
@@ -206,7 +207,7 @@ defmodule Oli.GenAI.Tools.ActivityTestEvalToolTest do
           %{
             activity_json: activity_json,
             activity_type: "invalid_type",
-            part_inputs: part_inputs
+            part_inputs: part_inputs_json
           },
           frame
         )
@@ -242,6 +243,7 @@ defmodule Oli.GenAI.Tools.ActivityTestEvalToolTest do
           "input" => %{}
         }
       ]
+      part_inputs_json = Jason.encode!(part_inputs)
 
       frame = %{}
 
@@ -250,7 +252,7 @@ defmodule Oli.GenAI.Tools.ActivityTestEvalToolTest do
           %{
             activity_json: activity_json,
             activity_type: "oli_multiple_choice",
-            part_inputs: part_inputs
+            part_inputs: part_inputs_json
           },
           frame
         )
