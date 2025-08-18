@@ -7,10 +7,10 @@ defmodule Oli.MCP.Tools.ActivityValidationTool do
   and structure requirements.
   """
 
-  use Hermes.Server.Component, type: :tool
+  use Anubis.Server.Component, type: :tool
 
   alias Oli.Validation
-  alias Hermes.Server.Response
+  alias Anubis.Server.Response
   alias Oli.GenAI.Agent.MCPToolRegistry
 
   # Get field descriptions from MCPToolRegistry at compile time

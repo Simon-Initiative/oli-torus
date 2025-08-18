@@ -6,7 +6,6 @@ defmodule Oli.MCP.Resources.ProjectResourcesTest do
   import Oli.MCPTestHelpers
 
   alias Oli.MCP.Resources.ProjectResources
-  alias Hermes.Server.Frame
 
   describe "read/2" do
     setup do
@@ -89,10 +88,8 @@ defmodule Oli.MCP.Resources.ProjectResourcesTest do
         revision: objective_revision_2
       })
 
-      # Set up MCP authentication context
-      setup_mcp_auth_context(author.id, project.id)
-
-      frame = %Frame{}
+      # Create authenticated frame for MCP
+      {frame, _token} = create_authenticated_frame(author.id, project.id)
 
       %{
         project: project,
@@ -111,7 +108,7 @@ defmodule Oli.MCP.Resources.ProjectResourcesTest do
       assert {:reply, response, _frame} = ProjectResources.read(%{"uri" => uri}, frame)
       
       # Extract and parse the JSON content
-      assert %Hermes.Server.Response{contents: %{"text" => json_content}} = response
+      assert %Anubis.Server.Response{contents: %{"text" => json_content}} = response
       assert {:ok, metadata} = Jason.decode(json_content)
       
       assert metadata["slug"] == project.slug
@@ -125,7 +122,7 @@ defmodule Oli.MCP.Resources.ProjectResourcesTest do
       assert {:reply, response, _frame} = ProjectResources.read(%{"uri" => uri}, frame)
       
       # Extract and parse the JSON content
-      assert %Hermes.Server.Response{contents: %{"text" => json_content}} = response
+      assert %Anubis.Server.Response{contents: %{"text" => json_content}} = response
       assert {:ok, hierarchy} = Jason.decode(json_content)
       
       # Verify hierarchy structure
@@ -141,7 +138,7 @@ defmodule Oli.MCP.Resources.ProjectResourcesTest do
       assert {:reply, response, _frame} = ProjectResources.read(%{"uri" => uri}, frame)
       
       # Extract and parse the JSON content
-      assert %Hermes.Server.Response{contents: %{"text" => json_content}} = response
+      assert %Anubis.Server.Response{contents: %{"text" => json_content}} = response
       assert {:ok, objectives_data} = Jason.decode(json_content)
       
       # Verify objectives structure
@@ -174,7 +171,7 @@ defmodule Oli.MCP.Resources.ProjectResourcesTest do
       assert {:reply, response, _frame} = ProjectResources.read(%{"uri" => uri}, frame)
       
       # Extract and parse the JSON content
-      assert %Hermes.Server.Response{contents: %{"text" => json_content}} = response
+      assert %Anubis.Server.Response{contents: %{"text" => json_content}} = response
       assert {:ok, page_data} = Jason.decode(json_content)
       
       # Verify page structure
@@ -190,7 +187,7 @@ defmodule Oli.MCP.Resources.ProjectResourcesTest do
       assert {:reply, response, _frame} = ProjectResources.read(%{"uri" => uri}, frame)
       
       # Extract and parse the JSON content
-      assert %Hermes.Server.Response{contents: %{"text" => json_content}} = response
+      assert %Anubis.Server.Response{contents: %{"text" => json_content}} = response
       assert {:ok, objective_data} = Jason.decode(json_content)
       
       # Verify objective structure
@@ -229,13 +226,14 @@ defmodule Oli.MCP.Resources.ProjectResourcesTest do
       assert {:error, error, _frame} = ProjectResources.read(%{"uri" => uri}, frame)
       assert error.reason == :resource_not_found
     end
+
   end
 
   describe "resource_templates/0" do
     test "returns all expected resource templates" do
       templates = ProjectResources.resource_templates()
       
-      # Should have 7 templates
+      # Should have 7 project-specific templates
       assert length(templates) == 7
       
       # Check that all expected URI templates are present

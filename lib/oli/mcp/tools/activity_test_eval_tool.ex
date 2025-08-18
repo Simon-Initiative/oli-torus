@@ -6,10 +6,10 @@ defmodule Oli.MCP.Tools.ActivityTestEvalTool do
   student submissions and verifying the correct responses and feedback are returned.
   """
 
-  use Hermes.Server.Component, type: :tool
+  use Anubis.Server.Component, type: :tool
 
   alias Oli.Delivery.Attempts.ActivityLifecycle.Evaluate
-  alias Hermes.Server.Response
+  alias Anubis.Server.Response
   alias Oli.GenAI.Agent.MCPToolRegistry
 
   # Get field descriptions from MCPToolRegistry at compile time

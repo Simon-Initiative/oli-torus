@@ -77,8 +77,9 @@ defmodule OliWeb.Router do
 
   # pipeline for MCP (Model Context Protocol) endpoints
   pipeline :mcp_api do
-    plug(:accepts, ["json"])
-    plug(OliWeb.Plugs.ValidateMCPBearerToken)
+    # The Anubis MCP server handles its own content negotiation,
+    # so we don't use Phoenix's accepts plug here
+    # Authentication is now handled in Oli.MCP.Server.init/2
   end
 
   ### PIPELINE EXTENSIONS ###
@@ -230,7 +231,7 @@ defmodule OliWeb.Router do
   scope "/mcp" do
     pipe_through [:mcp_api]
 
-    forward "/", Hermes.Server.Transport.StreamableHTTP.Plug, server: Oli.MCP.Server
+    forward "/", Anubis.Server.Transport.StreamableHTTP.Plug, server: Oli.MCP.Server
   end
 
   ## Authentication routes

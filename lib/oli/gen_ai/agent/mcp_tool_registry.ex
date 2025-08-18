@@ -29,7 +29,7 @@ defmodule Oli.GenAI.Agent.MCPToolRegistry do
   end
 
   @doc """
-  Get field definitions for a specific tool to use in Hermes schema macro.
+  Get field definitions for a specific tool to use in Anubis schema macro.
   """
   @spec get_tool_fields(String.t()) :: [tuple()] | nil
   def get_tool_fields(tool_name) do
@@ -42,24 +42,6 @@ defmodule Oli.GenAI.Agent.MCPToolRegistry do
   # Private function containing all tool definitions
   defp tool_definitions do
     %{
-      "revision_content" => %{
-        name: "revision_content",
-        desc: "Retrieve JSON content of a resource revision from any project",
-        schema: %{
-          "type" => "object",
-          "properties" => %{
-            "project_slug" => %{
-              "type" => "string",
-              "description" => "The slug of the project containing the revision"
-            },
-            "revision_slug" => %{
-              "type" => "string",
-              "description" => "The slug of the revision to retrieve content from"
-            }
-          },
-          "required" => ["project_slug", "revision_slug"]
-        }
-      },
       "activity_validation" => %{
         name: "activity_validation",
         desc: "Validate activity JSON content against schema requirements",
@@ -97,21 +79,6 @@ defmodule Oli.GenAI.Agent.MCPToolRegistry do
           "required" => ["activity_type", "activity_json", "part_inputs"]
         }
       },
-      "example_activity" => %{
-        name: "example_activity",
-        desc: "Retrieve example activities by type to understand structure",
-        schema: %{
-          "type" => "object",
-          "properties" => %{
-            "activity_type" => %{
-              "type" => "string",
-              "description" =>
-                "The activity type slug (e.g., 'oli_multiple_choice', 'oli_short_answer')"
-            }
-          },
-          "required" => ["activity_type"]
-        }
-      },
       "create_activity" => %{
         name: "create_activity",
         desc: "Create activities in projects using validated activity JSON",
@@ -133,20 +100,11 @@ defmodule Oli.GenAI.Agent.MCPToolRegistry do
           },
           "required" => ["project_slug", "activity_json", "activity_type_slug"]
         }
-      },
-      "content_schema" => %{
-        name: "content_schema",
-        desc: "Retrieve the JSON schema for rich content elements",
-        schema: %{
-          "type" => "object",
-          "properties" => %{},
-          "required" => []
-        }
       }
     }
   end
 
-  # Converts JSON schema format to Hermes field tuples
+  # Converts JSON schema format to Anubis field tuples
   defp convert_schema_to_fields(schema) do
     properties = Map.get(schema, "properties", %{})
     required_fields = Map.get(schema, "required", [])
@@ -194,8 +152,8 @@ defmodule Oli.GenAI.Agent.MCPToolRegistry do
           case apply(module, :execute, [mcp_args, %{}]) do
             {:reply, response, _frame} ->
               case response do
-                # Handle Hermes.Server.Response struct
-                %Hermes.Server.Response{isError: true, content: content} when is_list(content) ->
+                # Handle Anubis.Server.Response struct
+                %Anubis.Server.Response{isError: true, content: content} when is_list(content) ->
                   error_text =
                     content
                     |> Enum.filter(&(Map.get(&1, "type") == "text"))
@@ -204,7 +162,7 @@ defmodule Oli.GenAI.Agent.MCPToolRegistry do
 
                   {:error, error_text}
 
-                %Hermes.Server.Response{isError: false, content: content} when is_list(content) ->
+                %Anubis.Server.Response{isError: false, content: content} when is_list(content) ->
                   # Extract text content from MCP response
                   text_content =
                     content
@@ -214,9 +172,9 @@ defmodule Oli.GenAI.Agent.MCPToolRegistry do
 
                   {:ok, %{content: text_content, token_cost: estimate_tokens(text_content)}}
 
-                %Hermes.Server.Response{} = hermes_response ->
-                  # Fallback for other Hermes response types
-                  content_text = inspect(hermes_response.content)
+                %Anubis.Server.Response{} = anubis_response ->
+                  # Fallback for other Anubis response types
+                  content_text = inspect(anubis_response.content)
                   {:ok, %{content: content_text, token_cost: estimate_tokens(content_text)}}
 
                 # Legacy response formats
@@ -264,12 +222,9 @@ defmodule Oli.GenAI.Agent.MCPToolRegistry do
 
   defp find_mcp_tool_module(tool_name) do
     case tool_name do
-      "revision_content" -> Oli.MCP.Tools.RevisionContentTool
       "activity_validation" -> Oli.MCP.Tools.ActivityValidationTool
       "activity_test_eval" -> Oli.MCP.Tools.ActivityTestEvalTool
-      "example_activity" -> Oli.MCP.Tools.ExampleActivityTool
       "create_activity" -> Oli.MCP.Tools.CreateActivityTool
-      "content_schema" -> Oli.MCP.Tools.ContentSchemaTool
       _ -> nil
     end
   end

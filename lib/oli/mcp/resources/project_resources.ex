@@ -1,7 +1,7 @@
 defmodule Oli.MCP.Resources.ProjectResources do
   @moduledoc """
   MCP resource provider for Torus project content.
-  
+
   Exposes project content as individual MCP resources with stable URIs following the scheme:
   - torus://p/{project}/pages/{id}
   - torus://p/{project}/activities/{id}
@@ -10,30 +10,46 @@ defmodule Oli.MCP.Resources.ProjectResources do
   - torus://p/{project}/hierarchy
   - torus://p/{project}/objectives
   - torus://p/{project}
-  
+
   Supports both list and read operations for browsing and accessing project content.
   """
 
+  use Anubis.Server.Component, type: :resource, uri: "torus://p"
+
+  alias Anubis.Server.Response
+
+  @impl true
+  def uri, do: "torus://p"
+
+  @impl true
+  def mime_type, do: "application/json"
+
   alias Oli.Publishing.AuthoringResolver
-  alias Hermes.Server.Response
-  alias Hermes.Server.Component.Resource
+  alias Anubis.Server.Response
+  alias Anubis.Server.Component.Resource
   alias Oli.MCP.Auth.Authorization
   alias Oli.MCP.Resources.{URIBuilder, HierarchyBuilder}
 
+  @impl true
   def read(%{"uri" => uri}, frame) do
+
     case URIBuilder.parse_uri(uri) do
-      {:ok, {project_slug, resource_type, resource_id}} ->
-        # Validate project access before proceeding
-        case Authorization.validate_project_access(project_slug) do
+      {:ok, {project_slug, resource_type, resource_id}} when not is_nil(project_slug) ->
+        # Validate project access before proceeding for project-specific resources
+        case Authorization.validate_project_access(project_slug, frame) do
           {:ok, _auth_context} ->
             handle_resource_read(project_slug, resource_type, resource_id, frame)
-            
+
           {:error, reason} ->
-            {:error, Hermes.MCP.Error.resource(:not_found, %{message: "Authorization failed: #{reason}"}), frame}
+            {:error, Anubis.MCP.Error.resource(:not_found, %{message: "Authorization failed: #{reason}"}), frame}
         end
-        
+
+      {:ok, {nil, resource_type, resource_id}} ->
+        # Handle global resources (no project validation needed)
+        handle_resource_read(nil, resource_type, resource_id, frame)
+
       {:error, reason} ->
-        {:error, Hermes.MCP.Error.resource(:not_found, %{message: reason}), frame}
+        {:error, Anubis.MCP.Error.resource(:not_found, %{message: reason}), frame}
     end
   end
 
@@ -43,9 +59,9 @@ defmodule Oli.MCP.Resources.ProjectResources do
       {:ok, metadata} ->
         json_content = Jason.encode!(metadata, pretty: true)
         {:reply, Response.text(Response.resource(), json_content), frame}
-        
+
       {:error, reason} ->
-        {:error, Hermes.MCP.Error.resource(:not_found, %{message: reason}), frame}
+        {:error, Anubis.MCP.Error.resource(:not_found, %{message: reason}), frame}
     end
   end
 
@@ -54,9 +70,9 @@ defmodule Oli.MCP.Resources.ProjectResources do
       {:ok, hierarchy} ->
         json_content = Jason.encode!(hierarchy, pretty: true)
         {:reply, Response.text(Response.resource(), json_content), frame}
-        
+
       {:error, reason} ->
-        {:error, Hermes.MCP.Error.resource(:not_found, %{message: reason}), frame}
+        {:error, Anubis.MCP.Error.resource(:not_found, %{message: reason}), frame}
     end
   end
 
@@ -65,21 +81,22 @@ defmodule Oli.MCP.Resources.ProjectResources do
       {:ok, objectives} ->
         json_content = Jason.encode!(objectives, pretty: true)
         {:reply, Response.text(Response.resource(), json_content), frame}
-        
+
       {:error, reason} ->
-        {:error, Hermes.MCP.Error.resource(:not_found, %{message: reason}), frame}
+        {:error, Anubis.MCP.Error.resource(:not_found, %{message: reason}), frame}
     end
   end
 
-  defp handle_resource_read(project_slug, resource_type, resource_id, frame) 
+
+  defp handle_resource_read(project_slug, resource_type, resource_id, frame)
        when resource_type in [:page, :activity, :container, :objective] do
     case get_resource_content(project_slug, resource_type, resource_id) do
       {:ok, content} ->
         json_content = Jason.encode!(content, pretty: true)
         {:reply, Response.text(Response.resource(), json_content), frame}
-        
+
       {:error, reason} ->
-        {:error, Hermes.MCP.Error.resource(:not_found, %{message: reason}), frame}
+        {:error, Anubis.MCP.Error.resource(:not_found, %{message: reason}), frame}
     end
   end
 
@@ -89,10 +106,10 @@ defmodule Oli.MCP.Resources.ProjectResources do
     case Oli.Authoring.Course.get_project_by_slug(project_slug) do
       nil ->
         {:error, "Project not found: #{project_slug}"}
-        
+
       %{deleted: true} ->
         {:error, "Project has been deleted: #{project_slug}"}
-        
+
       project ->
         metadata = %{
           slug: project.slug,
@@ -121,10 +138,10 @@ defmodule Oli.MCP.Resources.ProjectResources do
     try do
       # Get the objective resource type ID
       objective_type_id = Oli.Resources.ResourceType.get_id_by_type("objective")
-      
+
       # Get all objective revisions for the project
       objective_revisions = AuthoringResolver.revisions_of_type(project_slug, objective_type_id)
-      
+
       # Transform into graph format with relationships
       objectives = Enum.map(objective_revisions, fn revision ->
         %{
@@ -134,7 +151,7 @@ defmodule Oli.MCP.Resources.ProjectResources do
           children: Map.get(revision, :children, []) || []
         }
       end)
-      
+
       {:ok, %{objectives: objectives, project_slug: project_slug}}
     rescue
       e ->
@@ -153,10 +170,10 @@ defmodule Oli.MCP.Resources.ProjectResources do
       case AuthoringResolver.from_resource_id(project_slug, resource_id) do
         nil ->
           {:error, "Resource not found: project '#{project_slug}', resource_id '#{resource_id}'"}
-          
+
         %{deleted: true} ->
           {:error, "Resource has been deleted: project '#{project_slug}', resource_id '#{resource_id}'"}
-          
+
         revision ->
           # Verify resource type matches expectation
           actual_type = get_type_from_resource_type_id(revision.resource_type_id)
@@ -189,6 +206,7 @@ defmodule Oli.MCP.Resources.ProjectResources do
     :activity
   end
   defp get_type_from_resource_type_id(_), do: :unknown
+
 
   # Resource templates that tell MCP clients about available URI patterns
   def resource_templates do
@@ -241,7 +259,7 @@ defmodule Oli.MCP.Resources.ProjectResources do
         description: "Individual learning objective definition",
         mime_type: URIBuilder.get_mime_type(:objective),
         handler: __MODULE__
-      }
+      },
     ]
   end
 end

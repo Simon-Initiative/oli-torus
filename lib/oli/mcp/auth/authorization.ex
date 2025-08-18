@@ -2,62 +2,54 @@ defmodule Oli.MCP.Auth.Authorization do
   @moduledoc """
   Authorization helpers for MCP tools.
 
-  Since the Hermes framework doesn't directly expose Plug.Conn context to tools,
-  we implement authorization by having tools re-validate their access permissions
-  based on the Bearer token in the request headers.
+  Validates access permissions based on authentication context stored
+  in the frame assigns by the MCP server's init callback.
   """
 
-  alias Oli.MCP.Auth
   alias Oli.Authoring.Course
 
   @doc """
-  Validates that a Bearer token grants access to the specified project.
+  Validates that the authenticated user has access to the specified project.
 
-  This function extracts the Bearer token from the current process context
-  (set by Process.put/2 in the MCP plug) and validates project access.
+  This function uses the authentication context from frame.assigns
+  (set during MCP server initialization) to validate project access.
 
-  Returns {:ok, %{author_id: id, project_id: id}} on success,
+  Returns {:ok, %{author_id: id, project_id: id, project: project}} on success,
   {:error, reason} on failure.
   """
-  def validate_project_access(project_slug) do
-    case Process.get(:mcp_bearer_token) do
-      nil ->
-        {:error, "No MCP Bearer token found in request context"}
+  def validate_project_access(project_slug, frame) do
+    case frame.assigns do
+      %{author_id: author_id, project_id: project_id} ->
+        case get_project_by_slug(project_slug) do
+          nil ->
+            {:error, "Project not found: #{project_slug}"}
 
-      token ->
-        case Auth.validate_token(token) do
-          {:ok, %{author_id: author_id, project_id: project_id}} ->
-            case get_project_by_slug(project_slug) do
-              nil ->
-                {:error, "Project not found: #{project_slug}"}
-
-              project ->
-                if project.id == project_id do
-                  {:ok, %{author_id: author_id, project_id: project_id, project: project}}
-                else
-                  {:error, "Bearer token does not grant access to project: #{project_slug}"}
-                end
+          project ->
+            if project.id == project_id do
+              {:ok, %{author_id: author_id, project_id: project_id, project: project}}
+            else
+              {:error, "Bearer token does not grant access to project: #{project_slug}"}
             end
-
-          {:error, reason} ->
-            {:error, "Invalid Bearer token: #{reason}"}
         end
+
+      _ ->
+        {:error, "No authentication context found"}
     end
   end
 
   @doc """
-  Validates that a Bearer token grants access to any project (for cross-project operations).
+  Gets the authentication context for cross-project operations.
 
   Returns {:ok, %{author_id: id, project_id: id}} on success,
   {:error, reason} on failure.
   """
-  def validate_any_project_access do
-    case Process.get(:mcp_bearer_token) do
-      nil ->
-        {:error, "No MCP Bearer token found in request context"}
+  def get_auth_context(frame) do
+    case frame.assigns do
+      %{author_id: author_id, project_id: project_id} ->
+        {:ok, %{author_id: author_id, project_id: project_id}}
 
-      token ->
-        Auth.validate_token(token)
+      _ ->
+        {:error, "No authentication context found"}
     end
   end
 

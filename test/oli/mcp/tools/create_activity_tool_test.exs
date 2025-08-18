@@ -133,20 +133,19 @@ defmodule Oli.MCP.Tools.CreateActivityToolTest do
 
       activity_json = Jason.encode!(valid_activity)
 
-      with_mcp_auth(author.id, project.id, fn ->
-        frame = %{}
+      {frame, _token} = create_authenticated_frame(author.id, project.id)
 
-        result =
-          CreateActivityTool.execute(
-            %{
-              project_slug: project.slug,
-              activity_json: activity_json,
-              activity_type_slug: "oli_multiple_choice"
-            },
-            frame
-          )
+      result =
+        CreateActivityTool.execute(
+          %{
+            project_slug: project.slug,
+            activity_json: activity_json,
+            activity_type_slug: "oli_multiple_choice"
+          },
+          frame
+        )
 
-        assert {:reply, response, ^frame} = result
+      assert {:reply, response, ^frame} = result
         assert [%{"type" => "text", "text" => success_text}] = response.content
 
         # Parse the JSON response
@@ -160,31 +159,28 @@ defmodule Oli.MCP.Tools.CreateActivityToolTest do
         assert Map.has_key?(activity, "revision_id")
         assert Map.has_key?(activity, "slug")
         assert Map.has_key?(activity, "title")
-      end)
     end
 
     test "returns error for invalid JSON", %{project: project, author: author} do
       invalid_json = "{ invalid json"
 
-      with_mcp_auth(author.id, project.id, fn ->
-        frame = %{}
+      {frame, _token} = create_authenticated_frame(author.id, project.id)
 
-        result =
-          CreateActivityTool.execute(
-            %{
-              project_slug: project.slug,
-              activity_json: invalid_json,
-              activity_type_slug: "oli_multiple_choice"
-            },
-            frame
-          )
+      result =
+        CreateActivityTool.execute(
+          %{
+            project_slug: project.slug,
+            activity_json: invalid_json,
+            activity_type_slug: "oli_multiple_choice"
+          },
+          frame
+        )
 
-        assert {:reply, response, ^frame} = result
+      assert {:reply, response, ^frame} = result
         assert response.isError == true
         assert [%{"type" => "text", "text" => error_text}] = response.content
         assert String.contains?(error_text, "Activity creation failed")
         assert String.contains?(error_text, "Invalid JSON")
-      end)
     end
 
     test "returns error for invalid activity structure", %{project: project, author: author} do
@@ -197,24 +193,22 @@ defmodule Oli.MCP.Tools.CreateActivityToolTest do
 
       activity_json = Jason.encode!(invalid_activity)
 
-      with_mcp_auth(author.id, project.id, fn ->
-        frame = %{}
+      {frame, _token} = create_authenticated_frame(author.id, project.id)
 
-        result =
-          CreateActivityTool.execute(
-            %{
-              project_slug: project.slug,
-              activity_json: activity_json,
-              activity_type_slug: "oli_multiple_choice"
-            },
-            frame
-          )
+      result =
+        CreateActivityTool.execute(
+          %{
+            project_slug: project.slug,
+            activity_json: activity_json,
+            activity_type_slug: "oli_multiple_choice"
+          },
+          frame
+        )
 
-        assert {:reply, response, ^frame} = result
+      assert {:reply, response, ^frame} = result
         assert response.isError == true
         assert [%{"type" => "text", "text" => error_text}] = response.content
         assert String.contains?(error_text, "Activity creation failed")
-      end)
     end
 
     test "returns error for non-existent project" do
@@ -240,7 +234,7 @@ defmodule Oli.MCP.Tools.CreateActivityToolTest do
 
       activity_json = Jason.encode!(valid_activity)
 
-      frame = %{}
+      frame = create_unauthenticated_frame()
 
       result =
         CreateActivityTool.execute(
@@ -255,7 +249,7 @@ defmodule Oli.MCP.Tools.CreateActivityToolTest do
       assert {:reply, response, ^frame} = result
       assert response.isError == true
       assert [%{"type" => "text", "text" => error_text}] = response.content
-      assert String.contains?(error_text, "Authorization failed: No MCP Bearer token found in request context")
+      assert String.contains?(error_text, "Authorization failed: No authentication context found")
     end
 
     test "extracts title from preview text", %{project: project, author: author} do
@@ -281,26 +275,24 @@ defmodule Oli.MCP.Tools.CreateActivityToolTest do
 
       activity_json = Jason.encode!(activity_with_preview)
 
-      with_mcp_auth(author.id, project.id, fn ->
-        frame = %{}
+      {frame, _token} = create_authenticated_frame(author.id, project.id)
 
-        result =
-          CreateActivityTool.execute(
-            %{
-              project_slug: project.slug,
-              activity_json: activity_json,
-              activity_type_slug: "oli_multiple_choice"
-            },
-            frame
-          )
+      result =
+        CreateActivityTool.execute(
+          %{
+            project_slug: project.slug,
+            activity_json: activity_json,
+            activity_type_slug: "oli_multiple_choice"
+          },
+          frame
+        )
 
-        assert {:reply, response, ^frame} = result
+      assert {:reply, response, ^frame} = result
         assert [%{"type" => "text", "text" => success_text}] = response.content
 
         # Parse the JSON response and check title
         {:ok, response_data} = Jason.decode(success_text)
         assert response_data["activity"]["title"] == "Custom Preview Title"
-      end)
     end
 
     test "extracts title from stem content when no preview text", %{project: project, author: author} do
@@ -326,26 +318,24 @@ defmodule Oli.MCP.Tools.CreateActivityToolTest do
 
       activity_json = Jason.encode!(activity_without_preview)
 
-      with_mcp_auth(author.id, project.id, fn ->
-        frame = %{}
+      {frame, _token} = create_authenticated_frame(author.id, project.id)
 
-        result =
-          CreateActivityTool.execute(
-            %{
-              project_slug: project.slug,
-              activity_json: activity_json,
-              activity_type_slug: "oli_multiple_choice"
-            },
-            frame
-          )
+      result =
+        CreateActivityTool.execute(
+          %{
+            project_slug: project.slug,
+            activity_json: activity_json,
+            activity_type_slug: "oli_multiple_choice"
+          },
+          frame
+        )
 
-        assert {:reply, response, ^frame} = result
+      assert {:reply, response, ^frame} = result
         assert [%{"type" => "text", "text" => success_text}] = response.content
 
         # Parse the JSON response and check title
         {:ok, response_data} = Jason.decode(success_text)
         assert response_data["activity"]["title"] == "What is the meaning of life?"
-      end)
     end
   end
 
@@ -377,7 +367,7 @@ defmodule Oli.MCP.Tools.CreateActivityToolTest do
       # Set the token in process context manually
       Process.put(:mcp_bearer_token, token_string)
 
-      frame = %{}
+      frame = create_unauthenticated_frame()
 
       result =
         CreateActivityTool.execute(
@@ -392,7 +382,7 @@ defmodule Oli.MCP.Tools.CreateActivityToolTest do
       assert {:reply, response, ^frame} = result
       assert response.isError == true
       assert [%{"type" => "text", "text" => error_text}] = response.content
-      assert String.contains?(error_text, "Authorization failed: Invalid Bearer token: invalid_token")
+      assert String.contains?(error_text, "Authorization failed: No authentication context found")
     end
   end
 end

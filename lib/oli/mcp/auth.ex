@@ -30,7 +30,7 @@ defmodule Oli.MCP.Auth do
     with :ok <- verify_author_project_access(author_id, project_id) do
       token = TokenGenerator.generate()
       hash = TokenGenerator.hash(token)
-      
+
       # Auto-generate hint if not provided
       hint = hint || TokenGenerator.create_hint(token)
 
@@ -74,7 +74,7 @@ defmodule Oli.MCP.Auth do
         existing_token ->
           token = TokenGenerator.generate()
           hash = TokenGenerator.hash(token)
-          
+
           # Auto-generate hint if not provided
           hint = hint || TokenGenerator.create_hint(token)
 
@@ -201,7 +201,7 @@ defmodule Oli.MCP.Auth do
 
   @doc """
   Verifies that an author can perform token operations for a project.
-  
+
   Returns :ok if the author is a collaborator on the project,
   {:error, reason} otherwise.
   """
@@ -222,16 +222,16 @@ defmodule Oli.MCP.Auth do
     case Repo.get_by(AuthorProject, author_id: author_id, project_id: project_id) do
       nil ->
         {:error, :unauthorized_project_access}
-      
+
       _author_project ->
         # Also verify the project exists and is not deleted
         case Repo.get(Project, project_id) do
           nil ->
             {:error, :project_not_found}
-          
+
           %Project{status: :deleted} ->
             {:error, :project_deleted}
-          
+
           %Project{} ->
             :ok
         end
@@ -240,9 +240,9 @@ defmodule Oli.MCP.Auth do
 
   defp verify_token_associations(%BearerToken{author_id: author_id, project_id: project_id}) do
     # Verify both the author and project still exist and are valid
-    with {:project, %Project{status: status}} when status != :deleted <- 
+    with {:project, %Project{status: status}} when status != :deleted <-
            {:project, Repo.get(Project, project_id)},
-         {:author, author} when not is_nil(author) <- 
+         {:author, author} when not is_nil(author) <-
            {:author, Repo.get(Oli.Accounts.Author, author_id)},
          {:author_project, author_project} when not is_nil(author_project) <-
            {:author_project, Repo.get_by(AuthorProject, author_id: author_id, project_id: project_id)} do

@@ -6,12 +6,12 @@ defmodule Oli.MCP.Tools.CreateActivityTool do
   function. It requires a system admin author for authorization.
   """
 
-  use Hermes.Server.Component, type: :tool
+  use Anubis.Server.Component, type: :tool
 
   alias Oli.Validation
   alias Oli.Authoring.Editing.ActivityEditor
   alias Oli.Accounts
-  alias Hermes.Server.Response
+  alias Anubis.Server.Response
   alias Oli.GenAI.Agent.MCPToolRegistry
   alias Oli.MCP.Auth.Authorization
 
@@ -41,7 +41,7 @@ defmodule Oli.MCP.Tools.CreateActivityTool do
         frame
       ) do
     # Validate project access before proceeding
-    case Authorization.validate_project_access(project_slug) do
+    case Authorization.validate_project_access(project_slug, frame) do
       {:ok, %{author_id: author_id}} ->
         case create_activity(project_slug, activity_json, activity_type_slug, author_id) do
           {:ok, activity_info} ->

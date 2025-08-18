@@ -76,7 +76,7 @@ defmodule Oli.Application do
         {Task.Supervisor, name: Oli.TaskSupervisor},
 
         # MCP (Model Context Protocol) server for AI agents
-        Hermes.Server.Registry,
+        Anubis.Server.Registry,
 
         # AI Agent system
         Oli.GenAI.Agent.Registry,

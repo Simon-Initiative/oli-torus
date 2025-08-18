@@ -6,47 +6,57 @@ defmodule Oli.MCPTestHelpers do
   alias Oli.MCP.Auth
 
   @doc """
-  Sets up Bearer token authentication context for MCP tool tests.
+  Creates a test frame with authentication context for MCP tool tests.
   
   This function creates a Bearer token for the given author and project,
-  then stores it in the process context so MCP tools can access it.
+  then returns a frame struct with the authentication context in assigns.
   
-  Returns the token string for reference.
+  Returns {frame, token_string} for reference.
   """
-  def setup_mcp_auth_context(author_id, project_id) do
+  def create_authenticated_frame(author_id, project_id) do
     # Create a Bearer token for the author and project
     {:ok, {_bearer_token, token_string}} = Auth.create_token(author_id, project_id, "Test token")
     
-    # Store token in process context (same as the plug does)
-    Process.put(:mcp_bearer_token, token_string)
+    # Create a frame with authentication context in assigns
+    frame = %{
+      assigns: %{
+        author_id: author_id,
+        project_id: project_id,
+        bearer_token: token_string
+      },
+      transport: %{
+        headers: %{
+          "authorization" => "Bearer #{token_string}"
+        }
+      }
+    }
     
-    token_string
+    {frame, token_string}
   end
 
   @doc """
-  Clears the MCP authentication context from the process.
+  Creates a basic frame without authentication for testing unauthorized access.
   """
-  def clear_mcp_auth_context do
-    Process.delete(:mcp_bearer_token)
+  def create_unauthenticated_frame do
+    %{
+      assigns: %{},
+      transport: %{
+        headers: %{}
+      }
+    }
   end
 
   @doc """
-  Wraps a test function with MCP authentication context.
+  Wraps a test function with an authenticated frame.
   
   Usage:
-    with_mcp_auth(author.id, project.id, fn ->
-      # test code that calls MCP tools
+    with_authenticated_frame(author.id, project.id, fn frame ->
+      # test code that uses the frame
     end)
   """
-  def with_mcp_auth(author_id, project_id, test_func) do
-    token = setup_mcp_auth_context(author_id, project_id)
-    
-    try do
-      test_func.()
-    after
-      clear_mcp_auth_context()
-    end
-    
+  def with_authenticated_frame(author_id, project_id, test_func) do
+    {frame, token} = create_authenticated_frame(author_id, project_id)
+    test_func.(frame)
     token
   end
 end

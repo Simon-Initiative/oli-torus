@@ -212,21 +212,21 @@ defmodule Oli.GenAI.Agent.ToolBrokerTest do
       assert length(tools) >= 2
 
       # Check structure matches OpenAI format - use actual MCP tools
-      revision_tool =
+      validation_tool =
         Enum.find(tools, fn t ->
-          get_in(t, [:function, :name]) == "revision_content"
+          get_in(t, [:function, :name]) == "activity_validation"
         end)
 
-      assert revision_tool
-      assert revision_tool.type == "function"
-      assert revision_tool.function.name == "revision_content"
+      assert validation_tool
+      assert validation_tool.type == "function"
+      assert validation_tool.function.name == "activity_validation"
 
-      assert revision_tool.function.description ==
-               "Retrieve JSON content of a resource revision from any project"
+      assert validation_tool.function.description ==
+               "Validate activity JSON content against schema requirements"
 
-      assert revision_tool.function.parameters["type"] == "object"
-      assert revision_tool.function.parameters["properties"]["project_slug"]
-      assert revision_tool.function.parameters["required"] == ["project_slug", "revision_slug"]
+      assert validation_tool.function.parameters["type"] == "object"
+      assert validation_tool.function.parameters["properties"]["activity_json"]
+      assert validation_tool.function.parameters["required"] == ["activity_json"]
     end
 
     test "converts to Anthropic-style tool specs when needed" do
@@ -243,9 +243,9 @@ defmodule Oli.GenAI.Agent.ToolBrokerTest do
           }
         end)
 
-      revision_tool = Enum.find(anthropic_tools, &(&1.name == "revision_content"))
-      assert revision_tool
-      assert revision_tool.input_schema["properties"]["project_slug"]
+      validation_tool = Enum.find(anthropic_tools, &(&1.name == "activity_validation"))
+      assert validation_tool
+      assert validation_tool.input_schema["properties"]["activity_json"]
     end
   end
 

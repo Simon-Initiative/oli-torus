@@ -4,7 +4,7 @@ defmodule Oli.MCP.AuthIntegrationTest do
   import Oli.Factory
 
   alias Oli.MCP.Auth
-  alias OliWeb.Plugs.ValidateMCPBearerToken
+  alias Oli.MCP.Server
 
   describe "MCP Authentication Integration" do
     test "complete authentication flow with valid token" do
@@ -15,28 +15,22 @@ defmodule Oli.MCP.AuthIntegrationTest do
 
       {:ok, {_token_record, token_string}} = Auth.create_token(author.id, project.id, "Integration test token")
 
-      # Test: Make request with valid Bearer token
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{token_string}")
-        |> ValidateMCPBearerToken.call(nil)
-
-      # Assert: Connection should not be halted and should have auth assigns
-      refute conn.halted
-      assert conn.assigns[:mcp_authenticated] == true
-      assert conn.assigns[:mcp_author_id] == author.id
-      assert conn.assigns[:mcp_project_id] == project.id
+      # Test: Simulate MCP Server init with valid Bearer token
+      frame = %{transport: %{req_headers: [{"authorization", "Bearer #{token_string}"}]}}
+      
+      # Assert: Server init should succeed with auth context
+      assert {:ok, updated_frame} = Server.init(nil, frame)
+      assert updated_frame.assigns.author_id == author.id
+      assert updated_frame.assigns.project_id == project.id
+      assert updated_frame.assigns.bearer_token == token_string
     end
 
     test "authentication fails with invalid token" do
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer invalid_token_format")
-        |> ValidateMCPBearerToken.call(nil)
-
-      assert conn.halted
-      assert conn.status == 401
-      assert conn.resp_body == "Invalid MCP Bearer token"
+      # Test: Simulate MCP Server init with invalid Bearer token
+      frame = %{transport: %{req_headers: [{"authorization", "Bearer invalid_token_format"}]}}
+      
+      # Assert: Server init should stop with unauthorized
+      assert {:stop, :unauthorized} = Server.init(nil, frame)
     end
 
     test "authentication fails with disabled token" do
@@ -47,13 +41,11 @@ defmodule Oli.MCP.AuthIntegrationTest do
       {:ok, {token_record, token_string}} = Auth.create_token(author.id, project.id)
       Auth.update_token_status(token_record.id, "disabled")
 
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{token_string}")
-        |> ValidateMCPBearerToken.call(nil)
-
-      assert conn.halted
-      assert conn.status == 401
+      # Test: Simulate MCP Server init with disabled token
+      frame = %{transport: %{req_headers: [{"authorization", "Bearer #{token_string}"}]}}
+      
+      # Assert: Server init should stop with unauthorized
+      assert {:stop, :unauthorized} = Server.init(nil, frame)
     end
 
     test "authentication fails when project is deleted after token creation" do
@@ -66,13 +58,11 @@ defmodule Oli.MCP.AuthIntegrationTest do
       # Delete the project
       Oli.Repo.update!(Oli.Authoring.Course.Project.changeset(project, %{status: :deleted}))
 
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{token_string}")
-        |> ValidateMCPBearerToken.call(nil)
-
-      assert conn.halted
-      assert conn.status == 401
+      # Test: Simulate MCP Server init with token for deleted project
+      frame = %{transport: %{req_headers: [{"authorization", "Bearer #{token_string}"}]}}
+      
+      # Assert: Server init should stop with unauthorized
+      assert {:stop, :unauthorized} = Server.init(nil, frame)
     end
 
     test "authentication fails when author loses project access" do
@@ -85,13 +75,11 @@ defmodule Oli.MCP.AuthIntegrationTest do
       # Remove author from project
       Oli.Repo.delete!(author_project)
 
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{token_string}")
-        |> ValidateMCPBearerToken.call(nil)
-
-      assert conn.halted
-      assert conn.status == 401
+      # Test: Simulate MCP Server init with token after access revoked
+      frame = %{transport: %{req_headers: [{"authorization", "Bearer #{token_string}"}]}}
+      
+      # Assert: Server init should stop with unauthorized
+      assert {:stop, :unauthorized} = Server.init(nil, frame)
     end
 
     test "token usage updates last_used_at timestamp" do
@@ -104,13 +92,9 @@ defmodule Oli.MCP.AuthIntegrationTest do
       # Verify initial state
       assert token_record.last_used_at == nil
 
-      # Use the token
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{token_string}")
-        |> ValidateMCPBearerToken.call(nil)
-
-      refute conn.halted
+      # Use the token through MCP Server init
+      frame = %{transport: %{req_headers: [{"authorization", "Bearer #{token_string}"}]}}
+      assert {:ok, _updated_frame} = Server.init(nil, frame)
 
       # Verify timestamp was updated
       updated_token = Auth.get_token_by_author_and_project(author.id, project.id)
@@ -129,21 +113,18 @@ defmodule Oli.MCP.AuthIntegrationTest do
       tasks = 
         for _i <- 1..10 do
           Task.async(fn ->
-            conn =
-              build_conn()
-              |> put_req_header("authorization", "Bearer #{token_string}")
-              |> ValidateMCPBearerToken.call(nil)
-
-            {conn.halted, conn.assigns[:mcp_authenticated]}
+            frame = %{transport: %{req_headers: [{"authorization", "Bearer #{token_string}"}]}}
+            Server.init(nil, frame)
           end)
         end
 
       results = Task.await_many(tasks, 5000)
 
       # All requests should succeed
-      Enum.each(results, fn {halted, authenticated} ->
-        refute halted
-        assert authenticated == true
+      Enum.each(results, fn result ->
+        assert {:ok, frame} = result
+        assert frame.assigns.author_id == author.id
+        assert frame.assigns.project_id == project.id
       end)
     end
 
@@ -158,13 +139,8 @@ defmodule Oli.MCP.AuthIntegrationTest do
       ]
 
       for {description, auth_header} <- test_cases do
-        conn =
-          build_conn()
-          |> put_req_header("authorization", auth_header)
-          |> ValidateMCPBearerToken.call(nil)
-
-        assert conn.halted, "Should fail for: #{description}"
-        assert conn.status == 401, "Should return 401 for: #{description}"
+        frame = %{transport: %{req_headers: [{"authorization", auth_header}]}}
+        assert {:stop, :unauthorized} = Server.init(nil, frame), "Should fail for: #{description}"
       end
     end
 
@@ -181,13 +157,8 @@ defmodule Oli.MCP.AuthIntegrationTest do
       ]
 
       for {description, token} <- test_cases do
-        conn =
-          build_conn()
-          |> put_req_header("authorization", "Bearer #{token}")
-          |> ValidateMCPBearerToken.call(nil)
-
-        assert conn.halted, "Should fail for: #{description}"
-        assert conn.status == 401, "Should return 401 for: #{description}"
+        frame = %{transport: %{req_headers: [{"authorization", "Bearer #{token}"}]}}
+        assert {:stop, :unauthorized} = Server.init(nil, frame), "Should fail for: #{description}"
       end
     end
   end
@@ -205,16 +176,13 @@ defmodule Oli.MCP.AuthIntegrationTest do
       # Create token for project1
       {:ok, {_token_record, token_string}} = Auth.create_token(author.id, project1.id)
 
-      # Validate token
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{token_string}")
-        |> ValidateMCPBearerToken.call(nil)
-
-      refute conn.halted
-      assert conn.assigns[:mcp_project_id] == project1.id
+      # Validate token through MCP Server init
+      frame = %{transport: %{req_headers: [{"authorization", "Bearer #{token_string}"}]}}
+      assert {:ok, updated_frame} = Server.init(nil, frame)
+      
+      assert updated_frame.assigns.project_id == project1.id
       # Token should NOT grant access to project2
-      refute conn.assigns[:mcp_project_id] == project2.id
+      refute updated_frame.assigns.project_id == project2.id
     end
 
     test "multiple authors can have tokens for same project" do
@@ -230,45 +198,28 @@ defmodule Oli.MCP.AuthIntegrationTest do
       {:ok, {_token2, token_string2}} = Auth.create_token(author2.id, project.id)
 
       # Both tokens should be valid
-      conn1 =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{token_string1}")
-        |> ValidateMCPBearerToken.call(nil)
-
-      conn2 =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{token_string2}")
-        |> ValidateMCPBearerToken.call(nil)
-
-      refute conn1.halted
-      refute conn2.halted
-      assert conn1.assigns[:mcp_author_id] == author1.id
-      assert conn2.assigns[:mcp_author_id] == author2.id
-      assert conn1.assigns[:mcp_project_id] == project.id
-      assert conn2.assigns[:mcp_project_id] == project.id
+      frame1 = %{transport: %{req_headers: [{"authorization", "Bearer #{token_string1}"}]}}
+      frame2 = %{transport: %{req_headers: [{"authorization", "Bearer #{token_string2}"}]}}
+      
+      assert {:ok, updated_frame1} = Server.init(nil, frame1)
+      assert {:ok, updated_frame2} = Server.init(nil, frame2)
+      
+      assert updated_frame1.assigns.author_id == author1.id
+      assert updated_frame2.assigns.author_id == author2.id
+      assert updated_frame1.assigns.project_id == project.id
+      assert updated_frame2.assigns.project_id == project.id
     end
   end
 
   describe "Error Response Format" do
-    test "returns error message for invalid token" do
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer invalid_token")
-        |> ValidateMCPBearerToken.call(nil)
-
-      assert conn.halted
-      assert conn.status == 401
-      assert conn.resp_body == "Invalid MCP Bearer token"
+    test "returns unauthorized for invalid token" do
+      frame = %{transport: %{req_headers: [{"authorization", "Bearer invalid_token"}]}}
+      assert {:stop, :unauthorized} = Server.init(nil, frame)
     end
 
-    test "returns error message for missing authorization header" do
-      conn = 
-        build_conn()
-        |> ValidateMCPBearerToken.call(nil)
-
-      assert conn.halted
-      assert conn.status == 401
-      assert conn.resp_body == "Missing or invalid Authorization header"
+    test "returns unauthorized for missing authorization header" do
+      frame = %{transport: %{req_headers: []}}
+      assert {:stop, :unauthorized} = Server.init(nil, frame)
     end
   end
 end

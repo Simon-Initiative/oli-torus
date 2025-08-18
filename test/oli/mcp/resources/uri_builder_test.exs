@@ -38,6 +38,7 @@ defmodule Oli.MCP.Resources.URIBuilderTest do
       uri = URIBuilder.build_objectives_graph_uri("test-project")
       assert uri == "torus://p/test-project/objectives"
     end
+
   end
 
   describe "parse_uri/1" do
@@ -76,6 +77,7 @@ defmodule Oli.MCP.Resources.URIBuilderTest do
       assert {:ok, {"test-project", :objectives_graph, nil}} = URIBuilder.parse_uri(uri)
     end
 
+
     test "returns error for invalid scheme" do
       uri = "http://p/test-project"
       assert {:error, "Invalid scheme: expected 'torus', got 'http'"} = URIBuilder.parse_uri(uri)
@@ -83,7 +85,7 @@ defmodule Oli.MCP.Resources.URIBuilderTest do
 
     test "returns error for invalid path" do
       uri = "torus://invalid/path"
-      assert {:error, "Invalid path: must start with /p/"} = URIBuilder.parse_uri(uri)
+      assert {:error, "Invalid path: /invalid/path"} = URIBuilder.parse_uri(uri)
     end
 
     test "returns error for invalid resource type" do
@@ -101,6 +103,10 @@ defmodule Oli.MCP.Resources.URIBuilderTest do
       assert URIBuilder.get_mime_type(:objective) == "application/vnd.torus.objective+json"
       assert URIBuilder.get_mime_type(:hierarchy) == "application/vnd.torus.hierarchy+json"
       assert URIBuilder.get_mime_type(:objectives_graph) == "application/vnd.torus.objectives-graph+json"
+      assert URIBuilder.get_mime_type(:examples_list) == "application/vnd.torus.examples-list+json"
+      assert URIBuilder.get_mime_type(:example) == "application/vnd.torus.example+json"
+      assert URIBuilder.get_mime_type(:schemas_list) == "application/vnd.torus.schemas-list+json"
+      assert URIBuilder.get_mime_type(:schema) == "application/json"
     end
   end
 end

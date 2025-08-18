@@ -60,6 +60,7 @@ defmodule Oli.MixProject do
       "guides/process/server-coding.md",
       "guides/process/pr-template.md",
       "guides/process/changelog-pr.md",
+      "guides/process/claude-code.md",
       "guides/process/deployment.md",
       "guides/process/building.md",
       "guides/design/introduction.md",
@@ -131,6 +132,7 @@ defmodule Oli.MixProject do
   defp deps do
     [
       {:anthropix, "~> 0.6"},
+      {:anubis_mcp, "~> 0.13.1"},
       {:appsignal_phoenix, "~> 2.7"},
       {:assent, "~> 0.2.9"},
       {:base32_crockford, "~> 1.0.0"},
@@ -165,7 +167,6 @@ defmodule Oli.MixProject do
       {:gen_smtp, "~> 1.2"},
       {:gettext, "~> 0.11"},
       {:hackney, "~> 1.17"},
-      {:hermes_mcp, "~> 0.14.1"},
       {:html_entities, "~> 0.5.2"},
       {:html_sanitize_ex, "~> 1.4"},
       {:httpoison, "~> 2.0"},
