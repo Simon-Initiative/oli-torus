@@ -9,7 +9,7 @@ defmodule OliWeb.Sections.OverviewView do
   alias Oli.Delivery.Sections.{Section, EnrollmentBrowseOptions}
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Sections.Details.ImageUpload
-  alias OliWeb.Sections.{Instructors, Mount, UnlinkSection}
+  alias OliWeb.Sections.{Instructors, Mount}
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Resources.Collaboration
   alias OliWeb.Projects.RequiredSurvey
@@ -410,12 +410,6 @@ defmodule OliWeb.Sections.OverviewView do
         </ul>
       </Group.render>
 
-      <%= if @is_lms_or_system_admin and !@section.open_and_free do %>
-        <Group.render label="LMS Admin" description="Administrator LMS Connection">
-          <UnlinkSection.render unlink="unlink" section={@section} />
-        </Group.render>
-      <% end %>
-
       <Group.render
         label="Cover Image"
         description="Manage the cover image for this section. Max file size is 5 MB."
@@ -529,14 +523,6 @@ defmodule OliWeb.Sections.OverviewView do
     {:noreply, socket}
   end
 
-  def handle_event("unlink", _, socket) do
-    %{section: section} = socket.assigns
-
-    {:ok, _deleted} = Oli.Delivery.Sections.soft_delete_section(section)
-
-    {:noreply, push_navigate(socket, to: Routes.delivery_path(socket, :index))}
-  end
-
   def handle_event("show_delete_modal", _params, socket) do
     section_has_student_data = Sections.has_student_data?(socket.assigns.section.slug)
 
@@ -590,18 +576,9 @@ defmodule OliWeb.Sections.OverviewView do
 
         case action_function.(socket.assigns.section) do
           {:ok, _section} ->
-            is_admin = socket.assigns.is_admin
-
-            redirect_path =
-              if is_admin do
-                Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.SectionsView)
-              else
-                ~p"/workspaces/instructor"
-              end
-
             socket
             |> put_flash(:info, "Section successfully #{action}.")
-            |> redirect(to: redirect_path)
+            |> redirect(to: ~p"/sections")
 
           {:error, %Ecto.Changeset{}} ->
             put_flash(

@@ -1,14 +1,11 @@
 defmodule Oli.Delivery do
   alias Lti_1p3.Roles.ContextRoles
-  alias Lti_1p3.Tool.Services.{AGS, NRPS}
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.PostProcessing
   alias Oli.Delivery.Settings.StudentException
-  alias Oli.Delivery.Sections.{Section, SectionsProjectsPublications}
+  alias Oli.Delivery.Sections.{Section, SectionsProjectsPublications, SectionSpecification}
   alias Oli.Institutions
   alias Oli.Institutions.Institution
-  alias Oli.Lti.LtiParams
-  alias Oli.Publishing
   alias Oli.Repo
   alias Oli.Publishing.{DeliveryResolver, PublishedResource}
   alias Oli.Delivery.Attempts.Core.{ResourceAttempt, ActivityAttempt, ResourceAccess}
@@ -18,170 +15,188 @@ defmodule Oli.Delivery do
   import Ecto.Query, warn: false
   import Oli.Utils
 
-  @deployment_claims "https://purl.imsglobal.org/spec/lti/claim/deployment_id"
-  @context_claims "https://purl.imsglobal.org/spec/lti/claim/context"
-  @roles_claims "https://purl.imsglobal.org/spec/lti/claim/roles"
+  @doc """
+  Creates a new section from the given changeset and source identifier. Depending on the
+  section specification provided, the section will either be created as a direct delivery section
+  or an LTI section with the appropriate settings.
 
-  def retrieve_visible_sources(user, lti_params) do
-    {institution, _registration, _deployment} =
-      Institutions.get_institution_registration_deployment(
-        lti_params["iss"],
-        LtiParams.peek_client_id(lti_params),
-        lti_params[@deployment_claims]
-      )
+  A section can be created from a project, publication or product (blueprint) depending on the
+  source identifier. The source identifier is expected to be in the format:
+    - `project:<project_id>` for a project
+    - `publication:<publication_id>` for a publication
+    - `product:<product_id>` for a product
 
-    Publishing.retrieve_visible_sources(user, institution)
+  The return value is one of the following:
+    - `{:ok, section.id, section.slug}`: The section was successfully created.
+    - `{:error, error_msg}`: An error occurred while creating the section.
+
+  Examples:
+    iex> create_section(changeset, "project:1", user, section_spec)
+    {:ok, 1, "section-slug"}
+
+    iex> create_section(changeset, "publication:1", user, section_spec)
+    {:ok, 1, "section-slug"}
+    {:error, "Failed to create new section"}
+
+  """
+  def create_section(changeset, source, user, section_spec) do
+    # Check if section already exists for LTI specifications
+    case section_spec do
+      %SectionSpecification.Lti{lti_params: lti_params} ->
+        case Sections.get_section_from_lti_params(lti_params) do
+          nil -> create_new_section(changeset, source, user, section_spec)
+          existing_section -> {:ok, existing_section.id, existing_section.slug}
+        end
+
+      _ ->
+        create_new_section(changeset, source, user, section_spec)
+    end
   end
 
-  def create_section(source_id, user, lti_params, attrs \\ %{}) do
-    section = Sections.get_section_from_lti_params(lti_params)
+  defp create_new_section(changeset, source, user, section_spec) do
+    case from_source_identifier(source) do
+      {:project, project} ->
+        %{id: project_id, has_experiments: has_experiments} =
+          Oli.Authoring.Course.get_project_by_slug(project.slug)
 
-    do_create_section(section, source_id, user, lti_params, attrs)
+        publication =
+          Oli.Publishing.get_latest_published_publication_by_slug(project.slug)
+          |> Repo.preload(:project)
+
+        customizations =
+          case publication.project.customizations do
+            nil -> nil
+            labels -> Map.from_struct(labels)
+          end
+
+        section_params =
+          changeset
+          |> Ecto.Changeset.apply_changes()
+          |> Map.from_struct()
+          |> Map.merge(%{
+            type: :enrollable,
+            base_project_id: project_id,
+            context_id: UUID.uuid4(),
+            customizations: customizations,
+            has_experiments: has_experiments,
+            analytics_version: :v2,
+            welcome_title: project.welcome_title,
+            encouraging_subtitle: project.encouraging_subtitle,
+            certificate: nil
+          })
+          |> SectionSpecification.apply(section_spec)
+
+        case create_from_publication(user, publication, section_params) do
+          {:ok, section} ->
+            {:ok, section.id, section.slug}
+
+          {:error, error} ->
+            {_error_id, error_msg} = log_error("Failed to create new section", error)
+            {:error, error_msg}
+        end
+
+      {:product, blueprint} ->
+        project = Oli.Repo.get(Oli.Authoring.Course.Project, blueprint.base_project_id)
+
+        # Try to calculate the cost from the product. If that fails, use the blueprint amount
+        amount =
+          case Oli.Delivery.Paywall.section_cost_from_product(
+                 blueprint,
+                 SectionSpecification.get_institution(section_spec)
+               ) do
+            {:ok, amount} -> amount
+            _ -> blueprint.amount
+          end
+
+        section_params =
+          changeset
+          |> Ecto.Changeset.apply_changes()
+          |> Map.from_struct()
+          |> Map.take([
+            :title,
+            :course_section_number,
+            :class_modality,
+            :class_days,
+            :start_date,
+            :end_date,
+            :preferred_scheduling_time
+          ])
+          |> Map.merge(%{
+            blueprint_id: blueprint.id,
+            required_survey_resource_id: project.required_survey_resource_id,
+            type: :enrollable,
+            has_experiments: project.has_experiments,
+            context_id: UUID.uuid4(),
+            analytics_version: :v2,
+            welcome_title: blueprint.welcome_title,
+            encouraging_subtitle: blueprint.encouraging_subtitle,
+            amount: amount
+          })
+          |> SectionSpecification.apply(section_spec)
+
+        case create_from_product(user, blueprint, section_params) do
+          {:ok, section} ->
+            {:ok, section.id, section.slug}
+
+          {:error, error} ->
+            {_error_id, error_msg} = log_error("Failed to create new section", error)
+
+            {:error, error_msg}
+        end
+    end
   end
 
-  defp do_create_section(nil, source_id, user, lti_params, attrs) do
-    client_id = LtiParams.peek_client_id(lti_params)
-    deployment_claims = lti_params[@deployment_claims]
-    iss = lti_params["iss"]
-
-    {institution, registration, deployment} =
-      Institutions.get_institution_registration_deployment(iss, client_id, deployment_claims)
-
-    # create section, section resources and enroll instructor
-    {create_fn, id} =
-      case source_id do
-        "publication:" <> publication_id ->
-          {&create_from_publication/7, String.to_integer(publication_id)}
-
-        "product:" <> product_id ->
-          {&create_from_product/7, String.to_integer(product_id)}
+  defp create_from_publication(user, publication, section_params) do
+    Repo.transaction(fn ->
+      with {:ok, section} <- Sections.create_section(section_params),
+           {:ok, section} <- Sections.create_section_resources(section, publication),
+           {:ok, _} <- Sections.rebuild_contained_pages(section),
+           {:ok, _} <- Sections.rebuild_contained_objectives(section),
+           {:ok, _enrollment} <-
+             Sections.enroll(user.id, section.id, [
+               ContextRoles.get_role(:context_instructor)
+             ]) do
+        PostProcessing.apply(section, :all)
+      else
+        {:error, changeset} ->
+          Repo.rollback(changeset)
       end
-
-    create_fn.(id, user, institution, lti_params, deployment, registration, attrs)
-  end
-
-  defp do_create_section(section, _source_id, _user, _lti_params, _attrs), do: {:ok, section}
-
-  defp create_from_product(
-         product_id,
-         user,
-         institution,
-         lti_params,
-         deployment,
-         registration,
-         attrs
-       ) do
-    Repo.transaction(fn ->
-      blueprint = Oli.Delivery.Sections.get_section!(product_id)
-
-      # calculate a cost, if an error, fallback to the amount in the blueprint.
-      # if the amount returned is nil, it means the paywall is bypassed
-      # TODO: we may need to move this to AFTER a remix if the cost calculation factors
-      # in the percentage project usage
-      {amount, requires_payment} =
-        case Oli.Delivery.Paywall.section_cost_from_product(blueprint, institution) do
-          {:ok, nil} -> {blueprint.amount, false}
-          {:ok, amount} -> {amount, blueprint.requires_payment}
-          _ -> {blueprint.amount, blueprint.requires_payment}
-        end
-
-      project = Oli.Repo.get(Oli.Authoring.Course.Project, blueprint.base_project_id)
-
-      {:ok, section} =
-        Oli.Delivery.Sections.Blueprint.duplicate(
-          blueprint,
-          Map.merge(
-            %{
-              type: :enrollable,
-              title: lti_params[@context_claims]["title"],
-              context_id: lti_params[@context_claims]["id"],
-              institution_id: institution.id,
-              lti_1p3_deployment_id: deployment.id,
-              blueprint_id: blueprint.id,
-              has_experiments: project.has_experiments,
-              amount: amount,
-              requires_payment: requires_payment,
-              pay_by_institution: blueprint.pay_by_institution,
-              grade_passback_enabled: AGS.grade_passback_enabled?(lti_params),
-              line_items_service_url: AGS.get_line_items_url(lti_params, registration),
-              nrps_enabled: NRPS.nrps_enabled?(lti_params),
-              nrps_context_memberships_url: NRPS.get_context_memberships_url(lti_params),
-              welcome_title: blueprint.welcome_title,
-              encouraging_subtitle: blueprint.encouraging_subtitle
-            },
-            attrs
-          )
-        )
-
-      section = PostProcessing.apply(section, :discussions)
-      {:ok, _} = Sections.rebuild_contained_pages(section)
-      {:ok, _} = Sections.rebuild_contained_objectives(section)
-
-      enroll(user.id, section.id, lti_params)
-
-      section
     end)
   end
 
-  defp create_from_publication(
-         publication_id,
-         user,
-         institution,
-         lti_params,
-         deployment,
-         registration,
-         attrs
-       ) do
+  defp create_from_product(user, blueprint, section_params) do
     Repo.transaction(fn ->
-      publication = Publishing.get_publication!(publication_id) |> Repo.preload(:project)
-
-      customizations =
-        case publication.project.customizations do
-          nil -> nil
-          labels -> Map.from_struct(labels)
-        end
-
-      {:ok, section} =
-        Sections.create_section(
-          Map.merge(
-            %{
-              type: :enrollable,
-              title: lti_params[@context_claims]["title"],
-              context_id: lti_params[@context_claims]["id"],
-              institution_id: institution.id,
-              base_project_id: publication.project_id,
-              has_experiments: publication.project.has_experiments,
-              lti_1p3_deployment_id: deployment.id,
-              grade_passback_enabled: AGS.grade_passback_enabled?(lti_params),
-              line_items_service_url: AGS.get_line_items_url(lti_params, registration),
-              nrps_enabled: NRPS.nrps_enabled?(lti_params),
-              nrps_context_memberships_url: NRPS.get_context_memberships_url(lti_params),
-              customizations: customizations,
-              welcome_title: publication.project.welcome_title,
-              encouraging_subtitle: publication.project.encouraging_subtitle
-            },
-            attrs
-          )
-        )
-
-      {:ok, %Section{} = section} = Sections.create_section_resources(section, publication)
-      section = PostProcessing.apply(section, :discussions)
-      {:ok, _} = Sections.rebuild_contained_pages(section)
-      {:ok, _} = Sections.rebuild_contained_objectives(section)
-
-      enroll(user.id, section.id, lti_params)
-
-      {:ok, updated_section} = maybe_update_section_contains_explorations(section)
-
-      updated_section
+      with {:ok, section} <- Oli.Delivery.Sections.Blueprint.duplicate(blueprint, section_params),
+           {:ok, _} <- Sections.rebuild_contained_pages(section),
+           {:ok, _} <- Sections.rebuild_contained_objectives(section),
+           {:ok, _maybe_enrollment} <-
+             Sections.enroll(user.id, section.id, [
+               ContextRoles.get_role(:context_instructor)
+             ]) do
+        PostProcessing.apply(section, :discussions)
+      else
+        {:error, changeset} -> Repo.rollback(changeset)
+      end
     end)
   end
 
-  defp enroll(user_id, section_id, lti_params) do
-    # Enroll this user with their proper roles (instructor)
-    lti_roles = lti_params[@roles_claims]
-    context_roles = ContextRoles.get_roles_by_uris(lti_roles)
-    Sections.enroll(user_id, section_id, context_roles)
+  # Returns a product or project used to create the section based on the source identifier.
+  defp from_source_identifier(source_id) do
+    case source_id do
+      "product:" <> id ->
+        {:product, Sections.get_section!(String.to_integer(id))}
+
+      "publication:" <> id ->
+        publication =
+          Oli.Publishing.get_publication!(String.to_integer(id)) |> Repo.preload(:project)
+
+        {:project, publication.project}
+
+      "project:" <> id ->
+        project = Oli.Authoring.Course.get_project!(id)
+
+        {:project, project}
+    end
   end
 
   @doc """
