@@ -6,6 +6,7 @@ defmodule Oli.GenAI.Dialogue.FallbackTest do
 
   defp wait_for_provider_fallback(server, expected_provider, retries \\ 20) do
     state = :sys.get_state(server)
+
     if state.registered_model.provider == expected_provider or retries == 0 do
       state
     else
@@ -43,7 +44,7 @@ defmodule Oli.GenAI.Dialogue.FallbackTest do
 
     # Wait for the fallback to process
     state = wait_for_provider_fallback(server, :null)
-    
+
     # Verify that the server state has been updated to now be using the NullProvider
     assert state.registered_model.provider == :null
 
