@@ -451,7 +451,6 @@ if config_env() == :prod do
 
   uploader_module =
     case xapi_etl_mode do
-      "lambda" -> Oli.Analytics.XAPI.LambdaUploader
       "file" -> Oli.Analytics.XAPI.FileUploader
       "clickhouse" -> Oli.Analytics.XAPI.ClickHouseUploader
       # Default S3 uploader

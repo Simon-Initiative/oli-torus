@@ -114,16 +114,8 @@ def handle_event_processing(event: Dict[str, Any], context: Any) -> Dict[str, An
         if not section_id:
             logger.warning(f"Could not extract section_id from S3 key: {key}")
 
-        # Check if this is a test mode invocation (from LambdaUploader)
-        test_body = event.get('_test_body')
-        test_mode = event.get('_test_mode', False)
-
-        if test_mode and test_body:
-            logger.info("Processing in test mode with provided body")
-            result = process_single_file(bucket, key, test_body)
-        else:
-            # Download and process the file
-            result = process_single_file(bucket, key)
+        # Download and process the file
+        result = process_single_file(bucket, key)
 
         # Add metadata to result
         result['section_id'] = section_id

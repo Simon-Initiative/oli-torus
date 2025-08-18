@@ -1,4 +1,7 @@
 defmodule Oli.Analytics.EventEmitter do
+  alias Oli.Analytics.XAPI
+  alias Oli.Analytics.XAPI.StatementBundle
+
   @chars "abcdefghijklmnopqrstuvwxyz1234567890" |> String.split("", trim: true)
 
   def emit_page_viewed(event) do
@@ -9,13 +12,14 @@ defmodule Oli.Analytics.EventEmitter do
       :crypto.hash(:md5, guid <> "-" <> random_string(10))
       |> Base.encode16()
 
-    Oli.Delivery.Snapshots.S3UploaderWorker.new(%{
+    %StatementBundle{
       body: [event] |> Oli.Analytics.Common.to_jsonlines(),
       bundle_id: bundle_id,
+      partition: :section,
       partition_id: section_id,
       category: :page_viewed
-    })
-    |> Oban.insert()
+    }
+    |> XAPI.emit()
   end
 
   def random_string(length) do

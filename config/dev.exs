@@ -220,7 +220,6 @@ xapi_etl_mode = System.get_env("XAPI_ETL_MODE", "direct")
 uploader_module =
   case xapi_etl_mode do
     "s3" -> Oli.Analytics.XAPI.S3Uploader
-    "lambda" -> Oli.Analytics.XAPI.LambdaUploader
     _ -> Oli.Analytics.XAPI.ClickHouseUploader
   end
 

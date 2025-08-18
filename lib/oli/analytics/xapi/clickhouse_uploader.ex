@@ -45,8 +45,9 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
     end
   end
 
-  defp parse_and_insert_events(_body, _category, _config) do
-    # For now, only handle video events. Other categories will be no-ops.
+  defp parse_and_insert_events(_body, category, _config) do
+    # Unsupported category - no-op
+    Logger.warning("Unsupported category for ClickHouse upload, skipping: #{inspect(category)}")
     {:ok, 0}
   end
 

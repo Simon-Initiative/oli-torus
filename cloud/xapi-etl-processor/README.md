@@ -182,45 +182,6 @@ If you encounter missing package errors, ensure your virtual environment is acti
 python3 test-unified-lambda.py
 ```
 
-### Integration Testing with Elixir
-
-The Elixir application can invoke the Lambda function for testing:
-
-```elixir
-# Configure in config/dev.exs
-config :oli, :xapi,
-  upload_to: :lambda,
-  lambda_etl: [
-    function_name: "dev-xapi-etl-processor",
-    aws_region: "us-east-1"
-  ]
-
-# Test event processing
-Oli.Analytics.XAPI.LambdaUploader.upload(statement_bundle)
-```
-
-## Migration from Previous Architecture
-
-This unified function replaces the previous two separate Lambda functions:
-
-- `process_xapi_events` → Event processing mode
-- `bulk_etl_processor` → Bulk processing mode
-
-### Benefits of Unified Approach
-
-1. **Simplified Deployment**: Single function to manage
-2. **Shared Code**: Common utilities reduce duplication
-3. **Consistent Environment**: Same configuration and dependencies
-4. **Easier Testing**: Single test suite and deployment pipeline
-5. **Cost Optimization**: Shared compute resources
-
-### Migration Steps
-
-1. Deploy unified function alongside existing functions
-2. Update S3 event configuration to point to new function
-3. Test both modes thoroughly
-4. Remove old functions and infrastructure
-
 ## Monitoring
 
 ### CloudWatch Logs
