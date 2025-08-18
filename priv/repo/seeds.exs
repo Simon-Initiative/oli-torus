@@ -21,6 +21,8 @@ alias Oli.Utils.DataGenerators.NameGenerator
 alias Oli.GenAI.Completions.{ServiceConfig, RegisteredModel}
 alias Oli.GenAIFeatureConfig
 
+import Ecto.Query, only: [from: 2]
+
 # create system roles
 if !Oli.Repo.get_by(Oli.Accounts.SystemRole, id: 1) do
   Oli.Repo.insert!(%Oli.Accounts.SystemRole{
@@ -188,7 +190,8 @@ case Oli.Repo.all(RegisteredModel) do
     })
 
     primary_model =
-      Oli.Repo.get!(RegisteredModel, 1)
+      from(r in RegisteredModel, order_by: [asc: :id], limit: 1)
+      |> Oli.Repo.one!()
 
     # Insert the completions_service_config
     Oli.Repo.insert!(%ServiceConfig{
