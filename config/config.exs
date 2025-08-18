@@ -344,6 +344,19 @@ config :oli, :datashop,
 config :oli, :student_sign_in,
   background_color: System.get_env("STUDENT_SIGNIN_BACKGROUND_COLOR", "#FF82E4")
 
+case System.get_env("CLOAK_VAULT_KEY") do
+  nil ->
+    # When CI or when no variable, don't configure
+    :ok
+
+  key ->
+    config :oli, Oli.Vault,
+      json_library: Jason,
+      ciphers: [
+        default: {Cloak.Ciphers.AES.GCM, tag: "AES.GCM.V1", key: Base.decode64!(key)}
+      ]
+end
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env()}.exs"
