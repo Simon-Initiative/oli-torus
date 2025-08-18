@@ -7,7 +7,7 @@ defmodule Oli.Repo.Migrations.CreateMcpBearerTokens do
       add :project_id, references(:projects, on_delete: :delete_all), null: false
       add :hash, :binary, null: false
       add :hint, :string
-      add :status, :string, default: "enabled", null: false
+      add :status, :string, default: "active", null: false
       add :last_used_at, :utc_datetime
 
       timestamps()

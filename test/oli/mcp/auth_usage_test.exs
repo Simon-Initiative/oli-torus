@@ -33,7 +33,7 @@ defmodule Oli.MCP.AuthUsageTest do
 
     test "track_usage/3 with tool name", %{bearer_token: bearer_token} do
       assert {:ok, usage} =
-               Auth.track_usage(bearer_token.id, "tool", 
+               Auth.track_usage(bearer_token.id, "tool",
                  tool_name: "create_activity",
                  status: "success"
                )
@@ -44,7 +44,7 @@ defmodule Oli.MCP.AuthUsageTest do
 
     test "track_usage/3 with resource URI", %{bearer_token: bearer_token} do
       assert {:ok, usage} =
-               Auth.track_usage(bearer_token.id, "resource", 
+               Auth.track_usage(bearer_token.id, "resource",
                  resource_uri: "torus://schemas/common/content",
                  status: "success"
                )

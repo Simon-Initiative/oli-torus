@@ -64,6 +64,8 @@ defmodule Oli.MCP.Auth do
 
   Replaces the existing token with a new one. Returns the same format
   as create_token/3.
+
+  Only allows regeneration if the current token is active.
   """
   def regenerate_token(author_id, project_id, hint \\ nil) do
     # Verify author has access to the project before regenerating
@@ -71,6 +73,9 @@ defmodule Oli.MCP.Auth do
       case get_token_by_author_and_project(author_id, project_id) do
         nil ->
           create_token(author_id, project_id, hint)
+
+        %BearerToken{status: :disabled} ->
+          {:error, :token_disabled}
 
         existing_token ->
           token = TokenGenerator.generate()
@@ -119,7 +124,7 @@ defmodule Oli.MCP.Auth do
         nil ->
           {:error, :invalid_token}
 
-        %BearerToken{status: "disabled"} ->
+        %BearerToken{status: :disabled} ->
           {:error, :token_disabled}
 
         %BearerToken{} = bearer_token ->
@@ -179,9 +184,9 @@ defmodule Oli.MCP.Auth do
   end
 
   @doc """
-  Updates the status of a bearer token (enabled/disabled).
+  Updates the status of a bearer token (active/disabled).
   """
-  def update_token_status(token_id, status) when status in ["enabled", "disabled"] do
+  def update_token_status(token_id, status) when status in [:active, :disabled] do
     case Repo.get(BearerToken, token_id) do
       nil ->
         {:error, :not_found}
@@ -246,7 +251,8 @@ defmodule Oli.MCP.Auth do
          {:author, author} when not is_nil(author) <-
            {:author, Repo.get(Oli.Accounts.Author, author_id)},
          {:author_project, author_project} when not is_nil(author_project) <-
-           {:author_project, Repo.get_by(AuthorProject, author_id: author_id, project_id: project_id)} do
+           {:author_project,
+            Repo.get_by(AuthorProject, author_id: author_id, project_id: project_id)} do
       :ok
     else
       {:project, nil} -> {:error, :project_not_found}
@@ -301,7 +307,7 @@ defmodule Oli.MCP.Auth do
 
   @doc """
   Browse bearer tokens with usage statistics for admin interface.
-  
+
   Returns tokens with preloaded associations and usage counts.
   """
   defmodule BrowseOptions do
@@ -313,35 +319,45 @@ defmodule Oli.MCP.Auth do
     ]
   end
 
-  def browse_tokens_with_usage(%Oli.Repo.Paging{limit: limit, offset: offset}, %Oli.Repo.Sorting{} = sorting, %BrowseOptions{} = options) do
+  def browse_tokens_with_usage(
+        %Oli.Repo.Paging{limit: limit, offset: offset},
+        %Oli.Repo.Sorting{} = sorting,
+        %BrowseOptions{} = options
+      ) do
     # First, get the total count
-    total_count_query = BearerToken
-    |> join(:inner, [bt], author in Oli.Accounts.Author, on: bt.author_id == author.id)
-    |> join(:inner, [bt], project in Project, on: bt.project_id == project.id)
-    |> apply_browse_filters(options)
-    |> select([bt, author, project], count(bt.id))
-    
+    total_count_query =
+      BearerToken
+      |> join(:inner, [bt], author in Oli.Accounts.Author, on: bt.author_id == author.id)
+      |> join(:inner, [bt], project in Project, on: bt.project_id == project.id)
+      |> apply_browse_filters(options)
+      |> select([bt, author, project], count(bt.id))
+
     total_count = Repo.one(total_count_query)
 
     # Then get the actual results
-    results = BearerToken
-    |> join(:left, [bt], usage in BearerTokenUsage, on: usage.bearer_token_id == bt.id)
-    |> join(:inner, [bt], author in Oli.Accounts.Author, on: bt.author_id == author.id)
-    |> join(:inner, [bt], project in Project, on: bt.project_id == project.id)
-    |> apply_browse_filters(options)
-    |> select([bt, usage, author, project], %{
-      bearer_token: bt,
-      author: author,
-      project: project,
-      usage_last_7_days: fragment("COUNT(CASE WHEN ? >= NOW() - INTERVAL '7 days' THEN 1 END)", usage.occurred_at),
-      total_usage: count(usage.id)
-    })
-    |> group_by([bt, usage, author, project], [bt.id, author.id, project.id])
-    |> apply_sorting(sorting)
-    |> limit(^limit)
-    |> offset(^offset)
-    |> Repo.all()
-    
+    results =
+      BearerToken
+      |> join(:left, [bt], usage in BearerTokenUsage, on: usage.bearer_token_id == bt.id)
+      |> join(:inner, [bt], author in Oli.Accounts.Author, on: bt.author_id == author.id)
+      |> join(:inner, [bt], project in Project, on: bt.project_id == project.id)
+      |> apply_browse_filters(options)
+      |> select([bt, usage, author, project], %{
+        bearer_token: bt,
+        author: author,
+        project: project,
+        usage_last_7_days:
+          fragment(
+            "COUNT(CASE WHEN ? >= NOW() - INTERVAL '7 days' THEN 1 END)",
+            usage.occurred_at
+          ),
+        total_usage: count(usage.id)
+      })
+      |> group_by([bt, usage, author, project], [bt.id, author.id, project.id])
+      |> apply_sorting(sorting)
+      |> limit(^limit)
+      |> offset(^offset)
+      |> Repo.all()
+
     # Add total_count and bearer_token_id to each result
     Enum.map(results, fn result ->
       result
@@ -360,44 +376,74 @@ defmodule Oli.MCP.Auth do
 
   defp maybe_filter_text_search(query, nil), do: query
   defp maybe_filter_text_search(query, ""), do: query
+
   defp maybe_filter_text_search(query, text_search) do
     search_term = "%#{text_search}%"
-    
-    where(query, [bt, usage, author, project], 
-      ilike(author.name, ^search_term) or 
-      ilike(author.email, ^search_term) or
-      ilike(project.title, ^search_term) or
-      ilike(bt.hint, ^search_term)
+
+    where(
+      query,
+      [bt, usage, author, project],
+      ilike(author.name, ^search_term) or
+        ilike(author.email, ^search_term) or
+        ilike(project.title, ^search_term) or
+        ilike(bt.hint, ^search_term)
     )
   end
 
   defp maybe_filter_include_disabled(query, true), do: query
+
   defp maybe_filter_include_disabled(query, false) do
-    where(query, [bt], bt.status == "enabled")
+    where(query, [bt], bt.status == :active)
   end
+
   defp maybe_filter_include_disabled(query, nil), do: query
 
   defp maybe_filter_author(query, nil), do: query
+
   defp maybe_filter_author(query, author_id) do
     where(query, [bt], bt.author_id == ^author_id)
   end
 
   defp maybe_filter_project(query, nil), do: query
+
   defp maybe_filter_project(query, project_id) do
     where(query, [bt], bt.project_id == ^project_id)
   end
 
   defp apply_sorting(query, %Oli.Repo.Sorting{field: field, direction: direction}) do
     case field do
-      :author_name -> order_by(query, [bt, usage, author, project], [{^direction, author.name}])
-      :project_title -> order_by(query, [bt, usage, author, project], [{^direction, project.title}])
-      :hint -> order_by(query, [bt, usage, author, project], [{^direction, bt.hint}])
-      :status -> order_by(query, [bt, usage, author, project], [{^direction, bt.status}])
-      :inserted_at -> order_by(query, [bt, usage, author, project], [{^direction, bt.inserted_at}])
-      :last_used_at -> order_by(query, [bt, usage, author, project], [{^direction, bt.last_used_at}])
-      :usage_last_7_days -> order_by(query, [bt, usage, author, project], [{^direction, fragment("COUNT(CASE WHEN ? >= NOW() - INTERVAL '7 days' THEN 1 END)", usage.occurred_at)}])
-      :total_usage -> order_by(query, [bt, usage, author, project], [{^direction, count(usage.id)}])
-      _ -> order_by(query, [bt, usage, author, project], [{^direction, bt.inserted_at}])
+      :author_name ->
+        order_by(query, [bt, usage, author, project], [{^direction, author.name}])
+
+      :project_title ->
+        order_by(query, [bt, usage, author, project], [{^direction, project.title}])
+
+      :hint ->
+        order_by(query, [bt, usage, author, project], [{^direction, bt.hint}])
+
+      :status ->
+        order_by(query, [bt, usage, author, project], [{^direction, bt.status}])
+
+      :inserted_at ->
+        order_by(query, [bt, usage, author, project], [{^direction, bt.inserted_at}])
+
+      :last_used_at ->
+        order_by(query, [bt, usage, author, project], [{^direction, bt.last_used_at}])
+
+      :usage_last_7_days ->
+        order_by(query, [bt, usage, author, project], [
+          {^direction,
+           fragment(
+             "COUNT(CASE WHEN ? >= NOW() - INTERVAL '7 days' THEN 1 END)",
+             usage.occurred_at
+           )}
+        ])
+
+      :total_usage ->
+        order_by(query, [bt, usage, author, project], [{^direction, count(usage.id)}])
+
+      _ ->
+        order_by(query, [bt, usage, author, project], [{^direction, bt.inserted_at}])
     end
   end
 end

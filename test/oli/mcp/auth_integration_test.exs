@@ -13,11 +13,12 @@ defmodule Oli.MCP.AuthIntegrationTest do
       project = insert(:project)
       _author_project = insert(:author_project, author_id: author.id, project_id: project.id)
 
-      {:ok, {_token_record, token_string}} = Auth.create_token(author.id, project.id, "Integration test token")
+      {:ok, {_token_record, token_string}} =
+        Auth.create_token(author.id, project.id, "Integration test token")
 
       # Test: Simulate MCP Server init with valid Bearer token
       frame = %{transport: %{req_headers: [{"authorization", "Bearer #{token_string}"}]}}
-      
+
       # Assert: Server init should succeed with auth context
       assert {:ok, updated_frame} = Server.init(nil, frame)
       assert updated_frame.assigns.author_id == author.id
@@ -28,7 +29,7 @@ defmodule Oli.MCP.AuthIntegrationTest do
     test "authentication fails with invalid token" do
       # Test: Simulate MCP Server init with invalid Bearer token
       frame = %{transport: %{req_headers: [{"authorization", "Bearer invalid_token_format"}]}}
-      
+
       # Assert: Server init should stop with unauthorized
       assert {:stop, :unauthorized} = Server.init(nil, frame)
     end
@@ -39,11 +40,11 @@ defmodule Oli.MCP.AuthIntegrationTest do
       _author_project = insert(:author_project, author_id: author.id, project_id: project.id)
 
       {:ok, {token_record, token_string}} = Auth.create_token(author.id, project.id)
-      Auth.update_token_status(token_record.id, "disabled")
+      Auth.update_token_status(token_record.id, :disabled)
 
       # Test: Simulate MCP Server init with disabled token
       frame = %{transport: %{req_headers: [{"authorization", "Bearer #{token_string}"}]}}
-      
+
       # Assert: Server init should stop with unauthorized
       assert {:stop, :unauthorized} = Server.init(nil, frame)
     end
@@ -60,7 +61,7 @@ defmodule Oli.MCP.AuthIntegrationTest do
 
       # Test: Simulate MCP Server init with token for deleted project
       frame = %{transport: %{req_headers: [{"authorization", "Bearer #{token_string}"}]}}
-      
+
       # Assert: Server init should stop with unauthorized
       assert {:stop, :unauthorized} = Server.init(nil, frame)
     end
@@ -77,7 +78,7 @@ defmodule Oli.MCP.AuthIntegrationTest do
 
       # Test: Simulate MCP Server init with token after access revoked
       frame = %{transport: %{req_headers: [{"authorization", "Bearer #{token_string}"}]}}
-      
+
       # Assert: Server init should stop with unauthorized
       assert {:stop, :unauthorized} = Server.init(nil, frame)
     end
@@ -88,7 +89,7 @@ defmodule Oli.MCP.AuthIntegrationTest do
       _author_project = insert(:author_project, author_id: author.id, project_id: project.id)
 
       {:ok, {token_record, token_string}} = Auth.create_token(author.id, project.id)
-      
+
       # Verify initial state
       assert token_record.last_used_at == nil
 
@@ -110,7 +111,7 @@ defmodule Oli.MCP.AuthIntegrationTest do
       {:ok, {_token_record, token_string}} = Auth.create_token(author.id, project.id)
 
       # Simulate concurrent requests
-      tasks = 
+      tasks =
         for _i <- 1..10 do
           Task.async(fn ->
             frame = %{transport: %{req_headers: [{"authorization", "Bearer #{token_string}"}]}}
@@ -168,7 +169,7 @@ defmodule Oli.MCP.AuthIntegrationTest do
       author = insert(:author)
       project1 = insert(:project)
       project2 = insert(:project)
-      
+
       # Author has access to both projects
       _author_project1 = insert(:author_project, author_id: author.id, project_id: project1.id)
       _author_project2 = insert(:author_project, author_id: author.id, project_id: project2.id)
@@ -179,7 +180,7 @@ defmodule Oli.MCP.AuthIntegrationTest do
       # Validate token through MCP Server init
       frame = %{transport: %{req_headers: [{"authorization", "Bearer #{token_string}"}]}}
       assert {:ok, updated_frame} = Server.init(nil, frame)
-      
+
       assert updated_frame.assigns.project_id == project1.id
       # Token should NOT grant access to project2
       refute updated_frame.assigns.project_id == project2.id
@@ -189,7 +190,7 @@ defmodule Oli.MCP.AuthIntegrationTest do
       author1 = insert(:author)
       author2 = insert(:author)
       project = insert(:project)
-      
+
       _author_project1 = insert(:author_project, author_id: author1.id, project_id: project.id)
       _author_project2 = insert(:author_project, author_id: author2.id, project_id: project.id)
 
@@ -200,10 +201,10 @@ defmodule Oli.MCP.AuthIntegrationTest do
       # Both tokens should be valid
       frame1 = %{transport: %{req_headers: [{"authorization", "Bearer #{token_string1}"}]}}
       frame2 = %{transport: %{req_headers: [{"authorization", "Bearer #{token_string2}"}]}}
-      
+
       assert {:ok, updated_frame1} = Server.init(nil, frame1)
       assert {:ok, updated_frame2} = Server.init(nil, frame2)
-      
+
       assert updated_frame1.assigns.author_id == author1.id
       assert updated_frame2.assigns.author_id == author2.id
       assert updated_frame1.assigns.project_id == project.id

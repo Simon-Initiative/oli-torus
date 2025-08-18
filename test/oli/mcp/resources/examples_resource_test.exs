@@ -13,12 +13,12 @@ defmodule Oli.MCP.Resources.ExamplesResourceTest do
       # Extract and parse the JSON content  
       assert %Anubis.Server.Response{contents: %{"text" => json_content}} = response
       assert {:ok, examples_data} = Jason.decode(json_content)
-      
+
       # Verify examples list structure
       assert Map.has_key?(examples_data, "examples")
       assert is_list(examples_data["examples"])
       assert length(examples_data["examples"]) == 1
-      
+
       example = hd(examples_data["examples"])
       assert example["type"] == "oli_multiple_choice"
       assert example["name"] == "Multiple Choice"

@@ -40,7 +40,7 @@ defmodule OliWeb.Projects.MCPTokenManager do
                   <p class="font-medium text-gray-900">Bearer Token</p>
                   <p class="text-sm text-gray-600 mt-1">
                     <%= if @token.hint do %>
-                      Description: <%= @token.hint %>
+                      Description: {@token.hint}
                     <% else %>
                       No description provided
                     <% end %>
@@ -49,14 +49,14 @@ defmodule OliWeb.Projects.MCPTokenManager do
                     Status:
                     <span class={[
                       "font-medium",
-                      if(@token.status == "enabled", do: "text-green-600", else: "text-red-600")
+                      if(@token.status == :active, do: "text-green-600", else: "text-red-600")
                     ]}>
-                      <%= String.capitalize(@token.status) %>
+                      {String.capitalize(to_string(@token.status))}
                     </span>
                   </p>
                   <%= if @token.last_used_at do %>
                     <p class="text-sm text-gray-500 mt-1">
-                      Last used: <%= format_datetime(@token.last_used_at) %>
+                      Last used: {format_datetime(@token.last_used_at)}
                     </p>
                   <% else %>
                     <p class="text-sm text-gray-500 mt-1">
@@ -67,27 +67,36 @@ defmodule OliWeb.Projects.MCPTokenManager do
               </div>
             </div>
             <div class="flex gap-2">
-              <button
-                type="button"
-                class="torus-button secondary"
-                phx-click="toggle_status"
-                phx-target={@myself}
-              >
-                <%= if @token.status == "enabled", do: "Disable", else: "Enable" %>
-              </button>
-              <button
-                type="button"
-                class="torus-button primary"
-                phx-click={Modal.show_modal("regenerate-token-modal")}
-              >
-                Regenerate Token
-              </button>
+              <%= if @token.status == :active do %>
+                <button
+                  type="button"
+                  class="torus-button primary"
+                  phx-click={Modal.show_modal("regenerate-token-modal")}
+                >
+                  Regenerate Token
+                </button>
+              <% else %>
+                <div class="flex items-center space-x-3">
+                  <span class="text-sm text-red-600 font-medium">
+                    Token has been disabled by an administrator
+                  </span>
+                  <button
+                    type="button"
+                    class="torus-button primary"
+                    disabled
+                    title="Cannot regenerate a disabled token"
+                  >
+                    Regenerate Token
+                  </button>
+                </div>
+              <% end %>
             </div>
           </div>
 
           <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
             <p class="text-sm text-blue-800">
-              <strong>Note:</strong> Bearer tokens grant read/write access to this project's content via the MCP API.
+              <strong>Note:</strong>
+              Bearer tokens grant read/write access to this project's content via the MCP API.
               Keep your token secure and regenerate it if you suspect it has been compromised.
             </p>
           </div>
@@ -110,15 +119,21 @@ defmodule OliWeb.Projects.MCPTokenManager do
           </div>
         </div>
       <% end %>
-
-      <!-- Generate Token Modal -->
+      
+    <!-- Generate Token Modal -->
       <Modal.modal id="generate-token-modal">
         <:title>Generate MCP Bearer Token</:title>
         <:subtitle>
           Create a new Bearer token for external AI agents to access this project's content.
         </:subtitle>
 
-        <.form :let={f} for={@changeset} phx-submit="generate_token" phx-target={@myself} id="generate-token-form">
+        <.form
+          :let={f}
+          for={@changeset}
+          phx-submit="generate_token"
+          phx-target={@myself}
+          id="generate-token-form"
+        >
           <div class="form-group">
             <label for="token-hint" class="form-label">
               Description (optional)
@@ -143,8 +158,8 @@ defmodule OliWeb.Projects.MCPTokenManager do
         </:confirm>
         <:cancel>Cancel</:cancel>
       </Modal.modal>
-
-      <!-- Regenerate Token Modal -->
+      
+    <!-- Regenerate Token Modal -->
       <Modal.modal id="regenerate-token-modal">
         <:title>Regenerate Bearer Token</:title>
         <:subtitle>
@@ -158,7 +173,13 @@ defmodule OliWeb.Projects.MCPTokenManager do
           </p>
         </div>
 
-        <.form :let={f} for={@changeset} phx-submit="regenerate_token" phx-target={@myself} id="regenerate-token-form">
+        <.form
+          :let={f}
+          for={@changeset}
+          phx-submit="regenerate_token"
+          phx-target={@myself}
+          id="regenerate-token-form"
+        >
           <div class="form-group">
             <label for="token-hint" class="form-label">
               Description (optional)
@@ -181,8 +202,8 @@ defmodule OliWeb.Projects.MCPTokenManager do
         </:confirm>
         <:cancel>Cancel</:cancel>
       </Modal.modal>
-
-      <!-- Token Display Modal -->
+      
+    <!-- Token Display Modal -->
       <%= if @new_token_string do %>
         <Modal.modal id="token-display-modal" show={true}>
           <:title>Your MCP Bearer Token</:title>
@@ -200,7 +221,7 @@ defmodule OliWeb.Projects.MCPTokenManager do
 
             <div class="relative">
               <div class="p-3 bg-gray-100 rounded-lg font-mono text-sm break-all">
-                <span id="token-value"><%= @new_token_string %></span>
+                <span id="token-value">{@new_token_string}</span>
               </div>
               <button
                 type="button"
@@ -220,7 +241,10 @@ defmodule OliWeb.Projects.MCPTokenManager do
                 Add this token to your AI agent's configuration to enable MCP access.
               </p>
               <p class="text-sm text-blue-800">
-                Example Authorization header: <code class="bg-blue-100 px-1">Bearer <%= String.slice(@new_token_string, 0, 20) %>...</code>
+                Example Authorization header:
+                <code class="bg-blue-100 px-1">
+                  Bearer {String.slice(@new_token_string, 0, 20)}...
+                </code>
               </p>
             </div>
           </div>
@@ -229,7 +253,10 @@ defmodule OliWeb.Projects.MCPTokenManager do
             <button
               type="button"
               class="torus-button primary w-full"
-              phx-click={JS.push("close_token_display", target: @myself) |> Modal.hide_modal("token-display-modal")}
+              phx-click={
+                JS.push("close_token_display", target: @myself)
+                |> Modal.hide_modal("token-display-modal")
+              }
             >
               I've copied the token
             </button>
@@ -275,25 +302,18 @@ defmodule OliWeb.Projects.MCPTokenManager do
          |> assign(:new_token_string, token_string)
          |> push_event("hide-modal", %{id: "regenerate-token-modal"})}
 
+      {:error, :token_disabled} ->
+        {:noreply,
+         socket
+         |> put_flash(
+           :error,
+           "Cannot regenerate a disabled token. Please enable the token first."
+         )}
+
       {:error, _changeset} ->
         {:noreply,
          socket
          |> put_flash(:error, "Failed to regenerate token. Please try again.")}
-    end
-  end
-
-  @impl true
-  def handle_event("toggle_status", _params, socket) do
-    new_status = if socket.assigns.token.status == "enabled", do: "disabled", else: "enabled"
-
-    case Auth.update_token_status(socket.assigns.token.id, new_status) do
-      {:ok, updated_token} ->
-        {:noreply, assign(socket, :token, updated_token)}
-
-      {:error, _} ->
-        {:noreply,
-         socket
-         |> put_flash(:error, "Failed to update token status.")}
     end
   end
 

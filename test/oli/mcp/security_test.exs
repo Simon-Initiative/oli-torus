@@ -9,7 +9,7 @@ defmodule Oli.MCP.SecurityTest do
   describe "Token Security Properties" do
     test "tokens are cryptographically secure" do
       # Generate multiple tokens and verify entropy
-      tokens = 
+      tokens =
         for _ <- 1..100 do
           TokenGenerator.generate()
         end
@@ -20,12 +20,13 @@ defmodule Oli.MCP.SecurityTest do
 
       # Check token length (should be sufficient for security)
       Enum.each(tokens, fn token ->
-        assert String.length(token) >= 40  # mcp_ + base64 of 32 bytes
+        # mcp_ + base64 of 32 bytes
+        assert String.length(token) >= 40
       end)
 
       # Verify tokens contain sufficient entropy (rough check)
       # Count unique characters across all tokens
-      all_chars = 
+      all_chars =
         tokens
         |> Enum.join("")
         |> String.graphemes()
@@ -64,13 +65,16 @@ defmodule Oli.MCP.SecurityTest do
         "short",
         "mcp_invalid",
         String.duplicate("mcp_", 100),
-        TokenGenerator.generate(),  # Valid format but wrong token
-        valid_token <> "x",         # Almost valid
-        String.slice(valid_token, 0..-2//1)  # Almost valid (truncated)
+        # Valid format but wrong token
+        TokenGenerator.generate(),
+        # Almost valid
+        valid_token <> "x",
+        # Almost valid (truncated)
+        String.slice(valid_token, 0..-2//1)
       ]
 
       # Measure validation times for invalid tokens
-      invalid_times = 
+      invalid_times =
         Enum.map(invalid_tokens, fn token ->
           {time, _result} = :timer.tc(fn -> Auth.validate_token(token) end)
           time
@@ -83,7 +87,7 @@ defmodule Oli.MCP.SecurityTest do
       # This is a rough check - in practice, timing attacks are complex
       max_time = Enum.max([valid_time | invalid_times])
       min_time = Enum.min([valid_time | invalid_times])
-      
+
       # The ratio shouldn't be too extreme (allowing for some variance)
       # Only calculate ratio if min_time is not zero
       if min_time > 0 do
@@ -94,7 +98,7 @@ defmodule Oli.MCP.SecurityTest do
 
     test "hash collision resistance" do
       # Generate many tokens and verify no hash collisions
-      tokens = 
+      tokens =
         for _ <- 1..1000 do
           TokenGenerator.generate()
         end
@@ -108,32 +112,40 @@ defmodule Oli.MCP.SecurityTest do
     test "token format prevents injection attacks" do
       # Try various injection patterns that should be rejected by format validation
       malicious_inputs = [
-        "'; DROP TABLE mcp_bearer_tokens; --",  # SQL injection without prefix
-        "<script>alert('xss')</script>",  # XSS without prefix  
-        "mcp_short",  # Too short
-        "wrong_prefix_abcdefghijklmnopqrstuvwxyz",  # Wrong prefix
-        "",  # Empty string
-        "mcp_",  # Just prefix
+        # SQL injection without prefix
+        "'; DROP TABLE mcp_bearer_tokens; --",
+        # XSS without prefix  
+        "<script>alert('xss')</script>",
+        # Too short
+        "mcp_short",
+        # Wrong prefix
+        "wrong_prefix_abcdefghijklmnopqrstuvwxyz",
+        # Empty string
+        "",
+        # Just prefix
+        "mcp_"
       ]
 
       Enum.each(malicious_inputs, fn input ->
         # Should be rejected at format validation level
         refute TokenGenerator.valid_format?(input)
-        
+
         # Should be rejected by auth system
         assert {:error, :invalid_token_format} = Auth.validate_token(input)
       end)
 
       # Test that longer valid-format tokens are handled correctly by auth system
       valid_format_but_invalid_tokens = [
-        "mcp_#{String.duplicate("A", 40)}",  # Valid format but invalid token
-        "mcp_" <> Base.url_encode64(:crypto.strong_rand_bytes(32), padding: false),  # Valid format, invalid token
+        # Valid format but invalid token
+        "mcp_#{String.duplicate("A", 40)}",
+        # Valid format, invalid token
+        "mcp_" <> Base.url_encode64(:crypto.strong_rand_bytes(32), padding: false)
       ]
 
       Enum.each(valid_format_but_invalid_tokens, fn input ->
         # Should pass format validation
         assert TokenGenerator.valid_format?(input)
-        
+
         # But should be rejected by auth system as invalid token
         assert {:error, :invalid_token} = Auth.validate_token(input)
       end)
@@ -145,12 +157,13 @@ defmodule Oli.MCP.SecurityTest do
       author = insert(:author)
       other_author = insert(:author)
       project = insert(:project)
-      
-      # Only other_author has access to project
-      _author_project = insert(:author_project, author_id: other_author.id, project_id: project.id)
 
-      assert {:error, :unauthorized_project_access} = 
-        Auth.create_token(author.id, project.id)
+      # Only other_author has access to project
+      _author_project =
+        insert(:author_project, author_id: other_author.id, project_id: project.id)
+
+      assert {:error, :unauthorized_project_access} =
+               Auth.create_token(author.id, project.id)
     end
 
     test "token becomes invalid when author loses project access" do
@@ -160,7 +173,7 @@ defmodule Oli.MCP.SecurityTest do
 
       # Create token while author has access
       {:ok, {_token_record, token_string}} = Auth.create_token(author.id, project.id)
-      
+
       # Verify token works
       assert {:ok, _} = Auth.validate_token(token_string)
 
@@ -177,7 +190,7 @@ defmodule Oli.MCP.SecurityTest do
       _author_project = insert(:author_project, author_id: author.id, project_id: project.id)
 
       {:ok, {_token_record, token_string}} = Auth.create_token(author.id, project.id)
-      
+
       # Verify token works
       assert {:ok, _} = Auth.validate_token(token_string)
 
@@ -194,7 +207,7 @@ defmodule Oli.MCP.SecurityTest do
       _author_project = insert(:author_project, author_id: author.id, project_id: project.id)
 
       {:ok, {token_record, token_string}} = Auth.create_token(author.id, project.id)
-      
+
       # Verify token exists and works
       assert Auth.get_token_by_author_and_project(author.id, project.id) != nil
       assert {:ok, _} = Auth.validate_token(token_string)
@@ -216,14 +229,17 @@ defmodule Oli.MCP.SecurityTest do
       _author_project = insert(:author_project, author_id: author.id, project_id: project.id)
 
       {:ok, {token_record, token_string}} = Auth.create_token(author.id, project.id)
-      
+
       # Verify token exists and works
       assert Auth.get_token_by_author_and_project(author.id, project.id) != nil
       assert {:ok, _} = Auth.validate_token(token_string)
 
       # Delete project (should cascade delete token due to foreign key constraint)
       # First delete the author_project association
-      Oli.Repo.delete_all(from ap in Oli.Authoring.Authors.AuthorProject, where: ap.project_id == ^project.id)
+      Oli.Repo.delete_all(
+        from ap in Oli.Authoring.Authors.AuthorProject, where: ap.project_id == ^project.id
+      )
+
       Oli.Repo.delete!(project)
 
       # Token should no longer exist
@@ -256,7 +272,7 @@ defmodule Oli.MCP.SecurityTest do
 
       # Create initial token
       {:ok, {_token1, token_string1}} = Auth.create_token(author.id, project.id)
-      
+
       # Verify it works
       assert {:ok, _} = Auth.validate_token(token_string1)
 
@@ -265,7 +281,7 @@ defmodule Oli.MCP.SecurityTest do
 
       # Old token should no longer work
       assert {:error, :invalid_token} = Auth.validate_token(token_string1)
-      
+
       # New token should work
       assert {:ok, _} = Auth.validate_token(token_string2)
     end
@@ -276,12 +292,12 @@ defmodule Oli.MCP.SecurityTest do
       _author_project = insert(:author_project, author_id: author.id, project_id: project.id)
 
       {:ok, {token_record, token_string}} = Auth.create_token(author.id, project.id)
-      
+
       # Verify token works initially
       assert {:ok, _} = Auth.validate_token(token_string)
 
       # Disable token
-      Auth.update_token_status(token_record.id, "disabled")
+      Auth.update_token_status(token_record.id, :disabled)
 
       # Token should no longer work
       assert {:error, :token_disabled} = Auth.validate_token(token_string)
@@ -292,15 +308,16 @@ defmodule Oli.MCP.SecurityTest do
       project = insert(:project)
       _author_project = insert(:author_project, author_id: author.id, project_id: project.id)
 
-      {:ok, {token_record, token_string}} = Auth.create_token(author.id, project.id, "My secret token")
-      
+      {:ok, {token_record, token_string}} =
+        Auth.create_token(author.id, project.id, "My secret token")
+
       # Hint should be the description, not contain the actual token
       assert token_record.hint == "My secret token"
       refute String.contains?(token_record.hint, token_string)
-      
+
       # Auto-generated hints should be safe
       {:ok, {token_record2, token_string2}} = Auth.regenerate_token(author.id, project.id)
-      
+
       # Auto-generated hint should contain masked version, not full token
       assert String.contains?(token_record2.hint, "****")
       refute String.contains?(token_record2.hint, token_string2)
@@ -316,34 +333,36 @@ defmodule Oli.MCP.SecurityTest do
       _author_project = insert(:author_project, author_id: author.id, project_id: project.id)
 
       {:ok, {token_record, token_string}} = Auth.create_token(author.id, project.id)
-      
+
       # Check that token is not stored in any field
       refute token_record.hash == token_string
       refute token_record.hint == token_string
-      
+
       # Verify we can't find the token by searching the database
       # This is a simplified check - in practice, you'd want to ensure
       # the token doesn't appear in any database dumps or logs
-      query_result = Oli.Repo.all(
-        from bt in Oli.MCP.Auth.BearerToken,
-        where: fragment("? = ?", bt.hash, ^token_string) or
-               fragment("? = ?", bt.hint, ^token_string)
-      )
-      
+      query_result =
+        Oli.Repo.all(
+          from bt in Oli.MCP.Auth.BearerToken,
+            where:
+              fragment("? = ?", bt.hash, ^token_string) or
+                fragment("? = ?", bt.hint, ^token_string)
+        )
+
       assert Enum.empty?(query_result)
     end
 
     test "hash storage uses appropriate algorithm" do
       token = TokenGenerator.generate()
       hash = TokenGenerator.hash(token)
-      
+
       # Hash should be exactly 16 bytes (MD5)
       assert byte_size(hash) == 16
-      
+
       # Hash should be deterministic
       hash2 = TokenGenerator.hash(token)
       assert hash == hash2
-      
+
       # Different tokens should produce different hashes
       other_token = TokenGenerator.generate()
       other_hash = TokenGenerator.hash(other_token)
@@ -358,23 +377,23 @@ defmodule Oli.MCP.SecurityTest do
       _author_project = insert(:author_project, author_id: author.id, project_id: project.id)
 
       {:ok, {_token_record, token_string}} = Auth.create_token(author.id, project.id)
-      
+
       # Validation should complete quickly (under 100ms)
       {time_microseconds, {:ok, _}} = :timer.tc(fn -> Auth.validate_token(token_string) end)
       time_milliseconds = time_microseconds / 1000
-      
+
       assert time_milliseconds < 100, "Token validation took #{time_milliseconds}ms (too slow)"
     end
 
     test "large number of invalid tokens don't cause performance issues" do
       # Generate many invalid tokens
-      invalid_tokens = 
+      invalid_tokens =
         for _ <- 1..100 do
           "mcp_" <> Base.url_encode64(:crypto.strong_rand_bytes(32), padding: false)
         end
 
       # Measure total time to validate all invalid tokens
-      {total_time, _results} = 
+      {total_time, _results} =
         :timer.tc(fn ->
           Enum.map(invalid_tokens, &Auth.validate_token/1)
         end)

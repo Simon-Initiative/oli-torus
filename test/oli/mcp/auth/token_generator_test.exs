@@ -28,7 +28,7 @@ defmodule Oli.MCP.Auth.TokenGeneratorTest do
     test "generates tokens with valid base64 after prefix" do
       token = TokenGenerator.generate()
       "mcp_" <> encoded = token
-      
+
       # Should be valid base64 (will raise if invalid)
       assert {:ok, _decoded} = Base.url_decode64(encoded, padding: false)
     end
@@ -39,22 +39,23 @@ defmodule Oli.MCP.Auth.TokenGeneratorTest do
       token = "mcp_test_token"
       hash1 = TokenGenerator.hash(token)
       hash2 = TokenGenerator.hash(token)
-      
+
       assert hash1 == hash2
     end
 
     test "generates different hashes for different tokens" do
       hash1 = TokenGenerator.hash("mcp_token1")
       hash2 = TokenGenerator.hash("mcp_token2")
-      
+
       assert hash1 != hash2
     end
 
     test "returns binary hash" do
       hash = TokenGenerator.hash("mcp_test")
-      
+
       assert is_binary(hash)
-      assert byte_size(hash) == 16  # MD5 is 16 bytes
+      # MD5 is 16 bytes
+      assert byte_size(hash) == 16
     end
   end
 
@@ -91,7 +92,7 @@ defmodule Oli.MCP.Auth.TokenGeneratorTest do
     test "creates hint with prefix and suffix for long tokens" do
       token = "mcp_abcdefghijklmnopqrstuvwxyz1234"
       hint = TokenGenerator.create_hint(token)
-      
+
       assert hint == "mcp_****1234"
     end
 
@@ -103,10 +104,10 @@ defmodule Oli.MCP.Auth.TokenGeneratorTest do
     test "creates different hints for different tokens" do
       token1 = "mcp_abcdefghijklmnopqrstuvwxyz1111"
       token2 = "mcp_abcdefghijklmnopqrstuvwxyz2222"
-      
+
       hint1 = TokenGenerator.create_hint(token1)
       hint2 = TokenGenerator.create_hint(token2)
-      
+
       assert hint1 != hint2
       assert hint1 == "mcp_****1111"
       assert hint2 == "mcp_****2222"
@@ -115,10 +116,11 @@ defmodule Oli.MCP.Auth.TokenGeneratorTest do
     test "works with generated tokens" do
       token = TokenGenerator.generate()
       hint = TokenGenerator.create_hint(token)
-      
+
       assert String.starts_with?(hint, "mcp_")
       assert String.contains?(hint, "****")
-      assert String.length(hint) == 12  # "mcp_****XXXX"
+      # "mcp_****XXXX"
+      assert String.length(hint) == 12
     end
   end
 
@@ -126,7 +128,7 @@ defmodule Oli.MCP.Auth.TokenGeneratorTest do
     test "returns true when token matches hash" do
       token = "mcp_test_token"
       hash = TokenGenerator.hash(token)
-      
+
       assert TokenGenerator.matches?(token, hash)
     end
 
@@ -134,13 +136,13 @@ defmodule Oli.MCP.Auth.TokenGeneratorTest do
       token = "mcp_test_token"
       wrong_token = "mcp_wrong_token"
       hash = TokenGenerator.hash(token)
-      
+
       refute TokenGenerator.matches?(wrong_token, hash)
     end
 
     test "returns false for invalid inputs" do
       hash = TokenGenerator.hash("test")
-      
+
       refute TokenGenerator.matches?(nil, hash)
       refute TokenGenerator.matches?("test", nil)
       refute TokenGenerator.matches?(123, hash)
@@ -150,10 +152,10 @@ defmodule Oli.MCP.Auth.TokenGeneratorTest do
       # Create two tokens that might have similar but different hashes
       token1 = "mcp_test_token_1"
       token2 = "mcp_test_token_2"
-      
+
       hash1 = TokenGenerator.hash(token1)
       hash2 = TokenGenerator.hash(token2)
-      
+
       assert TokenGenerator.matches?(token1, hash1)
       assert TokenGenerator.matches?(token2, hash2)
       refute TokenGenerator.matches?(token1, hash2)
@@ -165,20 +167,20 @@ defmodule Oli.MCP.Auth.TokenGeneratorTest do
     test "complete token lifecycle" do
       # Generate a token
       token = TokenGenerator.generate()
-      
+
       # Verify format
       assert TokenGenerator.valid_format?(token)
-      
+
       # Hash it
       hash = TokenGenerator.hash(token)
-      
+
       # Verify it matches
       assert TokenGenerator.matches?(token, hash)
-      
+
       # Create hint
       hint = TokenGenerator.create_hint(token)
       assert String.contains?(hint, "****")
-      
+
       # Verify different token doesn't match
       other_token = TokenGenerator.generate()
       refute TokenGenerator.matches?(other_token, hash)
@@ -188,16 +190,16 @@ defmodule Oli.MCP.Auth.TokenGeneratorTest do
       # Generate multiple tokens and verify they're all unique
       tokens = Enum.map(1..100, fn _ -> TokenGenerator.generate() end)
       unique_tokens = Enum.uniq(tokens)
-      
+
       assert length(tokens) == length(unique_tokens), "All generated tokens should be unique"
-      
+
       # Verify all tokens have valid format
       assert Enum.all?(tokens, &TokenGenerator.valid_format?/1)
-      
+
       # Verify hashes are different for different tokens
       hashes = Enum.map(tokens, &TokenGenerator.hash/1)
       unique_hashes = Enum.uniq(hashes)
-      
+
       assert length(hashes) == length(unique_hashes), "All hashes should be unique"
     end
   end

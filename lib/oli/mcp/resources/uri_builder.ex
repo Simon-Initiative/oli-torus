@@ -105,7 +105,6 @@ defmodule Oli.MCP.Resources.URIBuilder do
   For global resources like examples and schemas, project_slug will be nil.
   """
   def parse_uri(uri) do
-
     case URI.parse(uri) do
       %URI{scheme: @base_scheme, host: host, path: path} = _parsed_uri ->
         # Reconstruct the full path including the host part
@@ -132,13 +131,16 @@ defmodule Oli.MCP.Resources.URIBuilder do
       [project_slug, "objectives"] ->
         {:ok, {project_slug, :objectives_graph, nil}}
 
-      [project_slug, resource_type, resource_id] when resource_type in ["pages", "activities", "containers", "objectives"] ->
-        type_atom = case resource_type do
-          "pages" -> :page
-          "activities" -> :activity
-          "containers" -> :container
-          "objectives" -> :objective
-        end
+      [project_slug, resource_type, resource_id]
+      when resource_type in ["pages", "activities", "containers", "objectives"] ->
+        type_atom =
+          case resource_type do
+            "pages" -> :page
+            "activities" -> :activity
+            "containers" -> :container
+            "objectives" -> :objective
+          end
+
         {:ok, {project_slug, type_atom, resource_id}}
 
       _ ->
@@ -163,6 +165,7 @@ defmodule Oli.MCP.Resources.URIBuilder do
     case String.split(path, "/") do
       [category, schema_type] ->
         {:ok, {nil, :schema, {category, schema_type}}}
+
       _parts ->
         {:error, "Invalid schema path format"}
     end

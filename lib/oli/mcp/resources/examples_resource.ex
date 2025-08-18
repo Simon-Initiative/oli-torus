@@ -18,7 +18,7 @@ defmodule Oli.MCP.Resources.ExamplesResource do
   def read(_params, frame) do
     # Track resource usage
     UsageTracker.track_resource_usage(uri(), frame)
-    
+
     # For now, only support oli_multiple_choice
     examples = [
       %{

@@ -10,7 +10,8 @@ defmodule Oli.MCP.Resources.HierarchyBuilderTest do
 
       # Create a simple hierarchy node structure
       revision = %{
-        resource_type_id: 1,  # Page
+        # Page
+        resource_type_id: 1,
         title: "Test Page",
         slug: "test-page"
       }
@@ -34,7 +35,8 @@ defmodule Oli.MCP.Resources.HierarchyBuilderTest do
       project_slug = "test-project"
 
       revision = %{
-        resource_type_id: 2,  # Container
+        # Container
+        resource_type_id: 2,
         title: "Test Container",
         slug: "test-container"
       }
@@ -55,7 +57,8 @@ defmodule Oli.MCP.Resources.HierarchyBuilderTest do
       project_slug = "test-project"
 
       revision = %{
-        resource_type_id: 3,  # Activity (>2)
+        # Activity (>2)
+        resource_type_id: 3,
         title: "Test Activity",
         slug: "test-activity"
       }
@@ -77,14 +80,16 @@ defmodule Oli.MCP.Resources.HierarchyBuilderTest do
 
       # Parent container
       parent_revision = %{
-        resource_type_id: 2, # Container
+        # Container
+        resource_type_id: 2,
         title: "Parent Container",
         slug: "parent"
       }
 
       # Child page
       child_revision = %{
-        resource_type_id: 1, # Page
+        # Page
+        resource_type_id: 1,
         title: "Child Page",
         slug: "child"
       }

@@ -7,16 +7,16 @@ defmodule Oli.MCPTestHelpers do
 
   @doc """
   Creates a test frame with authentication context for MCP tool tests.
-  
+
   This function creates a Bearer token for the given author and project,
   then returns a frame struct with the authentication context in assigns.
-  
+
   Returns {frame, token_string} for reference.
   """
   def create_authenticated_frame(author_id, project_id) do
     # Create a Bearer token for the author and project
     {:ok, {_bearer_token, token_string}} = Auth.create_token(author_id, project_id, "Test token")
-    
+
     # Create a frame with authentication context in assigns
     frame = %{
       assigns: %{
@@ -30,7 +30,7 @@ defmodule Oli.MCPTestHelpers do
         }
       }
     }
-    
+
     {frame, token_string}
   end
 
@@ -48,7 +48,7 @@ defmodule Oli.MCPTestHelpers do
 
   @doc """
   Wraps a test function with an authenticated frame.
-  
+
   Usage:
     with_authenticated_frame(author.id, project.id, fn frame ->
       # test code that uses the frame

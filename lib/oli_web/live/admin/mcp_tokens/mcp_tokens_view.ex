@@ -7,7 +7,7 @@ defmodule OliWeb.Admin.MCPTokens.MCPTokensView do
   alias Oli.MCP.Auth
   alias Oli.Repo.{Paging, Sorting}
   alias OliWeb.Admin.MCPTokens.TableModel
-  alias OliWeb.Common.{Breadcrumb, PagedTable, TextSearch}
+  alias OliWeb.Common.{Breadcrumb, PagedTable}
   alias OliWeb.Common.Table.SortableTableModel
 
   @limit 25
@@ -39,7 +39,16 @@ defmodule OliWeb.Admin.MCPTokens.MCPTokensView do
 
     total_count = SortableTableModel.determine_total(tokens)
 
-    {:ok, table_model} = TableModel.new(tokens, socket.assigns.ctx)
+    # Create table model without auto-sorting since we're sorting at database level
+    {:ok, table_model} = TableModel.new([], socket.assigns.ctx)
+    initial_sort_spec = Enum.find(table_model.column_specs, fn spec -> spec.name == @sort_by end)
+
+    table_model = %{
+      table_model
+      | rows: tokens,
+        sort_by_spec: initial_sort_spec,
+        sort_order: @sort_order
+    }
 
     {:ok,
      assign(socket,
@@ -53,6 +62,8 @@ defmodule OliWeb.Admin.MCPTokens.MCPTokensView do
   end
 
   def handle_params(params, _, socket) do
+    IO.inspect(params)
+
     table_model =
       SortableTableModel.update_from_params(
         socket.assigns.table_model,
@@ -73,7 +84,8 @@ defmodule OliWeb.Admin.MCPTokens.MCPTokensView do
         options
       )
 
-    table_model = Map.put(table_model, :rows, tokens)
+    # Don't use Map.put which might trigger re-sorting, directly set the rows
+    table_model = %{table_model | rows: tokens}
     total_count = SortableTableModel.determine_total(tokens)
 
     {:noreply,
@@ -89,25 +101,6 @@ defmodule OliWeb.Admin.MCPTokens.MCPTokensView do
     ~H"""
     <div class="flex flex-col mt-4 space-y-4">
       <h1 class="text-2xl font-normal leading-9">MCP Bearer Tokens</h1>
-      <div class="flex flex-row items-center justify-between">
-        <TextSearch.render
-          id="text-search"
-          class="lg:!max-w-[33%] w-full"
-          text={@options.text_search}
-          event_target={nil}
-        />
-        <div class="flex items-center space-x-2">
-          <label class="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              checked={@options.include_disabled}
-              phx-click="toggle_include_disabled"
-              class="rounded"
-            />
-            <span class="text-sm">Include disabled tokens</span>
-          </label>
-        </div>
-      </div>
     </div>
     <div class="mt-4">
       <PagedTable.render
@@ -121,19 +114,51 @@ defmodule OliWeb.Admin.MCPTokens.MCPTokensView do
     """
   end
 
-  def handle_event("toggle_include_disabled", _params, socket) do
-    current_value = socket.assigns.options.include_disabled
+  def handle_event(
+        "toggle_token_status",
+        %{"token-id" => token_id, "current-status" => current_status},
+        socket
+      ) do
+    token_id = String.to_integer(token_id)
+    current_status = String.to_existing_atom(current_status)
 
-    {:noreply,
-     push_patch(socket,
-       to: ~p"/admin/mcp_tokens?#{%{include_disabled: !current_value}}"
-     )}
+    new_status =
+      case current_status do
+        :active -> :disabled
+        :disabled -> :active
+      end
+
+    case Auth.update_token_status(token_id, new_status) do
+      {:ok, _updated_token} ->
+        # Refresh the table data
+        tokens =
+          Auth.browse_tokens_with_usage(
+            %Paging{offset: socket.assigns[:offset] || 0, limit: @limit},
+            %Sorting{
+              direction: socket.assigns.table_model.sort_order,
+              field: socket.assigns.table_model.sort_by_spec.name
+            },
+            socket.assigns.options
+          )
+
+        table_model = Map.put(socket.assigns.table_model, :rows, tokens)
+        total_count = SortableTableModel.determine_total(tokens)
+
+        {:noreply,
+         socket
+         |> assign(table_model: table_model, total_count: total_count)
+         |> put_flash(:info, "Token status updated successfully.")}
+
+      {:error, _} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Failed to update token status. Please try again.")}
+    end
   end
 
   def handle_event(event, params, socket) do
     {event, params, socket, &__MODULE__.patch/2}
     |> delegate_to([
-      &TextSearch.handle_delegated/4,
       &PagedTable.handle_delegated/4
     ])
   end
@@ -143,15 +168,18 @@ defmodule OliWeb.Admin.MCPTokens.MCPTokensView do
   end
 
   defp build_url(socket, changes) do
+    IO.inspect(changes)
+
     current_params = %{
-      "offset" => socket.assigns[:offset] || 0,
-      "sort_by" => socket.assigns.table_model.sort_by_spec.name,
-      "sort_order" => socket.assigns.table_model.sort_order,
-      "text_search" => socket.assigns.options.text_search,
-      "include_disabled" => socket.assigns.options.include_disabled
+      offset: socket.assigns[:offset] || 0,
+      sort_by: socket.assigns.table_model.sort_by_spec.name,
+      sort_order: socket.assigns.table_model.sort_order,
+      text_search: socket.assigns.options.text_search,
+      include_disabled: socket.assigns.options.include_disabled
     }
 
-    updated_params = Map.merge(current_params, Enum.into(changes, %{}))
+    updated_params = Map.merge(current_params, changes)
+    IO.inspect(updated_params, label: "Updated Params")
     ~p"/admin/mcp_tokens?#{updated_params}"
   end
 end

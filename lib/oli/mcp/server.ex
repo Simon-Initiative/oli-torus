@@ -34,7 +34,6 @@ defmodule Oli.MCP.Server do
   def init(_arg, frame) do
     # Extract Bearer token from Authorization header
     case Enum.find(frame.transport.req_headers, fn {h, _v} -> h == "authorization" end) do
-
       nil ->
         {:stop, :unauthorized}
 
@@ -47,9 +46,7 @@ defmodule Oli.MCP.Server do
           :error ->
             {:stop, :unauthorized}
         end
-
     end
-
   end
 
   defp extract_and_validate_token("Bearer " <> token) do
@@ -57,7 +54,7 @@ defmodule Oli.MCP.Server do
       {:ok, %{author_id: author_id, project_id: project_id}} ->
         # Track initialization usage
         Auth.track_usage_by_token(token, "init")
-        
+
         {:ok, %{author_id: author_id, project_id: project_id, bearer_token: token}}
 
       {:error, _reason} ->

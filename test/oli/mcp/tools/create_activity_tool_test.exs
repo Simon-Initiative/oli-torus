@@ -34,7 +34,8 @@ defmodule Oli.MCP.Tools.CreateActivityToolTest do
 
     %{
       admin_author: admin_author,
-      author: admin_author,  # Make available as author too for consistency
+      # Make available as author too for consistency
+      author: admin_author,
       project: project,
       publication: publication,
       activity_registration: activity_registration
@@ -146,19 +147,19 @@ defmodule Oli.MCP.Tools.CreateActivityToolTest do
         )
 
       assert {:reply, response, ^frame} = result
-        assert [%{"type" => "text", "text" => success_text}] = response.content
+      assert [%{"type" => "text", "text" => success_text}] = response.content
 
-        # Parse the JSON response
-        {:ok, response_data} = Jason.decode(success_text)
-        assert response_data["success"] == true
-        assert response_data["message"] == "Activity created successfully"
-        assert Map.has_key?(response_data, "activity")
+      # Parse the JSON response
+      {:ok, response_data} = Jason.decode(success_text)
+      assert response_data["success"] == true
+      assert response_data["message"] == "Activity created successfully"
+      assert Map.has_key?(response_data, "activity")
 
-        activity = response_data["activity"]
-        assert Map.has_key?(activity, "resource_id")
-        assert Map.has_key?(activity, "revision_id")
-        assert Map.has_key?(activity, "slug")
-        assert Map.has_key?(activity, "title")
+      activity = response_data["activity"]
+      assert Map.has_key?(activity, "resource_id")
+      assert Map.has_key?(activity, "revision_id")
+      assert Map.has_key?(activity, "slug")
+      assert Map.has_key?(activity, "title")
     end
 
     test "returns error for invalid JSON", %{project: project, author: author} do
@@ -177,10 +178,10 @@ defmodule Oli.MCP.Tools.CreateActivityToolTest do
         )
 
       assert {:reply, response, ^frame} = result
-        assert response.isError == true
-        assert [%{"type" => "text", "text" => error_text}] = response.content
-        assert String.contains?(error_text, "Activity creation failed")
-        assert String.contains?(error_text, "Invalid JSON")
+      assert response.isError == true
+      assert [%{"type" => "text", "text" => error_text}] = response.content
+      assert String.contains?(error_text, "Activity creation failed")
+      assert String.contains?(error_text, "Invalid JSON")
     end
 
     test "returns error for invalid activity structure", %{project: project, author: author} do
@@ -206,9 +207,9 @@ defmodule Oli.MCP.Tools.CreateActivityToolTest do
         )
 
       assert {:reply, response, ^frame} = result
-        assert response.isError == true
-        assert [%{"type" => "text", "text" => error_text}] = response.content
-        assert String.contains?(error_text, "Activity creation failed")
+      assert response.isError == true
+      assert [%{"type" => "text", "text" => error_text}] = response.content
+      assert String.contains?(error_text, "Activity creation failed")
     end
 
     test "returns error for non-existent project" do
@@ -288,14 +289,17 @@ defmodule Oli.MCP.Tools.CreateActivityToolTest do
         )
 
       assert {:reply, response, ^frame} = result
-        assert [%{"type" => "text", "text" => success_text}] = response.content
+      assert [%{"type" => "text", "text" => success_text}] = response.content
 
-        # Parse the JSON response and check title
-        {:ok, response_data} = Jason.decode(success_text)
-        assert response_data["activity"]["title"] == "Custom Preview Title"
+      # Parse the JSON response and check title
+      {:ok, response_data} = Jason.decode(success_text)
+      assert response_data["activity"]["title"] == "Custom Preview Title"
     end
 
-    test "extracts title from stem content when no preview text", %{project: project, author: author} do
+    test "extracts title from stem content when no preview text", %{
+      project: project,
+      author: author
+    } do
       activity_without_preview = %{
         "stem" => %{
           "id" => "stem_1",
@@ -331,19 +335,20 @@ defmodule Oli.MCP.Tools.CreateActivityToolTest do
         )
 
       assert {:reply, response, ^frame} = result
-        assert [%{"type" => "text", "text" => success_text}] = response.content
+      assert [%{"type" => "text", "text" => success_text}] = response.content
 
-        # Parse the JSON response and check title
-        {:ok, response_data} = Jason.decode(success_text)
-        assert response_data["activity"]["title"] == "What is the meaning of life?"
+      # Parse the JSON response and check title
+      {:ok, response_data} = Jason.decode(success_text)
+      assert response_data["activity"]["title"] == "What is the meaning of life?"
     end
   end
 
   describe "system admin requirement" do
     test "fails when no authors exist", %{project: project, author: author} do
       # Create Bearer token before deleting authors
-      {:ok, {_bearer_token, token_string}} = Oli.MCP.Auth.create_token(author.id, project.id, "Test token")
-      
+      {:ok, {_bearer_token, token_string}} =
+        Oli.MCP.Auth.create_token(author.id, project.id, "Test token")
+
       # Delete all authors (making the Bearer token invalid)
       Oli.Repo.delete_all(Oli.Accounts.Author)
 

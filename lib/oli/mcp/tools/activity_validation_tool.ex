@@ -26,7 +26,7 @@ defmodule Oli.MCP.Tools.ActivityValidationTool do
   def execute(%{activity_json: activity_json}, frame) do
     # Track tool usage
     UsageTracker.track_tool_usage("activity_validation", frame)
-    
+
     case validate_activity_json(activity_json) do
       {:ok, _parsed_model} ->
         {:reply, Response.text(Response.tool(), "Activity JSON is valid"), frame}

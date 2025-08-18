@@ -32,7 +32,7 @@ defmodule Oli.MCP.Tools.ActivityTestEvalTool do
       ) do
     # Track tool usage
     UsageTracker.track_tool_usage("activity_test_eval", frame)
-    
+
     part_inputs = Jason.decode!(part_inputs)
 
     case test_activity_evaluation(activity_json, activity_type, part_inputs) do
@@ -42,6 +42,7 @@ defmodule Oli.MCP.Tools.ActivityTestEvalTool do
 
       {:error, reason} ->
         UsageTracker.track_tool_usage("activity_test_eval", frame, "error")
+
         {:reply,
          Response.error(Response.tool(), "Test evaluation failed: #{format_error(reason)}"),
          frame}

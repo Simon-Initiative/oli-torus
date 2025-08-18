@@ -8,18 +8,18 @@ defmodule Oli.MCP.Auth.BearerToken do
           project_id: integer(),
           hash: binary(),
           hint: String.t() | nil,
-          status: String.t(),
+          status: atom(),
           last_used_at: DateTime.t() | nil,
           inserted_at: DateTime.t(),
           updated_at: DateTime.t()
         }
 
-  @statuses ~w(enabled disabled)
+  @statuses [:active, :disabled]
 
   schema "mcp_bearer_tokens" do
     field :hash, :binary
     field :hint, :string
-    field :status, :string, default: "enabled"
+    field :status, Ecto.Enum, values: @statuses, default: :active
     field :last_used_at, :utc_datetime
 
     belongs_to :author, Oli.Accounts.Author
@@ -47,12 +47,12 @@ defmodule Oli.MCP.Auth.BearerToken do
   def statuses, do: @statuses
 
   @doc """
-  Returns true if the token is enabled.
+  Returns true if the token is active.
   """
-  def enabled?(%__MODULE__{status: status}), do: status == "enabled"
+  def active?(%__MODULE__{status: status}), do: status == :active
 
   @doc """
   Returns true if the token is disabled.
   """
-  def disabled?(%__MODULE__{status: status}), do: status == "disabled"
+  def disabled?(%__MODULE__{status: status}), do: status == :disabled
 end

@@ -43,7 +43,7 @@ defmodule Oli.MCP.Tools.CreateActivityTool do
       ) do
     # Track tool usage
     UsageTracker.track_tool_usage("create_activity", frame)
-    
+
     # Validate project access before proceeding
     case Authorization.validate_project_access(project_slug, frame) do
       {:ok, %{author_id: author_id}} ->

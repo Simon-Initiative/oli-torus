@@ -20,7 +20,7 @@ defmodule Oli.MCP.AuthTest do
       assert token_record.author_id == author.id
       assert token_record.project_id == project.id
       assert token_record.hint == "Test token"
-      assert token_record.status == "enabled"
+      assert token_record.status == :active
       assert is_binary(token_record.hash)
       assert is_binary(token_string)
       assert String.starts_with?(token_string, "mcp_")
@@ -96,7 +96,9 @@ defmodule Oli.MCP.AuthTest do
     test "rejects token with invalid format" do
       assert {:error, :invalid_token_format} = Auth.validate_token("invalid_token")
       assert {:error, :invalid_token_format} = Auth.validate_token("mcp_short")
-      assert {:error, :invalid_token_format} = Auth.validate_token("wrong_prefix_abcdefghijklmnopqrstuvwxyz")
+
+      assert {:error, :invalid_token_format} =
+               Auth.validate_token("wrong_prefix_abcdefghijklmnopqrstuvwxyz")
     end
 
     test "rejects non-existent token with valid format" do
@@ -110,7 +112,7 @@ defmodule Oli.MCP.AuthTest do
       _author_project = insert(:author_project, author_id: author.id, project_id: project.id)
 
       {:ok, {token_record, token_string}} = Auth.create_token(author.id, project.id)
-      Auth.update_token_status(token_record.id, "disabled")
+      Auth.update_token_status(token_record.id, :disabled)
 
       assert {:error, :token_disabled} = Auth.validate_token(token_string)
     end
@@ -287,7 +289,7 @@ defmodule Oli.MCP.AuthTest do
       _author_project = insert(:author_project, author_id: author.id, project_id: project.id)
 
       # Generate multiple tokens by regenerating
-      tokens = 
+      tokens =
         for _ <- 1..10 do
           {:ok, {_token_record, token_string}} = Auth.regenerate_token(author.id, project.id)
           token_string

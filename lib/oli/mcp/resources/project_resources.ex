@@ -44,7 +44,9 @@ defmodule Oli.MCP.Resources.ProjectResources do
             handle_resource_read(project_slug, resource_type, resource_id, frame)
 
           {:error, reason} ->
-            {:error, Anubis.MCP.Error.resource(:not_found, %{message: "Authorization failed: #{reason}"}), frame}
+            {:error,
+             Anubis.MCP.Error.resource(:not_found, %{message: "Authorization failed: #{reason}"}),
+             frame}
         end
 
       {:ok, {nil, resource_type, resource_id}} ->
@@ -90,7 +92,6 @@ defmodule Oli.MCP.Resources.ProjectResources do
     end
   end
 
-
   defp handle_resource_read(project_slug, resource_type, resource_id, frame)
        when resource_type in [:page, :activity, :container, :objective] do
     case get_resource_content(project_slug, resource_type, resource_id) do
@@ -122,6 +123,7 @@ defmodule Oli.MCP.Resources.ProjectResources do
           created: project.inserted_at,
           updated: project.updated_at
         }
+
         {:ok, metadata}
     end
   end
@@ -146,14 +148,15 @@ defmodule Oli.MCP.Resources.ProjectResources do
       objective_revisions = AuthoringResolver.revisions_of_type(project_slug, objective_type_id)
 
       # Transform into graph format with relationships
-      objectives = Enum.map(objective_revisions, fn revision ->
-        %{
-          resource_uri: URIBuilder.build_objective_uri(project_slug, revision.resource_id),
-          resource_id: revision.resource_id,
-          title: revision.title || revision.slug || "Untitled Objective",
-          children: Map.get(revision, :children, []) || []
-        }
-      end)
+      objectives =
+        Enum.map(objective_revisions, fn revision ->
+          %{
+            resource_uri: URIBuilder.build_objective_uri(project_slug, revision.resource_id),
+            resource_id: revision.resource_id,
+            title: revision.title || revision.slug || "Untitled Objective",
+            children: Map.get(revision, :children, []) || []
+          }
+        end)
 
       {:ok, %{objectives: objectives, project_slug: project_slug}}
     rescue
@@ -165,32 +168,36 @@ defmodule Oli.MCP.Resources.ProjectResources do
   defp get_resource_content(project_slug, resource_type, resource_id) do
     try do
       # Convert string resource_id to integer if needed
-      resource_id = case Integer.parse(resource_id) do
-        {id, ""} -> id
-        _ -> resource_id
-      end
+      resource_id =
+        case Integer.parse(resource_id) do
+          {id, ""} -> id
+          _ -> resource_id
+        end
 
       case AuthoringResolver.from_resource_id(project_slug, resource_id) do
         nil ->
           {:error, "Resource not found: project '#{project_slug}', resource_id '#{resource_id}'"}
 
         %{deleted: true} ->
-          {:error, "Resource has been deleted: project '#{project_slug}', resource_id '#{resource_id}'"}
+          {:error,
+           "Resource has been deleted: project '#{project_slug}', resource_id '#{resource_id}'"}
 
         revision ->
           # Verify resource type matches expectation
           actual_type = get_type_from_resource_type_id(revision.resource_type_id)
+
           if actual_type == resource_type do
-            {:ok, %{
-              resource_id: revision.resource_id,
-              slug: revision.slug,
-              title: revision.title,
-              content: revision.content,
-              objectives: Map.get(revision, :objectives, []),
-              resource_type: actual_type,
-              created: revision.inserted_at,
-              updated: revision.updated_at
-            }}
+            {:ok,
+             %{
+               resource_id: revision.resource_id,
+               slug: revision.slug,
+               title: revision.title,
+               content: revision.content,
+               objectives: Map.get(revision, :objectives, []),
+               resource_type: actual_type,
+               created: revision.inserted_at,
+               updated: revision.updated_at
+             }}
           else
             {:error, "Resource type mismatch: expected #{resource_type}, got #{actual_type}"}
           end
@@ -204,12 +211,13 @@ defmodule Oli.MCP.Resources.ProjectResources do
   defp get_type_from_resource_type_id(1), do: :page
   defp get_type_from_resource_type_id(2), do: :container
   defp get_type_from_resource_type_id(4), do: :objective
+
   defp get_type_from_resource_type_id(id) when id > 2 and id != 4 do
     # Activities have resource_type_id > 2 (but not 4 which is objective)
     :activity
   end
-  defp get_type_from_resource_type_id(_), do: :unknown
 
+  defp get_type_from_resource_type_id(_), do: :unknown
 
   # Resource templates that tell MCP clients about available URI patterns
   def resource_templates do
@@ -262,7 +270,7 @@ defmodule Oli.MCP.Resources.ProjectResources do
         description: "Individual learning objective definition",
         mime_type: URIBuilder.get_mime_type(:objective),
         handler: __MODULE__
-      },
+      }
     ]
   end
 end

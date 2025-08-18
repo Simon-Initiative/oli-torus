@@ -18,7 +18,7 @@ defmodule Oli.MCP.Resources.ExampleResource do
   def read(_params, frame) do
     # Track resource usage
     UsageTracker.track_resource_usage(uri(), frame)
-    
+
     example = %{
       "stem" => %{
         "id" => "stem_1",

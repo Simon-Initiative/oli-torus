@@ -26,11 +26,19 @@ defmodule Oli.MCP.Resources.SchemaResource do
         case Jason.decode(content) do
           {:ok, schema} ->
             {:reply, Response.json(Response.resource(), schema), frame}
+
           {:error, reason} ->
-            {:error, Anubis.MCP.Error.resource(:not_found, %{message: "Failed to parse schema file as JSON: #{inspect(reason)}"}), frame}
+            {:error,
+             Anubis.MCP.Error.resource(:not_found, %{
+               message: "Failed to parse schema file as JSON: #{inspect(reason)}"
+             }), frame}
         end
+
       {:error, reason} ->
-        {:error, Anubis.MCP.Error.resource(:not_found, %{message: "Failed to read content schema file: #{inspect(reason)}"}), frame}
+        {:error,
+         Anubis.MCP.Error.resource(:not_found, %{
+           message: "Failed to read content schema file: #{inspect(reason)}"
+         }), frame}
     end
   end
 end

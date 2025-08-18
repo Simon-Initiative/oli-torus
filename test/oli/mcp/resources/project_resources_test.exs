@@ -22,7 +22,8 @@ defmodule Oli.MCP.Resources.ProjectResourcesTest do
       page_revision =
         insert(:revision, %{
           resource: page_resource,
-          resource_type_id: 1, # Ensure this is a page
+          # Ensure this is a page
+          resource_type_id: 1,
           title: "Test Page",
           content: %{
             "model" => [
@@ -54,22 +55,27 @@ defmodule Oli.MCP.Resources.ProjectResourcesTest do
 
       # Create some objectives for testing
       objective_resource_1 = insert(:resource)
-      objective_revision_1 = insert(:revision, %{
-        resource: objective_resource_1,
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("objective"),
-        title: "Learning Objective 1",
-        slug: "objective-1",
-        children: []
-      })
+
+      objective_revision_1 =
+        insert(:revision, %{
+          resource: objective_resource_1,
+          resource_type_id: Oli.Resources.ResourceType.get_id_by_type("objective"),
+          title: "Learning Objective 1",
+          slug: "objective-1",
+          children: []
+        })
 
       objective_resource_2 = insert(:resource)
-      objective_revision_2 = insert(:revision, %{
-        resource: objective_resource_2,
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("objective"),
-        title: "Learning Objective 2",
-        slug: "objective-2",
-        children: [objective_resource_1.id]  # This objective has child objective 1
-      })
+
+      objective_revision_2 =
+        insert(:revision, %{
+          resource: objective_resource_2,
+          resource_type_id: Oli.Resources.ResourceType.get_id_by_type("objective"),
+          title: "Learning Objective 2",
+          slug: "objective-2",
+          # This objective has child objective 1
+          children: [objective_resource_1.id]
+        })
 
       # Associate objectives with project
       insert(:project_resource, %{project_id: project.id, resource_id: objective_resource_1.id})
@@ -104,13 +110,13 @@ defmodule Oli.MCP.Resources.ProjectResourcesTest do
 
     test "reads project metadata successfully", %{project: project, frame: frame} do
       uri = "torus://p/#{project.slug}"
-      
+
       assert {:reply, response, _frame} = ProjectResources.read(%{"uri" => uri}, frame)
-      
+
       # Extract and parse the JSON content
       assert %Anubis.Server.Response{contents: %{"text" => json_content}} = response
       assert {:ok, metadata} = Jason.decode(json_content)
-      
+
       assert metadata["slug"] == project.slug
       assert metadata["title"] == project.title
       assert metadata["status"] == Atom.to_string(project.status)
@@ -118,13 +124,13 @@ defmodule Oli.MCP.Resources.ProjectResourcesTest do
 
     test "reads project hierarchy successfully", %{project: project, frame: frame} do
       uri = "torus://p/#{project.slug}/hierarchy"
-      
+
       assert {:reply, response, _frame} = ProjectResources.read(%{"uri" => uri}, frame)
-      
+
       # Extract and parse the JSON content
       assert %Anubis.Server.Response{contents: %{"text" => json_content}} = response
       assert {:ok, hierarchy} = Jason.decode(json_content)
-      
+
       # Verify hierarchy structure
       assert is_map(hierarchy)
       # Root can be either a page or container depending on setup
@@ -132,48 +138,57 @@ defmodule Oli.MCP.Resources.ProjectResourcesTest do
       assert is_list(hierarchy["children"])
     end
 
-    test "reads objectives graph successfully", %{project: project, objective_resource_1: obj1, objective_resource_2: obj2, frame: frame} do
+    test "reads objectives graph successfully", %{
+      project: project,
+      objective_resource_1: obj1,
+      objective_resource_2: obj2,
+      frame: frame
+    } do
       uri = "torus://p/#{project.slug}/objectives"
-      
+
       assert {:reply, response, _frame} = ProjectResources.read(%{"uri" => uri}, frame)
-      
+
       # Extract and parse the JSON content
       assert %Anubis.Server.Response{contents: %{"text" => json_content}} = response
       assert {:ok, objectives_data} = Jason.decode(json_content)
-      
+
       # Verify objectives structure
       assert is_map(objectives_data)
       assert Map.has_key?(objectives_data, "objectives")
       assert is_list(objectives_data["objectives"])
-      
+
       # Should have our 2 objectives
       objectives = objectives_data["objectives"]
       assert length(objectives) == 2
-      
+
       # Find our specific objectives
       obj1_data = Enum.find(objectives, &(&1["resource_id"] == obj1.id))
       obj2_data = Enum.find(objectives, &(&1["resource_id"] == obj2.id))
-      
+
       # Verify objective 1 structure
       assert obj1_data["title"] == "Learning Objective 1"
       assert obj1_data["resource_uri"] == "torus://p/#{project.slug}/objectives/#{obj1.id}"
       assert obj1_data["children"] == []
-      
+
       # Verify objective 2 structure (has objective 1 as child)
       assert obj2_data["title"] == "Learning Objective 2"
       assert obj2_data["resource_uri"] == "torus://p/#{project.slug}/objectives/#{obj2.id}"
       assert obj2_data["children"] == [obj1.id]
     end
 
-    test "reads page content successfully", %{project: project, page_resource: page_resource, frame: frame} do
+    test "reads page content successfully", %{
+      project: project,
+      page_resource: page_resource,
+      frame: frame
+    } do
       uri = "torus://p/#{project.slug}/pages/#{page_resource.id}"
-      
+
       assert {:reply, response, _frame} = ProjectResources.read(%{"uri" => uri}, frame)
-      
+
       # Extract and parse the JSON content
       assert %Anubis.Server.Response{contents: %{"text" => json_content}} = response
       assert {:ok, page_data} = Jason.decode(json_content)
-      
+
       # Verify page structure
       assert page_data["resource_type"] == "page"
       assert page_data["resource_id"] == page_resource.id
@@ -181,15 +196,19 @@ defmodule Oli.MCP.Resources.ProjectResourcesTest do
       assert Map.has_key?(page_data, "title")
     end
 
-    test "reads individual objective successfully", %{project: project, objective_resource_1: objective_resource, frame: frame} do
+    test "reads individual objective successfully", %{
+      project: project,
+      objective_resource_1: objective_resource,
+      frame: frame
+    } do
       uri = "torus://p/#{project.slug}/objectives/#{objective_resource.id}"
-      
+
       assert {:reply, response, _frame} = ProjectResources.read(%{"uri" => uri}, frame)
-      
+
       # Extract and parse the JSON content
       assert %Anubis.Server.Response{contents: %{"text" => json_content}} = response
       assert {:ok, objective_data} = Jason.decode(json_content)
-      
+
       # Verify objective structure
       assert objective_data["resource_type"] == "objective"
       assert objective_data["resource_id"] == objective_resource.id
@@ -200,45 +219,48 @@ defmodule Oli.MCP.Resources.ProjectResourcesTest do
 
     test "returns error for invalid URI format", %{frame: frame} do
       uri = "invalid://uri/format"
-      
+
       assert {:error, error, _frame} = ProjectResources.read(%{"uri" => uri}, frame)
       assert error.reason == :resource_not_found
     end
 
     test "returns error for non-existent project", %{frame: frame} do
       uri = "torus://p/non-existent-project"
-      
+
       assert {:error, error, _frame} = ProjectResources.read(%{"uri" => uri}, frame)
       assert error.reason == :resource_not_found
     end
 
     test "returns error for non-existent resource", %{project: project, frame: frame} do
       uri = "torus://p/#{project.slug}/pages/999999"
-      
+
       assert {:error, error, _frame} = ProjectResources.read(%{"uri" => uri}, frame)
       assert error.reason == :resource_not_found
     end
 
-    test "returns error for resource type mismatch", %{project: project, page_resource: page_resource, frame: frame} do
+    test "returns error for resource type mismatch", %{
+      project: project,
+      page_resource: page_resource,
+      frame: frame
+    } do
       # Try to access the page as an activity (should fail due to type mismatch)
       uri = "torus://p/#{project.slug}/activities/#{page_resource.id}"
-      
+
       assert {:error, error, _frame} = ProjectResources.read(%{"uri" => uri}, frame)
       assert error.reason == :resource_not_found
     end
-
   end
 
   describe "resource_templates/0" do
     test "returns all expected resource templates" do
       templates = ProjectResources.resource_templates()
-      
+
       # Should have 7 project-specific templates
       assert length(templates) == 7
-      
+
       # Check that all expected URI templates are present
       uri_templates = Enum.map(templates, & &1.uri_template)
-      
+
       expected_templates = [
         "torus://p/{project}",
         "torus://p/{project}/hierarchy",
@@ -248,11 +270,11 @@ defmodule Oli.MCP.Resources.ProjectResourcesTest do
         "torus://p/{project}/containers/{id}",
         "torus://p/{project}/objectives/{id}"
       ]
-      
+
       for template <- expected_templates do
         assert template in uri_templates
       end
-      
+
       # Verify each template has required fields
       for template_resource <- templates do
         assert template_resource.name
