@@ -12,7 +12,9 @@ defmodule Oli.MCP.Auth do
   import Ecto.Query, warn: false
   alias Oli.Repo
   alias Oli.MCP.Auth.BearerToken
+  alias Oli.MCP.Auth.TokenGenerator
   alias Oli.Authoring.Course.Project
+  alias Oli.Authoring.Authors.AuthorProject
 
   @doc """
   Creates a new bearer token for the given author and project.
@@ -24,20 +26,26 @@ defmodule Oli.MCP.Auth do
   to the user immediately as it cannot be retrieved again.
   """
   def create_token(author_id, project_id, hint \\ nil) do
-    token = generate_token()
-    hash = hash_token(token)
+    # Verify author has access to the project before creating token
+    with :ok <- verify_author_project_access(author_id, project_id) do
+      token = TokenGenerator.generate()
+      hash = TokenGenerator.hash(token)
+      
+      # Auto-generate hint if not provided
+      hint = hint || TokenGenerator.create_hint(token)
 
-    %BearerToken{}
-    |> BearerToken.changeset(%{
-      author_id: author_id,
-      project_id: project_id,
-      hash: hash,
-      hint: hint
-    })
-    |> Repo.insert()
-    |> case do
-      {:ok, bearer_token} -> {:ok, {bearer_token, token}}
-      {:error, changeset} -> {:error, changeset}
+      %BearerToken{}
+      |> BearerToken.changeset(%{
+        author_id: author_id,
+        project_id: project_id,
+        hash: hash,
+        hint: hint
+      })
+      |> Repo.insert()
+      |> case do
+        {:ok, bearer_token} -> {:ok, {bearer_token, token}}
+        {:error, changeset} -> {:error, changeset}
+      end
     end
   end
 
@@ -57,21 +65,27 @@ defmodule Oli.MCP.Auth do
   as create_token/3.
   """
   def regenerate_token(author_id, project_id, hint \\ nil) do
-    case get_token_by_author_and_project(author_id, project_id) do
-      nil ->
-        create_token(author_id, project_id, hint)
+    # Verify author has access to the project before regenerating
+    with :ok <- verify_author_project_access(author_id, project_id) do
+      case get_token_by_author_and_project(author_id, project_id) do
+        nil ->
+          create_token(author_id, project_id, hint)
 
-      existing_token ->
-        token = generate_token()
-        hash = hash_token(token)
+        existing_token ->
+          token = TokenGenerator.generate()
+          hash = TokenGenerator.hash(token)
+          
+          # Auto-generate hint if not provided
+          hint = hint || TokenGenerator.create_hint(token)
 
-        existing_token
-        |> BearerToken.changeset(%{hash: hash, hint: hint})
-        |> Repo.update()
-        |> case do
-          {:ok, bearer_token} -> {:ok, {bearer_token, token}}
-          {:error, changeset} -> {:error, changeset}
-        end
+          existing_token
+          |> BearerToken.changeset(%{hash: hash, hint: hint})
+          |> Repo.update()
+          |> case do
+            {:ok, bearer_token} -> {:ok, {bearer_token, token}}
+            {:error, changeset} -> {:error, changeset}
+          end
+      end
     end
   end
 
@@ -94,24 +108,32 @@ defmodule Oli.MCP.Auth do
   Also updates the last_used_at timestamp for valid tokens.
   """
   def validate_token(token) when is_binary(token) do
-    hash = hash_token(token)
+    # First check token format for early rejection
+    unless TokenGenerator.valid_format?(token) do
+      {:error, :invalid_token_format}
+    else
+      hash = TokenGenerator.hash(token)
 
-    case Repo.get_by(BearerToken, hash: hash) do
-      nil ->
-        {:error, :invalid_token}
+      case Repo.get_by(BearerToken, hash: hash) do
+        nil ->
+          {:error, :invalid_token}
 
-      %BearerToken{status: "disabled"} ->
-        {:error, :token_disabled}
+        %BearerToken{status: "disabled"} ->
+          {:error, :token_disabled}
 
-      %BearerToken{} = bearer_token ->
-        # Update last used timestamp
-        update_last_used(bearer_token)
+        %BearerToken{} = bearer_token ->
+          # Verify the associated project and author still exist and are active
+          with :ok <- verify_token_associations(bearer_token) do
+            # Update last used timestamp
+            update_last_used(bearer_token)
 
-        {:ok,
-         %{
-           author_id: bearer_token.author_id,
-           project_id: bearer_token.project_id
-         }}
+            {:ok,
+             %{
+               author_id: bearer_token.author_id,
+               project_id: bearer_token.project_id
+             }}
+          end
+      end
     end
   end
 
@@ -177,24 +199,59 @@ defmodule Oli.MCP.Auth do
     BearerToken.changeset(token, attrs)
   end
 
+  @doc """
+  Verifies that an author can perform token operations for a project.
+  
+  Returns :ok if the author is a collaborator on the project,
+  {:error, reason} otherwise.
+  """
+  def verify_author_can_manage_token(author_id, project_id) do
+    verify_author_project_access(author_id, project_id)
+  end
+
   # Private functions
-
-  defp generate_token do
-    # Generate a cryptographically secure token with "mcp_" prefix
-    # Following the same pattern as outlined in the plan
-    random_bytes = :crypto.strong_rand_bytes(32)
-    "mcp_" <> Base.url_encode64(random_bytes, padding: false)
-  end
-
-  defp hash_token(token) do
-    # Use the same MD5 hashing approach as the existing API key system
-    # but store as binary instead of encoded string
-    :crypto.hash(:md5, token)
-  end
 
   defp update_last_used(%BearerToken{} = token) do
     token
     |> BearerToken.changeset(%{last_used_at: DateTime.utc_now()})
     |> Repo.update()
+  end
+
+  defp verify_author_project_access(author_id, project_id) do
+    # Check if author is a collaborator on the project
+    case Repo.get_by(AuthorProject, author_id: author_id, project_id: project_id) do
+      nil ->
+        {:error, :unauthorized_project_access}
+      
+      _author_project ->
+        # Also verify the project exists and is not deleted
+        case Repo.get(Project, project_id) do
+          nil ->
+            {:error, :project_not_found}
+          
+          %Project{status: :deleted} ->
+            {:error, :project_deleted}
+          
+          %Project{} ->
+            :ok
+        end
+    end
+  end
+
+  defp verify_token_associations(%BearerToken{author_id: author_id, project_id: project_id}) do
+    # Verify both the author and project still exist and are valid
+    with {:project, %Project{status: status}} when status != :deleted <- 
+           {:project, Repo.get(Project, project_id)},
+         {:author, author} when not is_nil(author) <- 
+           {:author, Repo.get(Oli.Accounts.Author, author_id)},
+         {:author_project, author_project} when not is_nil(author_project) <-
+           {:author_project, Repo.get_by(AuthorProject, author_id: author_id, project_id: project_id)} do
+      :ok
+    else
+      {:project, nil} -> {:error, :project_not_found}
+      {:project, %Project{status: :deleted}} -> {:error, :project_deleted}
+      {:author, nil} -> {:error, :author_not_found}
+      {:author_project, nil} -> {:error, :unauthorized_project_access}
+    end
   end
 end
