@@ -359,6 +359,11 @@ defmodule OliWeb.Router do
     post("/jcourse/dashboard/log/server", OliWeb.LegacyLogsController, :process)
   end
 
+  scope "/api/v1/superactivity/media", OliWeb do
+    pipe_through([:api, :authoring_protected])
+    post("/", LegacySuperactivityController, :create_media)
+  end
+
   scope "/", OliWeb do
     pipe_through([:browser, :delivery_protected])
 

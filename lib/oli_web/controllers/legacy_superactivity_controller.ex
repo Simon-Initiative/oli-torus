@@ -100,6 +100,36 @@ defmodule OliWeb.LegacySuperactivityController do
     end
   end
 
+  def create_media(conn, %{"directory" => directory, "file" => file, "name" => name}) do
+    case Base.decode64(file) do
+      {:ok, contents} ->
+        bucket_name = Application.fetch_env!(:oli, :s3_media_bucket_name)
+        hash = :crypto.hash(:md5, contents) |> Base.encode16()
+        upload_path = Path.join(["/media", directory, "webcontent", hash, name])
+        media_url = Application.fetch_env!(:oli, :media_url)
+
+        case upload_file(bucket_name, upload_path, contents) do
+          {:ok, %{status_code: 200}} ->
+            json(conn, %{
+              type: "success",
+              url: "https://#{media_url}#{upload_path}"
+            })
+
+          _ ->
+            error(conn, 400, "failed to add superactivity media")
+        end
+
+      _ ->
+        error(conn, 400, "invalid encoded file")
+    end
+  end
+
+  defp upload_file(bucket, file_name, contents) do
+    mime_type = MIME.from_path(file_name)
+    options = [{:acl, :public_read}, {:content_type, mime_type}]
+    ExAws.S3.put_object(bucket, file_name, contents, options) |> ExAws.request()
+  end
+
   def file_not_found(conn, _params) do
     conn
     |> put_status(404)
