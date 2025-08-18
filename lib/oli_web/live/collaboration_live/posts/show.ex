@@ -49,14 +49,14 @@ defmodule OliWeb.CollaborationLive.Posts.Show do
     ~H"""
     <div class="flex-col">
       <div class="flex gap-2 mb-3">
-        <span class="torus-span post-index">#<%= @index %></span>
+        <span class="torus-span post-index">#{@index}</span>
 
         <div class="border-r border-gray-200 h-10" />
 
         <div class="flex flex-1 justify-between">
           <div class="flex-col">
-            <h6 class="torus-h6 text-sm"><%= render_name(@post, @user_id) %></h6>
-            <small class="torus-small"><%= render_date(@post.inserted_at) %></small>
+            <h6 class="torus-h6 text-sm">{render_name(@post, @user_id)}</h6>
+            <small class="torus-small">{render_date(@post.inserted_at)}</small>
           </div>
 
           <div :if={!@parent_is_archived} class="flex gap-2 items-center">
@@ -173,7 +173,7 @@ defmodule OliWeb.CollaborationLive.Posts.Show do
 
       <%= if @is_threaded and @is_reply and @post.parent_post_id != @parent_post_id do %>
         <small class="mt-2 torus-small reply-info">
-          <%= reply_parent_post_text(assigns, @parent_replies, @index, @post.parent_post_id) %>
+          {reply_parent_post_text(assigns, @parent_replies, @index, @post.parent_post_id)}
         </small>
       <% end %>
 
@@ -219,7 +219,7 @@ defmodule OliWeb.CollaborationLive.Posts.Show do
               >
                 <i class={"fa #{if @is_selected, do: "fa-angle-up", else: "fa-angle-down"} mr-1"} />
                 <small>
-                  <%= if @is_selected, do: "Hide replies", else: "Show #{@post.replies_count} replies" %>
+                  {if @is_selected, do: "Hide replies", else: "Show #{@post.replies_count} replies"}
                 </small>
               </button>
             </div>
@@ -279,7 +279,7 @@ defmodule OliWeb.CollaborationLive.Posts.Show do
       <% end %>
 
       <%= if !@is_editing do %>
-        <p class="mb-0 text-sm post-content"><%= @post.content.message %></p>
+        <p class="mb-0 text-sm post-content">{@post.content.message}</p>
       <% end %>
 
       <%= if @is_threaded && !@is_editing do %>
@@ -328,7 +328,7 @@ defmodule OliWeb.CollaborationLive.Posts.Show do
               >
                 <i class={"fa #{if @is_selected, do: "fa-angle-up", else: "fa-angle-down"} mr-1"} />
                 <small>
-                  <%= if @is_selected, do: "Hide replies", else: "Show #{@post.replies_count} replies" %>
+                  {if @is_selected, do: "Hide replies", else: "Show #{@post.replies_count} replies"}
                 </small>
               </button>
             </div>
@@ -377,7 +377,7 @@ defmodule OliWeb.CollaborationLive.Posts.Show do
     assigns = Map.merge(assigns, %{thread_index: thread_index, index: index})
 
     ~H"""
-    <%= "Replying to ##{@thread_index}.#{@index}:" %>
+    {"Replying to ##{@thread_index}.#{@index}:"}
     """
   end
 

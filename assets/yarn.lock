@@ -14240,6 +14240,11 @@ monaco-editor@^0.32.1:
   resolved "https://registry.npmjs.org/monaco-editor/-/monaco-editor-0.32.1.tgz"
   integrity sha512-LUt2wsUvQmEi2tfTOK+tjAPvt7eQ+K5C4rZPr6SeuyzjAuAHrIvlUloTcOiGjZW3fn3a/jFQCONrEJbNOaCqbA==
 
+morphdom@2.7.7:
+  version "2.7.7"
+  resolved "https://registry.yarnpkg.com/morphdom/-/morphdom-2.7.7.tgz#72559af781357a4eb2169a0a578acb76ff7e8abf"
+  integrity sha512-04GmsiBcalrSCNmzfo+UjU8tt3PhZJKzcOy+r1FlGA7/zri8wre3I1WkYN9PT3sIeIKfW9bpyElA+VzOg2E24g==
+
 move-concurrently@^1.0.1:
   version "1.0.1"
   resolved "https://registry.npmjs.org/move-concurrently/-/move-concurrently-1.0.1.tgz"
@@ -15112,7 +15117,7 @@ pbkdf2@^3.0.3:
     to-buffer "^1.2.0"
 
 "phoenix@file:../deps/phoenix":
-  version "1.7.21"
+  version "1.8.0"
 
 "phoenix_html@file:../deps/phoenix_html":
   version "3.3.4"
@@ -15121,7 +15126,9 @@ pbkdf2@^3.0.3:
   version "0.4.2"
 
 "phoenix_live_view@file:../deps/phoenix_live_view":
-  version "0.20.17"
+  version "1.1.3"
+  dependencies:
+    morphdom "2.7.7"
 
 picocolors@^0.2.1:
   version "0.2.1"

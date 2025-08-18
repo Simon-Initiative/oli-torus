@@ -3,17 +3,17 @@
 
   <%= form_for @conn, Routes.certificate_path(@conn, :verify, %{}), [as: :guid], fn f -> %>
     <div class="flex flex-col w-[50ch] space-y-2">
-      <%= label(f, :value, "Certificate ID", class: "text-white text-base") %>
+      {label(f, :value, "Certificate ID", class: "text-white text-base")}
       <div class="flex w-full">
-        <%= text_input(f, :value,
+        {text_input(f, :value,
           placeholder: "Enter certificate ID...",
           class:
             "w-full bg-primary-24 border border-gray-600 rounded-l-sm px-4 py-2 placeholder-white",
           value: assigns[:guid]
-        ) %>
-        <%= submit("Submit",
+        )}
+        {submit("Submit",
           class: "bg-[#4CA6FF] hover:bg-blue-400 text-white font-semibold px-4 py-2 rounded-r-sm"
-        ) %>
+        )}
       </div>
     </div>
 
@@ -23,7 +23,7 @@
     </div>
 
     <span :if={assigns[:recaptcha_error]} class="text-red-500 mt-2 block text-center">
-      <%= assigns[:recaptcha_error] %>
+      {assigns[:recaptcha_error]}
     </span>
   <% end %>
 </div>

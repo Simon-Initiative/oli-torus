@@ -45,13 +45,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.Publish.VersioningDetails do
                           <%= case {@version_change, @latest_published_publication} do %>
                             <% {{:major, {edition, major, minor}}, %{edition: current_edition, major: current_major, minor: current_minor}} -> %>
                               <small class="ml-1">
-                                <%= Utils.render_version(
+                                {Utils.render_version(
                                   current_edition,
                                   current_major,
                                   current_minor
-                                ) %>
+                                )}
                                 <i class="fas fa-arrow-right mx-2"></i>
-                                <%= Utils.render_version(edition, major, minor) %>
+                                {Utils.render_version(edition, major, minor)}
                               </small>
                             <% _ -> %>
                           <% end %>
@@ -76,13 +76,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.Publish.VersioningDetails do
                           <%= case {@version_change, @latest_published_publication} do %>
                             <% {{:minor, {edition, major, minor}}, %{edition: current_edition, major: current_major, minor: current_minor}} -> %>
                               <small class="ml-1">
-                                <%= Utils.render_version(
+                                {Utils.render_version(
                                   current_edition,
                                   current_major,
                                   current_minor
-                                ) %>
+                                )}
                                 <i class="fas fa-arrow-right mx-2"></i>
-                                <%= Utils.render_version(edition, major, minor) %>
+                                {Utils.render_version(edition, major, minor)}
                               </small>
                             <% _ -> %>
                           <% end %>
@@ -130,8 +130,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.Publish.VersioningDetails do
             <%= if @push_affected.section_count > 0 or @push_affected.product_count > 0 do %>
               <h6>This force push update will affect:</h6>
               <ul class="mb-0">
-                <li><%= @push_affected.section_count %> course section(s)</li>
-                <li><%= @push_affected.product_count %> product(s)</li>
+                <li>{@push_affected.section_count} course section(s)</li>
+                <li>{@push_affected.product_count} product(s)</li>
               </ul>
             <% else %>
               This force push update will not affect any product or course section.
@@ -157,7 +157,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Publish.VersioningDetails do
           <%= case @version_change do %>
             <% {:no_changes, _} -> %>
             <% {_, {edition, major, minor}} -> %>
-              <span class="ml-2"><%= Utils.render_version(edition, major, minor) %></span>
+              <span class="ml-2">{Utils.render_version(edition, major, minor)}</span>
             <% _ -> %>
           <% end %>
         </div>

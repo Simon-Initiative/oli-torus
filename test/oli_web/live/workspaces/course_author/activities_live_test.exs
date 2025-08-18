@@ -77,7 +77,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ActivitiesLiveTest do
 
       ## Sort by title asc
       view
-      |> element("th[phx-click=\"paged_table_sort\"][phx-value-sort_by=\"title\"]")
+      |> element("th[phx-click='paged_table_sort'][phx-value-sort_by='title']")
       |> render_click()
 
       assert view
@@ -86,13 +86,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.ActivitiesLiveTest do
                revisions.act_revision_w.title
 
       assert view
-             |> element("tr:last-child(2) td:nth-child(2) > div")
+             |> element("tr:last-child td:nth-child(2) > div")
              |> render() =~
                revisions.act_revision_z.title
 
       ## Sort by title desc
       view
-      |> element("th[phx-click=\"paged_table_sort\"][phx-value-sort_by=\"title\"]")
+      |> element("th[phx-click='paged_table_sort'][phx-value-sort_by='title']")
       |> render_click()
 
       assert view
@@ -101,7 +101,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ActivitiesLiveTest do
                revisions.act_revision_z.title
 
       assert view
-             |> element("tr:last-child(2) td:nth-child(2) > div")
+             |> element("tr:last-child td:nth-child(2) > div")
              |> render() =~
                revisions.act_revision_w.title
     end

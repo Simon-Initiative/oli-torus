@@ -290,7 +290,7 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsViewTest do
 
       # click institution edit button for section 1
       view
-      |> element(~s{button[phx-click="edit_section"][value=#{section_1.id}]}, "Edit")
+      |> element(~s{button[phx-click="edit_section"][value='#{section_1.id}']}, "Edit")
       |> render_click
 
       # the modal is shown...
@@ -301,7 +301,7 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsViewTest do
       # ...with the current institution pre-selected
       assert view
              |> element(
-               "select[id=institution_id] option[selected=selected]",
+               "select[id=institution_id] option[selected]",
                section_1.institution.name
              )
              |> has_element?

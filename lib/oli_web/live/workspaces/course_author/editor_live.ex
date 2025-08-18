@@ -34,9 +34,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
     ~H"""
     <.scripts_wrapper socket={@socket} error={@error} maybe_scripts_loaded={@maybe_scripts_loaded}>
       <div id="editor" class="container">
-        <%= React.component(@ctx, "Components.Authoring", @app_params, id: "authoring_editor") %>
+        {React.component(@ctx, "Components.Authoring", @app_params, id: "authoring_editor")}
       </div>
-      <%= render_prev_next_nav(assigns) %>
+      {render_prev_next_nav(assigns)}
     </.scripts_wrapper>
     """
   end
@@ -66,21 +66,21 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
       <% end %>
 
       <div id="editor" style="width: 95%;" class="container mx-auto">
-        <%= React.component(@ctx, "Components.PageEditor", @raw_context, id: "page_editor") %>
+        {React.component(@ctx, "Components.PageEditor", @raw_context, id: "page_editor")}
       </div>
 
       <div class="container mx-auto mt-5">
-        <%= live_render(@socket, OliWeb.CollaborationLive.CollabSpaceConfigView,
+        {live_render(@socket, OliWeb.CollaborationLive.CollabSpaceConfigView,
           id: "collab-space-#{@project_slug}-#{@revision_slug}",
           session: %{
             "collab_space_config" => @collab_space_config,
             "project_slug" => @project_slug,
             "resource_slug" => @revision_slug
           }
-        ) %>
+        )}
       </div>
 
-      <%= render_prev_next_nav(assigns) %>
+      {render_prev_next_nav(assigns)}
     </.scripts_wrapper>
     """
   end
@@ -112,7 +112,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
     <div id="eventIntercept" phx-hook="LoadSurveyScripts">
       <%= if connected?(@socket) and @maybe_scripts_loaded do %>
         <.maybe_show_error error={@error} />
-        <%= render_slot(@inner_block) %>
+        {render_slot(@inner_block)}
       <% else %>
         <.loader />
       <% end %>
@@ -208,8 +208,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
               <i class="fas fa-arrow-left nav-icon"></i>
             </div>
             <div class="flex flex-col text-right overflow-hidden">
-              <div class="nav-label"><%= "Previous" %></div>
-              <div class="nav-title"><%= @context.previous_page["title"] %></div>
+              <div class="nav-label">{"Previous"}</div>
+              <div class="nav-title">{@context.previous_page["title"]}</div>
             </div>
           </div>
         </.link>
@@ -228,8 +228,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
         >
           <div class="flex items-center justify-between">
             <div class="flex flex-col text-left overflow-hidden">
-              <div class="nav-label"><%= "Next" %></div>
-              <div class="nav-title"><%= @context.next_page["title"] %></div>
+              <div class="nav-label">{"Next"}</div>
+              <div class="nav-title">{@context.next_page["title"]}</div>
             </div>
             <div class="ml-4">
               <i class="fas fa-arrow-right nav-icon"></i>

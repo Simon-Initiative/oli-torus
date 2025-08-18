@@ -16,7 +16,7 @@ defmodule OliWeb.Components.Delivery.LTIExternalTools do
 
         <div style="margin-bottom: 20px;">
           <button class="btn btn-primary" type="submit">
-            Launch <%= @name %>
+            Launch {@name}
           </button>
         </div>
       </form>

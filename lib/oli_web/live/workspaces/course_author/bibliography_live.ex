@@ -42,7 +42,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.BibliographyLive do
     ~H"""
     <h2 id="header_id" class="pb-2">Bibliography</h2>
     <div :if={!@error} id="editor" phx-update="ignore">
-      <%= React.component(@ctx, "Components.Bibliography", @context, id: "bibliography") %>
+      {React.component(@ctx, "Components.Bibliography", @context, id: "bibliography")}
     </div>
     """
   end

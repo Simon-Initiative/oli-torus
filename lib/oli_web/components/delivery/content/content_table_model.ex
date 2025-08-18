@@ -85,11 +85,11 @@ defmodule OliWeb.Components.Delivery.ContentTableModel do
             )
           }
         >
-          <%= @title %>
+          {@title}
         </.link>
       <% else %>
         <div class="ml-6 text-gray-600">
-          <%= @title %>
+          {@title}
         </div>
       <% end %>
     </div>
@@ -104,7 +104,7 @@ defmodule OliWeb.Components.Delivery.ContentTableModel do
       class={"font-bold #{if @progress < 50, do: "text-[#CE2C31] dark:text-[#FF8787]", else: "text-[#353740] dark:text-[#EEEBF5]"}"}
       data-progress-check={if @progress >= 50, do: "true", else: "false"}
     >
-      <%= @progress %>%
+      {@progress}%
     </div>
     """
   end

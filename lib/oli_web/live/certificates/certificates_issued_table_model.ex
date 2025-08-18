@@ -53,10 +53,10 @@ defmodule OliWeb.Certificates.CertificatesIssuedTableModel do
       navigate={~p"/sections/#{@product_slug}/student_dashboard/#{@gc.recipient.id}/content"}
       class="mr-3"
     >
-      <%= Utils.name(@gc.recipient.name, @gc.recipient.family_name, @gc.recipient.given_name) %>
+      {Utils.name(@gc.recipient.name, @gc.recipient.family_name, @gc.recipient.given_name)}
     </.link>
 
-    <%= @gc.recipient.email %>
+    {@gc.recipient.email}
     """
   end
 
@@ -64,7 +64,7 @@ defmodule OliWeb.Certificates.CertificatesIssuedTableModel do
     assigns = Map.merge(assigns, %{gc: granted_certificate})
 
     ~H"""
-    <%= Utils.name(@gc.issuer.name, @gc.issuer.family_name, @gc.issuer.given_name) %>
+    {Utils.name(@gc.issuer.name, @gc.issuer.family_name, @gc.issuer.given_name)}
     """
   end
 
@@ -72,7 +72,7 @@ defmodule OliWeb.Certificates.CertificatesIssuedTableModel do
     assigns = Map.merge(assigns, %{gc: granted_certificate})
 
     ~H"""
-    <%= @gc.guid %>
+    {@gc.guid}
     """
   end
 end

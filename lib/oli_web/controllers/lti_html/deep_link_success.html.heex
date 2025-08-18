@@ -24,12 +24,12 @@
     <div class="success">
       <h2>Resource Selected Successfully</h2>
       <div class="content-item">
-        <h3><%= @content_item["title"] || "Selected Resource" %></h3>
+        <h3>{@content_item["title"] || "Selected Resource"}</h3>
         <%= if @content_item["text"] do %>
-          <p><%= @content_item["text"] %></p>
+          <p>{@content_item["text"]}</p>
         <% end %>
         <%= if @content_item["url"] do %>
-          <p><strong>URL:</strong> <%= @content_item["url"] %></p>
+          <p><strong>URL:</strong> {@content_item["url"]}</p>
         <% end %>
       </div>
       <p>This window will close automatically...</p>

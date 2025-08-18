@@ -1,6 +1,4 @@
-<script
-  src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?version=3.52.1&features=fetch"
->
+<script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?version=3.52.1&features=fetch">
 </script>
 <script type="text/javascript" src={Routes.static_path(@conn, "/js/stripeclient.js")}>
 </script>
@@ -188,11 +186,11 @@
   <div class="bg-gray-200 summary">
     <div class="grid grid-cols-3">
       <div class="font-semibold ">Course Title:</div>
-      <div class="col-span-2 font-semibold"><%= @section.title %></div>
+      <div class="col-span-2 font-semibold">{@section.title}</div>
     </div>
     <div class="grid grid-cols-3">
       <div class="font-semibold ">User:</div>
-      <div class="col-span-2 font-semibold"><%= @user_name %></div>
+      <div class="col-span-2 font-semibold">{@user_name}</div>
     </div>
     <div class="font-semibold mt-4">Summary</div>
 
@@ -200,13 +198,13 @@
       <tbody>
         <tr>
           <td class="text-left text-gray-700">Price</td>
-          <td class="text-right text-gray-700"><%= @cost %></td>
+          <td class="text-right text-gray-700">{@cost}</td>
         </tr>
       </tbody>
       <tfoot>
         <tr>
           <td class="text-left font-bold text-gray-700">Total</td>
-          <td class="text-right font-bold text-gray-700"><%= @cost %></td>
+          <td class="text-right font-bold text-gray-700">{@cost}</td>
         </tr>
       </tfoot>
     </table>

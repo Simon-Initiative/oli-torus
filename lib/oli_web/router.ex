@@ -910,7 +910,6 @@ defmodule OliWeb.Router do
         live("/:project_id/overview", OverviewLive)
         live("/:project_id/alternatives", AlternativesLive)
         live("/:project_id/index_csv", IndexCsvLive)
-        live("/:project_id/datashop", AnalyticsLive)
         live("/:project_id/activity_bank", ActivityBankLive)
         live("/:project_id/objectives", ObjectivesLive)
         live("/:project_id/experiments", ExperimentsLive)
@@ -1430,7 +1429,6 @@ defmodule OliWeb.Router do
       live("/source_materials", Delivery.ManageSourceMaterials, as: :source_materials)
       live("/remix", Delivery.RemixSection)
       live("/remix/:section_resource_slug", Delivery.RemixSection)
-      live("/enrollments", Sections.EnrollmentsViewLive)
       live("/invitations", Sections.InviteView)
       live("/lti_external_tools", Sections.LtiExternalToolsView)
 
