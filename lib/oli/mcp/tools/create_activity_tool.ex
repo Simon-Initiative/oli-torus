@@ -14,6 +14,7 @@ defmodule Oli.MCP.Tools.CreateActivityTool do
   alias Anubis.Server.Response
   alias Oli.GenAI.Agent.MCPToolRegistry
   alias Oli.MCP.Auth.Authorization
+  alias Oli.MCP.UsageTracker
 
   # Get field descriptions from MCPToolRegistry at compile time
   @tool_schema MCPToolRegistry.get_tool_schema("create_activity")
@@ -40,6 +41,9 @@ defmodule Oli.MCP.Tools.CreateActivityTool do
         },
         frame
       ) do
+    # Track tool usage
+    UsageTracker.track_tool_usage("create_activity", frame)
+    
     # Validate project access before proceeding
     case Authorization.validate_project_access(project_slug, frame) do
       {:ok, %{author_id: author_id}} ->
@@ -50,12 +54,14 @@ defmodule Oli.MCP.Tools.CreateActivityTool do
 
           {:error, reason} ->
             error_message = format_error(reason)
+            UsageTracker.track_tool_usage("create_activity", frame, "error")
 
             {:reply,
              Response.error(Response.tool(), "Activity creation failed: #{error_message}"), frame}
         end
 
       {:error, reason} ->
+        UsageTracker.track_tool_usage("create_activity", frame, "error")
         {:reply, Response.error(Response.tool(), "Authorization failed: #{reason}"), frame}
     end
   end

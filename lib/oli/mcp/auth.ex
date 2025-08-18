@@ -12,6 +12,7 @@ defmodule Oli.MCP.Auth do
   import Ecto.Query, warn: false
   alias Oli.Repo
   alias Oli.MCP.Auth.BearerToken
+  alias Oli.MCP.Auth.BearerTokenUsage
   alias Oli.MCP.Auth.TokenGenerator
   alias Oli.Authoring.Course.Project
   alias Oli.Authoring.Authors.AuthorProject
@@ -252,6 +253,151 @@ defmodule Oli.MCP.Auth do
       {:project, %Project{status: :deleted}} -> {:error, :project_deleted}
       {:author, nil} -> {:error, :author_not_found}
       {:author_project, nil} -> {:error, :unauthorized_project_access}
+    end
+  end
+
+  # Usage tracking functions
+
+  @doc """
+  Tracks usage of a bearer token for analytics and monitoring.
+
+  Creates a usage record with minimal, non-sensitive metadata.
+  """
+  def track_usage(bearer_token_id, event_type, opts \\ []) do
+    attrs = %{
+      bearer_token_id: bearer_token_id,
+      event_type: event_type,
+      occurred_at: DateTime.utc_now(),
+      tool_name: Keyword.get(opts, :tool_name),
+      resource_uri: Keyword.get(opts, :resource_uri),
+      request_id: Keyword.get(opts, :request_id),
+      status: Keyword.get(opts, :status, "success")
+    }
+
+    %BearerTokenUsage{}
+    |> BearerTokenUsage.changeset(attrs)
+    |> Repo.insert()
+    |> case do
+      {:ok, usage} -> {:ok, usage}
+      {:error, changeset} -> {:error, changeset}
+    end
+  end
+
+  @doc """
+  Tracks usage by token string rather than ID.
+  Helper function for use in authentication flows.
+  """
+  def track_usage_by_token(token, event_type, opts \\ []) when is_binary(token) do
+    hash = TokenGenerator.hash(token)
+
+    case Repo.get_by(BearerToken, hash: hash) do
+      %BearerToken{id: token_id} ->
+        track_usage(token_id, event_type, opts)
+
+      nil ->
+        {:error, :token_not_found}
+    end
+  end
+
+  @doc """
+  Browse bearer tokens with usage statistics for admin interface.
+  
+  Returns tokens with preloaded associations and usage counts.
+  """
+  defmodule BrowseOptions do
+    defstruct [
+      :text_search,
+      :include_disabled,
+      :author_id,
+      :project_id
+    ]
+  end
+
+  def browse_tokens_with_usage(%Oli.Repo.Paging{limit: limit, offset: offset}, %Oli.Repo.Sorting{} = sorting, %BrowseOptions{} = options) do
+    # First, get the total count
+    total_count_query = BearerToken
+    |> join(:inner, [bt], author in Oli.Accounts.Author, on: bt.author_id == author.id)
+    |> join(:inner, [bt], project in Project, on: bt.project_id == project.id)
+    |> apply_browse_filters(options)
+    |> select([bt, author, project], count(bt.id))
+    
+    total_count = Repo.one(total_count_query)
+
+    # Then get the actual results
+    results = BearerToken
+    |> join(:left, [bt], usage in BearerTokenUsage, on: usage.bearer_token_id == bt.id)
+    |> join(:inner, [bt], author in Oli.Accounts.Author, on: bt.author_id == author.id)
+    |> join(:inner, [bt], project in Project, on: bt.project_id == project.id)
+    |> apply_browse_filters(options)
+    |> select([bt, usage, author, project], %{
+      bearer_token: bt,
+      author: author,
+      project: project,
+      usage_last_7_days: fragment("COUNT(CASE WHEN ? >= NOW() - INTERVAL '7 days' THEN 1 END)", usage.occurred_at),
+      total_usage: count(usage.id)
+    })
+    |> group_by([bt, usage, author, project], [bt.id, author.id, project.id])
+    |> apply_sorting(sorting)
+    |> limit(^limit)
+    |> offset(^offset)
+    |> Repo.all()
+    
+    # Add total_count and bearer_token_id to each result
+    Enum.map(results, fn result ->
+      result
+      |> Map.put(:total_count, total_count)
+      |> Map.put(:bearer_token_id, result.bearer_token.id)
+    end)
+  end
+
+  defp apply_browse_filters(query, %BrowseOptions{} = options) do
+    query
+    |> maybe_filter_text_search(options.text_search)
+    |> maybe_filter_include_disabled(options.include_disabled)
+    |> maybe_filter_author(options.author_id)
+    |> maybe_filter_project(options.project_id)
+  end
+
+  defp maybe_filter_text_search(query, nil), do: query
+  defp maybe_filter_text_search(query, ""), do: query
+  defp maybe_filter_text_search(query, text_search) do
+    search_term = "%#{text_search}%"
+    
+    where(query, [bt, usage, author, project], 
+      ilike(author.name, ^search_term) or 
+      ilike(author.email, ^search_term) or
+      ilike(project.title, ^search_term) or
+      ilike(bt.hint, ^search_term)
+    )
+  end
+
+  defp maybe_filter_include_disabled(query, true), do: query
+  defp maybe_filter_include_disabled(query, false) do
+    where(query, [bt], bt.status == "enabled")
+  end
+  defp maybe_filter_include_disabled(query, nil), do: query
+
+  defp maybe_filter_author(query, nil), do: query
+  defp maybe_filter_author(query, author_id) do
+    where(query, [bt], bt.author_id == ^author_id)
+  end
+
+  defp maybe_filter_project(query, nil), do: query
+  defp maybe_filter_project(query, project_id) do
+    where(query, [bt], bt.project_id == ^project_id)
+  end
+
+  defp apply_sorting(query, %Oli.Repo.Sorting{field: field, direction: direction}) do
+    case field do
+      :author_name -> order_by(query, [bt, usage, author, project], [{^direction, author.name}])
+      :project_title -> order_by(query, [bt, usage, author, project], [{^direction, project.title}])
+      :hint -> order_by(query, [bt, usage, author, project], [{^direction, bt.hint}])
+      :status -> order_by(query, [bt, usage, author, project], [{^direction, bt.status}])
+      :inserted_at -> order_by(query, [bt, usage, author, project], [{^direction, bt.inserted_at}])
+      :last_used_at -> order_by(query, [bt, usage, author, project], [{^direction, bt.last_used_at}])
+      :usage_last_7_days -> order_by(query, [bt, usage, author, project], [{^direction, fragment("COUNT(CASE WHEN ? >= NOW() - INTERVAL '7 days' THEN 1 END)", usage.occurred_at)}])
+      :total_usage -> order_by(query, [bt, usage, author, project], [{^direction, count(usage.id)}])
+      _ -> order_by(query, [bt, usage, author, project], [{^direction, bt.inserted_at}])
     end
   end
 end

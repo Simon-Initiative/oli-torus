@@ -11,6 +11,7 @@ defmodule Oli.MCP.Tools.ActivityTestEvalTool do
   alias Oli.Delivery.Attempts.ActivityLifecycle.Evaluate
   alias Anubis.Server.Response
   alias Oli.GenAI.Agent.MCPToolRegistry
+  alias Oli.MCP.UsageTracker
 
   # Get field descriptions from MCPToolRegistry at compile time
   @tool_schema MCPToolRegistry.get_tool_schema("activity_test_eval")
@@ -29,6 +30,9 @@ defmodule Oli.MCP.Tools.ActivityTestEvalTool do
         %{activity_json: activity_json, activity_type: activity_type, part_inputs: part_inputs},
         frame
       ) do
+    # Track tool usage
+    UsageTracker.track_tool_usage("activity_test_eval", frame)
+    
     part_inputs = Jason.decode!(part_inputs)
 
     case test_activity_evaluation(activity_json, activity_type, part_inputs) do
@@ -37,6 +41,7 @@ defmodule Oli.MCP.Tools.ActivityTestEvalTool do
         {:reply, Response.text(Response.tool(), response_text), frame}
 
       {:error, reason} ->
+        UsageTracker.track_tool_usage("activity_test_eval", frame, "error")
         {:reply,
          Response.error(Response.tool(), "Test evaluation failed: #{format_error(reason)}"),
          frame}

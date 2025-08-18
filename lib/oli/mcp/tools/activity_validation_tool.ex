@@ -12,6 +12,7 @@ defmodule Oli.MCP.Tools.ActivityValidationTool do
   alias Oli.Validation
   alias Anubis.Server.Response
   alias Oli.GenAI.Agent.MCPToolRegistry
+  alias Oli.MCP.UsageTracker
 
   # Get field descriptions from MCPToolRegistry at compile time
   @tool_schema MCPToolRegistry.get_tool_schema("activity_validation")
@@ -23,11 +24,15 @@ defmodule Oli.MCP.Tools.ActivityValidationTool do
 
   @impl true
   def execute(%{activity_json: activity_json}, frame) do
+    # Track tool usage
+    UsageTracker.track_tool_usage("activity_validation", frame)
+    
     case validate_activity_json(activity_json) do
       {:ok, _parsed_model} ->
         {:reply, Response.text(Response.tool(), "Activity JSON is valid"), frame}
 
       {:error, reason} ->
+        UsageTracker.track_tool_usage("activity_validation", frame, "error")
         error_message = format_error(reason)
         {:reply, Response.error(Response.tool(), "Validation failed: #{error_message}"), frame}
     end

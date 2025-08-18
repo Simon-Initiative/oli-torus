@@ -148,6 +148,11 @@ defmodule OliWeb.Admin.AdminView do
                 AI Agent Monitor
               </a>
             </li>
+            <li>
+              <a href={~p"/admin/mcp_tokens"}>
+                Manage MCP Bearer Tokens
+              </a>
+            </li>
           </ul>
         </Group.render>
       <% end %>

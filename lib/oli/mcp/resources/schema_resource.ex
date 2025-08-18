@@ -6,6 +6,7 @@ defmodule Oli.MCP.Resources.SchemaResource do
   use Anubis.Server.Component, type: :resource, uri: "torus://schemas/common/content"
 
   alias Anubis.Server.Response
+  alias Oli.MCP.UsageTracker
 
   @impl true
   def uri, do: "torus://schemas/common/content"
@@ -15,6 +16,8 @@ defmodule Oli.MCP.Resources.SchemaResource do
 
   @impl true
   def read(_params, frame) do
+    # Track resource usage
+    UsageTracker.track_resource_usage(uri(), frame)
 
     schema_path = Application.app_dir(:oli, "priv/schemas/v0-1-0/content-element.schema.json")
 

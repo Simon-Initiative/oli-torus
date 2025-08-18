@@ -29,9 +29,12 @@ defmodule Oli.MCP.Resources.ProjectResources do
   alias Anubis.Server.Component.Resource
   alias Oli.MCP.Auth.Authorization
   alias Oli.MCP.Resources.{URIBuilder, HierarchyBuilder}
+  alias Oli.MCP.UsageTracker
 
   @impl true
   def read(%{"uri" => uri}, frame) do
+    # Track resource usage
+    UsageTracker.track_resource_usage(uri, frame)
 
     case URIBuilder.parse_uri(uri) do
       {:ok, {project_slug, resource_type, resource_id}} when not is_nil(project_slug) ->

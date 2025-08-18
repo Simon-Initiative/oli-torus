@@ -6,6 +6,7 @@ defmodule Oli.MCP.Resources.SchemasResource do
   use Anubis.Server.Component, type: :resource
 
   alias Anubis.Server.Response
+  alias Oli.MCP.UsageTracker
 
   @impl true
   def uri, do: "torus://schemas"
@@ -15,6 +16,8 @@ defmodule Oli.MCP.Resources.SchemasResource do
 
   @impl true
   def read(_params, frame) do
+    # Track resource usage
+    UsageTracker.track_resource_usage(uri(), frame)
 
     schemas = [
       %{

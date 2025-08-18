@@ -3,9 +3,10 @@ defmodule Oli.MCP.Resources.ExamplesResource do
   Global examples resource that lists available activity example types.
   """
 
-  use Anubis.Server.Component, type: :resource
+  use Anubis.Server.Component, type: :resource, uri: "torus://examples"
 
   alias Anubis.Server.Response
+  alias Oli.MCP.UsageTracker
 
   @impl true
   def uri, do: "torus://examples"
@@ -15,6 +16,9 @@ defmodule Oli.MCP.Resources.ExamplesResource do
 
   @impl true
   def read(_params, frame) do
+    # Track resource usage
+    UsageTracker.track_resource_usage(uri(), frame)
+    
     # For now, only support oli_multiple_choice
     examples = [
       %{

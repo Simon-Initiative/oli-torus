@@ -6,6 +6,7 @@ defmodule Oli.MCP.Resources.ExampleResource do
   use Anubis.Server.Component, type: :resource, uri: "torus://examples/oli_multiple_choice"
 
   alias Anubis.Server.Response
+  alias Oli.MCP.UsageTracker
 
   @impl true
   def uri, do: "torus://examples/oli_multiple_choice"
@@ -15,6 +16,9 @@ defmodule Oli.MCP.Resources.ExampleResource do
 
   @impl true
   def read(_params, frame) do
+    # Track resource usage
+    UsageTracker.track_resource_usage(uri(), frame)
+    
     example = %{
       "stem" => %{
         "id" => "stem_1",
