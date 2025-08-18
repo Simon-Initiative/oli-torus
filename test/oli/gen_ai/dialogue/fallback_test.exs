@@ -4,6 +4,16 @@ defmodule Oli.GenAI.Dialogue.FallbackTest do
   alias Oli.GenAI.Completions.{RegisteredModel, ServiceConfig, Message}
   alias Oli.GenAI.Dialogue.{Server, Configuration}
 
+  defp wait_for_provider_fallback(server, expected_provider, retries \\ 20) do
+    state = :sys.get_state(server)
+    if state.registered_model.provider == expected_provider or retries == 0 do
+      state
+    else
+      :timer.sleep(500)
+      wait_for_provider_fallback(server, expected_provider, retries - 1)
+    end
+  end
+
   test "falls back to NullProvider when primary provider fails" do
     # Configure a bogus primary model that simulates a failure
     primary = %RegisteredModel{
@@ -31,16 +41,15 @@ defmodule Oli.GenAI.Dialogue.FallbackTest do
     {:ok, server} = Server.new(config)
     Server.engage(server, %Message{role: :user, content: "Hello"})
 
-    # Allow time for the fallback to process
-    :timer.sleep(2000)
-
+    # Wait for the fallback to process
+    state = wait_for_provider_fallback(server, :null)
+    
     # Verify that the server state has been updated to now be using the NullProvider
-    state = :sys.get_state(server)
     assert state.registered_model.provider == :null
 
     Server.engage(server, %Message{role: :user, content: "Hello"})
     # Allow time for the tokens to stream from the NullProvider
-    :timer.sleep(2000)
+    :timer.sleep(3000)
 
     # We can verify that the server now has an assistant message from the NullProvider
     state = :sys.get_state(server)

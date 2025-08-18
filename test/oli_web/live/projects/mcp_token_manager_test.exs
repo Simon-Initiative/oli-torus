@@ -28,7 +28,7 @@ defmodule OliWeb.Projects.MCPTokenManagerTest do
       {:ok, {token, _token_string}} = Auth.create_token(author.id, project.id, "Test token")
 
       # Load the page and verify token appears
-      {:ok, view, html} = live(conn, ~p"/workspaces/course_author/#{project.slug}/overview")
+      {:ok, _view, html} = live(conn, ~p"/workspaces/course_author/#{project.slug}/overview")
 
       # Check that token info is displayed
       assert html =~ "Bearer Token"

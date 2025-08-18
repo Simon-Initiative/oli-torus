@@ -30,7 +30,7 @@ defmodule OliWeb.Projects.MCPTokenManager do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="mcp-token-manager">
+    <div id="mcp-token-manager" class="mcp-token-manager">
       <%= if @token do %>
         <div class="space-y-4">
           <div class="flex items-center justify-between p-4 border rounded-lg bg-gray-50">
