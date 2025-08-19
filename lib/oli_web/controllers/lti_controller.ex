@@ -51,7 +51,7 @@ defmodule OliWeb.LtiController do
 
   def launch(conn, params) do
     session_state = Plug.Conn.get_session(conn, "state")
-    resource_slug = Map.get(params, "resource_slug")
+    revision_slug = Map.get(params, "revision_slug")
 
     case Lti_1p3.Tool.LaunchValidation.validate(params, session_state) do
       {:ok, lti_params} ->
@@ -61,8 +61,8 @@ defmodule OliWeb.LtiController do
             redirect_opts = [allow_new_section_creation: true]
 
             redirect_opts =
-              if resource_slug do
-                Keyword.put(redirect_opts, :resource_slug, resource_slug)
+              if revision_slug do
+                Keyword.put(redirect_opts, :revision_slug, revision_slug)
               else
                 redirect_opts
               end

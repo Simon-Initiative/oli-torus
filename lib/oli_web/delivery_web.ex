@@ -2,7 +2,6 @@ defmodule OliWeb.DeliveryWeb do
   use OliWeb, :verified_routes
 
   import Phoenix.Controller
-  import Ecto.Query
 
   alias Lti_1p3.Roles.{PlatformRoles, ContextRoles}
   alias Oli.Accounts.User
@@ -10,7 +9,6 @@ defmodule OliWeb.DeliveryWeb do
   alias Oli.Delivery.Sections
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Resources.ResourceType
-  alias Oli.Repo
 
   require Logger
 
@@ -25,7 +23,7 @@ defmodule OliWeb.DeliveryWeb do
 
   def redirect_user(conn, opts \\ []) do
     allow_new_section_creation = Keyword.get(opts, :allow_new_section_creation, false)
-    resource_slug = Keyword.get(opts, :resource_slug)
+    revision_slug = Keyword.get(opts, :revision_slug)
 
     with %User{id: user_id, independent_learner: false} <- conn.assigns.current_user,
          %LtiParams{params: lti_params} <- LtiParams.get_latest_user_lti_params(user_id) do
@@ -61,9 +59,9 @@ defmodule OliWeb.DeliveryWeb do
 
             # Section has already been configured
             section ->
-              # If a resource_slug is provided, attempt to redirect to that specific page
-              if resource_slug do
-                case get_and_validate_revision(section.slug, resource_slug) do
+              # If a revision_slug is provided, attempt to redirect to that specific page
+              if revision_slug do
+                case get_and_validate_revision(section.slug, revision_slug) do
                   {:ok, revision} ->
                     # Redirect directly to the specific page
                     conn
@@ -74,7 +72,7 @@ defmodule OliWeb.DeliveryWeb do
                     redirect_to_default(conn, section, can_configure_section)
                 end
               else
-                # No resource_slug provided, use normal redirect logic
+                # No revision_slug provided, use normal redirect logic
                 redirect_to_default(conn, section, can_configure_section)
               end
           end
@@ -102,23 +100,20 @@ defmodule OliWeb.DeliveryWeb do
     end
   end
 
-  defp get_and_validate_revision(section_slug, resource_slug) do
-    page_type_id = ResourceType.get_id_by_type("page")
-
-    query =
-      from [_sr, _s, _spp, _pr, rev] in DeliveryResolver.section_resource_revisions(section_slug),
-        where:
-          rev.slug == ^resource_slug and rev.resource_type_id == ^page_type_id and
-            rev.deleted == false,
-        select: rev,
-        limit: 1
-
-    case Repo.one(query) do
+  defp get_and_validate_revision(section_slug, revision_slug) do
+    case DeliveryResolver.from_revision_slug(section_slug, revision_slug) do
       nil ->
         {:error, :not_found}
 
       revision ->
-        {:ok, revision}
+        # Verify it's a page and not deleted
+        page_type_id = ResourceType.get_id_by_type("page")
+
+        if revision.resource_type_id == page_type_id and not revision.deleted do
+          {:ok, revision}
+        else
+          {:error, :not_found}
+        end
     end
   end
 end
