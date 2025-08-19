@@ -234,6 +234,10 @@ def process_single_file(bucket: str, key: str, test_body: Optional[str] = None) 
         # Parse JSONL content
         events = []
         video_events = []
+        activity_attempt_events = []
+        page_attempt_events = []
+        page_viewed_events = []
+        part_attempt_events = []
         invalid_lines = 0
 
         for line_num, line in enumerate(content.strip().split('\n'), 1):
@@ -244,26 +248,61 @@ def process_single_file(bucket: str, key: str, test_body: Optional[str] = None) 
                 event_data = json.loads(line)
                 events.append(event_data)
 
+                # Categorize events by type
                 if is_video_event(event_data):
                     video_events.append(event_data)
+                elif is_activity_attempt_event(event_data):
+                    activity_attempt_events.append(event_data)
+                elif is_page_attempt_event(event_data):
+                    page_attempt_events.append(event_data)
+                elif is_page_viewed_event(event_data):
+                    page_viewed_events.append(event_data)
+                elif is_part_attempt_event(event_data):
+                    part_attempt_events.append(event_data)
 
             except json.JSONDecodeError as e:
                 logger.warning(f"Invalid JSON on line {line_num}: {str(e)}")
                 invalid_lines += 1
 
-        logger.info(f"Parsed {len(events)} total events, {len(video_events)} video events, {invalid_lines} invalid lines")
+        logger.info(f"Parsed {len(events)} total events: {len(video_events)} video, "
+                   f"{len(activity_attempt_events)} activity attempts, "
+                   f"{len(page_attempt_events)} page attempts, "
+                   f"{len(page_viewed_events)} page views, "
+                   f"{len(part_attempt_events)} part attempts, "
+                   f"{invalid_lines} invalid lines")
 
-        # Initialize ClickHouse client and process video events
+        # Initialize ClickHouse client and process events
         clickhouse_client = ClickHouseClient()
 
-        # Insert video events
+        # Insert events by type
         video_events_inserted = 0
+        activity_attempt_events_inserted = 0
+        page_attempt_events_inserted = 0
+        page_viewed_events_inserted = 0
+        part_attempt_events_inserted = 0
+
         if video_events:
             video_events_inserted = clickhouse_client.insert_video_events(video_events)
+
+        if activity_attempt_events:
+            activity_attempt_events_inserted = clickhouse_client.insert_activity_attempt_events(activity_attempt_events)
+
+        if page_attempt_events:
+            page_attempt_events_inserted = clickhouse_client.insert_page_attempt_events(page_attempt_events)
+
+        if page_viewed_events:
+            page_viewed_events_inserted = clickhouse_client.insert_page_viewed_events(page_viewed_events)
+
+        if part_attempt_events:
+            part_attempt_events_inserted = clickhouse_client.insert_part_attempt_events(part_attempt_events)
 
         return {
             'events_processed': len(events),
             'video_events_processed': video_events_inserted,
+            'activity_attempt_events_processed': activity_attempt_events_inserted,
+            'page_attempt_events_processed': page_attempt_events_inserted,
+            'page_viewed_events_processed': page_viewed_events_inserted,
+            'part_attempt_events_processed': part_attempt_events_inserted,
             'invalid_lines': invalid_lines,
             'file_size_bytes': len(content),
             'success': True
@@ -366,6 +405,10 @@ def process_files_bulk(
     """Process multiple files in bulk"""
     total_events = 0
     total_video_events = 0
+    total_activity_attempt_events = 0
+    total_page_attempt_events = 0
+    total_page_viewed_events = 0
+    total_part_attempt_events = 0
     processed_files = 0
     failed_files = 0
     skipped_files = 0
@@ -389,6 +432,10 @@ def process_files_bulk(
 
             total_events += result['events_processed']
             total_video_events += result['video_events_processed']
+            total_activity_attempt_events += result.get('activity_attempt_events_processed', 0)
+            total_page_attempt_events += result.get('page_attempt_events_processed', 0)
+            total_page_viewed_events += result.get('page_viewed_events_processed', 0)
+            total_part_attempt_events += result.get('part_attempt_events_processed', 0)
             processed_files += 1
 
             # Log progress every 10 files
@@ -407,6 +454,10 @@ def process_files_bulk(
         'skipped_files': skipped_files,
         'total_events_processed': total_events,
         'total_video_events_processed': total_video_events,
+        'total_activity_attempt_events_processed': total_activity_attempt_events,
+        'total_page_attempt_events_processed': total_page_attempt_events,
+        'total_page_viewed_events_processed': total_page_viewed_events,
+        'total_part_attempt_events_processed': total_part_attempt_events,
         'section_id': section_id,
         'success': failed_files == 0
     }

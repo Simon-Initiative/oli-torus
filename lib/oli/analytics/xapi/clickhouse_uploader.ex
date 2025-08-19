@@ -45,6 +45,58 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
     end
   end
 
+  defp parse_and_insert_events(body, :activity_attempt, config) do
+    events =
+      body
+      |> String.split("\n", trim: true)
+      |> Enum.map(&Jason.decode!/1)
+      |> Enum.filter(&is_activity_attempt_event?/1)
+
+    case events do
+      [] -> {:ok, 0}
+      events -> insert_activity_attempt_events(events, config)
+    end
+  end
+
+  defp parse_and_insert_events(body, :page_attempt, config) do
+    events =
+      body
+      |> String.split("\n", trim: true)
+      |> Enum.map(&Jason.decode!/1)
+      |> Enum.filter(&is_page_attempt_event?/1)
+
+    case events do
+      [] -> {:ok, 0}
+      events -> insert_page_attempt_events(events, config)
+    end
+  end
+
+  defp parse_and_insert_events(body, :page_viewed, config) do
+    events =
+      body
+      |> String.split("\n", trim: true)
+      |> Enum.map(&Jason.decode!/1)
+      |> Enum.filter(&is_page_viewed_event?/1)
+
+    case events do
+      [] -> {:ok, 0}
+      events -> insert_page_viewed_events(events, config)
+    end
+  end
+
+  defp parse_and_insert_events(body, :part_attempt, config) do
+    events =
+      body
+      |> String.split("\n", trim: true)
+      |> Enum.map(&Jason.decode!/1)
+      |> Enum.filter(&is_part_attempt_event?/1)
+
+    case events do
+      [] -> {:ok, 0}
+      events -> insert_part_attempt_events(events, config)
+    end
+  end
+
   defp parse_and_insert_events(_body, category, _config) do
     # Unsupported category - no-op
     Logger.warning("Unsupported category for ClickHouse upload, skipping: #{inspect(category)}")
@@ -70,8 +122,58 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
         true
 
       _ ->
-        Logger.warning("Ignoring non-video event: #{inspect(event)}")
+        false
+    end
+  end
 
+  defp is_activity_attempt_event?(event) do
+    case get_in(event, ["verb", "id"]) do
+      "http://adlnet.gov/expapi/verbs/completed" ->
+        case get_in(event, ["object", "definition", "type"]) do
+          "http://oli.cmu.edu/extensions/activity_attempt" -> true
+          _ -> false
+        end
+
+      _ ->
+        false
+    end
+  end
+
+  defp is_page_attempt_event?(event) do
+    case get_in(event, ["verb", "id"]) do
+      "http://adlnet.gov/expapi/verbs/completed" ->
+        case get_in(event, ["object", "definition", "type"]) do
+          "http://oli.cmu.edu/extensions/page_attempt" -> true
+          _ -> false
+        end
+
+      _ ->
+        false
+    end
+  end
+
+  defp is_page_viewed_event?(event) do
+    case get_in(event, ["verb", "id"]) do
+      "http://id.tincanapi.com/verb/viewed" ->
+        case get_in(event, ["object", "definition", "type"]) do
+          "http://oli.cmu.edu/extensions/types/page" -> true
+          _ -> false
+        end
+
+      _ ->
+        false
+    end
+  end
+
+  defp is_part_attempt_event?(event) do
+    case get_in(event, ["verb", "id"]) do
+      "http://adlnet.gov/expapi/verbs/completed" ->
+        case get_in(event, ["object", "definition", "type"]) do
+          "http://adlnet.gov/expapi/activities/question" -> true
+          _ -> false
+        end
+
+      _ ->
         false
     end
   end
@@ -87,6 +189,50 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
     insert_statement = query <> format_values(values)
 
     # Execute the query
+    case execute_clickhouse_query(insert_statement, config) do
+      {:ok, _response} -> {:ok, length(events)}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp insert_activity_attempt_events(events, config) do
+    query = build_activity_attempt_insert_query()
+    values = Enum.map(events, &transform_activity_attempt_event/1)
+    insert_statement = query <> format_values(values)
+
+    case execute_clickhouse_query(insert_statement, config) do
+      {:ok, _response} -> {:ok, length(events)}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp insert_page_attempt_events(events, config) do
+    query = build_page_attempt_insert_query()
+    values = Enum.map(events, &transform_page_attempt_event/1)
+    insert_statement = query <> format_values(values)
+
+    case execute_clickhouse_query(insert_statement, config) do
+      {:ok, _response} -> {:ok, length(events)}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp insert_page_viewed_events(events, config) do
+    query = build_page_viewed_insert_query()
+    values = Enum.map(events, &transform_page_viewed_event/1)
+    insert_statement = query <> format_values(values)
+
+    case execute_clickhouse_query(insert_statement, config) do
+      {:ok, _response} -> {:ok, length(events)}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp insert_part_attempt_events(events, config) do
+    query = build_part_attempt_insert_query()
+    values = Enum.map(events, &transform_part_attempt_event/1)
+    insert_statement = query <> format_values(values)
+
     case execute_clickhouse_query(insert_statement, config) do
       {:ok, _response} -> {:ok, length(events)}
       {:error, reason} -> {:error, reason}
@@ -118,6 +264,116 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
       video_play_time,
       video_seek_from,
       video_seek_to
+    ) VALUES
+    """
+  end
+
+  defp build_activity_attempt_insert_query() do
+    activity_attempt_events_table = AdvancedAnalytics.activity_attempt_events_table()
+
+    """
+    INSERT INTO #{activity_attempt_events_table} (
+      event_id,
+      user_id,
+      host_name,
+      section_id,
+      project_id,
+      publication_id,
+      activity_attempt_guid,
+      activity_attempt_number,
+      page_attempt_guid,
+      page_attempt_number,
+      page_id,
+      activity_id,
+      activity_revision_id,
+      timestamp,
+      score,
+      out_of,
+      scaled_score,
+      success,
+      completion
+    ) VALUES
+    """
+  end
+
+  defp build_page_attempt_insert_query() do
+    page_attempt_events_table = AdvancedAnalytics.page_attempt_events_table()
+
+    """
+    INSERT INTO #{page_attempt_events_table} (
+      event_id,
+      user_id,
+      host_name,
+      section_id,
+      project_id,
+      publication_id,
+      page_attempt_guid,
+      page_attempt_number,
+      page_id,
+      timestamp,
+      score,
+      out_of,
+      scaled_score,
+      success,
+      completion
+    ) VALUES
+    """
+  end
+
+  defp build_page_viewed_insert_query() do
+    page_viewed_events_table = AdvancedAnalytics.page_viewed_events_table()
+
+    """
+    INSERT INTO #{page_viewed_events_table} (
+      event_id,
+      user_id,
+      host_name,
+      section_id,
+      project_id,
+      publication_id,
+      page_attempt_guid,
+      page_attempt_number,
+      page_id,
+      page_sub_type,
+      timestamp,
+      success,
+      completion
+    ) VALUES
+    """
+  end
+
+  defp build_part_attempt_insert_query() do
+    part_attempt_events_table = AdvancedAnalytics.part_attempt_events_table()
+
+    """
+    INSERT INTO #{part_attempt_events_table} (
+      event_id,
+      user_id,
+      host_name,
+      section_id,
+      project_id,
+      publication_id,
+      part_attempt_guid,
+      part_attempt_number,
+      activity_attempt_guid,
+      activity_attempt_number,
+      page_attempt_guid,
+      page_attempt_number,
+      page_id,
+      activity_id,
+      activity_revision_id,
+      part_id,
+      timestamp,
+      score,
+      out_of,
+      scaled_score,
+      success,
+      completion,
+      response,
+      feedback,
+      hints_requested,
+      attached_objectives,
+      session_id
     ) VALUES
     """
   end
@@ -185,6 +441,247 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
       video_play_time,
       video_seek_from,
       video_seek_to
+    ]
+  end
+
+  defp transform_activity_attempt_event(event) do
+    # Extract common fields
+    user_id =
+      get_in(event, ["actor", "account", "name"]) ||
+        get_in(event, ["actor", "mbox"]) || ""
+
+    raw_timestamp = get_in(event, ["timestamp"]) || DateTime.utc_now() |> DateTime.to_iso8601()
+    timestamp = String.replace(raw_timestamp, "Z", "")
+    event_id = get_in(event, ["id"]) || Ecto.UUID.generate()
+
+    # Extract context extensions
+    extensions = get_in(event, ["context", "extensions"]) || %{}
+    section_id = extensions["http://oli.cmu.edu/extensions/section_id"] || 0
+    project_id = extensions["http://oli.cmu.edu/extensions/project_id"] || 0
+    publication_id = extensions["http://oli.cmu.edu/extensions/publication_id"] || 0
+
+    activity_attempt_guid =
+      extensions["http://oli.cmu.edu/extensions/activity_attempt_guid"] || ""
+
+    activity_attempt_number =
+      extensions["http://oli.cmu.edu/extensions/activity_attempt_number"] || 0
+
+    page_attempt_guid = extensions["http://oli.cmu.edu/extensions/page_attempt_guid"] || ""
+    page_attempt_number = extensions["http://oli.cmu.edu/extensions/page_attempt_number"] || 0
+    page_id = extensions["http://oli.cmu.edu/extensions/page_id"] || 0
+    activity_id = extensions["http://oli.cmu.edu/extensions/activity_id"] || 0
+    activity_revision_id = extensions["http://oli.cmu.edu/extensions/activity_revision_id"] || 0
+    host_name = extensions["http://oli.cmu.edu/extensions/host_name"] || ""
+
+    # Extract result data
+    result = get_in(event, ["result"]) || %{}
+    score_data = result["score"] || %{}
+    score = score_data["raw"]
+    out_of = score_data["max"]
+    scaled_score = score_data["scaled"]
+    success = result["success"]
+    completion = result["completion"]
+
+    [
+      quote_value(event_id),
+      quote_value(user_id),
+      quote_value(host_name),
+      section_id,
+      project_id,
+      publication_id,
+      quote_value(activity_attempt_guid),
+      activity_attempt_number,
+      quote_value(page_attempt_guid),
+      page_attempt_number,
+      page_id,
+      activity_id,
+      activity_revision_id,
+      quote_value(timestamp),
+      score,
+      out_of,
+      scaled_score,
+      success,
+      completion
+    ]
+  end
+
+  defp transform_page_attempt_event(event) do
+    # Extract common fields
+    user_id =
+      get_in(event, ["actor", "account", "name"]) ||
+        get_in(event, ["actor", "mbox"]) || ""
+
+    raw_timestamp = get_in(event, ["timestamp"]) || DateTime.utc_now() |> DateTime.to_iso8601()
+    timestamp = String.replace(raw_timestamp, "Z", "")
+    event_id = get_in(event, ["id"]) || Ecto.UUID.generate()
+
+    # Extract context extensions
+    extensions = get_in(event, ["context", "extensions"]) || %{}
+    section_id = extensions["http://oli.cmu.edu/extensions/section_id"] || 0
+    project_id = extensions["http://oli.cmu.edu/extensions/project_id"] || 0
+    publication_id = extensions["http://oli.cmu.edu/extensions/publication_id"] || 0
+    page_attempt_guid = extensions["http://oli.cmu.edu/extensions/page_attempt_guid"] || ""
+    page_attempt_number = extensions["http://oli.cmu.edu/extensions/page_attempt_number"] || 0
+    page_id = extensions["http://oli.cmu.edu/extensions/page_id"] || 0
+    host_name = extensions["http://oli.cmu.edu/extensions/host_name"] || ""
+
+    # Extract result data
+    result = get_in(event, ["result"]) || %{}
+    score_data = result["score"] || %{}
+    score = score_data["raw"]
+    out_of = score_data["max"]
+    scaled_score = score_data["scaled"]
+    success = result["success"]
+    completion = result["completion"]
+
+    [
+      quote_value(event_id),
+      quote_value(user_id),
+      quote_value(host_name),
+      section_id,
+      project_id,
+      publication_id,
+      quote_value(page_attempt_guid),
+      page_attempt_number,
+      page_id,
+      quote_value(timestamp),
+      score,
+      out_of,
+      scaled_score,
+      success,
+      completion
+    ]
+  end
+
+  defp transform_page_viewed_event(event) do
+    # Extract common fields
+    user_id =
+      get_in(event, ["actor", "account", "name"]) ||
+        get_in(event, ["actor", "mbox"]) || ""
+
+    raw_timestamp = get_in(event, ["timestamp"]) || DateTime.utc_now() |> DateTime.to_iso8601()
+    timestamp = String.replace(raw_timestamp, "Z", "")
+    event_id = get_in(event, ["id"]) || Ecto.UUID.generate()
+
+    # Extract context extensions
+    extensions = get_in(event, ["context", "extensions"]) || %{}
+    section_id = extensions["http://oli.cmu.edu/extensions/section_id"] || 0
+    project_id = extensions["http://oli.cmu.edu/extensions/project_id"] || 0
+    publication_id = extensions["http://oli.cmu.edu/extensions/publication_id"] || 0
+    page_attempt_guid = extensions["http://oli.cmu.edu/extensions/page_attempt_guid"] || ""
+    page_attempt_number = extensions["http://oli.cmu.edu/extensions/page_attempt_number"] || 0
+    page_id = extensions["http://oli.cmu.edu/extensions/page_id"] || 0
+    host_name = extensions["http://oli.cmu.edu/extensions/host_name"] || ""
+
+    # Extract page sub type
+    page_sub_type = get_in(event, ["object", "definition", "subType"])
+
+    # Extract result data
+    result = get_in(event, ["result"]) || %{}
+    success = result["success"]
+    completion = result["completion"]
+
+    [
+      quote_value(event_id),
+      quote_value(user_id),
+      quote_value(host_name),
+      section_id,
+      project_id,
+      publication_id,
+      quote_value(page_attempt_guid),
+      page_attempt_number,
+      page_id,
+      quote_value(page_sub_type),
+      quote_value(timestamp),
+      success,
+      completion
+    ]
+  end
+
+  defp transform_part_attempt_event(event) do
+    # Extract common fields
+    user_id =
+      get_in(event, ["actor", "account", "name"]) ||
+        get_in(event, ["actor", "mbox"]) || ""
+
+    raw_timestamp = get_in(event, ["timestamp"]) || DateTime.utc_now() |> DateTime.to_iso8601()
+    timestamp = String.replace(raw_timestamp, "Z", "")
+    event_id = get_in(event, ["id"]) || Ecto.UUID.generate()
+
+    # Extract context extensions
+    extensions = get_in(event, ["context", "extensions"]) || %{}
+    section_id = extensions["http://oli.cmu.edu/extensions/section_id"] || 0
+    project_id = extensions["http://oli.cmu.edu/extensions/project_id"] || 0
+    publication_id = extensions["http://oli.cmu.edu/extensions/publication_id"] || 0
+    part_attempt_guid = extensions["http://oli.cmu.edu/extensions/part_attempt_guid"] || ""
+    part_attempt_number = extensions["http://oli.cmu.edu/extensions/part_attempt_number"] || 0
+
+    activity_attempt_guid =
+      extensions["http://oli.cmu.edu/extensions/activity_attempt_guid"] || ""
+
+    activity_attempt_number =
+      extensions["http://oli.cmu.edu/extensions/activity_attempt_number"] || 0
+
+    page_attempt_guid = extensions["http://oli.cmu.edu/extensions/page_attempt_guid"] || ""
+    page_attempt_number = extensions["http://oli.cmu.edu/extensions/page_attempt_number"] || 0
+    page_id = extensions["http://oli.cmu.edu/extensions/page_id"] || 0
+    activity_id = extensions["http://oli.cmu.edu/extensions/activity_id"] || 0
+    activity_revision_id = extensions["http://oli.cmu.edu/extensions/activity_revision_id"] || 0
+    part_id = extensions["http://oli.cmu.edu/extensions/part_id"] || ""
+    hints_requested = extensions["http://oli.cmu.edu/extensions/hints_requested"] || 0
+    attached_objectives = extensions["http://oli.cmu.edu/extensions/attached_objectives"]
+    session_id = extensions["http://oli.cmu.edu/extensions/session_id"]
+    host_name = extensions["http://oli.cmu.edu/extensions/host_name"] || ""
+
+    # Extract result data
+    result = get_in(event, ["result"]) || %{}
+    score_data = result["score"] || %{}
+    score = score_data["raw"]
+    out_of = score_data["max"]
+    scaled_score = score_data["scaled"]
+    success = result["success"]
+    completion = result["completion"]
+    response = result["response"]
+
+    # Extract feedback from result extensions
+    result_extensions = result["extensions"] || %{}
+    feedback = result_extensions["http://oli.cmu.edu/extensions/feedback"]
+
+    # Convert attached_objectives to JSON string if it's a list
+    attached_objectives_str =
+      case attached_objectives do
+        list when is_list(list) -> Jason.encode!(list)
+        _ -> attached_objectives
+      end
+
+    [
+      quote_value(event_id),
+      quote_value(user_id),
+      quote_value(host_name),
+      section_id,
+      project_id,
+      publication_id,
+      quote_value(part_attempt_guid),
+      part_attempt_number,
+      quote_value(activity_attempt_guid),
+      activity_attempt_number,
+      quote_value(page_attempt_guid),
+      page_attempt_number,
+      page_id,
+      activity_id,
+      activity_revision_id,
+      quote_value(part_id),
+      quote_value(timestamp),
+      score,
+      out_of,
+      scaled_score,
+      success,
+      completion,
+      quote_value(response),
+      quote_value(feedback),
+      hints_requested,
+      quote_value(attached_objectives_str),
+      quote_value(session_id)
     ]
   end
 

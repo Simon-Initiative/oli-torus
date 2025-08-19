@@ -242,8 +242,10 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         selected_query: "",
         custom_query: "",
         executing: false,
-        video_engagement_by_section:
-          Oli.Analytics.AdvancedAnalytics.video_engagement_by_section(socket.assigns.section.id)
+        comprehensive_section_analytics:
+          Oli.Analytics.AdvancedAnalytics.comprehensive_section_analytics(
+            socket.assigns.section.id
+          )
       )
 
     {:noreply, socket}
@@ -699,18 +701,18 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     <div class="container mx-auto p-6">
       <div class="max-w-6xl mx-auto">
         <h1 class="text-2xl font-bold mb-6 text-gray-900 dark:text-white">
-          Advanced Analytics
+          Advanced Analytics Dashboard
         </h1>
-        <!-- Sample Queries Section -->
+        <!-- Comprehensive Section Analytics -->
         <div class="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-6 mb-6">
           <h2 class="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
-            Video Analytics
+            Event Summary
           </h2>
           <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-            Analyze student video engagement patterns for your section.
+            Overview of all learner activity events in this section.
           </p>
-          <!-- Results Section -->
-          <%= case @video_engagement_by_section do %>
+
+          <%= case @comprehensive_section_analytics do %>
             <% {:ok, result} -> %>
               <div class="text-green-600 dark:text-green-400 mb-3 flex items-center">
                 <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
@@ -721,17 +723,44 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
                   >
                   </path>
                 </svg>
-                Query executed successfully
+                Analytics data loaded successfully
               </div>
-              <%= if result.body != "" do %>
-                <div class="bg-gray-50 dark:bg-gray-900 border rounded-lg overflow-hidden">
-                  <pre class="p-4 text-sm overflow-x-auto"><%= result.body %></pre>
+              <!-- Event Type Cards -->
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                <%= for line <- String.split(result.body, "\n") |> Enum.reject(&(&1 == "" or String.starts_with?(&1, "event_type"))) do %>
+                  <% parts = String.split(line, "\t") %>
+                  <%= if length(parts) >= 6 do %>
+                    <% [event_type, total_events, unique_users, earliest, latest, additional] =
+                      Enum.take(parts, 6) %>
+                    <div class="bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-700 dark:to-gray-600 rounded-lg p-4">
+                      <div class="flex items-center justify-between mb-2">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">
+                          <%= humanize_event_type(event_type) %>
+                        </span>
+                      </div>
+                      <div>
+                        <p class="text-2xl font-bold text-gray-900 dark:text-white">
+                          <%= total_events %>
+                        </p>
+                        <p class="text-sm text-gray-600 dark:text-gray-300">
+                          events from <%= unique_users %> users
+                        </p>
+                        <%= if additional != "" and additional != "0" do %>
+                          <p class="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                            <%= format_additional_info(event_type, additional) %>
+                          </p>
+                        <% end %>
+                      </div>
+                    </div>
+                  <% end %>
+                <% end %>
+              </div>
+              <!-- Raw Data Table -->
+              <div class="bg-gray-50 dark:bg-gray-900 border rounded-lg overflow-hidden">
+                <div class="border-t">
+                  <pre class="p-4 text-xs overflow-x-auto"><%= result.body %></pre>
                 </div>
-              <% else %>
-                <div class="text-gray-500 dark:text-gray-400 italic bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
-                  Query executed successfully (no output)
-                </div>
-              <% end %>
+              </div>
             <% {:error, reason} -> %>
               <div class="text-red-600 dark:text-red-400 mb-3 flex items-start">
                 <svg class="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -742,12 +771,89 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
                   >
                   </path>
                 </svg>
-                Query failed
+                Analytics query failed
               </div>
               <div class="bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-800 rounded-lg p-4">
                 <pre class="text-sm text-red-800 dark:text-red-200 whitespace-pre-wrap"><%= reason %></pre>
               </div>
+            <% _ -> %>
+              <div class="bg-gray-50 dark:bg-gray-900 border rounded-lg p-4">
+                <p class="text-sm text-gray-600 dark:text-gray-400">
+                  Loading comprehensive analytics data...
+                </p>
+              </div>
           <% end %>
+        </div>
+        <!-- Available Analytics Section -->
+        <div class="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-6">
+          <h2 class="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
+            Available Analytics
+          </h2>
+          <p class="text-sm text-gray-600 dark:text-gray-400 mb-6">
+            The system now captures and analyzes multiple types of learner interactions.
+          </p>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="bg-gradient-to-br from-green-50 to-emerald-100 dark:from-gray-700 dark:to-gray-600 rounded-lg p-4">
+              <h3 class="font-medium text-gray-900 dark:text-white mb-2">Video Analytics</h3>
+              <ul class="text-sm text-gray-600 dark:text-gray-300 space-y-1">
+                <li>• Play/pause patterns</li>
+                <li>• Completion rates</li>
+                <li>• Seek behavior</li>
+                <li>• Engagement time</li>
+              </ul>
+            </div>
+
+            <div class="bg-gradient-to-br from-blue-50 to-cyan-100 dark:from-gray-700 dark:to-gray-600 rounded-lg p-4">
+              <h3 class="font-medium text-gray-900 dark:text-white mb-2">Assessment Analytics</h3>
+              <ul class="text-sm text-gray-600 dark:text-gray-300 space-y-1">
+                <li>• Activity performance</li>
+                <li>• Page attempt scores</li>
+                <li>• Part-level analysis</li>
+                <li>• Success patterns</li>
+              </ul>
+            </div>
+
+            <div class="bg-gradient-to-br from-purple-50 to-violet-100 dark:from-gray-700 dark:to-gray-600 rounded-lg p-4">
+              <h3 class="font-medium text-gray-900 dark:text-white mb-2">Engagement Analytics</h3>
+              <ul class="text-sm text-gray-600 dark:text-gray-300 space-y-1">
+                <li>• Page view patterns</li>
+                <li>• Content preferences</li>
+                <li>• Learning paths</li>
+                <li>• Time-based trends</li>
+              </ul>
+            </div>
+
+            <div class="bg-gradient-to-br from-yellow-50 to-orange-100 dark:from-gray-700 dark:to-gray-600 rounded-lg p-4">
+              <h3 class="font-medium text-gray-900 dark:text-white mb-2">Performance Insights</h3>
+              <ul class="text-sm text-gray-600 dark:text-gray-300 space-y-1">
+                <li>• Score distributions</li>
+                <li>• Hint usage patterns</li>
+                <li>• Feedback effectiveness</li>
+                <li>• Learning objective alignment</li>
+              </ul>
+            </div>
+
+            <div class="bg-gradient-to-br from-pink-50 to-rose-100 dark:from-gray-700 dark:to-gray-600 rounded-lg p-4">
+              <h3 class="font-medium text-gray-900 dark:text-white mb-2">Cross-Event Analysis</h3>
+              <ul class="text-sm text-gray-600 dark:text-gray-300 space-y-1">
+                <li>• Multi-modal learning</li>
+                <li>• Comprehensive summaries</li>
+                <li>• User journey mapping</li>
+                <li>• Predictive insights</li>
+              </ul>
+            </div>
+
+            <div class="bg-gradient-to-br from-gray-50 to-slate-100 dark:from-gray-700 dark:to-gray-600 rounded-lg p-4">
+              <h3 class="font-medium text-gray-900 dark:text-white mb-2">Technical Details</h3>
+              <ul class="text-sm text-gray-600 dark:text-gray-300 space-y-1">
+                <li>• ClickHouse OLAP storage</li>
+                <li>• Real-time ETL pipeline</li>
+                <li>• Scalable architecture</li>
+                <li>• xAPI standards compliance</li>
+              </ul>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -923,5 +1029,27 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   @impl Phoenix.LiveView
   def handle_info(_any, socket) do
     {:noreply, socket}
+  end
+
+  # Helper functions for formatting analytics display
+  defp humanize_event_type(event_type) do
+    case event_type do
+      "video_events" -> "Video Interactions"
+      "activity_attempts" -> "Activity Attempts"
+      "page_attempts" -> "Page Assessments"
+      "page_views" -> "Page Views"
+      "part_attempts" -> "Question Attempts"
+      _ -> String.replace(event_type, "_", " ") |> String.capitalize()
+    end
+  end
+
+  defp format_additional_info(event_type, additional) do
+    case event_type do
+      "activity_attempts" -> "Avg score: #{additional}"
+      "page_attempts" -> "Avg score: #{additional}"
+      "page_views" -> "#{additional} completed"
+      "part_attempts" -> "Avg score: #{additional}"
+      _ -> additional
+    end
   end
 end

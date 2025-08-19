@@ -46,6 +46,22 @@ class ClickHouseClient:
         """Get the fully qualified video events table name"""
         return f"{self.database}.video_events"
 
+    def get_activity_attempt_events_table(self) -> str:
+        """Get the fully qualified activity attempt events table name"""
+        return f"{self.database}.activity_attempt_events"
+
+    def get_page_attempt_events_table(self) -> str:
+        """Get the fully qualified page attempt events table name"""
+        return f"{self.database}.page_attempt_events"
+
+    def get_page_viewed_events_table(self) -> str:
+        """Get the fully qualified page viewed events table name"""
+        return f"{self.database}.page_viewed_events"
+
+    def get_part_attempt_events_table(self) -> str:
+        """Get the fully qualified part attempt events table name"""
+        return f"{self.database}.part_attempt_events"
+
     def insert_video_events(self, events: List[Dict[str, Any]]) -> int:
         """Insert video events into ClickHouse"""
         if not events:
@@ -119,6 +135,212 @@ class ClickHouseClient:
             logger.error(f"Failed to insert video events: {str(e)}")
             raise
 
+    def insert_activity_attempt_events(self, events: List[Dict[str, Any]]) -> int:
+        """Insert activity attempt events into ClickHouse"""
+        if not events:
+            return 0
+
+        table_name = self.get_activity_attempt_events_table()
+        transformed_events = [self._transform_activity_attempt_event(event) for event in events]
+
+        insert_query = f"""
+        INSERT INTO {table_name} (
+            event_id, user_id, host_name, section_id, project_id, publication_id,
+            activity_attempt_guid, activity_attempt_number, page_attempt_guid,
+            page_attempt_number, page_id, activity_id, activity_revision_id,
+            timestamp, score, out_of, scaled_score, success, completion
+        ) VALUES
+        """
+
+        values_list = []
+        for event_data in transformed_events:
+            values = [
+                format_sql_value(event_data['event_id']),
+                format_sql_value(event_data['user_id']),
+                format_sql_value(event_data['host_name']),
+                str(event_data['section_id']),
+                str(event_data['project_id']),
+                str(event_data['publication_id']),
+                format_sql_value(event_data['activity_attempt_guid']),
+                str(event_data['activity_attempt_number']),
+                format_sql_value(event_data['page_attempt_guid']),
+                str(event_data['page_attempt_number']),
+                str(event_data['page_id']),
+                str(event_data['activity_id']),
+                str(event_data['activity_revision_id']),
+                format_sql_value(event_data['timestamp']),
+                str(event_data['score']) if event_data['score'] is not None else 'NULL',
+                str(event_data['out_of']) if event_data['out_of'] is not None else 'NULL',
+                str(event_data['scaled_score']) if event_data['scaled_score'] is not None else 'NULL',
+                str(event_data['success']).lower() if event_data['success'] is not None else 'NULL',
+                str(event_data['completion']).lower() if event_data['completion'] is not None else 'NULL'
+            ]
+            values_list.append(f"({', '.join(values)})")
+
+        full_query = insert_query + ', '.join(values_list)
+
+        try:
+            self._execute_query(full_query)
+            logger.info(f"Successfully inserted {len(events)} activity attempt events into ClickHouse")
+            return len(events)
+        except Exception as e:
+            logger.error(f"Failed to insert activity attempt events: {str(e)}")
+            raise
+
+    def insert_page_attempt_events(self, events: List[Dict[str, Any]]) -> int:
+        """Insert page attempt events into ClickHouse"""
+        if not events:
+            return 0
+
+        table_name = self.get_page_attempt_events_table()
+        transformed_events = [self._transform_page_attempt_event(event) for event in events]
+
+        insert_query = f"""
+        INSERT INTO {table_name} (
+            event_id, user_id, host_name, section_id, project_id, publication_id,
+            page_attempt_guid, page_attempt_number, page_id, timestamp,
+            score, out_of, scaled_score, success, completion
+        ) VALUES
+        """
+
+        values_list = []
+        for event_data in transformed_events:
+            values = [
+                format_sql_value(event_data['event_id']),
+                format_sql_value(event_data['user_id']),
+                format_sql_value(event_data['host_name']),
+                str(event_data['section_id']),
+                str(event_data['project_id']),
+                str(event_data['publication_id']),
+                format_sql_value(event_data['page_attempt_guid']),
+                str(event_data['page_attempt_number']),
+                str(event_data['page_id']),
+                format_sql_value(event_data['timestamp']),
+                str(event_data['score']) if event_data['score'] is not None else 'NULL',
+                str(event_data['out_of']) if event_data['out_of'] is not None else 'NULL',
+                str(event_data['scaled_score']) if event_data['scaled_score'] is not None else 'NULL',
+                str(event_data['success']).lower() if event_data['success'] is not None else 'NULL',
+                str(event_data['completion']).lower() if event_data['completion'] is not None else 'NULL'
+            ]
+            values_list.append(f"({', '.join(values)})")
+
+        full_query = insert_query + ', '.join(values_list)
+
+        try:
+            self._execute_query(full_query)
+            logger.info(f"Successfully inserted {len(events)} page attempt events into ClickHouse")
+            return len(events)
+        except Exception as e:
+            logger.error(f"Failed to insert page attempt events: {str(e)}")
+            raise
+
+    def insert_page_viewed_events(self, events: List[Dict[str, Any]]) -> int:
+        """Insert page viewed events into ClickHouse"""
+        if not events:
+            return 0
+
+        table_name = self.get_page_viewed_events_table()
+        transformed_events = [self._transform_page_viewed_event(event) for event in events]
+
+        insert_query = f"""
+        INSERT INTO {table_name} (
+            event_id, user_id, host_name, section_id, project_id, publication_id,
+            page_attempt_guid, page_attempt_number, page_id, page_sub_type,
+            timestamp, success, completion
+        ) VALUES
+        """
+
+        values_list = []
+        for event_data in transformed_events:
+            values = [
+                format_sql_value(event_data['event_id']),
+                format_sql_value(event_data['user_id']),
+                format_sql_value(event_data['host_name']),
+                str(event_data['section_id']),
+                str(event_data['project_id']),
+                str(event_data['publication_id']),
+                format_sql_value(event_data['page_attempt_guid']),
+                str(event_data['page_attempt_number']),
+                str(event_data['page_id']),
+                format_sql_value(event_data['page_sub_type']),
+                format_sql_value(event_data['timestamp']),
+                str(event_data['success']).lower() if event_data['success'] is not None else 'NULL',
+                str(event_data['completion']).lower() if event_data['completion'] is not None else 'NULL'
+            ]
+            values_list.append(f"({', '.join(values)})")
+
+        full_query = insert_query + ', '.join(values_list)
+
+        try:
+            self._execute_query(full_query)
+            logger.info(f"Successfully inserted {len(events)} page viewed events into ClickHouse")
+            return len(events)
+        except Exception as e:
+            logger.error(f"Failed to insert page viewed events: {str(e)}")
+            raise
+
+    def insert_part_attempt_events(self, events: List[Dict[str, Any]]) -> int:
+        """Insert part attempt events into ClickHouse"""
+        if not events:
+            return 0
+
+        table_name = self.get_part_attempt_events_table()
+        transformed_events = [self._transform_part_attempt_event(event) for event in events]
+
+        insert_query = f"""
+        INSERT INTO {table_name} (
+            event_id, user_id, host_name, section_id, project_id, publication_id,
+            part_attempt_guid, part_attempt_number, activity_attempt_guid,
+            activity_attempt_number, page_attempt_guid, page_attempt_number,
+            page_id, activity_id, activity_revision_id, part_id, timestamp,
+            score, out_of, scaled_score, success, completion, response,
+            feedback, hints_requested, attached_objectives, session_id
+        ) VALUES
+        """
+
+        values_list = []
+        for event_data in transformed_events:
+            values = [
+                format_sql_value(event_data['event_id']),
+                format_sql_value(event_data['user_id']),
+                format_sql_value(event_data['host_name']),
+                str(event_data['section_id']),
+                str(event_data['project_id']),
+                str(event_data['publication_id']),
+                format_sql_value(event_data['part_attempt_guid']),
+                str(event_data['part_attempt_number']),
+                format_sql_value(event_data['activity_attempt_guid']),
+                str(event_data['activity_attempt_number']),
+                format_sql_value(event_data['page_attempt_guid']),
+                str(event_data['page_attempt_number']),
+                str(event_data['page_id']),
+                str(event_data['activity_id']),
+                str(event_data['activity_revision_id']),
+                format_sql_value(event_data['part_id']),
+                format_sql_value(event_data['timestamp']),
+                str(event_data['score']) if event_data['score'] is not None else 'NULL',
+                str(event_data['out_of']) if event_data['out_of'] is not None else 'NULL',
+                str(event_data['scaled_score']) if event_data['scaled_score'] is not None else 'NULL',
+                str(event_data['success']).lower() if event_data['success'] is not None else 'NULL',
+                str(event_data['completion']).lower() if event_data['completion'] is not None else 'NULL',
+                format_sql_value(event_data['response']),
+                format_sql_value(event_data['feedback']),
+                str(event_data['hints_requested']) if event_data['hints_requested'] is not None else 'NULL',
+                format_sql_value(event_data['attached_objectives']),
+                format_sql_value(event_data['session_id'])
+            ]
+            values_list.append(f"({', '.join(values)})")
+
+        full_query = insert_query + ', '.join(values_list)
+
+        try:
+            self._execute_query(full_query)
+            logger.info(f"Successfully inserted {len(events)} part attempt events into ClickHouse")
+            return len(events)
+        except Exception as e:
+            logger.error(f"Failed to insert part attempt events: {str(e)}")
+            raise
+
     def _transform_video_event(self, event: Dict[str, Any]) -> Dict[str, Any]:
         """Transform xAPI video event to ClickHouse format"""
         # Extract basic fields
@@ -188,33 +410,295 @@ class ClickHouseClient:
             'video_seek_to': float(video_seek_to) if video_seek_to is not None else None
         }
 
-    def get_section_event_count(self, section_id: int) -> int:
-        """Get the count of events for a specific section"""
-        table_name = self.get_video_events_table()
-        query = f"SELECT COUNT(*) FROM {table_name} WHERE section_id = {section_id}"
+    def _transform_activity_attempt_event(self, event: Dict[str, Any]) -> Dict[str, Any]:
+        """Transform xAPI activity attempt event to ClickHouse format"""
+        event_id = event.get('id', str(uuid.uuid4()))
+        raw_timestamp = event.get('timestamp', datetime.utcnow().isoformat())
+        timestamp = format_clickhouse_timestamp(raw_timestamp)
 
-        try:
-            response = self._execute_query(query)
-            count = int(response.text.strip())
-            return count
-        except Exception as e:
-            logger.error(f"Failed to get section event count: {str(e)}")
-            return 0
+        # Extract user information
+        actor = event.get('actor', {})
+        account = actor.get('account', {})
+        user_id = account.get('name', '') or actor.get('mbox', '') or ''
+
+        # Extract context extensions
+        context = event.get('context', {})
+        extensions = context.get('extensions', {})
+
+        section_id = extensions.get('http://oli.cmu.edu/extensions/section_id', 0)
+        project_id = extensions.get('http://oli.cmu.edu/extensions/project_id', 0)
+        publication_id = extensions.get('http://oli.cmu.edu/extensions/publication_id', 0)
+        activity_attempt_guid = extensions.get('http://oli.cmu.edu/extensions/activity_attempt_guid', '')
+        activity_attempt_number = extensions.get('http://oli.cmu.edu/extensions/activity_attempt_number', 0)
+        page_attempt_guid = extensions.get('http://oli.cmu.edu/extensions/page_attempt_guid', '')
+        page_attempt_number = extensions.get('http://oli.cmu.edu/extensions/page_attempt_number', 0)
+        page_id = extensions.get('http://oli.cmu.edu/extensions/page_id', 0)
+        activity_id = extensions.get('http://oli.cmu.edu/extensions/activity_id', 0)
+        activity_revision_id = extensions.get('http://oli.cmu.edu/extensions/activity_revision_id', 0)
+        host_name = extensions.get('http://oli.cmu.edu/extensions/host_name', '')
+
+        # Extract result data
+        result = event.get('result', {})
+        score_data = result.get('score', {})
+        score = score_data.get('raw')
+        out_of = score_data.get('max')
+        scaled_score = score_data.get('scaled')
+        success = result.get('success')
+        completion = result.get('completion')
+
+        return {
+            'event_id': event_id,
+            'user_id': user_id,
+            'host_name': host_name,
+            'section_id': int(section_id) if section_id else 0,
+            'project_id': int(project_id) if project_id else 0,
+            'publication_id': int(publication_id) if publication_id else 0,
+            'activity_attempt_guid': activity_attempt_guid,
+            'activity_attempt_number': int(activity_attempt_number) if activity_attempt_number else 0,
+            'page_attempt_guid': page_attempt_guid,
+            'page_attempt_number': int(page_attempt_number) if page_attempt_number else 0,
+            'page_id': int(page_id) if page_id else 0,
+            'activity_id': int(activity_id) if activity_id else 0,
+            'activity_revision_id': int(activity_revision_id) if activity_revision_id else 0,
+            'timestamp': timestamp,
+            'score': float(score) if score is not None else None,
+            'out_of': float(out_of) if out_of is not None else None,
+            'scaled_score': float(scaled_score) if scaled_score is not None else None,
+            'success': success,
+            'completion': completion
+        }
+
+    def _transform_page_attempt_event(self, event: Dict[str, Any]) -> Dict[str, Any]:
+        """Transform xAPI page attempt event to ClickHouse format"""
+        event_id = event.get('id', str(uuid.uuid4()))
+        raw_timestamp = event.get('timestamp', datetime.utcnow().isoformat())
+        timestamp = format_clickhouse_timestamp(raw_timestamp)
+
+        # Extract user information
+        actor = event.get('actor', {})
+        account = actor.get('account', {})
+        user_id = account.get('name', '') or actor.get('mbox', '') or ''
+
+        # Extract context extensions
+        context = event.get('context', {})
+        extensions = context.get('extensions', {})
+
+        section_id = extensions.get('http://oli.cmu.edu/extensions/section_id', 0)
+        project_id = extensions.get('http://oli.cmu.edu/extensions/project_id', 0)
+        publication_id = extensions.get('http://oli.cmu.edu/extensions/publication_id', 0)
+        page_attempt_guid = extensions.get('http://oli.cmu.edu/extensions/page_attempt_guid', '')
+        page_attempt_number = extensions.get('http://oli.cmu.edu/extensions/page_attempt_number', 0)
+        page_id = extensions.get('http://oli.cmu.edu/extensions/page_id', 0)
+        host_name = extensions.get('http://oli.cmu.edu/extensions/host_name', '')
+
+        # Extract result data
+        result = event.get('result', {})
+        score_data = result.get('score', {})
+        score = score_data.get('raw')
+        out_of = score_data.get('max')
+        scaled_score = score_data.get('scaled')
+        success = result.get('success')
+        completion = result.get('completion')
+
+        return {
+            'event_id': event_id,
+            'user_id': user_id,
+            'host_name': host_name,
+            'section_id': int(section_id) if section_id else 0,
+            'project_id': int(project_id) if project_id else 0,
+            'publication_id': int(publication_id) if publication_id else 0,
+            'page_attempt_guid': page_attempt_guid,
+            'page_attempt_number': int(page_attempt_number) if page_attempt_number else 0,
+            'page_id': int(page_id) if page_id else 0,
+            'timestamp': timestamp,
+            'score': float(score) if score is not None else None,
+            'out_of': float(out_of) if out_of is not None else None,
+            'scaled_score': float(scaled_score) if scaled_score is not None else None,
+            'success': success,
+            'completion': completion
+        }
+
+    def _transform_page_viewed_event(self, event: Dict[str, Any]) -> Dict[str, Any]:
+        """Transform xAPI page viewed event to ClickHouse format"""
+        event_id = event.get('id', str(uuid.uuid4()))
+        raw_timestamp = event.get('timestamp', datetime.utcnow().isoformat())
+        timestamp = format_clickhouse_timestamp(raw_timestamp)
+
+        # Extract user information
+        actor = event.get('actor', {})
+        account = actor.get('account', {})
+        user_id = account.get('name', '') or actor.get('mbox', '') or ''
+
+        # Extract context extensions
+        context = event.get('context', {})
+        extensions = context.get('extensions', {})
+
+        section_id = extensions.get('http://oli.cmu.edu/extensions/section_id', 0)
+        project_id = extensions.get('http://oli.cmu.edu/extensions/project_id', 0)
+        publication_id = extensions.get('http://oli.cmu.edu/extensions/publication_id', 0)
+        page_attempt_guid = extensions.get('http://oli.cmu.edu/extensions/page_attempt_guid', '')
+        page_attempt_number = extensions.get('http://oli.cmu.edu/extensions/page_attempt_number', 0)
+        page_id = extensions.get('http://oli.cmu.edu/extensions/page_id', 0)
+        host_name = extensions.get('http://oli.cmu.edu/extensions/host_name', '')
+
+        # Extract page sub type
+        page_sub_type = safe_get_nested(event, 'object.definition.subType', '')
+
+        # Extract result data
+        result = event.get('result', {})
+        success = result.get('success')
+        completion = result.get('completion')
+
+        return {
+            'event_id': event_id,
+            'user_id': user_id,
+            'host_name': host_name,
+            'section_id': int(section_id) if section_id else 0,
+            'project_id': int(project_id) if project_id else 0,
+            'publication_id': int(publication_id) if publication_id else 0,
+            'page_attempt_guid': page_attempt_guid,
+            'page_attempt_number': int(page_attempt_number) if page_attempt_number else 0,
+            'page_id': int(page_id) if page_id else 0,
+            'page_sub_type': page_sub_type,
+            'timestamp': timestamp,
+            'success': success,
+            'completion': completion
+        }
+
+    def _transform_part_attempt_event(self, event: Dict[str, Any]) -> Dict[str, Any]:
+        """Transform xAPI part attempt event to ClickHouse format"""
+        event_id = event.get('id', str(uuid.uuid4()))
+        raw_timestamp = event.get('timestamp', datetime.utcnow().isoformat())
+        timestamp = format_clickhouse_timestamp(raw_timestamp)
+
+        # Extract user information
+        actor = event.get('actor', {})
+        account = actor.get('account', {})
+        user_id = account.get('name', '') or actor.get('mbox', '') or ''
+
+        # Extract context extensions
+        context = event.get('context', {})
+        extensions = context.get('extensions', {})
+
+        section_id = extensions.get('http://oli.cmu.edu/extensions/section_id', 0)
+        project_id = extensions.get('http://oli.cmu.edu/extensions/project_id', 0)
+        publication_id = extensions.get('http://oli.cmu.edu/extensions/publication_id', 0)
+        part_attempt_guid = extensions.get('http://oli.cmu.edu/extensions/part_attempt_guid', '')
+        part_attempt_number = extensions.get('http://oli.cmu.edu/extensions/part_attempt_number', 0)
+        activity_attempt_guid = extensions.get('http://oli.cmu.edu/extensions/activity_attempt_guid', '')
+        activity_attempt_number = extensions.get('http://oli.cmu.edu/extensions/activity_attempt_number', 0)
+        page_attempt_guid = extensions.get('http://oli.cmu.edu/extensions/page_attempt_guid', '')
+        page_attempt_number = extensions.get('http://oli.cmu.edu/extensions/page_attempt_number', 0)
+        page_id = extensions.get('http://oli.cmu.edu/extensions/page_id', 0)
+        activity_id = extensions.get('http://oli.cmu.edu/extensions/activity_id', 0)
+        activity_revision_id = extensions.get('http://oli.cmu.edu/extensions/activity_revision_id', 0)
+        part_id = extensions.get('http://oli.cmu.edu/extensions/part_id', '')
+        hints_requested = extensions.get('http://oli.cmu.edu/extensions/hints_requested', 0)
+        attached_objectives = extensions.get('http://oli.cmu.edu/extensions/attached_objectives')
+        session_id = extensions.get('http://oli.cmu.edu/extensions/session_id')
+        host_name = extensions.get('http://oli.cmu.edu/extensions/host_name', '')
+
+        # Extract result data
+        result = event.get('result', {})
+        score_data = result.get('score', {})
+        score = score_data.get('raw')
+        out_of = score_data.get('max')
+        scaled_score = score_data.get('scaled')
+        success = result.get('success')
+        completion = result.get('completion')
+        response = result.get('response')
+
+        # Extract feedback from result extensions
+        result_extensions = result.get('extensions', {})
+        feedback = result_extensions.get('http://oli.cmu.edu/extensions/feedback')
+
+        # Convert attached_objectives to JSON string if it's a list
+        attached_objectives_str = None
+        if attached_objectives is not None:
+            if isinstance(attached_objectives, list):
+                attached_objectives_str = json.dumps(attached_objectives)
+            else:
+                attached_objectives_str = str(attached_objectives)
+
+        return {
+            'event_id': event_id,
+            'user_id': user_id,
+            'host_name': host_name,
+            'section_id': int(section_id) if section_id else 0,
+            'project_id': int(project_id) if project_id else 0,
+            'publication_id': int(publication_id) if publication_id else 0,
+            'part_attempt_guid': part_attempt_guid,
+            'part_attempt_number': int(part_attempt_number) if part_attempt_number else 0,
+            'activity_attempt_guid': activity_attempt_guid,
+            'activity_attempt_number': int(activity_attempt_number) if activity_attempt_number else 0,
+            'page_attempt_guid': page_attempt_guid,
+            'page_attempt_number': int(page_attempt_number) if page_attempt_number else 0,
+            'page_id': int(page_id) if page_id else 0,
+            'activity_id': int(activity_id) if activity_id else 0,
+            'activity_revision_id': int(activity_revision_id) if activity_revision_id else 0,
+            'part_id': part_id,
+            'timestamp': timestamp,
+            'score': float(score) if score is not None else None,
+            'out_of': float(out_of) if out_of is not None else None,
+            'scaled_score': float(scaled_score) if scaled_score is not None else None,
+            'success': success,
+            'completion': completion,
+            'response': response,
+            'feedback': feedback,
+            'hints_requested': int(hints_requested) if hints_requested is not None else None,
+            'attached_objectives': attached_objectives_str,
+            'session_id': session_id
+        }
+
+    def get_section_event_count(self, section_id: int) -> int:
+        """Get the total count of events for a specific section across all event types"""
+        tables = [
+            self.get_video_events_table(),
+            self.get_activity_attempt_events_table(),
+            self.get_page_attempt_events_table(),
+            self.get_page_viewed_events_table(),
+            self.get_part_attempt_events_table()
+        ]
+
+        total_count = 0
+        for table in tables:
+            query = f"SELECT COUNT(*) FROM {table} WHERE section_id = {section_id}"
+            try:
+                response = self._execute_query(query)
+                count = int(response.text.strip())
+                total_count += count
+            except Exception as e:
+                logger.warning(f"Failed to get event count from {table}: {str(e)}")
+                # Continue with other tables
+                continue
+
+        return total_count
 
     def delete_section_events(self, section_id: int, before_timestamp: Optional[str] = None) -> int:
-        """Delete events for a specific section, optionally before a timestamp"""
-        table_name = self.get_video_events_table()
+        """Delete events for a specific section from all event tables, optionally before a timestamp"""
+        tables = [
+            self.get_video_events_table(),
+            self.get_activity_attempt_events_table(),
+            self.get_page_attempt_events_table(),
+            self.get_page_viewed_events_table(),
+            self.get_part_attempt_events_table()
+        ]
 
-        where_clause = f"section_id = {section_id}"
-        if before_timestamp:
-            where_clause += f" AND timestamp < '{before_timestamp}'"
+        deleted_count = 0
+        for table in tables:
+            where_clause = f"section_id = {section_id}"
+            if before_timestamp:
+                where_clause += f" AND timestamp < '{before_timestamp}'"
 
-        query = f"ALTER TABLE {table_name} DELETE WHERE {where_clause}"
+            query = f"ALTER TABLE {table} DELETE WHERE {where_clause}"
 
-        try:
-            self._execute_query(query)
-            logger.info(f"Deleted events for section {section_id}")
-            return 1  # ClickHouse ALTER DELETE doesn't return affected rows immediately
-        except Exception as e:
-            logger.error(f"Failed to delete section events: {str(e)}")
-            return 0
+            try:
+                self._execute_query(query)
+                deleted_count += 1
+                logger.info(f"Deleted events for section {section_id} from {table}")
+            except Exception as e:
+                logger.error(f"Failed to delete section events from {table}: {str(e)}")
+                # Continue with other tables
+                continue
+
+        return deleted_count

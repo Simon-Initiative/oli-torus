@@ -75,6 +75,38 @@ def is_video_event(event_data: Dict[str, Any]) -> bool:
 
     return verb_id in video_verbs
 
+def is_activity_attempt_event(event_data: Dict[str, Any]) -> bool:
+    """Check if the xAPI event is an activity attempt event"""
+    verb_id = event_data.get('verb', {}).get('id', '')
+    object_type = safe_get_nested(event_data, 'object.definition.type', '')
+
+    return (verb_id == 'http://adlnet.gov/expapi/verbs/completed' and
+            object_type == 'http://oli.cmu.edu/extensions/activity_attempt')
+
+def is_page_attempt_event(event_data: Dict[str, Any]) -> bool:
+    """Check if the xAPI event is a page attempt event"""
+    verb_id = event_data.get('verb', {}).get('id', '')
+    object_type = safe_get_nested(event_data, 'object.definition.type', '')
+
+    return (verb_id == 'http://adlnet.gov/expapi/verbs/completed' and
+            object_type == 'http://oli.cmu.edu/extensions/page_attempt')
+
+def is_page_viewed_event(event_data: Dict[str, Any]) -> bool:
+    """Check if the xAPI event is a page viewed event"""
+    verb_id = event_data.get('verb', {}).get('id', '')
+    object_type = safe_get_nested(event_data, 'object.definition.type', '')
+
+    return (verb_id == 'http://id.tincanapi.com/verb/viewed' and
+            object_type == 'http://oli.cmu.edu/extensions/types/page')
+
+def is_part_attempt_event(event_data: Dict[str, Any]) -> bool:
+    """Check if the xAPI event is a part attempt event"""
+    verb_id = event_data.get('verb', {}).get('id', '')
+    object_type = safe_get_nested(event_data, 'object.definition.type', '')
+
+    return (verb_id == 'http://adlnet.gov/expapi/verbs/completed' and
+            object_type == 'http://adlnet.gov/expapi/activities/question')
+
 def format_clickhouse_timestamp(timestamp_str: str) -> str:
     """Convert ISO8601 timestamp to ClickHouse format"""
     # Remove 'Z' suffix if present

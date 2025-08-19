@@ -24,19 +24,44 @@ defmodule Oli.Analytics.AdvancedAnalytics do
     end
   end
 
-  # Gets the fully qualified video_events table name
+  # Gets the fully qualified table names for all event types
   def video_events_table() do
     config = Application.get_env(:oli, :clickhouse) |> Enum.into(%{})
     "#{config.database}.video_events"
   end
 
+  def activity_attempt_events_table() do
+    config = Application.get_env(:oli, :clickhouse) |> Enum.into(%{})
+    "#{config.database}.activity_attempt_events"
+  end
+
+  def page_attempt_events_table() do
+    config = Application.get_env(:oli, :clickhouse) |> Enum.into(%{})
+    "#{config.database}.page_attempt_events"
+  end
+
+  def page_viewed_events_table() do
+    config = Application.get_env(:oli, :clickhouse) |> Enum.into(%{})
+    "#{config.database}.page_viewed_events"
+  end
+
+  def part_attempt_events_table() do
+    config = Application.get_env(:oli, :clickhouse) |> Enum.into(%{})
+    "#{config.database}.part_attempt_events"
+  end
+
   @doc """
-  Provides useful analytics queries for video events.
+  Provides comprehensive analytics queries for all event types.
   """
-  def sample_video_analytics_queries() do
+  def sample_analytics_queries() do
     video_events_table = video_events_table()
+    activity_attempt_events_table = activity_attempt_events_table()
+    page_attempt_events_table = page_attempt_events_table()
+    page_viewed_events_table = page_viewed_events_table()
+    part_attempt_events_table = part_attempt_events_table()
 
     %{
+      # Video Analytics
       video_engagement_by_section: """
         SELECT
           section_id,
@@ -77,6 +102,168 @@ defmodule Oli.Analytics.AdvancedAnalytics do
         WHERE user_id IS NOT NULL
         GROUP BY user_id
         ORDER BY total_watch_time DESC
+      """,
+
+      # Activity Attempt Analytics
+      activity_attempt_performance: """
+        SELECT
+          section_id,
+          activity_id,
+          count(*) as total_attempts,
+          avg(score) as avg_score,
+          avg(out_of) as avg_possible_score,
+          avg(scaled_score) as avg_scaled_score,
+          countIf(success = true) as successful_attempts,
+          uniq(user_id) as unique_users
+        FROM #{activity_attempt_events_table}
+        WHERE section_id IS NOT NULL
+        GROUP BY section_id, activity_id
+        ORDER BY avg_scaled_score DESC
+      """,
+      activity_attempt_trends: """
+        SELECT
+          toYYYYMM(timestamp) as month,
+          section_id,
+          count(*) as attempts,
+          avg(scaled_score) as avg_performance,
+          uniq(user_id) as active_users
+        FROM #{activity_attempt_events_table}
+        WHERE section_id IS NOT NULL
+        GROUP BY month, section_id
+        ORDER BY month DESC, section_id
+      """,
+
+      # Page Attempt Analytics
+      page_attempt_performance: """
+        SELECT
+          section_id,
+          page_id,
+          count(*) as total_attempts,
+          avg(score) as avg_score,
+          avg(out_of) as avg_possible_score,
+          avg(scaled_score) as avg_scaled_score,
+          countIf(success = true) as successful_attempts,
+          uniq(user_id) as unique_users
+        FROM #{page_attempt_events_table}
+        WHERE section_id IS NOT NULL
+        GROUP BY section_id, page_id
+        ORDER BY avg_scaled_score DESC
+      """,
+
+      # Page Viewed Analytics
+      page_engagement: """
+        SELECT
+          section_id,
+          page_id,
+          page_sub_type,
+          count(*) as total_views,
+          uniq(user_id) as unique_viewers,
+          countIf(completion = true) as completed_views,
+          toHour(timestamp) as hour_of_day,
+          count(*) as views_by_hour
+        FROM #{page_viewed_events_table}
+        WHERE section_id IS NOT NULL
+        GROUP BY section_id, page_id, page_sub_type, hour_of_day
+        ORDER BY total_views DESC
+      """,
+      popular_pages: """
+        SELECT
+          page_id,
+          page_sub_type,
+          count(*) as total_views,
+          uniq(user_id) as unique_viewers,
+          avg(if(completion = true, 1, 0)) as completion_rate
+        FROM #{page_viewed_events_table}
+        WHERE page_id IS NOT NULL
+        GROUP BY page_id, page_sub_type
+        ORDER BY total_views DESC
+      """,
+
+      # Part Attempt Analytics
+      part_attempt_analysis: """
+        SELECT
+          section_id,
+          activity_id,
+          part_id,
+          count(*) as total_attempts,
+          avg(score) as avg_score,
+          avg(out_of) as avg_possible_score,
+          avg(scaled_score) as avg_scaled_score,
+          countIf(success = true) as successful_attempts,
+          avg(hints_requested) as avg_hints_used,
+          uniq(user_id) as unique_users
+        FROM #{part_attempt_events_table}
+        WHERE section_id IS NOT NULL
+        GROUP BY section_id, activity_id, part_id
+        ORDER BY avg_scaled_score DESC
+      """,
+
+      # Cross-Event Analytics
+      comprehensive_section_summary: """
+        SELECT
+          'video_events' as event_type,
+          section_id,
+          count(*) as total_events,
+          uniq(user_id) as unique_users,
+          min(timestamp) as earliest_event,
+          max(timestamp) as latest_event
+        FROM #{video_events_table}
+        WHERE section_id IS NOT NULL
+        GROUP BY section_id
+
+        UNION ALL
+
+        SELECT
+          'activity_attempts' as event_type,
+          section_id,
+          count(*) as total_events,
+          uniq(user_id) as unique_users,
+          min(timestamp) as earliest_event,
+          max(timestamp) as latest_event
+        FROM #{activity_attempt_events_table}
+        WHERE section_id IS NOT NULL
+        GROUP BY section_id
+
+        UNION ALL
+
+        SELECT
+          'page_attempts' as event_type,
+          section_id,
+          count(*) as total_events,
+          uniq(user_id) as unique_users,
+          min(timestamp) as earliest_event,
+          max(timestamp) as latest_event
+        FROM #{page_attempt_events_table}
+        WHERE section_id IS NOT NULL
+        GROUP BY section_id
+
+        UNION ALL
+
+        SELECT
+          'page_views' as event_type,
+          section_id,
+          count(*) as total_events,
+          uniq(user_id) as unique_users,
+          min(timestamp) as earliest_event,
+          max(timestamp) as latest_event
+        FROM #{page_viewed_events_table}
+        WHERE section_id IS NOT NULL
+        GROUP BY section_id
+
+        UNION ALL
+
+        SELECT
+          'part_attempts' as event_type,
+          section_id,
+          count(*) as total_events,
+          uniq(user_id) as unique_users,
+          min(timestamp) as earliest_event,
+          max(timestamp) as latest_event
+        FROM #{part_attempt_events_table}
+        WHERE section_id IS NOT NULL
+        GROUP BY section_id
+
+        ORDER BY section_id, event_type
       """
     }
   end
@@ -91,28 +278,101 @@ defmodule Oli.Analytics.AdvancedAnalytics do
   end
 
   @doc """
-  Provides useful analytics queries for video events.
+  Get comprehensive analytics for a specific section across all event types.
   """
-  def video_engagement_by_section(section_id) when is_integer(section_id) do
+  def comprehensive_section_analytics(section_id) when is_integer(section_id) do
     video_events_table = video_events_table()
+    activity_attempt_events_table = activity_attempt_events_table()
+    page_attempt_events_table = page_attempt_events_table()
+    page_viewed_events_table = page_viewed_events_table()
+    part_attempt_events_table = part_attempt_events_table()
 
     """
+    SELECT
+      event_type,
+      total_events,
+      unique_users,
+      earliest_event,
+      latest_event,
+      additional_info
+    FROM (
       SELECT
-        section_id,
+        'video_events' as event_type,
         count(*) as total_events,
-        countIf(video_time IS NOT NULL AND video_seek_from IS NULL) as play_pause_events,
-        countIf(video_progress IS NOT NULL AND video_played_segments IS NOT NULL) as completion_events,
-        countIf(video_seek_from IS NOT NULL AND video_seek_to IS NOT NULL) as seek_events,
-        avg(video_progress) as avg_progress,
         uniq(user_id) as unique_users,
-        uniq(content_element_id) as unique_videos
+        min(timestamp) as earliest_event,
+        max(timestamp) as latest_event,
+        if(count(*) > 0, 'Watch time tracked', 'No video interactions') as additional_info
       FROM #{video_events_table}
       WHERE section_id = #{section_id}
-        AND section_id IS NOT NULL
-      GROUP BY section_id
-      ORDER BY total_events DESC
+
+      UNION ALL
+
+      SELECT
+        'activity_attempts' as event_type,
+        count(*) as total_events,
+        uniq(user_id) as unique_users,
+        min(timestamp) as earliest_event,
+        max(timestamp) as latest_event,
+        if(count(*) > 0,
+           concat('Avg score: ', toString(round(avg(scaled_score), 3))),
+           'No attempts recorded') as additional_info
+      FROM #{activity_attempt_events_table}
+      WHERE section_id = #{section_id}
+
+      UNION ALL
+
+      SELECT
+        'page_attempts' as event_type,
+        count(*) as total_events,
+        uniq(user_id) as unique_users,
+        min(timestamp) as earliest_event,
+        max(timestamp) as latest_event,
+        if(count(*) > 0,
+           concat('Avg score: ', toString(round(avg(scaled_score), 3))),
+           'No attempts recorded') as additional_info
+      FROM #{page_attempt_events_table}
+      WHERE section_id = #{section_id}
+
+      UNION ALL
+
+      SELECT
+        'page_views' as event_type,
+        count(*) as total_events,
+        uniq(user_id) as unique_users,
+        min(timestamp) as earliest_event,
+        max(timestamp) as latest_event,
+        if(count(*) > 0,
+           concat('Completed: ', toString(countIf(completion = true))),
+           'No page views') as additional_info
+      FROM #{page_viewed_events_table}
+      WHERE section_id = #{section_id}
+
+      UNION ALL
+
+      SELECT
+        'part_attempts' as event_type,
+        count(*) as total_events,
+        uniq(user_id) as unique_users,
+        min(timestamp) as earliest_event,
+        max(timestamp) as latest_event,
+        if(count(*) > 0,
+           concat('Avg score: ', toString(round(avg(scaled_score), 3))),
+           'No attempts recorded') as additional_info
+      FROM #{part_attempt_events_table}
+      WHERE section_id = #{section_id}
+    )
+    ORDER BY
+      CASE event_type
+        WHEN 'video_events' THEN 1
+        WHEN 'activity_attempts' THEN 2
+        WHEN 'page_attempts' THEN 3
+        WHEN 'page_views' THEN 4
+        WHEN 'part_attempts' THEN 5
+        ELSE 6
+      END
     """
-    |> execute_query("video engagement by section")
+    |> execute_query("comprehensive section analytics for section #{section_id}")
   end
 
   def execute_query(query, description) when is_binary(query) and byte_size(query) > 0 do

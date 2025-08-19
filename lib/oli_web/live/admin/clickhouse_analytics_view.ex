@@ -19,7 +19,7 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
          selected_query: "",
          custom_query: "",
          executing: false,
-         sample_queries: AdvancedAnalytics.sample_video_analytics_queries()
+         sample_queries: AdvancedAnalytics.sample_analytics_queries()
        )}
     else
       {:ok,
