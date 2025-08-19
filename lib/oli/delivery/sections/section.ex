@@ -164,6 +164,7 @@ defmodule Oli.Delivery.Sections.Section do
     field(:encouraging_subtitle, :string)
 
     field(:agenda, :boolean, default: true)
+    field(:progress_scoring_settings, :map, default: %{"enabled" => false})
 
     timestamps(type: :utc_datetime)
   end
@@ -228,7 +229,8 @@ defmodule Oli.Delivery.Sections.Section do
       :welcome_title,
       :encouraging_subtitle,
       :agenda,
-      :certificate_enabled
+      :certificate_enabled,
+      :progress_scoring_settings
     ])
     |> cast_embed(:customizations, required: false)
     |> validate_required(@required_fields)

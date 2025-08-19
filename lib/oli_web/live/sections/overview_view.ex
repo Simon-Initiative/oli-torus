@@ -352,6 +352,16 @@ defmodule OliWeb.Sections.OverviewView do
               Assessment Scores
             </a>
           </li>
+          <li>
+            <a
+              href={
+                Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.ProgressScoringLive, @section.slug)
+              }
+              class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
+            >
+              Progress as Graded Item
+            </a>
+          </li>
 
           <%= if !@section.open_and_free do %>
             <li>
@@ -362,6 +372,7 @@ defmodule OliWeb.Sections.OverviewView do
                 Manage LMS Gradebook
               </a>
             </li>
+
             <li>
               <a
                 href={

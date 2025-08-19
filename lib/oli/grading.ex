@@ -32,6 +32,114 @@ defmodule Oli.Grading do
   alias OliWeb.Common.Utils
   alias Oli.Repo
   alias OliWeb.Delivery.Student.Utils, as: StudentUtils
+  alias Oli.Delivery.Sections.ProgressScoringSettings
+  alias Oli.Resources.ResourceType
+
+  @doc """
+  Determines all scored items (both assessments and progress containers) for a section
+  in course order, using the efficient SectionResourceDepot.
+
+  Returns a list of maps with item information needed for line item creation.
+  """
+  def determine_all_scored_items(section) do
+    # Get all graded pages
+    graded_pages = SectionResourceDepot.graded_pages(section.id)
+
+    # Get progress scoring settings
+    progress_settings = get_progress_scoring_settings(section)
+
+    # Get all containers if progress scoring is enabled
+    progress_containers =
+      if progress_settings.enabled && not Enum.empty?(progress_settings.container_ids) do
+        SectionResourceDepot.containers(section.id)
+        |> Enum.filter(fn sr -> sr.resource_id in progress_settings.container_ids end)
+      else
+        []
+      end
+
+    # Combine and sort by numbering_index (course order)
+    all_items =
+      (graded_pages ++ progress_containers)
+      |> Enum.sort_by(& &1.numbering_index)
+
+    # Batch fetch all revisions for graded pages in a single DB call
+    graded_page_resource_ids =
+      all_items
+      |> Enum.filter(fn sr ->
+        sr.resource_type_id == ResourceType.id_for_page() && sr.graded
+      end)
+      |> Enum.map(& &1.resource_id)
+
+    # Make a single batch call to get all revisions
+    revisions_map =
+      if Enum.empty?(graded_page_resource_ids) do
+        %{}
+      else
+        DeliveryResolver.from_resource_id(section.slug, graded_page_resource_ids)
+        |> Map.new(&{&1.resource_id, &1})
+      end
+
+    # Transform to the format needed for line item creation
+    Enum.map(all_items, fn sr ->
+      cond do
+        # Is this a graded page?
+        sr.resource_type_id == ResourceType.id_for_page() && sr.graded ->
+          # Get the revision from our pre-fetched map
+          revision = Map.get(revisions_map, sr.resource_id)
+
+          %{
+            type: :assessment,
+            resource_id: sr.resource_id,
+            title: sr.title,
+            out_of: determine_page_out_of(section.slug, revision),
+            numbering_index: sr.numbering_index
+          }
+
+        # Is this a progress container?
+        sr.resource_type_id == ResourceType.id_for_container() ->
+          %{
+            type: :progress_container,
+            resource_id: sr.resource_id,
+            title: sr.title,
+            container_id: sr.resource_id,
+            hierarchy_type: progress_settings.hierarchy_type,
+            out_of: progress_settings.out_of,
+            numbering_index: sr.numbering_index
+          }
+
+        true ->
+          nil
+      end
+    end)
+    |> Enum.reject(&is_nil/1)
+  end
+
+  defp get_progress_scoring_settings(section) do
+    case section.progress_scoring_settings do
+      nil ->
+        %ProgressScoringSettings{}
+
+      settings_map when is_map(settings_map) ->
+        struct(ProgressScoringSettings, atomize_keys(settings_map))
+
+      _ ->
+        %ProgressScoringSettings{}
+    end
+  end
+
+  defp atomize_keys(map) when is_map(map) do
+    Map.new(map, fn
+      {key, value} when is_binary(key) ->
+        try do
+          {String.to_existing_atom(key), value}
+        rescue
+          ArgumentError -> {key, value}
+        end
+
+      {key, value} ->
+        {key, value}
+    end)
+  end
 
   @doc """
   If grade passback services 2.0 is enabled, sends the current state of a ResourceAccess

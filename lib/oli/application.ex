@@ -72,6 +72,15 @@ defmodule Oli.Application do
         # Starts Cachex to store section info
         Oli.Delivery.Sections.SectionCache,
 
+        # Starts the progress scoring monitor for automatic sync coordination
+        Oli.Delivery.Sections.ProgressScoringMonitor,
+
+        # Registry for line items creator processes
+        {Registry, keys: :unique, name: Oli.Delivery.LineItemsRegistry},
+
+        # Dynamic supervisor for line items creator processes
+        {DynamicSupervisor, strategy: :one_for_one, name: Oli.DynamicSupervisor},
+
         # a supervisor which can be used to dynamically supervise tasks
         {Task.Supervisor, name: Oli.TaskSupervisor}
       ] ++ maybe_node_js_config()

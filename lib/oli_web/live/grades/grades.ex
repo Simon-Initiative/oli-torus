@@ -3,7 +3,6 @@ defmodule OliWeb.Grades.GradesLive do
 
   alias Oli.Grading
   alias Lti_1p3.Tool.Services.AGS
-  alias Lti_1p3.Tool.Services.AGS.LineItem
   alias Oli.Delivery.Attempts.Core, as: Attempts
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Attempts.PageLifecycle.Broadcaster
@@ -11,6 +10,7 @@ defmodule OliWeb.Grades.GradesLive do
   alias OliWeb.Sections.Mount
   alias OliWeb.Common.Breadcrumb
   alias OliWeb.Grades.{Export, GradeSync, LineItems, TestConnection}
+  alias Oli.Delivery.Sections.LineItemsCreator
 
   def set_breadcrumbs(type, section) do
     type
@@ -45,6 +45,9 @@ defmodule OliWeb.Grades.GradesLive do
             nil
           end
 
+        # Subscribe to line items creator updates
+        Phoenix.PubSub.subscribe(Oli.PubSub, "line_items_creator:#{section.slug}")
+
         {:ok,
          assign(socket,
            title: "LMS Grades",
@@ -63,7 +66,9 @@ defmodule OliWeb.Grades.GradesLive do
            failed_jobs: nil,
            succeeded_jobs: nil,
            test_output: nil,
-           test_in_progress?: false
+           test_in_progress?: false,
+           line_items_job_id: nil,
+           line_items_job_status: nil
          )}
     end
   end
@@ -108,7 +113,11 @@ defmodule OliWeb.Grades.GradesLive do
       </div>
 
       <div class="my-2">
-        <LineItems.render task_queue={@task_queue} />
+        <LineItems.render
+          task_queue={@task_queue}
+          job_status={@line_items_job_status}
+          section_slug={@section_slug}
+        />
       </div>
       <div class="my-2">
         <GradeSync.render
@@ -136,44 +145,6 @@ defmodule OliWeb.Grades.GradesLive do
       </div>
     </div>
     """
-  end
-
-  defp determine_line_item_tasks(graded_pages, line_items, section) do
-    line_item_map = Enum.reduce(line_items, %{}, fn i, m -> Map.put(m, i.resourceId, i) end)
-
-    # tasks to create line items for graded pages that do not have them
-    creation_tasks =
-      Enum.filter(graded_pages, fn p ->
-        !Map.has_key?(line_item_map, LineItem.to_resource_id(p.resource_id))
-      end)
-      |> Enum.map(fn p ->
-        fn assigns ->
-          out_of = Oli.Grading.determine_page_out_of(section.slug, p)
-
-          AGS.create_line_item(
-            assigns.line_items_url,
-            p.resource_id,
-            out_of,
-            p.title,
-            assigns.access_token
-          )
-        end
-      end)
-
-    # tasks to update the labels of line items whose corresponding graded page's title has changed
-    update_tasks =
-      Enum.filter(graded_pages, fn p ->
-        Map.has_key?(line_item_map, LineItem.to_resource_id(p.resource_id)) and
-          Map.get(line_item_map, LineItem.to_resource_id(p.resource_id)).label != p.title
-      end)
-      |> Enum.map(fn p ->
-        fn assigns ->
-          line_item = Map.get(line_item_map, LineItem.to_resource_id(p.resource_id))
-          AGS.update_line_item(line_item, %{label: p.title}, assigns.access_token)
-        end
-      end)
-
-    creation_tasks ++ update_tasks
   end
 
   defp host() do
@@ -222,75 +193,30 @@ defmodule OliWeb.Grades.GradesLive do
     students
   end
 
-  # Sorts the given list of pages by the order within the hierarchy.
-  #
-  # TODO: Eventually we should use a reachability implementation to determine
-  # the order of the pages in the hierarchy as well as unordered pages outside
-  # of the hierarchy. For now, we just sort the pages by the order they appear
-  # in the hierarchy and append any remaining pages that are not in the hierarchy
-  # to the end.
-  defp sort_pages_by_hierarchy(pages, hierarchy) do
-    pages_map = Enum.reduce(pages, %{}, fn p, m -> Map.put(m, p.resource_id, p) end)
-    page_resource_ids = MapSet.new(Enum.map(pages, fn p -> p.resource_id end))
-
-    {reverse_ordered_page_resource_ids, remaining_resource_ids} =
-      hierarchy
-      |> Oli.Delivery.Hierarchy.flatten()
-      # only include pages that are in the hierarchy
-      |> Enum.filter(fn node ->
-        node.revision.resource_type_id ==
-          Oli.Resources.ResourceType.id_for_page()
-      end)
-      |> Enum.map(fn node -> node.revision.resource_id end)
-      |> Enum.reduce({[], page_resource_ids}, fn resource_id, {ordered, remaining} ->
-        if MapSet.member?(remaining, resource_id) do
-          {[resource_id | ordered], MapSet.delete(remaining, resource_id)}
-        else
-          {ordered, remaining}
-        end
-      end)
-
-    # reverse result and add any remaining pages that are not in the hierarchy
-    (Enum.reverse(reverse_ordered_page_resource_ids) ++ MapSet.to_list(remaining_resource_ids))
-    |> Enum.map(fn resource_id -> Map.get(pages_map, resource_id) end)
-  end
-
   def emit_status(pid, status, decoration, is_done?) do
     send(pid, {:test_status, status, decoration, is_done?})
   end
 
   def handle_event("send_line_items", _, socket) do
-    registration = socket.assigns.registration
     section = socket.assigns.section
 
-    case fetch_line_items(registration, socket.assigns.line_items_url) do
-      {:ok, line_items, access_token} ->
-        graded_pages = Sections.fetch_scored_pages(section.slug)
+    # Start the async line items creation process
+    case LineItemsCreator.create_all_line_items(section.slug) do
+      {:ok, job_id} ->
+        {:noreply,
+         socket
+         |> assign(:line_items_job_id, job_id)
+         |> put_flash(
+           :info,
+           dgettext(
+             "grades",
+             "Line items creation started. You can close this page and the process will continue in the background."
+           )
+         )}
 
-        # sort by hierarchical order
-        hierarchy = Oli.Publishing.DeliveryResolver.full_hierarchy(section.slug)
-        ordered_graded_pages = sort_pages_by_hierarchy(graded_pages, hierarchy)
-
-        case determine_line_item_tasks(ordered_graded_pages, line_items, socket.assigns.section) do
-          [] ->
-            {:noreply,
-             put_flash(socket, :info, dgettext("grades", "LMS line items already up to date"))}
-
-          task_queue ->
-            # Kick off the serial processing of the queue by popping the first item
-            send(self(), :pop_task_queue)
-
-            {:noreply,
-             assign(socket,
-               access_token: access_token,
-               task_queue: task_queue,
-               progress_max: length(task_queue),
-               progress_current: 0
-             )}
-        end
-
-      {:error, e} ->
-        {:noreply, put_flash(socket, :error, e)}
+      {:error, reason} ->
+        {:noreply,
+         put_flash(socket, :error, "Failed to start line items creation: #{inspect(reason)}")}
     end
   end
 
@@ -386,19 +312,6 @@ defmodule OliWeb.Grades.GradesLive do
     {:noreply, assign(socket, total_jobs: total_jobs, failed_jobs: 0, succeeded_jobs: 0)}
   end
 
-  defp fetch_line_items(registration, line_items_url) do
-    case access_token_provider(registration) do
-      {:ok, access_token} ->
-        case AGS.fetch_line_items(line_items_url, access_token) do
-          {:ok, line_items} -> {:ok, line_items, access_token}
-          _ -> {:error, dgettext("grades", "Error accessing LMS line items")}
-        end
-
-      _ ->
-        {:error, dgettext("grades", "Error getting LMS access token")}
-    end
-  end
-
   def handle_info({:test_status, status, decoration, is_done}, socket) do
     test_output =
       if is_nil(socket.assigns.test_output) do
@@ -448,31 +361,8 @@ defmodule OliWeb.Grades.GradesLive do
      )}
   end
 
-  def handle_info(:pop_task_queue, socket) do
-    # take the first item off the queue
-    [task | task_queue] = socket.assigns.task_queue
-
-    # and invoke the task, providing the current socket assigns
-    # as context. If any task fails we simply move on and execute the
-    # next one.  Failed tasks would be encountered, for instance, if NRPS was not enabled and
-    # score posts for students no longer enrolled are sent to the LMS.
-    case task.(socket.assigns) do
-      _ ->
-        # See if there is another item in the queue to pop
-        socket =
-          if length(task_queue) > 0 do
-            send(self(), :pop_task_queue)
-            socket
-          else
-            socket |> put_flash(:info, dgettext("grades", "LMS up to date"))
-          end
-
-        {:noreply,
-         assign(socket,
-           task_queue: task_queue,
-           progress_current: socket.assigns.progress_current + 1
-         )}
-    end
+  def handle_info({:line_items_status, status}, socket) do
+    {:noreply, assign(socket, :line_items_job_status, status)}
   end
 
   def handle_info(_, socket) do

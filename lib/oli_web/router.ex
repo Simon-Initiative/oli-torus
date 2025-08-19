@@ -1448,6 +1448,7 @@ defmodule OliWeb.Router do
       live("/lti_external_tools", Sections.LtiExternalToolsView)
 
       live("/edit", Sections.EditView)
+      live("/progress_scoring", Sections.ProgressScoringLive)
 
       live("/debugger/:attempt_guid", Attempt.AttemptLive)
 
