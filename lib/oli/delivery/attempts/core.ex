@@ -258,20 +258,19 @@ defmodule Oli.Delivery.Attempts.Core do
 
   def get_graded_resource_access_for_context(section_id, user_ids) do
     graded_resource_access_for_context(section_id)
-    |> where([_, _, _, a], a.user_id in ^user_ids)
+    |> where([r], r.user_id in ^user_ids)
     |> Repo.all()
   end
 
   # base query, intended to be composable for the above two uses
   defp graded_resource_access_for_context(section_id) do
-    SectionsProjectsPublications
-    |> join(:left, [spp], pr in PublishedResource, on: pr.publication_id == spp.publication_id)
-    |> join(:left, [_, pr], r in Revision, on: r.id == pr.revision_id)
-    |> join(:left, [spp, _, r], a in ResourceAccess,
-      on: r.resource_id == a.resource_id and a.section_id == spp.section_id
-    )
-    |> where([spp, _, r, a], not is_nil(a) and spp.section_id == ^section_id and r.graded == true)
-    |> select([_, _, _, a], a)
+    graded_pages_resource_ids =
+      Oli.Delivery.Sections.SectionResourceDepot.graded_pages(section_id)
+      |> Enum.map(& &1.resource_id)
+
+    ResourceAccess
+    |> where([r], r.resource_id in ^graded_pages_resource_ids)
+    |> select([r], r)
   end
 
   @doc """
