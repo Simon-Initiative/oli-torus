@@ -65,7 +65,7 @@ defmodule OliWeb.DeliveryWeb do
                   {:ok, revision} ->
                     # Redirect directly to the specific page
                     conn
-                    |> redirect(to: ~p"/sections/#{section.slug}/page/#{revision.slug}")
+                    |> redirect(to: ~p"/sections/#{section.slug}/lesson/#{revision.slug}")
 
                   {:error, _reason} ->
                     # Fallback to normal redirect logic if page not found or not valid

@@ -375,7 +375,7 @@ defmodule OliWeb.LtiControllerTest do
         )
 
       # Should redirect to the specific page
-      assert redirected_to(conn) == "/sections/#{section.slug}/page/#{page_revision.slug}"
+      assert redirected_to(conn) == "/sections/#{section.slug}/lesson/#{page_revision.slug}"
     end
 
     test "launch with invalid resource_slug falls back to normal redirect", %{
