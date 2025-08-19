@@ -60,15 +60,18 @@ class ClickHouseClient:
         insert_query = f"""
         INSERT INTO {table_name} (
             event_id,
-            timestamp,
             user_id,
-            session_id,
+            host_name,
             section_id,
+            project_id,
+            publication_id,
+            attempt_guid,
+            attempt_number,
             page_id,
             content_element_id,
+            timestamp,
             video_url,
             video_title,
-            verb,
             video_time,
             video_length,
             video_progress,
@@ -84,15 +87,18 @@ class ClickHouseClient:
         for event_data in transformed_events:
             values = [
                 format_sql_value(event_data['event_id']),
-                format_sql_value(event_data['timestamp']),
                 format_sql_value(event_data['user_id']),
-                format_sql_value(event_data['session_id']),
+                format_sql_value(event_data['host_name']),
                 str(event_data['section_id']),
-                str(event_data['page_id']),
+                str(event_data['project_id']),
+                str(event_data['publication_id']),
+                format_sql_value(event_data['attempt_guid']),
+                str(event_data['attempt_number']),
+                str(event_data['page_id']) if event_data['page_id'] is not None else 'NULL',
                 format_sql_value(event_data['content_element_id']),
+                format_sql_value(event_data['timestamp']),
                 format_sql_value(event_data['video_url']),
                 format_sql_value(event_data['video_title']),
-                format_sql_value(event_data['verb']),
                 str(event_data['video_time']) if event_data['video_time'] is not None else 'NULL',
                 str(event_data['video_length']) if event_data['video_length'] is not None else 'NULL',
                 str(event_data['video_progress']) if event_data['video_progress'] is not None else 'NULL',
@@ -132,8 +138,12 @@ class ClickHouseClient:
         extensions = context.get('extensions', {})
 
         section_id = extensions.get('http://oli.cmu.edu/extensions/section_id', 0)
-        page_id = extensions.get('http://oli.cmu.edu/extensions/page_id', 0)
-        session_id = extensions.get('http://oli.cmu.edu/extensions/session_id', '')
+        project_id = extensions.get('http://oli.cmu.edu/extensions/project_id', 0)
+        publication_id = extensions.get('http://oli.cmu.edu/extensions/publication_id', 0)
+        attempt_guid = extensions.get('http://oli.cmu.edu/extensions/attempt_guid', '')
+        attempt_number = extensions.get('http://oli.cmu.edu/extensions/attempt_number', 0)
+        page_id = extensions.get('http://oli.cmu.edu/extensions/page_id')
+        host_name = extensions.get('http://oli.cmu.edu/extensions/host_name', '')
 
         # Extract video-specific data
         obj = event.get('object', {})
@@ -155,20 +165,20 @@ class ClickHouseClient:
         video_seek_from = result_extensions.get('https://w3id.org/xapi/video/extensions/time-from')
         video_seek_to = result_extensions.get('https://w3id.org/xapi/video/extensions/time-to')
 
-        # Extract verb
-        verb = safe_get_nested(event, 'verb.id', '')
-
         return {
             'event_id': event_id,
-            'timestamp': timestamp,
             'user_id': user_id,
-            'session_id': session_id,
+            'host_name': host_name,
             'section_id': int(section_id) if section_id else 0,
-            'page_id': int(page_id) if page_id else 0,
+            'project_id': int(project_id) if project_id else 0,
+            'publication_id': int(publication_id) if publication_id else 0,
+            'attempt_guid': attempt_guid,
+            'attempt_number': int(attempt_number) if attempt_number else 0,
+            'page_id': int(page_id) if page_id is not None else None,
             'content_element_id': content_element_id,
+            'timestamp': timestamp,
             'video_url': video_url,
             'video_title': video_title,
-            'verb': verb,
             'video_time': float(video_time) if video_time is not None else None,
             'video_length': float(video_length) if video_length is not None else None,
             'video_progress': float(video_progress) if video_progress is not None else None,

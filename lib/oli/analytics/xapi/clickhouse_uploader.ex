@@ -54,12 +54,25 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
   defp is_video_event?(event) do
     # Check if this is a video-related xAPI statement
     case get_in(event, ["verb", "id"]) do
-      "http://adlnet.gov/expapi/verbs/experienced" -> true
-      "https://w3id.org/xapi/video/verbs/played" -> true
-      "https://w3id.org/xapi/video/verbs/paused" -> true
-      "https://w3id.org/xapi/video/verbs/seeked" -> true
-      "https://w3id.org/xapi/video/verbs/completed" -> true
-      _ -> false
+      "http://adlnet.gov/expapi/verbs/experienced" ->
+        true
+
+      "https://w3id.org/xapi/video/verbs/played" ->
+        true
+
+      "https://w3id.org/xapi/video/verbs/paused" ->
+        true
+
+      "https://w3id.org/xapi/video/verbs/seeked" ->
+        true
+
+      "https://w3id.org/xapi/video/verbs/completed" ->
+        true
+
+      _ ->
+        Logger.warning("Ignoring non-video event: #{inspect(event)}")
+
+        false
     end
   end
 
@@ -86,15 +99,18 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
     """
     INSERT INTO #{video_events_table} (
       event_id,
-      timestamp,
       user_id,
-      session_id,
+      host_name,
       section_id,
+      project_id,
+      publication_id,
+      attempt_guid,
+      attempt_number,
       page_id,
       content_element_id,
+      timestamp,
       video_url,
       video_title,
-      verb,
       video_time,
       video_length,
       video_progress,
@@ -116,13 +132,17 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
     raw_timestamp = get_in(event, ["timestamp"]) || DateTime.utc_now() |> DateTime.to_iso8601()
     timestamp = String.replace(raw_timestamp, "Z", "")
 
-    event_id = get_in(event, ["id"]) || UUID.uuid4(:hex)
+    event_id = get_in(event, ["id"]) || Ecto.UUID.generate()
 
     # Extract context extensions
     extensions = get_in(event, ["context", "extensions"]) || %{}
     section_id = extensions["http://oli.cmu.edu/extensions/section_id"] || 0
+    project_id = extensions["http://oli.cmu.edu/extensions/project_id"] || 0
+    publication_id = extensions["http://oli.cmu.edu/extensions/publication_id"] || 0
+    attempt_guid = extensions["http://oli.cmu.edu/extensions/attempt_guid"] || ""
+    attempt_number = extensions["http://oli.cmu.edu/extensions/attempt_number"] || 0
     page_id = extensions["http://oli.cmu.edu/extensions/page_id"]
-    session_id = extensions["http://oli.cmu.edu/extensions/session_id"]
+    host_name = extensions["http://oli.cmu.edu/extensions/host_name"] || ""
 
     # Extract video-specific data from result extensions
     result_extensions = get_in(event, ["result", "extensions"]) || %{}
@@ -144,21 +164,20 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
     video_seek_from = result_extensions["video_seek_from"]
     video_seek_to = result_extensions["video_seek_to"]
 
-    verb = get_in(event, ["verb", "id"])
-
     [
       quote_value(event_id),
-      quote_value(timestamp),
-      # Now guaranteed to be a string, never null
       quote_value(user_id),
-      quote_value(session_id),
-      # Now guaranteed to be a number, never null
+      quote_value(host_name),
       section_id,
+      project_id,
+      publication_id,
+      quote_value(attempt_guid),
+      attempt_number,
       page_id,
       quote_value(content_element_id),
+      quote_value(timestamp),
       quote_value(video_url),
       quote_value(video_title),
-      quote_value(verb),
       video_time,
       video_length,
       video_progress,

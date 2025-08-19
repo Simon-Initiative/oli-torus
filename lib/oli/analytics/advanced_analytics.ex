@@ -41,9 +41,9 @@ defmodule Oli.Analytics.AdvancedAnalytics do
         SELECT
           section_id,
           count(*) as total_events,
-          countIf(verb LIKE '%played%') as play_events,
-          countIf(verb LIKE '%paused%') as pause_events,
-          countIf(verb LIKE '%completed%') as completion_events,
+          countIf(video_time IS NOT NULL AND video_seek_from IS NULL) as play_pause_events,
+          countIf(video_progress IS NOT NULL AND video_played_segments IS NOT NULL) as completion_events,
+          countIf(video_seek_from IS NOT NULL AND video_seek_to IS NOT NULL) as seek_events,
           avg(video_progress) as avg_progress,
           uniq(user_id) as unique_users,
           uniq(content_element_id) as unique_videos
@@ -56,8 +56,8 @@ defmodule Oli.Analytics.AdvancedAnalytics do
         SELECT
           content_element_id,
           video_title,
-          countIf(verb LIKE '%played%') as plays,
-          countIf(verb LIKE '%completed%') as completions,
+          countIf(video_time IS NOT NULL) as plays,
+          countIf(video_progress IS NOT NULL AND video_played_segments IS NOT NULL) as completions,
           if(plays > 0, completions / plays * 100, 0) as completion_rate_percent
         FROM #{video_events_table}
         WHERE content_element_id IS NOT NULL
@@ -69,7 +69,7 @@ defmodule Oli.Analytics.AdvancedAnalytics do
         SELECT
           user_id,
           count(*) as total_interactions,
-          countIf(verb LIKE '%played%') as videos_played,
+          countIf(video_time IS NOT NULL) as videos_played,
           sum(video_play_time) as total_watch_time,
           avg(video_progress) as avg_completion_rate,
           max(timestamp) as last_interaction
@@ -100,9 +100,9 @@ defmodule Oli.Analytics.AdvancedAnalytics do
       SELECT
         section_id,
         count(*) as total_events,
-        countIf(verb LIKE '%played%') as play_events,
-        countIf(verb LIKE '%paused%') as pause_events,
-        countIf(verb LIKE '%completed%') as completion_events,
+        countIf(video_time IS NOT NULL AND video_seek_from IS NULL) as play_pause_events,
+        countIf(video_progress IS NOT NULL AND video_played_segments IS NOT NULL) as completion_events,
+        countIf(video_seek_from IS NOT NULL AND video_seek_to IS NOT NULL) as seek_events,
         avg(video_progress) as avg_progress,
         uniq(user_id) as unique_users,
         uniq(content_element_id) as unique_videos
