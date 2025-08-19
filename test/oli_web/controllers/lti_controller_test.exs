@@ -312,6 +312,138 @@ defmodule OliWeb.LtiControllerTest do
       assert html_response(conn, 200) =~ "This course section is not available"
     end
 
+    test "launch with resource_slug redirects to specific page", %{
+      conn: conn,
+      registration: registration,
+      deployment: deployment
+    } do
+      platform_jwk = jwk_fixture()
+
+      Oli.Test.MockHTTP
+      |> expect(:get, 2, mock_keyset_endpoint("some key_set_url", platform_jwk))
+
+      # Create a project with a page using the Seeder
+      %{project: project, publication: publication, revision1: page_revision} =
+        Oli.Seeder.base_project_with_resource2()
+
+      # Create section and attach resources
+      section =
+        section_fixture(%{
+          title: "Test Section",
+          base_project_id: project.id,
+          institution_id: deployment.institution_id,
+          context_id: "some_context_id",
+          status: :active
+        })
+
+      {:ok, _} = Oli.Delivery.Sections.create_section_resources(section, publication)
+
+      state = "some-state"
+      conn = Plug.Test.init_test_session(conn, state: state)
+
+      custom_header = %{"kid" => platform_jwk.kid}
+      signer = Joken.Signer.create("RS256", %{"pem" => platform_jwk.pem}, custom_header)
+
+      claims =
+        Oli.Lti.TestHelpers.all_default_claims()
+        |> Map.delete("iss")
+        |> Map.delete("aud")
+        |> Map.put("https://purl.imsglobal.org/spec/lti/claim/context", %{
+          "id" => "some_context_id",
+          "title" => "Test Course"
+        })
+        |> Map.put(
+          "https://purl.imsglobal.org/spec/lti/claim/deployment_id",
+          deployment.deployment_id
+        )
+        |> Map.put(
+          "https://purl.imsglobal.org/spec/lti/claim/roles",
+          ["http://purl.imsglobal.org/vocab/lis/v2/membership#Learner"]
+        )
+
+      {:ok, claims} =
+        Joken.Config.default_claims(iss: registration.issuer, aud: registration.client_id)
+        |> Joken.generate_claims(claims)
+
+      {:ok, id_token, _claims} = Joken.encode_and_sign(claims, signer)
+
+      # Launch with resource_slug parameter
+      conn =
+        post(
+          conn,
+          Routes.lti_path(conn, :launch, page_revision.slug, %{state: state, id_token: id_token})
+        )
+
+      # Should redirect to the specific page
+      assert redirected_to(conn) == "/sections/#{section.slug}/page/#{page_revision.slug}"
+    end
+
+    test "launch with invalid resource_slug falls back to normal redirect", %{
+      conn: conn,
+      registration: registration,
+      deployment: deployment
+    } do
+      platform_jwk = jwk_fixture()
+
+      Oli.Test.MockHTTP
+      |> expect(:get, 2, mock_keyset_endpoint("some key_set_url", platform_jwk))
+
+      # Create a project and section using the Seeder
+      %{project: project, publication: publication} =
+        Oli.Seeder.base_project_with_resource2()
+
+      # Create section and attach resources
+      section =
+        section_fixture(%{
+          title: "Test Section",
+          base_project_id: project.id,
+          institution_id: deployment.institution_id,
+          context_id: "some_context_id",
+          status: :active
+        })
+
+      {:ok, _} = Oli.Delivery.Sections.create_section_resources(section, publication)
+
+      state = "some-state"
+      conn = Plug.Test.init_test_session(conn, state: state)
+
+      custom_header = %{"kid" => platform_jwk.kid}
+      signer = Joken.Signer.create("RS256", %{"pem" => platform_jwk.pem}, custom_header)
+
+      claims =
+        Oli.Lti.TestHelpers.all_default_claims()
+        |> Map.delete("iss")
+        |> Map.delete("aud")
+        |> Map.put("https://purl.imsglobal.org/spec/lti/claim/context", %{
+          "id" => "some_context_id",
+          "title" => "Test Course"
+        })
+        |> Map.put(
+          "https://purl.imsglobal.org/spec/lti/claim/deployment_id",
+          deployment.deployment_id
+        )
+        |> Map.put(
+          "https://purl.imsglobal.org/spec/lti/claim/roles",
+          ["http://purl.imsglobal.org/vocab/lis/v2/membership#Learner"]
+        )
+
+      {:ok, claims} =
+        Joken.Config.default_claims(iss: registration.issuer, aud: registration.client_id)
+        |> Joken.generate_claims(claims)
+
+      {:ok, id_token, _claims} = Joken.encode_and_sign(claims, signer)
+
+      # Launch with non-existent resource_slug parameter
+      conn =
+        post(
+          conn,
+          Routes.lti_path(conn, :launch, "non-existent-slug", %{state: state, id_token: id_token})
+        )
+
+      # Should fallback to normal section redirect (student view)
+      assert redirected_to(conn) == "/sections/#{section.slug}"
+    end
+
     test "launch successful for valid params with no email", %{
       conn: conn,
       registration: registration

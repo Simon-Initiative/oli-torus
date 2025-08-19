@@ -2,11 +2,15 @@ defmodule OliWeb.DeliveryWeb do
   use OliWeb, :verified_routes
 
   import Phoenix.Controller
+  import Ecto.Query
 
   alias Lti_1p3.Roles.{PlatformRoles, ContextRoles}
   alias Oli.Accounts.User
   alias Oli.Lti.LtiParams
   alias Oli.Delivery.Sections
+  alias Oli.Publishing.DeliveryResolver
+  alias Oli.Resources.ResourceType
+  alias Oli.Repo
 
   require Logger
 
@@ -21,6 +25,7 @@ defmodule OliWeb.DeliveryWeb do
 
   def redirect_user(conn, opts \\ []) do
     allow_new_section_creation = Keyword.get(opts, :allow_new_section_creation, false)
+    resource_slug = Keyword.get(opts, :resource_slug)
 
     with %User{id: user_id, independent_learner: false} <- conn.assigns.current_user,
          %LtiParams{params: lti_params} <- LtiParams.get_latest_user_lti_params(user_id) do
@@ -54,15 +59,24 @@ defmodule OliWeb.DeliveryWeb do
               |> put_view(OliWeb.DeliveryView)
               |> render("course_not_configured.html")
 
-            # Section has already been configured, redirect to manage view
-            section when can_configure_section ->
-              conn
-              |> redirect(to: ~p"/sections/#{section.slug}/manage")
-
-            # Section has been configured, redirect student to section home
+            # Section has already been configured
             section ->
-              conn
-              |> redirect(to: ~p"/sections/#{section.slug}")
+              # If a resource_slug is provided, attempt to redirect to that specific page
+              if resource_slug do
+                case get_and_validate_revision(section.slug, resource_slug) do
+                  {:ok, revision} ->
+                    # Redirect directly to the specific page
+                    conn
+                    |> redirect(to: ~p"/sections/#{section.slug}/page/#{revision.slug}")
+
+                  {:error, _reason} ->
+                    # Fallback to normal redirect logic if page not found or not valid
+                    redirect_to_default(conn, section, can_configure_section)
+                end
+              else
+                # No resource_slug provided, use normal redirect logic
+                redirect_to_default(conn, section, can_configure_section)
+              end
           end
 
         _ ->
@@ -75,6 +89,36 @@ defmodule OliWeb.DeliveryWeb do
     else
       _ ->
         redirect(conn, to: ~p"/workspaces/student")
+    end
+  end
+
+  defp redirect_to_default(conn, section, can_configure_section) do
+    if can_configure_section do
+      conn
+      |> redirect(to: ~p"/sections/#{section.slug}/manage")
+    else
+      conn
+      |> redirect(to: ~p"/sections/#{section.slug}")
+    end
+  end
+
+  defp get_and_validate_revision(section_slug, resource_slug) do
+    page_type_id = ResourceType.get_id_by_type("page")
+
+    query =
+      from [_sr, _s, _spp, _pr, rev] in DeliveryResolver.section_resource_revisions(section_slug),
+        where:
+          rev.slug == ^resource_slug and rev.resource_type_id == ^page_type_id and
+            rev.deleted == false,
+        select: rev,
+        limit: 1
+
+    case Repo.one(query) do
+      nil ->
+        {:error, :not_found}
+
+      revision ->
+        {:ok, revision}
     end
   end
 end

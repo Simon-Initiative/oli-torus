@@ -51,16 +51,26 @@ defmodule OliWeb.LtiController do
 
   def launch(conn, params) do
     session_state = Plug.Conn.get_session(conn, "state")
+    resource_slug = Map.get(params, "resource_slug")
 
     case Lti_1p3.Tool.LaunchValidation.validate(params, session_state) do
       {:ok, lti_params} ->
         case handle_valid_lti_1p3_launch(lti_params) do
           {:ok, user} ->
             # sign in LTI user and redirect to appropriate route
+            redirect_opts = [allow_new_section_creation: true]
+
+            redirect_opts =
+              if resource_slug do
+                Keyword.put(redirect_opts, :resource_slug, resource_slug)
+              else
+                redirect_opts
+              end
+
             conn
             |> UserAuth.create_session(user)
             |> assign(:current_user, user)
-            |> DeliveryWeb.redirect_user(allow_new_section_creation: true)
+            |> DeliveryWeb.redirect_user(redirect_opts)
 
           {:error, error} ->
             # Log the error for debugging purposes
