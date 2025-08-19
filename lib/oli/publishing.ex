@@ -1063,6 +1063,7 @@ defmodule Oli.Publishing do
       {:ok, publication} ->
         # Log the publication event
         author = Oli.Accounts.get_author!(user_id)
+
         Oli.Auditing.capture(
           author,
           :project_published,
@@ -1074,7 +1075,7 @@ defmodule Oli.Publishing do
             "version" => "#{publication.edition}.#{publication.major}.#{publication.minor}"
           }
         )
-        
+
         {:ok, publication}
 
       other ->

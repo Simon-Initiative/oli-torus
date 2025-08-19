@@ -9,9 +9,9 @@ defmodule Oli.AuditingTest do
   describe "capture/4" do
     test "captures user action" do
       user = insert(:user)
-      
-      assert {:ok, %LogEvent{} = event} = 
-        Auditing.capture(user, :user_created, nil, %{"email" => user.email})
+
+      assert {:ok, %LogEvent{} = event} =
+               Auditing.capture(user, :user_created, nil, %{"email" => user.email})
 
       assert event.user_id == user.id
       assert event.author_id == nil
@@ -21,9 +21,9 @@ defmodule Oli.AuditingTest do
 
     test "captures author action" do
       author = insert(:author)
-      
-      assert {:ok, %LogEvent{} = event} = 
-        Auditing.capture(author, :author_created, nil, %{"email" => author.email})
+
+      assert {:ok, %LogEvent{} = event} =
+               Auditing.capture(author, :author_created, nil, %{"email" => author.email})
 
       assert event.author_id == author.id
       assert event.user_id == nil
@@ -34,12 +34,12 @@ defmodule Oli.AuditingTest do
     test "captures action with project resource" do
       author = insert(:author)
       project = insert(:project, authors: [author])
-      
-      assert {:ok, %LogEvent{} = event} = 
-        Auditing.capture(author, :project_published, project, %{
-          "version" => "1.0.0",
-          "description" => "Initial release"
-        })
+
+      assert {:ok, %LogEvent{} = event} =
+               Auditing.capture(author, :project_published, project, %{
+                 "version" => "1.0.0",
+                 "description" => "Initial release"
+               })
 
       assert event.author_id == author.id
       assert event.project_id == project.id
@@ -50,11 +50,11 @@ defmodule Oli.AuditingTest do
     test "captures action with section resource" do
       user = insert(:user)
       section = insert(:section)
-      
-      assert {:ok, %LogEvent{} = event} = 
-        Auditing.capture(user, :section_created, section, %{
-          "title" => section.title
-        })
+
+      assert {:ok, %LogEvent{} = event} =
+               Auditing.capture(user, :section_created, section, %{
+                 "title" => section.title
+               })
 
       assert event.user_id == user.id
       assert event.section_id == section.id
@@ -63,11 +63,11 @@ defmodule Oli.AuditingTest do
     end
 
     test "captures system action without actor" do
-      assert {:ok, %LogEvent{} = event} = 
-        Auditing.capture(nil, :system_setting_changed, nil, %{
-          "setting" => "maintenance_mode",
-          "value" => true
-        })
+      assert {:ok, %LogEvent{} = event} =
+               Auditing.capture(nil, :system_setting_changed, nil, %{
+                 "setting" => "maintenance_mode",
+                 "value" => true
+               })
 
       assert event.user_id == nil
       assert event.author_id == nil
@@ -77,16 +77,16 @@ defmodule Oli.AuditingTest do
 
     test "fails with invalid event type" do
       user = insert(:user)
-      
-      assert {:error, changeset} = 
-        Auditing.capture(user, :invalid_event_type, nil, %{})
+
+      assert {:error, changeset} =
+               Auditing.capture(user, :invalid_event_type, nil, %{})
 
       assert errors_on(changeset)[:event_type]
     end
 
     test "fails without actor" do
-      assert {:error, changeset} = 
-        Auditing.capture(nil, :user_created, nil, %{})
+      assert {:error, changeset} =
+               Auditing.capture(nil, :user_created, nil, %{})
 
       assert errors_on(changeset)[:base]
     end
@@ -114,11 +114,11 @@ defmodule Oli.AuditingTest do
 
     test "lists all events", %{events: events} do
       results = Auditing.list_events()
-      
+
       assert length(results) >= 3
       event_ids = Enum.map(events, & &1.id)
       result_ids = Enum.map(results, & &1.id)
-      
+
       Enum.each(event_ids, fn id ->
         assert id in result_ids
       end)
@@ -126,35 +126,35 @@ defmodule Oli.AuditingTest do
 
     test "filters by user_id", %{user: user} do
       results = Auditing.list_events(user_id: user.id)
-      
+
       assert length(results) == 2
       assert Enum.all?(results, fn e -> e.user_id == user.id end)
     end
 
     test "filters by author_id", %{author: author} do
       results = Auditing.list_events(author_id: author.id)
-      
+
       assert length(results) == 1
       assert Enum.all?(results, fn e -> e.author_id == author.id end)
     end
 
     test "filters by event_type" do
       results = Auditing.list_events(event_type: :project_published)
-      
+
       assert length(results) >= 1
       assert Enum.all?(results, fn e -> e.event_type == :project_published end)
     end
 
     test "filters by project_id", %{project: project} do
       results = Auditing.list_events(project_id: project.id)
-      
+
       assert length(results) == 1
       assert Enum.all?(results, fn e -> e.project_id == project.id end)
     end
 
     test "filters by section_id", %{section: section} do
       results = Auditing.list_events(section_id: section.id)
-      
+
       assert length(results) == 1
       assert Enum.all?(results, fn e -> e.section_id == section.id end)
     end
@@ -172,20 +172,21 @@ defmodule Oli.AuditingTest do
 
     test "orders by inserted_at desc by default", %{events: [_event1, _, event3]} do
       results = Auditing.list_events()
-      
+
       # Most recent should be first (event3 was created last)
       # Since there might be other events in the database, we check that event3
       # appears before event1 in the results
       event_ids = Enum.map(results, & &1.id)
       event3_index = Enum.find_index(event_ids, fn id -> id == event3.id end)
-      
+
       assert event3_index != nil
-      assert event3_index < 3  # Should be in the first few results
+      # Should be in the first few results
+      assert event3_index < 3
     end
 
     test "preloads actor associations", %{user: user, author: author} do
       results = Auditing.list_events()
-      
+
       user_event = Enum.find(results, fn e -> e.user_id == user.id end)
       assert user_event.actor.id == user.id
       assert user_event.actor.email == user.email
@@ -197,7 +198,7 @@ defmodule Oli.AuditingTest do
 
     test "preloads resource associations", %{project: project, section: section} do
       results = Auditing.list_events()
-      
+
       project_event = Enum.find(results, fn e -> e.project_id == project.id end)
       assert project_event.resource.id == project.id
       assert project_event.resource.title == project.title
@@ -221,7 +222,7 @@ defmodule Oli.AuditingTest do
 
     test "raises if event does not exist" do
       assert_raise Ecto.NoResultsError, fn ->
-        Auditing.get_event!(999999)
+        Auditing.get_event!(999_999)
       end
     end
 
@@ -238,7 +239,7 @@ defmodule Oli.AuditingTest do
   describe "convenience functions" do
     test "log_user_action/3" do
       user = insert(:user)
-      
+
       assert {:ok, event} = Auditing.log_user_action(user, :user_created, %{"test" => true})
       assert event.user_id == user.id
       assert event.details["test"] == true
@@ -246,7 +247,7 @@ defmodule Oli.AuditingTest do
 
     test "log_author_action/3" do
       author = insert(:author)
-      
+
       assert {:ok, event} = Auditing.log_author_action(author, :author_created, %{"test" => true})
       assert event.author_id == author.id
       assert event.details["test"] == true
@@ -255,14 +256,15 @@ defmodule Oli.AuditingTest do
     test "log_admin_action/4" do
       admin = insert(:user)
       project = insert(:project)
-      
-      assert {:ok, event} = Auditing.log_admin_action(
-        admin, 
-        :project_published, 
-        project, 
-        %{"version" => "1.0"}
-      )
-      
+
+      assert {:ok, event} =
+               Auditing.log_admin_action(
+                 admin,
+                 :project_published,
+                 project,
+                 %{"version" => "1.0"}
+               )
+
       assert event.user_id == admin.id
       assert event.project_id == project.id
       assert event.details["admin_action"] == true
@@ -275,7 +277,7 @@ defmodule Oli.AuditingTest do
       user = insert(:user, name: "John Doe")
       {:ok, event} = Auditing.capture(user, :user_created, nil, %{})
       event = Auditing.get_event!(event.id)
-      
+
       assert LogEvent.actor_name(event) == "John Doe"
     end
 
@@ -283,7 +285,7 @@ defmodule Oli.AuditingTest do
       user = insert(:user, name: nil, email: "user@example.com")
       {:ok, event} = Auditing.capture(user, :user_created, nil, %{})
       event = Auditing.get_event!(event.id)
-      
+
       assert LogEvent.actor_name(event) == "user@example.com"
     end
 
@@ -291,7 +293,7 @@ defmodule Oli.AuditingTest do
       author = insert(:author, name: "Jane Author")
       {:ok, event} = Auditing.capture(author, :author_created, nil, %{})
       event = Auditing.get_event!(event.id)
-      
+
       assert LogEvent.actor_name(event) == "Jane Author"
     end
 
@@ -299,14 +301,14 @@ defmodule Oli.AuditingTest do
       author = insert(:author, name: nil, email: "author@example.com")
       {:ok, event} = Auditing.capture(author, :author_created, nil, %{})
       event = Auditing.get_event!(event.id)
-      
+
       assert LogEvent.actor_name(event) == "author@example.com"
     end
 
     test "returns User # when actor not loaded" do
       user = insert(:user)
       {:ok, event} = Auditing.capture(user, :user_created, nil, %{})
-      
+
       # Don't preload associations
       event = Repo.get!(LogEvent, event.id)
       assert LogEvent.actor_name(event) == "User ##{user.id}"
@@ -314,7 +316,7 @@ defmodule Oli.AuditingTest do
 
     test "returns System for nil actor" do
       {:ok, event} = Auditing.capture(nil, :system_setting_changed, nil, %{})
-      
+
       assert LogEvent.actor_name(event) == "System"
     end
   end
@@ -327,9 +329,10 @@ defmodule Oli.AuditingTest do
 
     test "returns description for project_published with title" do
       event = %LogEvent{
-        event_type: :project_published, 
+        event_type: :project_published,
         details: %{"project_title" => "My Project"}
       }
+
       assert LogEvent.event_description(event) == "Published project My Project"
     end
 
@@ -338,6 +341,7 @@ defmodule Oli.AuditingTest do
         event_type: :section_created,
         details: %{"section_title" => "My Section"}
       }
+
       assert LogEvent.event_description(event) == "Created section My Section"
     end
 
@@ -346,6 +350,7 @@ defmodule Oli.AuditingTest do
         event_type: :role_changed,
         details: %{"from_role" => "user", "to_role" => "admin"}
       }
+
       assert LogEvent.event_description(event) == "Changed role from user to admin"
     end
 

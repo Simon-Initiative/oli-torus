@@ -45,7 +45,15 @@ defmodule Oli.Auditing.LogEvent do
   @doc false
   def changeset(log_event, attrs) do
     log_event
-    |> cast(attrs, [:user_id, :author_id, :event_type, :section_id, :project_id, :resource_id, :details])
+    |> cast(attrs, [
+      :user_id,
+      :author_id,
+      :event_type,
+      :section_id,
+      :project_id,
+      :resource_id,
+      :details
+    ])
     |> validate_required([:event_type])
     |> validate_inclusion(:event_type, @event_types)
     |> validate_actor()

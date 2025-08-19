@@ -95,7 +95,7 @@ defmodule Oli.Auditing do
   """
   def list_events(opts \\ []) do
     limit = Keyword.get(opts, :limit, 100)
-    order_by = Keyword.get(opts, :order_by, [desc: :inserted_at])
+    order_by = Keyword.get(opts, :order_by, desc: :inserted_at)
 
     LogEvent
     |> apply_filters(opts)
@@ -303,7 +303,11 @@ defmodule Oli.Auditing do
           order_by(query, [e, u, a], {^direction, fragment("coalesce(?, ?)", u.name, a.name)})
 
         :resource ->
-          order_by(query, [e, _, _, p, s], {^direction, fragment("coalesce(?, ?)", p.title, s.title)})
+          order_by(
+            query,
+            [e, _, _, p, s],
+            {^direction, fragment("coalesce(?, ?)", p.title, s.title)}
+          )
 
         :inserted_at ->
           order_by(query, [e], {^direction, e.inserted_at})
@@ -318,9 +322,9 @@ defmodule Oli.Auditing do
 
   @doc """
   Browse audit events with paging, sorting, and filtering.
-  
+
   ## Examples
-  
+
       iex> browse_events(%Paging{}, %Sorting{}, %BrowseOptions{})
       [%LogEvent{}, ...]
   """

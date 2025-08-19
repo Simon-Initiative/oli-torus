@@ -127,7 +127,7 @@ defmodule OliWeb.Admin.AuditLogLive do
           <div class="flex-1 min-w-[300px]">
             <TextSearch.render id="text-search" text={@options.text_search} />
           </div>
-          
+
           <div class="min-w-[200px]">
             <label class="block text-sm font-medium text-gray-700 mb-1">Event Type</label>
             <select
@@ -145,7 +145,7 @@ defmodule OliWeb.Admin.AuditLogLive do
               <% end %>
             </select>
           </div>
-          
+
           <div class="min-w-[200px]">
             <label class="block text-sm font-medium text-gray-700 mb-1">Actor Type</label>
             <select
@@ -174,12 +174,24 @@ defmodule OliWeb.Admin.AuditLogLive do
       />
 
       <%= if @show_details_modal do %>
-        <div class="fixed z-10 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div
+          class="fixed z-10 inset-0 overflow-y-auto"
+          aria-labelledby="modal-title"
+          role="dialog"
+          aria-modal="true"
+        >
           <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" phx-click="close_details_modal"></div>
-            
-            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            
+            <div
+              class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+              aria-hidden="true"
+              phx-click="close_details_modal"
+            >
+            </div>
+
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">
+              &#8203;
+            </span>
+
             <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
               <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                 <div class="sm:flex sm:items-start">
@@ -194,8 +206,8 @@ defmodule OliWeb.Admin.AuditLogLive do
                 </div>
               </div>
               <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   phx-click="close_details_modal"
                   class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm"
                 >
@@ -236,24 +248,24 @@ defmodule OliWeb.Admin.AuditLogLive do
   # Specific event handlers must come before the generic handler
   # These handlers receive events from the SelectListener hook which sends {id, value}
   def handle_event("filter_event_type", %{"id" => _id, "value" => value}, socket) do
-    event_type = 
+    event_type =
       case value do
         "" -> nil
         "nil" -> nil
         v -> String.to_existing_atom(v)
       end
-    
+
     patch_with(socket, %{event_type: event_type, offset: 0})
   end
 
   def handle_event("filter_actor_type", %{"id" => _id, "value" => value}, socket) do
-    actor_type = 
+    actor_type =
       case value do
         "" -> nil
-        "nil" -> nil  
+        "nil" -> nil
         v -> String.to_existing_atom(v)
       end
-    
+
     patch_with(socket, %{actor_type: actor_type, offset: 0})
   end
 

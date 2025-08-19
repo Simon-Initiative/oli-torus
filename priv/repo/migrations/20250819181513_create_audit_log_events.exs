@@ -10,7 +10,7 @@ defmodule Oli.Repo.Migrations.CreateAuditLogEvents do
       add :project_id, :integer
       add :resource_id, :integer
       add :details, :map, default: %{}
-      
+
       timestamps(updated_at: false)
     end
 

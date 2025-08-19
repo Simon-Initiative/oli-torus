@@ -69,11 +69,12 @@ defmodule OliWeb.Admin.AuditLog.TableModel do
     type_class = get_event_type_class(event.event_type)
     description = LogEvent.event_description(event)
 
-    assigns = Map.merge(assigns, %{
-      event_type: event.event_type,
-      type_class: type_class,
-      description: description
-    })
+    assigns =
+      Map.merge(assigns, %{
+        event_type: event.event_type,
+        type_class: type_class,
+        description: description
+      })
 
     ~H"""
     <div>
@@ -86,13 +87,16 @@ defmodule OliWeb.Admin.AuditLog.TableModel do
 
   def render_actor_column(assigns, event, _) do
     actor_name = LogEvent.actor_name(event)
-    actor_type = if event.user_id, do: "User", else: (if event.author_id, do: "Author", else: "System")
 
-    assigns = Map.merge(assigns, %{
-      event: event,
-      actor_name: actor_name,
-      actor_type: actor_type
-    })
+    actor_type =
+      if event.user_id, do: "User", else: if(event.author_id, do: "Author", else: "System")
+
+    assigns =
+      Map.merge(assigns, %{
+        event: event,
+        actor_name: actor_name,
+        actor_type: actor_type
+      })
 
     ~H"""
     <div>
@@ -108,10 +112,12 @@ defmodule OliWeb.Admin.AuditLog.TableModel do
         <% else %>
           <%= if @event.author_id do %>
             <a
-              href={Routes.live_path(OliWeb.Endpoint, OliWeb.Users.AuthorsDetailView, @event.author_id)}
+              href={
+                Routes.live_path(OliWeb.Endpoint, OliWeb.Users.AuthorsDetailView, @event.author_id)
+              }
               class="text-blue-600 hover:text-blue-800"
             >
-            {@actor_name}
+              {@actor_name}
             </a>
           <% end %>
         <% end %>
@@ -128,7 +134,13 @@ defmodule OliWeb.Admin.AuditLog.TableModel do
       <%= cond do %>
         <% @event.project_id && @event.resource -> %>
           <a
-            href={Routes.live_path(OliWeb.Endpoint, OliWeb.Workspaces.CourseAuthor.OverviewLive, @event.resource.slug)}
+            href={
+              Routes.live_path(
+                OliWeb.Endpoint,
+                OliWeb.Workspaces.CourseAuthor.OverviewLive,
+                @event.resource.slug
+              )
+            }
             class="text-blue-600 hover:text-blue-800 text-sm"
           >
             {@event.resource.slug}
@@ -136,7 +148,14 @@ defmodule OliWeb.Admin.AuditLog.TableModel do
           <div class="text-xs text-gray-500">Project</div>
         <% @event.section_id && @event.resource -> %>
           <a
-            href={Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive, @event.resource.slug, :overview)}
+            href={
+              Routes.live_path(
+                OliWeb.Endpoint,
+                OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+                @event.resource.slug,
+                :overview
+              )
+            }
             class="text-blue-600 hover:text-blue-800 text-sm"
           >
             {@event.resource.slug}
@@ -196,6 +215,7 @@ defmodule OliWeb.Admin.AuditLog.TableModel do
     |> Enum.reject(fn {_k, v} -> is_nil(v) or v == "" end)
     |> Map.new(fn {k, v} -> {k, format_value(v)} end)
   end
+
   defp format_details(_), do: %{}
 
   defp format_value(value) when is_map(value), do: Jason.encode!(value, pretty: true)
@@ -203,6 +223,7 @@ defmodule OliWeb.Admin.AuditLog.TableModel do
   defp format_value(value), do: to_string(value)
 
   defp details_preview(details) when map_size(details) == 0, do: "No additional details"
+
   defp details_preview(details) do
     details
     |> Enum.take(2)

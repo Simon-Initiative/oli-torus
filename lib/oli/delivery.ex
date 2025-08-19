@@ -167,7 +167,7 @@ defmodule Oli.Delivery do
             "base_project_id" => section.base_project_id
           }
         )
-        
+
         PostProcessing.apply(section, :all)
       else
         {:error, changeset} ->
@@ -197,7 +197,7 @@ defmodule Oli.Delivery do
             "blueprint_id" => blueprint.id
           }
         )
-        
+
         PostProcessing.apply(section, :discussions)
       else
         {:error, changeset} -> Repo.rollback(changeset)
