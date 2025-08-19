@@ -156,6 +156,18 @@ defmodule Oli.Delivery do
              Sections.enroll(user.id, section.id, [
                ContextRoles.get_role(:context_instructor)
              ]) do
+        # Log the section creation
+        Oli.Auditing.capture(
+          user,
+          :section_created,
+          section,
+          %{
+            "section_title" => section.title,
+            "type" => Atom.to_string(section.type),
+            "base_project_id" => section.base_project_id
+          }
+        )
+        
         PostProcessing.apply(section, :all)
       else
         {:error, changeset} ->
@@ -173,6 +185,19 @@ defmodule Oli.Delivery do
              Sections.enroll(user.id, section.id, [
                ContextRoles.get_role(:context_instructor)
              ]) do
+        # Log the section creation
+        Oli.Auditing.capture(
+          user,
+          :section_created,
+          section,
+          %{
+            "section_title" => section.title,
+            "type" => Atom.to_string(section.type),
+            "base_project_id" => section.base_project_id,
+            "blueprint_id" => blueprint.id
+          }
+        )
+        
         PostProcessing.apply(section, :discussions)
       else
         {:error, changeset} -> Repo.rollback(changeset)

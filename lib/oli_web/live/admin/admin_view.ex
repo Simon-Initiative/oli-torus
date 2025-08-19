@@ -133,6 +133,11 @@ defmodule OliWeb.Admin.AdminView do
               </a>
             </li>
             <li>
+              <a href={~p"/admin/audit_log"}>
+                View Audit Log
+              </a>
+            </li>
+            <li>
               <a href={~p"/admin/xapi"}>
                 XAPI Upload Pipeline Stats
               </a>
