@@ -3,9 +3,9 @@ defmodule OliWeb.TechSupportLive do
   alias Oli.Help.HelpContent
   alias Oli.Help.HelpRequest
   alias OliWeb.Components.Modal
+  import Oli.Utils, only: [get_base_url: 0]
 
   @modal_id "tech-support-modal"
-  @base_url Oli.Utils.get_base_url()
 
   require Logger
 
@@ -336,7 +336,7 @@ defmodule OliWeb.TechSupportLive do
       |> Map.take([:title, :start_date, :end_date])
       |> Map.merge(%{
         institution_name: institution_name,
-        course_management_url: "#{@base_url}/sections/#{section.slug}/manage"
+        course_management_url: "#{get_base_url()}/sections/#{section.slug}/manage"
       })
       |> then(fn m -> struct(Oli.Help.CourseData, m) end)
     end
@@ -368,7 +368,7 @@ defmodule OliWeb.TechSupportLive do
       user = session["user"]
 
       if section && user do
-        "#{@base_url}/sections/#{section.slug}/student_dashboard/#{user.id}/content"
+        "#{get_base_url()}/sections/#{section.slug}/student_dashboard/#{user.id}/content"
       end
     end
   end
@@ -376,9 +376,9 @@ defmodule OliWeb.TechSupportLive do
   defp get_user_account_url(session) do
     if user = session["user"] do
       if session["current_user_id"] do
-        "#{@base_url}/admin/users/#{user.id}"
+        "#{get_base_url()}/admin/users/#{user.id}"
       else
-        "#{@base_url}/admin/authors/#{user.id}"
+        "#{get_base_url()}/admin/authors/#{user.id}"
       end
     end
   end
