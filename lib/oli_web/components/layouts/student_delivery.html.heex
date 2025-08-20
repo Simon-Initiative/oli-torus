@@ -26,7 +26,7 @@
     </div>
   </div>
   <div class={[
-    "flex-1 flex flex-col min-h-screen dark:bg-[#0F0D0F] bg-[#F3F4F8]",
+    "flex-1 flex flex-col min-h-screen bg-Background-bg-primary",
     if(@sidebar_expanded,
       do: "md:w-[calc(100%-200px)] md:ml-[200px]",
       else: "md:w-[calc(100%-60px)] md:ml-[60px]"
@@ -36,10 +36,10 @@
       <.flash_group flash={@flash} />
     </div>
     <%= if @section do %>
-      <%= live_render(@socket, OliWeb.Dialogue.WindowLive,
+      {live_render(@socket, OliWeb.Dialogue.WindowLive,
         session: %{"section_slug" => @section.slug},
         id: "dialogue-window"
-      ) %>
+      )}
     <% end %>
     <div
       :if={assigns[:paywall_summary] && OliWeb.LayoutView.show_pay_early(@paywall_summary)}
@@ -47,7 +47,7 @@
       class="absolute z-50 system-banner flex flex-row alert alert-warning m-6"
       role="alert"
     >
-      <%= OliWeb.LayoutView.pay_early_message(@paywall_summary) %>
+      {OliWeb.LayoutView.pay_early_message(@paywall_summary)}
       <div class="flex whitespace-nowrap items-center">
         <.link class="ml-8" href={Routes.payment_path(@socket, :guard, @section.slug)}>
           Pay Now
@@ -60,6 +60,6 @@
         </button>
       </div>
     </div>
-    <%= @inner_content %>
+    {@inner_content}
   </div>
 </main>

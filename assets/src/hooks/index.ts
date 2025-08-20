@@ -6,6 +6,7 @@ import { ClickOutside } from './click_outside';
 import { ClickExecJS, HoverAway } from './click_variations';
 import { ConditionalToggle } from './conditional_toggle';
 import { CopyListener } from './copy_listener';
+import { CopyToClipboard } from './copy_to_clipboard';
 import { Countdown } from './countdown';
 import { CountdownTimer } from './countdown_timer';
 import { CustomFocusWrap } from './custom_focus_wrap';
@@ -111,4 +112,5 @@ export const Hooks = {
   FixedNavigationBar,
   SubmitTechSupportForm,
   ConditionalToggle,
+  CopyToClipboard,
 };

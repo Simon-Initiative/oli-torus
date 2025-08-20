@@ -38,10 +38,27 @@ export const readGlobalUserState = async (
   keys: string[] | null = null,
   useLocalStorage = false,
 ) => {
-  if (provider === 'deprecated') {
-    return deprecatedReadGlobalUserState(keys, useLocalStorage);
+  if (provider === 'new') {
+    const blobResponse = await Blob.readGlobalUserState(keys, useLocalStorage);
+
+    // If the response is an array (from blob storage), map it to the expected format
+    if (Array.isArray(blobResponse) && keys && keys.length > 0) {
+      const mappedResponse = blobResponse.reduce((acc: any, item, index) => {
+        const key = keys[index] || index.toString();
+        if (typeof item === 'object' && item !== null) {
+          Object.keys(item).forEach((subKey) => {
+            acc[key] = acc[key] || {};
+            acc[key][subKey] = item[subKey];
+          });
+        }
+        return acc;
+      }, {});
+      return mappedResponse;
+    }
+
+    return blobResponse;
   }
-  return Blob.readGlobalUserState(keys, useLocalStorage);
+  return deprecatedReadGlobalUserState(keys, useLocalStorage);
 };
 
 const deprecatedReadGlobalUserState = async (

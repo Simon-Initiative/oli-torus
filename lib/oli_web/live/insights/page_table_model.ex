@@ -53,7 +53,7 @@ defmodule OliWeb.Insights.PageTableModel do
 
     ~H"""
     <a href={Routes.resource_path(OliWeb.Endpoint, :edit, @project_slug, @row.slug)}>
-      <%= @row.title %>
+      {@row.title}
     </a>
     """
   end

@@ -39,7 +39,7 @@ defmodule OliWeb.Delivery.Student.Learn.Components.ViewSelector do
             <.view_icon option={option} />
           </div>
           <div class="dark:text-white text-base font-normal">
-            <%= to_capitalized_string(option) %>
+            {to_capitalized_string(option)}
           </div>
         </button>
       </div>
@@ -58,7 +58,7 @@ defmodule OliWeb.Delivery.Student.Learn.Components.ViewSelector do
         <div class="h-[36px] pl-2.5 pr-[7px] py-2.5 justify-center items-center gap-[5px] flex">
           <div class="justify-center items-center flex"><.view_icon option={@selected_view} /></div>
           <div class="ml-1 dark:text-white text-base font-normal">
-            <%= to_capitalized_string(@selected_view) %> View
+            {to_capitalized_string(@selected_view)} View
           </div>
         </div>
         <div class="w-8 h-[36px] py-2.5 px-2.5 justify-center items-center gap-[5px] flex">

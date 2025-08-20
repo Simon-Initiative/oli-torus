@@ -105,14 +105,14 @@ defmodule OliWeb.PublisherLiveTest do
       |> render_blur(%{value: "testing"})
 
       view
-      |> element("button[phx-click=\"apply_search\"]")
+      |> element("button[phx-click='apply_search']")
       |> render_click()
 
       assert has_element?(view, "##{p1.id}")
       refute has_element?(view, "##{p2.id}")
 
       view
-      |> element("button[phx-click=\"reset_search\"]")
+      |> element("button[phx-click='reset_search']")
       |> render_click()
 
       assert has_element?(view, "##{p1.id}")
@@ -131,7 +131,7 @@ defmodule OliWeb.PublisherLiveTest do
                "A Publisher"
 
       view
-      |> element("th[phx-click=\"sort\"]:first-of-type")
+      |> element("th[phx-click='sort']:first-of-type")
       |> render_click(%{sort_by: "name"})
 
       assert view
@@ -154,7 +154,7 @@ defmodule OliWeb.PublisherLiveTest do
       {:ok, view, _html} = live(conn, @live_view_index_route)
 
       view
-      |> element("th[phx-click=\"sort\"]:first-of-type")
+      |> element("th[phx-click='sort']:first-of-type")
       |> render_click(%{sort_by: "inserted_at"})
 
       assert view |> element("tr:first-child > td:first-child") |> render() =~
@@ -164,7 +164,7 @@ defmodule OliWeb.PublisherLiveTest do
                "Z Publisher"
 
       view
-      |> element("th[phx-click=\"sort\"]:first-of-type")
+      |> element("th[phx-click='sort']:first-of-type")
       |> render_click(%{sort_by: "inserted_at"})
 
       assert view |> element("tr:first-child > td:first-child") |> render() =~
@@ -185,7 +185,7 @@ defmodule OliWeb.PublisherLiveTest do
       refute has_element?(view, "##{last_p.id}")
 
       view
-      |> element("button[phx-click=\"page_change\"]", "2")
+      |> element("button[phx-click='page_change']", "2")
       |> render_click()
 
       refute has_element?(view, "##{first_p.id}")
@@ -212,14 +212,14 @@ defmodule OliWeb.PublisherLiveTest do
       {:ok, view, _html} = live(conn, @live_view_new_route)
 
       assert has_element?(view, "h5", "New Publisher")
-      assert has_element?(view, "form[phx-submit=\"save\"")
+      assert has_element?(view, "form[phx-submit='save']")
     end
 
     test "displays error message when data is invalid", %{conn: conn} do
       {:ok, view, _html} = live(conn, @live_view_new_route)
 
       view
-      |> element("form[phx-submit=\"save\"")
+      |> element("form[phx-submit='save']")
       |> render_submit(%{publisher: %{name: ""}})
 
       assert view
@@ -239,7 +239,7 @@ defmodule OliWeb.PublisherLiveTest do
       publisher = insert(:publisher)
 
       view
-      |> element("form[phx-submit=\"save\"")
+      |> element("form[phx-submit='save']")
       |> render_submit(%{
         publisher: %{name: publisher.name <> " ", email: "test@email.com", default: false}
       })
@@ -260,7 +260,7 @@ defmodule OliWeb.PublisherLiveTest do
       params = params_for(:publisher)
 
       view
-      |> element("form[phx-submit=\"save\"")
+      |> element("form[phx-submit='save']")
       |> render_submit(%{
         publisher: params
       })
@@ -279,13 +279,13 @@ defmodule OliWeb.PublisherLiveTest do
 
     defp render_delete_modal(view) do
       view
-      |> element("button[phx-click=\"show_delete_modal\"]")
+      |> element("button[phx-click='show_delete_modal']")
       |> render_click()
     end
 
     defp render_set_default_modal(view) do
       view
-      |> element("button[phx-click=\"show_set_default_modal\"]")
+      |> element("button[phx-click='show_set_default_modal']")
       |> render_click()
     end
 
@@ -320,7 +320,7 @@ defmodule OliWeb.PublisherLiveTest do
       {:ok, view, _html} = live(conn, live_view_show_route(id))
 
       view
-      |> element("form[phx-submit=\"save\"")
+      |> element("form[phx-submit='save']")
       |> render_submit(%{publisher: %{name: ""}})
 
       assert view
@@ -345,7 +345,7 @@ defmodule OliWeb.PublisherLiveTest do
         )
 
       view
-      |> element("form[phx-submit=\"save\"")
+      |> element("form[phx-submit='save']")
       |> render_submit(%{publisher: new_attributes})
 
       assert view
@@ -372,7 +372,7 @@ defmodule OliWeb.PublisherLiveTest do
       new_attributes = params_for(:publisher, name: publisher.name <> " ")
 
       view
-      |> element("form[phx-submit=\"save\"")
+      |> element("form[phx-submit='save']")
       |> render_submit(%{publisher: new_attributes})
 
       assert view
@@ -417,7 +417,7 @@ defmodule OliWeb.PublisherLiveTest do
 
       {:ok, view, _html} = live(conn, live_view_show_route(default_publisher.id))
 
-      refute has_element?(view, "button[phx-click=\"show_delete_modal\"]")
+      refute has_element?(view, "button[phx-click='show_delete_modal']")
     end
 
     test "does not allow deleting the publisher if names do not match", %{
@@ -496,7 +496,7 @@ defmodule OliWeb.PublisherLiveTest do
       render_set_default_modal(view)
 
       view
-      |> element("button[phx-click=\"set_default\"]")
+      |> element("button[phx-click='set_default']")
       |> render_click()
 
       assert render(view) =~ "Publisher successfully set as the default."
@@ -513,7 +513,7 @@ defmodule OliWeb.PublisherLiveTest do
 
       {:ok, view, _html} = live(conn, live_view_show_route(default_publisher.id))
 
-      refute has_element?(view, "button[phx-click=\"show_set_default_modal\"]")
+      refute has_element?(view, "button[phx-click='show_set_default_modal']")
     end
 
     test "makes a publisher unavailable via API", %{
@@ -523,7 +523,7 @@ defmodule OliWeb.PublisherLiveTest do
       {:ok, view, _html} = live(conn, live_view_show_route(id))
 
       view
-      |> element("form[phx-change=\"save\"")
+      |> element("form[phx-change='save']")
       |> render_change(%{publisher: %{available_via_api: false}})
 
       assert view
@@ -543,7 +543,7 @@ defmodule OliWeb.PublisherLiveTest do
       invalid_attributes = params_for(:publisher, support_email: "invalid-email")
 
       view
-      |> element("form[phx-submit=\"save\"")
+      |> element("form[phx-submit='save']")
       |> render_submit(%{publisher: invalid_attributes})
 
       assert view

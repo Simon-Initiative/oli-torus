@@ -110,8 +110,8 @@ defmodule OliWeb.TechSupportLive do
 
         <div class="hint">
           <p>
-            Add up to <%= @uploads.attached_screenshots.max_entries %> screenshots
-            (max <%= trunc(@uploads.attached_screenshots.max_file_size / 1_000_000) %> MB each)
+            Add up to {@uploads.attached_screenshots.max_entries} screenshots
+            (max {trunc(@uploads.attached_screenshots.max_file_size / 1_000_000)} MB each)
           </p>
           <p>
             Please show full browser window including address bar.
@@ -126,7 +126,7 @@ defmodule OliWeb.TechSupportLive do
         </div>
 
         <.error :for={err <- upload_errors(@uploads.attached_screenshots)}>
-          <%= Phoenix.Naming.humanize(err) %>
+          {Phoenix.Naming.humanize(err)}
         </.error>
 
         <div :for={entry <- @uploads.attached_screenshots.entries} class="entry">
@@ -134,13 +134,13 @@ defmodule OliWeb.TechSupportLive do
 
           <div class="progress">
             <div class="value">
-              <%= entry.progress %>%
+              {entry.progress}%
             </div>
             <div class="bar">
               <span style={"width: #{entry.progress}%"}></span>
             </div>
             <.error :for={err <- upload_errors(@uploads.attached_screenshots, entry)}>
-              <%= Phoenix.Naming.humanize(err) %>
+              {Phoenix.Naming.humanize(err)}
             </.error>
           </div>
 
@@ -152,7 +152,7 @@ defmodule OliWeb.TechSupportLive do
           <%!-- Start Captcha --%>
           <div class="w-80 mx-auto">
             <div
-              id="recaptcha"
+              id="support_recaptcha"
               phx-hook="Recaptcha"
               data-sitekey={Application.fetch_env!(:oli, :recaptcha)[:site_key]}
               data-theme="dark"
@@ -160,7 +160,7 @@ defmodule OliWeb.TechSupportLive do
             >
             </div>
 
-            <.error :if={@recaptcha_error}><%= @recaptcha_error %></.error>
+            <.error :if={@recaptcha_error}>{@recaptcha_error}</.error>
           </div>
 
           <div class="flex w-full justify-around lg:justify-end items-center">

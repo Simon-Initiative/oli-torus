@@ -125,6 +125,10 @@ defmodule OliWeb.Router do
     plug(Oli.Plugs.EnsureResearchConsent)
   end
 
+  pipeline :redirect_lti_user_to_section do
+    plug(Oli.Plugs.RedirectLtiUserToSection)
+  end
+
   pipeline :authorize_section_preview do
     plug(Oli.Plugs.AuthorizeSectionPreview)
   end
@@ -910,7 +914,6 @@ defmodule OliWeb.Router do
         live("/:project_id/overview", OverviewLive)
         live("/:project_id/alternatives", AlternativesLive)
         live("/:project_id/index_csv", IndexCsvLive)
-        live("/:project_id/datashop", AnalyticsLive)
         live("/:project_id/activity_bank", ActivityBankLive)
         live("/:project_id/objectives", ObjectivesLive)
         live("/:project_id/experiments", ExperimentsLive)
@@ -973,7 +976,8 @@ defmodule OliWeb.Router do
   scope "/workspaces", OliWeb.Workspaces do
     pipe_through([
       :browser,
-      :delivery_protected
+      :delivery_protected,
+      :redirect_lti_user_to_section
     ])
 
     live_session :student_delivery_workspace,
@@ -1006,6 +1010,7 @@ defmodule OliWeb.Router do
     live("/join/invalid", Sections.InvalidSectionInviteView)
   end
 
+  ### Sections - Invites
   scope "/sections", OliWeb do
     pipe_through([
       :browser,
@@ -1017,11 +1022,20 @@ defmodule OliWeb.Router do
     get("/join/:section_invite_slug", DeliveryController, :enroll_independent)
   end
 
-  # Sections - Independent Learner Section Creation
+  ### Sections - Creation
+  scope "/sections", OliWeb do
+    pipe_through([:browser, :delivery_protected])
+
+    live("/new", Delivery.NewCourse, as: :select_source)
+
+    # If a context_id is provided, we are creating an LTI section using latest LTI params
+    live("/new/:context_id", Delivery.NewCourse, :lti, as: :select_source)
+  end
+
+  ### Sections - Independent Learner Section Creation (Cognito)
   scope "/sections", OliWeb do
     pipe_through([:browser, :delivery_protected, :require_independent_instructor])
 
-    live("/independent/create", Delivery.NewCourse, :independent_learner, as: :select_source)
     resources("/independent/", OpenAndFreeController, as: :independent_sections, except: [:index])
   end
 
@@ -1430,7 +1444,6 @@ defmodule OliWeb.Router do
       live("/source_materials", Delivery.ManageSourceMaterials, as: :source_materials)
       live("/remix", Delivery.RemixSection)
       live("/remix/:section_resource_slug", Delivery.RemixSection)
-      live("/enrollments", Sections.EnrollmentsViewLive)
       live("/invitations", Sections.InviteView)
       live("/lti_external_tools", Sections.LtiExternalToolsView)
 
@@ -1531,11 +1544,9 @@ defmodule OliWeb.Router do
     post("/:section_slug/auto_enroll", LaunchController, :auto_enroll_as_guest)
   end
 
-  scope "/course", OliWeb do
-    pipe_through([:browser, :delivery_protected])
-
-    live("/select_project", Delivery.NewCourse, :lms_instructor, as: :select_source)
-  end
+  ###
+  # Delivery
+  ###
 
   ### Admin Dashboard / Telemetry
 
@@ -1797,6 +1808,7 @@ defmodule OliWeb.Router do
 
       get("/flame_graphs", DevController, :flame_graphs)
       live("/icons", Dev.IconsLive)
+      live("/tokens", Dev.TokensLive)
     end
   end
 end

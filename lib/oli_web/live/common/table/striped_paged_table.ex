@@ -26,21 +26,21 @@ defmodule OliWeb.Common.StripedPagedTable do
     ~H"""
     <div class={if @scrollable, do: "overflow-x-auto #{@overflow_class}"}>
       <%= if @filter != "" and @render_top_info do %>
-        <strong>Results filtered on &quot;<%= @filter %>&quot;</strong>
+        <strong>Results filtered on &quot;{@filter}&quot;</strong>
       <% end %>
 
       <%= if @total_count > 0 do %>
         <div :if={@total_count <= @limit and @render_top_info} class="px-5 py-2">
-          Showing all results (<%= @total_count %> total)
+          Showing all results ({@total_count} total)
         </div>
         <div class="relative max-h-[650px] overflow-y-auto overflow-x-auto mx-4">
-          <%= render_table(%{
+          {render_table(%{
             allow_selection: @allow_selection,
             table_model: @table_model,
             sort: @sort,
             selection_change: @selection_change,
             additional_table_class: @additional_table_class
-          }) %>
+          })}
         </div>
         <Paging.render
           id="footer_paging"
@@ -49,14 +49,14 @@ defmodule OliWeb.Common.StripedPagedTable do
           limit={@limit}
           click={@page_change}
           limit_change={@limit_change}
-          has_shorter_label={true}
+          has_shorter_label={false}
           show_limit_change={true}
           should_add_empty_flex={false}
           is_page_size_right={true}
         />
       <% else %>
         <div class="bg-white dark:bg-gray-800 dark:text-white px-10 my-5">
-          <p><%= @no_records_message %></p>
+          <p>{@no_records_message}</p>
         </div>
       <% end %>
     </div>

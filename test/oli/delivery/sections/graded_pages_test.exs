@@ -10,12 +10,12 @@ defmodule Oli.Delivery.Sections.GradedPagesTest do
       graded_pages = Sections.get_graded_pages(section.slug, 1)
 
       assert Enum.at(graded_pages, 0).title == "Graded page 4 - Level 0 (w/ gating condition)"
-      assert Enum.at(graded_pages, 0).end_date == ~U[2023-01-12 13:30:00.000000Z]
+      assert Enum.at(graded_pages, 0).end_date == ~U[2023-01-12 13:30:00Z]
 
       assert Enum.at(graded_pages, 1).title ==
                "Graded page 5 - Level 0 (w/ student gating condition)"
 
-      assert Enum.at(graded_pages, 1).end_date == ~U[2023-06-05 14:00:00.000000Z]
+      assert Enum.at(graded_pages, 1).end_date == ~U[2023-06-05 14:00:00Z]
 
       assert Enum.at(graded_pages, 2).title == "Graded page 1 - Level 1 (w/ no date)"
       assert Enum.at(graded_pages, 2)[:end_date] == nil

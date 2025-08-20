@@ -26,17 +26,17 @@ defmodule OliWeb.ObjectivesLive.Listing do
               phx-click="set_selected"
               phx-value-slug={item.slug}
             >
-              <%= item.title %>
+              {item.title}
             </button>
             <div class="d-flex flex-column font-weight-light small p-2 pr-4">
               <div>
-                <i class="fa fa-cubes c0183 mr-1"></i><%= "Sub-Objectives #{item.sub_objectives_count}" %>
+                <i class="fa fa-cubes c0183 mr-1"></i>{"Sub-Objectives #{item.sub_objectives_count}"}
               </div>
               <div>
-                <i class="far fa-file c0183 mr-1"></i><%= "Pages #{item.page_attachments_count}" %>
+                <i class="far fa-file c0183 mr-1"></i>{"Pages #{item.page_attachments_count}"}
               </div>
               <div>
-                <i class="fa fa-list mr-1"></i><%= "Activities #{item.activity_attachments_count}" %>
+                <i class="fa fa-list mr-1"></i>{"Activities #{item.activity_attachments_count}"}
               </div>
               <.link
                 :if={@revision_history_link}
@@ -61,7 +61,7 @@ defmodule OliWeb.ObjectivesLive.Listing do
                 <ul class="list-group list-group-flush">
                   <%= for sub_objective <- item.children do %>
                     <li :if={!is_nil(sub_objective)} class="list-group-item p-2 d-flex group/item">
-                      <div class="py-1.5 w-75"><%= sub_objective.title %></div>
+                      <div class="py-1.5 w-75">{sub_objective.title}</div>
                       <div class="ml-2 invisible group-hover/item:visible">
                         <.button
                           variant={:tertiary}
@@ -95,7 +95,7 @@ defmodule OliWeb.ObjectivesLive.Listing do
                         target="_blank"
                         class="text-primary"
                       >
-                        <%= page.title %>
+                        {page.title}
                       </a>
                     </li>
                   <% end %>

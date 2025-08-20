@@ -73,13 +73,13 @@ defmodule OliWeb.Attempt.TableModel do
     if row.id == assigns.model.selected do
       ~H"""
       <div>
-        <strong><%= @row.attempt_guid %></strong>
+        <strong>{@row.attempt_guid}</strong>
       </div>
       """
     else
       ~H"""
       <div>
-        <span style="color: blue; cursor: pointer;"><u><%= @row.attempt_guid %></u></span>
+        <span style="color: blue; cursor: pointer;"><u>{@row.attempt_guid}</u></span>
       </div>
       """
     end

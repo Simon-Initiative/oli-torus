@@ -170,12 +170,12 @@ defmodule OliWeb.Qa.QaLive do
           <div class="col-span-12">
             <p class="mb-3">
               Last reviewed <strong><%= Utils.render_date(hd(@qa_reviews), :inserted_at, @ctx) %></strong>,
-              with <strong><%= length(@warnings) %></strong>
-              potential improvement <%= if length(@warnings) == 1 do
+              with <strong>{length(@warnings)}</strong>
+              potential improvement {if length(@warnings) == 1 do
                 "opportunity"
               else
                 "opportunities"
-              end %> found.
+              end} found.
             </p>
             <%= if !Enum.empty?(@warnings_by_type) do %>
               <div class="d-flex">

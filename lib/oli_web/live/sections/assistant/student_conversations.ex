@@ -175,10 +175,10 @@ defmodule OliWeb.Sections.Assistant.StudentConversationsLive do
             <div class="flex flex-row justify-between">
               <div class="whitespace-nowrap px-6 py-3">
                 <h4 class="font-bold">
-                  <%= user_or_guest_name(@selected_user) %>
+                  {user_or_guest_name(@selected_user)}
                 </h4>
                 <div :if={@selected_resource_id} class="text-sm text-gray-500 mt-1">
-                  <%= @resource_titles[@selected_resource_id] %>
+                  {@resource_titles[@selected_resource_id]}
                 </div>
               </div>
               <button class="px-6 py-3 text-2xl" phx-click="clear_selection">

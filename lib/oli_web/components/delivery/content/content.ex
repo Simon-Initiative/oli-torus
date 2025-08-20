@@ -140,7 +140,7 @@ defmodule OliWeb.Components.Delivery.Content do
       <div class="w-full h-10 relative my-7">
         <button
           id="filter_units_button"
-          class={"w-24 h-10 left-0 top-0 absolute rounded-tl-lg rounded-bl-lg border border-[#CED1D9] dark:border-[#3B3740] #{set_button_background(@params.container_filter_by, :units)} text-xs #{set_button_text(@params.container_filter_by, :units)}"}
+          class={"w-24 h-10 left-0 top-0 absolute rounded-tl-lg rounded-bl-lg border border-Border-border-default #{set_button_background(@params.container_filter_by, :units)} text-xs #{set_button_text(@params.container_filter_by, :units)}"}
           phx-click="filter_container"
           phx-value-filter="units"
           phx-target={@myself}
@@ -150,7 +150,7 @@ defmodule OliWeb.Components.Delivery.Content do
         </button>
         <button
           id="filter_modules_button"
-          class={"w-24 h-10 left-[95px] top-0 absolute rounded-tr-lg rounded-br-lg border border-[#CED1D9] dark:border-[#3B3740] #{set_button_background(@params.container_filter_by, :modules)} text-xs #{set_button_text(@params.container_filter_by, :modules)}"}
+          class={"w-24 h-10 left-[95px] top-0 absolute rounded-tr-lg rounded-br-lg border border-Border-border-default #{set_button_background(@params.container_filter_by, :modules)} text-xs #{set_button_text(@params.container_filter_by, :modules)}"}
           phx-click="filter_container"
           phx-value-filter="modules"
           phx-target={@myself}
@@ -162,7 +162,7 @@ defmodule OliWeb.Components.Delivery.Content do
       <div class="bg-white dark:bg-[#262626] shadow-sm">
         <div class="flex justify-between gap-2 items-center px-4 pt-8 pb-4 instructor_dashboard_table dark:bg-[#262626]">
           <div class="text-zinc-700 text-lg font-bold leading-none tracking-tight dark:bg-gray-800 dark:text-white">
-            Course <%= if @params.container_filter_by == :units, do: "Units", else: "Modules" %>
+            Course {if @params.container_filter_by == :units, do: "Units", else: "Modules"}
           </div>
           <div>
             <a
@@ -172,7 +172,7 @@ defmodule OliWeb.Components.Delivery.Content do
                 )
               }
               download="course_content.csv"
-              class="flex items-center justify-center gap-x-2 text-[#006CD9] dark:text-[#4CA6FF] font-bold"
+              class="flex items-center justify-center gap-x-2 text-Text-text-button font-bold"
             >
               Download CSV <Icons.download />
             </a>
@@ -192,7 +192,7 @@ defmodule OliWeb.Components.Delivery.Content do
           <% end %>
         </div>
 
-        <div class="flex w-fit gap-2 mx-4 mt-4 mb-4 shadow-[0px_2px_6.099999904632568px_0px_rgba(0,0,0,0.10)] border border-[#ced1d9] dark:border-[#3B3740] dark:bg-[#000000]">
+        <div class="flex w-fit gap-2 mx-4 mt-4 mb-4 shadow-[0px_2px_6.099999904632568px_0px_rgba(0,0,0,0.10)] border border-Border-border-default bg-Background-bg-secondary">
           <div class="flex p-2 gap-2">
             <.form for={%{}} phx-target={@myself} phx-change="search_container" class="w-56">
               <SearchInput.render
@@ -220,7 +220,7 @@ defmodule OliWeb.Components.Delivery.Content do
             />
 
             <button
-              class="ml-2 mr-6 text-center text-[#353740] dark:text-[#EEEBF5] hover:text-[#006CD9] dark:hover:text-[#4CA6FF] text-sm font-normal leading-none flex items-center gap-x-2"
+              class="ml-2 mr-6 text-center text-Text-text-high text-sm font-normal leading-none flex items-center gap-x-2"
               phx-click="clear_all_filters"
               phx-target={@myself}
             >
@@ -639,8 +639,8 @@ defmodule OliWeb.Components.Delivery.Content do
   defp set_button_background(container_filter_by, filter),
     do:
       if(container_filter_by == filter,
-        do: "bg-[#0080FF] dark:bg-[#0062F2]",
-        else: "bg-[#F3F4F8] dark:bg-[#0D0C0F]"
+        do: "bg-Fill-Buttons-fill-primary",
+        else: "bg-Background-bg-primary"
       )
 
   defp set_button_text(:pages, _filter), do: "text-gray-700 dark:text-white cursor-not-allowed"
@@ -648,8 +648,8 @@ defmodule OliWeb.Components.Delivery.Content do
   defp set_button_text(container_filter_by, filter),
     do:
       if(container_filter_by == filter,
-        do: "text-[#FFFFFF] font-semibold",
-        else: "text-[#45464C] font-normal dark:text-[#BAB8BF]"
+        do: "text-Text-text-white font-semibold",
+        else: "text-Text-text-low font-normal"
       )
 
   defp containers_count(containers, container_filter) do

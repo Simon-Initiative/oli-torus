@@ -6,6 +6,7 @@ const plugin = require('tailwindcss/plugin');
 const tailwindFormsPlugin = require('@tailwindcss/forms');
 const tailwindCSSVariablesPlugin = require('tailwind-css-variables');
 const theme = require('./tailwind.theme.js');
+const { tokenColorPlugin } = require('./tailwind.plugins');
 
 module.exports = {
   content: [
@@ -17,11 +18,9 @@ module.exports = {
   darkMode: 'class',
   theme,
   plugins: [
+    tokenColorPlugin,
     tailwindFormsPlugin,
     tailwindCSSVariablesPlugin({ oli: 'oli' }, {}),
-    plugin(({ addVariant }) =>
-      addVariant('phx-no-feedback', ['&.phx-no-feedback', '.phx-no-feedback &']),
-    ),
     plugin(({ addVariant }) =>
       addVariant('phx-click-loading', ['&.phx-click-loading', '.phx-click-loading &']),
     ),

@@ -33,7 +33,7 @@ defmodule OliWeb.Delivery.Actions.StudentsToTransferTableModel do
 
     ~H"""
     <div class="pl-9 pr-4 flex flex-col">
-      <%= @name %>
+      {@name}
     </div>
     """
   end
@@ -42,7 +42,7 @@ defmodule OliWeb.Delivery.Actions.StudentsToTransferTableModel do
     assigns = Map.put(assigns, :enrollment_date, student.enrollment_date)
 
     ~H"""
-    <%= FormatDateTime.format_datetime(@enrollment_date, show_timezone: false) %>
+    {FormatDateTime.format_datetime(@enrollment_date, show_timezone: false)}
     """
   end
 end

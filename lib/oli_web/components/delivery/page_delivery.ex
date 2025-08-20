@@ -18,7 +18,7 @@ defmodule OliWeb.Components.Delivery.PageDelivery do
   def header(assigns) do
     ~H"""
     <h1 class="title flex flex-row items-center justify-between mb-2">
-      <%= @title %>
+      {@title}
       <%= if @review_mode == true do %>
         (Review)
       <% end %>
@@ -49,12 +49,12 @@ defmodule OliWeb.Components.Delivery.PageDelivery do
     <div class="flex flex-row my-2">
       <%= if @end_date do %>
         <div class="py-1.5 px-4 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-delivery-body-color-dark rounded">
-          <%= scheduling_type_label(@scheduling_type) %> <%= date(@end_date, @ctx) %>
+          {scheduling_type_label(@scheduling_type)} {date(@end_date, @ctx)}
         </div>
       <% end %>
       <%= if @est_reading_time do %>
         <div class="py-1.5 px-4 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-delivery-body-color-dark rounded ml-1">
-          Estimated reading time: <%= duration(@est_reading_time) %>
+          Estimated reading time: {duration(@est_reading_time)}
         </div>
       <% end %>
     </div>
@@ -74,7 +74,7 @@ defmodule OliWeb.Components.Delivery.PageDelivery do
         <div class="uppercase font-bold mb-2">Learning Objectives</div>
         <ul class="list-none">
           <%= for title <- @objectives do %>
-            <li class="objective mt-2"><%= title %></li>
+            <li class="objective mt-2">{title}</li>
           <% end %>
         </ul>
       </div>
