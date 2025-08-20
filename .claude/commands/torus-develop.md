@@ -17,7 +17,7 @@ After completing all tasks you MUST `mix compile` and fix all warnings, ensure n
 
 Then issue a git commit with a concise but meaningful commit message like "Phase 1: Added DB migration and made schema updates".
 
-Finally, and this is REQUIRED: you must invoke the "reviewer" subagent to receive suggestions on how to improve your code.  Make any necessary changes, compile and run and fix affected unit tests.
+Finally, and this is REQUIRED: you must invoke the "elixir-code-reviewer" subagent to receive suggestions on how to improve your code.  Make any necessary changes, compile and run and fix affected unit tests.
 
 Then move on to Phase 2, and Phase 3, etc. until the entire feature is implemented.
 
