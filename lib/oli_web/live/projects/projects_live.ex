@@ -206,7 +206,7 @@ defmodule OliWeb.Projects.ProjectsLive do
         >
           <Icons.trash /> Clear All Filters
         </button>
-        
+
         <button
           class="ml-2 mr-4 text-center text-[#353740] dark:text-[#EEEBF5] text-sm font-normal leading-none flex items-center gap-x-1 hover:text-[#006CD9] dark:hover:text-[#4CA6FF]"
           phx-click="export_csv"
@@ -303,7 +303,7 @@ defmodule OliWeb.Projects.ProjectsLive do
     # Build URL with current table state
     params = current_params(socket)
     export_url = ~p"/authoring/projects/export?#{params}"
-    
+
     # Redirect to CSV export endpoint
     {:noreply, redirect(socket, external: export_url)}
   end

@@ -211,11 +211,11 @@ defmodule Oli.Authoring.Course do
 
   @doc """
   Browse projects for CSV export without pagination limits.
-  
+
   Returns all projects that match the filtering criteria without pagination.
   This function reuses the same filtering and sorting logic as browse_projects/4
   but removes pagination limits for export purposes.
-  
+
   ## Parameters
     - author: The current author requesting the export
     - sorting: Sorting parameters (field and direction)
@@ -223,7 +223,7 @@ defmodule Oli.Authoring.Course do
       - include_deleted: Include deleted projects (default: false)
       - admin_show_all: Admin view shows all projects (default: true for admins)
       - text_search: Text search filter (default: "")
-  
+
   ## Examples
       iex> browse_projects_for_export(author, %Sorting{}, [])
       [%{id: 1, title: "Project 1", ...}, ...]
