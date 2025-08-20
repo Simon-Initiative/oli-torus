@@ -1399,7 +1399,7 @@ defmodule Oli.Delivery.Metrics do
                                  num_attempts}},
                                acc ->
           proficiency =
-            if num_attempts in [+0.0, -0.0] or num_first_attempts in [+0.0, 0.0] do
+            if num_attempts in [+0.0, -0.0] or num_first_attempts in [+0.0, -0.0] do
               nil
             else
               (1 * num_first_attempts_correct +
