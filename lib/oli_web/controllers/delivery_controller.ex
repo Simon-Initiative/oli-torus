@@ -11,23 +11,15 @@ defmodule OliWeb.DeliveryController do
   alias Oli.Delivery.Sections.EnrollmentBrowseOptions
   alias Oli.Institutions
   alias Oli.Institutions.Institution
-  alias Oli.Lti.LtiParams
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
   alias OliWeb.UserAuth
   alias OliWeb.Common.Params
   alias OliWeb.Delivery.InstructorDashboard.Helpers
+  alias OliWeb.DeliveryWeb
   alias OliWeb.Delivery.Student.Utils
 
   require Logger
-
-  @allow_configure_section_roles [
-    PlatformRoles.get_role(:system_administrator),
-    PlatformRoles.get_role(:institution_administrator),
-    ContextRoles.get_role(:context_administrator),
-    ContextRoles.get_role(:context_instructor),
-    ContextRoles.get_role(:context_content_developer)
-  ]
 
   @doc """
   This is the default entry point for delivery users. It will redirect to the appropriate page based
@@ -35,66 +27,14 @@ defmodule OliWeb.DeliveryController do
 
   If the user is an independent learner, they will be redirected to the student workspace.
 
-  If the user is an LTI user, the user's roles will be checked to determine if they are allowed to
-  configure the section. If they are allowed to configure the section, they will be redirected to
-  the instructor dashboard. If they are not allowed to configure the section, the student will be
-  redirected to the page delivery.
+  Otherwise, the user's LTI roles will be checked to determine if they are allowed to configure the
+  section. If they are allowed to configure the section, they will be redirected to the instructor
+  dashboard. If they are not allowed to configure the section, the student will be redirected to the
+  page delivery.
   """
   def index(conn, _params) do
-    user = conn.assigns.current_user
-
-    with false <- user.independent_learner,
-         %LtiParams{params: lti_params} <- LtiParams.get_latest_user_lti_params(user.id) do
-      lti_roles = lti_params["https://purl.imsglobal.org/spec/lti/claim/roles"]
-      context_roles = ContextRoles.get_roles_by_uris(lti_roles)
-      platform_roles = PlatformRoles.get_roles_by_uris(lti_roles)
-      roles = MapSet.new(context_roles ++ platform_roles)
-      allow_configure_section_roles = MapSet.new(@allow_configure_section_roles)
-
-      # allow section configuration if user has any of the allowed roles
-      allow_configure_section =
-        MapSet.intersection(roles, allow_configure_section_roles) |> MapSet.size() > 0
-
-      section = Sections.get_section_from_lti_params(lti_params)
-
-      case section do
-        nil when allow_configure_section ->
-          render_getting_started(conn)
-
-        nil ->
-          render_course_not_configured(conn)
-
-        section when allow_configure_section ->
-          redirect_to_instructor_dashboard(conn, section)
-
-        # section has been configured
-        section ->
-          redirect_to_page_delivery(conn, section)
-      end
-    else
-      _ ->
-        redirect(conn, to: ~p"/workspaces/student")
-    end
-  end
-
-  defp render_course_not_configured(conn) do
-    render(conn, "course_not_configured.html")
-  end
-
-  defp render_getting_started(conn) do
-    render(conn, "getting_started.html")
-  end
-
-  defp redirect_to_page_delivery(conn, section) do
-    redirect(conn,
-      to: ~p"/sections/#{section.slug}"
-    )
-  end
-
-  defp redirect_to_instructor_dashboard(conn, section) do
-    redirect(conn,
-      to: ~p"/sections/#{section.slug}/manage"
-    )
+    conn
+    |> DeliveryWeb.redirect_user()
   end
 
   def show_research_consent(conn, params) do
