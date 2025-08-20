@@ -162,5 +162,18 @@ defmodule OliWeb.ProjectsControllerTest do
       current_year = Date.utc_today().year |> to_string()
       assert String.contains?(disposition_header, current_year)
     end
+
+    test "handles invalid sort parameters gracefully", %{conn: conn, admin: admin} do
+      conn = log_in_author(conn, admin)
+      
+      # Try invalid sort_by and sort_order parameters
+      conn = get(conn, ~p"/authoring/projects/export?sort_by=invalid&sort_order=invalid")
+      
+      assert response(conn, 200)
+      csv_content = response(conn, 200)
+      
+      # Should still work and return valid CSV
+      assert String.contains?(csv_content, "Title,Created,Created By,Status")
+    end
   end
 end

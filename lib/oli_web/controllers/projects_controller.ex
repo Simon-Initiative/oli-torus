@@ -7,6 +7,8 @@ defmodule OliWeb.ProjectsController do
   alias Oli.Repo.Sorting
   alias Oli.Utils.Time
 
+  @csv_headers ["Title", "Created", "Created By", "Status"]
+
   @doc """
   Export projects as CSV file.
   
@@ -17,9 +19,20 @@ defmodule OliWeb.ProjectsController do
     author = conn.assigns.current_author
     is_content_admin = Accounts.has_admin_role?(author, :content_admin)
     
-    # Extract table state from URL parameters
-    sort_by = String.to_existing_atom(params["sort_by"] || "title")
-    sort_order = String.to_existing_atom(params["sort_order"] || "asc")
+    # Extract table state from URL parameters with validation
+    sort_by = case params["sort_by"] do
+      "title" -> :title
+      "inserted_at" -> :inserted_at
+      "status" -> :status
+      "name" -> :name
+      _ -> :title
+    end
+    
+    sort_order = case params["sort_order"] do
+      "asc" -> :asc
+      "desc" -> :desc
+      _ -> :asc
+    end
     text_search = params["text_search"] || ""
     
     # Handle show_all with proper defaults like the LiveView
@@ -58,12 +71,14 @@ defmodule OliWeb.ProjectsController do
     # Generate filename with current date
     filename = "projects-#{Timex.format!(Time.now(), "{YYYY}-{M}-{D}")}.csv"
     
-    # Send download
-    send_download(conn, {:binary, csv_content}, filename: filename)
+    # Send download with proper content type
+    conn
+    |> put_resp_header("content-type", "text/csv")
+    |> send_download({:binary, csv_content}, filename: filename)
   end
   
   defp projects_to_csv(projects) do
-    headers = ["Title", "Created", "Created By", "Status"]
+    headers = @csv_headers
     
     rows = Enum.map(projects, fn project ->
       [

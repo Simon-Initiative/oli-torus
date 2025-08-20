@@ -65,6 +65,34 @@ to build sortable, searchable, paged tables.
 
 Consult this example: `lib/oli_web/live/admin/external_tools/usage_view.ex`
 
+### CSV Export Pattern
+
+For adding CSV export functionality to existing tables:
+
+1. **Data Layer**: Add export function to context module (e.g., `browse_projects_for_export/3`)
+   - Remove pagination limits while preserving filtering/sorting
+   - Reuse existing query logic for consistency
+
+2. **Controller**: Create export action following PageDeliveryController pattern
+   - Extract table state from URL parameters
+   - Handle default values for admin preferences (show_all, show_deleted)
+   - Use `send_download(conn, {:binary, csv_content}, filename: filename)`
+   - Filename format: `resource-YYYY-M-D.csv`
+
+3. **LiveView Integration**: Add export button and event handler
+   - Button redirects to controller endpoint with current table state
+   - Use `redirect(socket, external: export_url)` to trigger download
+
+4. **CSV Formatting**: 
+   - Escape all fields with `escape_csv_field/1` 
+   - Use simple date format (YYYY-MM-DD) to avoid comma issues
+   - Handle special characters, quotes, and newlines properly
+
+Example files:
+- Context: `lib/oli/authoring/course.ex:browse_projects_for_export/3`
+- Controller: `lib/oli_web/controllers/projects_controller.ex:export_csv/2`
+- LiveView: `lib/oli_web/live/projects/projects_live.ex` (export_csv event)
+
 ## Critical Performance Rules
 
 - Use SectionResourceDepot cache, not SectionResource queries
