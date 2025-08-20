@@ -48,7 +48,7 @@ defmodule OliWeb.ProjectsControllerTest do
       assert get_resp_header(conn, "content-disposition") != []
 
       csv_content = response(conn, 200)
-      assert String.contains?(csv_content, "Title,Created,Created By,Status")
+      assert String.contains?(csv_content, "Slug,Title,Created,Created By,Email,Status")
       assert String.contains?(csv_content, "Admin Project")
       assert String.contains?(csv_content, "Author Project")
     end
@@ -131,14 +131,14 @@ defmodule OliWeb.ProjectsControllerTest do
       [header | _] = lines
 
       # Check header format
-      assert header == "Title,Created,Created By,Status"
+      assert header == "Slug,Title,Created,Created By,Email,Status"
 
-      # Check that all non-empty lines have 4 columns
+      # Check that all non-empty lines have 7 columns
       lines
       |> Enum.filter(&(&1 != ""))
       |> Enum.each(fn line ->
         columns = String.split(line, ",")
-        assert length(columns) == 4
+        assert length(columns) == 6
       end)
     end
 
@@ -179,7 +179,7 @@ defmodule OliWeb.ProjectsControllerTest do
       csv_content = response(conn, 200)
 
       # Should still work and return valid CSV
-      assert String.contains?(csv_content, "Title,Created,Created By,Status")
+      assert String.contains?(csv_content, "Slug,Title,Created,Created By,Email,Status")
     end
   end
 end

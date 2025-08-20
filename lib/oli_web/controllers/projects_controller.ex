@@ -6,7 +6,7 @@ defmodule OliWeb.ProjectsController do
   alias Oli.Repo.Sorting
   alias Oli.Utils.Time
 
-  @csv_headers ["Title", "Created", "Created By", "Status"]
+  @csv_headers ["Slug", "Title", "Created", "Created By", "Email", "Status"]
   # Configurable safety limit
   @max_export_limit 10_000
 
@@ -123,9 +123,11 @@ defmodule OliWeb.ProjectsController do
     rows =
       Enum.map(projects, fn project ->
         [
+          escape_csv_field(project.slug || ""),
           escape_csv_field(project.title || ""),
           escape_csv_field(Date.to_string(DateTime.to_date(project.inserted_at))),
           escape_csv_field(project.name || ""),
+          escape_csv_field(project.email || ""),
           escape_csv_field(format_status(project.status))
         ]
       end)

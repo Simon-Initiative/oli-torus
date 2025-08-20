@@ -214,8 +214,7 @@ defmodule OliWeb.Projects.ProjectsLive do
           class="mr-4 inline-flex items-center gap-1 text-sm font-medium text-[#0080FF] hover:underline"
           phx-click="export_csv"
         >
-          Download CSV
-          <Icons.download class="w-4 h-4 text-[#0080FF]" />
+          Download CSV <Icons.download stroke_class="stroke-[#0080FF]" />
         </button>
       </div>
 
