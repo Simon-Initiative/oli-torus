@@ -206,6 +206,13 @@ defmodule OliWeb.Projects.ProjectsLive do
         >
           <Icons.trash /> Clear All Filters
         </button>
+        
+        <button
+          class="ml-2 mr-4 text-center text-[#353740] dark:text-[#EEEBF5] text-sm font-normal leading-none flex items-center gap-x-1 hover:text-[#006CD9] dark:hover:text-[#4CA6FF]"
+          phx-click="export_csv"
+        >
+          <Icons.download stroke_class="stroke-[#353740] dark:stroke-[#EEEBF5]" /> Download CSV
+        </button>
       </div>
 
       <div class="grid grid-cols-12">
@@ -290,6 +297,15 @@ defmodule OliWeb.Projects.ProjectsLive do
       )
 
     patch_with(socket, %{limit: new_limit, offset: new_offset})
+  end
+
+  def handle_event("export_csv", _params, socket) do
+    # Build URL with current table state
+    params = current_params(socket)
+    export_url = ~p"/authoring/projects/export?#{params}"
+    
+    # Redirect to CSV export endpoint
+    {:noreply, redirect(socket, external: export_url)}
   end
 
   def handle_event("clear_all_filters", _params, socket) do
