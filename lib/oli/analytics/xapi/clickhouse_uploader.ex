@@ -18,6 +18,8 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
   def upload(%StatementBundle{body: body, category: category} = bundle) do
     config = Application.get_env(:oli, :clickhouse) |> Enum.into(%{})
 
+    dbg(bundle)
+
     case parse_and_insert_events(body, category, config) do
       {:ok, _count} = result ->
         Logger.debug("Successfully uploaded bundle #{bundle.bundle_id} to ClickHouse")
@@ -32,75 +34,108 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
     end
   end
 
-  defp parse_and_insert_events(body, :video, config) do
-    events =
+  defp parse_and_insert_events(body, _category, config) do
+    # Parse all events from the bundle
+    parsed_events =
       body
       |> String.split("\n", trim: true)
       |> Enum.map(&Jason.decode!/1)
-      |> Enum.filter(&is_video_event?/1)
 
-    case events do
-      [] -> {:ok, 0}
-      events -> insert_video_events(events, config)
+    # Group events by type
+    {video_events, remaining_events} = Enum.split_with(parsed_events, &is_video_event?/1)
+
+    {activity_attempt_events, remaining_events} =
+      Enum.split_with(remaining_events, &is_activity_attempt_event?/1)
+
+    {page_attempt_events, remaining_events} =
+      Enum.split_with(remaining_events, &is_page_attempt_event?/1)
+
+    {page_viewed_events, remaining_events} =
+      Enum.split_with(remaining_events, &is_page_viewed_event?/1)
+
+    {part_attempt_events, _remaining_events} =
+      Enum.split_with(remaining_events, &is_part_attempt_event?/1)
+
+    # Insert each event type and collect results
+    results = []
+
+    results =
+      case video_events do
+        [] ->
+          results
+
+        events ->
+          case insert_video_events(events, config) do
+            {:ok, count} -> [{:video_events, count} | results]
+            {:error, reason} -> [{:video_events, {:error, reason}} | results]
+          end
+      end
+
+    results =
+      case activity_attempt_events do
+        [] ->
+          results
+
+        events ->
+          case insert_activity_attempt_events(events, config) do
+            {:ok, count} -> [{:activity_attempt_events, count} | results]
+            {:error, reason} -> [{:activity_attempt_events, {:error, reason}} | results]
+          end
+      end
+
+    results =
+      case page_attempt_events do
+        [] ->
+          results
+
+        events ->
+          case insert_page_attempt_events(events, config) do
+            {:ok, count} -> [{:page_attempt_events, count} | results]
+            {:error, reason} -> [{:page_attempt_events, {:error, reason}} | results]
+          end
+      end
+
+    results =
+      case page_viewed_events do
+        [] ->
+          results
+
+        events ->
+          case insert_page_viewed_events(events, config) do
+            {:ok, count} -> [{:page_viewed_events, count} | results]
+            {:error, reason} -> [{:page_viewed_events, {:error, reason}} | results]
+          end
+      end
+
+    results =
+      case part_attempt_events do
+        [] ->
+          results
+
+        events ->
+          case insert_part_attempt_events(events, config) do
+            {:ok, count} -> [{:part_attempt_events, count} | results]
+            {:error, reason} -> [{:part_attempt_events, {:error, reason}} | results]
+          end
+      end
+
+    # Check for any errors and return appropriate result
+    errors = Enum.filter(results, fn {_type, result} -> match?({:error, _}, result) end)
+
+    case errors do
+      [] ->
+        total_count = results |> Enum.map(fn {_type, count} -> count end) |> Enum.sum()
+
+        Logger.debug(
+          "Successfully processed #{total_count} events across #{length(results)} event types"
+        )
+
+        {:ok, total_count}
+
+      [{_type, {:error, reason}} | _] ->
+        Logger.error("Failed to insert events: #{inspect(reason)}")
+        {:error, reason}
     end
-  end
-
-  defp parse_and_insert_events(body, :activity_attempt, config) do
-    events =
-      body
-      |> String.split("\n", trim: true)
-      |> Enum.map(&Jason.decode!/1)
-      |> Enum.filter(&is_activity_attempt_event?/1)
-
-    case events do
-      [] -> {:ok, 0}
-      events -> insert_activity_attempt_events(events, config)
-    end
-  end
-
-  defp parse_and_insert_events(body, :page_attempt, config) do
-    events =
-      body
-      |> String.split("\n", trim: true)
-      |> Enum.map(&Jason.decode!/1)
-      |> Enum.filter(&is_page_attempt_event?/1)
-
-    case events do
-      [] -> {:ok, 0}
-      events -> insert_page_attempt_events(events, config)
-    end
-  end
-
-  defp parse_and_insert_events(body, :page_viewed, config) do
-    events =
-      body
-      |> String.split("\n", trim: true)
-      |> Enum.map(&Jason.decode!/1)
-      |> Enum.filter(&is_page_viewed_event?/1)
-
-    case events do
-      [] -> {:ok, 0}
-      events -> insert_page_viewed_events(events, config)
-    end
-  end
-
-  defp parse_and_insert_events(body, :part_attempt, config) do
-    events =
-      body
-      |> String.split("\n", trim: true)
-      |> Enum.map(&Jason.decode!/1)
-      |> Enum.filter(&is_part_attempt_event?/1)
-
-    case events do
-      [] -> {:ok, 0}
-      events -> insert_part_attempt_events(events, config)
-    end
-  end
-
-  defp parse_and_insert_events(_body, category, _config) do
-    # Unsupported category - no-op
-    Logger.warning("Unsupported category for ClickHouse upload, skipping: #{inspect(category)}")
-    {:ok, 0}
   end
 
   defp is_video_event?(event) do
@@ -647,6 +682,14 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
     result_extensions = result["extensions"] || %{}
     feedback = result_extensions["http://oli.cmu.edu/extensions/feedback"]
 
+    # Convert response to JSON string if it's a complex data structure
+    response_str =
+      case response do
+        nil -> nil
+        str when is_binary(str) -> str
+        data -> Jason.encode!(data)
+      end
+
     # Convert attached_objectives to JSON string if it's a list
     attached_objectives_str =
       case attached_objectives do
@@ -677,7 +720,7 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
       scaled_score,
       success,
       completion,
-      quote_value(response),
+      quote_value(response_str),
       quote_value(feedback),
       hints_requested,
       quote_value(attached_objectives_str),
@@ -697,6 +740,9 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
 
   defp quote_value(value) when is_binary(value),
     do: "'" <> String.replace(value, "'", "''") <> "'"
+
+  defp quote_value(value) when is_map(value) or is_list(value),
+    do: "'" <> String.replace(Jason.encode!(value), "'", "''") <> "'"
 
   defp quote_value(value), do: to_string(value)
 
