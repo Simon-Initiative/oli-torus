@@ -434,7 +434,7 @@ defmodule OliWeb.Instructor.ReviewActivitiesLive do
     [
       Breadcrumb.new(%{
         full_title: revision.title,
-        link: Routes.page_delivery_path(OliWeb.Endpoint, :page, section.slug, revision.slug)
+        link: ~p"/sections/#{section.slug}/preview/page/#{revision.slug}"
       }),
       Breadcrumb.new(%{
         full_title: "Review Activities",
