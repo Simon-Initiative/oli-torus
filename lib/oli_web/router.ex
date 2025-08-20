@@ -85,7 +85,7 @@ defmodule OliWeb.Router do
 
   pipeline :delivery do
     plug(Oli.Plugs.SetVrAgentValue)
-    plug(OliWeb.Plugs.AllowIframe)
+    plug(OliWeb.Plugs.AllowIframeCSP)
   end
 
   # set the layout to be workspace
