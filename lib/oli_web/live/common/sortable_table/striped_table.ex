@@ -169,10 +169,10 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
               @model.data
             ),
             row
-          ) %>
+          )}
 
           <%= if @model.data[:expandable_rows] do %>
-            <%= render_details_row(
+            {render_details_row(
               with_data(
                 %{
                   model: @model,
@@ -183,7 +183,7 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
                 @model.data
               ),
               row
-            ) %>
+            )}
           <% end %>
         <% end %>
       </tbody>

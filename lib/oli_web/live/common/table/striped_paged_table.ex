@@ -42,7 +42,7 @@ defmodule OliWeb.Common.StripedPagedTable do
             selection_change: @selection_change,
             additional_table_class: @additional_table_class,
             additional_row_class: @additional_row_class
-          }) %>
+          })}
         </div>
         <Paging.render
           id="footer_paging"
