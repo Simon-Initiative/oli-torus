@@ -1445,11 +1445,11 @@ defmodule Oli.Delivery.Metrics do
     end)
     |> Enum.into(%{}, fn {container_id, {first_correct, first_total, _correct, total}} ->
       proficiency =
-        case total do
-          total when total in [+0.0, -0.0] or first_total in [+0.0, -0.0] ->
+        cond do
+          total in [+0.0, -0.0] or first_total in [+0.0, -0.0] ->
             nil
 
-          _ ->
+          true ->
             (1 * first_correct + 0.2 * (first_total - first_correct)) / first_total
         end
 
