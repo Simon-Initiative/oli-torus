@@ -105,15 +105,15 @@ defmodule OliWeb.Dev.TokensLive do
         <%= for item <- @tokens do %>
           <%= case item do %>
             <% %{type: :category, name: name} -> %>
-              <h2 class="text-2xl font-semibold border-b pb-2"><%= name %></h2>
+              <h2 class="text-2xl font-semibold border-b pb-2">{name}</h2>
             <% %{type: :subgroup, name: name} -> %>
-              <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300"><%= name %></h3>
+              <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300">{name}</h3>
             <% %{type: :tokens, tokens: tokens} -> %>
               <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <%= for %{name: token, light: light, dark: dark} <- tokens do %>
                   <div class="rounded-lg border p-4 space-y-3">
                     <div class="flex justify-between items-center">
-                      <span class="font-medium"><%= token %></span>
+                      <span class="font-medium">{token}</span>
                       <button
                         id={token}
                         phx-hook="CopyToClipboard"

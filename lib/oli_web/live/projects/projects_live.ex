@@ -145,7 +145,7 @@ defmodule OliWeb.Projects.ProjectsLive do
 
   def render(assigns) do
     ~H"""
-    <%= render_modal(assigns) %>
+    {render_modal(assigns)}
 
     <div>
       <div class="flex justify-between items-center px-4">

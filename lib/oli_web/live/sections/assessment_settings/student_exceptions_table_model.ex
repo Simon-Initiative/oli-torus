@@ -144,7 +144,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
         checked={@id in @selected_student_exceptions}
         name={"checkbox-#{@id}"}
       />
-      <%= @name %>
+      {@name}
     </div>
     """
   end
@@ -168,7 +168,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
           <%= if is_nil(@available_date) do %>
             Always available
           <% else %>
-            <%= value_from_datetime(@available_date, @ctx) %>
+            {value_from_datetime(@available_date, @ctx)}
           <% end %>
         </button>
       </div>
@@ -193,7 +193,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
           phx-value-user_id={@id}
         >
           <%= if @due_date do %>
-            <%= value_from_datetime(@due_date, @ctx) %>
+            {value_from_datetime(@due_date, @ctx)}
           <% else %>
             No due date
           <% end %>

@@ -19,7 +19,7 @@ defmodule OliWeb.Breadcrumb.BreadcrumbWorkspaceLive do
       class="breadcrumb-item-workspace flex justify-center items-center text-sm active truncate text-[#A3A3A3]"
       aria-current="page"
     >
-      <%= get_title(@breadcrumb, @show_short) %>
+      {get_title(@breadcrumb, @show_short)}
     </li>
     """
   end
@@ -27,7 +27,7 @@ defmodule OliWeb.Breadcrumb.BreadcrumbWorkspaceLive do
   defp render_breadcrumb(%{breadcrumb: %{link: nil}} = assigns) do
     ~H"""
     <li class="breadcrumb-item-workspace flex justify-center items-center text-sm">
-      <%= get_title(@breadcrumb, @show_short) %>
+      {get_title(@breadcrumb, @show_short)}
       <span><i class="fas fa-angle-right ml-1"></i></span>
     </li>
     """
@@ -36,7 +36,7 @@ defmodule OliWeb.Breadcrumb.BreadcrumbWorkspaceLive do
   defp render_breadcrumb(%{is_last: false} = assigns) do
     ~H"""
     <li class="breadcrumb-item-workspace flex justify-center items-center text-sm">
-      <.link navigate={@breadcrumb.link}><%= get_title(@breadcrumb, @show_short) %></.link>
+      <.link navigate={@breadcrumb.link}>{get_title(@breadcrumb, @show_short)}</.link>
       <span class="px-5"></span>
     </li>
     """

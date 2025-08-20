@@ -152,7 +152,7 @@ defmodule OliWeb.GradesLiveTest do
       {:ok, view, _html} = live(conn, live_view_grades_route(section.slug))
 
       view
-      |> element("button[phx-click=\"test_connection\"]")
+      |> element("button[phx-click='test_connection']")
       |> render_click()
 
       wait_while(fn -> not has_element?(view, "samp", "Requesting line items...") end)
@@ -191,7 +191,7 @@ defmodule OliWeb.GradesLiveTest do
 
       view
       |> element(
-        "a[phx-click=\"send_line_items\"]",
+        "a[phx-click='send_line_items']",
         "Update LMS Line Items"
       )
       |> render_click()
@@ -214,7 +214,7 @@ defmodule OliWeb.GradesLiveTest do
 
       view
       |> element(
-        "a[phx-click=\"send_line_items\"]",
+        "a[phx-click='send_line_items']",
         "Update LMS Line Items"
       )
       |> render_click()
@@ -233,7 +233,7 @@ defmodule OliWeb.GradesLiveTest do
 
       view
       |> element(
-        "a[phx-click=\"send_grades\"]",
+        "a[phx-click='send_grades']",
         "Synchronize Grades"
       )
       |> render_click()
@@ -266,7 +266,7 @@ defmodule OliWeb.GradesLiveTest do
 
       view
       |> element(
-        "a[phx-click=\"send_grades\"]",
+        "a[phx-click='send_grades']",
         "Synchronize Grades"
       )
       |> render_click()
@@ -276,7 +276,7 @@ defmodule OliWeb.GradesLiveTest do
       # Button disabled until it is finished
       assert view
              |> has_element?(
-               "a[phx-click=\"send_grades\"][disabled]",
+               "a[phx-click='send_grades'][disabled]",
                "Synchronize Grades"
              )
 
@@ -293,7 +293,7 @@ defmodule OliWeb.GradesLiveTest do
       # Button is enabled again once the sync is finished
       refute view
              |> has_element?(
-               "a[phx-click=\"send_grades\"][disabled]",
+               "a[phx-click='send_grades'][disabled]",
                "Synchronize Grades"
              )
     end
@@ -336,7 +336,7 @@ defmodule OliWeb.GradesLiveTest do
 
       # Synchronize for first page
       view
-      |> element("a[phx-click=\"send_grades\"]", "Synchronize Grades")
+      |> element("a[phx-click='send_grades']", "Synchronize Grades")
       |> render_click()
 
       assert has_element?(view, "p", "Pending grade updates: 2")
@@ -348,7 +348,7 @@ defmodule OliWeb.GradesLiveTest do
 
       # Synchronize for second page
       view
-      |> element("a[phx-click=\"send_grades\"]", "Synchronize Grades")
+      |> element("a[phx-click='send_grades']", "Synchronize Grades")
       |> render_click()
 
       assert has_element?(view, "p", "Pending grade updates: 1")
@@ -460,7 +460,7 @@ defmodule OliWeb.GradesLiveTest do
       {:ok, view, _html} = live(conn, live_view_grades_route(section.slug))
 
       view
-      |> element("button[phx-click=\"test_connection\"]")
+      |> element("button[phx-click='test_connection']")
       |> render_click()
 
       assert has_element?(view, "samp", "Starting test")
@@ -477,7 +477,7 @@ defmodule OliWeb.GradesLiveTest do
 
       view
       |> element(
-        "a[phx-click=\"send_line_items\"]",
+        "a[phx-click='send_line_items']",
         "Update LMS Line Items"
       )
       |> render_click()

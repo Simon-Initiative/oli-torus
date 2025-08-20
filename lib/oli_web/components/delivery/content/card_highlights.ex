@@ -20,16 +20,16 @@ defmodule OliWeb.Components.Delivery.CardHighlights do
       }
     >
       <div class="text-gray-700 text-base font-semibold leading-normal dark:text-[#EEEBF5]">
-        <%= @title %>
+        {@title}
       </div>
 
       <div class="flex justify-start items-end gap-2 w-full">
         <div class={"text-[32px] font-bold leading-[44px] #{if @is_selected, do: "text-[#006CD9] dark:text-[#4CA6FF]", else: "text-[#353740] dark:text-[#EEEBF5]"}"}>
-          <%= @count %>
+          {@count}
         </div>
         <div class="flex-1 py-2 flex justify-start items-center gap-1">
           <div class="text-sm text-[#45464c] font-normal leading-none dark:text-[#BAB8BF]">
-            <%= label_for(@container_filter_by, @count) %>
+            {label_for(@container_filter_by, @count)}
           </div>
         </div>
       </div>

@@ -41,7 +41,7 @@ defmodule OliWeb.AuthorRegistrationLiveTest do
 
       {:ok, conn} =
         lv
-        |> element(~s|a:fl-contains("Sign in to existing account")|)
+        |> element("a", "Sign in to existing account")
         |> render_click()
         |> follow_redirect(conn, ~p"/authors/log_in")
 

@@ -151,17 +151,17 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
           <%= if @current_assessment != nil do %>
             <div class="flex flex-col">
               <%= if @current_assessment.container_label do %>
-                <h4 class="torus-h4 whitespace-nowrap"><%= @current_assessment.container_label %></h4>
+                <h4 class="torus-h4 whitespace-nowrap">{@current_assessment.container_label}</h4>
 
                 <div class="flex flex-row items-center">
                   <%= if !@current_assessment.batch_scoring do %>
                     <Icons.score_as_you_go />
                   <% end %>
 
-                  <span class="text-lg ml-1"><%= @current_assessment.title %></span>
+                  <span class="text-lg ml-1">{@current_assessment.title}</span>
                 </div>
               <% else %>
-                <h4 class="torus-h4 whitespace-nowrap"><%= @current_assessment.title %></h4>
+                <h4 class="torus-h4 whitespace-nowrap">{@current_assessment.title}</h4>
               <% end %>
             </div>
           <% else %>
@@ -189,15 +189,15 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
                 <%= if @students_with_attempts_count == 0 do %>
                   No student has completed any attempts.
                 <% else %>
-                  <%= ~s{#{@students_with_attempts_count} #{Gettext.ngettext(OliWeb.Gettext, "student has", "students have", @students_with_attempts_count)} completed #{@total_attempts_count} #{Gettext.ngettext(OliWeb.Gettext, "attempt", "attempts", @total_attempts_count)}.} %>
+                  {~s{#{@students_with_attempts_count} #{Gettext.ngettext(OliWeb.Gettext, "student has", "students have", @students_with_attempts_count)} completed #{@total_attempts_count} #{Gettext.ngettext(OliWeb.Gettext, "attempt", "attempts", @total_attempts_count)}.}}
                 <% end %>
               </span>
               <div :if={@students_with_attempts_count < Enum.count(@students)} class="flex flex-col">
                 <span class="text-xs ml-2">
-                  <%= ~s{#{Enum.count(@student_emails_without_attempts)} #{Gettext.ngettext(OliWeb.Gettext,
+                  {~s{#{Enum.count(@student_emails_without_attempts)} #{Gettext.ngettext(OliWeb.Gettext,
                   "student has",
                   "students have",
-                  Enum.count(@student_emails_without_attempts))} not completed any attempt.} %>
+                  Enum.count(@student_emails_without_attempts))} not completed any attempt.}}
                 </span>
                 <input
                   type="text"
@@ -212,12 +212,12 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
                   phx-hook="CopyListener"
                   data-clipboard-target="#email_inputs"
                 >
-                  <i class="fa-solid fa-copy mr-2" /><%= Gettext.ngettext(
+                  <i class="fa-solid fa-copy mr-2" />{Gettext.ngettext(
                     OliWeb.Gettext,
                     "Copy email address",
                     "Copy email addresses",
                     Enum.count(@student_emails_without_attempts)
-                  ) %>
+                  )}
                 </button>
               </div>
             </div>

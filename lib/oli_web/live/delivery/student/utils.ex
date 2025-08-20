@@ -36,7 +36,7 @@ defmodule OliWeb.Delivery.Student.Utils do
                 role="container label"
                 class="opacity-50 dark:text-white text-sm font-bold uppercase tracking-wider"
               >
-                <%= @container_label %>
+                {@container_label}
               </div>
 
               <div
@@ -67,10 +67,10 @@ defmodule OliWeb.Delivery.Student.Utils do
           </div>
           <div role="page label" class="self-stretch justify-start items-start gap-2.5 inline-flex">
             <div role="page numbering index" class="opacity-50 dark:text-white text-[38px] font-bold">
-              <%= @index %>.
+              {@index}.
             </div>
             <div role="page title" class="grow shrink basis-0 dark:text-white text-[38px] font-bold">
-              <%= @page_context.page.title %>
+              {@page_context.page.title}
             </div>
           </div>
         </div>
@@ -85,7 +85,7 @@ defmodule OliWeb.Delivery.Student.Utils do
               </div>
               <div class="justify-end items-end gap-0.5 flex">
                 <div class="text-right dark:text-white text-xs font-bold uppercase tracking-wide">
-                  <%= @page_context.page.duration_minutes %>
+                  {@page_context.page.duration_minutes}
                 </div>
                 <div class="dark:text-white text-[9px] font-bold uppercase tracking-wide">
                   min
@@ -102,11 +102,11 @@ defmodule OliWeb.Delivery.Student.Utils do
               Available by:
             </div>
             <div class="dark:text-white text-xs font-normal">
-              <%= FormatDateTime.to_formatted_datetime(
+              {FormatDateTime.to_formatted_datetime(
                 @page_context.effective_settings.start_date,
                 @ctx,
                 "{WDshort} {Mshort} {D}, {YYYY}"
-              ) %>
+              )}
             </div>
           </div>
           <div
@@ -115,14 +115,14 @@ defmodule OliWeb.Delivery.Student.Utils do
             class="justify-start items-start gap-1 flex"
           >
             <div class="opacity-50 dark:text-white text-xs font-normal">
-              <%= label_for_scheduling_type(@page_context.effective_settings.scheduling_type) %>
+              {label_for_scheduling_type(@page_context.effective_settings.scheduling_type)}
             </div>
             <div class="dark:text-white text-xs font-normal">
-              <%= FormatDateTime.to_formatted_datetime(
+              {FormatDateTime.to_formatted_datetime(
                 @page_context.effective_settings.end_date,
                 @ctx,
                 "{WDshort} {Mshort} {D}, {YYYY}"
-              ) %>
+              )}
             </div>
           </div>
         </div>
@@ -157,13 +157,13 @@ defmodule OliWeb.Delivery.Student.Utils do
             <.proficiency_icon_with_tooltip objective={objective} />
             <div class="justify-start items-start flex w-full">
               <div class="text-neutral-800 dark:text-neutral-500 text-sm font-bold font-['Inter'] leading-[21px] min-w-[2rem]">
-                L<%= index %>
+                L{index}
               </div>
               <div
                 role={"objective #{objective.resource_id} title"}
                 class="text-stone-700 dark:text-stone-300 text-sm font-normal font-['Open Sans'] leading-[21px]"
               >
-                <%= objective.title %>
+                {objective.title}
               </div>
             </div>
           </div>
@@ -195,13 +195,13 @@ defmodule OliWeb.Delivery.Student.Utils do
           <.page_due_term effective_settings={@effective_settings} ctx={@ctx} />
         </li>
         <li :if={!@effective_settings.batch_scoring} id="score_as_you_go_term">
-          <%= score_as_you_go(@effective_settings) %>
+          {score_as_you_go(@effective_settings)}
         </li>
         <li id="page_scoring_terms">
-          <%= page_scoring_term(@effective_settings) %>
+          {page_scoring_term(@effective_settings)}
         </li>
         <li :if={!@effective_settings.batch_scoring} id="question_attempts">
-          <%= question_attempts(@effective_settings) %>
+          {question_attempts(@effective_settings)}
         </li>
         <.time_limit_term effective_settings={@effective_settings} />
         <.submit_term effective_settings={@effective_settings} />
@@ -230,7 +230,7 @@ defmodule OliWeb.Delivery.Student.Utils do
 
   defp question_attempts(assigns) do
     ~H"""
-    You can attempt each question <strong><%= @max_attempts %></strong> times.
+    You can attempt each question <strong>{@max_attempts}</strong> times.
     """
   end
 
@@ -238,7 +238,7 @@ defmodule OliWeb.Delivery.Student.Utils do
        when time_limit > 0 do
     ~H"""
     <li id="page_time_limit_term">
-      You have <b><%= parse_minutes(@effective_settings.time_limit) %></b>
+      You have <b>{parse_minutes(@effective_settings.time_limit)}</b>
       to complete the assessment from the time you begin.
     </li>
     """
@@ -308,24 +308,24 @@ defmodule OliWeb.Delivery.Student.Utils do
 
     ~H"""
     <%= if @effective_settings.start_date do %>
-      This assignment <%= @available_verb_form %> available on
+      This assignment {@available_verb_form} available on
       <b>
-        <%= FormatDateTime.to_formatted_datetime(
+        {FormatDateTime.to_formatted_datetime(
           @effective_settings.start_date,
           @ctx,
           "{WDshort} {Mshort} {D}, {YYYY} at {h12}:{m}{am}."
-        ) %>
+        )}
       </b>
     <% else %>
       This assignment is available <b>Now</b>
     <% end %>
-    <%= "and #{@verb_form} #{scheduling_type(@effective_settings.scheduling_type)}" %>
+    {"and #{@verb_form} #{scheduling_type(@effective_settings.scheduling_type)}"}
     <b>
-      <%= FormatDateTime.to_formatted_datetime(
+      {FormatDateTime.to_formatted_datetime(
         @effective_settings.end_date,
         @ctx,
         "{WDshort} {Mshort} {D}, {YYYY} by {h12}:{m}{am}."
-      ) %>
+      )}
     </b>
     """
   end
@@ -434,11 +434,11 @@ defmodule OliWeb.Delivery.Student.Utils do
               <Icons.proficiency proficiency={proficiency} />
             </div>
             <div class="text-zinc-700 dark:text-white text-base font-bold font-['Inter'] leading-normal">
-              <%= name %>
+              {name}
             </div>
           </div>
           <div class="text-zinc-700 dark:text-white text-base font-normal font-['Inter'] leading-normal">
-            <%= description %>
+            {description}
           </div>
         </div>
       </div>
@@ -465,7 +465,7 @@ defmodule OliWeb.Delivery.Student.Utils do
       id={"objective_#{@objective.resource_id}_tooltip"}
       class="hidden absolute min-h-[57px] max-w-[240px] -top-[20px] p-6 -left-6 text-gray-800 dark:text-gray-700 text-base font-normal font-['Inter'] leading-normal bg-gray-300 dark:bg-white rounded-md border-2 border-gray-700 flex-col justify-start items-center gap-4 z-10 -translate-x-full"
     >
-      <%= proficiency_to_text(@objective.proficiency) %>
+      {proficiency_to_text(@objective.proficiency)}
       <div class="absolute h-[40px] w-2 bg-gray-300 dark:bg-white top-2 right-0 z-20"></div>
       <Icons.filled_chevron_up class="absolute -right-[13px] top-[16px] fill-gray-300 dark:fill-white z-10 rotate-90 scale-150 stroke-1.5 stroke-gray-700" />
     </div>
@@ -1008,9 +1008,7 @@ defmodule OliWeb.Delivery.Student.Utils do
   def references(assigns) do
     ~H"""
     <div class="content">
-      <%= OliWeb.Common.React.component(@ctx, "Components.References", @bib_app_params,
-        id: "references"
-      ) %>
+      {OliWeb.Common.React.component(@ctx, "Components.References", @bib_app_params, id: "references")}
     </div>
     """
   end
@@ -1025,22 +1023,19 @@ defmodule OliWeb.Delivery.Student.Utils do
           <p><i class="far fa-hand-paper" aria-hidden="true" style="font-size: 64px"></i></p>
           <h2 class="mt-4 mb-4">This Resource is Gated</h2>
           <p>
-            You are trying to access a resource that is gated by the following condition<%= if Enum.count(
-                                                                                                 @attempt_message
-                                                                                               ) >
-                                                                                                 1,
-                                                                                               do:
-                                                                                                 "s",
-                                                                                               else:
-                                                                                                 "" %>:
+            You are trying to access a resource that is gated by the following condition{if Enum.count(
+                                                                                              @attempt_message
+                                                                                            ) >
+                                                                                              1,
+                                                                                            do: "s",
+                                                                                            else: ""}:
             <ul style="list-style-position: inside">
-              <li :for={reason <- @attempt_message}><%= reason %></li>
+              <li :for={reason <- @attempt_message}>{reason}</li>
             </ul>
           </p>
 
           <p class="mt-4">
-            If you think this is an error or would like more information, please
-            <OliWeb.Components.Common.tech_support_link
+            If you think this is an error or would like more information, please <OliWeb.Components.Common.tech_support_link
               id="tech_support_lti_error"
               class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline text-base font-['Open Sans'] tracking-tight cursor-pointer"
             >

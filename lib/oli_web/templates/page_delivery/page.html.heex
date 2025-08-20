@@ -1,6 +1,6 @@
 <div class="pt-5 mx-auto max-w-[900px]">
   <%= if not (Map.has_key?(@resource_attempt.content, "advancedDelivery") and @resource_attempt.content["advancedDelivery"]) do %>
-    <%= react_component("Components.OfflineDetector") %>
+    {react_component("Components.OfflineDetector")}
     <Components.Delivery.PageDelivery.header
       title={@title}
       page_number={@page_number}
@@ -36,26 +36,26 @@
         <div class="grid grid-cols-12 justify-content-start">
           <div class="col-span-3">Started:</div>
           <div class="col-span-9">
-            <%= Utils.render_date(@resource_attempt, :inserted_at, @conn) %>
+            {Utils.render_date(@resource_attempt, :inserted_at, @conn)}
           </div>
         </div>
         <div class="grid grid-cols-12">
           <div class="col-span-3">Submitted:</div>
           <div class="col-span-9">
-            <%= Utils.render_date(@resource_attempt, :date_evaluated, @conn) %>
+            {Utils.render_date(@resource_attempt, :date_evaluated, @conn)}
           </div>
         </div>
         <%= if @show_feedback do %>
           <div class="grid grid-cols-12">
             <div class="col-span-3">Score:</div>
             <div class="col-span-9">
-              <%= show_score(@resource_attempt.score, @resource_attempt.out_of) %>%
+              {show_score(@resource_attempt.score, @resource_attempt.out_of)}%
             </div>
           </div>
           <div class="grid grid-cols-12">
             <div class="col-span-3">Points:</div>
             <div class="col-span-9">
-              <%= Utils.format_score(@resource_attempt.score) %> out of <%= @resource_attempt.out_of %>
+              {Utils.format_score(@resource_attempt.score)} out of {@resource_attempt.out_of}
             </div>
           </div>
         <% end %>
@@ -66,11 +66,11 @@
         <h3>Awaiting Instructor Grading</h3>
         <div class="grid grid-cols-12 justify-content-start">
           <div class="col-span-3">Started:</div>
-          <div><%= Utils.render_date(@resource_attempt, :inserted_at, @conn) %></div>
+          <div>{Utils.render_date(@resource_attempt, :inserted_at, @conn)}</div>
         </div>
         <div class="grid grid-cols-12">
           <div class="col-span-3">Submitted:</div>
-          <div><%= Utils.render_date(@resource_attempt, :date_submitted, @conn) %></div>
+          <div>{Utils.render_date(@resource_attempt, :date_submitted, @conn)}</div>
         </div>
       </div>
     <% end %>
@@ -91,7 +91,7 @@
   <% end %>
 
   <div id="eventIntercept" class="content">
-    <%= raw(@html) %>
+    {raw(@html)}
   </div>
 
   <script>
@@ -122,19 +122,19 @@
     </div>
   <% end %>
 
-  <%= live_render(@conn, OliWeb.Dialogue.WindowLive,
+  {live_render(@conn, OliWeb.Dialogue.WindowLive,
     session: %{
       "section_slug" => @section_slug,
       "resource_id" => @current_page["id"],
       "revision_id" => @page.id
     }
-  ) %>
+  )}
   <%= if @review_mode == true do %>
     <div class="d-flex align-items-center justify-content-center">
-      <%= link("Continue",
+      {link("Continue",
         to: Routes.page_delivery_path(@conn, :page, @section_slug, @slug),
         class: "btn btn-primary btn-lg"
-      ) %>
+      )}
     </div>
   <% end %>
 

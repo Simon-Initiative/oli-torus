@@ -31,7 +31,7 @@ defmodule OliWeb.Admin.ExternalTools.NewExternalToolView do
   def render(assigns) do
     ~H"""
     <div class="flex flex-col justify-end mx-12 mt-4">
-      <%= render_custom_flash(@custom_flash) %>
+      {render_custom_flash(@custom_flash)}
       <div class="w-[1247px] inline-flex flex-col justify-start items-start gap-3">
         <div class="self-stretch flex flex-col justify-start items-start">
           <div class="justify-center text-color-blue-24 text-2xl font-normal leading-9">
@@ -121,7 +121,7 @@ defmodule OliWeb.Admin.ExternalTools.NewExternalToolView do
               <Icons.alert />
           <% end %>
           <span class={"text-[#{@text_color}] text-base font-semibold"}>
-            <%= @label %>
+            {@label}
           </span>
         </div>
         <button
@@ -131,7 +131,7 @@ defmodule OliWeb.Admin.ExternalTools.NewExternalToolView do
           ✕
         </button>
       </div>
-      <p class="mt-1 text-[#353740] text-sm font-normal"><%= @message %></p>
+      <p class="mt-1 text-[#353740] text-sm font-normal">{@message}</p>
     </div>
     """
   end

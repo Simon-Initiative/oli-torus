@@ -46,7 +46,7 @@ defmodule OliWeb.Common.EnrollmentBrowser.TableModel do
 
     ~H"""
     <button class="btn btn-primary" phx-click="select_user" phx-value-id={@id}>
-      <%= name(@name, @given_name, @family_name) %>
+      {name(@name, @given_name, @family_name)}
     </button>
     """
   end

@@ -62,7 +62,7 @@ defmodule OliWeb.Collaborators.Invitations.InviteView do
           Go to project
         </div>
         <div>
-          <%= OliWeb.Icons.right_arrow_login(%{}) %>
+          {OliWeb.Icons.right_arrow_login(%{})}
         </div>
       </.link>
     </.invite_container>
@@ -72,7 +72,7 @@ defmodule OliWeb.Collaborators.Invitations.InviteView do
   def render(%{step: "accept_or_reject_invitation"} = assigns) do
     ~H"""
     <.invite_container>
-      <h1 class="text-white">Invitation to <%= @project.title %></h1>
+      <h1 class="text-white">Invitation to {@project.title}</h1>
 
       <div class="flex gap-4">
         <.button type="button" phx-click="accept_invitation" class="btn btn-primary">
@@ -89,7 +89,7 @@ defmodule OliWeb.Collaborators.Invitations.InviteView do
   def render(%{step: "new_author_account_creation"} = assigns) do
     ~H"""
     <.invite_container>
-      <h1 class="text-white">Invitation to <%= @project.title %></h1>
+      <h1 class="text-white">Invitation to {@project.title}</h1>
 
       <div class="w-full flex items-center justify-center dark">
         <Components.Auth.registration_form
@@ -111,7 +111,7 @@ defmodule OliWeb.Collaborators.Invitations.InviteView do
   def render(%{step: "existing_author_login"} = assigns) do
     ~H"""
     <.invite_container>
-      <h1 class="text-white">Invitation to <%= @project.title %></h1>
+      <h1 class="text-white">Invitation to {@project.title}</h1>
 
       <div class="w-full flex items-center justify-center dark">
         <Components.Auth.login_form
@@ -133,8 +133,8 @@ defmodule OliWeb.Collaborators.Invitations.InviteView do
       >
         <p role="account warning" class="text-white">
           You are currently logged in as <strong><%= @current_author.email %></strong>.<br />
-          You will be automatically logged in as <strong><%= @author.email %></strong>
-          to access your invitation to <strong>"<%= @project.title %>"</strong>
+          You will be automatically logged in as <strong>{@author.email}</strong>
+          to access your invitation to <strong>"{@project.title}"</strong>
           Course.
         </p>
       </div>
@@ -151,7 +151,7 @@ defmodule OliWeb.Collaborators.Invitations.InviteView do
         <.author_invitation />
       </div>
       <div class="flex flex-col justify-center items-center gap-y-10 w-full relative z-50 overflow-y-scroll lg:overflow-y-auto h-[calc(100vh-270px)] md:h-[calc(100vh-220px)] lg:h-auto py-4 sm:py-8 lg:py-0">
-        <%= render_slot(@inner_block) %>
+        {render_slot(@inner_block)}
       </div>
     </div>
     """

@@ -146,7 +146,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
                     selected={@params.filter_by == module.container_id}
                     value={module.container_id}
                   >
-                    <%= module.title %>
+                    {module.title}
                   </option>
                 </select>
               </label>
@@ -258,10 +258,10 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
             :if={@selected_values == %{}}
             class="text-zinc-900 text-xs font-semibold leading-none dark:text-white"
           >
-            <%= @placeholder %>
+            {@placeholder}
           </span>
           <span :if={@selected_values != %{}} class="text-blue-500 text-xs font-semibold leading-none">
-            Proficiency is <%= show_proficiency_selected_values(@selected_values) %>
+            Proficiency is {show_proficiency_selected_values(@selected_values)}
           </span>
         </div>
         <.toggle_chevron id={@id} map_values={@selected_values} />

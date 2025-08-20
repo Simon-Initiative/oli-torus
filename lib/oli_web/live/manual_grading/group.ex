@@ -4,7 +4,7 @@ defmodule OliWeb.ManualGrading.Group do
   def render(assigns) do
     ~H"""
     <div class="mb-3">
-      <%= render_slot(@inner_block) %>
+      {render_slot(@inner_block)}
     </div>
     """
   end

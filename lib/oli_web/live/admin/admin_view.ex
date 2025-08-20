@@ -44,10 +44,10 @@ defmodule OliWeb.Admin.AdminView do
             </li>
             <li>
               <a href={~p"/admin/institutions"}>
-                Manage Institutions <%= badge(
+                Manage Institutions {badge(
                   assigns,
                   Oli.Institutions.count_pending_registrations() |> Oli.Utils.positive_or_nil()
-                ) %>
+                )}
               </a>
             </li>
             <li><a href={~p"/admin/invite"}>Invite New Authors</a></li>
@@ -159,7 +159,7 @@ defmodule OliWeb.Admin.AdminView do
         assigns = assign(assigns, badge: badge)
 
         ~H"""
-        <span class="badge badge-pill badge-primary ml-2"><%= @badge %></span>
+        <span class="badge badge-pill badge-primary ml-2">{@badge}</span>
         """
     end
   end

@@ -77,11 +77,11 @@ defmodule OliWeb.Components.Delivery.LearningOpportunities do
       <div class="flex-1 rounded p-8 py-4 mb-2 last:mb-0 md:last:mb-2 md:mr-2">
         <div class="flex my-2">
           <span class={"rounded-full py-1 px-6 #{badge_bg_color(@learning_opportunity)} text-white"}>
-            <%= badge_name(@learning_opportunity) %>
+            {badge_name(@learning_opportunity)}
           </span>
         </div>
         <div class="my-2">
-          <span class="font-bold"><%= @learning_opportunity.title %></span>
+          <span class="font-bold">{@learning_opportunity.title}</span>
         </div>
         <%= case @learning_opportunity.progress do %>
           <% {:percent_complete, percent} -> %>
@@ -90,20 +90,20 @@ defmodule OliWeb.Components.Delivery.LearningOpportunities do
             <div class="my-2 flex flex-row items-center">
               <div>Score:</div>
               <div class="flex-1 ml-2 text-red-500">
-                <%= "#{score}/#{out_of}" %>
+                {"#{score}/#{out_of}"}
               </div>
             </div>
           <% {:activities_completed, completed, out_of} -> %>
             <div class="my-2 flex flex-row items-center">
               <div>Activities completed:</div>
               <div class="flex-1 ml-2 text-yellow-500">
-                <%= "#{completed}/#{out_of}" %>
+                {"#{completed}/#{out_of}"}
               </div>
             </div>
         <% end %>
         <div class="my-2 flex flex-row">
           <div class="flex-1 bg-gray-100 dark:bg-gray-700 rounded p-2 text-center">
-            Read by <%= @learning_opportunity.complete_by_date %>
+            Read by {@learning_opportunity.complete_by_date}
           </div>
           <div>
             <a

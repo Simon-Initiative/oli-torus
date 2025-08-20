@@ -7,7 +7,7 @@ defmodule OliWeb.Projects.LmsUrlToCopy do
 
   def render(assigns) do
     ~H"""
-    <strong><%= @title %>:</strong>
+    <strong>{@title}:</strong>
     <div class="input-group input-group-sm mb-3">
       <input type="text" id={@id} class="form-control" value={@value} readonly />
       <div class="input-group-append">

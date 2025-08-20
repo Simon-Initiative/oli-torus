@@ -32,7 +32,7 @@ defmodule OliWeb.Components.Delivery.CourseOutline do
         <%= link to: @container_link_url.(from_node(@node, :slug)),
             class: resource_link_class(@active_page == from_node(@node, :slug)) do %>
           <span class="container-title my-2">
-            <%= container_title(@node, @display_curriculum_item_numbering) %>
+            {container_title(@node, @display_curriculum_item_numbering)}
           </span>
         <% end %>
       </h5>
@@ -57,7 +57,7 @@ defmodule OliWeb.Components.Delivery.CourseOutline do
       <%= link to: @container_link_url.(from_node(@node, :slug)),
           class: resource_link_class(@active_page == from_node(@node, :slug)) do %>
         <span class="container-title my-2">
-          <%= container_title(@node, @display_curriculum_item_numbering) %>
+          {container_title(@node, @display_curriculum_item_numbering)}
         </span>
       <% end %>
     </div>
@@ -71,12 +71,12 @@ defmodule OliWeb.Components.Delivery.CourseOutline do
         <%= link to: @page_link_url.(from_node(@node, :slug)),
             class: resource_link_class(@active_page == from_node(@node, :slug)) do %>
           <span class="page-title">
-            <i class="fa fa-file-pen mr-2"></i> <%= from_node(@node, :title) %>
+            <i class="fa fa-file-pen mr-2"></i> {from_node(@node, :title)}
           </span>
         <% end %>
       </div>
       <div class="mr-2">
-        <%= node_index(@node) %>
+        {node_index(@node)}
       </div>
     </div>
     """
@@ -89,12 +89,12 @@ defmodule OliWeb.Components.Delivery.CourseOutline do
         <%= link to: @page_link_url.(from_node(@node, :slug)),
             class: resource_link_class(@active_page == from_node(@node, :slug)) do %>
           <span class="page-title">
-            <i class="far fa-file mr-2"></i> <%= from_node(@node, :title) %>
+            <i class="far fa-file mr-2"></i> {from_node(@node, :title)}
           </span>
         <% end %>
       </div>
       <div class="mr-2">
-        <%= node_index(@node) %>
+        {node_index(@node)}
       </div>
     </div>
     """

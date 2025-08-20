@@ -410,13 +410,6 @@ defmodule Oli.Accounts do
   end
 
   @doc """
-  Preloads the user's linked author.
-  """
-  def preload_author(%User{} = user) do
-    Repo.preload(user, :author)
-  end
-
-  @doc """
   Updates the platform roles associated with a user
   ## Examples
       iex> update_user_platform_roles(user, roles)
@@ -1251,7 +1244,7 @@ defmodule Oli.Accounts do
 
   """
   def change_user_password(user, attrs \\ %{}) do
-    User.password_changeset(user, attrs, hash_password: false)
+    User.password_changeset(user, attrs, hash_password: false, require_current_password: true)
   end
 
   @doc """
@@ -1269,7 +1262,7 @@ defmodule Oli.Accounts do
   def update_user_password(user, password, attrs) do
     changeset =
       user
-      |> User.password_changeset(attrs)
+      |> User.password_changeset(attrs, require_current_password: true)
       |> User.validate_current_password(password)
 
     Ecto.Multi.new()
@@ -1679,7 +1672,7 @@ defmodule Oli.Accounts do
   """
   def apply_author_email(author, password, attrs) do
     author
-    |> Author.email_changeset(attrs)
+    |> Author.email_changeset(attrs, require_current_password: true)
     |> Author.validate_current_password(password)
     |> Ecto.Changeset.apply_action(:update)
   end
@@ -1763,7 +1756,7 @@ defmodule Oli.Accounts do
   def update_author_password(author, password, attrs) do
     changeset =
       author
-      |> Author.password_changeset(attrs)
+      |> Author.password_changeset(attrs, require_current_password: true)
       |> Author.validate_current_password(password)
 
     Ecto.Multi.new()

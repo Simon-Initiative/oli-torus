@@ -147,7 +147,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.DatasetsLive do
             <option value={:all} selected={@filter_project == :all}>All Projects</option>
             <%= for project <- @projects do %>
               <option value={project.id} selected={@filter_project == project.id}>
-                <%= project.title %>
+                {project.title}
               </option>
             <% end %>
           </select>
@@ -175,7 +175,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.DatasetsLive do
           <option value={:all} selected={@filter_user == :all}>All Users</option>
           <%= for user <- @users do %>
             <option value={user.id} selected={@filter_user == user.id}>
-              <%= user.email %>
+              {user.email}
             </option>
           <% end %>
         </select>
@@ -190,7 +190,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.DatasetsLive do
           <option value={:all} selected={@filter_status == :all}>All Statuses</option>
           <%= for status <- DatasetJob.statuses() do %>
             <option value={status} selected={@filter_status == status}>
-              <%= status %>
+              {status}
             </option>
           <% end %>
         </select>

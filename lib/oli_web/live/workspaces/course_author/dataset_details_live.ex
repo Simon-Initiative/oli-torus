@@ -53,14 +53,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.DatasetDetailsLive do
       <div class="card-body">
         <h5 class="mb-3">Dataset Job Details</h5>
         <p class="card-text">
-          <strong>Job Id:</strong> <%= @job.job_id %><br />
-          <strong>Job Run Id:</strong> <%= @job.job_run_id %><br />
-          <strong>Job Type:</strong> <%= @job.job_type %><br />
-          <strong>Status:</strong> <%= @job.status %><br />
-          <strong>Notify:</strong> <%= @job.notify_emails |> Enum.join(" ") %><br />
-          <strong>Started:</strong> <%= @job.inserted_at %><br />
-          <strong>Finished:</strong> <%= @job.finished_on %><br />
-          <strong>Started By:</strong> <%= @job.initiator_email %><br />
+          <strong>Job Id:</strong> {@job.job_id}<br />
+          <strong>Job Run Id:</strong> {@job.job_run_id}<br />
+          <strong>Job Type:</strong> {@job.job_type}<br />
+          <strong>Status:</strong> {@job.status}<br />
+          <strong>Notify:</strong> {@job.notify_emails |> Enum.join(" ")}<br />
+          <strong>Started:</strong> {@job.inserted_at}<br />
+          <strong>Finished:</strong> {@job.finished_on}<br />
+          <strong>Started By:</strong> {@job.initiator_email}<br />
         </p>
       </div>
     </div>
@@ -77,7 +77,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.DatasetDetailsLive do
           file is a JSON file that contains a mapping of the data in the dataset job to the
           original data in the source system.
         </p>
-        <p class="mb-2"><a href={@lookup_url}><%= @lookup_url %></a></p>
+        <p class="mb-2"><a href={@lookup_url}>{@lookup_url}</a></p>
 
         <p>
           Some example Python code for using the above lookup file can be found in the following
@@ -88,7 +88,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.DatasetDetailsLive do
         </p>
       </div>
     </div>
-    <%= render_manifest(assigns) %>
+    {render_manifest(assigns)}
     """
   end
 
@@ -134,7 +134,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.DatasetDetailsLive do
     <div class="card mt-5 mb-5">
       <div class="card-body">
         <p class="card-text">
-          <strong><%= Enum.count(@manifest["chunks"]) %> file(s) total:</strong>
+          <strong>{Enum.count(@manifest["chunks"])} file(s) total:</strong>
         </p>
         <table class="table table-striped">
           <thead>
@@ -145,7 +145,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.DatasetDetailsLive do
           <tbody>
             <%= for file <- @manifest["chunks"] do %>
               <tr>
-                <td><a href={file}><%= file %></a></td>
+                <td><a href={file}>{file}</a></td>
               </tr>
             <% end %>
           </tbody>

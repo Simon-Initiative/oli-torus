@@ -12,7 +12,7 @@ defmodule OliWeb.Components.Footer do
           <.footer_part_2 />
         </div>
         <%= if Map.get(assigns, :license) do %>
-          <%= OliWeb.LayoutView.render_license(@license) %>
+          {OliWeb.LayoutView.render_license(@license)}
         <% end %>
       </div>
       <.retrieve_cookies />
@@ -75,7 +75,7 @@ defmodule OliWeb.Components.Footer do
 
     ~H"""
     <div class="w-9/12 text-left sm:text-center">
-      <%= @footer_text %><a href={@footer_link_1_location} target="_blank"><%= @footer_link_1_text %></a>
+      {@footer_text}<a href={@footer_link_1_location} target="_blank"><%= @footer_link_1_text %></a>
     </div>
     """
   end
@@ -89,7 +89,7 @@ defmodule OliWeb.Components.Footer do
 
     ~H"""
     <div class="w-2/12 text-left sm:text-left">
-      <a href={@footer_link_2_location} target="_blank"><%= @footer_link_2_text %></a>
+      <a href={@footer_link_2_location} target="_blank">{@footer_link_2_text}</a>
     </div>
     """
   end
@@ -99,7 +99,7 @@ defmodule OliWeb.Components.Footer do
 
     ~H"""
     <div class="text-center sm:text-left sm:text-right">
-      Version <%= @version %> (<%= @sha %>) <%= @timestamp %>
+      Version {@version} ({@sha}) {@timestamp}
     </div>
     """
   end

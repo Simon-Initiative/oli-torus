@@ -391,7 +391,7 @@ defmodule OliWeb.Dialogue.WindowLive do
           class="w-7 h-7 ml-2 mr-2 rounded-full justify-center items-center flex text-white bg-[#2080F0] dark:bg-[#DF8028]"
         >
           <div class="text-[14px] uppercase">
-            <%= @user_initials %>
+            {@user_initials}
           </div>
         </div>
       </div>
@@ -409,7 +409,7 @@ defmodule OliWeb.Dialogue.WindowLive do
                 id={"message_#{@index}_content"}
                 class="self-stretch dark:text-white text-sm font-normal font-['Open Sans'] tracking-tight"
               >
-                <%= raw(@content) %>
+                {raw(@content)}
               </div>
             </div>
           </div>

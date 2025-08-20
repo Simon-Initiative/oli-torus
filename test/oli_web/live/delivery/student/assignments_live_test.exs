@@ -509,7 +509,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLiveTest do
 
       # open filter
       view
-      |> element("button[phx-click=\"toggle_filter_open\"]")
+      |> element("button[phx-click='toggle_filter_open']")
       |> render_click()
 
       # select only required assignments
