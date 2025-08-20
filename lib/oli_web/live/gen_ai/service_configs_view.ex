@@ -105,23 +105,23 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
     >
       <div class="flex flex-col min-w-0 gap-x-4">
         <h3 class="text-base font-semibold leading-6 text-gray-900 dark:text-white">
-          <%= @service_config.name %>
+          {@service_config.name}
         </h3>
         <div class="flex">
           <div class="mr-5">
             <span class="text-gray-800 text-xs py-0.5">Primary: </span>
             <span class="text-gray-800 text-xs font-mono py-0.5 ">
-              <%= @service_config.primary_model.name %>
+              {@service_config.primary_model.name}
             </span>
           </div>
           <div>
             <span class="text-gray-800 text-xs py-0.5">Backup: </span>
             <span class="text-gray-800 text-xs font-mono py-0.5">
-              <%= if is_nil(@service_config.backup_model) do
+              {if is_nil(@service_config.backup_model) do
                 "None"
               else
                 @service_config.backup_model.name
-              end %>
+              end}
             </span>
           </div>
         </div>
@@ -129,7 +129,7 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
       <div class="hidden shrink-0 sm:flex sm:flex-col sm:items-end">
         <%= if @service_config.usage_count > 0 do %>
           <p class="mt-0 text-xs text-gray-500">
-            Used by <strong><%= @service_config.usage_count %></strong> feature config(s)
+            Used by <strong>{@service_config.usage_count}</strong> feature config(s)
           </p>
         <% else %>
           <p class="mt-0 text-xs text-red-500">

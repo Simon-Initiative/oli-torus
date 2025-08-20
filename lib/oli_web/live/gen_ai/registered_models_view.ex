@@ -104,18 +104,18 @@ defmodule OliWeb.GenAI.RegisteredModelsView do
     >
       <div class="flex flex-col min-w-0 gap-x-4">
         <h3 class="text-base font-semibold leading-6 text-gray-900 dark:text-white">
-          <%= @registered_model.name %>
+          {@registered_model.name}
         </h3>
         <div class="text-gray-800 text-xs font-mono py-0.5">
-          <%= @registered_model.provider %>: <%= @registered_model.url_template %>
+          {@registered_model.provider}: {@registered_model.url_template}
         </div>
       </div>
       <div class="hidden shrink-0 sm:flex sm:flex-col sm:items-end">
-        <p class="mt-0 text-xs text-gray-500">model: <%= @registered_model.model %></p>
+        <p class="mt-0 text-xs text-gray-500">model: {@registered_model.model}</p>
 
         <%= if @registered_model.service_config_count > 0 do %>
           <p class="mt-0 text-xs text-gray-500">
-            Used by <strong><%= @registered_model.service_config_count %></strong> service config(s)
+            Used by <strong>{@registered_model.service_config_count}</strong> service config(s)
           </p>
         <% else %>
           <p class="mt-0 text-xs text-red-500">
@@ -148,7 +148,7 @@ defmodule OliWeb.GenAI.RegisteredModelsView do
         >
           Test Model
         </button>
-        <div><%= @test_results %></div>
+        <div>{@test_results}</div>
       </div>
 
       <.form :let={f} for={@changeset} id="registered-model-form" phx-submit="save">

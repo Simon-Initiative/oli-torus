@@ -129,21 +129,21 @@ defmodule OliWeb.GenAI.FeatureConfigsView do
     >
       <div class="flex flex-col min-w-0 gap-x-4">
         <h3 class="text-base font-semibold leading-6 text-gray-900 dark:text-white">
-          <%= @feature_config.feature %>
+          {@feature_config.feature}
         </h3>
         <div class="flex">
           <%= if is_nil(@feature_config.section) do %>
             <span class="text-sm text-gray-500">DEFAULT</span>
           <% else %>
             <span class="text-sm text-gray-500">
-              <%= @feature_config.section.slug %>
+              {@feature_config.section.slug}
             </span>
           <% end %>
         </div>
       </div>
       <div class="hidden shrink-0 sm:flex sm:flex-col sm:items-end">
         <div>
-          Service Config: <%= @feature_config.service_config.name %>
+          Service Config: {@feature_config.service_config.name}
         </div>
       </div>
     </li>
@@ -178,7 +178,7 @@ defmodule OliWeb.GenAI.FeatureConfigsView do
         </label>
         <select id="service_config" name="service_config_id" class={@form_control_classes}>
           <%= for {name, id} <- @service_configs do %>
-            <option value={id}><%= name %></option>
+            <option value={id}>{name}</option>
           <% end %>
         </select>
       </div>
@@ -198,13 +198,13 @@ defmodule OliWeb.GenAI.FeatureConfigsView do
 
       <%= if @section do %>
         <div class="mt-2 bg-slate-200 p-2 rounded-md">
-          <div class="text-sm text-gray-800"><%= @section.title %></div>
+          <div class="text-sm text-gray-800">{@section.title}</div>
           <div class="text-sm text-gray-500">
-            <%= if @section.type == :enrollable do
+            {if @section.type == :enrollable do
               "Section"
             else
               "Product"
-            end %>
+            end}
           </div>
         </div>
       <% end %>
