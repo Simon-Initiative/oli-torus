@@ -1399,14 +1399,12 @@ defmodule Oli.Delivery.Metrics do
                                  num_attempts}},
                                acc ->
           proficiency =
-            case num_attempts do
-              num_attempts when num_attempts in [+0.0, -0.0] ->
-                nil
-
-              _ ->
-                (1 * num_first_attempts_correct +
-                   0.2 * (num_first_attempts - num_first_attempts_correct)) /
-                  num_first_attempts
+            if num_attempts in [+0.0, -0.0] or num_first_attempts in [+0.0, -0.0] do
+              nil
+            else
+              (1 * num_first_attempts_correct +
+                 0.2 * (num_first_attempts - num_first_attempts_correct)) /
+                num_first_attempts
             end
 
           Map.put(acc, user_id, proficiency_range(proficiency, num_attempts))
@@ -1445,12 +1443,10 @@ defmodule Oli.Delivery.Metrics do
     end)
     |> Enum.into(%{}, fn {container_id, {first_correct, first_total, _correct, total}} ->
       proficiency =
-        cond do
-          total in [+0.0, -0.0] or first_total in [+0.0, -0.0] ->
-            nil
-
-          true ->
-            (1 * first_correct + 0.2 * (first_total - first_correct)) / first_total
+        if total in [+0.0, -0.0] or first_total in [+0.0, -0.0] do
+          nil
+        else
+          (1 * first_correct + 0.2 * (first_total - first_correct)) / first_total
         end
 
       {container_id, proficiency_range(proficiency, total)}
