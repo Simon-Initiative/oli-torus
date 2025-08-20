@@ -1,8 +1,8 @@
 defmodule OliWeb.ProjectsController do
   use OliWeb, :controller
 
-  import OliWeb.Common.FormatDateTime
 
+  alias Oli.Accounts
   alias Oli.Authoring.Course
   alias Oli.Repo.Sorting
   alias Oli.Utils.Time
@@ -15,13 +15,29 @@ defmodule OliWeb.ProjectsController do
   """
   def export_csv(conn, params) do
     author = conn.assigns.current_author
+    is_content_admin = Accounts.has_admin_role?(author, :content_admin)
     
     # Extract table state from URL parameters
     sort_by = String.to_existing_atom(params["sort_by"] || "title")
     sort_order = String.to_existing_atom(params["sort_order"] || "asc")
     text_search = params["text_search"] || ""
-    show_all = params["show_all"] == "true"
-    show_deleted = params["show_deleted"] == "true"
+    
+    # Handle show_all with proper defaults like the LiveView
+    show_all = case params["show_all"] do
+      "true" -> true
+      "false" -> false
+      nil -> 
+        if is_content_admin,
+          do: Accounts.get_author_preference(author, :admin_show_all_projects, true),
+          else: true
+    end
+    
+    # Handle show_deleted with proper defaults
+    show_deleted = case params["show_deleted"] do
+      "true" -> true
+      "false" -> false
+      nil -> Accounts.get_author_preference(author, :admin_show_deleted_projects, false)
+    end
     
     # Build sorting struct
     sorting = %Sorting{direction: sort_order, field: sort_by}
@@ -52,9 +68,9 @@ defmodule OliWeb.ProjectsController do
     rows = Enum.map(projects, fn project ->
       [
         escape_csv_field(project.title || ""),
-        date(project.inserted_at, precision: :date),
+        escape_csv_field(Date.to_string(DateTime.to_date(project.inserted_at))),
         escape_csv_field(project.name || ""),
-        format_status(project.status)
+        escape_csv_field(format_status(project.status))
       ]
     end)
     
