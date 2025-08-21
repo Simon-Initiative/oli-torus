@@ -1,7 +1,13 @@
 defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
   use Phoenix.Component
 
+  import OliWeb.Components.Common
+
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
+  alias OliWeb.Common.Chip
+  alias OliWeb.Delivery.InstructorDashboard.HTMLComponents
+  alias OliWeb.Icons
+  alias Phoenix.LiveView.JS
 
   @proficiency_labels ["Not enough data", "Low", "Medium", "High"]
 
@@ -14,21 +20,27 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
   def new(objectives, :instructor_dashboard) do
     column_specs = [
       %ColumnSpec{
+        render_fn: &render_expanded/3,
+        sortable: false,
+        th_class: "w-4"
+      },
+      %ColumnSpec{
         name: :objective_instructor_dashboard,
-        label: "LEARNING OBJECTIVE",
+        label: "Learning Objective",
         render_fn: &custom_render/3,
-        th_class: "pl-10"
+        th_class: "w-1/2",
+        td_class: "pr-4"
       },
       %ColumnSpec{
         name: :student_proficiency_obj,
-        label: "STUDENT PROFICIENCY",
+        label: HTMLComponents.render_proficiency_label(%{title: "Student Proficiency"}),
         render_fn: &custom_render/3,
         tooltip:
           "For all students, or one specific student, proficiency for a learning objective will be calculated off the percentage of correct answers for first part attempts within first activity attempts - for those parts that have that learning objective or any of its sub-objectives attached to it."
       },
       %ColumnSpec{
         name: :student_proficiency_distribution,
-        label: "PROFICIENCY DISTRIBUTION",
+        label: "Proficiency Distribution",
         sortable: false,
         render_fn: &custom_render/3
       }
@@ -38,7 +50,8 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
       rows: objectives,
       column_specs: column_specs,
       event_suffix: "",
-      id_field: [:resource_id]
+      id_field: [:resource_id],
+      data: %{expandable_rows: true}
     )
   end
 
@@ -84,10 +97,23 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
         _ -> objectives.student_proficiency_subobj
       end
 
-    assigns = Map.put(assigns, :student_proficiency, student_proficiency)
+    {bg_color, text_color} =
+      case student_proficiency do
+        "High" -> {"bg-Fill-Chip-Green", "text-Text-Chip-Green"}
+        "Medium" -> {"bg-Fill-Accent-fill-accent-orange", "text-Text-Chip-Orange"}
+        "Low" -> {"bg-Fill-fill-danger", "text-Text-text-danger"}
+        _ -> {"bg-Fill-Chip-Gray", "text-Text-Chip-Gray"}
+      end
+
+    assigns =
+      Map.merge(assigns, %{
+        label: student_proficiency,
+        bg_color: bg_color,
+        text_color: text_color
+      })
 
     ~H"""
-    {@student_proficiency}
+    <Chip.render {assigns} />
     """
   end
 
@@ -100,7 +126,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
 
     ~H"""
     <div
-      class="flex items-center ml-8 gap-x-4"
+      class="flex items-center gap-x-4"
       data-proficiency-check={if @student_proficiency == "Low", do: "false", else: "true"}
     >
       <span class={"flex flex-shrink-0 rounded-full w-2 h-2 #{if @student_proficiency == "Low", do: "bg-red-600", else: "bg-gray-500"}"}>
@@ -120,8 +146,8 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
     assigns = Map.merge(assigns, %{objective: objective})
 
     ~H"""
-    <div class="flex items-center ml-8 gap-x-4">
-      <span>{@objective}</span>
+    <div class="flex items-center gap-x-4">
+      <span class="text-Text-text-high">{@objective}</span>
     </div>
     """
   end
@@ -159,6 +185,25 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
         <% end %>
       </div>
     </div>
+    """
+  end
+
+  defp render_expanded(assigns, objective, _) do
+    id = objective.resource_id
+    assigns = Map.merge(assigns, %{id: id})
+
+    ~H"""
+    <.button
+      id={"button_#{@id}"}
+      class="flex !p-0"
+      phx-click={
+        JS.toggle(to: "#details-#{@id}")
+        |> JS.toggle_class("rotate-180", to: "#button_#{@id} svg")
+        |> JS.toggle_class("bg-Table-table-select", to: ~s(tr[data-row-id="#{@id}"]))
+      }
+    >
+      <Icons.chevron_down class="fill-Text-text-high transition-transform duration-200" />
+    </.button>
     """
   end
 

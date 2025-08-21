@@ -88,7 +88,11 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
     ~H"""
     <tr
       id={id_field(@row, @model)}
-      class={@row_class <> if Map.get(@row, :selected) || id_field(@row, @model) == @model.selected, do: " bg-delivery-primary-100 shadow-inner dark:bg-gray-700 dark:text-black", else: ""}
+      data-row-id={id_field(@row, @model)}
+      class={@row_class <> " hover:bg-Table-table-hover" <>
+    if Map.get(@row, :selected) || id_field(@row, @model) == @model.selected,
+      do: " bg-delivery-primary-100 shadow-inner dark:bg-gray-700 dark:text-black",
+      else: ""}
       aria-selected={if Map.get(@row, :selected), do: "true", else: "false"}
       phx-click={@select}
       phx-value-id={id_field(@row, @model)}
@@ -158,14 +162,29 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
                 additional_table_class: @additional_table_class,
                 additional_row_class:
                   if(Integer.is_even(index),
-                    do: "bg-Table-table-row-1",
-                    else: "bg-Table-table-row-2"
-                  )
+                    do: "bg-Table-table-row-1 ",
+                    else: "bg-Table-table-row-2 "
+                  ) <> @additional_row_class
               },
               @model.data
             ),
             row
           )}
+
+          <%= if @model.data[:expandable_rows] do %>
+            {render_details_row(
+              with_data(
+                %{
+                  model: @model,
+                  sort: @sort,
+                  select: @select,
+                  additional_table_class: @additional_table_class
+                },
+                @model.data
+              ),
+              row
+            )}
+          <% end %>
         <% end %>
       </tbody>
     </table>
@@ -174,5 +193,22 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
 
   defp with_data(assigns, data) do
     Map.merge(assigns, data)
+  end
+
+  defp render_details_row(assigns, row) do
+    row_id = id_field(row, assigns.model)
+    col_span = length(assigns.model.column_specs)
+
+    assigns = Map.merge(assigns, %{row_id: row_id, col_span: col_span})
+
+    ~H"""
+    <tr id={"details-#{@row_id}"} class="hidden">
+      <td colspan={@col_span} class="bg-gray-50 dark:bg-gray-900 p-4">
+        <div class="text-sm text-gray-700 dark:text-gray-200">
+          Information will go here.
+        </div>
+      </td>
+    </tr>
+    """
   end
 end

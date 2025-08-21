@@ -1,16 +1,13 @@
 defmodule OliWeb.Components.Delivery.LearningObjectives do
   use OliWeb, :live_component
 
-  import OliWeb.Components.Delivery.Buttons, only: [toggle_chevron: 1]
-
-  alias OliWeb.Common.InstructorDashboardPagedTable
-  alias OliWeb.Common.Params
-  alias OliWeb.Common.SearchInput
+  alias OliWeb.Common.{Params, StripedPagedTable, SearchInput}
   alias OliWeb.Components.Delivery.CardHighlights
+  alias OliWeb.Delivery.Content.MultiSelect
   alias OliWeb.Delivery.LearningObjectives.ObjectivesTableModel
   alias OliWeb.Router.Helpers, as: Routes
-  alias Phoenix.LiveView.JS
   alias OliWeb.Icons
+  alias Phoenix.LiveView.JS
 
   @default_params %{
     offset: 0,
@@ -121,10 +118,10 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
     ~H"""
     <div class="flex flex-col gap-2 mb-10">
       <div class="bg-white shadow-sm dark:bg-gray-800">
-        <div class="flex justify-between items-center px-4 sm:px-9 py-4 instructor_dashboard_table">
-          <div>
-            <h4 class="torus-h4 !py-0 mr-auto mb-2">Learning Objectives</h4>
-          </div>
+        <div class="flex justify-between items-center px-4 pt-8 pb-4 instructor_dashboard_table">
+          <h4 class="justify-center text-Text-text-high text-lg font-bold leading-normal">
+            Learning Objectives
+          </h4>
 
           <div class="flex flex-col-reverse sm:flex-row gap-2 items-end overflow-hidden">
             <.form for={%{}} class="w-full" phx-change="filter_by" phx-target={@myself}>
@@ -154,12 +151,12 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
           </div>
           <a
             href={Routes.delivery_path(OliWeb.Endpoint, :download_learning_objectives, @section_slug)}
-            class="flex items-center justify-center gap-x-2"
+            class="flex items-center justify-center gap-x-2 text-Text-text-button font-bold"
           >
             Download CSV <Icons.download />
           </a>
         </div>
-        <div class="flex flex-row mx-9 gap-x-4">
+        <div class="flex flex-row mx-4 gap-x-4">
           <%= for card <- @card_props do %>
             <CardHighlights.render
               title={card.title}
@@ -171,157 +168,59 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
             />
           <% end %>
         </div>
-        <div class="flex flex-row items-center gap-x-4 mx-9 my-4 dark:bg-gray-800">
-          <.form
-            for={%{}}
-            phx-target={@myself}
-            phx-change="search_objective"
-            class="w-44 border-zinc-400"
-          >
-            <SearchInput.render
-              id="objective_search_input"
-              name="objective_name"
-              text={@params.text_search}
-              class="w-44"
+
+        <div class="flex w-fit gap-2 mx-4 mt-4 mb-4 shadow-[0px_2px_6.099999904632568px_0px_rgba(0,0,0,0.10)] border border-Border-border-default bg-Background-bg-secondary">
+          <div class="flex p-2 gap-2">
+            <.form for={%{}} phx-target={@myself} phx-change="search_objective" class="w-56">
+              <SearchInput.render
+                id="objective_search_input"
+                name="objective_name"
+                text={@params.text_search}
+              />
+            </.form>
+
+            <MultiSelect.render
+              id="proficiency_select"
+              options={@proficiency_options}
+              selected_values={@selected_proficiency_options}
+              selected_proficiency_ids={@selected_proficiency_ids}
+              target={@myself}
+              disabled={@selected_proficiency_ids == %{}}
+              placeholder="Proficiency"
             />
-          </.form>
-          <.multi_select
-            id="proficiency_select"
-            options={@proficiency_options}
-            selected_values={@selected_proficiency_options}
-            selected_proficiency_ids={@selected_proficiency_ids}
-            target={@myself}
-            disabled={@selected_proficiency_ids == %{}}
-            placeholder="Proficiency"
-          />
-          <button
-            class="text-center text-blue-500 text-xs font-semibold underline leading-none"
-            phx-click="clear_all_filters"
-            phx-target={@myself}
-          >
-            Clear All Filters
-          </button>
+
+            <button
+              class="ml-2 mr-4 text-center text-Text-text-high text-sm font-normal leading-none flex items-center gap-x-1 hover:text-Text-text-button"
+              phx-click="clear_all_filters"
+              phx-target={@myself}
+            >
+              <Icons.trash /> Clear All Filters
+            </button>
+          </div>
         </div>
 
         <%= if @total_count > 0 do %>
           <div id="objectives-table">
-            <InstructorDashboardPagedTable.render
+            <StripedPagedTable.render
               table_model={@table_model}
-              page_change={JS.push("paged_table_page_change", target: @myself)}
-              sort={JS.push("paged_table_sort", target: @myself)}
               total_count={@total_count}
               offset={@params.offset}
               limit={@params.limit}
-              additional_table_class="instructor_dashboard_table"
-              show_bottom_paging={false}
               render_top_info={false}
+              additional_table_class="instructor_dashboard_table"
+              sort={JS.push("paged_table_sort", target: @myself)}
+              page_change={JS.push("paged_table_page_change", target: @myself)}
               limit_change={JS.push("paged_table_limit_change", target: @myself)}
+              selection_change={JS.push("paged_table_selection_change", target: @myself)}
               show_limit_change={true}
+              show_bottom_paging={false}
+              allow_selection={true}
+              additional_row_class="!h-20"
             />
           </div>
         <% else %>
           <h6 class="text-center py-4 bg-white dark:bg-gray-800">There are no objectives to show</h6>
         <% end %>
-      </div>
-    </div>
-    """
-  end
-
-  attr :placeholder, :string, default: "Select an option"
-  attr :disabled, :boolean, default: false
-  attr :options, :list, default: []
-  attr :id, :string
-  attr :target, :map, default: %{}
-  attr :selected_values, :map, default: %{}
-  attr :selected_proficiency_ids, :list, default: []
-
-  def multi_select(assigns) do
-    ~H"""
-    <div class={"flex flex-col border relative rounded-md h-9 #{if @selected_values != %{}, do: "border-blue-500", else: "border-zinc-400"}"}>
-      <div
-        phx-click={
-          if(!@disabled,
-            do:
-              JS.toggle(to: "##{@id}-options-container")
-              |> JS.toggle(to: "##{@id}-down-icon")
-              |> JS.toggle(to: "##{@id}-up-icon")
-          )
-        }
-        class={[
-          "flex gap-x-4 px-4 h-9 justify-between items-center w-auto hover:cursor-pointer rounded",
-          if(@disabled, do: "bg-gray-300 hover:cursor-not-allowed")
-        ]}
-        id={"#{@id}-selected-options-container"}
-      >
-        <div class="flex gap-1 flex-wrap">
-          <span
-            :if={@selected_values == %{}}
-            class="text-zinc-900 text-xs font-semibold leading-none dark:text-white"
-          >
-            {@placeholder}
-          </span>
-          <span :if={@selected_values != %{}} class="text-blue-500 text-xs font-semibold leading-none">
-            Proficiency is {show_proficiency_selected_values(@selected_values)}
-          </span>
-        </div>
-        <.toggle_chevron id={@id} map_values={@selected_values} />
-      </div>
-      <div class="relative">
-        <div
-          class="py-4 hidden z-50 absolute dark:bg-gray-800 bg-white w-48 border overflow-y-scroll top-1 rounded"
-          id={"#{@id}-options-container"}
-          phx-click-away={
-            JS.hide() |> JS.hide(to: "##{@id}-up-icon") |> JS.show(to: "##{@id}-down-icon")
-          }
-        >
-          <div>
-            <.form
-              :let={_f}
-              class="flex flex-column gap-y-3 px-4"
-              for={%{}}
-              as={:options}
-              phx-change="toggle_selected"
-              phx-target={@target}
-            >
-              <.input
-                :for={option <- @options}
-                name={option.id}
-                value={option.selected}
-                label={option.name}
-                checked={option.id in @selected_proficiency_ids}
-                type="checkbox"
-                label_class="text-zinc-900 text-xs font-normal leading-none dark:text-white"
-              />
-            </.form>
-          </div>
-          <div class="w-full border border-gray-200 my-4"></div>
-          <div class="flex flex-row items-center justify-end px-4 gap-x-4">
-            <button
-              class="text-center text-neutral-600 text-xs font-semibold leading-none dark:text-white"
-              phx-click={
-                JS.hide(to: "##{@id}-options-container")
-                |> JS.hide(to: "##{@id}-up-icon")
-                |> JS.show(to: "##{@id}-down-icon")
-              }
-            >
-              Cancel
-            </button>
-            <button
-              class="px-4 py-2 bg-blue-500 rounded justify-center items-center gap-2 inline-flex opacity-90 text-right text-white text-xs font-semibold leading-none"
-              phx-click={
-                JS.push("apply_proficiency_filter")
-                |> JS.hide(to: "##{@id}-options-container")
-                |> JS.hide(to: "##{@id}-up-icon")
-                |> JS.show(to: "##{@id}-down-icon")
-              }
-              phx-target={@target}
-              phx-value={@selected_proficiency_ids}
-              disabled={@disabled}
-            >
-              Apply
-            </button>
-          </div>
-        </div>
       </div>
     </div>
     """
@@ -466,6 +365,10 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
      )}
   end
 
+  def handle_event("paged_table_selection_change", %{"id" => _selected_objective_id}, socket) do
+    {:noreply, socket}
+  end
+
   defp do_update_selection(socket, selected_id) do
     %{proficiency_options: proficiency_options} = socket.assigns
 
@@ -487,10 +390,6 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
        proficiency_options: updated_options,
        selected_proficiency_ids: selected_ids
      )}
-  end
-
-  defp show_proficiency_selected_values(values) do
-    Enum.map_join(values, ", ", fn {_id, values} -> values end)
   end
 
   defp update_proficiency_options(selected_proficiency_ids, proficiency_options) do
