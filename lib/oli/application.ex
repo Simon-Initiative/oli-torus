@@ -70,6 +70,9 @@ defmodule Oli.Application do
         # Starts Cachex to store section info
         Oli.Delivery.Sections.SectionCache,
 
+        # Starts the LTI 1.3 examples key provider
+        Lti_1p3.Examples.KeyProviderConfig.child_spec(),
+
         # a supervisor which can be used to dynamically supervise tasks
         {Task.Supervisor, name: Oli.TaskSupervisor}
       ] ++ maybe_node_js_config()
