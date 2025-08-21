@@ -3,7 +3,7 @@ defmodule Oli.Repo.Migrations.AddTimezoneToSections do
 
   def change do
     alter table(:sections) do
-      add :timezone, :string, default: "Etc/UTC"
+      add :timezone, :string, default: nil
     end
   end
 end

@@ -165,7 +165,7 @@ defmodule Oli.Delivery.Sections.Section do
 
     field(:agenda, :boolean, default: true)
 
-    field(:timezone, :string, default: "Etc/UTC")
+    field(:timezone, :string, default: nil)
 
     timestamps(type: :utc_datetime)
   end
