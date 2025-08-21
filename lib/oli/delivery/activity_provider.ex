@@ -267,8 +267,7 @@ defmodule Oli.Delivery.ActivityProvider do
 
         # Exclude any section specific blacklisted activities
         blacklisted_activity_ids =
-          Enum.filter(blacklisted_activities, fn ba -> ba.selection_id == id end)
-          |> Enum.map(fn ba -> ba.activity_id end)
+          for ba <- blacklisted_activities, ba.selection_id == id, do: ba.activity_id
 
         original_blacklisted_activity_ids =
           fulfillment_state.source.blacklisted_activity_ids

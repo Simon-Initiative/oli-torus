@@ -490,4 +490,30 @@ defmodule Oli.Resources do
 
     Repo.all(query)
   end
+
+  @doc """
+  Gets bank entries for a given publication ID.
+  
+  Returns a list of maps containing resource_id, tags, objectives, and activity_type_id
+  for all banked activities in the given publication.
+  """
+  def get_bank_entries(publication_id) do
+    activity_type_id = ResourceType.id_for_activity()
+
+    from(r in Revision,
+      join: pr in Oli.Publishing.PublishedResource,
+      on: pr.revision_id == r.id,
+      where: pr.publication_id == ^publication_id,
+      where: r.deleted == false,
+      where: r.resource_type_id == ^activity_type_id,
+      where: r.scope == :banked,
+      select: %{
+        resource_id: pr.resource_id,
+        tags: r.tags,
+        objectives: r.objectives,
+        activity_type_id: r.activity_type_id
+      }
+    )
+    |> Repo.all()
+  end
 end

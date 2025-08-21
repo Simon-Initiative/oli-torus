@@ -11,12 +11,10 @@ defmodule OliWeb.Instructor.ReviewActivitiesLive do
   alias Oli.Activities.Realizer.Query.BankEntry
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Activities
-  alias Oli.Resources.ResourceType
+  alias Oli.Resources
   alias OliWeb.Common.Breadcrumb
   alias OliWeb.Common.Paging
   alias OliWeb.Router.Helpers, as: Routes
-  import Ecto.Query, warn: false
-  alias Oli.Repo
 
   @impl Phoenix.LiveView
   def mount(%{"page_id" => page_id, "selection_id" => selection_id}, _session, socket) do
@@ -273,24 +271,8 @@ defmodule OliWeb.Instructor.ReviewActivitiesLive do
                   )
 
                 # Populate the bank activities
-                activity_type_id = ResourceType.id_for_activity()
-
                 bank_entries =
-                  from(r in Oli.Resources.Revision,
-                    join: pr in Oli.Publishing.PublishedResource,
-                    on: pr.revision_id == r.id,
-                    where: pr.publication_id == ^publication_id,
-                    where: r.deleted == false,
-                    where: r.resource_type_id == ^activity_type_id,
-                    where: r.scope == :banked,
-                    select: %{
-                      resource_id: pr.resource_id,
-                      tags: r.tags,
-                      objectives: r.objectives,
-                      activity_type_id: r.activity_type_id
-                    }
-                  )
-                  |> Repo.all()
+                  Resources.get_bank_entries(publication_id)
                   |> Enum.map(&BankEntry.from_map/1)
 
                 source = %Source{
