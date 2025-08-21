@@ -1026,6 +1026,10 @@ select {
   accent-color: #2F2C33;
 }
 
+.bg-Fill-fill-danger {
+  background-color: #FEEBED;
+}
+
 .dark .bg-Fill-fill-danger {
   background-color: #33181A;
 }
@@ -1204,6 +1208,86 @@ select {
 
 .dark .accent-Fill-fill-progress {
   accent-color: #0FB863;
+}
+
+.bg-Fill-Chip-Green {
+  background-color: #E7FCF3;
+}
+
+.dark .bg-Fill-Chip-Green {
+  background-color: #3D4F47;
+}
+
+.dark .text-Fill-Chip-Green {
+  color: #3D4F47;
+}
+
+.dark .border-Fill-Chip-Green {
+  border-color: #3D4F47;
+}
+
+.dark .outline-Fill-Chip-Green {
+  outline-color: #3D4F47;
+}
+
+.dark .ring-Fill-Chip-Green {
+  --tw-ring-color: #3D4F47;
+}
+
+.dark .fill-Fill-Chip-Green {
+  fill: #3D4F47;
+}
+
+.dark .stroke-Fill-Chip-Green {
+  stroke: #3D4F47;
+}
+
+.dark .caret-Fill-Chip-Green {
+  caret-color: #3D4F47;
+}
+
+.dark .accent-Fill-Chip-Green {
+  accent-color: #3D4F47;
+}
+
+.bg-Fill-Chip-Gray {
+  background-color: #CED1D9;
+}
+
+.dark .bg-Fill-Chip-Gray {
+  background-color: #353740;
+}
+
+.dark .text-Fill-Chip-Gray {
+  color: #353740;
+}
+
+.dark .border-Fill-Chip-Gray {
+  border-color: #353740;
+}
+
+.dark .outline-Fill-Chip-Gray {
+  outline-color: #353740;
+}
+
+.dark .ring-Fill-Chip-Gray {
+  --tw-ring-color: #353740;
+}
+
+.dark .fill-Fill-Chip-Gray {
+  fill: #353740;
+}
+
+.dark .stroke-Fill-Chip-Gray {
+  stroke: #353740;
+}
+
+.dark .caret-Fill-Chip-Gray {
+  caret-color: #353740;
+}
+
+.dark .accent-Fill-Chip-Gray {
+  accent-color: #353740;
 }
 
 .bg-Fill-Buttons-fill-primary {
@@ -1644,6 +1728,10 @@ select {
 
 .dark .accent-Fill-Accent-fill-accent-teal {
   accent-color: #364147;
+}
+
+.bg-Fill-Accent-fill-accent-orange {
+  background-color: #FFECDE;
 }
 
 .dark .bg-Fill-Accent-fill-accent-orange {
@@ -2294,6 +2382,10 @@ select {
   --tw-ring-color: #EEEBF5;
 }
 
+.fill-Text-text-high {
+  fill: #353740;
+}
+
 .dark .fill-Text-text-high {
   fill: #EEEBF5;
 }
@@ -2766,6 +2858,126 @@ select {
   accent-color: #EBAAF2;
 }
 
+.dark .bg-Text-Chip-Orange {
+  background-color: #FFB387;
+}
+
+.text-Text-Chip-Orange {
+  color: #91450E;
+}
+
+.dark .text-Text-Chip-Orange {
+  color: #FFB387;
+}
+
+.dark .border-Text-Chip-Orange {
+  border-color: #FFB387;
+}
+
+.dark .outline-Text-Chip-Orange {
+  outline-color: #FFB387;
+}
+
+.dark .ring-Text-Chip-Orange {
+  --tw-ring-color: #FFB387;
+}
+
+.dark .fill-Text-Chip-Orange {
+  fill: #FFB387;
+}
+
+.dark .stroke-Text-Chip-Orange {
+  stroke: #FFB387;
+}
+
+.dark .caret-Text-Chip-Orange {
+  caret-color: #FFB387;
+}
+
+.dark .accent-Text-Chip-Orange {
+  accent-color: #FFB387;
+}
+
+.dark .bg-Text-Chip-Green {
+  background-color: #39E581;
+}
+
+.text-Text-Chip-Green {
+  color: #175A3D;
+}
+
+.dark .text-Text-Chip-Green {
+  color: #39E581;
+}
+
+.dark .border-Text-Chip-Green {
+  border-color: #39E581;
+}
+
+.dark .outline-Text-Chip-Green {
+  outline-color: #39E581;
+}
+
+.dark .ring-Text-Chip-Green {
+  --tw-ring-color: #39E581;
+}
+
+.dark .fill-Text-Chip-Green {
+  fill: #39E581;
+}
+
+.dark .stroke-Text-Chip-Green {
+  stroke: #39E581;
+}
+
+.dark .caret-Text-Chip-Green {
+  caret-color: #39E581;
+}
+
+.dark .accent-Text-Chip-Green {
+  accent-color: #39E581;
+}
+
+.dark .bg-Text-Chip-Gray {
+  background-color: #FFFFFF;
+}
+
+.text-Text-Chip-Gray {
+  color: #000000;
+}
+
+.dark .text-Text-Chip-Gray {
+  color: #FFFFFF;
+}
+
+.dark .border-Text-Chip-Gray {
+  border-color: #FFFFFF;
+}
+
+.dark .outline-Text-Chip-Gray {
+  outline-color: #FFFFFF;
+}
+
+.dark .ring-Text-Chip-Gray {
+  --tw-ring-color: #FFFFFF;
+}
+
+.dark .fill-Text-Chip-Gray {
+  fill: #FFFFFF;
+}
+
+.dark .stroke-Text-Chip-Gray {
+  stroke: #FFFFFF;
+}
+
+.dark .caret-Text-Chip-Gray {
+  caret-color: #FFFFFF;
+}
+
+.dark .accent-Text-Chip-Gray {
+  accent-color: #FFFFFF;
+}
+
 .bg-Table-table-row-1 {
   background-color: #F3F4F8;
 }
@@ -2880,6 +3092,10 @@ select {
 
 .dark .accent-Table-table-hover {
   accent-color: #0A203A;
+}
+
+.bg-Table-table-select {
+  background-color: #DEECFF;
 }
 
 .dark .bg-Table-table-select {
@@ -8984,6 +9200,10 @@ table.table-striped tbody tr:nth-child(even) {
   height: 2.5rem !important;
 }
 
+.\!h-20 {
+  height: 5rem !important;
+}
+
 .h-0 {
   height: 0px;
 }
@@ -11689,11 +11909,6 @@ table.table-striped tbody tr:nth-child(even) {
   background-color: rgb(254 235 237 / var(--tw-bg-opacity));
 }
 
-.bg-\[\#ced1d9\] {
-  --tw-bg-opacity: 1;
-  background-color: rgb(206 209 217 / var(--tw-bg-opacity));
-}
-
 .bg-\[\#ced9f2\] {
   --tw-bg-opacity: 1;
   background-color: rgb(206 217 242 / var(--tw-bg-opacity));
@@ -11723,19 +11938,9 @@ table.table-striped tbody tr:nth-child(even) {
   background-color: rgb(222 236 255 / var(--tw-bg-opacity));
 }
 
-.bg-\[\#e6fcf2\] {
-  --tw-bg-opacity: 1;
-  background-color: rgb(230 252 242 / var(--tw-bg-opacity));
-}
-
 .bg-\[\#edeef7\] {
   --tw-bg-opacity: 1;
   background-color: rgb(237 238 247 / var(--tw-bg-opacity));
-}
-
-.bg-\[\#feebed\] {
-  --tw-bg-opacity: 1;
-  background-color: rgb(254 235 237 / var(--tw-bg-opacity));
 }
 
 .bg-\[\#ffecde\] {
@@ -12502,6 +12707,10 @@ table.table-striped tbody tr:nth-child(even) {
 .object-left {
   -o-object-position: left;
      object-position: left;
+}
+
+.\!p-0 {
+  padding: 0px !important;
 }
 
 .\!p-\[2px\] {
@@ -13564,11 +13773,6 @@ table.table-striped tbody tr:nth-child(even) {
   color: rgb(255 255 255 / var(--tw-text-opacity)) !important;
 }
 
-.text-\[\#000000\] {
-  --tw-text-opacity: 1;
-  color: rgb(0 0 0 / var(--tw-text-opacity));
-}
-
 .text-\[\#0062F2\] {
   --tw-text-opacity: 1;
   color: rgb(0 98 242 / var(--tw-text-opacity));
@@ -13627,11 +13831,6 @@ table.table-striped tbody tr:nth-child(even) {
 .text-\[\#0d70ff\] {
   --tw-text-opacity: 1;
   color: rgb(13 112 255 / var(--tw-text-opacity));
-}
-
-.text-\[\#175a3d\] {
-  --tw-text-opacity: 1;
-  color: rgb(23 90 61 / var(--tw-text-opacity));
 }
 
 .text-\[\#1B67B2\] {
@@ -13739,11 +13938,6 @@ table.table-striped tbody tr:nth-child(even) {
   color: rgb(142 142 142 / var(--tw-text-opacity));
 }
 
-.text-\[\#91450e\] {
-  --tw-text-opacity: 1;
-  color: rgb(145 69 14 / var(--tw-text-opacity));
-}
-
 .text-\[\#9a40a8\] {
   --tw-text-opacity: 1;
   color: rgb(154 64 168 / var(--tw-text-opacity));
@@ -13792,11 +13986,6 @@ table.table-striped tbody tr:nth-child(even) {
 .text-\[\#c03a2b\] {
   --tw-text-opacity: 1;
   color: rgb(192 58 43 / var(--tw-text-opacity));
-}
-
-.text-\[\#ce2c31\] {
-  --tw-text-opacity: 1;
-  color: rgb(206 44 49 / var(--tw-text-opacity));
 }
 
 .text-\[\#eeebf5\]\/75 {
@@ -14709,6 +14898,22 @@ table.table-striped tbody tr:nth-child(even) {
   color: #0FB863;
 }
 
+.dark .placeholder-Fill-Chip-Green::-moz-placeholder {
+  color: #3D4F47;
+}
+
+.dark .placeholder-Fill-Chip-Green::placeholder {
+  color: #3D4F47;
+}
+
+.dark .placeholder-Fill-Chip-Gray::-moz-placeholder {
+  color: #353740;
+}
+
+.dark .placeholder-Fill-Chip-Gray::placeholder {
+  color: #353740;
+}
+
 .dark .placeholder-Fill-Buttons-fill-primary::-moz-placeholder {
   color: #0062F2;
 }
@@ -15043,6 +15248,30 @@ table.table-striped tbody tr:nth-child(even) {
 
 .dark .placeholder-Text-text-accent-purple::placeholder {
   color: #EBAAF2;
+}
+
+.dark .placeholder-Text-Chip-Orange::-moz-placeholder {
+  color: #FFB387;
+}
+
+.dark .placeholder-Text-Chip-Orange::placeholder {
+  color: #FFB387;
+}
+
+.dark .placeholder-Text-Chip-Green::-moz-placeholder {
+  color: #39E581;
+}
+
+.dark .placeholder-Text-Chip-Green::placeholder {
+  color: #39E581;
+}
+
+.dark .placeholder-Text-Chip-Gray::-moz-placeholder {
+  color: #FFFFFF;
+}
+
+.dark .placeholder-Text-Chip-Gray::placeholder {
+  color: #FFFFFF;
 }
 
 .dark .placeholder-Table-table-row-1::-moz-placeholder {
@@ -18967,6 +19196,14 @@ Not supports in Firefox and IE */
   color: #EF4444;
 }
 
+.hover\:bg-Table-table-hover:hover {
+  background-color: #F2F9FF;
+}
+
+.dark .hover\:bg-Table-table-hover:hover {
+  background-color: #0A203A;
+}
+
 @media (min-width: 768px) {
   .md\:container {
     width: 100%;
@@ -20850,16 +21087,6 @@ Not supports in Firefox and IE */
   background-color: rgb(47 49 71 / var(--tw-bg-opacity));
 }
 
-.dark .dark\:bg-\[\#33181A\] {
-  --tw-bg-opacity: 1;
-  background-color: rgb(51 24 26 / var(--tw-bg-opacity));
-}
-
-.dark .dark\:bg-\[\#353740\] {
-  --tw-bg-opacity: 1;
-  background-color: rgb(53 55 64 / var(--tw-bg-opacity));
-}
-
 .dark .dark\:bg-\[\#363b59\] {
   --tw-bg-opacity: 1;
   background-color: rgb(54 59 89 / var(--tw-bg-opacity));
@@ -20870,11 +21097,6 @@ Not supports in Firefox and IE */
   background-color: rgb(54 65 71 / var(--tw-bg-opacity));
 }
 
-.dark .dark\:bg-\[\#3D4F47\] {
-  --tw-bg-opacity: 1;
-  background-color: rgb(61 79 71 / var(--tw-bg-opacity));
-}
-
 .dark .dark\:bg-\[\#3e3f44\] {
   --tw-bg-opacity: 1;
   background-color: rgb(62 63 68 / var(--tw-bg-opacity));
@@ -20883,11 +21105,6 @@ Not supports in Firefox and IE */
 .dark .dark\:bg-\[\#494b65\] {
   --tw-bg-opacity: 1;
   background-color: rgb(73 75 101 / var(--tw-bg-opacity));
-}
-
-.dark .dark\:bg-\[\#4C3F39\] {
-  --tw-bg-opacity: 1;
-  background-color: rgb(76 63 57 / var(--tw-bg-opacity));
 }
 
 .dark .dark\:bg-\[\#4CA6FF\] {
@@ -21328,16 +21545,6 @@ Not supports in Firefox and IE */
 .dark .dark\:text-\[\#FF8787\] {
   --tw-text-opacity: 1;
   color: rgb(255 135 135 / var(--tw-text-opacity));
-}
-
-.dark .dark\:text-\[\#FFB387\] {
-  --tw-text-opacity: 1;
-  color: rgb(255 179 135 / var(--tw-text-opacity));
-}
-
-.dark .dark\:text-\[\#FFFFFF\] {
-  --tw-text-opacity: 1;
-  color: rgb(255 255 255 / var(--tw-text-opacity));
 }
 
 .dark .dark\:text-\[\#bab8bf\] {
