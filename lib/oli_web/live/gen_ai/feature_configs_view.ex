@@ -26,7 +26,7 @@ defmodule OliWeb.GenAI.FeatureConfigsView do
 
     {:ok,
      assign(socket,
-       show_defaults_only?: true,
+       show_defaults_only?: false,
        editing: false,
        section_slug: "",
        section: nil,
@@ -176,7 +176,7 @@ defmodule OliWeb.GenAI.FeatureConfigsView do
         <label for="service_config" class="block text-sm font-medium text-gray-700">
           Service Config
         </label>
-        <select id="service_config" name="service_config_id" class={@form_control_classes}>
+        <select phx-hook="SelectListener" id="service_config" name="service_config_id" class={@form_control_classes}>
           <%= for {name, id} <- @service_configs do %>
             <option value={id}>{name}</option>
           <% end %>
@@ -408,6 +408,13 @@ defmodule OliWeb.GenAI.FeatureConfigsView do
     {:noreply, assign(socket, selected_feature: String.to_existing_atom(feature))}
   end
 
+  def handle_event("change", %{"id" => "service_config", "value" => service_config_id}, socket) do
+    service_config_id = String.to_integer(service_config_id)
+    service_configs = socket.assigns.service_configs
+    selected_service_config = Enum.find(service_configs, fn {_name, id} -> id == service_config_id end)
+    {:noreply, assign(socket, selected_service_config: selected_service_config)}
+  end
+
   defp create_feature_config(feature, socket) do
     case GenAI.create_feature_config(%{
            feature: feature,
@@ -415,11 +422,12 @@ defmodule OliWeb.GenAI.FeatureConfigsView do
            section_id: socket.assigns.section.id
          }) do
       {:ok, feature_config} ->
+        # Preload the associations to avoid crashes when rendering
+        feature_config = Oli.Repo.preload(feature_config, [:service_config, :section])
         all = all(socket.assigns.show_defaults_only?)
-        selected = Enum.find(all, &(&1.id == feature_config.id))
-        changeset = FeatureConfig.changeset(selected, %{})
+        changeset = FeatureConfig.changeset(feature_config, %{})
 
-        {:noreply, assign(socket, selected: selected, feature_configs: all, changeset: changeset)}
+        {:noreply, assign(socket, selected: feature_config, feature_configs: all, changeset: changeset)}
 
       {:error, changeset} ->
         # Handle error (e.g., show a flash message)

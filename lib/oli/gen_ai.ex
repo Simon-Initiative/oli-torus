@@ -1,4 +1,9 @@
 defmodule Oli.GenAI do
+  @moduledoc """
+  Context module for managing GenAI configurations including registered models,
+  service configurations, and feature configurations.
+  """
+
   alias Oli.GenAI.Completions.{RegisteredModel, ServiceConfig}
   alias Oli.GenAI.FeatureConfig
   alias Oli.Repo
@@ -25,22 +30,34 @@ defmodule Oli.GenAI do
     Repo.all(query)
   end
 
+  @doc """
+  Deletes a registered model.
+  """
   def delete_registered_model(%RegisteredModel{} = registered_model) do
     Repo.delete(registered_model)
   end
 
+  @doc """
+  Updates a registered model with the given attributes.
+  """
   def update_registered_model(%RegisteredModel{} = registered_model, attrs) do
     registered_model
     |> RegisteredModel.changeset(attrs)
     |> Repo.update()
   end
 
+  @doc """
+  Creates a new registered model with the given attributes.
+  """
   def create_registered_model(attrs) do
     %RegisteredModel{}
     |> RegisteredModel.changeset(attrs)
     |> Repo.insert()
   end
 
+  @doc """
+  Returns all service configurations with their associated models and usage count.
+  """
   def service_configs do
     query =
       from r in ServiceConfig,
@@ -58,22 +75,34 @@ defmodule Oli.GenAI do
     Repo.all(query)
   end
 
+  @doc """
+  Deletes a service configuration.
+  """
   def delete_service_config(%ServiceConfig{} = service_config) do
     Repo.delete(service_config)
   end
 
+  @doc """
+  Updates a service configuration with the given attributes.
+  """
   def update_service_config(%ServiceConfig{} = service_config, attrs) do
     service_config
     |> ServiceConfig.changeset(attrs)
     |> Repo.update()
   end
 
+  @doc """
+  Creates a new service configuration with the given attributes.
+  """
   def create_service_config(attrs) do
     %ServiceConfig{}
     |> ServiceConfig.changeset(attrs)
     |> Repo.insert()
   end
 
+  @doc """
+  Checks if a feature configuration exists for the given feature and section.
+  """
   def feature_config_exists?(feature, section_id) do
     from(
       g in FeatureConfig,
@@ -82,6 +111,9 @@ defmodule Oli.GenAI do
     |> Oli.Repo.exists?()
   end
 
+  @doc """
+  Returns all feature configurations with their associated service configs and sections.
+  """
   def feature_configs do
     query =
       from r in FeatureConfig,
@@ -91,16 +123,25 @@ defmodule Oli.GenAI do
     Repo.all(query)
   end
 
+  @doc """
+  Deletes a feature configuration.
+  """
   def delete_feature_config(%FeatureConfig{} = feature_config) do
     Repo.delete(feature_config)
   end
 
+  @doc """
+  Updates a feature configuration with the given attributes.
+  """
   def update_feature_config(%FeatureConfig{} = feature_config, attrs) do
     feature_config
     |> FeatureConfig.changeset(attrs)
     |> Repo.update()
   end
 
+  @doc """
+  Creates a new feature configuration with the given attributes.
+  """
   def create_feature_config(attrs) do
     %FeatureConfig{}
     |> FeatureConfig.changeset(attrs)
