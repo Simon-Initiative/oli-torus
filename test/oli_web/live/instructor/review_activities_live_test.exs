@@ -19,7 +19,11 @@ defmodule OliWeb.Instructor.ReviewActivitiesLiveTest do
       Sections.enroll(user_id, section.id, [ContextRoles.get_role(:context_instructor)])
 
       # Test that the route exists and handles invalid page gracefully
-      result = live(conn, ~p"/sections/#{section.slug}/preview/page/invalid_page/selection/invalid_selection")
+      result =
+        live(
+          conn,
+          ~p"/sections/#{section.slug}/preview/page/invalid_page/selection/invalid_selection"
+        )
 
       # Should redirect with error flash
       assert {:error, {:redirect, %{flash: %{"error" => error_message}}}} = result

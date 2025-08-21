@@ -493,7 +493,7 @@ defmodule Oli.Resources do
 
   @doc """
   Gets bank entries for a given publication ID.
-  
+
   Returns a list of maps containing resource_id, tags, objectives, and activity_type_id
   for all banked activities in the given publication.
   """
