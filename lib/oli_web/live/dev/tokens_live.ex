@@ -134,7 +134,7 @@ defmodule OliWeb.Dev.TokensLive do
                           phx-hook="CopyToClipboard"
                           data-copy-text={light}
                         />
-                        <span class="text-xs"><%= light %></span>
+                        <span class="text-xs">{light}</span>
                         <span class="text-xs">Light</span>
                       </div>
 
@@ -146,7 +146,7 @@ defmodule OliWeb.Dev.TokensLive do
                           phx-hook="CopyToClipboard"
                           data-copy-text={dark}
                         />
-                        <span class="text-xs"><%= dark %></span>
+                        <span class="text-xs">{dark}</span>
                         <span class="text-xs">Dark</span>
                       </div>
                     </div>

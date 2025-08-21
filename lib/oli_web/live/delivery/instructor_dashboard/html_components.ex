@@ -283,8 +283,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.HTMLComponents do
   def render_proficiency_label(assigns) do
     ~H"""
     <div class="flex items-center gap-x-2">
-      <%= Icons.info(assigns) %>
-      <span><%= @title %></span>
+      {Icons.info(assigns)}
+      <span>{@title}</span>
     </div>
     """
   end
