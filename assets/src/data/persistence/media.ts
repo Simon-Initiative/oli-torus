@@ -70,6 +70,27 @@ export function createMedia(
   });
 }
 
+export function createSuperActivityMedia(
+  directory: string,
+  file: File,
+): Promise<MediaItemCreated | ServerError> {
+  const fileName = getFileName(file);
+  return encodeFile(file).then((encoding: string) => {
+    const body = {
+      file: encoding,
+      name: fileName,
+      directory: directory,
+    };
+    const params = {
+      method: 'POST',
+      body: JSON.stringify(body),
+      url: '/superactivity/media',
+    };
+
+    return makeRequest<MediaItemCreated>(params);
+  });
+}
+
 export function deleteMedia(
   project: ProjectSlug,
   mediaIds: string[],

@@ -85,7 +85,7 @@ defmodule OliWeb.Router do
 
   pipeline :delivery do
     plug(Oli.Plugs.SetVrAgentValue)
-    plug(OliWeb.Plugs.AllowIframe)
+    plug(OliWeb.Plugs.AllowIframeCSP)
   end
 
   # set the layout to be workspace
@@ -361,6 +361,11 @@ defmodule OliWeb.Router do
     )
 
     post("/jcourse/dashboard/log/server", OliWeb.LegacyLogsController, :process)
+  end
+
+  scope "/api/v1/superactivity/media", OliWeb do
+    pipe_through([:api, :authoring_protected])
+    post("/", LegacySuperactivityController, :create_media)
   end
 
   scope "/", OliWeb do
