@@ -20,15 +20,29 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
   def generate(messages, functions, %RegisteredModel{model: model} = registered_model) do
     config = config(:sync, registered_model)
 
-    api_post(
-      config.api_url <> "/v1/chat/completions",
-      [
-        model: model,
-        messages: encode_messages(messages),
-        functions: functions
-      ],
-      config
-    )
+    params =
+      case functions do
+        [] ->
+          [model: model, messages: encode_messages(messages)]
+
+        _ ->
+          [model: model, messages: encode_messages(messages), functions: functions]
+      end
+
+    case api_post(config.api_url <> "/v1/chat/completions", params, config) do
+      {:ok, string_response} ->
+        case Jason.decode!(string_response) do
+          %{"choices" => [%{"message" => %{"content" => content}} | _]} ->
+            {:ok, content}
+
+          _ ->
+            Logger.error("Unexpected OpenAI response format: #{inspect(string_response)}")
+            {:error, :unexpected_response}
+        end
+
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
   def stream(

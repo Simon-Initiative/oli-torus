@@ -1,4 +1,4 @@
-defmodule Oli.GenAIFeatureConfig do
+defmodule Oli.GenAI.FeatureConfig do
   use Ecto.Schema
 
   import Ecto.Query, warn: false
