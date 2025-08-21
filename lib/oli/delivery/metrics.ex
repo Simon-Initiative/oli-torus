@@ -1399,7 +1399,7 @@ defmodule Oli.Delivery.Metrics do
                                  num_attempts}},
                                acc ->
           proficiency =
-            if num_attempts in [+0.0, -0.0] or num_first_attempts in [+0.0, -0.0] do
+            if num_attempts == 0.0 or num_first_attempts == 0.0 do
               nil
             else
               (1 * num_first_attempts_correct +
@@ -1443,7 +1443,7 @@ defmodule Oli.Delivery.Metrics do
     end)
     |> Enum.into(%{}, fn {container_id, {first_correct, first_total, _correct, total}} ->
       proficiency =
-        if total in [+0.0, -0.0] or first_total in [+0.0, -0.0] do
+        if total == 0.0 or first_total == 0.0 do
           nil
         else
           (1 * first_correct + 0.2 * (first_total - first_correct)) / first_total
