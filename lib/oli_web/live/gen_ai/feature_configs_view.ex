@@ -176,7 +176,12 @@ defmodule OliWeb.GenAI.FeatureConfigsView do
         <label for="service_config" class="block text-sm font-medium text-gray-700">
           Service Config
         </label>
-        <select phx-hook="SelectListener" id="service_config" name="service_config_id" class={@form_control_classes}>
+        <select
+          phx-hook="SelectListener"
+          id="service_config"
+          name="service_config_id"
+          class={@form_control_classes}
+        >
           <%= for {name, id} <- @service_configs do %>
             <option value={id}>{name}</option>
           <% end %>
@@ -411,7 +416,10 @@ defmodule OliWeb.GenAI.FeatureConfigsView do
   def handle_event("change", %{"id" => "service_config", "value" => service_config_id}, socket) do
     service_config_id = String.to_integer(service_config_id)
     service_configs = socket.assigns.service_configs
-    selected_service_config = Enum.find(service_configs, fn {_name, id} -> id == service_config_id end)
+
+    selected_service_config =
+      Enum.find(service_configs, fn {_name, id} -> id == service_config_id end)
+
     {:noreply, assign(socket, selected_service_config: selected_service_config)}
   end
 
@@ -427,7 +435,8 @@ defmodule OliWeb.GenAI.FeatureConfigsView do
         all = all(socket.assigns.show_defaults_only?)
         changeset = FeatureConfig.changeset(feature_config, %{})
 
-        {:noreply, assign(socket, selected: feature_config, feature_configs: all, changeset: changeset)}
+        {:noreply,
+         assign(socket, selected: feature_config, feature_configs: all, changeset: changeset)}
 
       {:error, changeset} ->
         # Handle error (e.g., show a flash message)
