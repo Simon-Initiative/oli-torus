@@ -18,7 +18,10 @@ defmodule OliWeb.GenAI.FeatureConfigsView do
 
   @impl true
   def mount(_, _session, socket) do
-    all = all(true)
+
+    show_defaults_only? = false
+
+    all = all(show_defaults_only?)
     selected = Enum.at(all, 0)
     changeset = FeatureConfig.changeset(selected, %{})
 
@@ -26,7 +29,7 @@ defmodule OliWeb.GenAI.FeatureConfigsView do
 
     {:ok,
      assign(socket,
-       show_defaults_only?: false,
+       show_defaults_only?: show_defaults_only?,
        editing: false,
        section_slug: "",
        section: nil,
@@ -89,6 +92,7 @@ defmodule OliWeb.GenAI.FeatureConfigsView do
               section_slug={@section_slug}
               section={@section}
               editing={@editing}
+              selected_feature={@selected_feature}
             />
           </div>
         </div>
@@ -154,6 +158,7 @@ defmodule OliWeb.GenAI.FeatureConfigsView do
   attr :section_slug, :string, required: true
   attr :section, Section
   attr :editing, :boolean, default: false
+  attr :selected_feature, :atom, required: true
 
   def create_new(assigns) do
     assigns =
@@ -164,13 +169,15 @@ defmodule OliWeb.GenAI.FeatureConfigsView do
     <div class="flex flex-col mt-4">
       <h3 class="text-lg font-semibold mb-2">Create New Feature Config</h3>
 
-      <div>
-        <label for="feature" class="block text-sm font-medium text-gray-700">Feature</label>
-        <select phx-hook="SelectListener" id="feature" name="feature" class={@form_control_classes}>
-          <option value="student_dialogue">Student Dialogue</option>
-          <option value="instructor_dashboard">Instructor Dashboard</option>
-        </select>
-      </div>
+      <form phx-change="feature_changed">
+        <div>
+          <label for="feature" class="block text-sm font-medium text-gray-700">Feature</label>
+          <select id="feature" name="feature" value={@selected_feature} class={@form_control_classes}>
+            <option value="student_dialogue" selected={@selected_feature == :student_dialogue}>Student Dialogue</option>
+            <option value="instructor_dashboard" selected={@selected_feature == :instructor_dashboard}>Instructor Dashboard</option>
+          </select>
+        </div>
+      </form>
 
       <div>
         <label for="service_config" class="block text-sm font-medium text-gray-700">
@@ -288,8 +295,10 @@ defmodule OliWeb.GenAI.FeatureConfigsView do
   @impl true
   def handle_event("change", %{"id" => "slug", "value" => slug}, socket) do
     case Sections.get_section_by_slug(slug) do
-      nil -> {:noreply, assign(socket, section_slug: slug, section: nil)}
-      section -> {:noreply, assign(socket, section_slug: slug, section: section)}
+      nil -> 
+        {:noreply, assign(socket, section_slug: slug, section: nil)}
+      section -> 
+        {:noreply, assign(socket, section_slug: slug, section: section)}
     end
   end
 
@@ -409,7 +418,7 @@ defmodule OliWeb.GenAI.FeatureConfigsView do
     end
   end
 
-  def handle_event("change", %{"id" => "feature", "value" => feature}, socket) do
+  def handle_event("feature_changed", %{"feature" => feature}, socket) do
     {:noreply, assign(socket, selected_feature: String.to_existing_atom(feature))}
   end
 
@@ -435,8 +444,11 @@ defmodule OliWeb.GenAI.FeatureConfigsView do
         all = all(socket.assigns.show_defaults_only?)
         changeset = FeatureConfig.changeset(feature_config, %{})
 
-        {:noreply,
-         assign(socket, selected: feature_config, feature_configs: all, changeset: changeset)}
+        socket = socket
+          |> put_flash(:info, "Successfully created new feature config.")
+          |> assign(selected: feature_config, feature_configs: all, changeset: changeset)
+
+        {:noreply, socket}
 
       {:error, changeset} ->
         # Handle error (e.g., show a flash message)
