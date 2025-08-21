@@ -11,6 +11,11 @@ defmodule OliWeb.Delivery.NewCourse.CourseDetails do
     {:saturday, "Sat"}
   ]
 
+  defp timezone_options do
+    Tzdata.zone_list()
+    |> Enum.map(&{&1, &1})
+  end
+
   attr(:changeset, :map, required: true)
 
   def render(assigns) do
@@ -64,13 +69,19 @@ defmodule OliWeb.Delivery.NewCourse.CourseDetails do
           </small>
         </div>
         <div class="flex flex-col gap-2">
-          <div class="flex flex-col gap-1 flex-1">
-            <span>Scheduling Preferred Time</span>
-            <.input type="time" field={@changeset[:preferred_scheduling_time]} />
+          <div class="flex gap-4 w-full">
+            <div class="flex flex-col gap-1 flex-1">
+              <span>Scheduling Preferred Time</span>
+              <.input type="time" field={@changeset[:preferred_scheduling_time]} />
+            </div>
+            <div class="flex flex-col gap-1 flex-1">
+              <span required>Course Timezone</span>
+              <.input type="select" field={@changeset[:timezone]} options={timezone_options()} />
+            </div>
           </div>
           <small class="torus-small mt-1">
             <i class="fa fa-circle-info mr-1" />
-            This is the time that the scheduler will use when setting due dates and times for your pages
+            The time and timezone that the scheduler will use when setting due dates and times for your pages
           </small>
         </div>
       </div>
