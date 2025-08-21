@@ -10,7 +10,7 @@ export class WorkspaceAuthorPO {
   private readonly header: Locator;
 
   constructor(private page: Page) {
-    this.header = this.page.locator('h1');
+    this.header = this.page.locator('main h1');
   }
 
   get dashboard() {
