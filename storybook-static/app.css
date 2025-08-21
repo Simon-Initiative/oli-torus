@@ -1606,6 +1606,10 @@ select {
   accent-color: #363B59;
 }
 
+.bg-Fill-Accent-fill-accent-teal {
+  background-color: #DCF3F5;
+}
+
 .dark .bg-Fill-Accent-fill-accent-teal {
   background-color: #364147;
 }
@@ -1676,6 +1680,10 @@ select {
 
 .dark .accent-Fill-Accent-fill-accent-orange {
   accent-color: #4C3F39;
+}
+
+.bg-Fill-Accent-fill-accent-purple {
+  background-color: #F7DEF8;
 }
 
 .dark .bg-Fill-Accent-fill-accent-purple {
@@ -2458,6 +2466,10 @@ select {
   background-color: #99CCFF;
 }
 
+.text-Text-text-link {
+  color: #1B67B2;
+}
+
 .dark .text-Text-text-link {
   color: #99CCFF;
 }
@@ -2642,6 +2654,10 @@ select {
   background-color: #87D7E0;
 }
 
+.text-Text-text-accent-teal {
+  color: #00525C;
+}
+
 .dark .text-Text-text-accent-teal {
   color: #87D7E0;
 }
@@ -2712,6 +2728,10 @@ select {
 
 .dark .bg-Text-text-accent-purple {
   background-color: #EBAAF2;
+}
+
+.text-Text-text-accent-purple {
+  color: #9A40A8;
 }
 
 .dark .text-Text-text-accent-purple {
@@ -2968,6 +2988,86 @@ select {
 
 .dark .accent-Table-table-top-row {
   accent-color: #000000;
+}
+
+.dark .bg-Table-text-accent-green {
+  background-color: #39E581;
+}
+
+.text-Table-text-accent-green {
+  color: #245D45;
+}
+
+.dark .text-Table-text-accent-green {
+  color: #39E581;
+}
+
+.dark .border-Table-text-accent-green {
+  border-color: #39E581;
+}
+
+.dark .outline-Table-text-accent-green {
+  outline-color: #39E581;
+}
+
+.dark .ring-Table-text-accent-green {
+  --tw-ring-color: #39E581;
+}
+
+.dark .fill-Table-text-accent-green {
+  fill: #39E581;
+}
+
+.dark .stroke-Table-text-accent-green {
+  stroke: #39E581;
+}
+
+.dark .caret-Table-text-accent-green {
+  caret-color: #39E581;
+}
+
+.dark .accent-Table-text-accent-green {
+  accent-color: #39E581;
+}
+
+.dark .bg-Table-text-danger {
+  background-color: #FF8787;
+}
+
+.text-Table-text-danger {
+  color: #A42327;
+}
+
+.dark .text-Table-text-danger {
+  color: #FF8787;
+}
+
+.dark .border-Table-text-danger {
+  border-color: #FF8787;
+}
+
+.dark .outline-Table-text-danger {
+  outline-color: #FF8787;
+}
+
+.dark .ring-Table-text-danger {
+  --tw-ring-color: #FF8787;
+}
+
+.dark .fill-Table-text-danger {
+  fill: #FF8787;
+}
+
+.dark .stroke-Table-text-danger {
+  stroke: #FF8787;
+}
+
+.dark .caret-Table-text-danger {
+  caret-color: #FF8787;
+}
+
+.dark .accent-Table-text-danger {
+  accent-color: #FF8787;
 }
 
 .dark .bg-Icon-icon-white {
@@ -13599,11 +13699,6 @@ table.table-striped tbody tr:nth-child(even) {
   color: rgb(60 117 211 / var(--tw-text-opacity));
 }
 
-.text-\[\#45464C\] {
-  --tw-text-opacity: 1;
-  color: rgb(69 70 76 / var(--tw-text-opacity));
-}
-
 .text-\[\#45464c\] {
   --tw-text-opacity: 1;
   color: rgb(69 70 76 / var(--tw-text-opacity));
@@ -14996,6 +15091,22 @@ table.table-striped tbody tr:nth-child(even) {
 
 .dark .placeholder-Table-table-top-row::placeholder {
   color: #000000;
+}
+
+.dark .placeholder-Table-text-accent-green::-moz-placeholder {
+  color: #39E581;
+}
+
+.dark .placeholder-Table-text-accent-green::placeholder {
+  color: #39E581;
+}
+
+.dark .placeholder-Table-text-danger::-moz-placeholder {
+  color: #FF8787;
+}
+
+.dark .placeholder-Table-text-danger::placeholder {
+  color: #FF8787;
 }
 
 .dark .placeholder-Icon-icon-white::-moz-placeholder {
@@ -18830,6 +18941,14 @@ Not supports in Firefox and IE */
   line-height: 1.5rem;
   --tw-text-opacity: 1;
   color: rgb(225 29 72 / var(--tw-text-opacity));
+}
+
+.hover\:text-Text-text-button:hover {
+  color: #006CD9;
+}
+
+.dark .hover\:text-Text-text-button:hover {
+  color: #4CA6FF;
 }
 
 .hover\:text-Text-text-button-hover:hover {
