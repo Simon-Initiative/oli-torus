@@ -1,6 +1,8 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Accordion, Dropdown, ListGroup, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
+import { useDndContext } from '@dnd-kit/core';
+import { SimpleTreeItemWrapper, SortableTree, TreeItemComponentProps } from 'dnd-kit-sortable-tree';
 import { saveActivity } from 'apps/authoring/store/activities/actions/saveActivity';
 import { setCurrentPartPropertyFocus } from 'apps/authoring/store/parts/slice';
 import { clone } from 'utils/common';
@@ -373,6 +375,7 @@ const SequenceEditor: React.FC<any> = (props: any) => {
     addNewSequence(newSequenceEntry, item.activitySlug);
   };
   const handleRenameItem = async (item: any) => {
+    console.log('setting Items TO Rname ==>', { item });
     if (itemToRename.custom.sequenceName.trim() === '') {
       setItemToRename(undefined);
       return;
@@ -394,6 +397,7 @@ const SequenceEditor: React.FC<any> = (props: any) => {
     dispatch(upsertGroup({ group: newGroup }));
     await dispatch(upsertActivity({ activity: activityClone }));
     await dispatch(savePage({ undoable: false }));
+    console.log('setting Items TO Rname ==> undefined');
     setItemToRename(undefined);
   };
 
@@ -551,6 +555,175 @@ const SequenceEditor: React.FC<any> = (props: any) => {
       },
     );
 
+  const [mode, setMode] = useState<'editable' | 'hierarchy'>('editable');
+  const [hierarchyDnDEnabled, setHierarchyDnDEnabled] = useState(false);
+
+  // eslint-disable-next-line react/display-name
+  const TreeItem = React.forwardRef<HTMLDivElement, TreeItemComponentProps<any>>((props, ref) => {
+    const { item, depth } = props;
+    const { active } = useDndContext();
+    const title = item?.custom?.sequenceName || props?.item?.activitySlug;
+    const itemToRename = item.parameters.itemToRename;
+    const inputToFocus = useRef<HTMLInputElement>(null);
+    const liRef = useRef<HTMLLIElement>(null);
+    const indent = depth * 10;
+
+    useEffect(() => {
+      if (
+        itemToRename &&
+        itemToRename.custom.sequenceId === item.custom.sequenceId &&
+        inputToFocus.current
+      ) {
+        inputToFocus.current.focus();
+      }
+    }, [itemToRename, item.custom.sequenceId]);
+    useEffect(() => {
+      if (
+        !item.parameters.hierarchyDnDEnabled &&
+        item.custom.sequenceId === item.parameters.currentSequenceId &&
+        liRef?.current &&
+        !itemToRename &&
+        !active
+      ) {
+        requestAnimationFrame(() => {
+          liRef.current?.focus();
+          liRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+      }
+    }, [item, itemToRename, item.parameters.currentSequenceId, active]);
+
+    return (
+      <SimpleTreeItemWrapper {...props} ref={ref}>
+        <ListGroup.Item
+          ref={liRef}
+          as="li"
+          className={`aa-sequence-item${props?.item?.children?.length ? ' is-parent' : ''}`}
+          style={{ width: '100%', paddingLeft: `${indent}px` }}
+          key={`${props.item.id}`}
+          active={item.custom.sequenceId === item.parameters.currentSequenceId}
+          tabIndex={0}
+          onClick={(e) => {
+            if (!item.parameters.hierarchyDnDEnabled) {
+              !(e as any).isContextButtonClick && item.parameters.handleItemClick(e, item);
+              item.parameters.contextMenuClicked((e as any).isContextButtonClick);
+            }
+          }}
+        >
+          <div
+            className="aa-sequence-details-wrapper"
+            style={{ width: '100%', paddingLeft: '5px' }}
+          >
+            <div className="details" style={{ width: '100%' }}>
+              {!itemToRename ? (
+                <span className="title" style={{ width: '100%' }} title={item.custom.sequenceId}>
+                  {title}
+                </span>
+              ) : itemToRename.custom.sequenceId !== item.custom.sequenceId ? (
+                <span className="title">{title}</span>
+              ) : null}
+              {!item.parameters.hierarchyDnDEnabled &&
+                itemToRename &&
+                itemToRename?.custom.sequenceId === item.custom.sequenceId && (
+                  <input
+                    ref={inputToFocus}
+                    className="form-control form-control-sm rename-sequence-input"
+                    type="text"
+                    placeholder={item.custom.isLayer ? 'Layer name' : 'Screen name'}
+                    value={itemToRename.custom.sequenceName}
+                    onClick={(e) => e.preventDefault()}
+                    onChange={(e) =>
+                      item.parameters.setItemToRename({
+                        ...itemToRename,
+                        custom: { ...itemToRename.custom, sequenceName: e.target.value },
+                      })
+                    }
+                    onFocus={(e) => {
+                      e.target.select();
+                      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+                      item.parameters.setCurrentPartPropertyFocus({ focus: false });
+                    }}
+                    onBlur={() => {
+                      console.log('onblur called');
+                      item.parameters.handleRenameItem(item);
+                      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+                      item.parameters.setCurrentPartPropertyFocus({ focus: true });
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') item.parameters.handleRenameItem(item);
+                      if (e.key === 'Escape') item.parameters.setItemToRename(undefined);
+                    }}
+                  />
+                )}
+
+              {!active && item.custom.isLayer && (
+                <i className="fas fa-layer-group ml-2 align-middle aa-isLayer" />
+              )}
+              {!active && item.custom.isBank && (
+                <i className="fas fa-cubes ml-2 align-middle aa-isLayer" />
+              )}
+            </div>
+            {!active && !item.parameters.hierarchyDnDEnabled && (
+              <SequenceItemContextMenu
+                id={item.activitySlug}
+                item={item}
+                index={item.parameters.index}
+                arr={item.parameters.arr}
+                isParentQB={item.parameters.isParentQB}
+                contextMenuClicked={item.parameters.contextMenuClicked}
+              />
+            )}
+          </div>
+        </ListGroup.Item>
+      </SimpleTreeItemWrapper>
+    );
+  });
+  const manageTreeData = useCallback(
+    (data: any) => {
+      return data.map((item: any, index: number) => {
+        const newItem: any = {
+          id: item?.id || guid(),
+          ...item,
+          parameters: {
+            contextMenuClicked: props?.contextMenuClicked,
+            itemToRename,
+            index, // This index is specific to the current level
+            arr: data?.length,
+            isParentQB: item.custom.isBank,
+            currentSequenceId,
+            setCurrentPartPropertyFocus,
+            handleRenameItem,
+            setItemToRename,
+            handleItemClick,
+            hierarchyDnDEnabled,
+          },
+        };
+
+        // 🚀 If the item has children, recursively call manageTreeData on them
+        if (item.children && item.children.length > 0) {
+          newItem.children = manageTreeData(item.children); // Recursion!
+        }
+
+        return newItem;
+      });
+    },
+    [
+      itemToRename,
+      currentSequenceId,
+      props?.setItemToRename,
+      handleRenameItem,
+      handleItemClick,
+      props.contextMenuClicked,
+      hierarchyDnDEnabled,
+    ],
+  );
+
+  const [treeItems, setTreeItems] = useState(manageTreeData(hierarchy));
+
+  useEffect(() => {
+    const ddd = manageTreeData(hierarchy);
+    setTreeItems(ddd);
+  }, [hierarchy, currentSequenceId, hierarchyDnDEnabled, itemToRename]);
+
   return (
     <Accordion
       className="aa-sequence-editor"
@@ -615,9 +788,93 @@ const SequenceEditor: React.FC<any> = (props: any) => {
           maxHeight: !bottomLeftPanel && open ? 'calc(100vh - 100px)' : '55vh',
         }}
       >
-        <ListGroup ref={refSequence} as="ol" className="aa-sequence">
-          {getHierarchyList(hierarchy)}
-        </ListGroup>
+        <>
+          <div className="border border-gray-300 rounded p-1">
+            <div className="flex flex-col gap-2 mb-3">
+              <label className="flex items-start gap-2">
+                <input
+                  type="radio"
+                  name="mode"
+                  checked={mode === 'editable'}
+                  onChange={() => {
+                    setMode('editable');
+                    setHierarchyDnDEnabled(false);
+                  }}
+                  className="mt-1"
+                />
+                <span className="text-xs">
+                  <strong>Sortable Tree</strong> <br />
+                  <span className="text-sm text-gray-600">Drag & drop always enabled</span>
+                </span>
+              </label>
+
+              <label className="flex items-start gap-2">
+                <input
+                  type="radio"
+                  name="mode"
+                  checked={mode === 'hierarchy'}
+                  onChange={() => {
+                    setMode('hierarchy');
+                    setHierarchyDnDEnabled(false);
+                  }}
+                  className="mt-1"
+                />
+                <span className="text-xs">
+                  <strong>Hierarchy View</strong> <br />
+                  <span className="text-sm text-gray-600">Toggle drag & drop mode</span>
+                </span>
+              </label>
+            </div>
+
+            {mode === 'hierarchy' && (
+              <div className="ms-6 p-1">
+                <label className="flex items-center gap-3" htmlFor="toggleDnD">
+                  <input
+                    type="checkbox"
+                    id="toggleDnD"
+                    checked={hierarchyDnDEnabled}
+                    onChange={(e) => setHierarchyDnDEnabled(e.target.checked)}
+                    className="relative h-5 w-10 appearance-none rounded-full bg-gray-300 checked:bg-blue-500 transition-all peer"
+                  />
+                  <span className="text-sm">Enable Drag & Drop Mode</span>
+                </label>
+              </div>
+            )}
+          </div>
+
+          <ListGroup ref={refSequence} as="ol" className="aa-sequence">
+            {mode === 'editable' && (
+              <SortableTree
+                items={treeItems}
+                onItemsChanged={(items) => {
+                  const newSequence = clone(flattenHierarchy(items));
+                  const newGroup = { ...currentGroup, children: newSequence };
+                  dispatch(upsertGroup({ group: newGroup }));
+                  dispatch(savePage({ undoable: false }));
+                  setTreeItems(items);
+                }}
+                TreeItemComponent={TreeItem}
+              />
+            )}
+
+            {mode === 'hierarchy' &&
+              (hierarchyDnDEnabled ? (
+                <SortableTree
+                  items={treeItems}
+                  onItemsChanged={(items) => {
+                    const newSequence = clone(flattenHierarchy(items));
+                    const newGroup = { ...currentGroup, children: newSequence };
+                    dispatch(upsertGroup({ group: newGroup }));
+                    dispatch(savePage({ undoable: false }));
+                    setTreeItems(items);
+                  }}
+                  TreeItemComponent={TreeItem}
+                />
+              ) : (
+                getHierarchyList(hierarchy)
+              ))}
+          </ListGroup>
+        </>
       </Accordion.Collapse>
       {showConfirmDelete && (
         <ConfirmDelete
