@@ -18,7 +18,6 @@ defmodule OliWeb.GenAI.FeatureConfigsView do
 
   @impl true
   def mount(_, _session, socket) do
-
     show_defaults_only? = false
 
     all = all(show_defaults_only?)
@@ -173,8 +172,12 @@ defmodule OliWeb.GenAI.FeatureConfigsView do
         <div>
           <label for="feature" class="block text-sm font-medium text-gray-700">Feature</label>
           <select id="feature" name="feature" value={@selected_feature} class={@form_control_classes}>
-            <option value="student_dialogue" selected={@selected_feature == :student_dialogue}>Student Dialogue</option>
-            <option value="instructor_dashboard" selected={@selected_feature == :instructor_dashboard}>Instructor Dashboard</option>
+            <option value="student_dialogue" selected={@selected_feature == :student_dialogue}>
+              Student Dialogue
+            </option>
+            <option value="instructor_dashboard" selected={@selected_feature == :instructor_dashboard}>
+              Instructor Dashboard
+            </option>
           </select>
         </div>
       </form>
@@ -295,9 +298,10 @@ defmodule OliWeb.GenAI.FeatureConfigsView do
   @impl true
   def handle_event("change", %{"id" => "slug", "value" => slug}, socket) do
     case Sections.get_section_by_slug(slug) do
-      nil -> 
+      nil ->
         {:noreply, assign(socket, section_slug: slug, section: nil)}
-      section -> 
+
+      section ->
         {:noreply, assign(socket, section_slug: slug, section: section)}
     end
   end
@@ -444,7 +448,8 @@ defmodule OliWeb.GenAI.FeatureConfigsView do
         all = all(socket.assigns.show_defaults_only?)
         changeset = FeatureConfig.changeset(feature_config, %{})
 
-        socket = socket
+        socket =
+          socket
           |> put_flash(:info, "Successfully created new feature config.")
           |> assign(selected: feature_config, feature_configs: all, changeset: changeset)
 
