@@ -105,7 +105,7 @@ defmodule OliWeb.Workspace.CourseAuthor.ProductsLiveTest do
       assert render(view) =~ "Showing all results (1 total)"
 
       # Table content
-      product_title_col = render(element(view, "table tbody tr td:nth-of-type(1) div"))
+      product_title_col = render(element(view, "table tbody tr td:nth-of-type(1) div a"))
 
       # Table content - Product title - text
       assert product_title_col =~ "Some product"
@@ -115,11 +115,11 @@ defmodule OliWeb.Workspace.CourseAuthor.ProductsLiveTest do
                "/workspaces/course_author/#{project.slug}/products/some_product"
 
       # Table content - Status
-      assert render(element(view, "table tbody tr td:nth-of-type(2) div")) =~ "Active"
-      assert render(element(view, "table tbody tr td:nth-of-type(3) div")) =~ "None"
+      assert render(element(view, "table tbody tr td:last-of-type div span")) =~ "Active"
+      assert render(element(view, "table tbody tr td:nth-of-type(4) div")) =~ "None"
 
       # Table content - Base project
-      base_project_col = render(element(view, "table tbody tr td:nth-of-type(4) div"))
+      base_project_col = render(element(view, "table tbody tr td:nth-of-type(5) div a"))
 
       # Table content - Base project - text
       assert base_project_col =~ "#{project.title}"
