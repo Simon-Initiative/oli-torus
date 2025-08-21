@@ -2390,6 +2390,10 @@ select {
   fill: #EEEBF5;
 }
 
+.stroke-Text-text-high {
+  stroke: #353740;
+}
+
 .dark .stroke-Text-text-high {
   stroke: #EEEBF5;
 }
