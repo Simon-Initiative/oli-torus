@@ -512,8 +512,8 @@ defmodule Oli.Delivery.Sections.Blueprint do
 
     filter_by_status =
       if opts[:include_archived],
-        do: dynamic([s, _], s.status in [:active, :archived]),
-        else: dynamic([s, _], s.status == :active)
+        do: dynamic([s, _], s.status in [:active, :archived, :deleted]),
+        else: dynamic([s, _], s.status in [:active, :deleted])
 
     filter_by_text =
       case opts[:text_search] do
@@ -542,22 +542,26 @@ defmodule Oli.Delivery.Sections.Blueprint do
       Section
       |> join(:inner, [s], bp in Project, on: s.base_project_id == bp.id)
       |> preload([s, bp], base_project: bp)
-      |> where([s, _], s.type == :blueprint)
+      |> join(:left, [s, _bp], i in Institution, on: s.institution_id == i.id)
+      |> where([s, bp], s.type == :blueprint)
       |> where(^filter_by_text)
       |> where(^filter_by_project)
       |> where(^filter_by_status)
       |> limit(^limit)
       |> offset(^offset)
-      |> select([s, _bp], %{s | total_count: fragment("count(*) OVER()")})
+      |> select([s, bp, i], %{
+        s
+        | institution_name: i.name,
+          total_count: fragment("count(*) OVER()")
+      })
 
     query =
       case field do
         :base_project_id ->
-          order_by(
-            query,
-            [s, bp],
-            [{^direction, bp.title}]
-          )
+          order_by(query, [s, bp], [{^direction, bp.title}])
+
+        :institution_name ->
+          order_by(query, [s, _bp, i], {^direction, i.name})
 
         :requires_payment ->
           order_by(
@@ -577,7 +581,7 @@ defmodule Oli.Delivery.Sections.Blueprint do
           )
 
         _ ->
-          order_by(query, [p, _, _, _], {^direction, field(p, ^field)})
+          order_by(query, [s, _, _], {^direction, field(s, ^field)})
       end
 
     Repo.all(query)

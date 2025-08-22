@@ -152,10 +152,7 @@ defmodule Oli.Delivery do
            {:ok, section} <- Sections.create_section_resources(section, publication),
            {:ok, _} <- Sections.rebuild_contained_pages(section),
            {:ok, _} <- Sections.rebuild_contained_objectives(section),
-           {:ok, _enrollment} <-
-             Sections.enroll(user.id, section.id, [
-               ContextRoles.get_role(:context_instructor)
-             ]) do
+           {:ok, _section} <- maybe_enroll_user_as_instructor(user, section) do
         # Log the section creation
         Oli.Auditing.capture(
           user,
@@ -167,7 +164,6 @@ defmodule Oli.Delivery do
             "base_project_id" => section.base_project_id
           }
         )
-
         PostProcessing.apply(section, :all)
       else
         {:error, changeset} ->
@@ -181,10 +177,7 @@ defmodule Oli.Delivery do
       with {:ok, section} <- Oli.Delivery.Sections.Blueprint.duplicate(blueprint, section_params),
            {:ok, _} <- Sections.rebuild_contained_pages(section),
            {:ok, _} <- Sections.rebuild_contained_objectives(section),
-           {:ok, _maybe_enrollment} <-
-             Sections.enroll(user.id, section.id, [
-               ContextRoles.get_role(:context_instructor)
-             ]) do
+           {:ok, _section} <- maybe_enroll_user_as_instructor(user, section) do
         # Log the section creation
         Oli.Auditing.capture(
           user,
@@ -197,13 +190,24 @@ defmodule Oli.Delivery do
             "blueprint_id" => blueprint.id
           }
         )
-
         PostProcessing.apply(section, :discussions)
       else
         {:error, changeset} -> Repo.rollback(changeset)
       end
     end)
   end
+
+  defp maybe_enroll_user_as_instructor(%User{id: user_id}, section) do
+    # Enroll the user in the section with instructor role
+    case Sections.enroll(user_id, section.id, [ContextRoles.get_role(:context_instructor)]) do
+      {:ok, _enrollment} -> {:ok, section}
+      {:error, changeset} -> {:error, changeset}
+    end
+  end
+
+  # In cases where the user is nil, this section is being created by
+  # an admin and therefore does not need to enroll a user.
+  defp maybe_enroll_user_as_instructor(_, section), do: {:ok, section}
 
   # Returns a product or project used to create the section based on the source identifier.
   defp from_source_identifier(source_id) do

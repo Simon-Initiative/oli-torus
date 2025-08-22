@@ -77,14 +77,9 @@ defmodule OliWeb.Projects.ProjectsLive do
       show_all: show_all,
       show_deleted: show_deleted,
       author: author
-    } =
-      socket.assigns
+    } = socket.assigns
 
-    table_model =
-      SortableTableModel.update_from_params(
-        socket.assigns.table_model,
-        params
-      )
+    table_model = SortableTableModel.update_from_params(socket.assigns.table_model, params)
 
     offset = get_int_param(params, "offset", 0)
     text_search = get_param(params, "text_search", "")
@@ -125,8 +120,7 @@ defmodule OliWeb.Projects.ProjectsLive do
         text_search: text_search
       )
 
-    table_model = Map.put(table_model, :rows, projects)
-
+    table_model = %SortableTableModel{table_model | rows: projects}
     total_count = determine_total(projects)
 
     {:noreply,
@@ -154,7 +148,7 @@ defmodule OliWeb.Projects.ProjectsLive do
         </span>
         <button
           id="button-new-project"
-          class="btn btn-sm rounded-md bg-[#0080FF] text-[#FFFFFF] font-semibold shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] px-4 py-2"
+          class="btn btn-sm rounded-md bg-Fill-Buttons-fill-primary text-Text-text-white font-semibold shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] px-4 py-2"
           phx-click="show_create_project_modal"
         >
           <i class="fa fa-plus pr-2"></i> New Project
@@ -191,7 +185,7 @@ defmodule OliWeb.Projects.ProjectsLive do
         </div>
       </div>
 
-      <div class="flex w-fit gap-4 p-2 pr-8 mx-4 mt-3 mb-2 shadow-[0px_2px_6.099999904632568px_0px_rgba(0,0,0,0.10)] border border-[#ced1d9] dark:border-[#3B3740] dark:bg-[#000000]">
+      <div class="flex w-fit gap-4 p-2 pr-8 mx-4 mt-3 mb-2 shadow-[0px_2px_6.099999904632568px_0px_rgba(0,0,0,0.10)] border border-Border-border-default bg-Background-bg-secondary">
         <.form for={%{}} phx-change="text_search_change" class="w-56">
           <SearchInput.render id="text-search" name="project_name" text={@text_search} />
         </.form>
@@ -201,7 +195,7 @@ defmodule OliWeb.Projects.ProjectsLive do
         </button>
 
         <button
-          class="ml-2 mr-4 text-center text-[#353740] dark:text-[#EEEBF5] text-sm font-normal leading-none flex items-center gap-x-1 hover:text-[#006CD9] dark:hover:text-[#4CA6FF]"
+          class="ml-2 mr-4 text-center text-Text-text-high text-sm font-normal leading-none flex items-center gap-x-1 hover:text-Text-text-button"
           phx-click="clear_all_filters"
         >
           <Icons.trash /> Clear All Filters

@@ -85,7 +85,7 @@ defmodule OliWeb.Router do
 
   pipeline :delivery do
     plug(Oli.Plugs.SetVrAgentValue)
-    plug(OliWeb.Plugs.AllowIframe)
+    plug(OliWeb.Plugs.AllowIframeCSP)
   end
 
   # set the layout to be workspace
@@ -361,6 +361,11 @@ defmodule OliWeb.Router do
     )
 
     post("/jcourse/dashboard/log/server", OliWeb.LegacyLogsController, :process)
+  end
+
+  scope "/api/v1/superactivity/media", OliWeb do
+    pipe_through([:api, :authoring_protected])
+    post("/", LegacySuperactivityController, :create_media)
   end
 
   scope "/", OliWeb do
@@ -1576,6 +1581,11 @@ defmodule OliWeb.Router do
     live("/vr_user_agents", Admin.VrUserAgentsView)
     live("/products", Products.ProductsView)
     live("/datasets", Workspaces.CourseAuthor.DatasetsLive)
+
+    # Gen AI
+    live("/gen_ai/registered_models", GenAI.RegisteredModelsView)
+    live("/gen_ai/service_configs", GenAI.ServiceConfigsView)
+    live("/gen_ai/feature_configs", GenAI.FeatureConfigsView)
 
     live("/products/:product_id/discounts", Products.Payments.Discounts.ProductsIndexView)
 

@@ -15,6 +15,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   alias Oli.Accounts.User
   alias Oli.Delivery.Attempts.PageLifecycle
   alias Oli.Delivery.Attempts.PageLifecycle.FinalizationSummary
+  alias Oli.Delivery.Attempts.Core
   alias Oli.Publishing.DeliveryResolver, as: Resolver
   alias Oli.Resources.Collaboration
   alias Oli.Resources.Collaboration.CollabSpaceConfig
@@ -131,7 +132,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         %{assigns: %{view: :graded_page}} =
           socket
       ) do
-    %{page_context: page_context} = socket.assigns
+    %{page_context: page_context, section: section} = socket.assigns
 
     if connected?(socket) do
       send(self(), :gc)
@@ -158,6 +159,17 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
       Oli.Delivery.ScoreAsYouGoNotifications.subscribe(resource_attempt.id)
 
+      # Get the latest ResourceAccess for this resource to get the current out_of value
+      resource_access =
+        Core.get_resource_access(
+          page_context.page.resource_id,
+          section.slug,
+          page_context.user.id
+        )
+
+      current_out_of =
+        if resource_access, do: resource_access.out_of, else: resource_attempt.out_of
+
       socket =
         socket
         |> emit_page_viewed_event()
@@ -175,7 +187,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           attempt_start_time: resource_attempt.inserted_at |> to_epoch,
           review_mode: page_context.review_mode,
           current_score: resource_attempt.score,
-          current_out_of: resource_attempt.out_of,
+          current_out_of: current_out_of,
           effective_settings: page_context.effective_settings
         )
         |> slim_assigns()

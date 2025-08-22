@@ -100,6 +100,8 @@ defmodule Oli.Release do
   end
 
   def seed do
+    # Initialize Vault before seeds to ensure Cloak.Ecto can encrypt fields
+    Oli.Vault.start_link()
     load_app()
 
     for repo <- repos() do
