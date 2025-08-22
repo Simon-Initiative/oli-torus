@@ -375,7 +375,6 @@ const SequenceEditor: React.FC<any> = (props: any) => {
     addNewSequence(newSequenceEntry, item.activitySlug);
   };
   const handleRenameItem = async (item: any) => {
-    console.log('setting Items TO Rname ==>', { item });
     if (itemToRename.custom.sequenceName.trim() === '') {
       setItemToRename(undefined);
       return;
@@ -397,7 +396,6 @@ const SequenceEditor: React.FC<any> = (props: any) => {
     dispatch(upsertGroup({ group: newGroup }));
     await dispatch(upsertActivity({ activity: activityClone }));
     await dispatch(savePage({ undoable: false }));
-    console.log('setting Items TO Rname ==> undefined');
     setItemToRename(undefined);
   };
 
