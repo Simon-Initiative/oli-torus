@@ -2,6 +2,13 @@ defmodule Oli.Auditing.LogEvent do
   use Ecto.Schema
   import Ecto.Changeset
 
+  # The following are event types that are initiated by user actions,
+  # either from an Author or a User (intructor).  Eventually we may
+  # introduce "user-less" event types, things that the system is doing
+  # itself (like automated fallback of a primary registered LLM model
+  # to a backup one). These could be represented by BOTH user_id and
+  # author_id being nil. We'd have to also consider updating the filter
+  # in the UI to account for System events.
   @event_types [
     :user_deleted,
     :author_deleted,
