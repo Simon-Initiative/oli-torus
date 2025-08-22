@@ -1683,6 +1683,7 @@ defmodule OliWeb.Router do
     # System admin
     scope "/" do
       pipe_through([:require_authenticated_system_admin])
+      live("/audit_log", Admin.AuditLogLive)
       get("/activity_review", ActivityReviewController, :index)
       live("/part_attempts", Admin.PartAttemptsView)
 

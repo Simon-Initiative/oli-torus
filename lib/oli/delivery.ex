@@ -153,6 +153,18 @@ defmodule Oli.Delivery do
            {:ok, _} <- Sections.rebuild_contained_pages(section),
            {:ok, _} <- Sections.rebuild_contained_objectives(section),
            {:ok, _section} <- maybe_enroll_user_as_instructor(user, section) do
+        # Log the section creation
+        Oli.Auditing.capture(
+          user,
+          :section_created,
+          section,
+          %{
+            "section_title" => section.title,
+            "type" => Atom.to_string(section.type),
+            "base_project_id" => section.base_project_id
+          }
+        )
+
         PostProcessing.apply(section, :all)
       else
         {:error, changeset} ->
@@ -167,6 +179,19 @@ defmodule Oli.Delivery do
            {:ok, _} <- Sections.rebuild_contained_pages(section),
            {:ok, _} <- Sections.rebuild_contained_objectives(section),
            {:ok, _section} <- maybe_enroll_user_as_instructor(user, section) do
+        # Log the section creation
+        Oli.Auditing.capture(
+          user,
+          :section_created,
+          section,
+          %{
+            "section_title" => section.title,
+            "type" => Atom.to_string(section.type),
+            "base_project_id" => section.base_project_id,
+            "blueprint_id" => blueprint.id
+          }
+        )
+
         PostProcessing.apply(section, :discussions)
       else
         {:error, changeset} -> Repo.rollback(changeset)
