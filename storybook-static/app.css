@@ -12634,6 +12634,10 @@ table.table-striped tbody tr:nth-child(even) {
   stroke: #006CD9;
 }
 
+.stroke-\[\#0080FF\] {
+  stroke: #0080FF;
+}
+
 .stroke-\[\#0CAF61\] {
   stroke: #0CAF61;
 }
