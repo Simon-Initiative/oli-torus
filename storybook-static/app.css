@@ -10140,6 +10140,10 @@ table.table-striped tbody tr:nth-child(even) {
   min-width: 0px;
 }
 
+.min-w-\[200px\] {
+  min-width: 200px;
+}
+
 .min-w-\[220px\] {
   min-width: 220px;
 }
@@ -10265,6 +10269,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .max-w-xl {
   max-width: 36rem;
+}
+
+.max-w-xs {
+  max-width: 20rem;
 }
 
 .flex-1 {
@@ -11130,6 +11138,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .whitespace-nowrap {
   white-space: nowrap;
+}
+
+.whitespace-pre-wrap {
+  white-space: pre-wrap;
 }
 
 .break-words {
@@ -12204,6 +12216,11 @@ table.table-striped tbody tr:nth-child(even) {
   background-color: rgb(238 242 255 / var(--tw-bg-opacity));
 }
 
+.bg-indigo-600 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(79 70 229 / var(--tw-bg-opacity));
+}
+
 .bg-inherit {
   background-color: inherit;
 }
@@ -12391,6 +12408,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .bg-opacity-50 {
   --tw-bg-opacity: 0.5;
+}
+
+.bg-opacity-75 {
+  --tw-bg-opacity: 0.75;
 }
 
 .bg-opacity-90 {
@@ -14058,6 +14079,11 @@ table.table-striped tbody tr:nth-child(even) {
   color: rgb(29 68 129 / var(--tw-text-opacity));
 }
 
+.text-blue-800 {
+  --tw-text-opacity: 1;
+  color: rgb(19 44 83 / var(--tw-text-opacity));
+}
+
 .text-body {
   --tw-text-opacity: 1;
   color: rgb(255 255 255 / var(--tw-text-opacity));
@@ -14207,6 +14233,11 @@ table.table-striped tbody tr:nth-child(even) {
   color: rgb(21 128 61 / var(--tw-text-opacity));
 }
 
+.text-green-800 {
+  --tw-text-opacity: 1;
+  color: rgb(22 101 52 / var(--tw-text-opacity));
+}
+
 .text-high-24 {
   --tw-text-opacity: 1;
   color: rgb(238 235 245 / var(--tw-text-opacity));
@@ -14294,6 +14325,11 @@ table.table-striped tbody tr:nth-child(even) {
 .text-red-700 {
   --tw-text-opacity: 1;
   color: rgb(185 28 28 / var(--tw-text-opacity));
+}
+
+.text-red-800 {
+  --tw-text-opacity: 1;
+  color: rgb(153 27 27 / var(--tw-text-opacity));
 }
 
 .text-rose-600 {
@@ -19847,6 +19883,11 @@ Not supports in Firefox and IE */
   background-color: rgb(224 231 255 / var(--tw-bg-opacity));
 }
 
+.hover\:bg-indigo-700:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(67 56 202 / var(--tw-bg-opacity));
+}
+
 .hover\:bg-primary-100:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(193 211 241 / var(--tw-bg-opacity));
@@ -19974,6 +20015,11 @@ Not supports in Firefox and IE */
 .hover\:text-blue-700:hover {
   --tw-text-opacity: 1;
   color: rgb(29 68 129 / var(--tw-text-opacity));
+}
+
+.hover\:text-blue-800:hover {
+  --tw-text-opacity: 1;
+  color: rgb(19 44 83 / var(--tw-text-opacity));
 }
 
 .hover\:text-body-color:hover {
@@ -22470,8 +22516,21 @@ Not supports in Firefox and IE */
     grid-column: span 6 / span 6;
   }
 
+  .sm\:my-8 {
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+  }
+
   .sm\:mb-0 {
     margin-bottom: 0px;
+  }
+
+  .sm\:ml-3 {
+    margin-left: 0.75rem;
+  }
+
+  .sm\:ml-4 {
+    margin-left: 1rem;
   }
 
   .sm\:mr-2 {
@@ -22486,8 +22545,20 @@ Not supports in Firefox and IE */
     margin-right: auto;
   }
 
+  .sm\:mt-0 {
+    margin-top: 0px;
+  }
+
   .sm\:mt-20 {
     margin-top: 5rem;
+  }
+
+  .sm\:block {
+    display: block;
+  }
+
+  .sm\:inline-block {
+    display: inline-block;
   }
 
   .sm\:inline {
@@ -22506,12 +22577,24 @@ Not supports in Firefox and IE */
     height: 60px;
   }
 
+  .sm\:h-screen {
+    height: 100vh;
+  }
+
   .sm\:w-\[60px\] {
     width: 60px;
   }
 
   .sm\:w-auto {
     width: auto;
+  }
+
+  .sm\:w-full {
+    width: 100%;
+  }
+
+  .sm\:max-w-lg {
+    max-width: 32rem;
   }
 
   .sm\:max-w-md {
@@ -22539,8 +22622,16 @@ Not supports in Firefox and IE */
     flex-direction: row;
   }
 
+  .sm\:flex-row-reverse {
+    flex-direction: row-reverse;
+  }
+
   .sm\:flex-col {
     flex-direction: column;
+  }
+
+  .sm\:items-start {
+    align-items: flex-start;
   }
 
   .sm\:items-end {
@@ -22563,6 +22654,10 @@ Not supports in Firefox and IE */
     border-radius: 0.375rem;
   }
 
+  .sm\:p-0 {
+    padding: 0px;
+  }
+
   .sm\:p-16 {
     padding: 4rem;
   }
@@ -22581,6 +22676,11 @@ Not supports in Firefox and IE */
     padding-right: 4rem;
   }
 
+  .sm\:px-6 {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+
   .sm\:px-9 {
     padding-left: 2.25rem;
     padding-right: 2.25rem;
@@ -22595,6 +22695,10 @@ Not supports in Firefox and IE */
     padding-bottom: 0px;
   }
 
+  .sm\:pb-4 {
+    padding-bottom: 1rem;
+  }
+
   .sm\:text-left {
     text-align: left;
   }
@@ -22605,6 +22709,10 @@ Not supports in Firefox and IE */
 
   .sm\:text-right {
     text-align: right;
+  }
+
+  .sm\:align-middle {
+    vertical-align: middle;
   }
 
   .sm\:text-sm {
