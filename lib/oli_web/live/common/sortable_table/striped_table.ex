@@ -133,7 +133,7 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
   def render(assigns) do
     ~H"""
     <table class={"min-w-full border " <> @additional_table_class}>
-      <thead class="sticky top-0 bg-white dark:bg-[#000000]">
+      <thead class="sticky top-0 bg-white dark:bg-[#000000] z-10">
         <tr>
           <%= for column_spec <- @model.column_specs do %>
             {render_th(
