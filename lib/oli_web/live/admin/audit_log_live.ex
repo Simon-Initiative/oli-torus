@@ -38,7 +38,6 @@ defmodule OliWeb.Admin.AuditLogLive do
   end
 
   def mount(_, _session, socket) do
-
     events =
       Auditing.browse_events(
         %Paging{offset: 0, limit: @limit},
@@ -52,17 +51,17 @@ defmodule OliWeb.Admin.AuditLogLive do
     {:ok, table_model} = TableModel.new(events, ctx)
 
     {:ok,
-      assign(socket,
-        title: "Audit Log",
-        breadcrumbs: set_breadcrumbs(),
-        events: events,
-        total_count: total_count,
-        table_model: table_model,
-        options: @default_options,
-        show_details_modal: false,
-        modal_details: nil,
-        event_types: LogEvent.event_types()
-      )}
+     assign(socket,
+       title: "Audit Log",
+       breadcrumbs: set_breadcrumbs(),
+       events: events,
+       total_count: total_count,
+       table_model: table_model,
+       options: @default_options,
+       show_details_modal: false,
+       modal_details: nil,
+       event_types: LogEvent.event_types()
+     )}
   end
 
   def handle_params(params, _, socket) do
