@@ -45,6 +45,8 @@ if !Oli.Repo.get_by(Oli.Accounts.Author,
     |> Author.bootstrap_admin_changeset(%{
       email: System.get_env("ADMIN_EMAIL", "admin@example.edu"),
       name: "Administrator",
+      family_name: "Siegel",
+      given_name: "Darren",
       password: System.get_env("ADMIN_PASSWORD", "changeme"),
       system_role_id: Oli.Accounts.SystemRole.role_id().system_admin,
       email_confirmed_at: DateTime.utc_now()

@@ -23,7 +23,7 @@ defmodule OliWeb.ProjectController do
     case Course.create_project(title, conn.assigns.current_author) do
       {:ok, %{project: project}} ->
         redirect(conn,
-          to: ~p"/workspaces/course_author/#{project.slug}/overview"
+          to: ~p"/workspaces/course_author/#{project.slug}/landing"
         )
 
       {:error, _changeset} ->
@@ -38,14 +38,14 @@ defmodule OliWeb.ProjectController do
       {:ok, project} ->
         conn
         |> put_flash(:info, "Project duplicated. You've been redirected to your new project.")
-        |> redirect(to: ~p"/workspaces/course_author/#{project.slug}/overview")
+        |> redirect(to: ~p"/workspaces/course_author/#{project.slug}/landing")
 
       {:error, message} ->
         project = conn.assigns.project
 
         conn
         |> put_flash(:error, "Project could not be copied: " <> message)
-        |> redirect(to: ~p"/workspaces/course_author/#{project.slug}/overview")
+        |> redirect(to: ~p"/workspaces/course_author/#{project.slug}/landing")
     end
   end
 
@@ -54,14 +54,14 @@ defmodule OliWeb.ProjectController do
       {:ok, project} ->
         conn
         |> put_flash(:info, "AI Activation Points enabled.")
-        |> redirect(to: ~p"/workspaces/course_author/#{project.slug}/overview")
+        |> redirect(to: ~p"/workspaces/course_author/#{project.slug}/landing")
 
       {:error, message} ->
         project = conn.assigns.project
 
         conn
         |> put_flash(:error, "Project could not be edited: " <> message)
-        |> redirect(to: ~p"/workspaces/course_author/#{project.slug}/overview")
+        |> redirect(to: ~p"/workspaces/course_author/#{project.slug}/landing")
     end
   end
 end

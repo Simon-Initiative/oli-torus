@@ -254,7 +254,7 @@ defmodule OliWeb.Workspaces.Utils do
       %SubMenuItem{
         text: "Overview",
         icon: "author_overview",
-        view: :overview
+        view: :landing
       },
       %SubMenuItem{
         text: "Create",
@@ -336,6 +336,11 @@ defmodule OliWeb.Workspaces.Utils do
             parent_view: :improve
           }
         ]
+      },
+      %SubMenuItem{
+        text: "Settings",
+        icon: "settings",
+        view: :overview
       }
     ]
   end

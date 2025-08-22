@@ -184,7 +184,7 @@ defmodule OliWeb.Common.Breadcrumb do
     [
       new(%{
         full_title: "Project Overview",
-        link: ~p"/workspaces/course_author/#{project_slug}/overview"
+        link: ~p"/workspaces/course_author/#{project_slug}/landing"
       }),
       new(%{
         full_title: "All Pages",
@@ -241,7 +241,7 @@ defmodule OliWeb.Common.Breadcrumb do
     [
       Breadcrumb.new(%{
         full_title: project.title,
-        link: ~p"/workspaces/course_author/#{project.slug}/overview"
+        link: ~p"/workspaces/course_author/#{project.slug}/landing"
       })
     ]
   end

@@ -73,7 +73,7 @@ defmodule OliWeb.Projects.TableModel do
     ~H"""
     <div class="flex flex-col">
       <a
-        href={~p"/workspaces/course_author/#{@project.slug}/overview"}
+        href={~p"/workspaces/course_author/#{@project.slug}/landing"}
         class="text-Text-text-link text-base font-medium leading-normal"
       >
         {@project.title}
