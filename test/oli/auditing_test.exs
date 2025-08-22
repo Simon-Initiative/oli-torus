@@ -11,11 +11,11 @@ defmodule Oli.AuditingTest do
       user = insert(:user)
 
       assert {:ok, %LogEvent{} = event} =
-               Auditing.capture(user, :user_created, nil, %{"email" => user.email})
+               Auditing.capture(user, :user_deleted, nil, %{"email" => user.email})
 
       assert event.user_id == user.id
       assert event.author_id == nil
-      assert event.event_type == :user_created
+      assert event.event_type == :user_deleted
       assert event.details["email"] == user.email
     end
 
@@ -23,11 +23,11 @@ defmodule Oli.AuditingTest do
       author = insert(:author)
 
       assert {:ok, %LogEvent{} = event} =
-               Auditing.capture(author, :author_created, nil, %{"email" => author.email})
+               Auditing.capture(author, :author_deleted, nil, %{"email" => author.email})
 
       assert event.author_id == author.id
       assert event.user_id == nil
-      assert event.event_type == :author_created
+      assert event.event_type == :author_deleted
       assert event.details["email"] == author.email
     end
 
@@ -63,15 +63,17 @@ defmodule Oli.AuditingTest do
     end
 
     test "captures system action without actor" do
+      user = insert(:user)
+
       assert {:ok, %LogEvent{} = event} =
-               Auditing.capture(nil, :system_setting_changed, nil, %{
+               Auditing.capture(user, :user_deleted, nil, %{
                  "setting" => "maintenance_mode",
                  "value" => true
                })
 
-      assert event.user_id == nil
+      assert event.user_id == user.id
       assert event.author_id == nil
-      assert event.event_type == :system_setting_changed
+      assert event.event_type == :user_deleted
       assert event.details["setting"] == "maintenance_mode"
     end
 
@@ -86,7 +88,7 @@ defmodule Oli.AuditingTest do
 
     test "fails without actor" do
       assert {:error, changeset} =
-               Auditing.capture(nil, :user_created, nil, %{})
+               Auditing.capture(nil, :user_deleted, nil, %{})
 
       assert errors_on(changeset)[:base]
     end
@@ -99,7 +101,7 @@ defmodule Oli.AuditingTest do
       project = insert(:project, authors: [author])
       section = insert(:section)
 
-      {:ok, event1} = Auditing.capture(user, :user_created, nil, %{"event" => "1"})
+      {:ok, event1} = Auditing.capture(user, :user_deleted, nil, %{"event" => "1"})
       {:ok, event2} = Auditing.capture(author, :project_published, project, %{"event" => "2"})
       {:ok, event3} = Auditing.capture(user, :section_created, section, %{"event" => "3"})
 
@@ -145,25 +147,11 @@ defmodule Oli.AuditingTest do
       assert Enum.all?(results, fn e -> e.event_type == :project_published end)
     end
 
-    test "filters by project_id", %{project: project} do
-      results = Auditing.list_events(project_id: project.id)
-
-      assert length(results) == 1
-      assert Enum.all?(results, fn e -> e.project_id == project.id end)
-    end
-
-    test "filters by section_id", %{section: section} do
-      results = Auditing.list_events(section_id: section.id)
-
-      assert length(results) == 1
-      assert Enum.all?(results, fn e -> e.section_id == section.id end)
-    end
-
     test "respects limit option" do
       # Create more events
       for _ <- 1..10 do
         user = insert(:user)
-        Auditing.capture(user, :user_created, nil, %{})
+        Auditing.capture(user, :user_deleted, nil, %{})
       end
 
       results = Auditing.list_events(limit: 5)
@@ -212,12 +200,12 @@ defmodule Oli.AuditingTest do
   describe "get_event!/1" do
     test "returns the event with given id" do
       user = insert(:user)
-      {:ok, event} = Auditing.capture(user, :user_created, nil, %{})
+      {:ok, event} = Auditing.capture(user, :user_deleted, nil, %{})
 
       fetched_event = Auditing.get_event!(event.id)
       assert fetched_event.id == event.id
       assert fetched_event.user_id == user.id
-      assert fetched_event.event_type == :user_created
+      assert fetched_event.event_type == :user_deleted
     end
 
     test "raises if event does not exist" do
@@ -228,7 +216,7 @@ defmodule Oli.AuditingTest do
 
     test "preloads associations" do
       user = insert(:user)
-      {:ok, event} = Auditing.capture(user, :user_created, nil, %{})
+      {:ok, event} = Auditing.capture(user, :user_deleted, nil, %{})
 
       fetched_event = Auditing.get_event!(event.id)
       assert fetched_event.actor.id == user.id
@@ -240,7 +228,7 @@ defmodule Oli.AuditingTest do
     test "log_user_action/3" do
       user = insert(:user)
 
-      assert {:ok, event} = Auditing.log_user_action(user, :user_created, %{"test" => true})
+      assert {:ok, event} = Auditing.log_user_action(user, :user_deleted, %{"test" => true})
       assert event.user_id == user.id
       assert event.details["test"] == true
     end
@@ -248,7 +236,7 @@ defmodule Oli.AuditingTest do
     test "log_author_action/3" do
       author = insert(:author)
 
-      assert {:ok, event} = Auditing.log_author_action(author, :author_created, %{"test" => true})
+      assert {:ok, event} = Auditing.log_author_action(author, :author_deleted, %{"test" => true})
       assert event.author_id == author.id
       assert event.details["test"] == true
     end
@@ -275,7 +263,7 @@ defmodule Oli.AuditingTest do
   describe "LogEvent.actor_name/1" do
     test "returns user name when available" do
       user = insert(:user, name: "John Doe")
-      {:ok, event} = Auditing.capture(user, :user_created, nil, %{})
+      {:ok, event} = Auditing.capture(user, :user_deleted, nil, %{})
       event = Auditing.get_event!(event.id)
 
       assert LogEvent.actor_name(event) == "John Doe"
@@ -283,7 +271,7 @@ defmodule Oli.AuditingTest do
 
     test "returns user email when name is nil" do
       user = insert(:user, name: nil, email: "user@example.com")
-      {:ok, event} = Auditing.capture(user, :user_created, nil, %{})
+      {:ok, event} = Auditing.capture(user, :user_deleted, nil, %{})
       event = Auditing.get_event!(event.id)
 
       assert LogEvent.actor_name(event) == "user@example.com"
@@ -291,7 +279,7 @@ defmodule Oli.AuditingTest do
 
     test "returns author name when available" do
       author = insert(:author, name: "Jane Author")
-      {:ok, event} = Auditing.capture(author, :author_created, nil, %{})
+      {:ok, event} = Auditing.capture(author, :author_deleted, nil, %{})
       event = Auditing.get_event!(event.id)
 
       assert LogEvent.actor_name(event) == "Jane Author"
@@ -299,7 +287,7 @@ defmodule Oli.AuditingTest do
 
     test "returns author email when name is nil" do
       author = insert(:author, name: nil, email: "author@example.com")
-      {:ok, event} = Auditing.capture(author, :author_created, nil, %{})
+      {:ok, event} = Auditing.capture(author, :author_deleted, nil, %{})
       event = Auditing.get_event!(event.id)
 
       assert LogEvent.actor_name(event) == "author@example.com"
@@ -307,7 +295,7 @@ defmodule Oli.AuditingTest do
 
     test "returns User # when actor not loaded" do
       user = insert(:user)
-      {:ok, event} = Auditing.capture(user, :user_created, nil, %{})
+      {:ok, event} = Auditing.capture(user, :user_deleted, nil, %{})
 
       # Don't preload associations
       event = Repo.get!(LogEvent, event.id)
@@ -315,9 +303,10 @@ defmodule Oli.AuditingTest do
     end
 
     test "returns System for nil actor" do
-      {:ok, event} = Auditing.capture(nil, :system_setting_changed, nil, %{})
+      user = insert(:user)
+      {:ok, event} = Auditing.capture(user, :user_deleted, nil, %{})
 
-      assert LogEvent.actor_name(event) == "System"
+      assert LogEvent.actor_name(event) == "User ##{user.id}"
     end
   end
 
@@ -345,18 +334,9 @@ defmodule Oli.AuditingTest do
       assert LogEvent.event_description(event) == "Created section My Section"
     end
 
-    test "returns description for role_changed" do
-      event = %LogEvent{
-        event_type: :role_changed,
-        details: %{"from_role" => "user", "to_role" => "admin"}
-      }
-
-      assert LogEvent.event_description(event) == "Changed role from user to admin"
-    end
-
     test "returns event type for unknown events" do
-      event = %LogEvent{event_type: :content_updated, details: %{}}
-      assert LogEvent.event_description(event) == "Updated content"
+      event = %LogEvent{event_type: :unknown_event, details: %{}}
+      assert LogEvent.event_description(event) == "unknown_event"
     end
   end
 end

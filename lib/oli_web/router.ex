@@ -1576,7 +1576,6 @@ defmodule OliWeb.Router do
     live("/vr_user_agents", Admin.VrUserAgentsView)
     live("/products", Products.ProductsView)
     live("/datasets", Workspaces.CourseAuthor.DatasetsLive)
-    live("/audit_log", Admin.AuditLogLive)
 
     live("/products/:product_id/discounts", Products.Payments.Discounts.ProductsIndexView)
 
@@ -1674,6 +1673,7 @@ defmodule OliWeb.Router do
     # System admin
     scope "/" do
       pipe_through([:require_authenticated_system_admin])
+      live("/audit_log", Admin.AuditLogLive)
       get("/activity_review", ActivityReviewController, :index)
       live("/part_attempts", Admin.PartAttemptsView)
 

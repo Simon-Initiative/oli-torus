@@ -54,7 +54,7 @@ defmodule OliWeb.Admin.AuditLogLiveTest do
       project = insert(:project, title: "Test Project")
       section = insert(:section, title: "Test Section")
 
-      {:ok, event1} = Auditing.capture(user1, :user_created, nil, %{"email" => user1.email})
+      {:ok, event1} = Auditing.capture(user1, :user_deleted, nil, %{"email" => user1.email})
 
       {:ok, event2} =
         Auditing.capture(user2, :section_created, section, %{"title" => section.title})
@@ -62,7 +62,7 @@ defmodule OliWeb.Admin.AuditLogLiveTest do
       {:ok, event3} =
         Auditing.capture(author1, :project_published, project, %{"version" => "1.0"})
 
-      {:ok, event4} = Auditing.capture(user1, :content_updated, nil, %{"page" => "test.html"})
+      {:ok, event4} = Auditing.capture(user1, :user_deleted, nil, %{"page" => "test.html"})
 
       conn = log_in_author(conn, admin)
 
@@ -83,10 +83,9 @@ defmodule OliWeb.Admin.AuditLogLiveTest do
       {:ok, _view, html} = live(conn, ~p"/admin/audit_log")
 
       # Check that events are displayed
-      assert html =~ "user_created"
+      assert html =~ "user_deleted"
       assert html =~ "section_created"
       assert html =~ "project_published"
-      assert html =~ "content_updated"
     end
 
     test "filters by event type", %{conn: conn, author1: author1} do
@@ -127,7 +126,7 @@ defmodule OliWeb.Admin.AuditLogLiveTest do
         |> render_change("filter_actor_type", %{"id" => "actor_type_filter", "value" => "user"})
 
       # These events should show (done by users)
-      assert html =~ "user_created"
+      assert html =~ "user_deleted"
       # The table should still be present
       assert html =~ "Actor Type"
     end
@@ -135,7 +134,7 @@ defmodule OliWeb.Admin.AuditLogLiveTest do
     test "text search filters events", %{conn: conn, admin: admin} do
       # Create a unique project to search for
       unique_project = insert(:project, slug: "unique-search-#{System.unique_integer()}")
-      {:ok, _event} = Auditing.capture(admin, :project_created, unique_project, %{})
+      {:ok, _event} = Auditing.capture(admin, :project_published, unique_project, %{})
 
       # Navigate to the page
       {:ok, view, _html} = live(conn, ~p"/admin/audit_log")
@@ -153,7 +152,7 @@ defmodule OliWeb.Admin.AuditLogLiveTest do
       # Create many events to trigger pagination
       for i <- 1..30 do
         user = insert(:user, name: "User #{i}")
-        Auditing.capture(user, :user_created, nil, %{"index" => i})
+        Auditing.capture(user, :user_deleted, nil, %{"index" => i})
       end
 
       {:ok, _view, html} = live(conn, ~p"/admin/audit_log")
@@ -234,7 +233,7 @@ defmodule OliWeb.Admin.AuditLogLiveTest do
 
     test "shows links to users", %{conn: conn, admin: _admin} do
       user = insert(:user, name: "John Doe")
-      {:ok, _event} = Auditing.capture(user, :user_created, nil, %{})
+      {:ok, _event} = Auditing.capture(user, :user_deleted, nil, %{})
 
       {:ok, _view, html} = live(conn, ~p"/admin/audit_log")
 
@@ -245,7 +244,7 @@ defmodule OliWeb.Admin.AuditLogLiveTest do
 
     test "shows links to authors", %{conn: conn, admin: _admin} do
       author = insert(:author, name: "Jane Author")
-      {:ok, _event} = Auditing.capture(author, :author_created, nil, %{})
+      {:ok, _event} = Auditing.capture(author, :author_deleted, nil, %{})
 
       {:ok, _view, html} = live(conn, ~p"/admin/audit_log")
 

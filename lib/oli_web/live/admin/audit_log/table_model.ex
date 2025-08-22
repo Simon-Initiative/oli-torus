@@ -190,20 +190,14 @@ defmodule OliWeb.Admin.AuditLog.TableModel do
 
   defp get_event_type_class(event_type) do
     case event_type do
-      t when t in [:user_deleted, :author_deleted, :section_deleted, :page_deleted] ->
+      t when t in [:user_deleted, :author_deleted] ->
         "bg-red-100 text-red-800"
 
-      t when t in [:user_created, :author_created, :section_created, :project_created] ->
+      t when t in [:section_created] ->
         "bg-green-100 text-green-800"
 
-      t when t in [:project_published, :enrollment_created] ->
+      t when t in [:project_published] ->
         "bg-blue-100 text-blue-800"
-
-      t when t in [:content_updated, :grade_updated] ->
-        "bg-yellow-100 text-yellow-800"
-
-      t when t in [:permission_granted, :permission_revoked, :role_changed] ->
-        "bg-purple-100 text-purple-800"
 
       _ ->
         "bg-gray-100 text-gray-800"

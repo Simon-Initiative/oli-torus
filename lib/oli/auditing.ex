@@ -83,8 +83,6 @@ defmodule Oli.Auditing do
     - :user_id - Filter by user ID
     - :author_id - Filter by author ID
     - :event_type - Filter by event type
-    - :section_id - Filter by section ID
-    - :project_id - Filter by project ID
     - :limit - Maximum number of results (default: 100)
     - :order_by - Order results (default: [desc: :inserted_at])
 
@@ -110,10 +108,6 @@ defmodule Oli.Auditing do
       {:user_id, id}, query -> where(query, [e], e.user_id == ^id)
       {:author_id, id}, query -> where(query, [e], e.author_id == ^id)
       {:event_type, type}, query -> where(query, [e], e.event_type == ^type)
-      {:section_id, id}, query -> where(query, [e], e.section_id == ^id)
-      {:project_id, id}, query -> where(query, [e], e.project_id == ^id)
-      {:date_from, date}, query -> where(query, [e], e.inserted_at >= ^date)
-      {:date_to, date}, query -> where(query, [e], e.inserted_at <= ^date)
       _, query -> query
     end)
   end
@@ -252,28 +246,6 @@ defmodule Oli.Auditing do
         _ -> true
       end
 
-    # Date range filters
-    filter_by_date_from =
-      if options.date_from,
-        do: dynamic([e], e.inserted_at >= ^options.date_from),
-        else: true
-
-    filter_by_date_to =
-      if options.date_to,
-        do: dynamic([e], e.inserted_at <= ^options.date_to),
-        else: true
-
-    # Resource filters
-    filter_by_project =
-      if options.project_id,
-        do: dynamic([e], e.project_id == ^options.project_id),
-        else: true
-
-    filter_by_section =
-      if options.section_id,
-        do: dynamic([e], e.section_id == ^options.section_id),
-        else: true
-
     query =
       LogEvent
       |> join(:left, [e], u in User, on: e.user_id == u.id)
@@ -283,10 +255,6 @@ defmodule Oli.Auditing do
       |> where(^filter_by_text)
       |> where(^filter_by_event_type)
       |> where(^filter_by_actor_type)
-      |> where(^filter_by_date_from)
-      |> where(^filter_by_date_to)
-      |> where(^filter_by_project)
-      |> where(^filter_by_section)
       |> limit(^limit)
       |> offset(^offset)
       |> select_merge([e], %{

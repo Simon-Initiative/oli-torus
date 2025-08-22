@@ -6,23 +6,7 @@ defmodule Oli.Auditing.LogEvent do
     :user_deleted,
     :author_deleted,
     :project_published,
-    :section_created,
-    :page_deleted,
-    :project_created,
-    :section_deleted,
-    :user_created,
-    :author_created,
-    :enrollment_created,
-    :enrollment_deleted,
-    :institution_created,
-    :institution_updated,
-    :institution_deleted,
-    :role_changed,
-    :permission_granted,
-    :permission_revoked,
-    :content_updated,
-    :grade_updated,
-    :system_setting_changed
+    :section_created
   ]
 
   schema "audit_log_events" do
@@ -66,7 +50,7 @@ defmodule Oli.Auditing.LogEvent do
     event_type = get_field(changeset, :event_type)
 
     # Allow system events without an actor
-    system_events = [:system_setting_changed]
+    system_events = []
 
     if is_nil(user_id) and is_nil(author_id) and event_type not in system_events do
       add_error(changeset, :base, "either user_id or author_id must be present")
@@ -121,54 +105,6 @@ defmodule Oli.Auditing.LogEvent do
 
       :section_created ->
         "Created section #{get_in(event.details, ["section_title"]) || ""}"
-
-      :page_deleted ->
-        "Deleted page #{get_in(event.details, ["page_title"]) || ""}"
-
-      :project_created ->
-        "Created project #{get_in(event.details, ["project_title"]) || ""}"
-
-      :section_deleted ->
-        "Deleted section #{get_in(event.details, ["section_title"]) || ""}"
-
-      :user_created ->
-        "Created user account"
-
-      :author_created ->
-        "Created author account"
-
-      :enrollment_created ->
-        "Created enrollment"
-
-      :enrollment_deleted ->
-        "Deleted enrollment"
-
-      :institution_created ->
-        "Created institution"
-
-      :institution_updated ->
-        "Updated institution"
-
-      :institution_deleted ->
-        "Deleted institution"
-
-      :role_changed ->
-        "Changed role from #{get_in(event.details, ["from_role"])} to #{get_in(event.details, ["to_role"])}"
-
-      :permission_granted ->
-        "Granted permission"
-
-      :permission_revoked ->
-        "Revoked permission"
-
-      :content_updated ->
-        "Updated content"
-
-      :grade_updated ->
-        "Updated grade"
-
-      :system_setting_changed ->
-        "Changed system setting"
 
       _ ->
         "#{event.event_type}"
