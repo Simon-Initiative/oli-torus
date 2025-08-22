@@ -82,13 +82,24 @@ function readGlobal(keys: string[] | null = null) {
   }
 
   return Promise.all(promises).then((results) => {
-    return results.map((result) => {
+    // Map the array results to an object with top-level keys
+    const resultMap: { [key: string]: any } = {};
+
+    keys?.forEach((key, index) => {
+      const result = results[index];
       if (typeof result === 'string') {
-        const json = JSON.parse(result);
-        return json;
+        try {
+          const json = JSON.parse(result);
+          resultMap[key] = json;
+        } catch (e) {
+          resultMap[key] = { type: 'ServerError', message: 'Invalid JSON response' };
+        }
+      } else {
+        resultMap[key] = { type: 'ServerError', message: 'Invalid response from server' };
       }
-      return { type: 'ServerError', message: 'Invalid response from server' };
     });
+
+    return resultMap;
   });
 }
 
