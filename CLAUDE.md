@@ -5,6 +5,7 @@ React frontend.
 ## Essential Commands
 ```bash
 # Backend
+set -a && source oli.env  # to properly set environment for other commands
 mix deps.get && mix phx.server # install & run
 mix test # test
 mix test test/path/to/file.exs # run one test
@@ -83,8 +84,8 @@ For adding CSV export functionality to existing tables:
    - Button redirects to controller endpoint with current table state
    - Use `redirect(socket, external: export_url)` to trigger download
 
-4. **CSV Formatting**: 
-   - Escape all fields with `escape_csv_field/1` 
+4. **CSV Formatting**:
+   - Escape all fields with `escape_csv_field/1`
    - Use simple date format (YYYY-MM-DD) to avoid comma issues
    - Handle special characters, quotes, and newlines properly
 
