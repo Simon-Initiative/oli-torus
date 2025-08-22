@@ -38,38 +38,31 @@ defmodule OliWeb.Admin.AuditLogLive do
   end
 
   def mount(_, _session, socket) do
-    # Check if user has system admin role
-    if !Oli.Accounts.has_admin_role?(socket.assigns.current_author, :system_admin) do
-      {:ok,
-       socket
-       |> put_flash(:error, "You are not authorized to view this page")
-       |> redirect(to: Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.AdminView))}
-    else
-      events =
-        Auditing.browse_events(
-          %Paging{offset: 0, limit: @limit},
-          %Sorting{direction: :desc, field: :inserted_at},
-          @default_options
-        )
 
-      total_count = SortableTableModel.determine_total(events)
+    events =
+      Auditing.browse_events(
+        %Paging{offset: 0, limit: @limit},
+        %Sorting{direction: :desc, field: :inserted_at},
+        @default_options
+      )
 
-      ctx = socket.assigns.ctx
-      {:ok, table_model} = TableModel.new(events, ctx)
+    total_count = SortableTableModel.determine_total(events)
 
-      {:ok,
-       assign(socket,
-         title: "Audit Log",
-         breadcrumbs: set_breadcrumbs(),
-         events: events,
-         total_count: total_count,
-         table_model: table_model,
-         options: @default_options,
-         show_details_modal: false,
-         modal_details: nil,
-         event_types: LogEvent.event_types()
-       )}
-    end
+    ctx = socket.assigns.ctx
+    {:ok, table_model} = TableModel.new(events, ctx)
+
+    {:ok,
+      assign(socket,
+        title: "Audit Log",
+        breadcrumbs: set_breadcrumbs(),
+        events: events,
+        total_count: total_count,
+        table_model: table_model,
+        options: @default_options,
+        show_details_modal: false,
+        modal_details: nil,
+        event_types: LogEvent.event_types()
+      )}
   end
 
   def handle_params(params, _, socket) do
