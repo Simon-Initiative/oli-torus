@@ -419,6 +419,7 @@ defmodule OliWeb.Router do
     pipe_through([:browser, :authoring_protected, :workspace])
 
     live("/projects", Projects.ProjectsLive)
+    get("/projects/export", ProjectsController, :export_csv)
     live("/products/:product_id", Products.DetailsView)
     live("/products/:product_id/payments", Products.PaymentsView)
     live("/products/:section_slug/source_materials", Delivery.ManageSourceMaterials)

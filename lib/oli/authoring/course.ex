@@ -346,6 +346,142 @@ defmodule Oli.Authoring.Course do
     Repo.all(query)
   end
 
+  @doc """
+  Browse projects for CSV export without pagination limits.
+
+  Returns all projects that match the filtering criteria without pagination.
+  This function reuses the same filtering and sorting logic as browse_projects/4
+  but removes pagination limits for export purposes.
+
+  ## Parameters
+    - author: The current author requesting the export
+    - sorting: Sorting parameters (field and direction)
+    - opts: Options including:
+      - include_deleted: Include deleted projects (default: false)
+      - admin_show_all: Admin view shows all projects (default: true for admins)
+      - text_search: Text search filter (default: "")
+
+  ## Examples
+      iex> browse_projects_for_export(author, %Sorting{}, [])
+      [%{id: 1, title: "Project 1", ...}, ...]
+  """
+  def browse_projects_for_export(
+        %Author{} = author,
+        %Sorting{} = sorting,
+        opts \\ []
+      ) do
+    include_deleted = Keyword.get(opts, :include_deleted, false)
+    admin_show_all = Keyword.get(opts, :admin_show_all, true)
+    text_search = Keyword.get(opts, :text_search, "")
+
+    if Accounts.has_admin_role?(author, :content_admin) and admin_show_all,
+      do: browse_projects_as_admin_for_export(sorting, include_deleted, text_search),
+      else: browse_projects_as_author_for_export(author, sorting, include_deleted, text_search)
+  end
+
+  defp browse_projects_as_admin_for_export(
+         %Sorting{direction: direction, field: field},
+         include_deleted,
+         text_search
+       ) do
+    filter_by_status =
+      if include_deleted do
+        true
+      else
+        dynamic([p], p.status == :active)
+      end
+
+    filter_by_text =
+      if text_search == "" do
+        true
+      else
+        dynamic([p], ilike(p.title, ^"%#{text_search}%"))
+      end
+
+    owner_id = Oli.Authoring.Authors.ProjectRole.role_id().owner
+
+    query =
+      Project
+      |> join(:left, [p], o in AuthorProject,
+        on: p.id == o.project_id and o.project_role_id == ^owner_id
+      )
+      |> join(:left, [p, a], o in Oli.Accounts.Author, on: o.id == a.author_id)
+      |> where(^filter_by_status)
+      |> where(^filter_by_text)
+      |> select([p, _, a], %{
+        id: p.id,
+        slug: p.slug,
+        title: p.title,
+        inserted_at: p.inserted_at,
+        status: p.status,
+        owner_id: a.id,
+        name: a.name,
+        email: a.email
+      })
+
+    query =
+      case field do
+        :name -> order_by(query, [_, _, o], {^direction, o.name})
+        _ -> order_by(query, [p, _], {^direction, field(p, ^field)})
+      end
+
+    Repo.all(query)
+  end
+
+  defp browse_projects_as_author_for_export(
+         %Author{id: id},
+         %Sorting{direction: direction, field: field},
+         include_deleted,
+         text_search
+       ) do
+    owner_id = Oli.Authoring.Authors.ProjectRole.role_id().owner
+
+    filter_by_collaborator = dynamic([c, _, _, _], c.author_id == ^id and c.status == :accepted)
+
+    filter_by_status =
+      if include_deleted do
+        true
+      else
+        dynamic([_, p, _, _], p.status == :active)
+      end
+
+    filter_by_text =
+      if text_search == "" do
+        true
+      else
+        dynamic([_, p, _, _], ilike(p.title, ^"%#{text_search}%"))
+      end
+
+    query =
+      AuthorProject
+      |> join(:left, [c], p in Project, on: c.project_id == p.id)
+      |> join(:left, [c, p], o in AuthorProject,
+        on: p.id == o.project_id and o.project_role_id == ^owner_id
+      )
+      |> join(:left, [c, p, o], a in Oli.Accounts.Author, on: o.author_id == a.id)
+      |> where(^filter_by_collaborator)
+      |> where(^filter_by_status)
+      |> where(^filter_by_text)
+      |> select([_, p, _, a], %{
+        id: p.id,
+        slug: p.slug,
+        title: p.title,
+        inserted_at: p.inserted_at,
+        status: p.status,
+        owner_id: a.id,
+        name: a.name,
+        email: a.email
+      })
+
+    query =
+      case field do
+        :name -> order_by(query, [_, _, o], {^direction, o.name})
+        _ -> order_by(query, [_, p, _], {^direction, field(p, ^field)})
+      end
+
+    Repo.all(query)
+  end
+
   @spec search_published_projects(binary) :: any
   @doc """
   Returns the list of published projects where the title, description and slug are similar to the query string
