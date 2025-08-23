@@ -13,7 +13,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.VisitContext do
 
   @enforce_keys [
     :publication_id,
-    :blacklisted_activity_ids,
+    :blacklisted_activities,
     :latest_resource_attempt,
     :page_revision,
     :section_slug,
@@ -26,7 +26,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.VisitContext do
 
   defstruct [
     :publication_id,
-    :blacklisted_activity_ids,
+    :blacklisted_activities,
     :latest_resource_attempt,
     :page_revision,
     :section_slug,
@@ -39,7 +39,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.VisitContext do
 
   @type t() :: %__MODULE__{
           publication_id: integer(),
-          blacklisted_activity_ids: list(),
+          blacklisted_activities: list(),
           latest_resource_attempt: %Oli.Delivery.Attempts.Core.ResourceAttempt{} | nil,
           page_revision: %Oli.Resources.Revision{},
           section_slug: String.t(),

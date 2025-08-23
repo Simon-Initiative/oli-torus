@@ -192,7 +192,7 @@ defmodule Oli.Delivery.Page.PageContext do
 
     Attempts.track_access(page_revision.resource_id, section_id, user.id)
 
-    activity_provider = &Oli.Delivery.ActivityProvider.provide/6
+    activity_provider = &Oli.Delivery.ActivityProvider.provide/7
 
     {progress_state, resource_attempts, latest_attempts, activities} =
       Appsignal.instrument("PageLifecycle.visit", fn ->
