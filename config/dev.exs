@@ -183,6 +183,9 @@ config :phoenix_live_view,
   debug_attributes: true,
   enable_expensive_runtime_checks: true
 
+# Enable MCP server in development for testing
+config :oli, :mcp_server_enabled, false
+
 # Configure Joken for jwt signing and verification
 config :joken, default_signer: "secret"
 

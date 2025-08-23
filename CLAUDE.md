@@ -1,120 +1,165 @@
-## Torus Overview
-Learning engineering platform for authoring, delivering and improving online courses. Traditional monolithic Elixir/Phoenix app with
-React frontend.
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project Overview
+
+OLI Torus is a sophisticated learning engineering platform built with Elixir/Phoenix (backend) and TypeScript/React (frontend). It provides course authoring and delivery capabilities with tight LMS integration via LTI 1.3.
 
 ## Essential Commands
-```bash
-# Backend
-set -a && source oli.env  # to properly set environment for other commands
-mix deps.get && mix phx.server # install & run
-mix test # test
-mix test test/path/to/file.exs # run one test
-mix format # format code
-mix ecto.reset # reset DB
 
-# Frontend (in assets/)
-yarn install && yarn test # install & test
+### Backend (Elixir/Phoenix)
+
+```bash
+# Install dependencies
+mix deps.get
+
+# Run development server
+mix phx.server
+
+# Run tests
+mix test
+
+# Run specific test file
+mix test test/path/to/test_file.exs
+
+# Format code
+mix format
+
+# Reset database
+mix ecto.reset
 ```
 
-## Architecture
+### Frontend (TypeScript/React)
 
-- Backend (lib/oli/): Authoring, Delivery, Activities, Resources, Publishing, LTI, Accounts
-- Web (lib/oli_web/): Controllers, LiveViews, API, Plugs
-- Frontend (assets/src/): apps/, components/, activities/, hooks/, state/
+```bash
+# Navigate to assets directory first
+cd assets
 
-## Users
+# Install dependencies
+yarn install
 
-- Authors (%Author{})
-- Instructors (%User{} with ContextRole of Instructor)
-- Students (%User{} with ContextRole of Learner)
-- Administrators (%Author{} with admin privs)
+# Run tests
+yarn test
 
-## Domain
+# Run specific test
+yarn test path/to/test
 
-- Authors create projects, add and edit resources, publish project
-- Resource types: containers, pages, learning objectives, activities, tags
-- Containers define structure by embedding references to pages and other containers
-- Pages embed rich content, groups, examples, and most importantly activities
-- Pages are either practice or scored (aka assessments)
-- Activities target learning objectives
-- Instructors create sections, customize material, enroll students, manage progress, grade questions
-- Students navigate course, work practice pages, take assessments
+# Format code
+yarn format
+```
 
-## Key Patterns:
+## High-Level Architecture
 
-- Projects can share Resources
-- Revision polymorphism (one table for all resource types)
-- Publication model insures forward authoring without interferring with revisions pinned to sections
-- Course sections customization via SectionResource
-- Activity framework for defining new client-side impl activities
-- LTI 1.3 support for LMS integration, with LTI gradepassback
+### Backend Structure (Elixir/Phoenix)
+
+The backend follows Phoenix context pattern with clear separation of concerns:
+
+#### Core Contexts (`lib/oli/`)
+- **Authoring**: Project management, collaboration, content creation
+- **Delivery**: Section management, student progress, grading
+- **Activities**: Extensible activity framework with registration system
+- **Resources**: Content versioning with resource/revision pattern
+- **Publishing**: Publication and deployment workflow
+- **LTI**: LTI 1.3 integration for LMS connectivity
+- **Accounts**: User and author management
+
+#### Web Layer (`lib/oli_web/`)
+- **Controllers**: Traditional HTTP endpoints
+- **LiveViews**: Real-time interactive UI components
+- **API**: REST endpoints for frontend integration
+- **Plugs**: Middleware for auth, authorization, request processing
+
+### Frontend Structure (TypeScript/React)
+
+Located in `assets/src/`:
+
+- **apps/**: Main application entry points (AuthoringApp, DeliveryApp, etc.)
+- **components/**: Reusable UI components
+- **components/activities/**: Activity type implementations
+- **hooks/**: Phoenix hooks and React custom hooks
+- **state/**: Redux state management
+- **phoenix/**: Phoenix/LiveView integration code
+
+### Key Architectural Patterns
+
+1. **Resource/Revision Pattern**: All content is versioned through resources (containers) and revisions (specific versions)
+2. **Publication Model**: Projects are published to create immutable publications, which are then deployed to sections
+3. **Activity Framework**: Plugin-based system for adding new activity types via manifests
+4. **Multi-tenancy**: Institution-based data separation with proper authorization
+5. **Phoenix Clustering**: Horizontal scaling with distributed Erlang
+
+## Database Schema
+
+PostgreSQL with Ecto ORM. Key tables:
+- `projects`: Course authoring projects
+- `sections`: Course delivery instances
+- `resources` & `revisions`: Versioned content
+- `activities`: Activity configurations
+- `users` & `authors`: Account management
+- `enrollments`: Student-section relationships
+- `attempts`: Student activity attempts
+
+## Activity Development
+
+Activities are self-contained components with:
+- Manifest file defining metadata
+- Authoring component (React)
+- Delivery component (React)
+- Model schema (JSON)
+- Evaluation logic
+
+Example activity types: Multiple Choice, Short Answer, File Upload, Multi-Input, etc.
+
+## Testing Approach
+
+- **Backend**: ExUnit tests in `test/` directory
+- **Frontend**: Jest tests alongside source files
+- Use factories for test data generation
+- Integration tests for critical workflows
+- Always run tests before committing
 
 ## Common Development Tasks
 
-### Adding a New LiveView
+### Adding a New Page/LiveView
 1. Create LiveView module in `lib/oli_web/live/`
 2. Add route in `lib/oli_web/router.ex`
-3. Define additional function components in LiveView, do not use external templates
+3. Create corresponding templates if needed
 4. Add tests in `test/oli_web/live/`
 
-Consult this example: `lib/oli_web/live/admin/external_tools/details_view.ex`
+### Modifying Activities
+1. Update activity manifest in `assets/src/components/activities/[activity_type]/`
+2. Modify authoring/delivery components
+3. Update model schema if needed
+4. Test both authoring and delivery modes
 
-### LiveView Tables
+### Working with Resources/Content
+1. Use `Oli.Resources` context for content operations
+2. Always work with revisions, not resources directly
+3. Respect the publication model - don't modify published content
+4. Use proper authorization checks
 
-Reusable `PagedTable` and `SortableTableModel` components exist
-to build sortable, searchable, paged tables.
+## Important Considerations
 
-Consult this example: `lib/oli_web/live/admin/external_tools/usage_view.ex`
+- **LTI Context**: Many features depend on LTI launch context from LMS
+- **Multi-tenancy**: Always scope data by institution/section
+- **Versioning**: Content is immutable once published
+- **Real-time Updates**: Use Phoenix PubSub for real-time features
+- **Background Jobs**: Use Oban for async processing
+- **Caching**: Leverage Cachex for performance-critical paths
 
-### CSV Export Pattern
+## Code Style Guidelines
 
-For adding CSV export functionality to existing tables:
+- Follow Elixir formatting standards (use `mix format`)
+- TypeScript code uses ESLint configuration
+- React components should be functional with hooks
+- Prefer composition over inheritance
+- Keep contexts focused and cohesive
 
-1. **Data Layer**: Add export function to context module (e.g., `browse_projects_for_export/3`)
-   - Remove pagination limits while preserving filtering/sorting
-   - Reuse existing query logic for consistency
-
-2. **Controller**: Create export action following PageDeliveryController pattern
-   - Extract table state from URL parameters
-   - Handle default values for admin preferences (show_all, show_deleted)
-   - Use `send_download(conn, {:binary, csv_content}, filename: filename)`
-   - Filename format: `resource-YYYY-M-D.csv`
-
-3. **LiveView Integration**: Add export button and event handler
-   - Button redirects to controller endpoint with current table state
-   - Use `redirect(socket, external: export_url)` to trigger download
-
-4. **CSV Formatting**:
-   - Escape all fields with `escape_csv_field/1`
-   - Use simple date format (YYYY-MM-DD) to avoid comma issues
-   - Handle special characters, quotes, and newlines properly
-
-Example files:
-- Context: `lib/oli/authoring/course.ex:browse_projects_for_export/3`
-- Controller: `lib/oli_web/controllers/projects_controller.ex:export_csv/2`
-- LiveView: `lib/oli_web/live/projects/projects_live.ex` (export_csv event)
-
-## Critical Performance Rules
-
-- Use SectionResourceDepot cache, not SectionResource queries
-- Never use DeliveryResolver.full_hierarchy directly
-- Avoid cross-table queries in attempt hierarchy tables
-
-## Dev Guidelines
+## Debugging Tips
 
 - Use `IO.inspect` for Elixir debugging
-- All new UIs should use LiveView not React
-- Use Tailwind for CSS
-- Respect publication model (immutable once published)
-- Use AuthoringResolver/DeliveryResolver for revision lookup
-- Oban for durable background jobs
-- Test with ExUnit (backend) and Jest (frontend)
-- Format code before committing
-
-## Additional Design Docs
-
-Consult when necessary:
-
-- guides/design/attempt-handling.md: Attempt processing
-- guides/design/publication-model.md: Publication model
-- guides/design/genai.md: GenAI infrastructure
+- Browser DevTools for React debugging
+- Phoenix LiveDashboard at `/admin/live_dashboard` (dev mode)
+- Check `assets/webpack.config.js` for frontend build configuration
+- Database queries can be inspected with Ecto query logging

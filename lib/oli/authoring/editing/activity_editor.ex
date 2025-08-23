@@ -694,7 +694,9 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
         _ -> {:ok, {activity, nil}}
       end
     else
-      error -> error
+      error ->
+        IO.inspect(error, label: "Activity creation error")
+        error
     end
   end
 

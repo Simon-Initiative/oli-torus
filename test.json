@@ -1,0 +1,158 @@
+{
+  "authoring": {
+    "parts": [
+      {
+        "gradingApproach": "automatic",
+        "hints": [
+          {
+            "content": [
+              {
+                "children": [
+                  {
+                    "text": "Think about the main administrative divisions of New York City. Each borough has its own government and distinct character."
+                  }
+                ],
+                "type": "p"
+              }
+            ],
+            "editor": "slate",
+            "id": "hint_1",
+            "textDirection": "ltr"
+          }
+        ],
+        "id": "part_1",
+        "responses": [
+          {
+            "correct": true,
+            "feedback": {
+              "content": [
+                {
+                  "children": [
+                    {
+                      "text": "Correct! New York City has five boroughs: Manhattan, Brooklyn, Queens, The Bronx, and Staten Island."
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "id": "feedback_correct",
+              "textDirection": "ltr"
+            },
+            "id": "response_correct",
+            "rule": "input like {choice_2}",
+            "score": 1
+          },
+          {
+            "correct": false,
+            "feedback": {
+              "content": [
+                {
+                  "children": [
+                    {
+                      "text": "That's not correct. New York City consists of five boroughs: Manhattan, Brooklyn, Queens, The Bronx, and Staten Island."
+                    }
+                  ],
+                  "type": "p"
+                }
+              ],
+              "editor": "slate",
+              "id": "feedback_incorrect",
+              "textDirection": "ltr"
+            },
+            "id": "response_incorrect",
+            "rule": "input like {.*}",
+            "score": 0
+          }
+        ],
+        "scoringStrategy": "average"
+      }
+    ],
+    "previewText": "How many boroughs does New York City have?",
+    "targeted": [],
+    "transformations": [
+      {
+        "firstAttemptOnly": true,
+        "id": "shuffle_1",
+        "operation": "shuffle",
+        "path": "choices"
+      }
+    ],
+    "version": 2
+  },
+  "choices": [
+    {
+      "content": [
+        {
+          "children": [
+            {
+              "text": "3"
+            }
+          ],
+          "type": "p"
+        }
+      ],
+      "editor": "slate",
+      "id": "choice_1",
+      "textDirection": "ltr"
+    },
+    {
+      "content": [
+        {
+          "children": [
+            {
+              "text": "5"
+            }
+          ],
+          "type": "p"
+        }
+      ],
+      "editor": "slate",
+      "id": "choice_2",
+      "textDirection": "ltr"
+    },
+    {
+      "content": [
+        {
+          "children": [
+            {
+              "text": "7"
+            }
+          ],
+          "type": "p"
+        }
+      ],
+      "editor": "slate",
+      "id": "choice_3",
+      "textDirection": "ltr"
+    },
+    {
+      "content": [
+        {
+          "children": [
+            {
+              "text": "4"
+            }
+          ],
+          "type": "p"
+        }
+      ],
+      "editor": "slate",
+      "id": "choice_4",
+      "textDirection": "ltr"
+    }
+  ],
+  "stem": {
+    "content": [
+      {
+        "children": [
+          {
+            "text": "How many boroughs does New York City have?"
+          }
+        ],
+        "type": "p"
+      }
+    ],
+    "id": "stem_1"
+  }
+}

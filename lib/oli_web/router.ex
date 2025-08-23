@@ -75,6 +75,13 @@ defmodule OliWeb.Router do
     plug(OliWeb.Plugs.SessionContext)
   end
 
+  # pipeline for MCP (Model Context Protocol) endpoints
+  pipeline :mcp_api do
+    # The Anubis MCP server handles its own content negotiation,
+    # so we don't use Phoenix's accepts plug here
+    # Authentication is now handled in Oli.MCP.Server.init/2
+  end
+
   ### PIPELINE EXTENSIONS ###
   # Extend the base pipelines specific routes
 
@@ -223,6 +230,13 @@ defmodule OliWeb.Router do
   end
 
   ### ROUTES ###
+
+  ## MCP (Model Context Protocol) routes
+  scope "/mcp" do
+    pipe_through [:mcp_api]
+
+    forward "/", Anubis.Server.Transport.StreamableHTTP.Plug, server: Oli.MCP.Server
+  end
 
   ## Authentication routes
 
@@ -1582,6 +1596,7 @@ defmodule OliWeb.Router do
     live("/vr_user_agents", Admin.VrUserAgentsView)
     live("/products", Products.ProductsView)
     live("/datasets", Workspaces.CourseAuthor.DatasetsLive)
+    live("/agent_monitor", Admin.AgentMonitorView)
 
     # Gen AI
     live("/gen_ai/registered_models", GenAI.RegisteredModelsView)
@@ -1679,6 +1694,9 @@ defmodule OliWeb.Router do
       live("/external_tools/new", Admin.ExternalTools.NewExternalToolView)
       live("/external_tools/:platform_instance_id/details", Admin.ExternalTools.DetailsView)
       live("/external_tools/:platform_instance_id/usage", Admin.ExternalTools.UsageView)
+
+      # MCP Bearer Tokens
+      live("/mcp_tokens", Admin.MCPTokens.MCPTokensView)
     end
 
     # System admin
