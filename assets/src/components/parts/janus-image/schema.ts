@@ -15,10 +15,6 @@ export const schema: JSONSchema7Object = {
     title: 'Custom CSS Class',
     type: 'string',
   },
-  imageSrc: {
-    title: 'Image Source',
-    type: 'string',
-  },
   src: {
     title: 'Source',
     type: 'string',
@@ -43,10 +39,6 @@ export const schema: JSONSchema7Object = {
 };
 
 export const simpleSchema: JSONSchema7Object = {
-  imageSrc: {
-    title: 'Image Source',
-    type: 'string',
-  },
   src: {
     title: 'Source',
     type: 'string',

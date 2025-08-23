@@ -1147,7 +1147,6 @@ defmodule OliWeb.RemixSectionLiveTest do
       |> element("th[phx-value-sort_by='title']")
       |> render_click()
 
-      IO.inspect(element(view, ".remix_materials_table tr:first-of-type td:nth-of-type(2)"))
       # "Another orph. Page" is the first element after sorting
       assert view
              |> has_element?(

@@ -165,6 +165,8 @@ defmodule Oli.Delivery.Sections.Section do
 
     field(:agenda, :boolean, default: true)
 
+    field(:timezone, :string, default: nil)
+
     timestamps(type: :utc_datetime)
   end
 
@@ -228,7 +230,8 @@ defmodule Oli.Delivery.Sections.Section do
       :welcome_title,
       :encouraging_subtitle,
       :agenda,
-      :certificate_enabled
+      :certificate_enabled,
+      :timezone
     ])
     |> cast_embed(:customizations, required: false)
     |> validate_required(@required_fields)

@@ -56,6 +56,14 @@ module.exports = {
     light: '#0FB863',
     dark: '#0FB863',
   },
+  'Fill-Chip-Green': {
+    light: '#E7FCF3',
+    dark: '#3D4F47',
+  },
+  'Fill-Chip-Gray': {
+    light: '#CED1D9',
+    dark: '#353740',
+  },
   // Fill/Buttons
   'Fill-Buttons-fill-primary': {
     light: '#0080FF',
@@ -228,6 +236,18 @@ module.exports = {
     light: '#9A40A8',
     dark: '#EBAAF2',
   },
+  'Text-Chip-Orange': {
+    light: '#91450E',
+    dark: '#FFB387',
+  },
+  'Text-Chip-Green': {
+    light: '#175A3D',
+    dark: '#39E581',
+  },
+  'Text-Chip-Gray': {
+    light: '#000000',
+    dark: '#FFFFFF',
+  },
   // Table
   'Table-table-row-1': {
     light: '#F3F4F8',
@@ -252,6 +272,14 @@ module.exports = {
   'Table-table-top-row': {
     light: '#FFFFFF',
     dark: '#000000',
+  },
+  'Table-text-accent-green': {
+    light: '#245D45',
+    dark: '#39E581',
+  },
+  'Table-text-danger': {
+    light: '#A42327',
+    dark: '#FF8787',
   },
   // Icon
   'Icon-icon-white': {

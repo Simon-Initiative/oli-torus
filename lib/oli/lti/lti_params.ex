@@ -123,6 +123,15 @@ defmodule Oli.Lti.LtiParams do
     |> Repo.one()
   end
 
+  def get_lti_params_for_user_context(user_id, context_id) do
+    from(p in LtiParams,
+      where: p.user_id == ^user_id and p.context_id == ^context_id,
+      order_by: [desc: p.updated_at],
+      limit: 1
+    )
+    |> Repo.one()
+  end
+
   @doc """
   Returns all lti param records for the given user id
   """

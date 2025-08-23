@@ -77,14 +77,9 @@ defmodule OliWeb.Projects.ProjectsLive do
       show_all: show_all,
       show_deleted: show_deleted,
       author: author
-    } =
-      socket.assigns
+    } = socket.assigns
 
-    table_model =
-      SortableTableModel.update_from_params(
-        socket.assigns.table_model,
-        params
-      )
+    table_model = SortableTableModel.update_from_params(socket.assigns.table_model, params)
 
     offset = get_int_param(params, "offset", 0)
     text_search = get_param(params, "text_search", "")
@@ -125,8 +120,7 @@ defmodule OliWeb.Projects.ProjectsLive do
         text_search: text_search
       )
 
-    table_model = Map.put(table_model, :rows, projects)
-
+    table_model = %SortableTableModel{table_model | rows: projects}
     total_count = determine_total(projects)
 
     {:noreply,
@@ -152,13 +146,16 @@ defmodule OliWeb.Projects.ProjectsLive do
         <span class="text-[#353740] dark:text-[#EEEBF5] text-2xl font-bold leading-loose">
           Browse Projects
         </span>
-        <button
-          id="button-new-project"
-          class="btn btn-sm rounded-md bg-[#0080FF] text-[#FFFFFF] font-semibold shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] px-4 py-2"
-          phx-click="show_create_project_modal"
-        >
-          <i class="fa fa-plus pr-2"></i> New Project
-        </button>
+
+        <div class="flex gap-3">
+          <button
+            id="button-new-project"
+            class="btn btn-sm rounded-md bg-[#0080FF] text-[#FFFFFF] font-semibold shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] px-4 py-2"
+            phx-click="show_create_project_modal"
+          >
+            <i class="fa fa-plus pr-2"></i> New Project
+          </button>
+        </div>
       </div>
       <div class="projects-title-row px-4 mt-2">
         <div class="flex justify-between items-baseline">
@@ -191,20 +188,28 @@ defmodule OliWeb.Projects.ProjectsLive do
         </div>
       </div>
 
-      <div class="flex w-fit gap-4 p-2 pr-8 mx-4 mt-3 mb-2 shadow-[0px_2px_6.099999904632568px_0px_rgba(0,0,0,0.10)] border border-[#ced1d9] dark:border-[#3B3740] dark:bg-[#000000]">
-        <.form for={%{}} phx-change="text_search_change" class="w-56">
-          <SearchInput.render id="text-search" name="project_name" text={@text_search} />
-        </.form>
+      <div class="flex justify-between">
+        <div class="flex w-fit gap-4 p-2 pr-8 mx-4 mt-3 mb-2 shadow-[0px_2px_6.099999904632568px_0px_rgba(0,0,0,0.10)] border border-[#ced1d9] dark:border-[#3B3740] dark:bg-[#000000]">
+          <.form for={%{}} phx-change="text_search_change" class="w-56">
+            <SearchInput.render id="text-search" name="project_name" text={@text_search} />
+          </.form>
 
-        <button class="ml-2 text-center text-[#353740] dark:text-[#EEEBF5] text-sm font-normal leading-none flex items-center gap-x-1 opacity-50 hover:cursor-not-allowed">
-          <Icons.filter class="stroke-[#353740] dark:stroke-[#EEEBF5]" /> Filter
-        </button>
+          <button class="ml-2 text-center text-[#353740] dark:text-[#EEEBF5] text-sm font-normal leading-none flex items-center gap-x-1 opacity-50 hover:cursor-not-allowed">
+            <Icons.filter class="stroke-[#353740] dark:stroke-[#EEEBF5]" /> Filter
+          </button>
 
+          <button
+            class="ml-2 mr-4 text-center text-[#353740] dark:text-[#EEEBF5] text-sm font-normal leading-none flex items-center gap-x-1 hover:text-[#006CD9] dark:hover:text-[#4CA6FF]"
+            phx-click="clear_all_filters"
+          >
+            <Icons.trash /> Clear All Filters
+          </button>
+        </div>
         <button
-          class="ml-2 mr-4 text-center text-[#353740] dark:text-[#EEEBF5] text-sm font-normal leading-none flex items-center gap-x-1 hover:text-[#006CD9] dark:hover:text-[#4CA6FF]"
-          phx-click="clear_all_filters"
+          class="mr-4 inline-flex items-center gap-1 text-sm font-medium text-[#0080FF] hover:underline"
+          phx-click="export_csv"
         >
-          <Icons.trash /> Clear All Filters
+          Download CSV <Icons.download stroke_class="stroke-[#0080FF]" />
         </button>
       </div>
 
@@ -290,6 +295,15 @@ defmodule OliWeb.Projects.ProjectsLive do
       )
 
     patch_with(socket, %{limit: new_limit, offset: new_offset})
+  end
+
+  def handle_event("export_csv", _params, socket) do
+    # Build URL with current table state
+    params = current_params(socket)
+    export_url = ~p"/authoring/projects/export?#{params}"
+
+    # Redirect to CSV export endpoint
+    {:noreply, redirect(socket, external: export_url)}
   end
 
   def handle_event("clear_all_filters", _params, socket) do

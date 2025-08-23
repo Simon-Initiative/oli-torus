@@ -1,4 +1,4 @@
-defmodule Oli.GenAIFeatureConfig do
+defmodule Oli.GenAI.FeatureConfig do
   use Ecto.Schema
 
   import Ecto.Query, warn: false
@@ -6,9 +6,10 @@ defmodule Oli.GenAIFeatureConfig do
   import Ecto.Changeset
 
   schema "gen_ai_feature_configs" do
-    field(:feature, Ecto.Enum, values: [:student_dialogue, :instructor_dashboard])
+    field :feature, Ecto.Enum, values: [:student_dialogue, :instructor_dashboard]
+
     belongs_to :service_config, Oli.GenAI.Completions.ServiceConfig
-    belongs_to(:section, Oli.Delivery.Sections.Section)
+    belongs_to :section, Oli.Delivery.Sections.Section
 
     timestamps(type: :utc_datetime)
   end
