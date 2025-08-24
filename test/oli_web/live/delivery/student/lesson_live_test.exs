@@ -2734,7 +2734,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       Sections.mark_section_visited_for_student(section, user)
 
       # Create a parent post
-      {:ok, parent_post} = create_post(user, section, page_1, "Parent post")
+      {:ok, _parent_post} = create_post(user, section, page_1, "Parent post")
 
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
       ensure_content_is_visible(view)
@@ -2813,7 +2813,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       Sections.mark_section_visited_for_student(section, user)
 
       # Create a parent post
-      {:ok, parent_post} = create_post(user, section, page_1, "Parent post")
+      {:ok, _parent_post} = create_post(user, section, page_1, "Parent post")
 
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
       ensure_content_is_visible(view)
@@ -2839,7 +2839,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       Sections.mark_section_visited_for_student(section, user)
 
       # Create a parent post
-      {:ok, parent_post} = create_post(user, section, page_1, "Parent post")
+      {:ok, _parent_post} = create_post(user, section, page_1, "Parent post")
 
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
       ensure_content_is_visible(view)
@@ -2865,7 +2865,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       Sections.mark_section_visited_for_student(section, user)
 
       # Create a post to delete
-      {:ok, post} = create_post(user, section, page_1, "Post to delete")
+      {:ok, _post} = create_post(user, section, page_1, "Post to delete")
 
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
       ensure_content_is_visible(view)
