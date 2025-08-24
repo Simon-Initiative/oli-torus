@@ -87,8 +87,8 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
 
     ~H"""
     <tr
-      id={id_field(@row, @model)}
-      data-row-id={id_field(@row, @model)}
+      id={@unique_id}
+      data-row-id={@unique_id}
       class={@row_class <> " hover:bg-Table-table-hover" <>
     if Map.get(@row, :selected) || id_field(@row, @model) == @model.selected,
       do: " bg-delivery-primary-100 shadow-inner dark:bg-gray-700 dark:text-black",
@@ -164,7 +164,8 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
                   if(Integer.is_even(index),
                     do: "bg-Table-table-row-1 ",
                     else: "bg-Table-table-row-2 "
-                  ) <> @additional_row_class
+                  ) <> @additional_row_class,
+                unique_id: "objective_#{row.resource_id}_#{index}"
               },
               @model.data
             ),
@@ -178,7 +179,8 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
                   model: @model,
                   sort: @sort,
                   select: @select,
-                  additional_table_class: @additional_table_class
+                  additional_table_class: @additional_table_class,
+                  unique_id: "objective_#{row.resource_id}_#{index}"
                 },
                 @model.data
               ),
@@ -196,13 +198,12 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
   end
 
   defp render_details_row(assigns, row) do
-    row_id = id_field(row, assigns.model)
     col_span = length(assigns.model.column_specs)
 
-    assigns = Map.merge(assigns, %{row_id: row_id, col_span: col_span})
+    assigns = Map.merge(assigns, %{col_span: col_span, unique_id: row.unique_id})
 
     ~H"""
-    <tr id={"details-#{@row_id}"} class="hidden">
+    <tr id={"details-#{@unique_id}"} class="hidden">
       <td colspan={@col_span} class="bg-gray-50 dark:bg-gray-900 p-4">
         <div class="text-sm text-gray-700 dark:text-gray-200">
           Information will go here.
