@@ -51,7 +51,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
       column_specs: column_specs,
       event_suffix: "",
       id_field: [:resource_id],
-      data: %{expandable_rows: true}
+      data: %{expandable_rows: true, view_type: :objectives_instructor_dashboard}
     )
   end
 
@@ -90,6 +90,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
     )
   end
 
+  # STUDENT PROFICIENCY
   defp custom_render(assigns, objectives, %ColumnSpec{name: :student_proficiency_obj}) do
     student_proficiency =
       case Map.get(objectives, :student_proficiency_subobj) do
@@ -117,6 +118,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
     """
   end
 
+  # OBJECTIVE
   defp custom_render(assigns, objective, %ColumnSpec{name: :objective}) do
     assigns =
       Map.merge(assigns, %{
@@ -136,6 +138,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
     """
   end
 
+  # OBJECTIVE INSTRUCTOR DASHBOARD
   defp custom_render(assigns, objective, %ColumnSpec{name: :objective_instructor_dashboard}) do
     objective =
       case Map.get(objective, :subobjective) do
@@ -152,6 +155,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
     """
   end
 
+  # SUBOBJECTIVE
   defp custom_render(assigns, objectives, %ColumnSpec{name: :subobjective}) do
     assigns = Map.merge(assigns, %{subobjective: objectives[:subobjective]})
 
@@ -160,6 +164,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
     """
   end
 
+  # STUDENT PROFICIENCY DISTRIBUTION
   defp custom_render(assigns, objective, %ColumnSpec{name: :student_proficiency_distribution}) do
     %{resource_id: objective_id, student_proficiency_obj_dist: student_proficiency_obj_dist} =
       objective
@@ -188,9 +193,9 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
     """
   end
 
+  # RENDER EXPANDED
   defp render_expanded(assigns, objective, _) do
-    id = objective.resource_id
-    assigns = Map.merge(assigns, %{id: id})
+    assigns = Map.merge(assigns, %{id: objective.unique_id})
 
     ~H"""
     <.button
@@ -207,6 +212,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
     """
   end
 
+  # RENDER PROFICIENCY DATA CHART
   defp render_proficiency_data_chart(objective_id, data) do
     data =
       @proficiency_labels
@@ -247,6 +253,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
     )
   end
 
+  # CALCULATE PERCENTAGES
   defp calc_percentages(data) do
     total = data |> Map.values() |> Enum.sum()
 

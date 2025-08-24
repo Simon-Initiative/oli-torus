@@ -41,11 +41,18 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
     {total_count, rows} =
       apply_filters(objectives_tab.objectives, params, assigns[:patch_url_type])
 
-    {:ok, objectives_table_model} = ObjectivesTableModel.new(rows, assigns[:patch_url_type])
+    indexed_rows =
+      Enum.with_index(rows)
+      |> Enum.map(fn {row, index} ->
+        Map.put(row, :unique_id, "row_#{row.resource_id}_#{index}")
+      end)
+
+    {:ok, objectives_table_model} =
+      ObjectivesTableModel.new(indexed_rows, assigns[:patch_url_type])
 
     objectives_table_model =
       Map.merge(objectives_table_model, %{
-        rows: rows,
+        rows: indexed_rows,
         sort_order: params.sort_order,
         sort_by_spec:
           Enum.find(objectives_table_model.column_specs, fn col_spec ->
