@@ -51,7 +51,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
       column_specs: column_specs,
       event_suffix: "",
       id_field: [:resource_id],
-      data: %{expandable_rows: true}
+      data: %{expandable_rows: true, view_type: :objectives_instructor_dashboard}
     )
   end
 

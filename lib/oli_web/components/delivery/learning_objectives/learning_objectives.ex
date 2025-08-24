@@ -44,7 +44,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
     indexed_rows =
       Enum.with_index(rows)
       |> Enum.map(fn {row, index} ->
-        Map.put(row, :unique_id, "objective_#{row.resource_id}_#{index}")
+        Map.put(row, :unique_id, "row_#{row.resource_id}_#{index}")
       end)
 
     {:ok, objectives_table_model} =

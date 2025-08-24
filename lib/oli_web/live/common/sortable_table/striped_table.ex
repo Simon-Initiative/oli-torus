@@ -83,12 +83,17 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
 
     row_class = row_class <> " #{assigns[:additional_row_class]}"
 
-    assigns = Map.merge(assigns, %{row: row, row_class: row_class})
+    row_id =
+      if assigns.model.data[:view_type] == :objectives_instructor_dashboard,
+        do: "row_#{row.resource_id}_#{assigns.index}",
+        else: id_field(row, assigns.model)
+
+    assigns = Map.merge(assigns, %{row: row, row_class: row_class, row_id: row_id})
 
     ~H"""
     <tr
-      id={@unique_id}
-      data-row-id={@unique_id}
+      id={@row_id}
+      data-row-id={@row_id}
       class={@row_class <> " hover:bg-Table-table-hover" <>
     if Map.get(@row, :selected) || id_field(@row, @model) == @model.selected,
       do: " bg-delivery-primary-100 shadow-inner dark:bg-gray-700 dark:text-black",
@@ -165,7 +170,7 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
                     do: "bg-Table-table-row-1 ",
                     else: "bg-Table-table-row-2 "
                   ) <> @additional_row_class,
-                unique_id: "objective_#{row.resource_id}_#{index}"
+                index: index
               },
               @model.data
             ),
@@ -180,7 +185,7 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
                   sort: @sort,
                   select: @select,
                   additional_table_class: @additional_table_class,
-                  unique_id: "objective_#{row.resource_id}_#{index}"
+                  index: index
                 },
                 @model.data
               ),
@@ -199,8 +204,9 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
 
   defp render_details_row(assigns, row) do
     col_span = length(assigns.model.column_specs)
+    unique_id = "row_#{row.resource_id}_#{assigns.index}"
 
-    assigns = Map.merge(assigns, %{col_span: col_span, unique_id: row.unique_id})
+    assigns = Map.merge(assigns, %{col_span: col_span, unique_id: unique_id})
 
     ~H"""
     <tr id={"details-#{@unique_id}"} class="hidden">
