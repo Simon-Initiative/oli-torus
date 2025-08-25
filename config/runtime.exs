@@ -460,4 +460,17 @@ if config_env() == :prod do
       certificate_eligibility:
         String.to_integer(System.get_env("OBAN_QUEUE_SIZE_CERTIFICATE_ELIGIBILITY", "10"))
     ]
+
+  cloak_vault_key =
+    System.get_env("CLOAK_VAULT_KEY") ||
+      raise """
+      environment variable CLOAK_VAULT_KEY is missing.
+      For example: HXCdm5z61eNgUpnXObJRv94k3JnKSrnfwppyb60nz6w=
+      """
+
+  config :oli, Oli.Vault,
+    json_library: Jason,
+    ciphers: [
+      default: {Cloak.Ciphers.AES.GCM, tag: "AES.GCM.V1", key: Base.decode64!(cloak_vault_key)}
+    ]
 end
