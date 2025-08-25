@@ -184,7 +184,7 @@ defmodule Oli.Factory do
       version: "1",
       family: anonymous_build(:family),
       visibility: :global,
-      authors: anonymous_build_list(2, :author),
+      authors: anonymous_build_list(1, :author),
       publisher: anonymous_build(:publisher),
       attributes: anonymous_build(:project_attributes)
     }
