@@ -1,9 +1,6 @@
 services:
   haproxy:
     image: haproxy
-    # TODO: REMOVE
-    ports:
-      - "80:80"
     networks:
       webproxy-public:
         aliases:
