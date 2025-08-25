@@ -14,6 +14,7 @@
 ARG ELIXIR_VERSION=1.18.4
 ARG OTP_VERSION=28.0.2
 ARG DEBIAN_VERSION=bullseye-20250721-slim
+ARG SHA
 
 ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
 ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
@@ -61,7 +62,9 @@ RUN mix compile
 COPY config/runtime.exs config/
 
 COPY rel rel
-RUN mix release
+
+# Build the release
+RUN SHA=${SHA} mix release
 
 # start a new build stage so that the final image will only contain
 # the compiled release and other runtime necessities
