@@ -4,7 +4,7 @@ services:
     networks:
       webproxy-public:
         aliases:
-          - pr${PR_NUMBER}-app
+          - ${PROJECT}
       default: {}
     volumes:
       - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
