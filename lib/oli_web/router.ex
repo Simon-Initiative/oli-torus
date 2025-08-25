@@ -85,7 +85,7 @@ defmodule OliWeb.Router do
 
   pipeline :delivery do
     plug(Oli.Plugs.SetVrAgentValue)
-    plug(OliWeb.Plugs.AllowIframe)
+    plug(OliWeb.Plugs.AllowIframeCSP)
   end
 
   # set the layout to be workspace
@@ -363,6 +363,11 @@ defmodule OliWeb.Router do
     post("/jcourse/dashboard/log/server", OliWeb.LegacyLogsController, :process)
   end
 
+  scope "/api/v1/superactivity/media", OliWeb do
+    pipe_through([:api, :authoring_protected])
+    post("/", LegacySuperactivityController, :create_media)
+  end
+
   scope "/", OliWeb do
     pipe_through([:browser, :delivery_protected])
 
@@ -414,6 +419,7 @@ defmodule OliWeb.Router do
     pipe_through([:browser, :authoring_protected, :workspace])
 
     live("/projects", Projects.ProjectsLive)
+    get("/projects/export", ProjectsController, :export_csv)
     live("/products/:product_id", Products.DetailsView)
     live("/products/:product_id/payments", Products.PaymentsView)
     live("/products/:section_slug/source_materials", Delivery.ManageSourceMaterials)
@@ -1577,6 +1583,11 @@ defmodule OliWeb.Router do
     live("/products", Products.ProductsView)
     live("/datasets", Workspaces.CourseAuthor.DatasetsLive)
 
+    # Gen AI
+    live("/gen_ai/registered_models", GenAI.RegisteredModelsView)
+    live("/gen_ai/service_configs", GenAI.ServiceConfigsView)
+    live("/gen_ai/feature_configs", GenAI.FeatureConfigsView)
+
     live("/products/:product_id/discounts", Products.Payments.Discounts.ProductsIndexView)
 
     live(
@@ -1673,6 +1684,7 @@ defmodule OliWeb.Router do
     # System admin
     scope "/" do
       pipe_through([:require_authenticated_system_admin])
+      live("/audit_log", Admin.AuditLogLive)
       get("/activity_review", ActivityReviewController, :index)
       live("/part_attempts", Admin.PartAttemptsView)
 

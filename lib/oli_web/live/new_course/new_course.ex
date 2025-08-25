@@ -20,9 +20,6 @@ defmodule OliWeb.Delivery.NewCourse do
 
   import OliWeb.Components.Delivery.Layouts
 
-  on_mount {OliWeb.UserAuth, :ensure_authenticated}
-  on_mount OliWeb.LiveSessionPlugs.SetCtx
-
   @context_claims "https://purl.imsglobal.org/spec/lti/claim/context"
   @resource_link_claims "https://purl.imsglobal.org/spec/lti/claim/resource_link"
 
@@ -384,9 +381,9 @@ defmodule OliWeb.Delivery.NewCourse do
 
         fields_to_validate =
           if class_modality != :never do
-            [:class_days, :start_date, :end_date, :preferred_scheduling_time]
+            [:class_days, :start_date, :end_date, :preferred_scheduling_time, :timezone]
           else
-            [:start_date, :end_date, :preferred_scheduling_time]
+            [:start_date, :end_date, :preferred_scheduling_time, :timezone]
           end
 
         if validate_fields(changeset, fields_to_validate) do

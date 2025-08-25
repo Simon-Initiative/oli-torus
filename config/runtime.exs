@@ -234,7 +234,7 @@ if config_env() == :prod do
   config :oli, :xapi_upload_pipeline,
     batcher_concurrency: get_env_as_integer.("XAPI_BATCHER_CONCURRENCY", "20"),
     batch_size: get_env_as_integer.("XAPI_BATCH_SIZE", "50"),
-    batch_timeout: get_env_as_integer.("XAPI_BATCHER_CONCURRENCY", "5000"),
+    batch_timeout: get_env_as_integer.("XAPI_BATCH_TIMEOUT", "5000"),
     processor_concurrency: get_env_as_integer.("XAPI_PROCESSOR_CONCURRENCY", "2")
 
   default_description = """

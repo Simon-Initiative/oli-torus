@@ -350,9 +350,22 @@ defmodule OliWeb.Users.AuthorsDetailView do
         socket
       ) do
     author = Accounts.get_author!(id)
+    admin = socket.assigns.current_author
 
     case Accounts.delete_author(author) do
-      {:ok, _} ->
+      {:ok, deleted_author} ->
+        # Log the deletion
+        Oli.Auditing.log_admin_action(
+          admin,
+          :author_deleted,
+          deleted_author,
+          %{
+            "email" => deleted_author.email,
+            "name" => deleted_author.name,
+            "deleted_by" => admin.email
+          }
+        )
+
         {:noreply,
          socket
          |> hide_modal(modal_assigns: nil)

@@ -1850,6 +1850,74 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       assert updated_attempt.lifecycle_state == :evaluated
       refute updated_attempt.was_late
     end
+
+    test "uses ResourceAccess.out_of instead of ResourceAttempt.out_of for current_out_of display in score-as-you-go assessment",
+         %{
+           conn: conn,
+           section: section,
+           user: user,
+           one_at_a_time_question_page: graded_page,
+           mcq_activity_1: mcq_activity_1
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      Sections.get_section_resource(section.id, graded_page.resource_id)
+      |> Sections.update_section_resource(%{batch_scoring: false})
+
+      resource_access =
+        Oli.Delivery.Attempts.Core.track_access(
+          graded_page.resource_id,
+          section.id,
+          user.id
+        )
+
+      {:ok, _updated_resource_access} =
+        Core.update_resource_access(resource_access, %{
+          score: 3.0,
+          out_of: 5.0
+        })
+
+      resource_attempt =
+        insert(:resource_attempt, %{
+          resource_access_id: resource_access.id,
+          resource_access: resource_access,
+          revision_id: graded_page.id,
+          revision: graded_page,
+          attempt_guid: UUID.uuid4(),
+          content: graded_page.content,
+          lifecycle_state: :active,
+          score: 3.0,
+          out_of: 4.0
+        })
+
+      activity_attempt =
+        insert(:activity_attempt, %{
+          resource_attempt_id: resource_attempt.id,
+          resource_attempt: resource_attempt,
+          revision_id: mcq_activity_1.id,
+          revision: mcq_activity_1,
+          resource_id: mcq_activity_1.resource_id,
+          resource: mcq_activity_1.resource,
+          attempt_guid: UUID.uuid4()
+        })
+
+      _part_attempt =
+        insert(:part_attempt, %{
+          activity_attempt_id: activity_attempt.id,
+          activity_attempt: activity_attempt,
+          attempt_guid: UUID.uuid4(),
+          part_id: "1"
+        })
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, graded_page.slug))
+      ensure_content_is_visible(view)
+
+      html = render(view)
+
+      # Verify the score displays correctly as "3 / 5" (using ResourceAccess.out_of)
+      assert html =~ ~r/Overall Page Score.*3 \/ 5/
+    end
   end
 
   describe "annotations toggle" do

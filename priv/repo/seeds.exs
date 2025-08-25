@@ -19,7 +19,7 @@ alias Oli.Accounts.{User, Author}
 alias Oli.Repo
 alias Oli.Utils.DataGenerators.NameGenerator
 alias Oli.GenAI.Completions.{ServiceConfig, RegisteredModel}
-alias Oli.GenAIFeatureConfig
+alias Oli.GenAI.FeatureConfig
 
 import Ecto.Query, only: [from: 2]
 
@@ -204,13 +204,13 @@ case Oli.Repo.all(RegisteredModel) do
     service_config =
       Oli.Repo.get_by!(Oli.GenAI.Completions.ServiceConfig, name: "standard-no-backup")
 
-    Oli.Repo.insert!(%GenAIFeatureConfig{
+    Oli.Repo.insert!(%FeatureConfig{
       feature: :student_dialogue,
       service_config_id: service_config.id,
       section_id: nil
     })
 
-    Oli.Repo.insert!(%GenAIFeatureConfig{
+    Oli.Repo.insert!(%FeatureConfig{
       feature: :instructor_dashboard,
       service_config_id: service_config.id,
       section_id: nil

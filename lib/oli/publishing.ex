@@ -1060,6 +1060,24 @@ defmodule Oli.Publishing do
 
         {:error, "Another user has modified the active publication. Please try again."}
 
+      {:ok, publication} ->
+        # Log the publication event
+        author = Oli.Accounts.get_author!(user_id)
+
+        Oli.Auditing.capture(
+          author,
+          :project_published,
+          project,
+          %{
+            "project_title" => project.title,
+            "publication_id" => publication.id,
+            "description" => description,
+            "version" => "#{publication.edition}.#{publication.major}.#{publication.minor}"
+          }
+        )
+
+        {:ok, publication}
+
       other ->
         other
     end
