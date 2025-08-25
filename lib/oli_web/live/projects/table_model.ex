@@ -112,17 +112,23 @@ defmodule OliWeb.Projects.TableModel do
   def custom_render(assigns, project, %ColumnSpec{name: :name}) do
     assigns = Map.merge(assigns, %{project: project})
 
-    ~H"""
-    <a
-      href={~p"/admin/authors/#{@project.owner_id}"}
-      class="text-Text-text-link text-base font-medium leading-normal"
-    >
-      {@project.name}
-    </a>
-    <small class="text-Text-text-low text-xs font-semibold leading-3">
-      {@project.email}
-    </small>
-    """
+    case project.owner_id do
+      nil ->
+        ""
+
+      _ ->
+        ~H"""
+        <a
+          href={~p"/admin/authors/#{@project.owner_id}"}
+          class="text-Text-text-link text-base font-medium leading-normal"
+        >
+          {@project.name}
+        </a>
+        <small class="text-Text-text-low text-xs font-semibold leading-3">
+          {@project.email}
+        </small>
+        """
+    end
   end
 
   # Collaborators
