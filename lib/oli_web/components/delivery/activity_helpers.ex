@@ -154,10 +154,12 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     |> Enum.map(fn activity ->
       ordinal = Map.get(ordinal_mapping, activity.resource_id)
 
+      student_responses = Map.get(activity, :student_responses, [])
+
       Map.put(
         activity,
         :preview_rendered,
-        fast_preview_render(section, activity.revision, page_id, activity_types_map, ordinal)
+        fast_preview_render(section, activity.revision, page_id, activity_types_map, ordinal, student_responses)
       )
     end)
   end
@@ -167,7 +169,8 @@ defmodule OliWeb.Delivery.ActivityHelpers do
          revision,
          page_id,
          activity_types_map,
-         ordinal
+         ordinal,
+         student_responses
        ) do
     type = Map.get(activity_types_map, revision.activity_type_id)
     state = ActivityState.create_preview_state(revision.content)
@@ -197,7 +200,8 @@ defmodule OliWeb.Delivery.ActivityHelpers do
       activity_map: Map.put(%{}, revision.resource_id, summary),
       activity_types_map: activity_types_map,
       resource_attempt: %Oli.Delivery.Attempts.Core.ResourceAttempt{},
-      is_liveview: true
+      is_liveview: true,
+      student_responses: student_responses
     }
     |> OliWeb.ManualGrading.Rendering.render(:instructor_preview)
   end
@@ -269,6 +273,8 @@ defmodule OliWeb.Delivery.ActivityHelpers do
         render_other(assigns)
     end
   end
+
+
 
   def render_likert(assigns) do
     spec =
@@ -465,7 +471,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     )
   end
 
-  defp add_choices_frequencies(activity_attempt, response_summaries) do
+  defp add_choices_frequencies(activity_attempt, response_summaries, part_id \\ nil) do
     responses =
       Enum.filter(response_summaries, fn response_summary ->
         response_summary.activity_id == activity_attempt.resource_id
@@ -496,41 +502,28 @@ defmodule OliWeb.Delivery.ActivityHelpers do
            end}
       end
 
-    choices =
+    blank_reponses = Enum.find(responses, fn r -> r.response == "" end)
+
+    part_id = case part_id do
+      nil -> (model["authoring"]["parts"] |> Enum.at(0))["id"]
+      part_id -> part_id
+    end
+
+    values =
       model["choices"]
-      |> Enum.map(
-        &Map.merge(&1, %{
-          "frequency" =>
-            Enum.find(responses, %{count: 0}, fn r -> r.response == &1["id"] end).count
-        })
+      |> Enum.map(fn c ->
+        %{
+          "label" => "A.",
+          "count" => Enum.find(responses, %{count: 0}, fn r -> r.response == c["id"] end).count,
+          "correct" => false,
+          "part_id" => part_id
+        } end
       )
-      |> then(fn choices ->
-        blank_reponses = Enum.find(responses, fn r -> r.response == "" end)
 
-        if blank_reponses[:response] do
-          [
-            %{
-              "content" => [
-                %{
-                  "children" => [
-                    %{
-                      "text" =>
-                        "Blank attempt (user submitted assessment without selecting any choice for this activity)"
-                    }
-                  ],
-                  "type" => "p"
-                }
-              ],
-              "frequency" => blank_reponses.count
-            }
-            | choices
-          ]
-        else
-          choices
-        end
-      end)
+    grouped = Enum.group_by(values, fn r -> r["part_id"] end)
 
-    updater.(activity_attempt, choices)
+    Map.put(activity_attempt, :student_responses, grouped)
+
   end
 
   defp add_likert_details(activity, response_summaries) do

@@ -89,8 +89,12 @@ defmodule Oli.Rendering.Activity.Html do
           |> Poison.encode!()
           |> HtmlEntities.encode()
 
+        student_responses = Map.get(context, :student_responses, %{})
+        |> Poison.encode!()
+        |> HtmlEntities.encode()
+
         [
-          ~s|<#{tag} authoringcontext="#{activity_context}" section_slug=\"#{section_slug}\" activity_id=\"#{activity_html_id}\" model="#{model_json}" activityId="#{activity_id}" editmode="false" projectSlug="#{section_slug}" bib_params="#{Base.encode64(bib_params_json)}"></#{tag}>\n|
+          ~s|<#{tag} authoringcontext="#{activity_context}" student_responses=\"#{student_responses}\" section_slug=\"#{section_slug}\" activity_id=\"#{activity_html_id}\" model="#{model_json}" activityId="#{activity_id}" editmode="false" mode="instructor_preview" projectSlug="#{section_slug}" bib_params="#{Base.encode64(bib_params_json)}"></#{tag}>\n|
         ]
 
       :review ->

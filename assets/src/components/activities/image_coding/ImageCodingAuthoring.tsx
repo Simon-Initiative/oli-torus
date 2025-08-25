@@ -14,6 +14,7 @@ import guid from 'utils/guid';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
 import { Explanation } from '../common/explanation/ExplanationAuthoring';
+import { StudentResponses } from '../common/responses/StudentResponses';
 import * as ActivityTypes from '../types';
 import { MediaItemRequest } from '../types';
 import { ICActions } from './actions';
@@ -23,7 +24,7 @@ import { ImageCodeEditor } from './sections/ImageCodeEditor';
 import { lastPart } from './utils';
 
 const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
-  const { dispatch, model, onRequestMedia } = useAuthoringElementContext<ImageCodingModelSchema>();
+  const { dispatch, model, mode, onRequestMedia } = useAuthoringElementContext<ImageCodingModelSchema>();
 
   const { projectSlug } = props;
 
@@ -190,6 +191,12 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
       {!model.isExample && (
         <div>
           <TabbedNavigation.Tabs>
+            {mode === 'instructor_preview' && (
+              <TabbedNavigation.Tab label="Student Responses">
+                <StudentResponses model={model} />
+              </TabbedNavigation.Tab>
+            )}
+
             <TabbedNavigation.Tab label="Answer Key">
               {solutionParameters()}
               <Feedback
@@ -212,6 +219,7 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
             <TabbedNavigation.Tab label="Explanation">
               <Explanation partId={model.authoring.parts[0].id} />
             </TabbedNavigation.Tab>
+
           </TabbedNavigation.Tabs>
         </div>
       )}

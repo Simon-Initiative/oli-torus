@@ -26,36 +26,107 @@ import { ActivityScoring } from '../common/responses/ActivityScoring';
 import { TriggerAuthoring, TriggerLabel } from '../common/triggers/TriggerAuthoring';
 import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
 import { VariableActions } from '../common/variables/variableActions';
+import { StudentResponses } from '../common/responses/StudentResponses';
+import { VegaLiteRenderer } from 'components/misc/VegaLiteRenderer';
 import * as ActivityTypes from '../types';
 import { MCSchema } from './schema';
 
 const store = configureStore();
 
+const ControlledTabs: React.FC<{ isInstructorPreview: boolean; children: React.ReactNode }> = ({
+  isInstructorPreview,
+  children
+}) => {
+  const [activeTab, setActiveTab] = React.useState<number>(0);
+
+  // Force the first visible tab to be active when the mode changes
+  React.useEffect(() => {
+    setActiveTab(0);
+  }, [isInstructorPreview]);
+
+  const validChildren = React.Children.toArray(children).filter(
+    (child): child is React.ReactElement => React.isValidElement(child)
+  );
+
+  return (
+    <>
+      <ul className="nav nav-tabs my-2 flex justify-between" role="tablist">
+        {validChildren.map((child, index) => (
+          <li key={'tab-' + index} className="nav-item" role="presentation">
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setActiveTab(index);
+              }}
+              className={'text-primary nav-link px-3' + (index === activeTab ? ' active' : '')}
+              data-bs-toggle="tab"
+              role="tab"
+              aria-controls={'tab-' + index}
+              aria-selected={index === activeTab}
+            >
+              {child.props.label}
+            </button>
+          </li>
+        ))}
+      </ul>
+      <div className="tab-content">
+        {validChildren.map((child, index) => (
+          <div
+            key={'tab-content-' + index}
+            className={'tab-pane' + (index === activeTab ? ' show active' : '')}
+            role="tabpanel"
+            aria-labelledby={'tab-' + index}
+          >
+            {child.props.children}
+          </div>
+        ))}
+      </div>
+    </>
+  );
+};
+
 const MultipleChoice: React.FC = () => {
-  const { dispatch, model, editMode, projectSlug, authoringContext } =
+  const { dispatch, model, editMode, mode, projectSlug, authoringContext, student_responses } =
     useAuthoringElementContext<MCSchema>();
   const writerContext = defaultWriterContext({
     projectSlug: projectSlug,
   });
-
+  const isInstructorPreview = mode === 'instructor_preview';
+  console.log("MCQ")
+  console.log(model);
   return (
     <>
-      <TabbedNavigation.Tabs>
-        <TabbedNavigation.Tab label="Question">
-          <Stem />
-          <ChoicesAuthoring
-            icon={<Radio.Unchecked />}
-            choices={model.choices}
-            addOne={() => dispatch(Choices.addOne(ActivityTypes.makeChoice('')))}
-            setAll={(choices: ActivityTypes.Choice[]) => dispatch(Choices.setAll(choices))}
-            onEdit={(id, content) => dispatch(Choices.setContent(id, content))}
-            onRemove={(id) => dispatch(Actions.removeChoice(id, model.authoring.parts[0].id))}
-            onChangeEditorType={(id, editor) => dispatch(Choices.setEditor(id, editor))}
-            onChangeEditorTextDirection={(id, textDirection) => {
-              dispatch(Choices.setTextDirection(id, textDirection));
-            }}
-          />
-        </TabbedNavigation.Tab>
+      <ControlledTabs isInstructorPreview={isInstructorPreview}>
+        {isInstructorPreview && (
+          <TabbedNavigation.Tab key="student-responses" label="Student Responses">
+            <StudentResponses model={model} projectSlug={projectSlug}>
+              {student_responses && student_responses[model.authoring.parts[0].id] && (
+                <VegaLiteRenderer
+                  spec={viz(student_responses[model.authoring.parts[0].id])}
+                />
+              )}
+            </StudentResponses>
+          </TabbedNavigation.Tab>
+        )}
+
+        {!isInstructorPreview && (
+          <TabbedNavigation.Tab key="question" label="Question">
+            <Stem />
+            <ChoicesAuthoring
+              icon={<Radio.Unchecked />}
+              choices={model.choices}
+              addOne={() => dispatch(Choices.addOne(ActivityTypes.makeChoice('')))}
+              setAll={(choices: ActivityTypes.Choice[]) => dispatch(Choices.setAll(choices))}
+              onEdit={(id, content) => dispatch(Choices.setContent(id, content))}
+              onRemove={(id) => dispatch(Actions.removeChoice(id, model.authoring.parts[0].id))}
+              onChangeEditorType={(id, editor) => dispatch(Choices.setEditor(id, editor))}
+              onChangeEditorTextDirection={(id, textDirection) => {
+                dispatch(Choices.setTextDirection(id, textDirection));
+              }}
+            />
+          </TabbedNavigation.Tab>
+        )}
         <TabbedNavigation.Tab label="Answer Key">
           <StemDelivery stem={model.stem} context={writerContext} />
 
@@ -72,6 +143,7 @@ const MultipleChoice: React.FC = () => {
             }
             isEvaluated={false}
             context={writerContext}
+            disabled={isInstructorPreview}
           />
           <SimpleFeedback partId={model.authoring.parts[0].id} />
           <ActivityScoring partId={model.authoring.parts[0].id} />
@@ -85,6 +157,7 @@ const MultipleChoice: React.FC = () => {
             }
             unselectedIcon={<Radio.Unchecked />}
             selectedIcon={<Radio.Checked />}
+            disabled={isInstructorPreview}
           />
         </TabbedNavigation.Tab>
 
@@ -99,6 +172,7 @@ const MultipleChoice: React.FC = () => {
         <TabbedNavigation.Tab label="Dynamic Variables">
           <VariableEditorOrNot
             editMode={editMode}
+            mode={mode}
             model={model}
             onEdit={(t) => dispatch(VariableActions.onUpdateTransformations(t))}
           />
@@ -111,10 +185,69 @@ const MultipleChoice: React.FC = () => {
         )}
 
         <ActivitySettings settings={[shuffleAnswerChoiceSetting(model, dispatch)]} />
-      </TabbedNavigation.Tabs>
+      </ControlledTabs>
     </>
   );
 };
+
+function viz(values: any) {
+  return {
+    "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+    "title": { "text": "First Attempt", "fontSize": 16, "anchor": "start", "dy": -5 },
+    "params": [
+      {
+        "name": "isDarkMode",
+        "value": false
+      }
+    ],
+    "data": {
+      "values": values
+    },
+    "transform": [
+      { "calculate": "datum.count + ' students'", "as": "countLabel" },
+      { "calculate": "length(datum.count + ' students') * 6 + 6", "as": "checkOffset" }
+    ],
+    "height": { "step": 32 },
+    "width": 330,
+    "config": {
+      "axis": { "labelFontSize": 13, "title": null, "grid": false, "ticks": false, "domain": false },
+      "view": { "stroke": null }
+    },
+    "layer": [
+      {
+        "mark": { "type": "bar", "cornerRadiusEnd": 3, "height": 12 },
+        "encoding": {
+          "y": { "field": "label", "type": "nominal", "sort": null, "axis": { "labelPadding": 8 } },
+          "x": { "field": "count", "type": "quantitative", "axis": null },
+          "color": {
+            "condition": { "test": "datum.correct", "value": "#27ae60" },
+            "value": "#b23b2e"
+          }
+        }
+      },
+      {
+        "mark": { "type": "text", "baseline": "middle", "align": "left", "dx": 6 },
+        "encoding": {
+          "y": { "field": "label", "type": "nominal" },
+          "x": { "field": "count", "type": "quantitative" },
+          "text": { "field": "countLabel" },
+          "color": { "value": "#555555" }
+        }
+      },
+      {
+        "mark": { "type": "text", "baseline": "middle", "align": "left" },
+        "encoding": {
+          "y": { "field": "label", "type": "nominal" },
+          "x": { "field": "count", "type": "quantitative" },
+          "text": { "value": "✓" },
+          "color": { "value": "#27ae60" },
+          "opacity": { "condition": { "test": "datum.correct", "value": 1 }, "value": 0 },
+          "xOffset": { "field": "checkOffset", "type": "quantitative" }
+        }
+      }
+    ]
+  } as any
+}
 
 export class MultipleChoiceAuthoring extends AuthoringElement<MCSchema> {
   migrateModelVersion(model: any): MCSchema {

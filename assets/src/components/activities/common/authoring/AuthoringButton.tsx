@@ -11,16 +11,19 @@ export type Props = {
   children?: React.ReactNode;
   disabled?: boolean;
   editMode: boolean;
+  mode?: 'authoring' | 'instructor_preview';
   ariaLabel?: string;
 };
 
 export const AuthoringButton: React.FC<Props> = (props: Props) => {
+  const isDisabled = props.disabled || !props.editMode || props.mode === 'instructor_preview';
+  
   return (
     <button
       aria-label={props.ariaLabel || ''}
       style={props.style}
       className={classNames('btn', props.className)}
-      disabled={props.disabled || !props.editMode}
+      disabled={isDisabled}
       type="button"
       onClick={(e) => props.action(e)}
       onKeyPress={(e: any) => (e.key === 'Enter' ? props.action(e) : null)}
@@ -30,7 +33,7 @@ export const AuthoringButton: React.FC<Props> = (props: Props) => {
   );
 };
 
-export const AuthoringButtonConnected: React.FC<Omit<Props, 'editMode'>> = (props) => {
-  const { editMode } = useAuthoringElementContext();
-  return <AuthoringButton {...props} editMode={editMode} />;
+export const AuthoringButtonConnected: React.FC<Omit<Props, 'editMode' | 'mode'>> = (props) => {
+  const { editMode, mode } = useAuthoringElementContext();
+  return <AuthoringButton {...props} editMode={editMode} mode={mode} />;
 };

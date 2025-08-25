@@ -16,7 +16,8 @@ export const FeedbackCard: React.FC<{
   updateTextDirection: (textDirection: TextDirection) => void;
   placeholder?: string;
   children: any;
-}> = ({ title, feedback, update, placeholder, children, updateEditor, updateTextDirection }) => {
+  editMode?: boolean;
+}> = ({ title, feedback, update, placeholder, children, updateEditor, updateTextDirection, editMode = true }) => {
   const { projectSlug } = useAuthoringElementContext();
   return (
     <Card.Card>
@@ -27,7 +28,7 @@ export const FeedbackCard: React.FC<{
           content={feedback.content}
           onEdit={(content) => update(feedback.id, content)}
           onEditorTypeChange={updateEditor}
-          editMode={true}
+          editMode={editMode}
           editorType={feedback.editor || DEFAULT_EDITOR}
           allowBlockElements={true}
           projectSlug={projectSlug}

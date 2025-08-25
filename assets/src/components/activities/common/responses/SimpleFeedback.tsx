@@ -13,7 +13,8 @@ interface Props {
 }
 
 export const SimpleFeedback: React.FC<Props> = ({ partId }) => {
-  const { model, dispatch, editMode, authoringContext } = useAuthoringElementContext<HasParts>();
+  const { model, dispatch, editMode, mode, authoringContext } = useAuthoringElementContext<HasParts>();
+  const isInstructorPreview = mode === 'instructor_preview';
 
   const correctResponse = getCorrectResponse(model, partId);
 
@@ -43,10 +44,11 @@ export const SimpleFeedback: React.FC<Props> = ({ partId }) => {
         update={(_id, content) => updateFeedback(correctResponse.id, content as RichText)}
         updateEditor={(editor) => updateFeedbackEditor(correctResponse.id, editor)}
         placeholder="Encourage students or explain why the answer is correct"
+        editMode={editMode && !isInstructorPreview}
       >
         {authoringContext.contentBreaksExist ? (
           <ShowPage
-            editMode={editMode}
+            editMode={editMode && !isInstructorPreview}
             index={correctResponse.showPage}
             onChange={(v) => updateShowPage(correctResponse.id, v)}
           />
@@ -62,10 +64,11 @@ export const SimpleFeedback: React.FC<Props> = ({ partId }) => {
           updateTextDirection(incorrectResponse.id, textDirection)
         }
         placeholder="Enter catch-all feedback for incorrect answers"
+        editMode={editMode && !isInstructorPreview}
       >
         {authoringContext.contentBreaksExist ? (
           <ShowPage
-            editMode={editMode}
+            editMode={editMode && !isInstructorPreview}
             index={incorrectResponse.showPage}
             onChange={(v) => updateShowPage(incorrectResponse.id, v)}
           />
