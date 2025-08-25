@@ -34,11 +34,6 @@ defmodule OliWeb.Projects.TableModel do
         render_fn: &custom_render/3
       },
       %ColumnSpec{
-        name: :institutions,
-        label: "Institution",
-        render_fn: &custom_render/3
-      },
-      %ColumnSpec{
         name: :published,
         label: "Published",
         render_fn: &custom_render/3
@@ -118,9 +113,12 @@ defmodule OliWeb.Projects.TableModel do
     assigns = Map.merge(assigns, %{project: project})
 
     ~H"""
-    <span class="text-Text-text-link text-base font-medium leading-normal">
+    <a
+      href={~p"/admin/authors/#{@project.owner_id}"}
+      class="text-Text-text-link text-base font-medium leading-normal"
+    >
       {@project.name}
-    </span>
+    </a>
     <small class="text-Text-text-low text-xs font-semibold leading-3">
       {@project.email}
     </small>
@@ -141,27 +139,6 @@ defmodule OliWeb.Projects.TableModel do
           {collab["name"]}
         </a>
         <%= if index < length(@project.collaborators) - 1 do %>
-          <span class="text-Text-text-high text-base font-medium leading-normal">, </span>
-        <% end %>
-      <% end %>
-    </div>
-    """
-  end
-
-  # Institution
-  def custom_render(assigns, project, %ColumnSpec{name: :institutions}) do
-    assigns = Map.merge(assigns, %{project: project})
-
-    ~H"""
-    <div>
-      <%= for {institution, index} <- Enum.with_index(@project.institutions || []) do %>
-        <a
-          href={~p"/admin/institutions/#{institution["id"]}"}
-          class="text-Text-text-link text-base font-medium leading-normal"
-        >
-          {institution["name"]}
-        </a>
-        <%= if index < length(@project.institutions) - 1 do %>
           <span class="text-Text-text-high text-base font-medium leading-normal">, </span>
         <% end %>
       <% end %>

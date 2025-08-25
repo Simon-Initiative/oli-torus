@@ -15,7 +15,6 @@ defmodule Oli.Authoring.Course do
 
   alias Oli.Groups.CommunityVisibility
   alias Oli.Inventories
-  alias Oli.Institutions.Institution
   alias Oli.Publishing
   alias Oli.Publishing.Publications.Publication
   alias Oli.Publishing.PublishedResource
@@ -133,8 +132,6 @@ defmodule Oli.Authoring.Course do
         on: ap.author_id == a.id,
         left_join: pv in ProjectVisibility,
         on: pv.project_id == p.id,
-        left_join: i in Institution,
-        on: pv.institution_id == i.id,
         left_join: pub in Publication,
         on: pub.project_id == p.id and not is_nil(pub.published),
         left_join: op in AuthorProject,
@@ -162,6 +159,7 @@ defmodule Oli.Authoring.Course do
           inserted_at: p.inserted_at,
           status: p.status,
           visibility: p.visibility,
+          owner_id: owner.id,
           name: owner.name,
           email: owner.email,
           total_count: fragment("count(*) OVER()"),
@@ -171,13 +169,6 @@ defmodule Oli.Authoring.Course do
               a.id,
               a.name,
               a.id
-            ),
-          institutions:
-            fragment(
-              "json_agg(DISTINCT jsonb_build_object('id', ?, 'name', ?)) FILTER (WHERE ? IS NOT NULL)",
-              i.id,
-              i.name,
-              i.id
             ),
           published: fragment("bool_or(?)", not is_nil(pub.id))
         }
@@ -192,13 +183,6 @@ defmodule Oli.Authoring.Course do
             query,
             [_, _, a],
             {^direction, fragment("string_agg(DISTINCT ?, ', ')", a.name)}
-          )
-
-        :institutions ->
-          order_by(
-            query,
-            [_, _, _, _, i],
-            {^direction, fragment("string_agg(DISTINCT ?, ', ')", i.name)}
           )
 
         :published ->
@@ -255,8 +239,6 @@ defmodule Oli.Authoring.Course do
         on: ap.author_id == a.id,
         left_join: pv in ProjectVisibility,
         on: pv.project_id == p.id,
-        left_join: i in Institution,
-        on: pv.institution_id == i.id,
         left_join: pub in Publication,
         on: pub.project_id == p.id and not is_nil(pub.published),
         left_join: op in AuthorProject,
@@ -284,6 +266,7 @@ defmodule Oli.Authoring.Course do
           inserted_at: p.inserted_at,
           status: p.status,
           visibility: p.visibility,
+          owner_id: owner.id,
           name: owner.name,
           email: owner.email,
           total_count: fragment("count(*) OVER()"),
@@ -293,13 +276,6 @@ defmodule Oli.Authoring.Course do
               a.id,
               a.name,
               a.id
-            ),
-          institutions:
-            fragment(
-              "json_agg(DISTINCT jsonb_build_object('id', ?, 'name', ?)) FILTER (WHERE ? IS NOT NULL)",
-              i.id,
-              i.name,
-              i.id
             ),
           published: fragment("bool_or(?)", not is_nil(pub.id))
         }
@@ -314,13 +290,6 @@ defmodule Oli.Authoring.Course do
             query,
             [_, _, a],
             {^direction, fragment("string_agg(DISTINCT ?, ', ')", a.name)}
-          )
-
-        :institutions ->
-          order_by(
-            query,
-            [_, _, _, _, i],
-            {^direction, fragment("string_agg(DISTINCT ?, ', ')", i.name)}
           )
 
         :published ->
