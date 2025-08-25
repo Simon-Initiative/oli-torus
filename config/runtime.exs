@@ -177,6 +177,13 @@ if config_env() == :prod do
       For example: your_s3_media_bucket_url.s3.amazonaws.com
       """
 
+  cloak_vault_key =
+    System.get_env("CLOAK_VAULT_KEY") ||
+      raise """
+      environment variable CLOAK_VAULT_KEY is missing.
+      For example: HXCdm5z61eNgUpnXObJRv94k3JnKSrnfwppyb60nz6w=
+      """
+
   # General OLI app config
   config :oli,
     logger_truncation_enabled: get_env_as_boolean.("LOGGER_TRUNCATION_ENABLED", "true"),
@@ -460,13 +467,6 @@ if config_env() == :prod do
       certificate_eligibility:
         String.to_integer(System.get_env("OBAN_QUEUE_SIZE_CERTIFICATE_ELIGIBILITY", "10"))
     ]
-
-  cloak_vault_key =
-    System.get_env("CLOAK_VAULT_KEY") ||
-      raise """
-      environment variable CLOAK_VAULT_KEY is missing.
-      For example: HXCdm5z61eNgUpnXObJRv94k3JnKSrnfwppyb60nz6w=
-      """
 
   config :oli, Oli.Vault,
     json_library: Jason,

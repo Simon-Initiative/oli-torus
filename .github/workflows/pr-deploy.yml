@@ -10,17 +10,27 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: 🧾 Build info
+        id: info
+        run: |
+          echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          echo "app_version=$(cat mix.exs | grep version | sed -e 's/.*version: "\(.*\)",/\1/')" >> $GITHUB_OUTPUT
+
       - name: Build Docker image
         run: |
-          docker build -t oli-torus:${{ github.sha }} .
+          docker build \
+          --build-arg APP_VERSION=${{ steps.info.outputs.app_version }} \
+          --build-arg SHA_SHORT=${{ steps.info.outputs.sha_short }} \
+          -t oli-torus:${{ github.sha }} .
 
       - name: Deploy PR stack
         run: |
-          PROJECT=pr${{ github.event.number }}
-          APP_IMAGE_TAG=${{ github.sha }}
-          HOST=pr${{ github.event.number }}.plasma.oli.cmu.edu
+          export PROJECT=pr${{ github.event.number }}
+          export APP_IMAGE_TAG=${{ github.sha }}
+          export HOST=pr${{ github.event.number }}.plasma.oli.cmu.edu
 
-          docker-compose -p $PROJECT \
-            -f devops/docker-compose.yml \
-            -f devops/docker-compose.override.yml \
-            up -d --build
+          # Setup database
+          docker-compose -p $PROJECT -f devops/docker-compose.yml run --rm app /app/bin/oli eval "Oli.Release.setup"
+
+          # Run stack
+          docker-compose -p $PROJECT -f devops/docker-compose.yml up -d
