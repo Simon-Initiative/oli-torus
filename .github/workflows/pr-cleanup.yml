@@ -1,0 +1,14 @@
+name: Cleanup PR Preview
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  cleanup:
+    runs-on: plasma
+    steps:
+      - name: Remove PR stack
+        run: |
+          PROJECT=pr${{ github.event.number }}
+          docker-compose -p $PROJECT down -v

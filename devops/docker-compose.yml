@@ -1,0 +1,51 @@
+services:
+  app:
+    image: oli-torus:${APP_IMAGE_TAG}
+    networks:
+      webproxy-public:
+        aliases:
+          - pr${PR_NUMBER}-app
+      default: {}
+    depends_on:
+      - postgres
+      - minio
+    environment:
+      DB_HOST: postgres
+      ADMIN_EMAIL: "admin@example.edu"
+      ADMIN_PASSWORD: "changeme"
+      HOST: ${HOST}
+      EMAIL_FROM_NAME: "OLI Torus"
+      EMAIL_FROM_ADDRESS: "no-reply@example.edu"
+      EMAIL_REPLY_TO: "admin@example.edu"
+
+  postgres:
+    image: ankane/pgvector
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "1"
+        max-size: 5m
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      PGDATA: /var/lib/postgresql/data/pgdata
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_HOST_AUTH_METHOD: trust
+
+  minio:
+    image: minio/minio
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: minio
+    volumes:
+      - minio_data:/data
+    command: ["server", "--console-address", ":9001", "/data"]
+
+volumes:
+  postgres_data:
+  minio_data:
+
+networks:
+  webproxy-public:
+    external: true
