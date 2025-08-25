@@ -1817,5 +1817,14 @@ defmodule OliWeb.Router do
       live("/icons", Dev.IconsLive)
       live("/tokens", Dev.TokensLive)
     end
+
+    # Prototype routes
+    scope "/prototype", OliWeb do
+      pipe_through([:browser])
+
+      live("/", Prototype.IntroductionLive)
+      live("/authoring_stop_prompts", Prototype.AuthoringStopPromptLive)
+      live("/delivery_stop_prompts", Prototype.DeliveryStopPromptLive)
+    end
   end
 end

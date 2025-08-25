@@ -73,7 +73,13 @@ defmodule Oli.Application do
         Oli.Delivery.Sections.SectionCache,
 
         # a supervisor which can be used to dynamically supervise tasks
-        {Task.Supervisor, name: Oli.TaskSupervisor}
+        {Task.Supervisor, name: Oli.TaskSupervisor},
+
+        # Speech to Text for prototype
+        Oli.Prototype.SpeechToText,
+
+        # Video annotation cache for prototype
+        Oli.Prototype.VideoAnnotationCache
       ] ++ maybe_node_js_config()
 
     if log_incomplete_requests?() do

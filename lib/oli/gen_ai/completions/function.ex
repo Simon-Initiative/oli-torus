@@ -53,7 +53,7 @@ defmodule Oli.GenAI.Completions.Function do
         case String.split(full_name, ".") do
           parts when is_list(parts) ->
             module_parts = Enum.take(parts, Enum.count(parts) - 1)
-            name = Enum.at(parts, -1) |> String.to_existing_atom()
+            name = Enum.at(parts, -1) |> String.to_atom()
 
             # Join the module parts and convert to an atom
             module =

@@ -53,14 +53,27 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
       ) do
     config = config(:async, registered_model)
 
+    args =
+      case functions do
+        [] ->
+          [
+            model: model,
+            messages: encode_messages(messages),
+            stream: true
+          ]
+
+        _ ->
+          [
+            model: model,
+            messages: encode_messages(messages),
+            functions: functions,
+            stream: true
+          ]
+      end
+
     case api_post(
            config.api_url <> "/v1/chat/completions",
-           [
-             model: model,
-             messages: encode_messages(messages),
-             functions: functions,
-             stream: true
-           ],
+           args,
            config
          ) do
       {:error, %HTTPoison.Error{reason: reason}} ->

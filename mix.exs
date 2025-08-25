@@ -130,6 +130,8 @@ defmodule Oli.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:bumblebee, "~> 0.6.0"},
+      {:exla, ">= 0.0.0"},
       {:anthropix, "~> 0.6"},
       {:appsignal_phoenix, "~> 2.7"},
       {:assent, "~> 0.2.9"},

@@ -51,6 +51,7 @@ import { ToggleReadMore } from './toggle_read_more';
 import { AutoHideTooltip, TooltipInit, TooltipWithTarget } from './tooltip';
 import { VideoPlayer } from './video_player';
 import { PauseOthersOnSelected, VideoPreview } from './video_preview';
+import { HTML5Player, YouTubePlayer, DialogueFader } from './prototype_video_hooks';
 import { WakeUpDot } from './wakeup_dot';
 
 export const Hooks = {
@@ -98,6 +99,9 @@ export const Hooks = {
   VideoPlayer,
   VideoPreview,
   PauseOthersOnSelected,
+  HTML5Player,
+  YouTubePlayer,
+  DialogueFader,
   PointMarkers,
   AutoSelect,
   CustomFocusWrap,
