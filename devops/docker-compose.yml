@@ -14,6 +14,7 @@ services:
       - postgres
       - minio
     environment:
+      RELEASE_NODE: oli@${HOST}
       SECRET_KEY_BASE: "ba1sX03RVQyAk3MPRfUeG7LQxUPRe3IB3iN3VnTHYFxUgsz2vAUDof/kGCiyaigs"
       LIVE_VIEW_SALT: "vf6j/P8XSYOVNs3aKUQ5SQCfunWheQPQ+EDzfBJM0FBTLcyTHZlmQGXbBBbSJwkV"
       HOST: ${HOST}
