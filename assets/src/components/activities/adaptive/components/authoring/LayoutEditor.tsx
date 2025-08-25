@@ -96,6 +96,18 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
     setParts(props.parts);
   }, [props.parts]);
 
+  useEffect(() => {
+    if (!parts?.length) {
+      setParts([
+        {
+          id: '__default',
+          type: 'janus-text-flow',
+          custom: [],
+        },
+      ]);
+    }
+  }, [parts]);
+
   const toolbarPosition = { x: 0, y: 0 };
   if (selectedPartAndCapabilities) {
     const x = selectedPartAndCapabilities?.custom.x || 0;
