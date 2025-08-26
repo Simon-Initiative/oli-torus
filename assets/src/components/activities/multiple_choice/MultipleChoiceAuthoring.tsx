@@ -94,8 +94,7 @@ const MultipleChoice: React.FC = () => {
     projectSlug: projectSlug,
   });
   const isInstructorPreview = mode === 'instructor_preview';
-  console.log('MCQ');
-  console.log(model);
+
   return (
     <>
       <ControlledTabs isInstructorPreview={isInstructorPreview}>
