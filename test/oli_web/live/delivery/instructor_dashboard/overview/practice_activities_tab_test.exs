@@ -1412,7 +1412,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       |> render_click()
 
       # check that the likert VegaLite visualization renders correctly
-      vega_divs = 
+      vega_divs =
         view
         |> render()
         |> Floki.parse_fragment!()
@@ -1477,7 +1477,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       assert view
              |> element(~s{div[role="student attempts summary"]})
              |> render() =~ "1 student has responded"
-
     end
 
     test "student attempts summary gets rendered correctly when more than one student has attempted",
@@ -1534,7 +1533,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       assert view
              |> element(~s{div[role="student attempts summary"]})
              |> render() =~ "3 students have responded"
-
     end
 
     test "student attempts summary gets rendered correctly when all students have attempted (even more than once)",
@@ -1633,7 +1631,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       refute view
              |> has_element?("#copy_emails_button", "Copy their email addresses")
     end
-
   end
 
   describe "page size change" do
