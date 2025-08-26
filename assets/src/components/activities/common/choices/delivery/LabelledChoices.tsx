@@ -2,6 +2,7 @@ import React from 'react';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { Choice } from 'components/activities/types';
 import { SlateOrMarkdownEditor } from 'components/editing/SlateOrMarkdownEditor';
+import { DEFAULT_EDITOR } from 'data/content/resource';
 
 interface Props {
   choices: Choice[];
@@ -30,7 +31,7 @@ export const LabelledChoices: React.FC<Props> = ({ choices }) => {
                 lineHeight: '1.5',
               }}
               editMode={false}
-              editorType={choice.editor}
+              editorType={choice.editor || DEFAULT_EDITOR}
               content={choice.content}
               onEdit={() => {}} // No-op since read-only
               allowBlockElements={true}
