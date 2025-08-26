@@ -8,7 +8,6 @@ import { configureStore } from 'state/store';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
 import { WrappedMonaco } from '../common/variables/WrappedMonaco';
-import { StudentResponses } from '../common/responses/StudentResponses';
 import { AnswerKey } from './AnswerKey';
 import { HintsEditor } from './HintsEditor';
 import { PartManager } from './PartManager';
@@ -18,9 +17,8 @@ import { CustomDnDSchema } from './schema';
 const store = configureStore();
 
 const CustomDnd = () => {
-  const { dispatch, model, editMode, mode } = useAuthoringElementContext<CustomDnDSchema>();
+  const { dispatch, model, editMode } = useAuthoringElementContext<CustomDnDSchema>();
   const [currentPart, setCurrentPart] = React.useState<string>(model.authoring.parts[0].id);
-  const isInstructorPreview = mode === 'instructor_preview';
 
   return (
     <>
@@ -47,12 +45,6 @@ const CustomDnd = () => {
       />
       <div className="mb-3" />
       <TabbedNavigation.Tabs>
-        {mode === 'instructor_preview' && (
-          <TabbedNavigation.Tab label="Student Responses">
-            <StudentResponses model={model} />
-          </TabbedNavigation.Tab>
-        )}
-
         <TabbedNavigation.Tab label={`Answer Key (${currentPart})`}>
           <AnswerKey partId={currentPart} />
         </TabbedNavigation.Tab>
@@ -99,7 +91,6 @@ const CustomDnd = () => {
             onEdit={(s) => dispatch(CustomDnDActions.editInitiators(s))}
           />
         </TabbedNavigation.Tab>
-
       </TabbedNavigation.Tabs>
     </>
   );

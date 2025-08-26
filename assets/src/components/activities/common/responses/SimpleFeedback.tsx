@@ -13,7 +13,8 @@ interface Props {
 }
 
 export const SimpleFeedback: React.FC<Props> = ({ partId }) => {
-  const { model, dispatch, editMode, mode, authoringContext } = useAuthoringElementContext<HasParts>();
+  const { model, dispatch, editMode, mode, authoringContext } =
+    useAuthoringElementContext<HasParts>();
   const isInstructorPreview = mode === 'instructor_preview';
 
   const correctResponse = getCorrectResponse(model, partId);

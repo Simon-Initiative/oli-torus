@@ -18,16 +18,16 @@ import { InputRef } from 'data/content/model/elements/types';
 import { configureStore } from 'state/store';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
+import { StudentResponses } from '../common/responses/StudentResponses';
 import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
 import { VariableActions } from '../common/variables/variableActions';
-import { StudentResponses } from '../common/responses/StudentResponses';
 import { MultiInput } from '../multi_input/schema';
 
 const store = configureStore();
 
-const ControlledTabs: React.FC<{ isInstructorPreview: boolean; children: React.ReactNode }> = ({ 
-  isInstructorPreview, 
-  children 
+const ControlledTabs: React.FC<{ isInstructorPreview: boolean; children: React.ReactNode }> = ({
+  isInstructorPreview,
+  children,
 }) => {
   const [activeTab, setActiveTab] = React.useState<number>(0);
 
@@ -37,7 +37,7 @@ const ControlledTabs: React.FC<{ isInstructorPreview: boolean; children: React.R
   }, [isInstructorPreview]);
 
   const validChildren = React.Children.toArray(children).filter(
-    (child): child is React.ReactElement => React.isValidElement(child)
+    (child): child is React.ReactElement => React.isValidElement(child),
   );
 
   return (
@@ -110,21 +110,13 @@ export const MultiInputComponent = () => {
       />
       {editor && input ? (
         <ControlledTabs isInstructorPreview={isInstructorPreview}>
-          {mode === 'instructor_preview' && (
-            <TabbedNavigation.Tab label="Student Responses">
-              <StudentResponses model={model} />
-            </TabbedNavigation.Tab>
-          )}
-
           <TabbedNavigation.Tab label="Config">
             <VlabConfigTab editor={editor} />
           </TabbedNavigation.Tab>
-          
-          {!isInstructorPreview && (
-            <TabbedNavigation.Tab label="Question">
-              <QuestionTab editor={editor} input={input} index={index} />
-            </TabbedNavigation.Tab>
-          )}
+
+          <TabbedNavigation.Tab label="Question">
+            <QuestionTab editor={editor} input={input} index={index} />
+          </TabbedNavigation.Tab>
           <TabbedNavigation.Tab label="Answer Key">
             <AnswerKeyTab input={input as MultiInput} />
           </TabbedNavigation.Tab>

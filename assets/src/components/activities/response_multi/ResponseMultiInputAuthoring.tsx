@@ -20,18 +20,18 @@ import { InputRef } from 'data/content/model/elements/types';
 import { configureStore } from 'state/store';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
+import { StudentResponses } from '../common/responses/StudentResponses';
 import { TriggerAuthoring, TriggerLabel } from '../common/triggers/TriggerAuthoring';
 import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
 import { VariableActions } from '../common/variables/variableActions';
-import { StudentResponses } from '../common/responses/StudentResponses';
 import { ExplanationTab } from './sections/ExplanationTab';
 import { PartsTab } from './sections/PartsTab';
 
 const store = configureStore();
 
-const ControlledTabs: React.FC<{ isInstructorPreview: boolean; children: React.ReactNode }> = ({ 
-  isInstructorPreview, 
-  children 
+const ControlledTabs: React.FC<{ isInstructorPreview: boolean; children: React.ReactNode }> = ({
+  isInstructorPreview,
+  children,
 }) => {
   const [activeTab, setActiveTab] = React.useState<number>(0);
 
@@ -41,7 +41,7 @@ const ControlledTabs: React.FC<{ isInstructorPreview: boolean; children: React.R
   }, [isInstructorPreview]);
 
   const validChildren = React.Children.toArray(children).filter(
-    (child): child is React.ReactElement => React.isValidElement(child)
+    (child): child is React.ReactElement => React.isValidElement(child),
   );
 
   return (
@@ -118,17 +118,9 @@ export const ResponseMultiInputComponent = () => {
       />
       {editor && input ? (
         <ControlledTabs isInstructorPreview={isInstructorPreview}>
-          {mode === 'instructor_preview' && (
-            <TabbedNavigation.Tab label="Student Responses">
-              <StudentResponses model={model} />
-            </TabbedNavigation.Tab>
-          )}
-
-          {!isInstructorPreview && (
-            <TabbedNavigation.Tab label="Input">
-              <QuestionTab editor={editor} input={input} index={index} />
-            </TabbedNavigation.Tab>
-          )}
+          <TabbedNavigation.Tab label="Input">
+            <QuestionTab editor={editor} input={input} index={index} />
+          </TabbedNavigation.Tab>
           <TabbedNavigation.Tab label="Answer Key">
             <PartsTab editor={editor} input={input} index={index} />
           </TabbedNavigation.Tab>

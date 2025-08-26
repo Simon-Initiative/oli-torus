@@ -30,19 +30,19 @@ import { RespondedUsersList } from '../common/authoring/RespondedUsersList';
 import { ActivitySettings } from '../common/authoring/settings/ActivitySettings';
 import { Explanation } from '../common/explanation/ExplanationAuthoring';
 import { ActivityScoring } from '../common/responses/ActivityScoring';
+import { StudentResponses } from '../common/responses/StudentResponses';
 import { TriggerAuthoring, TriggerLabel } from '../common/triggers/TriggerAuthoring';
 import { toggleSubmitAndCompareOption } from '../common/utils';
 import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
 import { VariableActions } from '../common/variables/variableActions';
-import { StudentResponses } from '../common/responses/StudentResponses';
 import { ShortAnswerActions } from './actions';
 import { ShortAnswerModelSchema } from './schema';
 
 const store = configureStore();
 
-const ControlledTabs: React.FC<{ isInstructorPreview: boolean; children: React.ReactNode }> = ({ 
-  isInstructorPreview, 
-  children 
+const ControlledTabs: React.FC<{ isInstructorPreview: boolean; children: React.ReactNode }> = ({
+  isInstructorPreview,
+  children,
 }) => {
   const [activeTab, setActiveTab] = React.useState<number>(0);
 
@@ -52,7 +52,7 @@ const ControlledTabs: React.FC<{ isInstructorPreview: boolean; children: React.R
   }, [isInstructorPreview]);
 
   const validChildren = React.Children.toArray(children).filter(
-    (child): child is React.ReactElement => React.isValidElement(child)
+    (child): child is React.ReactElement => React.isValidElement(child),
   );
 
   return (
@@ -107,46 +107,38 @@ const ShortAnswer = () => {
   return (
     <>
       <ControlledTabs isInstructorPreview={isInstructorPreview}>
-        {mode === 'instructor_preview' && (
-          <TabbedNavigation.Tab label="Student Responses">
-            <StudentResponses model={model} projectSlug={projectSlug} />
-          </TabbedNavigation.Tab>
-        )}
-
-        {!isInstructorPreview && (
-          <TabbedNavigation.Tab label="Question">
-            <div className="d-flex flex-column flex-md-row mb-2">
-              <Stem />
-              {!model.responses ? (
-                <InputTypeDropdown
-                  options={shortAnswerOptions}
-                  editMode={editMode}
-                  selected={model.inputType}
-                  onChange={(inputType) =>
-                    dispatch(ShortAnswerActions.setInputType(inputType, model.authoring.parts[0].id))
-                  }
-                />
-              ) : (
-                <table>
-                  <tr>
-                    <th>Students</th>
-                    <th>Response</th>
-                  </tr>
-                  <tbody>
-                    {model.responses.map((response, index) => (
-                      <tr key={index}>
-                        <td className="whitespace-nowrap">
-                          <RespondedUsersList users={response.users} />
-                        </td>
-                        <td>{response.text}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-          </TabbedNavigation.Tab>
-        )}
+        <TabbedNavigation.Tab label="Question">
+          <div className="d-flex flex-column flex-md-row mb-2">
+            <Stem />
+            {!model.responses ? (
+              <InputTypeDropdown
+                options={shortAnswerOptions}
+                editMode={editMode}
+                selected={model.inputType}
+                onChange={(inputType) =>
+                  dispatch(ShortAnswerActions.setInputType(inputType, model.authoring.parts[0].id))
+                }
+              />
+            ) : (
+              <table>
+                <tr>
+                  <th>Students</th>
+                  <th>Response</th>
+                </tr>
+                <tbody>
+                  {model.responses.map((response, index) => (
+                    <tr key={index}>
+                      <td className="whitespace-nowrap">
+                        <RespondedUsersList users={response.users} />
+                      </td>
+                      <td>{response.text}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </TabbedNavigation.Tab>
         <TabbedNavigation.Tab label="Answer Key">
           <div className="d-flex flex-column mb-2">
             <StemDelivery

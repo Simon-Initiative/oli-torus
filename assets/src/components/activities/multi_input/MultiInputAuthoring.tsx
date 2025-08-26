@@ -23,14 +23,13 @@ import { AuthoringElementProvider, useAuthoringElementContext } from '../Authori
 import { TriggerAuthoring, TriggerLabel } from '../common/triggers/TriggerAuthoring';
 import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
 import { VariableActions } from '../common/variables/variableActions';
-import { StudentResponses } from '../common/responses/StudentResponses';
 import { ExplanationTab } from './sections/ExplanationTab';
 
 const store = configureStore();
 
-const ControlledTabs: React.FC<{ isInstructorPreview: boolean; children: React.ReactNode }> = ({ 
-  isInstructorPreview, 
-  children 
+const ControlledTabs: React.FC<{ isInstructorPreview: boolean; children: React.ReactNode }> = ({
+  isInstructorPreview,
+  children,
 }) => {
   const [activeTab, setActiveTab] = React.useState<number>(0);
 
@@ -40,7 +39,7 @@ const ControlledTabs: React.FC<{ isInstructorPreview: boolean; children: React.R
   }, [isInstructorPreview]);
 
   const validChildren = React.Children.toArray(children).filter(
-    (child): child is React.ReactElement => React.isValidElement(child)
+    (child): child is React.ReactElement => React.isValidElement(child),
   );
 
   return (
@@ -119,17 +118,9 @@ export const MultiInputComponent = () => {
       />
       {editor && input ? (
         <ControlledTabs isInstructorPreview={isInstructorPreview}>
-          {mode === 'instructor_preview' && (
-            <TabbedNavigation.Tab label="Student Responses">
-              <StudentResponses model={model} />
-            </TabbedNavigation.Tab>
-          )}
-
-          {!isInstructorPreview && (
-            <TabbedNavigation.Tab label="Question">
-              <QuestionTab editor={editor} input={input} index={index} />
-            </TabbedNavigation.Tab>
-          )}
+          <TabbedNavigation.Tab label="Question">
+            <QuestionTab editor={editor} input={input} index={index} />
+          </TabbedNavigation.Tab>
           <TabbedNavigation.Tab label="Answer Key">
             <AnswerKeyTab input={input} />
           </TabbedNavigation.Tab>

@@ -25,19 +25,19 @@ import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
 import { Explanation } from '../common/explanation/ExplanationAuthoring';
 import { ActivityScoring } from '../common/responses/ActivityScoring';
+import { StudentResponses } from '../common/responses/StudentResponses';
 import { TriggerAuthoring, TriggerLabel } from '../common/triggers/TriggerAuthoring';
 import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
 import { VariableActions } from '../common/variables/variableActions';
-import { StudentResponses } from '../common/responses/StudentResponses';
 import * as ActivityTypes from '../types';
 import { Actions } from './actions';
 import { OrderingSchema } from './schema';
 
 const store = configureStore();
 
-const ControlledTabs: React.FC<{ isInstructorPreview: boolean; children: React.ReactNode }> = ({ 
-  isInstructorPreview, 
-  children 
+const ControlledTabs: React.FC<{ isInstructorPreview: boolean; children: React.ReactNode }> = ({
+  isInstructorPreview,
+  children,
 }) => {
   const [activeTab, setActiveTab] = React.useState<number>(0);
 
@@ -47,7 +47,7 @@ const ControlledTabs: React.FC<{ isInstructorPreview: boolean; children: React.R
   }, [isInstructorPreview]);
 
   const validChildren = React.Children.toArray(children).filter(
-    (child): child is React.ReactElement => React.isValidElement(child)
+    (child): child is React.ReactElement => React.isValidElement(child),
   );
 
   return (
@@ -101,28 +101,20 @@ export const Ordering: React.FC = () => {
 
   return (
     <ControlledTabs isInstructorPreview={isInstructorPreview}>
-        {mode === 'instructor_preview' && (
-          <TabbedNavigation.Tab label="Student Responses">
-            <StudentResponses model={model} projectSlug={projectSlug} />
-          </TabbedNavigation.Tab>
-        )}
-
-        {!isInstructorPreview && (
-          <TabbedNavigation.Tab label="Question">
-          <Stem />
-          <ChoicesAuthoring
-            icon={(choice, index) => <span className="mr-1">{index + 1}.</span>}
-            choices={model.choices}
-            addOne={() => dispatch(Actions.addChoice(ActivityTypes.makeChoice('')))}
-            setAll={(choices: ActivityTypes.Choice[]) => dispatch(Choices.setAll(choices))}
-            onEdit={(id, content) => dispatch(Choices.setContent(id, content))}
-            onChangeEditorType={(id, editor) => dispatch(Choices.setEditor(id, editor))}
-            onRemove={(id) => dispatch(Actions.removeChoiceAndUpdateRules(id))}
-            colorMap={model.choiceColors ? new Map(model.choiceColors) : undefined}
-            onChangeEditorTextDirection={(id, dir) => dispatch(Choices.setTextDirection(id, dir))}
-          />
-        </TabbedNavigation.Tab>
-      )}
+      <TabbedNavigation.Tab label="Question">
+        <Stem />
+        <ChoicesAuthoring
+          icon={(choice, index) => <span className="mr-1">{index + 1}.</span>}
+          choices={model.choices}
+          addOne={() => dispatch(Actions.addChoice(ActivityTypes.makeChoice('')))}
+          setAll={(choices: ActivityTypes.Choice[]) => dispatch(Choices.setAll(choices))}
+          onEdit={(id, content) => dispatch(Choices.setContent(id, content))}
+          onChangeEditorType={(id, editor) => dispatch(Choices.setEditor(id, editor))}
+          onRemove={(id) => dispatch(Actions.removeChoiceAndUpdateRules(id))}
+          colorMap={model.choiceColors ? new Map(model.choiceColors) : undefined}
+          onChangeEditorTextDirection={(id, dir) => dispatch(Choices.setTextDirection(id, dir))}
+        />
+      </TabbedNavigation.Tab>
 
       <TabbedNavigation.Tab label="Answer Key">
         <StemDelivery stem={model.stem} context={writerContext} />

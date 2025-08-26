@@ -1412,11 +1412,15 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       |> render_click()
 
       # check that the likert VegaLite visualization renders correctly
-      selected_activity_data =
+      vega_divs = 
         view
-        |> element("div[data-live-react-class=\"Components.VegaLiteRenderer\"]")
         |> render()
         |> Floki.parse_fragment!()
+        |> Floki.find("div[data-live-react-class=\"Components.VegaLiteRenderer\"]")
+
+      selected_activity_data =
+        vega_divs
+        |> hd()
         |> Floki.attribute("data-live-react-props")
         |> hd()
         |> Jason.decode!()
@@ -1472,11 +1476,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
 
       assert view
              |> element(~s{div[role="student attempts summary"]})
-             |> render() =~ "1 student has completed 1 attempt."
+             |> render() =~ "1 student has responded"
 
-      assert view
-             |> element(~s{div[role="student attempts summary"]})
-             |> render() =~ "3 students have not completed any attempt"
     end
 
     test "student attempts summary gets rendered correctly when more than one student has attempted",
@@ -1532,11 +1533,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
 
       assert view
              |> element(~s{div[role="student attempts summary"]})
-             |> render() =~ "3 students have completed 3 attempts."
+             |> render() =~ "3 students have responded"
 
-      assert view
-             |> element(~s{div[role="student attempts summary"]})
-             |> render() =~ "1 student has not completed any attempt"
     end
 
     test "student attempts summary gets rendered correctly when all students have attempted (even more than once)",
@@ -1626,7 +1624,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
 
       assert view
              |> element(~s{div[role="student attempts summary"]})
-             |> render() =~ "4 students have completed 6 attempts."
+             |> render() =~ "4 students have responded"
 
       refute view
              |> element(~s{div[role="student attempts summary"]})
@@ -1636,48 +1634,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
              |> has_element?("#copy_emails_button", "Copy their email addresses")
     end
 
-    test "instructor can copy email of students that have not yet attempted",
-         %{
-           conn: conn,
-           section: section,
-           page_1: page_1,
-           student_1: student_1,
-           student_2: student_2,
-           mcq_activity_1: mcq_activity_1,
-           project: project,
-           publication: publication
-         } do
-      set_activity_attempt(
-        page_1,
-        mcq_activity_1,
-        student_1,
-        section,
-        project.id,
-        publication.id,
-        "id_for_option_a",
-        true
-      )
-
-      set_activity_attempt(
-        page_1,
-        mcq_activity_1,
-        student_2,
-        section,
-        project.id,
-        publication.id,
-        "id_for_option_a",
-        true
-      )
-
-      {:ok, view, _html} = live(conn, live_view_practice_activities_route(section.slug))
-
-      view
-      |> element("table tbody tr[id='#{page_1.resource_id}']")
-      |> render_click()
-
-      assert view
-             |> has_element?(~s{button[role="copy emails button"]}, "Copy email addresses")
-    end
   end
 
   describe "page size change" do

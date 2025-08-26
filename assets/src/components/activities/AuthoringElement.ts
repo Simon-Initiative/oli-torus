@@ -71,7 +71,8 @@ export abstract class AuthoringElement<T extends ActivityModelSchema> extends HT
     const getProp = (key: string) => JSON.parse(this.getAttribute(key) as any);
     const model = this.migrateModelVersion(getProp('model'));
     const editMode: boolean = this.getAttribute('editmode') === 'true';
-    const mode: 'authoring' | 'instructor_preview' = (this.getAttribute('mode') as 'authoring' | 'instructor_preview') || 'authoring';
+    const mode: 'authoring' | 'instructor_preview' =
+      (this.getAttribute('mode') as 'authoring' | 'instructor_preview') || 'authoring';
     const projectSlug: ProjectSlug = this.getAttribute('projectSlug') as string;
 
     const sectionSlug = this.getAttribute('section_slug') || '';
@@ -190,5 +191,11 @@ export abstract class AuthoringElement<T extends ActivityModelSchema> extends HT
   }
 
   // Lower case here as opposed to camelCase is required
-  static observedAttributes = ['editmode', 'model', 'authoringcontext', 'mode', 'student_responses'];
+  static observedAttributes = [
+    'editmode',
+    'model',
+    'authoringcontext',
+    'mode',
+    'student_responses',
+  ];
 }

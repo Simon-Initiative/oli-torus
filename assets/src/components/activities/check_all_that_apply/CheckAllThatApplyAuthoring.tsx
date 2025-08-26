@@ -13,6 +13,7 @@ import { SimpleFeedback } from 'components/activities/common/responses/SimpleFee
 import { TargetedFeedback } from 'components/activities/common/responses/TargetedFeedback';
 import { Stem } from 'components/activities/common/stem/authoring/StemAuthoringConnected';
 import { StemDelivery } from 'components/activities/common/stem/delivery/StemDelivery';
+import { VegaLiteRenderer } from 'components/misc/VegaLiteRenderer';
 import { Checkbox } from 'components/misc/icons/checkbox/Checkbox';
 import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
 import { Choices } from 'data/activities/model/choices';
@@ -23,18 +24,19 @@ import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
 import { Explanation } from '../common/explanation/ExplanationAuthoring';
 import { ActivityScoring } from '../common/responses/ActivityScoring';
+import { StudentResponses } from '../common/responses/StudentResponses';
 import { TriggerAuthoring, TriggerLabel } from '../common/triggers/TriggerAuthoring';
 import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
 import { VariableActions } from '../common/variables/variableActions';
-import { StudentResponses } from '../common/responses/StudentResponses';
 import * as ActivityTypes from '../types';
 import { CATAActions } from './actions';
+import studentResponsesSpec from './studentResponses.json';
 
 const store = configureStore();
 
-const ControlledTabs: React.FC<{ isInstructorPreview: boolean; children: React.ReactNode }> = ({ 
-  isInstructorPreview, 
-  children 
+const ControlledTabs: React.FC<{ isInstructorPreview: boolean; children: React.ReactNode }> = ({
+  isInstructorPreview,
+  children,
 }) => {
   const [activeTab, setActiveTab] = React.useState<number>(0);
 
@@ -44,7 +46,7 @@ const ControlledTabs: React.FC<{ isInstructorPreview: boolean; children: React.R
   }, [isInstructorPreview]);
 
   const validChildren = React.Children.toArray(children).filter(
-    (child): child is React.ReactElement => React.isValidElement(child)
+    (child): child is React.ReactElement => React.isValidElement(child),
   );
 
   return (
@@ -85,8 +87,26 @@ const ControlledTabs: React.FC<{ isInstructorPreview: boolean; children: React.R
   );
 };
 
+function viz(values: any) {
+  // values, find the max count to create [0, < max >] for scale and domain
+  const maxCount = Math.max(...values.map((v: any) => v.count), 0);
+  const domain = [0, maxCount];
+
+  const viz = {
+    ...studentResponsesSpec,
+    data: {
+      values: values,
+    },
+  } as any;
+
+  viz.layer[0].encoding.x.scale.domain = domain;
+  viz.layer[0].encoding.x.axis.values = domain;
+
+  return viz;
+}
+
 const CheckAllThatApply = () => {
-  const { dispatch, model, editMode, mode, projectSlug, authoringContext } =
+  const { dispatch, model, editMode, mode, projectSlug, authoringContext, student_responses } =
     useAuthoringElementContext<CATASchema>();
   const writerContext = defaultWriterContext({
     projectSlug: projectSlug,
@@ -95,27 +115,31 @@ const CheckAllThatApply = () => {
 
   return (
     <ControlledTabs isInstructorPreview={isInstructorPreview}>
-        {isInstructorPreview && (
-          <TabbedNavigation.Tab label="Student Responses">
-            <StudentResponses model={model} projectSlug={projectSlug} />
-          </TabbedNavigation.Tab>
-        )}
+      {isInstructorPreview && (
+        <TabbedNavigation.Tab key="student-responses" label="Student Responses">
+          <StudentResponses model={model} projectSlug={projectSlug}>
+            {student_responses && student_responses[model.authoring.parts[0].id] && (
+              <VegaLiteRenderer spec={viz(student_responses[model.authoring.parts[0].id])} />
+            )}
+          </StudentResponses>
+        </TabbedNavigation.Tab>
+      )}
 
-        {!isInstructorPreview && (
-          <TabbedNavigation.Tab label="Question">
-            <Stem />
-            <ChoicesAuthoring
-              icon={<Checkbox.Unchecked />}
-              choices={model.choices}
-              addOne={() => dispatch(CATAActions.addChoice(ActivityTypes.makeChoice('')))}
-              setAll={(choices: ActivityTypes.Choice[]) => dispatch(Choices.setAll(choices))}
-              onEdit={(id, content) => dispatch(Choices.setContent(id, content))}
-              onChangeEditorType={(id, editorType) => dispatch(Choices.setEditor(id, editorType))}
-              onRemove={(id) => dispatch(CATAActions.removeChoiceAndUpdateRules(id))}
-              onChangeEditorTextDirection={(id, dir) => dispatch(Choices.setTextDirection(id, dir))}
-            />
-          </TabbedNavigation.Tab>
-        )}
+      {!isInstructorPreview && (
+        <TabbedNavigation.Tab label="Question">
+          <Stem />
+          <ChoicesAuthoring
+            icon={<Checkbox.Unchecked />}
+            choices={model.choices}
+            addOne={() => dispatch(CATAActions.addChoice(ActivityTypes.makeChoice('')))}
+            setAll={(choices: ActivityTypes.Choice[]) => dispatch(Choices.setAll(choices))}
+            onEdit={(id, content) => dispatch(Choices.setContent(id, content))}
+            onChangeEditorType={(id, editorType) => dispatch(Choices.setEditor(id, editorType))}
+            onRemove={(id) => dispatch(CATAActions.removeChoiceAndUpdateRules(id))}
+            onChangeEditorTextDirection={(id, dir) => dispatch(Choices.setTextDirection(id, dir))}
+          />
+        </TabbedNavigation.Tab>
+      )}
 
       <TabbedNavigation.Tab label="Answer Key">
         <StemDelivery stem={model.stem} context={writerContext} />

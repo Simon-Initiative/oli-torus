@@ -17,7 +17,7 @@ export type Props = {
 
 export const AuthoringButton: React.FC<Props> = (props: Props) => {
   const isDisabled = props.disabled || !props.editMode || props.mode === 'instructor_preview';
-  
+
   return (
     <button
       aria-label={props.ariaLabel || ''}

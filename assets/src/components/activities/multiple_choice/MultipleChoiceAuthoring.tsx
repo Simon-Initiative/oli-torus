@@ -13,6 +13,7 @@ import { Stem } from 'components/activities/common/stem/authoring/StemAuthoringC
 import { StemDelivery } from 'components/activities/common/stem/delivery/StemDelivery';
 import { mcV1toV2 } from 'components/activities/multiple_choice/transformations/v2';
 import { getCorrectChoice } from 'components/activities/multiple_choice/utils';
+import { VegaLiteRenderer } from 'components/misc/VegaLiteRenderer';
 import { Radio } from 'components/misc/icons/radio/Radio';
 import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
 import { Choices } from 'data/activities/model/choices';
@@ -23,19 +24,19 @@ import { AuthoringElementProvider, useAuthoringElementContext } from '../Authori
 import { MCActions as Actions } from '../common/authoring/actions/multipleChoiceActions';
 import { Explanation } from '../common/explanation/ExplanationAuthoring';
 import { ActivityScoring } from '../common/responses/ActivityScoring';
+import { StudentResponses } from '../common/responses/StudentResponses';
 import { TriggerAuthoring, TriggerLabel } from '../common/triggers/TriggerAuthoring';
 import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
 import { VariableActions } from '../common/variables/variableActions';
-import { StudentResponses } from '../common/responses/StudentResponses';
-import { VegaLiteRenderer } from 'components/misc/VegaLiteRenderer';
 import * as ActivityTypes from '../types';
 import { MCSchema } from './schema';
+import studentResponsesSpec from './studentResponses.json';
 
 const store = configureStore();
 
 const ControlledTabs: React.FC<{ isInstructorPreview: boolean; children: React.ReactNode }> = ({
   isInstructorPreview,
-  children
+  children,
 }) => {
   const [activeTab, setActiveTab] = React.useState<number>(0);
 
@@ -45,7 +46,7 @@ const ControlledTabs: React.FC<{ isInstructorPreview: boolean; children: React.R
   }, [isInstructorPreview]);
 
   const validChildren = React.Children.toArray(children).filter(
-    (child): child is React.ReactElement => React.isValidElement(child)
+    (child): child is React.ReactElement => React.isValidElement(child),
   );
 
   return (
@@ -93,7 +94,7 @@ const MultipleChoice: React.FC = () => {
     projectSlug: projectSlug,
   });
   const isInstructorPreview = mode === 'instructor_preview';
-  console.log("MCQ")
+  console.log('MCQ');
   console.log(model);
   return (
     <>
@@ -102,9 +103,7 @@ const MultipleChoice: React.FC = () => {
           <TabbedNavigation.Tab key="student-responses" label="Student Responses">
             <StudentResponses model={model} projectSlug={projectSlug}>
               {student_responses && student_responses[model.authoring.parts[0].id] && (
-                <VegaLiteRenderer
-                  spec={viz(student_responses[model.authoring.parts[0].id])}
-                />
+                <VegaLiteRenderer spec={viz(student_responses[model.authoring.parts[0].id])} />
               )}
             </StudentResponses>
           </TabbedNavigation.Tab>
@@ -191,62 +190,21 @@ const MultipleChoice: React.FC = () => {
 };
 
 function viz(values: any) {
-  return {
-    "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
-    "title": { "text": "First Attempt", "fontSize": 16, "anchor": "start", "dy": -5 },
-    "params": [
-      {
-        "name": "isDarkMode",
-        "value": false
-      }
-    ],
-    "data": {
-      "values": values
+  // values, find the max count to create [0, < max >] for scale and domain
+  const maxCount = Math.max(...values.map((v: any) => v.count), 0);
+  const domain = [0, maxCount];
+
+  const viz = {
+    ...studentResponsesSpec,
+    data: {
+      values: values,
     },
-    "transform": [
-      { "calculate": "datum.count + ' students'", "as": "countLabel" },
-      { "calculate": "length(datum.count + ' students') * 6 + 6", "as": "checkOffset" }
-    ],
-    "height": { "step": 32 },
-    "width": 330,
-    "config": {
-      "axis": { "labelFontSize": 13, "title": null, "grid": false, "ticks": false, "domain": false },
-      "view": { "stroke": null }
-    },
-    "layer": [
-      {
-        "mark": { "type": "bar", "cornerRadiusEnd": 3, "height": 12 },
-        "encoding": {
-          "y": { "field": "label", "type": "nominal", "sort": null, "axis": { "labelPadding": 8 } },
-          "x": { "field": "count", "type": "quantitative", "axis": null },
-          "color": {
-            "condition": { "test": "datum.correct", "value": "#27ae60" },
-            "value": "#b23b2e"
-          }
-        }
-      },
-      {
-        "mark": { "type": "text", "baseline": "middle", "align": "left", "dx": 6 },
-        "encoding": {
-          "y": { "field": "label", "type": "nominal" },
-          "x": { "field": "count", "type": "quantitative" },
-          "text": { "field": "countLabel" },
-          "color": { "value": "#555555" }
-        }
-      },
-      {
-        "mark": { "type": "text", "baseline": "middle", "align": "left" },
-        "encoding": {
-          "y": { "field": "label", "type": "nominal" },
-          "x": { "field": "count", "type": "quantitative" },
-          "text": { "value": "✓" },
-          "color": { "value": "#27ae60" },
-          "opacity": { "condition": { "test": "datum.correct", "value": 1 }, "value": 0 },
-          "xOffset": { "field": "checkOffset", "type": "quantitative" }
-        }
-      }
-    ]
-  } as any
+  } as any;
+
+  viz.layer[0].encoding.x.scale.domain = domain;
+  viz.layer[0].encoding.x.axis.values = domain;
+
+  return viz;
 }
 
 export class MultipleChoiceAuthoring extends AuthoringElement<MCSchema> {

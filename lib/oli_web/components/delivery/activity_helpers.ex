@@ -131,6 +131,22 @@ defmodule OliWeb.Delivery.ActivityHelpers do
       student_emails_without_attempts =
         MapSet.difference(all_emails, MapSet.new(emails_with_attempts)) |> MapSet.to_list()
 
+      {correct, total} =
+        Map.get(grouped_by_activity_id, activity_id, [])
+        |> Enum.reduce({0, 0}, fn rs, {correct, total} ->
+          {correct + rs.num_first_attempts_correct, total + rs.num_first_attempts}
+        end)
+
+      first_attempt_pct = if total > 0, do: correct / total, else: 0
+
+      {correct, total} =
+        Map.get(grouped_by_activity_id, activity_id, [])
+        |> Enum.reduce({0, 0}, fn rs, {correct, total} ->
+          {correct + rs.num_correct, total + rs.num_attempts}
+        end)
+
+      all_attempt_pct = if total > 0, do: correct / total, else: 0
+
       revision =
         case revisions_by_resource_id[activity_id] do
           nil -> %{title: "Unknown Activity"}
@@ -144,6 +160,8 @@ defmodule OliWeb.Delivery.ActivityHelpers do
         title: revision.title,
         revision: revision,
         transformed_model: nil,
+        first_attempt_pct: first_attempt_pct,
+        all_attempt_pct: all_attempt_pct,
         total_attempts_count: attempt_totals[activity_id],
         students_with_attempts: emails_with_attempts,
         students_with_attempts_count: Enum.count(emails_with_attempts),
@@ -154,12 +172,19 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     |> Enum.map(fn activity ->
       ordinal = Map.get(ordinal_mapping, activity.resource_id)
 
-      student_responses = Map.get(activity, :student_responses, [])
+      student_responses = Map.get(activity, :student_responses, %{})
 
       Map.put(
         activity,
         :preview_rendered,
-        fast_preview_render(section, activity.revision, page_id, activity_types_map, ordinal, student_responses)
+        fast_preview_render(
+          section,
+          activity.revision,
+          page_id,
+          activity_types_map,
+          ordinal,
+          student_responses
+        )
       )
     end)
   end
@@ -229,6 +254,11 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     multiple_choice_type_id =
       Enum.find_value(activity_types_map, fn {k, v} -> if v.title == "Multiple Choice", do: k end)
 
+    cata_id =
+      Enum.find_value(activity_types_map, fn {k, v} ->
+        if v.title == "Check All That Apply", do: k
+      end)
+
     single_response_type_id =
       Enum.find_value(activity_types_map, fn {k, v} -> if v.title == "Single Response", do: k end)
 
@@ -245,6 +275,9 @@ defmodule OliWeb.Delivery.ActivityHelpers do
       case a.revision.activity_type_id do
         ^multiple_choice_type_id ->
           add_choices_frequencies(a, response_summaries)
+
+        ^cata_id ->
+          add_cata_frequencies(a, response_summaries)
 
         ^single_response_type_id ->
           add_single_response_details(a, response_summaries)
@@ -274,7 +307,67 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     end
   end
 
+  attr :id, :string, required: true
+  attr :value, :any, required: true
+  attr :label, :string, required: true
 
+  def percentage_bar(assigns) do
+    spec = %{
+      # fixed pixel width
+      width: 200,
+      # small bar height
+      height: 30,
+      layer: [
+        # background gray bar
+        %{
+          mark: %{type: "bar", cornerRadiusEnd: 2},
+          data: %{values: [%{x: 100}]},
+          encoding: %{
+            x: %{field: "x", type: "quantitative", axis: nil},
+            # gray background
+            color: %{value: "#C2C2C2"}
+          }
+        },
+        # filled purple portion
+        %{
+          mark: %{type: "bar", cornerRadiusEnd: 2},
+          data: %{values: [%{x: assigns.value * 100}]},
+          encoding: %{
+            x: %{field: "x", type: "quantitative", axis: nil},
+            # dark purple
+            color: %{value: "#7B19C1"}
+          }
+        }
+      ],
+      config: %{
+        axis: %{domain: false, ticks: false, labels: false, title: false},
+        view: %{stroke: nil},
+        legend: %{disable: true},
+        background: nil
+      }
+    }
+
+    assigns = assign(assigns, :spec, spec)
+
+    ~H"""
+    <div class="flex justify-start font-bold">
+      <div class="mt-2 mr-3">{@label}</div>
+      <div>
+        {OliWeb.Common.React.component(
+          %{is_liveview: true},
+          "Components.VegaLiteRenderer",
+          %{spec: spec},
+          id: "pct-bar-#{@id}"
+        )}
+      </div>
+      <div class="mt-2 ml-3">{format_as_int(@value)}%</div>
+    </div>
+    """
+  end
+
+  defp format_as_int(value) do
+    round(value * 100)
+  end
 
   def render_likert(assigns) do
     spec =
@@ -471,7 +564,65 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     )
   end
 
-  defp add_choices_frequencies(activity_attempt, response_summaries, part_id \\ nil) do
+  defp add_choices_frequencies(activity_attempt, response_summaries) do
+    responses =
+      Enum.filter(response_summaries, fn response_summary ->
+        response_summary.activity_id == activity_attempt.resource_id
+      end)
+
+    model =
+      case activity_attempt.transformed_model do
+        nil ->
+          activity_attempt.revision.content
+
+        transformed_model ->
+          transformed_model
+      end
+
+    first_part = model["authoring"]["parts"] |> Enum.at(0)
+    part_id = first_part["id"]
+
+    # index of 0 = A, 1 = B, etc.
+    to_letter = fn index ->
+      <<index + 65>> <> "."
+    end
+
+    correct_response =
+      Enum.reduce(first_part["responses"], first_part["responses"] |> hd, fn r, acc ->
+        case r["score"] > acc["score"] do
+          true -> r
+          false -> acc
+        end
+      end)
+
+    # From this rule format, determine the set of correct choice IDs
+    # "(!(input like {617912613})) && (input like {1708872710} && (input like {2311585959}))"
+    correct_choice_ids =
+      Enum.map(model["choices"], fn choice -> choice["id"] end)
+      |> Enum.filter(fn choice_id ->
+        String.contains?(correct_response["rule"], "{" <> choice_id <> "}")
+      end)
+      |> MapSet.new()
+
+    values =
+      model["choices"]
+      |> Enum.with_index()
+      |> Enum.map(fn {c, index} ->
+        %{
+          "label" => to_letter.(index),
+          "count" => Enum.find(responses, %{count: 0}, fn r -> r.response == c["id"] end).count,
+          "correct" => MapSet.member?(correct_choice_ids, c["id"]),
+          "part_id" => part_id
+        }
+      end)
+
+    grouped = Enum.group_by(values, fn r -> r["part_id"] end)
+
+    sr = Map.get(activity_attempt, :student_responses, %{})
+    Map.put(activity_attempt, :student_responses, Map.merge(sr, grouped))
+  end
+
+  defp add_cata_frequencies(activity_attempt, response_summaries) do
     responses =
       Enum.filter(response_summaries, fn response_summary ->
         response_summary.activity_id == activity_attempt.resource_id
@@ -479,51 +630,56 @@ defmodule OliWeb.Delivery.ActivityHelpers do
 
     # we must consider the case where a transformed model is present and if so, then use it
     # otherwise, use the revision model. This block also returns a corresponding updater function
-    {model, updater} =
+    model =
       case activity_attempt.transformed_model do
         nil ->
-          {activity_attempt.revision.content,
-           fn activity_attempt, choices ->
-             update_in(
-               activity_attempt,
-               [Access.key!(:revision), Access.key!(:content)],
-               &Map.put(&1, "choices", choices)
-             )
-           end}
+          activity_attempt.revision.content
 
         transformed_model ->
-          {transformed_model,
-           fn activity_attempt, choices ->
-             update_in(
-               activity_attempt,
-               [Access.key!(:transformed_model)],
-               &Map.put(&1, "choices", choices)
-             )
-           end}
+          transformed_model
       end
 
-    blank_reponses = Enum.find(responses, fn r -> r.response == "" end)
+    first_part = model["authoring"]["parts"] |> Enum.at(0)
+    part_id = first_part["id"]
 
-    part_id = case part_id do
-      nil -> (model["authoring"]["parts"] |> Enum.at(0))["id"]
-      part_id -> part_id
+    correct_response =
+      Enum.reduce(first_part["responses"], first_part["responses"] |> hd, fn r, acc ->
+        case r["score"] > acc["score"] do
+          true -> r
+          false -> acc
+        end
+      end)
+
+    # From this rule format, determine the set of correct choice IDs
+    # "(!(input like {617912613})) && (input like {1708872710} && (input like {2311585959}))"
+    correct_choice_ids =
+      Enum.map(model["choices"], fn choice -> choice["id"] end)
+      |> Enum.filter(fn choice_id ->
+        String.contains?(correct_response["rule"], "{" <> choice_id <> "}")
+      end)
+      |> MapSet.new()
+
+    # index of 0 = A, 1 = B, etc.
+    to_letter = fn index ->
+      <<index + 65>> <> "."
     end
 
     values =
       model["choices"]
-      |> Enum.map(fn c ->
+      |> Enum.with_index()
+      |> Enum.map(fn {c, index} ->
         %{
-          "label" => "A.",
+          "label" => to_letter.(index),
           "count" => Enum.find(responses, %{count: 0}, fn r -> r.response == c["id"] end).count,
-          "correct" => false,
+          "correct" => MapSet.member?(correct_choice_ids, c["id"]),
           "part_id" => part_id
-        } end
-      )
+        }
+      end)
 
     grouped = Enum.group_by(values, fn r -> r["part_id"] end)
 
-    Map.put(activity_attempt, :student_responses, grouped)
-
+    sr = Map.get(activity_attempt, :student_responses, %{})
+    Map.put(activity_attempt, :student_responses, Map.merge(sr, grouped))
   end
 
   defp add_likert_details(activity, response_summaries) do
@@ -689,8 +845,77 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     )
   end
 
+  # This is only used by the multi-input
+  defp update_choices_frequencies(activity_attempt, response_summaries) do
+    responses =
+      Enum.filter(response_summaries, fn response_summary ->
+        response_summary.activity_id == activity_attempt.resource_id
+      end)
+
+    # we must consider the case where a transformed model is present and if so, then use it
+    # otherwise, use the revision model. This block also returns a corresponding updater function
+    {model, updater} =
+      case activity_attempt.transformed_model do
+        nil ->
+          {activity_attempt.revision.content,
+           fn activity_attempt, choices ->
+             update_in(
+               activity_attempt,
+               [Access.key!(:revision), Access.key!(:content)],
+               &Map.put(&1, "choices", choices)
+             )
+           end}
+
+        transformed_model ->
+          {transformed_model,
+           fn activity_attempt, choices ->
+             update_in(
+               activity_attempt,
+               [Access.key!(:transformed_model)],
+               &Map.put(&1, "choices", choices)
+             )
+           end}
+      end
+
+    choices =
+      model["choices"]
+      |> Enum.map(
+        &Map.merge(&1, %{
+          "frequency" =>
+            Enum.find(responses, %{count: 0}, fn r -> r.response == &1["id"] end).count
+        })
+      )
+      |> then(fn choices ->
+        blank_reponses = Enum.find(responses, fn r -> r.response == "" end)
+
+        if blank_reponses[:response] do
+          [
+            %{
+              "content" => [
+                %{
+                  "children" => [
+                    %{
+                      "text" =>
+                        "Blank attempt (user submitted assessment without selecting any choice for this activity)"
+                    }
+                  ],
+                  "type" => "p"
+                }
+              ],
+              "frequency" => blank_reponses.count
+            }
+            | choices
+          ]
+        else
+          choices
+        end
+      end)
+
+    updater.(activity_attempt, choices)
+  end
+
   defp add_dropdown_choices(acc, response_summaries) do
-    add_choices_frequencies(acc, response_summaries)
+    update_choices_frequencies(acc, response_summaries)
     |> update_in(
       [
         Access.key!(:revision),

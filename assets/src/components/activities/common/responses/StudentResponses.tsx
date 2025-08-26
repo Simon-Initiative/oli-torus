@@ -1,6 +1,6 @@
 import React from 'react';
-import { StemDelivery } from 'components/activities/common/stem/delivery/StemDelivery';
 import { LabelledChoices } from 'components/activities/common/choices/delivery/LabelledChoices';
+import { StemDelivery } from 'components/activities/common/stem/delivery/StemDelivery';
 import { defaultWriterContext } from 'data/content/writers/context';
 
 interface StudentResponsesProps {
@@ -9,7 +9,11 @@ interface StudentResponsesProps {
   children?: React.ReactNode;
 }
 
-export const StudentResponses: React.FC<StudentResponsesProps> = ({ model, projectSlug, children }) => {
+export const StudentResponses: React.FC<StudentResponsesProps> = ({
+  model,
+  projectSlug,
+  children,
+}) => {
   const writerContext = defaultWriterContext({
     projectSlug: projectSlug || '',
   });
@@ -20,18 +24,14 @@ export const StudentResponses: React.FC<StudentResponsesProps> = ({ model, proje
   };
 
   return (
-    <div className="d-flex" style={{ height: '100%' }}>
-      {/* First column - 1/4 width */}
-      <div style={{ width: '25%', height: '100%', borderRight: '1px solid #d3d3d3', paddingRight: '15px', marginRight: '15px' }}>
-        {children || (
-          <div className="text-muted">
-            Student responses controls placeholder
-          </div>
-        )}
+    <div className="flex h-full">
+      {/* Fixed width column for visualization - 280px to accommodate 250px chart + padding */}
+      <div className="w-[280px] h-full border-r border-gray-300 pr-4 mr-4 flex-shrink-0">
+        {children || <div className="text-muted">Student responses controls placeholder</div>}
       </div>
 
-      {/* Second column - 3/4 width */}
-      <div style={{ width: '75%', height: '100%' }} className="pl-3">
+      {/* Remaining space for content */}
+      <div className="flex-1 h-full pl-3 min-w-0">
         <StemDelivery stem={model.stem} context={writerContext} />
         {isChoiceBasedActivity() && (
           <div className="mt-3">

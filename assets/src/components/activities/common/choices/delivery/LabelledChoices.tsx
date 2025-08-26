@@ -1,7 +1,7 @@
 import React from 'react';
+import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { Choice } from 'components/activities/types';
 import { SlateOrMarkdownEditor } from 'components/editing/SlateOrMarkdownEditor';
-import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 
 interface Props {
   choices: Choice[];

@@ -24,7 +24,8 @@ import { ImageCodeEditor } from './sections/ImageCodeEditor';
 import { lastPart } from './utils';
 
 const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
-  const { dispatch, model, mode, onRequestMedia } = useAuthoringElementContext<ImageCodingModelSchema>();
+  const { dispatch, model, mode, onRequestMedia } =
+    useAuthoringElementContext<ImageCodingModelSchema>();
 
   const { projectSlug } = props;
 
@@ -191,12 +192,6 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
       {!model.isExample && (
         <div>
           <TabbedNavigation.Tabs>
-            {mode === 'instructor_preview' && (
-              <TabbedNavigation.Tab label="Student Responses">
-                <StudentResponses model={model} />
-              </TabbedNavigation.Tab>
-            )}
-
             <TabbedNavigation.Tab label="Answer Key">
               {solutionParameters()}
               <Feedback
@@ -219,7 +214,6 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
             <TabbedNavigation.Tab label="Explanation">
               <Explanation partId={model.authoring.parts[0].id} />
             </TabbedNavigation.Tab>
-
           </TabbedNavigation.Tabs>
         </div>
       )}

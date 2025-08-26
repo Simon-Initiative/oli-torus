@@ -18,18 +18,18 @@ import { ChoicesDelivery } from '../common/choices/delivery/ChoicesDelivery';
 import { Explanation } from '../common/explanation/ExplanationAuthoring';
 import { ActivityScoring } from '../common/responses/ActivityScoring';
 import { SimpleFeedback } from '../common/responses/SimpleFeedback';
+import { StudentResponses } from '../common/responses/StudentResponses';
 import { TargetedFeedback } from '../common/responses/TargetedFeedback';
 import { StemDelivery } from '../common/stem/delivery/StemDelivery';
 import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
 import { VariableActions } from '../common/variables/variableActions';
-import { StudentResponses } from '../common/responses/StudentResponses';
 import * as ActivityTypes from '../types';
 import { LikertActions } from './actions';
 import { LikertModelSchema } from './schema';
 
-const ControlledTabs: React.FC<{ isInstructorPreview: boolean; children: React.ReactNode }> = ({ 
-  isInstructorPreview, 
-  children 
+const ControlledTabs: React.FC<{ isInstructorPreview: boolean; children: React.ReactNode }> = ({
+  isInstructorPreview,
+  children,
 }) => {
   const [activeTab, setActiveTab] = React.useState<number>(0);
 
@@ -39,7 +39,7 @@ const ControlledTabs: React.FC<{ isInstructorPreview: boolean; children: React.R
   }, [isInstructorPreview]);
 
   const validChildren = React.Children.toArray(children).filter(
-    (child): child is React.ReactElement => React.isValidElement(child)
+    (child): child is React.ReactElement => React.isValidElement(child),
   );
 
   return (
@@ -174,93 +174,85 @@ const Likert = (props: AuthoringElementProps<LikertModelSchema>) => {
   return (
     <React.Fragment>
       <ControlledTabs isInstructorPreview={isInstructorPreview}>
-        {isInstructorPreview && (
-          <TabbedNavigation.Tab label="Student Responses">
-            <StudentResponses model={model} projectSlug={projectSlug} />
-          </TabbedNavigation.Tab>
-        )}
-
-        {!isInstructorPreview && (
-          <TabbedNavigation.Tab label="Question">
-            <Stem />
-            <div>
-              <br />
-              <p>Choices:</p>
-              <div className="flex flex-col lg:flex-row">
-                <div className="w-full">
-                  <ChoicesAuthoring
-                    icon={<Radio.Unchecked />}
-                    choices={model.choices}
-                    setAll={(choices: ActivityTypes.Choice[]) => dispatch(Choices.setAll(choices))}
-                    onEdit={(id, content) => dispatch(Choices.setContent(id, content))}
-                    onChangeEditorType={(id, editorType) =>
-                      dispatch(Choices.setEditor(id, editorType))
-                    }
-                    addOne={() => dispatch(LikertActions.addChoice())}
-                    onRemove={(id) => dispatch(LikertActions.removeChoice(id))}
-                    onChangeEditorTextDirection={(id, textDirection) =>
-                      dispatch(Choices.setTextDirection(id, textDirection))
-                    }
-                  />
-                </div>
-              </div>
-              {/* <div className="flex flex-col lg:flex-row">
-                <div className={`${dataLong > 0 ? 'w-full lg:w-1/2' : 'w-full'}`}>
-                  <ChoicesAuthoring
-                    icon={<Radio.Unchecked />}
-                    choices={model.choices}
-                    setAll={(choices: ActivityTypes.Choice[]) => dispatch(Choices.setAll(choices))}
-                    onEdit={(id, content) => dispatch(Choices.setContent(id, content))}
-                    onChangeEditorType={(id, editorType) =>
-                      dispatch(Choices.setEditor(id, editorType))
-                    }
-                    addOne={() => dispatch(LikertActions.addChoice())}
-                    onRemove={(id) => dispatch(LikertActions.removeChoice(id))}
-                    onChangeEditorTextDirection={(id, textDirection) =>
-                      dispatch(Choices.setTextDirection(id, textDirection))
-                    }
-                  />
-                </div>
-                {dataLong > 0 && (
-                  <>
-                    <div className="hidden lg:flex border-r border-2 border-gray-500 mx-4" />
-                    <div
-                      className={`${dataLong > 0 && 'flex items-center w-full my-5 lg:w-1/2 px-2'}`}
-                    >
-                      <VegaLite spec={spec} />
-                    </div>
-                  </>
-                )}
-              </div> */}
-              <div className="form-check mb-2">
-                <input
-                  className="form-check-input"
-                  type="checkbox"
-                  id="descending-toggle"
-                  aria-label="Checkbox for descending order"
-                  checked={model.orderDescending}
-                  onChange={(e: any) => dispatch(LikertActions.setOrderDescending(e.target.checked))}
+        <TabbedNavigation.Tab label="Question">
+          <Stem />
+          <div>
+            <br />
+            <p>Choices:</p>
+            <div className="flex flex-col lg:flex-row">
+              <div className="w-full">
+                <ChoicesAuthoring
+                  icon={<Radio.Unchecked />}
+                  choices={model.choices}
+                  setAll={(choices: ActivityTypes.Choice[]) => dispatch(Choices.setAll(choices))}
+                  onEdit={(id, content) => dispatch(Choices.setContent(id, content))}
+                  onChangeEditorType={(id, editorType) =>
+                    dispatch(Choices.setEditor(id, editorType))
+                  }
+                  addOne={() => dispatch(LikertActions.addChoice())}
+                  onRemove={(id) => dispatch(LikertActions.removeChoice(id))}
+                  onChangeEditorTextDirection={(id, textDirection) =>
+                    dispatch(Choices.setTextDirection(id, textDirection))
+                  }
                 />
-                <label className="form-check-label" htmlFor="descending-toggle">
-                  Number Descending
-                </label>
               </div>
             </div>
+            {/* <div className="flex flex-col lg:flex-row">
+              <div className={`${dataLong > 0 ? 'w-full lg:w-1/2' : 'w-full'}`}>
+                <ChoicesAuthoring
+                  icon={<Radio.Unchecked />}
+                  choices={model.choices}
+                  setAll={(choices: ActivityTypes.Choice[]) => dispatch(Choices.setAll(choices))}
+                  onEdit={(id, content) => dispatch(Choices.setContent(id, content))}
+                  onChangeEditorType={(id, editorType) =>
+                    dispatch(Choices.setEditor(id, editorType))
+                  }
+                  addOne={() => dispatch(LikertActions.addChoice())}
+                  onRemove={(id) => dispatch(LikertActions.removeChoice(id))}
+                  onChangeEditorTextDirection={(id, textDirection) =>
+                    dispatch(Choices.setTextDirection(id, textDirection))
+                  }
+                />
+              </div>
+              {dataLong > 0 && (
+                <>
+                  <div className="hidden lg:flex border-r border-2 border-gray-500 mx-4" />
+                  <div
+                    className={`${dataLong > 0 && 'flex items-center w-full my-5 lg:w-1/2 px-2'}`}
+                  >
+                    <VegaLite spec={spec} />
+                  </div>
+                </>
+              )}
+            </div> */}
+            <div className="form-check mb-2">
+              <input
+                className="form-check-input"
+                type="checkbox"
+                id="descending-toggle"
+                aria-label="Checkbox for descending order"
+                checked={model.orderDescending}
+                onChange={(e: any) => dispatch(LikertActions.setOrderDescending(e.target.checked))}
+              />
+              <label className="form-check-label" htmlFor="descending-toggle">
+                Number Descending
+              </label>
+            </div>
+          </div>
 
-            <p>Questions:</p>
-            <ChoicesAuthoring
-              choices={model.items}
-              setAll={(choices: ActivityTypes.Choice[]) => dispatch(Items.setAll(choices))}
-              onEdit={(id, content) => dispatch(Items.setContent(id, content))}
-              onChangeEditorType={(id, editorType) => dispatch(Items.setEditor(id, editorType))}
-              addOne={() => dispatch(LikertActions.addItem())}
-              onRemove={(id) => dispatch(LikertActions.removeItem(id))}
-              onChangeEditorTextDirection={(id, textDirection) =>
-                dispatch(Items.setTextDirection(id, textDirection))
-              }
-            />
-          </TabbedNavigation.Tab>
-        )}
+          <p>Questions:</p>
+          <ChoicesAuthoring
+            choices={model.items}
+            setAll={(choices: ActivityTypes.Choice[]) => dispatch(Items.setAll(choices))}
+            onEdit={(id, content) => dispatch(Items.setContent(id, content))}
+            onChangeEditorType={(id, editorType) => dispatch(Items.setEditor(id, editorType))}
+            addOne={() => dispatch(LikertActions.addItem())}
+            onRemove={(id) => dispatch(LikertActions.removeItem(id))}
+            onChangeEditorTextDirection={(id, textDirection) =>
+              dispatch(Items.setTextDirection(id, textDirection))
+            }
+          />
+        </TabbedNavigation.Tab>
         <TabbedNavigation.Tab label="Answer Key">
           <StemDelivery stem={selectedItem} context={writerContext} />
 
@@ -307,7 +299,6 @@ const Likert = (props: AuthoringElementProps<LikertModelSchema>) => {
             onEdit={(t) => dispatch(VariableActions.onUpdateTransformations(t))}
           />
         </TabbedNavigation.Tab>
-
       </ControlledTabs>
     </React.Fragment>
   );

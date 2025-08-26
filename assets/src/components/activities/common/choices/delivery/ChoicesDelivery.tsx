@@ -48,9 +48,9 @@ export const ChoicesDelivery: React.FC<Props> = ({
           aria-label={`choice ${index + 1}`}
           onClick={disabled ? undefined : onClicked(choice.id)}
           className={classNames(
-            styles.choicesChoiceRow, 
+            styles.choicesChoiceRow,
             isSelected(choice.id) ? 'selected' : '',
-            disabled ? 'disabled' : ''
+            disabled ? 'disabled' : '',
           )}
           style={{ cursor: disabled ? 'default' : 'pointer' }}
         >

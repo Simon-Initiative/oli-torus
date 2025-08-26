@@ -17,7 +17,16 @@ export const FeedbackCard: React.FC<{
   placeholder?: string;
   children: any;
   editMode?: boolean;
-}> = ({ title, feedback, update, placeholder, children, updateEditor, updateTextDirection, editMode = true }) => {
+}> = ({
+  title,
+  feedback,
+  update,
+  placeholder,
+  children,
+  updateEditor,
+  updateTextDirection,
+  editMode = true,
+}) => {
   const { projectSlug } = useAuthoringElementContext();
   return (
     <Card.Card>

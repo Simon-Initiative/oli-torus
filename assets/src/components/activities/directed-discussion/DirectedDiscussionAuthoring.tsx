@@ -11,9 +11,9 @@ import {
   SectionAuthoringProps,
 } from '../AuthoringElement';
 import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
+import { StudentResponses } from '../common/responses/StudentResponses';
 import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
 import { VariableActions } from '../common/variables/variableActions';
-import { StudentResponses } from '../common/responses/StudentResponses';
 import * as ActivityTypes from '../types';
 import { DirectedDiscussion } from './discussion/DirectedDiscussion';
 import { DiscussionParticipationAuthoring } from './discussion/DiscussionParticipationAuthoring';
@@ -22,9 +22,9 @@ import { DirectedDiscussionActivitySchema } from './schema';
 
 const store = configureStore();
 
-const ControlledTabs: React.FC<{ isInstructorPreview: boolean; children: React.ReactNode }> = ({ 
-  isInstructorPreview, 
-  children 
+const ControlledTabs: React.FC<{ isInstructorPreview: boolean; children: React.ReactNode }> = ({
+  isInstructorPreview,
+  children,
 }) => {
   const [activeTab, setActiveTab] = React.useState<number>(0);
 
@@ -34,7 +34,7 @@ const ControlledTabs: React.FC<{ isInstructorPreview: boolean; children: React.R
   }, [isInstructorPreview]);
 
   const validChildren = React.Children.toArray(children).filter(
-    (child): child is React.ReactElement => React.isValidElement(child)
+    (child): child is React.ReactElement => React.isValidElement(child),
   );
 
   return (
@@ -89,17 +89,9 @@ const DirectedDiscussionAuthoringInternal: React.FC<SectionAuthoringProps> = ({
   return (
     <>
       <ControlledTabs isInstructorPreview={isInstructorPreview}>
-        {mode === 'instructor_preview' && (
-          <TabbedNavigation.Tab label="Student Responses">
-            <StudentResponses model={model} />
-          </TabbedNavigation.Tab>
-        )}
-
-        {!isInstructorPreview && (
-          <TabbedNavigation.Tab label="Question">
-            {displayDiscussion || <Stem />}
-          </TabbedNavigation.Tab>
-        )}
+        <TabbedNavigation.Tab label="Question">
+          {displayDiscussion || <Stem />}
+        </TabbedNavigation.Tab>
 
         <TabbedNavigation.Tab label="Participation">
           <DiscussionParticipationAuthoring />
@@ -117,7 +109,6 @@ const DirectedDiscussionAuthoringInternal: React.FC<SectionAuthoringProps> = ({
             onEdit={(t) => dispatch(VariableActions.onUpdateTransformations(t))}
           />
         </TabbedNavigation.Tab>
-
       </ControlledTabs>
       {displayDiscussion && (
         <>
