@@ -18,7 +18,7 @@ import { ChoicesDelivery } from '../common/choices/delivery/ChoicesDelivery';
 import { Explanation } from '../common/explanation/ExplanationAuthoring';
 import { ActivityScoring } from '../common/responses/ActivityScoring';
 import { SimpleFeedback } from '../common/responses/SimpleFeedback';
-import { StudentResponses } from '../common/responses/StudentResponses';
+import { StudentResponses as _StudentResponses } from '../common/responses/StudentResponses';
 import { TargetedFeedback } from '../common/responses/TargetedFeedback';
 import { StemDelivery } from '../common/stem/delivery/StemDelivery';
 import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';

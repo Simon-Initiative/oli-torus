@@ -11,7 +11,7 @@ import {
   SectionAuthoringProps,
 } from '../AuthoringElement';
 import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
-import { StudentResponses } from '../common/responses/StudentResponses';
+import { StudentResponses as _StudentResponses } from '../common/responses/StudentResponses';
 import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
 import { VariableActions } from '../common/variables/variableActions';
 import * as ActivityTypes from '../types';

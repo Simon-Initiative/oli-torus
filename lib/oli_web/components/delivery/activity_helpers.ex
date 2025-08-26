@@ -356,7 +356,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
         {OliWeb.Common.React.component(
           %{is_liveview: true},
           "Components.VegaLiteRenderer",
-          %{spec: spec},
+          %{spec: @spec},
           id: "pct-bar-#{@id}"
         )}
       </div>

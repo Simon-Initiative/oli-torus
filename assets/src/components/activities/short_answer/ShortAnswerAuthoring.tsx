@@ -30,7 +30,7 @@ import { RespondedUsersList } from '../common/authoring/RespondedUsersList';
 import { ActivitySettings } from '../common/authoring/settings/ActivitySettings';
 import { Explanation } from '../common/explanation/ExplanationAuthoring';
 import { ActivityScoring } from '../common/responses/ActivityScoring';
-import { StudentResponses } from '../common/responses/StudentResponses';
+import { StudentResponses as _StudentResponses } from '../common/responses/StudentResponses';
 import { TriggerAuthoring, TriggerLabel } from '../common/triggers/TriggerAuthoring';
 import { toggleSubmitAndCompareOption } from '../common/utils';
 import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
