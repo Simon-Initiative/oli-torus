@@ -16,52 +16,73 @@ defmodule OliWeb.Sections.SectionsTableModel do
       %ColumnSpec{
         name: :title,
         label: "Title",
+        td_class: "!border-r border-Table-table-border",
+        th_class: "!border-r border-Table-table-border",
         render_fn: &custom_render/3
       },
       %ColumnSpec{
         name: :tags,
         label: "Tags",
+        sortable: false,
+        td_class: "!border-r border-Table-table-border",
+        th_class: "!border-r border-Table-table-border",
         render_fn: &custom_render/3
       },
       %ColumnSpec{
         name: :enrollments_count,
-        label: "# Enrolled"
+        label: "# Enrolled",
+        td_class: "!border-r border-Table-table-border",
+        th_class: "!border-r border-Table-table-border"
       },
       %ColumnSpec{
         name: :requires_payment,
         label: "Cost",
+        td_class: "!border-r border-Table-table-border",
+        th_class: "!border-r border-Table-table-border",
         render_fn: &custom_render/3
       },
       %ColumnSpec{
         name: :start_date,
         label: "Start",
+        td_class: "!border-r border-Table-table-border",
+        th_class: "!border-r border-Table-table-border",
         render_fn: &custom_render/3,
         sort_fn: &Common.sort_date/2
       },
       %ColumnSpec{
         name: :end_date,
         label: "End",
+        td_class: "!border-r border-Table-table-border",
+        th_class: "!border-r border-Table-table-border",
         render_fn: &custom_render/3,
         sort_fn: &Common.sort_date/2
       },
       %ColumnSpec{
         name: :base,
         label: "Base Project/Product",
+        td_class: "!border-r border-Table-table-border",
+        th_class: "!border-r border-Table-table-border",
         render_fn: &custom_render/3
       },
       %ColumnSpec{
         name: :instructor,
         label: "Instructors",
+        td_class: "!border-r border-Table-table-border",
+        th_class: "!border-r border-Table-table-border",
         render_fn: &custom_render/3
       },
       %ColumnSpec{
         name: :institution,
         label: "Institution",
+        td_class: "!border-r border-Table-table-border",
+        th_class: "!border-r border-Table-table-border",
         render_fn: &custom_render/3
       },
       %ColumnSpec{
         name: :delivery,
         label: "Delivery",
+        td_class: "!border-r border-Table-table-border",
+        th_class: "!border-r border-Table-table-border",
         render_fn: &custom_render/3
       },
       %ColumnSpec{
