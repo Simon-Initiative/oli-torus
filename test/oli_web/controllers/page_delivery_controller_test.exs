@@ -1095,7 +1095,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       effective_settings = Settings.get_combined_settings(page_revision, section.id, user.id)
 
       datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
-      activity_provider = &Oli.Delivery.ActivityProvider.provide/6
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/7
 
       # simulate multiple requests to start an attempt, such as browser back/forward
       [
@@ -1345,7 +1345,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
         Oli.Delivery.Settings.get_combined_settings(page.revision, section.id, user.id)
 
       datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
-      activity_provider = &Oli.Delivery.ActivityProvider.provide/6
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/7
 
       Oli.Delivery.Sections.get_section_resource(section.id, page.resource.id)
       |> Oli.Delivery.Sections.update_section_resource(%{time_limit: 5})

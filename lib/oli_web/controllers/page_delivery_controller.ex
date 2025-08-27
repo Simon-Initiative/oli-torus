@@ -1226,7 +1226,7 @@ defmodule OliWeb.PageDeliveryController do
 
   def do_start_attempt(conn, section, user, revision, effective_settings) do
     datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
-    activity_provider = &Oli.Delivery.ActivityProvider.provide/6
+    activity_provider = &Oli.Delivery.ActivityProvider.provide/7
 
     # We must check gating conditions here to account for gates that activated after
     # the prologue page was rendered, and for malicious/deliberate attempts to start an attempt via

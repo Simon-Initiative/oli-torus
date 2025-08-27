@@ -3495,7 +3495,7 @@ defmodule Oli.TestHelpers do
   end
 
   def visit_page(page_revision, section, enrolled_user) do
-    activity_provider = &Oli.Delivery.ActivityProvider.provide/6
+    activity_provider = &Oli.Delivery.ActivityProvider.provide/7
     datashop_session_id = UUID.uuid4()
 
     effective_settings =

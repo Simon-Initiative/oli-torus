@@ -59,7 +59,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.RetakeModeTest do
     } do
       Attempts.track_access(p1.resource.id, section.id, user.id)
 
-      activity_provider = &Oli.Delivery.ActivityProvider.provide/6
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/7
       datashop_session_id = UUID.uuid4()
 
       effective_settings =
@@ -75,7 +75,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.RetakeModeTest do
           user: user,
           audience_role: :student,
           activity_provider: activity_provider,
-          blacklisted_activity_ids: [],
+          blacklisted_activities: [],
           publication_id: pub.id,
           effective_settings: effective_settings
         })
@@ -111,7 +111,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.RetakeModeTest do
           user: user,
           audience_role: :student,
           activity_provider: activity_provider,
-          blacklisted_activity_ids: [],
+          blacklisted_activities: [],
           publication_id: pub.id,
           effective_settings: effective_settings
         })
@@ -136,7 +136,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.RetakeModeTest do
     } do
       Attempts.track_access(p1.resource.id, section.id, user.id)
 
-      activity_provider = &Oli.Delivery.ActivityProvider.provide/6
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/7
       datashop_session_id = UUID.uuid4()
 
       effective_settings =
@@ -152,7 +152,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.RetakeModeTest do
           user: user,
           audience_role: :student,
           activity_provider: activity_provider,
-          blacklisted_activity_ids: [],
+          blacklisted_activities: [],
           publication_id: pub.id,
           effective_settings: effective_settings
         })
@@ -188,7 +188,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.RetakeModeTest do
           user: user,
           audience_role: :student,
           activity_provider: activity_provider,
-          blacklisted_activity_ids: [],
+          blacklisted_activities: [],
           publication_id: pub.id,
           effective_settings: effective_settings
         })
@@ -213,7 +213,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.RetakeModeTest do
     } do
       Attempts.track_access(p1.resource.id, section.id, user.id)
 
-      activity_provider = &Oli.Delivery.ActivityProvider.provide/6
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/7
       datashop_session_id = UUID.uuid4()
 
       content = Map.put(p1.revision.content, "advancedDelivery", true)
@@ -228,7 +228,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.RetakeModeTest do
           user: user,
           audience_role: :student,
           activity_provider: activity_provider,
-          blacklisted_activity_ids: [],
+          blacklisted_activities: [],
           publication_id: pub.id,
           effective_settings:
             Oli.Delivery.Settings.get_combined_settings(adaptive_revision, section.id, user.id)
@@ -265,7 +265,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.RetakeModeTest do
           user: user,
           audience_role: :student,
           activity_provider: activity_provider,
-          blacklisted_activity_ids: [],
+          blacklisted_activities: [],
           publication_id: pub.id,
           effective_settings:
             Oli.Delivery.Settings.get_combined_settings(adaptive_revision, section.id, user.id)
