@@ -2,11 +2,10 @@ name: Deploy PR Preview
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened, labeled]
+    types: [opened, synchronize, reopened]
 
 jobs:
-  deploy:
-    if: contains(github.event.pull_request.labels.*.name, 'deploy')
+  preview-deploy:
     runs-on: plasma
     steps:
       - uses: actions/checkout@v4

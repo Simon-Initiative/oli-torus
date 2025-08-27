@@ -5,7 +5,7 @@ on:
     types: [closed]
 
 jobs:
-  cleanup:
+  preview-cleanup:
     runs-on: plasma
     steps:
       - uses: actions/checkout@v4
