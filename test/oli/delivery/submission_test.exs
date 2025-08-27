@@ -810,7 +810,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       # now try to reset the guid from the first attempt, simulating the
       # student clicking 'Reset' in tab A. This should fail because attempt 1
       # is no longer the latest attempt (attempt 2 was created above).
-      assert {:error, {:already_reset}} ==
+      assert {:error, {:no_more_attempts}} ==
                ActivityLifecycle.reset_activity(
                  section.slug,
                  activity_attempt.attempt_guid,
