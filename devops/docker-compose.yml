@@ -18,6 +18,11 @@ services:
       start_period: 60s
     environment:
       PHX_SERVER: "true"
+      # Tell Phoenix we're behind a proxy that handles SSL
+      FORCE_SSL: "false"
+      # Use HTTP scheme since SSL is terminated by HAProxy
+      SCHEME: "https"
+      PORT: "443"
       SECRET_KEY_BASE: "ba1sX03RVQyAk3MPRfUeG7LQxUPRe3IB3iN3VnTHYFxUgsz2vAUDof/kGCiyaigs"
       LIVE_VIEW_SALT: "vf6j/P8XSYOVNs3aKUQ5SQCfunWheQPQ+EDzfBJM0FBTLcyTHZlmQGXbBBbSJwkV"
       HOST: ${HOST}
@@ -47,6 +52,10 @@ services:
       # Health check for the service
       - "traefik.http.services.${PROJECT}-app.loadbalancer.healthcheck.path=/healthz"
       - "traefik.http.services.${PROJECT}-app.loadbalancer.healthcheck.interval=30s"
+      # Add headers to indicate HTTPS is being used upstream
+      - "traefik.http.middlewares.${PROJECT}-headers.headers.customrequestheaders.X-Forwarded-Proto=https"
+      - "traefik.http.middlewares.${PROJECT}-headers.headers.customrequestheaders.X-Forwarded-Port=443"
+      - "traefik.http.routers.${PROJECT}-app.middlewares=${PROJECT}-headers"
 
   postgres:
     image: ankane/pgvector
