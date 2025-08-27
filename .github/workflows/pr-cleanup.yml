@@ -12,5 +12,5 @@ jobs:
 
       - name: Remove PR stack
         run: |
-          PROJECT=pr${{ github.event.number }}
+          export PROJECT=pr${{ github.event.number }}
           docker-compose -p $PROJECT -f devops/docker-compose.yml down -v

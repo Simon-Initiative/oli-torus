@@ -3,17 +3,19 @@ services:
     image: oli-torus:${APP_IMAGE_TAG}
     hostname: ${HOST}
     depends_on:
-      - postgres
-      - minio
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_started
     networks:
       - default
       - webproxy-public
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:80/healthz"]
+      test: ["CMD-SHELL", "curl -f http://localhost:80/healthz || exit 1"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 40s
+      retries: 5
+      start_period: 60s
     environment:
       PHX_SERVER: "true"
       SECRET_KEY_BASE: "ba1sX03RVQyAk3MPRfUeG7LQxUPRe3IB3iN3VnTHYFxUgsz2vAUDof/kGCiyaigs"
@@ -35,11 +37,16 @@ services:
       EMAIL_REPLY_TO: "admin@example.edu"
     labels:
       - "traefik.enable=true"
+      # Specify the network for Traefik to use
+      - "traefik.docker.network=webproxy-public"
       # Route everything except /media to app
       - "traefik.http.routers.${PROJECT}-app.rule=Host(`${HOST}`) && PathPrefix(`/`)"
       - "traefik.http.routers.${PROJECT}-app.priority=10"
       - "traefik.http.routers.${PROJECT}-app.entrypoints=web"
       - "traefik.http.services.${PROJECT}-app.loadbalancer.server.port=80"
+      # Health check for the service
+      - "traefik.http.services.${PROJECT}-app.loadbalancer.healthcheck.path=/healthz"
+      - "traefik.http.services.${PROJECT}-app.loadbalancer.healthcheck.interval=30s"
 
   postgres:
     image: ankane/pgvector
@@ -55,6 +62,11 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_USER: postgres
       POSTGRES_HOST_AUTH_METHOD: trust
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   minio:
     image: minio/minio
@@ -68,6 +80,8 @@ services:
       - webproxy-public
     labels:
       - "traefik.enable=true"
+      # Specify the network for Traefik to use
+      - "traefik.docker.network=webproxy-public"
       # Route only /media to minio
       - "traefik.http.routers.${PROJECT}-minio.rule=Host(`${HOST}`) && PathPrefix(`/media`)"
       - "traefik.http.routers.${PROJECT}-minio.priority=20"
