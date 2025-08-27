@@ -40,6 +40,10 @@ services:
       EMAIL_FROM_NAME: "OLI Torus"
       EMAIL_FROM_ADDRESS: "no-reply@example.edu"
       EMAIL_REPLY_TO: "admin@example.edu"
+      BRANDING_LOGO: "/branding/dev/oli_torus_logo.png"
+      BRANDING_LOGO_DARK: "/branding/dev/oli_torus_logo_dark.png"
+      BRANDING_FAVICONS_DIR: "/branding/dev/favicons"
+      VENDOR_PROPERTY_WORKSPACE_LOGO: "/branding/dev/oli_torus_icon.png"
     labels:
       - "traefik.enable=true"
       # Specify the network for Traefik to use
