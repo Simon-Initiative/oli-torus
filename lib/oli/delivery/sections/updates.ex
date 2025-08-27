@@ -457,13 +457,14 @@ defmodule Oli.Delivery.Sections.Updates do
   defp all_resource_mappings(section) do
     # Query the section project publications to get all publication ids, then create the
     # published resource map for each and MERGE them all into one map
-    from(spp in Sections.SectionsProjectsPublications,
-      where: spp.section_id == ^section.id,
-      select: spp.publication_id
-    )
-    |> Repo.all()
-    |> Enum.map(fn publication_id -> MinimalHierarchy.published_resources_map(publication_id) end)
-    |> Enum.reduce(%{}, fn m, merged -> Map.merge(merged, m) end)
+    publication_ids =
+      from(spp in Sections.SectionsProjectsPublications,
+        where: spp.section_id == ^section.id,
+        select: spp.publication_id
+      )
+      |> Repo.all()
+
+    MinimalHierarchy.published_resources_map(publication_ids)
   end
 
   defp update_container_children(section, prev_publication, new_publication) do
