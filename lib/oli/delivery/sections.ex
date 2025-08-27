@@ -3891,7 +3891,6 @@ defmodule Oli.Delivery.Sections do
       |> Enum.filter(fn child_id -> !is_nil(child_id) end)
       |> Enum.filter(fn child_id ->
         case Map.get(new_published_resources_map, sr_id_to_resource_id[child_id]) do
-          nil -> false
           %{deleted: true} -> false
           _ -> true
         end
