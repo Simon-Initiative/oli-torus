@@ -1141,7 +1141,7 @@ defmodule OliWeb.Components.Common do
   def toggle_switch(assigns) do
     ~H"""
     <div {@rest}>
-      <form id={@id} phx-change={@on_toggle} phx-target={@phx_target}>
+      <form id={@id} phx-change={@on_toggle} phx-target={@phx_target} phx-auto-recover="ignore">
         <label class="inline-flex items-center cursor-pointer">
           <input
             id={"#{@id}_checkbox"}
