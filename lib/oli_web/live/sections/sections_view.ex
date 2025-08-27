@@ -62,7 +62,7 @@ defmodule OliWeb.Sections.SectionsView do
       )
 
     total_count = determine_total(sections)
-    {:ok, table_model} = SectionsTableModel.new(ctx, sections)
+    {:ok, table_model} = SectionsTableModel.new(ctx, sections, render_date: :full)
 
     {:ok,
      assign(socket,

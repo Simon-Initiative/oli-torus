@@ -7,10 +7,13 @@ defmodule OliWeb.Sections.SectionsTableModel do
   alias OliWeb.Common.Table.{ColumnSpec, Common, SortableTableModel}
   alias OliWeb.Router.Helpers, as: Routes
 
-  @default_opts [render_institution_action: false, exclude_columns: []]
+  @default_opts [render_institution_action: false, render_date: :relative, exclude_columns: []]
 
   def new(%SessionContext{} = ctx, sections, opts \\ []) do
     opts = Keyword.validate!(opts, @default_opts)
+
+    date_render =
+      if opts[:render_date] == :relative, do: &Common.render_date/3, else: &custom_render/3
 
     column_specs = [
       %ColumnSpec{
@@ -46,7 +49,7 @@ defmodule OliWeb.Sections.SectionsTableModel do
         label: "Start",
         td_class: "!border-r border-Table-table-border",
         th_class: "!border-r border-Table-table-border",
-        render_fn: &custom_render/3,
+        render_fn: date_render,
         sort_fn: &Common.sort_date/2
       },
       %ColumnSpec{
@@ -54,7 +57,7 @@ defmodule OliWeb.Sections.SectionsTableModel do
         label: "End",
         td_class: "!border-r border-Table-table-border",
         th_class: "!border-r border-Table-table-border",
-        render_fn: &custom_render/3,
+        render_fn: date_render,
         sort_fn: &Common.sort_date/2
       },
       %ColumnSpec{
@@ -265,6 +268,8 @@ defmodule OliWeb.Sections.SectionsTableModel do
     <div>nothing</div>
     """
   end
+
+  defp format_date(_assigns, _section, nil), do: ""
 
   defp format_date(assigns, section, date) do
     tz =
