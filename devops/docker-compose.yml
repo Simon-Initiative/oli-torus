@@ -8,7 +8,14 @@ services:
     networks:
       - default
       - webproxy-public
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     environment:
+      PHX_SERVER: "true"
       SECRET_KEY_BASE: "ba1sX03RVQyAk3MPRfUeG7LQxUPRe3IB3iN3VnTHYFxUgsz2vAUDof/kGCiyaigs"
       LIVE_VIEW_SALT: "vf6j/P8XSYOVNs3aKUQ5SQCfunWheQPQ+EDzfBJM0FBTLcyTHZlmQGXbBBbSJwkV"
       HOST: ${HOST}
