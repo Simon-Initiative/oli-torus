@@ -14,7 +14,7 @@
 ARG ELIXIR_VERSION=1.18.4
 ARG OTP_VERSION=28.0.2
 ARG DEBIAN_VERSION=bullseye-20250721-slim
-ARG SHA
+ARG RELEASE_SHA
 
 ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
 ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
@@ -64,13 +64,16 @@ COPY lib lib
 COPY assets assets
 
 # install node dependencies
-RUN cd assets && yarn install
+RUN yarn --cwd ./assets
 
 # compile assets
+RUN NODE_ENV=production npm run deploy --prefix ./assets
+RUN NODE_ENV=production npm run deploy-node --prefix ./assets
+
 RUN mix assets.deploy
 
 # Compile the release
-RUN mix compile
+RUN SHA=$RELEASE_SHA mix compile
 
 # Changes to config/runtime.exs don't require recompiling the code
 COPY config/runtime.exs config/
@@ -78,7 +81,7 @@ COPY config/runtime.exs config/
 COPY rel rel
 
 # Build the release
-RUN SHA=${SHA} mix release
+RUN SHA=${RELEASE_SHA} mix release
 
 # start a new build stage so that the final image will only contain
 # the compiled release and other runtime necessities

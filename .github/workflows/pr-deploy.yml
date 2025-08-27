@@ -20,7 +20,7 @@ jobs:
         run: |
           docker build \
           --build-arg APP_VERSION=${{ steps.info.outputs.app_version }} \
-          --build-arg SHA_SHORT=${{ steps.info.outputs.sha_short }} \
+          --build-arg RELEASE_SHA=${{ steps.info.outputs.sha_short }} \
           -t oli-torus:${{ github.sha }} .
 
       - name: Deploy PR stack
