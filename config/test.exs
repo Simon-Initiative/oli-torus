@@ -139,3 +139,11 @@ config :ex_aws, :emr, region: System.get_env("AWS_REGION", "us-east-1")
 config :ex_aws, :hackney_opts,
   follow_redirect: true,
   recv_timeout: 200_000
+
+config :oli, Oli.Vault,
+  json_library: Jason,
+  ciphers: [
+    default:
+      {Cloak.Ciphers.AES.GCM,
+       tag: "AES.GCM.V1", key: Base.decode64!("HXCdm5z61eNgUpnXObJRv94k3JnKSrnfwppyb60nz6w=")}
+  ]
