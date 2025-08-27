@@ -3146,6 +3146,10 @@ select {
   color: #3B3740;
 }
 
+.border-Table-table-border {
+  border-color: #CED1D9;
+}
+
 .dark .border-Table-table-border {
   border-color: #3B3740;
 }
@@ -11338,6 +11342,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .\!border-b-0 {
   border-bottom-width: 0px !important;
+}
+
+.\!border-r {
+  border-right-width: 1px !important;
 }
 
 .\!border-r-0 {
