@@ -110,7 +110,7 @@ defmodule OliWeb.Sections.SectionsTableModelTest do
       assert :base in column_names
       assert :instructor in column_names
       assert :institution in column_names
-      assert :delivery in column_names
+      assert :type in column_names
       assert :status in column_names
     end
 
@@ -216,7 +216,7 @@ defmodule OliWeb.Sections.SectionsTableModelTest do
       assigns: assigns,
       section: section
     } do
-      column_spec = %ColumnSpec{name: :delivery}
+      column_spec = %ColumnSpec{name: :type}
       rendered = SectionsTableModel.custom_render(assigns, section, column_spec)
       rendered_str = rendered_to_string(rendered)
 
@@ -227,7 +227,7 @@ defmodule OliWeb.Sections.SectionsTableModelTest do
 
     test "renders delivery column for LTI section", %{assigns: assigns, section: section} do
       section = %{section | open_and_free: false}
-      column_spec = %ColumnSpec{name: :delivery}
+      column_spec = %ColumnSpec{name: :type}
       rendered = SectionsTableModel.custom_render(assigns, section, column_spec)
       rendered_str = rendered_to_string(rendered)
 

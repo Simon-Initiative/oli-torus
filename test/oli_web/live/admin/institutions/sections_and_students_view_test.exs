@@ -145,7 +145,7 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsViewTest do
             :base,
             :instructor,
             :institution,
-            :delivery,
+            :type,
             :status
           ]
 

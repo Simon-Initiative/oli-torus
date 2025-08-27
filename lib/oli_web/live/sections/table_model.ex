@@ -82,7 +82,7 @@ defmodule OliWeb.Sections.SectionsTableModel do
         render_fn: &custom_render/3
       },
       %ColumnSpec{
-        name: :delivery,
+        name: :type,
         label: "Delivery",
         td_class: "!border-r border-Table-table-border",
         th_class: "!border-r border-Table-table-border",
@@ -134,7 +134,7 @@ defmodule OliWeb.Sections.SectionsTableModel do
     ""
   end
 
-  def custom_render(_assigns, section, %ColumnSpec{name: :delivery}) do
+  def custom_render(_assigns, section, %ColumnSpec{name: :type}) do
     {text, bg_color, text_color} =
       if section.open_and_free do
         {"DD", "bg-Fill-Accent-fill-accent-purple", "text-Text-text-accent-purple"}
