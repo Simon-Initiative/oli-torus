@@ -1,13 +1,4 @@
 services:
-  # haproxy:
-  #   image: haproxy
-  #   networks:
-  #     webproxy-public:
-  #       aliases:
-  #         - ${PROJECT}
-  #     default: {}
-  #   volumes:
-  #     - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
   app:
     image: oli-torus:${APP_IMAGE_TAG}
     hostname: ${HOST}
@@ -23,7 +14,11 @@ services:
       HOST: ${HOST}
       S3_MEDIA_BUCKET_NAME: "oli-torus-media-dev"
       S3_XAPI_BUCKET_NAME: "oli-torus-xapi-dev"
-      MEDIA_URL: ${HOST}/media
+      MEDIA_URL: https://${HOST}/media
+      # MinIO S3 configuration
+      AWS_ACCESS_KEY_ID: "minio-user"
+      AWS_SECRET_ACCESS_KEY: "minio-password"
+      S3_ENDPOINT: "http://minio:9000"
       CLOAK_VAULT_KEY: "HXCdm5z61eNgUpnXObJRv94k3JnKSrnfwppyb60nz6w="
       DATABASE_URL: postgres://postgres:postgres@postgres:5432/postgres
       ADMIN_EMAIL: "admin@example.edu"
@@ -36,7 +31,8 @@ services:
       # Route everything except /media to app
       - "traefik.http.routers.${PROJECT}-app.rule=Host(`${HOST}`) && PathPrefix(`/`)"
       - "traefik.http.routers.${PROJECT}-app.priority=10"
-      - "traefik.http.services.${PROJECT}-app.loadbalancer.server.port=4000"
+      - "traefik.http.routers.${PROJECT}-app.entrypoints=web"
+      - "traefik.http.services.${PROJECT}-app.loadbalancer.server.port=80"
 
   postgres:
     image: ankane/pgvector
@@ -68,8 +64,9 @@ services:
       # Route only /media to minio
       - "traefik.http.routers.${PROJECT}-minio.rule=Host(`${HOST}`) && PathPrefix(`/media`)"
       - "traefik.http.routers.${PROJECT}-minio.priority=20"
+      - "traefik.http.routers.${PROJECT}-minio.entrypoints=web"
       - "traefik.http.services.${PROJECT}-minio.loadbalancer.server.port=9000"
-      # Optional: strip /media prefix before forwarding
+      # Strip /media prefix before forwarding
       - "traefik.http.middlewares.${PROJECT}-stripprefix.stripprefix.prefixes=/media"
       - "traefik.http.routers.${PROJECT}-minio.middlewares=${PROJECT}-stripprefix"
     command: ["server", "--console-address", ":9001", "/data"]

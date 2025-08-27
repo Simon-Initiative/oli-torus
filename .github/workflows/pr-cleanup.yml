@@ -8,7 +8,9 @@ jobs:
   cleanup:
     runs-on: plasma
     steps:
+      - uses: actions/checkout@v4
+
       - name: Remove PR stack
         run: |
           PROJECT=pr${{ github.event.number }}
-          docker-compose -p $PROJECT down -v
+          docker-compose -p $PROJECT -f devops/docker-compose.yml down -v
