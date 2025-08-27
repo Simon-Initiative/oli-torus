@@ -6,40 +6,48 @@ defmodule OliWeb.Products.ProductsTableModel do
   alias OliWeb.Common.FormatDateTime
 
   def new(products, ctx, project_slug \\ "") do
+    default_td_class = "!border-r border-Table-table-border"
+    default_th_class = "!border-r border-Table-table-border"
+
     SortableTableModel.new(
       rows: products,
       column_specs: [
         %ColumnSpec{
           name: :title,
           label: "Title",
-          render_fn: &render_title_column(Map.put(&1, :project_slug, project_slug), &2, &3)
+          render_fn: &render_title_column(Map.put(&1, :project_slug, project_slug), &2, &3),
+          td_class: default_td_class,
+          th_class: default_th_class
         },
         %ColumnSpec{
           name: :tags,
           label: "Tags",
           render_fn: &render_tags_column/3,
-          sortable: false
+          sortable: false,
+          td_class: default_td_class,
+          th_class: default_th_class
         },
         %ColumnSpec{
           name: :inserted_at,
           label: "Created",
-          render_fn: &render_created_column/3
+          render_fn: &render_created_column/3,
+          td_class: default_td_class,
+          th_class: default_th_class
         },
         %ColumnSpec{
           name: :requires_payment,
           label: "Requires Payment",
           render_fn: &render_payment_column/3,
-          sort_fn: &sort_payment_column/2
+          sort_fn: &sort_payment_column/2,
+          td_class: default_td_class,
+          th_class: default_th_class
         },
         %ColumnSpec{
           name: :base_project_id,
           label: "Base Project",
-          render_fn: &render_project_column(Map.put(&1, :project_slug, project_slug), &2, &3)
-        },
-        %ColumnSpec{
-          name: :institution_name,
-          label: "Institution",
-          render_fn: &render_institution_column/3
+          render_fn: &render_project_column(Map.put(&1, :project_slug, project_slug), &2, &3),
+          td_class: default_td_class,
+          th_class: default_th_class
         },
         %ColumnSpec{name: :status, label: "Status", render_fn: &render_status_column/3}
       ],
@@ -147,26 +155,6 @@ defmodule OliWeb.Products.ProductsTableModel do
     <span class="text-Text-text-high text-base font-medium">
       {Map.get(@product, :tags, "")}
     </span>
-    """
-  end
-
-  defp render_institution_column(_assigns, %{institution_name: nil}, _), do: ""
-
-  defp render_institution_column(
-         assigns,
-         %{institution_name: institution_name, institution_id: institution_id},
-         _
-       ) do
-    assigns =
-      Map.merge(assigns, %{institution_name: institution_name, institution_id: institution_id})
-
-    ~H"""
-    <a
-      href={~p"/admin/institutions/#{@institution_id}"}
-      class="text-Text-text-link text-base font-medium leading-normal"
-    >
-      {@institution_name}
-    </a>
     """
   end
 
