@@ -454,6 +454,18 @@ defmodule Oli.Delivery.Sections.Updates do
     end
   end
 
+  defp all_resource_mappings(section) do
+    # Query the section project publications to get all publication ids, then create the
+    # published resource map for each and MERGE them all into one map
+    from(spp in Sections.SectionsProjectsPublications,
+      where: spp.section_id == ^section.id,
+      select: spp.publication_id
+    )
+    |> Repo.all()
+    |> Enum.map(fn publication_id -> MinimalHierarchy.published_resources_map(publication_id) end)
+    |> Enum.reduce(%{}, fn m, merged -> Map.merge(merged, m) end)
+  end
+
   defp update_container_children(section, prev_publication, new_publication) do
     container = ResourceType.id_for_container()
 
@@ -462,6 +474,9 @@ defmodule Oli.Delivery.Sections.Updates do
 
     new_published_resources_map =
       MinimalHierarchy.published_resources_map(new_publication.id)
+
+    # create resource mappings for all the remixed course publications
+    all_resource_map = all_resource_mappings(section)
 
     # get all section resources including freshly minted ones
     section_resources = Sections.get_section_resources(section.id)
@@ -541,7 +556,7 @@ defmodule Oli.Delivery.Sections.Updates do
           Sections.clean_children(
             updated_section_resource,
             sr_id_to_resource_id,
-            new_published_resources_map
+            all_resource_map
           )
         else
           section_resource

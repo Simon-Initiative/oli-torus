@@ -3883,14 +3883,14 @@ defmodule Oli.Delivery.Sections do
   end
 
   # For a given section resource, clean the children attribute to ensure that:
-  # 1. Any nil records are removed
-  # 2. All non-nil sr id references map to a non-deleted revision in the new pub
+  # 1. All non-nil sr id references map to a non-deleted revision in the new pub get removed
   def clean_children(section_resource, sr_id_to_resource_id, new_published_resources_map) do
     updated_children =
       section_resource.children
       |> Enum.filter(fn child_id -> !is_nil(child_id) end)
       |> Enum.filter(fn child_id ->
         case Map.get(new_published_resources_map, sr_id_to_resource_id[child_id]) do
+          nil -> false
           %{deleted: true} -> false
           _ -> true
         end
