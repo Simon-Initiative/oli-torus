@@ -19584,6 +19584,11 @@ Not supports in Firefox and IE */
   border-color: rgb(39 92 175 / var(--tw-border-opacity));
 }
 
+.checked\:bg-blue-500:checked {
+  --tw-bg-opacity: 1;
+  background-color: rgb(59 118 211 / var(--tw-bg-opacity));
+}
+
 .checked\:bg-blue-600:checked {
   --tw-bg-opacity: 1;
   background-color: rgb(39 92 175 / var(--tw-bg-opacity));
