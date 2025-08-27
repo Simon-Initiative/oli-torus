@@ -95,9 +95,12 @@ defmodule OliWeb.Sections.SectionsTableModel do
       }
     ]
 
+    column_specs =
+      Enum.reject(column_specs, fn column -> column.name in opts[:exclude_columns] end)
+
     SortableTableModel.new(
       rows: sections,
-      column_specs: column_specs -- opts[:exclude_columns],
+      column_specs: column_specs,
       event_suffix: "",
       id_field: [:id],
       data: %{

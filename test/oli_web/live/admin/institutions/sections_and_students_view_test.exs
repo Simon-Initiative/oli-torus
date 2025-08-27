@@ -138,7 +138,6 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsViewTest do
         :sections ->
           [
             :title,
-            :tags,
             :enrollments_count,
             :requires_payment,
             :start_date,
@@ -421,7 +420,7 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsViewTest do
 
       # test order desc
       assert view
-             |> element("table > tbody > tr:first-child > td:nth-child(4) > div")
+             |> element("table > tbody > tr:first-child > td:nth-child(3) > div")
              |> render() =~ "$10.00"
 
       view
@@ -430,7 +429,7 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsViewTest do
 
       # test order asc
       assert view
-             |> element("table > tbody > tr:first-child > td:nth-child(4) > div")
+             |> element("table > tbody > tr:first-child > td:nth-child(3) > div")
              |> render() =~ "$40.00"
     end
   end
