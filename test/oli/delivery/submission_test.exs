@@ -808,8 +808,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       assert attempt_state.hasMoreAttempts == false
 
       # now try to reset the guid from the first attempt, simulating the
-      # student clicking 'Reset' in tab A. This should fail because attempt 1
-      # is no longer the latest attempt (attempt 2 was created above).
+      # student clicking 'Reset' in tab A.
       assert {:error, {:no_more_attempts}} ==
                ActivityLifecycle.reset_activity(
                  section.slug,
