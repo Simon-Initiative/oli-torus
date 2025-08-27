@@ -1,19 +1,22 @@
 services:
-  haproxy:
-    image: haproxy
-    networks:
-      webproxy-public:
-        aliases:
-          - ${PROJECT}
-      default: {}
-    volumes:
-      - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
+  # haproxy:
+  #   image: haproxy
+  #   networks:
+  #     webproxy-public:
+  #       aliases:
+  #         - ${PROJECT}
+  #     default: {}
+  #   volumes:
+  #     - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
   app:
     image: oli-torus:${APP_IMAGE_TAG}
     hostname: ${HOST}
     depends_on:
       - postgres
       - minio
+    networks:
+      - default
+      - webproxy-public
     environment:
       SECRET_KEY_BASE: "ba1sX03RVQyAk3MPRfUeG7LQxUPRe3IB3iN3VnTHYFxUgsz2vAUDof/kGCiyaigs"
       LIVE_VIEW_SALT: "vf6j/P8XSYOVNs3aKUQ5SQCfunWheQPQ+EDzfBJM0FBTLcyTHZlmQGXbBBbSJwkV"
@@ -28,6 +31,12 @@ services:
       EMAIL_FROM_NAME: "OLI Torus"
       EMAIL_FROM_ADDRESS: "no-reply@example.edu"
       EMAIL_REPLY_TO: "admin@example.edu"
+    labels:
+      - "traefik.enable=true"
+      # Route everything except /media to app
+      - "traefik.http.routers.${PROJECT}-app.rule=Host(`${HOST}`) && PathPrefix(`/`)"
+      - "traefik.http.routers.${PROJECT}-app.priority=10"
+      - "traefik.http.services.${PROJECT}-app.loadbalancer.server.port=4000"
 
   postgres:
     image: ankane/pgvector
@@ -51,6 +60,18 @@ services:
       MINIO_ROOT_PASSWORD: minio-password
     volumes:
       - minio_data:/data
+    networks:
+      - default
+      - webproxy-public
+    labels:
+      - "traefik.enable=true"
+      # Route only /media to minio
+      - "traefik.http.routers.${PROJECT}-minio.rule=Host(`${HOST}`) && PathPrefix(`/media`)"
+      - "traefik.http.routers.${PROJECT}-minio.priority=20"
+      - "traefik.http.services.${PROJECT}-minio.loadbalancer.server.port=9000"
+      # Optional: strip /media prefix before forwarding
+      - "traefik.http.middlewares.${PROJECT}-stripprefix.stripprefix.prefixes=/media"
+      - "traefik.http.routers.${PROJECT}-minio.middlewares=${PROJECT}-stripprefix"
     command: ["server", "--console-address", ":9001", "/data"]
 
 volumes:
