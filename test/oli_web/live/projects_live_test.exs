@@ -80,8 +80,11 @@ defmodule OliWeb.Projects.ProjectsLiveTest do
       assert has_element?(view, "##{deleted_project.id}")
     end
 
-    test "applies paging", %{conn: conn} do
-      [first_p | tail] = insert_list(26, :project) |> Enum.sort_by(& &1.title)
+    test "applies paging", %{conn: conn, admin: admin} do
+      [first_p | tail] =
+        insert_list(26, :project, authors: [admin])
+        |> Enum.sort_by(& &1.title)
+
       last_p = List.last(tail)
 
       {:ok, view, _html} = live(conn, Routes.live_path(Endpoint, ProjectsLive))
