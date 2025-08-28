@@ -112,7 +112,7 @@ defmodule OliWeb.Components.Delivery.Students.EmailModal do
               </button>
               <button
                 role="send email"
-                phx-click={JS.push("send_email") |> JS.push("close_email_modal")}
+                phx-click={JS.push("send_email")}
                 phx-target={@myself}
                 disabled={String.trim(@email_message) == ""}
                 class={[
@@ -179,18 +179,17 @@ defmodule OliWeb.Components.Delivery.Students.EmailModal do
 
   def handle_event("send_email", _params, socket) do
     if String.trim(socket.assigns.email_message) != "" do
-      # Send emails to selected students
-      socket.assigns.selected_students
-      |> Enum.each(fn student_id ->
-        student = Enum.find(socket.assigns.students, fn s -> s.id == student_id end)
+      student_emails =
+        socket.assigns.selected_students
+        |> Oli.Accounts.get_user_emails_by_ids()
+        |> Enum.reject(&is_nil/1)
 
-        send_student_email(
-          student,
-          socket.assigns.email_message,
-          socket.assigns.section_title,
-          socket.assigns.instructor_email
-        )
-      end)
+      send_student_emails(
+        student_emails,
+        socket.assigns.email_message,
+        socket.assigns.section_title,
+        socket.assigns.instructor_email
+      )
 
       {:noreply,
        socket
@@ -202,21 +201,19 @@ defmodule OliWeb.Components.Delivery.Students.EmailModal do
   end
 
   def handle_event("close_email_modal", _params, socket) do
-    # Send message to the Students component to hide the modal
     send(self(), {:hide_email_modal})
     {:noreply, socket}
   end
 
-  defp send_student_email(student, message, course_name, _instructor_email) do
-    Oli.Email.create_email(
-      student.email,
-      "Note from your #{course_name} Instructor",
-      :instructor_student_email,
-      %{
-        message: message,
-        course_name: course_name
-      }
-    )
+  defp send_student_emails(student_emails, message, course_name, instructor_email) do
+    student_emails
+    |> Enum.map(fn student_email ->
+      Oli.Email.create_text_email(
+        student_email,
+        "Note from your #{course_name} Instructor #{instructor_email}",
+        message
+      )
+    end)
     |> Oli.Mailer.deliver_later()
   end
 
