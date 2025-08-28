@@ -6634,6 +6634,23 @@ html.dark .nav-tabs .nav-item.show .nav-link {
   opacity: 0;
 }
 
+/* Light */
+
+.tooltip {
+  --bs-tooltip-bg: #ffffff;
+  --bs-tooltip-color: #353740;
+  --bs-tooltip-border-color: #ced1d9;
+  --bs-tooltip-border-width: 1px;
+}
+
+/* Dark */
+
+.dark .tooltip {
+  --bs-tooltip-bg: #0d0c0f;
+  --bs-tooltip-color: #eeebf5;
+  --bs-tooltip-border-color: #3b3740;
+}
+
 .tooltip.show {
   opacity: var(--bs-tooltip-opacity);
 }
@@ -6649,6 +6666,7 @@ html.dark .nav-tabs .nav-item.show .nav-link {
   content: '';
   border-color: transparent;
   border-style: solid;
+  background: none;
 }
 
 .bs-tooltip-top .tooltip-arrow,
@@ -6660,7 +6678,7 @@ html.dark .nav-tabs .nav-item.show .nav-link {
 .bs-tooltip-auto[data-popper-placement^='top'] .tooltip-arrow::before {
   top: -1px;
   border-width: var(--bs-tooltip-arrow-height) calc(var(--bs-tooltip-arrow-width) * 0.5) 0;
-  border-top-color: var(--bs-tooltip-bg);
+  border-top-color: var(--bs-tooltip-border-color);
 }
 
 /* rtl:begin:ignore */
@@ -6677,7 +6695,7 @@ html.dark .nav-tabs .nav-item.show .nav-link {
   right: -1px;
   border-width: calc(var(--bs-tooltip-arrow-width) * 0.5) var(--bs-tooltip-arrow-height)
     calc(var(--bs-tooltip-arrow-width) * 0.5) 0;
-  border-right-color: var(--bs-tooltip-bg);
+  border-right-color: var(--bs-tooltip-border-color);
 }
 
 /* rtl:end:ignore */
@@ -6691,7 +6709,7 @@ html.dark .nav-tabs .nav-item.show .nav-link {
 .bs-tooltip-auto[data-popper-placement^='bottom'] .tooltip-arrow::before {
   bottom: -1px;
   border-width: 0 calc(var(--bs-tooltip-arrow-width) * 0.5) var(--bs-tooltip-arrow-height);
-  border-bottom-color: var(--bs-tooltip-bg);
+  border-bottom-color: var(--bs-tooltip-border-color);
 }
 
 /* rtl:begin:ignore */
@@ -6708,7 +6726,7 @@ html.dark .nav-tabs .nav-item.show .nav-link {
   left: -1px;
   border-width: calc(var(--bs-tooltip-arrow-width) * 0.5) 0
     calc(var(--bs-tooltip-arrow-width) * 0.5) var(--bs-tooltip-arrow-height);
-  border-left-color: var(--bs-tooltip-bg);
+  border-left-color: var(--bs-tooltip-border-color);
 }
 
 /* rtl:end:ignore */
@@ -6720,6 +6738,7 @@ html.dark .nav-tabs .nav-item.show .nav-link {
   text-align: center;
   background-color: var(--bs-tooltip-bg);
   border-radius: var(--bs-tooltip-border-radius);
+  border: var(--bs-tooltip-border-width) solid var(--bs-tooltip-border-color);
 }
 
 .btn {
