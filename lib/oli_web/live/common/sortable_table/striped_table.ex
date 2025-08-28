@@ -83,12 +83,17 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
 
     row_class = row_class <> " #{assigns[:additional_row_class]}"
 
-    assigns = Map.merge(assigns, %{row: row, row_class: row_class})
+    row_id =
+      if assigns.model.data[:view_type] == :objectives_instructor_dashboard,
+        do: "row_#{row.resource_id}_#{assigns.index}",
+        else: id_field(row, assigns.model)
+
+    assigns = Map.merge(assigns, %{row: row, row_class: row_class, row_id: row_id})
 
     ~H"""
     <tr
-      id={id_field(@row, @model)}
-      data-row-id={id_field(@row, @model)}
+      id={@row_id}
+      data-row-id={@row_id}
       class={@row_class <> " hover:bg-Table-table-hover" <>
     if Map.get(@row, :selected) || id_field(@row, @model) == @model.selected,
       do: " bg-delivery-primary-100 shadow-inner dark:bg-gray-700 dark:text-black",
@@ -133,7 +138,7 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
   def render(assigns) do
     ~H"""
     <table class={"min-w-full border " <> @additional_table_class}>
-      <thead class="sticky top-0 bg-white dark:bg-[#000000]">
+      <thead class="sticky top-0 bg-white dark:bg-[#000000] z-10">
         <tr>
           <%= for column_spec <- @model.column_specs do %>
             {render_th(
@@ -164,7 +169,8 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
                   if(Integer.is_even(index),
                     do: "bg-Table-table-row-1 ",
                     else: "bg-Table-table-row-2 "
-                  ) <> @additional_row_class
+                  ) <> @additional_row_class,
+                index: index
               },
               @model.data
             ),
@@ -178,7 +184,8 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
                   model: @model,
                   sort: @sort,
                   select: @select,
-                  additional_table_class: @additional_table_class
+                  additional_table_class: @additional_table_class,
+                  index: index
                 },
                 @model.data
               ),
@@ -196,13 +203,13 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
   end
 
   defp render_details_row(assigns, row) do
-    row_id = id_field(row, assigns.model)
     col_span = length(assigns.model.column_specs)
+    unique_id = "row_#{row.resource_id}_#{assigns.index}"
 
-    assigns = Map.merge(assigns, %{row_id: row_id, col_span: col_span})
+    assigns = Map.merge(assigns, %{col_span: col_span, unique_id: unique_id})
 
     ~H"""
-    <tr id={"details-#{@row_id}"} class="hidden">
+    <tr id={"details-#{@unique_id}"} class="hidden">
       <td colspan={@col_span} class="bg-gray-50 dark:bg-gray-900 p-4">
         <div class="text-sm text-gray-700 dark:text-gray-200">
           Information will go here.
