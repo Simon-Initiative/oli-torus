@@ -1,5 +1,5 @@
 import { Page, Locator } from '@playwright/test';
-import { Utils } from '../../../../../core/Utils';
+import { Utils } from '@core/Utils';
 
 export class AdminAllUsersPO {
   private utils: Utils;
@@ -10,14 +10,14 @@ export class AdminAllUsersPO {
     this.searchInput = this.page.locator('#text-search-input');
   }
 
-  async searchUserByEmail(user: string) {
+  async searchUserByEmail(email: string) {
     await this.searchInput.click();
     await this.utils.sleep(1);
-    await this.searchInput.pressSequentially(user);
+    await this.searchInput.pressSequentially(email);
     await this.utils.sleep(1);
   }
 
   async openUserDetails(name: string) {
-    await this.page.getByRole('link', { name: `${name}` }).click();
+    await this.page.getByRole('link', { name: name }).click();
   }
 }

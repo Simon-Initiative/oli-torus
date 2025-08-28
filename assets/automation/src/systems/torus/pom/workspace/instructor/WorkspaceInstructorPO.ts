@@ -6,7 +6,7 @@ export class WorkspaceInstructorPO {
   private header: Locator;
 
   constructor(private page: Page) {
-    this.header = this.page.locator('h1');
+    this.header = this.page.getByRole('heading');
   }
 
   get dashboard() {
@@ -17,7 +17,7 @@ export class WorkspaceInstructorPO {
     return new NewCourseSetupPO(this.page);
   }
 
-  async verifyrHeader(expectedHeader: string) {
+  async verifyHeader(expectedHeader: string) {
     await expect(this.header).toContainText(expectedHeader);
   }
 }
