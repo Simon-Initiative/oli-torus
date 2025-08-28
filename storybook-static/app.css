@@ -13895,11 +13895,6 @@ table.table-striped tbody tr:nth-child(even) {
   color: rgb(33 131 88 / var(--tw-text-opacity));
 }
 
-.text-\[\#245D45\] {
-  --tw-text-opacity: 1;
-  color: rgb(36 93 69 / var(--tw-text-opacity));
-}
-
 .text-\[\#2db767\] {
   --tw-text-opacity: 1;
   color: rgb(45 183 103 / var(--tw-text-opacity));
@@ -13993,11 +13988,6 @@ table.table-striped tbody tr:nth-child(even) {
 .text-\[\#A3A3A3\] {
   --tw-text-opacity: 1;
   color: rgb(163 163 163 / var(--tw-text-opacity));
-}
-
-.text-\[\#A42327\] {
-  --tw-text-opacity: 1;
-  color: rgb(164 35 39 / var(--tw-text-opacity));
 }
 
 .text-\[\#CE2C31\] {
@@ -21555,11 +21545,6 @@ Not supports in Firefox and IE */
   color: rgb(51 153 255 / var(--tw-text-opacity));
 }
 
-.dark .dark\:text-\[\#39E581\] {
-  --tw-text-opacity: 1;
-  color: rgb(57 229 129 / var(--tw-text-opacity));
-}
-
 .dark .dark\:text-\[\#39e581\] {
   --tw-text-opacity: 1;
   color: rgb(57 229 129 / var(--tw-text-opacity));
@@ -21588,11 +21573,6 @@ Not supports in Firefox and IE */
 .dark .dark\:text-\[\#87d7e0\] {
   --tw-text-opacity: 1;
   color: rgb(135 215 224 / var(--tw-text-opacity));
-}
-
-.dark .dark\:text-\[\#99CCFF\] {
-  --tw-text-opacity: 1;
-  color: rgb(153 204 255 / var(--tw-text-opacity));
 }
 
 .dark .dark\:text-\[\#99ccff\] {
