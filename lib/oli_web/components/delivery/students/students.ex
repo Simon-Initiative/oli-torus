@@ -42,6 +42,11 @@ defmodule OliWeb.Components.Delivery.Students do
     %{id: 3, name: "High", selected: false}
   ]
 
+  def update(%{show_email_modal: show_email_modal} = _assigns, socket) do
+    # Handle partial updates for show_email_modal
+    {:ok, assign(socket, show_email_modal: show_email_modal)}
+  end
+
   def update(
         %{
           params: params,
@@ -177,7 +182,8 @@ defmodule OliWeb.Components.Delivery.Students do
            assigns.certificate.requires_instructor_approval,
        certificate_pending_email_notification_count:
          (assigns[:certificate] && assigns.certificate_pending_email_notification_count) || 0,
-       selected_students: socket.assigns[:selected_students] || []
+       selected_students: socket.assigns[:selected_students] || [],
+       show_email_modal: false
      )}
   end
 
@@ -401,6 +407,7 @@ defmodule OliWeb.Components.Delivery.Students do
   attr(:previous_id, :integer)
   attr(:next_id, :integer)
   attr(:navigation_data, :map, required: true)
+  attr(:show_email_modal, :boolean, default: false)
 
   def render(assigns) do
     ~H"""
@@ -663,6 +670,18 @@ defmodule OliWeb.Components.Delivery.Students do
           selected_modal={nil}
           granted_certificate_guid={nil}
           section_slug={@section_slug}
+        />
+
+        <.live_component
+          :if={@show_email_modal}
+          id="email_modal"
+          module={OliWeb.Components.Delivery.Students.EmailModal}
+          selected_students={@selected_students}
+          students={@table_model.rows}
+          section_title={@section_title}
+          instructor_email={issued_by_email(@current_author, @current_user)}
+          section_slug={@section_slug}
+          show_modal={@show_email_modal}
         />
       </div>
     </div>
@@ -1409,7 +1428,12 @@ defmodule OliWeb.Components.Delivery.Students do
 
     table_model = Map.put(socket.assigns.table_model, :data, table_model_data)
 
-    {:noreply, assign(socket, selected_students: selected_students, table_model: table_model)}
+    {:noreply,
+     assign(socket,
+       selected_students: selected_students,
+       table_model: table_model,
+       show_email_modal: false
+     )}
   end
 
   def handle_event("filter_by", %{"filter" => filter}, socket) do
@@ -1516,6 +1540,18 @@ defmodule OliWeb.Components.Delivery.Students do
            update_params(socket.assigns.params, %{navigation_data: navigation_data})
          )
      )}
+  end
+
+  def handle_event("show_email_modal", _params, socket) do
+    {:noreply, assign(socket, show_email_modal: true)}
+  end
+
+  def handle_event("hide_email_modal", _params, socket) do
+    {:noreply, assign(socket, show_email_modal: false)}
+  end
+
+  def handle_event("close_email_modal", _params, socket) do
+    {:noreply, assign(socket, show_email_modal: false)}
   end
 
   def decode_params(params) do

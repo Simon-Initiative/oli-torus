@@ -1,7 +1,6 @@
 defmodule OliWeb.Components.Delivery.Students.EmailButton do
   use OliWeb, :live_component
 
-  alias OliWeb.Components.Modal
   alias OliWeb.Icons
   alias Phoenix.LiveView.JS
 
@@ -43,7 +42,6 @@ defmodule OliWeb.Components.Delivery.Students.EmailButton do
             phx-click={
               JS.push("show_email_modal")
               |> JS.hide(to: "#email-dropdown-#{@id}")
-              |> Modal.show_modal("email_modal")
             }
             phx-target={@myself}
           >

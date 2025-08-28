@@ -840,6 +840,50 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     {:noreply, put_flash(socket, type, message)}
   end
 
+  def handle_info({:show_email_modal, _assigns}, socket) do
+    # Only send update if the Students component is currently rendered
+    case {socket.assigns.view, socket.assigns.active_tab} do
+      {:overview, :students} ->
+        send_update(OliWeb.Components.Delivery.Students,
+          id: "students_table",
+          show_email_modal: true
+        )
+
+      {:insights, :content} ->
+        send_update(OliWeb.Components.Delivery.Students,
+          id: "container_details_table",
+          show_email_modal: true
+        )
+
+      _ ->
+        :ok
+    end
+
+    {:noreply, socket}
+  end
+
+  def handle_info({:hide_email_modal}, socket) do
+    # Only send update if the Students component is currently rendered
+    case {socket.assigns.view, socket.assigns.active_tab} do
+      {:overview, :students} ->
+        send_update(OliWeb.Components.Delivery.Students,
+          id: "students_table",
+          show_email_modal: false
+        )
+
+      {:insights, :content} ->
+        send_update(OliWeb.Components.Delivery.Students,
+          id: "container_details_table",
+          show_email_modal: false
+        )
+
+      _ ->
+        :ok
+    end
+
+    {:noreply, socket}
+  end
+
   @impl Phoenix.LiveView
   def handle_info(_any, socket) do
     {:noreply, socket}
