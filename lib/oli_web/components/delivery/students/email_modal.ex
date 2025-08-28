@@ -43,7 +43,7 @@ defmodule OliWeb.Components.Delivery.Students.EmailModal do
                 id="email_message"
                 name="email_message"
                 placeholder="Type here..."
-                class="w-full h-32 p-3 border border-gray-300 rounded-md resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                class="w-full h-32 p-3 border border-gray-300 dark:border-gray-600 rounded-md resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                 phx-target={@myself}
                 phx-change="update_message"
                 phx-value-email_message={@email_message}
