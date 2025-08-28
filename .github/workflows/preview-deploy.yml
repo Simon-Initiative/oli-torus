@@ -44,7 +44,7 @@ jobs:
         run: |
           export HOST=pr${{ github.event.number }}.plasma.oli.cmu.edu
           for i in {1..30}; do
-            if curl -fsSL --max-time 5 https://$HOST/healthz; then
+            if curl -k -fsSL --max-time 5 https://$HOST/healthz; then
               echo "Preview is up!"
               exit 0
             fi
