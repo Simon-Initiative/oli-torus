@@ -37,8 +37,7 @@ defmodule OliWeb.Components.Delivery.Students.EmailModal do
                 placeholder="Type here..."
                 class="w-full h-32 p-3 border border-gray-300 dark:border-gray-600 rounded-md resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                 phx-target={@myself}
-                phx-change="update_message"
-                phx-value-email_message={@email_message}
+                phx-blur="update_message"
               ><%= @email_message %></textarea>
             </div>
 
@@ -112,7 +111,7 @@ defmodule OliWeb.Components.Delivery.Students.EmailModal do
               </button>
               <button
                 role="send email"
-                phx-click={JS.push("send_email")}
+                phx-click={JS.push("send_email") |> JS.push("close_email_modal")}
                 phx-target={@myself}
                 disabled={String.trim(@email_message) == ""}
                 class={[
@@ -142,7 +141,7 @@ defmodule OliWeb.Components.Delivery.Students.EmailModal do
   end
 
   def handle_event("update_message", params, socket) do
-    message = Map.get(params, "email_message", "")
+    message = Map.get(params, "value", "")
     {:noreply, assign(socket, email_message: message)}
   end
 
