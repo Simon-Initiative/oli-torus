@@ -789,7 +789,7 @@ defmodule Oli.Factory do
     %Oli.ScopedFeatureFlags.ScopedFeatureFlagState{
       feature_name: "mcp_authoring",
       enabled: false,
-      project: anonymous_build(:project)
+      project: build(:project)
     }
   end
 
@@ -797,7 +797,7 @@ defmodule Oli.Factory do
     %Oli.ScopedFeatureFlags.ScopedFeatureFlagState{
       feature_name: "mcp_authoring",
       enabled: false,
-      project: anonymous_build(:project)
+      project: build(:project)
     }
   end
 
@@ -805,7 +805,7 @@ defmodule Oli.Factory do
     %Oli.ScopedFeatureFlags.ScopedFeatureFlagState{
       feature_name: "mcp_authoring",
       enabled: false,
-      section: anonymous_build(:section)
+      section: build(:section)
     }
   end
 

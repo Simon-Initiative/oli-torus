@@ -18,7 +18,7 @@ defmodule Oli.ScopedFeatureFlags.ScopedFeatureFlagState do
   @doc false
   def changeset(scoped_feature_flag_state, attrs \\ %{}) do
     scoped_feature_flag_state
-    |> cast(attrs, [:feature_name, :enabled, :project_id, :section_id])
+    |> cast(attrs, [:feature_name, :enabled])
     |> validate_required([:feature_name, :enabled])
     |> validate_length(:feature_name, min: 1, max: 255)
     |> validate_mutual_exclusion()
@@ -27,6 +27,20 @@ defmodule Oli.ScopedFeatureFlags.ScopedFeatureFlagState do
     |> unique_constraint([:feature_name, :section_id])
     |> foreign_key_constraint(:project_id)
     |> foreign_key_constraint(:section_id)
+  end
+
+  @doc false
+  def changeset_with_project(scoped_feature_flag_state, attrs, project_id) do
+    scoped_feature_flag_state
+    |> changeset(attrs)
+    |> put_change(:project_id, project_id)
+  end
+
+  @doc false
+  def changeset_with_section(scoped_feature_flag_state, attrs, section_id) do
+    scoped_feature_flag_state
+    |> changeset(attrs)
+    |> put_change(:section_id, section_id)
   end
 
   defp validate_mutual_exclusion(changeset) do

@@ -695,7 +695,6 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
       end
     else
       error ->
-        IO.inspect(error, label: "Activity creation error")
         error
     end
   end

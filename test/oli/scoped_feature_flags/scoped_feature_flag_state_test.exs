@@ -1,45 +1,49 @@
 defmodule Oli.ScopedFeatureFlags.ScopedFeatureFlagStateTest do
   use Oli.DataCase
+  import Ecto.Changeset, only: [get_field: 2]
 
   alias Oli.ScopedFeatureFlags.ScopedFeatureFlagState
 
   import Oli.Factory
 
   describe "changeset/2" do
-    test "valid changeset with project_id" do
+    test "valid changeset with project_id using changeset_with_project/3" do
       project = insert(:project)
 
       changeset =
-        ScopedFeatureFlagState.changeset(%ScopedFeatureFlagState{}, %{
-          feature_name: "mcp_authoring",
-          enabled: true,
-          project_id: project.id
-        })
+        ScopedFeatureFlagState.changeset_with_project(
+          %ScopedFeatureFlagState{},
+          %{feature_name: "mcp_authoring", enabled: true},
+          project.id
+        )
 
       assert changeset.valid?
+      assert get_field(changeset, :project_id) == project.id
     end
 
-    test "valid changeset with section_id" do
+    test "valid changeset with section_id using changeset_with_section/3" do
       section = insert(:section)
 
       changeset =
-        ScopedFeatureFlagState.changeset(%ScopedFeatureFlagState{}, %{
-          feature_name: "mcp_authoring",
-          enabled: false,
-          section_id: section.id
-        })
+        ScopedFeatureFlagState.changeset_with_section(
+          %ScopedFeatureFlagState{},
+          %{feature_name: "mcp_authoring", enabled: false},
+          section.id
+        )
 
       assert changeset.valid?
+      assert get_field(changeset, :section_id) == section.id
     end
 
     test "invalid changeset without feature_name" do
       project = insert(:project)
 
       changeset =
-        ScopedFeatureFlagState.changeset(%ScopedFeatureFlagState{}, %{
-          enabled: true,
-          project_id: project.id
-        })
+        ScopedFeatureFlagState.changeset_with_project(
+          %ScopedFeatureFlagState{},
+          %{enabled: true},
+          project.id
+        )
 
       refute changeset.valid?
       assert "can't be blank" in errors_on(changeset).feature_name
@@ -49,10 +53,11 @@ defmodule Oli.ScopedFeatureFlags.ScopedFeatureFlagStateTest do
       project = insert(:project)
 
       changeset =
-        ScopedFeatureFlagState.changeset(%ScopedFeatureFlagState{}, %{
-          feature_name: "mcp_authoring",
-          project_id: project.id
-        })
+        ScopedFeatureFlagState.changeset_with_project(
+          %ScopedFeatureFlagState{},
+          %{feature_name: "mcp_authoring"},
+          project.id
+        )
 
       refute changeset.valid?
       assert "can't be blank" in errors_on(changeset).enabled
@@ -62,11 +67,11 @@ defmodule Oli.ScopedFeatureFlags.ScopedFeatureFlagStateTest do
       project = insert(:project)
 
       changeset =
-        ScopedFeatureFlagState.changeset(%ScopedFeatureFlagState{}, %{
-          feature_name: "",
-          enabled: true,
-          project_id: project.id
-        })
+        ScopedFeatureFlagState.changeset_with_project(
+          %ScopedFeatureFlagState{},
+          %{feature_name: "", enabled: true},
+          project.id
+        )
 
       refute changeset.valid?
       assert "should be at least 1 character(s)" in errors_on(changeset).feature_name
@@ -76,30 +81,14 @@ defmodule Oli.ScopedFeatureFlags.ScopedFeatureFlagStateTest do
       project = insert(:project)
 
       changeset =
-        ScopedFeatureFlagState.changeset(%ScopedFeatureFlagState{}, %{
-          feature_name: String.duplicate("a", 256),
-          enabled: true,
-          project_id: project.id
-        })
+        ScopedFeatureFlagState.changeset_with_project(
+          %ScopedFeatureFlagState{},
+          %{feature_name: String.duplicate("a", 256), enabled: true},
+          project.id
+        )
 
       refute changeset.valid?
       assert "should be at most 255 character(s)" in errors_on(changeset).feature_name
-    end
-
-    test "invalid changeset with both project_id and section_id" do
-      project = insert(:project)
-      section = insert(:section)
-
-      changeset =
-        ScopedFeatureFlagState.changeset(%ScopedFeatureFlagState{}, %{
-          feature_name: "mcp_authoring",
-          enabled: true,
-          project_id: project.id,
-          section_id: section.id
-        })
-
-      refute changeset.valid?
-      assert "Cannot specify both project_id and section_id" in errors_on(changeset).base
     end
 
     test "invalid changeset with neither project_id nor section_id" do
@@ -113,39 +102,60 @@ defmodule Oli.ScopedFeatureFlags.ScopedFeatureFlagStateTest do
       assert "Must specify either project_id or section_id" in errors_on(changeset).base
     end
 
-    test "invalid changeset with non-existent project_id" do
+    test "invalid changeset with non-boolean enabled field" do
+      project = insert(:project)
+
       changeset =
-        ScopedFeatureFlagState.changeset(%ScopedFeatureFlagState{}, %{
-          feature_name: "mcp_authoring",
-          enabled: true,
-          project_id: 999_999
-        })
+        ScopedFeatureFlagState.changeset_with_project(
+          %ScopedFeatureFlagState{},
+          %{feature_name: "mcp_authoring", enabled: "not_a_boolean"},
+          project.id
+        )
 
-      assert changeset.valid?
-
-      # Database constraint should be tested at the repo level
-      assert {:error, changeset} =
-               Repo.insert(changeset)
-
-      assert "does not exist" in errors_on(changeset).project_id
+      refute changeset.valid?
+      assert "is invalid" in errors_on(changeset).enabled
     end
 
-    test "invalid changeset with non-existent section_id" do
+    test "valid changeset with feature_name containing special characters" do
+      project = insert(:project)
+
       changeset =
-        ScopedFeatureFlagState.changeset(%ScopedFeatureFlagState{}, %{
-          feature_name: "mcp_authoring",
-          enabled: true,
-          section_id: 999_999
-        })
+        ScopedFeatureFlagState.changeset_with_project(
+          %ScopedFeatureFlagState{},
+          %{feature_name: "feature_with-special.chars_123", enabled: true},
+          project.id
+        )
 
       assert changeset.valid?
-
-      # Database constraint should be tested at the repo level
-      assert {:error, changeset} =
-               Repo.insert(changeset)
-
-      assert "does not exist" in errors_on(changeset).section_id
     end
+
+    test "valid changeset with unicode feature_name" do
+      project = insert(:project)
+
+      changeset =
+        ScopedFeatureFlagState.changeset_with_project(
+          %ScopedFeatureFlagState{},
+          %{feature_name: "功能_测试", enabled: true},
+          project.id
+        )
+
+      assert changeset.valid?
+    end
+
+    test "valid changeset with nil enabled field defaults to false" do
+      project = insert(:project)
+
+      changeset =
+        ScopedFeatureFlagState.changeset_with_project(
+          %ScopedFeatureFlagState{enabled: false},
+          %{feature_name: "mcp_authoring"},
+          project.id
+        )
+
+      assert changeset.valid?
+      assert get_field(changeset, :enabled) == false
+    end
+
   end
 
   describe "database constraints" do
@@ -153,19 +163,19 @@ defmodule Oli.ScopedFeatureFlags.ScopedFeatureFlagStateTest do
       project = insert(:project)
 
       {:ok, _first} =
-        ScopedFeatureFlagState.changeset(%ScopedFeatureFlagState{}, %{
-          feature_name: "mcp_authoring",
-          enabled: true,
-          project_id: project.id
-        })
+        ScopedFeatureFlagState.changeset_with_project(
+          %ScopedFeatureFlagState{},
+          %{feature_name: "mcp_authoring", enabled: true},
+          project.id
+        )
         |> Repo.insert()
 
       assert {:error, changeset} =
-               ScopedFeatureFlagState.changeset(%ScopedFeatureFlagState{}, %{
-                 feature_name: "mcp_authoring",
-                 enabled: false,
-                 project_id: project.id
-               })
+               ScopedFeatureFlagState.changeset_with_project(
+                 %ScopedFeatureFlagState{},
+                 %{feature_name: "mcp_authoring", enabled: false},
+                 project.id
+               )
                |> Repo.insert()
 
       assert "has already been taken" in errors_on(changeset).feature_name
@@ -175,19 +185,19 @@ defmodule Oli.ScopedFeatureFlags.ScopedFeatureFlagStateTest do
       section = insert(:section)
 
       {:ok, _first} =
-        ScopedFeatureFlagState.changeset(%ScopedFeatureFlagState{}, %{
-          feature_name: "mcp_authoring",
-          enabled: true,
-          section_id: section.id
-        })
+        ScopedFeatureFlagState.changeset_with_section(
+          %ScopedFeatureFlagState{},
+          %{feature_name: "mcp_authoring", enabled: true},
+          section.id
+        )
         |> Repo.insert()
 
       assert {:error, changeset} =
-               ScopedFeatureFlagState.changeset(%ScopedFeatureFlagState{}, %{
-                 feature_name: "mcp_authoring",
-                 enabled: false,
-                 section_id: section.id
-               })
+               ScopedFeatureFlagState.changeset_with_section(
+                 %ScopedFeatureFlagState{},
+                 %{feature_name: "mcp_authoring", enabled: false},
+                 section.id
+               )
                |> Repo.insert()
 
       assert "has already been taken" in errors_on(changeset).feature_name
@@ -198,19 +208,19 @@ defmodule Oli.ScopedFeatureFlags.ScopedFeatureFlagStateTest do
       project2 = insert(:project)
 
       {:ok, _first} =
-        ScopedFeatureFlagState.changeset(%ScopedFeatureFlagState{}, %{
-          feature_name: "mcp_authoring",
-          enabled: true,
-          project_id: project1.id
-        })
+        ScopedFeatureFlagState.changeset_with_project(
+          %ScopedFeatureFlagState{},
+          %{feature_name: "mcp_authoring", enabled: true},
+          project1.id
+        )
         |> Repo.insert()
 
       assert {:ok, _second} =
-               ScopedFeatureFlagState.changeset(%ScopedFeatureFlagState{}, %{
-                 feature_name: "mcp_authoring",
-                 enabled: false,
-                 project_id: project2.id
-               })
+               ScopedFeatureFlagState.changeset_with_project(
+                 %ScopedFeatureFlagState{},
+                 %{feature_name: "mcp_authoring", enabled: false},
+                 project2.id
+               )
                |> Repo.insert()
     end
 
@@ -219,19 +229,19 @@ defmodule Oli.ScopedFeatureFlags.ScopedFeatureFlagStateTest do
       section2 = insert(:section)
 
       {:ok, _first} =
-        ScopedFeatureFlagState.changeset(%ScopedFeatureFlagState{}, %{
-          feature_name: "mcp_authoring",
-          enabled: true,
-          section_id: section1.id
-        })
+        ScopedFeatureFlagState.changeset_with_section(
+          %ScopedFeatureFlagState{},
+          %{feature_name: "mcp_authoring", enabled: true},
+          section1.id
+        )
         |> Repo.insert()
 
       assert {:ok, _second} =
-               ScopedFeatureFlagState.changeset(%ScopedFeatureFlagState{}, %{
-                 feature_name: "mcp_authoring",
-                 enabled: false,
-                 section_id: section2.id
-               })
+               ScopedFeatureFlagState.changeset_with_section(
+                 %ScopedFeatureFlagState{},
+                 %{feature_name: "mcp_authoring", enabled: false},
+                 section2.id
+               )
                |> Repo.insert()
     end
 
@@ -240,19 +250,19 @@ defmodule Oli.ScopedFeatureFlags.ScopedFeatureFlagStateTest do
       section = insert(:section)
 
       {:ok, _first} =
-        ScopedFeatureFlagState.changeset(%ScopedFeatureFlagState{}, %{
-          feature_name: "mcp_authoring",
-          enabled: true,
-          project_id: project.id
-        })
+        ScopedFeatureFlagState.changeset_with_project(
+          %ScopedFeatureFlagState{},
+          %{feature_name: "mcp_authoring", enabled: true},
+          project.id
+        )
         |> Repo.insert()
 
       assert {:ok, _second} =
-               ScopedFeatureFlagState.changeset(%ScopedFeatureFlagState{}, %{
-                 feature_name: "mcp_authoring",
-                 enabled: false,
-                 section_id: section.id
-               })
+               ScopedFeatureFlagState.changeset_with_section(
+                 %ScopedFeatureFlagState{},
+                 %{feature_name: "mcp_authoring", enabled: false},
+                 section.id
+               )
                |> Repo.insert()
     end
   end

@@ -29,6 +29,5 @@ defmodule Oli.Repo.Migrations.CreateScopedFeatureFlagStates do
     create(index(:scoped_feature_flag_states, [:project_id]))
     create(index(:scoped_feature_flag_states, [:section_id]))
     create(index(:scoped_feature_flag_states, [:feature_name]))
-    create(index(:scoped_feature_flag_states, [:enabled]))
   end
 end
