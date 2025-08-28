@@ -62,7 +62,7 @@ defmodule OliWeb.Sections.SectionsView do
       )
 
     total_count = determine_total(sections)
-    {:ok, table_model} = SectionsTableModel.new(ctx, sections)
+    {:ok, table_model} = SectionsTableModel.new(ctx, sections, render_date: :full)
 
     {:ok,
      assign(socket,
@@ -283,6 +283,6 @@ defmodule OliWeb.Sections.SectionsView do
   defp toggle_sort_order(:asc), do: :desc
   defp toggle_sort_order(_), do: :asc
 
-  defp humanize_type_opt(:open), do: "Open"
-  defp humanize_type_opt(:lms), do: "LMS"
+  defp humanize_type_opt(:open), do: "DD"
+  defp humanize_type_opt(:lms), do: "LTI"
 end

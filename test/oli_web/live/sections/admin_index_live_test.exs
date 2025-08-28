@@ -61,7 +61,7 @@ defmodule OliWeb.Sections.AdminIndexLiveTest do
       assert has_element?(view, "td", section.title)
       assert has_element?(view, "td", project.title)
       assert has_element?(view, "td", institution.name)
-      assert has_element?(view, "td", "#{u1.name}, #{u2.name}")
+      assert has_element?(view, "td", "#{u1.name} , #{u2.name}")
     end
 
     test "applies filtering", %{conn: conn} do
