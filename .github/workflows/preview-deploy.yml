@@ -43,7 +43,7 @@ jobs:
       - name: Post/Update PR Preview URL Comment
         uses: peter-evans/create-or-update-comment@v3
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}
           issue-number: ${{ github.event.number }}
           body: "PR preview deployed at: https://pr${{ github.event.number }}.plasma.oli.cmu.edu"
           body-includes: "PR preview deployed at:"
