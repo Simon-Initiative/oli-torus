@@ -22,7 +22,7 @@ const ImageAuthor: React.FC<AuthorPartComponentProps<ImageModel>> = (props) => {
     props.onReady({ id, responses: [] });
   }, [ready]);
 
-  const { width, height, src, alt, defaultSrc } = model;
+  const { width, height, src, alt, defaultSrc, lockAspectRatio } = model;
   const imageStyles: CSSProperties = {
     width,
     height,
@@ -37,10 +37,10 @@ const ImageAuthor: React.FC<AuthorPartComponentProps<ImageModel>> = (props) => {
   );
 
   useEffect(() => {
-    if (src != defaultSrc) {
+    if (src?.length && src !== defaultSrc && lockAspectRatio) {
       debounceImageAdjust(model);
     }
-  }, [model]);
+  }, [model, lockAspectRatio]);
   const imageContainerRef = useRef<HTMLImageElement>(null);
   const manipulateImageSize = (updatedModel: ImageModel, isfromDebaunce: boolean) => {
     if (!imageContainerRef?.current || !isfromDebaunce) {
@@ -84,7 +84,7 @@ const ImageAuthor: React.FC<AuthorPartComponentProps<ImageModel>> = (props) => {
     <img
       ref={imageContainerRef}
       onLoad={() => {
-        manipulateImageSize(model, false);
+        lockAspectRatio && manipulateImageSize(model, false);
       }}
       draggable="false"
       alt={alt}
