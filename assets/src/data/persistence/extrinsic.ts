@@ -38,10 +38,10 @@ export const readGlobalUserState = async (
   keys: string[] | null = null,
   useLocalStorage = false,
 ) => {
-  if (provider === 'deprecated') {
-    return deprecatedReadGlobalUserState(keys, useLocalStorage);
+  if (provider === 'new') {
+    return Blob.readGlobalUserState(keys, useLocalStorage);
   }
-  return Blob.readGlobalUserState(keys, useLocalStorage);
+  return deprecatedReadGlobalUserState(keys, useLocalStorage);
 };
 
 const deprecatedReadGlobalUserState = async (

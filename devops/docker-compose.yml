@@ -1,0 +1,114 @@
+services:
+  app:
+    image: oli-torus:${APP_IMAGE_TAG}
+    hostname: ${HOST}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_started
+    networks:
+      - default
+      - webproxy-public
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:80/healthz || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    environment:
+      PHX_SERVER: "true"
+      # Tell Phoenix we're behind a proxy that handles SSL
+      FORCE_SSL: "false"
+      # Use HTTP scheme since SSL is terminated by HAProxy
+      SCHEME: "https"
+      PORT: "443"
+      SECRET_KEY_BASE: "ba1sX03RVQyAk3MPRfUeG7LQxUPRe3IB3iN3VnTHYFxUgsz2vAUDof/kGCiyaigs"
+      LIVE_VIEW_SALT: "vf6j/P8XSYOVNs3aKUQ5SQCfunWheQPQ+EDzfBJM0FBTLcyTHZlmQGXbBBbSJwkV"
+      HOST: ${HOST}
+      S3_MEDIA_BUCKET_NAME: "oli-torus-media"
+      S3_XAPI_BUCKET_NAME: "oli-torus-xapi"
+      MEDIA_URL: https://${HOST}/media
+      # MinIO S3 configuration
+      AWS_ACCESS_KEY_ID: "minio-user"
+      AWS_SECRET_ACCESS_KEY: "minio-password"
+      S3_ENDPOINT: "http://minio:9000"
+      CLOAK_VAULT_KEY: "HXCdm5z61eNgUpnXObJRv94k3JnKSrnfwppyb60nz6w="
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/postgres
+      ADMIN_EMAIL: "admin@example.edu"
+      ADMIN_PASSWORD: "changeme"
+      EMAIL_FROM_NAME: "OLI Torus"
+      EMAIL_FROM_ADDRESS: "no-reply@example.edu"
+      EMAIL_REPLY_TO: "admin@example.edu"
+      BRANDING_LOGO: "/branding/dev/oli_torus_logo.png"
+      BRANDING_LOGO_DARK: "/branding/dev/oli_torus_logo_dark.png"
+      BRANDING_FAVICONS_DIR: "/branding/dev/favicons"
+      VENDOR_PROPERTY_WORKSPACE_LOGO: "/branding/dev/oli_torus_icon.png"
+    labels:
+      - "traefik.enable=true"
+      # Specify the network for Traefik to use
+      - "traefik.docker.network=webproxy-public"
+      # Route everything except /media to app
+      - "traefik.http.routers.${PROJECT}-app.rule=Host(`${HOST}`) && PathPrefix(`/`)"
+      - "traefik.http.routers.${PROJECT}-app.priority=10"
+      - "traefik.http.routers.${PROJECT}-app.entrypoints=web"
+      - "traefik.http.services.${PROJECT}-app.loadbalancer.server.port=80"
+      # Health check for the service
+      - "traefik.http.services.${PROJECT}-app.loadbalancer.healthcheck.path=/healthz"
+      - "traefik.http.services.${PROJECT}-app.loadbalancer.healthcheck.interval=30s"
+      # Add headers to indicate HTTPS is being used upstream
+      - "traefik.http.middlewares.${PROJECT}-headers.headers.customrequestheaders.X-Forwarded-Proto=https"
+      - "traefik.http.middlewares.${PROJECT}-headers.headers.customrequestheaders.X-Forwarded-Port=443"
+      - "traefik.http.routers.${PROJECT}-app.middlewares=${PROJECT}-headers"
+
+  postgres:
+    image: ankane/pgvector
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "1"
+        max-size: 5m
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      PGDATA: /var/lib/postgresql/data/pgdata
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_HOST_AUTH_METHOD: trust
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: minio/minio
+    environment:
+      MINIO_ROOT_USER: minio-user
+      MINIO_ROOT_PASSWORD: minio-password
+    volumes:
+      - minio_data:/data
+    networks:
+      - default
+      - webproxy-public
+    labels:
+      - "traefik.enable=true"
+      # Specify the network for Traefik to use
+      - "traefik.docker.network=webproxy-public"
+      # Route only /media to minio
+      - "traefik.http.routers.${PROJECT}-minio.rule=Host(`${HOST}`) && PathPrefix(`/media`)"
+      - "traefik.http.routers.${PROJECT}-minio.priority=20"
+      - "traefik.http.routers.${PROJECT}-minio.entrypoints=web"
+      - "traefik.http.services.${PROJECT}-minio.loadbalancer.server.port=9000"
+      # Strip /media prefix before forwarding
+      - "traefik.http.middlewares.${PROJECT}-stripprefix.stripprefix.prefixes=/media"
+      - "traefik.http.routers.${PROJECT}-minio.middlewares=${PROJECT}-stripprefix"
+    command: ["server", "--console-address", ":9001", "/data"]
+
+volumes:
+  postgres_data:
+  minio_data:
+
+networks:
+  webproxy-public:
+    external: true

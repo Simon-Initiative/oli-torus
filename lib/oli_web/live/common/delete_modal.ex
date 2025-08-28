@@ -30,9 +30,9 @@ defmodule OliWeb.Common.DeleteModal do
           </div>
           <div class="modal-body">
             <div class="container form-container">
-              <div class="mb-3"><%= @description %></div>
+              <div class="mb-3">{@description}</div>
               <div>
-                <p>Please type <strong><%= @entity_name %></strong> below to confirm.</p>
+                <p>Please type <strong>{@entity_name}</strong> below to confirm.</p>
               </div>
               <.form
                 for={%{}}
@@ -50,7 +50,7 @@ defmodule OliWeb.Common.DeleteModal do
                     onclick={"$('##{@id}').modal('hide')"}
                     disabled={!@delete_enabled}
                   >
-                    Delete this <%= @entity_type %>
+                    Delete this {@entity_type}
                   </button>
                 </div>
               </.form>

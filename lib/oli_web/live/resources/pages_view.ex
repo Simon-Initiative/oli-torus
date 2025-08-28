@@ -161,7 +161,7 @@ defmodule OliWeb.Resources.PagesView do
 
   def render(assigns) do
     ~H"""
-    <%= render_modal(assigns) %>
+    {render_modal(assigns)}
 
     <Modal.modal
       id="options_modal"
@@ -170,7 +170,7 @@ defmodule OliWeb.Resources.PagesView do
       on_cancel={JS.push("restart_options_modal")}
     >
       <:title>
-        <%= @options_modal_assigns[:title] %>
+        {@options_modal_assigns[:title]}
       </:title>
 
       <%= if @options_modal_assigns do %>
@@ -180,13 +180,12 @@ defmodule OliWeb.Resources.PagesView do
           ctx={@ctx}
           redirect_url={@options_modal_assigns.redirect_url}
           revision={@options_modal_assigns.revision}
-          changeset={@options_modal_assigns.changeset}
           project={@project}
           project_hierarchy={@project_hierarchy}
           validate={JS.push("validate-options")}
           submit={JS.push("save-options")}
           cancel={Modal.hide_modal("options_modal") |> JS.push("restart_options_modal")}
-          form={to_form(@options_modal_assigns.changeset)}
+          form={@options_modal_assigns.form}
         />
       <% end %>
       <div id="options-modal-assigns-trigger" data-show_modal={Modal.show_modal("options_modal")}>
@@ -225,7 +224,7 @@ defmodule OliWeb.Resources.PagesView do
                   value={Kernel.to_string(value)}
                   selected={@options.graded == value}
                 >
-                  <%= str %>
+                  {str}
                 </option>
               </select>
             </form>
@@ -246,7 +245,7 @@ defmodule OliWeb.Resources.PagesView do
                   value={Kernel.to_string(value)}
                   selected={@options.basic == value}
                 >
-                  <%= str %>
+                  {str}
                 </option>
               </select>
             </form>
@@ -445,7 +444,7 @@ defmodule OliWeb.Resources.PagesView do
           }
         ),
       revision: revision,
-      changeset: Resources.change_revision(revision),
+      form: to_form(Resources.change_revision(revision)),
       title: "#{resource_type_label(revision) |> String.capitalize()} Options"
     }
 
@@ -462,37 +461,11 @@ defmodule OliWeb.Resources.PagesView do
   end
 
   def handle_event("validate-options", %{"revision" => revision_params}, socket) do
-    %{options_modal_assigns: %{revision: revision} = modal_assigns} = socket.assigns
-
-    revision_params = ContainerLiveHelpers.decode_revision_params(revision_params)
-
-    changeset =
-      revision
-      |> Resources.change_revision(revision_params)
-      |> Map.put(:action, :validate)
-
-    {:noreply, assign(socket, options_modal_assigns: %{modal_assigns | changeset: changeset})}
+    ContainerLiveHelpers.handle_validate_options(socket, revision_params)
   end
 
   def handle_event("save-options", %{"revision" => revision_params}, socket) do
-    %{options_modal_assigns: %{redirect_url: redirect_url, revision: revision}, project: project} =
-      socket.assigns
-
-    revision_params = ContainerLiveHelpers.decode_revision_params(revision_params)
-
-    case ContainerEditor.edit_page(project, revision.slug, revision_params) do
-      {:ok, _} ->
-        {:noreply,
-         socket
-         |> put_flash(
-           :info,
-           "#{resource_type_label(revision) |> String.capitalize()} options saved"
-         )
-         |> push_navigate(to: redirect_url)}
-
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, assign(socket, :changeset, changeset)}
-    end
+    ContainerLiveHelpers.handle_save_options(socket, revision_params)
   end
 
   def handle_event("show_move_modal", %{"slug" => slug}, socket) do

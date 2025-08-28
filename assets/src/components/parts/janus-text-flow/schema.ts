@@ -37,6 +37,7 @@ export const schema: JSONSchema7Object = {
     default: true,
     description: 'controls the visibility of the text',
   },
+  padding: { type: 'string' },
   customCssClass: { type: 'string' },
   palette: {
     type: 'object',
@@ -103,6 +104,7 @@ export const createSchema = (context?: CreationContext): Partial<TextFlowModel> 
     overrideWidth: true,
     overrideHeight: false,
     visible: true,
+    padding: '',
     customCssClass: '',
     nodes: [
       {
@@ -111,7 +113,7 @@ export const createSchema = (context?: CreationContext): Partial<TextFlowModel> 
         children: [
           {
             tag: 'span',
-            style: { fontSize: '1.25rem' },
+            style: { fontSize: '1rem' },
             children: [
               {
                 tag: 'text',
@@ -175,13 +177,14 @@ export const transformModelToSchema = (model: Partial<TextFlowModel>) => {
 };
 
 export const transformSchemaToModel = (schema: Partial<TextFlowModel>) => {
-  const { overrideHeight, overrideWidth, visible, customCssClass, palette } = schema;
+  const { overrideHeight, overrideWidth, visible, padding, customCssClass, palette } = schema;
   const result: Partial<TextFlowModel> = {
     ...schema,
     overrideHeight: !!overrideHeight,
     visible: !!visible,
     overrideWidth: !!overrideWidth,
     customCssClass: customCssClass || '',
+    padding: padding || '',
   };
 
   if (palette) {

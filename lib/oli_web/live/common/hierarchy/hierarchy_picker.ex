@@ -111,11 +111,11 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
         />
       <% else %>
         <div class="hierarchy-navigation">
-          <%= render_breadcrumb(assigns) %>
+          {render_breadcrumb(assigns)}
         </div>
         <div class="hierarchy">
           <%= for child <- @children |> filter_items(assigns) |> sort_items(assigns) do %>
-            <%= render_child(assigns, child) %>
+            {render_child(assigns, child)}
           <% end %>
         </div>
       <% end %>
@@ -132,7 +132,7 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
     ~H"""
     <div id={@id} class="hierarchy-picker">
       <div class="hierarchy-navigation">
-        <%= render_breadcrumb(assigns) %>
+        {render_breadcrumb(assigns)}
       </div>
       <div class="hierarchy">
         <form
@@ -187,7 +187,7 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
           <input type="checkbox" {@maybe_checked} />
           <OliWeb.Curriculum.Entry.entry_icon child={@child.revision} />
         </span>
-        <%= resource_link(assigns, @child) %>
+        {resource_link(assigns, @child)}
       </div>
     </div>
     """
@@ -224,9 +224,9 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
       <div class="flex-1 mx-2">
         <span class="align-middle">
           <input type="checkbox" {@maybe_checked} {@maybe_preselected} />
-          <%= OliWeb.Curriculum.Entry.entry_icon(%{child: @child.revision}) %>
+          {OliWeb.Curriculum.Entry.entry_icon(%{child: @child.revision})}
         </span>
-        <%= resource_link(assigns, @child) %>
+        {resource_link(assigns, @child)}
       </div>
     </div>
     """
@@ -239,9 +239,9 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
     <div id={"hierarchy_item_#{@child.uuid}"}>
       <div class="flex-1 mx-2">
         <span class="align-middle">
-          <%= OliWeb.Curriculum.Entry.entry_icon(%{child: @child.revision}) %>
+          {OliWeb.Curriculum.Entry.entry_icon(%{child: @child.revision})}
         </span>
-        <%= resource_link(assigns, @child) %>
+        {resource_link(assigns, @child)}
       </div>
     </div>
     """
@@ -299,7 +299,7 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
           </button>
           <span>/</span>
         <% {_, true} -> %>
-          <span><%= get_title(@breadcrumb, @show_short) %></span>
+          <span>{get_title(@breadcrumb, @show_short)}</span>
         <% _ -> %>
           <button
             class="btn btn-link p-0"
@@ -307,7 +307,7 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
             phx-click="HierarchyPicker.update_active"
             phx-value-uuid={@breadcrumb.slug}
           >
-            <%= get_title(@breadcrumb, @show_short) %>
+            {get_title(@breadcrumb, @show_short)}
           </button>
           <span>/</span>
       <% end %>
@@ -330,7 +330,7 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
       phx-value-tab_name={@tab_name}
       class={"py-3 px-2 border-b-4 #{if @active_tab == @tab_name, do: "border-b-delivery-primary", else: "hover:border-b-4 hover:border-b-delivery-primary/25"}"}
     >
-      <%= @tab_label %>
+      {@tab_label}
     </button>
     """
   end
@@ -397,13 +397,13 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
             phx-click="HierarchyPicker.update_active"
             phx-value-uuid={@uuid}
           >
-            <%= @title %>
+            {@title}
           </button>
           """
 
         _ ->
           ~H"""
-          <button class="btn btn-link entry-title px-0" disabled><%= @revision.title %></button>
+          <button class="btn btn-link entry-title px-0" disabled>{@revision.title}</button>
           """
       end
     end
@@ -427,18 +427,7 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
 
       _ ->
         # default sort by resource type, containers first
-        Enum.sort(children, &sort_containers_first/2)
-    end
-  end
-
-  defp sort_containers_first(%HierarchyNode{revision: a}, %HierarchyNode{revision: b}) do
-    case {
-      Oli.Resources.ResourceType.get_type_by_id(a.resource_type_id),
-      Oli.Resources.ResourceType.get_type_by_id(b.resource_type_id)
-    } do
-      {"container", _} -> true
-      {type_a, type_b} when type_a == type_b -> true
-      _ -> false
+        children
     end
   end
 end

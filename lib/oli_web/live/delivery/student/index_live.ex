@@ -254,7 +254,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
                 class="justify-start items-start gap-1 flex"
               >
                 <div class="opacity-50 text-white text-sm font-bold uppercase tracking-tight">
-                  Module <%= @suggested_page.module_index %>
+                  Module {@suggested_page.module_index}
                 </div>
               </div>
               <div
@@ -263,11 +263,11 @@ defmodule OliWeb.Delivery.Student.IndexLive do
               >
                 <div class="text-right text-white text-sm font-bold">Due:</div>
                 <div class="text-right text-white text-sm font-bold">
-                  <%= format_date(
+                  {format_date(
                     @suggested_page.end_date,
                     @ctx,
                     "{WDshort} {Mshort} {D}, {YYYY}"
-                  ) %>
+                  )}
                 </div>
               </div>
             </div>
@@ -275,12 +275,12 @@ defmodule OliWeb.Delivery.Student.IndexLive do
               <div class="justify-start items-center gap-5 flex">
                 <div class="py-0.5 justify-start items-start gap-2.5 flex">
                   <div class="text-white text-xs font-semibold">
-                    <%= @suggested_page.numbering_index %>
+                    {@suggested_page.numbering_index}
                   </div>
                 </div>
                 <div class="flex-col justify-center items-start gap-1 inline-flex">
                   <div class="text-white md:text-lg font-semibold">
-                    <%= @suggested_page.title %>
+                    {@suggested_page.title}
                   </div>
                 </div>
               </div>
@@ -290,7 +290,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
               >
                 <div class="h-6 px-2 py-1 bg-white bg-opacity-10 rounded-xl shadow justify-end items-center gap-1 flex">
                   <div class="text-white text-xs font-semibold">
-                    Estimated time <%= @suggested_page.duration_minutes %> m
+                    Estimated time {@suggested_page.duration_minutes} m
                   </div>
                 </div>
               </div>
@@ -309,7 +309,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             >
               <div class="px-5 py-2.5 bg-blue-600 rounded-lg shadow justify-center items-center gap-2.5 flex hover:bg-blue-500">
                 <div class="text-white text-sm font-bold leading-tight whitespace-nowrap">
-                  <%= lesson_button_label(@unfinished_lesson, @suggested_page) %>
+                  {lesson_button_label(@unfinished_lesson, @suggested_page)}
                 </div>
               </div>
             </.link>
@@ -354,15 +354,15 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
       <div class="flex flex-col w-full px-9 absolute flex-col justify-center items-start gap-2 md:gap-6">
         <h3 class="w-full text-white text-2xl font-bold tracking-wide">
-          Hi, <%= user_given_name(@ctx) %> !
+          Hi, {user_given_name(@ctx)} !
         </h3>
         <div class="flex flex-col items-start gap-2.5">
           <h4 class="text-3xl text-white font-medium">
-            <%= build_welcome_title(@section.welcome_title) %>
+            {build_welcome_title(@section.welcome_title)}
           </h4>
           <div class="text-white/60 text-lg font-semibold">
-            <%= @section.encouraging_subtitle ||
-              "Dive Into Discovery. Begin Your Learning Adventure Now!" %>
+            {@section.encouraging_subtitle ||
+              "Dive Into Discovery. Begin Your Learning Adventure Now!"}
           </div>
         </div>
         <div class="flex flex-col md:flex-row w-full justify-end items-start gap-3.5">
@@ -523,7 +523,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
           <div class="flex-col justify-start items-start flex">
             <div>
               <span class="text-3xl md:text-6xl font-bold leading-[76px]">
-                <%= parse_progress(@completed_pages.completed_pages / @completed_pages.total_pages) %>
+                {parse_progress(@completed_pages.completed_pages / @completed_pages.total_pages)}
               </span>
               <span class="text-xl md:text-3xl font-bold leading-[44px]">%</span>
             </div>
@@ -541,7 +541,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             navigate={@page_completed_target_path}
             class="text-[#4ca6ff] dark:text-[#3399FF] text-base font-bold ml-auto hover:text-opacity-80 hover:no-underline"
           >
-            <%= @completed_pages.completed_pages %>/<%= @completed_pages.total_pages %> Pages Completed
+            {@completed_pages.completed_pages}/{@completed_pages.total_pages} Pages Completed
           </.link>
         <% else %>
           <div class="justify-start items-center gap-1 inline-flex self-stretch">
@@ -601,10 +601,10 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             <div class="justify-center items-center gap-3 inline-flex">
               <div class="w-5 h-5 overflow-hidden"><Icons.check /></div>
               <div class="dark:text-white text-sm font-normal leading-none">
-                <%= certificate_progress_text(
+                {certificate_progress_text(
                   certificate_progress.discussion_posts,
                   "Discussion Post"
-                ) %>
+                )}
               </div>
             </div>
           </div>
@@ -623,10 +623,10 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             <div class="justify-center items-center gap-3 inline-flex">
               <div class="w-5 h-5 overflow-hidden"><Icons.check /></div>
               <div class="dark:text-white text-sm font-normal leading-none">
-                <%= certificate_progress_text(
+                {certificate_progress_text(
                   certificate_progress.class_notes,
                   "Class Note"
-                ) %>
+                )}
               </div>
             </div>
           </div>
@@ -647,10 +647,10 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             <div class="justify-center items-center gap-3 inline-flex">
               <div class="w-5 h-5 overflow-hidden"><Icons.check /></div>
               <div class="dark:text-white text-sm font-normal leading-none">
-                <%= certificate_progress_text(
+                {certificate_progress_text(
                   certificate_progress.required_assignments,
                   "Required Assignment"
-                ) %>
+                )}
               </div>
             </div>
           </div>
@@ -753,7 +753,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
           <%= if Enum.empty?(@lessons) do %>
             <div role="message" class="flex-col justify-start items-start gap-2.5 flex">
               <div class="dark:text-white text-base font-normal font-sans tracking-[0.32px] break-words">
-                <%= empty_assignments_message(@assignments_tab) %>
+                {empty_assignments_message(@assignments_tab)}
               </div>
             </div>
           <% else %>
@@ -822,22 +822,25 @@ defmodule OliWeb.Delivery.Student.IndexLive do
         "flex h-full px-2.5 py-3.5 rounded-xl border flex-col justify-start items-start hover:cursor-pointer relative overflow-hidden z-0 before:content-[''] before:absolute before:left-0 before:top-0 before:w-0.5 before:h-full before:z-10"
       ]}>
         <div class="self-stretch justify-between items-start flex pl-2">
-          <div class="grow shrink basis-0 self-stretch flex-col justify-start items-start gap-2.5 flex">
-            <div role="container_label" class="justify-start items-start gap-2 flex uppercase">
-              <div class="dark:text-white text-opacity-60 text-xs font-bold whitespace-nowrap">
-                <%= @unit["label"] %>
-              </div>
-
-              <div :if={@module} class="flex items-center gap-2">
-                <div class="dark:text-white text-opacity-60 text-xs font-bold">•</div>
-                <div class="dark:text-white text-opacity-60 text-xs font-bold whitespace-nowrap">
-                  <%= @module["label"] %>
-                </div>
-              </div>
+          <div class="flex flex-col justify-start items-start gap-2.5 flex-grow min-w-0 overflow-hidden pr-2">
+            <div
+              role="container_label"
+              class="uppercase w-full min-w-0 dark:text-white text-opacity-60 text-xs font-bold break-words"
+            >
+              <span class="break-words">
+                {@unit["label"]}
+                <%= if @module do %>
+                  <span class="mx-2">•</span>{@module["label"]}
+                <% end %>
+              </span>
             </div>
-            <div role="title" class="self-stretch pb-2.5 justify-start items-start gap-2.5 flex">
-              <div class="grow shrink basis-0 dark:text-white text-opacity-90 text-lg font-semibold">
-                <%= @lesson.title %>
+
+            <div
+              role="title"
+              class="self-stretch pb-2.5 justify-start items-start gap-2.5 flex min-w-0"
+            >
+              <div class="grow shrink basis-0 dark:text-white text-opacity-90 text-lg font-semibold break-words">
+                {@lesson.title}
               </div>
             </div>
           </div>
@@ -877,7 +880,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             :if={!is_nil(@lesson.start_date) and !is_nil(@lesson.end_date)}
             class="text-right dark:text-white text-opacity-90 text-xs font-semibold"
           >
-            <%= if is_nil(@lesson.settings),
+            {if is_nil(@lesson.settings),
               do:
                 Utils.coalesce(@lesson.end_date, @lesson.start_date)
                 |> Utils.days_difference(@lesson.scheduling_type, @ctx),
@@ -885,7 +888,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
                 Utils.coalesce(@lesson.settings.end_date, @lesson.end_date)
                 |> Utils.coalesce(@lesson.settings.start_date)
                 |> Utils.coalesce(@lesson.start_date)
-                |> Utils.days_difference(@lesson.settings.scheduling_type, @ctx) %>
+                |> Utils.days_difference(@lesson.settings.scheduling_type, @ctx)}
           </div>
         </div>
       </div>
@@ -918,13 +921,13 @@ defmodule OliWeb.Delivery.Student.IndexLive do
         <div class="text-green-700 dark:text-green-500 flex justify-end items-center gap-1">
           <div class="relative"><Icons.score_as_you_go /></div>
           <div role="score" class="text-sm font-semibold tracking-tight">
-            <%= Utils.format_score(@lesson.score) %>
+            {Utils.format_score(@lesson.score)}
           </div>
           <div class="text-sm font-semibold tracking-widest">
             /
           </div>
           <div role="out_of" class="text-sm font-semibold tracking-tight">
-            <%= Utils.format_score(@lesson.out_of) %>
+            {Utils.format_score(@lesson.out_of)}
           </div>
         </div>
       </div>
@@ -945,7 +948,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             "text-xs font-normal"
           ]}
         >
-          <%= effective_lesson_expiration_date(@lesson) |> Utils.format_time_remaining() %>
+          {effective_lesson_expiration_date(@lesson) |> Utils.format_time_remaining()}
         </div>
       </div>
     </div>
@@ -960,7 +963,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
         <div class="flex px-2 py-0.5 bg-white/10 rounded-xl shadow tracking-tight gap-2 items-center align-center">
           <div role="count" class="pl-1 justify-start items-center gap-2.5 flex">
             <div class="dark:text-white text-xs font-semibold">
-              Attempt <%= "#{@lesson.attempts_count}/#{max_attempts(@lesson.settings.max_attempts)}" %>
+              Attempt {"#{@lesson.attempts_count}/#{max_attempts(@lesson.settings.max_attempts)}"}
             </div>
           </div>
         </div>
@@ -982,7 +985,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
               "text-xs font-normal"
             ]}
           >
-            <%= effective_lesson_expiration_date(@lesson) |> Utils.format_time_remaining() %>
+            {effective_lesson_expiration_date(@lesson) |> Utils.format_time_remaining()}
           </div>
         </div>
       <% end %>
@@ -993,13 +996,13 @@ defmodule OliWeb.Delivery.Student.IndexLive do
         <div class="text-green-700 dark:text-green-500 flex justify-end items-center gap-1">
           <div class="w-4 h-4 relative"><Icons.star /></div>
           <div role="score" class="text-sm font-semibold tracking-tight">
-            <%= Utils.format_score(@lesson.score) %>
+            {Utils.format_score(@lesson.score)}
           </div>
           <div class="text-sm font-semibold tracking-widest">
             /
           </div>
           <div role="out_of" class="text-sm font-semibold tracking-tight">
-            <%= Utils.format_score(@lesson.out_of) %>
+            {Utils.format_score(@lesson.out_of)}
           </div>
         </div>
       </div>
@@ -1019,7 +1022,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
           Time Remaining:
         </div>
         <div role="countdown" class="text-practice dark:text-practice-dark text-xs font-normal">
-          <%= effective_lesson_expiration_date(@lesson) |> Utils.format_time_remaining() %>
+          {effective_lesson_expiration_date(@lesson) |> Utils.format_time_remaining()}
         </div>
       </div>
     </div>

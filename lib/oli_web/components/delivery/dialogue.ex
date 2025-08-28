@@ -21,7 +21,7 @@ defmodule OliWeb.Components.Delivery.Dialogue do
           class="mt-2 ml-2 mr-2 w-7 h-7 rounded-full justify-center items-center flex text-white bg-[#2f3147] dark:bg-[#2f3147]"
         >
           <div class="text-[14px] uppercase">
-            <%= to_initials(@user) %>
+            {to_initials(@user)}
           </div>
         </div>
       </div>
@@ -40,7 +40,7 @@ defmodule OliWeb.Components.Delivery.Dialogue do
                 class="chat-message self-stretch dark:text-white text-sm font-normal font-['Open Sans'] tracking-tight"
                 phx-hook="EvaluateMathJaxExpressions"
               >
-                <%= raw(@content) %>
+                {raw(@content)}
               </div>
             </div>
           </div>
@@ -89,10 +89,10 @@ defmodule OliWeb.Components.Delivery.Dialogue do
             <div class="grow shrink basis-0 self-stretch flex-col justify-start items-start gap-3 inline-flex">
               <div class="self-stretch dark:text-white text-sm font-normal font-mono tracking-tight">
                 <div class="font-bold border-b border-white mb-1">
-                  &gt; <%= @name %>
+                  &gt; {@name}
                 </div>
                 <div id={"message_#{@index}_content"}>
-                  <%= @content %>
+                  {@content}
                 </div>
               </div>
             </div>

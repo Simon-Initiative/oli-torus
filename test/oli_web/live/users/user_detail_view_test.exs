@@ -97,7 +97,7 @@ defmodule OliWeb.Users.UsersDetailViewTest do
         |> live(~p"/admin/users/#{ctx.independent_student.id}")
 
       view
-      |> element("button[phx-click=\"start_edit\"]", "Edit")
+      |> element("button[phx-click='start_edit']", "Edit")
       |> render_click()
 
       # Params with invalid data to display errors
@@ -113,14 +113,14 @@ defmodule OliWeb.Users.UsersDetailViewTest do
 
       document =
         view
-        |> element("form[phx-change=\"change\"")
+        |> element("form[phx-change='change']")
         |> render_change(params)
         |> Floki.parse_document!()
 
       assert document
-             |> Floki.find("[phx-feedback-for='user[email]'] > p")
+             |> Floki.find("p")
              |> Floki.text() =~
-               "must have the @ sign and no spaces"
+               "must be a valid email address"
 
       assert has_element?(view, "[type='submit'][disabled]")
 
@@ -142,10 +142,10 @@ defmodule OliWeb.Users.UsersDetailViewTest do
       }
 
       assert view
-             |> element("form[phx-submit=\"submit\"")
+             |> element("form[phx-submit='submit']")
              |> render_submit(params)
              |> Floki.parse_document!()
-             |> Floki.find("[phx-feedback-for='user[email]'] > p")
+             |> Floki.find("p")
              |> Floki.text() =~
                "has already been taken"
 
@@ -179,7 +179,7 @@ defmodule OliWeb.Users.UsersDetailViewTest do
       assert has_element?(view, "input[value=\"#{independent_student.email}\"][disabled]")
 
       view
-      |> element("button[phx-click=\"start_edit\"]", "Edit")
+      |> element("button[phx-click='start_edit']", "Edit")
       |> render_click()
 
       # Assert that there is a save button
@@ -191,7 +191,7 @@ defmodule OliWeb.Users.UsersDetailViewTest do
       refute has_element?(view, "input[value=\"#{independent_student.email}\"][disabled]")
 
       view
-      |> element("form[phx-submit=\"submit\"")
+      |> element("form[phx-submit='submit']")
       |> render_submit(%{
         "user" => %{
           "given_name" => new_given_name,
@@ -213,6 +213,110 @@ defmodule OliWeb.Users.UsersDetailViewTest do
       assert view
              |> element("input[value=\"#{new_given_name} #{new_last_name}\"][disabled]")
              |> render() =~ "#{new_given_name} #{new_last_name}"
+    end
+
+    test "shows error message when First Name is empty", %{
+      conn: conn,
+      admin: admin,
+      independent_student: independent_student
+    } do
+      conn =
+        Plug.Test.init_test_session(conn, %{})
+        |> log_in_author(admin)
+
+      conn =
+        get(
+          conn,
+          ~p"/admin/users/#{independent_student.id}"
+        )
+
+      {:ok, view, _html} = live(conn)
+
+      view
+      |> element("button[phx-click='start_edit']", "Edit")
+      |> render_click()
+
+      view
+      |> element("form[phx-submit='submit']")
+      |> render_submit(%{
+        "user" => %{
+          "given_name" => "",
+          "family_name" => independent_student.family_name,
+          "email" => independent_student.email
+        }
+      })
+
+      assert render(view) =~ "Please enter a First Name"
+    end
+
+    test "shows error message when Last Name is shorter than 2 characters", %{
+      conn: conn,
+      admin: admin,
+      independent_student: independent_student
+    } do
+      conn =
+        Plug.Test.init_test_session(conn, %{})
+        |> log_in_author(admin)
+
+      conn =
+        get(
+          conn,
+          ~p"/admin/users/#{independent_student.id}"
+        )
+
+      {:ok, view, _html} = live(conn)
+
+      view
+      |> element("button[phx-click='start_edit']", "Edit")
+      |> render_click()
+
+      view
+      |> element("form[phx-submit='submit']")
+      |> render_submit(%{
+        "user" => %{
+          "given_name" => independent_student.given_name,
+          "family_name" => "A",
+          "email" => independent_student.email
+        }
+      })
+
+      assert render(view) =~ "Please enter a Last Name that is at least two characters long."
+    end
+
+    test "shows both error messages when First Name is empty and Last Name has less than 2 characters on form submit",
+         %{
+           conn: conn,
+           admin: admin,
+           independent_student: independent_student
+         } do
+      conn =
+        Plug.Test.init_test_session(conn, %{})
+        |> log_in_author(admin)
+
+      conn =
+        get(
+          conn,
+          ~p"/admin/users/#{independent_student.id}"
+        )
+
+      {:ok, view, _html} = live(conn)
+
+      view
+      |> element("button[phx-click='start_edit']", "Edit")
+      |> render_click()
+
+      view
+      |> element("form[phx-submit='submit']")
+      |> render_submit(%{
+        "user" => %{
+          "given_name" => "",
+          "family_name" => "A",
+          "email" => independent_student.email
+        }
+      })
+
+      assert render(view) =~ "Please enter a First Name"
+      assert render(view) =~ "Please enter a Last Name that is at least two characters long."
     end
   end
 

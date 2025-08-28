@@ -306,3 +306,59 @@ export const padLeft = (inp: string | number, length: number, char = '0') => {
 export function isDefined<T>(value: T | undefined): value is T {
   return value !== undefined;
 }
+
+/**
+ * Calculates the number of significant figures in a numeric string input.
+ *
+ * ✅ Rules handled:
+ * - Leading zeros are **not significant** (e.g., "0.003" → 1 sig fig).
+ * - All **non-zero digits** are significant.
+ * - Zeros **between non-zero digits** are significant (e.g., "1002" → 4 sig figs).
+ * - Trailing zeros in **decimal numbers** are significant (e.g., "5.00" → 3 sig figs).
+ * - Trailing zeros in **whole numbers** are **not significant** unless a decimal point is present (e.g., "100" → 1, "100." → 3).
+ * - **Scientific notation** is handled correctly (e.g., "1.20e4" → 3 sig figs).
+ * - Handles numbers with or without leading digits or trailing decimals (e.g., ".003", "3000.").
+ *
+ * @param input - The number input as a string.
+ * @returns The count of significant figures as a number.
+ */
+export const countSigFigs = (input: string): number => {
+  if (!input || isNaN(Number(input))) return 0;
+
+  const trimmed = input.trim();
+
+  // Handle scientific notation
+  if (/e/i.test(trimmed)) {
+    const [base] = trimmed.toLowerCase().split('e');
+    const cleaned = base.replace(/^[-+]?0+/, '');
+    const digits = cleaned.replace('.', '');
+    return digits.length;
+  }
+
+  // Handle decimal numbers (with or without trailing digits)
+  if (trimmed.includes('.')) {
+    const cleaned = trimmed.replace(/^[-+]/, ''); // remove sign
+    const digits = cleaned.replace('.', '');
+
+    // Remove leading zeros before first non-zero digit
+    const sigStart = digits.search(/[1-9]/);
+    if (sigStart === -1) return 0; // all zeros (e.g., "0.00")
+
+    return digits.slice(sigStart).length;
+  }
+
+  // Handle integers without decimal
+  const hasTrailingDot = trimmed.endsWith('.');
+  const withoutSign = trimmed.replace(/^[-+]/, '');
+
+  if (hasTrailingDot) {
+    // Preserve ALL digits if it ends in a decimal (e.g., "3000.")
+    const nonZeroMatch = withoutSign.match(/[1-9]/);
+    return nonZeroMatch ? withoutSign.length : 0;
+  }
+
+  // Pure integer with no decimal — trailing zeros not significant
+  const cleaned = withoutSign.replace(/^0+/, ''); // remove leading zeros
+  const noTrailingZeros = cleaned.replace(/0+$/, ''); // remove trailing zeros
+  return noTrailingZeros.length;
+};

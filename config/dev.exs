@@ -178,6 +178,11 @@ config :phoenix, :stacktrace_depth, 20
 # Initialize plugs at runtime for faster development compilation
 config :phoenix, :plug_init_mode, :runtime
 
+config :phoenix_live_view,
+  debug_heex_annotations: true,
+  debug_attributes: true,
+  enable_expensive_runtime_checks: true
+
 # Configure Joken for jwt signing and verification
 config :joken, default_signer: "secret"
 
@@ -203,3 +208,11 @@ config :oli, :recaptcha,
   timeout: 5000,
   site_key: System.get_env("RECAPTCHA_SITE_KEY", "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"),
   secret: System.get_env("RECAPTCHA_PRIVATE_KEY", "6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe")
+
+config :oli, Oli.Vault,
+  json_library: Jason,
+  ciphers: [
+    default:
+      {Cloak.Ciphers.AES.GCM,
+       tag: "AES.GCM.V1", key: Base.decode64!("HXCdm5z61eNgUpnXObJRv94k3JnKSrnfwppyb60nz6w=")}
+  ]

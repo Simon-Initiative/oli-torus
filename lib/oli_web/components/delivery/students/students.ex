@@ -146,6 +146,7 @@ defmodule OliWeb.Components.Delivery.Students do
        add_enrollments_step: :step_1,
        add_enrollments_selected_role: :student,
        add_enrollments_emails: [],
+       add_enrollments_invalid_emails: [],
        add_enrollments_grouped_by_status: %{
          enrolled: [],
          suspended: [],
@@ -385,6 +386,7 @@ defmodule OliWeb.Components.Delivery.Students do
   attr(:add_enrollments_step, :atom, default: :step_1)
   attr(:add_enrollments_selected_role, :atom, default: :student)
   attr(:add_enrollments_emails, :list, default: [])
+  attr(:add_enrollments_invalid_emails, :list, default: [])
   attr(:current_user, :any, required: false)
   attr(:current_author, :any, required: false)
   attr(:inviter, :string, required: false)
@@ -430,6 +432,7 @@ defmodule OliWeb.Components.Delivery.Students do
       >
         <.add_enrollments
           add_enrollments_emails={@add_enrollments_emails}
+          add_enrollments_invalid_emails={@add_enrollments_invalid_emails}
           add_enrollments_step={@add_enrollments_step}
           add_enrollments_selected_role={@add_enrollments_selected_role}
           add_enrollments_grouped_by_status={@add_enrollments_grouped_by_status}
@@ -449,7 +452,7 @@ defmodule OliWeb.Components.Delivery.Students do
               <div class="flex gap-2 items-center">
                 <Icons.left_chevron_blue />
                 <div class="text-zinc-700 text-sm font-semibold tracking-tight dark:text-white">
-                  Back to <%= String.capitalize(@navigation_data["container_filter_by"]) %>
+                  Back to {String.capitalize(@navigation_data["container_filter_by"])}
                 </div>
               </div>
             </.link>
@@ -467,7 +470,7 @@ defmodule OliWeb.Components.Delivery.Students do
             </div>
             <div class="w-auto px-2 py-1 rounded-md flex-col justify-center items-center text-center inline-flex">
               <div class="self-stretch text-zinc-700 text-xl font-bold leading-none tracking-tight dark:text-white">
-                <%= @title %>
+                {@title}
               </div>
             </div>
             <div class="w-auto py-2 flex rounded-md justify-center items-center gap-2">
@@ -485,23 +488,23 @@ defmodule OliWeb.Components.Delivery.Students do
             <div class="flex justify-center items-center">
               <div class="flex flex-col items-start gap-y-2">
                 <%= label class: "form-check-label flex flex-row items-center cursor-pointer gap-x-2" do %>
-                  <%= radio_button(:container, :option, :by_filtered,
+                  {radio_button(:container, :option, :by_filtered,
                     class: "form-check-input",
                     checked: @navigation_data["navigation_criteria"] == "by_filtered"
-                  ) %>
+                  )}
                   <div class="w-full text-zinc-900 text-xs font-normal leading-none dark:text-white">
-                    Navigate within <%= @navigation_data["filtered_count"] %> filtered <%= @navigation_data[
+                    Navigate within {@navigation_data["filtered_count"]} filtered {@navigation_data[
                       "container_filter_by"
-                    ] %> <%= get_card_type(@navigation_data["filter_criteria_card"]) %>
+                    ]} {get_card_type(@navigation_data["filter_criteria_card"])}
                   </div>
                 <% end %>
                 <%= label class: "form-check-label flex flex-row items-center cursor-pointer gap-x-2" do %>
-                  <%= radio_button(:container, :option, :by_all,
+                  {radio_button(:container, :option, :by_all,
                     class: "form-check-input",
                     checked: @navigation_data["navigation_criteria"] == "by_all"
-                  ) %>
+                  )}
                   <div class="w-full text-zinc-900 text-xs font-normal leading-none dark:text-white">
-                    Navigate within ALL <%= @navigation_data["container_filter_by"] %>
+                    Navigate within ALL {@navigation_data["container_filter_by"]}
                   </div>
                 <% end %>
               </div>
@@ -512,7 +515,7 @@ defmodule OliWeb.Components.Delivery.Students do
       <div class="bg-white dark:bg-gray-800 shadow-sm">
         <div class="flex justify-between sm:items-end px-4 sm:px-9 py-4 instructor_dashboard_table">
           <div>
-            <h4 class="torus-h4 !py-0 sm:mr-auto mb-2">Students Enrolled in <%= @title %></h4>
+            <h4 class="torus-h4 !py-0 sm:mr-auto mb-2">Students Enrolled in {@title}</h4>
             <%= if @show_progress_csv_download do %>
               <a
                 class="self-end"
@@ -553,7 +556,7 @@ defmodule OliWeb.Components.Delivery.Students do
                       selected={@params.filter_by == elem.value}
                       value={elem.value}
                     >
-                      <%= elem.label %>
+                      {elem.label}
                     </option>
                   </select>
                 </label>
@@ -681,10 +684,10 @@ defmodule OliWeb.Components.Delivery.Students do
             :if={@selected_values == %{}}
             class="text-zinc-900 text-xs font-semibold leading-none dark:text-white"
           >
-            <%= @placeholder %>
+            {@placeholder}
           </span>
           <span :if={@selected_values != %{}} class="text-blue-500 text-xs font-semibold leading-none">
-            Proficiency is <%= show_proficiency_selected_values(@selected_values) %>
+            Proficiency is {show_proficiency_selected_values(@selected_values)}
           </span>
         </div>
         <.toggle_chevron id={@id} map_values={@selected_values} />
@@ -760,6 +763,7 @@ defmodule OliWeb.Components.Delivery.Students do
       <OliWeb.Components.EmailList.render
         id="enrollments_email_list"
         emails_list={@add_enrollments_emails}
+        invalid_emails={@add_enrollments_invalid_emails}
         on_update="add_enrollments_update_list"
         on_remove="add_enrollments_remove_from_list"
         target={@target}
@@ -797,7 +801,7 @@ defmodule OliWeb.Components.Delivery.Students do
             <%= for email <- @add_enrollments_grouped_by_status[:non_existing_users] do %>
               <ul class="odd:bg-gray-200 dark:odd:bg-neutral-600 even:bg-gray-100 dark:even:bg-neutral-500 p-2 first:rounded-t last:rounded-b">
                 <div class="flex items-center justify-between">
-                  <p><%= email %></p>
+                  <p>{email}</p>
                   <button
                     phx-click={
                       JS.push("add_enrollments_remove_from_list",
@@ -828,7 +832,7 @@ defmodule OliWeb.Components.Delivery.Students do
             <%= for email <- @add_enrollments_grouped_by_status[:pending_confirmation] do %>
               <ul class="odd:bg-gray-200 dark:odd:bg-neutral-600 even:bg-gray-100 dark:even:bg-neutral-500 p-2 first:rounded-t last:rounded-b">
                 <div class="flex items-center justify-between">
-                  <p><%= email %></p>
+                  <p>{email}</p>
                   <button
                     phx-click={
                       JS.push("add_enrollments_remove_from_list",
@@ -859,7 +863,7 @@ defmodule OliWeb.Components.Delivery.Students do
             <%= for email <- @add_enrollments_grouped_by_status[:rejected] do %>
               <ul class="odd:bg-gray-200 dark:odd:bg-neutral-600 even:bg-gray-100 dark:even:bg-neutral-500 p-2 first:rounded-t last:rounded-b">
                 <div class="flex items-center justify-between">
-                  <p><%= email %></p>
+                  <p>{email}</p>
                   <button
                     phx-click={
                       JS.push("add_enrollments_remove_from_list",
@@ -890,7 +894,7 @@ defmodule OliWeb.Components.Delivery.Students do
             <%= for email <- @add_enrollments_grouped_by_status[:suspended] do %>
               <ul class="odd:bg-gray-200 dark:odd:bg-neutral-600 even:bg-gray-100 dark:even:bg-neutral-500 p-2 first:rounded-t last:rounded-b">
                 <div class="flex items-center justify-between">
-                  <p><%= email %></p>
+                  <p>{email}</p>
                   <button
                     phx-click={
                       JS.push("add_enrollments_remove_from_list",
@@ -918,7 +922,7 @@ defmodule OliWeb.Components.Delivery.Students do
             <%= for email <- @add_enrollments_grouped_by_status[:enrolled] do %>
               <ul class="odd:bg-gray-200 dark:odd:bg-neutral-600 even:bg-gray-100 dark:even:bg-neutral-500 p-2 first:rounded-t last:rounded-b">
                 <div class="flex items-center justify-between">
-                  <p><%= email %></p>
+                  <p>{email}</p>
                   <button
                     phx-click={
                       JS.push("add_enrollments_remove_from_list",
@@ -989,7 +993,7 @@ defmodule OliWeb.Components.Delivery.Students do
     </.form>
     <div class="px-4">
       <p>
-        Are you sure you want to send an enrollment email invitation to <%= "#{if @add_enrollments_effective_count == 1, do: "one user", else: "#{@add_enrollments_effective_count} users"}" %>?
+        Are you sure you want to send an enrollment email invitation to {"#{if @add_enrollments_effective_count == 1, do: "one user", else: "#{@add_enrollments_effective_count} users"}"}?
       </p>
       <.inviter
         current_author={@current_author}
@@ -1025,7 +1029,7 @@ defmodule OliWeb.Components.Delivery.Students do
             phx-target={@myself}
             checked={@inviter == "author"}
           />
-          <label for="author" class="ml-2"><%= Map.get(@current_author, :name) %></label>
+          <label for="author" class="ml-2">{Map.get(@current_author, :name)}</label>
         </div>
         <div class="ml-2">
           <input
@@ -1037,7 +1041,7 @@ defmodule OliWeb.Components.Delivery.Students do
             phx-target={@myself}
             checked={@inviter == "user"}
           />
-          <label for="user" class="ml-2"><%= Map.get(@current_user, :name) %></label>
+          <label for="user" class="ml-2">{Map.get(@current_user, :name)}</label>
         </div>
       </fieldset>
     </div>
@@ -1205,20 +1209,40 @@ defmodule OliWeb.Components.Delivery.Students do
   def handle_event("add_enrollments_update_list", %{"value" => list}, socket)
       when is_list(list) do
     current_emails = socket.assigns.add_enrollments_emails
+    current_invalid_emails = socket.assigns.add_enrollments_invalid_emails
 
-    maybe_updated_add_enrollments_emails = remove_duplicates(current_emails, list)
+    {valid_emails, invalid_emails} = Enum.split_with(list, &Oli.Utils.validate_email/1)
 
-    socket = assign(socket, add_enrollments_emails: maybe_updated_add_enrollments_emails)
+    maybe_updated_add_enrollments_invalid_emails =
+      remove_duplicates(current_invalid_emails, invalid_emails)
+
+    maybe_updated_add_enrollments_emails = remove_duplicates(current_emails, valid_emails)
+
+    socket =
+      assign(socket,
+        add_enrollments_emails: maybe_updated_add_enrollments_emails,
+        add_enrollments_invalid_emails: maybe_updated_add_enrollments_invalid_emails
+      )
 
     {:noreply, socket}
   end
 
   def handle_event("add_enrollments_update_list", %{"value" => value}, socket) do
     current_emails = socket.assigns.add_enrollments_emails
+    current_invalid_emails = socket.assigns.add_enrollments_invalid_emails
 
-    maybe_updated_add_enrollments_emails = remove_duplicates(current_emails, value)
+    socket =
+      if Oli.Utils.validate_email(value) do
+        maybe_updated_add_enrollments_emails = remove_duplicates(current_emails, value)
+        assign(socket, add_enrollments_emails: maybe_updated_add_enrollments_emails)
+      else
+        maybe_updated_add_enrollments_invalid_emails =
+          remove_duplicates(current_invalid_emails, value)
 
-    socket = assign(socket, add_enrollments_emails: maybe_updated_add_enrollments_emails)
+        assign(socket,
+          add_enrollments_invalid_emails: maybe_updated_add_enrollments_invalid_emails
+        )
+      end
 
     {:noreply, socket}
   end

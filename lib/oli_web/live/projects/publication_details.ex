@@ -77,11 +77,11 @@ defmodule OliWeb.Projects.PublicationDetails do
       <%= case @latest_published_publication do %>
         <% %{edition: current_edition, major: current_major, minor: current_minor} -> %>
           <div class="badge badge-secondary">
-            Latest Publication: <%= Utils.render_version(
+            Latest Publication: {Utils.render_version(
               current_edition,
               current_major,
               current_minor
-            ) %>
+            )}
           </div>
         <% _ -> %>
       <% end %>
@@ -97,9 +97,9 @@ defmodule OliWeb.Projects.PublicationDetails do
         <% {true, changes} -> %>
           <div class="my-3">
             Last published <strong> <%= Utils.render_date(@latest_published_publication, :published, @ctx) %></strong>.
-            There <%= if change_count(changes) == 1, do: "is", else: "are" %>
-            <strong><%= change_count(changes) %></strong>
-            pending <%= if change_count(changes) == 1, do: "change", else: "changes" %> since last publish:
+            There {if change_count(changes) == 1, do: "is", else: "are"}
+            <strong>{change_count(changes)}</strong>
+            pending {if change_count(changes) == 1, do: "change", else: "changes"} since last publish:
           </div>
       <% end %>
       <div id="publish-changes-table">

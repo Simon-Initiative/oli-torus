@@ -4,6 +4,7 @@ defmodule OliWeb.Components.Delivery.ContentTableModel do
   alias OliWeb.Common.Table.ColumnSpec
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Delivery.InstructorDashboard.HTMLComponents
+  alias OliWeb.Common.Chip
 
   alias OliWeb.Router.Helpers, as: Routes
 
@@ -11,27 +12,24 @@ defmodule OliWeb.Components.Delivery.ContentTableModel do
     column_specs = [
       %ColumnSpec{
         name: :numbering_index,
-        label: "ORDER",
-        th_class: "pl-10",
-        td_class: "pl-10"
+        label: "Order"
       },
       %ColumnSpec{
         name: :container_name,
         label: container_column_name,
-        render_fn: &__MODULE__.render_name_column/3
+        render_fn: &render_name_column/3
       },
       %ColumnSpec{
         name: :student_completion,
-        th_class: "flex items-center gap-1 border-b-0",
-        label: HTMLComponents.student_progress_label(%{title: "STUDENT PROGRESS"}),
-        render_fn: &__MODULE__.render_student_completion/3
+        label: HTMLComponents.student_progress_label(%{title: "Class Progress"}),
+        render_fn: &render_student_completion/3
       },
       %ColumnSpec{
         name: :student_proficiency,
-        label: "STUDENT PROFICIENCY",
+        label: "Class Proficiency",
         tooltip:
           "For all students, or one specific student, proficiency for a learning objective will be calculated off the percentage of correct answers for first part attempts within first activity attempts - for those parts that have that learning objective or any of its sub-objectives attached to it.",
-        render_fn: &__MODULE__.render_student_proficiency/3
+        render_fn: &render_student_proficiency/3
       }
     ]
 
@@ -56,7 +54,7 @@ defmodule OliWeb.Components.Delivery.ContentTableModel do
       ) do
     url_params =
       case column_spec.label do
-        "PAGES" -> %{page_id: container.id}
+        "Pages" -> %{page_id: container.id}
         _ -> %{container_id: container.id}
       end
 
@@ -73,11 +71,9 @@ defmodule OliWeb.Components.Delivery.ContentTableModel do
 
     ~H"""
     <div class="flex items-center">
-      <div class={"flex flex-shrink-0 rounded-full w-2 h-2 #{if @progress < 50, do: "bg-red-600", else: "bg-gray-500"}"}>
-      </div>
       <%= if @patch_url_type == :instructor_dashboard do %>
         <.link
-          class="ml-6 underline"
+          class="justify-start text-[#1B67B2] dark:text-[#4CA6FF] text-base font-medium leading-normal"
           patch={
             Routes.live_path(
               OliWeb.Endpoint,
@@ -89,11 +85,11 @@ defmodule OliWeb.Components.Delivery.ContentTableModel do
             )
           }
         >
-          <%= @title %>
+          {@title}
         </.link>
       <% else %>
         <div class="ml-6 text-gray-600">
-          <%= @title %>
+          {@title}
         </div>
       <% end %>
     </div>
@@ -105,21 +101,32 @@ defmodule OliWeb.Components.Delivery.ContentTableModel do
 
     ~H"""
     <div
-      class={if @progress < 50, do: "text-red-600 font-bold"}
+      class={"font-bold #{if @progress < 50, do: "text-[#CE2C31] dark:text-[#FF8787]", else: "text-[#353740] dark:text-[#EEEBF5]"}"}
       data-progress-check={if @progress >= 50, do: "true", else: "false"}
     >
-      <%= @progress %>%
+      {@progress}%
     </div>
     """
   end
 
   def render_student_proficiency(assigns, container, _) do
-    assigns = Map.merge(assigns, %{container: container})
+    {bg_color, text_color} =
+      case container.student_proficiency do
+        "High" -> {"bg-Fill-Chip-Green", "text-Text-Chip-Green"}
+        "Medium" -> {"bg-Fill-Accent-fill-accent-orange", "text-Text-Chip-Orange"}
+        "Low" -> {"bg-Fill-fill-danger", "text-Text-text-danger"}
+        _ -> {"bg-Fill-Chip-Gray", "text-Text-Chip-Gray"}
+      end
+
+    assigns =
+      Map.merge(assigns, %{
+        label: container.student_proficiency,
+        bg_color: bg_color,
+        text_color: text_color
+      })
 
     ~H"""
-    <div class={if @container.student_proficiency == "Low", do: "text-red-600 font-bold"}>
-      <%= @container.student_proficiency %>
-    </div>
+    <Chip.render {assigns} />
     """
   end
 

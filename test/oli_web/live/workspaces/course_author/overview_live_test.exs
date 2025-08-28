@@ -4,7 +4,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
   import Phoenix.LiveViewTest
   import Oli.Factory
 
-  alias Oli.Activities
   alias Oli.Authoring.Course
   alias Oli.Lti.PlatformExternalTools
 
@@ -51,7 +50,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
 
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
 
-      element(view, "form[phx-submit=\"delete\"]")
+      element(view, "form[phx-submit='delete']")
       |> render_submit()
       |> follow_redirect(conn, "/workspaces/course_author")
 
@@ -77,7 +76,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
 
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
 
-      element(view, "form[phx-submit=\"update\"]")
+      element(view, "form[phx-submit='update']")
       |> render_submit(%{
         "project" => %{
           "title" => "updated title",
@@ -112,7 +111,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
 
       assert view
-             |> element("form[phx-change=\"validate\"]")
+             |> element("form[phx-change='validate']")
              |> render_change(%{
                "project" => %{
                  "title" => nil
@@ -127,7 +126,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
 
       refute has_element?(view, "input[name=\"survey\"][checked]")
 
-      element(view, "form[phx-change=\"set-required-survey\"]")
+      element(view, "form[phx-change='set-required-survey']")
       |> render_change(%{
         survey: "on"
       })
@@ -144,14 +143,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
 
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
 
-      assert has_element?(view, "input[name=\"survey\"][checked]")
+      assert has_element?(view, "input[name='survey'][checked]")
 
-      element(view, "form[phx-change=\"set-required-survey\"]")
-      |> render_change(%{})
+      element(view, "form[phx-change='set-required-survey']")
+      |> render_change(%{"_target" => ["survey"], "survey" => ""})
 
       updated_project = Course.get_project!(project.id)
       assert updated_project.required_survey_resource_id == nil
-      refute has_element?(view, "input[name=\"survey\"][checked]")
+      refute has_element?(view, "input[name='survey'][checked]")
       refute has_element?(view, "a", "Edit survey")
     end
 
@@ -164,7 +163,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
 
       ## Enable required survey
-      element(view, "form[phx-change=\"set-required-survey\"]")
+      element(view, "form[phx-change='set-required-survey']")
       |> render_change(%{
         survey: "on"
       })
@@ -186,7 +185,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
 
       refute project.allow_transfer_payment_codes
 
-      element(view, "form[phx-change=\"set_allow_transfer\"]")
+      element(view, "form[phx-change='set_allow_transfer']")
       |> render_change(%{})
 
       assert Course.get_project!(project.id).allow_transfer_payment_codes
@@ -201,7 +200,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
 
       assert project.allow_transfer_payment_codes
 
-      element(view, "form[phx-change=\"set_allow_transfer\"]")
+      element(view, "form[phx-change='set_allow_transfer']")
       |> render_change(%{})
 
       refute Course.get_project!(project.id).allow_transfer_payment_codes
@@ -210,14 +209,40 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
     test "advanced activities are shown correctly", %{conn: conn, author: author} do
       project = create_project_with_author(author)
 
+      # Add some activities to the project
+      activity1 =
+        insert(:activity_registration, %{
+          title: "Test Activity 1",
+          globally_visible: true,
+          globally_available: false
+        })
+
+      activity2 =
+        insert(:activity_registration, %{
+          title: "Test Activity 2",
+          globally_visible: true,
+          globally_available: false
+        })
+
+      insert(:activity_registration_project, %{
+        activity_registration_id: activity1.id,
+        project_id: project.id,
+        status: :enabled
+      })
+
+      insert(:activity_registration_project, %{
+        activity_registration_id: activity2.id,
+        project_id: project.id,
+        status: :disabled
+      })
+
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
 
       assert has_element?(view, "h4", "Advanced Activities")
 
-      Activities.advanced_activities(project)
-      |> Enum.each(fn activity ->
-        assert has_element?(view, "div", activity.title)
-      end)
+      # Should show both activities
+      assert has_element?(view, "div", activity1.title)
+      assert has_element?(view, "div", activity2.title)
     end
 
     test "external tools activities are shown correctly", %{conn: conn, author: author} do
@@ -250,6 +275,19 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
 
       {:ok, {_platform_instance_2, activity_registration_2, deployment_2}} =
         PlatformExternalTools.register_lti_external_tool_activity(external_tool_2_params)
+
+      # Add activities to project
+      insert(:activity_registration_project, %{
+        activity_registration_id: activity_registration_1.id,
+        project_id: project.id,
+        status: :enabled
+      })
+
+      insert(:activity_registration_project, %{
+        activity_registration_id: activity_registration_2.id,
+        project_id: project.id,
+        status: :enabled
+      })
 
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
 
@@ -307,6 +345,98 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
       refute has_element?(view, "div", activity_registration_1.title)
     end
 
+    test "shows add activities and tools button", %{conn: conn, author: author} do
+      project = create_project_with_author(author)
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      assert has_element?(view, "button", "+ Add Activities and Tools")
+    end
+
+    test "opens modal when add activities button is clicked", %{conn: conn, author: author} do
+      project = create_project_with_author(author)
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      # the modal is present but hidden by default
+      assert has_element?(view, "#add-activities-tools")
+      assert has_element?(view, "#add-activities-tools-modal")
+
+      # Click the add activities button
+      view
+      |> element("button", "+ Add Activities and Tools")
+      |> render_click()
+
+      # Should trigger the show_modal event and load modal content
+      # The modal should be visible after the click and contain the expected content
+      assert has_element?(view, "h1", "Add Advanced Activities & External Tools")
+      assert has_element?(view, "button", "Advanced Activities")
+      assert has_element?(view, "button", "External Tools")
+    end
+
+    test "handles flash messages from modal", %{conn: conn, author: author} do
+      project = create_project_with_author(author)
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      # Send info flash message (simulating from modal)
+      send(view.pid, {:flash_message, {:info, "Test message"}})
+      assert has_element?(view, ".alert.alert-info", "Test message")
+
+      # Send error flash message (simulating from modal)
+      send(view.pid, {:flash_message, {:error, "Test error message"}})
+      assert has_element?(view, ".alert.alert-danger", "Test error message")
+    end
+
+    test "refreshes activities when refresh message is received", %{conn: conn, author: author} do
+      project = create_project_with_author(author)
+
+      # Add initial advanced activity
+      activity1 =
+        insert(:activity_registration, %{
+          title: "Initial Activity",
+          globally_visible: true,
+          globally_available: false
+        })
+
+      insert(:activity_registration_project, %{
+        activity_registration_id: activity1.id,
+        project_id: project.id,
+        status: :enabled
+      })
+
+      # create ativity 2, but do not yet add it to the project
+      activity2 =
+        insert(:activity_registration, %{
+          title: "New Activity",
+          globally_visible: true,
+          globally_available: false
+        })
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      # Should show initial advanced activity, but not the one not yet added to the project
+      assert has_element?(view, "div", activity1.title)
+      refute has_element?(view, "div", activity2.title)
+
+      # Simulate an advanced activity was added by the modal
+      # so the modal informs back to the live view that the activities were updated
+
+      insert(:activity_registration_project, %{
+        activity_registration_id: activity2.id,
+        project_id: project.id,
+        status: :enabled
+      })
+
+      # Send refresh message (simulating from modal)
+      send(view.pid, {:refresh_tools_and_activities})
+
+      # Should still show the advanced activity after refresh
+      # and show the just added advanced activity
+      assert has_element?(view, "div", activity1.title)
+      assert has_element?(view, "div", activity2.title)
+    end
+
     defp create_project_with_author(author) do
       %{project: project} = base_project_with_curriculum(nil)
       insert(:author_project, project_id: project.id, author_id: author.id)
@@ -352,7 +482,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
 
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
 
-      element(view, "form[phx-submit=\"update\"]")
+      element(view, "form[phx-submit='update']")
       |> render_submit(%{
         "project" => %{
           "attributes" => %{

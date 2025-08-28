@@ -2,7 +2,7 @@ defmodule Oli.Conversation.ConversationMessage do
   use Ecto.Schema
 
   import Ecto.Changeset
-  import Oli.Conversation.Common
+  import Oli.GenAI.Completions.Utils
 
   @derive {Jason.Encoder, only: [:role, :content, :token_length, :user_id, :resource_id]}
   schema "assistant_conversation_messages" do
@@ -18,7 +18,7 @@ defmodule Oli.Conversation.ConversationMessage do
     field :token_length, :integer
 
     belongs_to :user, Oli.Accounts.User
-    belongs_to :resource, Oli.Delivery.Resources.Resource
+    belongs_to :resource, Oli.Resources.Resource
     belongs_to :section, Oli.Delivery.Sections.Section
 
     timestamps(type: :utc_datetime)

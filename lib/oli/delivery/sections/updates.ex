@@ -169,6 +169,11 @@ defmodule Oli.Delivery.Sections.Updates do
 
         cull_unreachable_pages(section, diff)
 
+        # when handling a minor update, sections resources are not rebuilt,
+        # so we need to update the revision fields from the section resources that were changed
+        # to avoid stale data in the section resources
+        update_targeted_section_resources(section, diff)
+
         Logger.info(
           "perform_update.MINOR: section[#{section.slug}] #{Oli.Timing.elapsed(mark) / 1000 / 1000}ms"
         )
@@ -177,6 +182,25 @@ defmodule Oli.Delivery.Sections.Updates do
 
       {:error, _} ->
         {:error, :unexpected_count}
+    end
+  end
+
+  defp update_targeted_section_resources(section, diff) do
+    changed_resource_ids =
+      filter_for_revisions(diff, :changed, fn _r -> true end)
+      |> Enum.map(& &1.resource_id)
+
+    case Oli.Delivery.Sections.SectionResourceMigration.migrate_specific_resources(
+           section.id,
+           changed_resource_ids
+         ) do
+      {:ok, _num_updated} ->
+        :ok
+
+      {:error, error} ->
+        Logger.error(
+          "[Updates] MINOR update: Failed to migrate changed revisions: #{inspect(error)}"
+        )
     end
   end
 

@@ -100,9 +100,9 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
   def render(assigns) do
     ~H"""
     <div id="settings_table" class="bg-white dark:bg-gray-800 shadow-sm">
-      <%= due_date_modal(assigns) %>
-      <%= available_date_modal(assigns) %>
-      <%= modal(@modal_assigns) %>
+      {due_date_modal(assigns)}
+      {available_date_modal(assigns)}
+      {modal(@modal_assigns)}
       <div class="flex flex-col space-y-4 lg:space-y-0 lg:flex-row lg:items-center lg:justify-between pr-6 mb-4">
         <div class="flex flex-col pl-9">
           <h4 class="torus-h4 whitespace-nowrap">Assessment Settings</h4>
@@ -122,7 +122,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
                 selected={assessment.resource_id == @bulk_apply_selected_assessment_id}
                 value={assessment.resource_id}
               >
-                <%= assessment.name %>
+                {assessment.name}
               </option>
             </select>
             <button
@@ -297,9 +297,9 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
               phx-target={@myself}
             >
               <div class="flex flex-col space-y-2">
-                <%= label(f, :feedback_scheduled_date, "Scheduled Date", class: "control-label") %>
-                <%= datetime_local_input(f, :feedback_scheduled_date, class: "mr-auto") %>
-                <%= error_tag(f, :feedback_scheduled_date, true) %>
+                {label(f, :feedback_scheduled_date, "Scheduled Date", class: "control-label")}
+                {datetime_local_input(f, :feedback_scheduled_date, class: "mr-auto")}
+                {error_tag(f, :feedback_scheduled_date, true)}
               </div>
               <div class="flex space-x-3 mt-6 justify-end">
                 <button
@@ -356,7 +356,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
             >
               <div class="flex flex-col space-y-2">
                 <p>
-                  Are you sure you want to apply the <strong><%= @base_assessment.name %></strong>
+                  Are you sure you want to apply the <strong>{@base_assessment.name}</strong>
                   settings to all other assessments?
                 </p>
               </div>
@@ -591,6 +591,10 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
              myself: socket.assigns.myself
            }
          )}
+
+      {key = :password, assessment_setting_id, new_value} ->
+        AssessmentSettings.do_update(key, assessment_setting_id, new_value, resources)
+        |> process_updated_result(socket, assessment_setting_id, key, new_value)
 
       {key, assessment_setting_id, new_value} when new_value != "" ->
         AssessmentSettings.do_update(key, assessment_setting_id, new_value, resources)

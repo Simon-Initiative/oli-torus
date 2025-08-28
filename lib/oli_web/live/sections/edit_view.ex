@@ -85,7 +85,7 @@ defmodule OliWeb.Sections.EditView do
     assigns = assign(assigns, form: to_form(assigns.changeset))
 
     ~H"""
-    <title><%= @title %></title>
+    <title>{@title}</title>
     <.form as={:section} for={@form} phx-change="validate" phx-submit="save" autocomplete="off">
       <Groups.render>
         <Group.render label="Settings" description="Manage the course section settings">

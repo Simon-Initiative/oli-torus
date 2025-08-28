@@ -194,7 +194,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.HTMLComponents do
     ~H"""
     <div
       id="student_progress_tooltip_container"
-      class="flex relative cursor-auto"
+      class="flex relative cursor-auto z-9999999999"
       phx-hook="HoverAway"
       mouse-leave-js={
         JS.hide(
@@ -208,7 +208,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.HTMLComponents do
       <div
         id="student_progress_tooltip"
         onclick="event.stopPropagation()"
-        class="absolute z-10 hidden -translate-x-[140px] -translate-y-[73px] w-max flex-col items-start p-3 border border-[#3a3740] rounded-md shadow bg-white dark:bg-[#0d0c0f] font-normal"
+        class="absolute z-50 hidden translate-x-[-10px] translate-y-[2rem] w-max flex-col items-start p-3 border border-[#3a3740] rounded-md shadow bg-white dark:bg-[#0d0c0f] font-normal"
       >
         <span style="text-[#353740] dark:text-[#eeebf5] text-sm leading-normal">
           This is an estimate of student progress.
@@ -233,7 +233,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.HTMLComponents do
         <Icons.info />
       </button>
     </div>
-    <%= @title %>
+    <div class="ml-1">
+      {@title}
+    </div>
     """
   end
 
@@ -270,8 +272,19 @@ defmodule OliWeb.Delivery.InstructorDashboard.HTMLComponents do
             <Icons.chevron_down class="fill-black dark:fill-dark -rotate-180" />
           </div>
         </div>
-        <%= render_slot(@inner_block) %>
+        {render_slot(@inner_block)}
       </div>
+    </div>
+    """
+  end
+
+  attr :title, :string, required: true
+
+  def render_proficiency_label(assigns) do
+    ~H"""
+    <div class="flex items-center gap-x-2">
+      {Icons.info(assigns)}
+      <span>{@title}</span>
     </div>
     """
   end
@@ -281,9 +294,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.HTMLComponents do
 
   defp view_example_bullet_entry(assigns) do
     ~H"""
-    <span class="text-[#383a44] text-base font-bold dark:text-white"><%= @entry %>:</span>
+    <span class="text-[#383a44] text-base font-bold dark:text-white">{@entry}:</span>
     <span class="text-[#383a44] text-base font-medium dark:text-white">
-      <%= render_slot(@inner_block) %>
+      {render_slot(@inner_block)}
     </span>
     """
   end
@@ -293,7 +306,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.HTMLComponents do
   defp view_example_blue_item(assigns) do
     ~H"""
     <div class="self-stretch text-[#0165da] text-base font-bold dark:text-white">
-      <%= @content %>
+      {@content}
     </div>
     """
   end

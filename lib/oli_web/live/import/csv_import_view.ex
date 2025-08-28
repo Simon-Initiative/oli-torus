@@ -65,7 +65,7 @@ defmodule OliWeb.Import.CSVImportView do
     <div>
       <%= for r <- @results do %>
         <p class={if r.result == :failure, do: "text-danger"}>
-          Row #<%= r.row_num %> - <%= r.result %>
+          Row #{r.row_num} - {r.result}
         </p>
       <% end %>
 

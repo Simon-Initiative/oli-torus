@@ -80,8 +80,11 @@ defmodule OliWeb.Projects.ProjectsLiveTest do
       assert has_element?(view, "##{deleted_project.id}")
     end
 
-    test "applies paging", %{conn: conn} do
-      [first_p | tail] = insert_list(26, :project) |> Enum.sort_by(& &1.title)
+    test "applies paging", %{conn: conn, admin: admin} do
+      [first_p | tail] =
+        insert_list(26, :project, authors: [admin])
+        |> Enum.sort_by(& &1.title)
+
       last_p = List.last(tail)
 
       {:ok, view, _html} = live(conn, Routes.live_path(Endpoint, ProjectsLive))
@@ -90,7 +93,7 @@ defmodule OliWeb.Projects.ProjectsLiveTest do
       refute has_element?(view, "##{last_p.id}")
 
       view
-      |> element("#header_paging button[phx-click=\"paged_table_page_change\"]", "2")
+      |> element("#footer_paging button[phx-click='paged_table_page_change']", "2")
       |> render_click()
 
       refute has_element?(view, "##{first_p.id}")
@@ -109,7 +112,7 @@ defmodule OliWeb.Projects.ProjectsLiveTest do
                "Testing A"
 
       view
-      |> element("th[phx-click=\"paged_table_sort\"]:first-of-type")
+      |> element("th[phx-click='paged_table_sort']:first-of-type")
       |> render_click(%{sort_by: "title"})
 
       assert view
@@ -182,7 +185,7 @@ defmodule OliWeb.Projects.ProjectsLiveTest do
       refute has_element?(view, "##{last_p.id}")
 
       view
-      |> element("#header_paging button[phx-click=\"paged_table_page_change\"]", "2")
+      |> element("#footer_paging button[phx-click='paged_table_page_change']", "2")
       |> render_click()
 
       refute has_element?(view, "##{first_p.id}")
@@ -201,7 +204,7 @@ defmodule OliWeb.Projects.ProjectsLiveTest do
                "Testing A"
 
       view
-      |> element("th[phx-click=\"paged_table_sort\"]:first-of-type")
+      |> element("th[phx-click='paged_table_sort']:first-of-type")
       |> render_click(%{sort_by: "title"})
 
       assert view

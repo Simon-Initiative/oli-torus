@@ -427,14 +427,14 @@ defmodule OliWeb.Delivery.ActivityHelpers do
 
     ~H"""
     <div class="mt-5 overflow-x-hidden w-full flex justify-center">
-      <%= OliWeb.Common.React.component(
+      {OliWeb.Common.React.component(
         %{is_liveview: true},
         "Components.VegaLiteRenderer",
         %{spec: @spec},
         id: "activity_#{@activity.id}",
         container: [class: "overflow-x-scroll"],
         container_tag: :div
-      ) %>
+      )}
     </div>
     """
   end

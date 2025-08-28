@@ -9,6 +9,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
   alias OliWeb.Components.Delivery.Utils, as: DeliveryUtils
   alias OliWeb.Delivery.Student.Utils
   alias OliWeb.Icons
+  alias OliWeb.Components.Utils, as: ComponentsUtils
 
   # this is an optimization to reduce the memory footprint of the liveview process
   @required_keys_per_assign %{
@@ -153,7 +154,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
               </span>
               <span class="text-sm font-normal"> Earn </span>
               <span class="text-[#2db767] dark:text-[#39e581] text-sm font-bold">
-                <%= format_percentage(@certificate.min_percentage_for_completion) %>
+                {format_percentage(@certificate.min_percentage_for_completion)}
               </span>
               <span class="text-sm font-normal">or above on all required assignments</span>
             </div>
@@ -163,7 +164,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
               </span>
               <span class="text-sm font-bold"></span><span class="text-sm font-normal">Earn</span>
               <span class="text-[#2db767] dark:text-[#39e581] text-sm font-bold">
-                <%= format_percentage(@certificate.min_percentage_for_distinction) %>
+                {format_percentage(@certificate.min_percentage_for_distinction)}
               </span>
               <span class="text-sm font-normal"></span><span class="text-sm font-normal">or above on all required assignments</span>
             </div>
@@ -186,22 +187,27 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
     <div class="w-full px-2 bg-white dark:bg-[#1b191f]/50 rounded-xl border border-[#ced1d9] dark:border-[#2a282d] flex-col justify-start items-start inline-flex">
       <div
         role="assignments header"
-        class="w-full h-11 py-3 border-b border-[#ced1d9] dark:border-[#3a3740] justify-between items-center inline-flex text-[#757682] dark:text-[#bab8bf] text-sm font-medium leading-none"
+        class="w-full flex-col pt-2 border-b border-[#ced1d9] dark:border-[#3a3740] justify-between items-center text-[#757682] dark:text-[#bab8bf] text-sm font-medium leading-none"
       >
-        <div class="justify-end items-center gap-2 flex">
-          <div class="w-5 h-5 relative"><Icons.check /></div>
-          <span>
-            <%= completed_assignments_count(@assignments, @certificate, @filter) %> of <%= total_assignments_count(
-              @assignments,
-              @certificate,
-              @filter
-            ) %> Assignments
-          </span>
+        <ComponentsUtils.timezone_info timezone={
+          FormatDateTime.tz_preference_or_default(@ctx.author, @ctx.user, @ctx.browser_timezone)
+        } />
+        <div class="flex w-full h-11 justify-between items-center inline-flex">
+          <div class="justify-end items-center gap-2 flex">
+            <div class="w-5 h-5 relative"><Icons.check /></div>
+            <span>
+              {completed_assignments_count(@assignments, @certificate, @filter)} of {total_assignments_count(
+                @assignments,
+                @certificate,
+                @filter
+              )} Assignments
+            </span>
+          </div>
+          <DeliveryUtils.toggle_visibility_button
+            :if={@assignments != []}
+            target_selector={~s{div[role="assignment detail"][data-completed="true"]}}
+          />
         </div>
-        <DeliveryUtils.toggle_visibility_button
-          :if={@assignments != []}
-          target_selector={~s{div[role="assignment detail"][data-completed="true"]}}
-        />
       </div>
       <div role="assignments details" class="mt-12 px-5 pb-5 flex flex-col gap-12 w-full">
         <.assignment
@@ -270,25 +276,35 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
         />
       </div>
       <div class="ml-6 mt-0.5 h-6 w-10 flex items-center text-left text-[#757682] dark:text-[#eeebf5]/75 text-sm font-semibold leading-none">
-        <%= @assignment.numbering_index %>
+        {@assignment.numbering_index}
       </div>
       <div class="h-12 flex flex-col justify-between mr-6 flex-1 min-w-0">
         <.link
           navigate={@target}
           class="h-6 mt-0.5 text-[#353740] dark:text-[#eeebf5] text-base font-semibold leading-normal whitespace-nowrap truncate"
         >
-          <%= @assignment.title %>
+          {@assignment.title}
         </.link>
         <span
-          :if={@has_scheduled_resources?}
           role="assignment schedule details"
           class="text-[#757682] dark:text-[#eeebf5]/75 text-xs font-semibold leading-3 whitespace-nowrap truncate"
         >
-          <%= Utils.label_for_scheduling_type(@assignment.scheduling_type) %> <%= FormatDateTime.to_formatted_datetime(
-            @assignment.end_date,
-            @ctx,
-            "{WDshort} {Mshort} {D}, {YYYY}"
-          ) %>
+          <span>
+            Available:
+            <%= if @assignment.start_date do %>
+              {FormatDateTime.to_formatted_datetime(
+                @assignment.start_date,
+                @ctx,
+                "{WDshort} {Mshort} {D}, {YYYY}"
+              )}
+            <% else %>
+              Now
+            <% end %>
+          </span>
+          <span class="ml-6">
+            {Utils.label_for_scheduling_type(@assignment.scheduling_type)}
+            {format_date(@assignment.end_date, @ctx, "{WDshort} {Mshort} {D}, {YYYY}")}
+          </span>
         </span>
       </div>
       <div :if={@assignment.raw_avg_score} class="ml-auto h-12 flex flex-col justify-between">
@@ -298,7 +314,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
           </span>
         <% else %>
           <span class="h-6 ml-auto text-[#757682] dark:text-[#eeebf5]/75 text-xs font-semibold leading-3 whitespace-nowrap">
-            Attempt <%= @assignment.attempts %> of <%= max_attempts(@assignment.max_attempts) %>
+            Attempt {@assignment.attempts} of {max_attempts(@assignment.max_attempts)}
           </span>
         <% end %>
         <div class="flex ml-auto gap-1.5 text-[#218358] dark:text-[#39e581]">
@@ -311,9 +327,9 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
           </div>
 
           <span class="flex gap-1 text-base font-bold leading-none whitespace-nowrap">
-            <%= Utils.parse_score(@assignment.raw_avg_score.score) %> / <%= Utils.parse_score(
+            {Utils.parse_score(@assignment.raw_avg_score.score)} / {Utils.parse_score(
               @assignment.raw_avg_score.out_of
-            ) %>
+            )}
           </span>
         </div>
       </div>
@@ -365,11 +381,12 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
               true
 
             {:due_by, end_date, :disallow} ->
-              !DateTime.compare(DateTime.utc_now(), end_date) == :gt
+              !(DateTime.compare(DateTime.utc_now(), end_date) == :gt)
 
             _ ->
               true
           end,
+        start_date: effective_settings.start_date,
         end_date: effective_settings.end_date,
         purpose: assignment.purpose,
         progress: progress_per_page_id[assignment.resource_id],
@@ -493,4 +510,9 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
     do:
       certificate.assessments_apply_to == :all or
         assignment.id in certificate.custom_assessments
+
+  defp format_date(nil, _ctx, _format), do: "None"
+
+  defp format_date(date, ctx, _format),
+    do: FormatDateTime.to_formatted_datetime(date, ctx, "{WDshort} {Mshort} {D}, {YYYY}")
 end

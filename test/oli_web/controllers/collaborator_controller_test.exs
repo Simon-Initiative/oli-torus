@@ -81,9 +81,9 @@ defmodule OliWeb.CollaboratorControllerTest do
                         "/workspaces/course_author/#{project.slug}/overview"
 
                assert Phoenix.Flash.get(conn.assigns.flash, :error) =~
-                        "Failed to invite some collaborators: notevenan_email"
+                        "Failed to invite some collaborators due to invalid email(s): notevenan_email"
              end) =~
-               "Failed to invite some collaborators: notevenan_email"
+               "Failed to invite some collaborators due to invalid email(s): [\"notevenan_email\"]"
     end
 
     test "redirects to project path when data is invalid", %{conn: conn, project: project} do

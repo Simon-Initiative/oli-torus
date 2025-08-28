@@ -11,7 +11,7 @@ defmodule OliWeb.ManualGrading.PartScoring do
     <form>
       <div class="form-row">
         <div class="col-span-11">
-          <%= feedback(assigns) %>
+          {feedback(assigns)}
         </div>
         <div class="col">
           <div class="input-group mb-3">

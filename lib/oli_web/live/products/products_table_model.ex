@@ -1,36 +1,55 @@
 defmodule OliWeb.Products.ProductsTableModel do
+  use Phoenix.Component
   use OliWeb, :verified_routes
-  alias OliWeb.Common.Table.{ColumnSpec, Common, SortableTableModel}
-  alias OliWeb.Router.Helpers, as: Routes
+
+  alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
+  alias OliWeb.Common.FormatDateTime
 
   def new(products, ctx, project_slug \\ "") do
+    default_td_class = "!border-r border-Table-table-border"
+    default_th_class = "!border-r border-Table-table-border"
+
     SortableTableModel.new(
       rows: products,
       column_specs: [
         %ColumnSpec{
           name: :title,
-          label: "Product Title",
-          render_fn:
-            &__MODULE__.render_title_column(Map.put(&1, :project_slug, project_slug), &2, &3)
-        },
-        %ColumnSpec{name: :status, label: "Status"},
-        %ColumnSpec{
-          name: :requires_payment,
-          label: "Requires Payment",
-          render_fn: &__MODULE__.render_payment_column/3,
-          sort_fn: &sort_payment_column/2
+          label: "Title",
+          render_fn: &render_title_column(Map.put(&1, :project_slug, project_slug), &2, &3),
+          td_class: default_td_class,
+          th_class: default_th_class
         },
         %ColumnSpec{
-          name: :base_project_id,
-          label: "Base Project",
-          render_fn:
-            &__MODULE__.render_project_column(Map.put(&1, :project_slug, project_slug), &2, &3)
+          name: :tags,
+          label: "Tags",
+          render_fn: &render_tags_column/3,
+          sortable: false,
+          td_class: default_td_class,
+          th_class: default_th_class
         },
         %ColumnSpec{
           name: :inserted_at,
           label: "Created",
-          render_fn: &Common.render_date/3
-        }
+          render_fn: &render_created_column/3,
+          td_class: default_td_class,
+          th_class: default_th_class
+        },
+        %ColumnSpec{
+          name: :requires_payment,
+          label: "Requires Payment",
+          render_fn: &render_payment_column/3,
+          sort_fn: &sort_payment_column/2,
+          td_class: default_td_class,
+          th_class: default_th_class
+        },
+        %ColumnSpec{
+          name: :base_project_id,
+          label: "Base Project",
+          render_fn: &render_project_column(Map.put(&1, :project_slug, project_slug), &2, &3),
+          td_class: default_td_class,
+          th_class: default_th_class
+        },
+        %ColumnSpec{name: :status, label: "Status", render_fn: &render_status_column/3}
       ],
       event_suffix: "",
       id_field: [:id],
@@ -50,11 +69,25 @@ defmodule OliWeb.Products.ProductsTableModel do
   def render_title_column(assigns, %{title: title, slug: slug}, _) do
     route_path =
       case Map.get(assigns, :project_slug) do
-        "" -> Routes.live_path(OliWeb.Endpoint, OliWeb.Products.DetailsView, slug)
+        "" -> ~p"/authoring/products/#{slug}"
         project_slug -> ~p"/workspaces/course_author/#{project_slug}/products/#{slug}"
       end
 
-    SortableTableModel.render_link_column(assigns, title, route_path)
+    assigns = Map.merge(assigns, %{title: title, slug: slug, route_path: route_path})
+
+    ~H"""
+    <div class="flex flex-col">
+      <a
+        href={@route_path}
+        class="text-Text-text-link text-base font-medium leading-normal"
+      >
+        {@title}
+      </a>
+      <span class="text-Text-text-low text-sm font-normal leading-tight">
+        ID: {@slug}
+      </span>
+    </div>
+    """
   end
 
   def render_project_column(assigns, %{base_project: base_project}, _) do
@@ -64,7 +97,65 @@ defmodule OliWeb.Products.ProductsTableModel do
         _project_slug -> ~p"/workspaces/course_author/#{base_project}/overview"
       end
 
-    SortableTableModel.render_link_column(assigns, base_project.title, route_path)
+    assigns = Map.merge(assigns, %{base_project: base_project, route_path: route_path})
+
+    ~H"""
+    <div class="flex flex-col">
+      <a
+        href={@route_path}
+        class="text-Text-text-link text-base font-medium leading-normal"
+      >
+        {@base_project.title}
+      </a>
+      <span class="text-Text-text-low text-sm font-normal leading-tight">
+        ID: {@base_project.slug}
+      </span>
+    </div>
+    """
+  end
+
+  def render_status_column(assigns, product, _) do
+    assigns = Map.merge(assigns, %{product: product})
+
+    case product.status do
+      :active ->
+        SortableTableModel.render_span_column(
+          assigns,
+          "Active",
+          "text-Table-text-accent-green"
+        )
+
+      _ ->
+        SortableTableModel.render_span_column(
+          assigns,
+          String.capitalize(to_string(product.status)),
+          "text-Table-text-danger"
+        )
+    end
+  end
+
+  defp render_created_column(assigns, %{inserted_at: inserted_at}, _) do
+    assigns = Map.merge(assigns, %{inserted_at: inserted_at})
+
+    ~H"""
+    <span class="text-Text-text-high text-base font-medium">
+      {FormatDateTime.to_formatted_datetime(
+        @inserted_at,
+        @ctx,
+        "{Mfull} {D}, {YYYY} {h12}:{m} {AM}"
+      )}
+    </span>
+    """
+  end
+
+  defp render_tags_column(assigns, product, _) do
+    assigns = Map.merge(assigns, %{product: product})
+
+    ~H"""
+    <span class="text-Text-text-high text-base font-medium">
+      {Map.get(@product, :tags, "")}
+    </span>
+    """
   end
 
   defp sort_payment_column(order, _spec) do

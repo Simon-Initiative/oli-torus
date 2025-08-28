@@ -1,5 +1,5 @@
 defmodule OliWeb.RemixSectionLiveTest do
-  use OliWeb.ConnCase
+  use OliWeb.ConnCase, async: true
 
   import Phoenix.ConnTest
   import Phoenix.LiveViewTest
@@ -16,33 +16,23 @@ defmodule OliWeb.RemixSectionLiveTest do
 
     test "mount as admin", %{
       conn: conn,
-      map: %{
-        section_1: section_1,
-        unit1_container: unit1_container,
-        revision1: revision1,
-        revision2: revision2
-      }
+      section: section,
+      unit_1: unit_1,
+      unit_2: unit_2,
+      page_5: page_5
     } do
-      conn =
-        get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, section_1.slug))
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/remix")
 
-      {:ok, view, _html} = live(conn)
-
-      assert view |> element("#entry-#{unit1_container.revision.resource_id}") |> has_element?()
-      assert view |> element("#entry-#{revision1.resource_id}") |> has_element?()
-      assert view |> element("#entry-#{revision2.resource_id}") |> has_element?()
+      assert view |> element("#entry-#{unit_1.resource_id}") |> has_element?()
+      assert view |> element("#entry-#{unit_2.resource_id}") |> has_element?()
+      assert view |> element("#entry-#{page_5.resource_id}") |> has_element?()
     end
 
     test "saving redirects admin correctly", %{
       conn: conn,
-      map: %{
-        section_1: section_1
-      }
+      section: section
     } do
-      conn =
-        get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, section_1.slug))
-
-      {:ok, view, _html} = live(conn)
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/remix")
 
       render_hook(view, "reorder", %{"sourceIndex" => "0", "dropIndex" => "2"})
 
@@ -52,34 +42,24 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       assert_redirected(
         view,
-        Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.OverviewView, section_1.slug)
+        ~p"/authoring/products/#{section.slug}"
       )
     end
 
     test "breadcrumbs render correctly", %{
       conn: conn,
-      map: %{
-        section_1: section_1
-      }
+      section: section
     } do
-      conn =
-        get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, section_1.slug))
-
-      {:ok, _view, html} = live(conn)
+      {:ok, _view, html} = live(conn, ~p"/sections/#{section.slug}/remix")
 
       assert html =~ "Customize Content"
     end
 
     test "remix section remove and save (including last course material)", %{
       conn: conn,
-      map: %{
-        section_1: section_1
-      }
+      section: section
     } do
-      conn =
-        get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, section_1.slug))
-
-      {:ok, view, _html} = live(conn)
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/remix")
 
       node_children_uuids =
         view
@@ -98,7 +78,7 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       assert_redirected(
         view,
-        Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.OverviewView, section_1.slug)
+        ~p"/authoring/products/#{section.slug}"
       )
     end
   end
@@ -139,12 +119,12 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       ## add Unit 1
       view
-      |> element("button[phx-click=\"show_add_materials_modal\"]")
+      |> element("button[phx-click='show_add_materials_modal']")
       |> render_click()
 
       view
       |> element(
-        ".hierarchy table > tbody tr button[phx-click=\"HierarchyPicker.select_publication\"]",
+        ".hierarchy table > tbody tr button[phx-click='HierarchyPicker.select_publication']",
         "Project 1"
       )
       |> render_click()
@@ -158,7 +138,7 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       view
       |> element(
-        "button[phx-click=\"AddMaterialsModal.add\"]",
+        "button[phx-click='AddMaterialsModal.add']",
         "Add"
       )
       |> render_click()
@@ -221,12 +201,12 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       ## add the Elixir Page
       view
-      |> element("button[phx-click=\"show_add_materials_modal\"]")
+      |> element("button[phx-click='show_add_materials_modal']")
       |> render_click()
 
       view
       |> element(
-        ".hierarchy table > tbody tr:first-of-type button[phx-click=\"HierarchyPicker.select_publication\"]"
+        ".hierarchy table > tbody tr:first-of-type button[phx-click='HierarchyPicker.select_publication']"
       )
       |> render_click()
 
@@ -235,7 +215,7 @@ defmodule OliWeb.RemixSectionLiveTest do
       |> render_click()
 
       view
-      |> element("button[phx-click=\"AddMaterialsModal.add\"]", "Add")
+      |> element("button[phx-click='AddMaterialsModal.add']", "Add")
       |> render_click()
 
       ## Elixir Page exists
@@ -247,7 +227,7 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       ## cancel the modal that shows the cancel button
       view
-      |> element("button[phx-click=\"cancel_modal\"]")
+      |> element("button[phx-click='cancel_modal']")
       |> render_click()
 
       ## nothing happens and the Elixir Page still exists
@@ -259,7 +239,7 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       ## click on the ok that shows the cancel button
       view
-      |> element("button[phx-click=\"ok_cancel_modal\"]")
+      |> element("button[phx-click='ok_cancel_modal']")
       |> render_click()
 
       ## expect to be redirected
@@ -391,13 +371,11 @@ defmodule OliWeb.RemixSectionLiveTest do
         |> hd()
 
       # Assert the button is showing "Hide", as the page is not hidden
-      assert has_element?(view, "button[phx-value-uuid=\"#{node_uuid}\"]", "Hide")
+      assert has_element?(view, "button[phx-value-uuid='#{node_uuid}']", "Hide")
 
       # Click the button to show the modal to hide the page
       view
-      |> element(
-        "button[phx-click=\"show_hide_resource_modal\"][phx-value-uuid=\"#{node_uuid}\"]"
-      )
+      |> element("button[phx-click='show_hide_resource_modal'][phx-value-uuid='#{node_uuid}']")
       |> render_click()
 
       # Assert the modal is showing the correct title
@@ -409,7 +387,7 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       # Click the button to hide the page and confirm the action
       view
-      |> element("button[phx-click=\"HideResourceModal.toggle\"]", "Hide")
+      |> element("button[phx-click='HideResourceModal.toggle']", "Hide")
       |> render_click()
 
       # Find again the uuid of the first node
@@ -422,7 +400,7 @@ defmodule OliWeb.RemixSectionLiveTest do
         |> hd()
 
       # Assert the button is showing "Show", as the page is hidden
-      assert has_element?(view, "button[phx-value-uuid=\"#{node_uuid}\"]", "Show")
+      assert has_element?(view, "button[phx-value-uuid='#{node_uuid}']", "Show")
 
       # Save the changes
       view |> element("#save") |> render_click()
@@ -452,13 +430,11 @@ defmodule OliWeb.RemixSectionLiveTest do
         |> hd()
 
       # Assert the button is showing "Hide", as the page is not hidden
-      assert has_element?(view, "button[phx-value-uuid=\"#{node_uuid}\"]", "Hide")
+      assert has_element?(view, "button[phx-value-uuid='#{node_uuid}']", "Hide")
 
       # Click the button to show the modal to hide the page
       view
-      |> element(
-        "button[phx-click=\"show_hide_resource_modal\"][phx-value-uuid=\"#{node_uuid}\"]"
-      )
+      |> element("button[phx-click='show_hide_resource_modal'][phx-value-uuid='#{node_uuid}']")
       |> render_click()
 
       # Assert the modal is showing the correct title
@@ -470,7 +446,7 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       # Click the button to cancel
       view
-      |> element("button[phx-click=\"HideResourceModal.cancel\"]", "Cancel")
+      |> element("button[phx-click='HideResourceModal.cancel']", "Cancel")
       |> render_click()
 
       # Find again the uuid of the first node
@@ -483,7 +459,7 @@ defmodule OliWeb.RemixSectionLiveTest do
         |> hd()
 
       # Assert the button is showing "Hide", as the page is not hidden
-      assert has_element?(view, "button[phx-value-uuid=\"#{node_uuid}\"]", "Hide")
+      assert has_element?(view, "button[phx-value-uuid='#{node_uuid}']", "Hide")
 
       # Check the page is not hidden
       sr_updated = Sections.get_section_resource(section.id, revision1.resource_id)
@@ -510,13 +486,11 @@ defmodule OliWeb.RemixSectionLiveTest do
         |> hd()
 
       # Assert the button is showing "Hide", as the page is not hidden
-      assert has_element?(view, "button[phx-value-uuid=\"#{node_uuid}\"]", "Hide")
+      assert has_element?(view, "button[phx-value-uuid='#{node_uuid}']", "Hide")
 
       # Click the button to show the modal to hide the page
       view
-      |> element(
-        "button[phx-click=\"show_hide_resource_modal\"][phx-value-uuid=\"#{node_uuid}\"]"
-      )
+      |> element("button[phx-click='show_hide_resource_modal'][phx-value-uuid='#{node_uuid}']")
       |> render_click()
 
       # Assert the modal is showing the correct title
@@ -528,7 +502,7 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       # Click the button to hide the page and confirm the action
       view
-      |> element("button[phx-click=\"HideResourceModal.toggle\"]", "Hide")
+      |> element("button[phx-click='HideResourceModal.toggle']", "Hide")
       |> render_click()
 
       # Find again the uuid of the first node
@@ -541,7 +515,7 @@ defmodule OliWeb.RemixSectionLiveTest do
         |> hd()
 
       # Assert the button is showing "Show", as the page is hidden
-      assert has_element?(view, "button[phx-value-uuid=\"#{node_uuid}\"]", "Show")
+      assert has_element?(view, "button[phx-value-uuid='#{node_uuid}']", "Show")
 
       # Cancel the changes
       view |> element("#cancel") |> render_click()
@@ -550,6 +524,348 @@ defmodule OliWeb.RemixSectionLiveTest do
       sr_updated = Sections.get_section_resource(section.id, revision1.resource_id)
 
       assert sr_updated.hidden == false
+    end
+
+    test "remix section - add materials - resources are inserted preserving hierarchical order",
+         %{
+           conn: conn,
+           map: %{
+             section_1: section
+           }
+         } do
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/remix")
+
+      # Open the add materials modal
+      view
+      |> element("button[phx-click='show_add_materials_modal']")
+      |> render_click()
+
+      # Select the project
+      view
+      |> element(
+        ".hierarchy table > tbody tr button[phx-click='HierarchyPicker.select_publication']",
+        "Project 1"
+      )
+      |> render_click()
+
+      # Verify the hierarchy is displayed correctly before selecting items
+      hierarchy_html = render(view)
+
+      # Check that the hierarchy shows all expected items in the correct order
+      hierarchy_items =
+        hierarchy_html
+        |> Floki.parse_fragment!()
+        |> Floki.find(".hierarchy > div[id^=\"hierarchy_item_\"]")
+        |> Enum.map(&Floki.text/1)
+
+      assert Enum.at(hierarchy_items, 0) =~ "Elixir Page"
+      assert Enum.at(hierarchy_items, 1) =~ "Another orph. Page"
+      assert Enum.at(hierarchy_items, 2) =~ "Great Unit 1"
+
+      # Verify that containers (units) are properly displayed in the hierarchy
+      assert hierarchy_html =~ "Great Unit 1"
+
+      # First add the orphan page, which is the last one in the hierarchy
+      view
+      |> element(".hierarchy > div", "Another orph. Page")
+      |> render_click()
+
+      # Then add the elixir page, which is the second to last one in the hierarchy
+      view
+      |> element(".hierarchy > div", "Elixir Page")
+      |> render_click()
+
+      # Add the resources
+      view
+      |> element("button[phx-click='AddMaterialsModal.add']", "Add")
+      |> render_click()
+
+      # Save the changes
+      view
+      |> element("#save", "Save")
+      |> render_click()
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/remix")
+
+      html = render(view)
+
+      # Get the entries
+      entries =
+        html
+        |> Floki.parse_document!()
+        |> Floki.find(".curriculum-entries .entry-title")
+        |> Enum.map(&Floki.text/1)
+
+      # Assert the elixir page is before the orphan page
+      assert Enum.find_index(entries, &(&1 =~ "Elixir Page")) <
+               Enum.find_index(entries, &(&1 =~ "Another orph. Page"))
+    end
+
+    test "remix section - add materials - hierarchy is displayed correctly with multiple units",
+         %{
+           conn: conn,
+           map: %{
+             section_1: section
+           }
+         } do
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/remix")
+
+      # Open the add materials modal
+      view
+      |> element("button[phx-click='show_add_materials_modal']")
+      |> render_click()
+
+      # Select the project
+      view
+      |> element(
+        ".hierarchy table > tbody tr button[phx-click='HierarchyPicker.select_publication']",
+        "Project 1"
+      )
+      |> render_click()
+
+      # Get the hierarchy items and verify they are displayed in the correct order
+      hierarchy_html = render(view)
+
+      # Parse the hierarchy to check the order
+      hierarchy_items =
+        hierarchy_html
+        |> Floki.parse_fragment!()
+        |> Floki.find(".hierarchy > div[id^=\"hierarchy_item_\"]")
+        |> Enum.map(&Floki.text/1)
+
+      # Assert that the hierarchy items are displayed in the correct order
+      assert Enum.at(hierarchy_items, 0) =~ "Elixir Page"
+      assert Enum.at(hierarchy_items, 1) =~ "Another orph. Page"
+      assert Enum.at(hierarchy_items, 2) =~ "Great Unit 1"
+
+      # Verify that containers (units) are properly identified
+      hierarchy_elements =
+        hierarchy_html
+        |> Floki.parse_fragment!()
+        |> Floki.find(".hierarchy > div[id^=\"hierarchy_item_\"]")
+
+      unit_element = Enum.at(hierarchy_elements, 0)
+      assert Floki.text(unit_element) =~ "Elixir Page"
+
+      assert length(hierarchy_elements) == 3
+    end
+
+    test "remix section - add materials - hierarchy preserves nested structure",
+         %{
+           conn: conn,
+           map: %{
+             section_1: section
+           }
+         } do
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/remix")
+
+      # Open the add materials modal
+      view
+      |> element("button[phx-click='show_add_materials_modal']")
+      |> render_click()
+
+      # Select the project
+      view
+      |> element(
+        ".hierarchy table > tbody tr button[phx-click='HierarchyPicker.select_publication']",
+        "Project 1"
+      )
+      |> render_click()
+
+      # Verify that the hierarchy shows the correct structure
+      hierarchy_html = render(view)
+
+      # Check that all expected items are present in the hierarchy
+      assert hierarchy_html =~ "Elixir Page"
+      assert hierarchy_html =~ "Another orph. Page"
+      assert hierarchy_html =~ "Great Unit 1"
+
+      # Verify the hierarchy items are selectable and maintain their order
+      hierarchy_items =
+        hierarchy_html
+        |> Floki.parse_fragment!()
+        |> Floki.find(".hierarchy > div[id^=\"hierarchy_item_\"]")
+
+      # Assert that we have exactly 3 items in the hierarchy
+      assert length(hierarchy_items) == 3
+
+      # Verify that each item can be selected (has click functionality)
+      Enum.each(hierarchy_items, fn item ->
+        assert Floki.attribute(item, "phx-click") != []
+      end)
+
+      # Test selecting items in hierarchy order
+      view
+      |> element(".hierarchy > div[id^=\"hierarchy_item_\"]", "Elixir Page")
+      |> render_click()
+
+      view
+      |> element(".hierarchy > div[id^=\"hierarchy_item_\"]", "Great Unit 1")
+      |> render_click()
+
+      # Add the selected materials
+      view
+      |> element("button[phx-click='AddMaterialsModal.add']", "Add")
+      |> render_click()
+
+      # Verify the materials were added in the correct order
+      assert render(view) =~ "Elixir Page"
+      assert render(view) =~ "Great Unit 1"
+    end
+
+    test "remix section - add materials - complex hierarchy with multiple units displays correctly",
+         %{
+           conn: conn,
+           map: %{
+             section_1: section
+           }
+         } do
+      # Create additional units for a more complex hierarchy
+      author = insert(:author, %{email: "test_author@example.com"})
+
+      # Create Unit 2
+      unit_2_revision =
+        insert(:revision, %{
+          resource_type_id: Oli.Resources.ResourceType.id_for_container(),
+          title: "Unit 2: Advanced Topics",
+          max_attempts: nil
+        })
+
+      # Create Unit 3
+      unit_3_revision =
+        insert(:revision, %{
+          resource_type_id: Oli.Resources.ResourceType.id_for_container(),
+          title: "Unit 3: Final Review",
+          max_attempts: nil
+        })
+
+      # Create a page for Unit 2
+      unit_2_page =
+        insert(:revision, %{
+          resource_type_id: Oli.Resources.ResourceType.id_for_page(),
+          title: "Advanced Page"
+        })
+
+      # Create a page for Unit 3
+      unit_3_page =
+        insert(:revision, %{
+          resource_type_id: Oli.Resources.ResourceType.id_for_page(),
+          title: "Review Page"
+        })
+
+      # Create a new project with complex hierarchy
+      complex_proj = insert(:project, title: "Complex Project", authors: [author])
+
+      # Create a container with all units and pages
+      complex_container =
+        insert(:revision, %{
+          resource: insert(:resource),
+          objectives: %{},
+          resource_type_id: Oli.Resources.ResourceType.id_for_container(),
+          children: [
+            unit_2_revision.resource_id,
+            unit_2_page.resource_id,
+            unit_3_revision.resource_id,
+            unit_3_page.resource_id
+          ],
+          content: %{},
+          deleted: false,
+          title: "Complex Root Container"
+        })
+
+      # Add all resources to the project
+      Enum.each(
+        [unit_2_revision, unit_2_page, unit_3_revision, unit_3_page, complex_container],
+        fn revision ->
+          insert(:project_resource, %{
+            project_id: complex_proj.id,
+            resource_id: revision.resource_id
+          })
+        end
+      )
+
+      # Create publication for the complex project
+      complex_publication =
+        insert(:publication, %{
+          project: complex_proj,
+          published: ~U[2023-06-30 00:36:38.112566Z],
+          root_resource_id: complex_container.resource_id
+        })
+
+      # Add all resources to the publication
+      Enum.each(
+        [unit_2_revision, unit_2_page, unit_3_revision, unit_3_page, complex_container],
+        fn revision ->
+          insert(:published_resource, %{
+            publication: complex_publication,
+            resource: revision.resource,
+            revision: revision,
+            author: author
+          })
+        end
+      )
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/remix")
+
+      # Open the add materials modal
+      view
+      |> element("button[phx-click='show_add_materials_modal']")
+      |> render_click()
+
+      # Select the complex project
+      view
+      |> element(
+        ".hierarchy table > tbody tr button[phx-click='HierarchyPicker.select_publication']",
+        "Complex Project"
+      )
+      |> render_click()
+
+      # Verify the hierarchy displays all units in the correct order
+      hierarchy_html = render(view)
+
+      # Parse the hierarchy to check the order
+      hierarchy_items =
+        hierarchy_html
+        |> Floki.parse_fragment!()
+        |> Floki.find(".hierarchy > div[id^=\"hierarchy_item_\"]")
+        |> Enum.map(&Floki.text/1)
+
+      assert Enum.at(hierarchy_items, 0) =~ "Unit 2: Advanced Topics"
+      assert Enum.at(hierarchy_items, 1) =~ "Advanced Page"
+      assert Enum.at(hierarchy_items, 2) =~ "Unit 3: Final Review"
+      assert Enum.at(hierarchy_items, 3) =~ "Review Page"
+
+      # Verify that containers (units) are properly identified
+      hierarchy_elements =
+        hierarchy_html
+        |> Floki.parse_fragment!()
+        |> Floki.find(".hierarchy > div[id^=\"hierarchy_item_\"]")
+
+      # Check that we have exactly 4 items in the hierarchy
+      assert length(hierarchy_elements) == 4
+
+      # Verify that each item can be selected
+      Enum.each(hierarchy_elements, fn item ->
+        assert Floki.attribute(item, "phx-click") != []
+      end)
+
+      # Test selecting a unit and a page
+      view
+      |> element(".hierarchy > div[id^=\"hierarchy_item_\"]", "Unit 2: Advanced Topics")
+      |> render_click()
+
+      view
+      |> element(".hierarchy > div[id^=\"hierarchy_item_\"]", "Review Page")
+      |> render_click()
+
+      # Add the selected materials
+      view
+      |> element("button[phx-click='AddMaterialsModal.add']", "Add")
+      |> render_click()
+
+      # Verify the materials were added
+      assert render(view) =~ "Unit 2: Advanced Topics"
+      assert render(view) =~ "Review Page"
     end
   end
 
@@ -623,39 +939,23 @@ defmodule OliWeb.RemixSectionLiveTest do
 
     test "mount as open and free", %{
       conn: conn,
-      map: %{
-        oaf_section_1: oaf_section_1,
-        unit1_container: unit1_container,
-        revision1: revision1,
-        revision2: revision2
-      }
+      section: section,
+      unit_1: unit_1,
+      unit_2: unit_2,
+      page_5: page_5
     } do
-      conn =
-        get(
-          conn,
-          Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, oaf_section_1.slug)
-        )
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/remix")
 
-      {:ok, view, _html} = live(conn)
-
-      assert view |> element("#entry-#{unit1_container.revision.resource_id}") |> has_element?()
-      assert view |> element("#entry-#{revision1.resource_id}") |> has_element?()
-      assert view |> element("#entry-#{revision2.resource_id}") |> has_element?()
+      assert view |> element("#entry-#{unit_1.resource_id}") |> has_element?()
+      assert view |> element("#entry-#{unit_2.resource_id}") |> has_element?()
+      assert view |> element("#entry-#{page_5.resource_id}") |> has_element?()
     end
 
     test "saving redirects open and free correctly", %{
       conn: conn,
-      map: %{
-        oaf_section_1: oaf_section_1
-      }
+      section: section
     } do
-      conn =
-        get(
-          conn,
-          Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, oaf_section_1.slug)
-        )
-
-      {:ok, view, _html} = live(conn)
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/remix")
 
       render_hook(view, "reorder", %{"sourceIndex" => "0", "dropIndex" => "2"})
 
@@ -665,83 +965,92 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       assert_redirect(
         view,
-        ~p"/sections/#{oaf_section_1.slug}/remix"
+        ~p"/authoring/products/#{section.slug}"
       )
     end
 
     test "remix section items and add materials items are ordered correctly", %{
       conn: conn,
-      map: %{
-        oaf_section_1: oaf_section_1,
-        unit1_container: unit1_container,
-        latest1: latest1,
-        latest2: latest2
-      }
+      section: section,
+      unit_1: unit_1,
+      unit_2: unit_2,
+      page_5: page_5
     } do
-      {:ok, view, _html} =
-        live(
-          conn,
-          Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, oaf_section_1.slug)
-        )
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/remix")
 
       assert view
              |> element(".curriculum-entries > div:nth-child(2)")
-             |> render() =~ "#{latest1.title}"
+             |> render() =~ "#{unit_1.title}"
 
       assert view
              |> element(".curriculum-entries > div:nth-child(4)")
-             |> render() =~ "#{latest2.title}"
+             |> render() =~ "#{unit_2.title}"
 
       assert view
              |> element(".curriculum-entries > div:nth-child(6)")
-             |> render() =~ "#{unit1_container.revision.title}"
+             |> render() =~ "#{page_5.title}"
 
-      # click add materials and assert is listing units first
+      # # click add materials and assert is listing units first
       view
-      |> element("button[phx-click=\"show_add_materials_modal\"]")
+      |> element("button[phx-click='show_add_materials_modal']")
       |> render_click()
 
       view
       |> element(
-        ".hierarchy table > tbody tr:first-of-type button[phx-click=\"HierarchyPicker.select_publication\"]"
+        ".hierarchy table > tbody tr:first-of-type button[phx-click='HierarchyPicker.select_publication']"
       )
       |> render_click()
 
+      # Verify the hierarchy displays items in the correct order
+      hierarchy_html = render(view)
+
+      # Check that the hierarchy shows all expected items
+      assert hierarchy_html =~ "#{unit_1.title}"
+      assert hierarchy_html =~ "#{unit_2.title}"
+      assert hierarchy_html =~ "#{page_5.title}"
+
+      # Verify the hierarchy order is maintained
+      hierarchy_items =
+        hierarchy_html
+        |> Floki.parse_fragment!()
+        |> Floki.find(".hierarchy > div[id^=\"hierarchy_item_\"]")
+        |> Enum.map(&Floki.text/1)
+
+      # Assert that units are displayed first in the hierarchy
+      assert Enum.at(hierarchy_items, 0) =~ "#{unit_1.title}"
+      assert Enum.at(hierarchy_items, 1) =~ "#{unit_2.title}"
+      assert Enum.at(hierarchy_items, 2) =~ "#{page_5.title}"
+
+      # Verify that containers (units) are properly identified in the hierarchy
       assert view
              |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-of-type(1)")
-             |> render() =~ "#{unit1_container.revision.title}"
+             |> render() =~ "#{unit_1.title}"
 
       assert view
              |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-of-type(2)")
-             |> render() =~ "#{latest1.title}"
+             |> render() =~ "#{unit_2.title}"
 
       assert view
              |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-of-type(3)")
-             |> render() =~ "#{latest2.title}"
+             |> render() =~ "#{page_5.title}"
     end
 
     test "remix section - add materials - publications are paginated", %{
       conn: conn,
-      map: %{
-        oaf_section_1: oaf_section_1
-      }
+      section: section
     } do
-      {:ok, view, _html} =
-        live(
-          conn,
-          Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, oaf_section_1.slug)
-        )
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/remix")
 
       # click add materials and assert is listing units first
       view
-      |> element("button[phx-click=\"show_add_materials_modal\"]")
+      |> element("button[phx-click='show_add_materials_modal']")
       |> render_click()
 
       assert has_element?(view, "nav[aria-label=\"Paging\"]")
       refute has_element?(view, "button", "Project 5")
 
       view
-      |> element("button[phx-click=\"HierarchyPicker.publications_page_change\"]", "2")
+      |> element("button[phx-click='HierarchyPicker.publications_page_change']", "2")
       |> render_click()
 
       assert has_element?(view, "button", "Project 5")
@@ -749,23 +1058,17 @@ defmodule OliWeb.RemixSectionLiveTest do
 
     test "remix section - add materials - publications can be filtered by text", %{
       conn: conn,
-      map: %{
-        oaf_section_1: oaf_section_1
-      }
+      section: section
     } do
-      {:ok, view, _html} =
-        live(
-          conn,
-          Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, oaf_section_1.slug)
-        )
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/remix")
 
       # click add materials and assert is listing units first
       view
-      |> element("button[phx-click=\"show_add_materials_modal\"]")
+      |> element("button[phx-click='show_add_materials_modal']")
       |> render_click()
 
       view
-      |> element("form[phx-change=\"HierarchyPicker.publications_text_search\"]")
+      |> element("form[phx-change='HierarchyPicker.publications_text_search']")
       |> render_change(%{"text_search" => "Project 2"})
 
       assert has_element?(view, "button", "Project 2")
@@ -774,125 +1077,104 @@ defmodule OliWeb.RemixSectionLiveTest do
 
     test "remix section items - add materials - all pages view gets rendered correctly", %{
       conn: conn,
-      map: %{
-        oaf_section_1: oaf_section_1,
-        unit1_container: unit1_container,
-        latest1: latest1,
-        latest2: latest2
-      },
-      orphan_revision_publication: orphan_revision_publication
+      section: section,
+      unit_1: unit_1,
+      unit_2: unit_2,
+      page_5: page_5
     } do
-      {:ok, view, _html} =
-        live(
-          conn,
-          Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, oaf_section_1.slug)
-        )
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/remix")
 
       # click add materials and assert is listing units first
       view
-      |> element("button[phx-click=\"show_add_materials_modal\"]")
+      |> element("button[phx-click='show_add_materials_modal']")
       |> render_click()
 
       view
       |> element(
-        ".hierarchy table > tbody tr:first-of-type button[phx-click=\"HierarchyPicker.select_publication\"]"
+        ".hierarchy table > tbody tr:first-of-type button[phx-click='HierarchyPicker.select_publication']"
       )
       |> render_click()
 
       assert view
              |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-of-type(1)")
-             |> render() =~ "#{unit1_container.revision.title}"
+             |> render() =~ "#{unit_1.title}"
 
       assert view
              |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-of-type(2)")
-             |> render() =~ "#{latest1.title}"
+             |> render() =~ "#{unit_2.title}"
 
       assert view
              |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-of-type(3)")
-             |> render() =~ "#{latest2.title}"
+             |> render() =~ "#{page_5.title}"
 
       view
-      |> element("button[phx-value-tab_name=\"all_pages\"]")
+      |> element("button[phx-value-tab_name='all_pages']")
       |> render_click()
 
       view
-      |> element("th[phx-value-sort_by=\"title\"]")
+      |> element("th[phx-value-sort_by='title']")
       |> render_click()
 
       assert view
-             |> has_element?(".remix_materials_table td", "An Orphan Page")
+             |> has_element?(".remix_materials_table td", "Page 1")
 
       assert view
              |> has_element?(".remix_materials_table th", "Published on")
-
-      assert view
-             |> has_element?(
-               ".remix_materials_table td",
-               OliWeb.Common.FormatDateTime.format_datetime(orphan_revision_publication.published,
-                 show_timezone: false
-               )
-             )
     end
 
     test "remix section items - add materials - all pages view can be sorted", %{
       conn: conn,
-      map: %{
-        oaf_section_1: oaf_section_1
-      }
+      section: section
     } do
-      {:ok, view, _html} =
-        live(
-          conn,
-          Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, oaf_section_1.slug)
-        )
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/remix")
 
       view
-      |> element("button[phx-click=\"show_add_materials_modal\"]")
+      |> element("button[phx-click='show_add_materials_modal']")
       |> render_click()
 
       view
       |> element(
-        ".hierarchy table > tbody tr button[phx-click=\"HierarchyPicker.select_publication\"]",
+        ".hierarchy table > tbody tr button[phx-click='HierarchyPicker.select_publication']",
         "Project 1"
       )
       |> render_click()
 
       view
-      |> element("button[phx-value-tab_name=\"all_pages\"]")
+      |> element("button[phx-value-tab_name='all_pages']")
       |> render_click()
 
       view
-      |> element("th[phx-value-sort_by=\"title\"]")
+      |> element("th[phx-value-sort_by='title']")
       |> render_click()
 
       # "Another orph. Page" is the first element after sorting
       assert view
              |> has_element?(
-               ".remix_materials_table tr:first-of-type td:nth-of-type(2)",
-               "Another orph. Page"
+               ".remix_materials_table tr:last-of-type td:nth-of-type(2)",
+               "Elixir Page"
              )
 
       assert view
              |> has_element?(
-               ".remix_materials_table tbody tr:last-of-type td:nth-of-type(2)",
-               "Elixir Page"
+               ".remix_materials_table tbody tr:first-of-type td:nth-of-type(2)",
+               "Another orph. Page"
              )
 
       view
-      |> element("th[phx-value-sort_by=\"title\"]")
+      |> element("th[phx-value-sort_by='title']")
       |> render_click()
 
       # "Elixir Page" is the first element after sorting
       assert view
              |> has_element?(
-               ".remix_materials_table tbody tr:first-of-type td:nth-of-type(2)",
-               "Elixir Page"
+               ".remix_materials_table tbody tr:last-of-type td:nth-of-type(2)",
+               "Another orph. Page"
              )
 
       assert view
              |> has_element?(
-               ".remix_materials_table tr:last-of-type td:nth-of-type(2)",
-               "Another orph. Page"
+               ".remix_materials_table tr:first-of-type td:nth-of-type(2)",
+               "Elixir Page"
              )
 
       # Can sort by published date
@@ -902,36 +1184,30 @@ defmodule OliWeb.RemixSectionLiveTest do
 
     test "remix section items - add materials - all pages view can be filtered by text", %{
       conn: conn,
-      map: %{
-        oaf_section_1: oaf_section_1
-      }
+      section: section
     } do
-      {:ok, view, _html} =
-        live(
-          conn,
-          Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, oaf_section_1.slug)
-        )
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/remix")
 
       view
-      |> element("button[phx-click=\"show_add_materials_modal\"]")
+      |> element("button[phx-click='show_add_materials_modal']")
       |> render_click()
 
       view
       |> element(
-        ".hierarchy table > tbody tr:first-of-type button[phx-click=\"HierarchyPicker.select_publication\"]"
+        ".hierarchy table > tbody tr:first-of-type button[phx-click='HierarchyPicker.select_publication']"
       )
       |> render_click()
 
       view
-      |> element("button[phx-value-tab_name=\"all_pages\"]")
+      |> element("button[phx-value-tab_name='all_pages']")
       |> render_click()
 
       view
-      |> element("form[phx-change=\"HierarchyPicker.pages_text_search\"]")
-      |> render_change(%{"text_search" => "Orphan"})
+      |> element("form[phx-change='HierarchyPicker.pages_text_search']")
+      |> render_change(%{"text_search" => "3"})
 
       assert view
-             |> has_element?(".remix_materials_table tbody tr:first-of-type td", "An Orphan Page")
+             |> has_element?(".remix_materials_table tbody tr:first-of-type td", "Page 3")
 
       refute view
              |> has_element?(".remix_materials_table tabtbodyle tr:nth-of-type(2)")
@@ -953,34 +1229,138 @@ defmodule OliWeb.RemixSectionLiveTest do
   end
 
   defp setup_admin_session(%{conn: conn}) do
-    map = Seeder.base_project_with_resource4()
+    author = insert(:author)
+    project = insert(:project, title: "Super Project", authors: [author])
 
-    admin = author_fixture(%{system_role_id: Oli.Accounts.SystemRole.role_id().system_admin})
+    # revisions...
 
-    conn =
-      Plug.Test.init_test_session(conn, %{})
-      |> log_in_author(admin)
+    ## pages...
 
-    # Add an orphan page to the section
-    orphan_revision =
+    page_1_revision =
+      insert(:revision,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        title: "Page 1",
+        graded: true
+      )
+
+    page_2_revision =
+      insert(:revision,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        title: "Page 2",
+        graded: true
+      )
+
+    page_3_revision =
+      insert(:revision,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        title: "Page 3",
+        graded: true
+      )
+
+    page_4_revision =
+      insert(:revision,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        title: "Page 4",
+        graded: true
+      )
+
+    page_5_revision =
+      insert(:revision,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        title: "Page 5",
+        graded: true
+      )
+
+    module_1_revision =
+      insert(:revision,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        title: "Module 1",
+        children: [page_1_revision.resource_id, page_2_revision.resource_id]
+      )
+
+    module_2_revision =
+      insert(:revision,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        title: "Module 2",
+        children: [page_3_revision.resource_id, page_4_revision.resource_id]
+      )
+
+    unit_1_revision =
+      insert(:revision,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        title: "Unit 1",
+        children: [module_1_revision.resource_id]
+      )
+
+    unit_2_revision =
+      insert(:revision,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        title: "Unit 2",
+        children: [module_2_revision.resource_id]
+      )
+
+    ## root container...
+    container_revision =
       insert(:revision, %{
-        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
-        title: "An Orphan Page"
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        children: [
+          unit_1_revision.resource_id,
+          unit_2_revision.resource_id,
+          page_5_revision.resource_id
+        ],
+        title: "Root Container"
       })
 
-    insert(:project_resource, %{
-      project_id: map.project.id,
-      resource_id: orphan_revision.resource.id
-    })
+    all_revisions =
+      [
+        page_1_revision,
+        page_2_revision,
+        page_3_revision,
+        page_4_revision,
+        page_5_revision,
+        module_1_revision,
+        module_2_revision,
+        unit_1_revision,
+        unit_2_revision,
+        container_revision
+      ]
 
-    insert(:published_resource, %{
-      publication: map.pub2,
-      resource: orphan_revision.resource,
-      revision: orphan_revision
-    })
+    # asociate resources to project
+    Enum.each(all_revisions, fn revision ->
+      insert(:project_resource, %{
+        project_id: project.id,
+        resource_id: revision.resource_id
+      })
+    end)
 
-    author = insert(:author, %{email: "my_custom@email.com"})
+    # publish project
+    publication =
+      insert(:publication, %{project: project, root_resource_id: container_revision.resource_id})
 
+    # publish resources
+    Enum.each(all_revisions, fn revision ->
+      insert(:published_resource, %{
+        publication: publication,
+        resource: revision.resource,
+        revision: revision,
+        author: author
+      })
+    end)
+
+    # create section...
+    section =
+      insert(:section,
+        base_project: project,
+        title: "The best course ever!",
+        start_date: ~U[2023-10-30 20:00:00Z],
+        analytics_version: :v2
+      )
+
+    {:ok, section} = Oli.Delivery.Sections.create_section_resources(section, publication)
+    {:ok, _} = Oli.Delivery.Sections.rebuild_contained_pages(section)
+    {:ok, _} = Oli.Delivery.Sections.rebuild_contained_objectives(section)
+
+    # other projects...
     proj_1 = insert(:project, title: "Project 1", authors: [author])
     proj_2 = insert(:project, title: "Project 2", authors: [author])
     proj_3 = insert(:project, title: "Project 3", authors: [author])
@@ -1056,7 +1436,7 @@ defmodule OliWeb.RemixSectionLiveTest do
       author: author
     })
 
-    section =
+    section_2 =
       insert(:section,
         base_project: proj_1,
         context_id: UUID.uuid4(),
@@ -1065,7 +1445,7 @@ defmodule OliWeb.RemixSectionLiveTest do
         type: :enrollable
       )
 
-    {:ok, _section} = Sections.create_section_resources(section, proj_1_publication)
+    {:ok, _section} = Sections.create_section_resources(section_2, proj_1_publication)
 
     insert(:publication, %{
       project: proj_2,
@@ -1087,14 +1467,30 @@ defmodule OliWeb.RemixSectionLiveTest do
       published: ~U[2023-06-29 00:36:38.112566Z]
     })
 
-    {:ok,
-     conn: conn,
-     map: map,
-     author: map.author,
-     institution: map.institution,
-     project: map.project,
-     publication: map.publication,
-     orphan_revision_publication: map.pub2}
+    # create and login admin...
+    admin = insert(:author, %{system_role_id: Oli.Accounts.SystemRole.role_id().system_admin})
+
+    conn =
+      Plug.Test.init_test_session(conn, %{})
+      |> log_in_author(admin)
+
+    %{
+      author: author,
+      section: section,
+      project: project,
+      publication: publication,
+      page_1: page_1_revision,
+      page_2: page_2_revision,
+      page_3: page_3_revision,
+      page_4: page_4_revision,
+      page_5: page_5_revision,
+      module_1: module_1_revision,
+      module_2: module_2_revision,
+      unit_1: unit_1_revision,
+      unit_2: unit_2_revision,
+      admin: admin,
+      conn: conn
+    }
   end
 
   defp setup_instructor_session(%{conn: conn}) do
@@ -1265,7 +1661,7 @@ defmodule OliWeb.RemixSectionLiveTest do
       project: project
     } =
       Seeder.base_project_with_resource2()
-      |> Seeder.create_product(%{title: "My 1st product", amount: Money.new(:USD, 100)}, :prod1)
+      |> Seeder.create_product(%{title: "My 1st product", amount: Money.new(100, "USD")}, :prod1)
 
     {:ok, _prod} = Sections.create_section_resources(prod, publication)
 

@@ -6,46 +6,20 @@ import { OliEmbeddedActions } from 'components/activities/oli_embedded/actions';
 import { OliEmbeddedModelSchema } from 'components/activities/oli_embedded/schema';
 import { lastPart } from 'components/activities/oli_embedded/utils';
 import * as ActivityTypes from 'components/activities/types';
-import { MediaItemRequest, ScoringStrategy } from 'components/activities/types';
-import { XmlEditor } from 'components/common/XmlEditor';
-import { uploadFiles } from 'components/media/manager/upload';
+import { ScoringStrategy } from 'components/activities/types';
+import { uploadSuperActivityFiles } from 'components/media/manager/upload';
 import { CloseButton } from 'components/misc/CloseButton';
 import { Modal } from 'components/modal/Modal';
 import { configureStore } from 'state/store';
 import guid from 'utils/guid';
+import { prettyPrintXml } from 'utils/xmlPretty';
 import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
+import { WrappedMonaco } from '../common/variables/WrappedMonaco';
 
 const store = configureStore();
 
 const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
-  const { dispatch, model } = useAuthoringElementContext<OliEmbeddedModelSchema>();
-
-  const { projectSlug } = props;
-
-  function select(projectSlug: string): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const request = {
-        type: 'MediaItemRequest',
-      } as MediaItemRequest;
-      if (props.onRequestMedia) {
-        props.onRequestMedia(request).then((r) => {
-          if (r === false) {
-            reject('error');
-          } else {
-            resolve(r as string);
-          }
-        });
-      } else {
-        reject('error');
-      }
-    });
-  }
-
-  const addFile = () => {
-    select(projectSlug).then((url: string) => {
-      dispatch(OliEmbeddedActions.addResourceURL(url));
-    });
-  };
+  const { dispatch, model, editMode } = useAuthoringElementContext<OliEmbeddedModelSchema>();
 
   const display = (c: any, id: string) => {
     let element = document.querySelector('#' + id);
@@ -65,7 +39,8 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
       fileList.push(file);
     }
 
-    uploadFiles(projectSlug, fileList)
+    const directory = model.resourceBase.includes('bundles/') ? model.resourceBase : '';
+    uploadSuperActivityFiles(directory, fileList)
       .then((result: any) => {
         result.forEach((i: any) => {
           dispatch(OliEmbeddedActions.addResourceURL(i.url));
@@ -135,11 +110,13 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
 
   return (
     <>
-      <XmlEditor
-        value={model.modelXml}
-        disabled={false}
-        onChange={(newValue: string) => dispatch(OliEmbeddedActions.editActivityXml(newValue))}
+      <WrappedMonaco
+        model={prettyPrintXml(model.modelXml, { indent: 2, inlineTextMax: 80 })}
+        editMode={editMode}
+        language="XML"
+        onEdit={(s: string) => dispatch(OliEmbeddedActions.editActivityXml(s))}
       />
+
       <div className="m-2">
         <input
           id={id}
@@ -154,15 +131,15 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
         >
           <i className="fa fa-upload" /> Upload File
         </button>
-        &nbsp;&nbsp;&nbsp;
+        {/* &nbsp;&nbsp;&nbsp;
         <button className="btn btn-primary media-toolbar-item upload" onClick={() => addFile()}>
           Media Library
-        </button>
+        </button> */}
       </div>
       <ul className="list-group">
         {model.resourceURLs.map((url, i) => (
           <li className="list-group-item" key={i}>
-            {lastPart(url)}
+            {lastPart(model.resourceBase, url)}
             <CloseButton
               className="pl-3 pr-1"
               editMode={props.editMode}

@@ -4,10 +4,11 @@ defmodule OliWeb.Workspaces.Student do
   alias Oli.Delivery.Metrics
   alias Oli.Delivery.Sections
   alias OliWeb.Backgrounds
-  alias OliWeb.Common.{Params, SearchInput}
+  alias OliWeb.Common.{FormatDateTime, Params, SearchInput}
   alias OliWeb.Common.SourceImage
 
   import Ecto.Query, warn: false
+  import OliWeb.Components.Utils
   import OliWeb.Components.Delivery.Layouts
 
   @default_params %{
@@ -25,7 +26,7 @@ defmodule OliWeb.Workspaces.Student do
   end
 
   @impl Phoenix.LiveView
-  def mount(params, _session, %{assigns: %{current_user: current_user}} = socket)
+  def mount(params, _session, %{assigns: %{current_user: current_user, ctx: ctx}} = socket)
       when not is_nil(current_user) do
     sections =
       current_user.id
@@ -38,7 +39,8 @@ defmodule OliWeb.Workspaces.Student do
        sections: sections,
        params: params,
        filtered_sections: sections,
-       active_workspace: :student
+       active_workspace: :student,
+       ctx: ctx
      )}
   end
 
@@ -58,13 +60,18 @@ defmodule OliWeb.Workspaces.Student do
   end
 
   @impl Phoenix.LiveView
-  def handle_params(params, _uri, %{assigns: %{sections: sections}} = socket) do
+  def handle_params(
+        params,
+        _uri,
+        %{assigns: %{sections: sections, ctx: ctx}} = socket
+      ) do
     params = decode_params(params)
 
     {:noreply,
      assign(socket,
        filtered_sections: maybe_filter_by_text(sections, params.text_search),
-       params: params
+       params: params,
+       ctx: ctx
      )}
   end
 
@@ -82,7 +89,7 @@ defmodule OliWeb.Workspaces.Student do
         style="background: linear-gradient(90deg, #D9D9D9 0%, rgba(217, 217, 217, 0.00) 100%);"
       />
       <h1 class="text-[64px] leading-[87px] tracking-[0.02px] pl-[100px] z-10">
-        Hi, <span class="font-bold"><%= @ctx.author.given_name %></span>
+        Hi, <span class="font-bold">{@ctx.author.given_name}</span>
       </h1>
     </div>
     <div class="flex flex-col items-start py-[60px] px-[100px]">
@@ -110,7 +117,7 @@ defmodule OliWeb.Workspaces.Student do
                 Welcome to
               </span>
               <span class="text-white font-bold font-['Open Sans'] leading-10">
-                <%= Oli.VendorProperties.product_short_name() %>
+                {Oli.VendorProperties.product_short_name()}
               </span>
             </div>
             <div class="w-48 h-11 justify-start items-center gap-1 inline-flex">
@@ -154,7 +161,7 @@ defmodule OliWeb.Workspaces.Student do
         style="background: linear-gradient(90deg, #D9D9D9 0%, rgba(217, 217, 217, 0.00) 100%);"
       />
       <h1 class="text-3xl md:text-[64px] leading-[87px] tracking-[0.02px] px-4 md:pl-[100px] z-10">
-        Hi, <span class="font-bold"><%= user_given_name(@ctx) %></span>
+        Hi, <span class="font-bold">{user_given_name(@ctx)}</span>
       </h1>
     </div>
     <div class="flex flex-col items-start py-6 md:py-[60px] px-4 md:px-[100px]">
@@ -186,9 +193,10 @@ defmodule OliWeb.Workspaces.Student do
               index={index}
               section={section}
               params={@params}
+              ctx={@ctx}
             />
             <p :if={length(@filtered_sections) == 0} class="mt-4">
-              No course found matching <strong>"<%= @params.text_search %>"</strong>
+              No course found matching <strong>"{@params.text_search}"</strong>
             </p>
           </div>
         <% end %>
@@ -200,6 +208,7 @@ defmodule OliWeb.Workspaces.Student do
   attr :index, :integer
   attr :section, :map
   attr :params, :map
+  attr :ctx, :map
 
   def course_card(assigns) do
     ~H"""
@@ -213,7 +222,7 @@ defmodule OliWeb.Workspaces.Student do
         )
         |> JS.remove_class("opacity-100 translate-x-0")
       }
-      class="opacity-0 relative flex items-center self-stretch md:h-[200px] w-full bg-cover py-4 md:py-12 px-6 md:px-24 text-white hover:text-white rounded-xl shadow-lg hover:no-underline transition-all hover:translate-x-3"
+      class="opacity-0 relative flex items-center self-stretch w-full bg-cover py-4 md:py-12 px-6 md:px-24 text-white hover:text-white rounded-xl shadow-lg hover:no-underline transition-all hover:translate-x-3"
       style={"background-image: url('#{SourceImage.cover_image(@section)}');"}
     >
       <div class="top-0 left-0 rounded-xl absolute w-full h-full mix-blend-difference bg-[linear-gradient(180deg,rgba(0,0,0,0.00)_0%,rgba(0,0,0,0.80)_100%),linear-gradient(90deg,rgba(0,0,0,0.80)_0%,rgba(0,0,0,0.40)_100%)]" />
@@ -227,15 +236,36 @@ defmodule OliWeb.Workspaces.Student do
         Complete
       </span>
       <div class="z-10 flex w-full items-center">
-        <div class="flex flex-col items-start gap-6">
+        <div class="flex flex-col items-start gap-2">
+          <div
+            class="justify-center text-[#bab8bf] text-xs font-bold uppercase leading-3"
+            role="start_end_date"
+          >
+            {FormatDateTime.to_formatted_datetime(@section.start_date, @ctx, "{Mshort} {YYYY}")} - {FormatDateTime.to_formatted_datetime(
+              @section.end_date,
+              @ctx,
+              "{Mshort} {YYYY}"
+            )}
+          </div>
           <h5 class="text-2xl md:text-[36px] md:leading-[49px] font-semibold drop-shadow-md">
-            <%= @section.title %>
+            {@section.title}
           </h5>
           <div
-            class="flex flex-col md:flex-row drop-shadow-md"
+            class="justify-center text-[#bab8bf] text-base font-bold leading-normal"
+            role="instructors"
+          >
+            <%= if length(Sections.get_instructors_for_section(@section.id)) == 1 do %>
+              Instructor:
+            <% else %>
+              Instructors:
+            <% end %>
+            {list_instructors(Sections.get_instructors_for_section(@section.id))}
+          </div>
+          <div
+            class="flex flex-col md:flex-row items-center drop-shadow-md md:mt-4"
             role={"progress_for_section_#{@section.id}"}
           >
-            <h4 class="text-sm md:text-[16px] md:leading-[32px] tracking-[1.28px] uppercase mr-9">
+            <h4 class="text-sm md:text-[16px] md:leading-[32px] tracking-[1.28px] uppercase mr-9 whitespace-nowrap">
               Course Progress
             </h4>
             <.progress_bar percent={@section.progress} show_percent={true} width="100px" />

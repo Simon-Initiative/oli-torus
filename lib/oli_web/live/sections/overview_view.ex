@@ -9,7 +9,7 @@ defmodule OliWeb.Sections.OverviewView do
   alias Oli.Delivery.Sections.{Section, EnrollmentBrowseOptions}
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Sections.Details.ImageUpload
-  alias OliWeb.Sections.{Instructors, Mount, UnlinkSection}
+  alias OliWeb.Sections.{Instructors, Mount}
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Resources.Collaboration
   alias OliWeb.Projects.RequiredSurvey
@@ -129,7 +129,7 @@ defmodule OliWeb.Sections.OverviewView do
     assigns = assign(assigns, deployment: assigns.section.lti_1p3_deployment)
 
     ~H"""
-    <%= render_modal(assigns) %>
+    {render_modal(assigns)}
 
     <Groups.render>
       <Group.render label="Details" description="Overview of course section details">
@@ -155,7 +155,7 @@ defmodule OliWeb.Sections.OverviewView do
             href={~p"/workspaces/course_author/#{@base_project.slug}/overview"}
             class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
           >
-            <%= @base_project.title %>
+            {@base_project.title}
           </a>
         </div>
         <%= unless is_nil(@section.blueprint_id) do %>
@@ -171,7 +171,7 @@ defmodule OliWeb.Sections.OverviewView do
               }
               class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
             >
-              <%= @section.blueprint.title %>
+              {@section.blueprint.title}
             </a>
           </div>
         <% end %>
@@ -229,7 +229,7 @@ defmodule OliWeb.Sections.OverviewView do
             >
               Manage Source Materials
               <%= if @updates_count > 0 do %>
-                <span class="badge badge-primary"><%= @updates_count %> available</span>
+                <span class="badge badge-primary">{@updates_count} available</span>
               <% end %>
             </a>
           </li>
@@ -242,7 +242,7 @@ defmodule OliWeb.Sections.OverviewView do
       >
         <div class="flex flex-col md:col-span-8 gap-2">
           <div>
-            This section <b>does <%= unless @section.certificate_enabled, do: "not" %></b>
+            This section <b>does {unless @section.certificate_enabled, do: "not"}</b>
             currently produce a certificate.
           </div>
           <div :if={@section.certificate_enabled}>
@@ -314,7 +314,7 @@ defmodule OliWeb.Sections.OverviewView do
         <% end %>
       </Group.render>
 
-      <%= live_render(@socket, OliWeb.CollaborationLive.CollabSpaceConfigView,
+      {live_render(@socket, OliWeb.CollaborationLive.CollabSpaceConfigView,
         id: "collab_space_config",
         session: %{
           "collab_space_config" => @collab_space_config,
@@ -323,7 +323,7 @@ defmodule OliWeb.Sections.OverviewView do
           "is_overview_render" => true,
           "is_delivery" => true
         }
-      ) %>
+      )}
 
       <Group.render label="Scoring" description="View and manage student scores and progress">
         <ul class="link-list">
@@ -409,12 +409,6 @@ defmodule OliWeb.Sections.OverviewView do
           <% end %>
         </ul>
       </Group.render>
-
-      <%= if @is_lms_or_system_admin and !@section.open_and_free do %>
-        <Group.render label="LMS Admin" description="Administrator LMS Connection">
-          <UnlinkSection.render unlink="unlink" section={@section} />
-        </Group.render>
-      <% end %>
 
       <Group.render
         label="Cover Image"
@@ -529,14 +523,6 @@ defmodule OliWeb.Sections.OverviewView do
     {:noreply, socket}
   end
 
-  def handle_event("unlink", _, socket) do
-    %{section: section} = socket.assigns
-
-    {:ok, _deleted} = Oli.Delivery.Sections.soft_delete_section(section)
-
-    {:noreply, push_navigate(socket, to: Routes.delivery_path(socket, :index))}
-  end
-
   def handle_event("show_delete_modal", _params, socket) do
     section_has_student_data = Sections.has_student_data?(socket.assigns.section.slug)
 
@@ -590,18 +576,9 @@ defmodule OliWeb.Sections.OverviewView do
 
         case action_function.(socket.assigns.section) do
           {:ok, _section} ->
-            is_admin = socket.assigns.is_admin
-
-            redirect_path =
-              if is_admin do
-                Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.SectionsView)
-              else
-                ~p"/workspaces/instructor"
-              end
-
             socket
             |> put_flash(:info, "Section successfully #{action}.")
-            |> redirect(to: redirect_path)
+            |> redirect(to: ~p"/sections")
 
           {:error, %Ecto.Changeset{}} ->
             put_flash(

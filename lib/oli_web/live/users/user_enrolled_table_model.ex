@@ -76,7 +76,7 @@ defmodule OliWeb.Users.UserEnrolledTableModel do
         assigns = Map.merge(assigns, %{row: row, col_spec: col_spec})
 
         ~H"""
-        <span><%= Utils.render_relative_date(@row, @col_spec.name, @ctx) %></span>
+        <span>{Utils.render_relative_date(@row, @col_spec.name, @ctx)}</span>
         """
     end
   end

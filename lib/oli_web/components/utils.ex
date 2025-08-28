@@ -1,5 +1,6 @@
 defmodule OliWeb.Components.Utils do
   use OliWeb, :verified_routes
+  use Phoenix.Component
 
   alias Phoenix.LiveView.JS
   alias OliWeb.Common.SessionContext
@@ -45,6 +46,15 @@ defmodule OliWeb.Components.Utils do
   end
 
   @doc """
+  Returns true if a user is signed in as guest.
+  Can be called with either the assigns (socket.assigns) or the session.
+  """
+  @spec user_is_guest?(map()) :: boolean()
+  def user_is_guest?(%{current_user: %User{guest: true}} = _socket_assigns), do: true
+  def user_is_guest?(%{"user" => %User{guest: true}} = _session), do: true
+  def user_is_guest?(_), do: false
+
+  @doc """
   Returns true if the section is open and free
   """
   def is_open_and_free_section?(section) do
@@ -68,5 +78,35 @@ defmodule OliWeb.Components.Utils do
       _ ->
         false
     end
+  end
+
+  attr :timezone, :string, required: true
+
+  def timezone_info(assigns) do
+    ~H"""
+    <div id="timezone_info" class="flex items-center gap-2 text-[#757682] dark:text-[#bab8bf] mb-1">
+      <div class="w-5 h-5 flex items-center justify-center">
+        <OliWeb.Icons.timezone_world />
+      </div>
+      <span class="text-sm font-medium leading-4">
+        {@timezone}
+      </span>
+    </div>
+    """
+  end
+
+  @doc """
+  Given a list of instructors, returns a comma-separated string of their names
+
+  ## Examples
+
+      iex> list_instructors([%{name: "John Doe"}, %{name: "Jane Smith"}])
+      "John Doe, Jane Smith"
+  """
+  @spec list_instructors(list(map())) :: String.t()
+  def list_instructors(instructors) do
+    instructors
+    |> Enum.map(& &1.name)
+    |> Enum.join(", ")
   end
 end

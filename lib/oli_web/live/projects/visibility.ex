@@ -39,10 +39,10 @@ defmodule OliWeb.Projects.VisibilityLive do
         <form phx-change="duplication" id="duplication_option">
           <div class="form-check">
             <%= label class: "form-check-label" do %>
-              <%= checkbox(:duplication, :allow_duplication,
+              {checkbox(:duplication, :allow_duplication,
                 id: "dupe_check",
                 checked: @project.allow_duplication
-              ) %> Allow duplication by non-collaborators
+              )} Allow duplication by non-collaborators
             <% end %>
           </div>
         </form>
@@ -64,10 +64,10 @@ defmodule OliWeb.Projects.VisibilityLive do
           <div class="form-check">
             <div class="form-group mb-2">
               <%= label class: "form-check-label flex flex-row cursor-pointer" do %>
-                <%= radio_button(:visibility, :option, "authors",
+                {radio_button(:visibility, :option, "authors",
                   class: "form-check-input",
                   checked: @project.visibility == :authors or is_nil(@project.visibility)
-                ) %>
+                )}
                 <div class="block ml-2">
                   <div class="d-flex align-items-center">
                     <div>Project authors</div>
@@ -81,10 +81,10 @@ defmodule OliWeb.Projects.VisibilityLive do
             </div>
             <div class="form-group mb-2">
               <%= label class: "form-check-label flex flex-row cursor-pointer" do %>
-                <%= radio_button(:visibility, :option, "global",
+                {radio_button(:visibility, :option, "global",
                   class: "form-check-input",
                   checked: @project.visibility == :global
-                ) %>
+                )}
                 <div class="block ml-2">
                   <div>Open</div>
                   <small>Any instructor</small>
@@ -93,10 +93,10 @@ defmodule OliWeb.Projects.VisibilityLive do
             </div>
             <div class="form-group mb-2">
               <%= label class: "form-check-label flex flex-row cursor-pointer" do %>
-                <%= radio_button(:visibility, :option, "selected",
+                {radio_button(:visibility, :option, "selected",
                   class: "form-check-input",
                   checked: @project.visibility == :selected
-                ) %>
+                )}
                 <div class="block ml-2">
                   <div>Restricted</div>
                   <small>
@@ -139,15 +139,14 @@ defmodule OliWeb.Projects.VisibilityLive do
                   class={"container tab-pane pl-0 #{if  @tab == :users, do: "active", else: "fade"}"}
                 >
                   <div>
-                    <form phx-change="search" class="form-inline form-grow">
-                      <%= text_input(:search_field, :query,
+                    <form phx-change="instructor_search" class="form-inline form-grow">
+                      {text_input(:instructor_search_field, :query,
                         placeholder: "Enter an author email here",
                         class: "form-control mb-2 mb-sm-0 title container-fluid flex-fill",
                         autofocus: true,
                         "phx-debounce": "300",
                         autocomplete: "off"
-                      ) %>
-                      <%= hidden_input(:search_field, :entity, value: "instructors") %>
+                      )}
                     </form>
                   </div>
                   <div class="grid grid-cols-12 justify-content-center">
@@ -155,10 +154,8 @@ defmodule OliWeb.Projects.VisibilityLive do
                       <div class="flex-fill">
                         <p>Select from the list below and submit</p>
                         <form phx-submit="selected_email" id="user_submit">
-                          <%= multiple_select(:multi, :emails, @user_emails,
-                            class: "form-control w-100"
-                          ) %>
-                          <%= submit("Submit", class: "btn btn-primary") %>
+                          {multiple_select(:multi, :emails, @user_emails, class: "form-control w-100")}
+                          {submit("Submit", class: "btn btn-primary")}
                         </form>
                       </div>
                     <% end %>
@@ -168,7 +165,7 @@ defmodule OliWeb.Projects.VisibilityLive do
                           <%= if v.author != nil do %>
                             <li class="list-group-item">
                               <div class="d-flex">
-                                <div class="flex-fill"><%= v.author.email %></div>
+                                <div class="flex-fill">{v.author.email}</div>
                                 <div>
                                   <button
                                     id={"delete_#{v.visibility.id}"}
@@ -194,14 +191,13 @@ defmodule OliWeb.Projects.VisibilityLive do
                   class={"container tab-pane pl-0 #{if  @tab == :institutions, do: "active", else: "fade"}"}
                 >
                   <div>
-                    <form phx-change="search" class="form-inline form-grow">
-                      <%= text_input(:search_field, :query,
+                    <form phx-change="institution_search" class="form-inline form-grow">
+                      {text_input(:institution_search_field, :query,
                         placeholder: "Search for institutions by name here",
                         class: "form-control mb-2 mb-sm-0 title container-fluid flex-fill",
                         autofocus: true,
                         "phx-debounce": "300"
-                      ) %>
-                      <%= hidden_input(:search_field, :entity, value: "institution") %>
+                      )}
                     </form>
                   </div>
                   <div class="grid grid-col-12 justify-content-start">
@@ -209,10 +205,10 @@ defmodule OliWeb.Projects.VisibilityLive do
                       <div class="flex-fill">
                         <p>Select from the list below and submit</p>
                         <form phx-submit="selected_institution" id="institutions_submit">
-                          <%= multiple_select(:multi, :institutions, @institution_names,
+                          {multiple_select(:multi, :institutions, @institution_names,
                             class: "form-control w-100"
-                          ) %>
-                          <%= submit("Submit", class: "btn btn-primary") %>
+                          )}
+                          {submit("Submit", class: "btn btn-primary")}
                         </form>
                       </div>
                     <% end %>
@@ -222,7 +218,7 @@ defmodule OliWeb.Projects.VisibilityLive do
                           <%= if v.institution != nil do %>
                             <li class="list-group-item">
                               <div class="d-flex">
-                                <div class="flex-fill"><%= v.institution.name %></div>
+                                <div class="flex-fill">{v.institution.name}</div>
                                 <div>
                                   <button
                                     id={"delete_#{v.visibility.id}"}
@@ -252,67 +248,67 @@ defmodule OliWeb.Projects.VisibilityLive do
     """
   end
 
-  def handle_event("search", %{"search_field" => %{"entity" => entity, "query" => query}}, socket) do
-    case entity do
-      "instructors" ->
-        list =
-          if String.length(query) > 1 do
-            Accounts.search_authors_matching(query)
-          else
-            []
-          end
+  def handle_event(
+        "institution_search",
+        %{"institution_search_field" => %{"query" => query}},
+        socket
+      )
+      when query not in [nil, ""] do
+    list =
+      Institutions.search_institutions_matching(query)
+      |> Enum.reduce([], fn institution, acc ->
+        {name, id} = {institution.name, institution.id}
 
-        list = Enum.map(list, fn a -> {a.email, a.id} end) |> Enum.sort_by(& &1)
-
-        list =
-          list
-          |> Enum.filter(fn e ->
-            {_, id} = e
-
-            f =
-              Enum.find(socket.assigns.project_visibilities, fn x ->
-                x.author != nil && x.author.id == id
-              end)
-
-            if f == nil do
-              true
-            else
-              false
-            end
+        # Check if institution is already in project visibilities
+        already_exists =
+          Enum.any?(socket.assigns.project_visibilities, fn x ->
+            x.institution != nil && x.institution.id == id
           end)
 
-        {:noreply, assign(socket, :user_emails, list)}
+        if !already_exists do
+          [{name, id} | acc]
+        else
+          acc
+        end
+      end)
+      |> Enum.sort()
 
-      "institution" ->
-        list =
-          if String.length(query) > 1 do
-            Institutions.search_institutions_matching(query)
-          else
-            []
-          end
-
-        list = Enum.map(list, fn a -> {a.name, a.id} end) |> Enum.sort_by(& &1)
-
-        list =
-          list
-          |> Enum.filter(fn e ->
-            {_, id} = e
-
-            f =
-              Enum.find(socket.assigns.project_visibilities, fn x ->
-                x.institution != nil && x.institution.id == id
-              end)
-
-            if f == nil do
-              true
-            else
-              false
-            end
-          end)
-
-        {:noreply, assign(socket, :institution_names, list)}
-    end
+    {:noreply, assign(socket, :institution_names, list)}
   end
+
+  def handle_event("institution_search", _, socket),
+    do: {:noreply, assign(socket, :institution_names, [])}
+
+  def handle_event(
+        "instructor_search",
+        %{"instructor_search_field" => %{"query" => query}},
+        socket
+      )
+      when query not in [nil, ""] do
+    list =
+      Accounts.search_authors_matching(query)
+      |> Enum.reduce([], fn author, acc ->
+        {email, id} = {author.email, author.id}
+
+        # Check if author is already in project visibilities
+        already_exists =
+          Enum.any?(socket.assigns.project_visibilities, fn x ->
+            x.author != nil && x.author.id == id
+          end)
+
+        if !already_exists do
+          [{email, id} | acc]
+        else
+          acc
+        end
+      end)
+      |> Enum.sort()
+
+    {:noreply, assign(socket, :user_emails, list)}
+  end
+
+  def handle_event("instructor_search", _, socket),
+    do: {:noreply, assign(socket, :user_emails, [])}
 
   def handle_event("option", %{"visibility" => %{"option" => option}}, socket) do
     {:ok, project} = Course.update_project(socket.assigns.project, %{visibility: option})

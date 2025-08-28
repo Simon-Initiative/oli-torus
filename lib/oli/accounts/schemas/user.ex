@@ -10,6 +10,8 @@ defmodule Oli.Accounts.User do
   schema "users" do
     field :email, :string
     field :password, :string, virtual: true, redact: true
+    field :current_password, :string, virtual: true, redact: true
+    field :password_confirmation, :string, virtual: true, redact: true
     field :password_hash, :string, redact: true
     field :email_confirmed_at, :utc_datetime
 
@@ -146,8 +148,7 @@ defmodule Oli.Accounts.User do
   defp validate_email(changeset, opts) do
     changeset
     |> validate_required([:email])
-    |> validate_format(:email, ~r/^[^\s]+@[^\s]+$/, message: "must have the @ sign and no spaces")
-    |> validate_length(:email, max: 160)
+    |> validate_change(:email, &Oli.Accounts.validate_email/2)
     |> maybe_validate_unique_email(opts)
   end
 
@@ -210,8 +211,20 @@ defmodule Oli.Accounts.User do
   It requires the email to change otherwise an error is added.
   """
   def email_changeset(user, attrs, opts \\ []) do
+    fields =
+      if Keyword.get(opts, :require_current_password, false),
+        do: [:email, :current_password],
+        else: [:email]
+
+    # :email is already required in validate_email/2
+    required_fields =
+      if Keyword.get(opts, :require_current_password, false),
+        do: [:current_password],
+        else: []
+
     user
-    |> cast(attrs, [:email])
+    |> cast(attrs, fields)
+    |> validate_required(required_fields)
     |> validate_email(opts)
     |> case do
       %{changes: %{email: _}} = changeset -> changeset
@@ -232,8 +245,20 @@ defmodule Oli.Accounts.User do
       Defaults to `true`.
   """
   def password_changeset(user, attrs, opts \\ []) do
+    fields =
+      if Keyword.get(opts, :require_current_password, false),
+        do: [:current_password, :password, :password_confirmation],
+        else: [:password]
+
+    # :password is already required in validate_password/2
+    required_fields =
+      if Keyword.get(opts, :require_current_password, false),
+        do: [:current_password, :password_confirmation],
+        else: []
+
     user
-    |> cast(attrs, [:password])
+    |> cast(attrs, fields)
+    |> validate_required(required_fields)
     |> validate_confirmation(:password, message: "does not match password")
     |> validate_password(opts)
   end
@@ -334,7 +359,7 @@ defmodule Oli.Accounts.User do
       :hidden
     ])
     |> cast_embed(:preferences)
-    |> validate_required([:given_name, :family_name])
+    |> common_name_validations()
     |> maybe_name_from_given_and_family()
   end
 
@@ -376,6 +401,7 @@ defmodule Oli.Accounts.User do
       :hidden
     ])
     |> cast_embed(:preferences)
+    |> common_name_validations()
     |> validate_email_if(&is_independent_learner_and_not_guest/1)
     |> maybe_name_from_given_and_family()
   end

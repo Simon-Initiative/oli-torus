@@ -80,7 +80,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         %{
           objectives:
             Sections.get_objectives_and_subobjectives(socket.assigns.section,
-              exclude_sub_objectives: true
+              exclude_sub_objectives: false
             ),
           filter_options:
             Sections.get_units_and_modules_from_a_section(socket.assigns.section.slug)
@@ -584,7 +584,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
     <div class="container mx-auto">
       <.live_component
-        id="objectives_table_#{@section_slug}"
+        id={"objectives_table_#{@section_slug}"}
         module={OliWeb.Components.Delivery.LearningObjectives}
         params={@params}
         view={@view}

@@ -41,7 +41,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
       <% unattempted_questions = total_questions - submitted_questions %>
       <Modal.modal id="finish_quiz_confirmation_modal" class="w-auto min-w-[50%]" body_class="px-6">
         <:title>
-          Finish Attempt <%= @attempt_number %> of <%= @max_attempt_number %>?
+          Finish Attempt {@attempt_number} of {@max_attempt_number}?
         </:title>
 
         <div class="text-[#373a44] dark:text-white text-sm font-normal leading-snug">
@@ -82,9 +82,9 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
         <div role="questions header" class="w-[1170px] pl-[189px]">
           <div class="flex w-full justify-between items-center mb-1">
             <div class="text-[#757682] text-xs font-normal leading-[18px] dark:text-white/80">
-              Question <%= selected_question.number %> / <%= total_questions %> • <%= parse_points(
+              Question {selected_question.number} / {total_questions} • {parse_points(
                 selected_question_points
-              ) %>
+              )}
             </div>
             <%= if @effective_settings.batch_scoring do %>
               <button
@@ -128,7 +128,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
               phx-hook="ReactToLiveView"
               class="flex h-[400px] border-b border-[#c8c8c8]"
             >
-              <div id="eventIntercept" phx-update="ignore">
+              <div id="eventIntercept_one_at_a_time_question" phx-update="ignore">
                 <div
                   :for={question <- @questions}
                   id={"question_#{question.number}"}
@@ -141,7 +141,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
                   phx-hook="DisableSubmitted"
                   data-submitted={"#{question.submitted and @effective_settings.batch_scoring}"}
                 >
-                  <%= raw(question.raw_content) %>
+                  {raw(question.raw_content)}
                 </div>
               </div>
               <div
@@ -159,10 +159,10 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
                     } />
                   </span>
                   <span class="text-[#757682] ml-4 dark:text-white/80">
-                    Part <%= index %>:
+                    Part {index}:
                   </span>
                   <span class="text-[#353740] ml-1 dark:text-white">
-                    <%= parse_points(points) %>
+                    {parse_points(points)}
                   </span>
                 </div>
               </div>
@@ -286,7 +286,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
           "text-[#353740] text-base font-normal leading-normal dark:text-white",
           if(question.selected, do: "!text-[#0f6bf5] !font-bold")
         ]}>
-          Question <%= question.number %>
+          Question {question.number}
         </span>
       </button>
     </div>

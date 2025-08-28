@@ -133,7 +133,7 @@ defmodule OliWeb.Admin.IngestV2 do
     <%= if @progress_step != "" do %>
       <div class="alert alert-secondary" role="alert">
         <h4 class="alert-heading">
-          <i class="fas fa-circle-notch fa-spin fa-1x fa-fw mr-2" /><%= @progress_step %>
+          <i class="fas fa-circle-notch fa-spin fa-1x fa-fw mr-2" />{@progress_step}
         </h4>
 
         <%= if @progress_total_tasks > 0 do %>
@@ -160,7 +160,7 @@ defmodule OliWeb.Admin.IngestV2 do
     <%= if @ingestion_step == :failed do %>
       <div class="alert alert-danger" role="alert">
         <h4 class="alert-heading">Ingest Processing Failed</h4>
-        <%= @error %>
+        {@error}
       </div>
     <% end %>
     """
@@ -176,11 +176,11 @@ defmodule OliWeb.Admin.IngestV2 do
       <h3 class="display-6">Course Ingestion</h3>
       <hr class="my-4" />
 
-      <%= render_ready(assigns) %>
-      <%= render_preprocessed(assigns) %>
-      <%= render_processed(assigns) %>
-      <%= render_failed(assigns) %>
-      <%= render_progress(assigns) %>
+      {render_ready(assigns)}
+      {render_preprocessed(assigns)}
+      {render_processed(assigns)}
+      {render_failed(assigns)}
+      {render_progress(assigns)}
     </div>
     """
   end

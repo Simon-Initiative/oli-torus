@@ -150,7 +150,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
       rows: assessments,
       column_specs: column_specs,
       event_suffix: "",
-      id_field: [:id],
+      id_field: [:resource_id],
       data: %{
         section_slug: section_slug,
         ctx: ctx,
@@ -166,7 +166,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
     assigns = Map.merge(assigns, %{name: assessment.name})
 
     ~H"""
-    <div class="pr-4"><%= @name %></div>
+    <div class="pr-4">{@name}</div>
     """
   end
 
@@ -187,7 +187,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
       <%= if is_nil(@available_date) do %>
         Always available
       <% else %>
-        <%= value_from_datetime(@available_date, @ctx) %>
+        {value_from_datetime(@available_date, @ctx)}
       <% end %>
     </button>
     """
@@ -209,7 +209,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
       phx-value-assessment_id={@id}
     >
       <%= if @due_date != nil and @scheduling_type == :due_by do %>
-        <%= value_from_datetime(@due_date, @ctx) %>
+        {value_from_datetime(@due_date, @ctx)}
       <% else %>
         No due date
       <% end %>
@@ -325,7 +325,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
       <option disabled selected={@scoring_strategy_id == nil} hidden value="">-</option>
       <option selected={@scoring_strategy_id == 1} value={1}>Average</option>
       <option selected={@scoring_strategy_id == 2} value={2}>Best</option>
-      <option selected={@scoring_strategy_id == 3} value={3}>Last</option>
+      <option selected={@scoring_strategy_id == 3} value={3}>Most Recent</option>
     </select>
     """
   end
@@ -469,7 +469,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
           )
         }
       >
-        <%= @exceptions_count %>
+        {@exceptions_count}
       </.link>
     </div>
     """

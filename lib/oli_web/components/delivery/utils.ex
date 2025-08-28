@@ -27,19 +27,6 @@ defmodule OliWeb.Components.Delivery.Utils do
   end
 
   @doc """
-  Returns true if a user is signed in as guest
-  """
-  def user_is_guest?(assigns) do
-    case assigns[:current_user] do
-      %User{guest: true} ->
-        true
-
-      _ ->
-        false
-    end
-  end
-
-  @doc """
   Returns true if a user is signed in as an independent learner
   """
   def user_is_independent_learner?(current_user) do
@@ -248,7 +235,8 @@ defmodule OliWeb.Components.Delivery.Utils do
 
   @instructor_roles [
     PlatformRoles.get_role(:institution_instructor),
-    ContextRoles.get_role(:context_instructor)
+    ContextRoles.get_role(:context_instructor),
+    ContextRoles.get_role(:context_content_developer)
   ]
 
   @student_roles [
@@ -356,7 +344,7 @@ defmodule OliWeb.Components.Delivery.Utils do
   def progress_bar(assigns) do
     ~H"""
     <div class="my-2 flex flex-row items-center">
-      <div class="font-bold"><%= @percent %>%</div>
+      <div class="font-bold">{@percent}%</div>
       <div class="flex-1 ml-3">
         <div class={"w-[#{@width}] rounded-full bg-gray-200 h-2"}>
           <div class="rounded-full bg-green-600 h-2" style={"width: #{@percent}%"}></div>

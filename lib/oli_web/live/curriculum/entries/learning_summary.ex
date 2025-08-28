@@ -43,11 +43,11 @@ defmodule OliWeb.Curriculum.LearningSummary do
     ~H"""
     <small>
       <%= if @count == 0 do %>
-        No <%= @type %> activities
+        No {@type} activities
       <% else %>
         <%= for %{title: title} <- @activities do %>
           <div>
-            <%= title %>
+            {title}
           </div>
         <% end %>
       <% end %>
@@ -66,7 +66,7 @@ defmodule OliWeb.Curriculum.LearningSummary do
         <%= for %{title: title} <- @objectives do %>
           <div class="objective">
             <small>
-              <%= title %>
+              {title}
             </small>
           </div>
         <% end %>
@@ -89,13 +89,13 @@ defmodule OliWeb.Curriculum.LearningSummary do
     <div>
       <%= if !is_container?(@child) do %>
         <div class="col-span-4 entry-section">
-          <%= render_objectives(
+          {render_objectives(
             assigns,
             determine_objectives(@activity_ids, @activity_map, @objective_map)
-          ) %>
+          )}
         </div>
         <div class="col-span-4 entry-section">
-          <%= render_activities(assigns, determine_activities(@activity_ids, @activity_map)) %>
+          {render_activities(assigns, determine_activities(@activity_ids, @activity_map))}
         </div>
       <% else %>
         <div></div>

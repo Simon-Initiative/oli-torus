@@ -18,6 +18,10 @@ alias Oli.Accounts
 alias Oli.Accounts.{User, Author}
 alias Oli.Repo
 alias Oli.Utils.DataGenerators.NameGenerator
+alias Oli.GenAI.Completions.{ServiceConfig, RegisteredModel}
+alias Oli.GenAI.FeatureConfig
+
+import Ecto.Query, only: [from: 2]
 
 # create system roles
 if !Oli.Repo.get_by(Oli.Accounts.SystemRole, id: 1) do
@@ -148,6 +152,85 @@ if !Oli.Repo.get_by(Lti_1p3.DataProviders.EctoProvider.ContextRole, id: 1) do
   end)
   |> Enum.map(&Lti_1p3.DataProviders.EctoProvider.ContextRole.changeset/1)
   |> Enum.map(fn t -> Oli.Repo.insert!(t, on_conflict: :replace_all, conflict_target: :id) end)
+end
+
+case Oli.Repo.all(RegisteredModel) do
+  [] ->
+    open_ai_key = System.get_env("OPENAI_API_KEY")
+    open_ai_org_key = System.get_env("OPENAI_ORG_KEY")
+    anthropic_api_key = System.get_env("ANTHROPIC_API_KEY")
+
+    # Insert the record for an OpenAI registered model, the NULL provider, and the Claude model.
+    if open_ai_key do
+      case Oli.Encrypted.Binary.dump(open_ai_key) do
+        {:ok, encrypted_key} ->
+          secondary_encrypted =
+            case Oli.Encrypted.Binary.dump(open_ai_org_key) do
+              {:ok, v} -> v
+              _ -> nil
+            end
+
+          Oli.Repo.insert!(%RegisteredModel{
+            name: "openai-gpt4",
+            provider: :open_ai,
+            model: "gpt-4-1106-preview",
+            url_template: "https://api.openai.com",
+            api_key: encrypted_key,
+            secondary_api_key: secondary_encrypted
+          })
+
+        _ ->
+          IO.puts("Failed to encrypt OPENAI_API_KEY. Value: #{inspect(open_ai_key)}")
+      end
+    end
+
+    if anthropic_api_key do
+      Oli.Repo.insert!(%RegisteredModel{
+        name: "claude",
+        provider: :claude,
+        model: "claude-3-haiku-20240307",
+        url_template: "https://api.anthropic.com/v1/messages",
+        api_key: Oli.Encrypted.Binary.dump(anthropic_api_key)
+      })
+    end
+
+    Oli.Repo.insert!(%RegisteredModel{
+      name: "null",
+      provider: :null,
+      model: "null",
+      url_template: "https://www.example.com"
+    })
+
+    primary_model =
+      from(r in RegisteredModel, order_by: [asc: :id], limit: 1)
+      |> Oli.Repo.one!()
+
+    # Insert the completions_service_config
+    Oli.Repo.insert!(%ServiceConfig{
+      name: "standard-no-backup",
+      primary_model_id: primary_model.id,
+      backup_model_id: nil
+    })
+
+    # And finally the defaults for the gen_ai_feature_configs
+    service_config =
+      Oli.Repo.get_by!(Oli.GenAI.Completions.ServiceConfig, name: "standard-no-backup")
+
+    Oli.Repo.insert!(%FeatureConfig{
+      feature: :student_dialogue,
+      service_config_id: service_config.id,
+      section_id: nil
+    })
+
+    Oli.Repo.insert!(%FeatureConfig{
+      feature: :instructor_dashboard,
+      service_config_id: service_config.id,
+      section_id: nil
+    })
+
+  _ ->
+    # already seeded
+    nil
 end
 
 # only seed with sample data if in development mode

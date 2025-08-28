@@ -177,6 +177,13 @@ if config_env() == :prod do
       For example: your_s3_media_bucket_url.s3.amazonaws.com
       """
 
+  cloak_vault_key =
+    System.get_env("CLOAK_VAULT_KEY") ||
+      raise """
+      environment variable CLOAK_VAULT_KEY is missing.
+      For example: HXCdm5z61eNgUpnXObJRv94k3JnKSrnfwppyb60nz6w=
+      """
+
   # General OLI app config
   config :oli,
     logger_truncation_enabled: get_env_as_boolean.("LOGGER_TRUNCATION_ENABLED", "true"),
@@ -234,7 +241,7 @@ if config_env() == :prod do
   config :oli, :xapi_upload_pipeline,
     batcher_concurrency: get_env_as_integer.("XAPI_BATCHER_CONCURRENCY", "20"),
     batch_size: get_env_as_integer.("XAPI_BATCH_SIZE", "50"),
-    batch_timeout: get_env_as_integer.("XAPI_BATCHER_CONCURRENCY", "5000"),
+    batch_timeout: get_env_as_integer.("XAPI_BATCH_TIMEOUT", "5000"),
     processor_concurrency: get_env_as_integer.("XAPI_PROCESSOR_CONCURRENCY", "2")
 
   default_description = """
@@ -459,5 +466,11 @@ if config_env() == :prod do
       mailer: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_MAILER", "10")),
       certificate_eligibility:
         String.to_integer(System.get_env("OBAN_QUEUE_SIZE_CERTIFICATE_ELIGIBILITY", "10"))
+    ]
+
+  config :oli, Oli.Vault,
+    json_library: Jason,
+    ciphers: [
+      default: {Cloak.Ciphers.AES.GCM, tag: "AES.GCM.V1", key: Base.decode64!(cloak_vault_key)}
     ]
 end

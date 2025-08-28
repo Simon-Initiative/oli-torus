@@ -14,6 +14,7 @@ defmodule Oli.Delivery.Sections.Blueprint do
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
 
+  @default_amount 25
   @doc """
   From a slug, retrieve a valid section blueprint.  A section is a
   valid blueprint when that section is of type :blueprint and the status
@@ -206,16 +207,24 @@ defmodule Oli.Delivery.Sections.Blueprint do
       "registration_open" => attrs["registration_open"] || false,
       "grace_period_days" => attrs["grace_period_days"] || 1,
       "amount" =>
-        Money.new(
-          attrs["amount"]["currency"] || :USD,
-          attrs["amount"]["amount"] || "25.00"
-        ),
+        Money.new(parse_amount(attrs["amount"]["amount"]), attrs["amount"]["currency"] || "USD"),
       "publisher_id" => project.publisher_id,
       "customizations" => custom_labels,
       "welcome_title" => attrs["welcome_title"] || project.welcome_title,
       "encouraging_subtitle" => attrs["encouraging_subtitle"] || project.encouraging_subtitle,
       "certificate_enabled" => attrs["certificate_enabled"] || false
     }
+  end
+
+  defp parse_amount(nil), do: @default_amount
+
+  defp parse_amount(amount) when is_integer(amount), do: amount
+
+  defp parse_amount(amount) when is_binary(amount) do
+    case Integer.parse(amount) do
+      {amount, ""} -> amount
+      _ -> @default_amount
+    end
   end
 
   defp migrate_section_resources(section_id) do
@@ -503,8 +512,8 @@ defmodule Oli.Delivery.Sections.Blueprint do
 
     filter_by_status =
       if opts[:include_archived],
-        do: dynamic([s, _], s.status in [:active, :archived]),
-        else: dynamic([s, _], s.status == :active)
+        do: dynamic([s, _], s.status in [:active, :archived, :deleted]),
+        else: dynamic([s, _], s.status in [:active, :deleted])
 
     filter_by_text =
       case opts[:text_search] do
@@ -533,22 +542,21 @@ defmodule Oli.Delivery.Sections.Blueprint do
       Section
       |> join(:inner, [s], bp in Project, on: s.base_project_id == bp.id)
       |> preload([s, bp], base_project: bp)
-      |> where([s, _], s.type == :blueprint)
+      |> where([s, bp], s.type == :blueprint)
       |> where(^filter_by_text)
       |> where(^filter_by_project)
       |> where(^filter_by_status)
       |> limit(^limit)
       |> offset(^offset)
-      |> select([s, _bp], %{s | total_count: fragment("count(*) OVER()")})
+      |> select([s, bp, i], %{
+        s
+        | total_count: fragment("count(*) OVER()")
+      })
 
     query =
       case field do
         :base_project_id ->
-          order_by(
-            query,
-            [s, bp],
-            [{^direction, bp.title}]
-          )
+          order_by(query, [s, bp], [{^direction, bp.title}])
 
         :requires_payment ->
           order_by(
@@ -568,7 +576,7 @@ defmodule Oli.Delivery.Sections.Blueprint do
           )
 
         _ ->
-          order_by(query, [p, _, _, _], {^direction, field(p, ^field)})
+          order_by(query, [s, _, _], {^direction, field(s, ^field)})
       end
 
     Repo.all(query)

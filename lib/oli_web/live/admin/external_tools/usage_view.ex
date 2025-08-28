@@ -55,7 +55,8 @@ defmodule OliWeb.Admin.ExternalTools.UsageView do
 
         total_count = SortableTableModel.determine_total(sections)
 
-        {:ok, table_model} = SectionsTableModel.new(socket.assigns.ctx, sections)
+        {:ok, table_model} =
+          SectionsTableModel.new(socket.assigns.ctx, sections, exclude_columns: [:tags])
 
         {:ok,
          assign(socket,

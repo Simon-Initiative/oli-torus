@@ -48,7 +48,7 @@ defmodule OliWeb.Workspaces.StudentTest do
       assert has_element?(view, "p", "You are not enrolled in any courses.")
     end
 
-    test "can see product title, image and description in sections index with a link to access to it in the student workspace",
+    test "can see product title, image, start date, end date, instructors and description in sections index with a link to access to it in the student workspace",
          %{
            conn: conn,
            user: user
@@ -58,8 +58,16 @@ defmodule OliWeb.Workspaces.StudentTest do
           open_and_free: true,
           cover_image: "https://example.com/some-image-url.png",
           description: "This is a description",
-          title: "The best course ever!"
+          title: "The best course ever!",
+          start_date: ~U[2025-01-01 00:00:00Z],
+          end_date: ~U[2026-01-01 00:00:00Z]
         })
+
+      instructor_1 = insert(:user, %{name: "Lionel Messi"})
+      instructor_2 = insert(:user, %{name: "Angel Di Maria"})
+
+      Sections.enroll(instructor_1.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.enroll(instructor_2.id, section.id, [ContextRoles.get_role(:context_instructor)])
 
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
 
@@ -71,6 +79,13 @@ defmodule OliWeb.Workspaces.StudentTest do
 
       assert has_element?(view, "h5", "The best course ever!")
       assert has_element?(view, ~s{a[href="/sections/#{section.slug}?sidebar_expanded=true"]})
+      assert has_element?(view, "div[role='start_end_date']", "Jan 2025 - Jan 2026")
+
+      assert has_element?(
+               view,
+               "div[role='instructors']",
+               ~r/Instructors:\s*#{instructor_1.name},\s*#{instructor_2.name}/
+             )
     end
 
     test "if no cover image is set, renders default image in enrollment page in the student workspace",
