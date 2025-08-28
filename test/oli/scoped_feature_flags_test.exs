@@ -198,7 +198,9 @@ defmodule Oli.ScopedFeatureFlagsTest do
 
     test "returns error for non-existent feature flag for section" do
       section = insert(:section)
-      assert {:error, :not_found} = ScopedFeatureFlags.remove_feature("test_delivery_feature", section)
+
+      assert {:error, :not_found} =
+               ScopedFeatureFlags.remove_feature("test_delivery_feature", section)
     end
   end
 
@@ -301,6 +303,7 @@ defmodule Oli.ScopedFeatureFlagsTest do
 
       # Too long - now caught by runtime validation
       long_name = String.duplicate("a", 256)
+
       assert_raise ArgumentError, ~r/Undefined feature flag/, fn ->
         ScopedFeatureFlags.enable_feature(long_name, project)
       end

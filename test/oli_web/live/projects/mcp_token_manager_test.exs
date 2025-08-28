@@ -11,10 +11,10 @@ defmodule OliWeb.Projects.MCPTokenManagerTest do
 
     test "displays MCP section on overview page", %{conn: conn, author: author} do
       project = create_project_with_author(author)
-      
+
       # Enable the MCP authoring feature flag
       {:ok, _} = ScopedFeatureFlags.enable_feature(:mcp_authoring, project, author)
-      
+
       {:ok, view, html} = live(conn, ~p"/workspaces/course_author/#{project.slug}/overview")
 
       # Check that the MCP section exists
@@ -27,7 +27,7 @@ defmodule OliWeb.Projects.MCPTokenManagerTest do
 
     test "can create and manage tokens", %{conn: conn, author: author} do
       project = create_project_with_author(author)
-      
+
       # Enable the MCP authoring feature flag
       {:ok, _} = ScopedFeatureFlags.enable_feature(:mcp_authoring, project, author)
 

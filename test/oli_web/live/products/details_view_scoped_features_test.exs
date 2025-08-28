@@ -22,7 +22,8 @@ defmodule OliWeb.Products.DetailsViewTest.ScopedFeatures do
       conn = log_in_author(build_conn(), author)
 
       # Should redirect to unauthorized page for non-admin users
-      assert {:error, {:redirect, %{to: "/unauthorized"}}} = live(conn, ~p"/authoring/products/#{section.slug}")
+      assert {:error, {:redirect, %{to: "/unauthorized"}}} =
+               live(conn, ~p"/authoring/products/#{section.slug}")
     end
 
     test "displays section-appropriate features", %{conn: conn, section: section} do
@@ -60,7 +61,10 @@ defmodule OliWeb.Products.DetailsViewTest.ScopedFeatures do
       assert view
     end
 
-    test "component shows disabled state for available delivery features", %{conn: conn, section: section} do
+    test "component shows disabled state for available delivery features", %{
+      conn: conn,
+      section: section
+    } do
       {:ok, view, _html} = live(conn, ~p"/authoring/products/#{section.slug}")
 
       # Should show disabled badges for available delivery features that are not enabled
