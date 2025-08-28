@@ -785,6 +785,30 @@ defmodule Oli.Factory do
     }
   end
 
+  def scoped_feature_flag_state_factory() do
+    %Oli.ScopedFeatureFlags.ScopedFeatureFlagState{
+      feature_name: "mcp_authoring",
+      enabled: false,
+      project: anonymous_build(:project)
+    }
+  end
+
+  def scoped_feature_flag_state_for_project_factory() do
+    %Oli.ScopedFeatureFlags.ScopedFeatureFlagState{
+      feature_name: "mcp_authoring",
+      enabled: false,
+      project: anonymous_build(:project)
+    }
+  end
+
+  def scoped_feature_flag_state_for_section_factory() do
+    %Oli.ScopedFeatureFlags.ScopedFeatureFlagState{
+      feature_name: "mcp_authoring",
+      enabled: false,
+      section: anonymous_build(:section)
+    }
+  end
+
   # HELPERS
 
   defp anonymous_build(entity_name, attrs \\ %{}),
