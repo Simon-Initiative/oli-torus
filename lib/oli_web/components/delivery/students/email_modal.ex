@@ -24,15 +24,7 @@ defmodule OliWeb.Components.Delivery.Students.EmailModal do
 
           <div class="text-sm font-normal mt-3">
             <p class="text-black dark:text-white mb-6">
-              <%= if length(@selected_students) == 1 do %>
-                This email will send to
-                <strong>{get_student_name(@selected_students, @students)}</strong>
-                at <strong><%= get_student_email(@selected_students, @students) %></strong>.
-              <% else %>
-                This email will send separately to the
-                <strong>{length(@selected_students)} students</strong>
-                you have selected.
-              <% end %>
+              {this_email_will_send_message(@selected_students, @students)}
             </p>
 
             <div class="mb-6">
@@ -215,32 +207,8 @@ defmodule OliWeb.Components.Delivery.Students.EmailModal do
     {:noreply, socket}
   end
 
-  defp get_student_name(selected_students, students) do
-    case selected_students do
-      [student_id] ->
-        student = Enum.find(students, fn s -> s.id == student_id end)
-        Utils.name(student.name, student.given_name, student.family_name)
-
-      _ ->
-        ""
-    end
-  end
-
-  defp get_student_email(selected_students, students) do
-    case selected_students do
-      [student_id] ->
-        student = Enum.find(students, fn s -> s.id == student_id end)
-        student.email
-
-      _ ->
-        ""
-    end
-  end
-
   defp send_student_email(student, message, course_name, _instructor_email) do
-    alias Oli.{Email, Mailer}
-
-    Email.create_email(
+    Oli.Email.create_email(
       student.email,
       "Note from your #{course_name} Instructor",
       :instructor_student_email,
@@ -249,6 +217,47 @@ defmodule OliWeb.Components.Delivery.Students.EmailModal do
         course_name: course_name
       }
     )
-    |> Mailer.deliver_later()
+    |> Oli.Mailer.deliver_later()
+  end
+
+  defp this_email_will_send_message([selected_student_id], students) do
+    student = Enum.find(students, fn s -> s.id == selected_student_id end)
+
+    student_name =
+      Utils.name(student.name, student.given_name, student.family_name)
+
+    assigns = %{student_name: student_name, student_email: student.email}
+
+    if student.email do
+      ~H"""
+      This email will send to <strong>{@student_name}</strong>
+      at <strong><%= @student_email %></strong>.
+      """
+    else
+      ~H"""
+      <span class="text-Text-text-danger font-semibold">
+        Email cannot be sent because the student does not have an email address associated.
+      </span>
+      """
+    end
+  end
+
+  defp this_email_will_send_message(selected_students_ids, students) do
+    selected_students = Enum.filter(students, fn s -> s.id in selected_students_ids end)
+    students_with_email = Enum.filter(selected_students, & &1.email)
+    students_without_email = Enum.reject(selected_students, & &1.email)
+
+    assigns = %{
+      students_with_email: students_with_email,
+      students_without_email: students_without_email
+    }
+
+    ~H"""
+    This email will send separately to <strong><%= length(@students_with_email) %> students</strong>.
+    <%= if length(@students_without_email) > 0 do %>
+      <br />
+      {length(@students_without_email)} of the selected students do not have an associated email.
+    <% end %>
+    """
   end
 end
