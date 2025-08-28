@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.38.2">
+    <meta name="project" content="OLI Torus v0.31.1">
+
+
+    <title>Developing Torus with Claude Code — OLI Torus v0.31.1</title>
+
+    <link rel="stylesheet" href="dist/html-elixir-KV3YOVJ3.css" />
+
+    <script defer src="dist/sidebar_items-A2124E1D.js"></script>
+    <script defer src="docs_config.js"></script>
+    <script defer src="dist/html-DPJLHKSM.js"></script>
+
+  </head>
+  <body>
+    <script>(()=>{var t="ex_doc:settings",e="dark";var o="dark",s="light";var E="sidebar_state",n="closed";var r="sidebar_width";var a="sidebar-open";var i=new URLSearchParams(window.location.search),S=i.get("theme")||JSON.parse(localStorage.getItem(t)||"{}").theme;(S===o||S!==s&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&document.body.classList.add(e);var d=sessionStorage.getItem(E),A=d!==n&&!window.matchMedia(`screen and (max-width: ${768}px)`).matches;document.body.classList.toggle(a,A);var c=sessionStorage.getItem(r);c&&document.body.style.setProperty("--sidebarWidth",`${c}px`);var p=/(Macintosh|iPhone|iPad|iPod)/.test(window.navigator.userAgent);document.documentElement.classList.toggle("apple-os",p);})();
+</script>
+
+<div class="body-wrapper">
+
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
+
+<nav id="sidebar" class="sidebar">
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
+
+        <a href="http://oli.cmu.edu" class="sidebar-projectImage">
+          <img src="assets/logo.png" alt="OLI Torus" />
+        </a>
+
+      <div>
+        <a href="http://oli.cmu.edu" class="sidebar-projectName" translate="no">
+OLI Torus
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v0.31.1
+        </div>
+      </div>
+    </div>
+    <ul id="sidebar-list-nav" class="sidebar-list-nav" role="tablist" data-extras="GUIDES"></ul>
+  </div>
+</nav>
+
+<output role="status" id="toast"></output>
+
+<main class="content page-extra" id="main" data-type="extras">
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of OLI Torus</span>
+            <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+          </label>
+          <button type="submit" class="search-button" aria-label="Submit Search" tabindex="-1">
+            <i class="ri-search-2-line ri-lg" aria-hidden="true"></i>
+          </button>
+          <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+            <i class="ri-close-line ri-lg" title="Cancel search"></i>
+          </button>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <div class="heading-with-actions top-heading">
+    <h1>Developing Torus with Claude Code</h1>
+
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/main/guides/process/claude-code.md#L1" title="View Source" class="icon-action" rel="help">
+        <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        <span class="sr-only">View Source</span>
+      </a>
+
+  </div>
+
+
+<h2 id="mcp-support" class="section-heading"><a href="#mcp-support" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">MCP Support</span></h2><h3 id="tidewave" class="section-heading"><a href="#tidewave" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Tidewave</span></h3><p>Torus has Tidewave installed and enabled for the development environment.  To add Tidewave MCP to
+Claude Code:</p><pre><code class="makeup elixir" translate="no"><span class="n">claude</span><span class="w"> </span><span class="n">mcp</span><span class="w"> </span><span class="n">add</span><span class="w"> </span><span class="o">--</span><span class="n">transport</span><span class="w"> </span><span class="n">sse</span><span class="w"> </span><span class="n">tidewave</span><span class="w"> </span><span class="n">https</span><span class="ss">://</span><span class="n">localhost</span><span class="o">/</span><span class="n">tidewave</span><span class="o">/</span><span class="n">mcp</span></code></pre><h3 id="appsignal" class="section-heading"><a href="#appsignal" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">AppSignal</span></h3><p>Claude Code can use the AppSignal MCP server to peruse error and performance data from our AppSignal
+instances.</p><ol><li>Generate an AppSignal MCP token for a server using the AppSignal Web UI.</li><li>Add the AppSignal MCP server to Claude Code:</li></ol><pre><code class="makeup elixir" translate="no"><span class="n">claude</span><span class="w"> </span><span class="n">mcp</span><span class="w"> </span><span class="n">add</span><span class="w"> </span><span class="n">appsignal</span><span class="w"> </span><span class="o">-</span><span class="n">e</span><span class="w"> </span><span class="nc">APPSIGNAL_API_KEY</span><span class="o">=</span><span class="n">your</span><span class="o">-</span><span class="n">mcp</span><span class="o">-</span><span class="n">token</span><span class="w"> </span><span class="o">--</span><span class="w"> </span><span class="n">docker</span><span class="w"> </span><span class="n">run</span><span class="w"> </span><span class="o">-</span><span class="n">i</span><span class="w"> </span><span class="o">--</span><span class="n">rm</span><span class="w"> </span><span class="o">-</span><span class="n">e</span><span class="w"> </span><span class="nc">APPSIGNAL_API_KEY</span><span class="w"> </span><span class="n">appsignal</span><span class="o">/</span><span class="n">mcp</span></code></pre><p>NOTE: Make sure that you have Docker installed and it is running, otherwise you will get a silent failure</p><h3 id="torus-mcp-server" class="section-heading"><a href="#torus-mcp-server" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Torus MCP Server</span></h3><p>Torus provides its own MCP Server that provides a set of tools and resources that allow an external
+agent like Claude Code to author course content.</p><p>To add it:</p><ol><li>Generate a Bearer Token for an author and a project using the Torus UI from Project Overview.</li><li>Add the MCP server to Claude Code</li></ol><pre><code class="makeup elixir" translate="no"><span class="n">claude</span><span class="w"> </span><span class="n">mcp</span><span class="w"> </span><span class="n">add</span><span class="w"> </span><span class="o">--</span><span class="n">scope</span><span class="w"> </span><span class="n">user</span><span class="w"> </span><span class="o">--</span><span class="n">transport</span><span class="w"> </span><span class="n">http</span><span class="w"> </span><span class="n">torus</span><span class="w"> </span><span class="n">http</span><span class="ss">://</span><span class="n">localhost</span><span class="o">/</span><span class="n">mcp</span><span class="w"> </span><span class="o">--</span><span class="n">header</span><span class="w"> </span><span class="s">&quot;Authorization: Bearer your-token&quot;</span></code></pre><p>NOTE: This connection seems flaky and eventually Claude Code will report that it is no longer connected.
+The root cause for this (which also seems to affect Tidewave) might be our SSL self-cert.  Current
+recommendation is start Claude Code telling it to trust this cert.  One way to do that (assuming you are launching Claude Code from within the <code class="inline">devmode.sh</code> environment so that it can successfully run tests) is to add this to your <code class="inline">oli.env</code>:</p><pre><code class="makeup elixir" translate="no"><span class="nc">NODE_EXTRA_CA_CERTS</span><span class="o">=</span><span class="o">/</span><span class="n">your</span><span class="o">/</span><span class="n">full</span><span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">priv</span><span class="o">/</span><span class="n">ssl</span><span class="o">/</span><span class="n">localhost</span><span class="o">.</span><span class="n">crt</span><span class="w">
+</span><span class="kn">alias</span><span class="w"> </span><span class="n">c</span><span class="o">=</span><span class="sc">&#39;claude --dangerously-skip-permissions&#39;</span></code></pre><p>Restarting your machine seems to also fix these &quot;localhost&quot; connection problems.</p><h3 id="verification" class="section-heading"><a href="#verification" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Verification</span></h3><p>To verify that your MCP servers are connected and working do:</p><pre><code class="makeup elixir" translate="no"><span class="n">claude</span><span class="w"> </span><span class="n">mcp</span><span class="w"> </span><span class="n">list</span></code></pre>
+
+</div>
+
+<div class="bottom-actions" id="bottom-actions">
+  <div class="bottom-actions-item">
+
+      <a href="changelog-pr.html" class="bottom-actions-button" rel="prev">
+        <span class="subheader">
+          ← Previous Page
+        </span>
+        <span class="title">
+PR processes
+        </span>
+      </a>
+
+  </div>
+  <div class="bottom-actions-item">
+
+      <a href="deployment.html" class="bottom-actions-button" rel="next">
+        <span class="subheader">
+          Next Page →
+        </span>
+        <span class="title">
+CI/CD and Deployment Process
+        </span>
+      </a>
+
+  </div>
+</div>
+    <footer class="footer">
+      <p>
+
+        <span class="line">
+          <button class="a-main footer-button display-quick-switch" title="Search HexDocs packages">
+            Search HexDocs
+          </button>
+
+            <a href="OLI Torus.epub" title="ePub version">
+              Download ePub version
+            </a>
+
+        </span>
+      </p>
+
+      <p class="built-using">
+        Built using
+        <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.38.2) for the
+
+          <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+
+      </p>
+
+    </footer>
+  </div>
+</main>
+</div>
+
+  </body>
+</html>

@@ -17,6 +17,7 @@ authoringelementprops.html
 building.html
 changelog-pr.html
 choice.html
+claude-code.html
 client-coding.html
 config.html
 creationcontext.html
@@ -33,8 +34,8 @@ dist/lato-latin-700-normal-2XVSBPG4.woff2
 dist/lato-latin-ext-400-normal-N27NCBWW.woff2
 dist/lato-latin-ext-700-normal-Q2L5DVMW.woff2
 dist/remixicon-QPNJX265.woff2
-dist/search_data-543820B7.js
-dist/sidebar_items-B995B1A5.js
+dist/search_data-2520DE62.js
+dist/sidebar_items-A2124E1D.js
 end-user.html
 evaluationresponse.html
 explanation.html
@@ -73,6 +74,7 @@ registrationresult.html
 requesthintresponse.html
 resetactivityresponse.html
 response.html
+scoped_feature_flags.html
 scoringstrategy.html
 search.html
 sectionauthoringprops.html
