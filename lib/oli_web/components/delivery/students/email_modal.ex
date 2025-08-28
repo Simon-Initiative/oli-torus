@@ -18,6 +18,7 @@ defmodule OliWeb.Components.Delivery.Students.EmailModal do
           class="w-[800px]"
           header_class="flex items-start justify-between px-[35px] pt-[27px] pb-4"
           body_class="border-t border-[#d4d4d4] dark:border-[#3e3f44] px-[35px] pb-[50px] pt-[30px]"
+          on_cancel={JS.push("close_email_modal", target: @myself)}
         >
           <:title>Email Students</:title>
 
@@ -57,10 +58,7 @@ defmodule OliWeb.Components.Delivery.Students.EmailModal do
                 <div class="border border-gray-300 rounded-lg p-4 relative">
                   <button
                     class="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
-                    phx-click={
-                      JS.push("copy_template", value: %{template: "low_progress"})
-                      |> JS.hide(to: "#email_modal")
-                    }
+                    phx-click={JS.push("copy_template", value: %{template: "low_progress"})}
                     phx-target={@myself}
                   >
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -85,10 +83,7 @@ defmodule OliWeb.Components.Delivery.Students.EmailModal do
                 <div class="border border-gray-300 rounded-lg p-4 relative">
                   <button
                     class="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
-                    phx-click={
-                      JS.push("copy_template", value: %{template: "approaching_due_date"})
-                      |> JS.hide(to: "#email_modal")
-                    }
+                    phx-click={JS.push("copy_template", value: %{template: "approaching_due_date"})}
                     phx-target={@myself}
                   >
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -185,6 +180,7 @@ defmodule OliWeb.Components.Delivery.Students.EmailModal do
 
     {:noreply,
      socket
+     |> assign(email_message: String.trim(message))
      |> push_event("copy_to_clipboard", %{text: message})
      |> put_flash(:info, "Template copied to clipboard")}
   end
