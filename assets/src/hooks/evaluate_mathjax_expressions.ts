@@ -3,7 +3,6 @@
 
 export const EvaluateMathJaxExpressions = {
   mounted() {
-    console.log('EvaluateMathJax');
     const elements = document.querySelectorAll('.formula, .formula-inline, .chat-message');
 
     const getGlobalLastPromise = () => {
