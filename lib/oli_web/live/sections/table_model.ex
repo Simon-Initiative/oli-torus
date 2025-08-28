@@ -261,7 +261,7 @@ defmodule OliWeb.Sections.SectionsTableModel do
   end
 
   def custom_render(assigns, section, %ColumnSpec{name: :start_date}),
-    do: format_date(assigns, section, section.end_date)
+    do: format_date(assigns, section, section.start_date)
 
   def custom_render(assigns, section, %ColumnSpec{name: :end_date}),
     do: format_date(assigns, section, section.end_date)
