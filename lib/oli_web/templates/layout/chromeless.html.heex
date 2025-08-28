@@ -7,9 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    {csrf_meta_tag()}
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /> {csrf_meta_tag()}
     <Phoenix.Component.live_title>
       {assigns[:page_title] || assigns[:title] || Oli.VendorProperties.product_short_name()}
     </Phoenix.Component.live_title>
@@ -89,6 +87,10 @@
     />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.0/highlight.min.js">
     </script>
+    <script
+      src="//cdnjs.cloudflare.com/ajax/libs/highlightjs-line-numbers.js/2.9.0/highlightjs-line-numbers.min.js"
+    >
+    </script>
 
     <link id="preview-theme-light" rel="stylesheet" href="/css/preview.css" />
 
@@ -102,14 +104,11 @@
     <script>
       window.cite = require('citation-js')
     </script>
-
     {OliWeb.Common.MathJaxScript.render(@conn)}
-
     <script type="text/javascript" src={Routes.static_path(@conn, "/js/vendor.js")}>
     </script>
     <script type="text/javascript" src={Routes.static_path(@conn, "/js/app.js")}>
     </script>
-
     {additional_stylesheets(assigns)}
   </head>
   <body>

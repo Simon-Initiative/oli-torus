@@ -49,7 +49,9 @@
     >
     </script>
     <!-- Typeahead -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-3-typeahead/4.0.2/bootstrap3-typeahead.min.js">
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-3-typeahead/4.0.2/bootstrap3-typeahead.min.js"
+    >
     </script>
     <!-- Moment.js https://momentjs.com -->
     <script
@@ -111,6 +113,10 @@
       referrerpolicy="no-referrer"
     >
     </script>
+    <script
+      src="//cdnjs.cloudflare.com/ajax/libs/highlightjs-line-numbers.js/2.9.0/highlightjs-line-numbers.min.js"
+    >
+    </script>
     <!-- ReCAPTCHA -->
     <script src="https://www.google.com/recaptcha/api.js">
     </script>
@@ -145,7 +151,7 @@
     {react_component("Components.ModalDisplay")}
 
     {live_render(@conn, OliWeb.TechSupportLive,
-      session: OliWeb.CollectHelpRequestInfo.collect(@conn)
+    session: OliWeb.CollectHelpRequestInfo.collect(@conn)
     )}
   </body>
 </html>
