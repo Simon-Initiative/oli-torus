@@ -117,14 +117,15 @@ defmodule OliWeb.Components.Delivery.Students.EmailModal do
             <div class="flex justify-end space-x-4 w-full h-24 px-[35px]">
               <button
                 role="cancel"
-                phx-click={Modal.hide_modal("email_modal")}
+                phx-click={JS.push("close_email_modal")}
+                phx-target={@myself}
                 class="text-[#3c75d3] text-sm font-normal leading-[14px] h-[30px] px-4 py-2 rounded-md border border-[#3c75d3] justify-center items-center gap-2 inline-flex overflow-hidden"
               >
                 Cancel
               </button>
               <button
                 role="send email"
-                phx-click={JS.push("send_email") |> Modal.hide_modal("email_modal")}
+                phx-click={JS.push("send_email") |> JS.push("close_email_modal")}
                 phx-target={@myself}
                 disabled={String.trim(@email_message) == ""}
                 class={[
@@ -184,7 +185,6 @@ defmodule OliWeb.Components.Delivery.Students.EmailModal do
 
     {:noreply,
      socket
-     |> assign(email_message: String.trim(message))
      |> push_event("copy_to_clipboard", %{text: message})
      |> put_flash(:info, "Template copied to clipboard")}
   end
@@ -211,6 +211,12 @@ defmodule OliWeb.Components.Delivery.Students.EmailModal do
     else
       {:noreply, socket}
     end
+  end
+
+  def handle_event("close_email_modal", _params, socket) do
+    # Send message to the Students component to hide the modal
+    send(self(), {:hide_email_modal})
+    {:noreply, socket}
   end
 
   defp get_student_name(selected_students, students) do
