@@ -99,10 +99,33 @@ $element-margin-bottom: 1.5em;
 
     code {
       color: inherit;
-    }
-
-    code.hljs {
       background: inherit;
+
+      // table for code line numbering by hljs-line-number add-on to highlightjs
+      table.hljs-ln {
+        width: 100%;
+        background: white;
+        border: 1px solid #ced1d9;
+        border-radius: 5px;
+        border-collapse: separate;
+        border-spacing: 0;
+
+        td.hljs-ln-numbers {
+          min-width: 25px;
+          width: 3em;
+          padding-right: 0.3em;
+          text-align: right;
+        }
+
+        td.hljs-ln-code {
+          border-left: 1px solid #ced1d9;
+          padding-left: 0.5em;
+        }
+
+        tr:nth-child(even) td.hljs-ln-code {
+          background: #f3f4f8;
+        }
+      }
     }
   }
 
@@ -602,6 +625,22 @@ html.dark {
     pre {
       color: var(--color-body-color-dark);
       background: var(--color-gray-900);
+    }
+
+    pre:has(code) {
+      background: inherit;
+
+      table.hljs-ln {
+        background: #2b282e;
+        border: 1px solid #3b3740;
+
+        td.hljs-ln-code {
+          border-left: 1px solid #3b3740;
+        }
+        tr:nth-child(even) td.hljs-ln-code {
+          background: #0d0c0f;
+        }
+      }
     }
 
     .highlighted-annotation-point-block {
