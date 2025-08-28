@@ -194,11 +194,13 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
                     Points:
                   </span>
                   <span class="ml-1 text-[#5e5e5e] text-xs font-semibold leading-[18px] dark:text-white">
-                    {question_points(selected_question)} / {total_question_points(selected_question)}
+                    <%= question_points(selected_question) %> / <%= total_question_points(
+                      selected_question
+                    ) %>
                   </span>
                 </div>
                 <div role="question feedback" class="activity-content">
-                  {OliWeb.Common.React.component(
+                  <%= OliWeb.Common.React.component(
                     @ctx,
                     "Components.Evaluation",
                     %{
@@ -207,7 +209,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
                     },
                     id: "activity_evaluation_for_question_#{selected_question.number}",
                     container: [class: "flex flex-col w-full"]
-                  )}
+                  ) %>
                 </div>
               </div>
             </div>

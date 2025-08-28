@@ -57,9 +57,12 @@ const RestartLessonDialog: React.FC<RestartLessonDialogProps> = ({ onRestart }) 
   const handleRestart = async () => {
     console.info('Restarting lesson...', onRestart);
     setIsLoading(true);
-    if (onRestart) {
+
+    // We only want to restart if we are in preview mode or the page is not graded
+    if ((isPreviewMode || !graded) && onRestart) {
       onRestart();
     }
+
     let redirectTo = overviewURL;
     if (!isPreviewMode && graded) {
       const finalizeResult = await finalizePageAttempt(
