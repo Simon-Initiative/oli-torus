@@ -409,7 +409,26 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
           modules={modules}
           defaultValue={delta}
           onChange={handleQuillChange}
-          formats={['size', 'font', 'bold', 'italic', 'underline', 'strike', 'script', 'blockquote', 'list', 'indent', 'header', 'color', 'background', 'align', 'link', 'image', 'adaptivity', 'insertFIBOption']}
+          formats={[
+            'size',
+            'font',
+            'bold',
+            'italic',
+            'underline',
+            'strike',
+            'script',
+            'blockquote',
+            'list',
+            'indent',
+            'header',
+            'color',
+            'background',
+            'align',
+            'link',
+            'image',
+            'adaptivity',
+            'insertFIBOption',
+          ]}
         />
         {showSaveCancelButtons && (
           <>
