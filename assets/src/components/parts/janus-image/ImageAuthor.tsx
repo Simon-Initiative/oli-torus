@@ -1,73 +1,92 @@
 import React, { CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
 import debounce from 'lodash/debounce';
+import { clone } from 'utils/common';
 import { AuthorPartComponentProps } from '../types/parts';
 import { ImageModel } from './schema';
 
+// 🔹 Module-level variable persists across re-renders and re-mounts
+let lastSavedSize: { width?: number; height?: number } = {};
 const ImageAuthor: React.FC<AuthorPartComponentProps<ImageModel>> = (props) => {
-  const { model, onSaveConfigure, id, onReady } = props;
-  const { width, height, alt, src, lockAspectRatio, defaultSrc } = model;
-
+  const { model, onSaveConfigure } = props;
   const [ready, setReady] = useState<boolean>(false);
-  const imageContainerRef = useRef<HTMLImageElement>(null);
-
-  const debounceImageAdjust = useRef(
-    debounce((modelToUpdate: ImageModel) => {
-      adjustImageSize(modelToUpdate);
-    }, 1000),
-  ).current;
+  const id: string = props.id;
 
   useEffect(() => {
-    onReady?.({ id, responses: [] });
     setReady(true);
-  }, [id, onReady]);
+  }, []);
 
-  const adjustImageSize = useCallback(
-    (updatedModel: ImageModel) => {
-      const imgEl = imageContainerRef.current;
-      if (!imgEl || src === defaultSrc) return;
+  useEffect(() => {
+    if (!ready) {
+      return;
+    }
+    props.onReady({ id, responses: [] });
+  }, [ready]);
 
-      const { naturalWidth, naturalHeight, width: currentWidth, height: currentHeight } = imgEl;
+  const { width, height, src, alt, defaultSrc } = model;
+  const imageStyles: CSSProperties = {
+    width,
+    height,
+  };
 
-      if (naturalWidth <= 0 || naturalHeight <= 0 || currentWidth <= 0 || currentHeight <= 0) {
-        return;
-      }
-      const ratioWidth = naturalWidth / currentWidth;
-      const ratioHeight = naturalHeight / currentHeight;
-
-      if (ratioWidth === ratioHeight) return;
-
-      let newWidth = currentWidth;
-      let newHeight = currentHeight;
-
-      if (ratioWidth > ratioHeight) {
-        newHeight = Math.round(naturalHeight / ratioWidth);
-      } else {
-        newWidth = Math.round(naturalWidth / ratioHeight);
-      }
-
-      if (newWidth !== updatedModel.width || newHeight !== updatedModel.height) {
-        onSaveConfigure({
-          id,
-          snapshot: { ...updatedModel, width: newWidth, height: newHeight },
-        });
-      }
-    },
-    [onSaveConfigure, id],
+  const debounceWaitTime = 1000;
+  const debounceImageAdjust = useCallback(
+    debounce((updatedModel: any) => {
+      manipulateImageSize(updatedModel, true);
+    }, debounceWaitTime),
+    [],
   );
 
   useEffect(() => {
-    if (src?.length && src !== defaultSrc && lockAspectRatio) {
+    if (src != defaultSrc) {
       debounceImageAdjust(model);
     }
-  }, [src, lockAspectRatio, model, debounceImageAdjust]);
+  }, [model]);
+  const imageContainerRef = useRef<HTMLImageElement>(null);
+  const manipulateImageSize = (updatedModel: ImageModel, isfromDebaunce: boolean) => {
+    if (!imageContainerRef?.current || !isfromDebaunce) {
+      return;
+    }
+    const naturalWidth = imageContainerRef.current.naturalWidth;
+    const naturalHeight = imageContainerRef.current.naturalHeight;
 
-  const imageStyles: CSSProperties = { width, height };
-
+    const currentWidth = imageContainerRef.current.width;
+    const currentHeight = imageContainerRef.current.height;
+    if (naturalWidth <= 0 || naturalHeight <= 0 || currentWidth <= 0 || currentHeight <= 0) {
+      return;
+    }
+    const ratioWidth = naturalWidth / currentWidth;
+    const ratioHeight = naturalHeight / currentHeight;
+    if (ratioWidth == ratioHeight) {
+      return;
+    }
+    let newAdjustedHeight = imageContainerRef.current.height;
+    let newAdjustedWidth = imageContainerRef.current.width;
+    if (ratioWidth > ratioHeight) {
+      newAdjustedHeight = parseInt(Number(naturalHeight / ratioWidth).toFixed());
+    } else {
+      newAdjustedWidth = parseInt(Number(naturalWidth / ratioHeight).toFixed());
+    }
+    const modelClone = clone(updatedModel);
+    modelClone.height = newAdjustedHeight;
+    modelClone.width = newAdjustedWidth;
+    if (
+      (newAdjustedHeight != updatedModel.height || newAdjustedWidth != updatedModel.width) &&
+      newAdjustedWidth !== lastSavedSize.width &&
+      newAdjustedHeight !== lastSavedSize.height
+    ) {
+      // Update module-level tracker
+      lastSavedSize = { width: newAdjustedWidth, height: newAdjustedHeight };
+      //we need to save the new width and height of the image so that the custom property is updated with adjusted values
+      onSaveConfigure({ id, snapshot: modelClone });
+    }
+  };
   return ready ? (
     <img
       ref={imageContainerRef}
-      onLoad={() => lockAspectRatio && adjustImageSize(model)}
-      draggable={false}
+      onLoad={() => {
+        manipulateImageSize(model, false);
+      }}
+      draggable="false"
       alt={alt}
       src={src}
       style={imageStyles}
