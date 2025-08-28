@@ -97,7 +97,7 @@ $element-margin-bottom: 1.5em;
     padding: 1em;
     margin-bottom: $element-margin-bottom;
 
-    code.hljs {
+    code {
       color: inherit;
       background: inherit;
 
@@ -627,7 +627,7 @@ html.dark {
       background: var(--color-gray-900);
     }
 
-    pre:has(code.hljs) {
+    pre:has(code) {
       background: inherit;
 
       table.hljs-ln {
