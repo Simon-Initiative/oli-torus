@@ -39,3 +39,12 @@ jobs:
 
           # Run stack
           docker-compose -p $PROJECT -f devops/docker-compose.yml up -d
+
+      - name: Post/Update PR Preview URL Comment
+        uses: peter-evans/create-or-update-comment@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue-number: ${{ github.event.number }}
+          body: "PR Preview deployed at: https://pr${{ github.event.number }}.plasma.oli.cmu.edu"
+          body-includes: "PR Preview deployed at:"
+          edit-mode: replace
