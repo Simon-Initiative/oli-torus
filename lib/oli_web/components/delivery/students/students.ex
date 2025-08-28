@@ -92,6 +92,11 @@ defmodule OliWeb.Components.Delivery.Students do
           Enum.find(table_model.column_specs, fn col_spec -> col_spec.name == params.sort_by end)
       })
 
+    # Add selected_students to table model data
+    selected_students = socket.assigns[:selected_students] || []
+    table_model_data = Map.put(table_model.data, :selected_students, selected_students)
+    table_model = Map.put(table_model, :data, table_model_data)
+
     selected_card_value = Map.get(assigns.params, :selected_card_value, nil)
     students_count = students_count(students, params.filter_by)
 
@@ -171,7 +176,8 @@ defmodule OliWeb.Components.Delivery.Students do
          assigns[:certificate] &&
            assigns.certificate.requires_instructor_approval,
        certificate_pending_email_notification_count:
-         (assigns[:certificate] && assigns.certificate_pending_email_notification_count) || 0
+         (assigns[:certificate] && assigns.certificate_pending_email_notification_count) || 0,
+       selected_students: socket.assigns[:selected_students] || []
      )}
   end
 
@@ -611,6 +617,17 @@ defmodule OliWeb.Components.Delivery.Students do
           </button>
 
           <.live_component
+            id="email_button_component"
+            module={OliWeb.Components.Delivery.Students.EmailButton}
+            selected_students={@selected_students}
+            students={@table_model.rows}
+            section_title={@section_title}
+            instructor_email={issued_by_email(@current_author, @current_user)}
+            section_slug={@section_slug}
+            show_component={length(@selected_students) > 0}
+          />
+
+          <.live_component
             id="bulk_email_certificate_status_component"
             module={OliWeb.Components.Delivery.Students.Certificates.BulkCertificateStatusEmail}
             show_component={
@@ -631,6 +648,8 @@ defmodule OliWeb.Components.Delivery.Students do
           page_change={JS.push("paged_table_page_change", target: @myself)}
           limit_change={JS.push("paged_table_limit_change", target: @myself)}
           show_limit_change={true}
+          allow_selection={true}
+          selection_change={JS.push("paged_table_selection_change", target: @myself)}
         />
         <HTMLComponents.view_example_student_progress_modal />
 
@@ -1371,6 +1390,26 @@ defmodule OliWeb.Components.Delivery.Students do
            update_params(socket.assigns.params, %{sort_by: String.to_existing_atom(sort_by)})
          )
      )}
+  end
+
+  def handle_event("paged_table_selection_change", %{"id" => selected_student_id}, socket) do
+    # Toggle selection - if already selected, remove it, otherwise add it
+    selected_students = socket.assigns[:selected_students] || []
+
+    selected_students =
+      if selected_student_id in selected_students do
+        List.delete(selected_students, selected_student_id)
+      else
+        [selected_student_id | selected_students]
+      end
+
+    # Update table model with selected students
+    table_model_data =
+      Map.put(socket.assigns.table_model.data, :selected_students, selected_students)
+
+    table_model = Map.put(socket.assigns.table_model, :data, table_model_data)
+
+    {:noreply, assign(socket, selected_students: selected_students, table_model: table_model)}
   end
 
   def handle_event("filter_by", %{"filter" => filter}, socket) do

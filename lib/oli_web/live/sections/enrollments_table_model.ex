@@ -10,6 +10,7 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
   alias OliWeb.Common.Utils
   alias OliWeb.Common.FormatDateTime
   alias OliWeb.Delivery.InstructorDashboard.HTMLComponents
+  alias Phoenix.LiveView.JS
 
   use Phoenix.Component
 
@@ -29,6 +30,13 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
       ) do
     column_specs =
       [
+        %ColumnSpec{
+          name: :selection,
+          label: "",
+          render_fn: &__MODULE__.render_selection_column/3,
+          sortable: false,
+          th_class: "w-4"
+        },
         %ColumnSpec{
           name: :name,
           label: "STUDENT NAME",
@@ -106,6 +114,25 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
           Utils.name(row2.name, row2.given_name, row2.family_name)
       end
     }
+  end
+
+  def render_selection_column(assigns, user, _) do
+    selected_students = Map.get(assigns, :selected_students, [])
+    is_selected = user.id in selected_students
+
+    assigns = Map.merge(assigns, %{is_selected: is_selected, user_id: user.id})
+
+    ~H"""
+    <div class="flex items-center justify-center">
+      <input
+        type="checkbox"
+        checked={@is_selected}
+        class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+        phx-click={JS.push("paged_table_selection_change", value: %{id: @user_id})}
+        phx-target={@target}
+      />
+    </div>
+    """
   end
 
   def render_name_column(
