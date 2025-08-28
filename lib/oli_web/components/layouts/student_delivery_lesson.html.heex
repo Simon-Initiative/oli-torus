@@ -133,13 +133,13 @@
 
         <%= if @section && !@page_context.page.graded do %>
           {live_render(@socket, OliWeb.Dialogue.WindowLive,
-          session: %{
-          "section_slug" => @section.slug,
-          "resource_id" => @page_context.page.resource_id,
-          "revision_id" => @page_context.page.id,
-          "is_page" => true
-          },
-          id: "dialogue-window"
+            session: %{
+              "section_slug" => @section.slug,
+              "resource_id" => @page_context.page.resource_id,
+              "revision_id" => @page_context.page.id,
+              "is_page" => true
+            },
+            id: "dialogue-window"
           )}
         <% end %>
       </div>

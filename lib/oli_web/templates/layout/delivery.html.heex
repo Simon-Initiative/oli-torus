@@ -114,9 +114,7 @@
       referrerpolicy="no-referrer"
     >
     </script>
-    <script
-      src="//cdnjs.cloudflare.com/ajax/libs/highlightjs-line-numbers.js/2.9.0/highlightjs-line-numbers.min.js"
-    >
+    <script src="//cdnjs.cloudflare.com/ajax/libs/highlightjs-line-numbers.js/2.9.0/highlightjs-line-numbers.min.js">
     </script>
 
     <%= unless Map.get(assigns, :vr_agent_active, false) do %>
@@ -157,7 +155,7 @@
     {react_component("Components.ModalDisplay")}
 
     {live_render(@conn, OliWeb.TechSupportLive,
-    session: OliWeb.CollectHelpRequestInfo.collect(@conn)
+      session: OliWeb.CollectHelpRequestInfo.collect(@conn)
     )}
   </body>
 </html>
