@@ -1825,18 +1825,18 @@ defmodule Oli.Delivery.Sections do
       end)
     end)
     |> label_and_sort_resources_by_hierarchy(section.slug)
-    |> attach_statuses_for_user(section.slug, user)
+    |> attach_statuses_for_user(section, user)
   end
 
-  defp attach_statuses_for_user(explorations_map, _section_slug, nil),
+  defp attach_statuses_for_user(explorations_map, _section, nil),
     do:
       explorations_map
       |> Enum.map(fn {container_id, explorations} ->
         {container_id, Enum.map(explorations, fn exploration -> {exploration, :not_started} end)}
       end)
 
-  defp attach_statuses_for_user(explorations_map, section_slug, user) do
-    started_explorations = fetch_started_explorations(section_slug, user.id)
+  defp attach_statuses_for_user(explorations_map, section, user) do
+    started_explorations = fetch_started_explorations(section, user.id)
 
     explorations_map
     |> Enum.map(fn {container_id, explorations} ->
@@ -1847,10 +1847,10 @@ defmodule Oli.Delivery.Sections do
     end)
   end
 
-  defp fetch_started_explorations(section_slug, user_id) do
+  defp fetch_started_explorations(section, user_id) do
     page_id = Oli.Resources.ResourceType.get_id_by_type("page")
 
-    from([sr: sr, rev: rev] in DeliveryResolver.section_resource_revisions(section_slug),
+    from([sr: sr, rev: rev] in DeliveryResolver.section_resource_revisions(section.slug),
       join: ra in ResourceAccess,
       on: ra.resource_id == rev.resource_id,
       join: resource_attempt in ResourceAttempt,
@@ -1858,7 +1858,8 @@ defmodule Oli.Delivery.Sections do
       join: user in assoc(ra, :user),
       where:
         rev.purpose == :application and rev.deleted == false and
-          rev.resource_type_id == ^page_id and user.id == ^user_id,
+          rev.resource_type_id == ^page_id and user.id == ^user_id and
+          ra.section_id == ^section.id,
       order_by: [asc: rev.resource_id],
       group_by: [rev.id, resource_attempt.id],
       select: rev.resource_id
