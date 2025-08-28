@@ -220,6 +220,218 @@ defmodule Oli.ScopedFeatureFlagsTest do
     end
   end
 
+  describe "batch operations" do
+    test "batch_enabled?/2 returns correct map for projects" do
+      project = insert(:project)
+      
+      {:ok, _} = ScopedFeatureFlags.enable_feature("feature1", project)
+      {:ok, _} = ScopedFeatureFlags.disable_feature("feature2", project)
+      
+      result = ScopedFeatureFlags.batch_enabled?(["feature1", "feature2", "feature3"], project)
+      
+      assert result == %{
+        "feature1" => true,
+        "feature2" => false,
+        "feature3" => false
+      }
+    end
+
+    test "batch_enabled?/2 returns correct map for sections" do
+      section = insert(:section)
+      
+      {:ok, _} = ScopedFeatureFlags.enable_feature("feature1", section)
+      {:ok, _} = ScopedFeatureFlags.disable_feature("feature2", section)
+      
+      result = ScopedFeatureFlags.batch_enabled?(["feature1", "feature2", "feature3"], section)
+      
+      assert result == %{
+        "feature1" => true,
+        "feature2" => false,
+        "feature3" => false
+      }
+    end
+
+    test "batch_enabled_projects?/2 returns correct map" do
+      project1 = insert(:project)
+      project2 = insert(:project)
+      project3 = insert(:project)
+      
+      {:ok, _} = ScopedFeatureFlags.enable_feature("mcp_authoring", project1)
+      {:ok, _} = ScopedFeatureFlags.disable_feature("mcp_authoring", project2)
+      
+      result = ScopedFeatureFlags.batch_enabled_projects?("mcp_authoring", [project1.id, project2.id, project3.id])
+      
+      assert result == %{
+        project1.id => true,
+        project2.id => false,
+        project3.id => false
+      }
+    end
+
+    test "set_features_atomically/2 succeeds when all operations are valid for project" do
+      project = insert(:project)
+      
+      feature_settings = [
+        {"feature1", true},
+        {"feature2", false},
+        {"feature3", true}
+      ]
+      
+      {:ok, results} = ScopedFeatureFlags.set_features_atomically(feature_settings, project)
+      
+      assert length(results) == 3
+      assert ScopedFeatureFlags.enabled?("feature1", project)
+      refute ScopedFeatureFlags.enabled?("feature2", project)
+      assert ScopedFeatureFlags.enabled?("feature3", project)
+    end
+
+    test "set_features_atomically/2 rolls back all operations on failure for project" do
+      project = insert(:project)
+      
+      feature_settings = [
+        {"valid_feature", true},
+        {"", false}, # This should cause validation failure
+        {"another_feature", true}
+      ]
+      
+      {:error, _} = ScopedFeatureFlags.set_features_atomically(feature_settings, project)
+      
+      # None of the features should be set due to rollback
+      refute ScopedFeatureFlags.enabled?("valid_feature", project)
+      refute ScopedFeatureFlags.enabled?("another_feature", project)
+    end
+  end
+
+  describe "input validation" do
+    test "rejects invalid feature names" do
+      project = insert(:project)
+
+      # Empty string
+      {:error, errors} = ScopedFeatureFlags.enable_feature("", project)
+      assert "Feature name cannot be empty" in errors[:invalid_feature_name]
+
+      # Too long
+      long_name = String.duplicate("a", 256)
+      {:error, errors} = ScopedFeatureFlags.enable_feature(long_name, project)
+      assert "Feature name cannot be longer than 255 characters" in errors[:invalid_feature_name]
+
+      # Invalid characters
+      {:error, errors} = ScopedFeatureFlags.enable_feature("feature name with spaces", project)
+      assert "Feature name can only contain letters, numbers, underscores, hyphens, and periods" in errors[:invalid_feature_name]
+
+      # Non-string
+      {:error, errors} = ScopedFeatureFlags.enable_feature(:atom_name, project)
+      assert "Feature name must be a string" in errors[:invalid_feature_name]
+    end
+
+    test "accepts valid feature names" do
+      project = insert(:project)
+
+      valid_names = [
+        "feature_name",
+        "feature-name",
+        "feature.name",
+        "feature123",
+        "Feature_Name-123.test"
+      ]
+
+      Enum.each(valid_names, fn name ->
+        {:ok, _} = ScopedFeatureFlags.enable_feature(name, project)
+        assert ScopedFeatureFlags.enabled?(name, project)
+      end)
+    end
+  end
+
+  describe "property-based behavior tests" do
+    @tag timeout: 30_000
+    test "idempotency property: enable/disable operations are idempotent" do
+      project = insert(:project)
+      feature_name = "test_feature"
+      
+      # Test multiple enables
+      Enum.each(1..10, fn _ ->
+        {:ok, flag_state} = ScopedFeatureFlags.enable_feature(feature_name, project)
+        assert flag_state.enabled == true
+        assert ScopedFeatureFlags.enabled?(feature_name, project)
+      end)
+      
+      # Test multiple disables
+      Enum.each(1..10, fn _ ->
+        {:ok, flag_state} = ScopedFeatureFlags.disable_feature(feature_name, project)
+        assert flag_state.enabled == false
+        refute ScopedFeatureFlags.enabled?(feature_name, project)
+      end)
+    end
+    
+    @tag timeout: 30_000
+    test "state transition property: enable -> disable -> enable produces consistent results" do
+      projects = insert_list(5, :project)
+      sections = insert_list(5, :section)
+      feature_names = ["feature1", "feature2", "feature3"]
+      
+      all_resources = projects ++ sections
+      
+      Enum.each(all_resources, fn resource ->
+        Enum.each(feature_names, fn feature_name ->
+          # Initial state should be false
+          refute ScopedFeatureFlags.enabled?(feature_name, resource)
+          
+          # Enable
+          {:ok, _} = ScopedFeatureFlags.enable_feature(feature_name, resource)
+          assert ScopedFeatureFlags.enabled?(feature_name, resource)
+          
+          # Disable
+          {:ok, _} = ScopedFeatureFlags.disable_feature(feature_name, resource)
+          refute ScopedFeatureFlags.enabled?(feature_name, resource)
+          
+          # Enable again
+          {:ok, _} = ScopedFeatureFlags.enable_feature(feature_name, resource)
+          assert ScopedFeatureFlags.enabled?(feature_name, resource)
+          
+          # Final disable
+          {:ok, _} = ScopedFeatureFlags.disable_feature(feature_name, resource)
+          refute ScopedFeatureFlags.enabled?(feature_name, resource)
+        end)
+      end)
+    end
+
+    test "isolation property: operations on different resources don't interfere" do
+      project1 = insert(:project)
+      project2 = insert(:project)
+      section1 = insert(:section)
+      section2 = insert(:section)
+      
+      feature_name = "test_feature"
+      
+      # Enable for project1 only
+      {:ok, _} = ScopedFeatureFlags.enable_feature(feature_name, project1)
+      
+      # Verify isolation
+      assert ScopedFeatureFlags.enabled?(feature_name, project1)
+      refute ScopedFeatureFlags.enabled?(feature_name, project2)
+      refute ScopedFeatureFlags.enabled?(feature_name, section1)
+      refute ScopedFeatureFlags.enabled?(feature_name, section2)
+      
+      # Enable for section2
+      {:ok, _} = ScopedFeatureFlags.enable_feature(feature_name, section2)
+      
+      # Verify continued isolation
+      assert ScopedFeatureFlags.enabled?(feature_name, project1)
+      refute ScopedFeatureFlags.enabled?(feature_name, project2)
+      refute ScopedFeatureFlags.enabled?(feature_name, section1)
+      assert ScopedFeatureFlags.enabled?(feature_name, section2)
+      
+      # Disable project1
+      {:ok, _} = ScopedFeatureFlags.disable_feature(feature_name, project1)
+      
+      # Verify section2 unaffected
+      refute ScopedFeatureFlags.enabled?(feature_name, project1)
+      refute ScopedFeatureFlags.enabled?(feature_name, project2)
+      refute ScopedFeatureFlags.enabled?(feature_name, section1)
+      assert ScopedFeatureFlags.enabled?(feature_name, section2)
+    end
+  end
+
   describe "resource isolation" do
     test "project and section feature flags are independent" do
       project = insert(:project)
