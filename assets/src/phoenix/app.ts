@@ -178,6 +178,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   hljs.highlightAll();
+  hljs.initLineNumbersOnLoad();
 });
 
 let currentlyPlaying: HTMLAudioElement | null = null;
