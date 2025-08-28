@@ -14,15 +14,27 @@
 ARG ELIXIR_VERSION=1.18.4
 ARG OTP_VERSION=28.0.2
 ARG DEBIAN_VERSION=bullseye-20250721-slim
+ARG RELEASE_SHA
 
 ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
 ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
 
 FROM ${BUILDER_IMAGE} as builder
 
-# install build dependencies
+# install build dependencies including Node.js for asset compilation
 RUN apt-get update -y && apt-get install -y build-essential git \
+    ca-certificates curl gnupg \
     && apt-get clean && rm -f /var/lib/apt/lists/*_*
+
+# install NodeJS 16 for asset compilation
+RUN mkdir -p /etc/apt/keyrings \
+  && curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg \
+  && echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_16.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list
+
+RUN apt-get update -y && apt-get install nodejs -y
+
+# install yarn
+RUN npm install -g yarn
 
 # prepare build dir
 WORKDIR /app
@@ -51,17 +63,25 @@ COPY lib lib
 
 COPY assets assets
 
+# install node dependencies
+RUN yarn --cwd ./assets
+
 # compile assets
+RUN NODE_ENV=production npm run deploy --prefix ./assets
+RUN NODE_ENV=production npm run deploy-node --prefix ./assets
+
 RUN mix assets.deploy
 
 # Compile the release
-RUN mix compile
+RUN SHA=$RELEASE_SHA mix compile
 
 # Changes to config/runtime.exs don't require recompiling the code
 COPY config/runtime.exs config/
 
 COPY rel rel
-RUN mix release
+
+# Build the release
+RUN SHA=${RELEASE_SHA} mix release
 
 # start a new build stage so that the final image will only contain
 # the compiled release and other runtime necessities

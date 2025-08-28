@@ -82,7 +82,7 @@ lib/oli/analytics/test.xml
 .devcontainer/data
 registrations.json
 seeds.json
-docker-compose.override.yml
+/docker-compose.override.yml
 supervisord.log
 supervisord.pid
 stacks.out

@@ -1,0 +1,16 @@
+name: Cleanup PR Preview
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  preview-cleanup:
+    runs-on: plasma
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Remove PR stack
+        run: |
+          export PROJECT=pr${{ github.event.number }}
+          docker-compose -p $PROJECT -f devops/docker-compose.yml down -v
