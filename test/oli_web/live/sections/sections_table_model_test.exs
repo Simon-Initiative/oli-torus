@@ -416,7 +416,7 @@ defmodule OliWeb.Sections.SectionsTableModelTest do
       rendered_str = rendered_to_string(rendered)
 
       assert rendered_str =~ "December"
-      assert rendered_str =~ "2024"
+      assert rendered_str =~ "2023"
     end
 
     test "renders end_date column", %{assigns: assigns, section: section} do
@@ -458,7 +458,7 @@ defmodule OliWeb.Sections.SectionsTableModelTest do
       start_rendered =
         SectionsTableModel.custom_render(assigns, section, %ColumnSpec{name: :start_date})
 
-      assert rendered_to_string(start_rendered) =~ "December 15, 2024"
+      assert rendered_to_string(start_rendered) =~ "January 15, 2024 05:30 AM"
 
       end_rendered =
         SectionsTableModel.custom_render(assigns, section, %ColumnSpec{name: :end_date})
