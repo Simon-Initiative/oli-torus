@@ -2,15 +2,19 @@ defmodule OliWeb.Projects.MCPTokenManagerTest do
   use OliWeb.ConnCase, async: true
 
   import Phoenix.LiveViewTest
-  import Oli.Factory
 
   alias Oli.MCP.Auth
+  alias Oli.ScopedFeatureFlags
 
   describe "MCP Token Manager" do
     setup [:author_conn]
 
     test "displays MCP section on overview page", %{conn: conn, author: author} do
       project = create_project_with_author(author)
+      
+      # Enable the MCP authoring feature flag
+      {:ok, _} = ScopedFeatureFlags.enable_feature(:mcp_authoring, project, author)
+      
       {:ok, view, html} = live(conn, ~p"/workspaces/course_author/#{project.slug}/overview")
 
       # Check that the MCP section exists
@@ -23,6 +27,9 @@ defmodule OliWeb.Projects.MCPTokenManagerTest do
 
     test "can create and manage tokens", %{conn: conn, author: author} do
       project = create_project_with_author(author)
+      
+      # Enable the MCP authoring feature flag
+      {:ok, _} = ScopedFeatureFlags.enable_feature(:mcp_authoring, project, author)
 
       # Create a token directly using the Auth context
       {:ok, {token, _token_string}} = Auth.create_token(author.id, project.id, "Test token")
@@ -44,8 +51,8 @@ defmodule OliWeb.Projects.MCPTokenManagerTest do
   end
 
   defp create_project_with_author(author) do
-    %{project: project} = base_project_with_curriculum(nil)
-    insert(:author_project, project_id: project.id, author_id: author.id)
+    # Use Course.create_project to ensure proper publication and root container setup
+    {:ok, %{project: project}} = Oli.Authoring.Course.create_project("Test Project", author)
     project
   end
 end

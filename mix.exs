@@ -72,6 +72,7 @@ defmodule Oli.MixProject do
       "guides/design/genai.md",
       "guides/design/page-model.md",
       "guides/design/gdpr.md",
+      "guides/design/scoped_feature_flags.md",
       "guides/design/misc.md",
       "guides/activities/overview.md",
       "guides/lti/implementing.md",

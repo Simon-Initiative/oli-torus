@@ -788,7 +788,6 @@ defmodule Oli.Factory do
   def scoped_feature_flag_state_factory() do
     %Oli.ScopedFeatureFlags.ScopedFeatureFlagState{
       feature_name: "mcp_authoring",
-      enabled: false,
       project: build(:project)
     }
   end
@@ -796,15 +795,15 @@ defmodule Oli.Factory do
   def scoped_feature_flag_state_for_project_factory() do
     %Oli.ScopedFeatureFlags.ScopedFeatureFlagState{
       feature_name: "mcp_authoring",
-      enabled: false,
       project: build(:project)
     }
   end
 
   def scoped_feature_flag_state_for_section_factory() do
+    # Note: This factory uses mcp_authoring which is authoring-only
+    # In real usage, you'd need a delivery-scoped feature for sections
     %Oli.ScopedFeatureFlags.ScopedFeatureFlagState{
       feature_name: "mcp_authoring",
-      enabled: false,
       section: build(:section)
     }
   end

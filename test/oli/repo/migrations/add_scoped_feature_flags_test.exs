@@ -1,5 +1,6 @@
 defmodule Oli.Repo.Migrations.AddScopedFeatureFlagsTest do
   use Oli.DataCase
+  import Ecto.Query
 
   import Oli.Factory
 
@@ -12,10 +13,9 @@ defmodule Oli.Repo.Migrations.AddScopedFeatureFlagsTest do
       section = insert(:section)
 
       # This should fail due to the check constraint
-      assert_raise Postgrex.Error, ~r/exactly_one_resource/, fn ->
+      assert_raise Ecto.ConstraintError, ~r/check_constraint/, fn ->
         Repo.insert!(%ScopedFeatureFlagState{
           feature_name: "mcp_authoring",
-          enabled: true,
           project_id: project.id,
           section_id: section.id
         })
@@ -24,10 +24,9 @@ defmodule Oli.Repo.Migrations.AddScopedFeatureFlagsTest do
 
     test "exactly_one_resource check constraint prevents neither project_id nor section_id" do
       # This should fail due to the check constraint
-      assert_raise Postgrex.Error, ~r/exactly_one_resource/, fn ->
+      assert_raise Ecto.ConstraintError, ~r/check_constraint/, fn ->
         Repo.insert!(%ScopedFeatureFlagState{
           feature_name: "mcp_authoring",
-          enabled: true,
           project_id: nil,
           section_id: nil
         })
@@ -40,7 +39,6 @@ defmodule Oli.Repo.Migrations.AddScopedFeatureFlagsTest do
       assert {:ok, _flag_state} =
                Repo.insert(%ScopedFeatureFlagState{
                  feature_name: "mcp_authoring",
-                 enabled: true,
                  project_id: project.id,
                  section_id: nil
                })
@@ -52,7 +50,6 @@ defmodule Oli.Repo.Migrations.AddScopedFeatureFlagsTest do
       assert {:ok, _flag_state} =
                Repo.insert(%ScopedFeatureFlagState{
                  feature_name: "mcp_authoring",
-                 enabled: true,
                  project_id: nil,
                  section_id: section.id
                })
@@ -63,15 +60,13 @@ defmodule Oli.Repo.Migrations.AddScopedFeatureFlagsTest do
 
       Repo.insert!(%ScopedFeatureFlagState{
         feature_name: "mcp_authoring",
-        enabled: true,
         project_id: project.id
       })
 
       # Second insert with same feature_name and project_id should fail
-      assert_raise Postgrex.Error, ~r/unique constraint/, fn ->
+      assert_raise Ecto.ConstraintError, ~r/unique_constraint/, fn ->
         Repo.insert!(%ScopedFeatureFlagState{
           feature_name: "mcp_authoring",
-          enabled: false,
           project_id: project.id
         })
       end
@@ -82,15 +77,13 @@ defmodule Oli.Repo.Migrations.AddScopedFeatureFlagsTest do
 
       Repo.insert!(%ScopedFeatureFlagState{
         feature_name: "mcp_authoring",
-        enabled: true,
         section_id: section.id
       })
 
       # Second insert with same feature_name and section_id should fail
-      assert_raise Postgrex.Error, ~r/unique constraint/, fn ->
+      assert_raise Ecto.ConstraintError, ~r/unique_constraint/, fn ->
         Repo.insert!(%ScopedFeatureFlagState{
           feature_name: "mcp_authoring",
-          enabled: false,
           section_id: section.id
         })
       end
@@ -98,10 +91,9 @@ defmodule Oli.Repo.Migrations.AddScopedFeatureFlagsTest do
 
     test "foreign key constraint on project_id" do
       # This should fail due to foreign key constraint
-      assert_raise Postgrex.Error, ~r/foreign key constraint/, fn ->
+      assert_raise Ecto.ConstraintError, ~r/foreign_key_constraint/, fn ->
         Repo.insert!(%ScopedFeatureFlagState{
           feature_name: "mcp_authoring",
-          enabled: true,
           project_id: 999_999
         })
       end
@@ -109,10 +101,9 @@ defmodule Oli.Repo.Migrations.AddScopedFeatureFlagsTest do
 
     test "foreign key constraint on section_id" do
       # This should fail due to foreign key constraint
-      assert_raise Postgrex.Error, ~r/foreign key constraint/, fn ->
+      assert_raise Ecto.ConstraintError, ~r/foreign_key_constraint/, fn ->
         Repo.insert!(%ScopedFeatureFlagState{
           feature_name: "mcp_authoring",
-          enabled: true,
           section_id: 999_999
         })
       end
@@ -124,9 +115,11 @@ defmodule Oli.Repo.Migrations.AddScopedFeatureFlagsTest do
       {:ok, flag_state} =
         Repo.insert(%ScopedFeatureFlagState{
           feature_name: "mcp_authoring",
-          enabled: true,
           project_id: project.id
         })
+
+      # First remove associations that might prevent deletion
+      from(ap in "authors_projects", where: ap.project_id == ^project.id) |> Repo.delete_all()
 
       # Delete the project
       Repo.delete!(project)
@@ -141,7 +134,6 @@ defmodule Oli.Repo.Migrations.AddScopedFeatureFlagsTest do
       {:ok, flag_state} =
         Repo.insert(%ScopedFeatureFlagState{
           feature_name: "mcp_authoring",
-          enabled: true,
           section_id: section.id
         })
 
@@ -161,14 +153,12 @@ defmodule Oli.Repo.Migrations.AddScopedFeatureFlagsTest do
       {:ok, project_flag} =
         Repo.insert(%ScopedFeatureFlagState{
           feature_name: "mcp_authoring",
-          enabled: true,
           project_id: project.id
         })
 
       {:ok, section_flag} =
         Repo.insert(%ScopedFeatureFlagState{
           feature_name: "mcp_authoring",
-          enabled: false,
           section_id: section.id
         })
 
@@ -185,16 +175,7 @@ defmodule Oli.Repo.Migrations.AddScopedFeatureFlagsTest do
                Repo.all(
                  from(s in ScopedFeatureFlagState,
                    where: s.feature_name == "mcp_authoring",
-                   order_by: s.enabled
-                 )
-               )
-
-      # Query by enabled (should use enabled index)
-      assert [^section_flag] =
-               Repo.all(
-                 from(s in ScopedFeatureFlagState,
-                   where: s.enabled == false,
-                   order_by: s.feature_name
+                   order_by: s.id
                  )
                )
     end
