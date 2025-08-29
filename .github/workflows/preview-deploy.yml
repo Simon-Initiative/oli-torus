@@ -1,0 +1,64 @@
+name: Deploy PR Preview
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  preview-deploy:
+    runs-on: plasma
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 🧾 Build info
+        id: info
+        run: |
+          echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          echo "app_version=$(cat mix.exs | grep version | sed -e 's/.*version: "\(.*\)",/\1/')" >> $GITHUB_OUTPUT
+
+      - name: Build Docker image
+        run: |
+          docker build \
+          --build-arg APP_VERSION=${{ steps.info.outputs.app_version }} \
+          --build-arg RELEASE_SHA=${{ steps.info.outputs.sha_short }} \
+          -t oli-torus:${{ github.sha }} .
+
+      - name: Deploy PR stack
+        run: |
+          export PROJECT=pr${{ github.event.number }}
+          export APP_IMAGE_TAG=${{ github.sha }}
+          export HOST=pr${{ github.event.number }}.plasma.oli.cmu.edu
+
+          # Setup database
+          docker-compose -p $PROJECT -f devops/docker-compose.yml run --rm app /app/bin/oli eval "Oli.Release.setup"
+
+          # Create minio buckets
+          docker-compose -p $PROJECT -f devops/docker-compose.yml run --rm --entrypoint=/bin/mc minio alias set localminio http://minio:9000 minio-user minio-password
+          docker-compose -p $PROJECT -f devops/docker-compose.yml run --rm --entrypoint=/bin/mc minio mb --ignore-existing localminio/oli-torus-media
+          docker-compose -p $PROJECT -f devops/docker-compose.yml run --rm --entrypoint=/bin/mc minio mb --ignore-existing localminio/oli-torus-xapi
+
+          # Run stack
+          docker-compose -p $PROJECT -f devops/docker-compose.yml up -d
+
+      - name: Wait for PR Preview to be available
+        run: |
+          export HOST=pr${{ github.event.number }}.plasma.oli.cmu.edu
+          for i in {1..30}; do
+            if curl -k -fsSL --max-time 5 https://$HOST/healthz; then
+              echo "Preview is up!"
+              exit 0
+            fi
+            echo "Waiting for preview to be available... ($i)"
+            sleep 10
+          done
+          echo "Preview did not become available in time." >&2
+          exit 1
+
+      - name: Post/Update PR Preview URL Comment
+        uses: peter-evans/create-or-update-comment@v3
+        with:
+          token: ${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}
+          issue-number: ${{ github.event.number }}
+          body: "PR preview deployed at: https://pr${{ github.event.number }}.plasma.oli.cmu.edu"
+          body-includes: "PR preview deployed at:"
+          edit-mode: replace

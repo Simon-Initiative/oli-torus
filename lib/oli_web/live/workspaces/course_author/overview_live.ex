@@ -12,6 +12,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
   alias Oli.LanguageCodesIso639
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Resources.Collaboration
+  alias Oli.ScopedFeatureFlags
   alias OliWeb.Common.Utils
   alias OliWeb.Components.{Common, Modal, Overview}
   alias OliWeb.Components.Project.{AdvancedActivityItem, AsyncExporter}
@@ -344,6 +345,20 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
         />
       </Overview.section>
 
+      <%= if ScopedFeatureFlags.enabled?(:mcp_authoring, @project) do %>
+        <Overview.section
+          title="MCP Access Tokens"
+          description="Generate Bearer tokens for external AI agents to access this project's content via the Model Context Protocol (MCP)."
+        >
+          <.live_component
+            module={OliWeb.Projects.MCPTokenManager}
+            id="mcp-token-manager"
+            project={@project}
+            current_author={@current_author}
+          />
+        </Overview.section>
+      <% end %>
+
       {live_render(@socket, OliWeb.Projects.VisibilityLive,
         id: "project_visibility",
         session: %{"project_slug" => @project.slug}
@@ -390,6 +405,24 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
           project={@project}
         />
       </Overview.section>
+
+      <%= if @is_admin do %>
+        <Overview.section
+          title="Feature Flags"
+          description="Manage scoped feature flags for this project."
+        >
+          <.live_component
+            module={OliWeb.Components.ScopedFeatureFlagsComponent}
+            id="project_scoped_features"
+            scopes={[:authoring, :both]}
+            source_id={@project.id}
+            source_type={:project}
+            source={@project}
+            current_author={@ctx.author}
+            title="Project Features"
+          />
+        </Overview.section>
+      <% end %>
 
       <Overview.section title="Actions" is_last={true}>
         <%= if @is_admin do %>
@@ -689,6 +722,17 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
        project_selected_activities:
          Activities.selected_activities_for_project(socket.assigns.project.id)
      )}
+  end
+
+  def handle_info({:scoped_feature_updated, feature_name, enabled, _source}, socket) do
+    action = if enabled, do: "enabled", else: "disabled"
+    message = "Feature '#{feature_name}' #{action} successfully"
+    {:noreply, put_flash(socket, :info, message)}
+  end
+
+  def handle_info({:scoped_feature_error, feature_name, error_message}, socket) do
+    message = "Failed to update feature '#{feature_name}': #{error_message}"
+    {:noreply, put_flash(socket, :error, message)}
   end
 
   attr :collaborators, :map, required: true

@@ -79,7 +79,7 @@ const getCssForFonts = (fonts: string[]) => {
 const fontStyles = `${getCssForFonts(supportedFonts)}
 /* default normal size */
 .ql-container {
-  font-size: 20px !important;
+  font-size: 16px !important;
 }
 .ql-snow .ql-picker.ql-size .ql-picker-item[data-value="12px"]::before {
   content: '12px';
@@ -134,7 +134,15 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
   const [contents, setContents] = React.useState<any>(tree);
   const [selectedKey, setSelectedKey] = useState<number>(0);
   const [fibElements, setFibElements] = React.useState<any>([]);
-  const [delta, setDelta] = React.useState<any>(convertJanusToQuill(tree));
+  // Set default font size to 16px in initial delta
+  const initialDelta = useMemo(() => {
+    const d = convertJanusToQuill(tree);
+    if (d && d.ops && d.ops.length > 0 && !d.ops[0].attributes?.size) {
+      d.ops[0].attributes = { ...(d.ops[0].attributes || {}), size: '16px' };
+    }
+    return d;
+  }, [tree]);
+  const [delta, setDelta] = React.useState<any>(initialDelta);
   const [currentQuillRange, setCurrentQuillRange] = React.useState<number>(0);
   const [showImageSelectorDailog, setShowImageSelectorDailog] = React.useState<boolean>(false);
   const [showFIBOptionEditorDailog, setShowFIBOptionEditorDailog] = React.useState<boolean>(false);
@@ -359,7 +367,7 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
           },
           { background: [] },
         ], // dropdown with defaults from theme
-        [{ font: FontAttributor.whitelist }, { size: ['12px', '14px', '16px', '18px', '20px'] }],
+        [{ font: FontAttributor.whitelist }, { size: ['16px', '12px', '14px', '18px', '20px'] }],
         [{ align: [] }],
         ['link', 'adaptivity'],
         ['clean'], // remove formatting button
@@ -401,6 +409,26 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
           modules={modules}
           defaultValue={delta}
           onChange={handleQuillChange}
+          formats={[
+            'size',
+            'font',
+            'bold',
+            'italic',
+            'underline',
+            'strike',
+            'script',
+            'blockquote',
+            'list',
+            'indent',
+            'header',
+            'color',
+            'background',
+            'align',
+            'link',
+            'image',
+            'adaptivity',
+            'insertFIBOption',
+          ]}
         />
         {showSaveCancelButtons && (
           <>

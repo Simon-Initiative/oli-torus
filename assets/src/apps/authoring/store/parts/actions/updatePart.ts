@@ -152,8 +152,10 @@ export const updatePart = createAsyncThunk(
     }
 
     if (authorPart) {
-      authorPart.gradingApproach = partDef.custom.requiresManualGrading ? 'manual' : 'automatic';
-      authorPart.outOf = partDef.custom.maxScore || 1;
+      authorPart.gradingApproach = payload?.changes?.custom?.requiresManualGrading
+        ? 'manual'
+        : 'automatic';
+      authorPart.outOf = payload?.changes?.custom?.maxScore || 1;
     }
 
     await dispatch(saveActivity({ activity: activityClone, undoable: false }));
