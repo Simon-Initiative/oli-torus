@@ -6,12 +6,16 @@ on:
       - hotfix-*
       - prerelease-*
       - nextgen-ux
+  pull_request:
+    types: [opened, synchronize, reopened]
   # manually trigger a package build from the Actions tab
   workflow_dispatch:
 
 jobs:
   amazon-linux:
     runs-on: ubuntu-latest
+    # Only run for push events, not pull requests
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
 
     outputs:
       app_version: ${{ steps.info.outputs.app_version }}

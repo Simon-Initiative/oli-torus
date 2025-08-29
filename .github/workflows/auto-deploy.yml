@@ -1,4 +1,4 @@
-name: Auto Deploy
+name: Auto Deploy & PR Preview
 
 on:
   # Run this workflow after the Package workflow completes
@@ -42,3 +42,78 @@ jobs:
           user: simon-bot
           key: ${{ secrets.SIMON_BOT_PRIVATE_KEY}}
           port: 44067
+
+  pr-preview-deploy:
+    name: PR Preview Deploy
+    if: always() && (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'pull_request')
+    runs-on: plasma
+    steps:
+      - name: 🛎️ Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: 🧾 Get PR number
+        id: pr
+        run: |
+          PR_NUMBER=$(gh pr view ${{ github.event.workflow_run.head_sha }} --json number --jq .number)
+          echo "number=$PR_NUMBER" >> $GITHUB_OUTPUT
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🧾 Build info
+        id: info
+        run: |
+          echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          echo "app_version=$(cat mix.exs | grep version | sed -e 's/.*version: "\(.*\)",/\1/')" >> $GITHUB_OUTPUT
+
+      - name: 🔑 Log in to Github Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🐳 Pull Docker image
+        run: |
+          docker pull ghcr.io/simon-initiative/oli-torus:sha-${{ steps.info.outputs.sha_short }}
+          docker tag ghcr.io/simon-initiative/oli-torus:sha-${{ steps.info.outputs.sha_short }} oli-torus:${{ github.event.workflow_run.head_sha }}
+
+      - name: 🚀 Deploy PR stack
+        run: |
+          export PROJECT=pr${{ steps.pr.outputs.number }}
+          export APP_IMAGE_TAG=${{ github.event.workflow_run.head_sha }}
+          export HOST=pr${{ steps.pr.outputs.number }}.plasma.oli.cmu.edu
+
+          # Setup database
+          docker-compose -p $PROJECT -f devops/docker-compose.yml run --rm app /app/bin/oli eval "Oli.Release.setup"
+
+          # Create minio buckets
+          docker-compose -p $PROJECT -f devops/docker-compose.yml run --rm --entrypoint=/bin/mc minio alias set localminio http://minio:9000 minio-user minio-password
+          docker-compose -p $PROJECT -f devops/docker-compose.yml run --rm --entrypoint=/bin/mc minio mb --ignore-existing localminio/oli-torus-media
+          docker-compose -p $PROJECT -f devops/docker-compose.yml run --rm --entrypoint=/bin/mc minio mb --ignore-existing localminio/oli-torus-xapi
+
+          # Run stack
+          docker-compose -p $PROJECT -f devops/docker-compose.yml up -d
+
+      - name: ⏳ Wait for PR Preview to be available
+        run: |
+          export HOST=pr${{ steps.pr.outputs.number }}.plasma.oli.cmu.edu
+          for i in {1..30}; do
+            if curl -k -fsSL --max-time 5 https://$HOST/healthz; then
+              echo "Preview is up!"
+              exit 0
+            fi
+            echo "Waiting for preview to be available... ($i)"
+            sleep 10
+          done
+          echo "Preview did not become available in time." >&2
+          exit 1
+
+      - name: 💬 Post/Update PR Preview URL Comment
+        uses: peter-evans/create-or-update-comment@v3
+        with:
+          token: ${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}
+          issue-number: ${{ steps.pr.outputs.number }}
+          body: "PR preview deployed at: https://pr${{ steps.pr.outputs.number }}.plasma.oli.cmu.edu"
+          edit-mode: replace
