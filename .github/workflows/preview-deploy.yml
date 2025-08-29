@@ -54,11 +54,23 @@ jobs:
           echo "Preview did not become available in time." >&2
           exit 1
 
-      - name: Post/Update PR Preview URL Comment
-        uses: peter-evans/create-or-update-comment@v3
+      - name: Find existing PR preview comment
+        uses: peter-evans/find-comment@v3
+        id: fc
         with:
           token: ${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}
           issue-number: ${{ github.event.number }}
-          body: "PR preview deployed at: https://pr${{ github.event.number }}.plasma.oli.cmu.edu"
+          comment-author: "simon-bot"
           body-includes: "PR preview deployed at:"
+
+      - name: Post/Update PR Preview URL Comment
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          token: ${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}
+          comment-id: ${{ steps.fc.outputs.comment-id }}
+          issue-number: ${{ github.event.number }}
+          body: |
+            PR preview deployed at: https://pr${{ github.event.number }}.plasma.oli.cmu.edu
+
+            Last updated: ${{ github.event.pull_request.updated_at }}
           edit-mode: replace
