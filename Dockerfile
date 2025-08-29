@@ -14,12 +14,13 @@
 ARG ELIXIR_VERSION=1.18.4
 ARG OTP_VERSION=28.0.2
 ARG DEBIAN_VERSION=bullseye-20250721-slim
-ARG RELEASE_SHA
 
 ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
 ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
 
 FROM ${BUILDER_IMAGE} as builder
+
+ARG SHA_SHORT
 
 # install build dependencies including Node.js for asset compilation
 RUN apt-get update -y && apt-get install -y build-essential git \
