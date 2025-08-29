@@ -2053,4 +2053,7 @@ defmodule Oli.Accounts do
       [email: "must be a valid email address"]
     end
   end
+
+  def get_user_emails_by_ids(user_ids),
+    do: from(u in User, where: u.id in ^user_ids, select: u.email) |> Repo.all()
 end
