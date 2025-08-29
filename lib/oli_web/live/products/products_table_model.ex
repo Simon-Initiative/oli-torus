@@ -5,7 +5,7 @@ defmodule OliWeb.Products.ProductsTableModel do
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Common.FormatDateTime
 
-  def new(products, ctx, opts \\ [], project_slug \\ "") do
+  def new(products, ctx, project_slug \\ "", opts \\ []) do
     default_td_class = "!border-r border-Table-table-border"
     default_th_class = "!border-r border-Table-table-border"
 

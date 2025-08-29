@@ -7,7 +7,13 @@ defmodule OliWeb.Sections.SectionsTableModel do
   alias OliWeb.Common.Table.{ColumnSpec, Common, SortableTableModel}
   alias OliWeb.Router.Helpers, as: Routes
 
-  @default_opts [render_institution_action: false, render_date: :relative, exclude_columns: []]
+  @default_opts [
+    render_institution_action: false,
+    render_date: :relative,
+    exclude_columns: [],
+    sort_by_spec: :start_date,
+    sort_order: :asc
+  ]
 
   def new(%SessionContext{} = ctx, sections, opts \\ []) do
     opts = Keyword.validate!(opts, @default_opts)
@@ -95,6 +101,12 @@ defmodule OliWeb.Sections.SectionsTableModel do
       }
     ]
 
+    sort_by = Keyword.get(opts, :sort_by_spec, :start_date)
+    sort_order = Keyword.get(opts, :sort_order, :asc)
+
+    sort_by_spec =
+      Enum.find(column_specs, fn spec -> spec.name == sort_by end)
+
     column_specs =
       Enum.reject(column_specs, fn column -> column.name in opts[:exclude_columns] end)
 
@@ -103,6 +115,8 @@ defmodule OliWeb.Sections.SectionsTableModel do
       column_specs: column_specs,
       event_suffix: "",
       id_field: [:id],
+      sort_by_spec: sort_by_spec,
+      sort_order: sort_order,
       data: %{
         ctx: ctx,
         fade_data: true,
@@ -167,9 +181,9 @@ defmodule OliWeb.Sections.SectionsTableModel do
 
     ~H"""
     <div class="flex space-x-2 items-center">
-      <div>
+      <span class="text-Text-text-high text-base font-medium">
         {@section.institution && @section.institution.name}
-      </div>
+      </span>
       <%= if @render_institution_action do %>
         <button class="btn btn-primary my-6" phx-click="edit_section" value={@section.id}>
           Edit
@@ -260,11 +274,25 @@ defmodule OliWeb.Sections.SectionsTableModel do
     """
   end
 
-  def custom_render(assigns, section, %ColumnSpec{name: :start_date}),
-    do: format_date(assigns, section, section.start_date)
+  def custom_render(assigns, section, %ColumnSpec{name: :start_date}) do
+    assigns = Map.merge(assigns, %{section: section})
 
-  def custom_render(assigns, section, %ColumnSpec{name: :end_date}),
-    do: format_date(assigns, section, section.end_date)
+    ~H"""
+    <span class="text-Text-text-high text-base font-medium">
+      {format_date(assigns, @section, @section.start_date)}
+    </span>
+    """
+  end
+
+  def custom_render(assigns, section, %ColumnSpec{name: :end_date}) do
+    assigns = Map.merge(assigns, %{section: section})
+
+    ~H"""
+    <span class="text-Text-text-high text-base font-medium">
+      {format_date(assigns, @section, @section.end_date)}
+    </span>
+    """
+  end
 
   def render(assigns) do
     ~H"""

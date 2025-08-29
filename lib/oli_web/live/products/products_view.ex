@@ -70,7 +70,7 @@ defmodule OliWeb.Products.ProductsView do
   end
 
   defp mount_as(params, author, is_admin_view, project, breadcrumbs, title, socket) do
-    project_id = if project === nil, do: nil, else: project.id
+    {project_id, project_slug} = {project && project.id, (project && project.slug) || ""}
 
     products =
       Blueprint.browse(
@@ -86,7 +86,10 @@ defmodule OliWeb.Products.ProductsView do
     ctx = socket.assigns.ctx
 
     {:ok, table_model} =
-      ProductsTableModel.new(products, ctx, sort_by_spec: :inserted_at, sort_order: :asc)
+      ProductsTableModel.new(products, ctx, project_slug,
+        sort_by_spec: :inserted_at,
+        sort_order: :asc
+      )
 
     published? =
       case project do
