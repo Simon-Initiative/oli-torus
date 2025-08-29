@@ -20,7 +20,6 @@ ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
 
 FROM ${BUILDER_IMAGE} as builder
 
-# Redeclare RELEASE_SHA to make it available in this build stage
 ARG RELEASE_SHA
 
 # install build dependencies including Node.js for asset compilation
