@@ -13,6 +13,7 @@ interface Props {
   isEvaluated: boolean;
   unselectedIcon: React.ReactNode;
   selectedIcon: React.ReactNode;
+  disabled?: boolean;
 }
 export const ChoicesDelivery: React.FC<Props> = ({
   choices,
@@ -22,6 +23,7 @@ export const ChoicesDelivery: React.FC<Props> = ({
   isEvaluated,
   unselectedIcon,
   selectedIcon,
+  disabled = false,
 }) => {
   const isSelected = (choiceId: ChoiceId) => !!selected.find((s) => s === choiceId);
 
@@ -31,11 +33,11 @@ export const ChoicesDelivery: React.FC<Props> = ({
         // Allow sub-elements to have clickable items that do things (like command buttons)
         return;
       }
-      if (!isEvaluated) {
+      if (!isEvaluated && !disabled) {
         onSelect(choiceId);
       }
     },
-    [isEvaluated, onSelect],
+    [isEvaluated, disabled, onSelect],
   );
 
   return (
@@ -44,8 +46,13 @@ export const ChoicesDelivery: React.FC<Props> = ({
         <div
           key={choice.id}
           aria-label={`choice ${index + 1}`}
-          onClick={onClicked(choice.id)}
-          className={classNames(styles.choicesChoiceRow, isSelected(choice.id) ? 'selected' : '')}
+          onClick={disabled ? undefined : onClicked(choice.id)}
+          className={classNames(
+            styles.choicesChoiceRow,
+            isSelected(choice.id) ? 'selected' : '',
+            disabled ? 'disabled' : '',
+          )}
+          style={{ cursor: disabled ? 'default' : 'pointer' }}
         >
           <div className={styles.choicesChoiceWrapper}>
             <label className={styles.choicesChoiceLabel} htmlFor={`choice-${index}`}>

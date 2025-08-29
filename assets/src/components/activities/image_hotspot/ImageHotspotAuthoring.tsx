@@ -21,6 +21,7 @@ import { MCActions } from '../common/authoring/actions/multipleChoiceActions';
 import { ChoicesDelivery } from '../common/choices/delivery/ChoicesDelivery';
 import { Explanation } from '../common/explanation/ExplanationAuthoring';
 import { SimpleFeedback } from '../common/responses/SimpleFeedback';
+import { StudentResponses } from '../common/responses/StudentResponses';
 import { TargetedFeedback } from '../common/responses/TargetedFeedback';
 import { TriggerAuthoring, TriggerLabel } from '../common/triggers/TriggerAuthoring';
 import * as ActivityTypes from '../types';
@@ -33,13 +34,14 @@ import { ImageHotspotActions } from './actions';
 import { Hotspot, ImageHotspotModelSchema, getShape, makeHotspot, shapeType } from './schema';
 
 const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => {
-  const { dispatch, model, projectSlug, authoringContext } =
+  const { dispatch, model, mode, projectSlug, authoringContext } =
     useAuthoringElementContext<ImageHotspotModelSchema>();
 
   const selectedPartId = model.authoring.parts[0].id;
   const writerContext = defaultWriterContext({
     projectSlug: projectSlug,
   });
+  const isInstructorPreview = mode === 'instructor_preview';
 
   const [selectedHotspot, setSelectedHotspot] = useState<string | null>(null);
   const [addPolyMode, setAddPolyMode] = useState<boolean>(false);
@@ -149,7 +151,11 @@ const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => 
 
   return (
     <React.Fragment>
-      <TabbedNavigation.Tabs>
+      <ControlledTabs isInstructorPreview={isInstructorPreview}>
+        <TabbedNavigation.Tab label="Student Responses">
+          <StudentResponses model={model} projectSlug={projectSlug} />
+        </TabbedNavigation.Tab>
+
         <TabbedNavigation.Tab label="Question">
           <Stem />
 
@@ -297,12 +303,65 @@ const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => 
             <TriggerAuthoring partId={model.authoring.parts[0].id} />
           </TabbedNavigation.Tab>
         )}
-      </TabbedNavigation.Tabs>
+      </ControlledTabs>
     </React.Fragment>
   );
 };
 
 const store = configureStore();
+
+const ControlledTabs: React.FC<{ isInstructorPreview: boolean; children: React.ReactNode }> = ({
+  isInstructorPreview,
+  children,
+}) => {
+  const [activeTab, setActiveTab] = React.useState<number>(0);
+
+  // Force the first visible tab to be active when the mode changes
+  React.useEffect(() => {
+    setActiveTab(0);
+  }, [isInstructorPreview]);
+
+  const validChildren = React.Children.toArray(children).filter(
+    (child): child is React.ReactElement => React.isValidElement(child),
+  );
+
+  return (
+    <>
+      <ul className="nav nav-tabs my-2 flex justify-between" role="tablist">
+        {validChildren.map((child, index) => (
+          <li key={'tab-' + index} className="nav-item" role="presentation">
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setActiveTab(index);
+              }}
+              className={'text-primary nav-link px-3' + (index === activeTab ? ' active' : '')}
+              data-bs-toggle="tab"
+              role="tab"
+              aria-controls={'tab-' + index}
+              aria-selected={index === activeTab}
+            >
+              {child.props.label}
+            </button>
+          </li>
+        ))}
+      </ul>
+      <div className="tab-content">
+        {validChildren.map((child, index) => (
+          <div
+            key={'tab-content-' + index}
+            className={'tab-pane' + (index === activeTab ? ' show active' : '')}
+            role="tabpanel"
+            aria-labelledby={'tab-' + index}
+          >
+            {child.props.children}
+          </div>
+        ))}
+      </div>
+    </>
+  );
+};
 
 export class ImageHotspotAuthoring extends AuthoringElement<ImageHotspotModelSchema> {
   render(mountPoint: HTMLDivElement, props: AuthoringElementProps<ImageHotspotModelSchema>) {

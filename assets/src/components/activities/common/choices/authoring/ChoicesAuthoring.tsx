@@ -45,7 +45,8 @@ export const Choices: React.FC<Props> = ({
   onChangeEditorType,
   onChangeEditorTextDirection,
 }) => {
-  const { projectSlug } = useAuthoringElementContext();
+  const { projectSlug, editMode, mode } = useAuthoringElementContext();
+  const isInstructorPreview = mode === 'instructor_preview';
 
   return (
     <>
@@ -68,7 +69,7 @@ export const Choices: React.FC<Props> = ({
                   >
                     {(choice, index) => (
                       <>
-                        <Draggable.DragIndicator />
+                        {!isInstructorPreview && <Draggable.DragIndicator />}
                         {renderChoiceIcon(icon, choice, index)}
                         {simpleText ? (
                           <input
@@ -81,10 +82,10 @@ export const Choices: React.FC<Props> = ({
                           <SlateOrMarkdownEditor
                             style={{
                               flexGrow: 1,
-                              cursor: 'text',
+                              cursor: isInstructorPreview ? 'default' : 'text',
                               backgroundColor: colorMap?.get(choice.id),
                             }}
-                            editMode={true}
+                            editMode={editMode && !isInstructorPreview}
                             editorType={choice.editor || DEFAULT_EDITOR}
                             placeholder="Answer choice"
                             content={choice.content}
@@ -101,7 +102,7 @@ export const Choices: React.FC<Props> = ({
                             projectSlug={projectSlug}
                           />
                         )}
-                        {choices.length > 1 && (
+                        {choices.length > 1 && !isInstructorPreview && (
                           <div className={styles.removeButtonContainer}>
                             <RemoveButtonConnected onClick={() => onRemove(choice.id)} />
                           </div>
@@ -126,7 +127,7 @@ export const Choices: React.FC<Props> = ({
           </tr>
         </tbody>
       </table>
-      <AddChoiceButton icon={icon} addOne={addOne} />
+      {!isInstructorPreview && <AddChoiceButton icon={icon} addOne={addOne} />}
     </>
   );
 };

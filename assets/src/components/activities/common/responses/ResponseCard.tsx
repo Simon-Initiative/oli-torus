@@ -21,10 +21,12 @@ interface Props {
   removeResponse: (responseId: ID) => void;
   updateScore?: (responseId: ID, score: number) => void;
   customScoring?: boolean;
+  editMode?: boolean;
 }
 
 export const ResponseCard: React.FC<Props> = (props) => {
   const { projectSlug } = useAuthoringElementContext();
+  const editMode = props.editMode ?? true;
 
   const onEditorTypeChange = (editor: EditorType) =>
     props.updateFeedbackEditor!(props.response.id, editor);
@@ -58,7 +60,7 @@ export const ResponseCard: React.FC<Props> = (props) => {
 
         {props.customScoring && (
           /* We are using custom scoring, so prompt for a score instead of correct/incorrect */
-          <ScoreInput score={props.response.score} onChange={onScoreChange} editMode={true}>
+          <ScoreInput score={props.response.score} onChange={onScoreChange} editMode={editMode}>
             Score:
           </ScoreInput>
         )}
@@ -73,7 +75,7 @@ export const ResponseCard: React.FC<Props> = (props) => {
           onEditorTypeChange={onEditorTypeChange}
           allowBlockElements={true}
           editorType={editorType}
-          editMode={true}
+          editMode={editMode}
           projectSlug={projectSlug}
           textDirection={props.response.feedback.textDirection}
           onChangeTextDirection={onChangeTextDirection}

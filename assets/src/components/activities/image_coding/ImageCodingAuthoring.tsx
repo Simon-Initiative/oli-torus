@@ -14,6 +14,7 @@ import guid from 'utils/guid';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
 import { Explanation } from '../common/explanation/ExplanationAuthoring';
+import { StudentResponses as _StudentResponses } from '../common/responses/StudentResponses';
 import * as ActivityTypes from '../types';
 import { MediaItemRequest } from '../types';
 import { ICActions } from './actions';
@@ -23,7 +24,12 @@ import { ImageCodeEditor } from './sections/ImageCodeEditor';
 import { lastPart } from './utils';
 
 const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
-  const { dispatch, model, onRequestMedia } = useAuthoringElementContext<ImageCodingModelSchema>();
+  const {
+    dispatch,
+    model,
+    mode: _mode,
+    onRequestMedia,
+  } = useAuthoringElementContext<ImageCodingModelSchema>();
 
   const { projectSlug } = props;
 

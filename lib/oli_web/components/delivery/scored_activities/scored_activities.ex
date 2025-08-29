@@ -261,6 +261,18 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
             <p class="pt-9 pb-5">No attempt registered for this question</p>
           <% end %>
         </div>
+        <div class="flex mt-2 mb-10 bg-white gap-x-20 dark:bg-gray-800 dark:text-white shadow-sm px-6 py-4">
+          <ActivityHelpers.percentage_bar
+            id={Integer.to_string(@selected_activity.id) <> "_first_try_correct"}
+            value={@selected_activity.first_attempt_pct}
+            label="First Try Correct"
+          />
+          <ActivityHelpers.percentage_bar
+            id={Integer.to_string(@selected_activity.id) <> "_eventually_correct"}
+            value={@selected_activity.all_attempt_pct}
+            label="Eventually Correct"
+          />
+        </div>
       </div>
     </div>
     """

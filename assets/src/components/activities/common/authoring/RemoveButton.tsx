@@ -7,12 +7,14 @@ type Props = {
   className?: string;
   style?: React.CSSProperties;
   editMode: boolean;
+  mode?: 'authoring' | 'instructor_preview';
 };
 
 export const RemoveButton: React.FC<Props> = (props) => (
   <AuthoringButton
     ariaLabel="Remove"
     editMode={props.editMode}
+    mode={props.mode}
     action={props.onClick}
     className="text-body-color dark:text-body-color-dark hover:text-red-500"
   >
@@ -20,7 +22,7 @@ export const RemoveButton: React.FC<Props> = (props) => (
   </AuthoringButton>
 );
 
-export const RemoveButtonConnected: React.FC<Omit<Props, 'editMode'>> = (props) => {
-  const { editMode } = useAuthoringElementContext();
-  return <RemoveButton {...props} editMode={editMode} />;
+export const RemoveButtonConnected: React.FC<Omit<Props, 'editMode' | 'mode'>> = (props) => {
+  const { editMode, mode } = useAuthoringElementContext();
+  return <RemoveButton {...props} editMode={editMode} mode={mode} />;
 };
