@@ -5,54 +5,64 @@ defmodule OliWeb.Products.ProductsTableModel do
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Common.FormatDateTime
 
-  def new(products, ctx, project_slug \\ "") do
+  def new(products, ctx, opts \\ [], project_slug \\ "") do
     default_td_class = "!border-r border-Table-table-border"
     default_th_class = "!border-r border-Table-table-border"
 
+    column_specs = [
+      %ColumnSpec{
+        name: :title,
+        label: "Title",
+        render_fn: &render_title_column(Map.put(&1, :project_slug, project_slug), &2, &3),
+        td_class: default_td_class,
+        th_class: default_th_class
+      },
+      %ColumnSpec{
+        name: :tags,
+        label: "Tags",
+        render_fn: &render_tags_column/3,
+        sortable: false,
+        td_class: default_td_class,
+        th_class: default_th_class
+      },
+      %ColumnSpec{
+        name: :inserted_at,
+        label: "Created",
+        render_fn: &render_created_column/3,
+        td_class: default_td_class,
+        th_class: default_th_class
+      },
+      %ColumnSpec{
+        name: :requires_payment,
+        label: "Requires Payment",
+        render_fn: &render_payment_column/3,
+        sort_fn: &sort_payment_column/2,
+        td_class: default_td_class,
+        th_class: default_th_class
+      },
+      %ColumnSpec{
+        name: :base_project_id,
+        label: "Base Project",
+        render_fn: &render_project_column(Map.put(&1, :project_slug, project_slug), &2, &3),
+        td_class: default_td_class,
+        th_class: default_th_class
+      },
+      %ColumnSpec{name: :status, label: "Status", render_fn: &render_status_column/3}
+    ]
+
+    sort_by = Keyword.get(opts, :sort_by_spec, :inserted_at)
+    sort_order = Keyword.get(opts, :sort_order, :asc)
+
+    sort_by_spec =
+      Enum.find(column_specs, fn spec -> spec.name == sort_by end)
+
     SortableTableModel.new(
       rows: products,
-      column_specs: [
-        %ColumnSpec{
-          name: :title,
-          label: "Title",
-          render_fn: &render_title_column(Map.put(&1, :project_slug, project_slug), &2, &3),
-          td_class: default_td_class,
-          th_class: default_th_class
-        },
-        %ColumnSpec{
-          name: :tags,
-          label: "Tags",
-          render_fn: &render_tags_column/3,
-          sortable: false,
-          td_class: default_td_class,
-          th_class: default_th_class
-        },
-        %ColumnSpec{
-          name: :inserted_at,
-          label: "Created",
-          render_fn: &render_created_column/3,
-          td_class: default_td_class,
-          th_class: default_th_class
-        },
-        %ColumnSpec{
-          name: :requires_payment,
-          label: "Requires Payment",
-          render_fn: &render_payment_column/3,
-          sort_fn: &sort_payment_column/2,
-          td_class: default_td_class,
-          th_class: default_th_class
-        },
-        %ColumnSpec{
-          name: :base_project_id,
-          label: "Base Project",
-          render_fn: &render_project_column(Map.put(&1, :project_slug, project_slug), &2, &3),
-          td_class: default_td_class,
-          th_class: default_th_class
-        },
-        %ColumnSpec{name: :status, label: "Status", render_fn: &render_status_column/3}
-      ],
+      column_specs: column_specs,
       event_suffix: "",
       id_field: [:id],
+      sort_by_spec: sort_by_spec,
+      sort_order: sort_order,
       data: %{ctx: ctx}
     )
   end
