@@ -220,6 +220,10 @@ defmodule OliWeb.Sections.AdminIndexLiveTest do
 
       {:ok, view, _html} = live(conn, @live_view_index_route)
 
+      view
+      |> element("th[phx-click='paged_table_sort']", "Title")
+      |> render_click(%{sort_by: "title"})
+
       # by title
       assert view
              |> element("tr:first-child > td:first-child")

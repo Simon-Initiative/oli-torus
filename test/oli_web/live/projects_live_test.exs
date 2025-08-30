@@ -106,14 +106,18 @@ defmodule OliWeb.Projects.ProjectsLiveTest do
 
       {:ok, view, _html} = live(conn, Routes.live_path(Endpoint, ProjectsLive))
 
+      view
+      |> element("th[phx-click='paged_table_sort'][phx-value-sort_by='title']")
+      |> render_click()
+
       assert view
              |> element("tr:first-child > td:first-child")
              |> render() =~
                "Testing A"
 
       view
-      |> element("th[phx-click='paged_table_sort']:first-of-type")
-      |> render_click(%{sort_by: "title"})
+      |> element("th[phx-click='paged_table_sort'][phx-value-sort_by='title']")
+      |> render_click()
 
       assert view
              |> element("tr:first-child > td:first-child")
@@ -198,13 +202,17 @@ defmodule OliWeb.Projects.ProjectsLiveTest do
 
       {:ok, view, _html} = live(conn, Routes.live_path(Endpoint, ProjectsLive))
 
+      view
+      |> element("th[phx-click='paged_table_sort'][phx-value-sort_by='title']")
+      |> render_click(%{sort_by: "title"})
+
       assert view
              |> element("tr:first-child > td:first-child")
              |> render() =~
                "Testing A"
 
       view
-      |> element("th[phx-click='paged_table_sort']:first-of-type")
+      |> element("th[phx-click='paged_table_sort'][phx-value-sort_by='title']")
       |> render_click(%{sort_by: "title"})
 
       assert view
