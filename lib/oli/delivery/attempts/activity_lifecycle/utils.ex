@@ -61,9 +61,11 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Utils do
             Enum.reduce(part_attempts, %{}, fn p, m -> Map.put(m, p.attempt_guid, p) end)
 
           # flat map the results since the results may contain an additional explanation action
-          for %{attempt_guid: attempt_guid, input: input} <- part_inputs,
-              # Only process inputs that have corresponding attempts
-              Map.has_key?(attempt_map, attempt_guid) do
+          part_inputs
+          |> Enum.filter(fn %{attempt_guid: attempt_guid} ->
+            Map.has_key?(attempt_map, attempt_guid)
+          end)
+          |> Enum.map(fn %{attempt_guid: attempt_guid, input: input} ->
             attempt = Map.get(attempt_map, attempt_guid)
             part = Map.get(part_map, attempt.part_id)
 
@@ -86,7 +88,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Utils do
               resource_revision: resource_attempt.revision,
               effective_settings: effective_settings
             })
-          end
+          end)
 
         _ ->
           []
