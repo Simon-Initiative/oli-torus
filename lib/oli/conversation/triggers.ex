@@ -58,19 +58,23 @@ defmodule Oli.Conversation.Triggers do
   with the AI agent and triggers enabled.
   """
   def verify_access(section_slug, user_id) do
-    case Oli.Accounts.User
-         |> join(:left, [u], e in Oli.Delivery.Sections.Enrollment, on: u.id == e.user_id)
-         |> join(:left, [_, e], s in Oli.Delivery.Sections.Section, on: s.id == e.section_id)
-         |> where(
-           [_, e, s],
-           s.slug == ^section_slug and s.triggers_enabled == true and s.assistant_enabled == true and
-             e.user_id == ^user_id
-         )
-         |> select([_, _, s], s)
-         |> limit(1)
-         |> Repo.one() do
-      nil -> {:error, :no_access}
-      section -> {:ok, section}
+    if is_nil(user_id) or is_nil(section_slug) do
+      {:error, :no_access}
+    else
+      case Oli.Accounts.User
+           |> join(:left, [u], e in Oli.Delivery.Sections.Enrollment, on: u.id == e.user_id)
+           |> join(:left, [_, e], s in Oli.Delivery.Sections.Section, on: s.id == e.section_id)
+           |> where(
+             [_, e, s],
+             s.slug == ^section_slug and s.triggers_enabled == true and s.assistant_enabled == true and
+               e.user_id == ^user_id
+           )
+           |> select([_, _, s], s)
+           |> limit(1)
+           |> Repo.one() do
+        nil -> {:error, :no_access}
+        section -> {:ok, section}
+      end
     end
   end
 
