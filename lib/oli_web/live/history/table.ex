@@ -40,6 +40,7 @@ defmodule OliWeb.RevisionHistory.Table do
 
     tr_props = fn rev_id ->
       selected_id = if assigns.selected, do: assigns.selected.id, else: nil
+
       if rev_id == selected_id do
         [class: "table-active"]
       else
@@ -66,12 +67,12 @@ defmodule OliWeb.RevisionHistory.Table do
         <%= for rev <- @to_display do %>
           <tr id={"revision-#{rev.id}"} {@tr_props.(rev.id)}>
             <td>{rev.id}</td>
-            <td>{
-              case Map.get(@tree, rev.id) do
+            <td>
+              {case Map.get(@tree, rev.id) do
                 %{project_id: project_id} -> project_id
                 _ -> "Unknown"
-              end
-            }</td>
+              end}
+            </td>
             <td>{Utils.render_date(rev, :inserted_at, @ctx)}</td>
             <td>{Utils.render_date(rev, :updated_at, @ctx)}</td>
             <td>{if rev.author, do: rev.author.email, else: "Unknown"}</td>
