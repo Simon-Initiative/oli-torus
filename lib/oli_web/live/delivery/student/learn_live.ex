@@ -3260,11 +3260,15 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     FormatDateTime.to_formatted_datetime(due_date, context, format)
   end
 
-  defp get_viewed_intro_video_resource_ids(section_slug, current_user_id) do
-    Sections.get_enrollment(section_slug, current_user_id).state[
-      "viewed_intro_video_resource_ids"
-    ] ||
-      []
+  @doc false
+  def get_viewed_intro_video_resource_ids(section_slug, current_user_id) do
+    case Sections.get_enrollment(section_slug, current_user_id) do
+      %{state: state} when is_map(state) ->
+        state["viewed_intro_video_resource_ids"] || []
+
+      _ ->
+        []
+    end
   end
 
   defp async_mark_video_as_viewed_in_student_enrollment_state(
