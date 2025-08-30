@@ -39,7 +39,8 @@ defmodule OliWeb.RevisionHistory.Table do
     to_display = Enum.slice(assigns.revisions, range)
 
     tr_props = fn rev_id ->
-      if rev_id == assigns.selected.id do
+      selected_id = if assigns.selected, do: assigns.selected.id, else: nil
+      if rev_id == selected_id do
         [class: "table-active"]
       else
         [style: "cursor: pointer;", "phx-click": "select", "phx-value-rev": rev_id]
@@ -65,10 +66,15 @@ defmodule OliWeb.RevisionHistory.Table do
         <%= for rev <- @to_display do %>
           <tr id={"revision-#{rev.id}"} {@tr_props.(rev.id)}>
             <td>{rev.id}</td>
-            <td>{Map.get(@tree, rev.id).project_id}</td>
+            <td>{
+              case Map.get(@tree, rev.id) do
+                %{project_id: project_id} -> project_id
+                _ -> "Unknown"
+              end
+            }</td>
             <td>{Utils.render_date(rev, :inserted_at, @ctx)}</td>
             <td>{Utils.render_date(rev, :updated_at, @ctx)}</td>
-            <td>{rev.author.email}</td>
+            <td>{if rev.author, do: rev.author.email, else: "Unknown"}</td>
             <td>{rev.slug}</td>
             <td>{publication_state(assigns, rev.id)}</td>
           </tr>
