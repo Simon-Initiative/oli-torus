@@ -28,12 +28,12 @@ defmodule Oli.Rendering.Activity.MarkdownTest do
 
       # Should render placeholder text for the activity
       assert rendered_markdown == [
-        "\n",
-        "Question / Activity: 1",
-        [],
-        [],
-        "\n\n"
-      ]
+               "\n",
+               "Question / Activity: 1",
+               [],
+               [],
+               "\n\n"
+             ]
     end
 
     test "renders activity with empty activity_map gracefully", %{author: author} do
@@ -54,12 +54,12 @@ defmodule Oli.Rendering.Activity.MarkdownTest do
 
       # Should render placeholder text for the activity
       assert rendered_markdown == [
-        "\n",
-        "Question / Activity: 1",
-        [],
-        [],
-        "\n\n"
-      ]
+               "\n",
+               "Question / Activity: 1",
+               [],
+               [],
+               "\n\n"
+             ]
     end
 
     test "renders activity with proper activity_map", %{author: author} do
