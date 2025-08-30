@@ -1,6 +1,8 @@
 defmodule OliWeb.Admin.ExternalTools.DetailsView do
   use OliWeb, :live_view
 
+  require Logger
+
   alias Lti_1p3.DataProviders.EctoProvider.PlatformInstance
   alias Oli.Lti.{PlatformInstances, PlatformExternalTools}
   alias OliWeb.Common.Breadcrumb
@@ -18,6 +20,7 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
       ] ++ [Breadcrumb.new(%{full_title: "LTI 1.3 External Tool Details"})]
   end
 
+  @impl Phoenix.LiveView
   def mount(%{"platform_instance_id" => platform_instance_id}, _session, socket) do
     case PlatformExternalTools.get_platform_instance_with_deployment(platform_instance_id) do
       nil ->
@@ -41,6 +44,7 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
     end
   end
 
+  @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
     <div class="flex flex-col justify-end mx-12 mt-4">
@@ -318,6 +322,14 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
          socket
          |> put_flash(:error, "Error deleting external tool.")}
     end
+  end
+
+  @impl Phoenix.LiveView
+  def handle_event(event, params, socket) do
+    # Catch-all for UI-only events from functional components
+    # that don't need handling (like dropdown toggles)
+    Logger.warning("Unhandled event in DetailsView: #{inspect(event)}, #{inspect(params)}")
+    {:noreply, socket}
   end
 
   defp render_custom_flash(nil), do: nil
