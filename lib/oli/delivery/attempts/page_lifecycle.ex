@@ -128,7 +128,6 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
         activity_provider
       ) do
     Repo.transaction(fn ->
-
       # If this should somehow fail, it should not affect the overall transaction
       # and block the ability to view the page
       update_latest_visited_page(section_slug, user.id, page_revision.resource_id)
