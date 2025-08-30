@@ -66,7 +66,8 @@ defmodule Oli.Conversation.Triggers do
            |> join(:left, [_, e], s in Oli.Delivery.Sections.Section, on: s.id == e.section_id)
            |> where(
              [_, e, s],
-             s.slug == ^section_slug and s.triggers_enabled == true and s.assistant_enabled == true and
+             s.slug == ^section_slug and s.triggers_enabled == true and
+               s.assistant_enabled == true and
                e.user_id == ^user_id
            )
            |> select([_, _, s], s)
