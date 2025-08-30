@@ -2,10 +2,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
   use OliWeb, :live_view
   use OliWeb.Common.Modal
 
+  require Logger
+
   import Oli.Utils, only: [value_or: 2]
   import Oli.Authoring.Editing.Utils
   import OliWeb.Curriculum.Utils
 
+  alias Cluster.Logger
   alias Oli.Authoring.Editing.ContainerEditor
 
   alias OliWeb.Curriculum.{
@@ -465,6 +468,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
      push_patch(socket,
        to: Routes.live_path(socket, __MODULE__, socket.assigns.project.slug, params)
      )}
+  end
+
+  @impl Phoenix.LiveView
+  def handle_event(event, params, socket) do
+    # Catch-all for UI-only events from functional components
+    # that don't need handling (like dropdown toggles)
+    Logger.warn("Unhandled event in CurriculumLive: #{inspect(event)}, #{inspect(params)}")
+    {:noreply, socket}
   end
 
   # Here we respond to notifications for edits made

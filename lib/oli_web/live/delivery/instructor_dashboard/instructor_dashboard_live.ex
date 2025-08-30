@@ -2,6 +2,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   use OliWeb, :live_view
   use OliWeb.Common.Modal
 
+  require Logger
+
   alias Oli.Delivery.Metrics
   alias Oli.Delivery.Sections
   alias OliWeb.Delivery.InstructorDashboard.HTMLComponents
@@ -728,6 +730,14 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     rescue
       _e -> default
     end
+  end
+
+  @impl Phoenix.LiveView
+  def handle_event(event, params, socket) do
+    # Catch-all for UI-only events from functional components
+    # that don't need handling (like dropdown toggles)
+    Logger.warn("Unhandled event in InstructorDashboardLive: #{inspect(event)}, #{inspect(params)}")
+    {:noreply, socket}
   end
 
   @impl Phoenix.LiveView

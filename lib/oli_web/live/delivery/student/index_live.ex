@@ -3,6 +3,8 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   use Appsignal.Instrumentation.Decorators
   import OliWeb.Components.Delivery.Layouts
 
+  require Logger
+
   alias Oli.Delivery.{Attempts, Certificates, Hierarchy, Metrics, Sections, Settings}
   alias Oli.Delivery.Sections.SectionResourceDepot
   alias Oli.Publishing.DeliveryResolver
@@ -148,6 +150,14 @@ defmodule OliWeb.Delivery.Student.IndexLive do
       :upcoming -> {:noreply, assign(socket, assignments_tab: :latest)}
       :latest -> {:noreply, assign(socket, assignments_tab: :upcoming)}
     end
+  end
+
+  @impl Phoenix.LiveView
+  def handle_event(event, params, socket) do
+    # Catch-all for UI-only events from functional components
+    # that don't need handling (like dropdown toggles)
+    Logger.warn("Unhandled event in StudentIndexLive: #{inspect(event)}, #{inspect(params)}")
+    {:noreply, socket}
   end
 
   def render(%{loaded: false} = assigns) do

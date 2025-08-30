@@ -128,8 +128,10 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
         activity_provider
       ) do
     Repo.transaction(fn ->
-      {:ok, _enrollment} =
-        update_latest_visited_page(section_slug, user.id, page_revision.resource_id)
+
+      # If this should somehow fail, it should not affect the overall transaction
+      # and block the ability to view the page
+      update_latest_visited_page(section_slug, user.id, page_revision.resource_id)
 
       {graded, latest_resource_attempt} =
         Appsignal.instrument("PageLifeCycle: get_latest_resource_attempt", fn ->
@@ -164,8 +166,13 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
 
   @decorate transaction_event("PageLifeCycle: update_latest_visited_page")
   defp update_latest_visited_page(section_slug, user_id, resource_id) do
-    Sections.get_enrollment(section_slug, user_id)
-    |> Sections.update_enrollment(%{most_recently_visited_resource_id: resource_id})
+    case Sections.get_enrollment(section_slug, user_id, filter_by_status: false) do
+      nil ->
+        {:error, :not_enrolled}
+
+      enrollment ->
+        Sections.update_enrollment(%{most_recently_visited_resource_id: resource_id})
+    end
   end
 
   @doc """

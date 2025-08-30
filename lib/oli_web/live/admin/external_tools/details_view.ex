@@ -1,6 +1,8 @@
 defmodule OliWeb.Admin.ExternalTools.DetailsView do
   use OliWeb, :live_view
 
+  require Logger
+
   alias Lti_1p3.DataProviders.EctoProvider.PlatformInstance
   alias Oli.Lti.{PlatformInstances, PlatformExternalTools}
   alias OliWeb.Common.Breadcrumb
@@ -318,6 +320,14 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
          socket
          |> put_flash(:error, "Error deleting external tool.")}
     end
+  end
+
+  @impl Phoenix.LiveView
+  def handle_event(event, params, socket) do
+    # Catch-all for UI-only events from functional components
+    # that don't need handling (like dropdown toggles)
+    Logger.warn("Unhandled event in DetailsView: #{inspect(event)}, #{inspect(params)}")
+    {:noreply, socket}
   end
 
   defp render_custom_flash(nil), do: nil
