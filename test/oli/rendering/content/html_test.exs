@@ -130,5 +130,29 @@ defmodule Oli.Content.Content.HtmlTest do
                         "<div class=\"content unsupported\">Content element type 'i-am-unsupported' is not supported"
              end) =~ "Content element type is not supported"
     end
+
+    test "renders content element with model field", %{author: author} do
+      # This test expects that content with a "model" field should render the model contents
+      content_with_model = %{
+        "model" => [
+          %{
+            "children" => [
+              %{"text" => "Among the following questions, which is a well-designed survey open-ended question?"}
+            ],
+            "id" => "c6929630baf84852849b804665882f90",
+            "type" => "p"
+          }
+        ]
+      }
+
+      context = %Context{user: author}
+
+      rendered_html = Content.render(context, content_with_model, Content.Html)
+      rendered_html_string = Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
+
+      # Should render the paragraph content from the model field
+      assert rendered_html_string =~ 
+               "<p data-point-marker=\"c6929630baf84852849b804665882f90\">Among the following questions, which is a well-designed survey open-ended question?</p>"
+    end
   end
 end
