@@ -3242,4 +3242,55 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       end)
     end
   end
+
+  describe "get_viewed_intro_video_resource_ids/2" do
+    alias OliWeb.Delivery.Student.LearnLive
+
+    test "returns empty list when enrollment is nil" do
+      # This simulates the bug scenario where get_enrollment returns nil
+      section_slug = "non_existent_section"
+      user_id = 99999
+
+      result = LearnLive.get_viewed_intro_video_resource_ids(section_slug, user_id)
+      assert result == []
+    end
+
+    test "returns empty list when enrollment exists but state is nil" do
+      user = insert(:user)
+      section = insert(:section)
+      
+      # Create enrollment with nil state
+      insert(:enrollment, user: user, section: section, state: nil)
+
+      result = LearnLive.get_viewed_intro_video_resource_ids(section.slug, user.id)
+      assert result == []
+    end
+
+    test "returns empty list when enrollment exists but state doesn't have viewed_intro_video_resource_ids" do
+      user = insert(:user)
+      section = insert(:section)
+      
+      # Create enrollment with state but without the specific key
+      insert(:enrollment, user: user, section: section, state: %{"other_key" => "value"})
+
+      result = LearnLive.get_viewed_intro_video_resource_ids(section.slug, user.id)
+      assert result == []
+    end
+
+    test "returns the viewed resource ids when they exist in the state" do
+      user = insert(:user)
+      section = insert(:section)
+      viewed_ids = [1, 2, 3]
+      
+      # Create enrollment with viewed intro video resource ids
+      insert(:enrollment, 
+        user: user, 
+        section: section, 
+        state: %{"viewed_intro_video_resource_ids" => viewed_ids}
+      )
+
+      result = LearnLive.get_viewed_intro_video_resource_ids(section.slug, user.id)
+      assert result == viewed_ids
+    end
+  end
 end
