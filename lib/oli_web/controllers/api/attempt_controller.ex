@@ -421,7 +421,7 @@ defmodule OliWeb.Api.AttemptController do
       {:ok, _} ->
         json(conn, %{"type" => "success"})
 
-      {:error, e} ->
+      {:error, _e} ->
         {_, msg} = Oli.Utils.log_error("Could not save part", e)
         error(conn, 500, msg)
     end
@@ -459,7 +459,7 @@ defmodule OliWeb.Api.AttemptController do
             "These changes could not be saved as this attempt may have already been submitted"
         })
 
-      {:error, e} ->
+      {:error, _e} ->
         {_, msg} = Oli.Utils.log_error("Could not save part", e)
         error(conn, 500, msg)
     end
@@ -509,7 +509,7 @@ defmodule OliWeb.Api.AttemptController do
 
         json(conn, %{"type" => "success", "actions" => evaluations})
 
-      {:error, e} ->
+      {:error, _e} ->
         {_, msg} = Oli.Utils.log_error("Could not submit part", e)
         error(conn, 500, msg)
     end
@@ -562,7 +562,7 @@ defmodule OliWeb.Api.AttemptController do
       {:ok, attempt_state} ->
         json(conn, %{"type" => "success", "attemptState" => attempt_state})
 
-      {:error, e} ->
+      {:error, _e} ->
         {_, msg} = Oli.Utils.log_error("Could not reset part", e)
         error(conn, 500, msg)
     end
@@ -593,7 +593,7 @@ defmodule OliWeb.Api.AttemptController do
       {:error, {:no_more_hints}} ->
         json(conn, %{"type" => "success", "hasMoreHints" => false})
 
-      {:error, e} ->
+      {:error, _e} ->
         {_, msg} = Oli.Utils.log_error("Could not get hint", e)
         error(conn, 500, msg)
     end
@@ -618,7 +618,7 @@ defmodule OliWeb.Api.AttemptController do
       {:ok, _} ->
         json(conn, %{"type" => "success"})
 
-      {:error, e} ->
+      {:error, _e} ->
         {_, msg} = Oli.Utils.log_error("Could not save activity", e)
         error(conn, 500, msg)
     end
@@ -655,7 +655,7 @@ defmodule OliWeb.Api.AttemptController do
             "These changes could not be saved as this attempt may have already been submitted"
         })
 
-      {:error, e} ->
+      {:error, _e} ->
         {_, msg} = Oli.Utils.log_error("Could not save activity", e)
         error(conn, 500, msg)
     end
@@ -753,7 +753,7 @@ defmodule OliWeb.Api.AttemptController do
       {:ok, evaluations} ->
         json(conn, %{"type" => "success", "actions" => evaluations})
 
-      {:error, e} ->
+      {:error, _e} ->
         {_, msg} = Oli.Utils.log_error("Could not process activity evaluations", e)
         error(conn, 500, msg)
     end
@@ -787,7 +787,7 @@ defmodule OliWeb.Api.AttemptController do
       {:ok, {attempt_state, model}} ->
         json(conn, %{"type" => "success", "attemptState" => attempt_state, "model" => model})
 
-      {:error, e} ->
+      {:error, _e} ->
         error(conn, 500, "Could not reset activity")
     end
   end
@@ -811,7 +811,7 @@ defmodule OliWeb.Api.AttemptController do
       {:ok, {attempt_state, model}} ->
         json(conn, %{"type" => "success", "attemptState" => attempt_state, "model" => model})
 
-      {:error, e} ->
+      {:error, _e} ->
         error(conn, 500, "could not reset activity")
     end
   end
