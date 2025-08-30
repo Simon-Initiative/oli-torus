@@ -7,8 +7,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
   import Oli.Utils, only: [value_or: 2]
   import Oli.Authoring.Editing.Utils
   import OliWeb.Curriculum.Utils
-
-  alias Cluster.Logger
   alias Oli.Authoring.Editing.ContainerEditor
 
   alias OliWeb.Curriculum.{
@@ -474,7 +472,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
   def handle_event(event, params, socket) do
     # Catch-all for UI-only events from functional components
     # that don't need handling (like dropdown toggles)
-    Logger.warn("Unhandled event in CurriculumLive: #{inspect(event)}, #{inspect(params)}")
+    Logger.warning("Unhandled event in CurriculumLive: #{inspect(event)}, #{inspect(params)}")
     {:noreply, socket}
   end
 

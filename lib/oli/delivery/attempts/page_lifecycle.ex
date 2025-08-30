@@ -171,7 +171,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
         {:error, :not_enrolled}
 
       enrollment ->
-        Sections.update_enrollment(%{most_recently_visited_resource_id: resource_id})
+        Sections.update_enrollment(enrollment, %{most_recently_visited_resource_id: resource_id})
     end
   end
 

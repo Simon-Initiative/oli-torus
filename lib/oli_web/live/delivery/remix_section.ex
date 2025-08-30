@@ -915,7 +915,7 @@ defmodule OliWeb.Delivery.RemixSection do
   def handle_event(event, params, socket) do
     # Catch-all for UI-only events from functional components
     # that don't need handling (like dropdown toggles)
-    Logger.warn("Unhandled event in RemixSectionLive: #{inspect(event)}, #{inspect(params)}")
+    Logger.warning("Unhandled event in RemixSectionLive: #{inspect(event)}, #{inspect(params)}")
     {:noreply, socket}
   end
 

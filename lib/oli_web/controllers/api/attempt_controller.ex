@@ -787,7 +787,7 @@ defmodule OliWeb.Api.AttemptController do
       {:ok, {attempt_state, model}} ->
         json(conn, %{"type" => "success", "attemptState" => attempt_state, "model" => model})
 
-      {:error, e} ->
+      {:error, _e} ->
         error(conn, 500, "Could not reset activity")
     end
   end
@@ -811,7 +811,7 @@ defmodule OliWeb.Api.AttemptController do
       {:ok, {attempt_state, model}} ->
         json(conn, %{"type" => "success", "attemptState" => attempt_state, "model" => model})
 
-      {:error, e} ->
+      {:error, _e} ->
         error(conn, 500, "could not reset activity")
     end
   end

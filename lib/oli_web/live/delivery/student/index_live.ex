@@ -123,6 +123,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     end
   end
 
+  @impl Phoenix.LiveView
   def handle_params(_params, _uri, socket) do
     {:noreply, socket}
   end
@@ -156,10 +157,11 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   def handle_event(event, params, socket) do
     # Catch-all for UI-only events from functional components
     # that don't need handling (like dropdown toggles)
-    Logger.warn("Unhandled event in StudentIndexLive: #{inspect(event)}, #{inspect(params)}")
+    Logger.warning("Unhandled event in StudentIndexLive: #{inspect(event)}, #{inspect(params)}")
     {:noreply, socket}
   end
 
+  @impl Phoenix.LiveView
   def render(%{loaded: false} = assigns) do
     ~H"""
     <div></div>
