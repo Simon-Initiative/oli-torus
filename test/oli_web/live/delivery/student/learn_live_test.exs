@@ -3258,7 +3258,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     test "returns empty list when enrollment exists but state is nil" do
       user = insert(:user)
       section = insert(:section)
-      
+
       # Create enrollment with nil state
       insert(:enrollment, user: user, section: section, state: nil)
 
@@ -3269,7 +3269,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     test "returns empty list when enrollment exists but state doesn't have viewed_intro_video_resource_ids" do
       user = insert(:user)
       section = insert(:section)
-      
+
       # Create enrollment with state but without the specific key
       insert(:enrollment, user: user, section: section, state: %{"other_key" => "value"})
 
@@ -3281,11 +3281,11 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       user = insert(:user)
       section = insert(:section)
       viewed_ids = [1, 2, 3]
-      
+
       # Create enrollment with viewed intro video resource ids
-      insert(:enrollment, 
-        user: user, 
-        section: section, 
+      insert(:enrollment,
+        user: user,
+        section: section,
         state: %{"viewed_intro_video_resource_ids" => viewed_ids}
       )
 

@@ -3265,6 +3265,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     case Sections.get_enrollment(section_slug, current_user_id) do
       %{state: state} when is_map(state) ->
         state["viewed_intro_video_resource_ids"] || []
+
       _ ->
         []
     end
