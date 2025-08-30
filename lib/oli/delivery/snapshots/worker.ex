@@ -68,6 +68,10 @@ defmodule Oli.Delivery.Snapshots.Worker do
       end
 
     case Oli.Analytics.Summary.execute_analytics_pipeline(results, project_id, host_name()) do
+      {:ok, %Pipeline{data: nil}} ->
+        # No evaluated part attempts found - job completes successfully without sending bundle
+        :ok
+
       {:ok, %Pipeline{data: attempt_group}} ->
         body =
           StatementFactory.to_statements(attempt_group)
