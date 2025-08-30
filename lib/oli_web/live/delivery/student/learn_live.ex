@@ -2803,9 +2803,15 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         unit["resource_id"] == unit_resource_id
       end)
 
-    Enum.find(unit["children"], fn module ->
-      module["resource_id"] == module_resource_id
-    end)
+    case unit do
+      nil ->
+        nil
+
+      unit ->
+        Enum.find(unit["children"], fn module ->
+          module["resource_id"] == module_resource_id
+        end)
+    end
   end
 
   defp resource_url(resource_slug, section_slug, resource_id, selected_view) do
@@ -2904,6 +2910,15 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         )
       end)
     )
+  end
+
+  defp mark_visited_and_completed_pages(
+         nil,
+         _visited_pages,
+         _student_raw_avg_score_per_page_id,
+         _student_progress_per_resource_id
+       ) do
+    nil
   end
 
   defp completed_page?(true = _graded, visited?, raw_avg_score, progress),
