@@ -40,7 +40,7 @@ defmodule OliWeb.Projects.ProjectsLive do
       Course.browse_projects(
         author,
         %Paging{offset: 0, limit: @limit},
-        %Sorting{direction: :asc, field: :inserted_at},
+        %Sorting{direction: :desc, field: :inserted_at},
         include_deleted: show_deleted,
         admin_show_all: show_all
       )
@@ -48,7 +48,7 @@ defmodule OliWeb.Projects.ProjectsLive do
     {:ok, table_model} =
       TableModel.new(ctx, projects,
         sort_by_spec: :inserted_at,
-        sort_order: :asc
+        sort_order: :desc
       )
 
     total_count = determine_total(projects)

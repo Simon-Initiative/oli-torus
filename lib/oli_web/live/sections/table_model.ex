@@ -12,7 +12,7 @@ defmodule OliWeb.Sections.SectionsTableModel do
     render_date: :relative,
     exclude_columns: [],
     sort_by_spec: :start_date,
-    sort_order: :asc
+    sort_order: :desc
   ]
 
   def new(%SessionContext{} = ctx, sections, opts \\ []) do
@@ -21,77 +21,80 @@ defmodule OliWeb.Sections.SectionsTableModel do
     date_render =
       if opts[:render_date] == :relative, do: &Common.render_date/3, else: &custom_render/3
 
+    default_td_class = "!border-r border-Table-table-border"
+    default_th_class = "!border-r border-Table-table-border"
+
     column_specs = [
       %ColumnSpec{
         name: :title,
         label: "Title",
-        td_class: "!border-r border-Table-table-border",
-        th_class: "!border-r border-Table-table-border",
+        th_class: "!sticky left-0 z-[60] " <> default_th_class,
+        td_class: "!sticky left-0 z-[1] bg-inherit " <> default_td_class,
         render_fn: &custom_render/3
       },
       %ColumnSpec{
         name: :tags,
         label: "Tags",
         sortable: false,
-        td_class: "!border-r border-Table-table-border",
-        th_class: "!border-r border-Table-table-border",
+        td_class: default_td_class,
+        th_class: default_th_class,
         render_fn: &custom_render/3
       },
       %ColumnSpec{
         name: :enrollments_count,
         label: "# Enrolled",
-        td_class: "!border-r border-Table-table-border",
-        th_class: "!border-r border-Table-table-border"
+        td_class: default_td_class,
+        th_class: default_th_class
       },
       %ColumnSpec{
         name: :requires_payment,
         label: "Cost",
-        td_class: "!border-r border-Table-table-border",
-        th_class: "!border-r border-Table-table-border",
+        td_class: default_td_class,
+        th_class: default_th_class,
         render_fn: &custom_render/3
       },
       %ColumnSpec{
         name: :start_date,
         label: "Start",
-        td_class: "!border-r border-Table-table-border",
-        th_class: "!border-r border-Table-table-border",
+        td_class: default_td_class,
+        th_class: default_th_class,
         render_fn: date_render,
         sort_fn: &Common.sort_date/2
       },
       %ColumnSpec{
         name: :end_date,
         label: "End",
-        td_class: "!border-r border-Table-table-border",
-        th_class: "!border-r border-Table-table-border",
+        td_class: default_td_class,
+        th_class: default_th_class,
         render_fn: date_render,
         sort_fn: &Common.sort_date/2
       },
       %ColumnSpec{
         name: :base,
         label: "Base Project/Product",
-        td_class: "!border-r border-Table-table-border",
-        th_class: "!border-r border-Table-table-border",
+        td_class: default_td_class,
+        th_class: default_th_class,
         render_fn: &custom_render/3
       },
       %ColumnSpec{
         name: :instructor,
         label: "Instructors",
-        td_class: "!border-r border-Table-table-border",
-        th_class: "!border-r border-Table-table-border",
+        td_class: default_td_class,
+        th_class: default_th_class,
         render_fn: &custom_render/3
       },
       %ColumnSpec{
         name: :institution,
         label: "Institution",
-        td_class: "!border-r border-Table-table-border",
-        th_class: "!border-r border-Table-table-border",
+        td_class: default_td_class,
+        th_class: default_th_class,
         render_fn: &custom_render/3
       },
       %ColumnSpec{
         name: :type,
         label: "Delivery",
-        td_class: "!border-r border-Table-table-border",
-        th_class: "!border-r border-Table-table-border",
+        td_class: default_td_class,
+        th_class: default_th_class,
         render_fn: &custom_render/3
       },
       %ColumnSpec{
@@ -102,7 +105,7 @@ defmodule OliWeb.Sections.SectionsTableModel do
     ]
 
     sort_by = Keyword.get(opts, :sort_by_spec, :start_date)
-    sort_order = Keyword.get(opts, :sort_order, :asc)
+    sort_order = Keyword.get(opts, :sort_order, :desc)
 
     sort_by_spec =
       Enum.find(column_specs, fn spec -> spec.name == sort_by end)

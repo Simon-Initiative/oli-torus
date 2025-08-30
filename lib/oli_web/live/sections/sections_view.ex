@@ -57,7 +57,7 @@ defmodule OliWeb.Sections.SectionsView do
     sections =
       Browse.browse_sections(
         %Paging{offset: 0, limit: @limit},
-        %Sorting{direction: :asc, field: :start_date},
+        %Sorting{direction: :desc, field: :start_date},
         @default_options
       )
 
@@ -67,7 +67,7 @@ defmodule OliWeb.Sections.SectionsView do
       SectionsTableModel.new(ctx, sections,
         render_date: :full,
         sort_by_spec: :start_date,
-        sort_order: :asc
+        sort_order: :desc
       )
 
     {:ok,

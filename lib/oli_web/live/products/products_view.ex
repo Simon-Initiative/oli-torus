@@ -75,7 +75,7 @@ defmodule OliWeb.Products.ProductsView do
     products =
       Blueprint.browse(
         %Paging{offset: 0, limit: @limit},
-        %Sorting{direction: :asc, field: :inserted_at},
+        %Sorting{direction: :desc, field: :inserted_at},
         text_search: Params.get_param(params, "text_search", ""),
         include_archived: Params.get_boolean_param(params, "include_archived", false),
         project_id: project_id
@@ -88,7 +88,7 @@ defmodule OliWeb.Products.ProductsView do
     {:ok, table_model} =
       ProductsTableModel.new(products, ctx, project_slug,
         sort_by_spec: :inserted_at,
-        sort_order: :asc
+        sort_order: :desc
       )
 
     published? =

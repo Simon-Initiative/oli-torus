@@ -14,8 +14,8 @@ defmodule OliWeb.Projects.TableModel do
         name: :title,
         label: "Title",
         render_fn: &custom_render/3,
-        td_class: default_td_class,
-        th_class: default_th_class
+        td_class: "!sticky left-0 z-[1] bg-inherit " <> default_td_class,
+        th_class: "!sticky left-0 z-[60] " <> default_th_class
       },
       %ColumnSpec{
         name: :tags,
@@ -68,7 +68,7 @@ defmodule OliWeb.Projects.TableModel do
     ]
 
     sort_by = Keyword.get(opts, :sort_by_spec, :inserted_at)
-    sort_order = Keyword.get(opts, :sort_order, :asc)
+    sort_order = Keyword.get(opts, :sort_order, :desc)
 
     sort_by_spec =
       Enum.find(column_specs, fn spec -> spec.name == sort_by end)
