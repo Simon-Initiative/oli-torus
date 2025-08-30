@@ -137,7 +137,10 @@ defmodule Oli.Content.Content.HtmlTest do
         "model" => [
           %{
             "children" => [
-              %{"text" => "Among the following questions, which is a well-designed survey open-ended question?"}
+              %{
+                "text" =>
+                  "Among the following questions, which is a well-designed survey open-ended question?"
+              }
             ],
             "id" => "c6929630baf84852849b804665882f90",
             "type" => "p"
@@ -151,7 +154,7 @@ defmodule Oli.Content.Content.HtmlTest do
       rendered_html_string = Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
 
       # Should render the paragraph content from the model field
-      assert rendered_html_string =~ 
+      assert rendered_html_string =~
                "<p data-point-marker=\"c6929630baf84852849b804665882f90\">Among the following questions, which is a well-designed survey open-ended question?</p>"
     end
   end
