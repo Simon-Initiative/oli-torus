@@ -75,9 +75,9 @@ defmodule Oli.Scenarios.DirectiveParser do
   defp parse_directive(%{"remix" => remix_data}) do
     %RemixDirective{
       from: remix_data["from"],
-      to: remix_data["to"],
       resource: remix_data["resource"],
-      position: remix_data["position"] || "end"
+      section: remix_data["section"],
+      to: remix_data["to"]
     }
   end
 

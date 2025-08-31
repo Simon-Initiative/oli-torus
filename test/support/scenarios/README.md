@@ -78,7 +78,11 @@ Instead of writing hundreds of lines of test setup code, you can describe your e
 
 - **`manipulate`**: Applies operations to modify a project's structure
   - Operations: `add_page`, `add_container`, `move`, `reorder`, `remove`, `edit_page_title`
-- **`remix`**: Copies content from one project/section to another
+- **`remix`**: Copies content from a project into a section's hierarchy
+  - `from`: Source project name
+  - `resource`: Page or container title to copy
+  - `section`: Target section name
+  - `to`: Container in the section where content will be added
 - **`customize`**: Applies operations to modify a section's curriculum (uses real Oli.Delivery.Hierarchy infrastructure)
   - Operations: `remove` (removes pages/containers), `reorder` (changes order with before/after)
 
@@ -190,6 +194,43 @@ Example workflow:
       - reorder:
           from: "Lesson 2"
           after: "Lesson 3"
+```
+
+## Remix Operations
+
+The `remix` directive copies content from a project into a section's hierarchy:
+
+```yaml
+# Create source project with reusable content
+- project:
+    name: "library"
+    title: "Content Library"
+    root:
+      children:
+        - page: "Shared Lesson"
+        - container: "Reusable Module"
+          children:
+            - page: "Lesson 1"
+            - page: "Lesson 2"
+
+# Create section
+- section:
+    name: "course_section"
+    from: "course_project"
+
+# Remix content into the section
+- remix:
+    from: "library"
+    resource: "Shared Lesson"
+    section: "course_section"
+    to: "Module 1"  # Target container in the section
+
+# Remix an entire module
+- remix:
+    from: "library"
+    resource: "Reusable Module"
+    section: "course_section"
+    to: "root"  # Add to the root of the section
 ```
 
 ## Error Handling

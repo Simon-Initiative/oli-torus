@@ -44,7 +44,7 @@ defmodule Oli.Scenarios.Directives.CustomizeHandler do
           {:ok, updated_state}
         rescue
           e ->
-            {:error, "Failed to customize section '#{to}': #{inspect(e)}", state}
+            {:error, "Failed to customize section '#{to}': #{inspect(e)}"}
         end
     end
   end

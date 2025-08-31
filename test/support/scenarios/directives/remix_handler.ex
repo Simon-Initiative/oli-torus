@@ -1,154 +1,128 @@
 defmodule Oli.Scenarios.Directives.RemixHandler do
   @moduledoc """
-  Handles remix directives for mixing content between projects and sections.
+  Handles remix directives for copying content from projects into sections.
+  Remixes content from a source project into a target section's hierarchy.
   """
 
   alias Oli.Scenarios.DirectiveTypes.RemixDirective
+  alias Oli.Scenarios.DirectiveTypes.ExecutionState
   alias Oli.Scenarios.Engine
   alias Oli.Publishing
+  alias Oli.Publishing.DeliveryResolver
+  alias Oli.Delivery.{Hierarchy, Sections}
+  alias Oli.Delivery.Sections.SectionCache
 
   def handle(
-        %RemixDirective{
-          from: source_name,
-          to: target_name,
-          resource: resource_title,
-          position: position
-        },
-        state
+        %RemixDirective{from: from, resource: resource_title, section: section_name, to: to},
+        %ExecutionState{} = state
       ) do
     try do
       # Get source project
       source_project =
-        Engine.get_project(state, source_name) ||
-          raise "Source project '#{source_name}' not found"
+        Engine.get_project(state, from) ||
+          raise "Source project '#{from}' not found"
 
-      # Get target (can be project or section)
-      {target_type, target} = get_target(state, target_name)
+      # Get the target section
+      section =
+        Engine.get_section(state, section_name) ||
+          raise "Section '#{section_name}' not found"
 
-      # Find the resource to remix
+      # Get the resource ID to remix from the source project
       resource_id =
         source_project.id_by_title[resource_title] ||
-          raise "Resource '#{resource_title}' not found in source project"
+          raise "Resource '#{resource_title}' not found in source project '#{from}'"
 
-      # Get the latest publication for source
-      source_pub = get_or_create_publication(state, source_name, source_project)
+      # Get the latest published publication for the source project
+      publication =
+        case Publishing.get_latest_published_publication_by_slug(source_project.project.slug) do
+          nil ->
+            # If no published publication exists, publish one
+            {:ok, pub} =
+              Publishing.publish_project(
+                source_project.project,
+                "Auto-published for remix",
+                state.current_author.id
+              )
 
-      # Perform the remix based on target type
-      case target_type do
-        :section ->
-          remix_into_section(target, resource_id, target_name, position, source_pub, state)
+            pub
 
-        :project ->
-          remix_into_project(target, resource_id, target_name, position, source_project, state)
-      end
-
-      {:ok, state}
-    rescue
-      e ->
-        {:error, "Failed to remix: #{Exception.message(e)}"}
-    end
-  end
-
-  defp get_target(state, name) do
-    case Engine.get_section(state, name) do
-      nil ->
-        case Engine.get_project(state, name) do
-          nil -> raise "Target '#{name}' not found (neither project nor section)"
-          project -> {:project, project}
+          pub ->
+            pub
         end
 
-      section ->
-        {:section, section}
-    end
-  end
+      # Get the section's current hierarchy as HierarchyNode structs
+      hierarchy = DeliveryResolver.full_hierarchy(section.slug)
 
-  defp get_or_create_publication(state, _project_name, built_project) do
-    # Get the latest published publication or create one
-    case Publishing.get_latest_published_publication_by_slug(built_project.project.slug) do
-      nil ->
-        {:ok, pub} =
-          Publishing.publish_project(
-            built_project.project,
-            "initial",
-            state.current_author.id
-          )
+      # Find the target container in the hierarchy
+      # Special case: "root" refers to the top-level container
+      target_container =
+        if to == "root" do
+          hierarchy
+        else
+          find_node_by_title(hierarchy, to)
+        end
 
-        pub
-
-      pub ->
-        pub
-    end
-  end
-
-  defp remix_into_section(_section, _resource_id, _to, _position, _source_pub, _state) do
-    # Note: Actual remixing into sections is complex and requires 
-    # the full remix infrastructure which is not yet fully implemented.
-    # For now, this is a placeholder that acknowledges the remix was requested.
-    # In production, this would use the proper remix queue and processing.
-    :ok
-  end
-
-  defp remix_into_project(target_project, resource_id, to, _position, source_project, state) do
-    # Get the container to remix into
-    to_id =
-      target_project.id_by_title[to || "root"] ||
-        raise "Container '#{to}' not found in target project"
-
-    # Get source revision
-    source_rev =
-      source_project.rev_by_title[
-        Enum.find_value(source_project.id_by_title, fn {title, id} ->
-          if id == resource_id, do: title
-        end)
-      ]
-
-    # Clone the resource and its children
-    cloned =
-      clone_resource_tree(
-        source_rev,
-        target_project.working_pub,
-        target_project.project,
-        state.current_author
-      )
-
-    # Attach to the target container
-    target_container_rev = target_project.rev_by_title[to || "root"]
-    target_container_res = %{id: to_id}
-
-    Oli.Seeder.attach_pages_to(
-      [cloned.resource],
-      target_container_res,
-      target_container_rev,
-      target_project.working_pub
-    )
-  end
-
-  defp clone_resource_tree(source_rev, target_pub, target_project, author) do
-    # Create a new resource in the target project
-    if source_rev.resource_type_id == Oli.Resources.ResourceType.id_for_page() do
-      Oli.Seeder.create_page(
-        source_rev.title,
-        target_pub,
-        target_project,
-        author
-      )
-    else
-      # Container - recursively clone children
-      new_container =
-        Oli.Seeder.create_container(
-          source_rev.title,
-          target_pub,
-          target_project,
-          author
-        )
-
-      # Clone and attach children if any
-      if source_rev.children && Enum.any?(source_rev.children) do
-        # Would need to implement recursive cloning of children
-        # For now, just return the container
+      if !target_container do
+        raise "Target container '#{to}' not found in section hierarchy"
       end
 
-      new_container
+      # Get published resources for this publication
+      published_resources_by_resource_id =
+        Publishing.get_published_resources_for_publications([publication.id])
+
+      # Create selection tuple like RemixUI does
+      selection = [{publication.id, resource_id}]
+
+      # Use Hierarchy.add_materials_to_hierarchy to properly add the content
+      updated_hierarchy =
+        Hierarchy.add_materials_to_hierarchy(
+          hierarchy,
+          target_container,
+          selection,
+          published_resources_by_resource_id
+        )
+        |> Hierarchy.finalize()
+
+      # Get current pinned project publications for the section
+      pinned_project_publications = Sections.get_pinned_project_publications(section.id)
+
+      # Update pinned publications to include the source project if not already there
+      updated_pinned_publications =
+        if Map.has_key?(pinned_project_publications, source_project.project.id) do
+          pinned_project_publications
+        else
+          Map.put(pinned_project_publications, source_project.project.id, publication)
+        end
+
+      # Rebuild the section curriculum with the modified hierarchy
+      Sections.rebuild_section_curriculum(section, updated_hierarchy, updated_pinned_publications)
+
+      # Clear cache and reload section
+      SectionCache.clear(section.slug)
+      Process.sleep(100)
+
+      refreshed_section = Sections.get_section!(section.id)
+
+      # Update state with the refreshed section
+      updated_state = Engine.put_section(state, section_name, refreshed_section)
+
+      {:ok, updated_state}
+    rescue
+      e ->
+        {:error,
+         "Failed to remix '#{resource_title}' from '#{from}' to '#{to}': #{Exception.message(e)}"}
     end
   end
+
+  defp find_node_by_title(%Oli.Delivery.Hierarchy.HierarchyNode{} = node, title) do
+    if node.revision && node.revision.title == title do
+      node
+    else
+      Enum.find_value(node.children || [], fn child ->
+        find_node_by_title(child, title)
+      end)
+    end
+  end
+
+  defp find_node_by_title(_, _), do: nil
 end

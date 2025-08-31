@@ -15,8 +15,14 @@ defmodule Oli.Scenarios.DirectiveTypes do
   end
 
   defmodule RemixDirective do
-    @moduledoc "Remixes content from source to target"
-    defstruct [:from, :to, :resource, :position]
+    @moduledoc """
+    Remix content from a source project into a section's container.
+    from: source project name
+    resource: page or container title to remix
+    section: target section name to remix into
+    to: target container title in the section where content will be added
+    """
+    defstruct [:from, :resource, :section, :to]
   end
 
   defmodule ManipulateDirective do
