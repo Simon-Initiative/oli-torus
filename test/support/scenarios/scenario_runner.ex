@@ -66,7 +66,7 @@ defmodule Oli.Scenarios.ScenarioRunner do
     if Enum.any?(failed_verifications) do
       messages =
         Enum.map(failed_verifications, fn v ->
-          "#{v.target}: #{v.message}"
+          "#{v.to}: #{v.message}"
         end)
 
       raise "Scenario '#{Path.basename(file_path)}' had verification failures:\n#{Enum.join(messages, "\n")}"

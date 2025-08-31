@@ -8,6 +8,7 @@
     root:
       children:
         - page: "Page to Remix"
+        - page: "Extra Page for Root"
         - container: "Module to Remix"
           children:
             - page: "Lesson 1"
@@ -97,10 +98,10 @@
                   - page: "Lesson 2"
                   - page: "Quiz"
 
-# Test remixing into the root container
+# Test remixing into the root container (using a different page since duplicates aren't allowed)
 - remix:
     from: "source_project"
-    resource: "Page to Remix"
+    resource: "Extra Page for Root"
     section: "main_section"
     to: "root"
 
@@ -123,4 +124,4 @@
                   - page: "Lesson 1"
                   - page: "Lesson 2"
                   - page: "Quiz"
-          - page: "Page to Remix"
+          - page: "Extra Page for Root"

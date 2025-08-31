@@ -9,6 +9,7 @@ defmodule Oli.Scenarios.Engine do
     ExecutionResult,
     ProjectDirective,
     SectionDirective,
+    ProductDirective,
     RemixDirective,
     ManipulateDirective,
     PublishDirective,
@@ -23,6 +24,7 @@ defmodule Oli.Scenarios.Engine do
   alias Oli.Scenarios.Directives.{
     ProjectHandler,
     SectionHandler,
+    ProductHandler,
     RemixHandler,
     ManipulateHandler,
     PublishHandler,
@@ -89,6 +91,7 @@ defmodule Oli.Scenarios.Engine do
     %ExecutionState{
       projects: %{},
       sections: %{},
+      products: %{},
       users: %{"default_author" => author},
       institutions: %{"default" => institution},
       current_author: author,
@@ -103,6 +106,10 @@ defmodule Oli.Scenarios.Engine do
 
   defp execute_directive(%SectionDirective{} = directive, state) do
     SectionHandler.handle(directive, state)
+  end
+
+  defp execute_directive(%ProductDirective{} = directive, state) do
+    ProductHandler.handle(directive, state)
   end
 
   defp execute_directive(%RemixDirective{} = directive, state) do
@@ -172,6 +179,13 @@ defmodule Oli.Scenarios.Engine do
   end
 
   @doc """
+  Gets a product from the state by name.
+  """
+  def get_product(state, name) do
+    Map.get(state.products, name)
+  end
+
+  @doc """
   Gets a user from the state by name.
   """
   def get_user(state, name) do
@@ -197,6 +211,13 @@ defmodule Oli.Scenarios.Engine do
   """
   def put_section(state, name, section) do
     %{state | sections: Map.put(state.sections, name, section)}
+  end
+
+  @doc """
+  Updates a product in the state.
+  """
+  def put_product(state, name, product) do
+    %{state | products: Map.put(state.products, name, product)}
   end
 
   @doc """

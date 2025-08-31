@@ -14,6 +14,14 @@ defmodule Oli.Scenarios.DirectiveTypes do
     defstruct [:name, :title, :from, :type, :registration_open]
   end
 
+  defmodule ProductDirective do
+    @moduledoc """
+    Creates a product (blueprint) from a project.
+    Products are templates that can be used to create sections.
+    """
+    defstruct [:name, :title, :from]
+  end
+
   defmodule RemixDirective do
     @moduledoc """
     Remix content from a source project into a section's container.
@@ -74,6 +82,8 @@ defmodule Oli.Scenarios.DirectiveTypes do
     defstruct projects: %{},
               # name -> Section  
               sections: %{},
+              # name -> Product (Blueprint)
+              products: %{},
               # name -> User/Author
               users: %{},
               # name -> Institution

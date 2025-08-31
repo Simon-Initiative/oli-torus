@@ -7,6 +7,7 @@ defmodule Oli.Scenarios.DirectiveParser do
   alias Oli.Scenarios.DirectiveTypes.{
     ProjectDirective,
     SectionDirective,
+    ProductDirective,
     RemixDirective,
     ManipulateDirective,
     PublishDirective,
@@ -69,6 +70,14 @@ defmodule Oli.Scenarios.DirectiveParser do
       from: section_data["from"],
       type: parse_section_type(section_data["type"]),
       registration_open: Map.get(section_data, "registration_open", true)
+    }
+  end
+
+  defp parse_directive(%{"product" => product_data}) do
+    %ProductDirective{
+      name: product_data["name"] || product_data["title"],
+      title: product_data["title"],
+      from: product_data["from"]
     }
   end
 
@@ -151,6 +160,7 @@ defmodule Oli.Scenarios.DirectiveParser do
     if key not in [
          "project",
          "section",
+         "product",
          "remix",
          "manipulate",
          "publish",
@@ -161,7 +171,7 @@ defmodule Oli.Scenarios.DirectiveParser do
          "update",
          "customize"
        ] do
-      raise "Unrecognized directive: '#{key}'. Valid directives are: project, section, remix, manipulate, publish, verify, user, enroll, institution, update, customize"
+      raise "Unrecognized directive: '#{key}'. Valid directives are: project, section, product, remix, manipulate, publish, verify, user, enroll, institution, update, customize"
     else
       # This shouldn't happen as specific handlers above should match first
       raise "Internal error: unhandled directive '#{key}'"
@@ -175,6 +185,7 @@ defmodule Oli.Scenarios.DirectiveParser do
       when key in [
              "project",
              "section",
+             "product",
              "remix",
              "manipulate",
              "publish",
@@ -188,7 +199,7 @@ defmodule Oli.Scenarios.DirectiveParser do
         [parse_directive(%{key => value})]
 
       {key, _value} ->
-        raise "Unrecognized directive: '#{key}'. Valid directives are: project, section, remix, manipulate, publish, verify, user, enroll, institution, update, customize"
+        raise "Unrecognized directive: '#{key}'. Valid directives are: project, section, product, remix, manipulate, publish, verify, user, enroll, institution, update, customize"
     end)
   end
 

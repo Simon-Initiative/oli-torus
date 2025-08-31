@@ -52,15 +52,25 @@ defmodule Oli.Scenarios.Directives.VerifyHandler do
   end
 
   defp get_target(state, name) do
-    case Engine.get_section(state, name) do
+    # Check for product first
+    case Engine.get_product(state, name) do
       nil ->
-        case Engine.get_project(state, name) do
-          nil -> raise "Target '#{name}' not found"
-          project -> {:project, project}
+        # Then check for section
+        case Engine.get_section(state, name) do
+          nil ->
+            # Finally check for project
+            case Engine.get_project(state, name) do
+              nil -> raise "Target '#{name}' not found"
+              project -> {:project, project}
+            end
+
+          section ->
+            {:section, section}
         end
 
-      section ->
-        {:section, section}
+      product ->
+        # Products are sections behind the scenes
+        {:section, product}
     end
   end
 

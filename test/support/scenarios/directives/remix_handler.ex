@@ -22,10 +22,15 @@ defmodule Oli.Scenarios.Directives.RemixHandler do
         Engine.get_project(state, from) ||
           raise "Source project '#{from}' not found"
 
-      # Get the target section
+      # Get the target section or product
       section =
-        Engine.get_section(state, section_name) ||
-          raise "Section '#{section_name}' not found"
+        case Engine.get_product(state, section_name) do
+          nil ->
+            Engine.get_section(state, section_name) ||
+              raise "Section or product '#{section_name}' not found"
+          product ->
+            product
+        end
 
       # Get the resource ID to remix from the source project
       resource_id =
@@ -103,8 +108,16 @@ defmodule Oli.Scenarios.Directives.RemixHandler do
 
       refreshed_section = Sections.get_section!(section.id)
 
-      # Update state with the refreshed section
-      updated_state = Engine.put_section(state, section_name, refreshed_section)
+      # Update state with the refreshed section or product
+      updated_state = 
+        case Engine.get_product(state, section_name) do
+          nil ->
+            # It's a section
+            Engine.put_section(state, section_name, refreshed_section)
+          _product ->
+            # It's a product - update as product
+            Engine.put_product(state, section_name, refreshed_section)
+        end
 
       {:ok, updated_state}
     rescue

@@ -56,8 +56,9 @@ defmodule Oli.Scenarios.DSLTest do
 
       - remix:
           from: "source"
-          to: "main_section"
           resource: "Unit A"
+          section: "main_section"
+          to: "root"
       """
 
       result = TestHelpers.execute_yaml(yaml)

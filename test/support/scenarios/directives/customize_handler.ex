@@ -10,9 +10,18 @@ defmodule Oli.Scenarios.Directives.CustomizeHandler do
   alias Oli.Publishing.DeliveryResolver
 
   def handle(%CustomizeDirective{to: to, ops: ops}, %ExecutionState{} = state) do
-    case Engine.get_section(state, to) do
+    # First check if it's a product, then check sections
+    section_or_product = 
+      case Engine.get_product(state, to) do
+        nil ->
+          Engine.get_section(state, to)
+        product ->
+          product
+      end
+
+    case section_or_product do
       nil ->
-        {:error, "Section '#{to}' not found", state}
+        {:error, "Section or product '#{to}' not found"}
 
       section ->
         try do
@@ -38,13 +47,21 @@ defmodule Oli.Scenarios.Directives.CustomizeHandler do
 
           refreshed_section = Sections.get_section!(section.id)
 
-          # Update state with the refreshed section
-          updated_state = Engine.put_section(state, to, refreshed_section)
+          # Update state with the refreshed section or product
+          updated_state = 
+            case Engine.get_product(state, to) do
+              nil ->
+                # It's a section
+                Engine.put_section(state, to, refreshed_section)
+              _product ->
+                # It's a product - update as product
+                Engine.put_product(state, to, refreshed_section)
+            end
 
           {:ok, updated_state}
         rescue
           e ->
-            {:error, "Failed to customize section '#{to}': #{inspect(e)}"}
+            {:error, "Failed to customize '#{to}': #{inspect(e)}"}
         end
     end
   end

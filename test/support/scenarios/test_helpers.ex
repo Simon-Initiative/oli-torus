@@ -140,6 +140,13 @@ defmodule Oli.Scenarios.TestHelpers do
   end
 
   @doc """
+  Gets a product from the execution result.
+  """
+  def get_product(%ExecutionResult{state: state}, name) do
+    Engine.get_product(state, name)
+  end
+
+  @doc """
   Asserts that a project exists in the result.
   """
   def assert_project_exists(%ExecutionResult{} = result, name) do

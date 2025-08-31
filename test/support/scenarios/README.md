@@ -70,7 +70,8 @@ Instead of writing hundreds of lines of test setup code, you can describe your e
 ### Structure Creation
 
 - **`project`**: Creates a new project with hierarchical content structure
-- **`section`**: Creates a course section from a project or standalone
+- **`product`**: Creates a product (blueprint) from a project that can be used as a template
+- **`section`**: Creates a course section from a project, product, or standalone
 - **`user`**: Creates users (authors, instructors, students)
 - **`institution`**: Creates an institution
 
@@ -78,12 +79,13 @@ Instead of writing hundreds of lines of test setup code, you can describe your e
 
 - **`manipulate`**: Applies operations to modify a project's structure
   - Operations: `add_page`, `add_container`, `move`, `reorder`, `remove`, `edit_page_title`
-- **`remix`**: Copies content from a project into a section's hierarchy
+- **`remix`**: Copies content from a project into a section or product's hierarchy
   - `from`: Source project name
   - `resource`: Page or container title to copy
-  - `section`: Target section name
-  - `to`: Container in the section where content will be added
-- **`customize`**: Applies operations to modify a section's curriculum (uses real Oli.Delivery.Hierarchy infrastructure)
+  - `section`: Target section or product name
+  - `to`: Container in the section/product where content will be added
+- **`customize`**: Applies operations to modify a section or product's curriculum (uses real Oli.Delivery.Hierarchy infrastructure)
+  - `to`: Target section or product name
   - Operations: `remove` (removes pages/containers), `reorder` (changes order with before/after)
 
 ### Publishing & Updates
@@ -195,6 +197,56 @@ Example workflow:
           from: "Lesson 2"
           after: "Lesson 3"
 ```
+
+## Products (Blueprints)
+
+Products are templates created from projects that can be used to spawn multiple sections. Products support the same customization and remix operations as sections:
+
+```yaml
+# Create a project with content
+- project:
+    name: "template_project"
+    title: "Template Course"
+    root:
+      children:
+        - page: "Welcome"
+        - container: "Module 1"
+          children:
+            - page: "Lesson 1"
+
+# Create a product from the project
+- product:
+    name: "course_template"
+    title: "Course Template V1"
+    from: "template_project"
+
+# Customize the product before creating sections
+- customize:
+    to: "course_template"
+    ops:
+      - remove:
+          from: "Lesson 1"
+
+# Remix additional content into the product
+- remix:
+    from: "another_project"
+    resource: "Additional Content"
+    section: "course_template"
+    to: "Module 1"
+
+# Create sections from the customized product
+- section:
+    name: "fall_2024"
+    title: "Fall 2024 Section"
+    from: "course_template"
+
+- section:
+    name: "spring_2025"
+    title: "Spring 2025 Section"
+    from: "course_template"
+```
+
+Both sections will inherit the customizations and remixed content from the product template.
 
 ## Remix Operations
 
