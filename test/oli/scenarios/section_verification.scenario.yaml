@@ -30,7 +30,7 @@
 
 # Verify the section has the expected structure
 - verify:
-    target: "test_section"
+    to: "test_section"
     structure:
       root:
         children:

@@ -35,22 +35,24 @@ defmodule Oli.Scenarios.TestHelpers do
   """
   def execute_and_verify!(yaml_path) do
     result = execute_spec(yaml_path)
-    
+
     # Check for errors
     if Enum.any?(result.errors) do
       raise "Execution errors: #{inspect(result.errors)}"
     end
-    
+
     # Check all verifications passed
     failed_verifications = Enum.filter(result.verifications, fn v -> !v.passed end)
-    
+
     if Enum.any?(failed_verifications) do
-      messages = Enum.map(failed_verifications, fn v ->
-        "#{v.target}: #{v.message}"
-      end)
+      messages =
+        Enum.map(failed_verifications, fn v ->
+          "#{v.to}: #{v.message}"
+        end)
+
       raise "Verification failures:\n#{Enum.join(messages, "\n")}"
     end
-    
+
     result
   end
 
@@ -84,13 +86,12 @@ defmodule Oli.Scenarios.TestHelpers do
   @doc """
   Creates a remix specification as a string.
   """
-  def remix_yaml(source, target, resource, into \\ "root") do
+  def remix_yaml(source, target, resource, _into \\ "root") do
     """
     - remix:
-        source: "#{source}"
-        target: "#{target}"
+        from: "#{source}"
+        to: "#{target}"
         resource: "#{resource}"
-        into: "#{into}"
     """
   end
 
@@ -99,19 +100,20 @@ defmodule Oli.Scenarios.TestHelpers do
   """
   def verify_yaml(target, expected_structure) do
     # Indent the expected structure properly for YAML
-    indented_structure = expected_structure
+    indented_structure =
+      expected_structure
       |> String.split("\n")
-      |> Enum.map(fn line -> 
+      |> Enum.map(fn line ->
         if String.trim(line) == "", do: "", else: "          #{line}"
       end)
       |> Enum.join("\n")
       |> String.trim_trailing()
-    
+
     """
     - verify:
-        target: "#{target}"
+        to: "#{target}"
         structure:
-#{indented_structure}
+    #{indented_structure}
     """
   end
 
@@ -142,11 +144,11 @@ defmodule Oli.Scenarios.TestHelpers do
   """
   def assert_project_exists(%ExecutionResult{} = result, name) do
     project = get_project(result, name)
-    
+
     if is_nil(project) do
       raise "Expected project '#{name}' to exist"
     end
-    
+
     project
   end
 
@@ -155,11 +157,11 @@ defmodule Oli.Scenarios.TestHelpers do
   """
   def assert_section_exists(%ExecutionResult{} = result, name) do
     section = get_section(result, name)
-    
+
     if is_nil(section) do
       raise "Expected section '#{name}' to exist"
     end
-    
+
     section
   end
 
@@ -174,6 +176,6 @@ defmodule Oli.Scenarios.TestHelpers do
   Counts the number of verifications that failed.
   """
   def count_failed_verifications(%ExecutionResult{verifications: verifications}) do
-    Enum.count(verifications, & !&1.passed)
+    Enum.count(verifications, &(!&1.passed))
   end
 end

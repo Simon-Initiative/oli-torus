@@ -9,13 +9,15 @@ defmodule Oli.Scenarios.Directives.EnrollmentHandler do
   def handle(%EnrollDirective{user: user_name, section: section_name, role: role}, state) do
     try do
       # Get user from state
-      _user = Engine.get_user(state, user_name) ||
-        raise "User '#{user_name}' not found"
-      
+      _user =
+        Engine.get_user(state, user_name) ||
+          raise "User '#{user_name}' not found"
+
       # Get section from state
-      _section = Engine.get_section(state, section_name) ||
-        raise "Section '#{section_name}' not found"
-      
+      _section =
+        Engine.get_section(state, section_name) ||
+          raise "Section '#{section_name}' not found"
+
       # Enroll user in section
       # Note: For simplicity, we'll just note that enrollment was requested
       # Actual enrollment requires complex role setup
@@ -23,15 +25,15 @@ defmodule Oli.Scenarios.Directives.EnrollmentHandler do
         :instructor ->
           # Would normally call Sections.enroll with instructor role
           :ok
-        
+
         :student ->
           # Would normally call Sections.enroll with student role
           :ok
-        
+
         _ ->
           raise "Unknown enrollment role: #{role}"
       end
-      
+
       {:ok, state}
     rescue
       e ->

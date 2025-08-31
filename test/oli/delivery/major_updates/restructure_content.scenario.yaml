@@ -24,7 +24,7 @@
 
 # Verify the section still has the original structure (before updates are applied)
 - verify:
-    target: "math101"
+    to: "math101"
     structure:
       root:
         children:
@@ -38,7 +38,7 @@
 
 # Restructure content into organized modules (major update)
 - manipulate:
-    target: "math_course"
+    to: "math_course"
     ops:
       - add_container:
           title: "Algebra Module"
@@ -50,30 +50,30 @@
           title: "Calculus Module"
 
       - remove:
-          target: "Algebra Basics"
+          from: "Algebra Basics"
 
       - add_page:
           title: "Algebra Fundamentals"
-          parent: "Algebra Module"
+          to: "Algebra Module"
 
       - remove:
-          target: "Geometry Basics"
+          from: "Geometry Basics"
 
       - add_page:
           title: "Geometry Fundamentals"
-          parent: "Geometry Module"
+          to: "Geometry Module"
 
       - remove:
-          target: "Calculus Basics"
+          from: "Calculus Basics"
 
       - add_page:
           title: "Calculus Fundamentals"
-          parent: "Calculus Module"
+          to: "Calculus Module"
       
       # The containers are already attached to root by default when created
 
 - publish:
-    target: "math_course"
+    to: "math_course"
     description: "Reorganizing content into subject modules"
 
 # Apply the update to the section
@@ -83,7 +83,7 @@
 
 # Verify the section now has the updated structure
 - verify:
-    target: "math101"
+    to: "math101"
     structure:
       root:
         children:

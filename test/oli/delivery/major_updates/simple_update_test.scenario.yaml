@@ -16,7 +16,7 @@
 
 # Verify initial structure
 - verify:
-    target: "test_section"
+    to: "test_section"
     structure:
       root:
         children:
@@ -24,19 +24,19 @@
 
 # Add a new page
 - manipulate:
-    target: "test_project"
+    to: "test_project"
     ops:
       - add_page:
           title: "Page 2"
-          parent: "root"
+          to: "root"
 
 - publish:
-    target: "test_project"
+    to: "test_project"
     description: "Adding Page 2"
 
 # Verify the project was updated correctly (without needing separate attach)
 - verify:
-    target: "test_project"
+    to: "test_project"
     structure:
       root:
         children:
@@ -50,7 +50,7 @@
 
 # Verify updated structure
 - verify:
-    target: "test_section"
+    to: "test_section"
     structure:
       root:
         children:

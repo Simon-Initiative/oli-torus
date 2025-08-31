@@ -16,6 +16,7 @@ defmodule Oli.Scenarios.DirectiveParser do
     InstitutionDirective,
     UpdateDirective
   }
+
   alias Oli.Scenarios.Types.Node
 
   @doc """
@@ -72,31 +73,30 @@ defmodule Oli.Scenarios.DirectiveParser do
 
   defp parse_directive(%{"remix" => remix_data}) do
     %RemixDirective{
-      source: remix_data["source"],
-      target: remix_data["target"],
+      from: remix_data["from"],
+      to: remix_data["to"],
       resource: remix_data["resource"],
-      into: remix_data["into"] || "root",
       position: remix_data["position"] || "end"
     }
   end
 
   defp parse_directive(%{"manipulate" => manipulate_data}) do
     %ManipulateDirective{
-      target: manipulate_data["target"],
+      to: manipulate_data["to"],
       ops: manipulate_data["ops"] || []
     }
   end
 
   defp parse_directive(%{"publish" => publish_data}) do
     %PublishDirective{
-      target: publish_data["target"],
+      to: publish_data["to"],
       description: publish_data["description"]
     }
   end
 
   defp parse_directive(%{"verify" => verify_data}) do
     %VerifyDirective{
-      target: verify_data["target"],
+      to: verify_data["to"],
       structure: parse_node(verify_data["structure"]),
       assertions: verify_data["assertions"] || []
     }
@@ -139,7 +139,19 @@ defmodule Oli.Scenarios.DirectiveParser do
   # Handle single unrecognized directive
   defp parse_directive(map) when is_map(map) and map_size(map) == 1 do
     [{key, _value}] = Enum.to_list(map)
-    if key not in ["project", "section", "remix", "manipulate", "publish", "verify", "user", "enroll", "institution", "update"] do
+
+    if key not in [
+         "project",
+         "section",
+         "remix",
+         "manipulate",
+         "publish",
+         "verify",
+         "user",
+         "enroll",
+         "institution",
+         "update"
+       ] do
       raise "Unrecognized directive: '#{key}'. Valid directives are: project, section, remix, manipulate, publish, verify, user, enroll, institution, update"
     else
       # This shouldn't happen as specific handlers above should match first
@@ -150,8 +162,21 @@ defmodule Oli.Scenarios.DirectiveParser do
   # Handle multiple directives in a single map (for complex YAML structures)
   defp parse_directive(map) when is_map(map) do
     Enum.flat_map(map, fn
-      {key, value} when key in ["project", "section", "remix", "manipulate", "publish", "verify", "user", "enroll", "institution", "update"] ->
+      {key, value}
+      when key in [
+             "project",
+             "section",
+             "remix",
+             "manipulate",
+             "publish",
+             "verify",
+             "user",
+             "enroll",
+             "institution",
+             "update"
+           ] ->
         [parse_directive(%{key => value})]
+
       {key, _value} ->
         raise "Unrecognized directive: '#{key}'. Valid directives are: project, section, remix, manipulate, publish, verify, user, enroll, institution, update"
     end)
@@ -159,7 +184,7 @@ defmodule Oli.Scenarios.DirectiveParser do
 
   # Parse node structures (for project and verification structures)
   defp parse_node(nil), do: nil
-  
+
   defp parse_node(%{"root" => root_data}) do
     parse_node(root_data)
   end
@@ -167,7 +192,7 @@ defmodule Oli.Scenarios.DirectiveParser do
   defp parse_node(%{"page" => title}) do
     %Node{type: :page, title: title}
   end
-  
+
   defp parse_node(%{"container" => title, "children" => children}) do
     %Node{
       type: :container,
@@ -175,11 +200,11 @@ defmodule Oli.Scenarios.DirectiveParser do
       children: Enum.map(children, &parse_node/1)
     }
   end
-  
+
   defp parse_node(%{"container" => title}) do
     %Node{type: :container, title: title, children: []}
   end
-  
+
   defp parse_node(%{"children" => children}) do
     %Node{
       type: :container,

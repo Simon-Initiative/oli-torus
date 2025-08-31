@@ -18,7 +18,7 @@ defmodule Oli.Scenarios.Engine do
     InstitutionDirective,
     UpdateDirective
   }
-  
+
   alias Oli.Scenarios.Directives.{
     ProjectHandler,
     SectionHandler,
@@ -40,21 +40,21 @@ defmodule Oli.Scenarios.Engine do
   """
   def execute(directives) when is_list(directives) do
     initial_state = initialize_state()
-    
-    {final_state, verifications, errors} = 
+
+    {final_state, verifications, errors} =
       Enum.reduce(directives, {initial_state, [], []}, fn directive, {state, verifs, errs} ->
         case execute_directive(directive, state) do
           {:ok, new_state} ->
             {new_state, verifs, errs}
-            
+
           {:ok, new_state, verification} ->
             {new_state, [verification | verifs], errs}
-            
+
           {:error, reason} ->
             {state, verifs, [{directive, reason} | errs]}
         end
       end)
-    
+
     %ExecutionResult{
       state: final_state,
       verifications: Enum.reverse(verifications),
@@ -75,14 +75,15 @@ defmodule Oli.Scenarios.Engine do
   defp initialize_state do
     # Create default author and institution if not specified
     author = AccountsFixtures.author_fixture()
-    
-    {:ok, institution} = Oli.Institutions.create_institution(%{
-      name: "Default Test Institution",
-      institution_email: "test@institution.edu",
-      country_code: "US",
-      institution_url: "http://test.institution.edu"
-    })
-    
+
+    {:ok, institution} =
+      Oli.Institutions.create_institution(%{
+        name: "Default Test Institution",
+        institution_email: "test@institution.edu",
+        country_code: "US",
+        institution_url: "http://test.institution.edu"
+      })
+
     %ExecutionState{
       projects: %{},
       sections: %{},

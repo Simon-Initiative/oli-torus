@@ -28,7 +28,7 @@ defmodule Oli.Scenarios.ScenarioRunner do
       for {name, path} <- @scenarios do
         @scenario_name name
         @scenario_path path
-        
+
         test "scenario: #{@scenario_name}" do
           Oli.Scenarios.ScenarioRunner.run_scenario_file!(@scenario_path)
         end
@@ -49,24 +49,29 @@ defmodule Oli.Scenarios.ScenarioRunner do
   """
   def run_scenario_file!(file_path) do
     result = run_scenario_file(file_path)
-    
+
     # Check for execution errors
     if Enum.any?(result.errors) do
-      error_messages = Enum.map(result.errors, fn {directive, reason} ->
-        "#{inspect(directive)}: #{reason}"
-      end)
+      error_messages =
+        Enum.map(result.errors, fn {directive, reason} ->
+          "#{inspect(directive)}: #{reason}"
+        end)
+
       raise "Scenario '#{Path.basename(file_path)}' had execution errors:\n#{Enum.join(error_messages, "\n")}"
     end
-    
+
     # Check for failed verifications
     failed_verifications = Enum.filter(result.verifications, fn v -> !v.passed end)
+
     if Enum.any?(failed_verifications) do
-      messages = Enum.map(failed_verifications, fn v ->
-        "#{v.target}: #{v.message}"
-      end)
+      messages =
+        Enum.map(failed_verifications, fn v ->
+          "#{v.target}: #{v.message}"
+        end)
+
       raise "Scenario '#{Path.basename(file_path)}' had verification failures:\n#{Enum.join(messages, "\n")}"
     end
-    
+
     result
   end
 
@@ -75,35 +80,35 @@ defmodule Oli.Scenarios.ScenarioRunner do
   """
   defmacro __using__(opts) do
     opts_ast = opts[:do]
-    
+
     quote do
       use Oli.DataCase
       import Oli.Scenarios.ScenarioRunner
-      
+
       # Store the test directory path at compile time
       @test_dir Path.dirname(__ENV__.file)
-      
+
       # Setup function to discover scenarios
       setup_all do
         # Discover scenarios at runtime
         scenarios = Oli.Scenarios.ScenarioRunner.discover_scenarios(@test_dir)
         {:ok, scenarios: scenarios}
       end
-      
+
       # Generate tests for each scenario file
       describe "scenario tests" do
         @test_dir Path.dirname(__ENV__.file)
-        
+
         for {name, path} <- Oli.Scenarios.ScenarioRunner.discover_scenarios(@test_dir) do
           @scenario_name name
           @scenario_path path
-          
+
           test "scenario: #{@scenario_name}" do
             Oli.Scenarios.ScenarioRunner.run_scenario_file!(@scenario_path)
           end
         end
       end
-      
+
       # Allow modules to add their own tests
       unquote(opts_ast)
     end

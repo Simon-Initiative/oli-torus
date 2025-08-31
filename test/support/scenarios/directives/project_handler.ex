@@ -14,16 +14,17 @@ defmodule Oli.Scenarios.Directives.ProjectHandler do
         title: title || name,
         root: root
       }
-      
-      built_project = Builder.build!(
-        project_spec,
-        state.current_author,
-        state.current_institution
-      )
-      
+
+      built_project =
+        Builder.build!(
+          project_spec,
+          state.current_author,
+          state.current_institution
+        )
+
       # Store the built project in state
       new_state = Engine.put_project(state, name, built_project)
-      
+
       {:ok, new_state}
     rescue
       e ->

@@ -2,15 +2,15 @@
 
 ## Overview
 
-Oli.Scenarios enables you to write sophisticated integration tests as simple unit tests without writing any Elixir code. By describing test scenarios in YAML files, you can rapidly script complex workflows that would normally require hundreds of lines of setup code.
+`Oli.Scenarios` enables you to write sophisticated integration tests as simple unit tests without writing any Elixir code. By describing test scenarios in YAML files, you can rapidly script complex workflows that would normally require hundreds of lines of setup code.
 
 ### Key Benefits
 
 - **Zero-code test creation**: Define entire test scenarios in readable YAML files - no Elixir code required
-- **Integration tests as unit tests**: Test complex multi-step workflows (project creation → publishing → section delivery → updates → verification) with the speed and isolation of unit tests
+- **Integration tests as unit tests**: Test complex multi-step workflows (project creation → publishing → section creation → updates → verification) with the speed and isolation of unit tests
 - **Rapid iteration**: Add new test cases by creating YAML files, not writing code
 - **Self-documenting**: YAML scenarios serve as both tests and documentation of system behavior
-- **Real infrastructure testing**: Uses the actual ContainerEditor infrastructure, ensuring tests exercise the same code paths as the authoring UI
+- **Real infrastructure testing**: Scenarios are powered by real infrastructure and **NOT** fixtures or other antiquated approaches. (e.g. `DBSeeder`) That means that things like simulating project hierarchy changes directly uses and tests the actual `ContainerEditor` module, the same code paths used when authors manipulate their curriculum.
 
 ### Example
 
@@ -36,15 +36,15 @@ Instead of writing hundreds of lines of test setup code, you can describe your e
 
 # Apply operations to modify the project
 - manipulate:
-    target: "math_course"
+    to: "math_course"
     ops:
       - add_page:
           title: "Lesson 2"
-          parent: "Module 1"
+          to: "Module 1"
 
 # Publish the changes
 - publish:
-    target: "math_course"
+    to: "math_course"
     description: "Adding Lesson 2"
 
 # Apply the update to the section
@@ -54,7 +54,7 @@ Instead of writing hundreds of lines of test setup code, you can describe your e
 
 # Verify the section now has the updated content
 - verify:
-    target: "spring_2024"
+    to: "spring_2024"
     structure:
       root:
         children:
@@ -97,28 +97,28 @@ Instead of writing hundreds of lines of test setup code, you can describe your e
   ```yaml
   - add_page:
       title: "New Page"
-      parent: "Module 1"  # Optional, defaults to root
+      to: "Module 1"  # Optional, defaults to root
   ```
 
 - **`add_container`**: Adds a new container (module/unit)
   ```yaml
   - add_container:
       title: "Module 2"
-      parent: "root"  # Optional, defaults to root
+      to: "root"  # Optional, defaults to root
   ```
 
 ### Content Organization
 - **`move`**: Moves a resource to a different parent container
   ```yaml
   - move:
-      source: "Page 1"
+      from: "Page 1"
       to: "Module 2"
   ```
 
 - **`reorder`**: Reorders a resource within its current container
   ```yaml
   - reorder:
-      source: "Page 2"
+      from: "Page 2"
       before: "Page 1"  # Or use 'after: "Page 3"'
   ```
 
@@ -126,7 +126,7 @@ Instead of writing hundreds of lines of test setup code, you can describe your e
 - **`remove`**: Removes a resource from its parent (doesn't delete it)
   ```yaml
   - remove:
-      target: "Old Page"
+      from: "Old Page"
   ```
 
 - **`edit_page_title`**: Changes the title of an existing page

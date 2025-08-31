@@ -21,7 +21,7 @@
 
 # Verify the project structure
 - verify:
-    target: "demo_project"
+    to: "demo_project"
     structure:
       root:
         children:
@@ -34,7 +34,7 @@
 
 # Verify the section structure (should match the project)
 - verify:
-    target: "demo_section"
+    to: "demo_section"
     structure:
       root:
         children:

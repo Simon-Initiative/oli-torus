@@ -19,19 +19,19 @@
 
 # Test move operation - move Page 2 from Module A to Module B
 - manipulate:
-    target: "test_move_reorder"
+    to: "test_move_reorder"
     ops:
       - move:
-          source: "Page 2"
+          from: "Page 2"
           to: "Module B"
 
 - publish:
-    target: "test_move_reorder"
+    to: "test_move_reorder"
     description: "Moving Page 2 to Module B"
 
 # Verify Page 2 is now in Module B
 - verify:
-    target: "test_move_reorder"
+    to: "test_move_reorder"
     structure:
       root:
         children:
@@ -47,19 +47,19 @@
 
 # Test reorder operation - move Page 5 before Page 4
 - manipulate:
-    target: "test_move_reorder"
+    to: "test_move_reorder"
     ops:
       - reorder:
-          source: "Page 5"
+          from: "Page 5"
           before: "Page 4"
 
 - publish:
-    target: "test_move_reorder"
+    to: "test_move_reorder"
     description: "Reordering Page 5 before Page 4"
 
 # Verify Page 5 is now before Page 4
 - verify:
-    target: "test_move_reorder"
+    to: "test_move_reorder"
     structure:
       root:
         children:
@@ -75,19 +75,19 @@
 
 # Test reorder with after - move Page 4 after Page 2
 - manipulate:
-    target: "test_move_reorder"
+    to: "test_move_reorder"
     ops:
       - reorder:
-          source: "Page 4"
+          from: "Page 4"
           after: "Page 2"
 
 - publish:
-    target: "test_move_reorder"
+    to: "test_move_reorder"
     description: "Reordering Page 4 after Page 2"
 
 # Verify final structure
 - verify:
-    target: "test_move_reorder"
+    to: "test_move_reorder"
     structure:
       root:
         children:
@@ -103,19 +103,19 @@
 
 # Test moving containers
 - manipulate:
-    target: "test_move_reorder"
+    to: "test_move_reorder"
     ops:
       - move:
-          source: "Module A"
+          from: "Module A"
           to: "Module B"
 
 - publish:
-    target: "test_move_reorder"
+    to: "test_move_reorder"
     description: "Moving Module A inside Module B"
 
 # Verify Module A is now inside Module B
 - verify:
-    target: "test_move_reorder"
+    to: "test_move_reorder"
     structure:
       root:
         children:

@@ -19,30 +19,32 @@ defmodule Oli.Scenarios.Ops do
 
   defp apply_op(%{"add_container" => params}, _major?, dest) do
     title = params["title"]
-    parent_title = params["parent"] || "root"  # Default to root if not specified
-    {true, add_container!(dest, title, parent_title)}
+    # Default to root if not specified
+    to = params["to"] || "root"
+    {true, add_container!(dest, title, to)}
   end
 
   defp apply_op(%{"add_page" => params}, _major?, dest) do
     title = params["title"]
-    parent_title = params["parent"] || "root"  # Default to root if not specified
-    {true, add_page!(dest, title, parent_title)}
+    # Default to root if not specified
+    to = params["to"] || "root"
+    {true, add_page!(dest, title, to)}
   end
 
   defp apply_op(%{"move" => params}, _major?, dest) do
-    source = params["source"]
+    from = params["from"]
     to = params["to"] || "root"
-    {true, move!(dest, source, to)}
+    {true, move!(dest, from, to)}
   end
 
   defp apply_op(%{"reorder" => params}, _major?, dest) do
-    source = params["source"]
+    from = params["from"]
     before = params["before"]
     after_target = params["after"]
-    {true, reorder!(dest, source, before, after_target)}
+    {true, reorder!(dest, from, before, after_target)}
   end
 
-  defp apply_op(%{"remove" => %{"target" => title}}, _major?, dest) do
+  defp apply_op(%{"remove" => %{"from" => title}}, _major?, dest) do
     {true, remove!(dest, title)}
   end
 
@@ -54,16 +56,17 @@ defmodule Oli.Scenarios.Ops do
 
   defp apply_op(_, major?, dest), do: {major?, dest}
 
-  defp add_container!(dest, title, parent_title) do
+  defp add_container!(dest, title, to) do
     %{project: proj} = dest
     author = dest.root.author
 
     # Determine parent revision (default to root if not specified)
-    parent_rev = if parent_title do
-      dest.rev_by_title[parent_title] || dest.root.revision
-    else
-      dest.root.revision
-    end
+    parent_rev =
+      if to do
+        dest.rev_by_title[to] || dest.root.revision
+      else
+        dest.root.revision
+      end
 
     # Use ContainerEditor to create and attach the container
     attrs = %{
@@ -78,28 +81,35 @@ defmodule Oli.Scenarios.Ops do
     {:ok, cont_rev} = ContainerEditor.add_new(parent_rev, attrs, author, proj)
 
     # Get the updated parent revision
-    parent_key = parent_title || "root"
+    parent_key = to || "root"
     updated_parent_rev = AuthoringResolver.from_resource_id(proj.slug, parent_rev.resource_id)
 
-    %{dest |
-      id_by_title: Map.put(dest.id_by_title, title, cont_rev.resource_id),
-      rev_by_title: dest.rev_by_title
-                    |> Map.put(title, cont_rev)
-                    |> Map.put(parent_key, updated_parent_rev),
-      root: if(parent_key == "root", do: %{dest.root | revision: updated_parent_rev}, else: dest.root)
+    %{
+      dest
+      | id_by_title: Map.put(dest.id_by_title, title, cont_rev.resource_id),
+        rev_by_title:
+          dest.rev_by_title
+          |> Map.put(title, cont_rev)
+          |> Map.put(parent_key, updated_parent_rev),
+        root:
+          if(parent_key == "root",
+            do: %{dest.root | revision: updated_parent_rev},
+            else: dest.root
+          )
     }
   end
 
-  defp add_page!(dest, title, parent_title) do
+  defp add_page!(dest, title, to) do
     %{project: proj} = dest
     author = dest.root.author
 
     # Determine parent revision (default to root if not specified)
-    parent_rev = if parent_title do
-      dest.rev_by_title[parent_title] || dest.root.revision
-    else
-      dest.root.revision
-    end
+    parent_rev =
+      if to do
+        dest.rev_by_title[to] || dest.root.revision
+      else
+        dest.root.revision
+      end
 
     # Use ContainerEditor to create and attach the page
     attrs = %{
@@ -115,24 +125,30 @@ defmodule Oli.Scenarios.Ops do
     {:ok, page_rev} = ContainerEditor.add_new(parent_rev, attrs, author, proj)
 
     # Get the updated parent revision
-    parent_key = parent_title || "root"
+    parent_key = to || "root"
     updated_parent_rev = AuthoringResolver.from_resource_id(proj.slug, parent_rev.resource_id)
 
-    %{dest |
-      id_by_title: Map.put(dest.id_by_title, title, page_rev.resource_id),
-      rev_by_title: dest.rev_by_title
-                    |> Map.put(title, page_rev)
-                    |> Map.put(parent_key, updated_parent_rev),
-      root: if(parent_key == "root", do: %{dest.root | revision: updated_parent_rev}, else: dest.root)
+    %{
+      dest
+      | id_by_title: Map.put(dest.id_by_title, title, page_rev.resource_id),
+        rev_by_title:
+          dest.rev_by_title
+          |> Map.put(title, page_rev)
+          |> Map.put(parent_key, updated_parent_rev),
+        root:
+          if(parent_key == "root",
+            do: %{dest.root | revision: updated_parent_rev},
+            else: dest.root
+          )
     }
   end
 
-  defp move!(dest, source_title, to_title) do
+  defp move!(dest, from_title, to_title) do
     %{project: proj} = dest
     author = dest.root.author
 
-    source_id = dest.id_by_title[source_title]
-    source_rev = dest.rev_by_title[source_title]
+    source_id = dest.id_by_title[from_title]
+    source_rev = dest.rev_by_title[from_title]
     new_parent_rev = dest.rev_by_title[to_title] || dest.root.revision
 
     if source_id && source_rev && new_parent_rev do
@@ -142,33 +158,50 @@ defmodule Oli.Scenarios.Ops do
         dest
       else
         # Find current parent
-        old_parent_rev = Enum.find_value(dest.rev_by_title, fn {_title, rev} ->
-          if rev.children && source_id in rev.children, do: rev
-        end)
+        old_parent_rev =
+          Enum.find_value(dest.rev_by_title, fn {_title, rev} ->
+            if rev.children && source_id in rev.children, do: rev
+          end)
 
         # Use ContainerEditor.move_to to handle the move
-        {:ok, _} = ContainerEditor.move_to(source_rev, old_parent_rev, new_parent_rev, author, proj)
+        {:ok, _} =
+          ContainerEditor.move_to(source_rev, old_parent_rev, new_parent_rev, author, proj)
 
         # Get updated parent revisions
-        updated_new_parent = AuthoringResolver.from_resource_id(proj.slug, new_parent_rev.resource_id)
+        updated_new_parent =
+          AuthoringResolver.from_resource_id(proj.slug, new_parent_rev.resource_id)
 
         # Update new parent in state
-        updated_dest = %{dest |
-          rev_by_title: Map.put(dest.rev_by_title, to_title || "root", updated_new_parent),
-          root: if(to_title == "root" || to_title == nil, do: %{dest.root | revision: updated_new_parent}, else: dest.root)
+        updated_dest = %{
+          dest
+          | rev_by_title: Map.put(dest.rev_by_title, to_title || "root", updated_new_parent),
+            root:
+              if(to_title == "root" || to_title == nil,
+                do: %{dest.root | revision: updated_new_parent},
+                else: dest.root
+              )
         }
 
         # Update old parent if it exists
         if old_parent_rev do
-          old_parent_title = Enum.find_value(dest.rev_by_title, fn {title, rev} ->
-            if rev.resource_id == old_parent_rev.resource_id, do: title
-          end)
+          old_parent_title =
+            Enum.find_value(dest.rev_by_title, fn {title, rev} ->
+              if rev.resource_id == old_parent_rev.resource_id, do: title
+            end)
 
           if old_parent_title do
-            updated_old_parent = AuthoringResolver.from_resource_id(proj.slug, old_parent_rev.resource_id)
-            %{updated_dest |
-              rev_by_title: Map.put(updated_dest.rev_by_title, old_parent_title, updated_old_parent),
-              root: if(old_parent_title == "root", do: %{updated_dest.root | revision: updated_old_parent}, else: updated_dest.root)
+            updated_old_parent =
+              AuthoringResolver.from_resource_id(proj.slug, old_parent_rev.resource_id)
+
+            %{
+              updated_dest
+              | rev_by_title:
+                  Map.put(updated_dest.rev_by_title, old_parent_title, updated_old_parent),
+                root:
+                  if(old_parent_title == "root",
+                    do: %{updated_dest.root | revision: updated_old_parent},
+                    else: updated_dest.root
+                  )
             }
           else
             updated_dest
@@ -182,52 +215,66 @@ defmodule Oli.Scenarios.Ops do
     end
   end
 
-  defp reorder!(dest, source_title, before_title, after_title) do
+  defp reorder!(dest, from_title, before_title, after_title) do
     %{project: proj} = dest
     author = dest.root.author
 
-    source_rev = dest.rev_by_title[source_title]
+    source_rev = dest.rev_by_title[from_title]
 
     if source_rev do
       # Find the container that holds this source
-      parent_rev = Enum.find_value(dest.rev_by_title, fn {_title, rev} ->
-        if rev.children && source_rev.resource_id in rev.children, do: rev
-      end)
+      parent_rev =
+        Enum.find_value(dest.rev_by_title, fn {_title, rev} ->
+          if rev.children && source_rev.resource_id in rev.children, do: rev
+        end)
 
       if parent_rev do
         # Calculate target index based on before/after
-        target_index = cond do
-          before_title ->
-            before_id = dest.id_by_title[before_title]
-            case Enum.find_index(parent_rev.children, & &1 == before_id) do
-              nil -> nil
-              idx -> idx  # Insert at the same index to go before
-            end
+        target_index =
+          cond do
+            before_title ->
+              before_id = dest.id_by_title[before_title]
 
-          after_title ->
-            after_id = dest.id_by_title[after_title]
-            case Enum.find_index(parent_rev.children, & &1 == after_id) do
-              nil -> nil
-              idx -> idx + 1  # Insert after by going to next index
-            end
+              case Enum.find_index(parent_rev.children, &(&1 == before_id)) do
+                nil -> nil
+                # Insert at the same index to go before
+                idx -> idx
+              end
 
-          true -> nil
-        end
+            after_title ->
+              after_id = dest.id_by_title[after_title]
+
+              case Enum.find_index(parent_rev.children, &(&1 == after_id)) do
+                nil -> nil
+                # Insert after by going to next index
+                idx -> idx + 1
+              end
+
+            true ->
+              nil
+          end
 
         if target_index do
           # Use ContainerEditor.reorder_child for the actual reordering
-          {:ok, _} = ContainerEditor.reorder_child(parent_rev, proj, author, source_rev.slug, target_index)
+          {:ok, _} =
+            ContainerEditor.reorder_child(parent_rev, proj, author, source_rev.slug, target_index)
 
           # Get updated parent revision
-          parent_title = Enum.find_value(dest.rev_by_title, fn {title, rev} ->
-            if rev.resource_id == parent_rev.resource_id, do: title
-          end)
+          parent_title =
+            Enum.find_value(dest.rev_by_title, fn {title, rev} ->
+              if rev.resource_id == parent_rev.resource_id, do: title
+            end)
 
           updated_parent = AuthoringResolver.from_resource_id(proj.slug, parent_rev.resource_id)
 
-          %{dest |
-            rev_by_title: Map.put(dest.rev_by_title, parent_title || "root", updated_parent),
-            root: if(parent_title == "root" || parent_title == nil, do: %{dest.root | revision: updated_parent}, else: dest.root)
+          %{
+            dest
+            | rev_by_title: Map.put(dest.rev_by_title, parent_title || "root", updated_parent),
+              root:
+                if(parent_title == "root" || parent_title == nil,
+                  do: %{dest.root | revision: updated_parent},
+                  else: dest.root
+                )
           }
         else
           dest
@@ -260,31 +307,36 @@ defmodule Oli.Scenarios.Ops do
           # ContainerEditor.remove_child also marks the child as deleted,
           # which we don't actually want for reorganization. Instead,
           # just remove from parent's children list directly.
-          new_children = Enum.filter(parent_rev.children, & &1 != revision.resource_id)
+          new_children = Enum.filter(parent_rev.children, &(&1 != revision.resource_id))
 
           # Create new revision with updated children
-          {:ok, updated_parent_rev} = Oli.Resources.create_revision_from_previous(
-            parent_rev,
-            %{children: new_children}
-          )
+          {:ok, updated_parent_rev} =
+            Oli.Resources.create_revision_from_previous(
+              parent_rev,
+              %{children: new_children}
+            )
 
           # Update published resource
           pub = Publishing.project_working_publication(proj.slug)
+
           Publishing.get_published_resource!(pub.id, parent_rev.resource_id)
           |> Publishing.update_published_resource(%{revision_id: updated_parent_rev.id})
 
-          %{dest |
-            id_by_title: Map.delete(dest.id_by_title, title),
-            rev_by_title: dest.rev_by_title
-                         |> Map.delete(title)
-                         |> Map.put(parent_title, updated_parent_rev)
+          %{
+            dest
+            | id_by_title: Map.delete(dest.id_by_title, title),
+              rev_by_title:
+                dest.rev_by_title
+                |> Map.delete(title)
+                |> Map.put(parent_title, updated_parent_rev)
           }
 
         _ ->
           # Just remove from maps if not found in any parent
-          %{dest |
-            id_by_title: Map.delete(dest.id_by_title, title),
-            rev_by_title: Map.delete(dest.rev_by_title, title)
+          %{
+            dest
+            | id_by_title: Map.delete(dest.id_by_title, title),
+              rev_by_title: Map.delete(dest.rev_by_title, title)
           }
       end
     else
@@ -300,23 +352,27 @@ defmodule Oli.Scenarios.Ops do
       # Update the revision's title
       %{working_pub: pub} = dest
       # Get author from the base structure
-      author = if Map.has_key?(dest.root, :author), do: dest.root.author, else: dest.root.revision.author
+      author =
+        if Map.has_key?(dest.root, :author), do: dest.root.author, else: dest.root.revision.author
+
       author_id = if is_map(author), do: author.id, else: author
 
-      updated_rev = Publishing.publish_new_revision(
-        rev,
-        %{title: new_title},
-        pub,
-        author_id
-      )
+      updated_rev =
+        Publishing.publish_new_revision(
+          rev,
+          %{title: new_title},
+          pub,
+          author_id
+        )
 
-      %{dest |
-        id_by_title: dest.id_by_title |> Map.delete(old_title) |> Map.put(new_title, id),
-        rev_by_title: dest.rev_by_title |> Map.delete(old_title) |> Map.put(new_title, updated_rev)
+      %{
+        dest
+        | id_by_title: dest.id_by_title |> Map.delete(old_title) |> Map.put(new_title, id),
+          rev_by_title:
+            dest.rev_by_title |> Map.delete(old_title) |> Map.put(new_title, updated_rev)
       }
     else
       dest
     end
   end
-
 end

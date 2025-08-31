@@ -8,30 +8,35 @@ defmodule Oli.Scenarios.Directives.VerifyHandler do
   alias Oli.Scenarios.Types.Node
   alias Oli.Delivery.Hierarchy
 
-  def handle(%VerifyDirective{target: target_name, structure: expected_structure, assertions: assertions}, state) do
+  def handle(
+        %VerifyDirective{to: to_name, structure: expected_structure, assertions: assertions},
+        state
+      ) do
     try do
       # Determine if target is a project or section
-      {target_type, target} = get_target(state, target_name)
+      {target_type, target} = get_target(state, to_name)
 
       # Get the actual structure
-      actual_structure = case target_type do
-        :section ->
-          get_section_structure(target)
+      actual_structure =
+        case target_type do
+          :section ->
+            get_section_structure(target)
 
-        :project ->
-          get_project_structure(target)
-      end
+          :project ->
+            get_project_structure(target)
+        end
 
       # Perform structure verification if expected structure is provided
-      verification_result = if expected_structure do
-        verify_structure(target_name, target_type, expected_structure, actual_structure)
-      else
-        %VerificationResult{
-          target: target_name,
-          passed: true,
-          message: "No structure verification specified"
-        }
-      end
+      verification_result =
+        if expected_structure do
+          verify_structure(to_name, target_type, expected_structure, actual_structure)
+        else
+          %VerificationResult{
+            to: to_name,
+            passed: true,
+            message: "No structure verification specified"
+          }
+        end
 
       # Perform additional assertions if provided
       if assertions && Enum.any?(assertions) do
@@ -42,7 +47,7 @@ defmodule Oli.Scenarios.Directives.VerifyHandler do
       {:ok, state, verification_result}
     rescue
       e ->
-        {:error, "Failed to verify '#{target_name}': #{Exception.message(e)}"}
+        {:error, "Failed to verify '#{to_name}': #{Exception.message(e)}"}
     end
   end
 
@@ -53,6 +58,7 @@ defmodule Oli.Scenarios.Directives.VerifyHandler do
           nil -> raise "Target '#{name}' not found"
           project -> {:project, project}
         end
+
       section ->
         {:section, section}
     end
@@ -86,12 +92,13 @@ defmodule Oli.Scenarios.Directives.VerifyHandler do
     revision = hierarchy[:revision] || hierarchy["revision"]
     children = hierarchy[:children] || hierarchy["children"] || []
 
-    title = if is_map(revision) do
-      revision[:title] || revision["title"]
-    else
-      # Sometimes the title might be directly in the hierarchy
-      hierarchy[:title] || hierarchy["title"] || "Unknown"
-    end
+    title =
+      if is_map(revision) do
+        revision[:title] || revision["title"]
+      else
+        # Sometimes the title might be directly in the hierarchy
+        hierarchy[:title] || hierarchy["title"] || "Unknown"
+      end
 
     page_type_id = Oli.Resources.ResourceType.id_for_page()
 
@@ -103,6 +110,7 @@ defmodule Oli.Scenarios.Directives.VerifyHandler do
   end
 
   defp convert_children_ids_to_nodes(nil, _built_project), do: []
+
   defp convert_children_ids_to_nodes(children_ids, built_project) do
     Enum.map(children_ids, fn child_id ->
       # Find the revision for this child ID
@@ -114,7 +122,11 @@ defmodule Oli.Scenarios.Directives.VerifyHandler do
         %Node{
           type: if(is_page, do: :page, else: :container),
           title: revision.title,
-          children: if(is_page, do: [], else: convert_children_ids_to_nodes(revision.children, built_project))
+          children:
+            if(is_page,
+              do: [],
+              else: convert_children_ids_to_nodes(revision.children, built_project)
+            )
         }
       else
         nil
@@ -125,9 +137,10 @@ defmodule Oli.Scenarios.Directives.VerifyHandler do
 
   defp find_revision_by_id(resource_id, built_project) do
     # First find the title that corresponds to this resource_id
-    matching_title = Enum.find_value(built_project.id_by_title, fn {title, id} ->
-      if id == resource_id, do: title
-    end)
+    matching_title =
+      Enum.find_value(built_project.id_by_title, fn {title, id} ->
+        if id == resource_id, do: title
+      end)
 
     # Then get the revision for that title
     if matching_title do
@@ -137,13 +150,13 @@ defmodule Oli.Scenarios.Directives.VerifyHandler do
     end
   end
 
-  defp verify_structure(target_name, _target_type, expected, actual) do
+  defp verify_structure(to_name, _target_type, expected, actual) do
     try do
       # Compare the structures
       compare_nodes(expected, actual)
 
       %VerificationResult{
-        target: target_name,
+        to: to_name,
         passed: true,
         message: "Structure matches expected",
         expected: expected,
@@ -152,7 +165,7 @@ defmodule Oli.Scenarios.Directives.VerifyHandler do
     rescue
       e ->
         %VerificationResult{
-          target: target_name,
+          to: to_name,
           passed: false,
           message: Exception.message(e),
           expected: expected,
@@ -196,5 +209,6 @@ defmodule Oli.Scenarios.Directives.VerifyHandler do
     # Accept various forms of root container titles
     actual_title in ["Root Container", "root", "Root", "ROOT"]
   end
+
   defp is_root_match?(_, _), do: false
 end

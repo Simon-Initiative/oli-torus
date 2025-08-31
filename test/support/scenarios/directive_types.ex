@@ -16,22 +16,22 @@ defmodule Oli.Scenarios.DirectiveTypes do
 
   defmodule RemixDirective do
     @moduledoc "Remixes content from source to target"
-    defstruct [:source, :target, :resource, :into, :position]
+    defstruct [:from, :to, :resource, :position]
   end
 
   defmodule ManipulateDirective do
     @moduledoc "Applies operations to a project"
-    defstruct [:target, :ops]
+    defstruct [:to, :ops]
   end
 
   defmodule PublishDirective do
     @moduledoc "Publishes outstanding changes to a project"
-    defstruct [:target, :description]
+    defstruct [:to, :description]
   end
 
   defmodule VerifyDirective do
     @moduledoc "Verifies the structure of a project or section"
-    defstruct [:target, :structure, :assertions]
+    defstruct [:to, :structure, :assertions]
   end
 
   defmodule UserDirective do
@@ -59,12 +59,18 @@ defmodule Oli.Scenarios.DirectiveTypes do
     @moduledoc """
     Maintains state throughout directive execution.
     """
-    defstruct projects: %{},           # name -> BuiltProject
-              sections: %{},           # name -> Section  
-              users: %{},             # name -> User/Author
-              institutions: %{},      # name -> Institution
-              current_author: nil,     # Default author for operations
-              current_institution: nil # Default institution
+    # name -> BuiltProject
+    defstruct projects: %{},
+              # name -> Section  
+              sections: %{},
+              # name -> User/Author
+              users: %{},
+              # name -> Institution
+              institutions: %{},
+              # Default author for operations
+              current_author: nil,
+              # Default institution
+              current_institution: nil
   end
 
   # Result types
@@ -79,7 +85,7 @@ defmodule Oli.Scenarios.DirectiveTypes do
     @moduledoc """
     Result of a verification directive.
     """
-    defstruct [:target, :passed, :message, :expected, :actual]
+    defstruct [:to, :passed, :message, :expected, :actual]
   end
 
   # Enhanced BuiltProject with section tracking

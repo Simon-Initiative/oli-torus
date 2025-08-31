@@ -21,23 +21,23 @@
 
 # Add new content (major update)
 - manipulate:
-    target: "course_v1"
+    to: "course_v1"
     ops:
       - add_container:
           title: "Module 2"
 
       - add_page:
           title: "Advanced Topics"
-          parent: "Module 2"
+          to: "Module 2"
 
       - add_page:
           title: "Lab Exercise"
-          parent: "Module 2"
+          to: "Module 2"
       
       # Module 2 is already attached to root by default when created
 
 - publish:
-    target: "course_v1"
+    to: "course_v1"
     description: "Adding Module 2 with new content"
 
 # Apply the update to the section
@@ -46,7 +46,7 @@
     to: "cs101_section"
 
 - verify:
-    target: "cs101_section"
+    to: "cs101_section"
     structure:
       root:
         children:
