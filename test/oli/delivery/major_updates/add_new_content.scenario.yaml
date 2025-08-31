@@ -20,9 +20,8 @@
     title: "CS 101 - Fall 2024"
 
 # Add new content (major update)
-- publish_changes:
+- manipulate:
     target: "course_v1"
-    description: "Adding Module 2 with new content"
     ops:
       - add_container:
           title: "Module 2"
@@ -34,11 +33,12 @@
       - add_page:
           title: "Lab Exercise"
           parent: "Module 2"
+      
+      # Module 2 is already attached to root by default when created
 
-      - attach:
-          child: "Module 2"
-          parent: "root"
-          position: "end"
+- publish:
+    target: "course_v1"
+    description: "Adding Module 2 with new content"
 
 # Apply the update to the section
 - update:

@@ -77,13 +77,16 @@ defmodule Oli.Scenarios.DSLTest do
             children:
               - page: "Original Page"
       
-      - publish_changes:
+      - manipulate:
           target: "my_project"
-          description: "Adding new content"
           ops:
             - add_page:
                 title: "New Page"
                 parent: "root"
+      
+      - publish:
+          target: "my_project"
+          description: "Adding new content"
       """
       
       result = TestHelpers.execute_yaml(yaml)
@@ -95,7 +98,6 @@ defmodule Oli.Scenarios.DSLTest do
       assert Map.has_key?(project.id_by_title, "New Page")
     end
     
-    @tag :skip
     test "can verify section structure" do
       yaml = """
       - project:
@@ -172,7 +174,6 @@ defmodule Oli.Scenarios.DSLTest do
       assert Engine.get_section(result.state, "section")
     end
     
-    @tag :skip
     test "can build scenarios programmatically" do
       # Build a scenario using helper functions
       scenario = TestHelpers.build_scenario([

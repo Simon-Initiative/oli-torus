@@ -37,9 +37,8 @@
               - page: "Problem Set 2"
 
 # Restructure content into organized modules (major update)
-- publish_changes:
+- manipulate:
     target: "math_course"
-    description: "Reorganizing content into subject modules"
     ops:
       - add_container:
           title: "Algebra Module"
@@ -70,21 +69,12 @@
       - add_page:
           title: "Calculus Fundamentals"
           parent: "Calculus Module"
+      
+      # The containers are already attached to root by default when created
 
-      - attach:
-          child: "Algebra Module"
-          parent: "root"
-          position: "end"
-
-      - attach:
-          child: "Geometry Module"
-          parent: "root"
-          position: "end"
-
-      - attach:
-          child: "Calculus Module"
-          parent: "root"
-          position: "end"
+- publish:
+    target: "math_course"
+    description: "Reorganizing content into subject modules"
 
 # Apply the update to the section
 - update:

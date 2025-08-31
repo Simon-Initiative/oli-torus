@@ -8,7 +8,8 @@ defmodule Oli.Scenarios.DirectiveParser do
     ProjectDirective,
     SectionDirective,
     RemixDirective,
-    PublishChangesDirective,
+    ManipulateDirective,
+    PublishDirective,
     VerifyDirective,
     UserDirective,
     EnrollDirective,
@@ -79,10 +80,16 @@ defmodule Oli.Scenarios.DirectiveParser do
     }
   end
 
-  defp parse_directive(%{"publish_changes" => publish_data}) do
-    %PublishChangesDirective{
+  defp parse_directive(%{"manipulate" => manipulate_data}) do
+    %ManipulateDirective{
+      target: manipulate_data["target"],
+      ops: manipulate_data["ops"] || []
+    }
+  end
+
+  defp parse_directive(%{"publish" => publish_data}) do
+    %PublishDirective{
       target: publish_data["target"],
-      ops: publish_data["ops"] || [],
       description: publish_data["description"]
     }
   end
@@ -129,13 +136,24 @@ defmodule Oli.Scenarios.DirectiveParser do
     }
   end
 
+  # Handle single unrecognized directive
+  defp parse_directive(map) when is_map(map) and map_size(map) == 1 do
+    [{key, _value}] = Enum.to_list(map)
+    if key not in ["project", "section", "remix", "manipulate", "publish", "verify", "user", "enroll", "institution", "update"] do
+      raise "Unrecognized directive: '#{key}'. Valid directives are: project, section, remix, manipulate, publish, verify, user, enroll, institution, update"
+    else
+      # This shouldn't happen as specific handlers above should match first
+      raise "Internal error: unhandled directive '#{key}'"
+    end
+  end
+
   # Handle multiple directives in a single map (for complex YAML structures)
   defp parse_directive(map) when is_map(map) do
     Enum.flat_map(map, fn
-      {key, value} when key in ["project", "section", "remix", "publish_changes", "verify", "user", "enroll", "institution"] ->
+      {key, value} when key in ["project", "section", "remix", "manipulate", "publish", "verify", "user", "enroll", "institution", "update"] ->
         [parse_directive(%{key => value})]
-      _ ->
-        []
+      {key, _value} ->
+        raise "Unrecognized directive: '#{key}'. Valid directives are: project, section, remix, manipulate, publish, verify, user, enroll, institution, update"
     end)
   end
 

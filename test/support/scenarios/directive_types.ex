@@ -19,9 +19,14 @@ defmodule Oli.Scenarios.DirectiveTypes do
     defstruct [:source, :target, :resource, :into, :position]
   end
 
-  defmodule PublishChangesDirective do
-    @moduledoc "Publishes changes to a project"
-    defstruct [:target, :ops, :description]
+  defmodule ManipulateDirective do
+    @moduledoc "Applies operations to a project"
+    defstruct [:target, :ops]
+  end
+
+  defmodule PublishDirective do
+    @moduledoc "Publishes outstanding changes to a project"
+    defstruct [:target, :description]
   end
 
   defmodule VerifyDirective do

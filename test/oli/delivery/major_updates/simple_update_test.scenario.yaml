@@ -23,13 +23,16 @@
           - page: "Page 1"
 
 # Add a new page
-- publish_changes:
+- manipulate:
     target: "test_project"
-    description: "Adding Page 2"
     ops:
       - add_page:
           title: "Page 2"
           parent: "root"
+
+- publish:
+    target: "test_project"
+    description: "Adding Page 2"
 
 # Verify the project was updated correctly (without needing separate attach)
 - verify:

@@ -10,7 +10,7 @@ Oli.Scenarios enables you to write sophisticated integration tests as simple uni
 - **Integration tests as unit tests**: Test complex multi-step workflows (project creation → publishing → section delivery → updates → verification) with the speed and isolation of unit tests
 - **Rapid iteration**: Add new test cases by creating YAML files, not writing code
 - **Self-documenting**: YAML scenarios serve as both tests and documentation of system behavior
-- **Reusable components**: Share project structures, operations, and verifications across multiple test scenarios
+- **Real infrastructure testing**: Uses the actual ContainerEditor infrastructure, ensuring tests exercise the same code paths as the authoring UI
 
 ### Example
 
@@ -34,14 +34,18 @@ Instead of writing hundreds of lines of test setup code, you can describe your e
     from: "math_course"
     title: "Math 101 - Spring 2024"
 
-# Make changes and publish an update
-- publish_changes:
+# Apply operations to modify the project
+- manipulate:
     target: "math_course"
-    description: "Adding Module 2"
     ops:
       - add_page:
           title: "Lesson 2"
           parent: "Module 1"
+
+# Publish the changes
+- publish:
+    target: "math_course"
+    description: "Adding Lesson 2"
 
 # Apply the update to the section
 - update:
@@ -61,4 +65,82 @@ Instead of writing hundreds of lines of test setup code, you can describe your e
               - page: "Lesson 2"
 ```
 
-This single YAML file replaces what would typically require multiple test files with complex factory setups, database transactions, and assertion helpers. The Scenarios framework handles all the complexity behind a simple, declarative interface.
+## Available Directives
+
+### Structure Creation
+
+- **`project`**: Creates a new project with hierarchical content structure
+- **`section`**: Creates a course section from a project or standalone
+- **`user`**: Creates users (authors, instructors, students)
+- **`institution`**: Creates an institution
+
+### Content Manipulation
+
+- **`manipulate`**: Applies operations to modify a project's structure
+  - Operations: `add_page`, `add_container`, `move`, `reorder`, `remove`, `edit_page_title`
+- **`remix`**: Copies content from one project/section to another
+
+### Publishing & Updates
+
+- **`publish`**: Publishes outstanding changes in a project
+- **`update`**: Applies published updates from a project to a section
+
+### Organization & Testing
+
+- **`enroll`**: Enrolls users in sections with specific roles
+- **`verify`**: Verifies the structure of a project or section matches expectations
+
+## Operations (used within `manipulate`)
+
+### Content Creation
+- **`add_page`**: Adds a new page to a container
+  ```yaml
+  - add_page:
+      title: "New Page"
+      parent: "Module 1"  # Optional, defaults to root
+  ```
+
+- **`add_container`**: Adds a new container (module/unit)
+  ```yaml
+  - add_container:
+      title: "Module 2"
+      parent: "root"  # Optional, defaults to root
+  ```
+
+### Content Organization
+- **`move`**: Moves a resource to a different parent container
+  ```yaml
+  - move:
+      source: "Page 1"
+      to: "Module 2"
+  ```
+
+- **`reorder`**: Reorders a resource within its current container
+  ```yaml
+  - reorder:
+      source: "Page 2"
+      before: "Page 1"  # Or use 'after: "Page 3"'
+  ```
+
+### Content Modification
+- **`remove`**: Removes a resource from its parent (doesn't delete it)
+  ```yaml
+  - remove:
+      target: "Old Page"
+  ```
+
+- **`edit_page_title`**: Changes the title of an existing page
+  ```yaml
+  - edit_page_title:
+      title: "Current Title"
+      new_title: "Updated Title"
+  ```
+
+## Error Handling
+
+The framework provides strict validation:
+- Unrecognized directives cause immediate test failure with helpful error messages
+- Invalid references (e.g., non-existent projects or sections) are caught and reported
+- All operations use the real ContainerEditor infrastructure, ensuring realistic test behavior
+
+This declarative approach replaces complex test setup code while ensuring your tests exercise the same code paths as the actual application.

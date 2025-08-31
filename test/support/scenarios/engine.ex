@@ -10,7 +10,8 @@ defmodule Oli.Scenarios.Engine do
     ProjectDirective,
     SectionDirective,
     RemixDirective,
-    PublishChangesDirective,
+    ManipulateDirective,
+    PublishDirective,
     VerifyDirective,
     UserDirective,
     EnrollDirective,
@@ -22,6 +23,7 @@ defmodule Oli.Scenarios.Engine do
     ProjectHandler,
     SectionHandler,
     RemixHandler,
+    ManipulateHandler,
     PublishHandler,
     VerifyHandler,
     UserHandler,
@@ -104,7 +106,11 @@ defmodule Oli.Scenarios.Engine do
     RemixHandler.handle(directive, state)
   end
 
-  defp execute_directive(%PublishChangesDirective{} = directive, state) do
+  defp execute_directive(%ManipulateDirective{} = directive, state) do
+    ManipulateHandler.handle(directive, state)
+  end
+
+  defp execute_directive(%PublishDirective{} = directive, state) do
     PublishHandler.handle(directive, state)
   end
 

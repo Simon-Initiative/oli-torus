@@ -3,10 +3,12 @@ defmodule Oli.Scenarios.Builder do
   Builds Torus project structures from Scenarios definitions.
   """
   alias Oli.Scenarios.Types.{ProjectSpec, Node, BuiltProject}
-  alias Oli.{Repo, Publishing, Seeder}
+  alias Oli.{Repo, Publishing}
   alias Oli.Authoring.Course.{Project, Family}
   alias Oli.Resources.{Resource, Revision, ResourceType}
   alias Oli.Inventories
+  alias Oli.Authoring.Editing.ContainerEditor
+  alias Oli.Publishing.AuthoringResolver
 
   def build!(%ProjectSpec{title: title, root: root_node}, author, _institution) do
     # Create a clean project from scratch
@@ -37,7 +39,7 @@ defmodule Oli.Scenarios.Builder do
       authors: [author]
     }) |> Repo.insert()
     
-    # Create the root container resource and revision first
+    # Create the root container resource and revision first (this is the only one we create directly)
     {:ok, root_resource} = Resource.changeset(%Resource{}, %{}) |> Repo.insert()
     
     # Ensure author has an id
@@ -67,18 +69,19 @@ defmodule Oli.Scenarios.Builder do
       revision_id: root_revision.id
     })
     
-    # Build the hierarchy from the spec
-    {id_by_title, rev_by_title, final_root_rev} = 
+    # Build the hierarchy from the spec using ContainerEditor
+    {id_by_title, rev_by_title} = 
       build_hierarchy!(
         root_node.children, 
-        root_resource, 
         root_revision,
-        publication, 
         project, 
         author,
         %{"root" => root_resource.id},
         %{"root" => root_revision}
       )
+
+    # Get the final root revision after all children have been added
+    final_root_rev = AuthoringResolver.from_resource_id(project.slug, root_resource.id)
 
     %BuiltProject{
       project: project,
@@ -93,39 +96,65 @@ defmodule Oli.Scenarios.Builder do
     }
   end
 
-  defp build_hierarchy!([], _parent_res, parent_rev, _pub, _proj, _author, id_map, rev_map),
-    do: {id_map, rev_map, parent_rev}
+  defp build_hierarchy!([], _parent_rev, _proj, _author, id_map, rev_map),
+    do: {id_map, rev_map}
 
-  defp build_hierarchy!([%Node{type: :page, title: title} | rest], parent_res, parent_rev, pub, proj, author, id_map, rev_map) do
-    %{resource: page_res, revision: page_rev} = 
-      Seeder.create_page(title, pub, proj, author)
+  defp build_hierarchy!([%Node{type: :page, title: title} | rest], parent_rev, proj, author, id_map, rev_map) do
+    # Use ContainerEditor to create and attach the page
+    attrs = %{
+      objectives: %{"attached" => []},
+      children: [],
+      content: %{"version" => "0.1.0", "model" => []},
+      title: title,
+      graded: false,
+      max_attempts: 0,
+      resource_type_id: ResourceType.id_for_page()
+    }
     
-    # attach_pages_to returns the updated parent revision
-    updated_parent_rev = Seeder.attach_pages_to([page_res], parent_res, parent_rev, pub)
+    {:ok, page_rev} = ContainerEditor.add_new(parent_rev, attrs, author, proj)
+    
+    # Parent revision has been updated, so fetch the latest version
+    updated_parent_rev = AuthoringResolver.from_resource_id(proj.slug, parent_rev.resource_id)
     
     build_hierarchy!(
-      rest, parent_res, updated_parent_rev, pub, proj, author,
-      Map.put(id_map, title, page_res.id),
+      rest, updated_parent_rev, proj, author,
+      Map.put(id_map, title, page_rev.resource_id),
       Map.put(rev_map, title, page_rev)
     )
   end
 
-  defp build_hierarchy!([%Node{type: :container, title: title, children: children} | rest], parent_res, parent_rev, pub, proj, author, id_map, rev_map) do
-    %{resource: cont_res, revision: cont_rev} = 
-      Seeder.create_container(title, pub, proj, author)
+  defp build_hierarchy!([%Node{type: :container, title: title, children: children} | rest], parent_rev, proj, author, id_map, rev_map) do
+    # Use ContainerEditor to create and attach the container
+    attrs = %{
+      objectives: %{"attached" => []},
+      children: [],
+      content: %{},
+      title: title,
+      graded: false,
+      resource_type_id: ResourceType.id_for_container()
+    }
     
-    # attach_pages_to returns the updated parent revision
-    updated_parent_rev = Seeder.attach_pages_to([cont_res], parent_res, parent_rev, pub)
+    {:ok, cont_rev} = ContainerEditor.add_new(parent_rev, attrs, author, proj)
 
-    # Build children of this container
-    {id_map_updated, rev_map_updated, cont_final_rev} =
-      build_hierarchy!(children, cont_res, cont_rev, pub, proj, author, id_map, rev_map)
+    # Build children of this container (note: cont_rev is already the latest)
+    {id_map_updated, rev_map_updated} =
+      build_hierarchy!(children, cont_rev, proj, author, id_map, rev_map)
+
+    # Get the final container revision after all children have been added
+    cont_final_rev = if Enum.empty?(children) do
+      cont_rev
+    else
+      AuthoringResolver.from_resource_id(proj.slug, cont_rev.resource_id)
+    end
+    
+    # Parent revision has been updated, so fetch the latest version
+    updated_parent_rev = AuthoringResolver.from_resource_id(proj.slug, parent_rev.resource_id)
 
     # Continue with siblings
     build_hierarchy!(
-      rest, parent_res, updated_parent_rev, pub, proj, author,
-      Map.put(id_map_updated, title, cont_res.id),
-      Map.put(rev_map_updated, title, cont_final_rev)  # Store the final container revision with its children
+      rest, updated_parent_rev, proj, author,
+      Map.put(id_map_updated, title, cont_rev.resource_id),
+      Map.put(rev_map_updated, title, cont_final_rev)
     )
   end
 end
