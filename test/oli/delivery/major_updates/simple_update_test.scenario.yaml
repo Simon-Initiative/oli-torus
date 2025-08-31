@@ -1,0 +1,55 @@
+# Simple test to verify update mechanism works
+
+# Create a simple project
+- project:
+    name: "test_project"
+    title: "Test Project"
+    root:
+      children:
+        - page: "Page 1"
+
+# Create section from project
+- section:
+    name: "test_section"
+    from: "test_project"
+    title: "Test Section"
+
+# Verify initial structure
+- verify:
+    target: "test_section"
+    structure:
+      root:
+        children:
+          - page: "Page 1"
+
+# Add a new page
+- publish_changes:
+    target: "test_project"
+    description: "Adding Page 2"
+    ops:
+      - add_page:
+          title: "Page 2"
+          parent: "root"
+
+# Verify the project was updated correctly (without needing separate attach)
+- verify:
+    target: "test_project"
+    structure:
+      root:
+        children:
+          - page: "Page 1"
+          - page: "Page 2"
+
+# Apply update
+- update:
+    from: "test_project"
+    to: "test_section"
+
+# Verify updated structure
+- verify:
+    target: "test_section"
+    structure:
+      root:
+        children:
+          - page: "Page 1"
+          - page: "Page 2"

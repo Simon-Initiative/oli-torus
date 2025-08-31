@@ -1,0 +1,112 @@
+# Scenario: Restructuring content hierarchy triggers a major update
+# This scenario creates a project, then reorganizes its structure
+
+# Create initial project structure
+- project:
+    name: "math_course"
+    title: "Mathematics Fundamentals"
+    root:
+      children:
+        - page: "Algebra Basics"
+        - page: "Geometry Basics"
+        - page: "Calculus Basics"
+        - container: "Practice Problems"
+          children:
+            - page: "Problem Set 1"
+            - page: "Problem Set 2"
+
+# Create a section from the project
+- section:
+    name: "math101"
+    from: "math_course"
+    title: "MATH 101"
+
+
+# Verify the section still has the original structure (before updates are applied)
+- verify:
+    target: "math101"
+    structure:
+      root:
+        children:
+          - page: "Algebra Basics"
+          - page: "Geometry Basics"
+          - page: "Calculus Basics"
+          - container: "Practice Problems"
+            children:
+              - page: "Problem Set 1"
+              - page: "Problem Set 2"
+
+# Restructure content into organized modules (major update)
+- publish_changes:
+    target: "math_course"
+    description: "Reorganizing content into subject modules"
+    ops:
+      - add_container:
+          title: "Algebra Module"
+
+      - add_container:
+          title: "Geometry Module"
+
+      - add_container:
+          title: "Calculus Module"
+
+      - remove:
+          target: "Algebra Basics"
+
+      - add_page:
+          title: "Algebra Fundamentals"
+          parent: "Algebra Module"
+
+      - remove:
+          target: "Geometry Basics"
+
+      - add_page:
+          title: "Geometry Fundamentals"
+          parent: "Geometry Module"
+
+      - remove:
+          target: "Calculus Basics"
+
+      - add_page:
+          title: "Calculus Fundamentals"
+          parent: "Calculus Module"
+
+      - attach:
+          child: "Algebra Module"
+          parent: "root"
+          position: "end"
+
+      - attach:
+          child: "Geometry Module"
+          parent: "root"
+          position: "end"
+
+      - attach:
+          child: "Calculus Module"
+          parent: "root"
+          position: "end"
+
+# Apply the update to the section
+- update:
+    from: "math_course"
+    to: "math101"
+
+# Verify the section now has the updated structure
+- verify:
+    target: "math101"
+    structure:
+      root:
+        children:
+          - container: "Practice Problems"
+            children:
+              - page: "Problem Set 1"
+              - page: "Problem Set 2"
+          - container: "Algebra Module"
+            children:
+              - page: "Algebra Fundamentals"
+          - container: "Geometry Module"
+            children:
+              - page: "Geometry Fundamentals"
+          - container: "Calculus Module"
+            children:
+              - page: "Calculus Fundamentals"

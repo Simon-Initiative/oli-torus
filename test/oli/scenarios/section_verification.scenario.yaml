@@ -1,0 +1,50 @@
+# Test scenario for verifying section hierarchies
+# This tests the full verify directive implementation for sections
+
+# Create a project with a specific structure
+- project:
+    name: "test_project"
+    title: "Test Project for Verification"
+    root:
+      children:
+        - page: "Introduction"
+        - container: "Module 1"
+          children:
+            - page: "Lesson 1.1"
+            - page: "Lesson 1.2"
+            - container: "Lab Section"
+              children:
+                - page: "Lab 1"
+                - page: "Lab 2"
+        - container: "Module 2"
+          children:
+            - page: "Lesson 2.1"
+            - page: "Lesson 2.2"
+        - page: "Conclusion"
+
+# Create a section from the project
+- section:
+    name: "test_section"
+    from: "test_project"
+    title: "Test Section"
+
+# Verify the section has the expected structure
+- verify:
+    target: "test_section"
+    structure:
+      root:
+        children:
+          - page: "Introduction"
+          - container: "Module 1"
+            children:
+              - page: "Lesson 1.1"
+              - page: "Lesson 1.2"
+              - container: "Lab Section"
+                children:
+                  - page: "Lab 1"
+                  - page: "Lab 2"
+          - container: "Module 2"
+            children:
+              - page: "Lesson 2.1"
+              - page: "Lesson 2.2"
+          - page: "Conclusion"
