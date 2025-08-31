@@ -79,6 +79,8 @@ Instead of writing hundreds of lines of test setup code, you can describe your e
 - **`manipulate`**: Applies operations to modify a project's structure
   - Operations: `add_page`, `add_container`, `move`, `reorder`, `remove`, `edit_page_title`
 - **`remix`**: Copies content from one project/section to another
+- **`customize`**: Applies operations to modify a section's curriculum (uses real Oli.Delivery.Hierarchy infrastructure)
+  - Operations: `remove` (removes pages/containers), `reorder` (changes order with before/after)
 
 ### Publishing & Updates
 
@@ -135,6 +137,60 @@ Instead of writing hundreds of lines of test setup code, you can describe your e
       title: "Current Title"
       new_title: "Updated Title"
   ```
+
+## Section Customization Operations
+
+The `customize` directive allows modification of section curriculum after creation:
+
+### Remove Operation
+- **`remove`**: Removes a page or container from the section hierarchy
+  ```yaml
+  - customize:
+      to: "section_name"
+      ops:
+        - remove:
+            from: "Page Title"
+  ```
+
+### Reorder Operation
+- **`reorder`**: Changes the order of pages/containers within their parent
+  ```yaml
+  - customize:
+      to: "section_name"
+      ops:
+        - reorder:
+            from: "Page to Move"
+            before: "Target Page"  # Or use 'after: "Target Page"'
+  ```
+  Note: The `from` and target pages must be siblings (same parent container)
+
+Example workflow:
+```yaml
+# Create section from project
+- section:
+    name: "my_section"
+    from: "my_project"
+
+# Remove unwanted content from the section
+- customize:
+    to: "my_section"
+    ops:
+      - remove:
+          from: "Quiz Page"
+      - remove:
+          from: "Optional Module"
+
+# Reorder content
+- customize:
+    to: "my_section"
+    ops:
+      - reorder:
+          from: "Final Exam"
+          before: "Module 1"
+      - reorder:
+          from: "Lesson 2"
+          after: "Lesson 3"
+```
 
 ## Error Handling
 

@@ -1,0 +1,132 @@
+# SKIP: This scenario is currently being developed
+# Test scenario for section customization operations
+# This tests the customize directive for modifying section curriculum
+
+# Create a project with specific structure
+- project:
+    name: "base_project"
+    title: "Base Project for Customization"
+    root:
+      children:
+        - page: "Welcome"
+        - container: "Module 1"
+          children:
+            - page: "Lesson 1.1"
+            - page: "Lesson 1.2"
+            - page: "Quiz 1"
+        - container: "Module 2"
+          children:
+            - page: "Lesson 2.1"
+            - page: "Lesson 2.2"
+        - page: "Final Exam"
+
+# Create a section from the project
+- section:
+    name: "custom_section"
+    from: "base_project"
+    title: "Customizable Section"
+
+# Verify initial structure
+- verify:
+    to: "custom_section"
+    structure:
+      root:
+        children:
+          - page: "Welcome"
+          - container: "Module 1"
+            children:
+              - page: "Lesson 1.1"
+              - page: "Lesson 1.2"
+              - page: "Quiz 1"
+          - container: "Module 2"
+            children:
+              - page: "Lesson 2.1"
+              - page: "Lesson 2.2"
+          - page: "Final Exam"
+
+# Customize the section by removing the quiz
+- customize:
+    to: "custom_section"
+    ops:
+      - remove:
+          from: "Quiz 1"
+
+# Verify the quiz was removed
+- verify:
+    to: "custom_section"
+    structure:
+      root:
+        children:
+          - page: "Welcome"
+          - container: "Module 1"
+            children:
+              - page: "Lesson 1.1"
+              - page: "Lesson 1.2"
+          - container: "Module 2"
+            children:
+              - page: "Lesson 2.1"
+              - page: "Lesson 2.2"
+          - page: "Final Exam"
+
+# Remove an entire module
+- customize:
+    to: "custom_section"
+    ops:
+      - remove:
+          from: "Module 2"
+
+# Verify Module 2 was removed
+- verify:
+    to: "custom_section"
+    structure:
+      root:
+        children:
+          - page: "Welcome"
+          - container: "Module 1"
+            children:
+              - page: "Lesson 1.1"
+              - page: "Lesson 1.2"
+          - page: "Final Exam"
+
+# Test reorder - move Final Exam before Module 1
+- customize:
+    to: "custom_section"
+    ops:
+      - reorder:
+          from: "Final Exam"
+          before: "Module 1"
+
+# Verify Final Exam was reordered
+- verify:
+    to: "custom_section"
+    structure:
+      root:
+        children:
+          - page: "Welcome"
+          - page: "Final Exam"
+          - container: "Module 1"
+            children:
+              - page: "Lesson 1.1"
+              - page: "Lesson 1.2"
+
+# Test reorder with after - move Lesson 1.2 after Welcome (move to root level)
+# This should fail since they're not siblings
+- customize:
+    to: "custom_section"
+    ops:
+      - reorder:
+          from: "Lesson 1.1"
+          after: "Lesson 1.2"
+
+# Verify Lesson 1.1 was moved after Lesson 1.2
+- verify:
+    to: "custom_section"
+    structure:
+      root:
+        children:
+          - page: "Welcome"
+          - page: "Final Exam"
+          - container: "Module 1"
+            children:
+              - page: "Lesson 1.2"
+              - page: "Lesson 1.1"

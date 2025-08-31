@@ -16,7 +16,8 @@ defmodule Oli.Scenarios.Engine do
     UserDirective,
     EnrollDirective,
     InstitutionDirective,
-    UpdateDirective
+    UpdateDirective,
+    CustomizeDirective
   }
 
   alias Oli.Scenarios.Directives.{
@@ -29,7 +30,8 @@ defmodule Oli.Scenarios.Engine do
     UserHandler,
     EnrollmentHandler,
     InstitutionHandler,
-    UpdateHandler
+    UpdateHandler,
+    CustomizeHandler
   }
 
   alias Oli.Utils.Seeder.AccountsFixtures
@@ -136,6 +138,10 @@ defmodule Oli.Scenarios.Engine do
 
   defp execute_directive(%UpdateDirective{} = directive, state) do
     UpdateHandler.handle(directive, state)
+  end
+
+  defp execute_directive(%CustomizeDirective{} = directive, state) do
+    CustomizeHandler.handle(directive, state)
   end
 
   # Handle lists of directives (from complex parsing)

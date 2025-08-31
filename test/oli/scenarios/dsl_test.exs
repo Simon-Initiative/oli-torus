@@ -239,5 +239,64 @@ defmodule Oli.Scenarios.DSLTest do
       assert TestHelpers.get_project(result, "project2")
       assert TestHelpers.get_project(result, "project3")
     end
+
+    test "can customize section curriculum" do
+      yaml = """
+      - project:
+          name: "base"
+          title: "Base Project"
+          root:
+            children:
+              - page: "Page A"
+              - container: "Unit"
+                children:
+                  - page: "Page B"
+                  - page: "Page C"
+              - page: "Page D"
+
+      - section:
+          name: "custom"
+          from: "base"
+
+      # Verify initial structure
+      - verify:
+          to: "custom"
+          structure:
+            root:
+              children:
+                - page: "Page A"
+                - container: "Unit"
+                  children:
+                    - page: "Page B"
+                    - page: "Page C"
+                - page: "Page D"
+
+      # Remove a page from the section
+      - customize:
+          to: "custom"
+          ops:
+            - remove:
+                from: "Page C"
+
+      # Verify the page was removed
+      - verify:
+          to: "custom"
+          structure:
+            root:
+              children:
+                - page: "Page A"
+                - container: "Unit"
+                  children:
+                    - page: "Page B"
+                - page: "Page D"
+      """
+
+      result = TestHelpers.execute_yaml(yaml)
+
+      assert %ExecutionResult{errors: [], verifications: verifications} = result
+      # Should have 2 successful verifications
+      assert length(verifications) == 2
+      assert Enum.all?(verifications, & &1.passed)
+    end
   end
 end

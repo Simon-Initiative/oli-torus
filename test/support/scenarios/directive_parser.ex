@@ -14,7 +14,8 @@ defmodule Oli.Scenarios.DirectiveParser do
     UserDirective,
     EnrollDirective,
     InstitutionDirective,
-    UpdateDirective
+    UpdateDirective,
+    CustomizeDirective
   }
 
   alias Oli.Scenarios.Types.Node
@@ -109,6 +110,13 @@ defmodule Oli.Scenarios.DirectiveParser do
     }
   end
 
+  defp parse_directive(%{"customize" => customize_data}) do
+    %CustomizeDirective{
+      to: customize_data["to"],
+      ops: customize_data["ops"] || []
+    }
+  end
+
   defp parse_directive(%{"user" => user_data}) do
     %UserDirective{
       name: user_data["name"],
@@ -150,9 +158,10 @@ defmodule Oli.Scenarios.DirectiveParser do
          "user",
          "enroll",
          "institution",
-         "update"
+         "update",
+         "customize"
        ] do
-      raise "Unrecognized directive: '#{key}'. Valid directives are: project, section, remix, manipulate, publish, verify, user, enroll, institution, update"
+      raise "Unrecognized directive: '#{key}'. Valid directives are: project, section, remix, manipulate, publish, verify, user, enroll, institution, update, customize"
     else
       # This shouldn't happen as specific handlers above should match first
       raise "Internal error: unhandled directive '#{key}'"
@@ -173,12 +182,13 @@ defmodule Oli.Scenarios.DirectiveParser do
              "user",
              "enroll",
              "institution",
-             "update"
+             "update",
+             "customize"
            ] ->
         [parse_directive(%{key => value})]
 
       {key, _value} ->
-        raise "Unrecognized directive: '#{key}'. Valid directives are: project, section, remix, manipulate, publish, verify, user, enroll, institution, update"
+        raise "Unrecognized directive: '#{key}'. Valid directives are: project, section, remix, manipulate, publish, verify, user, enroll, institution, update, customize"
     end)
   end
 

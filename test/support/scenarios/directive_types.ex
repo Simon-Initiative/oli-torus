@@ -54,6 +54,11 @@ defmodule Oli.Scenarios.DirectiveTypes do
     defstruct [:from, :to]
   end
 
+  defmodule CustomizeDirective do
+    @moduledoc "Applies customization operations to a section's curriculum"
+    defstruct [:to, :ops]
+  end
+
   # Execution state
   defmodule ExecutionState do
     @moduledoc """
