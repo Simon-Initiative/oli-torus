@@ -54,6 +54,12 @@ defmodule Oli.Scenarios.Ops do
     {major?, edit_title_minor!(dest, old_title, new_title)}
   end
 
+  defp apply_op(%{"revise" => params}, major?, dest) do
+    target = params["target"]
+    set = params["set"] || %{}
+    {major?, revise!(dest, target, set)}
+  end
+
   defp apply_op(_, major?, dest), do: {major?, dest}
 
   defp add_container!(dest, title, to) do
@@ -375,4 +381,69 @@ defmodule Oli.Scenarios.Ops do
       dest
     end
   end
+
+  defp revise!(dest, target, set_params) do
+    %{project: proj} = dest
+    rev = dest.rev_by_title[target]
+
+    if rev do
+      # Get author from the base structure
+      author =
+        if Map.has_key?(dest.root, :author), do: dest.root.author, else: dest.root.revision.author
+
+      author_id = if is_map(author), do: author.id, else: author
+
+      # Process the set parameters to convert special values
+      revision_params = 
+        set_params
+        |> Enum.map(fn {key, value} ->
+          {key, process_revision_value(key, value)}
+        end)
+        |> Enum.into(%{})
+        |> Map.put("author_id", author_id)
+
+      # Use ContainerEditor.edit_page to make the changes
+      case ContainerEditor.edit_page(proj, rev.slug, revision_params) do
+        {:ok, _} ->
+          # Fetch the updated revision from the database to ensure we have the latest version
+          updated_rev = AuthoringResolver.from_resource_id(proj.slug, rev.resource_id)
+          
+          # Update our state with the new revision
+          updated_dest = %{
+            dest
+            | rev_by_title: Map.put(dest.rev_by_title, target, updated_rev)
+          }
+          
+          # Also update root if this was the root revision
+          if target == "root" || rev.resource_id == dest.root.revision.resource_id do
+            %{updated_dest | root: %{dest.root | revision: updated_rev}}
+          else
+            updated_dest
+          end
+
+        {:error, error} ->
+          # If the update fails, raise an error to fail the test
+          raise "Failed to revise '#{target}': #{inspect(error)}"
+      end
+    else
+      # If the target revision is not found, raise an error to fail the test
+      raise "Revision target '#{target}' not found in project"
+    end
+  end
+
+  # Helper function to process special value formats
+  defp process_revision_value("purpose", "@atom(" <> rest) do
+    # Handle @atom(practice) format -> :practice
+    atom_str = String.trim_trailing(rest, ")")
+    String.to_atom(atom_str)
+  end
+
+  defp process_revision_value("graded", value) when is_binary(value) do
+    # Convert string "true"/"false" to boolean
+    value == "true"
+  end
+
+  defp process_revision_value("graded", value) when is_boolean(value), do: value
+
+  defp process_revision_value(_key, value), do: value
 end

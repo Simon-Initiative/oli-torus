@@ -6,7 +6,7 @@ defmodule Oli.Scenarios.Directives.VerifyHandler do
   alias Oli.Scenarios.DirectiveTypes.{VerifyDirective, VerificationResult}
   alias Oli.Scenarios.Engine
   alias Oli.Scenarios.Types.Node
-  alias Oli.Delivery.Hierarchy
+  alias Oli.Publishing.DeliveryResolver
 
   def handle(
         %VerifyDirective{to: to_name, structure: expected_structure, assertions: assertions},
@@ -75,29 +75,69 @@ defmodule Oli.Scenarios.Directives.VerifyHandler do
   end
 
   defp get_section_structure(section) do
-    # Get the full hierarchy for the section
-    # Section should have a slug field
-    hierarchy = Hierarchy.full_hierarchy(section)
+    # Get the full hierarchy for the section - always fetch fresh from DB
+    hierarchy = DeliveryResolver.full_hierarchy(section.slug)
 
     # Convert the hierarchy to our Node structure for comparison
     convert_hierarchy_to_node(hierarchy)
   end
 
   defp get_project_structure(built_project) do
-    # Get the project's hierarchy from its root revision
-    # The root revision already contains the children structure
-    root_revision = built_project.root.revision
+    # Get fresh root revision from the database to avoid stale data
+    alias Oli.Publishing.AuthoringResolver
+    
+    fresh_root_revision = 
+      AuthoringResolver.from_resource_id(
+        built_project.project.slug, 
+        built_project.root.revision.resource_id
+      )
 
     # Convert to Node structure
     %Node{
       type: :container,
       title: "root",
-      children: convert_children_ids_to_nodes(root_revision.children, built_project)
+      children: convert_children_ids_to_nodes(fresh_root_revision.children, built_project)
     }
   end
 
+  defp convert_hierarchy_to_node(%Oli.Delivery.Hierarchy.HierarchyNode{} = hierarchy) do
+    # HierarchyNode is a struct, use dot notation
+    # Get resource type - prefer revision's resource_type_id as it's always populated
+    resource_type_id = 
+      cond do
+        hierarchy.revision && hierarchy.revision.resource_type_id ->
+          hierarchy.revision.resource_type_id
+        hierarchy.section_resource && hierarchy.section_resource.resource_type_id ->
+          hierarchy.section_resource.resource_type_id
+        true ->
+          # For root nodes without revision or section_resource, assume container
+          Oli.Resources.ResourceType.id_for_container()
+      end
+      
+    revision = hierarchy.revision
+    children = hierarchy.children || []
+
+    title =
+      cond do
+        revision && revision.title ->
+          revision.title
+        hierarchy.section_resource && hierarchy.section_resource.title ->
+          hierarchy.section_resource.title
+        true ->
+          "root"
+      end
+
+    page_type_id = Oli.Resources.ResourceType.id_for_page()
+
+    %Node{
+      type: if(resource_type_id == page_type_id, do: :page, else: :container),
+      title: title,
+      children: Enum.map(children, &convert_hierarchy_to_node/1)
+    }
+  end
+  
   defp convert_hierarchy_to_node(hierarchy) when is_map(hierarchy) do
-    # Handle both atom and string keys
+    # Fallback for map-based hierarchies (shouldn't happen with DeliveryResolver)
     resource_type_id = hierarchy[:resource_type_id] || hierarchy["resource_type_id"]
     revision = hierarchy[:revision] || hierarchy["revision"]
     children = hierarchy[:children] || hierarchy["children"] || []
@@ -106,7 +146,6 @@ defmodule Oli.Scenarios.Directives.VerifyHandler do
       if is_map(revision) do
         revision[:title] || revision["title"]
       else
-        # Sometimes the title might be directly in the hierarchy
         hierarchy[:title] || hierarchy["title"] || "Unknown"
       end
 
@@ -146,18 +185,10 @@ defmodule Oli.Scenarios.Directives.VerifyHandler do
   end
 
   defp find_revision_by_id(resource_id, built_project) do
-    # First find the title that corresponds to this resource_id
-    matching_title =
-      Enum.find_value(built_project.id_by_title, fn {title, id} ->
-        if id == resource_id, do: title
-      end)
-
-    # Then get the revision for that title
-    if matching_title do
-      built_project.rev_by_title[matching_title]
-    else
-      nil
-    end
+    alias Oli.Publishing.AuthoringResolver
+    
+    # Get fresh revision from database to avoid stale data
+    AuthoringResolver.from_resource_id(built_project.project.slug, resource_id)
   end
 
   defp verify_structure(to_name, _target_type, expected, actual) do

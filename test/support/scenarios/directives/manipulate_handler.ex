@@ -9,7 +9,7 @@ defmodule Oli.Scenarios.Directives.ManipulateHandler do
   def handle(%ManipulateDirective{to: to, ops: ops}, %ExecutionState{} = state) do
     case Map.get(state.projects, to) do
       nil ->
-        {:error, "Project '#{to}' not found", state}
+        {:error, "Project '#{to}' not found"}
 
       built_project ->
         # Apply operations
@@ -22,7 +22,7 @@ defmodule Oli.Scenarios.Directives.ManipulateHandler do
           {:ok, updated_state}
         rescue
           e ->
-            {:error, "Failed to apply operations: #{inspect(e)}", state}
+            {:error, "Failed to apply operations: #{inspect(e)}"}
         end
     end
   end

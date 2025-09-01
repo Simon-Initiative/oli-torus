@@ -144,6 +144,16 @@ Instead of writing hundreds of lines of test setup code, you can describe your e
       new_title: "Updated Title"
   ```
 
+- **`revise`**: Updates properties of a page or container
+  ```yaml
+  - revise:
+      target: "Page Title"
+      set:
+        purpose: "@atom(deliberate_practice)"  # foundation, application, or deliberate_practice
+        graded: false
+        max_attempts: 0
+  ```
+
 ## Section Customization Operations
 
 The `customize` directive allows modification of section curriculum after creation:
