@@ -421,7 +421,7 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsViewTest do
       # test order desc
       assert view
              |> element("table > tbody > tr:first-child > td:nth-child(3) > div")
-             |> render() =~ "$10.00"
+             |> render() =~ "$40.00"
 
       view
       |> element("th[phx-value-sort_by=requires_payment]")
@@ -430,7 +430,7 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsViewTest do
       # test order asc
       assert view
              |> element("table > tbody > tr:first-child > td:nth-child(3) > div")
-             |> render() =~ "$40.00"
+             |> render() =~ "$10.00"
     end
   end
 end
