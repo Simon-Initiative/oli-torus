@@ -375,7 +375,7 @@ defmodule Oli.Scenarios.Ops do
           new_title = if title_changed, do: set_params["title"], else: target
 
           # Update our state with the new revision
-          updated_rev_by_title = 
+          updated_rev_by_title =
             if title_changed do
               dest.rev_by_title
               |> Map.delete(target)
@@ -387,6 +387,7 @@ defmodule Oli.Scenarios.Ops do
           updated_id_by_title =
             if title_changed do
               resource_id = rev.resource_id
+
               dest.id_by_title
               |> Map.delete(target)
               |> Map.put(new_title, resource_id)
