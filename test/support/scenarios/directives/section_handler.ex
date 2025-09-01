@@ -59,39 +59,39 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
   end
 
   defp create_from_built_project(built_project, title, type, reg_open, state) do
-        # Get the latest published publication or create one
-        publication =
-          case Publishing.get_latest_published_publication_by_slug(built_project.project.slug) do
-            nil ->
-              # Create initial publication
-              {:ok, pub} =
-                Publishing.publish_project(
-                  built_project.project,
-                  "initial",
-                  state.current_author.id
-                )
+    # Get the latest published publication or create one
+    publication =
+      case Publishing.get_latest_published_publication_by_slug(built_project.project.slug) do
+        nil ->
+          # Create initial publication
+          {:ok, pub} =
+            Publishing.publish_project(
+              built_project.project,
+              "initial",
+              state.current_author.id
+            )
 
-              pub
+          pub
 
-            pub ->
-              pub
-          end
+        pub ->
+          pub
+      end
 
-        # Create section
-        {:ok, section} =
-          Sections.create_section(%{
-            title: title,
-            registration_open: reg_open,
-            context_id: "context_#{System.unique_integer([:positive])}",
-            institution_id: state.current_institution.id,
-            base_project_id: built_project.project.id,
-            type: type || :enrollable
-          })
+    # Create section
+    {:ok, section} =
+      Sections.create_section(%{
+        title: title,
+        registration_open: reg_open,
+        context_id: "context_#{System.unique_integer([:positive])}",
+        institution_id: state.current_institution.id,
+        base_project_id: built_project.project.id,
+        type: type || :enrollable
+      })
 
-        # Create section resources from publication
-        {:ok, section} = Sections.create_section_resources(section, publication)
+    # Create section resources from publication
+    {:ok, section} = Sections.create_section_resources(section, publication)
 
-        section
+    section
   end
 
   defp create_from_product(product, title, type, reg_open, state) do
@@ -101,12 +101,13 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
       registration_open: reg_open,
       context_id: "context_#{System.unique_integer([:positive])}",
       institution_id: state.current_institution.id,
+      blueprint_id: product.id,
       type: type || :enrollable
     }
 
     {:ok, section} = Delivery.create_from_product(state.current_author, product, section_params)
-    
-    section
+
+    section |> Oli.Repo.preload([:blueprint])
   end
 
   defp create_standalone(title, type, reg_open, state) do

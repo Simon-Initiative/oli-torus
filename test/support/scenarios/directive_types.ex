@@ -44,8 +44,8 @@ defmodule Oli.Scenarios.DirectiveTypes do
   end
 
   defmodule VerifyDirective do
-    @moduledoc "Verifies the structure of a project or section"
-    defstruct [:to, :structure, :assertions]
+    @moduledoc "Verifies the structure or resource properties of a project or section"
+    defstruct [:to, :structure, :resource, :assertions]
   end
 
   defmodule UserDirective do

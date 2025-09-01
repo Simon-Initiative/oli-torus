@@ -9,33 +9,45 @@ defmodule Oli.Scenarios.Directives.VerifyHandler do
   alias Oli.Publishing.DeliveryResolver
 
   def handle(
-        %VerifyDirective{to: to_name, structure: expected_structure, assertions: assertions},
+        %VerifyDirective{
+          to: to_name,
+          structure: expected_structure,
+          resource: resource_spec,
+          assertions: assertions
+        },
         state
       ) do
     try do
       # Determine if target is a project or section
       {target_type, target} = get_target(state, to_name)
 
-      # Get the actual structure
-      actual_structure =
-        case target_type do
-          :section ->
-            get_section_structure(target)
-
-          :project ->
-            get_project_structure(target)
-        end
-
-      # Perform structure verification if expected structure is provided
+      # Perform the appropriate verification
       verification_result =
-        if expected_structure do
-          verify_structure(to_name, target_type, expected_structure, actual_structure)
-        else
-          %VerificationResult{
-            to: to_name,
-            passed: true,
-            message: "No structure verification specified"
-          }
+        cond do
+          # Structure verification
+          expected_structure ->
+            actual_structure =
+              case target_type do
+                :section ->
+                  get_section_structure(target)
+
+                :project ->
+                  get_project_structure(target)
+              end
+
+            verify_structure(to_name, target_type, expected_structure, actual_structure)
+
+          # Resource property verification
+          resource_spec ->
+            verify_resource_properties(to_name, target_type, target, resource_spec, state)
+
+          # No verification specified
+          true ->
+            %VerificationResult{
+              to: to_name,
+              passed: true,
+              message: "No verification specified"
+            }
         end
 
       # Perform additional assertions if provided
@@ -85,10 +97,10 @@ defmodule Oli.Scenarios.Directives.VerifyHandler do
   defp get_project_structure(built_project) do
     # Get fresh root revision from the database to avoid stale data
     alias Oli.Publishing.AuthoringResolver
-    
-    fresh_root_revision = 
+
+    fresh_root_revision =
       AuthoringResolver.from_resource_id(
-        built_project.project.slug, 
+        built_project.project.slug,
         built_project.root.revision.resource_id
       )
 
@@ -103,17 +115,19 @@ defmodule Oli.Scenarios.Directives.VerifyHandler do
   defp convert_hierarchy_to_node(%Oli.Delivery.Hierarchy.HierarchyNode{} = hierarchy) do
     # HierarchyNode is a struct, use dot notation
     # Get resource type - prefer revision's resource_type_id as it's always populated
-    resource_type_id = 
+    resource_type_id =
       cond do
         hierarchy.revision && hierarchy.revision.resource_type_id ->
           hierarchy.revision.resource_type_id
+
         hierarchy.section_resource && hierarchy.section_resource.resource_type_id ->
           hierarchy.section_resource.resource_type_id
+
         true ->
           # For root nodes without revision or section_resource, assume container
           Oli.Resources.ResourceType.id_for_container()
       end
-      
+
     revision = hierarchy.revision
     children = hierarchy.children || []
 
@@ -121,8 +135,10 @@ defmodule Oli.Scenarios.Directives.VerifyHandler do
       cond do
         revision && revision.title ->
           revision.title
+
         hierarchy.section_resource && hierarchy.section_resource.title ->
           hierarchy.section_resource.title
+
         true ->
           "root"
       end
@@ -135,7 +151,7 @@ defmodule Oli.Scenarios.Directives.VerifyHandler do
       children: Enum.map(children, &convert_hierarchy_to_node/1)
     }
   end
-  
+
   defp convert_hierarchy_to_node(hierarchy) when is_map(hierarchy) do
     # Fallback for map-based hierarchies (shouldn't happen with DeliveryResolver)
     resource_type_id = hierarchy[:resource_type_id] || hierarchy["resource_type_id"]
@@ -186,7 +202,7 @@ defmodule Oli.Scenarios.Directives.VerifyHandler do
 
   defp find_revision_by_id(resource_id, built_project) do
     alias Oli.Publishing.AuthoringResolver
-    
+
     # Get fresh revision from database to avoid stale data
     AuthoringResolver.from_resource_id(built_project.project.slug, resource_id)
   end
@@ -252,4 +268,142 @@ defmodule Oli.Scenarios.Directives.VerifyHandler do
   end
 
   defp is_root_match?(_, _), do: false
+
+  defp verify_resource_properties(to_name, target_type, target, resource_spec, state) do
+    alias Oli.Publishing.AuthoringResolver
+
+    target_name = resource_spec["target"]
+    expected_properties = resource_spec["resource"] || %{}
+
+    # Get the resource data for verification
+    {actual_data, data_type} =
+      case target_type do
+        :project ->
+          # For projects, get the revision from the state
+          built_project = Engine.get_project(state, to_name)
+
+          if built_project do
+            # First try to find by title in the project's rev_by_title map
+            rev = built_project.rev_by_title[target_name]
+
+            if rev do
+              # Get fresh revision from database
+              fresh_rev =
+                AuthoringResolver.from_resource_id(built_project.project.slug, rev.resource_id)
+
+              {fresh_rev, :revision}
+            else
+              {nil, nil}
+            end
+          else
+            {nil, nil}
+          end
+
+        :section ->
+          # For sections, only consider the SectionResource record
+          hierarchy = DeliveryResolver.full_hierarchy(target.slug)
+          node = find_node_by_title_in_hierarchy(hierarchy, target_name)
+
+          if node && node.section_resource do
+            # Get fresh section resource from database
+            section_resource =
+              Oli.Repo.get!(Oli.Delivery.Sections.SectionResource, node.section_resource.id)
+
+            {section_resource, :section_resource}
+          else
+            {nil, nil}
+          end
+      end
+
+    if actual_data do
+      # Compare the expected properties with actual
+      verify_resource_data(to_name, target_name, expected_properties, actual_data, data_type)
+    else
+      %VerificationResult{
+        to: to_name,
+        passed: false,
+        message: "Resource '#{target_name}' not found in '#{to_name}'"
+      }
+    end
+  end
+
+  defp find_node_by_title_in_hierarchy(%Oli.Delivery.Hierarchy.HierarchyNode{} = node, title) do
+    cond do
+      node.revision && node.revision.title == title ->
+        node
+
+      node.section_resource && node.section_resource.title == title ->
+        node
+
+      true ->
+        Enum.find_value(node.children || [], fn child ->
+          find_node_by_title_in_hierarchy(child, title)
+        end)
+    end
+  end
+
+  defp find_node_by_title_in_hierarchy(_, _), do: nil
+
+  defp verify_resource_data(to_name, target_name, expected_properties, actual_data, _data_type) do
+    try do
+      Enum.each(expected_properties, fn {key, expected_value} ->
+        # Process the expected value (handle @atom() syntax and type conversion)
+        expected = process_expected_value(key, expected_value)
+
+        # Get the actual value from the data (works for both revision and section_resource)
+        actual = Map.get(actual_data, String.to_atom(key))
+
+        if actual != expected do
+          raise "Property '#{key}' mismatch for '#{target_name}': expected #{inspect(expected)}, got #{inspect(actual)}"
+        end
+      end)
+
+      %VerificationResult{
+        to: to_name,
+        passed: true,
+        message: "Resource '#{target_name}' properties match expected"
+      }
+    rescue
+      e ->
+        %VerificationResult{
+          to: to_name,
+          passed: false,
+          message: Exception.message(e)
+        }
+    end
+  end
+
+  defp process_expected_value(_key, value) when is_binary(value) do
+    cond do
+      # Handle @atom(...) format
+      String.starts_with?(value, "@atom(") ->
+        atom_str =
+          value
+          |> String.trim_leading("@atom(")
+          |> String.trim_trailing(")")
+
+        String.to_atom(atom_str)
+
+      # Handle boolean strings
+      value in ["true", "false"] ->
+        value == "true"
+
+      # Handle integer strings
+      String.match?(value, ~r/^\d+$/) ->
+        String.to_integer(value)
+
+      # Handle float strings
+      String.match?(value, ~r/^\d+\.\d+$/) ->
+        String.to_float(value)
+
+      # Otherwise keep as string
+      true ->
+        value
+    end
+  end
+
+  defp process_expected_value(_key, value) when is_boolean(value), do: value
+  defp process_expected_value(_key, value) when is_number(value), do: value
+  defp process_expected_value(_key, value) when is_atom(value), do: value
+  defp process_expected_value(_key, value), do: value
 end

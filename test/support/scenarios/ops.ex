@@ -394,7 +394,7 @@ defmodule Oli.Scenarios.Ops do
       author_id = if is_map(author), do: author.id, else: author
 
       # Process the set parameters to convert special values
-      revision_params = 
+      revision_params =
         set_params
         |> Enum.map(fn {key, value} ->
           {key, process_revision_value(key, value)}
@@ -407,13 +407,13 @@ defmodule Oli.Scenarios.Ops do
         {:ok, _} ->
           # Fetch the updated revision from the database to ensure we have the latest version
           updated_rev = AuthoringResolver.from_resource_id(proj.slug, rev.resource_id)
-          
+
           # Update our state with the new revision
           updated_dest = %{
             dest
             | rev_by_title: Map.put(dest.rev_by_title, target, updated_rev)
           }
-          
+
           # Also update root if this was the root revision
           if target == "root" || rev.resource_id == dest.root.revision.resource_id do
             %{updated_dest | root: %{dest.root | revision: updated_rev}}
@@ -431,19 +431,38 @@ defmodule Oli.Scenarios.Ops do
     end
   end
 
-  # Helper function to process special value formats
-  defp process_revision_value("purpose", "@atom(" <> rest) do
-    # Handle @atom(practice) format -> :practice
-    atom_str = String.trim_trailing(rest, ")")
-    String.to_atom(atom_str)
+  # Helper function to process special value formats (data-driven)
+  defp process_revision_value(_key, value) when is_binary(value) do
+    cond do
+      # Handle @atom(...) format
+      String.starts_with?(value, "@atom(") ->
+        atom_str =
+          value
+          |> String.trim_leading("@atom(")
+          |> String.trim_trailing(")")
+
+        String.to_atom(atom_str)
+
+      # Handle boolean strings
+      value in ["true", "false"] ->
+        value == "true"
+
+      # Handle integer strings
+      String.match?(value, ~r/^\d+$/) ->
+        String.to_integer(value)
+
+      # Handle float strings
+      String.match?(value, ~r/^\d+\.\d+$/) ->
+        String.to_float(value)
+
+      # Otherwise keep as string
+      true ->
+        value
+    end
   end
 
-  defp process_revision_value("graded", value) when is_binary(value) do
-    # Convert string "true"/"false" to boolean
-    value == "true"
-  end
-
-  defp process_revision_value("graded", value) when is_boolean(value), do: value
-
+  defp process_revision_value(_key, value) when is_boolean(value), do: value
+  defp process_revision_value(_key, value) when is_number(value), do: value
+  defp process_revision_value(_key, value) when is_atom(value), do: value
   defp process_revision_value(_key, value), do: value
 end

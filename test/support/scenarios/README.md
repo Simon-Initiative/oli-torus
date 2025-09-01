@@ -96,7 +96,7 @@ Instead of writing hundreds of lines of test setup code, you can describe your e
 ### Organization & Testing
 
 - **`enroll`**: Enrolls users in sections with specific roles
-- **`verify`**: Verifies the structure of a project or section matches expectations
+- **`verify`**: Verifies the structure or resource properties of a project, section, or product
 
 ## Operations (used within `manipulate`)
 
@@ -293,6 +293,62 @@ The `remix` directive copies content from a project into a section's hierarchy:
     resource: "Reusable Module"
     section: "course_section"
     to: "root"  # Add to the root of the section
+```
+
+## Verification
+
+The `verify` directive supports two modes:
+
+### Structure Verification
+Verifies the hierarchical structure of a project, section, or product:
+
+```yaml
+- verify:
+    to: "section_name"
+    structure:
+      root:
+        children:
+          - page: "Page 1"
+          - container: "Module 1"
+            children:
+              - page: "Lesson 1"
+```
+
+### Resource Property Verification
+Verifies specific properties of individual resources:
+
+```yaml
+- verify:
+    to: "project_name"
+    resource:
+      target: "Page Title"
+      resource:
+        graded: true
+        max_attempts: 3
+        purpose: "@atom(deliberate_practice)"
+```
+
+This is particularly useful after using the `revise` operation to ensure properties were set correctly:
+
+```yaml
+# First revise a page
+- manipulate:
+    to: "project"
+    ops:
+      - revise:
+          target: "Quiz Page"
+          set:
+            graded: true
+            max_attempts: 3
+
+# Then verify the properties
+- verify:
+    to: "project"
+    resource:
+      target: "Quiz Page"
+      resource:
+        graded: true
+        max_attempts: 3
 ```
 
 ## Error Handling

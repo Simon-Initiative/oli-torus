@@ -14,7 +14,7 @@
     from: "test_project"
     title: "Test Section"
 
-# Verify initial structure
+# Verify initial structure of section
 - verify:
     to: "test_section"
     structure:
@@ -22,7 +22,7 @@
         children:
           - page: "Page 1"
 
-# Add a new page
+# Add a new page to the project
 - manipulate:
     to: "test_project"
     ops:
@@ -34,7 +34,7 @@
     to: "test_project"
     description: "Adding Page 2"
 
-# Verify the project was updated correctly (without needing separate attach)
+# Verify the project was updated correctly
 - verify:
     to: "test_project"
     structure:
@@ -43,12 +43,12 @@
           - page: "Page 1"
           - page: "Page 2"
 
-# Apply update
+# Apply the publication update to the section
 - update:
     from: "test_project"
     to: "test_section"
 
-# Verify updated structure
+# Verify updated structure in section
 - verify:
     to: "test_section"
     structure:

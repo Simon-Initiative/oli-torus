@@ -48,16 +48,16 @@ defmodule Oli.Scenarios.ReviseOperationTest do
       result = TestHelpers.execute_yaml(yaml)
 
       assert %ExecutionResult{errors: []} = result
-      
+
       # Get the project to verify the revisions
       project = TestHelpers.get_project(result, "test_project")
-      
+
       # Check that Practice Page has the deliberate_practice purpose
       practice_page = project.rev_by_title["Practice Page"]
       assert practice_page.purpose == :deliberate_practice
       assert practice_page.graded == false
       assert practice_page.max_attempts == 0
-      
+
       # Check that Quiz 1 is graded
       quiz = project.rev_by_title["Quiz 1"]
       assert quiz.graded == true
@@ -94,9 +94,9 @@ defmodule Oli.Scenarios.ReviseOperationTest do
       result = TestHelpers.execute_yaml(yaml)
 
       assert %ExecutionResult{errors: []} = result
-      
+
       project = TestHelpers.get_project(result, "container_project")
-      
+
       # Check that Practice Module has the application purpose
       module = project.rev_by_title["Practice Module"]
       assert module.purpose == :application
@@ -139,19 +139,19 @@ defmodule Oli.Scenarios.ReviseOperationTest do
       result = TestHelpers.execute_yaml(yaml)
 
       assert %ExecutionResult{errors: []} = result
-      
+
       project = TestHelpers.get_project(result, "multi_revise")
-      
+
       # Verify all three pages have different purposes
       page1 = project.rev_by_title["Page 1"]
       assert page1.purpose == :foundation
       assert page1.graded == false
-      
+
       page2 = project.rev_by_title["Page 2"]
       assert page2.purpose == :application
       assert page2.graded == true
       assert page2.max_attempts == 2
-      
+
       page3 = project.rev_by_title["Page 3"]
       assert page3.purpose == :deliberate_practice
       assert page3.graded == false
@@ -181,7 +181,7 @@ defmodule Oli.Scenarios.ReviseOperationTest do
       # The operation should now fail with an error
       assert %ExecutionResult{errors: errors} = result
       assert length(errors) > 0
-      
+
       # Check that the error message mentions the missing target
       {_directive, error_msg} = List.first(errors)
       assert error_msg =~ "Non-existent Page"
@@ -239,16 +239,16 @@ defmodule Oli.Scenarios.ReviseOperationTest do
       result = TestHelpers.execute_yaml(yaml)
 
       assert %ExecutionResult{errors: []} = result
-      
+
       project = TestHelpers.get_project(result, "tracking_test")
-      
+
       # Verify the page has all the revisions applied
       revised_page = project.rev_by_title["Revised Test Page"]
       assert revised_page != nil
       assert revised_page.purpose == :application
       assert revised_page.graded == true
       assert revised_page.max_attempts == 5
-      
+
       # Verify it's in Module 1
       module1 = project.rev_by_title["Module 1"]
       assert revised_page.resource_id in module1.children

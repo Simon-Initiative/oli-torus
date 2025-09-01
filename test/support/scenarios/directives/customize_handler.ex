@@ -11,10 +11,11 @@ defmodule Oli.Scenarios.Directives.CustomizeHandler do
 
   def handle(%CustomizeDirective{to: to, ops: ops}, %ExecutionState{} = state) do
     # First check if it's a product, then check sections
-    section_or_product = 
+    section_or_product =
       case Engine.get_product(state, to) do
         nil ->
           Engine.get_section(state, to)
+
         product ->
           product
       end
@@ -48,11 +49,12 @@ defmodule Oli.Scenarios.Directives.CustomizeHandler do
           refreshed_section = Sections.get_section!(section.id)
 
           # Update state with the refreshed section or product
-          updated_state = 
+          updated_state =
             case Engine.get_product(state, to) do
               nil ->
                 # It's a section
                 Engine.put_section(state, to, refreshed_section)
+
               _product ->
                 # It's a product - update as product
                 Engine.put_product(state, to, refreshed_section)

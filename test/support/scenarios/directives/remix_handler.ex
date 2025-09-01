@@ -28,6 +28,7 @@ defmodule Oli.Scenarios.Directives.RemixHandler do
           nil ->
             Engine.get_section(state, section_name) ||
               raise "Section or product '#{section_name}' not found"
+
           product ->
             product
         end
@@ -109,11 +110,12 @@ defmodule Oli.Scenarios.Directives.RemixHandler do
       refreshed_section = Sections.get_section!(section.id)
 
       # Update state with the refreshed section or product
-      updated_state = 
+      updated_state =
         case Engine.get_product(state, section_name) do
           nil ->
             # It's a section
             Engine.put_section(state, section_name, refreshed_section)
+
           _product ->
             # It's a product - update as product
             Engine.put_product(state, section_name, refreshed_section)

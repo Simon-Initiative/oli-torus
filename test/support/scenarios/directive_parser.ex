@@ -108,6 +108,7 @@ defmodule Oli.Scenarios.DirectiveParser do
     %VerifyDirective{
       to: verify_data["to"],
       structure: parse_node(verify_data["structure"]),
+      resource: verify_data["resource"],
       assertions: verify_data["assertions"] || []
     }
   end
