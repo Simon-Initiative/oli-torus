@@ -218,13 +218,14 @@ defmodule Oli.Scenarios.ReviseOperationTest do
                 from: "Test Page"
                 to: "Module 1"
 
-      # And edit its title
+      # And edit its title using revise
       - manipulate:
           to: "tracking_test"
           ops:
-            - edit_page_title:
-                title: "Test Page"
-                new_title: "Revised Test Page"
+            - revise:
+                target: "Test Page"
+                set:
+                  title: "Revised Test Page"
 
       # Finally revise it again with the new title
       - manipulate:

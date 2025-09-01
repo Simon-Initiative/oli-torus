@@ -370,10 +370,34 @@ defmodule Oli.Scenarios.Ops do
           # Fetch the updated revision from the database to ensure we have the latest version
           updated_rev = AuthoringResolver.from_resource_id(proj.slug, rev.resource_id)
 
+          # Check if title was changed
+          title_changed = Map.has_key?(set_params, "title") and set_params["title"] != target
+          new_title = if title_changed, do: set_params["title"], else: target
+
           # Update our state with the new revision
+          updated_rev_by_title = 
+            if title_changed do
+              dest.rev_by_title
+              |> Map.delete(target)
+              |> Map.put(new_title, updated_rev)
+            else
+              Map.put(dest.rev_by_title, target, updated_rev)
+            end
+
+          updated_id_by_title =
+            if title_changed do
+              resource_id = rev.resource_id
+              dest.id_by_title
+              |> Map.delete(target)
+              |> Map.put(new_title, resource_id)
+            else
+              dest.id_by_title
+            end
+
           updated_dest = %{
             dest
-            | rev_by_title: Map.put(dest.rev_by_title, target, updated_rev)
+            | rev_by_title: updated_rev_by_title,
+              id_by_title: updated_id_by_title
           }
 
           # Also update root if this was the root revision
