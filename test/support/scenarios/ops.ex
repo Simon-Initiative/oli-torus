@@ -48,12 +48,6 @@ defmodule Oli.Scenarios.Ops do
     {true, remove!(dest, title)}
   end
 
-  defp apply_op(%{"edit_page_title" => params}, major?, dest) do
-    old_title = params["title"]
-    new_title = params["new_title"]
-    {major?, edit_title_minor!(dest, old_title, new_title)}
-  end
-
   defp apply_op(%{"revise" => params}, major?, dest) do
     target = params["target"]
     set = params["set"] || %{}
@@ -345,38 +339,6 @@ defmodule Oli.Scenarios.Ops do
               rev_by_title: Map.delete(dest.rev_by_title, title)
           }
       end
-    else
-      dest
-    end
-  end
-
-  defp edit_title_minor!(dest, old_title, new_title) do
-    id = dest.id_by_title[old_title]
-    rev = dest.rev_by_title[old_title]
-
-    if id && rev do
-      # Update the revision's title
-      %{working_pub: pub} = dest
-      # Get author from the base structure
-      author =
-        if Map.has_key?(dest.root, :author), do: dest.root.author, else: dest.root.revision.author
-
-      author_id = if is_map(author), do: author.id, else: author
-
-      updated_rev =
-        Publishing.publish_new_revision(
-          rev,
-          %{title: new_title},
-          pub,
-          author_id
-        )
-
-      %{
-        dest
-        | id_by_title: dest.id_by_title |> Map.delete(old_title) |> Map.put(new_title, id),
-          rev_by_title:
-            dest.rev_by_title |> Map.delete(old_title) |> Map.put(new_title, updated_rev)
-      }
     else
       dest
     end

@@ -2,18 +2,18 @@
 description: Create a new Scenario based integration test
 ---
 
-`Oli.Scenarios` is a YAML based mechanism for authoring complex integration
+`Oli.Scenarios` is a YAML based DSL for authoring complex integration
 style unit tests in the Torus codebase.  The core implementation is found
 in directory `./test/support/scenarios`.  For a complete understanding of
-`Oli.Scenarios` you must read and carefully study
-`./test/support/scenarios/README.md`.
+`Oli.Scenarios` and the directives available you must read and carefully study
+`./test/support/scenarios/README.md`.  Consult the core implementation also if needed.
 
 Scenario based unit tests are used to test the following types of workflows:
 - Publishing changes from a project to course section built from them
 - Course section remix functionality
 - Course section customization functionality
 - Creation of course sections from products
-- And also more complex patterns involving any or all of the above
+- And also more complex patterns involving combinations of any or all of the above
 
 Good examples of real Scenarios that you can consult are:
 - `./test/oli/delivery/major_updates/product_section_update_restriction.scenario.yaml`
@@ -36,9 +36,7 @@ end
 
 The key in the above example is the `use Oli.Scenarios.ScenarioRunner`
 
-More complex scenarios can be created by inlining the YAML (or reading it
-from a standalone file), executing it, and then executing additional custom
-code. Here is an example:
+More complex scenarios - only if needed -  can be created by inlining the YAML (or reading it from a standalone file), executing it, and then executing additional custom code. Here is an example:
 
 ```
 test "can create a product from a project" do
@@ -70,7 +68,9 @@ test "can create a product from a project" do
 end
 ```
 
-Create a new `Oli.Scenarios` based unit test for the following workflow:
+IMPORTANT: Never try to extend the `Oli.Scenarios` implementation and infrastructure. Never change any production code under `./lib`.  Your job is ONLY to author a test scenario.
+
+Think hardest and author a new `Oli.Scenarios` based unit test for the following workflow:
 
 @$ARGUMENTS
 

@@ -78,7 +78,7 @@ Instead of writing hundreds of lines of test setup code, you can describe your e
 ### Content Manipulation
 
 - **`manipulate`**: Applies operations to modify a project's structure
-  - Operations: `add_page`, `add_container`, `move`, `reorder`, `remove`, `edit_page_title`
+  - Operations: `add_page`, `add_container`, `move`, `reorder`, `remove`, `revise`
 - **`remix`**: Copies content from a project into a section or product's hierarchy
   - `from`: Source project name
   - `resource`: Page or container title to copy
@@ -137,14 +137,7 @@ Instead of writing hundreds of lines of test setup code, you can describe your e
       from: "Old Page"
   ```
 
-- **`edit_page_title`**: Changes the title of an existing page
-  ```yaml
-  - edit_page_title:
-      title: "Current Title"
-      new_title: "Updated Title"
-  ```
-
-- **`revise`**: Updates properties of a page or container
+- **`revise`**: Updates properties of a page or container (including title)
   ```yaml
   - revise:
       target: "Page Title"
