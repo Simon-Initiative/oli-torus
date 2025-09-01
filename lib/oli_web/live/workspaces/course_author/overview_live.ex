@@ -286,7 +286,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
               {error_tag(f, :collaborator_emails)}
               {hidden_input(f, :authors,
                 value:
-                  @collaborators.accepted
+                  Map.get(@collaborators, :accepted, [])
                   |> Enum.map(fn author_projects -> author_projects.author.email end)
                   |> Enum.join(", ")
               )}
@@ -741,7 +741,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
     ~H"""
     <div class="flex flex-col w-full space-y-3 mb-2">
       <div :if={!is_nil(@collaborators[:accepted])}>
-        <h5>{"Collaborators (#{length(@collaborators.accepted)})"}</h5>
+        <h5>{"Collaborators (#{length(Map.get(@collaborators, :accepted, []))})"}</h5>
         <div
           :for={collaborator <- @collaborators.accepted}
           class="d-flex justify-content-between align-items-center py-1"
@@ -767,7 +767,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
       </div>
 
       <div :if={!is_nil(@collaborators[:pending_confirmation])}>
-        <h5>{"Pending Confirmation (#{length(@collaborators.pending_confirmation)})"}</h5>
+        <h5>
+          {"Pending Confirmation (#{length(Map.get(@collaborators, :pending_confirmation, []))})"}
+        </h5>
         <div
           :for={collaborator <- @collaborators.pending_confirmation}
           class="d-flex justify-content-between align-items-center py-1"
@@ -793,7 +795,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
       </div>
 
       <div :if={!is_nil(@collaborators[:rejected])}>
-        <h5>{"Rejected Invitations (#{length(@collaborators.rejected)})"}</h5>
+        <h5>{"Rejected Invitations (#{length(Map.get(@collaborators, :rejected, []))})"}</h5>
         <div
           :for={collaborator <- @collaborators.rejected}
           class="d-flex justify-content-between align-items-center py-1"
