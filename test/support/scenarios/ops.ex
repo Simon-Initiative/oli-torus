@@ -346,75 +346,73 @@ defmodule Oli.Scenarios.Ops do
 
   defp revise!(dest, target, set_params) do
     %{project: proj} = dest
-    rev = dest.rev_by_title[target]
 
-    if rev do
-      # Get author from the base structure
-      author =
-        if Map.has_key?(dest.root, :author), do: dest.root.author, else: dest.root.revision.author
-
-      author_id = if is_map(author), do: author.id, else: author
-
-      # Process the set parameters to convert special values
-      revision_params =
-        set_params
-        |> Enum.map(fn {key, value} ->
-          {key, process_revision_value(key, value)}
-        end)
-        |> Enum.into(%{})
-        |> Map.put("author_id", author_id)
-
-      # Use ContainerEditor.edit_page to make the changes
-      case ContainerEditor.edit_page(proj, rev.slug, revision_params) do
-        {:ok, _} ->
-          # Fetch the updated revision from the database to ensure we have the latest version
-          updated_rev = AuthoringResolver.from_resource_id(proj.slug, rev.resource_id)
-
-          # Check if title was changed
-          title_changed = Map.has_key?(set_params, "title") and set_params["title"] != target
-          new_title = if title_changed, do: set_params["title"], else: target
-
-          # Update our state with the new revision
-          updated_rev_by_title =
-            if title_changed do
-              dest.rev_by_title
-              |> Map.delete(target)
-              |> Map.put(new_title, updated_rev)
-            else
-              Map.put(dest.rev_by_title, target, updated_rev)
-            end
-
-          updated_id_by_title =
-            if title_changed do
-              resource_id = rev.resource_id
-
-              dest.id_by_title
-              |> Map.delete(target)
-              |> Map.put(new_title, resource_id)
-            else
-              dest.id_by_title
-            end
-
-          updated_dest = %{
-            dest
-            | rev_by_title: updated_rev_by_title,
-              id_by_title: updated_id_by_title
-          }
-
-          # Also update root if this was the root revision
-          if target == "root" || rev.resource_id == dest.root.revision.resource_id do
-            %{updated_dest | root: %{dest.root | revision: updated_rev}}
-          else
-            updated_dest
-          end
-
-        {:error, error} ->
-          # If the update fails, raise an error to fail the test
-          raise "Failed to revise '#{target}': #{inspect(error)}"
-      end
+    with rev when not is_nil(rev) <- dest.rev_by_title[target],
+         author_id <- extract_author_id(dest),
+         revision_params <- build_revision_params(set_params, author_id),
+         {:ok, _} <- ContainerEditor.edit_page(proj, rev.slug, revision_params),
+         updated_rev <- AuthoringResolver.from_resource_id(proj.slug, rev.resource_id) do
+      update_destination_state(dest, target, set_params, rev, updated_rev)
     else
-      # If the target revision is not found, raise an error to fail the test
-      raise "Revision target '#{target}' not found in project"
+      nil ->
+        raise "Revision target '#{target}' not found in project"
+
+      {:error, error} ->
+        raise "Failed to revise '#{target}': #{inspect(error)}"
+    end
+  end
+
+  defp extract_author_id(dest) do
+    author =
+      if Map.has_key?(dest.root, :author),
+        do: dest.root.author,
+        else: dest.root.revision.author
+
+    if is_map(author), do: author.id, else: author
+  end
+
+  defp build_revision_params(set_params, author_id) do
+    set_params
+    |> Enum.map(fn {key, value} ->
+      {key, process_revision_value(key, value)}
+    end)
+    |> Enum.into(%{})
+    |> Map.put("author_id", author_id)
+  end
+
+  defp update_destination_state(dest, target, set_params, rev, updated_rev) do
+    title_changed = Map.has_key?(set_params, "title") and set_params["title"] != target
+    new_title = if title_changed, do: set_params["title"], else: target
+
+    updated_rev_by_title =
+      if title_changed do
+        dest.rev_by_title
+        |> Map.delete(target)
+        |> Map.put(new_title, updated_rev)
+      else
+        Map.put(dest.rev_by_title, target, updated_rev)
+      end
+
+    updated_id_by_title =
+      if title_changed do
+        dest.id_by_title
+        |> Map.delete(target)
+        |> Map.put(new_title, rev.resource_id)
+      else
+        dest.id_by_title
+      end
+
+    updated_dest = %{
+      dest
+      | rev_by_title: updated_rev_by_title,
+        id_by_title: updated_id_by_title
+    }
+
+    # Also update root if this was the root revision
+    if target == "root" || rev.resource_id == dest.root.revision.resource_id do
+      %{updated_dest | root: %{dest.root | revision: updated_rev}}
+    else
+      updated_dest
     end
   end
 

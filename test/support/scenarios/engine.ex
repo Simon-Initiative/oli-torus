@@ -125,10 +125,7 @@ defmodule Oli.Scenarios.Engine do
   end
 
   defp execute_directive(%VerifyDirective{} = directive, state) do
-    case VerifyHandler.handle(directive, state) do
-      {:ok, state, verification} -> {:ok, state, verification}
-      error -> error
-    end
+    VerifyHandler.handle(directive, state)
   end
 
   defp execute_directive(%UserDirective{} = directive, state) do
@@ -200,35 +197,35 @@ defmodule Oli.Scenarios.Engine do
   end
 
   @doc """
-  Updates a project in the state.
+  Upserts a project by name into the state.
   """
   def put_project(state, name, project) do
     %{state | projects: Map.put(state.projects, name, project)}
   end
 
   @doc """
-  Updates a section in the state.
+  Upserts a section by name into the state.
   """
   def put_section(state, name, section) do
     %{state | sections: Map.put(state.sections, name, section)}
   end
 
   @doc """
-  Updates a product in the state.
+  Upserts a product by name into the state.
   """
   def put_product(state, name, product) do
     %{state | products: Map.put(state.products, name, product)}
   end
 
   @doc """
-  Updates a user in the state.
+  Upserts a user by name into the state.
   """
   def put_user(state, name, user) do
     %{state | users: Map.put(state.users, name, user)}
   end
 
   @doc """
-  Updates an institution in the state.
+  Upserts an institution by name in the state.
   """
   def put_institution(state, name, institution) do
     %{state | institutions: Map.put(state.institutions, name, institution)}

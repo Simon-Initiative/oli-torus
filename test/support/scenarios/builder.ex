@@ -3,95 +3,44 @@ defmodule Oli.Scenarios.Builder do
   Builds Torus project structures from Scenarios definitions.
   """
   alias Oli.Scenarios.Types.{ProjectSpec, Node, BuiltProject}
-  alias Oli.{Repo, Publishing}
-  alias Oli.Authoring.Course.{Project, Family}
-  alias Oli.Resources.{Resource, Revision, ResourceType}
-  alias Oli.Inventories
+  alias Oli.Authoring.Course
   alias Oli.Authoring.Editing.ContainerEditor
   alias Oli.Publishing.AuthoringResolver
+  alias Oli.Resources.ResourceType
 
   def build!(%ProjectSpec{title: title, root: root_node}, author, _institution) do
-    # Create a clean project from scratch
-    {:ok, family} =
-      Family.changeset(%Family{}, %{
-        description: "Test family",
-        title: title || "Test Project"
-      })
-      |> Repo.insert()
+    # Use the standard Oli.Authoring.Course.create_project infrastructure
+    # that the UI uses when creating projects
+    {:ok, project_setup} = Course.create_project(title || "Test Project", author)
 
-    publisher =
-      case Inventories.default_publisher() do
-        nil ->
-          {:ok, pub} =
-            Inventories.create_publisher(%{
-              name: "Test Publisher",
-              email: "test@publisher.com",
-              address: "Test Address",
-              main_contact: "Test Contact",
-              website_url: "https://test.com"
-            })
+    %{
+      project: project,
+      resource: root_resource,
+      resource_revision: root_revision,
+      publication: publication
+    } = project_setup
 
-          pub
+    # Update the root revision title to match what tests expect
+    # The standard infrastructure creates "Curriculum" but tests expect "root"
+    {:ok, _} =
+      ContainerEditor.edit_page(
+        project,
+        root_revision.slug,
+        %{"title" => "root", "author_id" => author.id}
+      )
 
-        pub ->
-          pub
-      end
-
-    {:ok, project} =
-      Project.changeset(%Project{}, %{
-        title: title || "Test Project",
-        description: "Test project",
-        version: "1",
-        family_id: family.id,
-        publisher_id: publisher.id,
-        authors: [author]
-      })
-      |> Repo.insert()
-
-    # Create the root container resource and revision first (this is the only one we create directly)
-    {:ok, root_resource} = Resource.changeset(%Resource{}, %{}) |> Repo.insert()
-
-    # Ensure author has an id
-    author_id = if author && Map.has_key?(author, :id), do: author.id, else: nil
-
-    {:ok, root_revision} =
-      Revision.changeset(%Revision{}, %{
-        resource_id: root_resource.id,
-        resource_type_id: ResourceType.id_for_container(),
-        title: "Root Container",
-        slug: "root",
-        author_id: author_id,
-        children: []
-      })
-      |> Repo.insert()
-
-    # Now create the working publication with the root resource
-    {:ok, publication} =
-      Publishing.create_publication(%{
-        project_id: project.id,
-        root_resource_id: root_resource.id,
-        # nil means it's a working publication
-        published: nil,
-        description: "Working publication"
-      })
-
-    # Publish the root container
-    {:ok, _published_resource} =
-      Publishing.create_published_resource(%{
-        publication_id: publication.id,
-        resource_id: root_resource.id,
-        revision_id: root_revision.id
-      })
+    # Get the updated root revision
+    updated_root_revision = AuthoringResolver.from_resource_id(project.slug, root_resource.id)
 
     # Build the hierarchy from the spec using ContainerEditor
     {id_by_title, rev_by_title} =
       build_hierarchy!(
         root_node.children,
-        root_revision,
+        updated_root_revision,
         project,
         author,
         %{"root" => root_resource.id},
-        %{"root" => root_revision}
+        %{"root" => updated_root_revision}
       )
 
     # Get the final root revision after all children have been added

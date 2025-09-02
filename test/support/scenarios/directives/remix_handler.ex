@@ -10,7 +10,6 @@ defmodule Oli.Scenarios.Directives.RemixHandler do
   alias Oli.Publishing
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Delivery.{Hierarchy, Sections}
-  alias Oli.Delivery.Sections.SectionCache
 
   def handle(
         %RemixDirective{from: from, resource: resource_title, section: section_name, to: to},
@@ -102,10 +101,6 @@ defmodule Oli.Scenarios.Directives.RemixHandler do
 
       # Rebuild the section curriculum with the modified hierarchy
       Sections.rebuild_section_curriculum(section, updated_hierarchy, updated_pinned_publications)
-
-      # Clear cache and reload section
-      SectionCache.clear(section.slug)
-      Process.sleep(100)
 
       refreshed_section = Sections.get_section!(section.id)
 

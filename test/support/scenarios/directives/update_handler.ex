@@ -41,12 +41,6 @@ defmodule Oli.Scenarios.Directives.UpdateHandler do
           raise "Failed to apply update: #{inspect(reason)}"
 
         {:ok, updated_section} ->
-          # Clear any caches and force reload
-          Oli.Delivery.Sections.SectionCache.clear(updated_section.slug)
-
-          # Small delay to ensure all async processing is complete
-          Process.sleep(100)
-
           refreshed_section = Oli.Delivery.Sections.get_section!(updated_section.id)
 
           # Update the section in state with the refreshed section
@@ -54,8 +48,6 @@ defmodule Oli.Scenarios.Directives.UpdateHandler do
           {:ok, updated_state}
 
         _ ->
-          # Clear any caches and force reload
-          Oli.Delivery.Sections.SectionCache.clear(section.slug)
           updated_section = Oli.Delivery.Sections.get_section!(section.id)
 
           updated_state = Engine.put_section(state, section_name, updated_section)
