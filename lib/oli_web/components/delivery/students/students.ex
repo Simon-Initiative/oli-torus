@@ -1546,14 +1546,6 @@ defmodule OliWeb.Components.Delivery.Students do
     {:noreply, assign(socket, show_email_modal: true)}
   end
 
-  def handle_event("hide_email_modal", _params, socket) do
-    {:noreply, assign(socket, show_email_modal: false)}
-  end
-
-  def handle_event("close_email_modal", _params, socket) do
-    {:noreply, assign(socket, show_email_modal: false)}
-  end
-
   def decode_params(params) do
     navigation_data =
       Params.get_param(params, "navigation_data", @default_params.navigation_data)
