@@ -32,6 +32,6 @@ jobs:
       - name: 💬 Post cleanup notification
         uses: peter-evans/create-or-update-comment@v3
         with:
-          token: ${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.number }}
           body: "🧹 PR preview environment has been cleaned up."
