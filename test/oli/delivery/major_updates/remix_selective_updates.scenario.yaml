@@ -1,0 +1,149 @@
+# Test scenario: Selective updates from remixed content
+# Verifies that when a section has remixed content from a secondary project,
+# updates to the remixed content show selective update behavior
+
+# Step 1: Create the primary project with basic content
+- project:
+    name: "primary"
+    title: "Primary Course Project"
+    root:
+      children:
+        - page: "Welcome to Primary"
+        - container: "Module 1: Primary Content"
+          children:
+            - page: "Primary Lesson 1"
+            - page: "Primary Lesson 2"
+        - page: "Primary Assessment"
+
+# Step 2: Create the secondary project with content to be remixed
+- project:
+    name: "secondary"
+    title: "Secondary Resource Project"
+    root:
+      children:
+        - container: "Supplemental Materials"
+          children:
+            - page: "Supplemental Topic A"
+            - page: "Supplemental Topic B"
+            - page: "Supplemental Quiz"
+
+# Step 3: Publish both projects initially
+- publish:
+    to: "primary"
+    description: "Initial primary publication"
+
+- publish:
+    to: "secondary"
+    description: "Initial secondary publication"
+
+# Step 4: Create a section from the primary project
+- section:
+    name: "course_section"
+    title: "Spring 2025 Course"
+    from: "primary"
+    type: enrollable
+
+# Step 5: Remix content from secondary project into the section
+# Add the "Supplemental Materials" container to the section's root
+- remix:
+    section: "course_section"
+    from: "secondary"
+    resource: "Supplemental Materials"
+    to: "root"
+
+# Step 6: Verify the section has both primary and remixed content
+- verify:
+    to: "course_section"
+    structure:
+      root:
+        children:
+          - page: "Welcome to Primary"
+          - container: "Module 1: Primary Content"
+            children:
+              - page: "Primary Lesson 1"
+              - page: "Primary Lesson 2"
+          - page: "Primary Assessment"
+          - container: "Supplemental Materials"  # Remixed from secondary
+            children:
+              - page: "Supplemental Topic A"
+              - page: "Supplemental Topic B"
+              - page: "Supplemental Quiz"
+
+# Step 7: Make changes to the secondary project
+- manipulate:
+    to: "secondary"
+    ops:
+      # Add a new page to the Supplemental Materials container
+      - add_page:
+          title: "NEW Supplemental Topic C"
+          to: "Supplemental Materials"
+
+      # Change the title of an existing page
+      - revise:
+          target: "Supplemental Topic A"
+          set:
+            title: "RENAMED Topic A"
+
+# Step 8: Publish the changes in the secondary project
+- publish:
+    to: "secondary"
+    description: "Added new topic and renamed existing topic"
+
+# Step 9: Now we need to verify what happens to remixed content
+# The expectation is that remixed content is a snapshot and doesn't auto-update
+# So the section should still have the original content
+- verify:
+    to: "course_section"
+    structure:
+      root:
+        children:
+          - page: "Welcome to Primary"
+          - container: "Module 1: Primary Content"
+            children:
+              - page: "Primary Lesson 1"
+              - page: "Primary Lesson 2"
+          - page: "Primary Assessment"
+          - container: "Supplemental Materials"
+            children:
+              - page: "Supplemental Topic A"  # Original title, not renamed
+              - page: "Supplemental Topic B"
+              - page: "Supplemental Quiz"
+              # NOTE: "NEW Supplemental Topic C" is NOT here
+              # Remixed content is a snapshot and doesn't auto-update
+
+# Step 10: Test updates from the primary project still work
+- manipulate:
+    to: "primary"
+    ops:
+      - add_page:
+          title: "New Primary Page"
+          to: "root"
+
+# Step 11: Publish the primary project
+- publish:
+    to: "primary"
+    description: "Added new page to primary"
+
+# Step 12: Apply updates from the primary project to the section
+- update:
+    from: "primary"
+    to: "course_section"
+
+# Step 13: Verify primary updates apply but remixed content remains unchanged
+- verify:
+    to: "course_section"
+    structure:
+      root:
+        children:
+          - page: "Welcome to Primary"
+          - container: "Module 1: Primary Content"
+            children:
+              - page: "Primary Lesson 1"
+              - page: "Primary Lesson 2"
+          - page: "Primary Assessment"
+          - page: "New Primary Page"  # New page from primary update appears
+          - container: "Supplemental Materials"  # Remixed content unchanged
+            children:
+              - page: "Supplemental Topic A"  # Still original title
+              - page: "Supplemental Topic B"
+              - page: "Supplemental Quiz"

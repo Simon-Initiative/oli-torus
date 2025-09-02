@@ -1,0 +1,185 @@
+# Test scenario: Product publishing with remixed content from another project
+# Verifies that products can be remixed with content from other projects
+# and still receive updates from their base project
+
+# Step 1: Create the first project (base for the product)
+- project:
+    name: "base_project"
+    title: "Base Course Project"
+    root:
+      children:
+        - page: "Introduction"
+        - container: "Module 1: Fundamentals"
+          children:
+            - page: "Lesson 1.1"
+            - page: "Lesson 1.2"
+        - page: "Midterm Exam"
+
+# Step 2: Create a second project (source for remix content)
+- project:
+    name: "supplemental_project"
+    title: "Supplemental Materials Project"
+    root:
+      children:
+        - container: "Advanced Topics"
+          children:
+            - page: "Advanced Lesson 1"
+            - page: "Advanced Lesson 2"
+            - page: "Advanced Quiz"
+        - container: "Extra Resources"
+          children:
+            - page: "Resource A"
+            - page: "Resource B"
+
+# Step 3: Create a product from the base project
+- product:
+    name: "course_product"
+    title: "Course Product Template"
+    from: "base_project"
+
+# Step 3b: Enable major updates on the product so sections can receive updates
+- manipulate:
+    to: "course_product"
+    ops:
+      - change:
+          apply_major_updates: true
+
+# Step 5: Verify initial product structure (matches base project)
+- verify:
+    to: "course_product"
+    structure:
+      root:
+        children:
+          - page: "Introduction"
+          - container: "Module 1: Fundamentals"
+            children:
+              - page: "Lesson 1.1"
+              - page: "Lesson 1.2"
+          - page: "Midterm Exam"
+
+# Step 6: Remix the product to add content from the supplemental project
+# Add the "Advanced Topics" module to the product's root
+- remix:
+    section: "course_product"
+    from: "supplemental_project"
+    resource: "Advanced Topics"
+    to: "root"
+
+# Step 7: Verify the product now has remixed content
+- verify:
+    to: "course_product"
+    structure:
+      root:
+        children:
+          - page: "Introduction"
+          - container: "Module 1: Fundamentals"
+            children:
+              - page: "Lesson 1.1"
+              - page: "Lesson 1.2"
+          - page: "Midterm Exam"
+          - container: "Advanced Topics"
+            children:
+              - page: "Advanced Lesson 1"
+              - page: "Advanced Lesson 2"
+              - page: "Advanced Quiz"
+
+# Step 8: Create a section from the remixed product to verify inheritance
+- section:
+    name: "course_section"
+    from: "course_product"
+    title: "Spring 2025 Course"
+
+# Step 9: Verify the section has the remixed content from the product
+- verify:
+    to: "course_section"
+    structure:
+      root:
+        children:
+          - page: "Introduction"
+          - container: "Module 1: Fundamentals"
+            children:
+              - page: "Lesson 1.1"
+              - page: "Lesson 1.2"
+          - page: "Midterm Exam"
+          - container: "Advanced Topics"  # Remixed content from product
+            children:
+              - page: "Advanced Lesson 1"
+              - page: "Advanced Lesson 2"
+              - page: "Advanced Quiz"
+
+# Step 10: Add new content to the base project
+- manipulate:
+    to: "base_project"
+    ops:
+      - add_container:
+          title: "Module 2: Applications"
+      - add_page:
+          title: "Lesson 2.1"
+          to: "Module 2: Applications"
+      - add_page:
+          title: "Lesson 2.2"
+          to: "Module 2: Applications"
+      - add_page:
+          title: "Final Exam"
+          to: "root"
+
+# Step 11: Publish the changes in the base project
+- publish:
+    to: "base_project"
+    description: "Added Module 2 and Final Exam"
+
+# Step 12: Update the product from the base project
+# This tests whether products themselves can receive updates
+- update:
+    from: "base_project"
+    to: "course_product"
+
+# Step 13: Verify the product structure after update
+# Products may not receive structural updates the same way sections do
+# The remixed content should still be present, but new content may not appear
+- verify:
+    to: "course_product"
+    structure:
+      root:
+        children:
+          - page: "Introduction"
+          - container: "Module 1: Fundamentals"
+            children:
+              - page: "Lesson 1.1"
+              - page: "Lesson 1.2"
+          - page: "Midterm Exam"
+          - container: "Advanced Topics"  # Remixed content should still be present
+            children:
+              - page: "Advanced Lesson 1"
+              - page: "Advanced Lesson 2"
+              - page: "Advanced Quiz"
+
+# Step 14: Update the section from the base project
+# This should work because apply_major_updates is enabled on the product
+- update:
+    from: "base_project"
+    to: "course_section"
+
+# Step 15: Verify final section structure
+# Should have BOTH the remixed content (Advanced Topics) AND the new content (Module 2, Final Exam)
+- verify:
+    to: "course_section"
+    structure:
+      root:
+        children:
+          - page: "Introduction"
+          - container: "Module 1: Fundamentals"
+            children:
+              - page: "Lesson 1.1"
+              - page: "Lesson 1.2"
+          - page: "Midterm Exam"
+          - container: "Module 2: Applications"  # New from base project update
+            children:
+              - page: "Lesson 2.1"
+              - page: "Lesson 2.2"
+          - page: "Final Exam"  # New from base project update
+          - container: "Advanced Topics"  # Remixed content stays at the end
+            children:
+              - page: "Advanced Lesson 1"
+              - page: "Advanced Lesson 2"
+              - page: "Advanced Quiz"
