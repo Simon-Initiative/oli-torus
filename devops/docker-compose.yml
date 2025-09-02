@@ -19,9 +19,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 1G
+          memory: 2G
         reservations:
-          memory: 256M
+          memory: 512M
     environment:
       PHX_SERVER: "true"
       # Tell Phoenix we're behind a proxy that handles SSL
@@ -89,9 +89,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 512M
+          memory: 1G
         reservations:
-          memory: 128M
+          memory: 256M
 
   minio:
     image: minio/minio
@@ -103,6 +103,12 @@ services:
     networks:
       - default
       - webproxy-public
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 128M
     labels:
       - "traefik.enable=true"
       # Specify the network for Traefik to use
