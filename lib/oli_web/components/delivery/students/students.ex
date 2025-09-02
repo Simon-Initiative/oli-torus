@@ -62,6 +62,8 @@ defmodule OliWeb.Components.Delivery.Students do
     certificate_pending_approval_count =
       Helpers.certificate_pending_approval_count(filtered_students, assigns[:certificate])
 
+    selected_students = socket.assigns[:selected_students] || []
+
     {:ok, table_model} =
       EnrollmentsTableModel.new(
         filtered_students,
@@ -69,7 +71,8 @@ defmodule OliWeb.Components.Delivery.Students do
         ctx,
         assigns[:certificate],
         certificate_pending_approval_count,
-        socket.assigns.myself
+        socket.assigns.myself,
+        selected_students
       )
 
     navigation_data = Jason.decode!(params.navigation_data)
@@ -97,8 +100,6 @@ defmodule OliWeb.Components.Delivery.Students do
           Enum.find(table_model.column_specs, fn col_spec -> col_spec.name == params.sort_by end)
       })
 
-    # Add selected_students to table model data
-    selected_students = socket.assigns[:selected_students] || []
     table_model_data = Map.put(table_model.data, :selected_students, selected_students)
     table_model = Map.put(table_model, :data, table_model_data)
 
@@ -1411,6 +1412,31 @@ defmodule OliWeb.Components.Delivery.Students do
      )}
   end
 
+  def handle_event("select_all_students", _params, socket) do
+    all_student_ids = Enum.map(socket.assigns.table_model.rows, & &1.id)
+    current_selected = socket.assigns[:selected_students] || []
+
+    # If all students are already selected, deselect all; otherwise select all
+    selected_students =
+      if length(current_selected) > 0 && Enum.all?(all_student_ids, &(&1 in current_selected)) do
+        []
+      else
+        all_student_ids
+      end
+
+    table_model_data =
+      Map.put(socket.assigns.table_model.data, :selected_students, selected_students)
+
+    table_model = Map.put(socket.assigns.table_model, :data, table_model_data)
+
+    {:noreply,
+     assign(socket,
+       selected_students: selected_students,
+       table_model: table_model,
+       show_email_modal: false
+     )}
+  end
+
   def handle_event("paged_table_selection_change", %{"id" => selected_student_id}, socket) do
     # Toggle selection - if already selected, remove it, otherwise add it
     selected_students = socket.assigns[:selected_students] || []
@@ -1422,7 +1448,6 @@ defmodule OliWeb.Components.Delivery.Students do
         [selected_student_id | selected_students]
       end
 
-    # Update table model with selected students
     table_model_data =
       Map.put(socket.assigns.table_model.data, :selected_students, selected_students)
 

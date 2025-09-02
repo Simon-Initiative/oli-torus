@@ -26,13 +26,14 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
         ctx,
         certificate,
         certificate_pending_approval_count,
-        target
+        target,
+        selected_students \\ []
       ) do
     column_specs =
       [
         %ColumnSpec{
           name: :selection,
-          label: "",
+          label: render_select_all_header(users, selected_students, target),
           render_fn: &__MODULE__.render_selection_column/3,
           sortable: false,
           th_class: "w-4"
@@ -114,6 +115,32 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
           Utils.name(row2.name, row2.given_name, row2.family_name)
       end
     }
+  end
+
+  def render_select_all_header(users, selected_students, target) do
+    all_user_ids = Enum.map(users, & &1.id)
+
+    all_selected =
+      length(selected_students) > 0 && Enum.all?(all_user_ids, &(&1 in selected_students))
+
+    assigns = %{
+      all_selected: all_selected,
+      target: target,
+      has_users: length(users) > 0
+    }
+
+    ~H"""
+    <div class="flex items-center justify-center">
+      <input
+        :if={@has_users}
+        type="checkbox"
+        checked={@all_selected}
+        class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+        phx-click="select_all_students"
+        phx-target={@target}
+      />
+    </div>
+    """
   end
 
   def render_selection_column(assigns, user, _) do
