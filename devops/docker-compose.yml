@@ -16,6 +16,12 @@ services:
       timeout: 10s
       retries: 5
       start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 256M
     environment:
       PHX_SERVER: "true"
       # Tell Phoenix we're behind a proxy that handles SSL
@@ -80,6 +86,12 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 128M
 
   minio:
     image: minio/minio
