@@ -162,26 +162,14 @@ case Oli.Repo.all(RegisteredModel) do
 
     # Insert the record for an OpenAI registered model, the NULL provider, and the Claude model.
     if open_ai_key do
-      case Oli.Encrypted.Binary.dump(open_ai_key) do
-        {:ok, encrypted_key} ->
-          secondary_encrypted =
-            case Oli.Encrypted.Binary.dump(open_ai_org_key) do
-              {:ok, v} -> v
-              _ -> nil
-            end
-
-          Oli.Repo.insert!(%RegisteredModel{
-            name: "openai-gpt4",
-            provider: :open_ai,
-            model: "gpt-4-1106-preview",
-            url_template: "https://api.openai.com",
-            api_key: encrypted_key,
-            secondary_api_key: secondary_encrypted
-          })
-
-        _ ->
-          IO.puts("Failed to encrypt OPENAI_API_KEY. Value: #{inspect(open_ai_key)}")
-      end
+      Oli.Repo.insert!(%RegisteredModel{
+        name: "openai-gpt4",
+        provider: :open_ai,
+        model: "gpt-4-1106-preview",
+        url_template: "https://api.openai.com",
+        api_key: open_ai_key,
+        secondary_api_key: open_ai_org_key
+      })
     end
 
     if anthropic_api_key do
@@ -190,7 +178,7 @@ case Oli.Repo.all(RegisteredModel) do
         provider: :claude,
         model: "claude-3-haiku-20240307",
         url_template: "https://api.anthropic.com/v1/messages",
-        api_key: Oli.Encrypted.Binary.dump(anthropic_api_key)
+        api_key: anthropic_api_key
       })
     end
 
