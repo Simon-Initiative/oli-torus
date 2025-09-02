@@ -4,7 +4,7 @@ import guid from 'utils/guid';
 // async because this may change to calling an authoring function of the part component
 export const createSimpleText = async (
   msg: string,
-  style: CSSProperties = { fontSize: '1.25rem' },
+  style: CSSProperties = { fontSize: '1rem' },
   transform = { x: 10, y: 10, z: 0, width: 330, height: 22 },
 ) => {
   const textComponent = {
