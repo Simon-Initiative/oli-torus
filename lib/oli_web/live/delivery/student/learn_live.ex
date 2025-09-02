@@ -688,24 +688,31 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               module_resource_id
             )
 
-          if clicked_module["resource_id"] == current_module["resource_id"] do
-            # if the user clicked in an already expanded module, then we should collapse it
-            {Map.drop(
-               socket.assigns.selected_module_per_unit_resource_id,
-               [unit_resource_id]
-             ), false}
-          else
-            {Map.merge(socket.assigns.selected_module_per_unit_resource_id, %{
-               unit_resource_id =>
-                 mark_visited_and_completed_pages(
-                   clicked_module,
-                   socket.assigns.student_visited_pages,
-                   socket.assigns.student_raw_avg_score_per_page_id,
-                   socket.assigns.student_progress_per_resource_id
-                 )
-               # The learning objectives tooltip was disabled in ticket NG-201 but will be reactivated with NG23-199
-               #  |> fetch_learning_objectives(socket.assigns.section.id)
-             }), true}
+          case clicked_module do
+            nil ->
+              # If clicked module not found, keep current state unchanged
+              {socket.assigns.selected_module_per_unit_resource_id, false}
+
+            clicked_module ->
+              if clicked_module["resource_id"] == current_module["resource_id"] do
+                # if the user clicked in an already expanded module, then we should collapse it
+                {Map.drop(
+                   socket.assigns.selected_module_per_unit_resource_id,
+                   [unit_resource_id]
+                 ), false}
+              else
+                {Map.merge(socket.assigns.selected_module_per_unit_resource_id, %{
+                   unit_resource_id =>
+                     mark_visited_and_completed_pages(
+                       clicked_module,
+                       socket.assigns.student_visited_pages,
+                       socket.assigns.student_raw_avg_score_per_page_id,
+                       socket.assigns.student_progress_per_resource_id
+                     )
+                   # The learning objectives tooltip was disabled in ticket NG-201 but will be reactivated with NG23-199
+                   #  |> fetch_learning_objectives(socket.assigns.section.id)
+                 }), true}
+              end
           end
       end
 
@@ -2803,9 +2810,15 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         unit["resource_id"] == unit_resource_id
       end)
 
-    Enum.find(unit["children"], fn module ->
-      module["resource_id"] == module_resource_id
-    end)
+    case unit do
+      nil ->
+        nil
+
+      unit ->
+        Enum.find(unit["children"], fn module ->
+          module["resource_id"] == module_resource_id
+        end)
+    end
   end
 
   defp resource_url(resource_slug, section_slug, resource_id, selected_view) do
@@ -2904,6 +2917,15 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         )
       end)
     )
+  end
+
+  defp mark_visited_and_completed_pages(
+         nil,
+         _visited_pages,
+         _student_raw_avg_score_per_page_id,
+         _student_progress_per_resource_id
+       ) do
+    nil
   end
 
   defp completed_page?(true = _graded, visited?, raw_avg_score, progress),
