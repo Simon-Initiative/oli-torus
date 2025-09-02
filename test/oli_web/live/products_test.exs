@@ -235,20 +235,22 @@ defmodule OliWeb.ProductsLiveTest do
     end
 
     test "applies paging", %{conn: conn} do
-      [first_p | tail] = insert_list(21, :section) |> Enum.sort_by(& &1.title)
-      last_p = List.last(tail)
+      first_p = insert(:section, title: "First Product", inserted_at: yesterday())
+      last_p = insert(:section, title: "Last Product", inserted_at: tomorrow())
+
+      insert_list(21, :section, inserted_at: DateTime.now!("Etc/UTC"))
 
       {:ok, view, _html} = live(conn, @live_view_all_products)
 
-      assert has_element?(view, "##{first_p.id}")
-      refute has_element?(view, "##{last_p.id}")
+      assert has_element?(view, "##{last_p.id}")
+      refute has_element?(view, "##{first_p.id}")
 
       view
       |> element("#footer_paging button[phx-click='paged_table_page_change']", "2")
       |> render_click()
 
-      refute has_element?(view, "##{first_p.id}")
-      assert has_element?(view, "##{last_p.id}")
+      refute has_element?(view, "##{last_p.id}")
+      assert has_element?(view, "##{first_p.id}")
     end
   end
 

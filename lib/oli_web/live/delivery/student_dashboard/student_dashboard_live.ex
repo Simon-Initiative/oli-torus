@@ -1,6 +1,9 @@
 defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
   use OliWeb, :live_view
   use OliWeb.Common.Modal
+
+  require Logger
+
   import Ecto.Query, warn: false
   import OliWeb.Common.Utils
 
@@ -125,6 +128,17 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
        params: params,
        active_tab: String.to_existing_atom(params["active_tab"])
      )}
+  end
+
+  @impl Phoenix.LiveView
+  def handle_event(event, params, socket) do
+    # Catch-all for UI-only events from functional components
+    # that don't need handling (like dropdown toggles)
+    Logger.warning(
+      "Unhandled event in StudentDashboardLive: #{inspect(event)}, #{inspect(params)}"
+    )
+
+    {:noreply, socket}
   end
 
   @impl Phoenix.LiveView

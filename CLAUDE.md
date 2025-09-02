@@ -155,6 +155,8 @@ Example activity types: Multiple Choice, Short Answer, File Upload, Multi-Input,
 - React components should be functional with hooks
 - Prefer composition over inheritance
 - Keep contexts focused and cohesive
+- Rarely use "if", prefer "case" statements
+- Use the "with" construct to avoid nested "case" statements
 
 ## Debugging Tips
 

@@ -20,7 +20,7 @@ ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
 
 FROM ${BUILDER_IMAGE} as builder
 
-ARG RELEASE_SHA
+ARG SHA_SHORT
 
 # install build dependencies including Node.js for asset compilation
 RUN apt-get update -y && apt-get install -y build-essential git \

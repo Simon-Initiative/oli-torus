@@ -1,0 +1,46 @@
+# Simple scenario demonstrating basic project creation
+# This file will be automatically discovered and run by scenario_runner_test.exs
+
+- project:
+    name: "demo_project"
+    title: "Demo Project"
+    root:
+      children:
+        - page: "Welcome"
+        - container: "Chapter 1"
+          children:
+            - page: "Introduction"
+            - page: "Key Concepts"
+        - page: "Summary"
+
+# Create a section to demonstrate section creation
+- section:
+    name: "demo_section"
+    from: "demo_project"
+    title: "Demo Section"
+
+# Verify the project structure
+- verify:
+    to: "demo_project"
+    structure:
+      root:
+        children:
+          - page: "Welcome"
+          - container: "Chapter 1"
+            children:
+              - page: "Introduction"
+              - page: "Key Concepts"
+          - page: "Summary"
+
+# Verify the section structure (should match the project)
+- verify:
+    to: "demo_section"
+    structure:
+      root:
+        children:
+          - page: "Welcome"
+          - container: "Chapter 1"
+            children:
+              - page: "Introduction"
+              - page: "Key Concepts"
+          - page: "Summary"

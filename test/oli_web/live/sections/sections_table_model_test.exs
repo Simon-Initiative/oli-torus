@@ -96,7 +96,7 @@ defmodule OliWeb.Sections.SectionsTableModelTest do
       {:ok, model} = SectionsTableModel.new(ctx, sections)
 
       assert length(model.column_specs) == 11
-      assert model.rows == sections
+      assert model.rows == Enum.sort_by(sections, & &1.start_date, :desc)
       assert model.event_suffix == ""
       assert model.id_field == [:id]
 

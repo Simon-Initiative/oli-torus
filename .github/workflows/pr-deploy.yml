@@ -1,0 +1,139 @@
+name: PR Preview Deploy
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  build-container:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    outputs:
+      app_version: ${{ steps.info.outputs.app_version }}
+      sha_short: ${{ steps.info.outputs.sha_short }}
+
+    steps:
+      - name: 🛎️ Checkout
+        uses: actions/checkout@v3
+
+      - name: 🔧 Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: 🧾 Build info
+        id: info
+        run: |
+          echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          echo "app_version=$(cat mix.exs | grep version | sed -e 's/.*version: "\(.*\)",/\1/')" >> $GITHUB_OUTPUT
+
+      - name: 🧾 Docker Metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          # list of Docker images to use as base name for tags
+          images: |
+            ghcr.io/simon-initiative/oli-torus
+          # generate Docker tags based on the following events/attributes
+          tags: |
+            type=ref,event=tag
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha
+
+      - name: 🔑 Log in to Github Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # builds the official oli-torus app image
+      - name: 🐳 Docker Build and Push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          build-args: APP_VERSION=${{ steps.info.outputs.app_version }}
+            SHA_SHORT=${{ steps.info.outputs.sha_short }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  pr-preview-deploy:
+    name: PR Preview Deploy
+    runs-on: plasma
+    needs: build-container
+    steps:
+      - name: 🛎️ Checkout
+        uses: actions/checkout@v4
+
+      - name: 🧾 Build info
+        id: info
+        run: |
+          echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: 🔑 Log in to Github Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🐳 Pull Docker image
+        run: |
+          docker pull ghcr.io/simon-initiative/oli-torus:sha-${{ steps.info.outputs.sha_short }}
+          docker tag ghcr.io/simon-initiative/oli-torus:sha-${{ steps.info.outputs.sha_short }} oli-torus:${{ github.sha }}
+
+      - name: 🚀 Deploy PR stack
+        run: |
+          export PROJECT=pr${{ github.event.number }}
+          export APP_IMAGE_TAG=${{ github.sha }}
+          export HOST=pr${{ github.event.number }}.plasma.oli.cmu.edu
+
+          # Setup database
+          docker-compose -p $PROJECT -f devops/docker-compose.yml run --rm app /app/bin/oli eval "Oli.Release.setup"
+
+          # Create minio buckets
+          docker-compose -p $PROJECT -f devops/docker-compose.yml run --rm --entrypoint=/bin/mc minio alias set localminio http://minio:9000 minio-user minio-password
+          docker-compose -p $PROJECT -f devops/docker-compose.yml run --rm --entrypoint=/bin/mc minio mb --ignore-existing localminio/oli-torus-media
+          docker-compose -p $PROJECT -f devops/docker-compose.yml run --rm --entrypoint=/bin/mc minio mb --ignore-existing localminio/oli-torus-xapi
+
+          # Run stack
+          docker-compose -p $PROJECT -f devops/docker-compose.yml up -d
+
+      - name: ⏳ Wait for PR Preview to be available
+        run: |
+          export HOST=pr${{ github.event.number }}.plasma.oli.cmu.edu
+          for i in {1..30}; do
+            if curl -k -fsSL --max-time 5 https://$HOST/healthz; then
+              echo "Preview is up!"
+              exit 0
+            fi
+            echo "Waiting for preview to be available... ($i)"
+            sleep 10
+          done
+          echo "Preview did not become available in time." >&2
+          exit 1
+
+      - name: 🔍 Find existing PR preview comment
+        uses: peter-evans/find-comment@v3
+        id: fc
+        with:
+          token: ${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}
+          issue-number: ${{ github.event.number }}
+          comment-author: "simon-bot"
+          body-includes: "PR preview deployed at:"
+
+      - name: 💬 Post/Update PR Preview URL Comment
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          token: ${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}
+          comment-id: ${{ steps.fc.outputs.comment-id }}
+          issue-number: ${{ github.event.number }}
+          body: |
+            PR preview deployed at: https://pr${{ github.event.number }}.plasma.oli.cmu.edu
+
+            Last updated: ${{ github.event.pull_request.updated_at }}
+          edit-mode: replace
