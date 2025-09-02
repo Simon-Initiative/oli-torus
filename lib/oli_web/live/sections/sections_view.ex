@@ -57,12 +57,18 @@ defmodule OliWeb.Sections.SectionsView do
     sections =
       Browse.browse_sections(
         %Paging{offset: 0, limit: @limit},
-        %Sorting{direction: :asc, field: :title},
+        %Sorting{direction: :desc, field: :start_date},
         @default_options
       )
 
     total_count = determine_total(sections)
-    {:ok, table_model} = SectionsTableModel.new(ctx, sections, render_date: :full)
+
+    {:ok, table_model} =
+      SectionsTableModel.new(ctx, sections,
+        render_date: :full,
+        sort_by_spec: :start_date,
+        sort_order: :desc
+      )
 
     {:ok,
      assign(socket,

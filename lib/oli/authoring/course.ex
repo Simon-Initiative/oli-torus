@@ -176,7 +176,7 @@ defmodule Oli.Authoring.Course do
     query =
       case field do
         :name ->
-          order_by(query, [_, _, _, _, _, _, _, owner], {^direction, owner.name})
+          order_by(query, [_, _, _, _, _, _, owner], {^direction, owner.name})
 
         :collaborators ->
           order_by(
@@ -188,7 +188,7 @@ defmodule Oli.Authoring.Course do
         :published ->
           order_by(
             query,
-            [_, _, _, _, _, pub],
+            [_, _, _, _, pub],
             {^direction, fragment("bool_or(?)", not is_nil(pub.id))}
           )
 

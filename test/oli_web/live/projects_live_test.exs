@@ -106,14 +106,18 @@ defmodule OliWeb.Projects.ProjectsLiveTest do
 
       {:ok, view, _html} = live(conn, Routes.live_path(Endpoint, ProjectsLive))
 
+      view
+      |> element("th[phx-click='paged_table_sort'][phx-value-sort_by='title']")
+      |> render_click()
+
       assert view
              |> element("tr:first-child > td:first-child")
              |> render() =~
                "Testing A"
 
       view
-      |> element("th[phx-click='paged_table_sort']:first-of-type")
-      |> render_click(%{sort_by: "title"})
+      |> element("th[phx-click='paged_table_sort'][phx-value-sort_by='title']")
+      |> render_click()
 
       assert view
              |> element("tr:first-child > td:first-child")
@@ -172,24 +176,24 @@ defmodule OliWeb.Projects.ProjectsLiveTest do
     end
 
     test "applies paging", %{conn: conn, author: author} do
-      [first_p | tail] =
-        1..26
-        |> Enum.map(fn _ -> create_project_with_owner(author) end)
-        |> Enum.sort_by(& &1.title)
+      first_p =
+        insert(:project, title: "First Project", inserted_at: yesterday(), authors: [author])
 
-      last_p = List.last(tail)
+      last_p = insert(:project, title: "Last Project", inserted_at: tomorrow(), authors: [author])
+
+      insert_list(26, :project, inserted_at: DateTime.now!("Etc/UTC"), authors: [author])
 
       {:ok, view, _html} = live(conn, Routes.live_path(Endpoint, ProjectsLive))
 
-      assert has_element?(view, "##{first_p.id}")
-      refute has_element?(view, "##{last_p.id}")
+      assert has_element?(view, "##{last_p.id}")
+      refute has_element?(view, "##{first_p.id}")
 
       view
       |> element("#footer_paging button[phx-click='paged_table_page_change']", "2")
       |> render_click()
 
-      refute has_element?(view, "##{first_p.id}")
-      assert has_element?(view, "##{last_p.id}")
+      refute has_element?(view, "##{last_p.id}")
+      assert has_element?(view, "##{first_p.id}")
     end
 
     test "applies sorting", %{conn: conn, author: author} do
@@ -198,13 +202,17 @@ defmodule OliWeb.Projects.ProjectsLiveTest do
 
       {:ok, view, _html} = live(conn, Routes.live_path(Endpoint, ProjectsLive))
 
+      view
+      |> element("th[phx-click='paged_table_sort'][phx-value-sort_by='title']")
+      |> render_click(%{sort_by: "title"})
+
       assert view
              |> element("tr:first-child > td:first-child")
              |> render() =~
                "Testing A"
 
       view
-      |> element("th[phx-click='paged_table_sort']:first-of-type")
+      |> element("th[phx-click='paged_table_sort'][phx-value-sort_by='title']")
       |> render_click(%{sort_by: "title"})
 
       assert view

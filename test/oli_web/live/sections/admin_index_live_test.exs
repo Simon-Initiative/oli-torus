@@ -220,6 +220,10 @@ defmodule OliWeb.Sections.AdminIndexLiveTest do
 
       {:ok, view, _html} = live(conn, @live_view_index_route)
 
+      view
+      |> element("th[phx-click='paged_table_sort']", "Title")
+      |> render_click(%{sort_by: "title"})
+
       # by title
       assert view
              |> element("tr:first-child > td:first-child")
@@ -272,20 +276,25 @@ defmodule OliWeb.Sections.AdminIndexLiveTest do
     end
 
     test "applies paging", %{conn: conn} do
-      [first_s | tail] = insert_list(26, :section, type: :enrollable) |> Enum.sort_by(& &1.title)
-      last_s = List.last(tail)
+      first_section =
+        insert(:section, type: :enrollable, title: "First Section", start_date: yesterday())
+
+      last_section =
+        insert(:section, type: :enrollable, title: "Last Section", start_date: tomorrow())
+
+      insert_list(26, :section, type: :enrollable, start_date: DateTime.now!("Etc/UTC"))
 
       {:ok, view, _html} = live(conn, @live_view_index_route)
 
-      assert has_element?(view, "td", first_s.title)
-      refute has_element?(view, "td", last_s.title)
+      assert has_element?(view, "td", last_section.title)
+      refute has_element?(view, "td", first_section.title)
 
       view
       |> element("#footer_paging button[phx-click='paged_table_page_change']", "2")
       |> render_click()
 
-      refute has_element?(view, "td", first_s.title)
-      assert has_element?(view, "td", last_s.title)
+      refute has_element?(view, "td", last_section.title)
+      assert has_element?(view, "td", first_section.title)
     end
 
     test "section title is a link to the manage tab of the instructor dashboard", %{conn: conn} do
