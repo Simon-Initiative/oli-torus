@@ -1,6 +1,6 @@
 export const CopyToClipboardEvent = {
   mounted() {
-    this.handleEvent('copy_to_clipboard', ({ text }) => {
+    this.handleEvent('copy_to_clipboard', ({ text }: { text: string }) => {
       navigator.clipboard
         .writeText(text)
         .then(() => {
