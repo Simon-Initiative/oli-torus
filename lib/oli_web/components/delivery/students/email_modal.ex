@@ -191,10 +191,10 @@ defmodule OliWeb.Components.Delivery.Students.EmailModal do
         socket.assigns.instructor_email
       )
 
-      {:noreply,
-       socket
-       |> assign(email_message: "")
-       |> put_flash(:info, "Emails sent successfully")}
+      # Send flash message to parent LiveView
+      send(self(), {:flash_message, {:info, "Emails sent successfully"}})
+
+      {:noreply, assign(socket, email_message: "")}
     else
       {:noreply, socket}
     end
