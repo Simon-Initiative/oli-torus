@@ -32,7 +32,7 @@ defmodule Oli.Scenarios.ChangeOperationTest do
       result = TestHelpers.execute_yaml(yaml)
 
       assert %ExecutionResult{errors: []} = result
-      
+
       # Verify the project was updated
       project = result.state.projects["test_project"].project
       assert project.title == "Updated Project Title"
@@ -69,7 +69,7 @@ defmodule Oli.Scenarios.ChangeOperationTest do
       result = TestHelpers.execute_yaml(yaml)
 
       assert %ExecutionResult{errors: []} = result
-      
+
       # Verify the section was updated
       section = result.state.sections["test_section"]
       assert section.title == "Updated Section Title"
@@ -107,7 +107,7 @@ defmodule Oli.Scenarios.ChangeOperationTest do
       result = TestHelpers.execute_yaml(yaml)
 
       assert %ExecutionResult{errors: []} = result
-      
+
       # Verify the product was updated
       product = result.state.products["test_product"]
       assert product.title == "Updated Product Title"
@@ -144,7 +144,7 @@ defmodule Oli.Scenarios.ChangeOperationTest do
       result = TestHelpers.execute_yaml(yaml)
 
       assert %ExecutionResult{errors: []} = result
-      
+
       section = result.state.sections["test_section"]
       assert section.title == "String Value"
       assert section.apply_major_updates == true
@@ -186,15 +186,15 @@ defmodule Oli.Scenarios.ChangeOperationTest do
       result = TestHelpers.execute_yaml(yaml)
 
       assert %ExecutionResult{errors: []} = result
-      
+
       # Verify all operations were applied
       project = result.state.projects["test_project"]
       assert project.project.title == "Updated Title"
       assert project.project.description == "Updated Description"
-      
+
       # Verify the new page was added
       assert Map.has_key?(project.id_by_title, "New Page")
-      
+
       # Verify Page 1 was revised
       page1_rev = project.rev_by_title["Page 1"]
       assert page1_rev.graded == true
