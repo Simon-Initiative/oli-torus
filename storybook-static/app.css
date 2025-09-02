@@ -8586,8 +8586,16 @@ table.table-striped tbody tr:nth-child(even) {
   z-index: 10000;
 }
 
+.z-\[1\] {
+  z-index: 1;
+}
+
 .z-\[2000\] {
   z-index: 2000;
+}
+
+.z-\[60\] {
+  z-index: 60;
 }
 
 .z-\[999\] {
@@ -10411,6 +10419,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .basis-1\/2 {
   flex-basis: 50%;
+}
+
+.table-fixed {
+  table-layout: fixed;
 }
 
 .border-collapse {
