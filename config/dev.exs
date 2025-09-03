@@ -18,9 +18,9 @@ end
 
 config :oli,
   env: :dev,
-  s3_xapi_bucket_name: System.get_env("S3_XAPI_BUCKET_NAME"),
-  s3_media_bucket_name: System.get_env("S3_MEDIA_BUCKET_NAME"),
-  media_url: System.get_env("MEDIA_URL", "http://localhost:9000/oli-torus-media"),
+  s3_xapi_bucket_name: System.get_env("S3_XAPI_BUCKET_NAME", "torus-xapi-dev"),
+  s3_media_bucket_name: System.get_env("S3_MEDIA_BUCKET_NAME", "torus-media-dev"),
+  media_url: System.get_env("MEDIA_URL", "http://localhost:9000/torus-media-dev"),
   problematic_query_detection:
     get_env_as_boolean.("DEV_PROBLEMATIC_QUERY_DETECTION_ENABLED", "false"),
   load_testing_mode: get_env_as_boolean.("LOAD_TESTING_MODE", "false"),
