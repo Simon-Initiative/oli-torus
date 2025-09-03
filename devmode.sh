@@ -21,6 +21,15 @@ if [ ! -f .devmode ]; then
   echo "## Starting postgres database..."
   docker compose up -d postgres && sleep 5
 
+  echo "## Starting MinIO storage..."
+  docker compose up -d minio && sleep 5
+
+  echo "## Setting up MinIO buckets..."
+  docker compose exec minio /bin/sh -c "mc alias set localminio http://localhost:9000 minio-user minio-password && mc mb --ignore-existing localminio/oli-torus-media && mc mb --ignore-existing localminio/oli-torus-xapi && mc mb --ignore-existing localminio/torus-blob-dev"
+  echo "## Setting MinIO bucket policies..."
+  docker compose exec minio /bin/sh -c "mc alias set localminio http://localhost:9000 minio-user minio-password && mc anonymous set public localminio/oli-torus-media"
+  docker compose exec minio /bin/sh -c "mc alias set localminio http://localhost:9000 minio-user minio-password && mc anonymous set public localminio/torus-blob-dev"
+
   echo "## Creating database and running migration..."
   set -a
   source oli.env
@@ -38,6 +47,22 @@ fi
 if ! docker compose ps | grep -iq "oli_postgres.\+Up"; then
   echo "## Starting postgres database..."
   docker compose up -d postgres && sleep 5
+fi
+
+# start minio if it's not running
+if ! docker compose ps | grep -iq "minio.\+Up"; then
+  echo "## Starting MinIO storage..."
+  docker compose up -d minio && sleep 5
+
+  echo "## Setting up MinIO buckets..."
+  docker compose exec minio /bin/sh -c "mc alias set localminio http://localhost:9000 minio-user minio-password && mc mb --ignore-existing localminio/oli-torus-media"
+  docker compose exec minio /bin/sh -c "mc alias set localminio http://localhost:9000 minio-user minio-password && mc mb --ignore-existing localminio/oli-torus-xapi"
+  docker compose exec minio /bin/sh -c "mc alias set localminio http://localhost:9000 minio-user minio-password && mc mb --ignore-existing localminio/torus-blob-dev"
+
+  echo "## Setting MinIO bucket policies..."
+  docker compose exec minio /bin/sh -c "mc alias set localminio http://localhost:9000 minio-user minio-password && mc anonymous set public localminio/oli-torus-media"
+  docker compose exec minio /bin/sh -c "mc alias set localminio http://localhost:9000 minio-user minio-password && mc anonymous set public localminio/oli-torus-xapi"
+  docker compose exec minio /bin/sh -c "mc alias set localminio http://localhost:9000 minio-user minio-password && mc anonymous set public localminio/torus-blob-dev"
 fi
 
 echo "## NOTICE: Running 'reload-env' will apply any configuration set in oli.env"

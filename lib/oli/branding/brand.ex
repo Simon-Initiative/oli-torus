@@ -51,10 +51,10 @@ defmodule Oli.Branding.Brand do
 
     case attrs[term] do
       %Plug.Upload{filename: filename} ->
-        Map.put(attrs, term, "https://#{media_url}/brands/#{slug}/#{filename}")
+        Map.put(attrs, term, "#{media_url}/brands/#{slug}/#{filename}")
 
       uploads when is_list(uploads) ->
-        Map.put(attrs, term, "https://#{media_url}/brands/#{slug}/#{to_charlist(term)}")
+        Map.put(attrs, term, "#{media_url}/brands/#{slug}/#{to_charlist(term)}")
 
       _ ->
         attrs

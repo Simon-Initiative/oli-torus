@@ -20,7 +20,7 @@ config :oli,
   env: :dev,
   s3_xapi_bucket_name: System.get_env("S3_XAPI_BUCKET_NAME"),
   s3_media_bucket_name: System.get_env("S3_MEDIA_BUCKET_NAME"),
-  media_url: System.get_env("MEDIA_URL"),
+  media_url: System.get_env("MEDIA_URL", "http://localhost:9000/oli-torus-media"),
   problematic_query_detection:
     get_env_as_boolean.("DEV_PROBLEMATIC_QUERY_DETECTION_ENABLED", "false"),
   load_testing_mode: get_env_as_boolean.("LOAD_TESTING_MODE", "false"),
@@ -191,10 +191,17 @@ config :appsignal, :config, active: false
 # Configure AWS
 config :ex_aws,
   region: System.get_env("AWS_REGION", "us-east-1"),
-  access_key_id: System.get_env("AWS_ACCESS_KEY_ID", "your_minio_access_key"),
-  secret_access_key: System.get_env("AWS_SECRET_ACCESS_KEY", "your_minio_secret_key")
+  access_key_id: System.get_env("AWS_ACCESS_KEY_ID", "your_aws_access_key"),
+  secret_access_key: System.get_env("AWS_SECRET_ACCESS_KEY", "your_aws_secret_key")
 
-config :ex_aws, :s3, region: System.get_env("AWS_REGION", "us-east-1")
+# Configure S3 specifically
+config :ex_aws, :s3,
+  region: System.get_env("AWS_REGION", "us-east-1"),
+  access_key_id: System.get_env("AWS_S3_ACCESS_KEY_ID", "your_minio_access_key"),
+  secret_access_key: System.get_env("AWS_S3_SECRET_ACCESS_KEY", "your_minio_secret_key"),
+  scheme: System.get_env("AWS_S3_SCHEME", "http"),
+  port: String.to_integer(System.get_env("AWS_S3_PORT", "9000")),
+  host: System.get_env("AWS_S3_HOST", "localhost")
 
 config :ex_aws, :hackney_opts,
   follow_redirect: true,

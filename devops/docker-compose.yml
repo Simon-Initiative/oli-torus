@@ -28,11 +28,13 @@ services:
       HOST: ${HOST}
       S3_MEDIA_BUCKET_NAME: "oli-torus-media"
       S3_XAPI_BUCKET_NAME: "oli-torus-xapi"
-      MEDIA_URL: https://${HOST}/media
+      MEDIA_URL: https://${HOST}/s3/oli-torus-media
       # MinIO S3 configuration
       AWS_ACCESS_KEY_ID: "minio-user"
       AWS_SECRET_ACCESS_KEY: "minio-password"
-      S3_ENDPOINT: "http://minio:9000"
+      AWS_S3_SCHEME: "http"
+      AWS_S3_PORT: "9000"
+      AWS_S3_HOST: "minio"
       CLOAK_VAULT_KEY: "HXCdm5z61eNgUpnXObJRv94k3JnKSrnfwppyb60nz6w="
       DATABASE_URL: postgres://postgres:postgres@postgres:5432/postgres
       ADMIN_EMAIL: "admin@example.edu"
@@ -48,7 +50,7 @@ services:
       - "traefik.enable=true"
       # Specify the network for Traefik to use
       - "traefik.docker.network=webproxy-public"
-      # Route everything except /media to app
+      # Route everything except /s3 to app
       - "traefik.http.routers.${PROJECT}-app.rule=Host(`${HOST}`) && PathPrefix(`/`)"
       - "traefik.http.routers.${PROJECT}-app.priority=10"
       - "traefik.http.routers.${PROJECT}-app.entrypoints=web"
@@ -95,13 +97,13 @@ services:
       - "traefik.enable=true"
       # Specify the network for Traefik to use
       - "traefik.docker.network=webproxy-public"
-      # Route only /media to minio
-      - "traefik.http.routers.${PROJECT}-minio.rule=Host(`${HOST}`) && PathPrefix(`/media`)"
+      # Route only /s3 to minio
+      - "traefik.http.routers.${PROJECT}-minio.rule=Host(`${HOST}`) && PathPrefix(`/s3`)"
       - "traefik.http.routers.${PROJECT}-minio.priority=20"
       - "traefik.http.routers.${PROJECT}-minio.entrypoints=web"
       - "traefik.http.services.${PROJECT}-minio.loadbalancer.server.port=9000"
-      # Strip /media prefix before forwarding
-      - "traefik.http.middlewares.${PROJECT}-stripprefix.stripprefix.prefixes=/media"
+      # Strip /s3 prefix before forwarding
+      - "traefik.http.middlewares.${PROJECT}-stripprefix.stripprefix.prefixes=/s3"
       - "traefik.http.routers.${PROJECT}-minio.middlewares=${PROJECT}-stripprefix"
     command: ["server", "--console-address", ":9001", "/data"]
 
