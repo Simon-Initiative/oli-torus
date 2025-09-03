@@ -197,9 +197,9 @@ config :ex_aws,
 # Configure S3 specifically
 config :ex_aws, :s3,
   region: System.get_env("AWS_REGION", "us-east-1"),
-  access_key_id: System.get_env("AWS_S3_ACCESS_KEY_ID", "your_minio_access_key"),
-  secret_access_key: System.get_env("AWS_S3_SECRET_ACCESS_KEY", "your_minio_secret_key"),
-  scheme: System.get_env("AWS_S3_SCHEME", "http"),
+  access_key_id: [{:system, "AWS_S3_ACCESS_KEY_ID"}, {:system, "AWS_ACCESS_KEY_ID"}, "your_minio_access_key"],
+  secret_access_key: [{:system, "AWS_S3_SECRET_ACCESS_KEY"}, {:system, "AWS_SECRET_ACCESS_KEY"}, "your_minio_secret_key"],
+  scheme: System.get_env("AWS_S3_SCHEME", "http") <> "://",
   port: String.to_integer(System.get_env("AWS_S3_PORT", "9000")),
   host: System.get_env("AWS_S3_HOST", "localhost")
 

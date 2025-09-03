@@ -28,10 +28,10 @@ services:
       HOST: ${HOST}
       S3_MEDIA_BUCKET_NAME: "oli-torus-media"
       S3_XAPI_BUCKET_NAME: "oli-torus-xapi"
-      MEDIA_URL: https://${HOST}/s3/oli-torus-media
+      MEDIA_URL: http://${HOST}/s3/oli-torus-media
       # MinIO S3 configuration
-      AWS_ACCESS_KEY_ID: "minio-user"
-      AWS_SECRET_ACCESS_KEY: "minio-password"
+      AWS_S3_ACCESS_KEY_ID: "minio-user"
+      AWS_S3_SECRET_ACCESS_KEY: "minio-password"
       AWS_S3_SCHEME: "http"
       AWS_S3_PORT: "9000"
       AWS_S3_HOST: "minio"
