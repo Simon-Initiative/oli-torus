@@ -17,38 +17,38 @@ defmodule OliWeb.Components.Delivery.Students.EmailModal do
           id="email_modal"
           class="w-[800px]"
           header_class="flex items-start justify-between px-[35px] pt-[27px] pb-4"
-          body_class="border-t border-[#d4d4d4] dark:border-[#3e3f44] px-[35px] pb-[50px] pt-[30px]"
+          body_class="border-t border-Border-border-subtle px-[35px] pb-[50px] pt-[30px]"
           on_cancel={JS.push("close_email_modal", target: @myself)}
         >
           <:title>Email Students</:title>
 
           <div class="text-sm font-normal mt-3">
-            <p class="text-black dark:text-white mb-6">
+            <p class="text-Text-text-high mb-6">
               {this_email_will_send_message(@selected_students, @students)}
             </p>
 
             <div class="mb-6">
-              <h3 class="text-sm font-bold text-black dark:text-white mb-3">
+              <h3 class="text-sm font-bold text-Text-text-high mb-3">
                 Type a new email message
               </h3>
               <textarea
                 id="email_message"
                 name="email_message"
                 placeholder="Type here..."
-                class="w-full h-32 p-3 border border-gray-300 dark:border-gray-600 rounded-md resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                class="w-full h-32 p-3 border border-Border-border-default rounded-md resize-none focus:ring-2 focus:ring-Fill-Buttons-fill-primary focus:border-transparent bg-Specially-Tokens-Fill-fill-input text-Text-text-high"
                 phx-target={@myself}
                 phx-blur="update_message"
               ><%= @email_message %></textarea>
             </div>
 
             <div class="mb-6">
-              <h3 class="text-sm font-bold text-black dark:text-white mb-3">
+              <h3 class="text-sm font-bold text-Text-text-high mb-3">
                 Or, copy and paste from the email templates below
               </h3>
               <div class="grid grid-cols-2 gap-4">
-                <div class="border border-gray-300 rounded-lg p-4 relative">
+                <div class="border border-Border-border-default rounded-lg p-4 relative">
                   <button
-                    class="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+                    class="absolute top-2 right-2 text-Icon-icon-default hover:text-Icon-icon-hover"
                     phx-click={JS.push("copy_template", value: %{template: "low_progress"})}
                     phx-target={@myself}
                   >
@@ -63,7 +63,7 @@ defmodule OliWeb.Components.Delivery.Students.EmailModal do
                     </svg>
                   </button>
                   <h4 class="font-bold text-sm mb-2">LOW STUDENT PROGRESS</h4>
-                  <p class="text-xs text-gray-600">
+                  <p class="text-xs text-Text-text-low">
                     Hello,<br /><br /> Your progress on <strong>[course material]</strong>
                     appears to be below expected levels. Please review the material and continue working through the material. Let me know if you have questions.<br /><br />
                     Best,<br />
@@ -71,9 +71,9 @@ defmodule OliWeb.Components.Delivery.Students.EmailModal do
                   </p>
                 </div>
 
-                <div class="border border-gray-300 rounded-lg p-4 relative">
+                <div class="border border-Border-border-default rounded-lg p-4 relative">
                   <button
-                    class="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+                    class="absolute top-2 right-2 text-Icon-icon-default hover:text-Icon-icon-hover"
                     phx-click={JS.push("copy_template", value: %{template: "approaching_due_date"})}
                     phx-target={@myself}
                   >
@@ -88,7 +88,7 @@ defmodule OliWeb.Components.Delivery.Students.EmailModal do
                     </svg>
                   </button>
                   <h4 class="font-bold text-sm mb-2">APPROACHING DUE DATE</h4>
-                  <p class="text-xs text-gray-600">
+                  <p class="text-xs text-Text-text-low">
                     Hello,<br /><br /> This is a reminder that <strong>[course material]</strong>
                     is due soon and has not yet been completed. Please complete it before the deadline. Let me know if clarification is needed.<br /><br />
                     Best,<br />
@@ -106,7 +106,7 @@ defmodule OliWeb.Components.Delivery.Students.EmailModal do
                 phx-click={
                   Modal.hide_modal(JS.push("close_email_modal", target: @myself), "email_modal")
                 }
-                class="text-[#3c75d3] text-sm font-normal leading-[14px] h-[30px] px-4 py-2 rounded-md border border-[#3c75d3] justify-center items-center gap-2 inline-flex overflow-hidden"
+                class="text-Text-text-button text-sm font-normal leading-[14px] h-[30px] px-4 py-2 rounded-md border border-Fill-Buttons-fill-primary justify-center items-center gap-2 inline-flex overflow-hidden"
               >
                 Cancel
               </button>
@@ -118,8 +118,10 @@ defmodule OliWeb.Components.Delivery.Students.EmailModal do
                 class={[
                   "text-sm font-semibold leading-[14px] h-[30px] px-4 py-2 rounded-md border justify-center items-center gap-2 inline-flex overflow-hidden",
                   if(String.trim(@email_message) == "",
-                    do: "text-gray-400 bg-gray-200 border-gray-300 cursor-not-allowed",
-                    else: "text-white bg-[#0062f2] border-[#0062f2] hover:bg-[#0051d1]"
+                    do:
+                      "text-Text-text-low-alpha bg-Fill-Buttons-fill-muted border-Border-border-default cursor-not-allowed",
+                    else:
+                      "text-Text-text-white bg-Fill-Buttons-fill-primary border-Fill-Buttons-fill-primary hover:bg-Fill-Buttons-fill-primary-hover"
                   )
                 ]}
               >

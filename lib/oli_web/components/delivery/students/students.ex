@@ -479,7 +479,7 @@ defmodule OliWeb.Components.Delivery.Students do
                 value={@previous_id}
                 phx-target={@myself}
               >
-                <Icons.previous_arrow color={if is_nil(@previous_id), do: "#a3a3a3", else: "#468AEF"} />
+                <Icons.previous_arrow color={if is_nil(@previous_id), do: "#757682", else: "#1B67B2"} />
               </button>
             </div>
             <div class="w-auto px-2 py-1 rounded-md flex-col justify-center items-center text-center inline-flex">
@@ -494,7 +494,7 @@ defmodule OliWeb.Components.Delivery.Students do
                 value={@next_id}
                 phx-target={@myself}
               >
-                <Icons.next_arrow color={if is_nil(@next_id), do: "#a3a3a3", else: "#468AEF"} />
+                <Icons.next_arrow color={if is_nil(@next_id), do: "#757682", else: "#1B67B2"} />
               </button>
             </div>
           </div>
@@ -526,7 +526,7 @@ defmodule OliWeb.Components.Delivery.Students do
           </form>
         </div>
       <% end %>
-      <div class="bg-white dark:bg-gray-800 shadow-sm">
+      <div class="bg-Surface-surface-primary shadow-sm">
         <div class="flex justify-between sm:items-end px-4 sm:px-9 py-4 instructor_dashboard_table">
           <div>
             <h4 class="torus-h4 !py-0 sm:mr-auto mb-2">Students Enrolled in {@title}</h4>
@@ -617,7 +617,7 @@ defmodule OliWeb.Components.Delivery.Students do
           />
 
           <button
-            class="text-center text-blue-500 text-xs font-semibold underline leading-none"
+            class="text-center text-Text-text-button text-xs font-semibold underline leading-none"
             phx-click="clear_all_filters"
             phx-target={@myself}
           >
@@ -702,7 +702,7 @@ defmodule OliWeb.Components.Delivery.Students do
 
   def multi_select(assigns) do
     ~H"""
-    <div class={"flex flex-col border relative rounded-md h-9 #{if @selected_values != %{}, do: "border-blue-500", else: "border-zinc-400"}"}>
+    <div class={"flex flex-col border relative rounded-md h-9 #{if @selected_values != %{}, do: "border-Fill-Buttons-fill-primary", else: "border-Border-border-default"}"}>
       <div
         phx-click={
           if(!@disabled,
@@ -714,7 +714,7 @@ defmodule OliWeb.Components.Delivery.Students do
         }
         class={[
           "flex gap-x-4 px-4 h-9 justify-between items-center w-auto hover:cursor-pointer rounded",
-          if(@disabled, do: "bg-gray-300 hover:cursor-not-allowed")
+          if(@disabled, do: "bg-Fill-Buttons-fill-muted hover:cursor-not-allowed")
         ]}
         id={"#{@id}-selected-options-container"}
       >
@@ -725,7 +725,10 @@ defmodule OliWeb.Components.Delivery.Students do
           >
             {@placeholder}
           </span>
-          <span :if={@selected_values != %{}} class="text-blue-500 text-xs font-semibold leading-none">
+          <span
+            :if={@selected_values != %{}}
+            class="text-Text-text-button text-xs font-semibold leading-none"
+          >
             Proficiency is {show_proficiency_selected_values(@selected_values)}
           </span>
         </div>
@@ -733,7 +736,7 @@ defmodule OliWeb.Components.Delivery.Students do
       </div>
       <div class="relative">
         <div
-          class="py-4 hidden z-50 absolute dark:bg-gray-800 bg-white w-48 border overflow-y-scroll top-1 rounded"
+          class="py-4 hidden z-50 absolute bg-Surface-surface-primary w-48 border overflow-y-scroll top-1 rounded"
           id={"#{@id}-options-container"}
           phx-click-away={
             JS.hide() |> JS.hide(to: "##{@id}-up-icon") |> JS.show(to: "##{@id}-down-icon")
@@ -772,7 +775,7 @@ defmodule OliWeb.Components.Delivery.Students do
               Cancel
             </button>
             <button
-              class="px-4 py-2 bg-blue-500 rounded justify-center items-center gap-2 inline-flex opacity-90 text-right text-white text-xs font-semibold leading-none"
+              class="px-4 py-2 bg-Fill-Buttons-fill-primary rounded justify-center items-center gap-2 inline-flex opacity-90 text-right text-Text-text-white text-xs font-semibold leading-none"
               phx-click={
                 JS.push("apply_proficiency_filter")
                 |> JS.hide(to: "##{@id}-options-container")
@@ -838,7 +841,7 @@ defmodule OliWeb.Components.Delivery.Students do
         <div>
           <li class="list-none mt-4 max-h-80 overflow-y-scroll">
             <%= for email <- @add_enrollments_grouped_by_status[:non_existing_users] do %>
-              <ul class="odd:bg-gray-200 dark:odd:bg-neutral-600 even:bg-gray-100 dark:even:bg-neutral-500 p-2 first:rounded-t last:rounded-b">
+              <ul class="odd:bg-Table-table-row-1 even:bg-Table-table-row-2 p-2 first:rounded-t last:rounded-b">
                 <div class="flex items-center justify-between">
                   <p>{email}</p>
                   <button
@@ -869,7 +872,7 @@ defmodule OliWeb.Components.Delivery.Students do
         <div>
           <li class="list-none mt-4 max-h-80 overflow-y-scroll">
             <%= for email <- @add_enrollments_grouped_by_status[:pending_confirmation] do %>
-              <ul class="odd:bg-gray-200 dark:odd:bg-neutral-600 even:bg-gray-100 dark:even:bg-neutral-500 p-2 first:rounded-t last:rounded-b">
+              <ul class="odd:bg-Table-table-row-1 even:bg-Table-table-row-2 p-2 first:rounded-t last:rounded-b">
                 <div class="flex items-center justify-between">
                   <p>{email}</p>
                   <button
@@ -900,7 +903,7 @@ defmodule OliWeb.Components.Delivery.Students do
         <div>
           <li class="list-none mt-4 max-h-80 overflow-y-scroll">
             <%= for email <- @add_enrollments_grouped_by_status[:rejected] do %>
-              <ul class="odd:bg-gray-200 dark:odd:bg-neutral-600 even:bg-gray-100 dark:even:bg-neutral-500 p-2 first:rounded-t last:rounded-b">
+              <ul class="odd:bg-Table-table-row-1 even:bg-Table-table-row-2 p-2 first:rounded-t last:rounded-b">
                 <div class="flex items-center justify-between">
                   <p>{email}</p>
                   <button
@@ -931,7 +934,7 @@ defmodule OliWeb.Components.Delivery.Students do
         <div>
           <li class="list-none mt-4 max-h-80 overflow-y-scroll">
             <%= for email <- @add_enrollments_grouped_by_status[:suspended] do %>
-              <ul class="odd:bg-gray-200 dark:odd:bg-neutral-600 even:bg-gray-100 dark:even:bg-neutral-500 p-2 first:rounded-t last:rounded-b">
+              <ul class="odd:bg-Table-table-row-1 even:bg-Table-table-row-2 p-2 first:rounded-t last:rounded-b">
                 <div class="flex items-center justify-between">
                   <p>{email}</p>
                   <button
@@ -959,7 +962,7 @@ defmodule OliWeb.Components.Delivery.Students do
         <div>
           <li class="list-none mt-4 max-h-80 overflow-y-scroll">
             <%= for email <- @add_enrollments_grouped_by_status[:enrolled] do %>
-              <ul class="odd:bg-gray-200 dark:odd:bg-neutral-600 even:bg-gray-100 dark:even:bg-neutral-500 p-2 first:rounded-t last:rounded-b">
+              <ul class="odd:bg-Table-table-row-1 even:bg-Table-table-row-2 p-2 first:rounded-t last:rounded-b">
                 <div class="flex items-center justify-between">
                   <p>{email}</p>
                   <button
@@ -1053,7 +1056,7 @@ defmodule OliWeb.Components.Delivery.Students do
     ~H"""
     <div
       :if={show_senders(@current_author, @current_user)}
-      class="mt-5 p-5 border-solid border-2 border-blue-400 rounded"
+      class="mt-5 p-5 border-solid border-2 border-Border-border-bold rounded"
     >
       <p>You're signed with two accounts.</p>
       <p>Please select the one to use as an inviter:</p>

@@ -11,8 +11,9 @@ defmodule OliWeb.Components.Delivery.Students.EmailButton do
         class={[
           "flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md",
           if(length(@selected_students) > 0,
-            do: "bg-blue-600 text-white hover:bg-blue-700",
-            else: "bg-gray-300 text-gray-500 cursor-not-allowed"
+            do:
+              "bg-Fill-Buttons-fill-primary text-Text-text-white hover:bg-Fill-Buttons-fill-primary-hover",
+            else: "bg-Fill-Buttons-fill-muted text-Text-text-low-alpha cursor-not-allowed"
           )
         ]}
         disabled={length(@selected_students) == 0}
@@ -26,19 +27,19 @@ defmodule OliWeb.Components.Delivery.Students.EmailButton do
 
       <div
         id={"email-dropdown-#{@id}"}
-        class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50 border border-gray-200"
+        class="hidden absolute right-0 mt-2 w-48 bg-Surface-surface-primary rounded-md shadow-lg z-50 border border-Border-border-subtle"
         phx-click-away={JS.hide(to: "#email-dropdown-#{@id}")}
       >
         <div class="py-1">
           <button
-            class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+            class="w-full text-left px-4 py-2 text-sm text-Text-text-high hover:bg-Surface-surface-secondary-hover"
             phx-click={JS.push("copy_email_addresses") |> JS.hide(to: "#email-dropdown-#{@id}")}
             phx-target={@myself}
           >
             Copy email addresses
           </button>
           <button
-            class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+            class="w-full text-left px-4 py-2 text-sm text-Text-text-high hover:bg-Surface-surface-secondary-hover"
             phx-click={
               JS.push("show_email_modal")
               |> JS.hide(to: "#email-dropdown-#{@id}")
