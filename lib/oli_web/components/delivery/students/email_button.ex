@@ -21,7 +21,7 @@ defmodule OliWeb.Components.Delivery.Students.EmailButton do
         }
         phx-target={@myself}
       >
-        <Icons.email class="w-4 h-4" /> Email <Icons.chevron_down class="w-4 h-4" />
+        <Icons.email class="w-4 h-4 stroke-current" /> Email <Icons.chevron_down class="w-4 h-4" />
       </button>
 
       <div
