@@ -28,7 +28,7 @@ services:
       HOST: ${HOST}
       S3_MEDIA_BUCKET_NAME: "torus-media"
       S3_XAPI_BUCKET_NAME: "torus-xapi"
-      MEDIA_URL: http://${HOST}/s3/torus-media
+      MEDIA_URL: https://${HOST}/s3/torus-media
       # MinIO S3 configuration
       AWS_S3_ACCESS_KEY_ID: "minio-user"
       AWS_S3_SECRET_ACCESS_KEY: "minio-password"
