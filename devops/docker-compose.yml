@@ -26,9 +26,9 @@ services:
       SECRET_KEY_BASE: "ba1sX03RVQyAk3MPRfUeG7LQxUPRe3IB3iN3VnTHYFxUgsz2vAUDof/kGCiyaigs"
       LIVE_VIEW_SALT: "vf6j/P8XSYOVNs3aKUQ5SQCfunWheQPQ+EDzfBJM0FBTLcyTHZlmQGXbBBbSJwkV"
       HOST: ${HOST}
-      S3_MEDIA_BUCKET_NAME: "oli-torus-media"
-      S3_XAPI_BUCKET_NAME: "oli-torus-xapi"
-      MEDIA_URL: http://${HOST}/s3/oli-torus-media
+      S3_MEDIA_BUCKET_NAME: "torus-media"
+      S3_XAPI_BUCKET_NAME: "torus-xapi"
+      MEDIA_URL: http://${HOST}/s3/torus-media
       # MinIO S3 configuration
       AWS_S3_ACCESS_KEY_ID: "minio-user"
       AWS_S3_SECRET_ACCESS_KEY: "minio-password"
