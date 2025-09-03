@@ -44,23 +44,12 @@ npm run show-report
 
 [Playwright Test for VSCode](https://marketplace.visualstudio.com/items?itemName=ms-playwright.playwright)
 
-Withd this plugin we can:
+With this plugin we can:
 
 - pick a locator
 - record a new test
 - select the browser to execute the tests
 - select the settings to apply in to the tests
-
-## Project structure
-
-```code
---src
-  |--> core
-  |--> systems
---test
-  |--> resources
-  |--> torus
-```
 
 ## Required environment variables
 
@@ -79,39 +68,3 @@ EMAIL_ADMIN=your_admin_email@example.com
 PASS_ADMIN=your_admin_password
 
 ```
-
-## Pre-conditions for `user-accounts` suite
-
-To successfully run the `user-accounts` test suite, make sure the following conditions are met:
-
-### ✅ General requirements for `user-accounts`
-
-- All required environment variables listed in the `.env` file must be set (see [Required environment variables](#required-environment-variables)).
-- Playwright must be installed and configured.
-- The `loginData` used in this suite must be correctly set up with valid credentials for each role.
-
-## Pre-conditions for `course-authoring` suite
-
-To successfully run the `course-authoring` test suite, make sure the following conditions are met:
-
-### ✅ General requirements for `course-authoring`
-
-- All required environment variables listed in the `.env` file must be set (see [Required environment variables](#required-environment-variables)).
-- The test data used in this suite assumes that specific projects already exist on the platform with fixed IDs
-
-### 🧪 Test data setup
-
-Before running this suite, verify that:
-
-- The **author** user has access to projects with the following IDs:
-  - `tqa10automation`
-  - `tqa11automation`
-  - `tqa12automation` must have `img-mock-05-16-2025.jpg`
-  - `tqa13automation` must have `img-mock-05-16-2025.jpg` `audio-test-01.mp3` `video-test-01.mp4`
-  - `tqa14automation`
-  - `tqa15automation`
-- The above projects should exist on the platform. Some tests depend on navigating directly to those project URLs.
-- The **media files** used in tests must be uploaded and available in the media library. These include:
-  - `img-mock-05-16-2025.jpg`
-  - `audio-test-01.mp3`
-  - `video-test-01.mp4`
