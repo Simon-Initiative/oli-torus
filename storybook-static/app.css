@@ -1298,6 +1298,10 @@ select {
   background-color: #0062F2;
 }
 
+.text-Fill-Buttons-fill-primary {
+  color: #0080FF;
+}
+
 .dark .text-Fill-Buttons-fill-primary {
   color: #0062F2;
 }
@@ -1316,6 +1320,10 @@ select {
 
 .dark .fill-Fill-Buttons-fill-primary {
   fill: #0062F2;
+}
+
+.stroke-Fill-Buttons-fill-primary {
+  stroke: #0080FF;
 }
 
 .dark .stroke-Fill-Buttons-fill-primary {
@@ -2078,6 +2086,10 @@ select {
   border-color: #3B3740;
 }
 
+.outline-Border-border-default {
+  outline-color: #CED1D9;
+}
+
 .dark .outline-Border-border-default {
   outline-color: #3B3740;
 }
@@ -2496,6 +2508,10 @@ select {
 
 .dark .border-Text-text-button {
   border-color: #4CA6FF;
+}
+
+.outline-Text-text-button {
+  outline-color: #006CD9;
 }
 
 .dark .outline-Text-text-button {
@@ -8554,6 +8570,10 @@ table.table-striped tbody tr:nth-child(even) {
   z-index: 10 !important;
 }
 
+.\!z-50 {
+  z-index: 50 !important;
+}
+
 .z-0 {
   z-index: 0;
 }
@@ -8755,11 +8775,6 @@ table.table-striped tbody tr:nth-child(even) {
 .mx-8 {
   margin-left: 2rem;
   margin-right: 2rem;
-}
-
-.mx-9 {
-  margin-left: 2.25rem;
-  margin-right: 2.25rem;
 }
 
 .mx-auto {
@@ -11841,11 +11856,6 @@ table.table-striped tbody tr:nth-child(even) {
   border-color: rgb(247 174 50 / var(--tw-border-opacity));
 }
 
-.border-zinc-400 {
-  --tw-border-opacity: 1;
-  border-color: rgb(161 161 170 / var(--tw-border-opacity));
-}
-
 .border-zinc-700 {
   --tw-border-opacity: 1;
   border-color: rgb(63 63 70 / var(--tw-border-opacity));
@@ -14410,11 +14420,6 @@ table.table-striped tbody tr:nth-child(even) {
   color: rgb(115 115 115 / var(--tw-text-opacity));
 }
 
-.text-neutral-600 {
-  --tw-text-opacity: 1;
-  color: rgb(82 82 82 / var(--tw-text-opacity));
-}
-
 .text-neutral-700 {
   --tw-text-opacity: 1;
   color: rgb(64 64 64 / var(--tw-text-opacity));
@@ -14582,6 +14587,11 @@ table.table-striped tbody tr:nth-child(even) {
 .text-zinc-700 {
   --tw-text-opacity: 1;
   color: rgb(63 63 70 / var(--tw-text-opacity));
+}
+
+.text-zinc-800 {
+  --tw-text-opacity: 1;
+  color: rgb(39 39 42 / var(--tw-text-opacity));
 }
 
 .text-zinc-900 {
