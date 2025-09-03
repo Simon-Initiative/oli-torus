@@ -191,8 +191,8 @@ config :appsignal, :config, active: false
 # Configure AWS
 config :ex_aws,
   region: System.get_env("AWS_REGION", "us-east-1"),
-  access_key_id: System.get_env("AWS_ACCESS_KEY_ID", "your_aws_access_key"),
-  secret_access_key: System.get_env("AWS_SECRET_ACCESS_KEY", "your_aws_secret_key")
+  access_key_id: [{:system, "AWS_ACCESS_KEY_ID"}],
+  secret_access_key: [{:system, "AWS_SECRET_ACCESS_KEY"}],
 
 # Configure S3 specifically
 config :ex_aws, :s3,
