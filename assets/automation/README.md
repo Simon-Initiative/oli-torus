@@ -68,3 +68,19 @@ EMAIL_ADMIN=your_admin_email@example.com
 PASS_ADMIN=your_admin_password
 
 ```
+### 🧪 Test data setup
+
+Before running this suite, verify that:
+
+- The **author** user has access to projects with the following IDs:
+  - `tqa10automation`
+  - `tqa11automation`
+  - `tqa12automation` must have `img-mock-05-16-2025.jpg`
+  - `tqa13automation` must have `img-mock-05-16-2025.jpg` `audio-test-01.mp3` `video-test-01.mp4`
+  - `tqa14automation`
+  - `tqa15automation`
+- The above projects should exist on the platform. Some tests depend on navigating directly to those project URLs.
+- The **media files** used in tests must be uploaded and available in the media library. These include:
+  - `img-mock-05-16-2025.jpg`
+  - `audio-test-01.mp3`
+  - `video-test-01.mp4`
