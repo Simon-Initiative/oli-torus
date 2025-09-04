@@ -22,8 +22,8 @@ defmodule OliWeb.Products.ProductsTableModel do
         label: "Tags",
         render_fn: &render_tags_column/3,
         sortable: false,
-        td_class: default_td_class,
-        th_class: default_th_class
+        td_class: "w-[180px] min-w-[180px] max-w-[180px] !p-0 " <> default_td_class,
+        th_class: "w-[180px] min-w-[180px] max-w-[180px] " <> default_th_class
       },
       %ColumnSpec{
         name: :inserted_at,
@@ -162,9 +162,15 @@ defmodule OliWeb.Products.ProductsTableModel do
     assigns = Map.merge(assigns, %{product: product})
 
     ~H"""
-    <span class="text-Text-text-high text-base font-medium">
-      {Map.get(@product, :tags, "")}
-    </span>
+    <div>
+      <.live_component
+        module={OliWeb.Live.Components.Tags.TagsComponent}
+        id={"tags-#{@product.id}"}
+        entity_type={:section}
+        entity_id={@product.id}
+        current_tags={Map.get(@product, :tags, [])}
+      />
+    </div>
     """
   end
 

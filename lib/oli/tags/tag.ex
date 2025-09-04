@@ -23,7 +23,7 @@ defmodule Oli.Tags.Tag do
   @doc """
   Creates a changeset for a tag.
   """
-  @spec changeset(t() | Ecto.Changeset.t(), map()) :: Ecto.Changeset.t()
+  @spec changeset(Tag | Ecto.Changeset.t(), map()) :: Ecto.Changeset.t()
   def changeset(tag, attrs \\ %{}) do
     tag
     |> cast(attrs, [:name])

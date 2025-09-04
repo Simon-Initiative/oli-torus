@@ -22,8 +22,8 @@ defmodule OliWeb.Projects.TableModel do
         label: "Tags",
         render_fn: &custom_render/3,
         sortable: false,
-        td_class: default_td_class,
-        th_class: default_th_class
+        td_class: "w-[200px] min-w-[200px] max-w-[200px] !p-0 " <> default_td_class,
+        th_class: "w-[200px] min-w-[200px] max-w-[200px] " <> default_th_class
       },
       %ColumnSpec{
         name: :inserted_at,
@@ -111,9 +111,13 @@ defmodule OliWeb.Projects.TableModel do
 
     ~H"""
     <div>
-      <span class="text-Text-text-low text-sm font-normal leading-tight">
-        {@project[:tags] || ""}
-      </span>
+      <.live_component
+        module={OliWeb.Live.Components.Tags.TagsComponent}
+        id={"tags-#{@project.id}"}
+        entity_type={:project}
+        entity_id={@project.id}
+        current_tags={Map.get(@project, :tags, [])}
+      />
     </div>
     """
   end
