@@ -11007,6 +11007,11 @@ table.table-striped tbody tr:nth-child(even) {
        column-gap: 0.5rem;
 }
 
+.gap-x-20 {
+  -moz-column-gap: 5rem;
+       column-gap: 5rem;
+}
+
 .gap-x-3 {
   -moz-column-gap: 0.75rem;
        column-gap: 0.75rem;
