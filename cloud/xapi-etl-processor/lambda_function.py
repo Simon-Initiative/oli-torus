@@ -18,7 +18,16 @@ import os
 # Add parent directory to path to import common modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from common import parse_s3_event, is_video_event, extract_section_id_from_s3_key, get_config
+from common import (
+    parse_s3_event,
+    is_video_event,
+    is_activity_attempt_event,
+    is_page_attempt_event,
+    is_page_viewed_event,
+    is_part_attempt_event,
+    extract_section_id_from_s3_key,
+    get_config
+)
 from clickhouse_client import ClickHouseClient
 
 logger = logging.getLogger(__name__)

@@ -11,6 +11,44 @@ import uuid
 
 logger = logging.getLogger(__name__)
 
+def safe_int_convert(value, default=0):
+    """Safely convert a value to integer, handling lists and other edge cases"""
+    if value is None:
+        return default
+
+    # If it's a list, take the first element
+    if isinstance(value, list):
+        if len(value) > 0:
+            value = value[0]
+        else:
+            return default
+
+    # Try to convert to int
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        logger.warning(f"Could not convert value {value} to int, using default {default}")
+        return default
+
+def safe_float_convert(value, default=None):
+    """Safely convert a value to float, handling lists and other edge cases"""
+    if value is None:
+        return default
+
+    # If it's a list, take the first element
+    if isinstance(value, list):
+        if len(value) > 0:
+            value = value[0]
+        else:
+            return default
+
+    # Try to convert to float
+    try:
+        return float(value)
+    except (ValueError, TypeError):
+        logger.warning(f"Could not convert value {value} to float, using default {default}")
+        return default
+
 class ClickHouseClient:
     def __init__(self):
         self.config = get_config()['clickhouse']
@@ -391,23 +429,23 @@ class ClickHouseClient:
             'event_id': event_id,
             'user_id': user_id,
             'host_name': host_name,
-            'section_id': int(section_id) if section_id else 0,
-            'project_id': int(project_id) if project_id else 0,
-            'publication_id': int(publication_id) if publication_id else 0,
+            'section_id': safe_int_convert(section_id),
+            'project_id': safe_int_convert(project_id),
+            'publication_id': safe_int_convert(publication_id),
             'attempt_guid': attempt_guid,
-            'attempt_number': int(attempt_number) if attempt_number else 0,
-            'page_id': int(page_id) if page_id is not None else None,
+            'attempt_number': safe_int_convert(attempt_number),
+            'page_id': safe_int_convert(page_id),
             'content_element_id': content_element_id,
             'timestamp': timestamp,
             'video_url': video_url,
             'video_title': video_title,
-            'video_time': float(video_time) if video_time is not None else None,
-            'video_length': float(video_length) if video_length is not None else None,
-            'video_progress': float(video_progress) if video_progress is not None else None,
+            'video_time': safe_float_convert(video_time),
+            'video_length': safe_float_convert(video_length),
+            'video_progress': safe_float_convert(video_progress),
             'video_played_segments': video_played_segments,
-            'video_play_time': float(video_play_time) if video_play_time is not None else None,
-            'video_seek_from': float(video_seek_from) if video_seek_from is not None else None,
-            'video_seek_to': float(video_seek_to) if video_seek_to is not None else None
+            'video_play_time': safe_float_convert(video_play_time),
+            'video_seek_from': safe_float_convert(video_seek_from),
+            'video_seek_to': safe_float_convert(video_seek_to)
         }
 
     def _transform_activity_attempt_event(self, event: Dict[str, Any]) -> Dict[str, Any]:
@@ -450,20 +488,20 @@ class ClickHouseClient:
             'event_id': event_id,
             'user_id': user_id,
             'host_name': host_name,
-            'section_id': int(section_id) if section_id else 0,
-            'project_id': int(project_id) if project_id else 0,
-            'publication_id': int(publication_id) if publication_id else 0,
+            'section_id': safe_int_convert(section_id),
+            'project_id': safe_int_convert(project_id),
+            'publication_id': safe_int_convert(publication_id),
             'activity_attempt_guid': activity_attempt_guid,
-            'activity_attempt_number': int(activity_attempt_number) if activity_attempt_number else 0,
+            'activity_attempt_number': safe_int_convert(activity_attempt_number),
             'page_attempt_guid': page_attempt_guid,
-            'page_attempt_number': int(page_attempt_number) if page_attempt_number else 0,
-            'page_id': int(page_id) if page_id else 0,
-            'activity_id': int(activity_id) if activity_id else 0,
-            'activity_revision_id': int(activity_revision_id) if activity_revision_id else 0,
+            'page_attempt_number': safe_int_convert(page_attempt_number),
+            'page_id': safe_int_convert(page_id),
+            'activity_id': safe_int_convert(activity_id),
+            'activity_revision_id': safe_int_convert(activity_revision_id),
             'timestamp': timestamp,
-            'score': float(score) if score is not None else None,
-            'out_of': float(out_of) if out_of is not None else None,
-            'scaled_score': float(scaled_score) if scaled_score is not None else None,
+            'score': safe_float_convert(score),
+            'out_of': safe_float_convert(out_of),
+            'scaled_score': safe_float_convert(scaled_score),
             'success': success,
             'completion': completion
         }
@@ -504,16 +542,16 @@ class ClickHouseClient:
             'event_id': event_id,
             'user_id': user_id,
             'host_name': host_name,
-            'section_id': int(section_id) if section_id else 0,
-            'project_id': int(project_id) if project_id else 0,
-            'publication_id': int(publication_id) if publication_id else 0,
+            'section_id': safe_int_convert(section_id),
+            'project_id': safe_int_convert(project_id),
+            'publication_id': safe_int_convert(publication_id),
             'page_attempt_guid': page_attempt_guid,
-            'page_attempt_number': int(page_attempt_number) if page_attempt_number else 0,
-            'page_id': int(page_id) if page_id else 0,
+            'page_attempt_number': safe_int_convert(page_attempt_number),
+            'page_id': safe_int_convert(page_id),
             'timestamp': timestamp,
-            'score': float(score) if score is not None else None,
-            'out_of': float(out_of) if out_of is not None else None,
-            'scaled_score': float(scaled_score) if scaled_score is not None else None,
+            'score': safe_float_convert(score),
+            'out_of': safe_float_convert(out_of),
+            'scaled_score': safe_float_convert(scaled_score),
             'success': success,
             'completion': completion
         }
@@ -553,12 +591,12 @@ class ClickHouseClient:
             'event_id': event_id,
             'user_id': user_id,
             'host_name': host_name,
-            'section_id': int(section_id) if section_id else 0,
-            'project_id': int(project_id) if project_id else 0,
-            'publication_id': int(publication_id) if publication_id else 0,
+            'section_id': safe_int_convert(section_id),
+            'project_id': safe_int_convert(project_id),
+            'publication_id': safe_int_convert(publication_id),
             'page_attempt_guid': page_attempt_guid,
-            'page_attempt_number': int(page_attempt_number) if page_attempt_number else 0,
-            'page_id': int(page_id) if page_id else 0,
+            'page_attempt_number': safe_int_convert(page_attempt_number),
+            'page_id': safe_int_convert(page_id),
             'page_sub_type': page_sub_type,
             'timestamp': timestamp,
             'success': success,
@@ -624,28 +662,28 @@ class ClickHouseClient:
             'event_id': event_id,
             'user_id': user_id,
             'host_name': host_name,
-            'section_id': int(section_id) if section_id else 0,
-            'project_id': int(project_id) if project_id else 0,
-            'publication_id': int(publication_id) if publication_id else 0,
+            'section_id': safe_int_convert(section_id),
+            'project_id': safe_int_convert(project_id),
+            'publication_id': safe_int_convert(publication_id),
             'part_attempt_guid': part_attempt_guid,
-            'part_attempt_number': int(part_attempt_number) if part_attempt_number else 0,
+            'part_attempt_number': safe_int_convert(part_attempt_number),
             'activity_attempt_guid': activity_attempt_guid,
-            'activity_attempt_number': int(activity_attempt_number) if activity_attempt_number else 0,
+            'activity_attempt_number': safe_int_convert(activity_attempt_number),
             'page_attempt_guid': page_attempt_guid,
-            'page_attempt_number': int(page_attempt_number) if page_attempt_number else 0,
-            'page_id': int(page_id) if page_id else 0,
-            'activity_id': int(activity_id) if activity_id else 0,
-            'activity_revision_id': int(activity_revision_id) if activity_revision_id else 0,
+            'page_attempt_number': safe_int_convert(page_attempt_number),
+            'page_id': safe_int_convert(page_id),
+            'activity_id': safe_int_convert(activity_id),
+            'activity_revision_id': safe_int_convert(activity_revision_id),
             'part_id': part_id,
             'timestamp': timestamp,
-            'score': float(score) if score is not None else None,
-            'out_of': float(out_of) if out_of is not None else None,
-            'scaled_score': float(scaled_score) if scaled_score is not None else None,
+            'score': safe_float_convert(score),
+            'out_of': safe_float_convert(out_of),
+            'scaled_score': safe_float_convert(scaled_score),
             'success': success,
             'completion': completion,
             'response': response,
             'feedback': feedback,
-            'hints_requested': int(hints_requested) if hints_requested is not None else None,
+            'hints_requested': safe_int_convert(hints_requested) if hints_requested is not None else None,
             'attached_objectives': attached_objectives_str,
             'session_id': session_id
         }

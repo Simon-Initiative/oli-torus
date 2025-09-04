@@ -1,0 +1,14 @@
+# Core dependencies (same as Lambda requirements.txt)
+boto3
+requests
+clickhouse-driver
+
+# Additional notebook-specific dependencies
+pandas>=1.3.0
+jupyter
+ipykernel
+
+# Optional but useful for data analysis
+matplotlib
+seaborn
+plotly

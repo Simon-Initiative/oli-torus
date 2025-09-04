@@ -142,10 +142,15 @@ def format_sql_value(value) -> str:
     if value is None:
         return 'NULL'
     elif isinstance(value, str):
-        # Escape single quotes for SQL
-        escaped = value.replace("'", "''")
+        # Use single quotes with proper escaping for ClickHouse
+        # Escape backslashes first, then single quotes
+        escaped = value.replace('\\', '\\\\').replace("'", "''")
         return f"'{escaped}'"
     elif isinstance(value, (int, float)):
         return str(value)
+    elif isinstance(value, bool):
+        return str(value).lower()
     else:
-        return f"'{str(value)}'"
+        # For other types, convert to string and escape
+        str_value = str(value).replace('\\', '\\\\').replace("'", "''")
+        return f"'{str_value}'"
