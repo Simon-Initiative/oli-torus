@@ -314,4 +314,11 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
     |> Enum.map(fn label -> {label, perc.(label)} end)
     |> Map.new()
   end
+
+  # RENDER EXPANDED DETAILS FOR STRIPED TABLE
+  def render_objective_details(assigns, _row) do
+    ~H"""
+    Information will go here
+    """
+  end
 end
