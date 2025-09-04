@@ -1,0 +1,118 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "title": {
+    "text": "First Attempt",
+    "fontSize": 16,
+    "anchor": "start",
+    "dy": -5
+  },
+  "params": [{ "name": "isDarkMode", "value": false }],
+  "data": {
+    "values": [
+      {
+        "label": "A",
+        "count": 1,
+        "correct": true
+      },
+      {
+        "label": "B",
+        "count": 0,
+        "correct": false
+      }
+    ]
+  },
+  "height": {
+    "step": 32
+  },
+  "width": 240,
+  "layer": [
+    {
+      "mark": {
+        "type": "bar",
+        "cornerRadiusEnd": 3,
+        "height": 12
+      },
+      "encoding": {
+        "y": {
+          "field": "label",
+          "type": "nominal",
+          "sort": null,
+          "axis": {
+            "title": "",
+            "labelPadding": 8
+          }
+        },
+        "x": {
+          "field": "count",
+          "type": "quantitative",
+          "axis": {
+            "title": "Students",
+            "format": "d",
+            "values": [0, 1]
+          },
+          "scale": { "domain": [0, 1], "nice": false }
+        },
+        "color": {
+          "condition": {
+            "test": "datum.correct",
+            "value": "#86efac"
+          },
+          "value": "#fca5a5"
+        },
+        "tooltip": [
+          {
+            "field": "label",
+            "title": "Choice"
+          },
+          {
+            "field": "count",
+            "title": "Students"
+          },
+          {
+            "field": "correct",
+            "title": "Correct"
+          }
+        ]
+      }
+    },
+    {
+      "transform": [
+        {
+          "filter": "datum.correct"
+        }
+      ],
+      "mark": {
+        "type": "text",
+        "text": "✓",
+        "baseline": "middle",
+        "align": "left",
+        "dx": 6,
+        "aria": false
+      },
+      "encoding": {
+        "y": {
+          "field": "label",
+          "type": "nominal"
+        },
+        "x": {
+          "field": "count",
+          "type": "quantitative"
+        },
+        "color": {
+          "value": "#16a34a"
+        }
+      }
+    }
+  ],
+  "config": {
+    "axis": {
+      "labelFontSize": 13,
+      "grid": false,
+      "ticks": false,
+      "domain": false
+    },
+    "view": {
+      "stroke": null
+    }
+  }
+}
