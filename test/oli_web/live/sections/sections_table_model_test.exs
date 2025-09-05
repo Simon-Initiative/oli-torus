@@ -308,6 +308,21 @@ defmodule OliWeb.Sections.SectionsTableModelTest do
       refute rendered_str =~ "Edit"
     end
 
+    test "renders institution column as clickable link", %{
+      assigns: assigns,
+      section: section,
+      institution: institution
+    } do
+      column_spec = %ColumnSpec{name: :institution}
+      rendered = SectionsTableModel.custom_render(assigns, section, column_spec)
+      rendered_str = rendered_to_string(rendered)
+
+      assert rendered_str =~ institution.name
+      assert rendered_str =~ "/admin/institutions/#{institution.id}"
+      assert rendered_str =~ "text-Text-text-link"
+      assert rendered_str =~ "<a"
+    end
+
     test "renders status column for active section", %{assigns: assigns, section: section} do
       column_spec = %ColumnSpec{name: :status}
       rendered = SectionsTableModel.custom_render(assigns, section, column_spec)
