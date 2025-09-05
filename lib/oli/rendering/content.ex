@@ -464,6 +464,11 @@ defmodule Oli.Rendering.Content do
     writer.selection(context, fn -> true end, selection)
   end
 
+  # Renders content elements that have a model field containing an array of content elements
+  def render(%Context{} = context, %{"model" => model} = _element, writer) when is_list(model) do
+    render(context, model, writer)
+  end
+
   # Renders an error message if none of the signatures above match. Logging and rendering of errors
   # can be configured using the render_opts in context
   def render(%Context{render_opts: render_opts} = context, element, writer) do

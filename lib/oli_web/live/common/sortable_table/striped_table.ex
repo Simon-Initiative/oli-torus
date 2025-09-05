@@ -37,7 +37,11 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
 
     ~H"""
     <th
-      class={"#{@column_spec.th_class} pl-2.5 border-b border-r p-2 bg-gray-100 font-semibold #{if @column_spec.sortable, do: "cursor-pointer"}"}
+      class={[
+        @column_spec.th_class,
+        "pl-2.5 font-semibold !sticky top-0",
+        if(@column_spec.sortable, do: "cursor-pointer", else: "")
+      ]}
       phx-click={if @column_spec.sortable, do: @sort, else: nil}
       phx-value-sort_by={@column_spec.name}
       data-sortable={if @column_spec.sortable == false, do: "false", else: "true"}
@@ -137,8 +141,8 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
 
   def render(assigns) do
     ~H"""
-    <table class={"min-w-full border " <> @additional_table_class}>
-      <thead class="sticky top-0 bg-white dark:bg-[#000000] z-10">
+    <table class={"min-w-full border table-fixed " <> @additional_table_class}>
+      <thead class="sticky top-0 z-10">
         <tr>
           <%= for column_spec <- @model.column_specs do %>
             {render_th(
