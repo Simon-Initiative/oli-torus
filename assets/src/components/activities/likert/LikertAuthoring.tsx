@@ -18,6 +18,7 @@ import { ChoicesDelivery } from '../common/choices/delivery/ChoicesDelivery';
 import { Explanation } from '../common/explanation/ExplanationAuthoring';
 import { ActivityScoring } from '../common/responses/ActivityScoring';
 import { SimpleFeedback } from '../common/responses/SimpleFeedback';
+import { StudentResponses as _StudentResponses } from '../common/responses/StudentResponses';
 import { TargetedFeedback } from '../common/responses/TargetedFeedback';
 import { StemDelivery } from '../common/stem/delivery/StemDelivery';
 import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
@@ -26,8 +27,61 @@ import * as ActivityTypes from '../types';
 import { LikertActions } from './actions';
 import { LikertModelSchema } from './schema';
 
+const ControlledTabs: React.FC<{ isInstructorPreview: boolean; children: React.ReactNode }> = ({
+  isInstructorPreview,
+  children,
+}) => {
+  const [activeTab, setActiveTab] = React.useState<number>(0);
+
+  // Force the first visible tab to be active when the mode changes
+  React.useEffect(() => {
+    setActiveTab(0);
+  }, [isInstructorPreview]);
+
+  const validChildren = React.Children.toArray(children).filter(
+    (child): child is React.ReactElement => React.isValidElement(child),
+  );
+
+  return (
+    <>
+      <ul className="nav nav-tabs my-2 flex justify-between" role="tablist">
+        {validChildren.map((child, index) => (
+          <li key={'tab-' + index} className="nav-item" role="presentation">
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setActiveTab(index);
+              }}
+              className={'text-primary nav-link px-3' + (index === activeTab ? ' active' : '')}
+              data-bs-toggle="tab"
+              role="tab"
+              aria-controls={'tab-' + index}
+              aria-selected={index === activeTab}
+            >
+              {child.props.label}
+            </button>
+          </li>
+        ))}
+      </ul>
+      <div className="tab-content">
+        {validChildren.map((child, index) => (
+          <div
+            key={'tab-content-' + index}
+            className={'tab-pane' + (index === activeTab ? ' show active' : '')}
+            role="tabpanel"
+            aria-labelledby={'tab-' + index}
+          >
+            {child.props.children}
+          </div>
+        ))}
+      </div>
+    </>
+  );
+};
+
 const Likert = (props: AuthoringElementProps<LikertModelSchema>) => {
-  const { dispatch, model, editMode, projectSlug } =
+  const { dispatch, model, editMode, mode, projectSlug } =
     useAuthoringElementContext<LikertModelSchema>();
 
   // for now, we always select the first part for editing correct/feedback/hints.
@@ -36,6 +90,7 @@ const Likert = (props: AuthoringElementProps<LikertModelSchema>) => {
   const writerContext = defaultWriterContext({
     projectSlug: projectSlug,
   });
+  const isInstructorPreview = mode === 'instructor_preview';
 
   // const transformedData = {
   //   values: model.choices
@@ -118,7 +173,7 @@ const Likert = (props: AuthoringElementProps<LikertModelSchema>) => {
 
   return (
     <React.Fragment>
-      <TabbedNavigation.Tabs>
+      <ControlledTabs isInstructorPreview={isInstructorPreview}>
         <TabbedNavigation.Tab label="Question">
           <Stem />
           <div>
@@ -212,6 +267,7 @@ const Likert = (props: AuthoringElementProps<LikertModelSchema>) => {
             onSelect={(id) => dispatch(MCActions.toggleChoiceCorrectness(id, selectedPartId))}
             isEvaluated={false}
             context={writerContext}
+            disabled={isInstructorPreview}
           />
           <SimpleFeedback partId={selectedPartId} />
           <ActivityScoring partId={model.authoring.parts[0].id} />
@@ -225,6 +281,7 @@ const Likert = (props: AuthoringElementProps<LikertModelSchema>) => {
             }
             unselectedIcon={<Radio.Unchecked />}
             selectedIcon={<Radio.Checked />}
+            disabled={isInstructorPreview}
           />
         </TabbedNavigation.Tab>
 
@@ -237,11 +294,12 @@ const Likert = (props: AuthoringElementProps<LikertModelSchema>) => {
         <TabbedNavigation.Tab label="Dynamic Variables">
           <VariableEditorOrNot
             editMode={editMode}
+            mode={mode}
             model={model}
             onEdit={(t) => dispatch(VariableActions.onUpdateTransformations(t))}
           />
         </TabbedNavigation.Tab>
-      </TabbedNavigation.Tabs>
+      </ControlledTabs>
     </React.Fragment>
   );
 };

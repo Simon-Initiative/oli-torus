@@ -111,7 +111,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
              )
 
       # Students table gets rendered
-      assert has_element?(view, "h4", "Students")
+      assert element(view, "h4") |> render() =~ "Student Insights"
 
       assert render(view) =~
                OliWeb.Common.Utils.name(user.name, user.given_name, user.family_name)
@@ -141,8 +141,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
         |> Floki.find(~s{.instructor_dashboard_table tbody tr td:nth-child(3)})
         |> Enum.map(fn td -> Floki.text(td) end)
 
-      assert student_1_email == student_1.email
-      assert student_2_email == student_2.email
+      assert String.trim(student_1_email) == student_1.email
+      assert String.trim(student_2_email) == student_2.email
     end
 
     test "students last interaction gets rendered (for a student with interaction and yet with no interaction)",
@@ -421,7 +421,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       assert student_for_tr_2 =~ "Di Maria, Angelito"
 
       assert element(view, "#footer_paging > div:first-child") |> render() =~
-               "3 - 4 of 4 results"
+               "3 - 4 of 4 total"
 
       assert element(view, "li.page-item.active a", "2")
       refute render(view) =~ "Suarez, Luis"
@@ -1463,14 +1463,14 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
          %{conn: conn, section_without_certificate: section} do
       {:ok, view, _html} = live(conn, live_view_students_route(section.slug))
 
-      refute has_element?(view, "th", "CERTIFICATE STATUS")
+      refute has_element?(view, "th", "Certificate Status")
     end
 
     test "Certificate status column is shown if the section has a certificate enabled AND there is a certificate",
          %{conn: conn, section: section} do
       {:ok, view, _html} = live(conn, live_view_students_route(section.slug))
 
-      assert has_element?(view, "th", "CERTIFICATE STATUS")
+      assert has_element?(view, "th", "Certificate Status")
     end
 
     test "instructor can approve/deny a granted certificate with a pending status", %{

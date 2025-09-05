@@ -37,6 +37,7 @@ export const AuthoringCheckbox: React.FC<Props> = (props: Props) => {
 };
 
 export const AuthoringCheckboxConnected: React.FC<Omit<Props, 'editMode'>> = (props) => {
-  const { editMode } = useAuthoringElementContext();
-  return <AuthoringCheckbox {...props} editMode={editMode} />;
+  const { editMode, mode } = useAuthoringElementContext();
+  const isInstructorPreview = mode === 'instructor_preview';
+  return <AuthoringCheckbox {...props} editMode={editMode && !isInstructorPreview} />;
 };

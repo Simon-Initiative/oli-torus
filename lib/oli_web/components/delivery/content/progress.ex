@@ -15,7 +15,7 @@ defmodule OliWeb.Delivery.Content.Progress do
     assigns = assign(assigns, :progress_selector, assigns.progress_selector)
 
     ~H"""
-    <div class="relative z-10">
+    <div class="relative !z-50">
       <div
         phx-click={
           JS.toggle(to: "#progress_form", display: "flex")

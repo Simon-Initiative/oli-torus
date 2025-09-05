@@ -11,6 +11,7 @@ export class MenuDropdownCO {
   private readonly researchConsentLink: Locator;
   private readonly emailLink: Locator;
   private readonly signOutLink: Locator;
+  private readonly userMenuButton: Locator;
 
   constructor(page: Page) {
     this.menuButton = page.locator('#workspace-user-menu');
@@ -23,6 +24,8 @@ export class MenuDropdownCO {
     this.researchConsentLink = this.workspaceMenu.getByRole('link', { name: 'Research Consent' });
     this.emailLink = this.workspaceMenu.locator('a>div[role="linked authoring account email"]');
     this.signOutLink = this.workspaceMenu.getByRole('link', { name: 'Sign out' });
+    this.userMenuButton = page.locator('#user-account-menu');
+    this.signOutLink = page.locator('a[href="/users/log_out"]');
   }
 
   async open() {
@@ -64,5 +67,9 @@ export class MenuDropdownCO {
   async selectTheme(type: string) {
     const themeLocator = this.workspaceMenu.locator(`label[for="${type}"]`);
     await themeLocator.click();
+  }
+
+  async openUserMenu() {
+    await this.userMenuButton.click();
   }
 }

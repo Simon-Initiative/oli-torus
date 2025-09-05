@@ -30,6 +30,7 @@ interface Props {
   addTargetedResponse: () => void;
   selectedIcon: React.ReactNode;
   unselectedIcon: React.ReactNode;
+  disabled?: boolean;
   children?: (xs: ReturnType<typeof useTargetedFeedback>) => React.ReactElement;
 }
 
@@ -70,12 +71,14 @@ export const getFeedbackForChoices = (
 
 export const TargetedFeedback: React.FC<Props> = (props) => {
   const hook = useTargetedFeedback();
-  const { model, authoringContext, editMode, projectSlug } = useAuthoringElementContext<
+  const { model, authoringContext, editMode, mode, projectSlug } = useAuthoringElementContext<
     HasParts & HasChoices & { authoring: { targeted: ChoiceIdsToResponseId[] } }
   >();
   const writerContext = defaultWriterContext({
     projectSlug: projectSlug,
   });
+  const isInstructorPreview = mode === 'instructor_preview';
+  const responseEditMode = editMode && !isInstructorPreview;
 
   if (typeof props.children === 'function') {
     return props.children(hook);
@@ -103,6 +106,7 @@ export const TargetedFeedback: React.FC<Props> = (props) => {
           removeResponse={hook.removeFeedback}
           updateFeedbackTextDirection={hook.updateFeedbackTextDirection}
           customScoring={customScoring}
+          editMode={responseEditMode}
         >
           <ChoicesDelivery
             unselectedIcon={props.unselectedIcon}
@@ -112,11 +116,12 @@ export const TargetedFeedback: React.FC<Props> = (props) => {
             onSelect={(id) => props.toggleChoice(id, mapping)}
             isEvaluated={false}
             context={writerContext}
+            disabled={props.disabled}
           />
 
           {authoringContext.contentBreaksExist ? (
             <ShowPage
-              editMode={editMode}
+              editMode={responseEditMode}
               index={mapping.response.showPage}
               onChange={(v) => hook.updateShowPage(mapping.response.id, v)}
             />

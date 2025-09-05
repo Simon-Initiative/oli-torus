@@ -15,9 +15,10 @@ export class TestData {
       name: FileManager.getValueEnv('NAME_STUDENT'),
       pass: FileManager.getValueEnv('PASS_STUDENT'),
     },
-    intructor: {
+
+    instructor: {
       type: USER_TYPES.INSTRUCTOR,
-      pageTitle: 'Sign in',
+      pageTitle: 'OLI Torus',
       role: 'Instructor',
       welcomeText: 'Welcome to OLI Torus',
       email: FileManager.getValueEnv('EMAIL_INSTRUCTOR'),
@@ -34,6 +35,7 @@ export class TestData {
       header: 'Course Author',
     },
     admin: {
+      type: USER_TYPES.ADMIN,
       email: FileManager.getValueEnv('EMAIL_ADMIN'),
       pass: FileManager.getValueEnv('PASS_ADMIN'),
     },
