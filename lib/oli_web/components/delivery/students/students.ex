@@ -608,7 +608,7 @@ defmodule OliWeb.Components.Delivery.Students do
             >
               <Icons.trash /> Clear All Filters
             </button>
-            
+
             <.live_component
               id="email_button_component"
               module={OliWeb.Components.Delivery.Students.EmailButton}
