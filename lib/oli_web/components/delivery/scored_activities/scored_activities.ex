@@ -8,6 +8,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
   alias Oli.Delivery.Sections.Section
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Repo
+  alias Oli.Resources
   alias Oli.Resources.ResourceType
   alias OliWeb.Common.InstructorDashboardPagedTable
   alias OliWeb.Common.PagingParams
@@ -567,11 +568,18 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
         Map.put(acc, resource_id, {total_attempts, avg_score})
       end)
 
+    lti_page_ids = Resources.section_resource_ids_with_lti_activities(section.id)
+
     activities =
       DeliveryResolver.from_resource_id(section.slug, activity_ids_from_responses)
       |> Enum.map(fn rev ->
         {total_attempts, avg_score} = Map.get(details_by_activity, rev.resource_id, {0, 0.0})
-        Map.merge(rev, %{total_attempts: total_attempts, avg_score: avg_score})
+
+        Map.merge(rev, %{
+          total_attempts: total_attempts,
+          avg_score: avg_score,
+          has_lti_activity: rev.resource_id in lti_page_ids
+        })
       end)
 
     add_objective_mapper(activities, section.slug)

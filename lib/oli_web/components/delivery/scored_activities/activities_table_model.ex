@@ -2,6 +2,7 @@ defmodule OliWeb.Delivery.ScoredActivities.ActivitiesTableModel do
   use Phoenix.Component
 
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
+  alias OliWeb.Icons
 
   def new(activities) do
     column_specs = [
@@ -44,8 +45,33 @@ defmodule OliWeb.Delivery.ScoredActivities.ActivitiesTableModel do
       |> Map.get("content", [%{"type" => "p", "children" => [%{"text" => "Unknown stem"}]}])
       |> best_effort_stem_extract()
 
-    assigns = Map.merge(assigns, %{header: activity.title, title: title})
+    assigns =
+      Map.merge(assigns, %{
+        header: activity.title,
+        title: title,
+        resource_id: activity.resource_id,
+        has_lti_activity: activity.has_lti_activity
+      })
 
+    ~H"""
+    <%= if @has_lti_activity do %>
+      <div
+        id={"lti_title_#{@resource_id}"}
+        phx-hook="GlobalTooltip"
+        data-tooltip="<div>LTI 1.3 External Tool</div>"
+        data-tooltip-align="left"
+        class="flex items-center gap-2"
+      >
+        <Icons.plug />
+        <.question_text header={@header} title={@title} />
+      </div>
+    <% else %>
+      <.question_text header={@header} title={@title} />
+    <% end %>
+    """
+  end
+
+  defp question_text(assigns) do
     ~H"""
     <div class="flex flex-col">
       <span class="font-bold">{@header}:</span>

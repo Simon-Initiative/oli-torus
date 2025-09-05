@@ -1,6 +1,7 @@
 defmodule OliWeb.Components.Delivery.PracticeActivities do
   use OliWeb, :live_component
 
+  alias Oli.Resources
   alias OliWeb.Common.InstructorDashboardPagedTable
 
   alias OliWeb.Common.{Params, SearchInput}
@@ -32,7 +33,14 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
   def update(assigns, socket) do
     params = decode_params(assigns.params)
 
-    {total_count, rows} = apply_filters(assigns.assessments, params)
+    lti_page_ids = Resources.section_resource_ids_with_lti_activities(assigns.section.id)
+
+    practices_with_lti_activity =
+      Enum.map(assigns.assessments, fn practice ->
+        Map.put(practice, :has_lti_activity, practice.resource_id in lti_page_ids)
+      end)
+
+    {total_count, rows} = apply_filters(practices_with_lti_activity, params)
 
     {:ok, table_model} =
       PracticeAssessmentsTableModel.new(rows, assigns.ctx, socket.assigns.myself)

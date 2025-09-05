@@ -5,6 +5,7 @@ defmodule OliWeb.Grades.GradebookTableModel do
   alias OliWeb.Common.Utils
   alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias OliWeb.Router.Helpers, as: Routes
+  alias OliWeb.Delivery.InstructorDashboard.HTMLComponents
 
   def new(enrollments, graded_pages, resource_accesses, section, show_all_links) do
     by_user =
@@ -38,7 +39,11 @@ defmodule OliWeb.Grades.GradebookTableModel do
         Enum.map(graded_pages, fn sr ->
           %ColumnSpec{
             name: sr.resource_id,
-            label: String.upcase(sr.title),
+            label:
+              if(sr.has_lti_activity,
+                do: HTMLComponents.lti_label_component(%{title: sr.title, id: sr.resource_id}),
+                else: String.upcase(sr.title)
+              ),
             render_fn: &__MODULE__.render_score/3,
             th_class: "whitespace-nowrap",
             sortable: false

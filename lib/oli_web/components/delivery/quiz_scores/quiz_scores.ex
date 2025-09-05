@@ -5,6 +5,7 @@ defmodule OliWeb.Components.Delivery.QuizScores do
   alias Oli.Delivery.Sections.EnrollmentBrowseOptions
   alias Oli.Repo.Paging
   alias Oli.Repo.Sorting
+  alias Oli.Resources
   alias OliWeb.Common.InstructorDashboardPagedTable
   alias OliWeb.Common.Params
   alias OliWeb.Common.SearchInput
@@ -79,7 +80,7 @@ defmodule OliWeb.Components.Delivery.QuizScores do
                 </label>
               </div>
             <% end %>
-            <form for="search" phx-target={@myself} phx-change="search_student" class="w-44">
+            <form for="search" phx-target={@myself} phx-change="search_student" class="w-auto">
               <SearchInput.render
                 id="student_search_input"
                 name="student_name"
@@ -160,12 +161,19 @@ defmodule OliWeb.Components.Delivery.QuizScores do
 
     graded_pages = Oli.Delivery.Sections.SectionResourceDepot.graded_pages(section.id)
 
+    lti_page_ids = Resources.section_resource_ids_with_lti_activities(section.id)
+
+    graded_pages_with_lti_activity =
+      Enum.map(graded_pages, fn page ->
+        Map.put(page, :has_lti_activity, page.resource_id in lti_page_ids)
+      end)
+
     resource_accesses = fetch_resource_accesses(enrollments, section)
 
     {:ok, table_model} =
       GradebookTableModel.new(
         enrollments,
-        graded_pages,
+        graded_pages_with_lti_activity,
         resource_accesses,
         section,
         params.show_all_links

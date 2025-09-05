@@ -2,6 +2,7 @@ defmodule OliWeb.Delivery.PracticeActivities.PracticeAssessmentsTableModel do
   use Phoenix.Component
 
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
+  alias OliWeb.Icons
 
   def new(assessments, ctx, target) do
     column_specs = [
@@ -15,7 +16,7 @@ defmodule OliWeb.Delivery.PracticeActivities.PracticeAssessmentsTableModel do
         name: :title,
         label: "ASSESSMENT",
         render_fn: &__MODULE__.render_assessment_column/3,
-        th_class: "pl-10"
+        th_class: "pl-2"
       },
       %ColumnSpec{
         name: :avg_score,
@@ -62,11 +63,32 @@ defmodule OliWeb.Delivery.PracticeActivities.PracticeAssessmentsTableModel do
     assigns =
       Map.merge(assigns, %{
         title: assessment.title,
-        container_label: assessment.container_label
+        container_label: assessment.container_label,
+        resource_id: assessment.resource_id,
+        has_lti_activity: assessment.has_lti_activity
       })
 
     ~H"""
-    <div class="pl-9 pr-4 flex flex-col">
+    <%= if @has_lti_activity do %>
+      <div
+        id={"lti_title_#{@resource_id}"}
+        phx-hook="GlobalTooltip"
+        data-tooltip="<div>LTI 1.3 External Tool</div>"
+        data-tooltip-align="left"
+        class="flex items-center gap-2"
+      >
+        <Icons.plug />
+        <.question_text container_label={@container_label} title={@title} />
+      </div>
+    <% else %>
+      <.question_text container_label={@container_label} title={@title} />
+    <% end %>
+    """
+  end
+
+  defp question_text(assigns) do
+    ~H"""
+    <div class="pl-0 pr-4 flex flex-col">
       <%= if @container_label do %>
         <span class="text-gray-600 font-bold text-sm">{@container_label}</span>
       <% end %>
