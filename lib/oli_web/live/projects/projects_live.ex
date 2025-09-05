@@ -210,10 +210,11 @@ defmodule OliWeb.Projects.ProjectsLive do
           </button>
         </div>
         <button
-          class="mr-4 inline-flex items-center gap-1 text-sm font-medium text-[#0080FF] hover:underline"
+          class="group mr-4 inline-flex items-center gap-1 text-sm text-Text-text-button font-bold leading-none hover:text-Text-text-button-hover"
           phx-click="export_csv"
         >
-          Download CSV <Icons.download stroke_class="stroke-[#0080FF]" />
+          Download CSV
+          <Icons.download stroke_class="group-hover:stroke-Text-text-button-hover stroke-Text-text-button" />
         </button>
       </div>
 
