@@ -2526,6 +2526,10 @@ select {
   fill: #4CA6FF;
 }
 
+.stroke-Text-text-button {
+  stroke: #006CD9;
+}
+
 .dark .stroke-Text-text-button {
   stroke: #4CA6FF;
 }
@@ -12803,10 +12807,6 @@ table.table-striped tbody tr:nth-child(even) {
   stroke: #006CD9;
 }
 
-.stroke-\[\#0080FF\] {
-  stroke: #0080FF;
-}
-
 .stroke-\[\#0CAF61\] {
   stroke: #0CAF61;
 }
@@ -19430,6 +19430,14 @@ Not supports in Firefox and IE */
 
 .dark .hover\:bg-Table-table-hover:hover {
   background-color: #0A203A;
+}
+
+.group:hover .group-hover\:stroke-Text-text-button-hover {
+  stroke: #1B67B2;
+}
+
+.dark .group:hover .group-hover\:stroke-Text-text-button-hover {
+  stroke: #99CCFF;
 }
 
 @media (min-width: 768px) {
