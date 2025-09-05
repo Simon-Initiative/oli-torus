@@ -120,22 +120,17 @@ defmodule Oli.Tags do
       {:error, :tag_not_found}
 
   """
-  @spec associate_tag_with_project(Project.t() | integer(), Tag.t() | integer()) ::
-          {:ok, ProjectTag.t()}
+  @spec associate_tag_with_project(Project | integer(), Tag | integer()) ::
+          {:ok, ProjectTag}
           | {:error, :tag_not_found | :project_not_found | Ecto.Changeset.t()}
   def associate_tag_with_project(project, tag) do
     project_id = get_entity_id(project)
     tag_id = get_entity_id(tag)
 
-    with {:ok, _project} <- get_entity(Project, project_id),
-         {:ok, _tag} <- get_entity(Tag, tag_id) do
-      %ProjectTag{project_id: project_id, tag_id: tag_id}
-      |> Repo.insert(on_conflict: :nothing)
-      |> case do
-        {:ok, result} -> {:ok, result}
-        {:error, %Ecto.Changeset{}} -> {:error, :already_exists}
-      end
-    end
+    %ProjectTag{}
+    |> ProjectTag.changeset(%{project_id: project_id, tag_id: tag_id})
+    |> Repo.insert()
+    |> parse_association_errors(:project)
   end
 
   @doc """
@@ -157,15 +152,10 @@ defmodule Oli.Tags do
     section_id = get_entity_id(section)
     tag_id = get_entity_id(tag)
 
-    with {:ok, _section} <- get_entity(Section, section_id),
-         {:ok, _tag} <- get_entity(Tag, tag_id) do
-      %SectionTag{section_id: section_id, tag_id: tag_id}
-      |> Repo.insert(on_conflict: :nothing)
-      |> case do
-        {:ok, result} -> {:ok, result}
-        {:error, %Ecto.Changeset{}} -> {:error, :already_exists}
-      end
-    end
+    %SectionTag{}
+    |> SectionTag.changeset(%{section_id: section_id, tag_id: tag_id})
+    |> Repo.insert()
+    |> parse_association_errors(:section)
   end
 
   @doc """
@@ -426,10 +416,52 @@ defmodule Oli.Tags do
   defp get_entity_id(%{id: id}), do: id
   defp get_entity_id(id) when is_integer(id), do: id
 
-  defp get_entity(schema, id) do
-    case Repo.get(schema, id) do
-      nil -> {:error, :not_found}
-      entity -> {:ok, entity}
+  # Parses database constraint errors for association functions
+  defp parse_association_errors(result, _entity_type) do
+    case result do
+      {:error, %Ecto.Changeset{errors: errors} = changeset} ->
+        case find_constraint_error(errors) do
+          :unique_constraint -> {:error, :already_exists}
+          :project_fk_constraint -> {:error, :project_not_found}
+          :section_fk_constraint -> {:error, :section_not_found}
+          :tag_fk_constraint -> {:error, :tag_not_found}
+          nil -> {:error, changeset}
+        end
+
+      result ->
+        result
     end
+  end
+
+  # Identifies specific constraint violations
+  defp find_constraint_error(errors) do
+    Enum.find_value(errors, fn {field, {_message, opts}} ->
+      case Keyword.get(opts, :constraint_name) do
+        "project_tags_pkey" ->
+          :unique_constraint
+
+        "section_tags_pkey" ->
+          :unique_constraint
+
+        constraint_name when is_binary(constraint_name) ->
+          cond do
+            constraint_name == "project_tags_project_id_fkey" or field == :project_id ->
+              :project_fk_constraint
+
+            constraint_name == "project_tags_tag_id_fkey" or
+              constraint_name == "section_tags_tag_id_fkey" or field == :tag_id ->
+              :tag_fk_constraint
+
+            constraint_name == "section_tags_section_id_fkey" or field == :section_id ->
+              :section_fk_constraint
+
+            true ->
+              nil
+          end
+
+        _ ->
+          nil
+      end
+    end)
   end
 end

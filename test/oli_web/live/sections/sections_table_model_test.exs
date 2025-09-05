@@ -207,9 +207,12 @@ defmodule OliWeb.Sections.SectionsTableModelTest do
     test "renders tags column", %{assigns: assigns, section: section} do
       column_spec = %ColumnSpec{name: :tags}
       rendered = SectionsTableModel.custom_render(assigns, section, column_spec)
-      rendered_str = rendered_to_string(rendered)
-
-      assert rendered_str == ""
+      
+      # The tags column returns a Phoenix.LiveView.Rendered struct with a live_component
+      # We can't serialize it to string outside LiveView context, so verify the structure
+      assert match?(%Phoenix.LiveView.Rendered{}, rendered)
+      assert rendered.static == ["<div>\n  ", "\n</div>"]
+      assert is_function(rendered.dynamic, 1)
     end
 
     test "renders delivery column for open and free section", %{
@@ -516,11 +519,20 @@ defmodule OliWeb.Sections.SectionsTableModelTest do
       assert model.data.ctx == ctx
 
       Enum.each(model.column_specs, fn column_spec ->
-        if column_spec.name != :enrollments_count do
-          assigns = %{ctx: ctx, render_institution_action: false}
-          rendered = SectionsTableModel.custom_render(assigns, section, column_spec)
-          rendered_str = rendered_to_string(rendered)
-          assert is_binary(rendered_str)
+        cond do
+          column_spec.name in [:enrollments_count] ->
+            # Skip enrollments_count as it's handled separately
+            :ok
+          column_spec.name == :tags ->
+            # Tags column returns a LiveComponent that cannot be serialized to string
+            assigns = %{ctx: ctx, render_institution_action: false}
+            rendered = SectionsTableModel.custom_render(assigns, section, column_spec)
+            assert match?(%Phoenix.LiveView.Rendered{}, rendered)
+          true ->
+            assigns = %{ctx: ctx, render_institution_action: false}
+            rendered = SectionsTableModel.custom_render(assigns, section, column_spec)
+            rendered_str = rendered_to_string(rendered)
+            assert is_binary(rendered_str)
         end
       end)
     end
@@ -552,11 +564,20 @@ defmodule OliWeb.Sections.SectionsTableModelTest do
       assert length(model.column_specs) == 11
 
       Enum.each(model.column_specs, fn column_spec ->
-        if column_spec.name != :enrollments_count do
-          assigns = %{ctx: ctx, render_institution_action: false}
-          rendered = SectionsTableModel.custom_render(assigns, minimal_section, column_spec)
-          rendered_str = rendered_to_string(rendered)
-          assert is_binary(rendered_str)
+        cond do
+          column_spec.name in [:enrollments_count] ->
+            # Skip enrollments_count as it's handled separately
+            :ok
+          column_spec.name == :tags ->
+            # Tags column returns a LiveComponent that cannot be serialized to string
+            assigns = %{ctx: ctx, render_institution_action: false}
+            rendered = SectionsTableModel.custom_render(assigns, minimal_section, column_spec)
+            assert match?(%Phoenix.LiveView.Rendered{}, rendered)
+          true ->
+            assigns = %{ctx: ctx, render_institution_action: false}
+            rendered = SectionsTableModel.custom_render(assigns, minimal_section, column_spec)
+            rendered_str = rendered_to_string(rendered)
+            assert is_binary(rendered_str)
         end
       end)
     end
