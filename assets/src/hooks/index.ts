@@ -46,6 +46,7 @@ import { SliderScroll } from './slider_scroll';
 import { SubmitForm } from './submit_form';
 import { SubmitTechSupportForm } from './submit_tech_support_form';
 import { SystemMessage } from './system_message';
+import { TagsComponent } from './tags_component';
 import { TextInputListener } from './text_input_listener';
 import { TextareaListener } from './textarea_listener';
 import { ThemeToggle } from './theme_toggle';
@@ -117,4 +118,5 @@ export const Hooks = {
   SubmitTechSupportForm,
   ConditionalToggle,
   CopyToClipboard,
+  TagsComponent,
 };

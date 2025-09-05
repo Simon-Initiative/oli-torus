@@ -82,6 +82,7 @@ defmodule Oli.Factory do
   alias Oli.Resources.{Resource, ResourceType, Revision}
   alias Oli.Resources.Collaboration.{CollabSpaceConfig, Post, PostContent, UserReactionPost}
   alias Oli.Search.RevisionEmbedding
+  alias Oli.Tags.{Tag, ProjectTag, SectionTag}
 
   def author_factory() do
     now = DateTime.utc_now() |> DateTime.truncate(:second)
@@ -805,6 +806,26 @@ defmodule Oli.Factory do
     %Oli.ScopedFeatureFlags.ScopedFeatureFlagState{
       feature_name: "mcp_authoring",
       section: build(:section)
+    }
+  end
+
+  def tag_factory() do
+    %Tag{
+      name: sequence("tag", &"Tag #{&1}")
+    }
+  end
+
+  def project_tag_factory() do
+    %ProjectTag{
+      project: build(:project),
+      tag: build(:tag)
+    }
+  end
+
+  def section_tag_factory() do
+    %SectionTag{
+      section: build(:section),
+      tag: build(:tag)
     }
   end
 

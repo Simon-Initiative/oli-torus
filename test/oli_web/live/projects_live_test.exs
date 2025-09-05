@@ -222,6 +222,46 @@ defmodule OliWeb.Projects.ProjectsLiveTest do
     end
   end
 
+  describe "projects with tags" do
+    setup [:admin_conn, :set_timezone]
+
+    test "displays project tags in table", %{conn: conn, admin: admin} do
+      project = create_project_with_owner(admin)
+
+      # Create and associate tags with the project
+      {:ok, biology_tag} = Oli.Tags.create_tag(%{name: "Biology"})
+      {:ok, chemistry_tag} = Oli.Tags.create_tag(%{name: "Chemistry"})
+      {:ok, _} = Oli.Tags.associate_tag_with_project(project, biology_tag)
+      {:ok, _} = Oli.Tags.associate_tag_with_project(project, chemistry_tag)
+
+      {:ok, view, _html} = live(conn, Routes.live_path(Endpoint, ProjectsLive))
+
+      # Check that tags are displayed in the project row
+      project_row = view |> element("##{project.id}") |> render()
+      assert project_row =~ "Biology"
+      assert project_row =~ "Chemistry"
+    end
+
+    test "displays empty tags column when project has no tags", %{conn: conn, admin: admin} do
+      project = create_project_with_owner(admin)
+
+      {:ok, view, _html} = live(conn, Routes.live_path(Endpoint, ProjectsLive))
+
+      # Should not show any tag pills for this project
+      project_row = view |> element("##{project.id}") |> render()
+      # tag pill background color
+      refute project_row =~ "bg-[#f7def8]"
+    end
+
+    test "tags component is rendered in table cell", %{conn: conn, admin: admin} do
+      _project = create_project_with_owner(admin)
+
+      {:ok, view, _html} = live(conn, Routes.live_path(Endpoint, ProjectsLive))
+      # Check that the TagsComponent is rendered
+      assert has_element?(view, "div[phx-hook='TagsComponent']")
+    end
+  end
+
   defp create_project_with_owner(owner, attrs \\ %{}) do
     project = insert(:project, attrs)
     insert(:author_project, project_id: project.id, author_id: owner.id)

@@ -36,8 +36,8 @@ defmodule OliWeb.Sections.SectionsTableModel do
         name: :tags,
         label: "Tags",
         sortable: false,
-        td_class: default_td_class,
-        th_class: default_th_class,
+        td_class: "w-[200px] min-w-[200px] max-w-[200px] !p-0 " <> default_td_class,
+        th_class: "w-[200px] min-w-[200px] max-w-[200px] " <> default_th_class,
         render_fn: &custom_render/3
       },
       %ColumnSpec{
@@ -146,9 +146,21 @@ defmodule OliWeb.Sections.SectionsTableModel do
     """
   end
 
-  # TODO: Add when project tags are implemented
-  def custom_render(_assigns, _section, %ColumnSpec{name: :tags}) do
-    ""
+  # Tags
+  def custom_render(assigns, section, %ColumnSpec{name: :tags}) do
+    assigns = Map.merge(assigns, %{section: section})
+
+    ~H"""
+    <div>
+      <.live_component
+        module={OliWeb.Live.Components.Tags.TagsComponent}
+        id={"tags-#{@section.id}"}
+        entity_type={:section}
+        entity_id={@section.id}
+        current_tags={Map.get(@section, :tags, [])}
+      />
+    </div>
+    """
   end
 
   def custom_render(_assigns, section, %ColumnSpec{name: :type}) do

@@ -125,6 +125,7 @@ defmodule Oli.Delivery.Sections.Section do
     field(:instructors, {:array, {:array, :string}}, virtual: true)
 
     many_to_many(:communities, Oli.Groups.Community, join_through: Oli.Groups.CommunityVisibility)
+    many_to_many(:tags, Oli.Tags.Tag, join_through: Oli.Tags.SectionTag)
 
     belongs_to(:publisher, Oli.Inventories.Publisher)
 
