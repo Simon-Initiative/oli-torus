@@ -54,6 +54,10 @@ defmodule Oli.Scenarios.Ops do
     {major?, revise!(dest, target, set)}
   end
 
+  defp apply_op(%{"change" => params}, major?, dest) do
+    {major?, change!(dest, params)}
+  end
+
   defp apply_op(_, major?, dest), do: {major?, dest}
 
   defp add_container!(dest, title, to) do
@@ -450,4 +454,25 @@ defmodule Oli.Scenarios.Ops do
   defp process_revision_value(_key, value) when is_number(value), do: value
   defp process_revision_value(_key, value) when is_atom(value), do: value
   defp process_revision_value(_key, value), do: value
+
+  defp change!(dest, params) do
+    %{project: project} = dest
+
+    # Process the parameters to convert special values
+    change_params =
+      params
+      |> Enum.map(fn {key, value} ->
+        {String.to_atom(key), process_revision_value(key, value)}
+      end)
+      |> Enum.into(%{})
+
+    # Update the project using standard changeset
+    case Oli.Authoring.Course.update_project(project, change_params) do
+      {:ok, updated_project} ->
+        %{dest | project: updated_project}
+
+      {:error, changeset} ->
+        raise "Failed to change project settings: #{inspect(changeset.errors)}"
+    end
+  end
 end
