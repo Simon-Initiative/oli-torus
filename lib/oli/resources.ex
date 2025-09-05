@@ -464,6 +464,45 @@ defmodule Oli.Resources do
     |> Repo.one()
   end
 
+  @doc """
+  Returns a list of resource ids that are LTI activities in the given section.
+  Example
+      iex> section_resource_ids_with_lti_activities(1)
+      [1, 2, 3]
+  """
+  @spec section_resource_ids_with_lti_activities(integer()) :: [integer()]
+  def section_resource_ids_with_lti_activities(section_id) do
+    lti_resource_ids =
+      from(ar in Oli.Activities.ActivityRegistration,
+        join: _ in assoc(ar, :lti_external_tool_activity_deployment),
+        select: ar.id
+      )
+      |> Repo.all()
+
+    lti_activity_resource_ids =
+      from(sr in Oli.Delivery.Sections.SectionResource,
+        join: r in Oli.Resources.Revision,
+        on: sr.revision_id == r.id,
+        where: sr.section_id == ^section_id and r.activity_type_id in ^lti_resource_ids,
+        select: r.resource_id
+      )
+      |> Repo.all()
+
+    page_type_id = Oli.Resources.ResourceType.id_for_page()
+
+    from(sr in Oli.Delivery.Sections.SectionResource,
+      join: rev in Oli.Resources.Revision,
+      on: sr.revision_id == rev.id,
+      where:
+        sr.section_id == ^section_id and
+          rev.resource_type_id == ^page_type_id and
+          fragment("? && ?", rev.activity_refs, ^lti_activity_resource_ids),
+      select: sr.resource_id
+    )
+    |> Repo.all()
+    |> MapSet.new()
+  end
+
   def get_report_activities(project_id) do
     query =
       Revision
