@@ -77,6 +77,11 @@ window.addEventListener('phx:page-loading-stop', () => {
   NProgress.done();
 });
 
+// Handle custom modal overflow-hidden removal
+window.addEventListener('phx:remove-overflow-hidden', () => {
+  document.body.classList.remove('overflow-hidden');
+});
+
 // Expose React/Redux APIs to server-side rendered templates
 function mount(Component: any, element: HTMLElement, context: any = {}) {
   ReactDOM.render(React.createElement(Component, context), element);
