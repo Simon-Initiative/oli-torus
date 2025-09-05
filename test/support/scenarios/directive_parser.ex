@@ -16,7 +16,9 @@ defmodule Oli.Scenarios.DirectiveParser do
     EnrollDirective,
     InstitutionDirective,
     UpdateDirective,
-    CustomizeDirective
+    CustomizeDirective,
+    ActivityDirective,
+    EditPageDirective
   }
 
   alias Oli.Scenarios.Types.Node
@@ -154,6 +156,25 @@ defmodule Oli.Scenarios.DirectiveParser do
     }
   end
 
+  defp parse_directive(%{"create_activity" => activity_data}) do
+    %ActivityDirective{
+      project: activity_data["project"],
+      title: activity_data["title"],
+      virtual_id: activity_data["virtual_id"],
+      scope: activity_data["scope"] || "embedded",
+      type: activity_data["type"],
+      content: activity_data["content"]
+    }
+  end
+
+  defp parse_directive(%{"edit_page" => edit_data}) do
+    %EditPageDirective{
+      project: edit_data["project"],
+      page: edit_data["page"],
+      content: edit_data["content"]
+    }
+  end
+
   # Handle single unrecognized directive
   defp parse_directive(map) when is_map(map) and map_size(map) == 1 do
     [{key, _value}] = Enum.to_list(map)
@@ -170,9 +191,11 @@ defmodule Oli.Scenarios.DirectiveParser do
          "enroll",
          "institution",
          "update",
-         "customize"
+         "customize",
+         "create_activity",
+         "edit_page"
        ] do
-      raise "Unrecognized directive: '#{key}'. Valid directives are: project, section, product, remix, manipulate, publish, verify, user, enroll, institution, update, customize"
+      raise "Unrecognized directive: '#{key}'. Valid directives are: project, section, product, remix, manipulate, publish, verify, user, enroll, institution, update, customize, create_activity, edit_page"
     else
       # This shouldn't happen as specific handlers above should match first
       raise "Internal error: unhandled directive '#{key}'"
@@ -194,13 +217,15 @@ defmodule Oli.Scenarios.DirectiveParser do
              "user",
              "enroll",
              "institution",
+             "create_activity",
+             "edit_page",
              "update",
              "customize"
            ] ->
         [parse_directive(%{key => value})]
 
       {key, _value} ->
-        raise "Unrecognized directive: '#{key}'. Valid directives are: project, section, product, remix, manipulate, publish, verify, user, enroll, institution, update, customize"
+        raise "Unrecognized directive: '#{key}'. Valid directives are: project, section, product, remix, manipulate, publish, verify, user, enroll, institution, update, customize, create_activity, edit_page"
     end)
   end
 

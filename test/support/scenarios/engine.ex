@@ -18,7 +18,9 @@ defmodule Oli.Scenarios.Engine do
     EnrollDirective,
     InstitutionDirective,
     UpdateDirective,
-    CustomizeDirective
+    CustomizeDirective,
+    ActivityDirective,
+    EditPageDirective
   }
 
   alias Oli.Scenarios.Directives.{
@@ -33,7 +35,9 @@ defmodule Oli.Scenarios.Engine do
     EnrollmentHandler,
     InstitutionHandler,
     UpdateHandler,
-    CustomizeHandler
+    CustomizeHandler,
+    ActivityHandler,
+    EditPageHandler
   }
 
   alias Oli.Utils.Seeder.AccountsFixtures
@@ -94,6 +98,7 @@ defmodule Oli.Scenarios.Engine do
       products: %{},
       users: %{"default_author" => author},
       institutions: %{"default" => institution},
+      activities: %{},
       current_author: author,
       current_institution: institution
     }
@@ -146,6 +151,14 @@ defmodule Oli.Scenarios.Engine do
 
   defp execute_directive(%CustomizeDirective{} = directive, state) do
     CustomizeHandler.handle(directive, state)
+  end
+
+  defp execute_directive(%ActivityDirective{} = directive, state) do
+    ActivityHandler.handle(directive, state)
+  end
+
+  defp execute_directive(%EditPageDirective{} = directive, state) do
+    EditPageHandler.handle(directive, state)
   end
 
   # Handle lists of directives (from complex parsing)

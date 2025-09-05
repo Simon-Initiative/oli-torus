@@ -11,8 +11,9 @@ defmodule Oli.TorusDoc.Markdown.TableParser do
   def parse_table(table_children, directive_map) do
     {header_rows, body_rows} = split_table_sections(table_children)
 
-    all_rows = transform_table_rows(header_rows, directive_map, true) ++
-               transform_table_rows(body_rows, directive_map, false)
+    all_rows =
+      transform_table_rows(header_rows, directive_map, true) ++
+        transform_table_rows(body_rows, directive_map, false)
 
     %{
       "type" => "table",
@@ -92,12 +93,15 @@ defmodule Oli.TorusDoc.Markdown.TableParser do
     children
     |> Enum.flat_map(fn
       {"p", _, inline_children, _} ->
-        [%{
-          "type" => "p",
-          "children" => inline_children
-                        |> Enum.flat_map(&InlineParser.transform(&1, directive_map))
-                        |> InlineParser.merge_adjacent_text()
-        }]
+        [
+          %{
+            "type" => "p",
+            "children" =>
+              inline_children
+              |> Enum.flat_map(&InlineParser.transform(&1, directive_map))
+              |> InlineParser.merge_adjacent_text()
+          }
+        ]
 
       other ->
         InlineParser.transform(other, directive_map)
@@ -123,12 +127,14 @@ defmodule Oli.TorusDoc.Markdown.TableParser do
   defp maybe_add_attr(map, key, value), do: Map.put(map, key, value)
 
   defp parse_span(nil), do: nil
+
   defp parse_span(value) when is_binary(value) do
     case Integer.parse(value) do
       {num, _} when num > 1 -> num
       _ -> nil
     end
   end
+
   defp parse_span(value) when is_integer(value) and value > 1, do: value
   defp parse_span(_), do: nil
 end

@@ -73,6 +73,29 @@ defmodule Oli.Scenarios.DirectiveTypes do
     defstruct [:to, :ops]
   end
 
+  defmodule ActivityDirective do
+    @moduledoc """
+    Creates an activity from TorusDoc YAML content.
+    project: target project name
+    title: activity title for referencing
+    virtual_id: optional scenario-local identifier for the activity
+    scope: "embedded" or "banked"
+    type: activity type slug (e.g. "oli_multiple_choice")
+    content: TorusDoc activity YAML content
+    """
+    defstruct [:project, :title, :virtual_id, :scope, :type, :content]
+  end
+
+  defmodule EditPageDirective do
+    @moduledoc """
+    Edits an existing page's content from TorusDoc YAML.
+    project: target project name
+    page: title of the page to edit
+    content: TorusDoc page YAML content
+    """
+    defstruct [:project, :page, :content]
+  end
+
   # Execution state
   defmodule ExecutionState do
     @moduledoc """
@@ -88,6 +111,10 @@ defmodule Oli.Scenarios.DirectiveTypes do
               users: %{},
               # name -> Institution
               institutions: %{},
+              # {project_name, activity_title} -> activity revision
+              activities: %{},
+              # {project_name, virtual_id} -> activity revision
+              activity_virtual_ids: %{},
               # Default author for operations
               current_author: nil,
               # Default institution

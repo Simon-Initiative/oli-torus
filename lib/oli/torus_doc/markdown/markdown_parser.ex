@@ -24,13 +24,6 @@ defmodule Oli.TorusDoc.Markdown.MarkdownParser do
   """
   @spec parse(String.t()) :: {:ok, list(map())} | {:error, String.t()}
   def parse(markdown) when is_binary(markdown) do
-    case do_parse(markdown) do
-      {:ok, elements} -> {:ok, elements}
-      {:error, reason} -> {:error, reason}
-    end
-  end
-
-  defp do_parse(markdown) do
     markdown
     |> preprocess_inline_math()
     |> preprocess_inline_directives()
@@ -142,6 +135,7 @@ defmodule Oli.TorusDoc.Markdown.MarkdownParser do
               nil ->
                 # Regular paragraph
                 [%{"type" => "p", "children" => transform_inline(children, directive_map)}]
+
               id ->
                 # Replace directive placeholder with actual directive content
                 case Map.get(directive_map, id) do
@@ -149,6 +143,7 @@ defmodule Oli.TorusDoc.Markdown.MarkdownParser do
                   directive -> [directive]
                 end
             end
+
           _ ->
             # Regular paragraph with multiple children
             [%{"type" => "p", "children" => transform_inline(children, directive_map)}]
@@ -179,7 +174,6 @@ defmodule Oli.TorusDoc.Markdown.MarkdownParser do
       {"hr", _, _, _} ->
         # Horizontal rules are not in the schema, skip them
         []
-
 
       text when is_binary(text) ->
         # Plain text at block level gets wrapped in paragraph

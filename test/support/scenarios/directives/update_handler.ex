@@ -10,7 +10,7 @@ defmodule Oli.Scenarios.Directives.UpdateHandler do
     try do
       # First check if target is a product
       product = Engine.get_product(state, target_name)
-      
+
       if product != nil do
         # Handle product update
         handle_product_update(project_name, target_name, product, state)

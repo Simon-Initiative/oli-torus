@@ -39,11 +39,13 @@ defmodule Oli.TorusDoc.Markdown.InlineParser do
   def transform({"a", [{"href", href} | _], children, _meta}, directive_map) do
     link_children = children |> Enum.flat_map(&transform(&1, directive_map))
 
-    [%{
-      "type" => "a",
-      "href" => href,
-      "children" => link_children
-    }]
+    [
+      %{
+        "type" => "a",
+        "href" => href,
+        "children" => link_children
+      }
+    ]
   end
 
   # Images
@@ -138,33 +140,38 @@ defmodule Oli.TorusDoc.Markdown.InlineParser do
     text_node = if text == "", do: nil, else: %{"text" => text}
 
     # Check if this is actually a math placeholder
-    math_node = if String.starts_with?(math_placeholder, "INLINE_MATH_START_") do
-      # Extract math content from placeholder
-      encoded = math_placeholder
-                |> String.trim_leading("INLINE_MATH_START_")
-                |> String.trim_trailing("_INLINE_MATH_END")
+    math_node =
+      if String.starts_with?(math_placeholder, "INLINE_MATH_START_") do
+        # Extract math content from placeholder
+        encoded =
+          math_placeholder
+          |> String.trim_leading("INLINE_MATH_START_")
+          |> String.trim_trailing("_INLINE_MATH_END")
 
-      # Decode the base64 content
-      math_content = case Base.decode64(encoded, padding: false) do
-        {:ok, decoded} -> decoded
-        :error -> encoded  # Fallback if decoding fails
+        # Decode the base64 content
+        math_content =
+          case Base.decode64(encoded, padding: false) do
+            {:ok, decoded} -> decoded
+            # Fallback if decoding fails
+            :error -> encoded
+          end
+
+        %{
+          "type" => "formula_inline",
+          "subtype" => "latex",
+          "src" => math_content
+        }
+      else
+        # Not a math placeholder, treat as text
+        %{"text" => math_placeholder}
       end
 
-      %{
-        "type" => "formula_inline",
-        "subtype" => "latex",
-        "src" => math_content
-      }
-    else
-      # Not a math placeholder, treat as text
-      %{"text" => math_placeholder}
-    end
-
-    new_acc = if text_node do
-      [math_node, text_node | acc]
-    else
-      [math_node | acc]
-    end
+    new_acc =
+      if text_node do
+        [math_node, text_node | acc]
+      else
+        [math_node | acc]
+      end
 
     process_math_parts(rest, new_acc)
   end
@@ -189,6 +196,7 @@ defmodule Oli.TorusDoc.Markdown.InlineParser do
           # Apply existing marks to text nodes
           %{"text" => _} = text_node ->
             Map.merge(text_node, Map.drop(node, ["text"]))
+
           other ->
             other
         end)
@@ -210,34 +218,37 @@ defmodule Oli.TorusDoc.Markdown.InlineParser do
   defp process_directive_parts([text, directive_placeholder | rest], acc) do
     text_node = if text == "", do: nil, else: %{"text" => text}
 
-    directive_node = if String.starts_with?(directive_placeholder, "INLINE_DIR_START_") do
-      # Extract directive components
-      parts = directive_placeholder
-              |> String.trim_leading("INLINE_DIR_START_")
-              |> String.trim_trailing("_INLINE_DIR_END")
-              |> String.split("_")
+    directive_node =
+      if String.starts_with?(directive_placeholder, "INLINE_DIR_START_") do
+        # Extract directive components
+        parts =
+          directive_placeholder
+          |> String.trim_leading("INLINE_DIR_START_")
+          |> String.trim_trailing("_INLINE_DIR_END")
+          |> String.split("_")
 
-      case parts do
-        [encoded_name, encoded_text, encoded_attrs] ->
-          name = decode_base64(encoded_name)
-          text_content = decode_base64(encoded_text)
-          attrs = decode_base64(encoded_attrs)
+        case parts do
+          [encoded_name, encoded_text, encoded_attrs] ->
+            name = decode_base64(encoded_name)
+            text_content = decode_base64(encoded_text)
+            attrs = decode_base64(encoded_attrs)
 
-          build_inline_directive(name, text_content, attrs)
+            build_inline_directive(name, text_content, attrs)
 
-        _ ->
-          # Malformed directive, treat as text
-          %{"text" => directive_placeholder}
+          _ ->
+            # Malformed directive, treat as text
+            %{"text" => directive_placeholder}
+        end
+      else
+        %{"text" => directive_placeholder}
       end
-    else
-      %{"text" => directive_placeholder}
-    end
 
-    new_acc = if text_node do
-      [directive_node, text_node | acc]
-    else
-      [directive_node | acc]
-    end
+    new_acc =
+      if text_node do
+        [directive_node, text_node | acc]
+      else
+        [directive_node | acc]
+      end
 
     process_directive_parts(rest, new_acc)
   end
@@ -273,6 +284,7 @@ defmodule Oli.TorusDoc.Markdown.InlineParser do
   end
 
   defp parse_inline_attrs(""), do: %{}
+
   defp parse_inline_attrs(attrs_str) do
     # Simple key="value" parser
     ~r/(\w+)\s*=\s*"([^"]*)"/
@@ -330,11 +342,13 @@ defmodule Oli.TorusDoc.Markdown.InlineParser do
   defp maybe_add_attr(map, key, value), do: Map.put(map, key, value)
 
   defp parse_dimension(nil), do: nil
+
   defp parse_dimension(value) when is_binary(value) do
     case Integer.parse(value) do
       {num, _} -> num
       _ -> value
     end
   end
+
   defp parse_dimension(value), do: value
 end

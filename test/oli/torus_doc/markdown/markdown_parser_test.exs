@@ -433,6 +433,7 @@ defmodule Oli.TorusDoc.MarkdownParserTest do
       :::youtube { id="dQw4w9WgXcQ" }
       :::
       """
+
       {:ok, [youtube]} = MarkdownParser.parse(valid_markdown)
       assert %{"type" => "youtube"} = youtube
 
@@ -441,6 +442,7 @@ defmodule Oli.TorusDoc.MarkdownParserTest do
       :::youtube { id="abc123" }
       :::
       """
+
       {:ok, [error]} = MarkdownParser.parse(invalid_markdown)
       assert %{"type" => "p", "children" => [%{"text" => "[Invalid YouTube ID]"}]} = error
     end
@@ -451,6 +453,7 @@ defmodule Oli.TorusDoc.MarkdownParserTest do
       :::audio { src="/media/audio.mp3" }
       :::
       """
+
       {:ok, [audio]} = MarkdownParser.parse(valid_audio)
       assert %{"type" => "audio", "src" => "/media/audio.mp3"} = audio
 
@@ -459,6 +462,7 @@ defmodule Oli.TorusDoc.MarkdownParserTest do
       :::audio { src="random-text" }
       :::
       """
+
       {:ok, [error]} = MarkdownParser.parse(invalid_audio)
       assert %{"type" => "p", "children" => [%{"text" => "[Invalid audio source]"}]} = error
     end
@@ -469,6 +473,7 @@ defmodule Oli.TorusDoc.MarkdownParserTest do
       :::iframe { src="https://codepen.io/embed/abc" }
       :::
       """
+
       {:ok, [iframe]} = MarkdownParser.parse(valid_iframe)
       assert %{"type" => "iframe"} = iframe
 
@@ -477,8 +482,13 @@ defmodule Oli.TorusDoc.MarkdownParserTest do
       :::iframe { src="https://evil-site.com/widget" }
       :::
       """
+
       {:ok, [error]} = MarkdownParser.parse(invalid_iframe)
-      assert %{"type" => "p", "children" => [%{"text" => "[Invalid or disallowed iframe source]"}]} = error
+
+      assert %{
+               "type" => "p",
+               "children" => [%{"text" => "[Invalid or disallowed iframe source]"}]
+             } = error
     end
   end
 

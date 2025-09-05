@@ -28,7 +28,7 @@ defmodule Oli.TorusDoc.Markdown.DirectiveParser do
         attrs = parse_attributes(List.first(attrs_match, ""))
 
         # Find the end of the directive
-        rest_of_markdown = String.slice(markdown, start_pos + length..-1//1)
+        rest_of_markdown = String.slice(markdown, (start_pos + length)..-1//1)
 
         case find_directive_end(rest_of_markdown) do
           nil ->
@@ -63,7 +63,9 @@ defmodule Oli.TorusDoc.Markdown.DirectiveParser do
     lines = String.split(markdown, "\n")
 
     case find_end_line(lines, 0) do
-      nil -> nil
+      nil ->
+        nil
+
       line_num ->
         # Calculate position up to and including the ::: line
         lines_before = Enum.take(lines, line_num + 1)
@@ -74,6 +76,7 @@ defmodule Oli.TorusDoc.Markdown.DirectiveParser do
   end
 
   defp find_end_line([], _), do: nil
+
   defp find_end_line([line | rest], index) do
     if Regex.match?(@end_directive_regex, line) do
       index
@@ -114,9 +117,12 @@ defmodule Oli.TorusDoc.Markdown.DirectiveParser do
 
   defp parse_value("true"), do: true
   defp parse_value("false"), do: false
+
   defp parse_value(str) do
     case Integer.parse(str) do
-      {num, ""} -> num
+      {num, ""} ->
+        num
+
       _ ->
         case Float.parse(str) do
           {num, ""} -> num
@@ -214,6 +220,7 @@ defmodule Oli.TorusDoc.Markdown.DirectiveParser do
   end
 
   defp build_youtube_url(nil), do: ""
+
   defp build_youtube_url(id) when is_binary(id) do
     "https://www.youtube.com/embed/#{id}"
   end
@@ -222,6 +229,7 @@ defmodule Oli.TorusDoc.Markdown.DirectiveParser do
     content_type = type || guess_content_type(src)
     [%{"url" => src, "contenttype" => content_type}]
   end
+
   defp build_video_sources(_, _), do: []
 
   defp guess_content_type(src) do
@@ -238,6 +246,7 @@ defmodule Oli.TorusDoc.Markdown.DirectiveParser do
 
   defp maybe_add_transcript(map, ""), do: map
   defp maybe_add_transcript(map, nil), do: map
+
   defp maybe_add_transcript(map, body) do
     # Parse the body as markdown and add as caption
     # For now, just add as text
@@ -249,6 +258,7 @@ defmodule Oli.TorusDoc.Markdown.DirectiveParser do
   @youtube_id_regex ~r/^[A-Za-z0-9_-]{11}$/
 
   defp validate_youtube_id(nil), do: :error
+
   defp validate_youtube_id(id) when is_binary(id) do
     if Regex.match?(@youtube_id_regex, id) do
       {:ok, id}
@@ -256,20 +266,35 @@ defmodule Oli.TorusDoc.Markdown.DirectiveParser do
       :error
     end
   end
+
   defp validate_youtube_id(_), do: :error
 
   defp validate_media_src(nil), do: :error
+
   defp validate_media_src(src) when is_binary(src) do
     # Allow relative paths and https URLs
     cond do
-      String.starts_with?(src, "/") -> {:ok, src}
-      String.starts_with?(src, "./") -> {:ok, src}
-      String.starts_with?(src, "../") -> {:ok, src}
-      String.starts_with?(src, "https://") -> {:ok, src}
-      String.starts_with?(src, "http://") -> {:ok, src}  # Will be upgraded to https
-      true -> :error
+      String.starts_with?(src, "/") ->
+        {:ok, src}
+
+      String.starts_with?(src, "./") ->
+        {:ok, src}
+
+      String.starts_with?(src, "../") ->
+        {:ok, src}
+
+      String.starts_with?(src, "https://") ->
+        {:ok, src}
+
+      String.starts_with?(src, "http://") ->
+        # Upgrade HTTP to HTTPS for security
+        {:ok, String.replace_prefix(src, "http://", "https://")}
+
+      true ->
+        :error
     end
   end
+
   defp validate_media_src(_), do: :error
 
   # List of allowed iframe domains for security
@@ -285,17 +310,26 @@ defmodule Oli.TorusDoc.Markdown.DirectiveParser do
   ]
 
   defp validate_iframe_src(nil), do: :error
+
   defp validate_iframe_src(src) when is_binary(src) do
     case URI.parse(src) do
       %URI{scheme: scheme, host: host} when scheme in ["http", "https"] and not is_nil(host) ->
-        if Enum.any?(@allowed_iframe_domains, &String.ends_with?(host, &1)) do
+        # Properly validate domain to prevent subdomain bypass attacks
+        # Check for exact match or valid subdomain (e.g., www.youtube.com for youtube.com)
+        if Enum.any?(@allowed_iframe_domains, fn allowed_domain ->
+             host == allowed_domain or
+               (String.ends_with?(host, "." <> allowed_domain) and
+                  not String.contains?(host <> ".", ".." <> allowed_domain <> "."))
+           end) do
           {:ok, src}
         else
           :error
         end
+
       _ ->
         :error
     end
   end
+
   defp validate_iframe_src(_), do: :error
 end
