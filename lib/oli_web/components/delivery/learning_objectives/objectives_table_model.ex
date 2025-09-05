@@ -316,9 +316,29 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
   end
 
   # RENDER EXPANDED DETAILS FOR STRIPED TABLE
-  def render_objective_details(assigns, _row) do
+  def render_objective_details(assigns, row) do
+    %{resource_id: objective_id, unique_id: unique_id} = row
+    section_slug = assigns[:section_slug] || assigns.model.data[:section_slug]
+    section_id = assigns[:section_id] || assigns.model.data[:section_id]
+
+    assigns =
+      assigns
+      |> Map.put(:objective, row)
+      |> Map.put(:objective_id, objective_id)
+      |> Map.put(:unique_id, unique_id)
+      |> Map.put(:section_slug, section_slug)
+      |> Map.put(:section_id, section_id)
+
     ~H"""
-    Information will go here
+    <div class="p-6 bg-Background-bg-secondary">
+      <.live_component
+        module={OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView}
+        id={"expanded-objective-#{@unique_id}"}
+        objective={@objective}
+        section_id={@section_id}
+        section_slug={@section_slug}
+      />
+    </div>
     """
   end
 end

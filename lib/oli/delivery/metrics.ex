@@ -1556,4 +1556,71 @@ defmodule Oli.Delivery.Metrics do
       end
     end)
   end
+
+  @doc """
+  Returns sub-objectives proficiency data for a specific learning objective.
+
+  ## Parameters
+  - section_id: The section ID
+  - objective_id: The learning objective resource ID
+
+  ## Returns
+  List of sub-objective data:
+  [%{sub_objective_id: 123, title: "Sub-objective title", proficiency_distribution: %{...}}]
+  """
+  @spec sub_objectives_proficiency(section_id :: integer, objective_id :: integer) :: list(map())
+  def sub_objectives_proficiency(section_id, objective_id) do
+    # Get the learning objective revision to find its children (sub-objectives)
+    objective_revision =
+      from(r in Revision,
+        where: r.resource_id == ^objective_id,
+        order_by: [desc: r.inserted_at],
+        limit: 1
+      )
+      |> Repo.one()
+
+    case objective_revision do
+      nil ->
+        []
+
+      %{children: []} ->
+        []
+
+      %{children: sub_objective_ids} ->
+        # Get sub-objective titles and proficiency distributions
+        sub_objective_revisions =
+          from(r in Revision,
+            where: r.resource_id in ^sub_objective_ids,
+            order_by: [desc: r.inserted_at],
+            distinct: r.resource_id,
+            select: {r.resource_id, r.title}
+          )
+          |> Repo.all()
+          |> Map.new()
+
+        # Get proficiency data for all sub-objectives at once
+        sub_objectives_proficiency =
+          proficiency_per_student_for_objective(section_id, sub_objective_ids)
+
+        # Build result list
+        sub_objective_ids
+        |> Enum.map(fn sub_obj_id ->
+          %{
+            sub_objective_id: sub_obj_id,
+            title: Map.get(sub_objective_revisions, sub_obj_id, "Unknown"),
+            proficiency_distribution:
+              calculate_proficiency_distribution(
+                Map.get(sub_objectives_proficiency, sub_obj_id, %{})
+              )
+          }
+        end)
+    end
+  end
+
+  # Helper function to calculate proficiency distribution from student proficiency map
+  defp calculate_proficiency_distribution(student_proficiency_map) do
+    student_proficiency_map
+    |> Enum.frequencies_by(fn {_student_id, proficiency} -> proficiency end)
+    |> Map.new()
+  end
 end

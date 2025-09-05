@@ -599,6 +599,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         view={@view}
         objectives_tab={@objectives_tab}
         section_slug={@section_slug}
+        section_id={@section.id}
         v25_migration={@section.v25_migration}
         patch_url_type={:instructor_dashboard}
       />
