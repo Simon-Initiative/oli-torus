@@ -20,7 +20,10 @@ defmodule Oli.Scenarios.Engine do
     UpdateDirective,
     CustomizeDirective,
     ActivityDirective,
-    EditPageDirective
+    EditPageDirective,
+    ViewPracticePageDirective,
+    AnswerQuestionDirective,
+    AssertProgressDirective
   }
 
   alias Oli.Scenarios.Directives.{
@@ -37,7 +40,10 @@ defmodule Oli.Scenarios.Engine do
     UpdateHandler,
     CustomizeHandler,
     ActivityHandler,
-    EditPageHandler
+    EditPageHandler,
+    ViewPracticePageHandler,
+    AnswerQuestionHandler,
+    AssertProgressHandler
   }
 
   alias Oli.Utils.Seeder.AccountsFixtures
@@ -99,6 +105,8 @@ defmodule Oli.Scenarios.Engine do
       users: %{"default_author" => author},
       institutions: %{"default" => institution},
       activities: %{},
+      page_attempts: %{},
+      activity_evaluations: %{},
       current_author: author,
       current_institution: institution
     }
@@ -159,6 +167,18 @@ defmodule Oli.Scenarios.Engine do
 
   defp execute_directive(%EditPageDirective{} = directive, state) do
     EditPageHandler.handle(directive, state)
+  end
+
+  defp execute_directive(%ViewPracticePageDirective{} = directive, state) do
+    ViewPracticePageHandler.handle(directive, state)
+  end
+
+  defp execute_directive(%AnswerQuestionDirective{} = directive, state) do
+    AnswerQuestionHandler.handle(directive, state)
+  end
+
+  defp execute_directive(%AssertProgressDirective{} = directive, state) do
+    AssertProgressHandler.handle(directive, state)
   end
 
   # Handle lists of directives (from complex parsing)

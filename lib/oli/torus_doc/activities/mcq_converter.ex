@@ -107,7 +107,7 @@ defmodule Oli.TorusDoc.Activities.MCQConverter do
       activity.mcq_attributes.choices
       |> Enum.map(fn choice ->
         # Create a response for each choice
-        rule = "{" <> choice.id <> "}"
+        rule = "input like {" <> choice.id <> "}"
 
         with {:ok, feedback} <- ActivityConverter.convert_feedback(choice.feedback_md) do
           {:ok,

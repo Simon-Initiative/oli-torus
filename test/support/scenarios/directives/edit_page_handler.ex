@@ -121,20 +121,32 @@ defmodule Oli.Scenarios.Directives.EditPageHandler do
   end
 
   # Edit the page - for test scenarios, directly update the revision
-  defp edit_page(_built_project, page_revision, author, page_json) do
-    # In test scenarios, we directly update the revision structure
-    # instead of going through PageEditor which requires database records
+  defp edit_page(built_project, page_revision, author, page_json) do
+    # In test scenarios, we need to actually update the revision in the database
+    # so that it's available when the section tries to load it
     
-    # Create an updated revision with the new content
-    updated_revision = %{page_revision |
+    # Update the revision in the database
+    case Oli.Resources.update_revision(page_revision, %{
       title: page_json["title"] || page_revision.title,
       content: page_json["content"],
       graded: page_json["isGraded"] || false,
-      author_id: author.id,
-      updated_at: DateTime.utc_now()
-    }
-    
-    {:ok, updated_revision}
+      author_id: author.id
+    }) do
+      {:ok, updated_revision} ->
+        # Also update the working publication if it exists
+        case Oli.Publishing.project_working_publication(built_project.project.slug) do
+          nil ->
+            {:ok, updated_revision}
+            
+          publication ->
+            # Update the published resource to point to the new revision
+            Oli.Publishing.upsert_published_resource(publication, updated_revision)
+            {:ok, updated_revision}
+        end
+        
+      error ->
+        error
+    end
   end
 
   # Update the rev_by_title mapping with the new revision

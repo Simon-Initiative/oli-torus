@@ -272,7 +272,7 @@ defmodule Oli.Scenarios.Directives.ActivityProcessor do
     ActivityConverter.from_yaml(yaml_string)
   end
   
-  defp create_test_activity(_built_project, registration, author, model, objectives, tags, title) do
+  defp create_test_activity(built_project, registration, author, model, objectives, tags, title) do
     # For test scenarios, create a simple revision structure
     # This mimics what ActivityEditor.create would do but without database operations
     
@@ -290,10 +290,28 @@ defmodule Oli.Scenarios.Directives.ActivityProcessor do
     
     # Create the resource and revision
     case Oli.Resources.create_resource_and_revision(attrs) do
-      {:ok, %{revision: revision}} ->
-        # In a real scenario, we'd also publish this to the project's publication
-        # For testing, the revision alone is enough
-        {:ok, revision}
+      {:ok, %{revision: revision, resource: resource}} ->
+        # Link the activity to the project
+        {:ok, _} = Oli.Authoring.Course.create_project_resource(%{
+          project_id: built_project.project.id,
+          resource_id: resource.id
+        })
+        
+        # If there's a working publication, add the activity to it
+        case Oli.Publishing.project_working_publication(built_project.project.slug) do
+          nil ->
+            # No publication yet, that's ok
+            {:ok, revision}
+            
+          publication ->
+            # Add to the working publication
+            {:ok, _} = Oli.Publishing.create_published_resource(%{
+              publication_id: publication.id,
+              resource_id: resource.id,
+              revision_id: revision.id
+            })
+            {:ok, revision}
+        end
         
       error ->
         error

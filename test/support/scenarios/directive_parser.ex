@@ -18,7 +18,10 @@ defmodule Oli.Scenarios.DirectiveParser do
     UpdateDirective,
     CustomizeDirective,
     ActivityDirective,
-    EditPageDirective
+    EditPageDirective,
+    ViewPracticePageDirective,
+    AnswerQuestionDirective,
+    AssertProgressDirective
   }
 
   alias Oli.Scenarios.Types.Node
@@ -175,6 +178,34 @@ defmodule Oli.Scenarios.DirectiveParser do
     }
   end
 
+  defp parse_directive(%{"view_practice_page" => view_data}) do
+    %ViewPracticePageDirective{
+      student: view_data["student"],
+      section: view_data["section"],
+      page: view_data["page"]
+    }
+  end
+
+  defp parse_directive(%{"answer_question" => answer_data}) do
+    %AnswerQuestionDirective{
+      student: answer_data["student"],
+      section: answer_data["section"],
+      page: answer_data["page"],
+      activity_virtual_id: answer_data["activity_virtual_id"],
+      response: answer_data["response"]
+    }
+  end
+  
+  defp parse_directive(%{"assert_progress" => progress_data}) do
+    %AssertProgressDirective{
+      section: progress_data["section"],
+      progress: parse_float(progress_data["progress"]),
+      page: progress_data["page"],
+      container: progress_data["container"],
+      student: progress_data["student"]
+    }
+  end
+
   # Handle single unrecognized directive
   defp parse_directive(map) when is_map(map) and map_size(map) == 1 do
     [{key, _value}] = Enum.to_list(map)
@@ -193,9 +224,12 @@ defmodule Oli.Scenarios.DirectiveParser do
          "update",
          "customize",
          "create_activity",
-         "edit_page"
+         "edit_page",
+         "view_practice_page",
+         "answer_question",
+         "assert_progress"
        ] do
-      raise "Unrecognized directive: '#{key}'. Valid directives are: project, section, product, remix, manipulate, publish, verify, user, enroll, institution, update, customize, create_activity, edit_page"
+      raise "Unrecognized directive: '#{key}'. Valid directives are: project, section, product, remix, manipulate, publish, verify, user, enroll, institution, update, customize, create_activity, edit_page, view_practice_page, answer_question, assert_progress"
     else
       # This shouldn't happen as specific handlers above should match first
       raise "Internal error: unhandled directive '#{key}'"
@@ -219,13 +253,15 @@ defmodule Oli.Scenarios.DirectiveParser do
              "institution",
              "create_activity",
              "edit_page",
+             "view_practice_page",
+             "answer_question",
              "update",
              "customize"
            ] ->
         [parse_directive(%{key => value})]
 
       {key, _value} ->
-        raise "Unrecognized directive: '#{key}'. Valid directives are: project, section, product, remix, manipulate, publish, verify, user, enroll, institution, update, customize, create_activity, edit_page"
+        raise "Unrecognized directive: '#{key}'. Valid directives are: project, section, product, remix, manipulate, publish, verify, user, enroll, institution, update, customize, create_activity, edit_page, view_practice_page, answer_question"
     end)
   end
 
@@ -276,4 +312,14 @@ defmodule Oli.Scenarios.DirectiveParser do
   defp parse_enrollment_role("instructor"), do: :instructor
   defp parse_enrollment_role("student"), do: :student
   defp parse_enrollment_role(role) when is_atom(role), do: role
+  
+  defp parse_float(nil), do: 0.0
+  defp parse_float(value) when is_float(value), do: value
+  defp parse_float(value) when is_integer(value), do: value / 1.0
+  defp parse_float(value) when is_binary(value) do
+    case Float.parse(value) do
+      {float, _} -> float
+      :error -> 0.0
+    end
+  end
 end

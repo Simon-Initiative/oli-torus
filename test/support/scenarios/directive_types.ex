@@ -96,6 +96,40 @@ defmodule Oli.Scenarios.DirectiveTypes do
     defstruct [:project, :page, :content]
   end
 
+  defmodule ViewPracticePageDirective do
+    @moduledoc """
+    Simulates a student viewing a practice page in a section.
+    student: name of the student user (as defined in user directive)
+    section: name of the section
+    page: title of the page to view
+    """
+    defstruct [:student, :section, :page]
+  end
+
+  defmodule AnswerQuestionDirective do
+    @moduledoc """
+    Simulates a student answering a question on a page.
+    student: name of the student user (as defined in user directive)
+    section: name of the section
+    page: title of the page
+    activity_virtual_id: virtual_id of the activity to answer
+    response: the student's response (e.g., "b" for multiple choice)
+    """
+    defstruct [:student, :section, :page, :activity_virtual_id, :response]
+  end
+  
+  defmodule AssertProgressDirective do
+    @moduledoc """
+    Asserts student progress in a page or container.
+    section: name of the section (required)
+    progress: expected progress value 0.0-1.0 (required)
+    page: title of the page (one of page/container required)
+    container: title of the container (one of page/container required)  
+    student: name of student user (optional - if omitted, asserts all students' average progress)
+    """
+    defstruct [:section, :progress, :page, :container, :student]
+  end
+
   # Execution state
   defmodule ExecutionState do
     @moduledoc """
@@ -115,6 +149,10 @@ defmodule Oli.Scenarios.DirectiveTypes do
               activities: %{},
               # {project_name, virtual_id} -> activity revision
               activity_virtual_ids: %{},
+              # {user_name, section_name, page_title} -> AttemptState
+              page_attempts: %{},
+              # {user_name, section_name, page_title, activity_virtual_id} -> evaluation result
+              activity_evaluations: %{},
               # Default author for operations
               current_author: nil,
               # Default institution

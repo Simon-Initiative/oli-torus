@@ -141,11 +141,16 @@ defmodule Oli.TorusDoc.PageConverter do
       "id" => block.id || generate_id()
     }
     
-    # Add activitySlug or virtual_id
+    # Add both activity_id and activitySlug for compatibility
     reference = 
       cond do
         Map.has_key?(block, :activity_id) ->
-          Map.put(reference, "activitySlug", block.activity_id)
+          # Include both fields for compatibility:
+          # - activity_id for the delivery system to resolve activities
+          # - activitySlug for test assertions and display
+          reference
+          |> Map.put("activity_id", block.activity_id)
+          |> Map.put("activitySlug", block.activity_id)
         Map.has_key?(block, :virtual_id) ->
           Map.put(reference, "_virtual_id", block.virtual_id)
         true ->
@@ -169,6 +174,7 @@ defmodule Oli.TorusDoc.PageConverter do
         reference = %{
           "type" => "activity-reference",
           "id" => block.id || generate_id(),
+          "activity_id" => activity_json["id"],
           "activitySlug" => activity_json["id"],
           "_inline_activity" => activity_json
         }
