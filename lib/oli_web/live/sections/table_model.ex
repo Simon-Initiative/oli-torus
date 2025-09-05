@@ -36,8 +36,8 @@ defmodule OliWeb.Sections.SectionsTableModel do
         name: :tags,
         label: "Tags",
         sortable: false,
-        td_class: "w-[180px] min-w-[180px] max-w-[180px] !p-0 " <> default_td_class,
-        th_class: "w-[180px] min-w-[180px] max-w-[180px] " <> default_th_class,
+        td_class: "w-[200px] min-w-[200px] max-w-[200px] !p-0 " <> default_td_class,
+        th_class: "w-[200px] min-w-[200px] max-w-[200px] " <> default_th_class,
         render_fn: &custom_render/3
       },
       %ColumnSpec{

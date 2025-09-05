@@ -208,10 +208,11 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
           <!-- Edit mode container - full cell -->
           <div class="relative w-full h-full">
             <!-- Edit mode input with selected tags - full cell -->
-            <div class="bg-white border border-[#ced1d9] rounded-[3px] text-sm w-full h-full min-h-[36px] flex flex-col items-center gap-1 p-2">
+            <div class="bg-Specially-Tokens-Fill-fill-input border border-Table-table-border rounded-[3px] text-sm w-full h-full min-h-[36px] flex flex-col items-center gap-1 p-2">
               <!-- Show currently selected tags with X buttons -->
               <%= for tag <- @current_tags do %>
                 <span
+                  role="selected tag"
                   class={"px-3 py-1 mr-auto rounded-full text-sm font-semibold shadow-sm flex items-center gap-2 #{get_tag_pill_classes(tag.name)}"}
                   style="font-family: 'Open Sans', sans-serif;"
                 >
@@ -244,12 +245,12 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
             </div>
             
     <!-- Available tags dropdown - positioned below input with full width -->
-            <div class="absolute top-[calc(100%+1px)] left-0 w-full z-[5] bg-[#f3f4f8] border border-[#ced1d9] rounded-[3px] max-h-60 overflow-y-auto shadow-xl">
+            <div class="absolute top-[calc(100%+1px)] left-0 w-full z-[5] bg-Table-table-row-1 border border-Table-table-border rounded-[3px] max-h-60 overflow-y-auto shadow-xl">
               <!-- Available tags list -->
               <%= if Enum.any?(@available_tags, fn tag -> tag.id not in @selected_tag_ids end) do %>
                 <div class="p-3 space-y-2">
                   <div
-                    class="text-[#757682] text-xs font-semibold mb-2"
+                    class="text-Text-text-low text-xs font-semibold mb-2"
                     style="font-family: 'Open Sans', sans-serif;"
                   >
                     Create or select an option
@@ -285,6 +286,7 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
             <div class="flex flex-col gap-1">
               <%= for tag <- @current_tags do %>
                 <span
+                  role="selected tag"
                   class={"px-3 py-1 mr-auto rounded-full text-sm font-semibold shadow-sm #{get_tag_pill_classes(tag.name)}"}
                   style="font-family: 'Open Sans', sans-serif;"
                 >
@@ -308,21 +310,16 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
   # Private functions
 
   defp get_tag_pill_classes(tag_name) do
-    # Define color combinations matching Figma design
     color_combinations = [
-      # Purple
-      "bg-[#f7def8] text-[#9a40a8]",
-      # Blue
-      "bg-[#deecff] text-[#1b67b2]",
-      # Orange
-      "bg-[#ffecde] text-[#a94f0e]",
-      # Teal
-      "bg-[#dcf3f5] text-[#00525c]"
+      "bg-Fill-Accent-fill-accent-purple text-Text-text-accent-purple",
+      "bg-Fill-Accent-fill-accent-blue text-Text-text-accent-blue",
+      "bg-Fill-Accent-fill-accent-orange text-Text-text-accent-orange",
+      "bg-Fill-Accent-fill-accent-teal text-Text-text-accent-teal"
     ]
 
     # Convert tag name to a consistent number between 0 and 3
     hash = :erlang.phash2(tag_name, 4)
-    Enum.at(color_combinations, hash)
+    "#{Enum.at(color_combinations, hash)} shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)]"
   end
 
   defp load_available_tags(socket, search \\ "") do
