@@ -112,7 +112,7 @@ defmodule OliWeb.LegacySuperactivityController do
           {:ok, %{status_code: 200}} ->
             json(conn, %{
               type: "success",
-              url: "https://#{media_url}#{upload_path}"
+              url: "#{media_url}#{upload_path}"
             })
 
           _ ->

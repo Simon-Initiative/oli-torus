@@ -8,7 +8,7 @@ defmodule Oli.Utils.S3Storage do
   def put(bucket_name, upload_path, file_content) do
     media_url = Application.fetch_env!(:oli, :media_url)
 
-    full_upload_path = "https://#{media_url}/#{upload_path}"
+    full_upload_path = "#{media_url}/#{upload_path}"
 
     case upload(bucket_name, upload_path, file_content) do
       {:ok, %{status_code: 200}} -> {:ok, full_upload_path}
@@ -19,7 +19,7 @@ defmodule Oli.Utils.S3Storage do
   def stream_file(bucket_name, upload_path, file_path) do
     media_url = Application.fetch_env!(:oli, :media_url)
 
-    full_upload_path = "https://#{media_url}/#{upload_path}"
+    full_upload_path = "#{media_url}/#{upload_path}"
 
     case file_path
          |> S3.Upload.stream_file()
@@ -33,13 +33,12 @@ defmodule Oli.Utils.S3Storage do
   def list_file_urls(path) do
     media_url = Application.fetch_env!(:oli, :media_url)
     bucket_name = Application.fetch_env!(:oli, :s3_media_bucket_name)
-    scheme = Application.fetch_env!(:oli, OliWeb.Endpoint)[:url][:scheme]
 
     S3.list_objects(bucket_name, prefix: path)
     |> HTTP.aws().request()
     |> case do
       {:ok, %{status_code: 200, body: %{contents: contents}}} ->
-        {:ok, Enum.map(contents, fn obj -> "#{scheme}://#{media_url}/#{obj.key}" end)}
+        {:ok, Enum.map(contents, fn obj -> "#{media_url}/#{obj.key}" end)}
 
       {_, payload} ->
         {:error, payload}
@@ -56,9 +55,8 @@ defmodule Oli.Utils.S3Storage do
 
   def upload_file(bucket_name, upload_path, file_path) do
     media_url = Application.fetch_env!(:oli, :media_url)
-    scheme = Application.fetch_env!(:oli, OliWeb.Endpoint)[:url][:scheme]
 
-    full_upload_path = "#{scheme}://#{media_url}/#{upload_path}"
+    full_upload_path = "#{media_url}/#{upload_path}"
 
     contents = File.read!(file_path)
 
