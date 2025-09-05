@@ -207,7 +207,7 @@ defmodule OliWeb.Sections.SectionsTableModelTest do
     test "renders tags column", %{assigns: assigns, section: section} do
       column_spec = %ColumnSpec{name: :tags}
       rendered = SectionsTableModel.custom_render(assigns, section, column_spec)
-      
+
       # The tags column returns a Phoenix.LiveView.Rendered struct with a live_component
       # We can't serialize it to string outside LiveView context, so verify the structure
       assert match?(%Phoenix.LiveView.Rendered{}, rendered)
@@ -523,11 +523,13 @@ defmodule OliWeb.Sections.SectionsTableModelTest do
           column_spec.name in [:enrollments_count] ->
             # Skip enrollments_count as it's handled separately
             :ok
+
           column_spec.name == :tags ->
             # Tags column returns a LiveComponent that cannot be serialized to string
             assigns = %{ctx: ctx, render_institution_action: false}
             rendered = SectionsTableModel.custom_render(assigns, section, column_spec)
             assert match?(%Phoenix.LiveView.Rendered{}, rendered)
+
           true ->
             assigns = %{ctx: ctx, render_institution_action: false}
             rendered = SectionsTableModel.custom_render(assigns, section, column_spec)
@@ -568,11 +570,13 @@ defmodule OliWeb.Sections.SectionsTableModelTest do
           column_spec.name in [:enrollments_count] ->
             # Skip enrollments_count as it's handled separately
             :ok
+
           column_spec.name == :tags ->
             # Tags column returns a LiveComponent that cannot be serialized to string
             assigns = %{ctx: ctx, render_institution_action: false}
             rendered = SectionsTableModel.custom_render(assigns, minimal_section, column_spec)
             assert match?(%Phoenix.LiveView.Rendered{}, rendered)
+
           true ->
             assigns = %{ctx: ctx, render_institution_action: false}
             rendered = SectionsTableModel.custom_render(assigns, minimal_section, column_spec)

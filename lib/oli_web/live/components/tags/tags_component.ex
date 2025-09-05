@@ -78,26 +78,27 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
     case associate_tag(entity_type, entity_id, tag_id) do
       {:ok, _} ->
         # Find the tag in available_tags
-        tag_to_add = Enum.find(socket.assigns.available_tags, &(&1.id == tag_id))
+        case Enum.find(socket.assigns.available_tags, &(&1.id == tag_id)) do
+          nil ->
+            {:noreply, assign(socket, :error, "Tag not found")}
 
-        if tag_to_add do
-          # Add tag to current_tags and sort
-          updated_current_tags = [tag_to_add | socket.assigns.current_tags]
-          sorted_current_tags = Enum.sort_by(updated_current_tags, & &1.name, :asc)
+          tag_to_add ->
+            # Add tag to current_tags and sort
+            updated_current_tags = [tag_to_add | socket.assigns.current_tags]
+            sorted_current_tags = Enum.sort_by(updated_current_tags, & &1.name, :asc)
 
-          # Remove tag from available_tags since it's now selected
-          updated_available_tags = Enum.reject(socket.assigns.available_tags, &(&1.id == tag_id))
+            # Remove tag from available_tags since it's now selected
+            updated_available_tags =
+              Enum.reject(socket.assigns.available_tags, &(&1.id == tag_id))
 
-          {:noreply,
-           socket
-           |> assign(:current_tags, sorted_current_tags)
-           |> assign(:available_tags, updated_available_tags)
-           |> assign(:selected_tag_ids, Enum.map(sorted_current_tags, & &1.id))
-           |> assign(:error, nil)
-           |> assign(:input_value, "")
-           |> push_event("focus_input", %{input_id: "tag-input-#{socket.assigns.id}"})}
-        else
-          {:noreply, assign(socket, :error, "Tag not found")}
+            {:noreply,
+             socket
+             |> assign(:current_tags, sorted_current_tags)
+             |> assign(:available_tags, updated_available_tags)
+             |> assign(:selected_tag_ids, Enum.map(sorted_current_tags, & &1.id))
+             |> assign(:error, nil)
+             |> assign(:input_value, "")
+             |> push_event("focus_input", %{input_id: "tag-input-#{socket.assigns.id}"})}
         end
 
       {:error, _} ->
@@ -118,22 +119,24 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
 
         updated_current_tags = Enum.reject(socket.assigns.current_tags, &(&1.id == tag_id))
 
-        # Check if tag still exists in the database
-        tag_still_exists = result != :completely_removed
-
+        # Check if tag still exists in the database and update available_tags accordingly
         updated_available_tags =
-          if tag_still_exists do
-            # Tag still exists, add it back to available_tags
-            if removed_tag not in socket.assigns.available_tags do
-              [removed_tag | socket.assigns.available_tags]
-              |> Enum.sort_by(& &1.name, :asc)
-            else
+          case result do
+            :completely_removed ->
+              # Tag was deleted from database, don't add back to available_tags
               socket.assigns.available_tags
-            end
-          else
-            # Tag was deleted from database, don't add back to available_tags
-            socket.assigns.available_tags
-            |> Enum.reject(&(&1.id == tag_id))
+              |> Enum.reject(&(&1.id == tag_id))
+
+            _ ->
+              # Tag still exists, add it back to available_tags if not already there
+              case removed_tag not in socket.assigns.available_tags do
+                true ->
+                  [removed_tag | socket.assigns.available_tags]
+                  |> Enum.sort_by(& &1.name, :asc)
+
+                false ->
+                  socket.assigns.available_tags
+              end
           end
 
         {:noreply,

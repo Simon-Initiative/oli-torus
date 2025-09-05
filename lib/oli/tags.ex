@@ -34,8 +34,6 @@ defmodule Oli.Tags do
   alias Oli.Tags.Tag
   alias Oli.Tags.ProjectTag
   alias Oli.Tags.SectionTag
-  alias Oli.Authoring.Course.Project
-  alias Oli.Delivery.Sections.Section
 
   @doc """
   Creates a tag.
@@ -49,7 +47,7 @@ defmodule Oli.Tags do
       {:error, %Ecto.Changeset{}}
 
   """
-  @spec create_tag(map()) :: {:ok, Tag.t()} | {:error, Ecto.Changeset.t()}
+  @spec create_tag(map()) :: {:ok, Oli.Tags.Tag.t()} | {:error, Ecto.Changeset.t()}
   def create_tag(attrs \\ %{}) do
     %Tag{}
     |> Tag.changeset(attrs)
@@ -68,7 +66,7 @@ defmodule Oli.Tags do
       nil
 
   """
-  @spec get_tag_by_name(String.t()) :: Tag.t() | nil
+  @spec get_tag_by_name(String.t()) :: Oli.Tags.Tag.t() | nil
   def get_tag_by_name(name) when is_binary(name) do
     Repo.get_by(Tag, name: name)
   end
@@ -94,7 +92,7 @@ defmodule Oli.Tags do
       [%Tag{}, ...]
 
   """
-  @spec list_tags(map()) :: [Tag.t()]
+  @spec list_tags(map()) :: [Oli.Tags.Tag.t()]
   def list_tags(opts \\ %{}) do
     search = Map.get(opts, :search, "")
     limit = Map.get(opts, :limit, 50)
@@ -120,8 +118,11 @@ defmodule Oli.Tags do
       {:error, :tag_not_found}
 
   """
-  @spec associate_tag_with_project(Project | integer(), Tag | integer()) ::
-          {:ok, ProjectTag}
+  @spec associate_tag_with_project(
+          Oli.Authoring.Course.Project.t() | integer(),
+          Oli.Tags.Tag.t() | integer()
+        ) ::
+          {:ok, Oli.Tags.ProjectTag.t()}
           | {:error, :tag_not_found | :project_not_found | Ecto.Changeset.t()}
   def associate_tag_with_project(project, tag) do
     project_id = get_entity_id(project)
@@ -145,8 +146,11 @@ defmodule Oli.Tags do
       {:ok, %SectionTag{}}
 
   """
-  @spec associate_tag_with_section(Section.t() | integer(), Tag.t() | integer()) ::
-          {:ok, SectionTag.t()}
+  @spec associate_tag_with_section(
+          Oli.Delivery.Sections.Section.t() | integer(),
+          Oli.Tags.Tag.t() | integer()
+        ) ::
+          {:ok, Oli.Tags.SectionTag.t()}
           | {:error, :tag_not_found | :section_not_found | Ecto.Changeset.t()}
   def associate_tag_with_section(section, tag) do
     section_id = get_entity_id(section)
@@ -183,9 +187,13 @@ defmodule Oli.Tags do
       {:error, :not_found}
 
   """
-  @spec remove_tag_from_project(Project.t() | integer(), Tag.t() | integer(), keyword()) ::
-          {:ok, ProjectTag.t(), :removed_from_entity}
-          | {:ok, Tag.t(), :completely_removed}
+  @spec remove_tag_from_project(
+          Oli.Authoring.Course.Project.t() | integer(),
+          Oli.Tags.Tag.t() | integer(),
+          keyword()
+        ) ::
+          {:ok, Oli.Tags.ProjectTag.t(), :removed_from_entity}
+          | {:ok, Oli.Tags.Tag.t(), :completely_removed}
           | {:error, :not_found}
   def remove_tag_from_project(project, tag, opts \\ []) do
     project_id = get_entity_id(project)
@@ -197,47 +205,7 @@ defmodule Oli.Tags do
         {:error, :not_found}
 
       project_tag ->
-        if remove_if_unused do
-          # Count total usage of this tag across projects and sections
-          project_count_query =
-            from(pt in ProjectTag, where: pt.tag_id == ^tag_id, select: count())
-
-          section_count_query =
-            from(st in SectionTag, where: st.tag_id == ^tag_id, select: count())
-
-          project_count = Repo.one(project_count_query) || 0
-          section_count = Repo.one(section_count_query) || 0
-          total_usage = project_count + section_count
-
-          if total_usage <= 1 do
-            # This is the last usage, delete the tag itself (cascade will remove associations)
-            case Repo.get(Tag, tag_id) do
-              nil ->
-                case Repo.delete(project_tag) do
-                  {:ok, deleted_project_tag} -> {:ok, deleted_project_tag, :removed_from_entity}
-                  {:error, changeset} -> {:error, changeset}
-                end
-
-              tag ->
-                case Repo.delete(tag) do
-                  {:ok, deleted_tag} -> {:ok, deleted_tag, :completely_removed}
-                  {:error, changeset} -> {:error, changeset}
-                end
-            end
-          else
-            # Tag is still used elsewhere, just remove the association
-            case Repo.delete(project_tag) do
-              {:ok, deleted_project_tag} -> {:ok, deleted_project_tag, :removed_from_entity}
-              {:error, changeset} -> {:error, changeset}
-            end
-          end
-        else
-          # Standard behavior: just remove the association
-          case Repo.delete(project_tag) do
-            {:ok, deleted_project_tag} -> {:ok, deleted_project_tag, :removed_from_entity}
-            {:error, changeset} -> {:error, changeset}
-          end
-        end
+        handle_tag_removal(project_tag, tag_id, remove_if_unused)
     end
   end
 
@@ -266,9 +234,13 @@ defmodule Oli.Tags do
       {:error, :not_found}
 
   """
-  @spec remove_tag_from_section(Section.t() | integer(), Tag.t() | integer(), keyword()) ::
-          {:ok, SectionTag.t(), :removed_from_entity}
-          | {:ok, Tag.t(), :completely_removed}
+  @spec remove_tag_from_section(
+          Oli.Delivery.Sections.Section.t() | integer(),
+          Oli.Tags.Tag.t() | integer(),
+          keyword()
+        ) ::
+          {:ok, Oli.Tags.SectionTag.t(), :removed_from_entity}
+          | {:ok, Oli.Tags.Tag.t(), :completely_removed}
           | {:error, :not_found}
   def remove_tag_from_section(section, tag, opts \\ []) do
     section_id = get_entity_id(section)
@@ -280,47 +252,7 @@ defmodule Oli.Tags do
         {:error, :not_found}
 
       section_tag ->
-        if remove_if_unused do
-          # Count total usage of this tag across projects and sections
-          project_count_query =
-            from(pt in ProjectTag, where: pt.tag_id == ^tag_id, select: count())
-
-          section_count_query =
-            from(st in SectionTag, where: st.tag_id == ^tag_id, select: count())
-
-          project_count = Repo.one(project_count_query) || 0
-          section_count = Repo.one(section_count_query) || 0
-          total_usage = project_count + section_count
-
-          if total_usage <= 1 do
-            # This is the last usage, delete the tag itself (cascade will remove associations)
-            case Repo.get(Tag, tag_id) do
-              nil ->
-                case Repo.delete(section_tag) do
-                  {:ok, deleted_section_tag} -> {:ok, deleted_section_tag, :removed_from_entity}
-                  {:error, changeset} -> {:error, changeset}
-                end
-
-              tag ->
-                case Repo.delete(tag) do
-                  {:ok, deleted_tag} -> {:ok, deleted_tag, :completely_removed}
-                  {:error, changeset} -> {:error, changeset}
-                end
-            end
-          else
-            # Tag is still used elsewhere, just remove the association
-            case Repo.delete(section_tag) do
-              {:ok, deleted_section_tag} -> {:ok, deleted_section_tag, :removed_from_entity}
-              {:error, changeset} -> {:error, changeset}
-            end
-          end
-        else
-          # Standard behavior: just remove the association
-          case Repo.delete(section_tag) do
-            {:ok, deleted_section_tag} -> {:ok, deleted_section_tag, :removed_from_entity}
-            {:error, changeset} -> {:error, changeset}
-          end
-        end
+        handle_tag_removal(section_tag, tag_id, remove_if_unused)
     end
   end
 
@@ -333,7 +265,7 @@ defmodule Oli.Tags do
       [%Tag{}, ...]
 
   """
-  @spec get_project_tags(Project.t() | integer()) :: [Tag.t()]
+  @spec get_project_tags(Oli.Authoring.Course.Project.t() | integer()) :: [Oli.Tags.Tag.t()]
   def get_project_tags(project) do
     project_id = get_entity_id(project)
 
@@ -356,7 +288,7 @@ defmodule Oli.Tags do
       [%Tag{}, ...]
 
   """
-  @spec get_section_tags(Section.t() | integer()) :: [Tag.t()]
+  @spec get_section_tags(Oli.Delivery.Sections.Section.t() | integer()) :: [Oli.Tags.Tag.t()]
   def get_section_tags(section) do
     section_id = get_entity_id(section)
 
@@ -379,7 +311,7 @@ defmodule Oli.Tags do
       {:ok, %Tag{}}
 
   """
-  @spec get_or_create_tag(String.t()) :: {:ok, Tag.t()}
+  @spec get_or_create_tag(String.t()) :: {:ok, Oli.Tags.Tag.t()}
   def get_or_create_tag(name) when is_binary(name) do
     case get_tag_by_name(name) do
       nil -> create_tag(%{name: name})
@@ -396,7 +328,7 @@ defmodule Oli.Tags do
       [%Tag{name: "Biology"}, %Tag{name: "Biochemistry"}, ...]
 
   """
-  @spec search_tags(String.t(), integer()) :: [Tag.t()]
+  @spec search_tags(String.t(), integer()) :: [Oli.Tags.Tag.t()]
   def search_tags(search_term, limit \\ 10) when is_binary(search_term) do
     Tag
     |> where([t], ilike(t.name, ^"%#{search_term}%"))
@@ -413,8 +345,14 @@ defmodule Oli.Tags do
     where(query, [t], ilike(t.name, ^"%#{search}%"))
   end
 
-  defp get_entity_id(%{id: id}), do: id
-  defp get_entity_id(id) when is_integer(id), do: id
+  defp get_entity_id(%{id: id}) when is_integer(id) and id > 0, do: id
+  defp get_entity_id(id) when is_integer(id) and id > 0, do: id
+
+  defp get_entity_id(%{id: id}),
+    do: raise(ArgumentError, "Entity ID must be a positive integer, got: #{inspect(id)}")
+
+  defp get_entity_id(id),
+    do: raise(ArgumentError, "Entity ID must be a positive integer, got: #{inspect(id)}")
 
   # Parses database constraint errors for association functions
   defp parse_association_errors(result, _entity_type) do
@@ -463,5 +401,64 @@ defmodule Oli.Tags do
           nil
       end
     end)
+  end
+
+  # Handles tag removal logic with optional deletion if unused.
+  #
+  # ## Parameters
+  # - `association_record` - The association record (ProjectTag or SectionTag) to be deleted
+  # - `tag_id` - The ID of the tag
+  # - `remove_if_unused` - Whether to delete the tag if it becomes unused
+  #
+  # ## Returns
+  # - `{:ok, association_record, :removed_from_entity}` - Association removed, tag still exists
+  # - `{:ok, tag, :completely_removed}` - Association removed and tag deleted
+  defp handle_tag_removal(association_record, tag_id, remove_if_unused) do
+    if remove_if_unused do
+      total_usage = count_tag_usage(tag_id)
+
+      if total_usage <= 1 do
+        # This is the last usage, delete the tag itself (cascade will remove associations)
+        case Repo.get(Tag, tag_id) do
+          nil ->
+            case Repo.delete(association_record) do
+              {:ok, deleted_record} -> {:ok, deleted_record, :removed_from_entity}
+              {:error, changeset} -> {:error, changeset}
+            end
+
+          tag ->
+            case Repo.delete(tag) do
+              {:ok, deleted_tag} -> {:ok, deleted_tag, :completely_removed}
+              {:error, changeset} -> {:error, changeset}
+            end
+        end
+      else
+        # Tag is still used elsewhere, just remove the association
+        case Repo.delete(association_record) do
+          {:ok, deleted_record} -> {:ok, deleted_record, :removed_from_entity}
+          {:error, changeset} -> {:error, changeset}
+        end
+      end
+    else
+      # Standard behavior: just remove the association
+      case Repo.delete(association_record) do
+        {:ok, deleted_record} -> {:ok, deleted_record, :removed_from_entity}
+        {:error, changeset} -> {:error, changeset}
+      end
+    end
+  end
+
+  # Counts total usage of a tag across projects and sections.
+  # Returns the total count as a single integer.
+  @spec count_tag_usage(integer()) :: integer()
+  defp count_tag_usage(tag_id) do
+    # Two simple, indexed queries - much more performant for large tables
+    project_count_query = from(pt in ProjectTag, where: pt.tag_id == ^tag_id, select: count())
+    section_count_query = from(st in SectionTag, where: st.tag_id == ^tag_id, select: count())
+
+    project_count = Repo.one(project_count_query) || 0
+    section_count = Repo.one(section_count_query) || 0
+
+    project_count + section_count
   end
 end

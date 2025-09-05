@@ -11,6 +11,15 @@ defmodule Oli.Tags.Tag do
 
   alias Oli.Tags.{ProjectTag, SectionTag}
 
+  @type t :: %__MODULE__{
+          id: integer() | nil,
+          name: String.t(),
+          inserted_at: DateTime.t() | nil,
+          updated_at: DateTime.t() | nil,
+          projects: [Oli.Authoring.Course.Project.t()] | Ecto.Association.NotLoaded.t(),
+          sections: [Oli.Delivery.Sections.Section.t()] | Ecto.Association.NotLoaded.t()
+        }
+
   schema "tags" do
     field :name, :string
     timestamps(type: :utc_datetime)
@@ -23,7 +32,7 @@ defmodule Oli.Tags.Tag do
   @doc """
   Creates a changeset for a tag.
   """
-  @spec changeset(Tag | Ecto.Changeset.t(), map()) :: Ecto.Changeset.t()
+  @spec changeset(t() | Ecto.Changeset.t(), map()) :: Ecto.Changeset.t()
   def changeset(tag, attrs \\ %{}) do
     tag
     |> cast(attrs, [:name])
