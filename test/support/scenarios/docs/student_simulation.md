@@ -6,7 +6,7 @@ This document covers directives for simulating student interactions and tracking
 - [Overview](#overview)
 - [view_practice_page](#view_practice_page) - Simulate viewing pages
 - [answer_question](#answer_question) - Simulate answering activities
-- [assert_progress](#assert_progress) - Assert progress metrics
+- [assert](#assert) - Assert progress metrics and other conditions
 - [Complete Workflows](#complete-workflows)
 
 ---
@@ -147,11 +147,11 @@ Use a map of input IDs to values:
 
 ---
 
-## assert_progress
+## assert
 
-Asserts student progress in a page or container. Can check individual student progress or average progress across all students.
+The `assert` directive can be used to assert student progress in a page or container. When used with the `progress` attribute, it can check individual student progress or average progress across all students.
 
-### Parameters
+### Progress Assertion Parameters
 - `section`: Name of the section (required)
 - `progress`: Expected progress value 0.0-1.0 (required)
 - `page`: Title of the page (one of page/container required)
@@ -167,28 +167,31 @@ Asserts student progress in a page or container. Can check individual student pr
 
 #### Individual Student Progress on Page
 ```yaml
-- assert_progress:
-    section: "my_section"
-    student: "alice"
-    page: "Lesson 1"
-    progress: 1.0  # Alice completed the page
+- assert:
+    progress:
+      section: "my_section"
+      student: "alice"
+      page: "Lesson 1"
+      progress: 1.0  # Alice completed the page
 ```
 
 #### Average Progress for All Students
 ```yaml
-- assert_progress:
-    section: "my_section"
-    page: "Lesson 1"
-    progress: 0.5  # Half the students completed
+- assert:
+    progress:
+      section: "my_section"
+      page: "Lesson 1"
+      progress: 0.5  # Half the students completed
 ```
 
 #### Container Progress
 ```yaml
-- assert_progress:
-    section: "my_section"
-    student: "alice"
-    container: "Module 1"
-    progress: 0.33  # Alice completed 1 of 3 pages in module
+- assert:
+    progress:
+      section: "my_section"
+      student: "alice"
+      container: "Module 1"
+      progress: 0.33  # Alice completed 1 of 3 pages in module
 ```
 
 ### Progress Calculation
@@ -291,11 +294,12 @@ Asserts student progress in a page or container. Can check individual student pr
     response: "correct"
 
 # Assert Lesson 1 complete
-- assert_progress:
-    section: "course_section"
-    student: "john"
-    page: "Lesson 1"
-    progress: 1.0
+- assert:
+    progress:
+      section: "course_section"
+      student: "john"
+      page: "Lesson 1"
+      progress: 1.0
 
 # Student partially completes Quiz
 - view_practice_page:
@@ -312,18 +316,20 @@ Asserts student progress in a page or container. Can check individual student pr
 # Doesn't answer quiz_q2
 
 # Assert partial Quiz progress
-- assert_progress:
-    section: "course_section"
-    student: "john"
-    page: "Quiz"
-    progress: 0.5  # Answered 1 of 2 questions
+- assert:
+    progress:
+      section: "course_section"
+      student: "john"
+      page: "Quiz"
+      progress: 0.5  # Answered 1 of 2 questions
 
 # Assert Module 1 progress (1 complete, 1 partial, 1 not started)
-- assert_progress:
-    section: "course_section"
-    student: "john"
-    container: "Module 1"
-    progress: 0.5  # Average of child progress
+- assert:
+    progress:
+      section: "course_section"
+      student: "john"
+      container: "Module 1"
+      progress: 0.5  # Average of child progress
 ```
 
 ### Workflow 2: Multiple Students with Varying Progress
@@ -439,47 +445,54 @@ Asserts student progress in a page or container. Can check individual student pr
 # Student 3 doesn't complete anything
 
 # Assert individual progress
-- assert_progress:
-    section: "class_section"
-    student: "student1"
-    page: "Pre-Test"
-    progress: 1.0
+- assert:
+    progress:
+      section: "class_section"
+      student: "student1"
+      page: "Pre-Test"
+      progress: 1.0
 
-- assert_progress:
-    section: "class_section"
-    student: "student1"
-    page: "Post-Test"
-    progress: 1.0
+- assert:
+    progress:
+      section: "class_section"
+      student: "student1"
+      page: "Post-Test"
+      progress: 1.0
 
-- assert_progress:
-    section: "class_section"
-    student: "student2"
-    page: "Pre-Test"
-    progress: 1.0
+- assert:
+    progress:
+      section: "class_section"
+      student: "student2"
+      page: "Pre-Test"
+      progress: 1.0
 
-- assert_progress:
-    section: "class_section"
-    student: "student2"
-    page: "Post-Test"
-    progress: 0.0
+- assert:
+    progress:
+      section: "class_section"
+      student: "student2"
+      page: "Post-Test"
+      progress: 0.0
 
-- assert_progress:
-    section: "class_section"
-    student: "student3"
-    page: "Pre-Test"
-    progress: 0.0
+- assert:
+    progress:
+      section: "class_section"
+      student: "student3"
+      page: "Pre-Test"
+      progress: 0.0
 
 # Assert average progress across all students
-- assert_progress:
-    section: "class_section"
-    page: "Pre-Test"
-    progress: 0.67  # 2 of 3 completed
+- assert:
+    progress:
+      section: "class_section"
+      page: "Pre-Test"
+      progress: 0.67  # 2 of 3 completed
 
-- assert_progress:
-    section: "class_section"
-    page: "Post-Test"
-    progress: 0.33  # 1 of 3 completed
-```
+- assert:
+    progress:
+      section: "class_section"
+      page: "Post-Test"
+      progress: 0.33  # 1 of 3 completed
+  ```
 
 ### Workflow 3: Testing Different Response Types
 
@@ -575,12 +588,13 @@ Asserts student progress in a page or container. Can check individual student pr
     response: ["c1", "c2"]  # Selected both correct options
 
 # Assert completion
-- assert_progress:
-    section: "test_section"
-    student: "tester"
-    page: "Mixed Questions"
-    progress: 1.0
-```
+- assert:
+    progress:
+      section: "test_section"
+      student: "tester"
+      page: "Mixed Questions"
+      progress: 1.0
+  ```
 
 ## Notes
 
@@ -588,5 +602,5 @@ Asserts student progress in a page or container. Can check individual student pr
 - Pages must be viewed before questions can be answered
 - Virtual IDs link activities to student responses
 - Progress is calculated based on actual completion, not correctness
-- The `assert_progress` directive uses `Oli.Delivery.Metrics` for calculations
+- The `assert` directive (with progress attribute) uses `Oli.Delivery.Metrics` for calculations
 - Container progress may be 0.0 in test scenarios due to ResourceAccess record limitations

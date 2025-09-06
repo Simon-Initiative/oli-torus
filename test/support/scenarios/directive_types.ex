@@ -43,9 +43,9 @@ defmodule Oli.Scenarios.DirectiveTypes do
     defstruct [:to, :description]
   end
 
-  defmodule VerifyDirective do
-    @moduledoc "Verifies the structure or resource properties of a project or section"
-    defstruct [:to, :structure, :resource, :assertions]
+  defmodule AssertDirective do
+    @moduledoc "Asserts the structure, resource properties, progress, or general assertions"
+    defstruct [:structure, :resource, :progress, :assertions]
   end
 
   defmodule UserDirective do
@@ -118,18 +118,6 @@ defmodule Oli.Scenarios.DirectiveTypes do
     response: the student's response (e.g., "b" for multiple choice)
     """
     defstruct [:student, :section, :page, :activity_virtual_id, :response]
-  end
-  
-  defmodule AssertProgressDirective do
-    @moduledoc """
-    Asserts student progress in a page or container.
-    section: name of the section (required)
-    progress: expected progress value 0.0-1.0 (required)
-    page: title of the page (one of page/container required)
-    container: title of the container (one of page/container required)  
-    student: name of student user (optional - if omitted, asserts all students' average progress)
-    """
-    defstruct [:section, :progress, :page, :container, :student]
   end
 
   # Execution state

@@ -34,18 +34,18 @@ defmodule Oli.Scenarios.ResourceVerifyTest do
                   max_attempts: 3
 
       # Verify the properties were set correctly
-      - verify:
-          to: "test_project"
+      - assert:
           resource:
+            to: "test_project"
             target: "Practice Page"
             resource:
               purpose: "@atom(deliberate_practice)"
               graded: false
               max_attempts: 0
 
-      - verify:
-          to: "test_project"
+      - assert:
           resource:
+            to: "test_project"
             target: "Quiz Page"
             resource:
               graded: true
@@ -91,17 +91,17 @@ defmodule Oli.Scenarios.ResourceVerifyTest do
                   max_attempts: 2
 
       # Verify resource properties in the section
-      - verify:
-          to: "test_section"
+      - assert:
           resource:
+            to: "test_section"
             target: "Lesson 1"
             resource:
               purpose: "@atom(foundation)"
               graded: false
 
-      - verify:
-          to: "test_section"
+      - assert:
           resource:
+            to: "test_section"
             target: "Lesson 2"
             resource:
               purpose: "@atom(application)"
@@ -142,9 +142,9 @@ defmodule Oli.Scenarios.ResourceVerifyTest do
                   max_attempts: 5
 
       # Verify resource properties in the product
-      - verify:
-          to: "test_product"
+      - assert:
           resource:
+            to: "test_product"
             target: "Page 1"
             resource:
               graded: true
@@ -177,9 +177,9 @@ defmodule Oli.Scenarios.ResourceVerifyTest do
                   max_attempts: 3
 
       # Verify with wrong expected values
-      - verify:
-          to: "test_project"
+      - assert:
           resource:
+            to: "test_project"
             target: "Test Page"
             resource:
               graded: false  # Wrong value
@@ -203,9 +203,9 @@ defmodule Oli.Scenarios.ResourceVerifyTest do
               - page: "Existing Page"
 
       # Try to verify non-existent resource
-      - verify:
-          to: "test_project"
+      - assert:
           resource:
+            to: "test_project"
             target: "Non-existent Page"
             resource:
               graded: true
@@ -241,9 +241,9 @@ defmodule Oli.Scenarios.ResourceVerifyTest do
                   graded: false
 
       # Verify structure
-      - verify:
-          to: "test_project"
+      - assert:
           structure:
+            to: "test_project"
             root:
               children:
                 - page: "Page 1"
@@ -252,9 +252,9 @@ defmodule Oli.Scenarios.ResourceVerifyTest do
                     - page: "Page 2"
 
       # Verify resource properties
-      - verify:
-          to: "test_project"
+      - assert:
           resource:
+            to: "test_project"
             target: "Page 2"
             resource:
               purpose: "@atom(deliberate_practice)"

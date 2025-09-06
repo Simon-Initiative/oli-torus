@@ -21,9 +21,9 @@ defmodule Oli.Scenarios.ObjectivesTest do
             - Learning Objective 2:
               - "Sub-objective 2.1"
 
-      - verify:
-          to: "test_proj"
+      - assert:
           structure:
+            to: "test_proj"
             root:
               children:
                 - page: "Page 1"

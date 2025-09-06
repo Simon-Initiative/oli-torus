@@ -13,7 +13,7 @@ defmodule Oli.Scenarios.Engine do
     RemixDirective,
     ManipulateDirective,
     PublishDirective,
-    VerifyDirective,
+    AssertDirective,
     UserDirective,
     EnrollDirective,
     InstitutionDirective,
@@ -22,8 +22,7 @@ defmodule Oli.Scenarios.Engine do
     ActivityDirective,
     EditPageDirective,
     ViewPracticePageDirective,
-    AnswerQuestionDirective,
-    AssertProgressDirective
+    AnswerQuestionDirective
   }
 
   alias Oli.Scenarios.Directives.{
@@ -33,7 +32,7 @@ defmodule Oli.Scenarios.Engine do
     RemixHandler,
     ManipulateHandler,
     PublishHandler,
-    VerifyHandler,
+    AssertHandler,
     UserHandler,
     EnrollmentHandler,
     InstitutionHandler,
@@ -42,8 +41,7 @@ defmodule Oli.Scenarios.Engine do
     ActivityHandler,
     EditPageHandler,
     ViewPracticePageHandler,
-    AnswerQuestionHandler,
-    AssertProgressHandler
+    AnswerQuestionHandler
   }
 
   alias Oli.Utils.Seeder.AccountsFixtures
@@ -137,8 +135,8 @@ defmodule Oli.Scenarios.Engine do
     PublishHandler.handle(directive, state)
   end
 
-  defp execute_directive(%VerifyDirective{} = directive, state) do
-    VerifyHandler.handle(directive, state)
+  defp execute_directive(%AssertDirective{} = directive, state) do
+    AssertHandler.handle(directive, state)
   end
 
   defp execute_directive(%UserDirective{} = directive, state) do
@@ -175,10 +173,6 @@ defmodule Oli.Scenarios.Engine do
 
   defp execute_directive(%AnswerQuestionDirective{} = directive, state) do
     AnswerQuestionHandler.handle(directive, state)
-  end
-
-  defp execute_directive(%AssertProgressDirective{} = directive, state) do
-    AssertProgressHandler.handle(directive, state)
   end
 
   # Handle lists of directives (from complex parsing)

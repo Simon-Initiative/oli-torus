@@ -103,18 +103,20 @@ defmodule Oli.Scenarios.AssertProgressTest do
           response: "a"
 
       # Assert student1's progress on Lesson 1 (should be 1.0)
-      - assert_progress:
-          section: test_section
-          student: student1
-          page: "Lesson 1"
-          progress: 1.0
+      - assert:
+          progress:
+            section: test_section
+            student: student1
+            page: "Lesson 1"
+            progress: 1.0
 
       # Assert student2's progress on Lesson 1 (should be 0.0)
-      - assert_progress:
-          section: test_section
-          student: student2
-          page: "Lesson 1"
-          progress: 0.0
+      - assert:
+          progress:
+            section: test_section
+            student: student2
+            page: "Lesson 1"
+            progress: 0.0
       """
 
       directives = DirectiveParser.parse_yaml!(yaml)
@@ -223,10 +225,11 @@ defmodule Oli.Scenarios.AssertProgressTest do
       # Student3 doesn't complete the quiz
 
       # Assert average progress for all students (2 out of 3 completed = ~0.667)
-      - assert_progress:
-          section: test_section
-          page: "Quiz Page"
-          progress: 0.667
+      - assert:
+          progress:
+            section: test_section
+            page: "Quiz Page"
+            progress: 0.667
       """
 
       directives = DirectiveParser.parse_yaml!(yaml)
@@ -317,11 +320,12 @@ defmodule Oli.Scenarios.AssertProgressTest do
       # Assert progress for Unit 1 container
       # NOTE: In test scenarios, container progress may not be fully simulated
       # as it depends on ResourceAccess records that aren't created by view_practice_page
-      - assert_progress:
-          section: test_section
-          student: student1
-          container: "Unit 1"
-          progress: 0.0
+      - assert:
+          progress:
+            section: test_section
+            student: student1
+            container: "Unit 1"
+            progress: 0.0
       """
 
       directives = DirectiveParser.parse_yaml!(yaml)
@@ -382,11 +386,12 @@ defmodule Oli.Scenarios.AssertProgressTest do
       # Student doesn't complete anything
 
       # Assert incorrect progress (expecting 1.0 but actual is 0.0)
-      - assert_progress:
-          section: test_section
-          student: student1
-          page: "Test Page"
-          progress: 1.0
+      - assert:
+          progress:
+            section: test_section
+            student: student1
+            page: "Test Page"
+            progress: 1.0
       """
 
       directives = DirectiveParser.parse_yaml!(yaml)
@@ -427,25 +432,28 @@ defmodule Oli.Scenarios.AssertProgressTest do
           role: student
 
       # Test with integer (should convert to float)
-      - assert_progress:
-          section: test_section
-          student: student1
-          page: "Page 1"
-          progress: 0
+      - assert:
+          progress:
+            section: test_section
+            student: student1
+            page: "Page 1"
+            progress: 0
 
       # Test with string float
-      - assert_progress:
-          section: test_section
-          student: student1
-          page: "Page 1"
-          progress: "0.0"
+      - assert:
+          progress:
+            section: test_section
+            student: student1
+            page: "Page 1"
+            progress: "0.0"
 
       # Test with actual float
-      - assert_progress:
-          section: test_section
-          student: student1
-          page: "Page 1"
-          progress: 0.0
+      - assert:
+          progress:
+            section: test_section
+            student: student1
+            page: "Page 1"
+            progress: 0.0
       """
 
       directives = DirectiveParser.parse_yaml!(yaml)
@@ -471,10 +479,11 @@ defmodule Oli.Scenarios.AssertProgressTest do
               - page: "Page 1"
 
       # Try to assert progress for non-existent section
-      - assert_progress:
-          section: non_existent_section
-          page: "Page 1"
-          progress: 0.0
+      - assert:
+          progress:
+            section: non_existent_section
+            page: "Page 1"
+            progress: 0.0
       """
 
       directives = DirectiveParser.parse_yaml!(yaml)
@@ -501,10 +510,11 @@ defmodule Oli.Scenarios.AssertProgressTest do
           from: test_project
 
       # Try to assert progress for non-existent page
-      - assert_progress:
-          section: test_section
-          page: "Non-existent Page"
-          progress: 0.0
+      - assert:
+          progress:
+            section: test_section
+            page: "Non-existent Page"
+            progress: 0.0
       """
 
       directives = DirectiveParser.parse_yaml!(yaml)
@@ -531,9 +541,10 @@ defmodule Oli.Scenarios.AssertProgressTest do
           from: test_project
 
       # Missing both page and container
-      - assert_progress:
-          section: test_section
-          progress: 0.0
+      - assert:
+          progress:
+            section: test_section
+            progress: 0.0
       """
 
       directives = DirectiveParser.parse_yaml!(yaml)

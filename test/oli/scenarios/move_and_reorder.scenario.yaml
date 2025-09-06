@@ -30,9 +30,9 @@
     description: "Moving Page 2 to Module B"
 
 # Verify Page 2 is now in Module B
-- verify:
-    to: "test_move_reorder"
+- assert:
     structure:
+      to: "test_move_reorder"
       root:
         children:
           - container: "Module A"
@@ -58,9 +58,9 @@
     description: "Reordering Page 5 before Page 4"
 
 # Verify Page 5 is now before Page 4
-- verify:
-    to: "test_move_reorder"
+- assert:
     structure:
+      to: "test_move_reorder"
       root:
         children:
           - container: "Module A"
@@ -86,9 +86,9 @@
     description: "Reordering Page 4 after Page 2"
 
 # Verify final structure
-- verify:
-    to: "test_move_reorder"
+- assert:
     structure:
+      to: "test_move_reorder"
       root:
         children:
           - container: "Module A"
@@ -114,9 +114,9 @@
     description: "Moving Module A inside Module B"
 
 # Verify Module A is now inside Module B
-- verify:
-    to: "test_move_reorder"
+- assert:
     structure:
+      to: "test_move_reorder"
       root:
         children:
           - container: "Module B"

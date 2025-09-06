@@ -114,9 +114,9 @@ defmodule Oli.Scenarios.DSLTest do
           name: "section"
           from: "project"
 
-      - verify:
-          to: "section"
+      - assert:
           structure:
+            to: "section"
             root:
               children:
                 - page: "Page A"
@@ -260,9 +260,9 @@ defmodule Oli.Scenarios.DSLTest do
           from: "base"
 
       # Verify initial structure
-      - verify:
-          to: "custom"
+      - assert:
           structure:
+            to: "custom"
             root:
               children:
                 - page: "Page A"
@@ -280,9 +280,9 @@ defmodule Oli.Scenarios.DSLTest do
                 from: "Page C"
 
       # Verify the page was removed
-      - verify:
-          to: "custom"
+      - assert:
           structure:
+            to: "custom"
             root:
               children:
                 - page: "Page A"

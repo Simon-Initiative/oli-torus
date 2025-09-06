@@ -7,7 +7,7 @@ This document covers directives for creating and managing course sections, apply
 - [update](#update) - Apply project updates to sections
 - [customize](#customize) - Modify section curriculum
 - [remix](#remix) - Copy content into sections
-- [verify](#verify) - Verify section structure
+- [assert](#assert) - Assert section structure
 
 ---
 
@@ -110,10 +110,10 @@ Applies published updates from a project to a section. This simulates the real-w
     from: "evolving_course"
     to: "live_section"
 
-# 7. Verify section has the updates
-- verify:
-    to: "live_section"
+# 7. Assert section has the updates
+- assert:
     structure:
+      to: "live_section"
       root:
         children:
           - page: "Lesson 1 - Updated"
@@ -294,10 +294,10 @@ Copies content from a source project into a section's hierarchy. This allows ins
     section: "enhanced_section"
     to: "root"
 
-# Verify combined structure
-- verify:
-    to: "enhanced_section"
+# Assert combined structure
+- assert:
     structure:
+      to: "enhanced_section"
       root:
         children:
           - container: "Core Module"
@@ -312,16 +312,16 @@ Copies content from a source project into a section's hierarchy. This allows ins
 
 ---
 
-## verify
+## assert
 
 Verifies the structure of a section. Works the same as project verification but targets sections.
 
 ### Structure Verification
 
 ```yaml
-- verify:
-    to: "my_section"
+- assert:
     structure:
+      to: "my_section"
       root:
         children:
           - page: "Page 1"
@@ -413,10 +413,10 @@ This example demonstrates the full lifecycle of section management:
     from: "master_course"
     to: "fall_2024_honors"
 
-# 9. Verify final section structure
-- verify:
-    to: "fall_2024_honors"
+# 9. Assert final section structure
+- assert:
     structure:
+      to: "fall_2024_honors"
       root:
         children:
           - page: "Welcome - Updated for 2024"

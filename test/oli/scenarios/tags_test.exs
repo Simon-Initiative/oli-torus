@@ -18,9 +18,9 @@ defmodule Oli.Scenarios.TagsTest do
             - "Math"
             - "Algebra"
 
-      - verify:
-          to: "test_proj"
+      - assert:
           structure:
+            to: "test_proj"
             root:
               children:
                 - page: "Page 1"

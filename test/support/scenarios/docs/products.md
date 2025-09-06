@@ -354,9 +354,9 @@ Maintain different versions of course templates:
 Products can be verified just like sections:
 
 ```yaml
-- verify:
-    to: "my_product_template"
+- assert:
     structure:
+      to: "my_product_template"
       root:
         children:
           - page: "Expected Page"

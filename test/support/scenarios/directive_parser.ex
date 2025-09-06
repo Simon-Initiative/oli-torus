@@ -11,7 +11,7 @@ defmodule Oli.Scenarios.DirectiveParser do
     RemixDirective,
     ManipulateDirective,
     PublishDirective,
-    VerifyDirective,
+    AssertDirective,
     UserDirective,
     EnrollDirective,
     InstitutionDirective,
@@ -20,8 +20,7 @@ defmodule Oli.Scenarios.DirectiveParser do
     ActivityDirective,
     EditPageDirective,
     ViewPracticePageDirective,
-    AnswerQuestionDirective,
-    AssertProgressDirective
+    AnswerQuestionDirective
   }
 
   alias Oli.Scenarios.Types.Node
@@ -111,15 +110,15 @@ defmodule Oli.Scenarios.DirectiveParser do
     }
   end
 
-  defp parse_directive(%{"verify" => verify_data}) do
-    %VerifyDirective{
-      to: verify_data["to"],
-      structure: parse_node(verify_data["structure"]),
-      resource: verify_data["resource"],
-      assertions: verify_data["assertions"] || []
+  defp parse_directive(%{"assert" => assert_data}) do
+    %AssertDirective{
+      structure: parse_structure_assertion(assert_data["structure"]),
+      resource: parse_resource_assertion(assert_data["resource"]),
+      progress: parse_progress_assertion(assert_data["progress"]),
+      assertions: assert_data["assertions"]
     }
   end
-
+  
   defp parse_directive(%{"update" => update_data}) do
     %UpdateDirective{
       from: update_data["from"],
@@ -199,16 +198,6 @@ defmodule Oli.Scenarios.DirectiveParser do
       response: answer_data["response"]
     }
   end
-  
-  defp parse_directive(%{"assert_progress" => progress_data}) do
-    %AssertProgressDirective{
-      section: progress_data["section"],
-      progress: parse_float(progress_data["progress"]),
-      page: progress_data["page"],
-      container: progress_data["container"],
-      student: progress_data["student"]
-    }
-  end
 
   # Handle single unrecognized directive
   defp parse_directive(map) when is_map(map) and map_size(map) == 1 do
@@ -221,7 +210,7 @@ defmodule Oli.Scenarios.DirectiveParser do
          "remix",
          "manipulate",
          "publish",
-         "verify",
+         "assert",
          "user",
          "enroll",
          "institution",
@@ -230,10 +219,9 @@ defmodule Oli.Scenarios.DirectiveParser do
          "create_activity",
          "edit_page",
          "view_practice_page",
-         "answer_question",
-         "assert_progress"
+         "answer_question"
        ] do
-      raise "Unrecognized directive: '#{key}'. Valid directives are: project, section, product, remix, manipulate, publish, verify, user, enroll, institution, update, customize, create_activity, edit_page, view_practice_page, answer_question, assert_progress"
+      raise "Unrecognized directive: '#{key}'. Valid directives are: project, section, product, remix, manipulate, publish, assert, user, enroll, institution, update, customize, create_activity, edit_page, view_practice_page, answer_question"
     else
       # This shouldn't happen as specific handlers above should match first
       raise "Internal error: unhandled directive '#{key}'"
@@ -251,7 +239,7 @@ defmodule Oli.Scenarios.DirectiveParser do
              "remix",
              "manipulate",
              "publish",
-             "verify",
+             "assert",
              "user",
              "enroll",
              "institution",
@@ -265,8 +253,36 @@ defmodule Oli.Scenarios.DirectiveParser do
         [parse_directive(%{key => value})]
 
       {key, _value} ->
-        raise "Unrecognized directive: '#{key}'. Valid directives are: project, section, product, remix, manipulate, publish, verify, user, enroll, institution, update, customize, create_activity, edit_page, view_practice_page, answer_question"
+        raise "Unrecognized directive: '#{key}'. Valid directives are: project, section, product, remix, manipulate, publish, assert, user, enroll, institution, update, customize, create_activity, edit_page, view_practice_page, answer_question"
     end)
+  end
+
+  defp parse_structure_assertion(nil), do: nil
+  defp parse_structure_assertion(data) when is_map(data) do
+    %{
+      to: data["to"],
+      root: parse_node(data["root"])
+    }
+  end
+  
+  defp parse_resource_assertion(nil), do: nil
+  defp parse_resource_assertion(data) when is_map(data) do
+    %{
+      to: data["to"],
+      target: data["target"],
+      resource: data["resource"]
+    }
+  end
+  
+  defp parse_progress_assertion(nil), do: nil
+  defp parse_progress_assertion(data) when is_map(data) do
+    %{
+      section: data["section"],
+      progress: parse_float(data["progress"]),
+      page: data["page"],
+      container: data["container"],
+      student: data["student"]
+    }
   end
 
   # Parse node structures (for project and verification structures)

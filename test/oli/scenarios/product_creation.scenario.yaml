@@ -41,9 +41,9 @@
     registration_open: true
 
 # Verify that both sections have the same structure from the product
-- verify:
-    to: "fall_2024_section"
+- assert:
     structure:
+      to: "fall_2024_section"
       root:
         children:
           - page: "Course Introduction"
@@ -58,9 +58,9 @@
               - page: "Case Studies"
               - page: "Final Assessment"
 
-- verify:
-    to: "spring_2025_section"
+- assert:
     structure:
+      to: "spring_2025_section"
       root:
         children:
           - page: "Course Introduction"
@@ -100,9 +100,9 @@
     from: "enhanced_template"
 
 # Verify the enhanced section has the bonus content
-- verify:
-    to: "summer_2025_section"
+- assert:
     structure:
+      to: "summer_2025_section"
       root:
         children:
           - page: "Course Introduction"

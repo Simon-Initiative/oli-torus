@@ -6,7 +6,7 @@ This document covers directives for creating, manipulating, and publishing proje
 - [project](#project) - Create new projects
 - [manipulate](#manipulate) - Modify project structure
 - [publish](#publish) - Publish project changes
-- [verify](#verify) - Verify project structure and properties
+- [assert](#assert) - Assert project structure and properties
 
 ---
 
@@ -306,18 +306,18 @@ Publishing is typically part of a larger workflow:
 
 ---
 
-## verify
+## assert
 
-Verifies the structure or resource properties of a project.
+Asserts the structure or resource properties of a project.
 
-### Structure Verification
+### Structure Assertion
 
-Verifies the hierarchical structure matches expectations.
+Asserts the hierarchical structure matches expectations.
 
 ```yaml
-- verify:
-    to: "my_project"
+- assert:
     structure:
+      to: "my_project"
       root:
         children:
           - page: "Introduction"
@@ -327,14 +327,14 @@ Verifies the hierarchical structure matches expectations.
               - page: "Lesson 2"
 ```
 
-### Resource Property Verification
+### Resource Property Assertion
 
-Verifies specific properties of individual resources.
+Asserts specific properties of individual resources.
 
 ```yaml
-- verify:
-    to: "my_project"
+- assert:
     resource:
+      to: "my_project"
       target: "Quiz Page"
       resource:
         graded: true
@@ -364,19 +364,19 @@ Verifies specific properties of individual resources.
             graded: true
             max_attempts: 2
 
-# Verify structure
-- verify:
-    to: "test_project"
+# Assert structure
+- assert:
     structure:
+      to: "test_project"
       root:
         children:
           - page: "Page 1"
           - page: "Quiz"
 
-# Verify properties
-- verify:
-    to: "test_project"
+# Assert properties
+- assert:
     resource:
+      to: "test_project"
       target: "Quiz"
       resource:
         graded: true
@@ -441,10 +441,10 @@ Verifies specific properties of individual resources.
     to: "full_course"
     description: "Initial course release v1.0"
 
-# Verify final structure
-- verify:
-    to: "full_course"
+# Assert final structure
+- assert:
     structure:
+      to: "full_course"
       root:
         children:
           - container: "Module 1"

@@ -60,7 +60,7 @@ All directives are documented in detail in the linked documentation files.
 | | `project` | Create a new project with content structure | [projects.md](docs/projects.md#project) |
 | | `manipulate` | Modify project structure (add, move, remove, etc.) | [projects.md](docs/projects.md#manipulate) |
 | | `publish` | Publish project changes | [projects.md](docs/projects.md#publish) |
-| | `verify` | Verify project structure/properties | [projects.md](docs/projects.md#verify) |
+| | `assert` | Assert project structure/properties | [projects.md](docs/projects.md#assert) |
 | **Sections** | | | |
 | | `section` | Create course section from project/product | [sections.md](docs/sections.md#section) |
 | | `update` | Apply project updates to section | [sections.md](docs/sections.md#update) |
@@ -74,7 +74,6 @@ All directives are documented in detail in the linked documentation files.
 | **Students** | | | |
 | | `view_practice_page` | Simulate student viewing page | [student_simulation.md](docs/student_simulation.md#view_practice_page) |
 | | `answer_question` | Simulate answering activity | [student_simulation.md](docs/student_simulation.md#answer_question) |
-| | `assert_progress` | Assert student progress metrics | [student_simulation.md](docs/student_simulation.md#assert_progress) |
 | **Organization** | | | |
 | | `user` | Create users (author/instructor/student) | [users_and_org.md](docs/users_and_org.md#user) |
 | | `institution` | Create institution | [users_and_org.md](docs/users_and_org.md#institution) |
@@ -111,9 +110,9 @@ defmodule MyScenarioTest do
           children:
             - page: "Page 1"
     
-    - verify:
-        to: "test_project"
+    - assert:
         structure:
+          to: "test_project"
           root:
             children:
               - page: "Page 1"

@@ -20,9 +20,9 @@
     title: "Demo Section"
 
 # Verify the project structure
-- verify:
-    to: "demo_project"
+- assert:
     structure:
+      to: "demo_project"
       root:
         children:
           - page: "Welcome"
@@ -33,9 +33,9 @@
           - page: "Summary"
 
 # Verify the section structure (should match the project)
-- verify:
-    to: "demo_section"
+- assert:
     structure:
+      to: "demo_section"
       root:
         children:
           - page: "Welcome"

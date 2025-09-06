@@ -36,9 +36,9 @@
     title: "Main Course Section"
 
 # Verify initial section structure
-- verify:
-    to: "main_section"
+- assert:
     structure:
+      to: "main_section"
       root:
         children:
           - page: "Welcome"
@@ -57,9 +57,9 @@
     to: "Module 1"
 
 # Verify the page was added to Module 1
-- verify:
-    to: "main_section"
+- assert:
     structure:
+      to: "main_section"
       root:
         children:
           - page: "Welcome"
@@ -79,9 +79,9 @@
     to: "Module 2"
 
 # Verify the module was added to Module 2
-- verify:
-    to: "main_section"
+- assert:
     structure:
+      to: "main_section"
       root:
         children:
           - page: "Welcome"
@@ -106,9 +106,9 @@
     to: "root"
 
 # Verify the page was added to the root
-- verify:
-    to: "main_section"
+- assert:
     structure:
+      to: "main_section"
       root:
         children:
           - page: "Welcome"

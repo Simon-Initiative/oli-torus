@@ -99,21 +99,27 @@ defmodule Oli.Scenarios.TestHelpers do
   Creates a verify specification as a string.
   """
   def verify_yaml(target, expected_structure) do
-    # Indent the expected structure properly for YAML
-    indented_structure =
-      expected_structure
-      |> String.split("\n")
+    # Parse the structure string and re-indent properly
+    lines = expected_structure |> String.trim() |> String.split("\n")
+    
+    # Add proper YAML indentation - each line needs to be indented under "structure:"
+    # The base indentation for items under "structure:" is 6 spaces
+    indented_structure = lines
       |> Enum.map(fn line ->
-        if String.trim(line) == "", do: "", else: "          #{line}"
+        if String.trim(line) == "" do
+          ""
+        else
+          # Add 6 spaces base indentation
+          "      #{line}"
+        end
       end)
       |> Enum.join("\n")
-      |> String.trim_trailing()
 
     """
-    - verify:
-        to: "#{target}"
+    - assert:
         structure:
-    #{indented_structure}
+          to: "#{target}"
+#{indented_structure}
     """
   end
 

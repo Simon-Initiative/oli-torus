@@ -1,13 +1,13 @@
-defmodule Oli.Scenarios.Directives.AssertProgressHandler do
+defmodule Oli.Scenarios.Directives.Assert.ProgressAssertion do
   @moduledoc """
-  Handles assert_progress directives for verifying student progress in pages or containers.
+  Handles progress assertions for student progress in pages or containers.
   
-  This handler uses Oli.Delivery.Metrics to calculate progress for:
+  This module uses Oli.Delivery.Metrics to calculate progress for:
   - Individual students or all enrolled students
   - Specific pages or entire containers
   """
 
-  alias Oli.Scenarios.DirectiveTypes.{ExecutionState, AssertProgressDirective, VerificationResult}
+  alias Oli.Scenarios.DirectiveTypes.{AssertDirective, VerificationResult}
   alias Oli.Delivery.Metrics
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Delivery.Sections
@@ -16,39 +16,50 @@ defmodule Oli.Scenarios.Directives.AssertProgressHandler do
   import Ecto.Query
 
   @doc """
-  Handles an assert_progress directive by calculating and verifying progress.
-  
-  Returns {:ok, state, verification_result} on completion, {:error, reason} on failure.
+  Asserts student progress in a page or container matches expected value.
   """
-  def handle(%AssertProgressDirective{} = directive, %ExecutionState{} = state) do
-    with {:ok, section} <- get_section(state, directive.section),
-         {:ok, resource_id} <- get_resource_id(section, directive.page || directive.container),
-         {:ok, user_ids} <- get_user_ids(state, directive.student, section),
-         actual_progress <- calculate_progress(section, resource_id, user_ids, directive) do
+  def assert(%AssertDirective{progress: progress_data}, state) when is_map(progress_data) do
+    section_name = progress_data.section
+    expected_progress = progress_data.progress
+    page = progress_data[:page]
+    container = progress_data[:container]
+    student = progress_data[:student]
+    
+    with {:ok, section} <- get_section(state, section_name),
+         {:ok, resource_id} <- get_resource_id(section, page || container),
+         {:ok, user_ids} <- get_user_ids(state, student, section),
+         actual_progress <- calculate_progress(section, resource_id, user_ids, progress_data) do
       
       # Allow a small tolerance for floating point comparison
       tolerance = 0.001
       
-      if abs(actual_progress - directive.progress) < tolerance do
-        {:ok, state, %VerificationResult{
-          passed: true,
-          message: format_success_message(directive, actual_progress),
-          expected: directive.progress,
-          actual: actual_progress
-        }}
-      else
-        {:ok, state, %VerificationResult{
-          passed: false,
-          message: format_failure_message(directive, actual_progress),
-          expected: directive.progress,
-          actual: actual_progress
-        }}
-      end
+      verification_result = 
+        if abs(actual_progress - expected_progress) < tolerance do
+          %VerificationResult{
+            to: section_name,
+            passed: true,
+            message: format_success_message(progress_data, actual_progress),
+            expected: expected_progress,
+            actual: actual_progress
+          }
+        else
+          %VerificationResult{
+            to: section_name,
+            passed: false,
+            message: format_failure_message(progress_data, actual_progress),
+            expected: expected_progress,
+            actual: actual_progress
+          }
+        end
+      
+      {:ok, state, verification_result}
     else
       {:error, reason} ->
         {:error, "Failed to assert progress: #{reason}"}
     end
   end
+  
+  def assert(%AssertDirective{progress: nil}, state), do: {:ok, state, nil}
 
   # Get section from state
   defp get_section(state, section_name) do
@@ -72,7 +83,7 @@ defmodule Oli.Scenarios.Directives.AssertProgressHandler do
   end
   
   defp get_resource_id(_section, nil) do
-    {:error, "Either 'page' or 'container' must be specified"}
+    {:error, "Either 'page' or 'container' must be specified for progress assertion"}
   end
 
   # Get user IDs - either specific student or all enrolled students
@@ -159,19 +170,19 @@ defmodule Oli.Scenarios.Directives.AssertProgressHandler do
   defp find_node_by_title(_, _), do: nil
 
   # Format success message
-  defp format_success_message(directive, actual_progress) do
-    target = directive.page || directive.container
-    student_info = if directive.student, do: "Student '#{directive.student}'", else: "All students"
+  defp format_success_message(progress_data, actual_progress) do
+    target = progress_data[:page] || progress_data[:container]
+    student_info = if progress_data[:student], do: "Student '#{progress_data[:student]}'", else: "All students"
     
-    "✓ Progress assertion passed: #{student_info} in '#{target}' has progress #{format_float(actual_progress)} (expected #{format_float(directive.progress)})"
+    "✓ Progress assertion passed: #{student_info} in '#{target}' has progress #{format_float(actual_progress)} (expected #{format_float(progress_data.progress)})"
   end
 
   # Format failure message  
-  defp format_failure_message(directive, actual_progress) do
-    target = directive.page || directive.container
-    student_info = if directive.student, do: "Student '#{directive.student}'", else: "All students"
+  defp format_failure_message(progress_data, actual_progress) do
+    target = progress_data[:page] || progress_data[:container]
+    student_info = if progress_data[:student], do: "Student '#{progress_data[:student]}'", else: "All students"
     
-    "✗ Progress assertion failed: #{student_info} in '#{target}' has progress #{format_float(actual_progress)} (expected #{format_float(directive.progress)})"
+    "✗ Progress assertion failed: #{student_info} in '#{target}' has progress #{format_float(actual_progress)} (expected #{format_float(progress_data.progress)})"
   end
 
   # Format float for display

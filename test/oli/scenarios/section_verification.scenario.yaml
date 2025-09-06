@@ -29,9 +29,9 @@
     title: "Test Section"
 
 # Verify the section has the expected structure
-- verify:
-    to: "test_section"
+- assert:
     structure:
+      to: "test_section"
       root:
         children:
           - page: "Introduction"
