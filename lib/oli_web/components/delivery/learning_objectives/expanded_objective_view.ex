@@ -1,5 +1,6 @@
 defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
   use OliWeb, :live_component
+  alias Oli.Delivery.Metrics
 
   attr :objective, :map, required: true
   attr :section_id, :integer, required: true
@@ -20,7 +21,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
     # Calculate real estimated students count based on enrolled students
     estimated_students = calculate_estimated_students(section_slug)
 
-    sub_objectives_data = get_sub_objectives_data(section_id, objective.resource_id)
+    sub_objectives_data = get_sub_objectives_data(section_id, section_slug, objective.resource_id)
 
     socket =
       socket
@@ -93,10 +94,10 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
   end
 
   # Get real sub-objectives data from database
-  defp get_sub_objectives_data(section_id, objective_id) do
+  defp get_sub_objectives_data(section_id, section_slug, objective_id) do
     # Use the existing Metrics function to get sub-objectives proficiency data
     sub_objectives_raw_data =
-      Oli.Delivery.Metrics.sub_objectives_proficiency(section_id, objective_id)
+      Metrics.sub_objectives_proficiency(section_id, objective_id)
 
     # Transform the data to match the table model structure
     sub_objectives_raw_data
@@ -113,8 +114,8 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
         title: title,
         student_proficiency: student_proficiency,
         proficiency_distribution: distribution,
-        # Hardcoded for now as requested
-        activities_count: 3
+        activities_count:
+          Metrics.related_activities_count_for_subobjective(section_slug, sub_obj_id)
       }
     end)
   end

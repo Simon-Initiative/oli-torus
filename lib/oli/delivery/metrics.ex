@@ -11,6 +11,7 @@ defmodule Oli.Delivery.Metrics do
   alias Oli.Resources.Revision
 
   alias Oli.Delivery.Sections
+  alias Oli.Publishing.DeliveryResolver
 
   alias Oli.Delivery.Sections.{
     ContainedPage,
@@ -1622,5 +1623,46 @@ defmodule Oli.Delivery.Metrics do
     student_proficiency_map
     |> Enum.frequencies_by(fn {_student_id, proficiency} -> proficiency end)
     |> Map.new()
+  end
+
+  @doc """
+  Calculates the number of related activities for a specific sub-objective within a section.
+
+  Returns the count of distinct activities that have the given sub-objective ID
+  referenced in their objectives field.
+
+  ## Parameters
+  - section_slug: The section slug to filter activities by
+  - sub_objective_id: The sub-objective resource ID to search for
+
+  ## Returns
+  Integer representing the count of related activities
+  """
+  @spec related_activities_count_for_subobjective(
+          section_slug :: String.t(),
+          sub_objective_id :: integer
+        ) ::
+          integer
+  def related_activities_count_for_subobjective(section_slug, sub_objective_id) do
+    activity_type_id = Oli.Resources.ResourceType.id_for_activity()
+    sub_objective_id_str = Integer.to_string(sub_objective_id)
+
+    query =
+      from(
+        [s: s, sr: sr, spp: spp, pr: pr, rev: rev] in DeliveryResolver.section_resource_revisions(
+          section_slug
+        ),
+        where: rev.resource_type_id == ^activity_type_id,
+        where: fragment("? != '{}'", rev.objectives),
+        where:
+          fragment(
+            "?::text LIKE ?",
+            rev.objectives,
+            ^"%#{sub_objective_id_str}%"
+          ),
+        select: count(fragment("DISTINCT ?", rev.resource_id))
+      )
+
+    Repo.one(query) || 0
   end
 end

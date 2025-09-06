@@ -103,8 +103,7 @@ defmodule OliWeb.Delivery.LearningObjectives.SubObjectivesTableModel do
 
   # RELATED ACTIVITIES COUNT
   defp custom_render(assigns, sub_objective, %ColumnSpec{name: :related_activities}) do
-    # Placeholder for now - in reality this would be calculated from the database
-    activities_count = sub_objective.activities_count || :rand.uniform(5)
+    activities_count = sub_objective.activities_count || 0
 
     assigns = Map.put(assigns, :activities_count, activities_count)
 
