@@ -21,7 +21,12 @@ defmodule Oli.TorusDoc.PageParser do
     end
   end
 
-  defp parse_page(data) when is_map(data) do
+  @doc """
+  Parses a page data structure (already parsed from YAML).
+  
+  This is used internally and by TorusDoc for processing page documents.
+  """
+  def parse_page(data) when is_map(data) do
     with :ok <- validate_page_type(data),
          {:ok, blocks} <- parse_blocks(data["blocks"] || []) do
       {:ok,
@@ -36,7 +41,7 @@ defmodule Oli.TorusDoc.PageParser do
     end
   end
 
-  defp parse_page(_), do: {:error, "Invalid page structure: expected a map"}
+  def parse_page(_), do: {:error, "Invalid page structure: expected a map"}
 
   defp validate_page_type(%{"type" => "page"}), do: :ok
 

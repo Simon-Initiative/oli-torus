@@ -8,31 +8,29 @@ defmodule Oli.TorusDoc.PageConverter do
 
   alias Oli.TorusDoc.Markdown.MarkdownParser
 
-  # Generic helper for converting block lists with proper error handling and performance
-  defp convert_block_list(blocks, converter_fn) when is_list(blocks) do
-    blocks
-    |> Enum.reduce_while({:ok, []}, fn block, {:ok, acc} ->
-      case converter_fn.(block) do
-        {:ok, converted} ->
-          {:cont, {:ok, [converted | acc]}}
-
-        {:error, reason} ->
-          {:halt, {:error, reason}}
-      end
-    end)
-    |> case do
-      {:ok, reversed_blocks} -> {:ok, Enum.reverse(reversed_blocks)}
-      error -> error
-    end
-  end
-
   @doc """
   Converts a parsed page structure to Torus JSON format.
 
   Returns `{:ok, json}` on success or `{:error, reason}` on failure.
   """
   def to_torus_json(parsed_page) when is_map(parsed_page) do
-    with {:ok, model} <- convert_blocks(parsed_page.blocks) do
+    to_torus_json(parsed_page, %{})
+  end
+
+  def to_torus_json(_) do
+    {:error, "Invalid parsed page structure"}
+  end
+
+  @doc """
+  Converts a parsed page structure to Torus JSON format with context.
+  
+  Context map can include:
+    - author: The author performing the operation (needed for clone directive)
+  
+  Returns `{:ok, json}` on success or `{:error, reason}` on failure.
+  """
+  def to_torus_json(parsed_page, context) when is_map(parsed_page) and is_map(context) do
+    with {:ok, model} <- convert_blocks(parsed_page.blocks, context) do
       {:ok,
        %{
          "type" => "Page",
@@ -52,14 +50,14 @@ defmodule Oli.TorusDoc.PageConverter do
     end
   end
 
-  def to_torus_json(_) do
+  def to_torus_json(_, _) do
     {:error, "Invalid parsed page structure"}
   end
 
-  defp convert_blocks(blocks) when is_list(blocks) do
+  defp convert_blocks(blocks, context) when is_list(blocks) do
     blocks
     |> Enum.reduce_while({:ok, []}, fn block, {:ok, acc} ->
-      case convert_block(block) do
+      case convert_block(block, context) do
         {:ok, converted} ->
           {:cont, {:ok, [converted | acc]}}
 
@@ -73,9 +71,9 @@ defmodule Oli.TorusDoc.PageConverter do
     end
   end
 
-  defp convert_blocks(_), do: {:error, "Blocks must be a list"}
+  defp convert_blocks(_, _), do: {:error, "Blocks must be a list"}
 
-  defp convert_block(%{type: "prose", body_md: markdown} = block) when is_binary(markdown) do
+  defp convert_block(%{type: "prose", body_md: markdown} = block, _context) when is_binary(markdown) do
     case MarkdownParser.parse(markdown) do
       {:ok, content_elements} ->
         {:ok,
@@ -90,12 +88,12 @@ defmodule Oli.TorusDoc.PageConverter do
     end
   end
 
-  defp convert_block(%{type: "prose"} = _block) do
+  defp convert_block(%{type: "prose"} = _block, _context) do
     {:error, "Failed to parse markdown in prose block: body_md must be a string"}
   end
 
-  defp convert_block(%{type: "survey"} = survey) do
-    with {:ok, children} <- convert_survey_blocks(survey.blocks) do
+  defp convert_block(%{type: "survey"} = survey, context) do
+    with {:ok, children} <- convert_survey_blocks(survey.blocks, context) do
       {:ok,
        %{
          "type" => "survey",
@@ -105,8 +103,8 @@ defmodule Oli.TorusDoc.PageConverter do
     end
   end
 
-  defp convert_block(%{type: "group"} = group) do
-    with {:ok, children} <- convert_group_blocks(group.blocks) do
+  defp convert_block(%{type: "group"} = group, context) do
+    with {:ok, children} <- convert_group_blocks(group.blocks, context) do
       result = %{
         "type" => "group",
         "id" => group.id || generate_id(),
@@ -134,7 +132,7 @@ defmodule Oli.TorusDoc.PageConverter do
     end
   end
 
-  defp convert_block(%{type: "activity_reference"} = block) do
+  defp convert_block(%{type: "activity_reference"} = block, _context) do
     # This is a reference to an existing activity
     reference = %{
       "type" => "activity-reference",
@@ -160,7 +158,7 @@ defmodule Oli.TorusDoc.PageConverter do
     {:ok, reference}
   end
 
-  defp convert_block(%{type: "activity_inline"} = block) do
+  defp convert_block(%{type: "activity_inline"} = block, _context) do
     # This is an inline activity definition
     # In Torus, activities are typically stored separately and referenced
     # For now, we'll convert it to an activity reference with the activity data
@@ -194,7 +192,7 @@ defmodule Oli.TorusDoc.PageConverter do
     end
   end
 
-  defp convert_block(%{type: "bank_selection"} = block) do
+  defp convert_block(%{type: "bank_selection"} = block, _context) do
     result = %{
       "type" => "selection",
       "id" => block.id || generate_id(),
@@ -213,23 +211,49 @@ defmodule Oli.TorusDoc.PageConverter do
     {:ok, result}
   end
 
-  defp convert_block(%{type: type}) do
+  defp convert_block(%{type: type}, _context) do
     {:error, "Unknown block type for conversion: #{type}"}
   end
 
-  defp convert_survey_blocks(blocks) when is_list(blocks) do
-    convert_block_list(blocks, &convert_survey_nested_block/1)
+  defp convert_survey_blocks(blocks, context) when is_list(blocks) do
+    blocks
+    |> Enum.reduce_while({:ok, []}, fn block, {:ok, acc} ->
+      case convert_survey_nested_block(block, context) do
+        {:ok, converted} ->
+          {:cont, {:ok, [converted | acc]}}
+
+        {:error, reason} ->
+          {:halt, {:error, reason}}
+      end
+    end)
+    |> case do
+      {:ok, reversed_blocks} -> {:ok, Enum.reverse(reversed_blocks)}
+      error -> error
+    end
   end
 
-  defp convert_survey_blocks(_), do: {:error, "Survey blocks must be a list"}
+  defp convert_survey_blocks(_, _), do: {:error, "Survey blocks must be a list"}
 
-  defp convert_group_blocks(blocks) when is_list(blocks) do
-    convert_block_list(blocks, &convert_group_nested_block/1)
+  defp convert_group_blocks(blocks, context) when is_list(blocks) do
+    blocks
+    |> Enum.reduce_while({:ok, []}, fn block, {:ok, acc} ->
+      case convert_group_nested_block(block, context) do
+        {:ok, converted} ->
+          {:cont, {:ok, [converted | acc]}}
+
+        {:error, reason} ->
+          {:halt, {:error, reason}}
+      end
+    end)
+    |> case do
+      {:ok, reversed_blocks} -> {:ok, Enum.reverse(reversed_blocks)}
+      error -> error
+    end
   end
 
-  defp convert_group_blocks(_), do: {:error, "Group blocks must be a list"}
+  defp convert_group_blocks(_, _), do: {:error, "Group blocks must be a list"}
 
-  defp convert_survey_nested_block(%{type: "prose", body_md: markdown} = block)
+  defp convert_survey_nested_block(%{type: "prose", body_md: markdown} = block, _context)
        when is_binary(markdown) do
     case MarkdownParser.parse(markdown) do
       {:ok, content_elements} ->
@@ -245,31 +269,31 @@ defmodule Oli.TorusDoc.PageConverter do
     end
   end
 
-  defp convert_survey_nested_block(%{type: "prose"} = _block) do
+  defp convert_survey_nested_block(%{type: "prose"} = _block, _context) do
     {:error, "Failed to parse markdown in survey prose block: body_md must be a string"}
   end
 
-  defp convert_survey_nested_block(%{type: "activity_reference"} = block) do
-    convert_block(block)
+  defp convert_survey_nested_block(%{type: "activity_reference"} = block, context) do
+    convert_block(block, context)
   end
 
-  defp convert_survey_nested_block(%{type: "activity_inline"} = block) do
-    convert_block(block)
+  defp convert_survey_nested_block(%{type: "activity_inline"} = block, context) do
+    convert_block(block, context)
   end
 
-  defp convert_survey_nested_block(%{type: "bank_selection"} = block) do
-    convert_block(block)
+  defp convert_survey_nested_block(%{type: "bank_selection"} = block, context) do
+    convert_block(block, context)
   end
 
-  defp convert_survey_nested_block(%{type: "bank_selection_placeholder"}) do
-    convert_block(%{type: "bank_selection_placeholder"})
+  defp convert_survey_nested_block(%{type: "bank_selection_placeholder"}, context) do
+    convert_block(%{type: "bank_selection_placeholder"}, context)
   end
 
-  defp convert_survey_nested_block(%{type: type}) do
+  defp convert_survey_nested_block(%{type: type}, _context) do
     {:error, "Unknown survey block type for conversion: #{type}"}
   end
 
-  defp convert_group_nested_block(%{type: "prose", body_md: markdown} = block)
+  defp convert_group_nested_block(%{type: "prose", body_md: markdown} = block, _context)
        when is_binary(markdown) do
     case MarkdownParser.parse(markdown) do
       {:ok, content_elements} ->
@@ -285,36 +309,36 @@ defmodule Oli.TorusDoc.PageConverter do
     end
   end
 
-  defp convert_group_nested_block(%{type: "prose"} = _block) do
+  defp convert_group_nested_block(%{type: "prose"} = _block, _context) do
     {:error, "Failed to parse markdown in group prose block: body_md must be a string"}
   end
 
-  defp convert_group_nested_block(%{type: "survey"} = survey) do
-    convert_block(survey)
+  defp convert_group_nested_block(%{type: "survey"} = survey, context) do
+    convert_block(survey, context)
   end
 
-  defp convert_group_nested_block(%{type: "group"} = group) do
+  defp convert_group_nested_block(%{type: "group"} = group, context) do
     # Groups can be nested within groups
-    convert_block(group)
+    convert_block(group, context)
   end
 
-  defp convert_group_nested_block(%{type: "activity_reference"} = block) do
-    convert_block(block)
+  defp convert_group_nested_block(%{type: "activity_reference"} = block, context) do
+    convert_block(block, context)
   end
 
-  defp convert_group_nested_block(%{type: "activity_inline"} = block) do
-    convert_block(block)
+  defp convert_group_nested_block(%{type: "activity_inline"} = block, context) do
+    convert_block(block, context)
   end
 
-  defp convert_group_nested_block(%{type: "bank_selection"} = block) do
-    convert_block(block)
+  defp convert_group_nested_block(%{type: "bank_selection"} = block, context) do
+    convert_block(block, context)
   end
 
-  defp convert_group_nested_block(%{type: "bank_selection_placeholder"}) do
-    convert_block(%{type: "bank_selection_placeholder"})
+  defp convert_group_nested_block(%{type: "bank_selection_placeholder"}, context) do
+    convert_block(%{type: "bank_selection_placeholder"}, context)
   end
 
-  defp convert_group_nested_block(%{type: type}) do
+  defp convert_group_nested_block(%{type: type}, _context) do
     {:error, "Unknown group block type for conversion: #{type}"}
   end
 
