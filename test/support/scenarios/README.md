@@ -48,6 +48,17 @@
 - update:
     from: "math_course"
     to: "spring_2024"
+
+# Assert the update is applied successfully
+- assert:
+    structure:
+      to: "spring_2024"
+      children:
+        - page: "Introduction"
+        - container: "Module 1"
+          children:
+            - page: "Lesson 1"
+            - page: "Lesson 2"
 ```
 
 ## Directive Reference
@@ -97,10 +108,10 @@ Detailed documentation is organized by topic:
 ```elixir
 defmodule MyScenarioTest do
   use Oli.DataCase
-  
+
   alias Oli.Scenarios.Engine
   alias Oli.Scenarios.DirectiveParser
-  
+
   test "my scenario" do
     yaml = """
     - project:
@@ -109,7 +120,7 @@ defmodule MyScenarioTest do
         root:
           children:
             - page: "Page 1"
-    
+
     - assert:
         structure:
           to: "test_project"
@@ -117,10 +128,10 @@ defmodule MyScenarioTest do
             children:
               - page: "Page 1"
     """
-    
+
     directives = DirectiveParser.parse_yaml!(yaml)
     result = Engine.execute(directives)
-    
+
     assert result.errors == []
     assert length(result.verifications) == 1
     assert hd(result.verifications).passed == true
@@ -134,6 +145,17 @@ end
 test "scenario from file" do
   result = Engine.execute_file("test/scenarios/my_scenario.yaml")
   assert result.errors == []
+end
+```
+
+### Universal Runner
+
+The `ScenarioRunner` macro will discover and run all `*.scenario.yaml`
+files in the current directory.
+
+```elixir
+defmodule Oli.Delivery.MajorUpdatesTest do
+  use Oli.Scenarios.ScenarioRunner
 end
 ```
 

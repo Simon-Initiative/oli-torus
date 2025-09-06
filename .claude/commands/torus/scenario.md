@@ -6,7 +6,8 @@ description: Create a new Scenario based integration test
 style unit tests in the Torus codebase.  The core implementation is found
 in directory `./test/support/scenarios`.  For a complete understanding of
 `Oli.Scenarios` and the directives available you must read and carefully study
-`./test/support/scenarios/README.md`.  Consult the core implementation also if needed.
+`./test/support/scenarios/README.md` and all of the sub documents
+linked from that read me.  Consult the core implementation also if needed.
 
 Scenario based unit tests are used to test the following types of workflows:
 - Publishing changes from a project to course section built from them
