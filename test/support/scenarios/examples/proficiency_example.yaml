@@ -1,0 +1,226 @@
+# Example scenario demonstrating proficiency assertions
+# This scenario creates a course with learning objectives, 
+# simulates student interactions, and asserts proficiency levels
+
+# Create a project with learning objectives
+- project:
+    name: "proficiency_course"
+    title: "Proficiency Test Course"
+    root:
+      children:
+        - page: "Introduction"
+        - container: "Module 1: Basics"
+          children:
+            - page: "Lesson 1.1"
+            - page: "Lesson 1.2"
+            - page: "Quiz 1"
+        - container: "Module 2: Advanced"
+          children:
+            - page: "Lesson 2.1"
+            - page: "Quiz 2"
+    objectives:
+      - Understand basic concepts:
+        - Define key terms
+        - Identify core principles
+      - Apply knowledge:
+        - Solve practice problems
+        - Complete exercises
+      - Analyze complex scenarios
+
+# Add assessment content to pages with objectives
+- edit_page:
+    project: "proficiency_course"
+    page: "Quiz 1"
+    content: |
+      blocks:
+        - type: activity
+          virtual_id: "q1_1"
+          objectives: ["Define key terms"]
+          activity:
+            type: oli_multiple_choice
+            stem_md: "What is the definition of X?"
+            choices:
+              - id: "a"
+                body_md: "Correct definition"
+                score: 1
+              - id: "b"
+                body_md: "Wrong definition"
+                score: 0
+        - type: activity
+          virtual_id: "q1_2"
+          objectives: ["Identify core principles"]
+          activity:
+            type: oli_multiple_choice
+            stem_md: "Which principle applies?"
+            choices:
+              - id: "a"
+                body_md: "Principle A"
+                score: 0
+              - id: "b"
+                body_md: "Principle B (correct)"
+                score: 1
+
+- edit_page:
+    project: "proficiency_course"
+    page: "Quiz 2"
+    content: |
+      blocks:
+        - type: activity
+          virtual_id: "q2_1"
+          objectives: ["Solve practice problems"]
+          activity:
+            type: oli_short_answer
+            stem_md: "Solve: 2 + 2 = ?"
+            input_type: "text"
+
+# Create section and enroll students
+- section:
+    name: "test_section"
+    from: "proficiency_course"
+    title: "Test Section"
+
+- user:
+    name: "alice"
+    type: student
+    email: "alice@test.edu"
+
+- user:
+    name: "bob"
+    type: student
+    email: "bob@test.edu"
+
+- user:
+    name: "charlie"
+    type: student
+    email: "charlie@test.edu"
+
+- enroll:
+    user: "alice"
+    section: "test_section"
+    role: student
+
+- enroll:
+    user: "bob"
+    section: "test_section"
+    role: student
+
+- enroll:
+    user: "charlie"
+    section: "test_section"
+    role: student
+
+# Simulate student interactions
+
+# Alice performs very well (High proficiency)
+- view_practice_page:
+    student: "alice"
+    section: "test_section"
+    page: "Quiz 1"
+
+- answer_question:
+    student: "alice"
+    section: "test_section"
+    page: "Quiz 1"
+    activity_virtual_id: "q1_1"
+    response: "a"  # Correct
+
+- answer_question:
+    student: "alice"
+    section: "test_section"
+    page: "Quiz 1"
+    activity_virtual_id: "q1_2"
+    response: "b"  # Correct
+
+# Bob performs moderately (Medium proficiency)
+- view_practice_page:
+    student: "bob"
+    section: "test_section"
+    page: "Quiz 1"
+
+- answer_question:
+    student: "bob"
+    section: "test_section"
+    page: "Quiz 1"
+    activity_virtual_id: "q1_1"
+    response: "a"  # Correct
+
+- answer_question:
+    student: "bob"
+    section: "test_section"
+    page: "Quiz 1"
+    activity_virtual_id: "q1_2"
+    response: "a"  # Wrong
+
+# Charlie performs poorly (Low proficiency)
+- view_practice_page:
+    student: "charlie"
+    section: "test_section"
+    page: "Quiz 1"
+
+- answer_question:
+    student: "charlie"
+    section: "test_section"
+    page: "Quiz 1"
+    activity_virtual_id: "q1_1"
+    response: "b"  # Wrong
+
+- answer_question:
+    student: "charlie"
+    section: "test_section"
+    page: "Quiz 1"
+    activity_virtual_id: "q1_2"
+    response: "a"  # Wrong
+
+# Assert individual student proficiency
+- assert:
+    proficiency:
+      section: "test_section"
+      objective: "Define key terms"
+      student: "alice"
+      bucket: "High"
+
+- assert:
+    proficiency:
+      section: "test_section"
+      objective: "Define key terms"
+      student: "bob"
+      bucket: "High"  # Got this one correct
+
+- assert:
+    proficiency:
+      section: "test_section"
+      objective: "Define key terms"
+      student: "charlie"
+      bucket: "Low"  # Got this one wrong
+
+# Assert average proficiency across all students
+- assert:
+    proficiency:
+      section: "test_section"
+      objective: "Define key terms"
+      bucket: "Medium"  # Average of High, High, Low
+
+# Assert proficiency for parent objective (aggregates sub-objectives)
+- assert:
+    proficiency:
+      section: "test_section"
+      objective: "Understand basic concepts"
+      student: "alice"
+      bucket: "High"  # Both sub-objectives done well
+
+# Assert with specific value check
+- assert:
+    proficiency:
+      section: "test_section"
+      objective: "Identify core principles"
+      student: "alice"
+      bucket: "High"
+      value: 1.0  # Perfect score
+
+# Assert "Not enough data" for objectives with no attempts
+- assert:
+    proficiency:
+      section: "test_section"
+      objective: "Analyze complex scenarios"
+      student: "alice"
+      bucket: "Not enough data"  # No activities for this objective

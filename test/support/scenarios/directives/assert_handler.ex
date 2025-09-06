@@ -8,6 +8,7 @@ defmodule Oli.Scenarios.Directives.AssertHandler do
     StructureAssertion,
     ResourceAssertion,
     ProgressAssertion,
+    ProficiencyAssertion,
     GeneralAssertion
   }
 
@@ -15,14 +16,18 @@ defmodule Oli.Scenarios.Directives.AssertHandler do
   Handles an assert directive by delegating to the appropriate assertion module.
   
   The assert directive can perform different types of assertions:
+  - proficiency: Verify learning proficiency for objectives
+  - progress: Verify student progress in a page or container
   - structure: Verify the hierarchical structure of a project or section
   - resource: Verify properties of a specific resource
-  - progress: Verify student progress in a page or container
   - assertions: General assertions (legacy support)
   """
   def handle(%AssertDirective{} = directive, state) do
     # Try each assertion type until one is found
     cond do
+      directive.proficiency != nil ->
+        ProficiencyAssertion.assert(directive, state)
+      
       directive.progress != nil ->
         ProgressAssertion.assert(directive, state)
       

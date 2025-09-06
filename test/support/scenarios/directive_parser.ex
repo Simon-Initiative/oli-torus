@@ -115,6 +115,7 @@ defmodule Oli.Scenarios.DirectiveParser do
       structure: parse_structure_assertion(assert_data["structure"]),
       resource: parse_resource_assertion(assert_data["resource"]),
       progress: parse_progress_assertion(assert_data["progress"]),
+      proficiency: parse_proficiency_assertion(assert_data["proficiency"]),
       assertions: assert_data["assertions"]
     }
   end
@@ -282,6 +283,19 @@ defmodule Oli.Scenarios.DirectiveParser do
       page: data["page"],
       container: data["container"],
       student: data["student"]
+    }
+  end
+  
+  defp parse_proficiency_assertion(nil), do: nil
+  defp parse_proficiency_assertion(data) when is_map(data) do
+    %{
+      section: data["section"],
+      objective: data["objective"],
+      bucket: data["bucket"],
+      value: if(data["value"], do: parse_float(data["value"]), else: nil),
+      student: data["student"],
+      page: data["page"],
+      container: data["container"]
     }
   end
 

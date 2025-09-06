@@ -44,8 +44,8 @@ defmodule Oli.Scenarios.DirectiveTypes do
   end
 
   defmodule AssertDirective do
-    @moduledoc "Asserts the structure, resource properties, progress, or general assertions"
-    defstruct [:structure, :resource, :progress, :assertions]
+    @moduledoc "Asserts the structure, resource properties, progress, proficiency, or general assertions"
+    defstruct [:structure, :resource, :progress, :proficiency, :assertions]
   end
 
   defmodule UserDirective do

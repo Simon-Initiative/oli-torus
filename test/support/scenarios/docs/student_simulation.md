@@ -149,7 +149,10 @@ Use a map of input IDs to values:
 
 ## assert
 
-The `assert` directive can be used to assert student progress in a page or container. When used with the `progress` attribute, it can check individual student progress or average progress across all students.
+The `assert` directive can be used to assert student progress and proficiency. It supports two main assertion types for student performance:
+
+### Progress Assertions
+When used with the `progress` attribute, it can check individual student progress or average progress across all students.
 
 ### Progress Assertion Parameters
 - `section`: Name of the section (required)
@@ -201,6 +204,70 @@ The `assert` directive can be used to assert student progress in a page or conta
 - **Container progress**: Based on child page completion
   - Average of all child page progress values
   - Nested containers calculate recursively
+
+### Proficiency Assertions
+When used with the `proficiency` attribute, it can check learning proficiency for specific learning objectives. Proficiency is calculated based on correctness of first attempts.
+
+### Proficiency Assertion Parameters
+- `section`: Name of the section (required)
+- `objective`: Title of the learning objective (required)
+- `bucket`: Expected proficiency bucket - "High", "Medium", "Low", or "Not enough data" (required)
+- `value`: Expected raw proficiency value 0.0-1.0 (optional)
+- `student`: Name of student user (optional - if omitted, calculates average across all students)
+- `page`: Title of the page (optional - scopes proficiency to specific page)
+- `container`: Title of the container (optional - scopes proficiency to specific container)
+
+### Proficiency Buckets
+The proficiency system converts raw proficiency scores into categorical buckets:
+- **High**: Proficiency value > 0.8
+- **Medium**: Proficiency value > 0.4 and ≤ 0.8
+- **Low**: Proficiency value ≤ 0.4
+- **Not enough data**: Less than 3 attempts or no data available
+
+### Proficiency Examples
+
+#### Individual Student Proficiency for an Objective
+```yaml
+- assert:
+    proficiency:
+      section: "my_section"
+      objective: "Understand basic concepts"
+      student: "alice"
+      bucket: "High"
+      value: 0.85
+```
+
+#### Average Proficiency Across All Students
+```yaml
+- assert:
+    proficiency:
+      section: "my_section"
+      objective: "Apply knowledge"
+      bucket: "Medium"
+      # No student specified - calculates average
+```
+
+#### Proficiency with Just Bucket Check
+```yaml
+- assert:
+    proficiency:
+      section: "my_section"
+      objective: "Solve problems"
+      student: "bob"
+      bucket: "Low"
+      # No value specified - only checks bucket
+```
+
+### Proficiency Calculation
+Proficiency is calculated using the formula:
+```
+proficiency = (1.0 * first_attempts_correct + 0.2 * (first_attempts_total - first_attempts_correct)) / first_attempts_total
+```
+
+This formula:
+- Gives full weight (1.0) to correct first attempts
+- Gives partial credit (0.2) to incorrect first attempts that may have been corrected later
+- Requires at least 3 attempts to move out of "Not enough data" bucket
 
 ---
 
