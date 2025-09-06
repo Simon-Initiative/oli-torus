@@ -6,18 +6,16 @@
 
 ### Key Benefits
 
-- **Zero-code test creation**: Define entire test scenarios in readable YAML files - no Elixir code required
-- **Integration tests as unit tests**: Test complex multi-step workflows (project creation → publishing → section creation → updates → verification) with the speed and isolation of unit tests
+- **Zero-code test creation**: Define entire test scenarios in readable YAML files
+- **Integration tests as unit tests**: Test complex multi-step workflows with the speed and isolation of unit tests
 - **Rapid iteration**: Add new test cases by creating YAML files, not writing code
-- **Self-documenting**: YAML scenarios serve as both tests and documentation of system behavior
-- **Real infrastructure testing**: Scenarios are powered by real infrastructure and **NOT** fixtures or other antiquated approaches. (e.g. `DBSeeder`) That means that things like simulating project hierarchy changes directly uses and tests the actual `ContainerEditor` module, the same code paths used when authors manipulate their curriculum.
+- **Self-documenting**: YAML scenarios serve as both tests and documentation
+- **Real infrastructure testing**: Uses actual OLI modules like `ContainerEditor`, not mocks or fixtures
 
-### Example
-
-Instead of writing hundreds of lines of test setup code, you can describe your entire test scenario declaratively:
+## Quick Start
 
 ```yaml
-# Create a project with initial content
+# Create a project with content
 - project:
     name: "math_course"
     title: "Mathematics 101"
@@ -28,13 +26,13 @@ Instead of writing hundreds of lines of test setup code, you can describe your e
           children:
             - page: "Lesson 1"
 
-# Create a course section from the project
+# Create a course section
 - section:
     name: "spring_2024"
     from: "math_course"
     title: "Math 101 - Spring 2024"
 
-# Apply operations to modify the project
+# Modify the project
 - manipulate:
     to: "math_course"
     ops:
@@ -42,313 +40,173 @@ Instead of writing hundreds of lines of test setup code, you can describe your e
           title: "Lesson 2"
           to: "Module 1"
 
-# Publish the changes
+# Publish and update
 - publish:
     to: "math_course"
-    description: "Adding Lesson 2"
+    description: "Added Lesson 2"
 
-# Apply the update to the section
 - update:
     from: "math_course"
     to: "spring_2024"
-
-# Verify the section now has the updated content
-- verify:
-    to: "spring_2024"
-    structure:
-      root:
-        children:
-          - page: "Introduction"
-          - container: "Module 1"
-            children:
-              - page: "Lesson 1"
-              - page: "Lesson 2"
 ```
 
-## Available Directives
+## Directive Reference
 
-### Structure Creation
+All directives are documented in detail in the linked documentation files.
 
-- **`project`**: Creates a new project with hierarchical content structure
-- **`product`**: Creates a product (blueprint) from a project that can be used as a template
-- **`section`**: Creates a course section from a project, product, or standalone
-- **`user`**: Creates users (authors, instructors, students)
-- **`institution`**: Creates an institution
+| Category | Directive | Description | Documentation |
+|----------|-----------|-------------|---------------|
+| **Projects** | | | |
+| | `project` | Create a new project with content structure | [projects.md](docs/projects.md#project) |
+| | `manipulate` | Modify project structure (add, move, remove, etc.) | [projects.md](docs/projects.md#manipulate) |
+| | `publish` | Publish project changes | [projects.md](docs/projects.md#publish) |
+| | `verify` | Verify project structure/properties | [projects.md](docs/projects.md#verify) |
+| **Sections** | | | |
+| | `section` | Create course section from project/product | [sections.md](docs/sections.md#section) |
+| | `update` | Apply project updates to section | [sections.md](docs/sections.md#update) |
+| | `customize` | Modify section curriculum | [sections.md](docs/sections.md#customize) |
+| | `remix` | Copy content into section | [sections.md](docs/sections.md#remix) |
+| **Products** | | | |
+| | `product` | Create reusable course template | [products.md](docs/products.md#product) |
+| **Content** | | | |
+| | `create_activity` | Create standalone activity | [content_authoring.md](docs/content_authoring.md#create_activity) |
+| | `edit_page` | Edit page content with TorusDoc | [content_authoring.md](docs/content_authoring.md#edit_page) |
+| **Students** | | | |
+| | `view_practice_page` | Simulate student viewing page | [student_simulation.md](docs/student_simulation.md#view_practice_page) |
+| | `answer_question` | Simulate answering activity | [student_simulation.md](docs/student_simulation.md#answer_question) |
+| | `assert_progress` | Assert student progress metrics | [student_simulation.md](docs/student_simulation.md#assert_progress) |
+| **Organization** | | | |
+| | `user` | Create users (author/instructor/student) | [users_and_org.md](docs/users_and_org.md#user) |
+| | `institution` | Create institution | [users_and_org.md](docs/users_and_org.md#institution) |
+| | `enroll` | Enroll users in sections | [users_and_org.md](docs/users_and_org.md#enroll) |
 
-### Content Manipulation
+## Documentation Guide
 
-- **`manipulate`**: Applies operations to modify a project's structure
-  - Operations: `add_page`, `add_container`, `move`, `reorder`, `remove`, `revise`
-- **`remix`**: Copies content from a project into a section or product's hierarchy
-  - `from`: Source project name
-  - `resource`: Page or container title to copy
-  - `section`: Target section or product name
-  - `to`: Container in the section/product where content will be added
-- **`customize`**: Applies operations to modify a section or product's curriculum (uses real Oli.Delivery.Hierarchy infrastructure)
-  - `to`: Target section or product name
-  - Operations: `remove` (removes pages/containers), `reorder` (changes order with before/after)
+Detailed documentation is organized by topic:
 
-### Publishing & Updates
+- **[Projects and Publishing](docs/projects.md)** - Creating and managing course projects
+- **[Sections and Updates](docs/sections.md)** - Course delivery and curriculum management
+- **[Products (Blueprints)](docs/products.md)** - Reusable course templates
+- **[Content Authoring](docs/content_authoring.md)** - Creating pages and activities with TorusDoc
+- **[Student Simulation](docs/student_simulation.md)** - Simulating student interactions and progress
+- **[Users and Organization](docs/users_and_org.md)** - Managing users, institutions, and enrollment
 
-- **`publish`**: Publishes outstanding changes in a project
-- **`update`**: Applies published updates from a project to a section
+## Writing Tests
 
-### Organization & Testing
+### Basic Test Structure
 
-- **`enroll`**: Enrolls users in sections with specific roles
-- **`verify`**: Verifies the structure or resource properties of a project, section, or product
-
-## Operations (used within `manipulate`)
-
-### Content Creation
-- **`add_page`**: Adds a new page to a container
-  ```yaml
-  - add_page:
-      title: "New Page"
-      to: "Module 1"  # Optional, defaults to root
-  ```
-
-- **`add_container`**: Adds a new container (module/unit)
-  ```yaml
-  - add_container:
-      title: "Module 2"
-      to: "root"  # Optional, defaults to root
-  ```
-
-### Content Organization
-- **`move`**: Moves a resource to a different parent container
-  ```yaml
-  - move:
-      from: "Page 1"
-      to: "Module 2"
-  ```
-
-- **`reorder`**: Reorders a resource within its current container
-  ```yaml
-  - reorder:
-      from: "Page 2"
-      before: "Page 1"  # Or use 'after: "Page 3"'
-  ```
-
-### Content Modification
-- **`remove`**: Removes a resource from its parent (doesn't delete it)
-  ```yaml
-  - remove:
-      from: "Old Page"
-  ```
-
-- **`revise`**: Updates properties of a page or container (including title)
-  ```yaml
-  - revise:
-      target: "Page Title"
-      set:
-        purpose: "@atom(deliberate_practice)"  # foundation, application, or deliberate_practice
-        graded: false
-        max_attempts: 0
-  ```
-
-## Section Customization Operations
-
-The `customize` directive allows modification of section curriculum after creation:
-
-### Remove Operation
-- **`remove`**: Removes a page or container from the section hierarchy
-  ```yaml
-  - customize:
-      to: "section_name"
-      ops:
-        - remove:
-            from: "Page Title"
-  ```
-
-### Reorder Operation
-- **`reorder`**: Changes the order of pages/containers within their parent
-  ```yaml
-  - customize:
-      to: "section_name"
-      ops:
-        - reorder:
-            from: "Page to Move"
-            before: "Target Page"  # Or use 'after: "Target Page"'
-  ```
-  Note: The `from` and target pages must be siblings (same parent container)
-
-Example workflow:
-```yaml
-# Create section from project
-- section:
-    name: "my_section"
-    from: "my_project"
-
-# Remove unwanted content from the section
-- customize:
-    to: "my_section"
-    ops:
-      - remove:
-          from: "Quiz Page"
-      - remove:
-          from: "Optional Module"
-
-# Reorder content
-- customize:
-    to: "my_section"
-    ops:
-      - reorder:
-          from: "Final Exam"
-          before: "Module 1"
-      - reorder:
-          from: "Lesson 2"
-          after: "Lesson 3"
-```
-
-## Products (Blueprints)
-
-Products are templates created from projects that can be used to spawn multiple sections. Products support the same customization and remix operations as sections:
-
-```yaml
-# Create a project with content
-- project:
-    name: "template_project"
-    title: "Template Course"
-    root:
-      children:
-        - page: "Welcome"
-        - container: "Module 1"
+```elixir
+defmodule MyScenarioTest do
+  use Oli.DataCase
+  
+  alias Oli.Scenarios.Engine
+  alias Oli.Scenarios.DirectiveParser
+  
+  test "my scenario" do
+    yaml = """
+    - project:
+        name: "test_project"
+        title: "Test Project"
+        root:
           children:
-            - page: "Lesson 1"
-
-# Create a product from the project
-- product:
-    name: "course_template"
-    title: "Course Template V1"
-    from: "template_project"
-
-# Customize the product before creating sections
-- customize:
-    to: "course_template"
-    ops:
-      - remove:
-          from: "Lesson 1"
-
-# Remix additional content into the product
-- remix:
-    from: "another_project"
-    resource: "Additional Content"
-    section: "course_template"
-    to: "Module 1"
-
-# Create sections from the customized product
-- section:
-    name: "fall_2024"
-    title: "Fall 2024 Section"
-    from: "course_template"
-
-- section:
-    name: "spring_2025"
-    title: "Spring 2025 Section"
-    from: "course_template"
-```
-
-Both sections will inherit the customizations and remixed content from the product template.
-
-## Remix Operations
-
-The `remix` directive copies content from a project into a section's hierarchy:
-
-```yaml
-# Create source project with reusable content
-- project:
-    name: "library"
-    title: "Content Library"
-    root:
-      children:
-        - page: "Shared Lesson"
-        - container: "Reusable Module"
-          children:
-            - page: "Lesson 1"
-            - page: "Lesson 2"
-
-# Create section
-- section:
-    name: "course_section"
-    from: "course_project"
-
-# Remix content into the section
-- remix:
-    from: "library"
-    resource: "Shared Lesson"
-    section: "course_section"
-    to: "Module 1"  # Target container in the section
-
-# Remix an entire module
-- remix:
-    from: "library"
-    resource: "Reusable Module"
-    section: "course_section"
-    to: "root"  # Add to the root of the section
-```
-
-## Verification
-
-The `verify` directive supports two modes:
-
-### Structure Verification
-Verifies the hierarchical structure of a project, section, or product:
-
-```yaml
-- verify:
-    to: "section_name"
-    structure:
-      root:
-        children:
-          - page: "Page 1"
-          - container: "Module 1"
+            - page: "Page 1"
+    
+    - verify:
+        to: "test_project"
+        structure:
+          root:
             children:
-              - page: "Lesson 1"
+              - page: "Page 1"
+    """
+    
+    directives = DirectiveParser.parse_yaml!(yaml)
+    result = Engine.execute(directives)
+    
+    assert result.errors == []
+    assert length(result.verifications) == 1
+    assert hd(result.verifications).passed == true
+  end
+end
 ```
 
-### Resource Property Verification
-Verifies specific properties of individual resources:
+### Loading from Files
 
-```yaml
-- verify:
-    to: "project_name"
-    resource:
-      target: "Page Title"
-      resource:
-        graded: true
-        max_attempts: 3
-        purpose: "@atom(deliberate_practice)"
-```
-
-This is particularly useful after using the `revise` operation to ensure properties were set correctly:
-
-```yaml
-# First revise a page
-- manipulate:
-    to: "project"
-    ops:
-      - revise:
-          target: "Quiz Page"
-          set:
-            graded: true
-            max_attempts: 3
-
-# Then verify the properties
-- verify:
-    to: "project"
-    resource:
-      target: "Quiz Page"
-      resource:
-        graded: true
-        max_attempts: 3
+```elixir
+test "scenario from file" do
+  result = Engine.execute_file("test/scenarios/my_scenario.yaml")
+  assert result.errors == []
+end
 ```
 
 ## Error Handling
 
-The framework provides strict validation:
-- Unrecognized directives cause immediate test failure with helpful error messages
-- Invalid references (e.g., non-existent projects or sections) are caught and reported
-- All operations use the real ContainerEditor infrastructure, ensuring realistic test behavior
+The framework provides comprehensive error reporting:
 
-This declarative approach replaces complex test setup code while ensuring your tests exercise the same code paths as the actual application.
+- **Unrecognized directives**: Immediate failure with helpful messages
+- **Invalid references**: Caught and reported (e.g., non-existent projects)
+- **Operation failures**: Detailed error messages with context
+
+Example error handling:
+```elixir
+result = Engine.execute(directives)
+
+# Check for errors
+if result.errors != [] do
+  Enum.each(result.errors, fn {directive, message} ->
+    IO.puts("Error in #{inspect(directive)}: #{message}")
+  end)
+end
+
+# Check verifications
+Enum.each(result.verifications, fn verification ->
+  if not verification.passed do
+    IO.puts("Verification failed: #{verification.message}")
+  end
+end)
+```
+
+## Advanced Features
+
+### Virtual IDs
+Virtual IDs provide scenario-local identifiers for activities, enabling:
+- Activity reuse across pages
+- Student response simulation
+- Progress tracking
+
+### State Management
+The execution engine maintains state throughout scenario execution:
+- Projects, sections, and products
+- Users and enrollments
+- Activities and student attempts
+- All state is accessible for assertions
+
+### Real Infrastructure
+Unlike traditional fixtures, Oli.Scenarios uses actual OLI modules:
+- `ContainerEditor` for project manipulation
+- `Oli.Delivery.Hierarchy` for section customization
+- `Oli.Delivery.Metrics` for progress calculation
+- Real database operations in test transactions
+
+## Tips and Best Practices
+
+1. **Keep scenarios focused**: Each test should verify one workflow
+2. **Use descriptive names**: Make directive names self-documenting
+3. **Leverage verification**: Always verify expected outcomes
+4. **Reuse common patterns**: Extract common setup into helper functions
+5. **Test edge cases**: Use scenarios to test complex interactions
+
+## Contributing
+
+When adding new directives:
+1. Define the type in `directive_types.ex`
+2. Add parsing in `directive_parser.ex`
+3. Implement handler in `directives/` folder
+4. Update documentation
+5. Add tests
+
+## Support
+
+For issues or questions:
+- Check the detailed documentation in the `docs/` folder
+- Review existing test scenarios for examples
+- Consult the handler implementations in `test/support/scenarios/directives/`
