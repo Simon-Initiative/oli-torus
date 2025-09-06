@@ -64,7 +64,9 @@ defmodule Oli.Scenarios.DirectiveParser do
     %ProjectDirective{
       name: project_data["name"] || project_data["title"],
       title: project_data["title"],
-      root: parse_node(project_data["root"])
+      root: parse_node(project_data["root"]),
+      objectives: parse_objectives(project_data["objectives"]),
+      tags: parse_tags(project_data["tags"])
     }
   end
 
@@ -166,7 +168,9 @@ defmodule Oli.Scenarios.DirectiveParser do
       virtual_id: activity_data["virtual_id"],
       scope: activity_data["scope"] || "embedded",
       type: activity_data["type"],
-      content: activity_data["content"]
+      content: activity_data["content"],
+      objectives: activity_data["objectives"],
+      tags: activity_data["tags"]
     }
   end
 
@@ -296,6 +300,36 @@ defmodule Oli.Scenarios.DirectiveParser do
     }
   end
 
+  # Parse objectives structure
+  defp parse_objectives(nil), do: nil
+  defp parse_objectives(objectives) when is_list(objectives) do
+    Enum.map(objectives, &parse_objective/1)
+  end
+
+  defp parse_objective(objective) when is_binary(objective) do
+    # Simple string - parent objective with no children
+    %{title: objective, children: []}
+  end
+  
+  defp parse_objective(objective) when is_map(objective) do
+    # Map should have exactly one key-value pair where key is the title and value is the children
+    case Map.to_list(objective) do
+      [{title, children}] when is_binary(title) and is_list(children) ->
+        # Simple format: {"Objective Title" => ["child1", "child2"]}
+        %{title: title, children: children}
+      [{_, _}] ->
+        # Any other single key-value pair is invalid
+        raise "Invalid objective format. Use either a string for simple objectives or {\"Title\": [children]} for objectives with sub-objectives"
+      _ ->
+        # Multiple keys or other structures are invalid
+        raise "Invalid objective format. Use either a string for simple objectives or {\"Title\": [children]} for objectives with sub-objectives"
+    end
+  end
+
+  # Parse tags - just a flat list of strings
+  defp parse_tags(nil), do: nil
+  defp parse_tags(tags) when is_list(tags), do: tags
+  
   # Helper functions for parsing enum values
   defp parse_section_type(nil), do: :enrollable
   defp parse_section_type("enrollable"), do: :enrollable

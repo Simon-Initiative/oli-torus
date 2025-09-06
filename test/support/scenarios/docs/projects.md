@@ -18,6 +18,8 @@ Creates a new project with hierarchical content structure.
 - `name`: Internal identifier for the project (required)
 - `title`: Display title for the project
 - `root`: Hierarchical structure definition
+- `objectives`: Learning objectives hierarchy (optional)
+- `tags`: List of tag titles (optional)
 
 ### Structure Definition
 Projects use a nested structure with containers and pages:
@@ -58,6 +60,55 @@ Projects use a nested structure with containers and pages:
                 - page: "Topic A"
                 - page: "Topic B"
 ```
+
+#### Project with Learning Objectives
+```yaml
+- project:
+    name: "course_with_objectives"
+    title: "Course with Learning Objectives"
+    root:
+      children:
+        - page: "Introduction"
+        - container: "Module 1"
+          children:
+            - page: "Lesson 1"
+    objectives:
+      - Understand basic concepts:
+        - Define key terms
+        - Identify core principles
+      - Apply knowledge:
+        - Solve practice problems
+        - Complete exercises
+      - Independent study  # Simple objective with no children
+```
+
+The objectives structure creates a two-level hierarchy of learning objectives:
+- Simple strings create parent objectives with no children
+- To add sub-objectives, use the parent title as a key with children as an array value
+- Each objective gets a unique resource that can be referenced later
+
+#### Project with Tags
+```yaml
+- project:
+    name: "tagged_course"
+    title: "Course with Tags"
+    root:
+      children:
+        - page: "Getting Started"
+        - container: "Module 1"
+          children:
+            - page: "Lesson 1"
+    tags:
+      - "Beginner"
+      - "Mathematics"
+      - "Algebra"
+      - "Self-paced"
+```
+
+Tags are flat metadata labels that can be attached to projects and activities:
+- Simple list of string titles
+- Each tag gets a unique resource that can be referenced later
+- Tags can be attached to activities for categorization
 
 ---
 

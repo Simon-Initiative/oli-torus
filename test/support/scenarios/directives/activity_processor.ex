@@ -234,8 +234,14 @@ defmodule Oli.Scenarios.Directives.ActivityProcessor do
           {:ok, activity_json} ->
             # Extract model and metadata
             model = Map.drop(activity_json, ["type", "objectives", "tags", "title"])
-            objectives = get_objectives(activity_json)
-            tags = Map.get(activity_json, "tags", [])
+            
+            # Get objectives - check if they are titles to resolve
+            raw_objectives = get_objectives(activity_json)
+            objectives = resolve_objective_titles(raw_objectives, built_project)
+            
+            # Get tags - check if they are titles to resolve
+            raw_tags = Map.get(activity_json, "tags", [])
+            tags = resolve_tag_titles(raw_tags, built_project)
             title = "Activity #{virtual_id}"
             
             # Create the activity using ActivityEditor
@@ -265,16 +271,41 @@ defmodule Oli.Scenarios.Directives.ActivityProcessor do
         Map.put(activity_data, "type", activity_type)
       end
     
+    # Extract objectives and tags before converting (they're not part of the activity model)
+    objectives = Map.get(yaml_with_type, "objectives", [])
+    tags = Map.get(yaml_with_type, "tags", [])
+    
+    # Remove objectives and tags from the data that goes to ActivityConverter
+    yaml_without_metadata = yaml_with_type
+      |> Map.delete("objectives")
+      |> Map.delete("tags")
+    
     # Convert data to properly formatted YAML string
-    yaml_string = build_activity_yaml(yaml_with_type)
+    yaml_string = build_activity_yaml(yaml_without_metadata)
     
     # Use ActivityConverter to parse it
-    ActivityConverter.from_yaml(yaml_string)
+    case ActivityConverter.from_yaml(yaml_string) do
+      {:ok, json} ->
+        # Add objectives and tags back to the result
+        {:ok, json 
+          |> Map.put("objectives", objectives)
+          |> Map.put("tags", tags)}
+      error ->
+        error
+    end
   end
   
   defp create_test_activity(built_project, registration, author, model, objectives, tags, title) do
     # For test scenarios, create a simple revision structure
     # This mimics what ActivityEditor.create would do but without database operations
+    
+    # Parse the model to get part IDs and attach objectives to all parts
+    objectives_map = case Oli.Activities.Model.parse(model) do
+      {:ok, %{parts: parts}} ->
+        Enum.reduce(parts, %{}, fn %{id: id}, m -> Map.put(m, id, objectives) end)
+      _ ->
+        %{}
+    end
     
     attrs = %{
       title: title,
@@ -282,7 +313,7 @@ defmodule Oli.Scenarios.Directives.ActivityProcessor do
       activity_type_id: registration.id,
       author_id: author.id,
       content: model,
-      objectives: %{"attached" => objectives},
+      objectives: objectives_map,
       tags: tags,
       graded: false,
       scope: "embedded"
@@ -319,11 +350,70 @@ defmodule Oli.Scenarios.Directives.ActivityProcessor do
   end
   
   defp get_objectives(activity_json) do
-    case Map.get(activity_json, "objectives") do
+    # Handle both string keys and atom keys
+    case Map.get(activity_json, "objectives") || Map.get(activity_json, :objectives) do
       %{"attached" => objectives} when is_list(objectives) -> objectives
       objectives when is_list(objectives) -> objectives
       _ -> []
     end
+  end
+  
+  defp resolve_objective_titles(objectives, built_project) do
+    objectives_by_title = built_project.objectives_by_title || %{}
+    
+    Enum.map(objectives, fn obj ->
+      cond do
+        # If it's already a number (resource ID), keep it
+        is_integer(obj) ->
+          obj
+          
+        # If it's a string, try to resolve it as a title
+        is_binary(obj) ->
+          case Map.get(objectives_by_title, obj) do
+            nil ->
+              # Not found as title, maybe it's already a resource ID as string
+              case Integer.parse(obj) do
+                {id, ""} -> id
+                _ -> nil  # Will be filtered out
+              end
+            objective_rev ->
+              objective_rev.resource_id
+          end
+          
+        true ->
+          nil  # Will be filtered out
+      end
+    end)
+    |> Enum.filter(&(&1 != nil))
+  end
+  
+  defp resolve_tag_titles(tags, built_project) do
+    tags_by_title = built_project.tags_by_title || %{}
+    
+    Enum.map(tags, fn tag ->
+      cond do
+        # If it's already a number (resource ID), keep it
+        is_integer(tag) ->
+          tag
+          
+        # If it's a string, try to resolve it as a title
+        is_binary(tag) ->
+          case Map.get(tags_by_title, tag) do
+            nil ->
+              # Not found as title, maybe it's already a resource ID as string
+              case Integer.parse(tag) do
+                {id, ""} -> id
+                _ -> nil  # Will be filtered out
+              end
+            tag_rev ->
+              tag_rev.resource_id
+          end
+          
+        true ->
+          nil  # Will be filtered out
+      end
+    end)
+    |> Enum.filter(&(&1 != nil))
   end
   
   defp convert_to_yaml_preserving_structure(data) do

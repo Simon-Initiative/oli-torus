@@ -28,6 +28,8 @@ defmodule Oli.Scenarios.Directives.ActivityHandler do
          {:ok, activity_type} <- validate_activity_type(directive.type),
          {:ok, scope} <- validate_scope(directive.scope),
          {:ok, activity_json} <- parse_and_convert_activity(directive.content, directive.type),
+         {:ok, objective_ids} <- resolve_objectives(directive.objectives, built_project),
+         {:ok, tag_ids} <- resolve_tags(directive.tags, built_project),
          {:ok, {revision, _resource}} <-
            create_activity(
              built_project,
@@ -35,7 +37,9 @@ defmodule Oli.Scenarios.Directives.ActivityHandler do
              author,
              activity_json,
              scope,
-             directive.title
+             directive.title,
+             objective_ids,
+             tag_ids
            ) do
       # Store activity reference by {project_name, title} for future directives
       updated_activities =
@@ -129,16 +133,66 @@ defmodule Oli.Scenarios.Directives.ActivityHandler do
     end
   end
 
+  # Resolve objective titles to resource IDs
+  defp resolve_objectives(nil, _built_project), do: {:ok, []}
+  defp resolve_objectives([], _built_project), do: {:ok, []}
+  
+  defp resolve_objectives(objective_titles, built_project) when is_list(objective_titles) do
+    objectives_by_title = built_project.objectives_by_title || %{}
+    
+    # Convert titles to resource IDs
+    result = Enum.reduce_while(objective_titles, {:ok, []}, fn title, {:ok, acc} ->
+      case Map.get(objectives_by_title, title) do
+        nil -> 
+          {:halt, {:error, "Objective '#{title}' not found in project"}}
+        objective_rev ->
+          {:cont, {:ok, acc ++ [objective_rev.resource_id]}}
+      end
+    end)
+    
+    result
+  end
+  
+  defp resolve_objectives(_, _), do: {:error, "Objectives must be a list"}
+  
+  # Resolve tag titles to resource IDs
+  defp resolve_tags(nil, _built_project), do: {:ok, []}
+  defp resolve_tags([], _built_project), do: {:ok, []}
+  
+  defp resolve_tags(tag_titles, built_project) when is_list(tag_titles) do
+    tags_by_title = built_project.tags_by_title || %{}
+    
+    # Convert titles to resource IDs
+    result = Enum.reduce_while(tag_titles, {:ok, []}, fn title, {:ok, acc} ->
+      case Map.get(tags_by_title, title) do
+        nil -> 
+          {:halt, {:error, "Tag '#{title}' not found in project"}}
+        tag_rev ->
+          {:cont, {:ok, acc ++ [tag_rev.resource_id]}}
+      end
+    end)
+    
+    result
+  end
+  
+  defp resolve_tags(_, _), do: {:error, "Tags must be a list"}
+
   # Create the activity in the project
-  defp create_activity(built_project, activity_registration, author, activity_json, scope, title) do
+  defp create_activity(built_project, activity_registration, author, activity_json, scope, title, objective_ids, tag_ids) do
     project = built_project.project
 
     # Extract model and other fields from the JSON
     model = Map.drop(activity_json, ["type", "objectives", "tags", "title"])
 
-    # Get objectives and tags if present
-    objectives = get_objectives(activity_json)
-    tags = Map.get(activity_json, "tags", [])
+    # Get objectives from JSON and merge with directive objectives
+    json_objectives = get_objectives(activity_json)
+    # Combine objectives from JSON and directive (directive takes precedence)
+    final_objectives = if objective_ids != [], do: objective_ids, else: json_objectives
+    
+    # Get tags from JSON and merge with directive tags
+    json_tags = Map.get(activity_json, "tags", [])
+    # Combine tags from JSON and directive (directive takes precedence)
+    final_tags = if tag_ids != [], do: tag_ids, else: json_tags
 
     # Use provided title or extract from JSON
     final_title = title || Map.get(activity_json, "title", "Untitled Activity")
@@ -149,12 +203,12 @@ defmodule Oli.Scenarios.Directives.ActivityHandler do
            activity_registration.slug,
            author,
            model,
-           objectives,
+           final_objectives,
            scope,
            final_title,
            # objective_map - empty for now
            %{},
-           tags
+           final_tags
          ) do
       {:ok, {revision, resource}} ->
         {:ok, {revision, resource}}

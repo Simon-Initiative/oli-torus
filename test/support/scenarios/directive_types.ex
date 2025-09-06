@@ -6,7 +6,7 @@ defmodule Oli.Scenarios.DirectiveTypes do
   # Directive types
   defmodule ProjectDirective do
     @moduledoc "Creates a new project with specified structure"
-    defstruct [:name, :title, :root]
+    defstruct [:name, :title, :root, :objectives, :tags]
   end
 
   defmodule SectionDirective do
@@ -82,8 +82,10 @@ defmodule Oli.Scenarios.DirectiveTypes do
     scope: "embedded" or "banked"
     type: activity type slug (e.g. "oli_multiple_choice")
     content: TorusDoc activity YAML content
+    objectives: optional list of objective titles to attach
+    tags: optional list of tag titles to attach
     """
-    defstruct [:project, :title, :virtual_id, :scope, :type, :content]
+    defstruct [:project, :title, :virtual_id, :scope, :type, :content, :objectives, :tags]
   end
 
   defmodule EditPageDirective do

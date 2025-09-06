@@ -34,6 +34,8 @@ Creates a standalone activity that can be referenced in pages.
 - `scope`: "embedded" or "banked" (default: "embedded")
 - `type`: Activity type slug (e.g., "oli_multiple_choice")
 - `content`: TorusDoc YAML content defining the activity
+- `objectives`: List of learning objective titles to attach (optional)
+- `tags`: List of tag titles to attach (optional)
 
 ### Examples
 
@@ -87,6 +89,68 @@ Creates a standalone activity that can be referenced in pages.
       rule: "input1 == 4 && input2 like 'correct'"
 ```
 
+#### Activity with Learning Objectives
+```yaml
+# First create project with objectives
+- project:
+    name: "my_project"
+    objectives:
+      - Understand concepts:
+        - Apply formulas
+        - Solve problems
+
+# Then create activity attached to objectives
+- create_activity:
+    project: "my_project"
+    title: "Practice Problem"
+    type: "oli_multiple_choice"
+    objectives:
+      - "Apply formulas"
+      - "Solve problems"
+    content: |
+      stem_md: "Calculate the area of a circle with radius 5"
+      choices:
+        - id: "a"
+          body_md: "25π"
+          score: 1
+        - id: "b"
+          body_md: "10π"
+          score: 0
+```
+
+**Note**: Objectives are attached by title. The project must have these objectives defined before activities can reference them.
+
+#### Activity with Tags
+```yaml
+# First create project with tags
+- project:
+    name: "my_project"
+    tags:
+      - "Beginner"
+      - "Practice"
+      - "Quiz"
+
+# Then create activity with tags
+- create_activity:
+    project: "my_project"
+    title: "Tagged Question"
+    type: "oli_multiple_choice"
+    tags:
+      - "Beginner"
+      - "Practice"
+    content: |
+      stem_md: "What is the capital of France?"
+      choices:
+        - id: "a"
+          body_md: "Paris"
+          score: 1
+        - id: "b"
+          body_md: "London"
+          score: 0
+```
+
+**Note**: Tags are attached by title. The project must have these tags defined before activities can reference them.
+
 ---
 
 ## edit_page
@@ -121,14 +185,14 @@ Pages contain an array of blocks:
         - type: prose
           body_md: |
             # Welcome to the Course
-            
+
             This course covers the fundamentals of programming.
-            
+
             ## Learning Objectives
             - Understand variables and data types
             - Write simple functions
             - Debug basic programs
-        
+
         - type: prose
           body_md: "Let's begin with a simple exercise."
 ```
@@ -144,7 +208,7 @@ Pages contain an array of blocks:
       blocks:
         - type: prose
           body_md: "Answer the following questions:"
-        
+
         # Inline activity with virtual_id
         - type: activity
           virtual_id: "q1"
@@ -161,7 +225,7 @@ Pages contain an array of blocks:
               - id: "c"
                 body_md: "CSS"
                 score: 0
-        
+
         # Another inline activity
         - type: activity
           virtual_id: "q2"
@@ -170,6 +234,76 @@ Pages contain an array of blocks:
             stem_md: "What does 'API' stand for?"
             input_type: "text"
 ```
+
+#### Inline Activities with Learning Objectives
+```yaml
+# Create project with objectives
+- project:
+    name: "my_project"
+    objectives:
+      - Programming Basics:
+        - Identify languages
+        - Understand syntax
+
+# Edit page with inline activities that attach to objectives
+- edit_page:
+    project: "my_project"
+    page: "Practice Page"
+    content: |
+      title: "Practice Questions"
+      blocks:
+        - type: activity
+          virtual_id: "lang_q"
+          activity:
+            type: oli_multiple_choice
+            objectives:
+              - "Identify languages"
+            stem_md: "Which is a compiled language?"
+            choices:
+              - id: "a"
+                body_md: "C++"
+                score: 1
+              - id: "b"
+                body_md: "JavaScript"
+                score: 0
+```
+
+**Note**: Objectives in inline activities work the same way - they're referenced by title and must exist in the project.
+
+#### Inline Activities with Tags
+```yaml
+# Create project with tags
+- project:
+    name: "my_project"
+    tags:
+      - "Easy"
+      - "Medium"
+      - "Hard"
+
+# Edit page with inline activities that have tags
+- edit_page:
+    project: "my_project"
+    page: "Practice Page"
+    content: |
+      title: "Practice Questions"
+      blocks:
+        - type: activity
+          virtual_id: "easy_q"
+          activity:
+            type: oli_multiple_choice
+            tags:
+              - "Easy"
+            stem_md: "What is 2 + 2?"
+            choices:
+              - id: "a"
+                body_md: "4"
+                score: 1
+              - id: "b"
+                body_md: "5"
+                score: 0
+```
+
+**Note**: Tags in inline activities work the same way - they're referenced by title and must exist in the project.
 
 #### Page with Activity References
 ```yaml
@@ -198,11 +332,11 @@ Pages contain an array of blocks:
       blocks:
         - type: prose
           body_md: "## Introduction to OOP"
-        
+
         # Reference the standalone activity
         - type: activity_reference
           virtual_id: "shared_q1"
-        
+
         - type: prose
           body_md: "Great! Now let's explore more concepts."
 ```
@@ -217,13 +351,13 @@ Pages contain an array of blocks:
       blocks:
         - type: prose
           body_md: "This lesson has grouped exercises."
-        
+
         - type: group
           purpose: "quiz"
           blocks:
             - type: prose
               body_md: "**Group Exercise 1**"
-            
+
             - type: activity
               virtual_id: "group_q1"
               activity:
@@ -236,7 +370,7 @@ Pages contain an array of blocks:
                   - id: "b"
                     body_md: "Answer B"
                     score: 0
-            
+
             - type: activity
               virtual_id: "group_q2"
               activity:
@@ -255,12 +389,12 @@ Pages contain an array of blocks:
       blocks:
         - type: prose
           body_md: "Please provide your feedback:"
-        
+
         - type: survey
           blocks:
             - type: prose
               body_md: "Your responses help us improve the course."
-            
+
             - type: activity
               virtual_id: "survey_q1"
               activity:
@@ -279,7 +413,7 @@ Pages contain an array of blocks:
                   - id: "2"
                     body_md: "Poor"
                     score: 1
-            
+
             - type: activity
               virtual_id: "survey_q2"
               activity:
@@ -343,6 +477,11 @@ Virtual IDs are scenario-local identifiers for activities that enable:
 - Creating activities once and referencing them multiple times
 - Referencing activities across pages
 - Student simulation (answering specific questions)
+
+We need virtual ids because when creating an activity, we do not know
+the resource id that its revision will end up having.  So instead, we
+rely on these ephemeral "virtual ids" to define and later reference
+an activity.
 
 ### How Virtual IDs Work
 
@@ -494,16 +633,16 @@ choices:
         - type: prose
           body_md: |
             # Variables and Constants
-            
+
             In programming, we use **variables** to store data that can change,
             and **constants** to store data that remains fixed.
-            
+
             ## Variables
             Variables are like labeled boxes where you can store values.
-        
+
         - type: activity_reference
           virtual_id: "concept_1"
-        
+
         - type: prose
           body_md: |
             ## Constants
@@ -522,13 +661,13 @@ choices:
           blocks:
             - type: prose
               body_md: "Try these practice questions:"
-            
+
             - type: activity_reference
               virtual_id: "concept_1"
-            
+
             - type: activity_reference
               virtual_id: "concept_2"
-            
+
             - type: activity
               virtual_id: "practice_q1"
               activity:
@@ -552,13 +691,13 @@ choices:
       blocks:
         - type: prose
           body_md: "Complete this assessment to test your understanding."
-        
+
         - type: activity_reference
           virtual_id: "concept_1"
-        
+
         - type: activity_reference
           virtual_id: "concept_2"
-        
+
         - type: activity
           virtual_id: "final_q"
           activity:

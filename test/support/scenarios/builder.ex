@@ -5,10 +5,12 @@ defmodule Oli.Scenarios.Builder do
   alias Oli.Scenarios.Types.{ProjectSpec, Node, BuiltProject}
   alias Oli.Authoring.Course
   alias Oli.Authoring.Editing.ContainerEditor
+  alias Oli.Authoring.Editing.ObjectiveEditor
+  alias Oli.Authoring.Editing.ResourceEditor
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Resources.ResourceType
 
-  def build!(%ProjectSpec{title: title, root: root_node}, author, _institution) do
+  def build!(%ProjectSpec{title: title, root: root_node, objectives: objectives, tags: tags}, author, _institution) do
     # Use the standard Oli.Authoring.Course.create_project infrastructure
     # that the UI uses when creating projects
     {:ok, project_setup} = Course.create_project(title || "Test Project", author)
@@ -46,6 +48,12 @@ defmodule Oli.Scenarios.Builder do
     # Get the final root revision after all children have been added
     final_root_rev = AuthoringResolver.from_resource_id(project.slug, root_resource.id)
 
+    # Build objectives if specified
+    objectives_by_title = build_objectives!(objectives, project, author)
+    
+    # Build tags if specified
+    tags_by_title = build_tags!(tags, project, author)
+
     %BuiltProject{
       project: project,
       working_pub: publication,
@@ -55,7 +63,9 @@ defmodule Oli.Scenarios.Builder do
         author: author
       },
       id_by_title: id_by_title,
-      rev_by_title: Map.put(rev_by_title, "root", final_root_rev)
+      rev_by_title: Map.put(rev_by_title, "root", final_root_rev),
+      objectives_by_title: objectives_by_title,
+      tags_by_title: tags_by_title
     }
   end
 
@@ -140,5 +150,58 @@ defmodule Oli.Scenarios.Builder do
       Map.put(id_map_updated, title, cont_rev.resource_id),
       Map.put(rev_map_updated, title, cont_final_rev)
     )
+  end
+
+  # Build objectives hierarchy
+  defp build_objectives!(nil, _project, _author), do: %{}
+  defp build_objectives!([], _project, _author), do: %{}
+
+  defp build_objectives!(objectives, project, author) when is_list(objectives) do
+    Enum.reduce(objectives, %{}, fn objective, acc ->
+      # Create parent objective
+      {:ok, %{revision: parent_rev}} =
+        ObjectiveEditor.add_new(%{title: objective.title}, author, project)
+
+      parent_map = Map.put(acc, objective.title, parent_rev)
+
+      # Create sub-objectives if any
+      case objective[:children] do
+        nil ->
+          parent_map
+
+        [] ->
+          parent_map
+
+        children when is_list(children) ->
+          # Create each sub-objective and attach to parent
+          Enum.reduce(children, parent_map, fn child_title, child_acc ->
+            {:ok, %{revision: child_rev}} =
+              ObjectiveEditor.add_new(%{title: child_title}, author, project, parent_rev.slug)
+
+            Map.put(child_acc, child_title, child_rev)
+          end)
+      end
+    end)
+  end
+  
+  # Build tags (flat list)
+  defp build_tags!(nil, _project, _author), do: %{}
+  defp build_tags!([], _project, _author), do: %{}
+  
+  defp build_tags!(tags, project, author) when is_list(tags) do
+    Enum.reduce(tags, %{}, fn tag_title, acc ->
+      case ResourceEditor.create(
+             project.slug,
+             author,
+             ResourceType.id_for_tag(),
+             %{"title" => tag_title, "author_id" => author.id}
+           ) do
+        {:ok, revision} ->
+          Map.put(acc, tag_title, revision)
+        
+        {:error, reason} ->
+          raise "Failed to create tag '#{tag_title}': #{inspect(reason)}"
+      end
+    end)
   end
 end
