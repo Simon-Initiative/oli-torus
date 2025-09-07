@@ -45,9 +45,9 @@
     from: "course_v1"
     to: "cs101_section"
 
-- verify:
-    to: "cs101_section"
+- assert:
     structure:
+      to: "cs101_section"
       root:
         children:
             - container: "Module 1"

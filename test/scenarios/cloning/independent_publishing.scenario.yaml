@@ -1,0 +1,134 @@
+# Scenario: Ensure that we can clone a project and make
+
+
+# Create initial project with basic content
+- project:
+    name: "original"
+    title: "Original Course Content"
+    root:
+      children:
+        - page: "Welcome"
+        - container: "Module 1: Introduction"
+          children:
+            - page: "Getting Started"
+            - page: "Basic Concepts"
+        - container: "Module 2: Core Topics"
+          children:
+            - page: "Topic A"
+            - page: "Topic B"
+
+# Create a section from the project
+- section:
+    name: "original_section"
+    title: "Fall 2024 Section"
+    from: "original"
+
+- clone:
+    from: "original"
+    name: "cloned"
+    title: "My Custom Course Copy"
+
+- section:
+    name: "cloned_section"
+    title: "Cloned Fall 2024 Section"
+    from: "cloned"
+
+# verify that we can make independent changes to the
+# same page in each project
+
+# Make a minor update - change the page title
+- manipulate:
+    to: "original"
+    ops:
+      - revise:
+          target: "Topic A"
+          set:
+            title: "Updated1"
+
+- manipulate:
+    to: "cloned"
+    ops:
+      - revise:
+          target: "Topic A"
+          set:
+            title: "Updated2"
+
+# Publish the minor update
+- publish:
+    to: "original"
+    description: "Minor update - changing page title"
+
+- publish:
+    to: "cloned"
+    description: "Minor update - changing page title"
+
+# Apply the update to the sections
+- update:
+    from: "original"
+    to: "original_section"
+
+- update:
+    from: "cloned"
+    to: "cloned_section"
+
+# Verify the sections have the updated page title
+- assert:
+    structure:
+      to: "original_section"
+      root:
+        children:
+          - page: "Welcome"
+          - container: "Module 1: Introduction"
+            children:
+              - page: "Getting Started"
+              - page: "Basic Concepts"
+          - container: "Module 2: Core Topics"
+            children:
+              - page: "Updated1"
+              - page: "Topic B"
+
+- assert:
+    structure:
+      to: "cloned_section"
+      root:
+        children:
+          - page: "Welcome"
+          - container: "Module 1: Introduction"
+            children:
+              - page: "Getting Started"
+              - page: "Basic Concepts"
+          - container: "Module 2: Core Topics"
+            children:
+              - page: "Updated2"
+              - page: "Topic B"
+
+# Assert the original and cloned project structures
+- assert:
+    structure:
+      to: "original"
+      root:
+        children:
+          - page: "Welcome"
+          - container: "Module 1: Introduction"
+            children:
+              - page: "Getting Started"
+              - page: "Basic Concepts"
+          - container: "Module 2: Core Topics"
+            children:
+              - page: "Updated1"
+              - page: "Topic B"
+
+- assert:
+    structure:
+      to: "cloned"
+      root:
+        children:
+          - page: "Welcome"
+          - container: "Module 1: Introduction"
+            children:
+              - page: "Getting Started"
+              - page: "Basic Concepts"
+          - container: "Module 2: Core Topics"
+            children:
+              - page: "Updated2"
+              - page: "Topic B"

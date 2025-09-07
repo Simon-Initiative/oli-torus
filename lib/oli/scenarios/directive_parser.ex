@@ -20,7 +20,8 @@ defmodule Oli.Scenarios.DirectiveParser do
     ActivityDirective,
     EditPageDirective,
     ViewPracticePageDirective,
-    AnswerQuestionDirective
+    AnswerQuestionDirective,
+    CloneDirective
   }
 
   alias Oli.Scenarios.Types.Node
@@ -66,6 +67,14 @@ defmodule Oli.Scenarios.DirectiveParser do
       root: parse_node(project_data["root"]),
       objectives: parse_objectives(project_data["objectives"]),
       tags: parse_tags(project_data["tags"])
+    }
+  end
+
+  defp parse_directive(%{"clone" => clone_data}) do
+    %CloneDirective{
+      from: clone_data["from"],
+      name: clone_data["name"],
+      title: clone_data["title"]
     }
   end
 
@@ -224,6 +233,7 @@ defmodule Oli.Scenarios.DirectiveParser do
 
     if key not in [
          "project",
+         "clone",
          "section",
          "product",
          "remix",
@@ -241,7 +251,7 @@ defmodule Oli.Scenarios.DirectiveParser do
          "view_practice_page",
          "answer_question"
        ] do
-      raise "Unrecognized directive: '#{key}'. Valid directives are: project, section, product, remix, manipulate, publish, assert, verify, user, enroll, institution, update, customize, create_activity, edit_page, view_practice_page, answer_question"
+      raise "Unrecognized directive: '#{key}'. Valid directives are: project, clone, section, product, remix, manipulate, publish, assert, verify, user, enroll, institution, update, customize, create_activity, edit_page, view_practice_page, answer_question"
     else
       # This shouldn't happen as specific handlers above should match first
       raise "Internal error: unhandled directive '#{key}'"
@@ -254,6 +264,7 @@ defmodule Oli.Scenarios.DirectiveParser do
       {key, value}
       when key in [
              "project",
+             "clone",
              "section",
              "product",
              "remix",
@@ -274,7 +285,7 @@ defmodule Oli.Scenarios.DirectiveParser do
         [parse_directive(%{key => value})]
 
       {key, _value} ->
-        raise "Unrecognized directive: '#{key}'. Valid directives are: project, section, product, remix, manipulate, publish, assert, verify, user, enroll, institution, update, customize, create_activity, edit_page, view_practice_page, answer_question"
+        raise "Unrecognized directive: '#{key}'. Valid directives are: project, clone, section, product, remix, manipulate, publish, assert, verify, user, enroll, institution, update, customize, create_activity, edit_page, view_practice_page, answer_question"
     end)
   end
 

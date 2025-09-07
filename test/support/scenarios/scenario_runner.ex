@@ -6,13 +6,18 @@ defmodule Oli.Scenarios.ScenarioRunner do
 
 
   @doc """
-  Discovers all .scenario.yaml files in a given directory.
-  Returns a list of {filename, full_path} tuples.
+  Discovers all .scenario.yaml files in a given directory and subdirectories.
+  Returns a list of {relative_path_name, full_path} tuples.
   """
   def discover_scenarios(directory) do
-    Path.wildcard(Path.join(directory, "*.scenario.yaml"))
+    Path.wildcard(Path.join(directory, "**/*.scenario.yaml"))
     |> Enum.map(fn path ->
-      {Path.basename(path, ".scenario.yaml"), path}
+      # Create a descriptive name including subdirectory
+      relative = Path.relative_to(path, directory)
+      name = relative
+        |> String.replace(".scenario.yaml", "")
+        |> String.replace("/", "_")
+      {name, path}
     end)
     |> Enum.sort()
   end

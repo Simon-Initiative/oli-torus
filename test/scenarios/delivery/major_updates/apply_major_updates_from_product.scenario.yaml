@@ -40,9 +40,9 @@
     title: "Spring 2025 Course"
 
 # Step 6: Verify initial section structure (should NOT have Lesson 2)
-- verify:
-    to: "course_section"
+- assert:
     structure:
+      to: "course_section"
       root:
         children:
           - page: "Introduction"
@@ -75,9 +75,9 @@
 
 # Step 10: Verify the new pages appear BUT Lesson 2 remains removed
 # The product customization should persist even after major updates
-- verify:
-    to: "course_section"
+- assert:
     structure:
+      to: "course_section"
       root:
         children:
           - page: "Introduction"

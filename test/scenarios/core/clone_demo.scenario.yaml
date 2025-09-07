@@ -1,0 +1,55 @@
+# Clone Directive Demonstration
+# This scenario shows how to use the clone directive to duplicate projects
+
+# First, create an original project with some structure
+- project:
+    name: original_course
+    title: "Original Course"
+    root:
+      container: "Course Root"
+      children:
+        - container: "Module 1"
+          children:
+            - page: "Introduction"
+            - page: "Lesson 1"
+            - page: "Quiz 1"
+        - container: "Module 2"
+          children:
+            - page: "Lesson 2"
+            - page: "Practice"
+
+# Clone the original project with a custom title
+- clone:
+    from: original_course
+    name: course_copy_custom
+    title: "My Custom Course Copy"
+
+# Clone the original project with default title (adds " Copy" suffix)
+- clone:
+    from: original_course
+    name: course_copy_default
+
+# Verify the clones were created correctly
+# Note: The cloned project preserves the exact structure of the original
+# The root container will have title "root" because that's how Builder creates it
+- assert:
+    structure:
+      to: course_copy_custom
+      root:
+        container: "root"
+        children:
+          - container: "Module 1"
+            children:
+              - page: "Introduction"
+              - page: "Lesson 1"
+              - page: "Quiz 1"
+          - container: "Module 2"
+            children:
+              - page: "Lesson 2"
+              - page: "Practice"
+
+# You can also clone a cloned project
+- clone:
+    from: course_copy_custom
+    name: double_clone
+    title: "Clone of a Clone"

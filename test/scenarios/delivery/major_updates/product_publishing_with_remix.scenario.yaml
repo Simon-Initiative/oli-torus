@@ -45,9 +45,9 @@
           apply_major_updates: true
 
 # Step 5: Verify initial product structure (matches base project)
-- verify:
-    to: "course_product"
+- assert:
     structure:
+      to: "course_product"
       root:
         children:
           - page: "Introduction"
@@ -66,9 +66,9 @@
     to: "root"
 
 # Step 7: Verify the product now has remixed content
-- verify:
-    to: "course_product"
+- assert:
     structure:
+      to: "course_product"
       root:
         children:
           - page: "Introduction"
@@ -90,9 +90,9 @@
     title: "Spring 2025 Course"
 
 # Step 9: Verify the section has the remixed content from the product
-- verify:
-    to: "course_section"
+- assert:
     structure:
+      to: "course_section"
       root:
         children:
           - page: "Introduction"
@@ -137,9 +137,9 @@
 # Step 13: Verify the product structure after update
 # Products may not receive structural updates the same way sections do
 # The remixed content should still be present, but new content may not appear
-- verify:
-    to: "course_product"
+- assert:
     structure:
+      to: "course_product"
       root:
         children:
           - page: "Introduction"
@@ -162,9 +162,9 @@
 
 # Step 15: Verify final section structure
 # Should have BOTH the remixed content (Advanced Topics) AND the new content (Module 2, Final Exam)
-- verify:
-    to: "course_section"
+- assert:
     structure:
+      to: "course_section"
       root:
         children:
           - page: "Introduction"

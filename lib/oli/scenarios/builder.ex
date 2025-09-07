@@ -22,13 +22,14 @@ defmodule Oli.Scenarios.Builder do
       publication: publication
     } = project_setup
 
-    # Update the root revision title to match what tests expect
-    # The standard infrastructure creates "Curriculum" but tests expect "root"
+    # Update the root revision title to match the spec
+    # The standard infrastructure creates "Curriculum" but we want the title from the spec
+    root_title = root_node.title || "root"
     {:ok, _} =
       ContainerEditor.edit_page(
         project,
         root_revision.slug,
-        %{"title" => "root", "author_id" => author.id}
+        %{"title" => root_title, "author_id" => author.id}
       )
 
     # Get the updated root revision
@@ -41,8 +42,8 @@ defmodule Oli.Scenarios.Builder do
         updated_root_revision,
         project,
         author,
-        %{"root" => root_resource.id},
-        %{"root" => updated_root_revision}
+        %{root_title => root_resource.id, "root" => root_resource.id},
+        %{root_title => updated_root_revision, "root" => updated_root_revision}
       )
 
     # Get the final root revision after all children have been added
@@ -63,7 +64,7 @@ defmodule Oli.Scenarios.Builder do
         author: author
       },
       id_by_title: id_by_title,
-      rev_by_title: Map.put(rev_by_title, "root", final_root_rev),
+      rev_by_title: rev_by_title |> Map.put("root", final_root_rev) |> Map.put(root_title, final_root_rev),
       objectives_by_title: objectives_by_title,
       tags_by_title: tags_by_title
     }

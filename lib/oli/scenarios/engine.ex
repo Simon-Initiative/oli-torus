@@ -8,6 +8,7 @@ defmodule Oli.Scenarios.Engine do
     ExecutionState,
     ExecutionResult,
     ProjectDirective,
+    CloneDirective,
     SectionDirective,
     ProductDirective,
     RemixDirective,
@@ -27,6 +28,7 @@ defmodule Oli.Scenarios.Engine do
 
   alias Oli.Scenarios.Directives.{
     ProjectHandler,
+    CloneHandler,
     SectionHandler,
     ProductHandler,
     RemixHandler,
@@ -83,24 +85,32 @@ defmodule Oli.Scenarios.Engine do
 
   # Initialize execution state with defaults
   defp initialize_state(opts) do
-    # Use provided author or create a default one
-    author = opts[:author] || create_default_author()
+    # If a complete state is provided, use it
+    case opts[:state] do
+      %ExecutionState{} = state ->
+        state
+      
+      nil ->
+        # Use provided author or create a default one
+        author = opts[:author] || create_default_author()
 
-    # Use provided institution or create a default one
-    institution = opts[:institution] || create_default_institution()
+        # Use provided institution or create a default one
+        institution = opts[:institution] || create_default_institution()
 
-    %ExecutionState{
-      projects: %{},
-      sections: %{},
-      products: %{},
-      users: %{"default_author" => author},
-      institutions: %{"default" => institution},
-      activities: %{},
-      page_attempts: %{},
-      activity_evaluations: %{},
-      current_author: author,
-      current_institution: institution
-    }
+        %ExecutionState{
+          projects: %{},
+          sections: %{},
+          products: %{},
+          users: %{"default_author" => author},
+          institutions: %{"default" => institution},
+          activities: %{},
+          activity_virtual_ids: %{},
+          page_attempts: %{},
+          activity_evaluations: %{},
+          current_author: author,
+          current_institution: institution
+        }
+    end
   end
 
   defp create_default_author do
@@ -141,6 +151,10 @@ defmodule Oli.Scenarios.Engine do
   # Execute individual directives
   defp execute_directive(%ProjectDirective{} = directive, state) do
     ProjectHandler.handle(directive, state)
+  end
+
+  defp execute_directive(%CloneDirective{} = directive, state) do
+    CloneHandler.handle(directive, state)
   end
 
   defp execute_directive(%SectionDirective{} = directive, state) do

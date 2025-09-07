@@ -52,9 +52,9 @@
     to: "root"
 
 # Step 6: Verify the section has both primary and remixed content
-- verify:
-    to: "course_section"
+- assert:
     structure:
+      to: "course_section"
       root:
         children:
           - page: "Welcome to Primary"
@@ -92,9 +92,9 @@
 # Step 9: Now we need to verify what happens to remixed content
 # The expectation is that remixed content is a snapshot and doesn't auto-update
 # So the section should still have the original content
-- verify:
-    to: "course_section"
+- assert:
     structure:
+      to: "course_section"
       root:
         children:
           - page: "Welcome to Primary"
@@ -130,9 +130,9 @@
     to: "course_section"
 
 # Step 13: Verify primary updates apply but remixed content remains unchanged
-- verify:
-    to: "course_section"
+- assert:
     structure:
+      to: "course_section"
       root:
         children:
           - page: "Welcome to Primary"

@@ -19,9 +19,9 @@
     from: "source_project"
 
 # Verify initial state - section has original page title
-- verify:
-    to: "test_section"
+- assert:
     structure:
+      to: "test_section"
       root:
         children:
           - page: "Original Page Title"
@@ -50,9 +50,9 @@
     to: "test_section"
 
 # Verify the section has the updated page title
-- verify:
-    to: "test_section"
+- assert:
     structure:
+      to: "test_section"
       root:
         children:
           - page: "Updated Page Title"

@@ -15,9 +15,9 @@
     title: "Test Section"
 
 # Verify initial structure of section
-- verify:
-    to: "test_section"
+- assert:
     structure:
+      to: "test_section"
       root:
         children:
           - page: "Page 1"
@@ -35,9 +35,9 @@
     description: "Adding Page 2"
 
 # Verify the project was updated correctly
-- verify:
-    to: "test_project"
+- assert:
     structure:
+      to: "test_project"
       root:
         children:
           - page: "Page 1"
@@ -49,9 +49,9 @@
     to: "test_section"
 
 # Verify updated structure in section
-- verify:
-    to: "test_section"
+- assert:
     structure:
+      to: "test_section"
       root:
         children:
           - page: "Page 1"

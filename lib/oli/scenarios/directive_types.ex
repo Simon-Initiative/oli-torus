@@ -157,6 +157,16 @@ defmodule Oli.Scenarios.DirectiveTypes do
     defstruct [:state, :verifications, :errors]
   end
 
+  defmodule CloneDirective do
+    @moduledoc """
+    Clones an existing project to create a new project with the same structure.
+    from: source project name to clone from
+    name: name for the new cloned project
+    title: optional title for the cloned project (defaults to source title with "Copy of" prefix)
+    """
+    defstruct [:from, :name, :title]
+  end
+
   defmodule VerificationResult do
     @moduledoc """
     Result of a verification directive.

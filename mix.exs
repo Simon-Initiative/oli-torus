@@ -17,6 +17,7 @@ defmodule Oli.MixProject do
       preferred_cli_env: [
         test: :test,
         "test.ecto.reset": :test,
+        scenarios: :test,
         coveralls: :test,
         "coveralls.detail": :test,
         "coveralls.post": :test,
