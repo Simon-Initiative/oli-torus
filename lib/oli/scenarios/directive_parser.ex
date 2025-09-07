@@ -120,6 +120,24 @@ defmodule Oli.Scenarios.DirectiveParser do
     }
   end
   
+  # Support "verify" as an alias for "assert" for backward compatibility
+  defp parse_directive(%{"verify" => verify_data}) do
+    # If verify has a "to" and "structure" field, convert to assert format
+    assert_data = if Map.has_key?(verify_data, "to") && Map.has_key?(verify_data, "structure") do
+      %{"structure" => Map.merge(verify_data["structure"], %{"to" => verify_data["to"]})}
+    else
+      verify_data
+    end
+    
+    %AssertDirective{
+      structure: parse_structure_assertion(assert_data["structure"]),
+      resource: parse_resource_assertion(assert_data["resource"]),
+      progress: parse_progress_assertion(assert_data["progress"]),
+      proficiency: parse_proficiency_assertion(assert_data["proficiency"]),
+      assertions: assert_data["assertions"]
+    }
+  end
+  
   defp parse_directive(%{"update" => update_data}) do
     %UpdateDirective{
       from: update_data["from"],
@@ -212,6 +230,7 @@ defmodule Oli.Scenarios.DirectiveParser do
          "manipulate",
          "publish",
          "assert",
+         "verify",
          "user",
          "enroll",
          "institution",
@@ -222,7 +241,7 @@ defmodule Oli.Scenarios.DirectiveParser do
          "view_practice_page",
          "answer_question"
        ] do
-      raise "Unrecognized directive: '#{key}'. Valid directives are: project, section, product, remix, manipulate, publish, assert, user, enroll, institution, update, customize, create_activity, edit_page, view_practice_page, answer_question"
+      raise "Unrecognized directive: '#{key}'. Valid directives are: project, section, product, remix, manipulate, publish, assert, verify, user, enroll, institution, update, customize, create_activity, edit_page, view_practice_page, answer_question"
     else
       # This shouldn't happen as specific handlers above should match first
       raise "Internal error: unhandled directive '#{key}'"
@@ -241,6 +260,7 @@ defmodule Oli.Scenarios.DirectiveParser do
              "manipulate",
              "publish",
              "assert",
+             "verify",
              "user",
              "enroll",
              "institution",
@@ -254,7 +274,7 @@ defmodule Oli.Scenarios.DirectiveParser do
         [parse_directive(%{key => value})]
 
       {key, _value} ->
-        raise "Unrecognized directive: '#{key}'. Valid directives are: project, section, product, remix, manipulate, publish, assert, user, enroll, institution, update, customize, create_activity, edit_page, view_practice_page, answer_question"
+        raise "Unrecognized directive: '#{key}'. Valid directives are: project, section, product, remix, manipulate, publish, assert, verify, user, enroll, institution, update, customize, create_activity, edit_page, view_practice_page, answer_question"
     end)
   end
 

@@ -94,12 +94,21 @@ defmodule Oli.TorusDoc.PageConverter do
 
   defp convert_block(%{type: "survey"} = survey, context) do
     with {:ok, children} <- convert_survey_blocks(survey.blocks, context) do
-      {:ok,
-       %{
-         "type" => "survey",
-         "id" => survey.id || generate_id(),
-         "children" => children
-       }}
+      result = %{
+        "type" => "survey",
+        "id" => survey.id || generate_id(),
+        "children" => children
+      }
+      
+      # Add optional survey fields if present
+      result = if survey[:title], do: Map.put(result, "title", survey.title), else: result
+      result = if survey[:anonymous], do: Map.put(result, "anonymous", survey.anonymous), else: result
+      result = if survey[:randomize], do: Map.put(result, "randomize", survey.randomize), else: result
+      result = if survey[:paging], do: Map.put(result, "paging", survey.paging), else: result
+      result = if survey[:show_progress], do: Map.put(result, "showProgress", survey.show_progress), else: result
+      result = if survey[:intro_md], do: Map.put(result, "introText", survey.intro_md), else: result
+      
+      {:ok, result}
     end
   end
 

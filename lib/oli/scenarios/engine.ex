@@ -44,14 +44,12 @@ defmodule Oli.Scenarios.Engine do
     AnswerQuestionHandler
   }
 
-  alias Oli.Utils.Seeder.AccountsFixtures
-
   @doc """
   Executes a list of directives sequentially, maintaining state throughout.
   Returns an ExecutionResult with final state and any verification results.
   """
-  def execute(directives) when is_list(directives) do
-    initial_state = initialize_state()
+  def execute(directives, opts \\ []) when is_list(directives) do
+    initial_state = initialize_state(opts)
 
     {final_state, verifications, errors} =
       Enum.reduce(directives, {initial_state, [], []}, fn directive, {state, verifs, errs} ->
@@ -77,24 +75,19 @@ defmodule Oli.Scenarios.Engine do
   @doc """
   Executes a single YAML file containing directives.
   """
-  def execute_file(yaml_path) do
+  def execute_file(yaml_path, opts \\ []) do
     yaml_path
     |> Oli.Scenarios.DirectiveParser.load_file!()
-    |> execute()
+    |> execute(opts)
   end
 
   # Initialize execution state with defaults
-  defp initialize_state do
-    # Create default author and institution if not specified
-    author = AccountsFixtures.author_fixture()
+  defp initialize_state(opts) do
+    # Use provided author or create a default one
+    author = opts[:author] || create_default_author()
 
-    {:ok, institution} =
-      Oli.Institutions.create_institution(%{
-        name: "Default Test Institution",
-        institution_email: "test@institution.edu",
-        country_code: "US",
-        institution_url: "http://test.institution.edu"
-      })
+    # Use provided institution or create a default one
+    institution = opts[:institution] || create_default_institution()
 
     %ExecutionState{
       projects: %{},
@@ -108,6 +101,41 @@ defmodule Oli.Scenarios.Engine do
       current_author: author,
       current_institution: institution
     }
+  end
+
+  defp create_default_author do
+    # Use production API to create an author
+    alias Oli.Accounts.Author
+    alias Oli.Repo
+    
+    {:ok, author} =
+      %Author{}
+      |> Author.registration_changeset(%{
+        email: "author_#{System.unique_integer([:positive])}@example.com",
+        given_name: "Default",
+        family_name: "Author",
+        password: "temporarypassword123",
+        password_confirmation: "temporarypassword123"
+      })
+      |> Author.noauth_changeset(%{
+        email: "author_#{System.unique_integer([:positive])}@example.com",
+        given_name: "Default",
+        family_name: "Author"
+      })
+      |> Repo.insert()
+    
+    author
+  end
+
+  defp create_default_institution do
+    {:ok, institution} =
+      Oli.Institutions.create_institution(%{
+        name: "Default Institution #{System.unique_integer([:positive])}",
+        institution_email: "admin@institution.edu",
+        country_code: "US",
+        institution_url: "http://institution.edu"
+      })
+    institution
   end
 
   # Execute individual directives

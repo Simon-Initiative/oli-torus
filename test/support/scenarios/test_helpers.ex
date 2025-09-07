@@ -10,7 +10,7 @@ defmodule Oli.Scenarios.TestHelpers do
   Executes a YAML specification file and returns the result.
   """
   def execute_spec(yaml_path) do
-    Engine.execute_file(yaml_path)
+    Oli.Scenarios.TestSupport.execute_file_with_fixtures(yaml_path)
   end
 
   @doc """
@@ -19,7 +19,7 @@ defmodule Oli.Scenarios.TestHelpers do
   def execute_yaml(yaml_content) do
     yaml_content
     |> DirectiveParser.parse_yaml!()
-    |> Engine.execute()
+    |> Oli.Scenarios.TestSupport.execute_with_fixtures()
   end
 
   @doc """

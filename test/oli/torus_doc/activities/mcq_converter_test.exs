@@ -165,7 +165,7 @@ defmodule Oli.TorusDoc.Activities.MCQConverterTest do
       assert choice_content["children"] |> List.first() |> Map.get("text") =~ "E = mc^2"
 
       part = List.first(json["authoring"]["parts"])
-      response_a = Enum.find(part["responses"], &(&1["rule"] == "{A}"))
+      response_a = Enum.find(part["responses"], &(&1["rule"] == "input like {A}"))
       assert response_a["score"] == 1
       feedback_content = response_a["feedback"]["content"] |> List.first()
       assert feedback_content["type"] == "p"

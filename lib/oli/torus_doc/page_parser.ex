@@ -241,6 +241,12 @@ defmodule Oli.TorusDoc.PageParser do
        %{
          type: "survey",
          id: block["id"],
+         title: block["title"],
+         anonymous: block["anonymous"],
+         randomize: block["randomize"],
+         paging: block["paging"],
+         show_progress: block["show_progress"],
+         intro_md: block["intro_md"],
          blocks: nested_blocks
        }}
     end
