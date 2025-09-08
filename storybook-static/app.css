@@ -1662,6 +1662,10 @@ select {
   accent-color: #524D59;
 }
 
+.bg-Fill-Accent-fill-accent-blue {
+  background-color: #DEECFF;
+}
+
 .dark .bg-Fill-Accent-fill-accent-blue {
   background-color: #363B59;
 }
@@ -2734,6 +2738,10 @@ select {
   background-color: #99CCFF;
 }
 
+.text-Text-text-accent-blue {
+  color: #1B67B2;
+}
+
 .dark .text-Text-text-accent-blue {
   color: #99CCFF;
 }
@@ -2808,6 +2816,10 @@ select {
 
 .dark .bg-Text-text-accent-orange {
   background-color: #FFB387;
+}
+
+.text-Text-text-accent-orange {
+  color: #A94F0E;
 }
 
 .dark .text-Text-text-accent-orange {
@@ -3816,6 +3828,10 @@ select {
 
 .dark .accent-Specially-Tokens-Fill-fill-avatar {
   accent-color: #2B282E;
+}
+
+.bg-Specially-Tokens-Fill-fill-input {
+  background-color: #FFFFFF;
 }
 
 .dark .bg-Specially-Tokens-Fill-fill-input {
@@ -8562,6 +8578,10 @@ table.table-striped tbody tr:nth-child(even) {
   top: 60px;
 }
 
+.top-\[calc\(100\%\+1px\)\] {
+  top: calc(100% + 1px);
+}
+
 .top-full {
   top: 100%;
 }
@@ -8616,6 +8636,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .z-\[2000\] {
   z-index: 2000;
+}
+
+.z-\[5\] {
+  z-index: 5;
 }
 
 .z-\[60\] {
@@ -9762,8 +9786,16 @@ table.table-striped tbody tr:nth-child(even) {
   min-height: 300px;
 }
 
+.min-h-\[32px\] {
+  min-height: 32px;
+}
+
 .min-h-\[34px\] {
   min-height: 34px;
+}
+
+.min-h-\[36px\] {
+  min-height: 36px;
 }
 
 .min-h-\[40px\] {
@@ -10257,6 +10289,10 @@ table.table-striped tbody tr:nth-child(even) {
   min-width: 0px;
 }
 
+.min-w-\[180px\] {
+  min-width: 180px;
+}
+
 .min-w-\[200px\] {
   min-width: 200px;
 }
@@ -10316,6 +10352,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .max-w-\[1040px\] {
   max-width: 1040px;
+}
+
+.max-w-\[200px\] {
+  max-width: 200px;
 }
 
 .max-w-\[220px\] {
@@ -20359,6 +20399,10 @@ Not supports in Firefox and IE */
 
 .hover\:opacity-75:hover {
   opacity: 0.75;
+}
+
+.hover\:opacity-80:hover {
+  opacity: 0.8;
 }
 
 .hover\:opacity-90:hover {
