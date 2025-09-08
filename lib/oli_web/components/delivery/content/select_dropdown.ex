@@ -3,6 +3,7 @@ defmodule OliWeb.Delivery.Content.SelectDropdown do
 
   import OliWeb.Components.Delivery.Buttons, only: [toggle_chevron: 1]
 
+  alias OliWeb.Icons
   alias Phoenix.LiveView.JS
 
   attr :id, :string, required: true
@@ -66,7 +67,7 @@ defmodule OliWeb.Delivery.Content.SelectDropdown do
                 type="button"
                 name={@name}
                 value={opt.value}
-                class="text-left text-sm text-zinc-800 hover:bg-gray-100 px-2 py-1 rounded dark:text-white"
+                class="flex flex-row justify-between text-left text-sm text-Text-text-high bg-Specially-Tokens-Fill-fill-input hover:bg-Fill-fill-hover px-2 py-1 rounded"
                 phx-click={
                   JS.push(@phx_change)
                   |> JS.hide(to: "##{@id}-options-container")
@@ -76,7 +77,12 @@ defmodule OliWeb.Delivery.Content.SelectDropdown do
                 phx-target={@target}
                 phx-value-filter={opt.value}
               >
-                {opt.label}
+                <span class={" #{if opt.value == @selected_value, do: "text-Text-text-high", else: "text-Text-text-low"}"}>
+                  {opt.label}
+                </span>
+                <%= if opt.value == @selected_value do %>
+                  <Icons.check stroke_class="stroke-Icon-icon-active" />
+                <% end %>
               </button>
             </div>
           </.form>
