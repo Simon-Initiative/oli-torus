@@ -565,7 +565,7 @@ defmodule Oli.TorusDoc.PageConverterTest do
       assert bank["children"] == nil
 
       logic = bank["logic"]
-      assert logic["conditions"]["fact"] == "all"
+      assert logic["conditions"]["operator"] == "all"
       assert length(logic["conditions"]["children"]) == 2
 
       [cond1, cond2] = logic["conditions"]["children"]

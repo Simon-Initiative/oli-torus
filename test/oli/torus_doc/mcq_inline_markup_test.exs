@@ -128,7 +128,7 @@ defmodule Oli.TorusDoc.MCQInlineMarkupTest do
       responses = part["responses"]
 
       # Find response for choice A
-      response_a = Enum.find(responses, &(&1["rule"] == "{A}"))
+      response_a = Enum.find(responses, &(&1["rule"] == "input like {A}"))
       feedback_a_content = response_a["feedback"]["content"] |> List.first()
       feedback_a_children = feedback_a_content["children"]
 
@@ -138,7 +138,7 @@ defmodule Oli.TorusDoc.MCQInlineMarkupTest do
       assert Enum.any?(feedback_a_children, &(&1 == %{"text" => " answer."}))
 
       # Find response for choice B
-      response_b = Enum.find(responses, &(&1["rule"] == "{B}"))
+      response_b = Enum.find(responses, &(&1["rule"] == "input like {B}"))
       feedback_b_content = response_b["feedback"]["content"] |> List.first()
       feedback_b_children = feedback_b_content["children"]
 

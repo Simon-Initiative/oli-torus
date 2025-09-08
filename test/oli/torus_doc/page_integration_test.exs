@@ -58,7 +58,7 @@ defmodule Oli.TorusDoc.PageIntegrationTest do
     # Bank selection (now properly converted)
     assert bank_selection["type"] == "selection"
     assert bank_selection["count"] == 2
-    assert bank_selection["logic"]["conditions"]["fact"] == "all"
+    assert bank_selection["logic"]["conditions"]["operator"] == "all"
 
     # Check the clauses in the bank selection
     conditions = bank_selection["logic"]["conditions"]["children"]

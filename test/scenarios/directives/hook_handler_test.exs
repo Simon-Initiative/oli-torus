@@ -141,7 +141,7 @@ defmodule Oli.Scenarios.Directives.HookHandlerTest do
 
       assert length(result.errors) == 1
       [{_directive, error_msg}] = result.errors
-      assert error_msg =~ "Failed to load module"
+      assert error_msg =~ "Hook module must be in Oli.Scenarios namespace"
     end
 
     test "hook with wrong arity fails" do
