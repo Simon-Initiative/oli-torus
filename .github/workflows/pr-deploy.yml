@@ -107,10 +107,18 @@ jobs:
           # Setup database
           docker-compose -p $PROJECT -f devops/docker-compose.yml run --rm app /app/bin/oli eval "Oli.Release.setup"
 
-          # Create minio buckets
-          docker-compose -p $PROJECT -f devops/docker-compose.yml run --rm --entrypoint=/bin/mc minio alias set localminio http://minio:9000 minio-user minio-password
-          docker-compose -p $PROJECT -f devops/docker-compose.yml run --rm --entrypoint=/bin/mc minio mb --ignore-existing localminio/oli-torus-media
-          docker-compose -p $PROJECT -f devops/docker-compose.yml run --rm --entrypoint=/bin/mc minio mb --ignore-existing localminio/oli-torus-xapi
+          # Run minio first and wait for it to be ready
+          docker-compose -p $PROJECT -f devops/docker-compose.yml up -d minio && sleep 5
+
+          # Create minio buckets and set policies
+          docker-compose -p $PROJECT -f devops/docker-compose.yml exec minio /bin/sh -c "mc alias set localminio http://localhost:9000 minio-user minio-password && mc mb --ignore-existing localminio/torus-media"
+          docker-compose -p $PROJECT -f devops/docker-compose.yml exec minio /bin/sh -c "mc alias set localminio http://localhost:9000 minio-user minio-password && mc mb --ignore-existing localminio/torus-xapi"
+          docker-compose -p $PROJECT -f devops/docker-compose.yml exec minio /bin/sh -c "mc alias set localminio http://localhost:9000 minio-user minio-password && mc mb --ignore-existing localminio/torus-blob-dev"
+
+          # Set minio bucket policies
+          docker-compose -p $PROJECT -f devops/docker-compose.yml exec minio /bin/sh -c "mc alias set localminio http://localhost:9000 minio-user minio-password && mc anonymous set public localminio/torus-media"
+          docker-compose -p $PROJECT -f devops/docker-compose.yml exec minio /bin/sh -c "mc alias set localminio http://localhost:9000 minio-user minio-password && mc anonymous set public localminio/torus-xapi"
+          docker-compose -p $PROJECT -f devops/docker-compose.yml exec minio /bin/sh -c "mc alias set localminio http://localhost:9000 minio-user minio-password && mc anonymous set public localminio/torus-blob-dev"
 
           # Run stack
           docker-compose -p $PROJECT -f devops/docker-compose.yml up -d
