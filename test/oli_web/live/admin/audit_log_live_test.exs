@@ -102,12 +102,11 @@ defmodule OliWeb.Admin.AuditLogLiveTest do
       # Navigate directly to the filtered URL to trigger handle_params
       {:ok, view, _html} = live(conn, ~p"/admin/audit_log")
 
-      # Simulate selecting event type filter (SelectListener sends id and value)
+      # Simulate selecting event type filter - match the actual form field name
       html =
         view
-        |> render_change("filter_event_type", %{
-          "id" => "event_type_filter",
-          "value" => "project_published"
+        |> render_change("change_event_type", %{
+          "event_type" => "project_published"
         })
 
       # Should see project_published events
@@ -120,10 +119,10 @@ defmodule OliWeb.Admin.AuditLogLiveTest do
       # Navigate to the audit log page
       {:ok, view, _html} = live(conn, ~p"/admin/audit_log")
 
-      # Simulate selecting actor type filter to show only user events (SelectListener sends id and value)
+      # Simulate selecting actor type filter to show only user events - match the actual form field name
       html =
         view
-        |> render_change("filter_actor_type", %{"id" => "actor_type_filter", "value" => "user"})
+        |> render_change("change_actor_type", %{"actor_type" => "user"})
 
       # These events should show (done by users)
       assert html =~ "user_deleted"
@@ -139,10 +138,10 @@ defmodule OliWeb.Admin.AuditLogLiveTest do
       # Navigate to the page
       {:ok, view, _html} = live(conn, ~p"/admin/audit_log")
 
-      # Simulate text search
+      # Simulate text search - match the actual form field name
       html =
         view
-        |> render_change("text_search_change", %{"value" => unique_project.slug})
+        |> render_change("text_search_change", %{"audit_search" => unique_project.slug})
 
       # Should show the unique project we searched for
       assert html =~ unique_project.slug
