@@ -22,7 +22,11 @@ def get_config() -> Dict[str, Any]:
             'database': os.getenv('CLICKHOUSE_DATABASE', 'oli_analytics_dev')
         },
         'environment': os.getenv('ENVIRONMENT', 'dev'),
-        'aws_region': os.getenv('AWS_REGION', 'us-east-1')
+        'aws': {
+            'region': os.getenv('AWS_REGION', 'us-east-1'),
+            'access_key_id': os.getenv('AWS_ACCESS_KEY_ID'),
+            'secret_access_key': os.getenv('AWS_SECRET_ACCESS_KEY')
+        }
     }
 
 def parse_s3_event(event: Dict[str, Any]) -> Optional[Dict[str, str]]:

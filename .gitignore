@@ -106,3 +106,4 @@ __pycache__/
 
 # AWS Lambda package files
 cloud/xapi-etl-processor/xapi-etl-processor.zip
+cloud/xapi-etl-processor/.env

@@ -131,8 +131,12 @@ def handle_event_processing(event: Dict[str, Any], context: Any) -> Dict[str, An
             logger.info("Processing in test mode with provided body")
             result = process_single_file(bucket, key, test_body)
         else:
-            # Download and process the file
-            result = process_single_file(bucket, key)
+            # Use ClickHouse S3 integration for single file processing
+            logger.info("Processing single file using ClickHouse S3 integration")
+            clickhouse_client = ClickHouseClient()
+            result = process_files_s3_integration(
+                clickhouse_client, bucket, [key], section_id, False
+            )
 
         # Add metadata to result
         result['section_id'] = section_id
@@ -140,7 +144,16 @@ def handle_event_processing(event: Dict[str, Any], context: Any) -> Dict[str, An
         result['s3_bucket'] = bucket
         result['processing_mode'] = 'event'
 
-        logger.info(f"Successfully processed {result['events_processed']} events from {key}")
+        # For single file processing, adjust the result format
+        if 'total_events_processed' in result:
+            result['events_processed'] = result['total_events_processed']
+            result['video_events_processed'] = result['total_video_events_processed']
+            result['activity_attempt_events_processed'] = result['total_activity_attempt_events_processed']
+            result['page_attempt_events_processed'] = result['total_page_attempt_events_processed']
+            result['page_viewed_events_processed'] = result['total_page_viewed_events_processed']
+            result['part_attempt_events_processed'] = result['total_part_attempt_events_processed']
+
+        logger.info(f"Successfully processed {result.get('events_processed', 0)} events from {key}")
 
         return {
             'statusCode': 200,
@@ -411,65 +424,75 @@ def process_files_bulk(
     section_id: Optional[str] = None,
     force_reprocess: bool = False
 ) -> Dict[str, Any]:
-    """Process multiple files in bulk"""
-    total_events = 0
-    total_video_events = 0
-    total_activity_attempt_events = 0
-    total_page_attempt_events = 0
-    total_page_viewed_events = 0
-    total_part_attempt_events = 0
-    processed_files = 0
-    failed_files = 0
-    skipped_files = 0
+    """
+    Process multiple files using ClickHouse S3 integration for optimal performance.
+    All processing is now handled by ClickHouse's native S3 capabilities.
+    """
+    logger.info(f"Processing {len(files)} files using ClickHouse S3 integration")
 
-    for i, key in enumerate(files, 1):
-        try:
-            logger.info(f"Processing file {i}/{len(files)}: {key}")
+    try:
+        return process_files_s3_integration(
+            clickhouse_client, bucket, files, section_id, force_reprocess
+        )
+    except Exception as e:
+        logger.error(f"S3 integration processing failed: {str(e)}")
+        raise
 
-            file_section_id = section_id or extract_section_id_from_s3_key(key)
+def process_files_s3_integration(
+    clickhouse_client: ClickHouseClient,
+    bucket: str,
+    files: List[str],
+    section_id: Optional[str] = None,
+    force_reprocess: bool = False
+) -> Dict[str, Any]:
+    """Process multiple files using ClickHouse S3 integration for efficiency"""
+    try:
+        # Check if we should skip processing
+        if not force_reprocess and section_id:
+            existing_count = clickhouse_client.get_section_event_count(int(section_id))
+            if existing_count > 0:
+                logger.info(f"Skipping S3 bulk processing - section {section_id} already has {existing_count} events")
+                return {
+                    'total_files_found': len(files),
+                    'processed_files': 0,
+                    'failed_files': 0,
+                    'skipped_files': len(files),
+                    'total_events_processed': 0,
+                    'total_video_events_processed': 0,
+                    'total_activity_attempt_events_processed': 0,
+                    'total_page_attempt_events_processed': 0,
+                    'total_page_viewed_events_processed': 0,
+                    'total_part_attempt_events_processed': 0,
+                    'section_id': section_id,
+                    'success': True,
+                    'processing_method': 's3_integration'
+                }
 
-            # Check if we should skip this file
-            if not force_reprocess and file_section_id:
-                existing_count = clickhouse_client.get_section_event_count(int(file_section_id))
-                if existing_count > 0:
-                    logger.info(f"Skipping {key} - section {file_section_id} already has {existing_count} events")
-                    skipped_files += 1
-                    continue
+        # Convert file keys to full S3 paths
+        s3_paths = [f"s3://{bucket}/{key}" for key in files]
 
-            # Process the file
-            result = process_single_file(bucket, key)
+        # Use ClickHouse S3 integration to process all files at once
+        results = clickhouse_client.bulk_insert_from_s3(s3_paths, int(section_id) if section_id else None)
 
-            total_events += result['events_processed']
-            total_video_events += result['video_events_processed']
-            total_activity_attempt_events += result.get('activity_attempt_events_processed', 0)
-            total_page_attempt_events += result.get('page_attempt_events_processed', 0)
-            total_page_viewed_events += result.get('page_viewed_events_processed', 0)
-            total_part_attempt_events += result.get('part_attempt_events_processed', 0)
-            processed_files += 1
+        return {
+            'total_files_found': len(files),
+            'processed_files': len(files),
+            'failed_files': 0,
+            'skipped_files': 0,
+            'total_events_processed': results['total_events_processed'],
+            'total_video_events_processed': results['video_events_processed'],
+            'total_activity_attempt_events_processed': results['activity_attempt_events_processed'],
+            'total_page_attempt_events_processed': results['page_attempt_events_processed'],
+            'total_page_viewed_events_processed': results['page_viewed_events_processed'],
+            'total_part_attempt_events_processed': results['part_attempt_events_processed'],
+            'section_id': section_id,
+            'success': True,
+            'processing_method': 's3_integration'
+        }
 
-            # Log progress every 10 files
-            if i % 10 == 0:
-                logger.info(f"Progress: {i}/{len(files)} files processed")
-
-        except Exception as e:
-            logger.error(f"Failed to process file {key}: {str(e)}")
-            failed_files += 1
-            continue
-
-    return {
-        'total_files_found': len(files),
-        'processed_files': processed_files,
-        'failed_files': failed_files,
-        'skipped_files': skipped_files,
-        'total_events_processed': total_events,
-        'total_video_events_processed': total_video_events,
-        'total_activity_attempt_events_processed': total_activity_attempt_events,
-        'total_page_attempt_events_processed': total_page_attempt_events,
-        'total_page_viewed_events_processed': total_page_viewed_events,
-        'total_part_attempt_events_processed': total_part_attempt_events,
-        'section_id': section_id,
-        'success': failed_files == 0
-    }
+    except Exception as e:
+        logger.error(f"S3 integration processing failed: {str(e)}")
+        raise
 
 def health_check() -> Dict[str, Any]:
     """Health check endpoint"""
@@ -483,6 +506,8 @@ def health_check() -> Dict[str, Any]:
                 'clickhouse_healthy': is_healthy,
                 'lambda_function': 'xapi-etl-processor',
                 'modes': ['event', 'bulk'],
+                'processing_method': 's3_integration',
+                'description': 'All processing uses ClickHouse S3 integration for optimal performance',
                 'timestamp': datetime.utcnow().isoformat()
             })
         }

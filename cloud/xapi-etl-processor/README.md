@@ -1,20 +1,44 @@
 # XAPI ETL Processor
 
-An AWS Lambda function for processing XAPI (Experience API) events from S3 into ClickHouse analytics database.
+An AWS Lambda function for processing XAPI (Experience API) events from S3 into ClickHouse analytics database using ClickHouse's native S3 integration.
 
 ## Overview
 
-This Lambda function combines both event processing and bulk processing capabilities in a single deployment:
+This Lambda function leverages **ClickHouse S3 integration** for all processing, providing consistent high performance and eliminating Lambda timeout limitations:
 
-- **Event Processing Mode**: Processes individual JSONL files triggered by S3 events
-- **Bulk Processing Mode**: Handles historical data processing for multiple files
+- **Event Processing**: Single files triggered by S3 events - processed via ClickHouse S3 integration
+- **Bulk Processing**: Multiple files for historical data - processed via ClickHouse S3 integration
+- **No Timeout Limits**: All heavy processing is handled by ClickHouse directly from S3
+- **Consistent Performance**: Same high-performance approach for all workload sizes
 
 ## Architecture
 
 ```
-S3 Bucket (XAPI Data) → Lambda Function → ClickHouse Database
-                     ↗ (Event Mode)
-Manual Trigger ------→ (Bulk Mode)
+S3 Bucket (XAPI Data) → Lambda Function → ClickHouse S3 Integration → ClickHouse Database
+                     ↗ (Event Mode)     ↗ (Direct S3 Processing)
+Manual Trigger ------→ (Bulk Mode) ----→ (No Lambda Limitations)
+```
+
+### Processing Strategy
+
+```
+All Files
+    │
+    ▼
+┌─────────────────────┐
+│ ClickHouse S3       │
+│ Integration         │
+│ (High Performance)  │
+│ - No timeout limits │
+│ - Direct S3 access  │
+│ - Parallel processing │
+└─────────────────────┘
+    │
+    ▼
+┌─────────────────────┐
+│ ClickHouse Database │
+│ (All Event Types)   │
+└─────────────────────┘
 ```
 
 ## Directory Structure
@@ -109,6 +133,36 @@ CLICKHOUSE_PASSWORD=your-password
 S3_XAPI_BUCKET_NAME=your-s3-bucket
 ENVIRONMENT=dev|staging|prod
 ```
+
+## Performance Benefits
+
+### ClickHouse S3 Integration Advantages
+
+All processing now uses ClickHouse's native S3 capabilities for optimal performance:
+
+#### Universal Benefits
+
+- **No Lambda Timeouts**: All processing bypasses the 15-minute Lambda limit
+- **High Performance**: ClickHouse processes data directly from S3 using native SQL
+- **Cost Effective**: Minimal Lambda execution time for all operations
+- **Scalability**: No practical limits on file count or dataset size
+- **Consistency**: Same high-performance approach for single files and bulk operations
+
+#### Technical Advantages
+
+- **Parallel Processing**: ClickHouse automatically parallelizes file processing
+- **Memory Efficiency**: No data flows through Lambda memory
+- **SQL-Based Filtering**: Event type filtering happens at the database level
+- **Direct Insertion**: Data goes straight from S3 to final tables
+
+### Configuration Requirements
+
+For S3 integration to work, ensure:
+
+- ClickHouse has network access to S3
+- IAM permissions allow ClickHouse to read from your S3 bucket
+- ClickHouse S3 table functions are enabled (`s3()` function available)
+- Network security groups allow S3 access
 
 ## Deployment
 

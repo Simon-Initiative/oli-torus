@@ -3,6 +3,9 @@ boto3
 requests
 clickhouse-driver
 
+# Environment variable handling
+python-dotenv
+
 # Additional notebook-specific dependencies
 pandas>=1.3.0
 jupyter
