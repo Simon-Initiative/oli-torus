@@ -65,7 +65,7 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = ({
     label,
     showLabel,
     showIncrementArrows,
-    enableScrollIncrement,
+    enableScrollIncrement = false,
     prompt = '',
   } = model;
 
