@@ -115,7 +115,10 @@ defmodule Oli.Delivery.ActivityProvider do
 
     prototypes_with_revisions =
       resolve_activity_ids(source.section_slug, prototypes, resolver)
-      |> Enum.map(fn p -> set_out_of(p) end)
+      |> Enum.reduce([], fn
+        %{revision: nil} = _p, acc -> acc
+        p, acc -> [set_out_of(p) | acc]
+      end)
 
     bib_revisions =
       BibUtils.assemble_bib_entries(
@@ -426,7 +429,10 @@ defmodule Oli.Delivery.ActivityProvider do
 
     map =
       resolver.from_resource_id(section_slug, activity_ids)
-      |> Enum.reduce(%{}, fn rev, m -> Map.put(m, rev.resource_id, rev) end)
+      |> Enum.reduce(%{}, fn
+        nil, m -> m
+        rev, m -> Map.put(m, rev.resource_id, rev)
+      end)
 
     Enum.map(prototypes, fn p ->
       case p.revision do
