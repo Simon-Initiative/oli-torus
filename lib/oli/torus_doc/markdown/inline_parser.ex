@@ -7,37 +7,35 @@ defmodule Oli.TorusDoc.Markdown.InlineParser do
   @doc """
   Transforms an inline element from Earmark AST to Torus JSON.
   """
-  def transform(element, directive_map \\ %{})
-
   # Text nodes
-  def transform(text, _) when is_binary(text) do
+  def transform(text) when is_binary(text) do
     text
     |> process_inline_math()
     |> Enum.flat_map(&process_inline_directives/1)
   end
 
   # Strong emphasis
-  def transform({"strong", _, children, _meta}, directive_map) do
+  def transform({"strong", _, children, _meta}) do
     children
-    |> Enum.flat_map(&transform(&1, directive_map))
+    |> Enum.flat_map(&transform(&1))
     |> apply_mark("strong")
   end
 
   # Emphasis
-  def transform({"em", _, children, _meta}, directive_map) do
+  def transform({"em", _, children, _meta}) do
     children
-    |> Enum.flat_map(&transform(&1, directive_map))
+    |> Enum.flat_map(&transform(&1))
     |> apply_mark("em")
   end
 
   # Code
-  def transform({"code", _, [text], _meta}, _) when is_binary(text) do
+  def transform({"code", _, [text], _meta}) when is_binary(text) do
     [%{"text" => text, "code" => true}]
   end
 
   # Links
-  def transform({"a", [{"href", href} | _], children, _meta}, directive_map) do
-    link_children = children |> Enum.flat_map(&transform(&1, directive_map))
+  def transform({"a", [{"href", href} | _], children, _meta}) do
+    link_children = children |> Enum.flat_map(&transform(&1))
 
     [
       %{
@@ -49,7 +47,7 @@ defmodule Oli.TorusDoc.Markdown.InlineParser do
   end
 
   # Images
-  def transform({"img", attrs, _, _meta}, _) do
+  def transform({"img", attrs, _, _meta}) do
     attrs_map = attrs |> Enum.into(%{})
 
     img = %{
@@ -65,45 +63,37 @@ defmodule Oli.TorusDoc.Markdown.InlineParser do
   end
 
   # Strikethrough (if GFM extension is enabled)
-  def transform({"del", _, children, _meta}, directive_map) do
+  def transform({"del", _, children, _meta}) do
     children
-    |> Enum.flat_map(&transform(&1, directive_map))
+    |> Enum.flat_map(&transform(&1))
     |> apply_mark("strikethrough")
   end
 
   # Superscript (custom parsing needed)
-  def transform({"sup", _, children, _meta}, directive_map) do
+  def transform({"sup", _, children, _meta}) do
     children
-    |> Enum.flat_map(&transform(&1, directive_map))
+    |> Enum.flat_map(&transform(&1))
     |> apply_mark("sup")
   end
 
   # Subscript (custom parsing needed)
-  def transform({"sub", _, children, _meta}, directive_map) do
+  def transform({"sub", _, children, _meta}) do
     children
-    |> Enum.flat_map(&transform(&1, directive_map))
+    |> Enum.flat_map(&transform(&1))
     |> apply_mark("sub")
   end
 
   # Line breaks
-  def transform({"br", _, _, _meta}, _) do
+  def transform({"br", _, _, _meta}) do
     [%{"text" => "\n"}]
   end
 
-  # Directive placeholders
-  def transform({"directive", %{"id" => id}}, directive_map) do
-    case Map.get(directive_map, id) do
-      nil -> []
-      directive -> [directive]
-    end
-  end
-
   # Unknown elements - try to extract text
-  def transform({_, _, children, _meta}, directive_map) when is_list(children) do
-    Enum.flat_map(children, &transform(&1, directive_map))
+  def transform({_, _, children, _meta}) when is_list(children) do
+    Enum.flat_map(children, &transform(&1))
   end
 
-  def transform(_, _), do: []
+  def transform(_), do: []
 
   @doc """
   Process inline math delimiters in text.

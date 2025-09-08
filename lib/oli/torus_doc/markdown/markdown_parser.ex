@@ -6,7 +6,6 @@ defmodule Oli.TorusDoc.Markdown.MarkdownParser do
   into the Torus content element schema.
   """
 
-  alias Oli.TorusDoc.Markdown.DirectiveParser
   alias Oli.TorusDoc.Markdown.InlineParser
   alias Oli.TorusDoc.Markdown.BlockParser
   alias Oli.TorusDoc.Markdown.TableParser
@@ -28,7 +27,6 @@ defmodule Oli.TorusDoc.Markdown.MarkdownParser do
     |> preprocess_inline_math()
     |> preprocess_inline_directives()
     |> BlockParser.preprocess_math()
-    |> preprocess_directives()
     |> parse_with_earmark()
     |> transform_to_torus_json()
   end
@@ -61,13 +59,8 @@ defmodule Oli.TorusDoc.Markdown.MarkdownParser do
     end)
   end
 
-  # Preprocess custom directives before markdown parsing
-  defp preprocess_directives(markdown) do
-    DirectiveParser.extract_and_replace(markdown)
-  end
-
   # Parse markdown using Earmark with GFM extensions
-  defp parse_with_earmark({markdown, directive_map}) do
+  defp parse_with_earmark(markdown) do
     options = %Earmark.Options{
       gfm: true,
       breaks: false,
@@ -78,10 +71,10 @@ defmodule Oli.TorusDoc.Markdown.MarkdownParser do
     # Use the recommended Parser.as_ast function
     case Earmark.Parser.as_ast(markdown, options) do
       {:ok, ast, _messages} ->
-        {:ok, ast, directive_map}
+        {:ok, ast}
 
       {:error, ast, errors} ->
-        {:error, format_errors(errors), ast, directive_map}
+        {:error, format_errors(errors), ast}
     end
   end
 
@@ -94,72 +87,54 @@ defmodule Oli.TorusDoc.Markdown.MarkdownParser do
   end
 
   # Transform Earmark AST to Torus JSON
-  defp transform_to_torus_json({:ok, ast, directive_map}) do
-    elements = transform_elements(ast, directive_map)
+  defp transform_to_torus_json({:ok, ast}) do
+    elements = transform_elements(ast)
     {:ok, elements}
   end
 
-  defp transform_to_torus_json({:error, reason, _ast, _directive_map}) do
+  defp transform_to_torus_json({:error, reason, _ast}) do
     {:error, reason}
   end
 
-  defp transform_elements(ast, directive_map) when is_list(ast) do
-    Enum.flat_map(ast, &transform_element(&1, directive_map))
+  defp transform_elements(ast) when is_list(ast) do
+    Enum.flat_map(ast, &transform_element(&1))
   end
 
-  defp transform_element(element, directive_map) do
+  defp transform_element(element) do
     case element do
       {"h1", _attrs, children, _meta} ->
-        [%{"type" => "h1", "children" => transform_inline(children, directive_map)}]
+        [%{"type" => "h1", "children" => transform_inline(children)}]
 
       {"h2", _attrs, children, _meta} ->
-        [%{"type" => "h2", "children" => transform_inline(children, directive_map)}]
+        [%{"type" => "h2", "children" => transform_inline(children)}]
 
       {"h3", _attrs, children, _meta} ->
-        [%{"type" => "h3", "children" => transform_inline(children, directive_map)}]
+        [%{"type" => "h3", "children" => transform_inline(children)}]
 
       {"h4", _attrs, children, _meta} ->
-        [%{"type" => "h4", "children" => transform_inline(children, directive_map)}]
+        [%{"type" => "h4", "children" => transform_inline(children)}]
 
       {"h5", _attrs, children, _meta} ->
-        [%{"type" => "h5", "children" => transform_inline(children, directive_map)}]
+        [%{"type" => "h5", "children" => transform_inline(children)}]
 
       {"h6", _attrs, children, _meta} ->
-        [%{"type" => "h6", "children" => transform_inline(children, directive_map)}]
+        [%{"type" => "h6", "children" => transform_inline(children)}]
 
       {"p", _attrs, children, _meta} ->
-        # Check if this paragraph contains only a directive placeholder
-        case children do
-          [text] when is_binary(text) ->
-            case extract_directive_id(text) do
-              nil ->
-                # Regular paragraph
-                [%{"type" => "p", "children" => transform_inline(children, directive_map)}]
-
-              id ->
-                # Replace directive placeholder with actual directive content
-                case Map.get(directive_map, id) do
-                  nil -> []
-                  directive -> [directive]
-                end
-            end
-
-          _ ->
-            # Regular paragraph with multiple children
-            [%{"type" => "p", "children" => transform_inline(children, directive_map)}]
-        end
+        # Regular paragraph
+        [%{"type" => "p", "children" => transform_inline(children)}]
 
       {"ul", _attrs, children, _meta} ->
-        [%{"type" => "ul", "children" => transform_list_items(children, directive_map)}]
+        [%{"type" => "ul", "children" => transform_list_items(children)}]
 
       {"ol", _attrs, children, _meta} ->
-        [%{"type" => "ol", "children" => transform_list_items(children, directive_map)}]
+        [%{"type" => "ol", "children" => transform_list_items(children)}]
 
       {"li", _attrs, children, _meta} ->
-        [%{"type" => "li", "children" => transform_inline(children, directive_map)}]
+        [%{"type" => "li", "children" => transform_inline(children)}]
 
       {"blockquote", _attrs, children, _meta} ->
-        paragraphs = transform_elements(children, directive_map)
+        paragraphs = transform_elements(children)
         [%{"type" => "blockquote", "children" => paragraphs}]
 
       {"pre", _, [{"code", [{"class", lang} | _], [code], _}], _meta} ->
@@ -169,7 +144,7 @@ defmodule Oli.TorusDoc.Markdown.MarkdownParser do
         [BlockParser.transform_code_block("text", code)]
 
       {"table", _attrs, children, _meta} ->
-        [TableParser.parse_table(children, directive_map)]
+        [TableParser.parse_table(children)]
 
       {"hr", _, _, _} ->
         # Horizontal rules are not in the schema, skip them
@@ -189,21 +164,21 @@ defmodule Oli.TorusDoc.Markdown.MarkdownParser do
     end
   end
 
-  defp transform_list_items(items, directive_map) do
+  defp transform_list_items(items) do
     Enum.flat_map(items, fn
       {"li", _attrs, children, _meta} ->
         # Check if children contain nested lists
         {inline_content, nested_lists} = partition_list_content(children)
 
-        li_children = transform_inline(inline_content, directive_map)
+        li_children = transform_inline(inline_content)
 
         base_item = %{"type" => "li", "children" => li_children}
 
         # Add nested lists as siblings after the list item
-        [base_item | transform_elements(nested_lists, directive_map)]
+        [base_item | transform_elements(nested_lists)]
 
       other ->
-        transform_element(other, directive_map)
+        transform_element(other)
     end)
   end
 
@@ -215,20 +190,13 @@ defmodule Oli.TorusDoc.Markdown.MarkdownParser do
     end)
   end
 
-  defp transform_inline(children, directive_map) when is_list(children) do
+  defp transform_inline(children) when is_list(children) do
     children
-    |> Enum.flat_map(&transform_inline_element(&1, directive_map))
+    |> Enum.flat_map(&transform_inline_element(&1))
     |> InlineParser.merge_adjacent_text()
   end
 
-  defp transform_inline_element(element, directive_map) do
-    InlineParser.transform(element, directive_map)
-  end
-
-  defp extract_directive_id(text) do
-    case Regex.run(~r/TORUS_DIRECTIVE\[(directive_\d+)\]/, text) do
-      [_, id] -> id
-      _ -> nil
-    end
+  defp transform_inline_element(element) do
+    InlineParser.transform(element)
   end
 end

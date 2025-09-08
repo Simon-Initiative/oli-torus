@@ -8,12 +8,12 @@ defmodule Oli.TorusDoc.Markdown.TableParser do
   @doc """
   Parses a table from Earmark AST to Torus JSON.
   """
-  def parse_table(table_children, directive_map) do
+  def parse_table(table_children) do
     {header_rows, body_rows} = split_table_sections(table_children)
 
     all_rows =
-      transform_table_rows(header_rows, directive_map, true) ++
-        transform_table_rows(body_rows, directive_map, false)
+      transform_table_rows(header_rows, true) ++
+        transform_table_rows(body_rows, false)
 
     %{
       "type" => "table",
@@ -28,9 +28,9 @@ defmodule Oli.TorusDoc.Markdown.TableParser do
     end)
   end
 
-  defp transform_table_rows([], _, _), do: []
+  defp transform_table_rows([], _), do: []
 
-  defp transform_table_rows(sections, directive_map, is_header) do
+  defp transform_table_rows(sections, is_header) do
     sections
     |> Enum.flat_map(fn
       {"thead", _, rows, _} -> rows
@@ -41,19 +41,19 @@ defmodule Oli.TorusDoc.Markdown.TableParser do
     |> Enum.map(fn {"tr", _, cells, _} ->
       %{
         "type" => "tr",
-        "children" => transform_table_cells(cells, directive_map, is_header)
+        "children" => transform_table_cells(cells, is_header)
       }
     end)
   end
 
-  defp transform_table_cells(cells, directive_map, is_header) do
+  defp transform_table_cells(cells, is_header) do
     Enum.map(cells, fn
       {"th", attrs, children, _} ->
-        build_table_cell("th", attrs, children, directive_map)
+        build_table_cell("th", attrs, children)
 
       {"td", attrs, children, _} ->
         cell_type = if is_header, do: "th", else: "td"
-        build_table_cell(cell_type, attrs, children, directive_map)
+        build_table_cell(cell_type, attrs, children)
 
       _ ->
         nil
@@ -61,12 +61,12 @@ defmodule Oli.TorusDoc.Markdown.TableParser do
     |> Enum.reject(&is_nil/1)
   end
 
-  defp build_table_cell(type, attrs, children, directive_map) do
+  defp build_table_cell(type, attrs, children) do
     attrs_map = attrs |> Enum.into(%{})
 
     cell = %{
       "type" => type,
-      "children" => transform_cell_content(children, directive_map)
+      "children" => transform_cell_content(children)
     }
 
     cell
@@ -74,22 +74,22 @@ defmodule Oli.TorusDoc.Markdown.TableParser do
     |> maybe_add_span(attrs_map)
   end
 
-  defp transform_cell_content(children, directive_map) do
+  defp transform_cell_content(children) do
     # Table cells can contain inline content or block content
     case children do
       [{"p", _, _inline_children, _} | _] ->
         # If it starts with a paragraph, transform as block content
-        transform_block_content(children, directive_map)
+        transform_block_content(children)
 
       _ ->
         # Otherwise, treat as inline content
         children
-        |> Enum.flat_map(&InlineParser.transform(&1, directive_map))
+        |> Enum.flat_map(&InlineParser.transform(&1))
         |> InlineParser.merge_adjacent_text()
     end
   end
 
-  defp transform_block_content(children, directive_map) do
+  defp transform_block_content(children) do
     children
     |> Enum.flat_map(fn
       {"p", _, inline_children, _} ->
@@ -98,13 +98,13 @@ defmodule Oli.TorusDoc.Markdown.TableParser do
             "type" => "p",
             "children" =>
               inline_children
-              |> Enum.flat_map(&InlineParser.transform(&1, directive_map))
+              |> Enum.flat_map(&InlineParser.transform(&1))
               |> InlineParser.merge_adjacent_text()
           }
         ]
 
       other ->
-        InlineParser.transform(other, directive_map)
+        InlineParser.transform(other)
     end)
   end
 

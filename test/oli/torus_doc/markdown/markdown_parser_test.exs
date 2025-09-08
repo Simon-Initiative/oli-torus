@@ -320,75 +320,6 @@ defmodule Oli.TorusDoc.MarkdownParserTest do
     end
   end
 
-  describe "custom directives" do
-    test "parses YouTube directive" do
-      markdown = """
-      :::youtube { id="dQw4w9WgXcQ" start=42 title="Demo Video" }
-      :::
-      """
-
-      {:ok, [youtube]} = MarkdownParser.parse(markdown)
-
-      assert %{
-               "type" => "youtube",
-               "src" => "https://www.youtube.com/embed/dQw4w9WgXcQ",
-               "startTime" => 42,
-               "alt" => "Demo Video"
-             } = youtube
-    end
-
-    test "parses audio directive" do
-      markdown = """
-      :::audio { src="/media/intro.mp3" caption="Course intro" }
-      Optional transcript text here.
-      :::
-      """
-
-      {:ok, [audio]} = MarkdownParser.parse(markdown)
-
-      assert %{
-               "type" => "audio",
-               "src" => "/media/intro.mp3",
-               "alt" => "Course intro",
-               "caption" => "Optional transcript text here."
-             } = audio
-    end
-
-    test "parses video directive" do
-      markdown = """
-      :::video { src="/media/clip.mp4" poster="/media/thumb.jpg" }
-      Video description
-      :::
-      """
-
-      {:ok, [video]} = MarkdownParser.parse(markdown)
-
-      assert %{
-               "type" => "video",
-               "src" => [%{"url" => "/media/clip.mp4", "contenttype" => "video/mp4"}],
-               "poster" => "/media/thumb.jpg",
-               "alt" => "Video description"
-             } = video
-    end
-
-    test "parses iframe directive" do
-      markdown = """
-      :::iframe { src="https://codepen.io/widget" width=640 height=360 title="Widget" }
-      :::
-      """
-
-      {:ok, [iframe]} = MarkdownParser.parse(markdown)
-
-      assert %{
-               "type" => "iframe",
-               "src" => "https://codepen.io/widget",
-               "width" => 640,
-               "height" => 360,
-               "alt" => "Widget"
-             } = iframe
-    end
-  end
-
   describe "inline directives" do
     test "parses term directive" do
       markdown = "The :term[acceleration]{id=\"accel\"} is the rate of change."
@@ -423,72 +354,6 @@ defmodule Oli.TorusDoc.MarkdownParserTest do
                  %{"text" => " is a vector quantity."}
                ]
              } = paragraph
-    end
-  end
-
-  describe "directive validation" do
-    test "validates YouTube ID format" do
-      # Valid YouTube ID
-      valid_markdown = """
-      :::youtube { id="dQw4w9WgXcQ" }
-      :::
-      """
-
-      {:ok, [youtube]} = MarkdownParser.parse(valid_markdown)
-      assert %{"type" => "youtube"} = youtube
-
-      # Invalid YouTube ID (too short)
-      invalid_markdown = """
-      :::youtube { id="abc123" }
-      :::
-      """
-
-      {:ok, [error]} = MarkdownParser.parse(invalid_markdown)
-      assert %{"type" => "p", "children" => [%{"text" => "[Invalid YouTube ID]"}]} = error
-    end
-
-    test "validates media source URLs" do
-      # Valid relative path
-      valid_audio = """
-      :::audio { src="/media/audio.mp3" }
-      :::
-      """
-
-      {:ok, [audio]} = MarkdownParser.parse(valid_audio)
-      assert %{"type" => "audio", "src" => "/media/audio.mp3"} = audio
-
-      # Invalid source (no protocol or relative path)
-      invalid_audio = """
-      :::audio { src="random-text" }
-      :::
-      """
-
-      {:ok, [error]} = MarkdownParser.parse(invalid_audio)
-      assert %{"type" => "p", "children" => [%{"text" => "[Invalid audio source]"}]} = error
-    end
-
-    test "validates iframe domains against allowlist" do
-      # Allowed domain
-      valid_iframe = """
-      :::iframe { src="https://codepen.io/embed/abc" }
-      :::
-      """
-
-      {:ok, [iframe]} = MarkdownParser.parse(valid_iframe)
-      assert %{"type" => "iframe"} = iframe
-
-      # Disallowed domain
-      invalid_iframe = """
-      :::iframe { src="https://evil-site.com/widget" }
-      :::
-      """
-
-      {:ok, [error]} = MarkdownParser.parse(invalid_iframe)
-
-      assert %{
-               "type" => "p",
-               "children" => [%{"text" => "[Invalid or disallowed iframe source]"}]
-             } = error
     end
   end
 
@@ -533,35 +398,6 @@ defmodule Oli.TorusDoc.MarkdownParserTest do
       {:ok, [table]} = MarkdownParser.parse(markdown)
       assert %{"type" => "table"} = table
     end
-
-    test "handles multiple consecutive directives" do
-      markdown = """
-      :::youtube { id="dQw4w9WgXcQ" }
-      :::
-
-      :::audio { src="/audio.mp3" }
-      :::
-      """
-
-      {:ok, result} = MarkdownParser.parse(markdown)
-      assert length(result) == 2
-      assert Enum.at(result, 0)["type"] == "youtube"
-      assert Enum.at(result, 1)["type"] == "audio"
-    end
-
-    test "handles directive with markdown body content" do
-      markdown = """
-      :::audio { src="/lecture.mp3" caption="Lecture Audio" }
-      This is a **transcript** with *emphasis* and `code`.
-
-      It has multiple paragraphs.
-      :::
-      """
-
-      {:ok, [audio]} = MarkdownParser.parse(markdown)
-      assert %{"type" => "audio", "caption" => caption} = audio
-      assert caption =~ "transcript"
-    end
   end
 
   describe "complex documents" do
@@ -605,12 +441,9 @@ defmodule Oli.TorusDoc.MarkdownParserTest do
       markdown = """
       # TorusDoc Example
 
-      This document demonstrates **all** TMD features including :term[special terms]{id="term1"}.
+      This document demonstrates **all** TMD features.
 
-      ## Media
-
-      :::youtube { id="dQw4w9WgXcQ" start=10 }
-      :::
+      ## Media Section
 
       ## Math Examples
 
@@ -651,7 +484,6 @@ defmodule Oli.TorusDoc.MarkdownParserTest do
       assert "h1" in types
       assert "h2" in types
       assert "p" in types
-      assert "youtube" in types
       assert "formula" in types
       assert "table" in types
       assert "ol" in types
