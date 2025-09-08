@@ -24,41 +24,17 @@ defmodule Oli.Analytics.AdvancedAnalytics do
     end
   end
 
-  # Gets the fully qualified table names for all event types
-  def video_events_table() do
+  # Gets the fully qualified table name for the unified raw events table
+  def raw_events_table() do
     config = Application.get_env(:oli, :clickhouse) |> Enum.into(%{})
-    "#{config.database}.video_events"
-  end
-
-  def activity_attempt_events_table() do
-    config = Application.get_env(:oli, :clickhouse) |> Enum.into(%{})
-    "#{config.database}.activity_attempt_events"
-  end
-
-  def page_attempt_events_table() do
-    config = Application.get_env(:oli, :clickhouse) |> Enum.into(%{})
-    "#{config.database}.page_attempt_events"
-  end
-
-  def page_viewed_events_table() do
-    config = Application.get_env(:oli, :clickhouse) |> Enum.into(%{})
-    "#{config.database}.page_viewed_events"
-  end
-
-  def part_attempt_events_table() do
-    config = Application.get_env(:oli, :clickhouse) |> Enum.into(%{})
-    "#{config.database}.part_attempt_events"
+    "#{config.database}.raw_events"
   end
 
   @doc """
   Provides comprehensive analytics queries for all event types.
   """
   def sample_analytics_queries() do
-    video_events_table = video_events_table()
-    activity_attempt_events_table = activity_attempt_events_table()
-    page_attempt_events_table = page_attempt_events_table()
-    page_viewed_events_table = page_viewed_events_table()
-    part_attempt_events_table = part_attempt_events_table()
+    raw_events_table = raw_events_table()
 
     %{
       # Video Analytics
@@ -72,8 +48,8 @@ defmodule Oli.Analytics.AdvancedAnalytics do
           avg(video_progress) as avg_progress,
           uniq(user_id) as unique_users,
           uniq(content_element_id) as unique_videos
-        FROM #{video_events_table}
-        WHERE section_id IS NOT NULL
+        FROM #{raw_events_table}
+        WHERE section_id IS NOT NULL AND event_type = 'video'
         GROUP BY section_id
         ORDER BY total_events DESC
       """,
@@ -84,8 +60,8 @@ defmodule Oli.Analytics.AdvancedAnalytics do
           countIf(video_time IS NOT NULL) as plays,
           countIf(video_progress IS NOT NULL AND video_played_segments IS NOT NULL) as completions,
           if(plays > 0, completions / plays * 100, 0) as completion_rate_percent
-        FROM #{video_events_table}
-        WHERE content_element_id IS NOT NULL
+        FROM #{raw_events_table}
+        WHERE content_element_id IS NOT NULL AND event_type = 'video'
         GROUP BY content_element_id, video_title
         HAVING plays > 5
         ORDER BY completion_rate_percent DESC
@@ -98,8 +74,8 @@ defmodule Oli.Analytics.AdvancedAnalytics do
           sum(video_play_time) as total_watch_time,
           avg(video_progress) as avg_completion_rate,
           max(timestamp) as last_interaction
-        FROM #{video_events_table}
-        WHERE user_id IS NOT NULL
+        FROM #{raw_events_table}
+        WHERE user_id IS NOT NULL AND event_type = 'video'
         GROUP BY user_id
         ORDER BY total_watch_time DESC
       """,
@@ -115,8 +91,8 @@ defmodule Oli.Analytics.AdvancedAnalytics do
           avg(scaled_score) as avg_scaled_score,
           countIf(success = true) as successful_attempts,
           uniq(user_id) as unique_users
-        FROM #{activity_attempt_events_table}
-        WHERE section_id IS NOT NULL
+        FROM #{raw_events_table}
+        WHERE section_id IS NOT NULL AND event_type = 'activity_attempt'
         GROUP BY section_id, activity_id
         ORDER BY avg_scaled_score DESC
       """,
@@ -127,8 +103,8 @@ defmodule Oli.Analytics.AdvancedAnalytics do
           count(*) as attempts,
           avg(scaled_score) as avg_performance,
           uniq(user_id) as active_users
-        FROM #{activity_attempt_events_table}
-        WHERE section_id IS NOT NULL
+        FROM #{raw_events_table}
+        WHERE section_id IS NOT NULL AND event_type = 'activity_attempt'
         GROUP BY month, section_id
         ORDER BY month DESC, section_id
       """,
@@ -144,8 +120,8 @@ defmodule Oli.Analytics.AdvancedAnalytics do
           avg(scaled_score) as avg_scaled_score,
           countIf(success = true) as successful_attempts,
           uniq(user_id) as unique_users
-        FROM #{page_attempt_events_table}
-        WHERE section_id IS NOT NULL
+        FROM #{raw_events_table}
+        WHERE section_id IS NOT NULL AND event_type = 'page_attempt'
         GROUP BY section_id, page_id
         ORDER BY avg_scaled_score DESC
       """,
@@ -161,8 +137,8 @@ defmodule Oli.Analytics.AdvancedAnalytics do
           countIf(completion = true) as completed_views,
           toHour(timestamp) as hour_of_day,
           count(*) as views_by_hour
-        FROM #{page_viewed_events_table}
-        WHERE section_id IS NOT NULL
+        FROM #{raw_events_table}
+        WHERE section_id IS NOT NULL AND event_type = 'page_viewed'
         GROUP BY section_id, page_id, page_sub_type, hour_of_day
         ORDER BY total_views DESC
       """,
@@ -173,8 +149,8 @@ defmodule Oli.Analytics.AdvancedAnalytics do
           count(*) as total_views,
           uniq(user_id) as unique_viewers,
           avg(if(completion = true, 1, 0)) as completion_rate
-        FROM #{page_viewed_events_table}
-        WHERE page_id IS NOT NULL
+        FROM #{raw_events_table}
+        WHERE page_id IS NOT NULL AND event_type = 'page_viewed'
         GROUP BY page_id, page_sub_type
         ORDER BY total_views DESC
       """,
@@ -192,8 +168,8 @@ defmodule Oli.Analytics.AdvancedAnalytics do
           countIf(success = true) as successful_attempts,
           avg(hints_requested) as avg_hints_used,
           uniq(user_id) as unique_users
-        FROM #{part_attempt_events_table}
-        WHERE section_id IS NOT NULL
+        FROM #{raw_events_table}
+        WHERE section_id IS NOT NULL AND event_type = 'part_attempt'
         GROUP BY section_id, activity_id, part_id
         ORDER BY avg_scaled_score DESC
       """,
@@ -201,69 +177,29 @@ defmodule Oli.Analytics.AdvancedAnalytics do
       # Cross-Event Analytics
       comprehensive_section_summary: """
         SELECT
-          'video_events' as event_type,
+          event_type,
           section_id,
           count(*) as total_events,
           uniq(user_id) as unique_users,
           min(timestamp) as earliest_event,
           max(timestamp) as latest_event
-        FROM #{video_events_table}
+        FROM #{raw_events_table}
         WHERE section_id IS NOT NULL
-        GROUP BY section_id
-
-        UNION ALL
-
-        SELECT
-          'activity_attempts' as event_type,
-          section_id,
-          count(*) as total_events,
-          uniq(user_id) as unique_users,
-          min(timestamp) as earliest_event,
-          max(timestamp) as latest_event
-        FROM #{activity_attempt_events_table}
-        WHERE section_id IS NOT NULL
-        GROUP BY section_id
-
-        UNION ALL
-
-        SELECT
-          'page_attempts' as event_type,
-          section_id,
-          count(*) as total_events,
-          uniq(user_id) as unique_users,
-          min(timestamp) as earliest_event,
-          max(timestamp) as latest_event
-        FROM #{page_attempt_events_table}
-        WHERE section_id IS NOT NULL
-        GROUP BY section_id
-
-        UNION ALL
-
-        SELECT
-          'page_views' as event_type,
-          section_id,
-          count(*) as total_events,
-          uniq(user_id) as unique_users,
-          min(timestamp) as earliest_event,
-          max(timestamp) as latest_event
-        FROM #{page_viewed_events_table}
-        WHERE section_id IS NOT NULL
-        GROUP BY section_id
-
-        UNION ALL
-
-        SELECT
-          'part_attempts' as event_type,
-          section_id,
-          count(*) as total_events,
-          uniq(user_id) as unique_users,
-          min(timestamp) as earliest_event,
-          max(timestamp) as latest_event
-        FROM #{part_attempt_events_table}
-        WHERE section_id IS NOT NULL
-        GROUP BY section_id
-
+        GROUP BY event_type, section_id
         ORDER BY section_id, event_type
+      """,
+
+      # Event Type Distribution
+      event_type_distribution: """
+        SELECT
+          event_type,
+          count(*) as total_events,
+          uniq(user_id) as unique_users,
+          min(timestamp) as earliest_event,
+          max(timestamp) as latest_event
+        FROM #{raw_events_table}
+        GROUP BY event_type
+        ORDER BY total_events DESC
       """
     }
   end
@@ -281,11 +217,7 @@ defmodule Oli.Analytics.AdvancedAnalytics do
   Get comprehensive analytics for a specific section across all event types.
   """
   def comprehensive_section_analytics(section_id) when is_integer(section_id) do
-    video_events_table = video_events_table()
-    activity_attempt_events_table = activity_attempt_events_table()
-    page_attempt_events_table = page_attempt_events_table()
-    page_viewed_events_table = page_viewed_events_table()
-    part_attempt_events_table = part_attempt_events_table()
+    raw_events_table = raw_events_table()
 
     """
     SELECT
@@ -297,19 +229,19 @@ defmodule Oli.Analytics.AdvancedAnalytics do
       additional_info
     FROM (
       SELECT
-        'video_events' as event_type,
+        'video' as event_type,
         count(*) as total_events,
         uniq(user_id) as unique_users,
         min(timestamp) as earliest_event,
         max(timestamp) as latest_event,
         if(count(*) > 0, 'Watch time tracked', 'No video interactions') as additional_info
-      FROM #{video_events_table}
-      WHERE section_id = #{section_id}
+      FROM #{raw_events_table}
+      WHERE section_id = #{section_id} AND event_type = 'video'
 
       UNION ALL
 
       SELECT
-        'activity_attempts' as event_type,
+        'activity_attempt' as event_type,
         count(*) as total_events,
         uniq(user_id) as unique_users,
         min(timestamp) as earliest_event,
@@ -317,13 +249,13 @@ defmodule Oli.Analytics.AdvancedAnalytics do
         if(count(*) > 0,
            concat('Avg score: ', toString(round(avg(scaled_score), 3))),
            'No attempts recorded') as additional_info
-      FROM #{activity_attempt_events_table}
-      WHERE section_id = #{section_id}
+      FROM #{raw_events_table}
+      WHERE section_id = #{section_id} AND event_type = 'activity_attempt'
 
       UNION ALL
 
       SELECT
-        'page_attempts' as event_type,
+        'page_attempt' as event_type,
         count(*) as total_events,
         uniq(user_id) as unique_users,
         min(timestamp) as earliest_event,
@@ -331,13 +263,13 @@ defmodule Oli.Analytics.AdvancedAnalytics do
         if(count(*) > 0,
            concat('Avg score: ', toString(round(avg(scaled_score), 3))),
            'No attempts recorded') as additional_info
-      FROM #{page_attempt_events_table}
-      WHERE section_id = #{section_id}
+      FROM #{raw_events_table}
+      WHERE section_id = #{section_id} AND event_type = 'page_attempt'
 
       UNION ALL
 
       SELECT
-        'page_views' as event_type,
+        'page_viewed' as event_type,
         count(*) as total_events,
         uniq(user_id) as unique_users,
         min(timestamp) as earliest_event,
@@ -345,13 +277,13 @@ defmodule Oli.Analytics.AdvancedAnalytics do
         if(count(*) > 0,
            concat('Completed: ', toString(countIf(completion = true))),
            'No page views') as additional_info
-      FROM #{page_viewed_events_table}
-      WHERE section_id = #{section_id}
+      FROM #{raw_events_table}
+      WHERE section_id = #{section_id} AND event_type = 'page_viewed'
 
       UNION ALL
 
       SELECT
-        'part_attempts' as event_type,
+        'part_attempt' as event_type,
         count(*) as total_events,
         uniq(user_id) as unique_users,
         min(timestamp) as earliest_event,
@@ -359,16 +291,16 @@ defmodule Oli.Analytics.AdvancedAnalytics do
         if(count(*) > 0,
            concat('Avg score: ', toString(round(avg(scaled_score), 3))),
            'No attempts recorded') as additional_info
-      FROM #{part_attempt_events_table}
-      WHERE section_id = #{section_id}
+      FROM #{raw_events_table}
+      WHERE section_id = #{section_id} AND event_type = 'part_attempt'
     )
     ORDER BY
       CASE event_type
-        WHEN 'video_events' THEN 1
-        WHEN 'activity_attempts' THEN 2
-        WHEN 'page_attempts' THEN 3
-        WHEN 'page_views' THEN 4
-        WHEN 'part_attempts' THEN 5
+        WHEN 'video' THEN 1
+        WHEN 'activity_attempt' THEN 2
+        WHEN 'page_attempt' THEN 3
+        WHEN 'page_viewed' THEN 4
+        WHEN 'part_attempt' THEN 5
         ELSE 6
       END
     """

@@ -730,7 +730,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
                 <%= for line <- String.split(result.body, "\n") |> Enum.reject(&(&1 == "" or String.starts_with?(&1, "event_type"))) do %>
                   <% parts = String.split(line, "\t") %>
                   <%= if length(parts) >= 6 do %>
-                    <% [event_type, total_events, unique_users, earliest, latest, additional] =
+                    <% [event_type, total_events, unique_users, _earliest, _latest, additional] =
                       Enum.take(parts, 6) %>
                     <div class="bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-700 dark:to-gray-600 rounded-lg p-4">
                       <div class="flex items-center justify-between mb-2">
@@ -1034,6 +1034,12 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   # Helper functions for formatting analytics display
   defp humanize_event_type(event_type) do
     case event_type do
+      "video" -> "Video Interactions"
+      "activity_attempt" -> "Activity Attempts"
+      "page_attempt" -> "Page Assessments"
+      "page_viewed" -> "Page Views"
+      "part_attempt" -> "Question Attempts"
+      # Legacy event type names for backward compatibility
       "video_events" -> "Video Interactions"
       "activity_attempts" -> "Activity Attempts"
       "page_attempts" -> "Page Assessments"
@@ -1045,6 +1051,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   defp format_additional_info(event_type, additional) do
     case event_type do
+      "activity_attempt" -> "Avg score: #{additional}"
+      "page_attempt" -> "Avg score: #{additional}"
+      "page_viewed" -> "#{additional} completed"
+      "part_attempt" -> "Avg score: #{additional}"
+      # Legacy event type names for backward compatibility
       "activity_attempts" -> "Avg score: #{additional}"
       "page_attempts" -> "Avg score: #{additional}"
       "page_views" -> "#{additional} completed"
