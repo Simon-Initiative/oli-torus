@@ -107,24 +107,12 @@ defmodule Mix.Tasks.Scenarios do
     end
   end
 
-  # Cache scenarios list within process to avoid repeated filesystem scans
-  defp get_all_scenarios do
-    case Process.get(:cached_scenarios) do
-      nil ->
-        scenarios = Path.wildcard("test/scenarios/**/*.scenario.yaml") |> Enum.sort()
-        Process.put(:cached_scenarios, scenarios)
-        scenarios
-      cached ->
-        cached
-    end
-  end
-  
   defp suggest_similar(path) do
     # Extract the filename part
     filename = Path.basename(path, ".scenario.yaml")
     
-    # Find similar files - cache this for better performance
-    all_scenarios = get_all_scenarios()
+    # Find similar files
+    all_scenarios = Path.wildcard("test/scenarios/**/*.scenario.yaml") |> Enum.sort()
     similar = all_scenarios
       |> Enum.filter(fn file ->
         String.contains?(String.downcase(file), String.downcase(filename))
