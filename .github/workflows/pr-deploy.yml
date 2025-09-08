@@ -187,7 +187,7 @@ jobs:
         uses: peter-evans/find-comment@v3
         id: fc
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}
           issue-number: ${{ github.event.number }}
           comment-author: "github-actions[bot]"
           body-includes: "PR preview deployed at:"
@@ -196,7 +196,7 @@ jobs:
         if: steps.preflight.outputs.memory_insufficient != 'true'
         uses: peter-evans/create-or-update-comment@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}
           comment-id: ${{ steps.fc.outputs.comment-id }}
           issue-number: ${{ github.event.number }}
           body: |
