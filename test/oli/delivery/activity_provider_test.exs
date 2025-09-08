@@ -130,6 +130,93 @@ defmodule Oli.Delivery.ActivityProviderTest do
     end
   end
 
+  describe "handling nil revision cases" do
+    setup do
+      content = %{
+        "stem" => "1",
+        "authoring" => %{
+          "parts" => [
+            %{
+              "id" => "1",
+              "responses" => [
+                %{
+                  "rule" => "input like {a}",
+                  "score" => 10,
+                  "id" => "r1",
+                  "feedback" => %{"id" => "1", "content" => "yes"}
+                }
+              ],
+              "hints" => [],
+              "scoringStrategy" => "best",
+              "evaluationStrategy" => "regex"
+            }
+          ]
+        }
+      }
+
+      map =
+        Seeder.base_project_with_resource2()
+        |> Seeder.create_section()
+        |> Seeder.add_activity(
+          %{title: "one", content: content, scope: "embedded"},
+          :activity1
+        )
+        |> Seeder.add_user(%{}, :user1)
+
+      attrs = %{
+        title: "page1",
+        content: %{
+          "model" => [
+            %{
+              "type" => "activity-reference",
+              "activity_id" => map.activity1.revision.resource_id,
+              "id" => "1"
+            },
+            %{
+              "type" => "activity-reference",
+              # Non-existent activity id
+              "activity_id" => 999_999,
+              "id" => "2"
+            }
+          ]
+        }
+      }
+
+      Seeder.add_page(map, attrs, :page)
+      |> Seeder.create_section_resources()
+    end
+
+    test "filters out prototypes with nil revisions from non-existent activity references", %{
+      activity1: activity1,
+      page: page,
+      publication: publication,
+      section: section,
+      user1: user
+    } do
+      source = %Source{
+        publication_id: publication.id,
+        blacklisted_activity_ids: [],
+        section_slug: section.slug
+      }
+
+      %Result{errors: errors, prototypes: prototypes} =
+        ActivityProvider.provide(
+          page.revision.content,
+          source,
+          [],
+          user,
+          section.slug,
+          Oli.Publishing.DeliveryResolver
+        )
+
+      # Should have no errors but only prototypes with valid revisions
+      # Non-existent activity references should be filtered out gracefully
+      assert length(errors) == 0
+      assert length(prototypes) == 1
+      assert Enum.at(prototypes, 0).revision.resource_id == activity1.revision.resource_id
+    end
+  end
+
   describe "fulfilling selections" do
     setup do
       content = %{
