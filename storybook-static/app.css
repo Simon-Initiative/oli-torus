@@ -3422,6 +3422,10 @@ select {
   fill: #FFFFFF;
 }
 
+.stroke-Icon-icon-active {
+  stroke: #353740;
+}
+
 .dark .stroke-Icon-icon-active {
   stroke: #FFFFFF;
 }
@@ -14634,11 +14638,6 @@ table.table-striped tbody tr:nth-child(even) {
   color: rgb(63 63 70 / var(--tw-text-opacity));
 }
 
-.text-zinc-800 {
-  --tw-text-opacity: 1;
-  color: rgb(39 39 42 / var(--tw-text-opacity));
-}
-
 .text-zinc-900 {
   --tw-text-opacity: 1;
   color: rgb(24 24 27 / var(--tw-text-opacity));
@@ -19438,6 +19437,14 @@ Not supports in Firefox and IE */
   line-height: 1.5rem;
   --tw-text-opacity: 1;
   color: rgb(225 29 72 / var(--tw-text-opacity));
+}
+
+.hover\:bg-Fill-fill-hover:hover {
+  background-color: #0000001A;
+}
+
+.dark .hover\:bg-Fill-fill-hover:hover {
+  background-color: #FFFFFF1A;
 }
 
 .hover\:text-Text-text-button:hover {
