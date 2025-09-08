@@ -185,7 +185,14 @@ defmodule OliWeb.Sections.SectionsTableModel do
     ~H"""
     <div class="flex space-x-2 items-center">
       <span class="text-Text-text-high text-base font-medium">
-        {@section.institution && @section.institution.name}
+        <%= if @section.institution do %>
+          <a
+            href={~p"/admin/institutions/#{@section.institution.id}"}
+            class="text-Text-text-link text-base font-medium leading-normal"
+          >
+            {@section.institution.name}
+          </a>
+        <% end %>
       </span>
       <%= if @render_institution_action do %>
         <button class="btn btn-primary my-6" phx-click="edit_section" value={@section.id}>
