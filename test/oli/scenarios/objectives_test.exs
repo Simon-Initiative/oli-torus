@@ -104,10 +104,9 @@ defmodule Oli.Scenarios.ObjectivesTest do
       result = Engine.execute(directives)
 
       assert result.errors == []
-      
+
       project = result.state.projects["test_proj"]
       assert project.objectives_by_title == %{}
     end
-
   end
 end

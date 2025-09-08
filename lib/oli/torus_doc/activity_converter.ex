@@ -16,7 +16,7 @@ defmodule Oli.TorusDoc.ActivityConverter do
   def to_torus_json(parsed_activity) when is_map(parsed_activity) do
     # Handle both :type and :activity_type fields
     activity_type = Map.get(parsed_activity, :type) || Map.get(parsed_activity, :activity_type)
-    
+
     # The parser produces :activity_type as symbols but :type as strings
     case activity_type do
       :mcq -> convert_mcq(parsed_activity)

@@ -44,7 +44,7 @@ defmodule Oli.Scenarios.Directives.Assert.ResourceAssertion do
 
     {:ok, state, verification_result}
   end
-  
+
   def assert(%AssertDirective{resource: nil}, state), do: {:ok, state, nil}
 
   defp get_target(state, name) do

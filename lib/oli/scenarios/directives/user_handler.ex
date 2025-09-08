@@ -82,13 +82,13 @@ defmodule Oli.Scenarios.Directives.UserHandler do
         family_name: attrs.family_name
       })
       |> Repo.insert()
-    
+
     author
   end
 
   defp create_user(attrs) do
     now = DateTime.utc_now() |> DateTime.truncate(:second)
-    
+
     {:ok, user} =
       %User{}
       |> Ecto.Changeset.cast(%{password: "temporarypassword123"}, [:password])
@@ -104,7 +104,7 @@ defmodule Oli.Scenarios.Directives.UserHandler do
         is_instructor: attrs[:is_instructor] || false
       })
       |> Repo.insert()
-    
+
     user
   end
 
@@ -112,6 +112,7 @@ defmodule Oli.Scenarios.Directives.UserHandler do
     case changeset do
       %Ecto.Changeset{valid?: true, changes: %{password: password}} ->
         Ecto.Changeset.put_change(changeset, :password_hash, Bcrypt.hash_pwd_salt(password))
+
       _ ->
         changeset
     end

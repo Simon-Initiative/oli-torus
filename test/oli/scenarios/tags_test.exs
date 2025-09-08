@@ -62,7 +62,7 @@ defmodule Oli.Scenarios.TagsTest do
       result = Engine.execute(directives)
 
       assert result.errors == []
-      
+
       project = result.state.projects["test_proj"]
       assert project.tags_by_title == %{}
     end
@@ -106,16 +106,16 @@ defmodule Oli.Scenarios.TagsTest do
       # Verify the activity was created with tags
       project = result.state.projects["test_proj"]
       activity_revision = result.state.activities[{"test_proj", "Test Activity"}]
-      
+
       assert activity_revision != nil
-      
+
       # Get tag resource IDs
       easy_tag = project.tags_by_title["Easy"]
       practice_tag = project.tags_by_title["Practice"]
-      
+
       assert easy_tag != nil
       assert practice_tag != nil
-      
+
       # Check that tags are attached to the activity
       assert easy_tag.resource_id in activity_revision.tags
       assert practice_tag.resource_id in activity_revision.tags
@@ -166,15 +166,15 @@ defmodule Oli.Scenarios.TagsTest do
       # Verify the inline activity has tags
       project = result.state.projects["test_proj"]
       activity_revision = result.state.activity_virtual_ids[{"test_proj", "practice_q1"}]
-      
+
       assert activity_revision != nil
-      
+
       intermediate_tag = project.tags_by_title["Intermediate"]
       quiz_tag = project.tags_by_title["Quiz"]
-      
+
       assert intermediate_tag != nil
       assert quiz_tag != nil
-      
+
       # Check tags are attached
       assert intermediate_tag.resource_id in activity_revision.tags
       assert quiz_tag.resource_id in activity_revision.tags
@@ -210,12 +210,15 @@ defmodule Oli.Scenarios.TagsTest do
       result = Engine.execute(directives)
 
       assert length(result.errors) > 0
-      assert Enum.any?(result.errors, fn 
-        {_directive, message} when is_binary(message) ->
-          String.contains?(message, "NonExistentTag") and String.contains?(message, "not found")
-        _ ->
-          false
-      end)
+
+      assert Enum.any?(result.errors, fn
+               {_directive, message} when is_binary(message) ->
+                 String.contains?(message, "NonExistentTag") and
+                   String.contains?(message, "not found")
+
+               _ ->
+                 false
+             end)
     end
 
     test "tags specified in directive override YAML content tags" do
@@ -253,10 +256,10 @@ defmodule Oli.Scenarios.TagsTest do
 
       project = result.state.projects["test_proj"]
       activity_revision = result.state.activities[{"test_proj", "Test Activity"}]
-      
+
       tag_a = project.tags_by_title["Tag A"]
       tag_b = project.tags_by_title["Tag B"]
-      
+
       # Directive tags should override YAML tags
       assert tag_a.resource_id in activity_revision.tags
       assert tag_b.resource_id not in activity_revision.tags

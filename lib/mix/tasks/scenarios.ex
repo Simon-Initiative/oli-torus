@@ -36,13 +36,13 @@ defmodule Mix.Tasks.Scenarios do
         # Run all scenarios via the test runner
         Mix.shell().info("Running all scenario tests...")
         Mix.shell().info("")
-        
+
         # Run the main scenario runner test
         Mix.Task.run("test", ["test/scenarios/scenario_runner_test.exs"])
-      
+
       [path] ->
         run_single_scenario(path)
-      
+
       _ ->
         Mix.shell().error("Too many arguments. Specify one path or none.")
         Mix.shell().info("")
@@ -56,17 +56,17 @@ defmodule Mix.Tasks.Scenarios do
   defp run_single_scenario(path) do
     # Normalize the path
     full_path = normalize_scenario_path(path)
-    
+
     # Check if file exists
     unless File.exists?(full_path) do
       Mix.shell().error("Scenario file not found: #{full_path}")
       suggest_similar(path)
       exit({:shutdown, 1})
     end
-    
+
     # Set the environment variable for the test to read
     System.put_env("SCENARIO_FILE", full_path)
-    
+
     # Run the single scenario test
     Mix.Task.run("test", ["test/run_single_scenario.exs"])
   end
@@ -76,30 +76,30 @@ defmodule Mix.Tasks.Scenarios do
       # Already a full path starting with test/
       String.starts_with?(path, "test/scenarios/") ->
         path
-      
+
       # Full path but without test/scenarios prefix
       String.starts_with?(path, "/") ->
         path
-      
+
       # Check if file exists as-is (relative to current dir)
       File.exists?(path) ->
         path
-      
+
       # Try with .scenario.yaml extension
       File.exists?(path <> ".scenario.yaml") ->
         path <> ".scenario.yaml"
-      
+
       # Try as relative to test/scenarios/
       true ->
         base_path = Path.join("test/scenarios", path)
-        
+
         cond do
           File.exists?(base_path) ->
             base_path
-          
+
           File.exists?(base_path <> ".scenario.yaml") ->
             base_path <> ".scenario.yaml"
-          
+
           true ->
             # Return the path as-is, file existence check will fail later
             base_path
@@ -110,18 +110,21 @@ defmodule Mix.Tasks.Scenarios do
   defp suggest_similar(path) do
     # Extract the filename part
     filename = Path.basename(path, ".scenario.yaml")
-    
+
     # Find similar files
     all_scenarios = Path.wildcard("test/scenarios/**/*.scenario.yaml") |> Enum.sort()
-    similar = all_scenarios
+
+    similar =
+      all_scenarios
       |> Enum.filter(fn file ->
         String.contains?(String.downcase(file), String.downcase(filename))
       end)
       |> Enum.take(5)
-    
+
     unless Enum.empty?(similar) do
       Mix.shell().info("")
       Mix.shell().info("Did you mean one of these?")
+
       Enum.each(similar, fn file ->
         relative = String.replace_prefix(file, "test/scenarios/", "")
         Mix.shell().info("  mix scenarios #{relative}")

@@ -18,19 +18,19 @@ defmodule Oli.Scenarios.Directives.EditPageHandler do
          {:ok, built_project} <- get_project(project_name, state),
          {:ok, page_revision} <- get_page_revision(built_project, directive.page),
          # Process inline activities and virtual_id references
-         {:ok, processed_content, updated_state} <- process_activities(
-           directive.content,
-           project_name,
-           built_project,
-           author,
-           state
-         ),
+         {:ok, processed_content, updated_state} <-
+           process_activities(
+             directive.content,
+             project_name,
+             built_project,
+             author,
+             state
+           ),
          {:ok, page_json} <- parse_and_convert_page(processed_content),
          {:ok, new_revision} <- edit_page(built_project, page_revision, author, page_json) do
-      
       # Update the rev_by_title mapping with the new revision
       updated_built_project = update_revision_mapping(built_project, directive.page, new_revision)
-      
+
       # Update the state with the updated project and activity mappings
       updated_projects = Map.put(updated_state.projects, project_name, updated_built_project)
       {:ok, %{updated_state | projects: updated_projects}}
@@ -83,7 +83,7 @@ defmodule Oli.Scenarios.Directives.EditPageHandler do
   defp process_activities(content, project_name, built_project, author, state) do
     ActivityProcessor.process_page_content(content, project_name, built_project, author, state)
   end
-  
+
   # Parse TorusDoc YAML content and convert to Torus JSON
   defp parse_and_convert_page(content) when is_binary(content) do
     # Add the type field if not present in the YAML
@@ -124,26 +124,26 @@ defmodule Oli.Scenarios.Directives.EditPageHandler do
   defp edit_page(built_project, page_revision, author, page_json) do
     # In test scenarios, we need to actually update the revision in the database
     # so that it's available when the section tries to load it
-    
+
     # Update the revision in the database
     case Oli.Resources.update_revision(page_revision, %{
-      title: page_json["title"] || page_revision.title,
-      content: page_json["content"],
-      graded: page_json["isGraded"] || false,
-      author_id: author.id
-    }) do
+           title: page_json["title"] || page_revision.title,
+           content: page_json["content"],
+           graded: page_json["isGraded"] || false,
+           author_id: author.id
+         }) do
       {:ok, updated_revision} ->
         # Also update the working publication if it exists
         case Oli.Publishing.project_working_publication(built_project.project.slug) do
           nil ->
             {:ok, updated_revision}
-            
+
           publication ->
             # Update the published resource to point to the new revision
             Oli.Publishing.upsert_published_resource(publication, updated_revision)
             {:ok, updated_revision}
         end
-        
+
       error ->
         error
     end
@@ -155,7 +155,7 @@ defmodule Oli.Scenarios.Directives.EditPageHandler do
     old_title = page_title
     new_title = new_revision.title
 
-    updated_rev_by_title = 
+    updated_rev_by_title =
       if old_title == new_title do
         # Title didn't change, just update the revision
         Map.put(built_project.rev_by_title, page_title, new_revision)
@@ -164,8 +164,10 @@ defmodule Oli.Scenarios.Directives.EditPageHandler do
         # 1. The original title should still point to the revision (for subsequent edits)
         # 2. The new title should also point to the revision (for lookups by current title)
         built_project.rev_by_title
-        |> Map.put(old_title, new_revision)  # Keep original title mapping
-        |> Map.put(new_title, new_revision)  # Add new title mapping
+        # Keep original title mapping
+        |> Map.put(old_title, new_revision)
+        # Add new title mapping
+        |> Map.put(new_title, new_revision)
       end
 
     %{built_project | rev_by_title: updated_rev_by_title}

@@ -4,7 +4,6 @@ defmodule Oli.Scenarios.ScenarioRunner do
   Provides functionality to discover and run .scenario.yaml files as individual tests.
   """
 
-
   @doc """
   Discovers all .scenario.yaml files in a given directory and subdirectories.
   Returns a list of {relative_path_name, full_path} tuples.
@@ -14,9 +13,12 @@ defmodule Oli.Scenarios.ScenarioRunner do
     |> Enum.map(fn path ->
       # Create a descriptive name including subdirectory
       relative = Path.relative_to(path, directory)
-      name = relative
+
+      name =
+        relative
         |> String.replace(".scenario.yaml", "")
         |> String.replace("/", "_")
+
       {name, path}
     end)
     |> Enum.sort()

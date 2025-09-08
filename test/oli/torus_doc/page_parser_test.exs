@@ -400,7 +400,7 @@ defmodule Oli.TorusDoc.PageParserTest do
 
       assert {:ok, page} = PageParser.parse(yaml)
       assert length(page.blocks) == 1
-      
+
       [activity_block] = page.blocks
       assert activity_block.type == "activity_inline"
       assert activity_block.activity.type == "oli_multi_choice"

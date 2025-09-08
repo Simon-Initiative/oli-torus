@@ -36,7 +36,12 @@ defmodule Oli.Scenarios.ObjectivesFormatTest do
       # Check parent objectives exist
       assert Map.has_key?(project.objectives_by_title, "Mechanics")
       assert Map.has_key?(project.objectives_by_title, "Kinematics")
-      assert Map.has_key?(project.objectives_by_title, "This is a very long objective to test wrapping in the UI")
+
+      assert Map.has_key?(
+               project.objectives_by_title,
+               "This is a very long objective to test wrapping in the UI"
+             )
+
       assert Map.has_key?(project.objectives_by_title, "Extensions")
 
       # Check sub-objectives exist
@@ -46,12 +51,16 @@ defmodule Oli.Scenarios.ObjectivesFormatTest do
       assert Map.has_key?(project.objectives_by_title, "Practice Problems")
 
       # Verify parent-child relationships
-      long_obj = project.objectives_by_title["This is a very long objective to test wrapping in the UI"]
+      long_obj =
+        project.objectives_by_title["This is a very long objective to test wrapping in the UI"]
+
       short_answer = project.objectives_by_title["Short Answer"]
       ordering = project.objectives_by_title["Ordering"]
 
       # Get the latest revision to see the children
-      long_obj_current = AuthoringResolver.from_resource_id(project.project.slug, long_obj.resource_id)
+      long_obj_current =
+        AuthoringResolver.from_resource_id(project.project.slug, long_obj.resource_id)
+
       assert short_answer.resource_id in long_obj_current.children
       assert ordering.resource_id in long_obj_current.children
 
@@ -59,13 +68,18 @@ defmodule Oli.Scenarios.ObjectivesFormatTest do
       worked = project.objectives_by_title["Worked Examples"]
       practice = project.objectives_by_title["Practice Problems"]
 
-      extensions_current = AuthoringResolver.from_resource_id(project.project.slug, extensions.resource_id)
+      extensions_current =
+        AuthoringResolver.from_resource_id(project.project.slug, extensions.resource_id)
+
       assert worked.resource_id in extensions_current.children
       assert practice.resource_id in extensions_current.children
 
       # Verify simple objectives have no children
       mechanics = project.objectives_by_title["Mechanics"]
-      mechanics_current = AuthoringResolver.from_resource_id(project.project.slug, mechanics.resource_id)
+
+      mechanics_current =
+        AuthoringResolver.from_resource_id(project.project.slug, mechanics.resource_id)
+
       assert mechanics_current.children == []
     end
 
@@ -126,10 +140,10 @@ defmodule Oli.Scenarios.ObjectivesFormatTest do
 
       project = result.state.projects["test_proj"]
       activity_revision = result.state.activities[{"test_proj", "Test Activity"}]
-      
+
       variables_obj = project.objectives_by_title["Variables"]
       advanced_obj = project.objectives_by_title["Advanced Topics"]
-      
+
       # Check that objectives are attached to the activity parts
       part_objectives = activity_revision.objectives |> Map.values() |> List.first() || []
       assert variables_obj.resource_id in part_objectives

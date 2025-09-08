@@ -1,11 +1,11 @@
 defmodule Oli.Scenarios.Hooks do
   @moduledoc """
   Collection of hook functions that can be called from scenario YAML files.
-  
+
   These functions demonstrate the power of the hook directive, allowing
   scenarios to perform custom operations like data injection, corruption,
   state manipulation, and other testing utilities.
-  
+
   All hook functions must:
   - Accept exactly one argument: the ExecutionState
   - Return an updated ExecutionState
@@ -26,14 +26,14 @@ defmodule Oli.Scenarios.Hooks do
     Logger.info("  Products: #{map_size(state.products)}")
     Logger.info("  Users: #{map_size(state.users)}")
     Logger.info("  Activities: #{map_size(state.activities)}")
-    
+
     state
   end
 
   @doc """
   Injects corrupted data into a project's page content.
   Useful for testing error handling and validation.
-  
+
   Example usage in YAML:
     - hook:
         function: "Oli.Scenarios.Hooks.corrupt_page_content/1"
@@ -44,17 +44,19 @@ defmodule Oli.Scenarios.Hooks do
       nil ->
         Logger.warning("No projects found to corrupt")
         state
-      
+
       built_project ->
         # Get the first page revision
-        case built_project.rev_by_title |> Map.values() |> Enum.find(&(&1.resource_type_id == 1)) do
+        case built_project.rev_by_title
+             |> Map.values()
+             |> Enum.find(&(&1.resource_type_id == 1)) do
           nil ->
             Logger.warning("No pages found to corrupt")
             state
-          
+
           page_revision ->
             Logger.info("Corrupting page: #{page_revision.title}")
-            
+
             # Create corrupted content
             corrupted_content = %{
               "model" => [
@@ -62,7 +64,7 @@ defmodule Oli.Scenarios.Hooks do
                   "type" => "p",
                   "children" => [
                     %{
-                      "text" => "CORRUPTED DATA: #{:rand.uniform(999999)}",
+                      "text" => "CORRUPTED DATA: #{:rand.uniform(999_999)}",
                       "invalid_field" => "This shouldn't be here"
                     }
                   ],
@@ -70,10 +72,10 @@ defmodule Oli.Scenarios.Hooks do
                 }
               ]
             }
-            
+
             # Update the revision (this is direct manipulation for testing)
             {:ok, _} = Resources.update_revision(page_revision, %{content: corrupted_content})
-            
+
             state
         end
     end
@@ -81,7 +83,7 @@ defmodule Oli.Scenarios.Hooks do
 
   @doc """
   Adds a custom flag to the state for conditional testing.
-  
+
   Example usage in YAML:
     - hook:
         function: "Oli.Scenarios.Hooks.set_test_flag/1"
@@ -94,7 +96,7 @@ defmodule Oli.Scenarios.Hooks do
   @doc """
   Simulates a delay in scenario execution.
   Useful for testing timeout behaviors.
-  
+
   Example usage in YAML:
     - hook:
         function: "Oli.Scenarios.Hooks.delay_execution/1"
@@ -108,25 +110,28 @@ defmodule Oli.Scenarios.Hooks do
   @doc """
   Creates multiple test users programmatically.
   Demonstrates how hooks can perform batch operations.
-  
+
   Example usage in YAML:
     - hook:
         function: "Oli.Scenarios.Hooks.create_bulk_users/1"
   """
   def create_bulk_users(%ExecutionState{} = state) do
     Logger.info("Creating 5 test users...")
-    
-    users = for i <- 1..5 do
-      {:ok, user} = Oli.Accounts.create_guest_user(%{
-        guest: false,
-        email: "bulk_user_#{i}@test.edu",
-        given_name: "Bulk",
-        family_name: "User#{i}",
-        sub: "bulk_user_#{i}_#{System.unique_integer([:positive])}"
-      })
-      {"bulk_user_#{i}", user}
-    end
-    
+
+    users =
+      for i <- 1..5 do
+        {:ok, user} =
+          Oli.Accounts.create_guest_user(%{
+            guest: false,
+            email: "bulk_user_#{i}@test.edu",
+            given_name: "Bulk",
+            family_name: "User#{i}",
+            sub: "bulk_user_#{i}_#{System.unique_integer([:positive])}"
+          })
+
+        {"bulk_user_#{i}", user}
+      end
+
     updated_users = Map.merge(state.users, Map.new(users))
     %{state | users: updated_users}
   end
@@ -134,7 +139,7 @@ defmodule Oli.Scenarios.Hooks do
   @doc """
   Validates that certain conditions are met in the state.
   Raises an error if validation fails.
-  
+
   Example usage in YAML:
     - hook:
         function: "Oli.Scenarios.Hooks.validate_state/1"
@@ -143,10 +148,10 @@ defmodule Oli.Scenarios.Hooks do
     cond do
       map_size(state.projects) == 0 ->
         raise "Validation failed: No projects in state"
-      
+
       map_size(state.sections) == 0 ->
         raise "Validation failed: No sections in state"
-      
+
       true ->
         Logger.info("State validation passed")
         state
@@ -156,7 +161,7 @@ defmodule Oli.Scenarios.Hooks do
   @doc """
   Clears all activities from the state.
   Useful for testing scenarios where activities need to be rebuilt.
-  
+
   Example usage in YAML:
     - hook:
         function: "Oli.Scenarios.Hooks.clear_activities/1"
@@ -169,33 +174,36 @@ defmodule Oli.Scenarios.Hooks do
   @doc """
   Modifies publication settings for all projects.
   Demonstrates direct manipulation of project data.
-  
+
   Example usage in YAML:
     - hook:
         function: "Oli.Scenarios.Hooks.modify_publications/1"
   """
   def modify_publications(%ExecutionState{} = state) do
     Logger.info("Modifying publication settings...")
-    
-    updated_projects = state.projects
-    |> Enum.map(fn {name, built_project} ->
-      # Add a custom description to the working publication
-      if built_project.working_pub do
-        {:ok, _} = Oli.Publishing.update_publication(
-          built_project.working_pub,
-          %{description: "Modified by hook at #{DateTime.utc_now()}"}
-        )
-      end
-      {name, built_project}
-    end)
-    |> Map.new()
-    
+
+    updated_projects =
+      state.projects
+      |> Enum.map(fn {name, built_project} ->
+        # Add a custom description to the working publication
+        if built_project.working_pub do
+          {:ok, _} =
+            Oli.Publishing.update_publication(
+              built_project.working_pub,
+              %{description: "Modified by hook at #{DateTime.utc_now()}"}
+            )
+        end
+
+        {name, built_project}
+      end)
+      |> Map.new()
+
     %{state | projects: updated_projects}
   end
 
   @doc """
   Injects a specific error condition for testing error handling.
-  
+
   Example usage in YAML:
     - hook:
         function: "Oli.Scenarios.Hooks.inject_error/1"
@@ -208,5 +216,4 @@ defmodule Oli.Scenarios.Hooks do
       timestamp: DateTime.utc_now()
     })
   end
-
 end

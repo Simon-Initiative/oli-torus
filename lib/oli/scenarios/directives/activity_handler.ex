@@ -136,49 +136,62 @@ defmodule Oli.Scenarios.Directives.ActivityHandler do
   # Resolve objective titles to resource IDs
   defp resolve_objectives(nil, _built_project), do: {:ok, []}
   defp resolve_objectives([], _built_project), do: {:ok, []}
-  
+
   defp resolve_objectives(objective_titles, built_project) when is_list(objective_titles) do
     objectives_by_title = built_project.objectives_by_title || %{}
-    
+
     # Convert titles to resource IDs
-    result = Enum.reduce_while(objective_titles, {:ok, []}, fn title, {:ok, acc} ->
-      case Map.get(objectives_by_title, title) do
-        nil -> 
-          {:halt, {:error, "Objective '#{title}' not found in project"}}
-        objective_rev ->
-          {:cont, {:ok, acc ++ [objective_rev.resource_id]}}
-      end
-    end)
-    
+    result =
+      Enum.reduce_while(objective_titles, {:ok, []}, fn title, {:ok, acc} ->
+        case Map.get(objectives_by_title, title) do
+          nil ->
+            {:halt, {:error, "Objective '#{title}' not found in project"}}
+
+          objective_rev ->
+            {:cont, {:ok, acc ++ [objective_rev.resource_id]}}
+        end
+      end)
+
     result
   end
-  
+
   defp resolve_objectives(_, _), do: {:error, "Objectives must be a list"}
-  
+
   # Resolve tag titles to resource IDs
   defp resolve_tags(nil, _built_project), do: {:ok, []}
   defp resolve_tags([], _built_project), do: {:ok, []}
-  
+
   defp resolve_tags(tag_titles, built_project) when is_list(tag_titles) do
     tags_by_title = built_project.tags_by_title || %{}
-    
+
     # Convert titles to resource IDs
-    result = Enum.reduce_while(tag_titles, {:ok, []}, fn title, {:ok, acc} ->
-      case Map.get(tags_by_title, title) do
-        nil -> 
-          {:halt, {:error, "Tag '#{title}' not found in project"}}
-        tag_rev ->
-          {:cont, {:ok, acc ++ [tag_rev.resource_id]}}
-      end
-    end)
-    
+    result =
+      Enum.reduce_while(tag_titles, {:ok, []}, fn title, {:ok, acc} ->
+        case Map.get(tags_by_title, title) do
+          nil ->
+            {:halt, {:error, "Tag '#{title}' not found in project"}}
+
+          tag_rev ->
+            {:cont, {:ok, acc ++ [tag_rev.resource_id]}}
+        end
+      end)
+
     result
   end
-  
+
   defp resolve_tags(_, _), do: {:error, "Tags must be a list"}
 
   # Create the activity in the project
-  defp create_activity(built_project, activity_registration, author, activity_json, scope, title, objective_ids, tag_ids) do
+  defp create_activity(
+         built_project,
+         activity_registration,
+         author,
+         activity_json,
+         scope,
+         title,
+         objective_ids,
+         tag_ids
+       ) do
     project = built_project.project
 
     # Extract model and other fields from the JSON
@@ -188,7 +201,7 @@ defmodule Oli.Scenarios.Directives.ActivityHandler do
     json_objectives = get_objectives(activity_json)
     # Combine objectives from JSON and directive (directive takes precedence)
     final_objectives = if objective_ids != [], do: objective_ids, else: json_objectives
-    
+
     # Get tags from JSON and merge with directive tags
     json_tags = Map.get(activity_json, "tags", [])
     # Combine tags from JSON and directive (directive takes precedence)

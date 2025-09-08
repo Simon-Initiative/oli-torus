@@ -46,9 +46,10 @@ defmodule Oli.Scenarios.Activities.NullLogicHooks do
          {:ok, built_project} <- get_project(state),
          {:ok, project_page_revision} <- get_page_revision(built_project),
          {:ok, section_revision} <- get_section_revision(section, project_page_revision) do
-      
-      Logger.info("Found section revision #{section_revision.id} for resource #{project_page_revision.resource_id}")
-      
+      Logger.info(
+        "Found section revision #{section_revision.id} for resource #{project_page_revision.resource_id}"
+      )
+
       # Use PageContent.map to traverse and update the content structure
       updated_content =
         Oli.Resources.PageContent.map(section_revision.content, fn element ->
@@ -65,14 +66,14 @@ defmodule Oli.Scenarios.Activities.NullLogicHooks do
       # Direct database update to the SECTION's revision
       # This bypasses normal validation and change tracking
       case Repo.transaction(fn ->
-        section_revision
-        |> Ecto.Changeset.change(%{content: updated_content})
-        |> Repo.update!()
-      end) do
+             section_revision
+             |> Ecto.Changeset.change(%{content: updated_content})
+             |> Repo.update!()
+           end) do
         {:ok, _updated_revision} ->
           Logger.info("Successfully modified activity bank selection logic in section revision")
           state
-        
+
         {:error, reason} ->
           Logger.error("Failed to update section revision: #{inspect(reason)}")
           state
@@ -106,10 +107,15 @@ defmodule Oli.Scenarios.Activities.NullLogicHooks do
   end
 
   defp get_section_revision(section, project_page_revision) do
-    case Oli.Publishing.DeliveryResolver.from_resource_id(section.slug, project_page_revision.resource_id) do
-      nil -> 
-        {:error, "Could not find published revision for resource_id #{project_page_revision.resource_id} in section #{section.slug}"}
-      revision -> 
+    case Oli.Publishing.DeliveryResolver.from_resource_id(
+           section.slug,
+           project_page_revision.resource_id
+         ) do
+      nil ->
+        {:error,
+         "Could not find published revision for resource_id #{project_page_revision.resource_id} in section #{section.slug}"}
+
+      revision ->
         {:ok, revision}
     end
   end

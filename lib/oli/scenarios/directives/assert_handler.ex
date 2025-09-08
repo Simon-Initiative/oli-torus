@@ -4,6 +4,7 @@ defmodule Oli.Scenarios.Directives.AssertHandler do
   """
 
   alias Oli.Scenarios.DirectiveTypes.AssertDirective
+
   alias Oli.Scenarios.Directives.Assert.{
     StructureAssertion,
     ResourceAssertion,
@@ -14,7 +15,7 @@ defmodule Oli.Scenarios.Directives.AssertHandler do
 
   @doc """
   Handles an assert directive by delegating to the appropriate assertion module.
-  
+
   The assert directive can perform different types of assertions:
   - proficiency: Verify learning proficiency for objectives
   - progress: Verify student progress in a page or container
@@ -27,19 +28,19 @@ defmodule Oli.Scenarios.Directives.AssertHandler do
     cond do
       directive.proficiency != nil ->
         ProficiencyAssertion.assert(directive, state)
-      
+
       directive.progress != nil ->
         ProgressAssertion.assert(directive, state)
-      
+
       directive.structure != nil ->
         StructureAssertion.assert(directive, state)
-      
+
       directive.resource != nil ->
         ResourceAssertion.assert(directive, state)
-      
+
       directive.assertions != nil ->
         GeneralAssertion.assert(directive, state)
-      
+
       true ->
         {:error, "Assert directive must specify at least one assertion type"}
     end

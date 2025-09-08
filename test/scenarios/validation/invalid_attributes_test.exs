@@ -15,9 +15,11 @@ defmodule Oli.Scenarios.Validation.InvalidAttributesTest do
               - page: "Page 1"
       """
 
-      assert_raise RuntimeError, ~r/Unknown attributes in 'project' directive: \["description"\]/, fn ->
-        DirectiveParser.parse_yaml!(yaml)
-      end
+      assert_raise RuntimeError,
+                   ~r/Unknown attributes in 'project' directive: \["description"\]/,
+                   fn ->
+                     DirectiveParser.parse_yaml!(yaml)
+                   end
     end
 
     test "section directive with typo in attribute name fails" do
@@ -28,9 +30,11 @@ defmodule Oli.Scenarios.Validation.InvalidAttributesTest do
           from: "project1"
       """
 
-      assert_raise RuntimeError, ~r/Unknown attributes in 'section' directive: \["tittle"\]/, fn ->
-        DirectiveParser.parse_yaml!(yaml)
-      end
+      assert_raise RuntimeError,
+                   ~r/Unknown attributes in 'section' directive: \["tittle"\]/,
+                   fn ->
+                     DirectiveParser.parse_yaml!(yaml)
+                   end
     end
 
     test "clone directive with extra attributes fails" do
@@ -43,9 +47,11 @@ defmodule Oli.Scenarios.Validation.InvalidAttributesTest do
           author: "Someone"
       """
 
-      assert_raise RuntimeError, ~r/Unknown attributes in 'clone' directive: \["author", "description"\]/, fn ->
-        DirectiveParser.parse_yaml!(yaml)
-      end
+      assert_raise RuntimeError,
+                   ~r/Unknown attributes in 'clone' directive: \["author", "description"\]/,
+                   fn ->
+                     DirectiveParser.parse_yaml!(yaml)
+                   end
     end
 
     test "user directive with misspelled attribute fails" do
@@ -70,9 +76,11 @@ defmodule Oli.Scenarios.Validation.InvalidAttributesTest do
           permissions: "read"
       """
 
-      assert_raise RuntimeError, ~r/Unknown attributes in 'enroll' directive: \["permissions"\]/, fn ->
-        DirectiveParser.parse_yaml!(yaml)
-      end
+      assert_raise RuntimeError,
+                   ~r/Unknown attributes in 'enroll' directive: \["permissions"\]/,
+                   fn ->
+                     DirectiveParser.parse_yaml!(yaml)
+                   end
     end
 
     test "publish directive with unknown attribute fails" do
@@ -83,9 +91,11 @@ defmodule Oli.Scenarios.Validation.InvalidAttributesTest do
           version: "1.0"
       """
 
-      assert_raise RuntimeError, ~r/Unknown attributes in 'publish' directive: \["version"\]/, fn ->
-        DirectiveParser.parse_yaml!(yaml)
-      end
+      assert_raise RuntimeError,
+                   ~r/Unknown attributes in 'publish' directive: \["version"\]/,
+                   fn ->
+                     DirectiveParser.parse_yaml!(yaml)
+                   end
     end
 
     test "assert directive with structure validation - unknown attributes fail" do
@@ -99,9 +109,11 @@ defmodule Oli.Scenarios.Validation.InvalidAttributesTest do
             extra_field: "should fail"
       """
 
-      assert_raise RuntimeError, ~r/Unknown attributes in 'structure assertion' directive: \["extra_field"\]/, fn ->
-        DirectiveParser.parse_yaml!(yaml)
-      end
+      assert_raise RuntimeError,
+                   ~r/Unknown attributes in 'structure assertion' directive: \["extra_field"\]/,
+                   fn ->
+                     DirectiveParser.parse_yaml!(yaml)
+                   end
     end
 
     test "assert directive with progress validation - unknown attributes fail" do
@@ -114,9 +126,11 @@ defmodule Oli.Scenarios.Validation.InvalidAttributesTest do
             score: 85
       """
 
-      assert_raise RuntimeError, ~r/Unknown attributes in 'progress assertion' directive: \["score"\]/, fn ->
-        DirectiveParser.parse_yaml!(yaml)
-      end
+      assert_raise RuntimeError,
+                   ~r/Unknown attributes in 'progress assertion' directive: \["score"\]/,
+                   fn ->
+                     DirectiveParser.parse_yaml!(yaml)
+                   end
     end
 
     test "create_activity directive with typo fails" do
@@ -128,9 +142,11 @@ defmodule Oli.Scenarios.Validation.InvalidAttributesTest do
           conent: "activity content"
       """
 
-      assert_raise RuntimeError, ~r/Unknown attributes in 'create_activity' directive: \["conent"\]/, fn ->
-        DirectiveParser.parse_yaml!(yaml)
-      end
+      assert_raise RuntimeError,
+                   ~r/Unknown attributes in 'create_activity' directive: \["conent"\]/,
+                   fn ->
+                     DirectiveParser.parse_yaml!(yaml)
+                   end
     end
 
     test "node with unknown structure fails" do
@@ -160,9 +176,11 @@ defmodule Oli.Scenarios.Validation.InvalidAttributesTest do
                 description: "This should fail"
       """
 
-      assert_raise RuntimeError, ~r/Unknown attributes in 'container node' directive: \["description"\]/, fn ->
-        DirectiveParser.parse_yaml!(yaml)
-      end
+      assert_raise RuntimeError,
+                   ~r/Unknown attributes in 'container node' directive: \["description"\]/,
+                   fn ->
+                     DirectiveParser.parse_yaml!(yaml)
+                   end
     end
 
     test "valid directives with all allowed attributes succeed" do
@@ -177,14 +195,14 @@ defmodule Oli.Scenarios.Validation.InvalidAttributesTest do
             - "Objective 1"
           tags:
             - "Tag 1"
-      
+
       - section:
           name: "test_section"
           title: "Test Section"
           from: "test"
           type: "enrollable"
           registration_open: true
-      
+
       - user:
           name: "testuser"
           type: "student"
@@ -208,9 +226,11 @@ defmodule Oli.Scenarios.Validation.InvalidAttributesTest do
           extra: "field"
       """
 
-      assert_raise RuntimeError, ~r/Unknown attributes in 'manipulate' directive: \["extra"\]/, fn ->
-        DirectiveParser.parse_yaml!(yaml)
-      end
+      assert_raise RuntimeError,
+                   ~r/Unknown attributes in 'manipulate' directive: \["extra"\]/,
+                   fn ->
+                     DirectiveParser.parse_yaml!(yaml)
+                   end
     end
 
     test "remix directive with misspelled attribute fails" do
@@ -222,9 +242,11 @@ defmodule Oli.Scenarios.Validation.InvalidAttributesTest do
           to: "Module 1"
       """
 
-      assert_raise RuntimeError, ~r/Unknown attributes in 'remix' directive: \["resources"\]/, fn ->
-        DirectiveParser.parse_yaml!(yaml)
-      end
+      assert_raise RuntimeError,
+                   ~r/Unknown attributes in 'remix' directive: \["resources"\]/,
+                   fn ->
+                     DirectiveParser.parse_yaml!(yaml)
+                   end
     end
 
     test "product directive with unknown attribute fails" do
@@ -251,9 +273,11 @@ defmodule Oli.Scenarios.Validation.InvalidAttributesTest do
           intitution_id: "12345"
       """
 
-      assert_raise RuntimeError, ~r/Unknown attributes in 'institution' directive: \["intitution_id"\]/, fn ->
-        DirectiveParser.parse_yaml!(yaml)
-      end
+      assert_raise RuntimeError,
+                   ~r/Unknown attributes in 'institution' directive: \["intitution_id"\]/,
+                   fn ->
+                     DirectiveParser.parse_yaml!(yaml)
+                   end
     end
 
     test "customize directive with wrong attribute fails" do
@@ -264,9 +288,11 @@ defmodule Oli.Scenarios.Validation.InvalidAttributesTest do
           options: "some options"
       """
 
-      assert_raise RuntimeError, ~r/Unknown attributes in 'customize' directive: \["options"\]/, fn ->
-        DirectiveParser.parse_yaml!(yaml)
-      end
+      assert_raise RuntimeError,
+                   ~r/Unknown attributes in 'customize' directive: \["options"\]/,
+                   fn ->
+                     DirectiveParser.parse_yaml!(yaml)
+                   end
     end
 
     test "update directive with extra field fails" do
@@ -290,9 +316,11 @@ defmodule Oli.Scenarios.Validation.InvalidAttributesTest do
           content: "content"
       """
 
-      assert_raise RuntimeError, ~r/Unknown attributes in 'edit_page' directive: \["pages"\]/, fn ->
-        DirectiveParser.parse_yaml!(yaml)
-      end
+      assert_raise RuntimeError,
+                   ~r/Unknown attributes in 'edit_page' directive: \["pages"\]/,
+                   fn ->
+                     DirectiveParser.parse_yaml!(yaml)
+                   end
     end
 
     test "view_practice_page directive with extra attribute fails" do
@@ -304,9 +332,11 @@ defmodule Oli.Scenarios.Validation.InvalidAttributesTest do
           duration: 60
       """
 
-      assert_raise RuntimeError, ~r/Unknown attributes in 'view_practice_page' directive: \["duration"\]/, fn ->
-        DirectiveParser.parse_yaml!(yaml)
-      end
+      assert_raise RuntimeError,
+                   ~r/Unknown attributes in 'view_practice_page' directive: \["duration"\]/,
+                   fn ->
+                     DirectiveParser.parse_yaml!(yaml)
+                   end
     end
 
     test "answer_question directive with wrong field fails" do
@@ -320,9 +350,11 @@ defmodule Oli.Scenarios.Validation.InvalidAttributesTest do
           correct: true
       """
 
-      assert_raise RuntimeError, ~r/Unknown attributes in 'answer_question' directive: \["correct"\]/, fn ->
-        DirectiveParser.parse_yaml!(yaml)
-      end
+      assert_raise RuntimeError,
+                   ~r/Unknown attributes in 'answer_question' directive: \["correct"\]/,
+                   fn ->
+                     DirectiveParser.parse_yaml!(yaml)
+                   end
     end
 
     test "use directive with extra attributes fails" do
@@ -348,9 +380,11 @@ defmodule Oli.Scenarios.Validation.InvalidAttributesTest do
             threshold: 0.7
       """
 
-      assert_raise RuntimeError, ~r/Unknown attributes in 'proficiency assertion' directive: \["threshold"\]/, fn ->
-        DirectiveParser.parse_yaml!(yaml)
-      end
+      assert_raise RuntimeError,
+                   ~r/Unknown attributes in 'proficiency assertion' directive: \["threshold"\]/,
+                   fn ->
+                     DirectiveParser.parse_yaml!(yaml)
+                   end
     end
 
     test "resource assertion with typo fails" do
@@ -362,9 +396,11 @@ defmodule Oli.Scenarios.Validation.InvalidAttributesTest do
             resources: {}
       """
 
-      assert_raise RuntimeError, ~r/Unknown attributes in 'resource assertion' directive: \["resources"\]/, fn ->
-        DirectiveParser.parse_yaml!(yaml)
-      end
+      assert_raise RuntimeError,
+                   ~r/Unknown attributes in 'resource assertion' directive: \["resources"\]/,
+                   fn ->
+                     DirectiveParser.parse_yaml!(yaml)
+                   end
     end
 
     test "multiple unknown attributes are all reported" do
@@ -380,9 +416,10 @@ defmodule Oli.Scenarios.Validation.InvalidAttributesTest do
               - page: "Page 1"
       """
 
-      error = assert_raise RuntimeError, fn ->
-        DirectiveParser.parse_yaml!(yaml)
-      end
+      error =
+        assert_raise RuntimeError, fn ->
+          DirectiveParser.parse_yaml!(yaml)
+        end
 
       # Check that all unknown attributes are listed
       assert error.message =~ "author"

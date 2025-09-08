@@ -44,13 +44,13 @@ defmodule Oli.Scenarios.ActivityObjectivesTest do
       # Verify the activity was created with objectives
       project = result.state.projects["test_proj"]
       activity_revision = result.state.activities[{"test_proj", "Test Activity"}]
-      
+
       assert activity_revision != nil
-      
+
       # Get objective resource IDs
       obj1 = project.objectives_by_title["Learning Objective 1"]
       obj2 = project.objectives_by_title["Learning Objective 2"]
-      
+
       # Check that objectives are attached to the activity
       # Objectives are attached to parts, not directly to the activity
       # Get the first part's objectives (all parts should have the same objectives)
@@ -102,12 +102,12 @@ defmodule Oli.Scenarios.ActivityObjectivesTest do
       # Verify the inline activity was created with objectives
       project = result.state.projects["test_proj"]
       activity_revision = result.state.activity_virtual_ids[{"test_proj", "practice_q1"}]
-      
+
       assert activity_revision != nil
-      
+
       # Get objective resource ID
       obj = project.objectives_by_title["Define terms"]
-      
+
       # Check that objective is attached to the activity
       # Objectives are attached to parts, not directly to the activity
       part_objectives = activity_revision.objectives |> Map.values() |> List.first() || []
@@ -180,7 +180,7 @@ defmodule Oli.Scenarios.ActivityObjectivesTest do
       # Verify the activity was created without objectives
       activity_revision = result.state.activities[{"test_proj", "Test Activity"}]
       assert activity_revision != nil
-      
+
       # Verify no objectives are attached to any parts
       all_objectives = activity_revision.objectives |> Map.values() |> List.flatten()
       assert all_objectives == []
@@ -222,13 +222,13 @@ defmodule Oli.Scenarios.ActivityObjectivesTest do
       # Verify the directive objectives override the YAML content objectives
       project = result.state.projects["test_proj"]
       activity_revision = result.state.activities[{"test_proj", "Test Activity"}]
-      
+
       obj_a = project.objectives_by_title["Objective A"]
       obj_b = project.objectives_by_title["Objective B"]
-      
+
       # Objectives are attached to parts
       part_objectives = activity_revision.objectives |> Map.values() |> List.first() || []
-      
+
       # Should have Objective A (from directive), not Objective B (from YAML content)
       assert obj_a.resource_id in part_objectives
       assert obj_b.resource_id not in part_objectives

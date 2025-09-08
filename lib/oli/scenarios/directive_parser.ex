@@ -5,6 +5,7 @@ defmodule Oli.Scenarios.DirectiveParser do
   """
 
   alias Oli.Scenarios.DirectiveValidator
+
   alias Oli.Scenarios.DirectiveTypes.{
     ProjectDirective,
     SectionDirective,
@@ -66,6 +67,7 @@ defmodule Oli.Scenarios.DirectiveParser do
   defp parse_directive(%{"project" => project_data}) do
     # Validate attributes
     allowed_attrs = ["name", "title", "root", "objectives", "tags"]
+
     case DirectiveValidator.validate_attributes(allowed_attrs, project_data, "project") do
       :ok ->
         %ProjectDirective{
@@ -75,6 +77,7 @@ defmodule Oli.Scenarios.DirectiveParser do
           objectives: parse_objectives(project_data["objectives"]),
           tags: parse_tags(project_data["tags"])
         }
+
       {:error, msg} ->
         raise msg
     end
@@ -83,6 +86,7 @@ defmodule Oli.Scenarios.DirectiveParser do
   defp parse_directive(%{"clone" => clone_data}) do
     # Validate attributes
     allowed_attrs = ["from", "name", "title"]
+
     case DirectiveValidator.validate_attributes(allowed_attrs, clone_data, "clone") do
       :ok ->
         %CloneDirective{
@@ -90,6 +94,7 @@ defmodule Oli.Scenarios.DirectiveParser do
           name: clone_data["name"],
           title: clone_data["title"]
         }
+
       {:error, msg} ->
         raise msg
     end
@@ -98,6 +103,7 @@ defmodule Oli.Scenarios.DirectiveParser do
   defp parse_directive(%{"section" => section_data}) do
     # Validate attributes
     allowed_attrs = ["name", "title", "from", "type", "registration_open"]
+
     case DirectiveValidator.validate_attributes(allowed_attrs, section_data, "section") do
       :ok ->
         %SectionDirective{
@@ -107,6 +113,7 @@ defmodule Oli.Scenarios.DirectiveParser do
           type: parse_section_type(section_data["type"]),
           registration_open: Map.get(section_data, "registration_open", true)
         }
+
       {:error, msg} ->
         raise msg
     end
@@ -115,6 +122,7 @@ defmodule Oli.Scenarios.DirectiveParser do
   defp parse_directive(%{"product" => product_data}) do
     # Validate attributes
     allowed_attrs = ["name", "title", "from"]
+
     case DirectiveValidator.validate_attributes(allowed_attrs, product_data, "product") do
       :ok ->
         %ProductDirective{
@@ -122,6 +130,7 @@ defmodule Oli.Scenarios.DirectiveParser do
           title: product_data["title"],
           from: product_data["from"]
         }
+
       {:error, msg} ->
         raise msg
     end
@@ -130,6 +139,7 @@ defmodule Oli.Scenarios.DirectiveParser do
   defp parse_directive(%{"remix" => remix_data}) do
     # Validate attributes
     allowed_attrs = ["from", "resource", "section", "to"]
+
     case DirectiveValidator.validate_attributes(allowed_attrs, remix_data, "remix") do
       :ok ->
         %RemixDirective{
@@ -138,6 +148,7 @@ defmodule Oli.Scenarios.DirectiveParser do
           section: remix_data["section"],
           to: remix_data["to"]
         }
+
       {:error, msg} ->
         raise msg
     end
@@ -146,12 +157,14 @@ defmodule Oli.Scenarios.DirectiveParser do
   defp parse_directive(%{"manipulate" => manipulate_data}) do
     # Validate attributes
     allowed_attrs = ["to", "ops"]
+
     case DirectiveValidator.validate_attributes(allowed_attrs, manipulate_data, "manipulate") do
       :ok ->
         %ManipulateDirective{
           to: manipulate_data["to"],
           ops: manipulate_data["ops"] || []
         }
+
       {:error, msg} ->
         raise msg
     end
@@ -160,12 +173,14 @@ defmodule Oli.Scenarios.DirectiveParser do
   defp parse_directive(%{"publish" => publish_data}) do
     # Validate attributes
     allowed_attrs = ["to", "description"]
+
     case DirectiveValidator.validate_attributes(allowed_attrs, publish_data, "publish") do
       :ok ->
         %PublishDirective{
           to: publish_data["to"],
           description: publish_data["description"]
         }
+
       {:error, msg} ->
         raise msg
     end
@@ -174,6 +189,7 @@ defmodule Oli.Scenarios.DirectiveParser do
   defp parse_directive(%{"assert" => assert_data}) do
     # Validate attributes
     allowed_attrs = ["structure", "resource", "progress", "proficiency", "assertions"]
+
     case DirectiveValidator.validate_attributes(allowed_attrs, assert_data, "assert") do
       :ok ->
         %AssertDirective{
@@ -183,23 +199,25 @@ defmodule Oli.Scenarios.DirectiveParser do
           proficiency: parse_proficiency_assertion(assert_data["proficiency"]),
           assertions: assert_data["assertions"]
         }
+
       {:error, msg} ->
         raise msg
     end
   end
-  
+
   # Support "verify" as an alias for "assert" for backward compatibility
   defp parse_directive(%{"verify" => verify_data}) do
     # If verify has a "to" and "structure" field, convert to assert format
-    {assert_data, allowed_attrs} = if Map.has_key?(verify_data, "to") && Map.has_key?(verify_data, "structure") do
-      # Legacy format with "to" at top level
-      {%{"structure" => Map.merge(verify_data["structure"], %{"to" => verify_data["to"]})},
-       ["to", "structure", "resource", "progress", "proficiency", "assertions"]}
-    else
-      # Standard format
-      {verify_data, ["structure", "resource", "progress", "proficiency", "assertions"]}
-    end
-    
+    {assert_data, allowed_attrs} =
+      if Map.has_key?(verify_data, "to") && Map.has_key?(verify_data, "structure") do
+        # Legacy format with "to" at top level
+        {%{"structure" => Map.merge(verify_data["structure"], %{"to" => verify_data["to"]})},
+         ["to", "structure", "resource", "progress", "proficiency", "assertions"]}
+      else
+        # Standard format
+        {verify_data, ["structure", "resource", "progress", "proficiency", "assertions"]}
+      end
+
     # Validate attributes
     case DirectiveValidator.validate_attributes(allowed_attrs, verify_data, "verify") do
       :ok ->
@@ -210,20 +228,23 @@ defmodule Oli.Scenarios.DirectiveParser do
           proficiency: parse_proficiency_assertion(assert_data["proficiency"]),
           assertions: assert_data["assertions"]
         }
+
       {:error, msg} ->
         raise msg
     end
   end
-  
+
   defp parse_directive(%{"update" => update_data}) do
     # Validate attributes
     allowed_attrs = ["from", "to"]
+
     case DirectiveValidator.validate_attributes(allowed_attrs, update_data, "update") do
       :ok ->
         %UpdateDirective{
           from: update_data["from"],
           to: update_data["to"]
         }
+
       {:error, msg} ->
         raise msg
     end
@@ -232,12 +253,14 @@ defmodule Oli.Scenarios.DirectiveParser do
   defp parse_directive(%{"customize" => customize_data}) do
     # Validate attributes
     allowed_attrs = ["to", "ops"]
+
     case DirectiveValidator.validate_attributes(allowed_attrs, customize_data, "customize") do
       :ok ->
         %CustomizeDirective{
           to: customize_data["to"],
           ops: customize_data["ops"] || []
         }
+
       {:error, msg} ->
         raise msg
     end
@@ -246,6 +269,7 @@ defmodule Oli.Scenarios.DirectiveParser do
   defp parse_directive(%{"user" => user_data}) do
     # Validate attributes
     allowed_attrs = ["name", "type", "email", "given_name", "family_name"]
+
     case DirectiveValidator.validate_attributes(allowed_attrs, user_data, "user") do
       :ok ->
         %UserDirective{
@@ -255,6 +279,7 @@ defmodule Oli.Scenarios.DirectiveParser do
           given_name: user_data["given_name"] || user_data["name"],
           family_name: user_data["family_name"] || "Test"
         }
+
       {:error, msg} ->
         raise msg
     end
@@ -263,6 +288,7 @@ defmodule Oli.Scenarios.DirectiveParser do
   defp parse_directive(%{"enroll" => enroll_data}) do
     # Validate attributes
     allowed_attrs = ["user", "section", "role"]
+
     case DirectiveValidator.validate_attributes(allowed_attrs, enroll_data, "enroll") do
       :ok ->
         %EnrollDirective{
@@ -270,6 +296,7 @@ defmodule Oli.Scenarios.DirectiveParser do
           section: enroll_data["section"],
           role: parse_enrollment_role(enroll_data["role"])
         }
+
       {:error, msg} ->
         raise msg
     end
@@ -278,6 +305,7 @@ defmodule Oli.Scenarios.DirectiveParser do
   defp parse_directive(%{"institution" => inst_data}) do
     # Validate attributes
     allowed_attrs = ["name", "country_code", "institution_email", "institution_url"]
+
     case DirectiveValidator.validate_attributes(allowed_attrs, inst_data, "institution") do
       :ok ->
         %InstitutionDirective{
@@ -286,6 +314,7 @@ defmodule Oli.Scenarios.DirectiveParser do
           institution_email: inst_data["institution_email"] || "admin@#{inst_data["name"]}.edu",
           institution_url: inst_data["institution_url"] || "http://#{inst_data["name"]}.edu"
         }
+
       {:error, msg} ->
         raise msg
     end
@@ -293,7 +322,17 @@ defmodule Oli.Scenarios.DirectiveParser do
 
   defp parse_directive(%{"create_activity" => activity_data}) do
     # Validate attributes
-    allowed_attrs = ["project", "title", "virtual_id", "scope", "type", "content", "objectives", "tags"]
+    allowed_attrs = [
+      "project",
+      "title",
+      "virtual_id",
+      "scope",
+      "type",
+      "content",
+      "objectives",
+      "tags"
+    ]
+
     case DirectiveValidator.validate_attributes(allowed_attrs, activity_data, "create_activity") do
       :ok ->
         %ActivityDirective{
@@ -306,6 +345,7 @@ defmodule Oli.Scenarios.DirectiveParser do
           objectives: activity_data["objectives"],
           tags: activity_data["tags"]
         }
+
       {:error, msg} ->
         raise msg
     end
@@ -314,6 +354,7 @@ defmodule Oli.Scenarios.DirectiveParser do
   defp parse_directive(%{"edit_page" => edit_data}) do
     # Validate attributes
     allowed_attrs = ["project", "page", "content"]
+
     case DirectiveValidator.validate_attributes(allowed_attrs, edit_data, "edit_page") do
       :ok ->
         %EditPageDirective{
@@ -321,6 +362,7 @@ defmodule Oli.Scenarios.DirectiveParser do
           page: edit_data["page"],
           content: edit_data["content"]
         }
+
       {:error, msg} ->
         raise msg
     end
@@ -329,6 +371,7 @@ defmodule Oli.Scenarios.DirectiveParser do
   defp parse_directive(%{"view_practice_page" => view_data}) do
     # Validate attributes
     allowed_attrs = ["student", "section", "page"]
+
     case DirectiveValidator.validate_attributes(allowed_attrs, view_data, "view_practice_page") do
       :ok ->
         %ViewPracticePageDirective{
@@ -336,6 +379,7 @@ defmodule Oli.Scenarios.DirectiveParser do
           section: view_data["section"],
           page: view_data["page"]
         }
+
       {:error, msg} ->
         raise msg
     end
@@ -344,6 +388,7 @@ defmodule Oli.Scenarios.DirectiveParser do
   defp parse_directive(%{"answer_question" => answer_data}) do
     # Validate attributes
     allowed_attrs = ["student", "section", "page", "activity_virtual_id", "response"]
+
     case DirectiveValidator.validate_attributes(allowed_attrs, answer_data, "answer_question") do
       :ok ->
         %AnswerQuestionDirective{
@@ -353,6 +398,7 @@ defmodule Oli.Scenarios.DirectiveParser do
           activity_virtual_id: answer_data["activity_virtual_id"],
           response: answer_data["response"]
         }
+
       {:error, msg} ->
         raise msg
     end
@@ -361,11 +407,13 @@ defmodule Oli.Scenarios.DirectiveParser do
   defp parse_directive(%{"use" => use_data}) do
     # Validate attributes
     allowed_attrs = ["file"]
+
     case DirectiveValidator.validate_attributes(allowed_attrs, use_data, "use") do
       :ok ->
         %UseDirective{
           file: use_data["file"]
         }
+
       {:error, msg} ->
         raise msg
     end
@@ -374,11 +422,13 @@ defmodule Oli.Scenarios.DirectiveParser do
   defp parse_directive(%{"hook" => hook_data}) do
     # Validate attributes
     allowed_attrs = ["function"]
+
     case DirectiveValidator.validate_attributes(allowed_attrs, hook_data, "hook") do
       :ok ->
         %HookDirective{
           function: hook_data["function"]
         }
+
       {:error, msg} ->
         raise msg
     end
@@ -451,6 +501,7 @@ defmodule Oli.Scenarios.DirectiveParser do
   end
 
   defp parse_structure_assertion(nil), do: nil
+
   defp parse_structure_assertion(data) when is_map(data) do
     case DirectiveValidator.validate_assertion_attributes(:structure, data) do
       :ok ->
@@ -458,12 +509,14 @@ defmodule Oli.Scenarios.DirectiveParser do
           to: data["to"],
           root: parse_node(data["root"])
         }
+
       {:error, msg} ->
         raise msg
     end
   end
-  
+
   defp parse_resource_assertion(nil), do: nil
+
   defp parse_resource_assertion(data) when is_map(data) do
     case DirectiveValidator.validate_assertion_attributes(:resource, data) do
       :ok ->
@@ -472,12 +525,14 @@ defmodule Oli.Scenarios.DirectiveParser do
           target: data["target"],
           resource: data["resource"]
         }
+
       {:error, msg} ->
         raise msg
     end
   end
-  
+
   defp parse_progress_assertion(nil), do: nil
+
   defp parse_progress_assertion(data) when is_map(data) do
     case DirectiveValidator.validate_assertion_attributes(:progress, data) do
       :ok ->
@@ -488,12 +543,14 @@ defmodule Oli.Scenarios.DirectiveParser do
           container: data["container"],
           student: data["student"]
         }
+
       {:error, msg} ->
         raise msg
     end
   end
-  
+
   defp parse_proficiency_assertion(nil), do: nil
+
   defp parse_proficiency_assertion(data) when is_map(data) do
     case DirectiveValidator.validate_assertion_attributes(:proficiency, data) do
       :ok ->
@@ -506,6 +563,7 @@ defmodule Oli.Scenarios.DirectiveParser do
           page: data["page"],
           container: data["container"]
         }
+
       {:error, msg} ->
         raise msg
     end
@@ -537,7 +595,9 @@ defmodule Oli.Scenarios.DirectiveParser do
           title: title,
           children: Enum.map(children, &parse_node/1)
         }
-      {:error, msg} -> raise msg
+
+      {:error, msg} ->
+        raise msg
     end
   end
 
@@ -556,10 +616,12 @@ defmodule Oli.Scenarios.DirectiveParser do
           title: "root",
           children: Enum.map(children, &parse_node/1)
         }
-      {:error, msg} -> raise msg
+
+      {:error, msg} ->
+        raise msg
     end
   end
-  
+
   defp parse_node(data) when is_map(data) do
     # Unknown node structure
     case DirectiveValidator.validate_node_attributes(data) do
@@ -570,6 +632,7 @@ defmodule Oli.Scenarios.DirectiveParser do
 
   # Parse objectives structure
   defp parse_objectives(nil), do: nil
+
   defp parse_objectives(objectives) when is_list(objectives) do
     Enum.map(objectives, &parse_objective/1)
   end
@@ -581,18 +644,19 @@ defmodule Oli.Scenarios.DirectiveParser do
       {:error, msg} -> raise msg
     end
   end
-  
+
   defp parse_objective(objective) when is_map(objective) do
     # Map should have exactly one key-value pair where key is the title and value is the children
     case DirectiveValidator.validate_objective(objective) do
       :ok ->
         [{title, children}] = Map.to_list(objective)
         %{title: title, children: children}
+
       {:error, msg} ->
         raise msg
     end
   end
-  
+
   defp parse_objective(objective) do
     case DirectiveValidator.validate_objective(objective) do
       {:error, msg} -> raise msg
@@ -603,7 +667,7 @@ defmodule Oli.Scenarios.DirectiveParser do
   # Parse tags - just a flat list of strings
   defp parse_tags(nil), do: nil
   defp parse_tags(tags) when is_list(tags), do: tags
-  
+
   # Helper functions for parsing enum values
   defp parse_section_type(nil), do: :enrollable
   defp parse_section_type("enrollable"), do: :enrollable
@@ -620,10 +684,11 @@ defmodule Oli.Scenarios.DirectiveParser do
   defp parse_enrollment_role("instructor"), do: :instructor
   defp parse_enrollment_role("student"), do: :student
   defp parse_enrollment_role(role) when is_atom(role), do: role
-  
+
   defp parse_float(nil), do: 0.0
   defp parse_float(value) when is_float(value), do: value
   defp parse_float(value) when is_integer(value), do: value / 1.0
+
   defp parse_float(value) when is_binary(value) do
     case Float.parse(value) do
       {float, _} -> float

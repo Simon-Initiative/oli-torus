@@ -85,7 +85,7 @@ defmodule Oli.Scenarios.Engine do
     # Add the file's directory to opts so 'use' directives can resolve relative paths
     dir = Path.dirname(Path.expand(yaml_path))
     opts_with_dir = Keyword.put(opts, :current_dir, dir)
-    
+
     yaml_path
     |> Oli.Scenarios.DirectiveParser.load_file!()
     |> execute(opts_with_dir)
@@ -102,7 +102,7 @@ defmodule Oli.Scenarios.Engine do
         else
           state
         end
-      
+
       nil ->
         # Use provided author or create a default one
         author = opts[:author] || create_default_author()
@@ -123,7 +123,7 @@ defmodule Oli.Scenarios.Engine do
           current_author: author,
           current_institution: institution
         }
-        
+
         # Add current_dir if provided
         if opts[:current_dir] do
           Map.put(base_state, :current_dir, opts[:current_dir])
@@ -137,7 +137,7 @@ defmodule Oli.Scenarios.Engine do
     # Use production API to create an author
     alias Oli.Accounts.Author
     alias Oli.Repo
-    
+
     {:ok, author} =
       %Author{}
       |> Author.registration_changeset(%{
@@ -153,7 +153,7 @@ defmodule Oli.Scenarios.Engine do
         family_name: "Author"
       })
       |> Repo.insert()
-    
+
     author
   end
 
@@ -165,6 +165,7 @@ defmodule Oli.Scenarios.Engine do
         country_code: "US",
         institution_url: "http://institution.edu"
       })
+
     institution
   end
 

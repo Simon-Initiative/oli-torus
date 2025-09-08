@@ -8,10 +8,10 @@ defmodule Oli.Scenarios.CloneDirectiveTest do
     setup do
       # Create a test project with some resources
       project_map = Oli.Seeder.base_project_with_resource2()
-      
+
       # Get the author from the project map
       author = project_map.author
-      
+
       %{
         project: project_map.project,
         author: author,
@@ -28,10 +28,10 @@ defmodule Oli.Scenarios.CloneDirectiveTest do
           name: cloned_project
           title: "Cloned Test Project"
       """
-      
+
       # Parse the directives
       directives = Oli.Scenarios.DirectiveParser.parse_yaml!(yaml)
-      
+
       # Execute with the source project in state
       initial_state = %Oli.Scenarios.DirectiveTypes.ExecutionState{
         projects: %{
@@ -56,16 +56,16 @@ defmodule Oli.Scenarios.CloneDirectiveTest do
         current_author: author,
         current_institution: nil
       }
-      
-      result = Scenarios.execute(directives, [author: author, state: initial_state])
-      
+
+      result = Scenarios.execute(directives, author: author, state: initial_state)
+
       # Verify the clone was successful
       assert result.errors == []
       assert Map.has_key?(result.state.projects, "cloned_project")
-      
+
       cloned = result.state.projects["cloned_project"]
       assert cloned.project.title == "Cloned Test Project"
-      
+
       # Verify the project was actually cloned in the database
       clones = Clone.existing_clones(source_project.slug, author)
       assert length(clones) > 0
@@ -78,9 +78,9 @@ defmodule Oli.Scenarios.CloneDirectiveTest do
           from: source_project
           name: cloned_project
       """
-      
+
       directives = Oli.Scenarios.DirectiveParser.parse_yaml!(yaml)
-      
+
       initial_state = %Oli.Scenarios.DirectiveTypes.ExecutionState{
         projects: %{
           "source_project" => %Oli.Scenarios.Types.BuiltProject{
@@ -104,9 +104,9 @@ defmodule Oli.Scenarios.CloneDirectiveTest do
         current_author: author,
         current_institution: nil
       }
-      
-      result = Scenarios.execute(directives, [author: author, state: initial_state])
-      
+
+      result = Scenarios.execute(directives, author: author, state: initial_state)
+
       assert result.errors == []
       cloned = result.state.projects["cloned_project"]
       # Clone.clone_project adds " Copy" suffix by default
@@ -119,11 +119,11 @@ defmodule Oli.Scenarios.CloneDirectiveTest do
           from: non_existent_project
           name: cloned_project
       """
-      
+
       directives = Oli.Scenarios.DirectiveParser.parse_yaml!(yaml)
-      
-      result = Scenarios.execute(directives, [author: author])
-      
+
+      result = Scenarios.execute(directives, author: author)
+
       assert length(result.errors) == 1
       [{_directive, error_message}] = result.errors
       assert error_message =~ "Source project 'non_existent_project' not found"
@@ -139,27 +139,27 @@ defmodule Oli.Scenarios.CloneDirectiveTest do
             children:
               - page: "Page 1"
               - page: "Page 2"
-      
+
       - clone:
           from: original
           name: copy1
           title: "First Copy"
-      
+
       - clone:
           from: original
           name: copy2
           title: "Second Copy"
       """
-      
+
       directives = Oli.Scenarios.DirectiveParser.parse_yaml!(yaml)
-      result = Scenarios.execute(directives, [author: author])
-      
+      result = Scenarios.execute(directives, author: author)
+
       # Verify all projects exist
       assert result.errors == []
       assert Map.has_key?(result.state.projects, "original")
       assert Map.has_key?(result.state.projects, "copy1")
       assert Map.has_key?(result.state.projects, "copy2")
-      
+
       # Verify titles
       assert result.state.projects["original"].project.title == "Original Project"
       assert result.state.projects["copy1"].project.title == "First Copy"

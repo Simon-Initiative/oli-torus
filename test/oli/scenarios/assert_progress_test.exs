@@ -335,7 +335,7 @@ defmodule Oli.Scenarios.AssertProgressTest do
       assert length(result.verifications) == 1
 
       [verification] = result.verifications
-      
+
       assert verification.passed == true
       assert verification.message =~ "Student 'student1'"
       assert verification.message =~ "Unit 1"

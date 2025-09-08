@@ -7,7 +7,16 @@ defmodule Oli.Scenarios.Directives.ProjectHandler do
   alias Oli.Scenarios.{Builder, Engine}
   alias Oli.Scenarios.Types.ProjectSpec
 
-  def handle(%ProjectDirective{name: name, title: title, root: root, objectives: objectives, tags: tags}, state) do
+  def handle(
+        %ProjectDirective{
+          name: name,
+          title: title,
+          root: root,
+          objectives: objectives,
+          tags: tags
+        },
+        state
+      ) do
     try do
       # Build the project using existing Builder
       project_spec = %ProjectSpec{

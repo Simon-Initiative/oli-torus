@@ -62,6 +62,7 @@ defmodule Oli.Scenarios.Directives.ViewPracticePageHandler do
       nil ->
         # Not enrolled, create enrollment
         learner_role = ContextRoles.get_role(:context_learner)
+
         case Sections.enroll([user.id], section.id, [learner_role]) do
           {:ok, _enrollments} -> {:ok, :enrolled}
           error -> {:error, "Failed to enroll: #{inspect(error)}"}
@@ -82,6 +83,7 @@ defmodule Oli.Scenarios.Directives.ViewPracticePageHandler do
       case DeliveryResolver.from_revision_slug(section.slug, page_rev.slug) do
         nil ->
           {:error, "Page '#{page_title}' not published in section"}
+
         published_revision ->
           {:ok, published_revision}
       end
@@ -125,24 +127,25 @@ defmodule Oli.Scenarios.Directives.ViewPracticePageHandler do
     datashop_session_id = "session_#{System.unique_integer([:positive])}"
 
     # Get effective settings for this page/section/user combination
-    effective_settings = Settings.get_combined_settings(
-      page_revision,
-      section.id,
-      user.id
-    )
+    effective_settings =
+      Settings.get_combined_settings(
+        page_revision,
+        section.id,
+        user.id
+      )
 
     # Use the standard activity provider
     activity_provider = &Oli.Delivery.ActivityProvider.provide/6
 
     # Call PageLifecycle.visit/6
     case PageLifecycle.visit(
-      page_revision,
-      section.slug,
-      datashop_session_id,
-      user,
-      effective_settings,
-      activity_provider
-    ) do
+           page_revision,
+           section.slug,
+           datashop_session_id,
+           user,
+           effective_settings,
+           activity_provider
+         ) do
       {:ok, result} -> {:ok, result}
       {:error, reason} -> {:error, "PageLifecycle.visit failed: #{inspect(reason)}"}
     end

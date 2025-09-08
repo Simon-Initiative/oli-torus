@@ -101,10 +101,11 @@ defmodule Oli.Scenarios.TestHelpers do
   def verify_yaml(target, expected_structure) do
     # Parse the structure string and re-indent properly
     lines = expected_structure |> String.trim() |> String.split("\n")
-    
+
     # Add proper YAML indentation - each line needs to be indented under "structure:"
     # The base indentation for items under "structure:" is 6 spaces
-    indented_structure = lines
+    indented_structure =
+      lines
       |> Enum.map(fn line ->
         if String.trim(line) == "" do
           ""
@@ -119,7 +120,7 @@ defmodule Oli.Scenarios.TestHelpers do
     - assert:
         structure:
           to: "#{target}"
-#{indented_structure}
+    #{indented_structure}
     """
   end
 

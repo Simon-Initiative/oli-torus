@@ -10,7 +10,11 @@ defmodule Oli.Scenarios.Builder do
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Resources.ResourceType
 
-  def build!(%ProjectSpec{title: title, root: root_node, objectives: objectives, tags: tags}, author, _institution) do
+  def build!(
+        %ProjectSpec{title: title, root: root_node, objectives: objectives, tags: tags},
+        author,
+        _institution
+      ) do
     # Use the standard Oli.Authoring.Course.create_project infrastructure
     # that the UI uses when creating projects
     {:ok, project_setup} = Course.create_project(title || "Test Project", author)
@@ -25,6 +29,7 @@ defmodule Oli.Scenarios.Builder do
     # Update the root revision title to match the spec
     # The standard infrastructure creates "Curriculum" but we want the title from the spec
     root_title = root_node.title || "root"
+
     {:ok, _} =
       ContainerEditor.edit_page(
         project,
@@ -51,7 +56,7 @@ defmodule Oli.Scenarios.Builder do
 
     # Build objectives if specified
     objectives_by_title = build_objectives!(objectives, project, author)
-    
+
     # Build tags if specified
     tags_by_title = build_tags!(tags, project, author)
 
@@ -64,7 +69,8 @@ defmodule Oli.Scenarios.Builder do
         author: author
       },
       id_by_title: id_by_title,
-      rev_by_title: rev_by_title |> Map.put("root", final_root_rev) |> Map.put(root_title, final_root_rev),
+      rev_by_title:
+        rev_by_title |> Map.put("root", final_root_rev) |> Map.put(root_title, final_root_rev),
       objectives_by_title: objectives_by_title,
       tags_by_title: tags_by_title
     }
@@ -184,11 +190,11 @@ defmodule Oli.Scenarios.Builder do
       end
     end)
   end
-  
+
   # Build tags (flat list)
   defp build_tags!(nil, _project, _author), do: %{}
   defp build_tags!([], _project, _author), do: %{}
-  
+
   defp build_tags!(tags, project, author) when is_list(tags) do
     Enum.reduce(tags, %{}, fn tag_title, acc ->
       case ResourceEditor.create(
@@ -199,7 +205,7 @@ defmodule Oli.Scenarios.Builder do
            ) do
         {:ok, revision} ->
           Map.put(acc, tag_title, revision)
-        
+
         {:error, reason} ->
           raise "Failed to create tag '#{tag_title}': #{inspect(reason)}"
       end

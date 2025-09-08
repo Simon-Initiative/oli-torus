@@ -21,22 +21,23 @@ defmodule Oli.Scenarios.Directives.EnrollmentHandler do
           raise "Section '#{section_name}' not found"
 
       # Enroll user in section with appropriate role
-      context_role = case role do
-        :instructor ->
-          ContextRoles.get_role(:context_instructor)
+      context_role =
+        case role do
+          :instructor ->
+            ContextRoles.get_role(:context_instructor)
 
-        :student ->
-          ContextRoles.get_role(:context_learner)
+          :student ->
+            ContextRoles.get_role(:context_learner)
 
-        _ ->
-          raise "Unknown enrollment role: #{role}"
-      end
+          _ ->
+            raise "Unknown enrollment role: #{role}"
+        end
 
       # Perform actual enrollment
       case Sections.enroll([user.id], section.id, [context_role]) do
         {:ok, _enrollments} ->
           {:ok, state}
-        
+
         {:error, reason} ->
           raise "Enrollment failed: #{inspect(reason)}"
       end

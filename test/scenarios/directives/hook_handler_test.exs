@@ -14,14 +14,14 @@ defmodule Oli.Scenarios.Directives.HookHandlerTest do
           root:
             children:
               - page: "Page 1"
-      
+
       - hook:
           function: "Oli.Scenarios.Hooks.set_test_flag/1"
       """
 
       directives = DirectiveParser.parse_yaml!(yaml)
       result = Engine.execute(directives)
-      
+
       assert result.errors == []
       assert Map.get(result.state, :test_flags, %{}) == %{hook_executed: true}
     end
@@ -34,19 +34,19 @@ defmodule Oli.Scenarios.Directives.HookHandlerTest do
           root:
             children:
               - page: "Page 1"
-      
+
       - section:
           name: "test_section"
           title: "Test Section"
           from: "test_project"
-      
+
       - hook:
           function: "Oli.Scenarios.Hooks.log_state/1"
       """
 
       directives = DirectiveParser.parse_yaml!(yaml)
       result = Engine.execute(directives)
-      
+
       assert result.errors == []
       assert map_size(result.state.projects) == 1
       assert map_size(result.state.sections) == 1
@@ -60,13 +60,14 @@ defmodule Oli.Scenarios.Directives.HookHandlerTest do
 
       directives = DirectiveParser.parse_yaml!(yaml)
       result = Engine.execute(directives)
-      
+
       assert result.errors == []
       # Should have created 5 bulk users
-      bulk_users = result.state.users
+      bulk_users =
+        result.state.users
         |> Map.keys()
         |> Enum.filter(&String.starts_with?(&1, "bulk_user_"))
-      
+
       assert length(bulk_users) == 5
     end
 
@@ -78,7 +79,7 @@ defmodule Oli.Scenarios.Directives.HookHandlerTest do
           root:
             children:
               - page: "Page 1"
-      
+
       - create_activity:
           project: "test_project"
           title: "Activity 1"
@@ -100,14 +101,14 @@ defmodule Oli.Scenarios.Directives.HookHandlerTest do
                     - rule: "input like {2}"
                       score: 0
                       feedback: "Incorrect"
-      
+
       - hook:
           function: "Oli.Scenarios.Hooks.clear_activities/1"
       """
 
       directives = DirectiveParser.parse_yaml!(yaml)
       result = Engine.execute(directives)
-      
+
       assert result.errors == []
       assert map_size(result.state.activities) == 0
       assert map_size(result.state.activity_virtual_ids) == 0
@@ -121,7 +122,7 @@ defmodule Oli.Scenarios.Directives.HookHandlerTest do
 
       directives = DirectiveParser.parse_yaml!(yaml)
       result = Engine.execute(directives)
-      
+
       assert result.errors == []
       error_info = Map.get(result.state, :error_injected)
       assert error_info != nil
@@ -137,7 +138,7 @@ defmodule Oli.Scenarios.Directives.HookHandlerTest do
 
       directives = DirectiveParser.parse_yaml!(yaml)
       result = Engine.execute(directives)
-      
+
       assert length(result.errors) == 1
       [{_directive, error_msg}] = result.errors
       assert error_msg =~ "Failed to load module"
@@ -151,7 +152,7 @@ defmodule Oli.Scenarios.Directives.HookHandlerTest do
 
       directives = DirectiveParser.parse_yaml!(yaml)
       result = Engine.execute(directives)
-      
+
       assert length(result.errors) == 1
       [{_directive, error_msg}] = result.errors
       assert error_msg =~ "Hook function must have arity 1"
@@ -165,7 +166,7 @@ defmodule Oli.Scenarios.Directives.HookHandlerTest do
 
       directives = DirectiveParser.parse_yaml!(yaml)
       result = Engine.execute(directives)
-      
+
       assert length(result.errors) == 1
       [{_directive, error_msg}] = result.errors
       assert error_msg =~ "Invalid function specification format"
@@ -178,33 +179,35 @@ defmodule Oli.Scenarios.Directives.HookHandlerTest do
           extra_field: "should fail"
       """
 
-      assert_raise RuntimeError, ~r/Unknown attributes in 'hook' directive: \["extra_field"\]/, fn ->
-        DirectiveParser.parse_yaml!(yaml)
-      end
+      assert_raise RuntimeError,
+                   ~r/Unknown attributes in 'hook' directive: \["extra_field"\]/,
+                   fn ->
+                     DirectiveParser.parse_yaml!(yaml)
+                   end
     end
 
     test "hook can be used multiple times in sequence" do
       yaml = """
       - hook:
           function: "Oli.Scenarios.Hooks.set_test_flag/1"
-      
+
       - project:
           name: "test_project"
           title: "Test Project"
           root:
             children:
               - page: "Page 1"
-      
+
       - hook:
           function: "Oli.Scenarios.Hooks.log_state/1"
-      
+
       - hook:
           function: "Oli.Scenarios.Hooks.inject_error/1"
       """
 
       directives = DirectiveParser.parse_yaml!(yaml)
       result = Engine.execute(directives)
-      
+
       assert result.errors == []
       assert Map.get(result.state, :test_flags, %{}) == %{hook_executed: true}
       assert Map.get(result.state, :error_injected) != nil
@@ -218,7 +221,7 @@ defmodule Oli.Scenarios.Directives.HookHandlerTest do
       def custom_operation(%ExecutionState{} = state) do
         Map.put(state, :custom_flag, :executed)
       end
-      
+
       def transform_state(%ExecutionState{} = state) do
         # Add a transformation marker
         Map.put(state, :transformed, true)
@@ -229,14 +232,14 @@ defmodule Oli.Scenarios.Directives.HookHandlerTest do
       yaml = """
       - hook:
           function: "Oli.Scenarios.Directives.HookHandlerTest.TestHooks.custom_operation/1"
-      
+
       - hook:
           function: "Oli.Scenarios.Directives.HookHandlerTest.TestHooks.transform_state/1"
       """
 
       directives = DirectiveParser.parse_yaml!(yaml)
       result = Engine.execute(directives)
-      
+
       assert result.errors == []
       assert Map.get(result.state, :custom_flag) == :executed
       assert Map.get(result.state, :transformed) == true

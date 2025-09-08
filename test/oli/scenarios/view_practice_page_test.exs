@@ -15,7 +15,7 @@ defmodule Oli.Scenarios.ViewPracticePageTest do
             container: "Root"
             children:
               - page: "Practice Page 1"
-      
+
       # Edit the page to add content (graded: false for practice)
       - edit_page:
           project: test_project
@@ -38,7 +38,7 @@ defmodule Oli.Scenarios.ViewPracticePageTest do
                     - id: "b"
                       body_md: "4"
                       score: 1
-      
+
       # Create a section from the project
       - section:
           name: test_section
@@ -46,19 +46,19 @@ defmodule Oli.Scenarios.ViewPracticePageTest do
           from: test_project
           type: enrollable
           registration_open: true
-      
+
       # Create a student user
       - user:
           name: student1
           type: student
           email: "student1@example.com"
-      
+
       # Enroll the student
       - enroll:
           user: student1
           section: test_section
           role: student
-      
+
       # Student views the practice page
       - view_practice_page:
           student: student1
@@ -70,14 +70,14 @@ defmodule Oli.Scenarios.ViewPracticePageTest do
       result = Engine.execute(directives)
 
       assert result.errors == []
-      
+
       # Check that the page attempt was stored
       key = {"student1", "test_section", "Practice Page 1"}
       assert Map.has_key?(result.state.page_attempts, key)
-      
+
       attempt_result = Map.get(result.state.page_attempts, key)
       assert attempt_result != nil
-      
+
       # The result should be either {:not_started, _} or {:in_progress, _}
       # For a first visit to a practice page, it typically starts an attempt
       assert is_tuple(attempt_result)
@@ -95,7 +95,7 @@ defmodule Oli.Scenarios.ViewPracticePageTest do
             container: "Root"
             children:
               - page: "Practice Page"
-      
+
       - edit_page:
           project: test_project
           page: "Practice Page"
@@ -105,29 +105,29 @@ defmodule Oli.Scenarios.ViewPracticePageTest do
             blocks:
               - type: prose
                 body_md: "Practice content"
-      
+
       - section:
           name: test_section
           title: "Test Section"
           from: test_project
-      
+
       # Create and enroll student
       - user:
           name: student1
           type: student
           email: "student1@example.com"
-      
+
       - enroll:
           user: student1
           section: test_section
           role: student
-      
+
       # First view
       - view_practice_page:
           student: student1
           section: test_section
           page: "Practice Page"
-      
+
       # Second view (should resume)
       - view_practice_page:
           student: student1
@@ -139,7 +139,7 @@ defmodule Oli.Scenarios.ViewPracticePageTest do
       result = Engine.execute(directives)
 
       assert result.errors == []
-      
+
       # Both views should succeed and store attempts
       key = {"student1", "test_section", "Practice Page"}
       assert Map.has_key?(result.state.page_attempts, key)
@@ -155,7 +155,7 @@ defmodule Oli.Scenarios.ViewPracticePageTest do
             container: "Root"
             children:
               - page: "Shared Practice Page"
-      
+
       - edit_page:
           project: test_project
           page: "Shared Practice Page"
@@ -165,40 +165,40 @@ defmodule Oli.Scenarios.ViewPracticePageTest do
             blocks:
               - type: prose
                 body_md: "Practice content for all students"
-      
+
       - section:
           name: test_section
           title: "Test Section"
           from: test_project
-      
+
       # Create multiple students
       - user:
           name: student1
           type: student
           email: "alice@example.com"
-      
+
       - user:
           name: student2
           type: student
           email: "bob@example.com"
-      
+
       # Enroll both students
       - enroll:
           user: student1
           section: test_section
           role: student
-      
+
       - enroll:
           user: student2
           section: test_section
           role: student
-      
+
       # Both students view the page
       - view_practice_page:
           student: student1
           section: test_section
           page: "Shared Practice Page"
-      
+
       - view_practice_page:
           student: student2
           section: test_section
@@ -209,18 +209,18 @@ defmodule Oli.Scenarios.ViewPracticePageTest do
       result = Engine.execute(directives)
 
       assert result.errors == []
-      
+
       # Check that both students have separate attempts
       key1 = {"student1", "test_section", "Shared Practice Page"}
       key2 = {"student2", "test_section", "Shared Practice Page"}
-      
+
       assert Map.has_key?(result.state.page_attempts, key1)
       assert Map.has_key?(result.state.page_attempts, key2)
-      
+
       # Each student should have their own attempt state
       attempt1 = Map.get(result.state.page_attempts, key1)
       attempt2 = Map.get(result.state.page_attempts, key2)
-      
+
       assert attempt1 != nil
       assert attempt2 != nil
     end
@@ -235,12 +235,12 @@ defmodule Oli.Scenarios.ViewPracticePageTest do
             container: "Root"
             children:
               - page: "Page 1"
-      
+
       - section:
           name: test_section
           title: "Test Section"
           from: test_project
-      
+
       # Try to view page with non-existent student
       - view_practice_page:
           student: nonexistent_student
@@ -264,7 +264,7 @@ defmodule Oli.Scenarios.ViewPracticePageTest do
           name: student1
           type: student
           email: "student1@example.com"
-      
+
       # Try to view page in non-existent section
       - view_practice_page:
           student: student1
@@ -291,22 +291,22 @@ defmodule Oli.Scenarios.ViewPracticePageTest do
             container: "Root"
             children:
               - page: "Existing Page"
-      
+
       - section:
           name: test_section
           title: "Test Section"
           from: test_project
-      
+
       - user:
           name: student1
           type: student
           email: "student1@example.com"
-      
+
       - enroll:
           user: student1
           section: test_section
           role: student
-      
+
       # Try to view non-existent page
       - view_practice_page:
           student: student1
@@ -333,7 +333,7 @@ defmodule Oli.Scenarios.ViewPracticePageTest do
             container: "Root"
             children:
               - page: "Practice Page"
-      
+
       - edit_page:
           project: test_project
           page: "Practice Page"
@@ -343,18 +343,18 @@ defmodule Oli.Scenarios.ViewPracticePageTest do
             blocks:
               - type: prose
                 body_md: "Auto-enrollment test"
-      
+
       - section:
           name: test_section
           title: "Test Section"
           from: test_project
-      
+
       # Create student but don't explicitly enroll
       - user:
           name: student1
           type: student
           email: "student1@example.com"
-      
+
       # View page (should auto-enroll)
       - view_practice_page:
           student: student1
@@ -367,7 +367,7 @@ defmodule Oli.Scenarios.ViewPracticePageTest do
 
       # Should succeed with auto-enrollment
       assert result.errors == []
-      
+
       key = {"student1", "test_section", "Practice Page"}
       assert Map.has_key?(result.state.page_attempts, key)
     end

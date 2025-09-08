@@ -23,7 +23,7 @@ defmodule Oli.TorusDoc.PageParser do
 
   @doc """
   Parses a page data structure (already parsed from YAML).
-  
+
   This is used internally and by TorusDoc for processing page documents.
   """
   def parse_page(data) when is_map(data) do
@@ -100,7 +100,8 @@ defmodule Oli.TorusDoc.PageParser do
   end
 
   defp parse_block(%{"type" => type} = _block) do
-    {:error, "Unknown block type: #{type}. Supported types: prose, survey, group, activity_reference"}
+    {:error,
+     "Unknown block type: #{type}. Supported types: prose, survey, group, activity_reference"}
   end
 
   defp parse_block(_) do
@@ -127,9 +128,9 @@ defmodule Oli.TorusDoc.PageParser do
       Map.has_key?(block, "activity") ->
         # This is a nested inline activity definition
         activity_data = block["activity"]
-        
+
         # Also support prompt_md as an alias for stem_md
-        activity_data = 
+        activity_data =
           if Map.has_key?(activity_data, "prompt_md") && !Map.has_key?(activity_data, "stem_md") do
             activity_data
             |> Map.put("stem_md", activity_data["prompt_md"])
@@ -137,7 +138,7 @@ defmodule Oli.TorusDoc.PageParser do
           else
             activity_data
           end
-        
+
         # Pass virtual_id if present
         virtual_id = Map.get(block, "virtual_id")
         parse_inline_activity(activity_data, block["id"], virtual_id)
@@ -166,18 +167,20 @@ defmodule Oli.TorusDoc.PageParser do
           type: "activity_reference",
           id: block["id"]
         }
-        
+
         # Add activity_id or virtual_id
-        reference = 
+        reference =
           cond do
             Map.has_key?(block, "activity_id") ->
               Map.put(reference, :activity_id, block["activity_id"])
+
             Map.has_key?(block, "virtual_id") ->
               Map.put(reference, :virtual_id, block["virtual_id"])
+
             true ->
               reference
           end
-        
+
         {:ok, reference}
 
       true ->
@@ -198,14 +201,15 @@ defmodule Oli.TorusDoc.PageParser do
           activity: activity,
           id: block_id
         }
-        
+
         # Add virtual_id if present
-        result = if virtual_id do
-          Map.put(result, :virtual_id, virtual_id)
-        else
-          result
-        end
-        
+        result =
+          if virtual_id do
+            Map.put(result, :virtual_id, virtual_id)
+          else
+            result
+          end
+
         {:ok, result}
 
       {:error, reason} ->
@@ -213,7 +217,8 @@ defmodule Oli.TorusDoc.PageParser do
     end
   end
 
-  defp parse_activity_reference_block(%{"virtual_id" => virtual_id} = block) when is_binary(virtual_id) do
+  defp parse_activity_reference_block(%{"virtual_id" => virtual_id} = block)
+       when is_binary(virtual_id) do
     {:ok,
      %{
        type: "activity_reference",
@@ -221,8 +226,9 @@ defmodule Oli.TorusDoc.PageParser do
        id: Map.get(block, "id")
      }}
   end
-  
-  defp parse_activity_reference_block(%{"activity_id" => activity_id} = block) when is_integer(activity_id) do
+
+  defp parse_activity_reference_block(%{"activity_id" => activity_id} = block)
+       when is_integer(activity_id) do
     {:ok,
      %{
        type: "activity_reference",
@@ -230,7 +236,7 @@ defmodule Oli.TorusDoc.PageParser do
        id: Map.get(block, "id")
      }}
   end
-  
+
   defp parse_activity_reference_block(_) do
     {:error, "Activity reference block must have either 'virtual_id' or 'activity_id' field"}
   end

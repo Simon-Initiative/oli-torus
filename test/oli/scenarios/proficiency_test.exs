@@ -18,7 +18,7 @@ defmodule Oli.Scenarios.ProficiencyTest do
 
       directives = DirectiveParser.parse_yaml!(yaml)
       assert length(directives) == 1
-      
+
       [directive] = directives
       assert directive.__struct__ == Oli.Scenarios.DirectiveTypes.AssertDirective
       assert directive.proficiency != nil
@@ -40,7 +40,7 @@ defmodule Oli.Scenarios.ProficiencyTest do
 
       directives = DirectiveParser.parse_yaml!(yaml)
       [directive] = directives
-      
+
       assert directive.proficiency.student == nil
       assert directive.proficiency.bucket == "Medium"
       assert directive.proficiency.value == nil
@@ -58,7 +58,7 @@ defmodule Oli.Scenarios.ProficiencyTest do
 
       directives = DirectiveParser.parse_yaml!(yaml)
       [directive] = directives
-      
+
       assert directive.proficiency.value == nil
       assert directive.proficiency.bucket == "Low"
     end
@@ -101,19 +101,19 @@ defmodule Oli.Scenarios.ProficiencyTest do
       """
 
       result = Engine.execute(DirectiveParser.parse_yaml!(yaml))
-      
+
       assert %ExecutionResult{errors: errors, verifications: verifications} = result
-      
+
       # Check for any errors
       if length(errors) > 0 do
         IO.inspect(errors, label: "Errors")
       end
-      
+
       # Should have one verification
       assert length(verifications) == 1
-      
+
       [verification] = verifications
-      
+
       # The verification might pass or fail depending on the actual implementation
       # For now, we're just checking that it executes without crashing
       assert verification.to == "test_sec"

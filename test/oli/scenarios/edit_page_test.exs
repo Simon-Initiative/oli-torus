@@ -19,10 +19,10 @@ defmodule Oli.Scenarios.EditPageTest do
           "Evolving Page" => "Version 2",
           "Assessment" => "Graded Assessment"
         }
-        
+
         new_title = Map.get(updated_titles, original_title, original_title)
         Map.get(project.rev_by_title, new_title)
-        
+
       revision ->
         # Found it directly
         revision

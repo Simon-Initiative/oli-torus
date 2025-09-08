@@ -1,7 +1,7 @@
 defmodule Oli.Scenarios.Directives.Assert.ProgressAssertion do
   @moduledoc """
   Handles progress assertions for student progress in pages or containers.
-  
+
   This module uses Oli.Delivery.Metrics to calculate progress for:
   - Individual students or all enrolled students
   - Specific pages or entire containers
@@ -24,16 +24,15 @@ defmodule Oli.Scenarios.Directives.Assert.ProgressAssertion do
     page = progress_data[:page]
     container = progress_data[:container]
     student = progress_data[:student]
-    
+
     with {:ok, section} <- get_section(state, section_name),
          {:ok, resource_id} <- get_resource_id(section, page || container),
          {:ok, user_ids} <- get_user_ids(state, student, section),
          actual_progress <- calculate_progress(section, resource_id, user_ids, progress_data) do
-      
       # Allow a small tolerance for floating point comparison
       tolerance = 0.001
-      
-      verification_result = 
+
+      verification_result =
         if abs(actual_progress - expected_progress) < tolerance do
           %VerificationResult{
             to: section_name,
@@ -51,14 +50,14 @@ defmodule Oli.Scenarios.Directives.Assert.ProgressAssertion do
             actual: actual_progress
           }
         end
-      
+
       {:ok, state, verification_result}
     else
       {:error, reason} ->
         {:error, "Failed to assert progress: #{reason}"}
     end
   end
-  
+
   def assert(%AssertDirective{progress: nil}, state), do: {:ok, state, nil}
 
   # Get section from state
@@ -74,14 +73,14 @@ defmodule Oli.Scenarios.Directives.Assert.ProgressAssertion do
     # Get the full hierarchy to find the resource by title
     hierarchy = DeliveryResolver.full_hierarchy(section.slug)
     node = find_node_by_title(hierarchy, title)
-    
+
     if node && node.revision do
       {:ok, node.revision.resource_id}
     else
       {:error, "Resource '#{title}' not found in section"}
     end
   end
-  
+
   defp get_resource_id(_section, nil) do
     {:error, "Either 'page' or 'container' must be specified for progress assertion"}
   end
@@ -89,13 +88,14 @@ defmodule Oli.Scenarios.Directives.Assert.ProgressAssertion do
   # Get user IDs - either specific student or all enrolled students
   defp get_user_ids(state, student_name, _section) when is_binary(student_name) do
     case Map.get(state.users, student_name) do
-      nil -> 
+      nil ->
         {:error, "Student '#{student_name}' not found"}
-      user -> 
+
+      user ->
         {:ok, [user.id]}
     end
   end
-  
+
   defp get_user_ids(_state, nil, section) do
     # Get all enrolled students in the section
     {:ok, get_enrolled_student_ids(section)}
@@ -104,9 +104,10 @@ defmodule Oli.Scenarios.Directives.Assert.ProgressAssertion do
   # Get all enrolled student IDs in the section
   defp get_enrolled_student_ids(section) do
     learner_role_id = ContextRoles.get_role(:context_learner).id
-    
+
     from(e in Sections.Enrollment,
-      join: ecr in "enrollments_context_roles", on: ecr.enrollment_id == e.id,
+      join: ecr in "enrollments_context_roles",
+      on: ecr.enrollment_id == e.id,
       where: e.section_id == ^section.id,
       where: e.status == :enrolled,
       where: ecr.context_role_id == ^learner_role_id,
@@ -124,7 +125,7 @@ defmodule Oli.Scenarios.Directives.Assert.ProgressAssertion do
     else
       # For multiple users, get average progress
       progress_map = Metrics.progress_for_page(section.id, user_ids, resource_id)
-      
+
       if map_size(progress_map) == 0 do
         0.0
       else
@@ -133,14 +134,15 @@ defmodule Oli.Scenarios.Directives.Assert.ProgressAssertion do
       end
     end
   end
-  
-  defp calculate_progress(section, container_id, user_ids, %{container: container}) when is_binary(container) do
+
+  defp calculate_progress(section, container_id, user_ids, %{container: container})
+       when is_binary(container) do
     # For a container, use progress_for
     if length(user_ids) == 1 do
       Metrics.progress_for(section.id, hd(user_ids), container_id)
     else
       progress_map = Metrics.progress_for(section.id, user_ids, container_id)
-      
+
       if map_size(progress_map) == 0 do
         0.0
       else
@@ -156,32 +158,36 @@ defmodule Oli.Scenarios.Directives.Assert.ProgressAssertion do
     cond do
       node.revision && node.revision.title == title ->
         node
-      
+
       node.section_resource && node.section_resource.title == title ->
         node
-      
+
       true ->
         Enum.find_value(node.children || [], fn child ->
           find_node_by_title(child, title)
         end)
     end
   end
-  
+
   defp find_node_by_title(_, _), do: nil
 
   # Format success message
   defp format_success_message(progress_data, actual_progress) do
     target = progress_data[:page] || progress_data[:container]
-    student_info = if progress_data[:student], do: "Student '#{progress_data[:student]}'", else: "All students"
-    
+
+    student_info =
+      if progress_data[:student], do: "Student '#{progress_data[:student]}'", else: "All students"
+
     "✓ Progress assertion passed: #{student_info} in '#{target}' has progress #{format_float(actual_progress)} (expected #{format_float(progress_data.progress)})"
   end
 
   # Format failure message  
   defp format_failure_message(progress_data, actual_progress) do
     target = progress_data[:page] || progress_data[:container]
-    student_info = if progress_data[:student], do: "Student '#{progress_data[:student]}'", else: "All students"
-    
+
+    student_info =
+      if progress_data[:student], do: "Student '#{progress_data[:student]}'", else: "All students"
+
     "✗ Progress assertion failed: #{student_info} in '#{target}' has progress #{format_float(actual_progress)} (expected #{format_float(progress_data.progress)})"
   end
 
@@ -189,10 +195,10 @@ defmodule Oli.Scenarios.Directives.Assert.ProgressAssertion do
   defp format_float(value) when is_float(value) do
     :erlang.float_to_binary(value, [{:decimals, 3}])
   end
-  
+
   defp format_float(value) when is_integer(value) do
     :erlang.float_to_binary(value / 1.0, [{:decimals, 3}])
   end
-  
+
   defp format_float(value), do: to_string(value)
 end

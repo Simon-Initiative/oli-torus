@@ -23,10 +23,10 @@ defmodule Oli.TorusDoc.PageConverter do
 
   @doc """
   Converts a parsed page structure to Torus JSON format with context.
-  
+
   Context map can include:
     - author: The author performing the operation (needed for clone directive)
-  
+
   Returns `{:ok, json}` on success or `{:error, reason}` on failure.
   """
   def to_torus_json(parsed_page, context) when is_map(parsed_page) and is_map(context) do
@@ -73,7 +73,8 @@ defmodule Oli.TorusDoc.PageConverter do
 
   defp convert_blocks(_, _), do: {:error, "Blocks must be a list"}
 
-  defp convert_block(%{type: "prose", body_md: markdown} = block, _context) when is_binary(markdown) do
+  defp convert_block(%{type: "prose", body_md: markdown} = block, _context)
+       when is_binary(markdown) do
     case MarkdownParser.parse(markdown) do
       {:ok, content_elements} ->
         {:ok,
@@ -99,15 +100,26 @@ defmodule Oli.TorusDoc.PageConverter do
         "id" => survey.id || generate_id(),
         "children" => children
       }
-      
+
       # Add optional survey fields if present
       result = if survey[:title], do: Map.put(result, "title", survey.title), else: result
-      result = if survey[:anonymous], do: Map.put(result, "anonymous", survey.anonymous), else: result
-      result = if survey[:randomize], do: Map.put(result, "randomize", survey.randomize), else: result
+
+      result =
+        if survey[:anonymous], do: Map.put(result, "anonymous", survey.anonymous), else: result
+
+      result =
+        if survey[:randomize], do: Map.put(result, "randomize", survey.randomize), else: result
+
       result = if survey[:paging], do: Map.put(result, "paging", survey.paging), else: result
-      result = if survey[:show_progress], do: Map.put(result, "showProgress", survey.show_progress), else: result
-      result = if survey[:intro_md], do: Map.put(result, "introText", survey.intro_md), else: result
-      
+
+      result =
+        if survey[:show_progress],
+          do: Map.put(result, "showProgress", survey.show_progress),
+          else: result
+
+      result =
+        if survey[:intro_md], do: Map.put(result, "introText", survey.intro_md), else: result
+
       {:ok, result}
     end
   end
@@ -147,9 +159,9 @@ defmodule Oli.TorusDoc.PageConverter do
       "type" => "activity-reference",
       "id" => block.id || generate_id()
     }
-    
+
     # Add both activity_id and activitySlug for compatibility
-    reference = 
+    reference =
       cond do
         Map.has_key?(block, :activity_id) ->
           # Include both fields for compatibility:
@@ -158,12 +170,14 @@ defmodule Oli.TorusDoc.PageConverter do
           reference
           |> Map.put("activity_id", block.activity_id)
           |> Map.put("activitySlug", block.activity_id)
+
         Map.has_key?(block, :virtual_id) ->
           Map.put(reference, "_virtual_id", block.virtual_id)
+
         true ->
           reference
       end
-    
+
     {:ok, reference}
   end
 
@@ -185,15 +199,15 @@ defmodule Oli.TorusDoc.PageConverter do
           "activitySlug" => activity_json["id"],
           "_inline_activity" => activity_json
         }
-        
+
         # Add virtual_id if present
-        reference = 
+        reference =
           if Map.has_key?(block, :virtual_id) do
             Map.put(reference, "_virtual_id", block.virtual_id)
           else
             reference
           end
-        
+
         {:ok, reference}
 
       {:error, reason} ->

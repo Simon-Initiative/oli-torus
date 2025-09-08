@@ -23,6 +23,7 @@ case PageParser.parse(yaml) do
     [activity_block] = page.blocks
     IO.inspect(activity_block, label: "Activity block", pretty: true)
     IO.inspect(activity_block.activity, label: "Activity", pretty: true)
+
   {:error, reason} ->
     IO.puts("Error: #{reason}")
 end

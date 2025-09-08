@@ -1,2 +1,3 @@
-defmodule Oli.Scenarios.RunAllTest do  use Oli.Scenarios.ScenarioRunner
+defmodule Oli.Scenarios.RunAllTest do
+  use Oli.Scenarios.ScenarioRunner
 end

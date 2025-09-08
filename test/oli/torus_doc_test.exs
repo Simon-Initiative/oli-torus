@@ -9,10 +9,10 @@ defmodule Oli.TorusDocTest do
     setup do
       # Create a test project with some resources
       project_map = Oli.Seeder.base_project_with_resource2()
-      
+
       # The publication is already created by the seeder
       publication = Publishing.project_working_publication(project_map.project.slug)
-      
+
       Map.put(project_map, :publication, publication)
     end
 
@@ -28,13 +28,13 @@ defmodule Oli.TorusDocTest do
       """
 
       {:ok, result} = TorusDoc.process(yaml, %{author: author})
-      
+
       assert result.type == "clone_result"
       assert result.success == true
       assert result.source_project == project.slug
       assert result.cloned_project != nil
       assert result.message =~ "Successfully cloned project"
-      
+
       # Verify the project was actually cloned
       clones = Clone.existing_clones(project.slug, author)
       assert length(clones) > 0
@@ -93,7 +93,9 @@ defmodule Oli.TorusDocTest do
       """
 
       {:error, message} = TorusDoc.process(yaml)
-      assert message == "Unknown project directive: unknown_directive. Supported directives: clone"
+
+      assert message ==
+               "Unknown project directive: unknown_directive. Supported directives: clone"
     end
 
     test "fails when directive field is missing" do
@@ -120,7 +122,7 @@ defmodule Oli.TorusDocTest do
       """
 
       {:ok, result} = TorusDoc.process(yaml)
-      
+
       assert result["type"] == "Page"
       assert result["title"] == "Test Page"
       assert result["content"]["model"] != nil
@@ -137,7 +139,7 @@ defmodule Oli.TorusDocTest do
       """
 
       {:ok, result} = TorusDoc.process(yaml, %{author: %{id: 1}})
-      
+
       assert result["type"] == "Page"
     end
   end
@@ -150,7 +152,9 @@ defmodule Oli.TorusDocTest do
       """
 
       {:error, message} = TorusDoc.process(yaml)
-      assert message == "Unknown document type: unknown_type. Expected 'page' or 'project_directive'"
+
+      assert message ==
+               "Unknown document type: unknown_type. Expected 'page' or 'project_directive'"
     end
 
     test "fails when type field is missing" do

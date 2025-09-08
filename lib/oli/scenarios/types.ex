@@ -12,7 +12,15 @@ defmodule Oli.Scenarios.Types do
   end
 
   defmodule BuiltProject do
-    defstruct [:project, :working_pub, :root, :id_by_title, :rev_by_title, :objectives_by_title, :tags_by_title]
+    defstruct [
+      :project,
+      :working_pub,
+      :root,
+      :id_by_title,
+      :rev_by_title,
+      :objectives_by_title,
+      :tags_by_title
+    ]
   end
 
   defmodule RunResult do

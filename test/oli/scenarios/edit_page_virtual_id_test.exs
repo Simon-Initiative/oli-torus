@@ -46,18 +46,18 @@ defmodule Oli.Scenarios.EditPageVirtualIdTest do
 
       # Verify the activity was created and stored by virtual_id
       assert Map.has_key?(result.state.activity_virtual_ids, {"test_project", "quiz_1"})
-      
+
       # Get the project and page
       project = Map.get(result.state.projects, "test_project")
       page_revision = Map.get(project.rev_by_title, "Page with Activity")
-      
+
       assert page_revision != nil
       assert page_revision.title == "Page with Activity"
-      
+
       # The content should have activity-reference blocks
       model = page_revision.content["model"]
       assert length(model) == 3
-      
+
       [_prose1, activity_ref, _prose2] = model
       assert activity_ref["type"] == "activity-reference"
       assert activity_ref["activitySlug"] != nil
@@ -118,20 +118,22 @@ defmodule Oli.Scenarios.EditPageVirtualIdTest do
       assert result.errors == []
 
       # Get the activity from state
-      activity_revision = Map.get(result.state.activity_virtual_ids, {"test_project", "reusable_quiz"})
+      activity_revision =
+        Map.get(result.state.activity_virtual_ids, {"test_project", "reusable_quiz"})
+
       assert activity_revision != nil
-      
+
       # Get the project and page after second edit
       project = Map.get(result.state.projects, "test_project")
       page_revision = Map.get(project.rev_by_title, "Version 2")
-      
+
       assert page_revision != nil
       assert page_revision.title == "Version 2"
-      
+
       # The content should reference the same activity
       model = page_revision.content["model"]
       assert length(model) == 3
-      
+
       [_prose1, activity_ref, _prose2] = model
       assert activity_ref["type"] == "activity-reference"
       assert activity_ref["activitySlug"] == activity_revision.resource_id
@@ -181,19 +183,21 @@ defmodule Oli.Scenarios.EditPageVirtualIdTest do
       assert result.errors == []
 
       # Get the activity from state
-      activity_revision = Map.get(result.state.activity_virtual_ids, {"test_project", "shared_activity"})
+      activity_revision =
+        Map.get(result.state.activity_virtual_ids, {"test_project", "shared_activity"})
+
       assert activity_revision != nil
-      
+
       # Get the second page
       project = Map.get(result.state.projects, "test_project")
       page2_revision = Map.get(project.rev_by_title, "Page 2 References Activity")
-      
+
       assert page2_revision != nil
-      
+
       # The content should reference the activity created in page 1
       model = page2_revision.content["model"]
       assert length(model) == 2
-      
+
       [_prose, activity_ref] = model
       assert activity_ref["type"] == "activity-reference"
       assert activity_ref["activitySlug"] == activity_revision.resource_id
@@ -239,27 +243,29 @@ defmodule Oli.Scenarios.EditPageVirtualIdTest do
       assert result.errors == []
 
       # Verify the activity was created
-      activity_revision = Map.get(result.state.activity_virtual_ids, {"test_project", "group_activity_1"})
+      activity_revision =
+        Map.get(result.state.activity_virtual_ids, {"test_project", "group_activity_1"})
+
       assert activity_revision != nil
-      
+
       # Get the page
       project = Map.get(result.state.projects, "test_project")
       page_revision = Map.get(project.rev_by_title, "Page with Nested Activities")
-      
+
       assert page_revision != nil
-      
+
       # Check the group structure
       model = page_revision.content["model"]
       assert length(model) == 1
-      
+
       [group] = model
       assert group["type"] == "group"
       assert group["purpose"] == "quiz"
-      
+
       # Check activities within the group
       group_children = group["children"]
       assert length(group_children) == 3
-      
+
       [_prose, activity1, activity2] = group_children
       assert activity1["type"] == "activity-reference"
       assert activity2["type"] == "activity-reference"
@@ -316,24 +322,24 @@ defmodule Oli.Scenarios.EditPageVirtualIdTest do
       # Verify both activities were created
       assert Map.has_key?(result.state.activity_virtual_ids, {"test_project", "survey_q1"})
       assert Map.has_key?(result.state.activity_virtual_ids, {"test_project", "survey_q2"})
-      
+
       # Get the page
       project = Map.get(result.state.projects, "test_project")
       page_revision = Map.get(project.rev_by_title, "Page with Survey")
-      
+
       assert page_revision != nil
-      
+
       # Check the survey structure
       model = page_revision.content["model"]
       assert length(model) == 1
-      
+
       [survey] = model
       assert survey["type"] == "survey"
-      
+
       # Check activities within the survey
       survey_children = survey["children"]
       assert length(survey_children) == 3
-      
+
       [_prose, activity1, activity2] = survey_children
       assert activity1["type"] == "activity-reference"
       assert activity2["type"] == "activity-reference"
@@ -418,17 +424,17 @@ defmodule Oli.Scenarios.EditPageVirtualIdTest do
       # Both activities should be in state
       assert Map.has_key?(result.state.activity_virtual_ids, {"test_project", "explicit_q1"})
       assert Map.has_key?(result.state.activity_virtual_ids, {"test_project", "inline_q1"})
-      
+
       # Get the page
       project = Map.get(result.state.projects, "test_project")
       page_revision = Map.get(project.rev_by_title, "Mixed Activities")
-      
+
       assert page_revision != nil
-      
+
       # Both should be activity references
       model = page_revision.content["model"]
       assert length(model) == 2
-      
+
       [activity1, activity2] = model
       assert activity1["type"] == "activity-reference"
       assert activity2["type"] == "activity-reference"

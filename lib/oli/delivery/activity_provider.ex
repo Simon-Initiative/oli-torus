@@ -274,6 +274,7 @@ defmodule Oli.Delivery.ActivityProvider do
 
             e ->
               error = "Selection failed to fulfill with error: #{e}"
+
               fulfillment_state
               |> Map.put(:errors, [error | fulfillment_state.errors])
           end

@@ -15,7 +15,7 @@ defmodule Oli.Scenarios.Directives.Assert.StructureAssertion do
   def assert(%AssertDirective{structure: structure_data}, state) when is_map(structure_data) do
     to_name = structure_data.to
     expected_structure = structure_data.root
-    
+
     # Determine if target is a project or section
     {target_type, target} = get_target(state, to_name)
 
@@ -31,10 +31,10 @@ defmodule Oli.Scenarios.Directives.Assert.StructureAssertion do
 
     # Verify the structure
     verification_result = verify_structure(to_name, expected_structure, actual_structure)
-    
+
     {:ok, state, verification_result}
   end
-  
+
   def assert(%AssertDirective{structure: nil}, state), do: {:ok, state, nil}
 
   defp get_target(state, name) do

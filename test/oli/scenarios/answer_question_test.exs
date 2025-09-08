@@ -159,18 +159,19 @@ defmodule Oli.Scenarios.AnswerQuestionTest do
       # Check evaluation exists
       key = {"student1", "test_section", "Quiz Page", "math_q1"}
       assert Map.has_key?(result.state.activity_evaluations, key)
-      
+
       evaluation = Map.get(result.state.activity_evaluations, key)
       assert evaluation != nil
-      
+
       # The evaluation should be a list of actions
       assert is_list(evaluation)
       assert length(evaluation) > 0
-      
+
       # Check that we got a FeedbackAction with incorrect score
       [action | _] = evaluation
       assert action.type == "FeedbackAction"
-      assert action.score == 0  # Incorrect answer should score 0
+      # Incorrect answer should score 0
+      assert action.score == 0
       assert action.out_of == 1.0
     end
 
@@ -259,21 +260,23 @@ defmodule Oli.Scenarios.AnswerQuestionTest do
 
       assert Map.has_key?(result.state.activity_evaluations, key1)
       assert Map.has_key?(result.state.activity_evaluations, key2)
-      
+
       # Check first question evaluation (correct answer)
       evaluation1 = Map.get(result.state.activity_evaluations, key1)
       assert is_list(evaluation1)
       [action1 | _] = evaluation1
       assert action1.type == "FeedbackAction"
-      assert action1.score == 1.0  # Correct answer should score 1
+      # Correct answer should score 1
+      assert action1.score == 1.0
       assert action1.out_of == 1.0
-      
+
       # Check second question evaluation (correct answer)
       evaluation2 = Map.get(result.state.activity_evaluations, key2)
       assert is_list(evaluation2)
       [action2 | _] = evaluation2
       assert action2.type == "FeedbackAction"
-      assert action2.score == 1.0  # Correct answer should score 1
+      # Correct answer should score 1
+      assert action2.score == 1.0
       assert action2.out_of == 1.0
     end
 
@@ -446,14 +449,14 @@ defmodule Oli.Scenarios.AnswerQuestionTest do
       # Check evaluation exists
       key = {"student1", "test_section", "Short Answer Page", "short_q1"}
       assert Map.has_key?(result.state.activity_evaluations, key)
-      
+
       evaluation = Map.get(result.state.activity_evaluations, key)
       assert evaluation != nil
-      
+
       # The evaluation should be a list of actions
       assert is_list(evaluation)
       assert length(evaluation) > 0
-      
+
       # Check that we got a FeedbackAction
       # Note: Short answer questions may have different scoring logic
       [action | _] = evaluation

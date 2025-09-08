@@ -24,11 +24,12 @@ defmodule Oli.Scenarios.Directives.AnswerQuestionHandler do
          {:ok, activity_attempt_info} <- find_activity_attempt(attempt_state, activity_revision),
          # Don't get part_id from revision, get it from the actual attempt
          {:ok, formatted_response} <- format_response(directive.response, activity_revision),
-         {:ok, evaluation_result} <- submit_answer(
-           section,
-           activity_attempt_info,
-           formatted_response
-         ) do
+         {:ok, evaluation_result} <-
+           submit_answer(
+             section,
+             activity_attempt_info,
+             formatted_response
+           ) do
       # Store the evaluation result
       key = {directive.student, directive.section, directive.page, directive.activity_virtual_id}
       updated_evaluations = Map.put(state.activity_evaluations, key, evaluation_result)
@@ -71,8 +72,10 @@ defmodule Oli.Scenarios.Directives.AnswerQuestionHandler do
     activity_revision =
       state.activity_virtual_ids
       |> Enum.find_value(fn
-        {{_project_name, virtual_id}, revision} when virtual_id == directive.activity_virtual_id ->
+        {{_project_name, virtual_id}, revision}
+        when virtual_id == directive.activity_virtual_id ->
           revision
+
         _ ->
           nil
       end)
@@ -92,7 +95,6 @@ defmodule Oli.Scenarios.Directives.AnswerQuestionHandler do
     # First try direct lookup by resource_id
     resource_id = activity_revision.resource_id
 
-
     case Map.get(attempt_state.attempt_hierarchy, resource_id) do
       nil ->
         # If not found, try to find any activity attempt (for single activity pages)
@@ -100,7 +102,11 @@ defmodule Oli.Scenarios.Directives.AnswerQuestionHandler do
         case Map.values(attempt_state.attempt_hierarchy) do
           [{%{attempt_guid: guid} = activity_attempt, part_attempts}] ->
             # Single activity on page, use it with part_attempts included
-            activity_attempt_with_parts = %{activity_attempt | part_attempts: Map.values(part_attempts)}
+            activity_attempt_with_parts = %{
+              activity_attempt
+              | part_attempts: Map.values(part_attempts)
+            }
+
             {:ok, %{attempt_guid: guid, activity_attempt: activity_attempt_with_parts}}
 
           [%{attemptGuid: guid} = thin_info] ->
@@ -115,10 +121,16 @@ defmodule Oli.Scenarios.Directives.AnswerQuestionHandler do
             # For now, take the first one as a workaround
             case List.first(Map.values(attempt_state.attempt_hierarchy)) do
               {%{attempt_guid: guid} = activity_attempt, part_attempts} ->
-                activity_attempt_with_parts = %{activity_attempt | part_attempts: Map.values(part_attempts)}
+                activity_attempt_with_parts = %{
+                  activity_attempt
+                  | part_attempts: Map.values(part_attempts)
+                }
+
                 {:ok, %{attempt_guid: guid, activity_attempt: activity_attempt_with_parts}}
+
               %{attemptGuid: guid} = thin_info ->
                 {:ok, %{attempt_guid: guid, activity_attempt: thin_info}}
+
               _ ->
                 {:error, "Could not find matching activity attempt"}
             end
@@ -127,7 +139,11 @@ defmodule Oli.Scenarios.Directives.AnswerQuestionHandler do
       # Basic page format: {%ActivityAttempt{}, part_attempts}
       {%{attempt_guid: guid} = activity_attempt, part_attempts} ->
         # Include the part_attempts in the activity_attempt
-        activity_attempt_with_parts = %{activity_attempt | part_attempts: Map.values(part_attempts)}
+        activity_attempt_with_parts = %{
+          activity_attempt
+          | part_attempts: Map.values(part_attempts)
+        }
+
         {:ok, %{attempt_guid: guid, activity_attempt: activity_attempt_with_parts}}
 
       # Adaptive page format: %{attemptGuid: guid, ...}
@@ -139,11 +155,11 @@ defmodule Oli.Scenarios.Directives.AnswerQuestionHandler do
     end
   end
 
-
   # Format the response based on activity type
   defp format_response(response, activity_revision) do
-    activity_type = activity_revision.content["activityType"] ||
-                   activity_revision.content["type"]
+    activity_type =
+      activity_revision.content["activityType"] ||
+        activity_revision.content["type"]
 
     case activity_type do
       type when type in ["oli_multiple_choice", "oli_multi_choice"] ->
@@ -193,11 +209,11 @@ defmodule Oli.Scenarios.Directives.AnswerQuestionHandler do
 
       # Call evaluate_activity
       case Evaluate.evaluate_activity(
-        section.slug,
-        activity_attempt_info.attempt_guid,
-        part_inputs,
-        datashop_session_id
-      ) do
+             section.slug,
+             activity_attempt_info.attempt_guid,
+             part_inputs,
+             datashop_session_id
+           ) do
         {:ok, result} -> {:ok, result}
         {:error, reason} -> {:error, "Evaluation failed: #{inspect(reason)}"}
       end
