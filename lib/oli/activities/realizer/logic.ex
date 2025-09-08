@@ -52,6 +52,10 @@ defmodule Oli.Activities.Realizer.Logic do
   alias Oli.Activities.Realizer.Logic.Expression
   alias Oli.Activities.Realizer.Logic.Clause
 
+  def parse(nil) do
+    {:ok, %Oli.Activities.Realizer.Logic{conditions: nil}}
+  end
+
   def parse(%{"conditions" => nil}) do
     {:ok, %Oli.Activities.Realizer.Logic{conditions: nil}}
   end

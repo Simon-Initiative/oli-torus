@@ -89,6 +89,10 @@ All directives are documented in detail in the linked documentation files.
 | | `user` | Create users (author/instructor/student) | [users_and_org.md](docs/users_and_org.md#user) |
 | | `institution` | Create institution | [users_and_org.md](docs/users_and_org.md#institution) |
 | | `enroll` | Enroll users in sections | [users_and_org.md](docs/users_and_org.md#enroll) |
+| **Extensions** | | | |
+| | `hook` | Execute custom Elixir functions | [hooks.md](docs/hooks.md) |
+| | `use` | Include another YAML scenario file | See [Modular Scenarios](#modular-scenarios) |
+| | `clone` | Clone an existing project | [projects.md](docs/projects.md#clone) |
 
 ## Documentation Guide
 
@@ -100,6 +104,7 @@ Detailed documentation is organized by topic:
 - **[Content Authoring](docs/content_authoring.md)** - Creating pages and activities with TorusDoc
 - **[Student Simulation](docs/student_simulation.md)** - Simulating student interactions and progress
 - **[Users and Organization](docs/users_and_org.md)** - Managing users, institutions, and enrollment
+- **[Hooks and Extensions](docs/hooks.md)** - Custom functions for advanced testing scenarios
 
 ## Writing Tests
 
@@ -188,6 +193,126 @@ end)
 
 ## Advanced Features
 
+### Hook Directive
+
+The `hook` directive provides a powerful extension mechanism that allows scenarios to execute custom Elixir functions. This enables advanced testing capabilities like data injection, state manipulation, and custom validation logic.
+
+#### Basic Usage
+
+```yaml
+# Execute a custom function
+- hook:
+    function: "Oli.Scenarios.Hooks.log_state/1"
+```
+
+#### Function Requirements
+
+- **Must accept exactly one argument**: The `ExecutionState`
+- **Must return**: An updated `ExecutionState`
+- **Format**: `"Module.function/1"` (arity must be 1)
+
+#### Built-in Hook Functions
+
+The framework provides several useful hooks in `Oli.Scenarios.Hooks`:
+
+| Function | Description |
+|----------|-------------|
+| `log_state/1` | Logs current state for debugging |
+| `set_test_flag/1` | Adds test flags to state |
+| `create_bulk_users/1` | Creates multiple test users |
+| `clear_activities/1` | Removes all activities from state |
+| `inject_error/1` | Injects error conditions for testing |
+| `corrupt_page_content/1` | Corrupts page data for error testing |
+| `validate_state/1` | Validates state conditions |
+| `delay_execution/1` | Adds delays for timing tests |
+| `modify_publications/1` | Modifies publication settings |
+
+#### Example: Testing with Data Corruption
+
+```yaml
+- project:
+    name: "test_project"
+    title: "Test Project"
+    root:
+      children:
+        - page: "Page 1"
+
+# Inject corrupted data to test error handling
+- hook:
+    function: "Oli.Scenarios.Hooks.corrupt_page_content/1"
+
+# Test that the system handles corruption gracefully
+- assert:
+    # ... your assertions here ...
+```
+
+#### Creating Custom Hooks
+
+```elixir
+defmodule MyProject.TestHooks do
+  alias Oli.Scenarios.DirectiveTypes.ExecutionState
+  
+  def custom_setup(%ExecutionState{} = state) do
+    # Perform custom setup logic
+    updated_state = Map.put(state, :custom_data, %{initialized: true})
+    updated_state
+  end
+  
+  def inject_test_data(%ExecutionState{} = state) do
+    # Inject specific test data
+    # Access projects, sections, users, etc. from state
+    # Return modified state
+    state
+  end
+end
+```
+
+Then use in your scenario:
+
+```yaml
+- hook:
+    function: "MyProject.TestHooks.custom_setup/1"
+
+- hook:
+    function: "MyProject.TestHooks.inject_test_data/1"
+```
+
+#### Common Use Cases
+
+1. **Data Injection**: Insert specific test data that would be difficult to create through normal directives
+2. **Error Simulation**: Corrupt data or inject errors to test error handling
+3. **State Validation**: Add custom validation logic beyond standard assertions
+4. **Performance Testing**: Add delays or resource-intensive operations
+5. **Cleanup Operations**: Reset or clear specific parts of the state
+6. **Debugging**: Log or inspect state during scenario execution
+
+### Modular Scenarios
+
+The `use` directive allows you to include and execute another YAML scenario file within the current execution context:
+
+```yaml
+# base_setup.yaml
+- project:
+    name: "base_project"
+    title: "Base Project"
+    root:
+      children:
+        - page: "Introduction"
+
+# main_scenario.yaml
+- use:
+    file: "base_setup.yaml"
+
+- section:
+    name: "test_section"
+    from: "base_project"
+```
+
+The file path is relative to the directory of the current YAML file. This enables:
+- Reusable setup scenarios
+- Modular test organization
+- Shared base configurations
+
 ### Virtual IDs
 Virtual IDs provide scenario-local identifiers for activities, enabling:
 - Activity reuse across pages
@@ -220,10 +345,12 @@ Unlike traditional fixtures, Oli.Scenarios uses actual OLI modules:
 
 When adding new directives:
 1. Define the type in `directive_types.ex`
-2. Add parsing in `directive_parser.ex`
+2. Add parsing in `directive_parser.ex` with attribute validation
 3. Implement handler in `directives/` folder
-4. Update documentation
-5. Add tests
+4. Update the Engine to execute the directive
+5. Update documentation (add to README and create docs if needed)
+6. Add comprehensive tests
+7. For hook-like functionality, consider if it should be a hook function instead
 
 ## Support
 

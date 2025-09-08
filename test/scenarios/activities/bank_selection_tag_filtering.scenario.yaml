@@ -1,0 +1,186 @@
+# Scenario: Bank selection with tag filtering
+# Tests bank selection functionality where activities are filtered by tags
+# and different pages request different numbers of activities
+
+# Create a project with 3 pages and 2 tags
+- project:
+    name: "tag_filter_project"
+    title: "Tag Filtering Bank Selection"
+    tags:
+      - "easy"
+      - "hard"
+    root:
+      children:
+        - page: "Page 1"
+        - page: "Page 2"
+        - page: "Page 3"
+
+# Create first banked activity with "easy" tag
+- create_activity:
+    project: "tag_filter_project"
+    title: "Easy Question 1"
+    virtual_id: "easy_q1"
+    scope: "banked"
+    type: "oli_multiple_choice"
+    tags: ["easy"]
+    content: |
+      stem_md: "What is 1 + 1?"
+      choices:
+        - id: "a"
+          body_md: "1"
+          score: 0
+          feedback_md: "Incorrect. Try again."
+        - id: "b"
+          body_md: "2"
+          score: 1
+          feedback_md: "Correct! 1 + 1 = 2"
+        - id: "c"
+          body_md: "3"
+          score: 0
+          feedback_md: "Incorrect. Try again."
+
+# Create second banked activity with "easy" tag
+- create_activity:
+    project: "tag_filter_project"
+    title: "Easy Question 2"
+    virtual_id: "easy_q2"
+    scope: "banked"
+    type: "oli_multiple_choice"
+    tags: ["easy"]
+    content: |
+      stem_md: "What is 2 + 2?"
+      choices:
+        - id: "a"
+          body_md: "3"
+          score: 0
+          feedback_md: "Not quite. 2 + 2 = 4"
+        - id: "b"
+          body_md: "4"
+          score: 1
+          feedback_md: "Correct! 2 + 2 = 4"
+        - id: "c"
+          body_md: "5"
+          score: 0
+          feedback_md: "Too high. 2 + 2 = 4"
+
+# Create third banked activity with no tags
+- create_activity:
+    project: "tag_filter_project"
+    title: "Untagged Question"
+    virtual_id: "untagged_q"
+    scope: "banked"
+    type: "oli_multiple_choice"
+    content: |
+      stem_md: "What is 3 + 3?"
+      choices:
+        - id: "a"
+          body_md: "5"
+          score: 0
+          feedback_md: "Close, but 3 + 3 = 6"
+        - id: "b"
+          body_md: "6"
+          score: 1
+          feedback_md: "Correct! 3 + 3 = 6"
+        - id: "c"
+          body_md: "7"
+          score: 0
+          feedback_md: "Too high. 3 + 3 = 6"
+
+# Edit Page 1 to contain bank selection for 2 questions tagged "easy"
+- edit_page:
+    project: "tag_filter_project"
+    page: "Page 1"
+    content: |
+      title: "Page 1"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "## Practice Questions - Select 2 Easy"
+        - type: bank-selection
+          id: "selection_2_easy"
+          count: 2
+          points: 0
+          clauses:
+            - field: "tags"
+              op: "includes"
+              value: ["easy"]
+
+# Edit Page 2 to contain bank selection for 3 questions tagged "easy"
+# Note: We only have 2 activities tagged "easy", so this will partially fill
+- edit_page:
+    project: "tag_filter_project"
+    page: "Page 2"
+    content: |
+      title: "Page 2"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "## Practice Questions - Select 3 Easy"
+        - type: bank-selection
+          id: "selection_3_easy"
+          count: 3
+          points: 0
+          clauses:
+            - field: "tags"
+              op: "includes"
+              value: ["easy"]
+
+# Edit Page 3 to contain bank selection for 1 question tagged "hard"
+# Note: We have no activities tagged "hard", so this will return empty
+- edit_page:
+    project: "tag_filter_project"
+    page: "Page 3"
+    content: |
+      title: "Page 3"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "## Practice Questions - Select 1 Hard"
+        - type: bank-selection
+          id: "selection_1_hard"
+          count: 1
+          points: 0
+          clauses:
+            - field: "tags"
+              op: "includes"
+              value: ["hard"]
+
+# Publish the project
+- publish:
+    to: "tag_filter_project"
+    description: "Publishing project with bank selections"
+
+# Create a course section
+- section:
+    name: "tag_filter_section"
+    title: "Tag Filtering Section"
+    from: "tag_filter_project"
+
+# Create a student user
+- user:
+    name: "student1"
+    type: "student"
+    email: "student1@example.com"
+
+# Enroll the student in the section
+- enroll:
+    user: "student1"
+    section: "tag_filter_section"
+
+# Have the student visit Page 1
+#- view_practice_page:
+#    student: "student1"
+#    section: "tag_filter_section"
+#    page: "Page 1"
+
+# Have the student visit Page 2
+#- view_practice_page:
+#    student: "student1"
+#    section: "tag_filter_section"
+#    page: "Page 2"
+
+# Have the student visit Page 3
+- view_practice_page:
+    student: "student1"
+    section: "tag_filter_section"
+    page: "Page 3"

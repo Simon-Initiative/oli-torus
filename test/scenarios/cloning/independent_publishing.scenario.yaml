@@ -1,5 +1,11 @@
-# Scenario: Ensure that we can clone a project and make
-
+# Scenario: Ensure that we can clone a project and create
+# course sections from each project, and then make
+# independent changes to the same page in each project and
+# have those changes correctly reflected in the respective sections.
+# And that the original and cloned projects remain independent.
+#
+# This tests the "copy on write" behavior of the publishing
+# model of resources in cloned projects and their sections.
 
 # Create initial project with basic content
 - project:

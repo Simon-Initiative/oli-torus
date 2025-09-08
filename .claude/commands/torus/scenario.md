@@ -4,38 +4,29 @@ description: Create a new Scenario based integration test
 
 `Oli.Scenarios` is a YAML based DSL for authoring complex integration
 style unit tests in the Torus codebase.  The core implementation is found
-in directory `./test/support/scenarios`.  For a complete understanding of
+in directory `./oli/scenarios` and the test support portion is in
+`./test/support/scenarios`.
+
+For a complete understanding of
 `Oli.Scenarios` and the directives available you must read and carefully study
 `./test/support/scenarios/README.md` and all of the sub documents
-linked from that read me.  Consult the core implementation also if needed.
+linked from that file.  Consult the core implementation also if needed.
 
-Scenario based unit tests are used to test the following types of workflows:
+Scenario test files are all stored under `./test/scenarios`.
+
+Scenario based unit tests are used to test complex workflows such as:
 - Publishing changes from a project to course section built from them
 - Course section remix functionality
 - Course section customization functionality
 - Creation of course sections from products
-- And also more complex patterns involving combinations of any or all of the above
+- Student metrics calculations after activity answering
 
 Good examples of real Scenarios that you can consult are:
-- `./test/oli/delivery/major_updates/product_section_update_restriction.scenario.yaml`
-- `./test/oli/delivery/major_updates/add_new_content.scenario.yaml`
+- `./test/scenarios/cloning/independent_publishing.scenario.yaml`
+- `./test/scenarios/delivery/major_updates/apply_major_updates_from_product.scenario.yaml`
 
 When creating a new Scenario, you must create a file name with a `.scenario.yaml`
-ending, which allows the "universal runner" that must also exist in that directory to find and execute the scenario. If the "universal runner" test file does not exist
-in the directory where you are creating the scenario, you will need to create that also.  Universal runners look like this:
-
-```
-defmodule Oli.Delivery.MajorUpdatesTest do
-  @moduledoc """
-  Test runner for major update scenarios.
-  Automatically discovers and runs all .scenario.yaml files in this directory.
-  """
-
-  use Oli.Scenarios.ScenarioRunner
-end
-```
-
-The key in the above example is the `use Oli.Scenarios.ScenarioRunner`
+ending, which allows the "universal scenario runner" to find and execute the scenario.
 
 More complex scenarios - only if needed -  can be created by inlining the YAML (or reading it from a standalone file), executing it, and then executing additional custom code. Here is an example:
 
@@ -69,9 +60,12 @@ test "can create a product from a project" do
 end
 ```
 
-IMPORTANT: Never try to extend the `Oli.Scenarios` implementation and infrastructure. Never change any production code under `./lib`.  Your job is ONLY to author a test scenario.
+IMPORTANT: When authoring a new scenario, never try to extend the
+`Oli.Scenarios` implementation and infrastructure. Never change any production code under `./lib`.  Your job is ONLY to author a test scenario.
 
-Think hardest and author a new `Oli.Scenarios` based unit test for the following workflow:
+Think hardest and author a new `Oli.Scenarios` based unit test for the following workflow. Determine which sub dir under `./test/scenarios` to store the scenario in.
+
+The workflow is:
 
 @$ARGUMENTS
 

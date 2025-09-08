@@ -1,0 +1,226 @@
+# Proficiency Base Scenario
+# This scenario creates a foundational project structure for proficiency testing.
+# It can be included in other scenarios using the "use" directive.
+#
+# Structure:
+# - 2 learning objectives
+# - 2 units with 3 pages each
+# - Each page contains an inline MCQ activity
+# - Unit 1 activities tag objective 1
+# - Unit 2 activities tag objective 2
+
+# Create a project with objectives
+- project:
+    name: "proficiency_base"
+    title: "Proficiency Base Project"
+    objectives:
+      - "Master fundamental concepts"
+      - "Apply advanced techniques"
+    root:
+      children:
+        - container: "Unit 1: Fundamentals"
+          children:
+            - page: "Lesson 1.1: Introduction"
+            - page: "Lesson 1.2: Basic Concepts"
+            - page: "Lesson 1.3: Practice Fundamentals"
+        - container: "Unit 2: Advanced Topics"
+          children:
+            - page: "Lesson 2.1: Complex Applications"
+            - page: "Lesson 2.2: Expert Techniques"
+            - page: "Lesson 2.3: Advanced Practice"
+
+# Edit Unit 1, Lesson 1.1 with inline MCQ activity
+- edit_page:
+    project: "proficiency_base"
+    page: "Lesson 1.1: Introduction"
+    content: |
+      title: "Lesson 1.1: Introduction"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "# Introduction to Fundamental Concepts\n\nThis lesson introduces key foundational ideas."
+        - type: activity
+          virtual_id: "unit1_lesson1_mcq"
+          activity:
+            type: "oli_multiple_choice"
+            title: "Understanding Basics"
+            objectives: ["Master fundamental concepts"]
+            stem_md: "What is the primary purpose of foundational learning?"
+            choices:
+              - id: "a"
+                body_md: "To memorize facts without understanding"
+              - id: "b"
+                body_md: "To build a strong base for advanced concepts"
+                score: 1
+              - id: "c"
+                body_md: "To skip to complex topics quickly"
+              - id: "d"
+                body_md: "To avoid challenging material"
+
+# Edit Unit 1, Lesson 1.2 with inline MCQ activity
+- edit_page:
+    project: "proficiency_base"
+    page: "Lesson 1.2: Basic Concepts"
+    content: |
+      title: "Lesson 1.2: Basic Concepts"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "# Core Basic Concepts\n\nExploring fundamental principles in detail."
+        - type: activity
+          virtual_id: "unit1_lesson2_mcq"
+          activity:
+            type: "oli_multiple_choice"
+            title: "Basic Concept Check"
+            objectives: ["Master fundamental concepts"]
+            stem_md: "Which approach best demonstrates mastery of basic concepts?"
+            choices:
+              - id: "a"
+                body_md: "Surface-level memorization"
+              - id: "b"
+                body_md: "Rushing through material"
+              - id: "c"
+                body_md: "Deep understanding and application"
+                score: 1
+              - id: "d"
+                body_md: "Avoiding practice problems"
+
+# Edit Unit 1, Lesson 1.3 with inline MCQ activity
+- edit_page:
+    project: "proficiency_base"
+    page: "Lesson 1.3: Practice Fundamentals"
+    content: |
+      title: "Lesson 1.3: Practice Fundamentals"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "# Practicing Fundamental Skills\n\nApplying basic concepts through practice."
+        - type: activity
+          virtual_id: "unit1_lesson3_mcq"
+          activity:
+            type: "oli_multiple_choice"
+            title: "Practice Application"
+            objectives: ["Master fundamental concepts"]
+            stem_md: "What is the most effective way to reinforce fundamental concepts?"
+            choices:
+              - id: "a"
+                body_md: "Reading without practicing"
+              - id: "b"
+                body_md: "Consistent practice with increasing complexity"
+                score: 1
+              - id: "c"
+                body_md: "Skipping exercises"
+              - id: "d"
+                body_md: "Only reviewing notes"
+
+# Edit Unit 2, Lesson 2.1 with inline MCQ activity
+- edit_page:
+    project: "proficiency_base"
+    page: "Lesson 2.1: Complex Applications"
+    content: |
+      title: "Lesson 2.1: Complex Applications"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "# Complex Applications\n\nApplying knowledge to sophisticated problems."
+        - type: activity
+          virtual_id: "unit2_lesson1_mcq"
+          activity:
+            type: "oli_multiple_choice"
+            title: "Advanced Application"
+            objectives: ["Apply advanced techniques"]
+            stem_md: "What characterizes effective application of advanced techniques?"
+            choices:
+              - id: "a"
+                body_md: "Using only basic methods"
+              - id: "b"
+                body_md: "Ignoring foundational principles"
+              - id: "c"
+                body_md: "Random trial and error"
+              - id: "d"
+                body_md: "Strategic combination of multiple approaches"
+                score: 1
+
+# Edit Unit 2, Lesson 2.2 with inline MCQ activity
+- edit_page:
+    project: "proficiency_base"
+    page: "Lesson 2.2: Expert Techniques"
+    content: |
+      title: "Lesson 2.2: Expert Techniques"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "# Expert-Level Techniques\n\nMastering the most sophisticated methods."
+        - type: activity
+          virtual_id: "unit2_lesson2_mcq"
+          activity:
+            type: "oli_multiple_choice"
+            title: "Expert Knowledge Assessment"
+            objectives: ["Apply advanced techniques"]
+            stem_md: "Which skill is most important for expert-level performance?"
+            choices:
+              - id: "a"
+                body_md: "Memorizing procedures without understanding"
+              - id: "b"
+                body_md: "Synthesis and creative problem-solving"
+                score: 1
+              - id: "c"
+                body_md: "Following only standard approaches"
+              - id: "d"
+                body_md: "Avoiding complex challenges"
+
+# Edit Unit 2, Lesson 2.3 with inline MCQ activity
+- edit_page:
+    project: "proficiency_base"
+    page: "Lesson 2.3: Advanced Practice"
+    content: |
+      title: "Lesson 2.3: Advanced Practice"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "# Advanced Practice Problems\n\nChallenging exercises for mastery."
+        - type: activity
+          virtual_id: "unit2_lesson3_mcq"
+          activity:
+            type: "oli_multiple_choice"
+            title: "Advanced Problem Solving"
+            objectives: ["Apply advanced techniques"]
+            stem_md: "How should one approach complex, multi-faceted problems?"
+            choices:
+              - id: "a"
+                body_md: "Use only one method repeatedly"
+              - id: "b"
+                body_md: "Give up when faced with difficulty"
+              - id: "c"
+                body_md: "Break down into components and apply diverse strategies"
+                score: 1
+              - id: "d"
+                body_md: "Avoid systematic analysis"
+
+# Publish the project
+- publish:
+    to: "proficiency_base"
+    description: "Initial publication of proficiency base project"
+
+# Create a section from the project
+- section:
+    name: "proficiency_section"
+    title: "Proficiency Assessment Section"
+    from: "proficiency_base"
+
+# Verify the structure was created correctly
+- assert:
+    structure:
+      to: "proficiency_section"
+      root:
+        children:
+          - container: "Unit 1: Fundamentals"
+            children:
+              - page: "Lesson 1.1: Introduction"
+              - page: "Lesson 1.2: Basic Concepts"
+              - page: "Lesson 1.3: Practice Fundamentals"
+          - container: "Unit 2: Advanced Topics"
+            children:
+              - page: "Lesson 2.1: Complex Applications"
+              - page: "Lesson 2.2: Expert Techniques"
+              - page: "Lesson 2.3: Advanced Practice"

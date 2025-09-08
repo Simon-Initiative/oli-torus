@@ -1,0 +1,29 @@
+# Test including files from subdirectories
+- use:
+    file: subdir/sub_include.yaml
+
+# Include file from same directory
+- use:
+    file: shared_setup.yaml
+
+# Verify we have users from both includes
+- section:
+    name: combined_section  
+    title: "Combined Section"
+    from: shared_project
+
+- enroll:
+    user: subdir_user
+    section: combined_section
+    role: student
+
+- enroll:
+    user: shared_student
+    section: combined_section
+    role: student
+
+# Also enroll the user from the neighbor file (included via sub_include)
+- enroll:
+    user: neighbor_user
+    section: combined_section
+    role: instructor

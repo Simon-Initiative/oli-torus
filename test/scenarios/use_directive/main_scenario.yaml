@@ -1,0 +1,35 @@
+# Main scenario that uses the shared setup
+- use:
+    file: shared_setup.yaml
+
+# Now we can reference entities created in shared_setup.yaml
+- publish:
+    to: shared_project
+    description: "Initial publication"
+
+- section:
+    name: test_section
+    title: "Test Section"
+    from: shared_project
+
+- enroll:
+    user: shared_instructor
+    section: test_section
+    role: instructor
+
+- enroll:
+    user: shared_student
+    section: test_section
+    role: student
+
+- assert:
+    structure:
+      to: shared_project
+      root:
+        children:
+          - page: "Introduction"
+          - page: "Lesson 1"
+          - container: "Module A"
+            children:
+              - page: "Page A1"
+              - page: "Page A2"

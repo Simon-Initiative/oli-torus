@@ -167,6 +167,23 @@ defmodule Oli.Scenarios.DirectiveTypes do
     defstruct [:from, :name, :title]
   end
 
+  defmodule UseDirective do
+    @moduledoc """
+    Includes and executes another YAML scenario file within the current execution context.
+    file: relative path to the YAML file to include (relative to the current file's directory)
+    """
+    defstruct [:file]
+  end
+
+  defmodule HookDirective do
+    @moduledoc """
+    Executes a custom Elixir function with the current execution state.
+    function: fully qualified module and function with arity (e.g., "Oli.Scenarios.Hooks.inject_bad_data/1")
+    The function will receive the ExecutionState and must return an updated ExecutionState.
+    """
+    defstruct [:function]
+  end
+
   defmodule VerificationResult do
     @moduledoc """
     Result of a verification directive.

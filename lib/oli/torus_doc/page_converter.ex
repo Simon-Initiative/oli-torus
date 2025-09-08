@@ -371,13 +371,13 @@ defmodule Oli.TorusDoc.PageConverter do
   defp convert_bank_logic(clauses) when is_list(clauses) do
     %{
       "conditions" => %{
-        "fact" => "all",
+        "operator" => "all",
         "children" => Enum.map(clauses, &convert_bank_clause/1)
       }
     }
   end
 
-  defp convert_bank_logic(_), do: %{"conditions" => %{"fact" => "all", "children" => []}}
+  defp convert_bank_logic(_), do: %{"conditions" => %{"operator" => "all", "children" => []}}
 
   defp convert_bank_clause(%{field: field, op: op, value: value}) do
     %{

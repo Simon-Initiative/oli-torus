@@ -1,0 +1,22 @@
+# Shared setup that can be included by other scenarios
+- user:
+    name: shared_instructor
+    type: instructor
+    email: shared_instructor@test.edu
+
+- user:
+    name: shared_student
+    type: student
+    email: shared_student@test.edu
+
+- project:
+    name: shared_project
+    title: "Shared Test Project"
+    root:
+      children:
+        - page: "Introduction"
+        - page: "Lesson 1"
+        - container: "Module A"
+          children:
+            - page: "Page A1"
+            - page: "Page A2"

@@ -1,0 +1,37 @@
+# Test nested use directives and shared context
+- use:
+    file: middle_include.yaml
+
+# At this point, we should have:
+# - nested_user from nested_include.yaml
+# - middle_user from middle_include.yaml  
+# - middle_project from middle_include.yaml
+
+- publish:
+    to: middle_project
+    description: "Publishing middle project"
+
+- section:
+    name: full_section
+    title: "Full Test Section"
+    from: middle_project
+
+# Enroll users from different include levels
+- enroll:
+    user: middle_user
+    section: full_section
+    role: instructor
+
+- enroll:
+    user: nested_user
+    section: full_section
+    role: student
+
+# Verify the project structure from middle_include.yaml
+- assert:
+    structure:
+      to: middle_project
+      root:
+        children:
+          - page: "Middle Page 1"
+          - page: "Middle Page 2"

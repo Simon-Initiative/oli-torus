@@ -23,7 +23,9 @@ defmodule Oli.Scenarios.Engine do
     ActivityDirective,
     EditPageDirective,
     ViewPracticePageDirective,
-    AnswerQuestionDirective
+    AnswerQuestionDirective,
+    UseDirective,
+    HookDirective
   }
 
   alias Oli.Scenarios.Directives.{
@@ -43,7 +45,9 @@ defmodule Oli.Scenarios.Engine do
     ActivityHandler,
     EditPageHandler,
     ViewPracticePageHandler,
-    AnswerQuestionHandler
+    AnswerQuestionHandler,
+    UseHandler,
+    HookHandler
   }
 
   @doc """
@@ -78,9 +82,13 @@ defmodule Oli.Scenarios.Engine do
   Executes a single YAML file containing directives.
   """
   def execute_file(yaml_path, opts \\ []) do
+    # Add the file's directory to opts so 'use' directives can resolve relative paths
+    dir = Path.dirname(Path.expand(yaml_path))
+    opts_with_dir = Keyword.put(opts, :current_dir, dir)
+    
     yaml_path
     |> Oli.Scenarios.DirectiveParser.load_file!()
-    |> execute(opts)
+    |> execute(opts_with_dir)
   end
 
   # Initialize execution state with defaults
@@ -88,7 +96,12 @@ defmodule Oli.Scenarios.Engine do
     # If a complete state is provided, use it
     case opts[:state] do
       %ExecutionState{} = state ->
-        state
+        # Add current_dir if provided
+        if opts[:current_dir] do
+          Map.put(state, :current_dir, opts[:current_dir])
+        else
+          state
+        end
       
       nil ->
         # Use provided author or create a default one
@@ -97,7 +110,7 @@ defmodule Oli.Scenarios.Engine do
         # Use provided institution or create a default one
         institution = opts[:institution] || create_default_institution()
 
-        %ExecutionState{
+        base_state = %ExecutionState{
           projects: %{},
           sections: %{},
           products: %{},
@@ -110,6 +123,13 @@ defmodule Oli.Scenarios.Engine do
           current_author: author,
           current_institution: institution
         }
+        
+        # Add current_dir if provided
+        if opts[:current_dir] do
+          Map.put(base_state, :current_dir, opts[:current_dir])
+        else
+          base_state
+        end
     end
   end
 
@@ -149,76 +169,85 @@ defmodule Oli.Scenarios.Engine do
   end
 
   # Execute individual directives
-  defp execute_directive(%ProjectDirective{} = directive, state) do
+  @doc false
+  def execute_directive(%UseDirective{} = directive, state) do
+    UseHandler.handle(directive, state)
+  end
+
+  def execute_directive(%ProjectDirective{} = directive, state) do
     ProjectHandler.handle(directive, state)
   end
 
-  defp execute_directive(%CloneDirective{} = directive, state) do
+  def execute_directive(%CloneDirective{} = directive, state) do
     CloneHandler.handle(directive, state)
   end
 
-  defp execute_directive(%SectionDirective{} = directive, state) do
+  def execute_directive(%SectionDirective{} = directive, state) do
     SectionHandler.handle(directive, state)
   end
 
-  defp execute_directive(%ProductDirective{} = directive, state) do
+  def execute_directive(%ProductDirective{} = directive, state) do
     ProductHandler.handle(directive, state)
   end
 
-  defp execute_directive(%RemixDirective{} = directive, state) do
+  def execute_directive(%RemixDirective{} = directive, state) do
     RemixHandler.handle(directive, state)
   end
 
-  defp execute_directive(%ManipulateDirective{} = directive, state) do
+  def execute_directive(%ManipulateDirective{} = directive, state) do
     ManipulateHandler.handle(directive, state)
   end
 
-  defp execute_directive(%PublishDirective{} = directive, state) do
+  def execute_directive(%PublishDirective{} = directive, state) do
     PublishHandler.handle(directive, state)
   end
 
-  defp execute_directive(%AssertDirective{} = directive, state) do
+  def execute_directive(%AssertDirective{} = directive, state) do
     AssertHandler.handle(directive, state)
   end
 
-  defp execute_directive(%UserDirective{} = directive, state) do
+  def execute_directive(%UserDirective{} = directive, state) do
     UserHandler.handle(directive, state)
   end
 
-  defp execute_directive(%EnrollDirective{} = directive, state) do
+  def execute_directive(%EnrollDirective{} = directive, state) do
     EnrollmentHandler.handle(directive, state)
   end
 
-  defp execute_directive(%InstitutionDirective{} = directive, state) do
+  def execute_directive(%InstitutionDirective{} = directive, state) do
     InstitutionHandler.handle(directive, state)
   end
 
-  defp execute_directive(%UpdateDirective{} = directive, state) do
+  def execute_directive(%UpdateDirective{} = directive, state) do
     UpdateHandler.handle(directive, state)
   end
 
-  defp execute_directive(%CustomizeDirective{} = directive, state) do
+  def execute_directive(%CustomizeDirective{} = directive, state) do
     CustomizeHandler.handle(directive, state)
   end
 
-  defp execute_directive(%ActivityDirective{} = directive, state) do
+  def execute_directive(%ActivityDirective{} = directive, state) do
     ActivityHandler.handle(directive, state)
   end
 
-  defp execute_directive(%EditPageDirective{} = directive, state) do
+  def execute_directive(%EditPageDirective{} = directive, state) do
     EditPageHandler.handle(directive, state)
   end
 
-  defp execute_directive(%ViewPracticePageDirective{} = directive, state) do
+  def execute_directive(%ViewPracticePageDirective{} = directive, state) do
     ViewPracticePageHandler.handle(directive, state)
   end
 
-  defp execute_directive(%AnswerQuestionDirective{} = directive, state) do
+  def execute_directive(%AnswerQuestionDirective{} = directive, state) do
     AnswerQuestionHandler.handle(directive, state)
   end
 
+  def execute_directive(%HookDirective{} = directive, state) do
+    HookHandler.handle(directive, state)
+  end
+
   # Handle lists of directives (from complex parsing)
-  defp execute_directive(directives, state) when is_list(directives) do
+  def execute_directive(directives, state) when is_list(directives) do
     Enum.reduce_while(directives, {:ok, state}, fn directive, {:ok, acc_state} ->
       case execute_directive(directive, acc_state) do
         {:ok, new_state} -> {:cont, {:ok, new_state}}

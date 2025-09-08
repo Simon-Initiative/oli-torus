@@ -1,10 +1,10 @@
 defmodule Oli.Scenarios.Directives.ViewPracticePageHandler do
   @moduledoc """
   Handles view_practice_page directives for simulating students viewing practice pages.
-  
+
   This handler delegates to Oli.Delivery.Attempts.PageLifecycle.visit/6 to create
   or resume page attempts, storing the resulting AttemptState in the ExecutionState.
-  
+
   The `student` field should reference the user's name (as defined in the user directive),
   not their email address.
   """
@@ -19,7 +19,7 @@ defmodule Oli.Scenarios.Directives.ViewPracticePageHandler do
 
   @doc """
   Handles a view_practice_page directive by simulating a student viewing a practice page.
-  
+
   Returns {:ok, updated_state} on success, {:error, reason} on failure.
   """
   def handle(%ViewPracticePageDirective{} = directive, %ExecutionState{} = state) do
@@ -31,7 +31,7 @@ defmodule Oli.Scenarios.Directives.ViewPracticePageHandler do
       # Store the attempt state using the user name, section name, and page title
       key = {directive.student, directive.section, directive.page}
       updated_attempts = Map.put(state.page_attempts, key, attempt_result)
-      
+
       {:ok, %{state | page_attempts: updated_attempts}}
     else
       {:error, reason} ->
@@ -66,7 +66,7 @@ defmodule Oli.Scenarios.Directives.ViewPracticePageHandler do
           {:ok, _enrollments} -> {:ok, :enrolled}
           error -> {:error, "Failed to enroll: #{inspect(error)}"}
         end
-      
+
       _enrollment ->
         # Already enrolled
         {:ok, :already_enrolled}
@@ -80,8 +80,10 @@ defmodule Oli.Scenarios.Directives.ViewPracticePageHandler do
          {:ok, page_rev} <- get_page_from_project(project, page_title) do
       # Get the published revision for this page in the section
       case DeliveryResolver.from_revision_slug(section.slug, page_rev.slug) do
-        nil -> {:error, "Page '#{page_title}' not published in section"}
-        revision -> {:ok, revision}
+        nil ->
+          {:error, "Page '#{page_title}' not published in section"}
+        published_revision ->
+          {:ok, published_revision}
       end
     end
   end
@@ -89,13 +91,13 @@ defmodule Oli.Scenarios.Directives.ViewPracticePageHandler do
   # Get the project that a section was created from
   defp get_project_for_section(state, section) do
     # Find the project that matches the section's base_project_id
-    project = 
+    project =
       state.projects
       |> Map.values()
-      |> Enum.find(fn built_project -> 
+      |> Enum.find(fn built_project ->
         built_project.project.id == section.base_project_id
       end)
-    
+
     case project do
       nil -> {:error, "Source project for section not found"}
       p -> {:ok, p}
@@ -118,20 +120,20 @@ defmodule Oli.Scenarios.Directives.ViewPracticePageHandler do
       section.id,
       user.id
     )
-    
+
     # Generate a unique datashop session ID
     datashop_session_id = "session_#{System.unique_integer([:positive])}"
-    
+
     # Get effective settings for this page/section/user combination
     effective_settings = Settings.get_combined_settings(
       page_revision,
       section.id,
       user.id
     )
-    
+
     # Use the standard activity provider
     activity_provider = &Oli.Delivery.ActivityProvider.provide/6
-    
+
     # Call PageLifecycle.visit/6
     case PageLifecycle.visit(
       page_revision,

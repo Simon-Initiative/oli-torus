@@ -27,6 +27,8 @@ test/scenarios/
 │       └── page_title_update.scenario.yaml
 ├── cloning/                   # Cloning-specific tests
 │   └── independent_publishing.scenario.yaml
+├── hooks/                     # Hook directive examples
+│   └── hook_demo.scenario.yaml
 └── scenario_runner_test.exs  # Universal test runner
 
 ```
@@ -79,6 +81,7 @@ Scenario files use YAML format with directives. Common directives include:
 - `publish:` - Publish project changes
 - `update:` - Apply updates to sections
 - `assert:` - Verify expected structure or state
+- `hook:` - Execute custom Elixir functions for advanced testing
 
 Example scenario:
 ```yaml
@@ -110,6 +113,31 @@ Example scenario:
           - page: "Welcome"
           - container: "Module 1"
 ```
+
+## Hook Directive
+
+The `hook` directive allows execution of custom Elixir functions during scenario execution:
+
+```yaml
+# Log current state for debugging
+- hook:
+    function: "Oli.Scenarios.Hooks.log_state/1"
+
+# Create test data
+- hook:
+    function: "Oli.Scenarios.Hooks.create_bulk_users/1"
+
+# Inject errors for testing
+- hook:
+    function: "Oli.Scenarios.Hooks.inject_error/1"
+```
+
+Hook functions must:
+- Accept exactly one argument (the ExecutionState)
+- Return an updated ExecutionState
+- Be specified as "Module.function/1"
+
+See `lib/oli/scenarios/hooks.ex` for available built-in hooks, or create your own custom hook functions.
 
 ## Test Discovery
 

@@ -1,0 +1,10 @@
+# Create a base project that will be modified by the main file
+- project:
+    name: modifiable_project
+    title: "Base Project"
+    root:
+      children:
+        - page: "Original Page 1"
+        - container: "Original Module"
+          children:
+            - page: "Original Nested Page"

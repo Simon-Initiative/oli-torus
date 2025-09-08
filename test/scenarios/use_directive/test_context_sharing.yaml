@@ -1,0 +1,31 @@
+# Test that included files truly share context
+- use:
+    file: base_project.yaml
+
+# Now manipulate the project created in the included file
+- manipulate:
+    to: modifiable_project
+    ops:
+      - add_page:
+          title: "Added Page from Main"
+          to: "root"
+      - add_page:
+          title: "Added to Module"
+          to: "Original Module"
+
+- publish:
+    to: modifiable_project
+    description: "Publishing after modifications"
+
+# Verify that both original and added content exist
+- assert:
+    structure:
+      to: modifiable_project
+      root:
+        children:
+          - page: "Original Page 1"
+          - container: "Original Module"
+            children:
+              - page: "Original Nested Page"
+              - page: "Added to Module"
+          - page: "Added Page from Main"

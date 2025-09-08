@@ -1,0 +1,49 @@
+# Example: Using the Proficiency Base Scenario
+# This demonstrates how to include the proficiency_base scenario using the "use" directive
+
+# Include the base proficiency scenario
+# This creates the project, pages, activities, and section
+- use:
+    file: "proficiency_base.scenario.yaml"
+
+# Now we can extend or work with the structures created by proficiency_base
+# For example, let's create a student and have them interact with the content
+
+# Create a student user
+- user:
+    name: "alice"
+    type: "student"
+    email: "alice@example.edu"
+
+# Enroll the student in the section created by proficiency_base
+- enroll:
+    user: "alice"
+    section: "proficiency_section"
+    role: "student"
+
+# Have the student view one of the pages
+- view_practice_page:
+    student: "alice"
+    section: "proficiency_section"
+    page: "Lesson 1.1: Introduction"
+
+# Create an instructor
+- user:
+    name: "prof_smith"
+    type: "author"
+    email: "prof.smith@example.edu"
+
+# Verify the section still has the expected structure
+- assert:
+    structure:
+      to: "proficiency_section"
+      root:
+        children:
+          - container: "Unit 1: Fundamentals"
+            children:
+              - page: "Lesson 1.1: Introduction"
+              - page: "Lesson 1.2: Basic Concepts"
+          - container: "Unit 2: Advanced Topics"
+            children:
+              - page: "Lesson 2.1: Complex Applications"
+              - page: "Lesson 2.2: Expert Techniques"

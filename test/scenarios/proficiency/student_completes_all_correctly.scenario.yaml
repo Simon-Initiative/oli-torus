@@ -1,0 +1,178 @@
+# Student Completes All Activities Correctly
+# This scenario tests proficiency calculation when a student answers all questions correctly.
+# It demonstrates the progression from "Not enough data" to "High" proficiency as the student
+# completes activities. With 3 questions per objective (all correct), we expect "High" proficiency.
+
+# Include the base proficiency scenario to set up the project structure
+- use:
+    file: "../proficiency_base.scenario.yaml"
+
+# Create a student user
+- user:
+    name: "emma"
+    type: "student"
+    email: "emma@university.edu"
+
+# Enroll the student in the section
+- enroll:
+    user: "emma"
+    section: "proficiency_section"
+    role: "student"
+
+# Student visits Unit 1, Lesson 1.1 and answers the question
+- view_practice_page:
+    student: "emma"
+    section: "proficiency_section"
+    page: "Lesson 1.1: Introduction"
+
+- answer_question:
+    student: "emma"
+    section: "proficiency_section"
+    page: "Lesson 1.1: Introduction"
+    activity_virtual_id: "unit1_lesson1_mcq"
+    response: "b"  # Correct answer: "To build a strong base for advanced concepts"
+
+# After 1 correct answer for objective 1, still not enough data
+- assert:
+    proficiency:
+      section: "proficiency_section"
+      student: "emma"
+      objective: "Master fundamental concepts"
+      bucket: "Not enough data"
+
+# Student visits Unit 1, Lesson 1.2 and answers the question
+- view_practice_page:
+    student: "emma"
+    section: "proficiency_section"
+    page: "Lesson 1.2: Basic Concepts"
+
+- answer_question:
+    student: "emma"
+    section: "proficiency_section"
+    page: "Lesson 1.2: Basic Concepts"
+    activity_virtual_id: "unit1_lesson2_mcq"
+    response: "c"  # Correct answer: "Deep understanding and application"
+
+# After 2 correct answers for objective 1, still not enough data
+- assert:
+    proficiency:
+      section: "proficiency_section"
+      student: "emma"
+      objective: "Master fundamental concepts"
+      bucket: "Not enough data"
+
+# Student visits Unit 1, Lesson 1.3 and answers the question
+- view_practice_page:
+    student: "emma"
+    section: "proficiency_section"
+    page: "Lesson 1.3: Practice Fundamentals"
+
+- answer_question:
+    student: "emma"
+    section: "proficiency_section"
+    page: "Lesson 1.3: Practice Fundamentals"
+    activity_virtual_id: "unit1_lesson3_mcq"
+    response: "b"  # Correct answer: "Consistent practice with increasing complexity"
+
+# After 3 correct answers for objective 1, now we have High proficiency
+- assert:
+    proficiency:
+      section: "proficiency_section"
+      student: "emma"
+      objective: "Master fundamental concepts"
+      bucket: "High"
+
+# Objective 2 should still be "Not enough data" at this point
+- assert:
+    proficiency:
+      section: "proficiency_section"
+      student: "emma"
+      objective: "Apply advanced techniques"
+      bucket: "Not enough data"
+
+# Student visits Unit 2, Lesson 2.1 and answers the question
+- view_practice_page:
+    student: "emma"
+    section: "proficiency_section"
+    page: "Lesson 2.1: Complex Applications"
+
+- answer_question:
+    student: "emma"
+    section: "proficiency_section"
+    page: "Lesson 2.1: Complex Applications"
+    activity_virtual_id: "unit2_lesson1_mcq"
+    response: "d"  # Correct answer: "Strategic combination of multiple approaches"
+
+# After 1 correct answer for objective 2, still not enough data
+- assert:
+    proficiency:
+      section: "proficiency_section"
+      student: "emma"
+      objective: "Apply advanced techniques"
+      bucket: "Not enough data"
+
+# Student visits Unit 2, Lesson 2.2 and answers the question
+- view_practice_page:
+    student: "emma"
+    section: "proficiency_section"
+    page: "Lesson 2.2: Expert Techniques"
+
+- answer_question:
+    student: "emma"
+    section: "proficiency_section"
+    page: "Lesson 2.2: Expert Techniques"
+    activity_virtual_id: "unit2_lesson2_mcq"
+    response: "b"  # Correct answer: "Synthesis and creative problem-solving"
+
+# After 2 correct answers for objective 2, still not enough data
+- assert:
+    proficiency:
+      section: "proficiency_section"
+      student: "emma"
+      objective: "Apply advanced techniques"
+      bucket: "Not enough data"
+
+# Student visits Unit 2, Lesson 2.3 and answers the question
+- view_practice_page:
+    student: "emma"
+    section: "proficiency_section"
+    page: "Lesson 2.3: Advanced Practice"
+
+- answer_question:
+    student: "emma"
+    section: "proficiency_section"
+    page: "Lesson 2.3: Advanced Practice"
+    activity_virtual_id: "unit2_lesson3_mcq"
+    response: "c"  # Correct answer: "Break down into components and apply diverse strategies"
+
+# Final state: After 3 correct answers for each objective, both should be High proficiency
+- assert:
+    proficiency:
+      section: "proficiency_section"
+      student: "emma"
+      objective: "Master fundamental concepts"
+      bucket: "High"  # 3 questions all correct gives High proficiency
+
+- assert:
+    proficiency:
+      section: "proficiency_section"
+      student: "emma"
+      objective: "Apply advanced techniques"
+      bucket: "High"  # 3 questions all correct gives High proficiency
+
+# Also verify the section structure is intact
+- assert:
+    structure:
+      to: "proficiency_section"
+      root:
+        children:
+          - container: "Unit 1: Fundamentals"
+            children:
+              - page: "Lesson 1.1: Introduction"
+              - page: "Lesson 1.2: Basic Concepts"
+              - page: "Lesson 1.3: Practice Fundamentals"
+          - container: "Unit 2: Advanced Topics"
+            children:
+              - page: "Lesson 2.1: Complex Applications"
+              - page: "Lesson 2.2: Expert Techniques"
+              - page: "Lesson 2.3: Advanced Practice"

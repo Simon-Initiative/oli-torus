@@ -1,0 +1,105 @@
+# Scenario: Verify bank-selection correctly resolves tag and objective titles to IDs
+# This test ensures that string titles are converted to resource IDs in the final JSON
+
+# Create a project with specific tags and objectives
+- project:
+    name: "resolution_test"
+    title: "Title Resolution Test"
+    tags:
+      - "algebra"
+      - "geometry"
+    objectives:
+      - "Solve equations"
+      - "Understand shapes"
+    root:
+      children:
+        - page: "Bank Selection Page"
+
+# Create banked activities with these tags and objectives
+- create_activity:
+    project: "resolution_test"
+    title: "Algebra Activity 1"
+    virtual_id: "alg_1"
+    scope: "banked"
+    type: "oli_multiple_choice"
+    tags: ["algebra"]
+    objectives: ["Solve equations"]
+    content: |
+      stem_md: "Solve for x: 2x + 3 = 7"
+      choices:
+        - id: "a"
+          body_md: "x = 2"
+          correct: true
+        - id: "b"
+          body_md: "x = 3"
+
+- create_activity:
+    project: "resolution_test"
+    title: "Geometry Activity 1"
+    virtual_id: "geo_1"
+    scope: "banked"
+    type: "oli_multiple_choice"
+    tags: ["geometry"]
+    objectives: ["Understand shapes"]
+    content: |
+      stem_md: "How many sides does a pentagon have?"
+      choices:
+        - id: "a"
+          body_md: "4"
+        - id: "b"
+          body_md: "5"
+          correct: true
+
+# Edit page with bank-selection using string titles
+- edit_page:
+    project: "resolution_test"
+    page: "Bank Selection Page"
+    content: |
+      title: "Bank Selection Page"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "## Bank Selection with Title Resolution"
+        - type: bank-selection
+          id: "selection_1"
+          count: 1
+          points: 10
+          clauses:
+            - field: "tags"
+              op: "includes"
+              value: ["algebra"]
+            - field: "objectives"
+              op: "includes"
+              value: ["Solve equations"]
+        - type: prose
+          body_md: "## Another Selection"
+        - type: bank-selection
+          id: "selection_2"
+          count: 1
+          points: 5
+          clauses:
+            - field: "tags"
+              op: "equals"
+              value: ["geometry"]
+            - field: "objectives"
+              op: "equals"
+              value: ["Understand shapes"]
+
+# Publish the project
+- publish:
+    to: "resolution_test"
+    description: "Publishing with resolved bank selections"
+
+# Create a section
+- section:
+    name: "resolution_section"
+    title: "Resolution Test Section"
+    from: "resolution_test"
+
+# Verify structure
+- assert:
+    structure:
+      to: "resolution_section"
+      root:
+        children:
+          - page: "Bank Selection Page"

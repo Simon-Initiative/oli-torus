@@ -88,6 +88,9 @@ defmodule Oli.Scenarios.Directives.ActivityProcessor do
       "group" ->
         process_group_block(block, project_name, built_project, author, state)
         
+      "bank-selection" ->
+        process_bank_selection_block(block, project_name, built_project, author, state)
+        
       _ ->
         # Other block types pass through unchanged
         {:ok, block, state}
@@ -216,6 +219,80 @@ defmodule Oli.Scenarios.Directives.ActivityProcessor do
         
       _ ->
         {:ok, block, state}
+    end
+  end
+  
+  defp process_bank_selection_block(block, _project_name, built_project, _author, state) do
+    # Process clauses to resolve tag and objective titles to IDs
+    case Map.get(block, "clauses") do
+      clauses when is_list(clauses) ->
+        processed_clauses = process_bank_clauses(clauses, built_project)
+        processed_block = Map.put(block, "clauses", processed_clauses)
+        {:ok, processed_block, state}
+        
+      _ ->
+        # No clauses to process
+        {:ok, block, state}
+    end
+  end
+  
+  defp process_bank_clauses(clauses, built_project) do
+    Enum.map(clauses, fn clause ->
+      case clause["field"] do
+        "tags" ->
+          resolve_clause_values(clause, built_project.tags_by_title || %{})
+          
+        "objectives" ->
+          resolve_clause_values(clause, built_project.objectives_by_title || %{})
+          
+        _ ->
+          # Other fields like "type", "text" pass through unchanged
+          clause
+      end
+    end)
+  end
+  
+  defp resolve_clause_values(clause, title_map) do
+    case clause["value"] do
+      values when is_list(values) ->
+        resolved_values = resolve_title_list(values, title_map)
+        Map.put(clause, "value", resolved_values)
+        
+      value ->
+        # Single value, not a list
+        resolved_value = resolve_single_value(value, title_map)
+        Map.put(clause, "value", resolved_value)
+    end
+  end
+  
+  defp resolve_title_list(values, title_map) do
+    Enum.map(values, fn value ->
+      resolve_single_value(value, title_map)
+    end)
+  end
+  
+  defp resolve_single_value(value, title_map) do
+    cond do
+      # If it's already a number (resource ID), keep it
+      is_integer(value) ->
+        value
+        
+      # If it's a string, try to resolve it as a title
+      is_binary(value) ->
+        case Map.get(title_map, value) do
+          nil ->
+            # Not found as title, maybe it's already a resource ID as string
+            case Integer.parse(value) do
+              {id, ""} -> id
+              _ -> value  # Keep original value if can't convert
+            end
+          revision ->
+            revision.resource_id
+        end
+        
+      true ->
+        # Other types pass through unchanged
+        value
     end
   end
   
@@ -494,6 +571,26 @@ defmodule Oli.Scenarios.Directives.ActivityProcessor do
           lines
         end
         
+      "bank-selection" ->
+        lines = if block["count"] do
+          ["    count: #{block["count"]}" | lines]
+        else
+          lines
+        end
+        
+        lines = if block["points"] do
+          ["    points: #{block["points"]}" | lines]
+        else
+          lines
+        end
+        
+        if block["clauses"] do
+          clauses_yaml = format_clauses_yaml(block["clauses"])
+          ["    clauses:\n#{clauses_yaml}" | lines]
+        else
+          lines
+        end
+        
       _ ->
         lines
     end
@@ -511,6 +608,47 @@ defmodule Oli.Scenarios.Directives.ActivityProcessor do
   end
   
   defp format_nested_blocks(_, _), do: ""
+  
+  defp format_clauses_yaml(clauses) when is_list(clauses) do
+    clauses
+    |> Enum.map(&format_single_clause/1)
+    |> Enum.join("\n")
+  end
+  
+  defp format_clauses_yaml(_), do: ""
+  
+  defp format_single_clause(clause) when is_map(clause) do
+    lines = ["      - field: \"#{clause["field"]}\""]
+    
+    lines = if clause["op"] do
+      ["        op: \"#{clause["op"]}\"" | lines]
+    else
+      lines
+    end
+    
+    lines = if clause["value"] do
+      value_yaml = format_clause_value(clause["value"])
+      ["        value: #{value_yaml}" | lines]
+    else
+      lines
+    end
+    
+    Enum.reverse(lines) |> Enum.join("\n")
+  end
+  
+  defp format_clause_value(values) when is_list(values) do
+    formatted_values = Enum.map(values, fn
+      val when is_binary(val) -> "\"#{escape_yaml_string(val)}\""
+      val -> "#{val}"
+    end)
+    "[#{Enum.join(formatted_values, ", ")}]"
+  end
+  
+  defp format_clause_value(value) when is_binary(value) do
+    "\"#{escape_yaml_string(value)}\""
+  end
+  
+  defp format_clause_value(value), do: "#{value}"
   
   defp format_nested_block_fields(block, indent) do
     fields = []
@@ -587,9 +725,20 @@ defmodule Oli.Scenarios.Directives.ActivityProcessor do
       lines
     end
     
-    # Add score
-    score = Map.get(choice, "score", 0)
+    # Add score - support "correct: true" as shorthand for "score: 1"
+    score = cond do
+      Map.has_key?(choice, "score") -> choice["score"]
+      Map.get(choice, "correct", false) == true -> 1
+      true -> 0
+    end
     lines = ["    score: #{score}" | lines]
+    
+    # Add feedback_md if present
+    lines = if choice["feedback_md"] do
+      ["    feedback_md: \"#{escape_yaml_string(choice["feedback_md"])}\"" | lines]
+    else
+      lines
+    end
     
     Enum.reverse(lines) |> Enum.join("\n")
   end
