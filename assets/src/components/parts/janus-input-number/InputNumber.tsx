@@ -71,7 +71,7 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = ({
 
   /**
    * Given a value, return either a number or an empty string, the value will be between
-   * minValue and maxValue inclusive.
+   * minValue and maxValue inclusive
    *
    * sanitizeValue(1) => 1
    * sanitizeValue(1.2) => 1
