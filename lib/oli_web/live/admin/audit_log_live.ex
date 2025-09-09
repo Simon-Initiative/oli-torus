@@ -7,7 +7,7 @@ defmodule OliWeb.Admin.AuditLogLive do
   alias Oli.Auditing
   alias Oli.Auditing.{BrowseOptions, LogEvent}
   alias Oli.Repo.{Paging, Sorting}
-  alias OliWeb.Common.{Breadcrumb, PagedTable, TextSearch}
+  alias OliWeb.Common.{Breadcrumb, StripedPagedTable, SearchInput, PagingParams}
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Admin.AuditLog.TableModel
@@ -113,57 +113,71 @@ defmodule OliWeb.Admin.AuditLogLive do
   def render(assigns) do
     ~H"""
     <div>
-      <div class="mb-4">
-        <h3 class="text-lg font-semibold mb-2">Filters</h3>
-        <div class="flex flex-wrap gap-4">
-          <div class="flex-1 min-w-[300px]">
-            <TextSearch.render id="text-search" text={@options.text_search} />
-          </div>
-
-          <div class="min-w-[200px]">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Event Type</label>
-            <select
-              id="event_type_filter"
-              name="event_type"
-              phx-hook="SelectListener"
-              phx-change="filter_event_type"
-              class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-            >
-              <option value="">All Events</option>
-              <%= for event_type <- @event_types do %>
-                <option value={event_type} selected={@options.event_type == event_type}>
+      <div class="flex flex-row justify-between items-center px-4">
+        <div class="flex flex-col">
+          <span class="text-2xl font-bold text-[#353740] dark:text-[#EEEBF5] leading-loose">
+            Audit Log
+          </span>
+          <div class="flex flex-row gap-4 mt-2 items-center">
+            <form phx-change="change_event_type" class="flex flex-row">
+              <select
+                name="event_type"
+                id="select_event_type"
+                class="custom-select"
+                style="width: 180px;"
+              >
+                <option value="" selected>Event Type</option>
+                <option
+                  :for={event_type <- @event_types}
+                  value={event_type}
+                  selected={@options.event_type == event_type}
+                >
                   {event_type |> to_string() |> String.replace("_", " ") |> String.capitalize()}
                 </option>
-              <% end %>
-            </select>
-          </div>
-
-          <div class="min-w-[200px]">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Actor Type</label>
-            <select
-              id="actor_type_filter"
-              name="actor_type"
-              phx-hook="SelectListener"
-              phx-change="filter_actor_type"
-              class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-            >
-              <option value="">All Actors</option>
-              <option value="user" selected={@options.actor_type == :user}>Users</option>
-              <option value="author" selected={@options.actor_type == :author}>Authors</option>
-            </select>
+              </select>
+            </form>
+            <form phx-change="change_actor_type" class="flex flex-row">
+              <select
+                name="actor_type"
+                id="select_actor_type"
+                class="custom-select"
+                style="width: 140px;"
+              >
+                <option value="" selected>Actor Type</option>
+                <option value="user" selected={@options.actor_type == :user}>Users</option>
+                <option value="author" selected={@options.actor_type == :author}>Authors</option>
+              </select>
+            </form>
           </div>
         </div>
       </div>
+      <div class="flex w-fit gap-4 p-2 pr-8 mx-4 mt-3 mb-2 shadow-[0px_2px_6.099999904632568px_0px_rgba(0,0,0,0.10)] border border-[#ced1d9] dark:border-[#3B3740] dark:bg-[#000000]">
+        <.form for={%{}} phx-change="text_search_change" class="w-56">
+          <SearchInput.render id="text-search" name="audit_search" text={@options.text_search} />
+        </.form>
 
-      <div class="mb-3" />
+        <button
+          class="ml-2 mr-4 text-center text-[#353740] dark:text-[#EEEBF5] text-sm font-normal leading-none flex items-center gap-x-1 hover:text-[#006CD9] dark:hover:text-[#4CA6FF]"
+          phx-click="clear_all_filters"
+        >
+          <OliWeb.Icons.trash /> Clear All Filters
+        </button>
+      </div>
 
-      <PagedTable.render
-        filter={@options.text_search}
-        table_model={@table_model}
-        total_count={@total_count}
-        offset={@offset}
-        limit={@limit}
-      />
+      <div class="audit-log-table">
+        <StripedPagedTable.render
+          table_model={@table_model}
+          total_count={@total_count}
+          offset={@offset}
+          limit={@limit}
+          render_top_info={false}
+          additional_table_class="instructor_dashboard_table"
+          sort="paged_table_sort"
+          page_change="paged_table_page_change"
+          limit_change="paged_table_limit_change"
+          show_limit_change={true}
+        />
+      </div>
 
       <%= if @show_details_modal do %>
         <div
@@ -184,20 +198,23 @@ defmodule OliWeb.Admin.AuditLogLive do
               &#8203;
             </span>
 
-            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-              <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+            <div class="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+              <div class="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                 <div class="sm:flex sm:items-start">
                   <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-                    <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                    <h3
+                      class="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100"
+                      id="modal-title"
+                    >
                       Event Details
                     </h3>
                     <div class="mt-2">
-                      <pre class="text-sm text-gray-500 whitespace-pre-wrap overflow-x-auto">{Jason.encode!(@modal_details, pretty: true)}</pre>
+                      <pre class="text-sm text-gray-500 dark:text-gray-400 whitespace-pre-wrap overflow-x-auto">{Jason.encode!(@modal_details, pretty: true)}</pre>
                     </div>
                   </div>
                 </div>
               </div>
-              <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+              <div class="bg-gray-50 dark:bg-gray-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
                 <button
                   type="button"
                   phx-click="close_details_modal"
@@ -237,28 +254,64 @@ defmodule OliWeb.Admin.AuditLogLive do
      )}
   end
 
-  # Specific event handlers must come before the generic handler
-  # These handlers receive events from the SelectListener hook which sends {id, value}
-  def handle_event("filter_event_type", %{"id" => _id, "value" => value}, socket) do
+  def handle_event("change_event_type", %{"event_type" => event_type}, socket) do
     event_type =
-      case value do
+      case event_type do
         "" -> nil
-        "nil" -> nil
         v -> String.to_existing_atom(v)
       end
 
     patch_with(socket, %{event_type: event_type, offset: 0})
   end
 
-  def handle_event("filter_actor_type", %{"id" => _id, "value" => value}, socket) do
+  def handle_event("change_actor_type", %{"actor_type" => actor_type}, socket) do
     actor_type =
-      case value do
+      case actor_type do
         "" -> nil
-        "nil" -> nil
         v -> String.to_existing_atom(v)
       end
 
     patch_with(socket, %{actor_type: actor_type, offset: 0})
+  end
+
+  def handle_event("text_search_change", %{"audit_search" => text}, socket) do
+    patch_with(socket, %{text_search: text, offset: 0})
+  end
+
+  def handle_event("clear_all_filters", _params, socket) do
+    {:noreply, push_patch(socket, to: ~p"/admin/audit_log")}
+  end
+
+  def handle_event("paged_table_sort", %{"sort_by" => sort_by_str}, socket) do
+    current_sort_by = socket.assigns.table_model.sort_by_spec.name
+    current_sort_order = socket.assigns.table_model.sort_order
+    new_sort_by = String.to_existing_atom(sort_by_str)
+
+    sort_order =
+      if new_sort_by == current_sort_by, do: toggle_sort_order(current_sort_order), else: :asc
+
+    patch_with(socket, %{sort_by: new_sort_by, sort_order: sort_order})
+  end
+
+  def handle_event("paged_table_page_change", %{"limit" => limit, "offset" => offset}, socket) do
+    patch_with(socket, %{limit: limit, offset: offset})
+  end
+
+  def handle_event(
+        "paged_table_limit_change",
+        params,
+        socket
+      ) do
+    new_limit = get_int_param(params, "limit", 20)
+
+    new_offset =
+      PagingParams.calculate_new_offset(
+        socket.assigns.offset,
+        new_limit,
+        socket.assigns.total_count
+      )
+
+    patch_with(socket, %{limit: new_limit, offset: new_offset})
   end
 
   def handle_event("show_details", %{"details" => details}, socket) do
@@ -273,11 +326,11 @@ defmodule OliWeb.Admin.AuditLogLive do
   # Generic handler for delegated events - must come last
   def handle_event(event, params, socket) do
     {event, params, socket, &__MODULE__.patch_with/2}
-    |> delegate_to([
-      &TextSearch.handle_delegated/4,
-      &PagedTable.handle_delegated/4
-    ])
+    |> delegate_to([&StripedPagedTable.handle_delegated/4])
   end
+
+  defp toggle_sort_order(:asc), do: :desc
+  defp toggle_sort_order(_), do: :asc
 
   defp get_atom_param(params, key, default) do
     case Map.get(params, key) do
