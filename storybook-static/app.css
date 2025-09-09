@@ -810,6 +810,10 @@ select {
   accent-color: #000000;
 }
 
+.bg-Surface-surface-background {
+  background-color: #FFFFFF;
+}
+
 .dark .bg-Surface-surface-background {
   background-color: #0D0C0F;
 }
@@ -8650,6 +8654,10 @@ table.table-striped tbody tr:nth-child(even) {
   z-index: 60;
 }
 
+.z-\[9999\] {
+  z-index: 9999;
+}
+
 .z-\[999\] {
   z-index: 999;
 }
@@ -10301,6 +10309,10 @@ table.table-striped tbody tr:nth-child(even) {
   min-width: 200px;
 }
 
+.min-w-\[210px\] {
+  min-width: 210px;
+}
+
 .min-w-\[220px\] {
   min-width: 220px;
 }
@@ -10597,6 +10609,11 @@ table.table-striped tbody tr:nth-child(even) {
 
 .-rotate-180 {
   --tw-rotate: -180deg;
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+
+.-rotate-45 {
+  --tw-rotate: -45deg;
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
 
@@ -11497,6 +11514,10 @@ table.table-striped tbody tr:nth-child(even) {
   border-width: 2px;
 }
 
+.border-\[0\.5px\] {
+  border-width: 0.5px;
+}
+
 .border-\[1px\] {
   border-width: 1px;
 }
@@ -11542,6 +11563,10 @@ table.table-striped tbody tr:nth-child(even) {
   border-bottom-width: 4px;
 }
 
+.border-b-\[0\.5px\] {
+  border-bottom-width: 0.5px;
+}
+
 .border-b-\[1px\] {
   border-bottom-width: 1px;
 }
@@ -11560,6 +11585,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .border-l-4 {
   border-left-width: 4px;
+}
+
+.border-l-\[0\.5px\] {
+  border-left-width: 0.5px;
 }
 
 .border-l-\[8px\] {
