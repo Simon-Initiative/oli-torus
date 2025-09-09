@@ -1,0 +1,89 @@
+# Test scenario: Verify that when apply_major_updates is true on a product-based section,
+# new content published to the project appears in the section
+
+# Step 1: Create a project with initial content
+- project:
+    name: "base_project"
+    title: "Base Project"
+    root:
+      children:
+        - page: "Introduction"
+        - container: "Module 1"
+          children:
+            - page: "Lesson 1"
+            - page: "Lesson 2"
+
+# Step 2: Create a product from the project
+- product:
+    name: "course_template"
+    title: "Course Template Product"
+    from: "base_project"
+
+# Step 3: Change the product to enable apply_major_updates
+- manipulate:
+    to: "course_template"
+    ops:
+      - change:
+          apply_major_updates: true
+
+# Step 4: Customize the product structure by removing Lesson 2
+- customize:
+    to: "course_template"
+    ops:
+      - remove:
+          from: "Lesson 2"
+
+# Step 5: Create a section from the customized product (will inherit apply_major_updates and customizations)
+- section:
+    name: "course_section"
+    from: "course_template"
+    title: "Spring 2025 Course"
+
+# Step 6: Verify initial section structure (should NOT have Lesson 2)
+- verify:
+    to: "course_section"
+    structure:
+      root:
+        children:
+          - page: "Introduction"
+          - container: "Module 1"
+            children:
+              - page: "Lesson 1"
+              # Lesson 2 should NOT be here due to product customization
+
+# Step 7: Add new content to the project
+- manipulate:
+    to: "base_project"
+    ops:
+      - add_page:
+          title: "New Lesson 3"
+          to: "Module 1"
+      - add_page:
+          title: "Conclusion"
+          to: "root"
+
+# Step 8: Publish the changes
+- publish:
+    to: "base_project"
+    description: "Added new lesson and conclusion page"
+
+# Step 9: Apply the publication to the section
+# This should work because apply_major_updates is true
+- update:
+    from: "base_project"
+    to: "course_section"
+
+# Step 10: Verify the new pages appear BUT Lesson 2 remains removed
+# The product customization should persist even after major updates
+- verify:
+    to: "course_section"
+    structure:
+      root:
+        children:
+          - page: "Introduction"
+          - container: "Module 1"
+            children:
+              - page: "Lesson 1"
+              # Lesson 2 should STILL not be here (removed by product customization)
+              - page: "New Lesson 3"  # This should now exist from major update
+          - page: "Conclusion"  # This should now exist from major update
