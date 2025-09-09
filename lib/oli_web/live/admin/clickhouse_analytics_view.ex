@@ -9,24 +9,16 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
   on_mount OliWeb.LiveSessionPlugs.SetCtx
 
   def mount(_, _, socket) do
-    if Application.get_env(:oli, :env) == :dev do
-      {:ok,
-       assign(socket,
-         title: "ClickHouse Analytics",
-         breadcrumb: breadcrumb(),
-         health_status: nil,
-         query_result: nil,
-         selected_query: "",
-         custom_query: "",
-         executing: false,
-         sample_queries: AdvancedAnalytics.sample_analytics_queries()
-       )}
-    else
-      {:ok,
-       socket
-       |> put_flash(:error, "ClickHouse Analytics is only available in development mode")
-       |> push_navigate(to: ~p"/admin")}
-    end
+    assign(socket,
+      title: "ClickHouse Analytics",
+      breadcrumb: breadcrumb(),
+      health_status: nil,
+      query_result: nil,
+      selected_query: "",
+      custom_query: "",
+      executing: false,
+      sample_queries: AdvancedAnalytics.sample_analytics_queries()
+    )
   end
 
   def render(assigns) do
