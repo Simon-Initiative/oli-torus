@@ -21496,6 +21496,11 @@ Not supports in Firefox and IE */
   background-color: rgb(29 68 129 / var(--tw-bg-opacity));
 }
 
+.dark .dark\:bg-blue-900 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(8 20 37 / var(--tw-bg-opacity));
+}
+
 .dark .dark\:bg-body-dark {
   --tw-bg-opacity: 1;
   background-color: rgb(42 43 46 / var(--tw-bg-opacity));
@@ -21930,6 +21935,16 @@ Not supports in Firefox and IE */
 .dark .dark\:text-black {
   --tw-text-opacity: 1;
   color: rgb(0 0 0 / var(--tw-text-opacity));
+}
+
+.dark .dark\:text-blue-200 {
+  --tw-text-opacity: 1;
+  color: rgb(159 188 233 / var(--tw-text-opacity));
+}
+
+.dark .dark\:text-blue-400 {
+  --tw-text-opacity: 1;
+  color: rgb(93 141 219 / var(--tw-text-opacity));
 }
 
 .dark .dark\:text-blue-500 {
@@ -22454,6 +22469,11 @@ Not supports in Firefox and IE */
 .dark .dark\:hover\:text-\[\#ef4444\]:hover {
   --tw-text-opacity: 1;
   color: rgb(239 68 68 / var(--tw-text-opacity));
+}
+
+.dark .dark\:hover\:text-blue-300:hover {
+  --tw-text-opacity: 1;
+  color: rgb(126 165 226 / var(--tw-text-opacity));
 }
 
 .dark .dark\:hover\:text-blue-500:hover {
