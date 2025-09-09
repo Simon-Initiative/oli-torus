@@ -13,7 +13,10 @@ defmodule Oli.Auditing.LogEvent do
     :user_deleted,
     :author_deleted,
     :project_published,
-    :section_created
+    :section_created,
+    :feature_flag_enabled,
+    :feature_flag_disabled,
+    :feature_flag_removed
   ]
 
   schema "audit_log_events" do
@@ -112,6 +115,21 @@ defmodule Oli.Auditing.LogEvent do
 
       :section_created ->
         "Created section #{get_in(event.details, ["section_title"]) || ""}"
+
+      :feature_flag_enabled ->
+        feature_name = get_in(event.details, ["feature_name"]) || "unknown"
+        resource_type = get_in(event.details, ["resource_type"]) || "resource"
+        "Enabled feature flag '#{feature_name}' for #{resource_type}"
+
+      :feature_flag_disabled ->
+        feature_name = get_in(event.details, ["feature_name"]) || "unknown"
+        resource_type = get_in(event.details, ["resource_type"]) || "resource"
+        "Disabled feature flag '#{feature_name}' for #{resource_type}"
+
+      :feature_flag_removed ->
+        feature_name = get_in(event.details, ["feature_name"]) || "unknown"
+        resource_type = get_in(event.details, ["resource_type"]) || "resource"
+        "Removed feature flag '#{feature_name}' from #{resource_type}"
 
       _ ->
         "#{event.event_type}"

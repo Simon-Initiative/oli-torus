@@ -169,6 +169,11 @@ defmodule Oli.Delivery.Sections.Updates do
 
         cull_unreachable_pages(section, diff)
 
+        # when handling a minor update, sections resources are not rebuilt,
+        # so we need to update the revision fields from the section resources that were changed
+        # to avoid stale data in the section resources
+        update_targeted_section_resources(section, diff)
+
         Logger.info(
           "perform_update.MINOR: section[#{section.slug}] #{Oli.Timing.elapsed(mark) / 1000 / 1000}ms"
         )
@@ -177,6 +182,25 @@ defmodule Oli.Delivery.Sections.Updates do
 
       {:error, _} ->
         {:error, :unexpected_count}
+    end
+  end
+
+  defp update_targeted_section_resources(section, diff) do
+    changed_resource_ids =
+      filter_for_revisions(diff, :changed, fn _r -> true end)
+      |> Enum.map(& &1.resource_id)
+
+    case Oli.Delivery.Sections.SectionResourceMigration.migrate_specific_resources(
+           section.id,
+           changed_resource_ids
+         ) do
+      {:ok, _num_updated} ->
+        :ok
+
+      {:error, error} ->
+        Logger.error(
+          "[Updates] MINOR update: Failed to migrate changed revisions: #{inspect(error)}"
+        )
     end
   end
 
@@ -454,6 +478,19 @@ defmodule Oli.Delivery.Sections.Updates do
     end
   end
 
+  defp all_resource_mappings(section) do
+    # Query the section project publications to get all publication ids, then create the
+    # published resource map for each and MERGE them all into one map
+    publication_ids =
+      from(spp in Sections.SectionsProjectsPublications,
+        where: spp.section_id == ^section.id,
+        select: spp.publication_id
+      )
+      |> Repo.all()
+
+    MinimalHierarchy.published_resources_map(publication_ids)
+  end
+
   defp update_container_children(section, prev_publication, new_publication) do
     container = ResourceType.id_for_container()
 
@@ -462,6 +499,9 @@ defmodule Oli.Delivery.Sections.Updates do
 
     new_published_resources_map =
       MinimalHierarchy.published_resources_map(new_publication.id)
+
+    # create resource mappings for all the remixed course publications
+    all_resource_map = all_resource_mappings(section)
 
     # get all section resources including freshly minted ones
     section_resources = Sections.get_section_resources(section.id)
@@ -541,7 +581,7 @@ defmodule Oli.Delivery.Sections.Updates do
           Sections.clean_children(
             updated_section_resource,
             sr_id_to_resource_id,
-            new_published_resources_map
+            all_resource_map
           )
         else
           section_resource

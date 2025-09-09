@@ -1,0 +1,127 @@
+# Test scenario for remixing content from projects into sections
+# Tests the new remix directive that adds content to section hierarchies
+
+# Create a source project with content to remix
+- project:
+    name: "source_project"
+    title: "Source Project with Reusable Content"
+    root:
+      children:
+        - page: "Page to Remix"
+        - page: "Extra Page for Root"
+        - container: "Module to Remix"
+          children:
+            - page: "Lesson 1"
+            - page: "Lesson 2"
+            - page: "Quiz"
+
+# Create a destination project and section
+- project:
+    name: "dest_project"
+    title: "Destination Project"
+    root:
+      children:
+        - page: "Welcome"
+        - container: "Module 1"
+          children:
+            - page: "Original Lesson"
+        - container: "Module 2"
+          children:
+            - page: "Another Lesson"
+
+# Create section from destination project
+- section:
+    name: "main_section"
+    from: "dest_project"
+    title: "Main Course Section"
+
+# Verify initial section structure
+- verify:
+    to: "main_section"
+    structure:
+      root:
+        children:
+          - page: "Welcome"
+          - container: "Module 1"
+            children:
+              - page: "Original Lesson"
+          - container: "Module 2"
+            children:
+              - page: "Another Lesson"
+
+# Remix a single page into Module 1
+- remix:
+    from: "source_project"
+    resource: "Page to Remix"
+    section: "main_section"
+    to: "Module 1"
+
+# Verify the page was added to Module 1
+- verify:
+    to: "main_section"
+    structure:
+      root:
+        children:
+          - page: "Welcome"
+          - container: "Module 1"
+            children:
+              - page: "Original Lesson"
+              - page: "Page to Remix"
+          - container: "Module 2"
+            children:
+              - page: "Another Lesson"
+
+# Remix an entire module into Module 2
+- remix:
+    from: "source_project"
+    resource: "Module to Remix"
+    section: "main_section"
+    to: "Module 2"
+
+# Verify the module was added to Module 2
+- verify:
+    to: "main_section"
+    structure:
+      root:
+        children:
+          - page: "Welcome"
+          - container: "Module 1"
+            children:
+              - page: "Original Lesson"
+              - page: "Page to Remix"
+          - container: "Module 2"
+            children:
+              - page: "Another Lesson"
+              - container: "Module to Remix"
+                children:
+                  - page: "Lesson 1"
+                  - page: "Lesson 2"
+                  - page: "Quiz"
+
+# Test remixing into the root container (using a different page since duplicates aren't allowed)
+- remix:
+    from: "source_project"
+    resource: "Extra Page for Root"
+    section: "main_section"
+    to: "root"
+
+# Verify the page was added to the root
+- verify:
+    to: "main_section"
+    structure:
+      root:
+        children:
+          - page: "Welcome"
+          - container: "Module 1"
+            children:
+              - page: "Original Lesson"
+              - page: "Page to Remix"
+          - container: "Module 2"
+            children:
+              - page: "Another Lesson"
+              - container: "Module to Remix"
+                children:
+                  - page: "Lesson 1"
+                  - page: "Lesson 2"
+                  - page: "Quiz"
+          - page: "Extra Page for Root"

@@ -20,8 +20,10 @@ import { EndDateTimer } from './end_date_timer';
 import { EvaluateMathJaxExpressions } from './evaluate_mathjax_expressions';
 import { ExpandContainers } from './expand_containers';
 import { FixedNavigationBar } from './fixed_navigation_bar';
+import { GlobalTooltip } from './global_tooltip';
 import { GraphNavigation } from './graph';
 import { HierarchySelector } from './hierarchy_selector';
+import { HighlightCode } from './highlight_code';
 import { InputAutoSelect } from './input_auto_select';
 import { KeepScrollAtBottom } from './keep_scroll_at_bottom';
 import { LiveModal } from './live_modal';
@@ -30,6 +32,7 @@ import { LtiConnectInstructions } from './lti_connect_instructions';
 import { ModalLaunch } from './modal';
 import { MonacoEditor } from './monaco_editor';
 import { OnMountAndUpdate } from './on_mount_and_update';
+import { PageContentHooks } from './page_content_hooks';
 import { FirePageTrigger } from './page_trigger';
 import { PointMarkers } from './point_markers';
 import { ProjectsTypeahead } from './projects_typeahead';
@@ -44,6 +47,7 @@ import { SliderScroll } from './slider_scroll';
 import { SubmitForm } from './submit_form';
 import { SubmitTechSupportForm } from './submit_tech_support_form';
 import { SystemMessage } from './system_message';
+import { TagsComponent } from './tags_component';
 import { TextInputListener } from './text_input_listener';
 import { TextareaListener } from './textarea_listener';
 import { ThemeToggle } from './theme_toggle';
@@ -55,6 +59,7 @@ import { WakeUpDot } from './wakeup_dot';
 
 export const Hooks = {
   DebouncedTextInputListener,
+  GlobalTooltip,
   WakeUpDot,
   ExpandContainers,
   ShowTeaser,
@@ -105,6 +110,8 @@ export const Hooks = {
   CountdownTimer,
   EndDateTimer,
   EvaluateMathJaxExpressions,
+  HighlightCode,
+  PageContentHooks,
   ReactToLiveView,
   DisableSubmitted,
   Recaptcha,
@@ -113,4 +120,5 @@ export const Hooks = {
   SubmitTechSupportForm,
   ConditionalToggle,
   CopyToClipboard,
+  TagsComponent,
 };

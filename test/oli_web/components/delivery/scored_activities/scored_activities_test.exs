@@ -168,7 +168,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivitiesTest do
         students_with_attempts_count: 1,
         total_attempts_count: 5,
         student_emails_without_attempts: [],
-        selected_activity: %{id: 1, title: "Q1"}
+        selected_activity: %{id: 1, title: "Q1", first_attempt_pct: 75.0, all_attempt_pct: 85.0}
       }
 
       html = render_component(&ScoredActivities.render/1, assigns)

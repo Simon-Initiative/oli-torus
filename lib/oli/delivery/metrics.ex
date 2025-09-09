@@ -441,7 +441,7 @@ defmodule Oli.Delivery.Metrics do
       select: {
         rs.resource_id,
         fragment(
-          "CAST(SUM(?) as float) / CAST(SUM(?) as float)",
+          "CAST(SUM(?) as float) / NULLIF(CAST(SUM(?) as float), 0.0)",
           rs.num_correct,
           rs.num_attempts
         )
@@ -975,10 +975,10 @@ defmodule Oli.Delivery.Metrics do
            fragment(
              """
              (
-               (1 * NULLIF(CAST(SUM(?) as float), 0.0001)) +
-               (0.2 * (NULLIF(CAST(SUM(?) as float), 0.0001) - NULLIF(CAST(SUM(?) as float), 0.0001)))
+               (1 * CAST(SUM(?) as float)) +
+               (0.2 * (CAST(SUM(?) as float) - CAST(SUM(?) as float)))
              ) /
-             NULLIF(CAST(SUM(?) as float), 0.0001)
+             NULLIF(CAST(SUM(?) as float), 0.0)
              """,
              summary.num_first_attempts_correct,
              summary.num_first_attempts,
@@ -1060,10 +1060,10 @@ defmodule Oli.Delivery.Metrics do
           fragment(
             """
             (
-              (1 * NULLIF(CAST(? as float), 0.0001)) +
-              (0.2 * (NULLIF(CAST(? as float), 0.0001) - NULLIF(CAST(? as float), 0.0001)))
+              (1 * CAST(? as float)) +
+              (0.2 * (CAST(? as float) - CAST(? as float)))
             ) /
-            NULLIF(CAST(? as float), 0.0001)
+            NULLIF(CAST(? as float), 0.0)
             """,
             summary.num_first_attempts_correct,
             summary.num_first_attempts,
@@ -1110,10 +1110,10 @@ defmodule Oli.Delivery.Metrics do
            fragment(
              """
              (
-               (1 * NULLIF(CAST(? as float), 0.0001)) +
-               (0.2 * (NULLIF(CAST(? as float), 0.0001) - NULLIF(CAST(? as float), 0.0001)))
+               (1 * CAST(? as float)) +
+               (0.2 * (CAST(? as float) - CAST(? as float)))
              ) /
-             NULLIF(CAST(? as float), 0.0001)
+             NULLIF(CAST(? as float), 0.0)
              """,
              summary.num_first_attempts_correct,
              summary.num_first_attempts,
@@ -1155,10 +1155,10 @@ defmodule Oli.Delivery.Metrics do
            fragment(
              """
              (
-               (1 * NULLIF(CAST(? as float), 0.0001)) +
-               (0.2 * (NULLIF(CAST(? as float), 0.0001) - NULLIF(CAST(? as float), 0.0001)))
+               (1 * CAST(? as float)) +
+               (0.2 * (CAST(? as float) - CAST(? as float)))
              ) /
-             NULLIF(CAST(? as float), 0.0001)
+             NULLIF(CAST(? as float), 0.0)
              """,
              summary.num_first_attempts_correct,
              summary.num_first_attempts,
@@ -1399,14 +1399,12 @@ defmodule Oli.Delivery.Metrics do
                                  num_attempts}},
                                acc ->
           proficiency =
-            case num_attempts do
-              num_attempts when num_attempts in [+0.0, -0.0] ->
-                nil
-
-              _ ->
-                (1 * num_first_attempts_correct +
-                   0.2 * (num_first_attempts - num_first_attempts_correct)) /
-                  num_first_attempts
+            if num_attempts == 0.0 or num_first_attempts == 0.0 do
+              nil
+            else
+              (1 * num_first_attempts_correct +
+                 0.2 * (num_first_attempts - num_first_attempts_correct)) /
+                num_first_attempts
             end
 
           Map.put(acc, user_id, proficiency_range(proficiency, num_attempts))
@@ -1445,12 +1443,10 @@ defmodule Oli.Delivery.Metrics do
     end)
     |> Enum.into(%{}, fn {container_id, {first_correct, first_total, _correct, total}} ->
       proficiency =
-        case total do
-          total when total in [+0.0, -0.0] ->
-            nil
-
-          _ ->
-            (1 * first_correct + 0.2 * (first_total - first_correct)) / first_total
+        if total == 0.0 or first_total == 0.0 do
+          nil
+        else
+          (1 * first_correct + 0.2 * (first_total - first_correct)) / first_total
         end
 
       {container_id, proficiency_range(proficiency, total)}
@@ -1509,10 +1505,10 @@ defmodule Oli.Delivery.Metrics do
            fragment(
              """
              (
-               (1 * NULLIF(CAST(SUM(?) as float), 0.0001)) +
-               (0.2 * (NULLIF(CAST(SUM(?) as float), 0.0001) - NULLIF(CAST(SUM(?) as float), 0.0001)))
+               (1 * CAST(SUM(?) as float)) +
+               (0.2 * (CAST(SUM(?) as float) - CAST(SUM(?) as float)))
              ) /
-             NULLIF(CAST(SUM(?) as float), 0.0001)
+             NULLIF(CAST(SUM(?) as float), 0.0)
              """,
              summary.num_first_attempts_correct,
              summary.num_first_attempts,

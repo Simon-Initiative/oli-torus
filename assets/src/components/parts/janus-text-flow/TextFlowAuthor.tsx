@@ -388,7 +388,7 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
       */}
           {`
         .text-flow-authoring-preview {
-          font-size: 13px;
+          font-size: 16px;
         }
         .text-flow-authoring-preview p {
           margin: 0;

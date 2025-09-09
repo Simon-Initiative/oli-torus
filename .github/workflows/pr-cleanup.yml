@@ -1,0 +1,37 @@
+name: PR Preview Cleanup
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  cleanup-preview:
+    name: Cleanup PR Preview
+    runs-on: plasma
+    steps:
+      - name: 🧹 Cleanup PR Preview Environment
+        run: |
+          export PROJECT=pr${{ github.event.number }}
+
+          echo "Cleaning up PR preview environment: $PROJECT"
+
+          # Primary cleanup - this should handle most cases
+          if docker-compose -p $PROJECT -f devops/docker-compose.yml down -v; then
+            echo "Docker compose cleanup successful"
+          else
+            echo "Docker compose cleanup failed, performing manual cleanup..."
+
+            # Fallback cleanup for edge cases
+            docker ps -a --filter "name=$PROJECT" -q | xargs -r docker rm -f || true
+            docker network ls --filter "name=$PROJECT" -q | xargs -r docker network rm || true
+            docker volume ls --filter "name=$PROJECT" -q | xargs -r docker volume rm || true
+          fi
+
+          echo "Cleanup completed for $PROJECT"
+
+      - name: 💬 Post cleanup notification
+        uses: peter-evans/create-or-update-comment@v3
+        with:
+          token: ${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}
+          issue-number: ${{ github.event.number }}
+          body: "🧹 PR preview environment has been cleaned up."

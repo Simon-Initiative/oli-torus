@@ -739,7 +739,7 @@ defmodule OliWeb.PageDeliveryController do
         graded: context.page.graded,
         content:
           build_page_content(context.page.content, Plug.Conn.get_session(conn, :request_path)),
-        resourceAttemptState: resource_attempt.state,
+        resourceAttemptState: Core.fetch_extrinsic_state(resource_attempt),
         resourceAttemptGuid: resource_attempt.attempt_guid,
         currentServerTime: DateTime.utc_now() |> to_epoch,
         effectiveEndTime:

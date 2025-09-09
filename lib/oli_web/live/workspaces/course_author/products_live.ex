@@ -31,7 +31,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProductsLive do
     products = get_products(socket.assigns)
 
     ctx = socket.assigns.ctx
-    {:ok, table_model} = ProductsTableModel.new(products, ctx, project.slug)
+
+    {:ok, table_model} =
+      ProductsTableModel.new(products, ctx, project.slug,
+        sort_by_spec: :inserted_at,
+        sort_order: :desc
+      )
+
     published? = Publishing.project_published?(project.slug)
 
     {:ok,
@@ -195,8 +201,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProductsLive do
     limit = assigns[:limit] || @max_items_per_page
 
     table_model = assigns[:table_model]
-    direction = if table_model, do: assigns.table_model.sort_order, else: :asc
-    field = if table_model, do: assigns.table_model.sort_by_spec.name, else: :title
+    direction = if table_model, do: assigns.table_model.sort_order, else: :desc
+    field = if table_model, do: assigns.table_model.sort_by_spec.name, else: :inserted_at
 
     include_archived = get_in(assigns, [:include_archived]) || false
 

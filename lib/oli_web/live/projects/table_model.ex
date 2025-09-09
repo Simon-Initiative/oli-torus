@@ -5,48 +5,60 @@ defmodule OliWeb.Projects.TableModel do
   alias OliWeb.Common.{Chip, FormatDateTime, SessionContext}
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
 
-  def new(%SessionContext{} = ctx, sections) do
+  def new(%SessionContext{} = ctx, sections, opts \\ []) do
+    default_td_class = "!border-r border-Table-table-border"
+    default_th_class = "!border-r border-Table-table-border"
+
     column_specs = [
       %ColumnSpec{
         name: :title,
         label: "Title",
-        render_fn: &custom_render/3
+        render_fn: &custom_render/3,
+        td_class: "!sticky left-0 z-[1] bg-inherit " <> default_td_class,
+        th_class: "!sticky left-0 z-[60] " <> default_th_class
       },
       %ColumnSpec{
         name: :tags,
         label: "Tags",
         render_fn: &custom_render/3,
-        sortable: false
+        sortable: false,
+        td_class: "w-[200px] min-w-[200px] max-w-[200px] !p-0 " <> default_td_class,
+        th_class: "w-[200px] min-w-[200px] max-w-[200px] " <> default_th_class
       },
       %ColumnSpec{
         name: :inserted_at,
         label: "Created",
-        render_fn: &custom_render/3
+        render_fn: &custom_render/3,
+        td_class: default_td_class,
+        th_class: default_th_class
       },
       %ColumnSpec{
         name: :name,
         label: "Created By",
-        render_fn: &custom_render/3
+        render_fn: &custom_render/3,
+        td_class: default_td_class,
+        th_class: default_th_class
       },
       %ColumnSpec{
         name: :collaborators,
         label: "Collaborators",
-        render_fn: &custom_render/3
-      },
-      %ColumnSpec{
-        name: :institutions,
-        label: "Institution",
-        render_fn: &custom_render/3
+        render_fn: &custom_render/3,
+        td_class: default_td_class,
+        th_class: default_th_class
       },
       %ColumnSpec{
         name: :published,
         label: "Published",
-        render_fn: &custom_render/3
+        render_fn: &custom_render/3,
+        td_class: default_td_class,
+        th_class: default_th_class
       },
       %ColumnSpec{
         name: :visibility,
         label: "Visibility",
-        render_fn: &custom_render/3
+        render_fn: &custom_render/3,
+        td_class: default_td_class,
+        th_class: default_th_class
       },
       %ColumnSpec{
         name: :status,
@@ -55,11 +67,19 @@ defmodule OliWeb.Projects.TableModel do
       }
     ]
 
+    sort_by = Keyword.get(opts, :sort_by_spec, :inserted_at)
+    sort_order = Keyword.get(opts, :sort_order, :desc)
+
+    sort_by_spec =
+      Enum.find(column_specs, fn spec -> spec.name == sort_by end)
+
     SortableTableModel.new(
       rows: sections,
       column_specs: column_specs,
       event_suffix: "",
       id_field: [:id],
+      sort_by_spec: sort_by_spec,
+      sort_order: sort_order,
       data: %{
         ctx: ctx
       }
@@ -91,9 +111,13 @@ defmodule OliWeb.Projects.TableModel do
 
     ~H"""
     <div>
-      <span class="text-Text-text-low text-sm font-normal leading-tight">
-        {@project[:tags] || ""}
-      </span>
+      <.live_component
+        module={OliWeb.Live.Components.Tags.TagsComponent}
+        id={"tags-#{@project.id}"}
+        entity_type={:project}
+        entity_id={@project.id}
+        current_tags={Map.get(@project, :tags, [])}
+      />
     </div>
     """
   end
@@ -117,14 +141,23 @@ defmodule OliWeb.Projects.TableModel do
   def custom_render(assigns, project, %ColumnSpec{name: :name}) do
     assigns = Map.merge(assigns, %{project: project})
 
-    ~H"""
-    <span class="text-Text-text-link text-base font-medium leading-normal">
-      {@project.name}
-    </span>
-    <small class="text-Text-text-low text-xs font-semibold leading-3">
-      {@project.email}
-    </small>
-    """
+    case project.owner_id do
+      nil ->
+        ""
+
+      _ ->
+        ~H"""
+        <a
+          href={~p"/admin/authors/#{@project.owner_id}"}
+          class="text-Text-text-link text-base font-medium leading-normal"
+        >
+          {@project.name}
+        </a>
+        <small class="text-Text-text-low text-xs font-semibold leading-3">
+          {@project.email}
+        </small>
+        """
+    end
   end
 
   # Collaborators
@@ -141,27 +174,6 @@ defmodule OliWeb.Projects.TableModel do
           {collab["name"]}
         </a>
         <%= if index < length(@project.collaborators) - 1 do %>
-          <span class="text-Text-text-high text-base font-medium leading-normal">, </span>
-        <% end %>
-      <% end %>
-    </div>
-    """
-  end
-
-  # Institution
-  def custom_render(assigns, project, %ColumnSpec{name: :institutions}) do
-    assigns = Map.merge(assigns, %{project: project})
-
-    ~H"""
-    <div>
-      <%= for {institution, index} <- Enum.with_index(@project.institutions || []) do %>
-        <a
-          href={~p"/admin/institutions/#{institution["id"]}"}
-          class="text-Text-text-link text-base font-medium leading-normal"
-        >
-          {institution["name"]}
-        </a>
-        <%= if index < length(@project.institutions) - 1 do %>
           <span class="text-Text-text-high text-base font-medium leading-normal">, </span>
         <% end %>
       <% end %>

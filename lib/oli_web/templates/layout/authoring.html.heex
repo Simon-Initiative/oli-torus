@@ -104,20 +104,14 @@
       crossorigin="anonymous"
       referrerpolicy="no-referrer"
     />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.4.0/styles/atom-one-dark.min.css"
-      integrity="sha512-Jk4AqjWsdSzSWCSuQTfYRIF84Rq/eV0G2+tu07byYwHcbTGfdmLrHjUSwvzp5HvbiqK4ibmNwdcG49Y5RGYPTg=="
-      crossorigin="anonymous"
-      referrerpolicy="no-referrer"
-      media="screen and (prefers-color-scheme: dark)"
-    />
     <script
       src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.4.0/highlight.min.js"
       integrity="sha512-IaaKO80nPNs5j+VLxd42eK/7sYuXQmr+fyywCNA0e+C6gtQnuCXNtORe9xR4LqGPz5U9VpH+ff41wKs/ZmC3iA=="
       crossorigin="anonymous"
       referrerpolicy="no-referrer"
     >
+    </script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/highlightjs-line-numbers.js/2.9.0/highlightjs-line-numbers.min.js">
     </script>
     <!-- ReCAPTCHA -->
     <script src="https://www.google.com/recaptcha/api.js">
@@ -128,7 +122,6 @@
     <script>
       window.cite = require('citation-js')
     </script>
-
     {OliWeb.Common.MathJaxScript.render(@conn)}
 
     {csrf_meta_tag()}
@@ -147,7 +140,6 @@
   </head>
   <body class="dark:bg-body-dark dark:text-white">
     <input type="hidden" id="layout-id" data-layout-id="authoring" />
-
     {live_render(@conn, OliWeb.SystemMessageLive.ShowView)}
 
     {Map.get(assigns, :inner_layout) || @inner_content}

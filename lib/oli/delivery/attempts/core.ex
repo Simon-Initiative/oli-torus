@@ -258,20 +258,19 @@ defmodule Oli.Delivery.Attempts.Core do
 
   def get_graded_resource_access_for_context(section_id, user_ids) do
     graded_resource_access_for_context(section_id)
-    |> where([_, _, _, a], a.user_id in ^user_ids)
+    |> where([r], r.user_id in ^user_ids)
     |> Repo.all()
   end
 
   # base query, intended to be composable for the above two uses
   defp graded_resource_access_for_context(section_id) do
-    SectionsProjectsPublications
-    |> join(:left, [spp], pr in PublishedResource, on: pr.publication_id == spp.publication_id)
-    |> join(:left, [_, pr], r in Revision, on: r.id == pr.revision_id)
-    |> join(:left, [spp, _, r], a in ResourceAccess,
-      on: r.resource_id == a.resource_id and a.section_id == spp.section_id
-    )
-    |> where([spp, _, r, a], not is_nil(a) and spp.section_id == ^section_id and r.graded == true)
-    |> select([_, _, _, a], a)
+    graded_pages_resource_ids =
+      Oli.Delivery.Sections.SectionResourceDepot.graded_pages(section_id)
+      |> Enum.map(& &1.resource_id)
+
+    ResourceAccess
+    |> where([r], r.resource_id in ^graded_pages_resource_ids)
+    |> select([r], r)
   end
 
   @doc """
@@ -1084,5 +1083,30 @@ defmodule Oli.Delivery.Attempts.Core do
     Repo.preload(resource_attempts,
       activity_attempts: [:part_attempts]
     )
+  end
+
+  @doc """
+  Retrieves the extrinsic state of the resource attempt must take
+  into account if the blob storage API is in use for extrinsic state.
+  """
+  def fetch_extrinsic_state(resource_attempt) do
+    if Application.get_env(:oli, :blob_storage)[:use_deprecated_api] do
+      resource_attempt.state
+    else
+      Oli.Delivery.TextBlob.read(
+        resource_attempt.attempt_guid,
+        "{}"
+      )
+      |> case do
+        {:ok, state} ->
+          case Jason.decode(state) do
+            {:ok, decoded_state} -> decoded_state
+            _ -> %{}
+          end
+
+        _ ->
+          %{}
+      end
+    end
   end
 end

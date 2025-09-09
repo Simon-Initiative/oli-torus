@@ -148,6 +148,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
             a.resource_id == activity_id and a.attempt_guid != activity_attempt_guid
           end)
 
+        other_attempts_for_this_activity = fix_bad_records(other_attempts_for_this_activity)
+
         all_attempts = [
           %{score: score, out_of: out_of, date_evaluated: now} | other_attempts_for_this_activity
         ]
@@ -164,6 +166,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
           end)
           |> Enum.group_by(fn a -> a.resource_id end)
           |> Enum.map(fn {_, attempts} ->
+            attempts = fix_bad_records(attempts)
             Enum.max_by(attempts, fn a -> a.attempt_number end)
           end)
           |> List.flatten()
@@ -333,6 +336,42 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
         end
       end
     )
+  end
+
+  @doc """
+  Account for bad records by filtering out multiple records for the same attempt number.
+  """
+  def fix_bad_records(attempts) do
+    # Group the records by activity id
+    by_activity_id = Enum.group_by(attempts, & &1.resource_id)
+
+    # Then disambiguate the records for each activity id
+    Enum.reduce(by_activity_id, [], fn {_activity_id, records}, acc ->
+      acc ++ fix_bad_records_for_activity_id(records)
+    end)
+  end
+
+  defp fix_bad_records_for_activity_id(attempts) do
+    grouped = Enum.group_by(attempts, & &1.attempt_number)
+
+    # For all groups where there is more than one entry, that
+    # means that we somehow ended up with multiple records for
+    # the same attempt number
+    Enum.reduce(grouped, [], fn {_attempt_number, records}, acc ->
+      if length(records) > 1 do
+        # Filter down to only those that are evaluated
+        evaluated = Enum.filter(records, &(&1.lifecycle_state == :evaluated))
+
+        case Enum.count(evaluated) do
+          # None were evaluated, so it is safe to use any one of them
+          0 -> acc ++ [records |> hd()]
+          # Sort by date evaluated descending, return the most recently evaluated
+          _n -> acc ++ [Enum.sort_by(evaluated, & &1.date_evaluated, :desc) |> List.first()]
+        end
+      else
+        acc ++ records
+      end
+    end)
   end
 
   defp initiate_grade_passback(section_id, resource_access_id) do

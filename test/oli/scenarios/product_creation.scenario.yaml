@@ -1,0 +1,119 @@
+# Scenario demonstrating product (blueprint) creation and usage
+# Products are templates that can be used to create multiple sections
+
+# Create a source project with a full curriculum
+- project:
+    name: "master_course"
+    title: "Master Course Template"
+    root:
+      children:
+        - page: "Course Introduction"
+        - container: "Unit 1: Fundamentals"
+          children:
+            - page: "Introduction to Concepts"
+            - page: "Basic Principles"
+            - page: "Practice Problems"
+        - container: "Unit 2: Advanced Topics"
+          children:
+            - page: "Advanced Theory"
+            - page: "Case Studies"
+            - page: "Final Assessment"
+
+# Create a product from the master course
+- product:
+    name: "standard_template"
+    title: "Standard Course Template"
+    from: "master_course"
+
+# Create multiple sections from the same product
+- section:
+    name: "fall_2024_section"
+    title: "Fall 2024 - Introduction to Subject"
+    from: "standard_template"
+    type: enrollable
+    registration_open: true
+
+- section:
+    name: "spring_2025_section"
+    title: "Spring 2025 - Introduction to Subject"
+    from: "standard_template"
+    type: enrollable
+    registration_open: true
+
+# Verify that both sections have the same structure from the product
+- verify:
+    to: "fall_2024_section"
+    structure:
+      root:
+        children:
+          - page: "Course Introduction"
+          - container: "Unit 1: Fundamentals"
+            children:
+              - page: "Introduction to Concepts"
+              - page: "Basic Principles"
+              - page: "Practice Problems"
+          - container: "Unit 2: Advanced Topics"
+            children:
+              - page: "Advanced Theory"
+              - page: "Case Studies"
+              - page: "Final Assessment"
+
+- verify:
+    to: "spring_2025_section"
+    structure:
+      root:
+        children:
+          - page: "Course Introduction"
+          - container: "Unit 1: Fundamentals"
+            children:
+              - page: "Introduction to Concepts"
+              - page: "Basic Principles"
+              - page: "Practice Problems"
+          - container: "Unit 2: Advanced Topics"
+            children:
+              - page: "Advanced Theory"
+              - page: "Case Studies"
+              - page: "Final Assessment"
+
+# Create another version of the product after updating the project
+- manipulate:
+    to: "master_course"
+    ops:
+      - add_page:
+          title: "Bonus Content"
+          to: "Unit 2: Advanced Topics"
+
+- publish:
+    to: "master_course"
+    description: "Added bonus content"
+
+# Create a new version of the product
+- product:
+    name: "enhanced_template"
+    title: "Enhanced Course Template"
+    from: "master_course"
+
+# Create a section from the enhanced template
+- section:
+    name: "summer_2025_section"
+    title: "Summer 2025 - Enhanced Course"
+    from: "enhanced_template"
+
+# Verify the enhanced section has the bonus content
+- verify:
+    to: "summer_2025_section"
+    structure:
+      root:
+        children:
+          - page: "Course Introduction"
+          - container: "Unit 1: Fundamentals"
+            children:
+              - page: "Introduction to Concepts"
+              - page: "Basic Principles"
+              - page: "Practice Problems"
+          - container: "Unit 2: Advanced Topics"
+            children:
+              - page: "Advanced Theory"
+              - page: "Case Studies"
+              - page: "Final Assessment"
+              - page: "Bonus Content"

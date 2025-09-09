@@ -10,6 +10,7 @@ defmodule OliWeb.ActivityBankController do
   alias Oli.Activities.Realizer.Query.Result
   alias OliWeb.Common.PagingParams
   alias Oli.Delivery.Page.PageContext
+  alias Oli.Delivery.Sections.SectionResourceDepot
 
   @doc false
   def index(conn, %{
@@ -114,7 +115,8 @@ defmodule OliWeb.ActivityBankController do
             selection: selection,
             total_count: total_count,
             offset: offset,
-            scripts: Enum.map(activity_types, fn a -> a.authoring_script end)
+            scripts: Enum.map(activity_types, fn a -> a.authoring_script end),
+            has_scheduled_resources?: SectionResourceDepot.has_scheduled_resources?(section.id)
           )
 
         _ ->

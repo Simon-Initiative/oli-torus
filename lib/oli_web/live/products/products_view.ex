@@ -70,12 +70,12 @@ defmodule OliWeb.Products.ProductsView do
   end
 
   defp mount_as(params, author, is_admin_view, project, breadcrumbs, title, socket) do
-    project_id = if project === nil, do: nil, else: project.id
+    {project_id, project_slug} = {project && project.id, (project && project.slug) || ""}
 
     products =
       Blueprint.browse(
         %Paging{offset: 0, limit: @limit},
-        %Sorting{direction: :asc, field: :title},
+        %Sorting{direction: :desc, field: :inserted_at},
         text_search: Params.get_param(params, "text_search", ""),
         include_archived: Params.get_boolean_param(params, "include_archived", false),
         project_id: project_id
@@ -84,7 +84,12 @@ defmodule OliWeb.Products.ProductsView do
     total_count = determine_total(products)
 
     ctx = socket.assigns.ctx
-    {:ok, table_model} = ProductsTableModel.new(products, ctx)
+
+    {:ok, table_model} =
+      ProductsTableModel.new(products, ctx, project_slug,
+        sort_by_spec: :inserted_at,
+        sort_order: :desc
+      )
 
     published? =
       case project do

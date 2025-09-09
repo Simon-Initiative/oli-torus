@@ -161,6 +161,16 @@ defmodule OliWeb.Admin.AdminView do
                 <i class="fas fa-external-link-alt self-center ml-1"></i>
               </a>
             </li>
+            <li>
+              <a href={~p"/admin/agent_monitor"}>
+                AI Agent Monitor
+              </a>
+            </li>
+            <li>
+              <a href={~p"/admin/mcp_tokens"}>
+                Manage MCP Bearer Tokens
+              </a>
+            </li>
           </ul>
         </Group.render>
       <% end %>

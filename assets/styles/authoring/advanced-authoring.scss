@@ -1111,3 +1111,16 @@ $font-family-sans-serif: var(--font-sans);
     border-radius: 4px;
   }
 }
+
+.dnd-sortable-tree_simple_tree-item {
+  padding: 2px !important;
+}
+.dnd-sortable-tree_simple_wrapper .aa-sequence-details-wrapper {
+  padding-left: 5px !important;
+}
+.dnd-sortable-tree_simple_handle {
+  width: 13px !important;
+}
+.dnd-sortable-tree_simple_tree-item li.aa-sequence-item {
+  padding-left: 0px !important;
+}

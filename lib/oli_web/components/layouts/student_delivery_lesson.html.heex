@@ -69,7 +69,7 @@
         <div
           :if={@section}
           id="page-content"
-          phx-hook="EvaluateMathJaxExpressions"
+          phx-hook="PageContentHooks"
           class="flex flex-col justify-center items-start relative"
         >
           <div
@@ -78,7 +78,6 @@
           >
             {react_component("Components.OfflineDetector")}
           </div>
-
           {@inner_content}
         </div>
       </div>

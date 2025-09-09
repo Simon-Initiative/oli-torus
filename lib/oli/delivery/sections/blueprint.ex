@@ -542,7 +542,6 @@ defmodule Oli.Delivery.Sections.Blueprint do
       Section
       |> join(:inner, [s], bp in Project, on: s.base_project_id == bp.id)
       |> preload([s, bp], base_project: bp)
-      |> join(:left, [s, _bp], i in Institution, on: s.institution_id == i.id)
       |> where([s, bp], s.type == :blueprint)
       |> where(^filter_by_text)
       |> where(^filter_by_project)
@@ -551,17 +550,13 @@ defmodule Oli.Delivery.Sections.Blueprint do
       |> offset(^offset)
       |> select([s, bp, i], %{
         s
-        | institution_name: i.name,
-          total_count: fragment("count(*) OVER()")
+        | total_count: fragment("count(*) OVER()")
       })
 
     query =
       case field do
         :base_project_id ->
           order_by(query, [s, bp], [{^direction, bp.title}])
-
-        :institution_name ->
-          order_by(query, [s, _bp, i], {^direction, i.name})
 
         :requires_payment ->
           order_by(

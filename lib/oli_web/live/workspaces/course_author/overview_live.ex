@@ -12,6 +12,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
   alias Oli.LanguageCodesIso639
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Resources.Collaboration
+  alias Oli.ScopedFeatureFlags
   alias OliWeb.Common.Utils
   alias OliWeb.Components.{Common, Modal, Overview}
   alias OliWeb.Components.Project.{AdvancedActivityItem, AsyncExporter}
@@ -285,7 +286,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
               {error_tag(f, :collaborator_emails)}
               {hidden_input(f, :authors,
                 value:
-                  @collaborators.accepted
+                  Map.get(@collaborators, :accepted, [])
                   |> Enum.map(fn author_projects -> author_projects.author.email end)
                   |> Enum.join(", ")
               )}
@@ -344,6 +345,20 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
         />
       </Overview.section>
 
+      <%= if ScopedFeatureFlags.enabled?(:mcp_authoring, @project) do %>
+        <Overview.section
+          title="MCP Access Tokens"
+          description="Generate Bearer tokens for external AI agents to access this project's content via the Model Context Protocol (MCP)."
+        >
+          <.live_component
+            module={OliWeb.Projects.MCPTokenManager}
+            id="mcp-token-manager"
+            project={@project}
+            current_author={@current_author}
+          />
+        </Overview.section>
+      <% end %>
+
       {live_render(@socket, OliWeb.Projects.VisibilityLive,
         id: "project_visibility",
         session: %{"project_slug" => @project.slug}
@@ -390,6 +405,24 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
           project={@project}
         />
       </Overview.section>
+
+      <%= if @is_admin do %>
+        <Overview.section
+          title="Feature Flags"
+          description="Manage scoped feature flags for this project."
+        >
+          <.live_component
+            module={OliWeb.Components.ScopedFeatureFlagsComponent}
+            id="project_scoped_features"
+            scopes={[:authoring, :both]}
+            source_id={@project.id}
+            source_type={:project}
+            source={@project}
+            current_author={@ctx.author}
+            title="Project Features"
+          />
+        </Overview.section>
+      <% end %>
 
       <Overview.section title="Actions" is_last={true}>
         <%= if @is_admin do %>
@@ -691,13 +724,24 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
      )}
   end
 
+  def handle_info({:scoped_feature_updated, feature_name, enabled, _source}, socket) do
+    action = if enabled, do: "enabled", else: "disabled"
+    message = "Feature '#{feature_name}' #{action} successfully"
+    {:noreply, put_flash(socket, :info, message)}
+  end
+
+  def handle_info({:scoped_feature_error, feature_name, error_message}, socket) do
+    message = "Failed to update feature '#{feature_name}': #{error_message}"
+    {:noreply, put_flash(socket, :error, message)}
+  end
+
   attr :collaborators, :map, required: true
 
   def collaborators(assigns) do
     ~H"""
     <div class="flex flex-col w-full space-y-3 mb-2">
       <div :if={!is_nil(@collaborators[:accepted])}>
-        <h5>{"Collaborators (#{length(@collaborators.accepted)})"}</h5>
+        <h5>{"Collaborators (#{length(Map.get(@collaborators, :accepted, []))})"}</h5>
         <div
           :for={collaborator <- @collaborators.accepted}
           class="d-flex justify-content-between align-items-center py-1"
@@ -723,7 +767,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
       </div>
 
       <div :if={!is_nil(@collaborators[:pending_confirmation])}>
-        <h5>{"Pending Confirmation (#{length(@collaborators.pending_confirmation)})"}</h5>
+        <h5>
+          {"Pending Confirmation (#{length(Map.get(@collaborators, :pending_confirmation, []))})"}
+        </h5>
         <div
           :for={collaborator <- @collaborators.pending_confirmation}
           class="d-flex justify-content-between align-items-center py-1"
@@ -749,7 +795,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
       </div>
 
       <div :if={!is_nil(@collaborators[:rejected])}>
-        <h5>{"Rejected Invitations (#{length(@collaborators.rejected)})"}</h5>
+        <h5>{"Rejected Invitations (#{length(Map.get(@collaborators, :rejected, []))})"}</h5>
         <div
           :for={collaborator <- @collaborators.rejected}
           class="d-flex justify-content-between align-items-center py-1"

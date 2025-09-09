@@ -173,7 +173,7 @@ defmodule Oli.Delivery do
     end)
   end
 
-  defp create_from_product(user, blueprint, section_params) do
+  def create_from_product(user, blueprint, section_params) do
     Repo.transaction(fn ->
       with {:ok, section} <- Oli.Delivery.Sections.Blueprint.duplicate(blueprint, section_params),
            {:ok, _} <- Sections.rebuild_contained_pages(section),

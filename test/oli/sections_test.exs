@@ -996,12 +996,20 @@ defmodule Oli.SectionsTest do
         |> then(fn {:ok, section} -> section end)
         |> Sections.create_section_resources(initial_pub)
 
+      # ensure the migration for the section resources is excecuted
+      Oli.Delivery.Sections.SectionResourceMigration.migrate(section.id)
+
       # verify the curriculum precondition
       hierarchy = DeliveryResolver.full_hierarchy(section.slug)
 
       assert hierarchy.children |> Enum.count() == 2
       assert hierarchy.children |> Enum.at(0) |> Map.get(:resource_id) == page1.id
       assert hierarchy.children |> Enum.at(1) |> Map.get(:resource_id) == page2.id
+
+      # verifiy the page 1 section resource initial values
+      page1_sr = Oli.Delivery.Sections.get_section_resource(section.id, page1.id)
+      refute page1_sr.graded
+      assert page1_sr.title == "Page one"
 
       # make some changes to project and publish
       working_pub = Publishing.project_working_publication(project.slug)
@@ -1064,7 +1072,9 @@ defmodule Oli.SectionsTest do
             }
           ]
         },
-        "objectives" => %{"attached" => [Map.get(map, :o1).resource.id]}
+        "objectives" => %{"attached" => [Map.get(map, :o1).resource.id]},
+        "graded" => true,
+        "title" => "New Title"
       }
 
       Seeder.revise_page(page1_changes, page1, revision1, working_pub)
@@ -1107,6 +1117,13 @@ defmodule Oli.SectionsTest do
 
       assert section_resources
              |> Enum.find(fn sr -> sr.resource_id == Map.get(map, :o1).resource.id end)
+
+      # verify that the revision fields where migrated to the section resouces
+      page_1_section_resource =
+        Enum.find(section_resources, fn sr -> sr.resource_id == page1.id end)
+
+      assert page_1_section_resource.graded
+      assert page_1_section_resource.title == "New Title"
     end
 
     @tag capture_log: true
@@ -1127,6 +1144,9 @@ defmodule Oli.SectionsTest do
         |> Oli.Utils.Seeder.Section.create_section_from_product(ref(:product), nil, nil, %{},
           section_tag: :section
         )
+
+      # ensure the migration for the section resources is excecuted
+      Oli.Delivery.Sections.SectionResourceMigration.migrate(section.id)
 
       # one week ago
       one_week_ago = DateTime.utc_now() |> DateTime.add(-7, :day) |> DateTime.truncate(:second)
@@ -1167,7 +1187,8 @@ defmodule Oli.SectionsTest do
           grace_period: 100,
           review_submission: :disallow,
           feedback_mode: :scheduled,
-          feedback_scheduled_date: a_day_later
+          feedback_scheduled_date: a_day_later,
+          graded: false
         })
 
       # verify the curriculum precondition
@@ -1189,7 +1210,9 @@ defmodule Oli.SectionsTest do
               "children" => [%{"type" => "p", "children" => [%{"text" => "SECOND"}]}]
             }
           ]
-        }
+        },
+        "graded" => true,
+        "title" => "New Title"
       }
 
       Seeder.revise_page(page1_changes, page1, revision1, working_pub)
@@ -1348,6 +1371,11 @@ defmodule Oli.SectionsTest do
         |> Repo.all()
 
       assert section_resources |> Enum.count() == 7
+
+      # verify the section resource values where migrated correctly
+      page1_sr = Enum.find(section_resources, fn sr -> sr.resource_id == page1.id end)
+      assert page1_sr.graded
+      assert page1_sr.title == "New Title"
     end
 
     @tag capture_log: true

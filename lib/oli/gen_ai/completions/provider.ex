@@ -4,7 +4,7 @@ defmodule Oli.GenAI.Completions.Provider do
               functions :: [Oli.GenAI.Completions.Function.t()],
               registered_model :: Oli.GenAI.Completions.RegisteredModel.t()
             ) ::
-              {:ok, String.t()} | {:error, String.t()}
+              {:ok, map()} | {:error, String.t()}
 
   @callback stream(
               messages :: [Oli.GenAI.Completions.Message.t()],

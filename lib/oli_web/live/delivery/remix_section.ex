@@ -2,6 +2,8 @@ defmodule OliWeb.Delivery.RemixSection do
   use OliWeb, :live_view
   use OliWeb.Common.Modal
 
+  require Logger
+
   import OliWeb.Curriculum.Utils,
     only: [
       is_container?: 1
@@ -907,6 +909,14 @@ defmodule OliWeb.Delivery.RemixSection do
 
   def handle_event("HideResourceModal.cancel", _, socket) do
     {:noreply, hide_modal(socket, modal_assigns: nil)}
+  end
+
+  @impl Phoenix.LiveView
+  def handle_event(event, params, socket) do
+    # Catch-all for UI-only events from functional components
+    # that don't need handling (like dropdown toggles)
+    Logger.warning("Unhandled event in RemixSectionLive: #{inspect(event)}, #{inspect(params)}")
+    {:noreply, socket}
   end
 
   defp maybe_filter_publications(publications, params) do

@@ -162,8 +162,7 @@ defmodule Oli.Delivery.Sections.Browse do
 
         :base ->
           order_by(query, [_, _, _, proj, prod], [
-            {^direction, prod.title},
-            {^direction, proj.title}
+            {^direction, fragment("coalesce(?, ?)", prod.title, proj.title)}
           ])
 
         _ ->

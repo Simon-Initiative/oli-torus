@@ -175,7 +175,7 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
       pageSlug: page_context.page.slug,
       graded: page_context.page.graded,
       content: build_page_content(page_context.page.content, params["request_path"]),
-      resourceAttemptState: resource_attempt && resource_attempt.state,
+      resourceAttemptState: Core.fetch_extrinsic_state(resource_attempt),
       resourceAttemptGuid: resource_attempt && resource_attempt.attempt_guid,
       currentServerTime: DateTime.utc_now() |> to_epoch,
       effectiveEndTime:

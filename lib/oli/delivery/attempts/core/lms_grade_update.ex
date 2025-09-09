@@ -31,8 +31,6 @@ defmodule Oli.Delivery.Attempts.Core.LMSGradeUpdate do
       :resource_access_id
     ])
     |> validate_required([
-      :score,
-      :out_of,
       :type,
       :result,
       :attempt_number,

@@ -40,12 +40,16 @@ defmodule OliWeb.Projects.ProjectsLive do
       Course.browse_projects(
         author,
         %Paging{offset: 0, limit: @limit},
-        %Sorting{direction: :asc, field: :title},
+        %Sorting{direction: :desc, field: :inserted_at},
         include_deleted: show_deleted,
         admin_show_all: show_all
       )
 
-    {:ok, table_model} = TableModel.new(ctx, projects)
+    {:ok, table_model} =
+      TableModel.new(ctx, projects,
+        sort_by_spec: :inserted_at,
+        sort_order: :desc
+      )
 
     total_count = determine_total(projects)
 
@@ -206,10 +210,11 @@ defmodule OliWeb.Projects.ProjectsLive do
           </button>
         </div>
         <button
-          class="mr-4 inline-flex items-center gap-1 text-sm font-medium text-[#0080FF] hover:underline"
+          class="group mr-4 inline-flex items-center gap-1 text-sm text-Text-text-button font-bold leading-none hover:text-Text-text-button-hover"
           phx-click="export_csv"
         >
-          Download CSV <Icons.download stroke_class="stroke-[#0080FF]" />
+          Download CSV
+          <Icons.download stroke_class="group-hover:stroke-Text-text-button-hover stroke-Text-text-button" />
         </button>
       </div>
 

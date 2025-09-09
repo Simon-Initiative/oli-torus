@@ -235,20 +235,22 @@ defmodule OliWeb.ProductsLiveTest do
     end
 
     test "applies paging", %{conn: conn} do
-      [first_p | tail] = insert_list(21, :section) |> Enum.sort_by(& &1.title)
-      last_p = List.last(tail)
+      first_p = insert(:section, title: "First Product", inserted_at: yesterday())
+      last_p = insert(:section, title: "Last Product", inserted_at: tomorrow())
+
+      insert_list(21, :section, inserted_at: DateTime.now!("Etc/UTC"))
 
       {:ok, view, _html} = live(conn, @live_view_all_products)
 
-      assert has_element?(view, "##{first_p.id}")
-      refute has_element?(view, "##{last_p.id}")
+      assert has_element?(view, "##{last_p.id}")
+      refute has_element?(view, "##{first_p.id}")
 
       view
       |> element("#footer_paging button[phx-click='paged_table_page_change']", "2")
       |> render_click()
 
-      refute has_element?(view, "##{first_p.id}")
-      assert has_element?(view, "##{last_p.id}")
+      refute has_element?(view, "##{last_p.id}")
+      assert has_element?(view, "##{first_p.id}")
     end
   end
 
@@ -557,5 +559,57 @@ defmodule OliWeb.ProductsLiveTest do
     Course.update_project(project, %{
       allow_transfer_payment_codes: true
     })
+  end
+
+  describe "products with tags" do
+    setup [:admin_conn, :create_product]
+
+    test "displays product tags in table", %{conn: conn, product: product} do
+      # Create and associate tags with the product
+      {:ok, biology_tag} = Oli.Tags.create_tag(%{name: "Biology"})
+      {:ok, chemistry_tag} = Oli.Tags.create_tag(%{name: "Chemistry"})
+      {:ok, _} = Oli.Tags.associate_tag_with_section(product, biology_tag)
+      {:ok, _} = Oli.Tags.associate_tag_with_section(product, chemistry_tag)
+
+      {:ok, view, _html} = live(conn, @live_view_all_products)
+
+      # Check that tags are displayed in the product row
+      product_row = view |> element("##{product.id}") |> render()
+      assert product_row =~ "Biology"
+      assert product_row =~ "Chemistry"
+    end
+
+    test "displays empty tags column when product has no tags", %{conn: conn, product: product} do
+      {:ok, view, _html} = live(conn, @live_view_all_products)
+
+      # Should not show any tag pills for this product
+      product_row = view |> element("##{product.id}") |> render()
+      # tag pill background color
+      refute product_row =~ "bg-[#f7def8]"
+    end
+
+    test "tags component is rendered in table cell", %{conn: conn} do
+      {:ok, view, _html} = live(conn, @live_view_all_products)
+
+      # Check that the TagsComponent is rendered
+      assert has_element?(view, "div[phx-hook='TagsComponent']")
+    end
+
+    test "tags work specifically with blueprint sections (products)", %{
+      conn: conn,
+      product: product
+    } do
+      # Ensure this is a blueprint section
+      assert product.type == :blueprint
+
+      {:ok, product_tag} = Oli.Tags.create_tag(%{name: "ProductTag"})
+      {:ok, _} = Oli.Tags.associate_tag_with_section(product, product_tag)
+
+      {:ok, view, _html} = live(conn, @live_view_all_products)
+
+      # Should display the tag
+      product_row = view |> element("##{product.id}") |> render()
+      assert product_row =~ "ProductTag"
+    end
   end
 end
