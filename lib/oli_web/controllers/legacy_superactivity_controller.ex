@@ -303,6 +303,7 @@ defmodule OliWeb.LegacySuperactivityController do
         end
 
       {:numeric, score, out_of} ->
+        IO.inspect("----------------------------------score: #{score}, out_of: #{out_of} --------------------------------")
         eval_numeric_score(context, score, out_of, part_attempt)
     end
   end
@@ -453,7 +454,7 @@ defmodule OliWeb.LegacySuperactivityController do
           Enum.reduce(part_attempts, [], fn p, acc ->
             case p.date_evaluated do
               nil -> acc ++ [create_evaluation(context, 0, 100, p)]
-              _ -> acc
+              _ -> acc ++ [create_evaluation(context, p.score, p.out_of, p)]
             end
           end)
 
@@ -496,9 +497,12 @@ defmodule OliWeb.LegacySuperactivityController do
   end
 
   defp eval_numeric_score(%LegacySuperactivityContext{} = context, score, out_of, part_attempt) do
+    Attempts.update_part_attempt(part_attempt, %{score: score, out_of: out_of})
     client_evaluations = [
       create_evaluation(context, score, out_of, part_attempt)
     ]
+
+    IO.inspect("----------------------------------client_evaluations: #{inspect(client_evaluations)} --------------------------------")
 
     case ActivityEvaluation.apply_client_evaluation(
            context.section.slug,
