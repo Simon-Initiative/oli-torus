@@ -55,7 +55,7 @@ defmodule OliWeb.Admin.AuditLog.TableModel do
 
     ~H"""
     <div class="text-sm">
-      <div class="font-medium text-gray-900">
+      <div class="font-medium text-gray-900 dark:text-gray-100">
         {FormatDateTime.format_datetime(
           @inserted_at,
           show_timezone: true
@@ -100,12 +100,12 @@ defmodule OliWeb.Admin.AuditLog.TableModel do
 
     ~H"""
     <div>
-      <div class="text-xs text-gray-500">
+      <div class="text-xs text-gray-500 dark:text-gray-400">
         {@actor_type}
         <%= if @event.user_id do %>
           <a
             href={Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, @event.user_id)}
-            class="text-blue-600 hover:text-blue-800"
+            class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
           >
             {@actor_name}
           </a>
@@ -115,7 +115,7 @@ defmodule OliWeb.Admin.AuditLog.TableModel do
               href={
                 Routes.live_path(OliWeb.Endpoint, OliWeb.Users.AuthorsDetailView, @event.author_id)
               }
-              class="text-blue-600 hover:text-blue-800"
+              class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
             >
               {@actor_name}
             </a>
@@ -145,7 +145,7 @@ defmodule OliWeb.Admin.AuditLog.TableModel do
           >
             {@event.resource.slug}
           </a>
-          <div class="text-xs text-gray-500">Project</div>
+          <div class="text-xs text-gray-500 dark:text-gray-400">Project</div>
         <% @event.section_id && @event.resource -> %>
           <a
             href={
@@ -160,9 +160,9 @@ defmodule OliWeb.Admin.AuditLog.TableModel do
           >
             {@event.resource.slug}
           </a>
-          <div class="text-xs text-gray-500">Section</div>
+          <div class="text-xs text-gray-500 dark:text-gray-400">Section</div>
         <% true -> %>
-          <span class="text-gray-400 text-sm">—</span>
+          <span class="text-gray-400 dark:text-gray-500 text-sm">—</span>
       <% end %>
     </div>
     """
@@ -177,11 +177,11 @@ defmodule OliWeb.Admin.AuditLog.TableModel do
       <button
         phx-click="show_details"
         phx-value-details={Jason.encode!(@formatted_details)}
-        class="text-sm text-blue-600 hover:text-blue-800"
+        class="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
       >
         View Details
       </button>
-      <div class="text-xs text-gray-500 truncate">
+      <div class="text-xs text-gray-500 dark:text-gray-400 truncate">
         {details_preview(@formatted_details)}
       </div>
     </div>
@@ -191,16 +191,16 @@ defmodule OliWeb.Admin.AuditLog.TableModel do
   defp get_event_type_class(event_type) do
     case event_type do
       t when t in [:user_deleted, :author_deleted] ->
-        "bg-red-100 text-red-800"
+        "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
 
       t when t in [:section_created] ->
-        "bg-green-100 text-green-800"
+        "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
 
       t when t in [:project_published] ->
-        "bg-blue-100 text-blue-800"
+        "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
 
       _ ->
-        "bg-gray-100 text-gray-800"
+        "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200"
     end
   end
 
