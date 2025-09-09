@@ -16,6 +16,7 @@ services:
       timeout: 10s
       retries: 5
       start_period: 60s
+    env_file: .env
     environment:
       PHX_SERVER: "true"
       # Tell Phoenix we're behind a proxy that handles SSL
@@ -23,29 +24,29 @@ services:
       # Use HTTP scheme since SSL is terminated by HAProxy
       SCHEME: "https"
       PORT: "443"
-      SECRET_KEY_BASE: "ba1sX03RVQyAk3MPRfUeG7LQxUPRe3IB3iN3VnTHYFxUgsz2vAUDof/kGCiyaigs"
-      LIVE_VIEW_SALT: "vf6j/P8XSYOVNs3aKUQ5SQCfunWheQPQ+EDzfBJM0FBTLcyTHZlmQGXbBBbSJwkV"
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE:-ba1sX03RVQyAk3MPRfUeG7LQxUPRe3IB3iN3VnTHYFxUgsz2vAUDof/kGCiyaigs}
+      LIVE_VIEW_SALT: ${LIVE_VIEW_SALT:-vf6j/P8XSYOVNs3aKUQ5SQCfunWheQPQ+EDzfBJM0FBTLcyTHZlmQGXbBBbSJwkV}
       HOST: ${HOST}
-      S3_MEDIA_BUCKET_NAME: "torus-media"
-      S3_XAPI_BUCKET_NAME: "torus-xapi"
-      MEDIA_URL: https://${HOST}/s3/torus-media
+      S3_MEDIA_BUCKET_NAME: ${S3_MEDIA_BUCKET_NAME:-torus-media}
+      S3_XAPI_BUCKET_NAME: ${S3_XAPI_BUCKET_NAME:-torus-xapi}
+      MEDIA_URL: ${MEDIA_URL:-https://${HOST}/s3/torus-media}
       # MinIO S3 configuration
-      AWS_S3_ACCESS_KEY_ID: "minio-user"
-      AWS_S3_SECRET_ACCESS_KEY: "minio-password"
-      AWS_S3_SCHEME: "http"
-      AWS_S3_PORT: "9000"
-      AWS_S3_HOST: "minio"
-      CLOAK_VAULT_KEY: "HXCdm5z61eNgUpnXObJRv94k3JnKSrnfwppyb60nz6w="
-      DATABASE_URL: postgres://postgres:postgres@postgres:5432/postgres
-      ADMIN_EMAIL: "admin@example.edu"
-      ADMIN_PASSWORD: "changeme"
-      EMAIL_FROM_NAME: "OLI Torus"
-      EMAIL_FROM_ADDRESS: "no-reply@example.edu"
-      EMAIL_REPLY_TO: "admin@example.edu"
-      BRANDING_LOGO: "/branding/dev/oli_torus_logo.png"
-      BRANDING_LOGO_DARK: "/branding/dev/oli_torus_logo_dark.png"
-      BRANDING_FAVICONS_DIR: "/branding/dev/favicons"
-      VENDOR_PROPERTY_WORKSPACE_LOGO: "/branding/dev/oli_torus_icon.png"
+      AWS_S3_ACCESS_KEY_ID: ${AWS_S3_ACCESS_KEY_ID:-minio-user}
+      AWS_S3_SECRET_ACCESS_KEY: ${AWS_S3_SECRET_ACCESS_KEY:-minio-password}
+      AWS_S3_SCHEME: ${AWS_S3_SCHEME:-http}
+      AWS_S3_PORT: ${AWS_S3_PORT:-9000}
+      AWS_S3_HOST: ${AWS_S3_HOST:-minio}
+      CLOAK_VAULT_KEY: ${CLOAK_VAULT_KEY:-HXCdm5z61eNgUpnXObJRv94k3JnKSrnfwppyb60nz6w=}
+      DATABASE_URL: ${DATABASE_URL:-postgres://postgres:postgres@postgres:5432/postgres}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@example.edu}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-changeme}
+      EMAIL_FROM_NAME: ${EMAIL_FROM_NAME:-OLI Torus}
+      EMAIL_FROM_ADDRESS: ${EMAIL_FROM_ADDRESS:-no-reply@example.edu}
+      EMAIL_REPLY_TO: ${EMAIL_REPLY_TO:-admin@example.edu}
+      BRANDING_LOGO: ${BRANDING_LOGO:-/branding/dev/oli_torus_logo.png}
+      BRANDING_LOGO_DARK: ${BRANDING_LOGO_DARK:-/branding/dev/oli_torus_logo_dark.png}
+      BRANDING_FAVICONS_DIR: ${BRANDING_FAVICONS_DIR:-/branding/dev/favicons}
+      VENDOR_PROPERTY_WORKSPACE_LOGO: ${VENDOR_PROPERTY_WORKSPACE_LOGO:-/branding/dev/oli_torus_icon.png}
     labels:
       - "traefik.enable=true"
       # Specify the network for Traefik to use
