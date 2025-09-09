@@ -4,6 +4,11 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
 
+# Limit concurrent PR deployments to prevent resource exhaustion
+concurrency:
+  group: pr-preview-${{ github.repository }}
+  cancel-in-progress: false # Don't cancel running deployments
+
 jobs:
   simon-token-available:
     name: Check if simon-bot access token is available
@@ -98,7 +103,54 @@ jobs:
           docker pull ghcr.io/simon-initiative/oli-torus:sha-${{ steps.info.outputs.sha_short }}
           docker tag ghcr.io/simon-initiative/oli-torus:sha-${{ steps.info.outputs.sha_short }} oli-torus:${{ github.sha }}
 
+      - name: 📑 Preflight check
+        id: preflight
+        run: |
+          # Get available memory in MB
+          AVAILABLE_MEMORY=$(free -m | awk 'NR==2{printf "%.0f", $7}')
+          REQUIRED_MEMORY=1024  # Require at least 1GB available
+          CURRENT_PR_COUNT=$(docker ps --filter "name=pr" -q | wc -l)
+
+          echo "📊 Current system status:"
+          echo "  Available memory: ${AVAILABLE_MEMORY}MB"
+          echo "  Required memory: ${REQUIRED_MEMORY}MB"
+          echo "  Current PR environments: ${CURRENT_PR_COUNT}"
+
+          if [ $AVAILABLE_MEMORY -lt $REQUIRED_MEMORY ]; then
+            echo "❌ Insufficient memory available. Need at least ${REQUIRED_MEMORY}MB, but only ${AVAILABLE_MEMORY}MB available."
+            echo "memory_insufficient=true" >> $GITHUB_OUTPUT
+            echo "available_memory=${AVAILABLE_MEMORY}" >> $GITHUB_OUTPUT
+            echo "current_pr_count=${CURRENT_PR_COUNT}" >> $GITHUB_OUTPUT
+          else
+            echo "✅ Sufficient memory available for deployment"
+            echo "memory_insufficient=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 💬 Post memory error comment
+        if: steps.preflight.outputs.memory_insufficient == 'true'
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          token: ${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}
+          issue-number: ${{ github.event.number }}
+          body: |
+            ⚠️ **PR Preview deployment skipped due to insufficient memory**
+
+            **Current system status:**
+            - Available memory: ${{ steps.preflight.outputs.available_memory }}MB
+            - Required memory: 1024MB
+            - Active PR environments: ${{ steps.preflight.outputs.current_pr_count }}
+
+            **What you can do:**
+            - Wait for other PR previews to be cleaned up automatically
+            - Ask maintainers to manually clean up old PR environments
+            - Try again later when system resources are available
+
+            The deployment will automatically retry when you push new commits to this PR.
+
+            *Last checked: ${{ github.event.pull_request.updated_at }}*
+
       - name: 🚀 Deploy PR stack
+        if: steps.preflight.outputs.memory_insufficient != 'true'
         run: |
           export PROJECT=pr${{ github.event.number }}
           export APP_IMAGE_TAG=${{ github.sha }}
@@ -124,6 +176,7 @@ jobs:
           docker-compose -p $PROJECT -f devops/docker-compose.yml up -d
 
       - name: ⏳ Wait for PR Preview to be available
+        if: steps.preflight.outputs.memory_insufficient != 'true'
         run: |
           export HOST=pr${{ github.event.number }}.plasma.oli.cmu.edu
           for i in {1..30}; do
@@ -138,6 +191,7 @@ jobs:
           exit 1
 
       - name: 🔍 Find existing PR preview comment
+        if: steps.preflight.outputs.memory_insufficient != 'true'
         uses: peter-evans/find-comment@v3
         id: fc
         with:
@@ -147,6 +201,7 @@ jobs:
           body-includes: "PR preview deployed at:"
 
       - name: 💬 Post/Update PR Preview URL Comment
+        if: steps.preflight.outputs.memory_insufficient != 'true'
         uses: peter-evans/create-or-update-comment@v4
         with:
           token: ${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}
@@ -154,6 +209,4 @@ jobs:
           issue-number: ${{ github.event.number }}
           body: |
             PR preview deployed at: https://pr${{ github.event.number }}.plasma.oli.cmu.edu
-
-            Last updated: ${{ github.event.pull_request.updated_at }}
           edit-mode: replace
