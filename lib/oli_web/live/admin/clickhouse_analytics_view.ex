@@ -9,7 +9,7 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
   on_mount OliWeb.LiveSessionPlugs.SetCtx
 
   def mount(_, _, socket) do
-    assign(socket,
+    {:ok, assign(socket,
       title: "ClickHouse Analytics",
       breadcrumb: breadcrumb(),
       health_status: nil,
@@ -18,7 +18,7 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
       custom_query: "",
       executing: false,
       sample_queries: AdvancedAnalytics.sample_analytics_queries()
-    )
+    )}
   end
 
   def render(assigns) do
