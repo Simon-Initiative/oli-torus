@@ -161,7 +161,7 @@ defmodule OliWeb.Components.Delivery.QuizScores do
 
     graded_pages = Oli.Delivery.Sections.SectionResourceDepot.graded_pages(section.id)
 
-    lti_page_ids = Resources.section_resource_ids_with_lti_activities(section.id)
+    lti_page_ids = Resources.get_page_resource_ids_with_lti_activities(section.id)
 
     graded_pages_with_lti_activity =
       Enum.map(graded_pages, fn page ->

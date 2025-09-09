@@ -568,7 +568,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
         Map.put(acc, resource_id, {total_attempts, avg_score})
       end)
 
-    lti_page_ids = Resources.section_resource_ids_with_lti_activities(section.id)
+    lti_page_ids = Resources.get_page_resource_ids_with_lti_activities(section.id)
 
     activities =
       DeliveryResolver.from_resource_id(section.slug, activity_ids_from_responses)

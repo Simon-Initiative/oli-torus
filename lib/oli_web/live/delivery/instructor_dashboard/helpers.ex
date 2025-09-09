@@ -1,6 +1,7 @@
 defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
   alias Oli.Delivery.{Certificates, GrantedCertificates, Metrics, Sections}
   alias Oli.Publishing.DeliveryResolver
+  alias Oli.Resources
 
   def get_containers(section, opts \\ [async: true]) do
     case Sections.get_units_and_modules_containers(section.slug) do
@@ -125,6 +126,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
         end)
       end)
 
+    lti_page_ids = Resources.get_page_resource_ids_with_lti_activities(section.id)
+
     graded_pages_and_section_resources
     |> Enum.with_index(1)
     |> Enum.map(fn {r, index} ->
@@ -138,7 +141,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
         scheduling_type: r.scheduling_type,
         container_label: label,
         avg_score: nil,
-        total_attempts: nil
+        total_attempts: nil,
+        has_lti_activity: r.resource_id in lti_page_ids
       })
     end)
   end

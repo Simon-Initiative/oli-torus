@@ -465,13 +465,13 @@ defmodule Oli.Resources do
   end
 
   @doc """
-  Returns a list of resource ids that are LTI activities in the given section.
+  Returns a list of resource IDs for pages containing LTI activities
   Example
-      iex> section_resource_ids_with_lti_activities(1)
+      iex> get_page_resource_ids_with_lti_activities(1)
       [1, 2, 3]
   """
-  @spec section_resource_ids_with_lti_activities(integer()) :: [integer()]
-  def section_resource_ids_with_lti_activities(section_id) do
+  @spec get_page_resource_ids_with_lti_activities(integer()) :: [integer()]
+  def get_page_resource_ids_with_lti_activities(section_id) do
     lti_resource_ids =
       from(ar in Oli.Activities.ActivityRegistration,
         join: _ in assoc(ar, :lti_external_tool_activity_deployment),
