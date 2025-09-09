@@ -1,6 +1,6 @@
 services:
   app:
-    image: oli-torus:${APP_IMAGE_TAG}
+    image: ghcr.io/simon-initiative/oli-torus:${APP_IMAGE_TAG}
     hostname: ${HOST}
     depends_on:
       postgres:
