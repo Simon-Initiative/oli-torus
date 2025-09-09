@@ -18,13 +18,13 @@ defmodule OliWeb.Curriculum.DeleteModal do
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title">
-              Delete <%= resource_type_label(@revision) |> String.capitalize() %>
+              Delete {resource_type_label(@revision) |> String.capitalize()}
             </h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
             </button>
           </div>
           <div class="modal-body">
-            Are you sure you want to delete "<%= @revision.title %>"?
+            Are you sure you want to delete "{@revision.title}"?
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -34,7 +34,7 @@ defmodule OliWeb.Curriculum.DeleteModal do
               phx-value-slug={@revision.slug}
               class="btn btn-danger"
             >
-              Delete <%= resource_type_label(@revision) |> String.capitalize() %>
+              Delete {resource_type_label(@revision) |> String.capitalize()}
             </button>
           </div>
         </div>

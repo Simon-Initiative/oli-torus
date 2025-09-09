@@ -1,10 +1,35 @@
 # Changelog
 
-## 0.26.0 (Unreleased)
+This file documents changes to the environment and infrastructure for each release.
 
-### Enhancements
+For a complete list of changes and release notes, please refer to the [GitHub repository's releases page](https://github.com/Simon-Initiative/oli-torus/releases).
 
-### Bug Fixes
+If a PR is opened that adds a new environment config or requires infrastructure changes, please
+update this file accordingly.
+
+## 0.32.0
+
+### Environment Configs
+
+| Name      | Required | Description                                                                     |
+| --------- | -------- | ------------------------------------------------------------------------------- |
+| MEDIA_URL | Yes      | HTTP/HTTPS URL for media assets (Default http://localhost:9000/oli-torus-media) |
+
+- `MEDIA_URL` is now set to the full URL including the scheme (http/https) and (optionally) the
+  port. The default value for development is now `http://localhost:9000/oli-torus-media` which
+  corresponds to a local S3/minio service. This value is still required to be set in production,
+  typically to the URL of the production S3 bucket.
+
+### Infrastructure Changes
+
+- [ ] Update servers to use the new MEDIA_URL format
+
+---
+
+**Note:** Moving forward CHANGELOG.md will no longer track release dates, features or bug fixes. The main purpose
+of this file will be to document changes to the environment and infrastructure.
+
+---
 
 ## 0.25.1 (2023-10-13)
 

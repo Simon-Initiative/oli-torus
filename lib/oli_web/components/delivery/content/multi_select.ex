@@ -35,13 +35,13 @@ defmodule OliWeb.Delivery.Content.MultiSelect do
             :if={@selected_values == %{}}
             class="text-[#353740] text-base font-semibold leading-none dark:text-[#EEEBF5]"
           >
-            <%= @placeholder %>
+            {@placeholder}
           </span>
           <span
             :if={@selected_values != %{}}
             class="text-[#006CD9] dark:text-[#4CA6FF] text-base font-semibold leading-none"
           >
-            Proficiency is <%= show_proficiency_selected_values(@selected_values) %>
+            Proficiency is {show_proficiency_selected_values(@selected_values)}
           </span>
         </div>
         <.toggle_chevron id={@id} map_values={@selected_values} />

@@ -18,9 +18,9 @@ end
 
 config :oli,
   env: :dev,
-  s3_xapi_bucket_name: System.get_env("S3_XAPI_BUCKET_NAME"),
-  s3_media_bucket_name: System.get_env("S3_MEDIA_BUCKET_NAME"),
-  media_url: System.get_env("MEDIA_URL"),
+  s3_xapi_bucket_name: System.get_env("S3_XAPI_BUCKET_NAME", "torus-xapi-dev"),
+  s3_media_bucket_name: System.get_env("S3_MEDIA_BUCKET_NAME", "torus-media-dev"),
+  media_url: System.get_env("MEDIA_URL", "http://localhost:9000/torus-media-dev"),
   problematic_query_detection:
     get_env_as_boolean.("DEV_PROBLEMATIC_QUERY_DETECTION_ENABLED", "false"),
   load_testing_mode: get_env_as_boolean.("LOAD_TESTING_MODE", "false"),
@@ -186,6 +186,11 @@ config :phoenix, :stacktrace_depth, 20
 # Initialize plugs at runtime for faster development compilation
 config :phoenix, :plug_init_mode, :runtime
 
+config :phoenix_live_view,
+  debug_heex_annotations: true,
+  debug_attributes: true,
+  enable_expensive_runtime_checks: true
+
 # Configure Joken for jwt signing and verification
 config :joken, default_signer: "secret"
 
@@ -194,10 +199,25 @@ config :appsignal, :config, active: false
 # Configure AWS
 config :ex_aws,
   region: System.get_env("AWS_REGION", "us-east-1"),
-  access_key_id: System.get_env("AWS_ACCESS_KEY_ID", "your_minio_access_key"),
-  secret_access_key: System.get_env("AWS_SECRET_ACCESS_KEY", "your_minio_secret_key")
+  access_key_id: [{:system, "AWS_ACCESS_KEY_ID"}],
+  secret_access_key: [{:system, "AWS_SECRET_ACCESS_KEY"}]
 
-config :ex_aws, :s3, region: System.get_env("AWS_REGION", "us-east-1")
+# Configure S3 specifically
+config :ex_aws, :s3,
+  region: System.get_env("AWS_REGION", "us-east-1"),
+  access_key_id: [
+    {:system, "AWS_S3_ACCESS_KEY_ID"},
+    {:system, "AWS_ACCESS_KEY_ID"},
+    "your_minio_access_key"
+  ],
+  secret_access_key: [
+    {:system, "AWS_S3_SECRET_ACCESS_KEY"},
+    {:system, "AWS_SECRET_ACCESS_KEY"},
+    "your_minio_secret_key"
+  ],
+  scheme: System.get_env("AWS_S3_SCHEME", "http") <> "://",
+  port: String.to_integer(System.get_env("AWS_S3_PORT", "9000")),
+  host: System.get_env("AWS_S3_HOST", "localhost")
 
 config :ex_aws, :hackney_opts,
   follow_redirect: true,
@@ -211,6 +231,14 @@ config :oli, :recaptcha,
   timeout: 5000,
   site_key: System.get_env("RECAPTCHA_SITE_KEY", "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"),
   secret: System.get_env("RECAPTCHA_PRIVATE_KEY", "6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe")
+
+config :oli, Oli.Vault,
+  json_library: Jason,
+  ciphers: [
+    default:
+      {Cloak.Ciphers.AES.GCM,
+       tag: "AES.GCM.V1", key: Base.decode64!("HXCdm5z61eNgUpnXObJRv94k3JnKSrnfwppyb60nz6w=")}
+  ]
 
 # Configure xAPI upload pipeline for development
 # Default: Use ClickHouse uploader for local development

@@ -82,6 +82,7 @@ defmodule Oli.Factory do
   alias Oli.Resources.{Resource, ResourceType, Revision}
   alias Oli.Resources.Collaboration.{CollabSpaceConfig, Post, PostContent, UserReactionPost}
   alias Oli.Search.RevisionEmbedding
+  alias Oli.Tags.{Tag, ProjectTag, SectionTag}
 
   def author_factory() do
     now = DateTime.utc_now() |> DateTime.truncate(:second)
@@ -782,6 +783,49 @@ defmodule Oli.Factory do
       activity_registration_id: build(:activity_registration).id,
       project_id: build(:project).id,
       status: :enabled
+    }
+  end
+
+  def scoped_feature_flag_state_factory() do
+    %Oli.ScopedFeatureFlags.ScopedFeatureFlagState{
+      feature_name: "mcp_authoring",
+      project: build(:project)
+    }
+  end
+
+  def scoped_feature_flag_state_for_project_factory() do
+    %Oli.ScopedFeatureFlags.ScopedFeatureFlagState{
+      feature_name: "mcp_authoring",
+      project: build(:project)
+    }
+  end
+
+  def scoped_feature_flag_state_for_section_factory() do
+    # Note: This factory uses mcp_authoring which is authoring-only
+    # In real usage, you'd need a delivery-scoped feature for sections
+    %Oli.ScopedFeatureFlags.ScopedFeatureFlagState{
+      feature_name: "mcp_authoring",
+      section: build(:section)
+    }
+  end
+
+  def tag_factory() do
+    %Tag{
+      name: sequence("tag", &"Tag #{&1}")
+    }
+  end
+
+  def project_tag_factory() do
+    %ProjectTag{
+      project: build(:project),
+      tag: build(:tag)
+    }
+  end
+
+  def section_tag_factory() do
+    %SectionTag{
+      section: build(:section),
+      tag: build(:tag)
     }
   end
 

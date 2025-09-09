@@ -13,6 +13,7 @@ export interface InputNumberModel extends JanusAbsolutePositioned, JanusCustomCs
   unitsLabel: string;
   enabled: boolean;
   showIncrementArrows: boolean;
+  enableScrollIncrement: boolean;
   prompt: string;
 }
 
@@ -55,6 +56,12 @@ export const simpleSchema: JSONSchema7Object = {
     title: 'Unit Label',
     type: 'string',
     description: 'text label appended to the input',
+  },
+  enableScrollIncrement: {
+    title: 'Enable Scroll Increment',
+    type: 'boolean',
+    description: 'specifies whether scroll increment should be enabled in number textbox',
+    default: false,
   },
   answer: correctOrRange.schema,
   correctFeedback: {
@@ -117,6 +124,12 @@ export const schema: JSONSchema7Object = {
     description: 'specifies whether increment arrows should be visible in number textbox',
     default: false,
   },
+  enableScrollIncrement: {
+    title: 'Enable Scroll Increment',
+    type: 'boolean',
+    description: 'specifies whether scroll increment should be enabled in number textbox',
+    default: false,
+  },
   prompt: {
     type: 'string',
   },
@@ -133,6 +146,7 @@ export const adaptivitySchema = {
 export const createSchema = (): Partial<InputNumberModel> => ({
   enabled: true,
   showIncrementArrows: false,
+  enableScrollIncrement: false,
   showLabel: true,
   label: 'How many?',
   unitsLabel: 'units',

@@ -33,7 +33,7 @@ defmodule OliWeb.ObjectivesLive.SelectionsModal do
                     href={Routes.resource_path(OliWeb.Endpoint, :edit, @project_slug, slug)}
                     target="_blank"
                   >
-                    <%= title %>
+                    {title}
                   </a>
                 </li>
               <% end %>

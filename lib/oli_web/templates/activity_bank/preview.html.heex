@@ -11,27 +11,27 @@
           <div id="wrapper d-block mb-4">
             <!-- Page Content -->
             <div id="page-content">
-              <h2><%= @revision.title %> (Preview)</h2>
+              <h2>{@revision.title} (Preview)</h2>
 
-              <%= raw(@rendered_selection) %>
+              {raw(@rendered_selection)}
 
               <div class="mb-3" />
 
-              <%= render("paging.html",
+              {render("paging.html",
                 conn: @conn,
                 params: @paging,
                 offset: @offset,
                 limit: @limit
-              ) %>
+              )}
 
               <%= for activity <- @activities do %>
                 <% type = Map.get(@activity_types, activity.activity_type_id) %>
                 <p>Test</p>
-                <%= Phoenix.HTML.Tag.content_tag(type.authoring_element, "",
+                {Phoenix.HTML.Tag.content_tag(type.authoring_element, "",
                   model: activity.encoded_model,
                   editmode: "false",
                   projectSlug: @section_slug
-                ) %>
+                )}
               <% end %>
             </div>
           </div>

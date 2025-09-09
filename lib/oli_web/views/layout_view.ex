@@ -122,7 +122,7 @@ defmodule OliWeb.LayoutView do
     ~H"""
     <.license_wrapper>
       <a href={String.trim(@custom_license_details)} , target="_blank">
-        <%= String.trim(@custom_license_details) %>
+        {String.trim(@custom_license_details)}
       </a>
     </.license_wrapper>
     """
@@ -131,7 +131,7 @@ defmodule OliWeb.LayoutView do
   defp render_as_text(assigns) do
     ~H"""
     <.license_wrapper>
-      <%= @custom_license_details %>
+      {@custom_license_details}
     </.license_wrapper>
     """
   end
@@ -169,7 +169,7 @@ defmodule OliWeb.LayoutView do
           />
         </a>
         <p>
-          Unless otherwise noted this work is licensed under a Creative Commons<%= @cc_text %> 4.0 Unported License.
+          Unless otherwise noted this work is licensed under a Creative Commons{@cc_text} 4.0 Unported License.
         </p>
       </div>
     </.license_wrapper>
@@ -179,7 +179,7 @@ defmodule OliWeb.LayoutView do
   def render_license(assigns) do
     ~H"""
     <.license_wrapper>
-      <%= CreativeCommons.cc_options()[:none].text %>
+      {CreativeCommons.cc_options()[:none].text}
     </.license_wrapper>
     """
   end
@@ -192,7 +192,7 @@ defmodule OliWeb.LayoutView do
       id="license"
       class="container mx-auto flex items-center justify-start overflow-y-hidden h-[40px] max-h-[40px] relative top-0"
     >
-      <%= render_slot(@inner_block) %>
+      {render_slot(@inner_block)}
     </div>
     """
   end

@@ -2,6 +2,8 @@ defmodule OliWeb.Delivery.RemixSection do
   use OliWeb, :live_view
   use OliWeb.Common.Modal
 
+  require Logger
+
   import OliWeb.Curriculum.Utils,
     only: [
       is_container?: 1
@@ -909,6 +911,14 @@ defmodule OliWeb.Delivery.RemixSection do
     {:noreply, hide_modal(socket, modal_assigns: nil)}
   end
 
+  @impl Phoenix.LiveView
+  def handle_event(event, params, socket) do
+    # Catch-all for UI-only events from functional components
+    # that don't need handling (like dropdown toggles)
+    Logger.warning("Unhandled event in RemixSectionLive: #{inspect(event)}, #{inspect(params)}")
+    {:noreply, socket}
+  end
+
   defp maybe_filter_publications(publications, params) do
     filtered_publications =
       case params[:text_filter] do
@@ -994,7 +1004,7 @@ defmodule OliWeb.Delivery.RemixSection do
       </button>
 
       <%= for {breadcrumb, index} <- Enum.with_index(@breadcrumbs) do %>
-        <%= render_breadcrumb_item(
+        {render_breadcrumb_item(
           Enum.into(
             %{
               breadcrumb: breadcrumb,
@@ -1003,7 +1013,7 @@ defmodule OliWeb.Delivery.RemixSection do
             },
             assigns
           )
-        ) %>
+        )}
       <% end %>
     </div>
     """
@@ -1028,7 +1038,7 @@ defmodule OliWeb.Delivery.RemixSection do
       phx-click="set_active"
       phx-value-uuid={@breadcrumb.slug}
     >
-      <%= get_title(@breadcrumb, @show_short) %>
+      {get_title(@breadcrumb, @show_short)}
     </button>
     """
   end

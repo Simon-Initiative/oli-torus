@@ -51,7 +51,7 @@ defmodule OliWeb.Delivery.Student.CertificateLive do
       <embed src={@granted_certificate.url} type="application/pdf" style="width: 66vw; height: 66vh;">
       </embed>
       <p class="text-blue-400 mt-4">
-        Certificate ID: <span class="font-semibold"><%= @granted_certificate.guid %></span>
+        Certificate ID: <span class="font-semibold">{@granted_certificate.guid}</span>
       </p>
     </div>
     """

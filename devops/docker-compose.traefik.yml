@@ -1,0 +1,27 @@
+## Traefik Reverse Proxy
+## Requires external network webproxy-public to be created
+##   docker network create webproxy-public
+services:
+  traefik:
+    image: traefik
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      # Tell Traefik we’re behind HAProxy (which does SSL termination)
+      - "--entrypoints.web.forwardedheaders.insecure=true"
+      - "--entrypoints.websecure.forwardedheaders.insecure=true"
+      # Optional: dashboard
+      - "--api.dashboard=true"
+    ports:
+      - "80:80"
+      - "8080:8080" # dashboard
+    networks:
+      - webproxy-public
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+networks:
+  webproxy-public:
+    external: true

@@ -138,15 +138,15 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsViewTest do
         :sections ->
           [
             :title,
-            :type,
             :enrollments_count,
             :requires_payment,
             :start_date,
             :end_date,
-            :status,
             :base,
             :instructor,
-            :institution
+            :institution,
+            :type,
+            :status
           ]
 
         :students ->
@@ -260,16 +260,16 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsViewTest do
 
       assert length(rendered_sections) == 4
 
-      assert s_1.title == section_1.title
+      assert s_1.title =~ section_1.title
       assert s_1.institution =~ institution.name
 
-      assert s_2.title == section_2.title
+      assert s_2.title =~ section_2.title
       assert s_2.institution =~ institution.name
 
-      assert s_3.title == section_3.title
+      assert s_3.title =~ section_3.title
       assert s_3.institution =~ institution.name
 
-      assert s_4.title == section_4.title
+      assert s_4.title =~ section_4.title
       assert s_4.institution =~ institution.name
     end
 
@@ -290,7 +290,7 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsViewTest do
 
       # click institution edit button for section 1
       view
-      |> element(~s{button[phx-click="edit_section"][value=#{section_1.id}]}, "Edit")
+      |> element(~s{button[phx-click="edit_section"][value='#{section_1.id}']}, "Edit")
       |> render_click
 
       # the modal is shown...
@@ -301,7 +301,7 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsViewTest do
       # ...with the current institution pre-selected
       assert view
              |> element(
-               "select[id=institution_id] option[selected=selected]",
+               "select[id=institution_id] option[selected]",
                section_1.institution.name
              )
              |> has_element?
@@ -333,7 +333,7 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsViewTest do
 
       [s_1] = table_as_list_of_maps(view, :sections)
 
-      assert s_1.title == section_1.title
+      assert s_1.title =~ section_1.title
     end
   end
 
@@ -420,8 +420,8 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsViewTest do
 
       # test order desc
       assert view
-             |> element("table > tbody > tr:first-child > td:nth-child(4) > div")
-             |> render() =~ "$10.00"
+             |> element("table > tbody > tr:first-child > td:nth-child(3) > div")
+             |> render() =~ "$40.00"
 
       view
       |> element("th[phx-value-sort_by=requires_payment]")
@@ -429,8 +429,8 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsViewTest do
 
       # test order asc
       assert view
-             |> element("table > tbody > tr:first-child > td:nth-child(4) > div")
-             |> render() =~ "$40.00"
+             |> element("table > tbody > tr:first-child > td:nth-child(3) > div")
+             |> render() =~ "$10.00"
     end
   end
 end

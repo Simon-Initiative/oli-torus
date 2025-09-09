@@ -103,7 +103,7 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
                       selected={assigns.params.container_id == container.resource_id}
                       value={container.resource_id}
                     >
-                      <%= if(container.numbering_level == 1, do: "Unit", else: "Module") %> <%= container.numbering_index %>: <%= container.title %>
+                      {if(container.numbering_level == 1, do: "Unit", else: "Module")} {container.numbering_index}: {container.title}
                     </option>
                   </select>
                 </div>
@@ -137,55 +137,25 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
           <div class="mt-9">
             <div :for={activity <- @activities} class="px-10">
               <div class="flex flex-col bg-white dark:bg-gray-800 dark:text-white w-min whitespace-nowrap rounded-t-md block font-medium text-sm leading-tight uppercase border-x-1 border-t-1 border-b-0 border-gray-300 px-6 py-4 my-4 gap-y-2">
-                <div role="activity_title"><%= activity.title %> - Question details</div>
+                <div role="activity_title">{activity.title} - Question details</div>
                 <div
                   :if={@current_assessment != nil and @activities not in [nil, []]}
-                  id="student_attempts_summary"
+                  id={"student_attempts_summary_#{activity.id}"}
                   class="flex flex-row gap-x-2 lowercase"
+                  role="student attempts summary"
                 >
-                  <span class="text-xs">
+                  <span class="text-xs font-bold">
                     <%= if activity.students_with_attempts_count == 0 do %>
-                      No student has completed any attempts.
+                      No student has responded
                     <% else %>
-                      <%= ~s{#{activity.students_with_attempts_count} #{Gettext.ngettext(OliWeb.Gettext, "student has", "students have", activity.students_with_attempts_count)} completed #{activity.total_attempts_count} #{Gettext.ngettext(OliWeb.Gettext, "attempt", "attempts", activity.total_attempts_count)}.} %>
+                      {~s{#{activity.students_with_attempts_count} #{Gettext.ngettext(OliWeb.Gettext, "student has", "students have", activity.students_with_attempts_count)} responded}}
                     <% end %>
                   </span>
-                  <div
-                    :if={activity.students_with_attempts_count < Enum.count(@students)}
-                    class="flex flex-col gap-x-2 items-center"
-                  >
-                    <span class="text-xs">
-                      <%= ~s{#{Enum.count(activity.student_emails_without_attempts)} #{Gettext.ngettext(OliWeb.Gettext,
-                      "student has",
-                      "students have",
-                      Enum.count(activity.student_emails_without_attempts))} not completed any attempt.} %>
-                    </span>
-                    <input
-                      type="text"
-                      id="email_inputs"
-                      class="form-control hidden"
-                      value={Enum.join(activity.student_emails_without_attempts, "; ")}
-                      readonly
-                    />
-                    <button
-                      id="copy_emails_button"
-                      class="text-xs text-primary underline ml-auto"
-                      phx-hook="CopyListener"
-                      data-clipboard-target="#email_inputs"
-                    >
-                      <i class="fa-solid fa-copy mr-2" /><%= Gettext.ngettext(
-                        OliWeb.Gettext,
-                        "Copy email address",
-                        "Copy email addresses",
-                        Enum.count(activity.student_emails_without_attempts)
-                      ) %>
-                    </button>
-                  </div>
                 </div>
               </div>
               <div
                 class="bg-white dark:bg-gray-800 dark:text-white shadow-sm px-6 -mt-5"
-                id="activity_detail"
+                id={"activity_detail_#{activity.id}"}
                 phx-hook="LoadSurveyScripts"
               >
                 <%= if Map.get(activity, :preview_rendered) != nil do %>
@@ -196,6 +166,18 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
                 <% else %>
                   <p class="pt-9 pb-5">No attempt registered for this question</p>
                 <% end %>
+              </div>
+              <div class="flex mt-2 mb-10 bg-white gap-x-20 dark:bg-gray-800 dark:text-white shadow-sm px-6 py-4">
+                <ActivityHelpers.percentage_bar
+                  id={Integer.to_string(activity.id) <> "_first_try_correct"}
+                  value={activity.first_attempt_pct}
+                  label="First Try Correct"
+                />
+                <ActivityHelpers.percentage_bar
+                  id={Integer.to_string(activity.id) <> "_eventually_correct"}
+                  value={activity.all_attempt_pct}
+                  label="Eventually Correct"
+                />
               </div>
             </div>
           </div>

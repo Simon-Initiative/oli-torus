@@ -17,6 +17,7 @@ defmodule OliWeb.Dialogue.WindowLive do
   alias Oli.Conversation
   alias Oli.GenAI.Dialogue.{Server, Configuration}
   alias Oli.GenAI.Completions.Message
+  alias Oli.GenAI.FeatureConfig
   alias OliWeb.Components
   alias OliWeb.Dialogue.UserInput
 
@@ -70,7 +71,7 @@ defmodule OliWeb.Dialogue.WindowLive do
       end
 
     configuration = %Configuration{
-      service_config: Oli.GenAIFeatureConfig.load_for(section.id, :student_dialogue),
+      service_config: FeatureConfig.load_for(section.id, :student_dialogue),
       messages: [Message.new(:system, system_prompt)],
       functions: OliWeb.Dialogue.StudentFunctions.functions(),
       reply_to_pid: self()
@@ -391,7 +392,7 @@ defmodule OliWeb.Dialogue.WindowLive do
           class="w-7 h-7 ml-2 mr-2 rounded-full justify-center items-center flex text-white bg-[#2080F0] dark:bg-[#DF8028]"
         >
           <div class="text-[14px] uppercase">
-            <%= @user_initials %>
+            {@user_initials}
           </div>
         </div>
       </div>
@@ -409,7 +410,7 @@ defmodule OliWeb.Dialogue.WindowLive do
                 id={"message_#{@index}_content"}
                 class="self-stretch dark:text-white text-sm font-normal font-['Open Sans'] tracking-tight"
               >
-                <%= raw(@content) %>
+                {raw(@content)}
               </div>
             </div>
           </div>

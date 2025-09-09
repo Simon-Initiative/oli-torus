@@ -8,6 +8,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
   alias Oli.Delivery.Sections.Section
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Repo
+  alias Oli.Resources
   alias Oli.Resources.ResourceType
   alias OliWeb.Common.InstructorDashboardPagedTable
   alias OliWeb.Common.PagingParams
@@ -151,17 +152,17 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
           <%= if @current_assessment != nil do %>
             <div class="flex flex-col">
               <%= if @current_assessment.container_label do %>
-                <h4 class="torus-h4 whitespace-nowrap"><%= @current_assessment.container_label %></h4>
+                <h4 class="torus-h4 whitespace-nowrap">{@current_assessment.container_label}</h4>
 
                 <div class="flex flex-row items-center">
                   <%= if !@current_assessment.batch_scoring do %>
                     <Icons.score_as_you_go />
                   <% end %>
 
-                  <span class="text-lg ml-1"><%= @current_assessment.title %></span>
+                  <span class="text-lg ml-1">{@current_assessment.title}</span>
                 </div>
               <% else %>
-                <h4 class="torus-h4 whitespace-nowrap"><%= @current_assessment.title %></h4>
+                <h4 class="torus-h4 whitespace-nowrap">{@current_assessment.title}</h4>
               <% end %>
             </div>
           <% else %>
@@ -189,15 +190,15 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
                 <%= if @students_with_attempts_count == 0 do %>
                   No student has completed any attempts.
                 <% else %>
-                  <%= ~s{#{@students_with_attempts_count} #{Gettext.ngettext(OliWeb.Gettext, "student has", "students have", @students_with_attempts_count)} completed #{@total_attempts_count} #{Gettext.ngettext(OliWeb.Gettext, "attempt", "attempts", @total_attempts_count)}.} %>
+                  {~s{#{@students_with_attempts_count} #{Gettext.ngettext(OliWeb.Gettext, "student has", "students have", @students_with_attempts_count)} completed #{@total_attempts_count} #{Gettext.ngettext(OliWeb.Gettext, "attempt", "attempts", @total_attempts_count)}.}}
                 <% end %>
               </span>
               <div :if={@students_with_attempts_count < Enum.count(@students)} class="flex flex-col">
                 <span class="text-xs ml-2">
-                  <%= ~s{#{Enum.count(@student_emails_without_attempts)} #{Gettext.ngettext(OliWeb.Gettext,
+                  {~s{#{Enum.count(@student_emails_without_attempts)} #{Gettext.ngettext(OliWeb.Gettext,
                   "student has",
                   "students have",
-                  Enum.count(@student_emails_without_attempts))} not completed any attempt.} %>
+                  Enum.count(@student_emails_without_attempts))} not completed any attempt.}}
                 </span>
                 <input
                   type="text"
@@ -212,12 +213,12 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
                   phx-hook="CopyListener"
                   data-clipboard-target="#email_inputs"
                 >
-                  <i class="fa-solid fa-copy mr-2" /><%= Gettext.ngettext(
+                  <i class="fa-solid fa-copy mr-2" />{Gettext.ngettext(
                     OliWeb.Gettext,
                     "Copy email address",
                     "Copy email addresses",
                     Enum.count(@student_emails_without_attempts)
-                  ) %>
+                  )}
                 </button>
               </div>
             </div>
@@ -260,6 +261,18 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
           <% else %>
             <p class="pt-9 pb-5">No attempt registered for this question</p>
           <% end %>
+        </div>
+        <div class="flex mt-2 mb-10 bg-white gap-x-20 dark:bg-gray-800 dark:text-white shadow-sm px-6 py-4">
+          <ActivityHelpers.percentage_bar
+            id={Integer.to_string(@selected_activity.id) <> "_first_try_correct"}
+            value={@selected_activity.first_attempt_pct}
+            label="First Try Correct"
+          />
+          <ActivityHelpers.percentage_bar
+            id={Integer.to_string(@selected_activity.id) <> "_eventually_correct"}
+            value={@selected_activity.all_attempt_pct}
+            label="Eventually Correct"
+          />
         </div>
       </div>
     </div>
@@ -555,11 +568,18 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
         Map.put(acc, resource_id, {total_attempts, avg_score})
       end)
 
+    lti_page_ids = Resources.get_page_resource_ids_with_lti_activities(section.id)
+
     activities =
       DeliveryResolver.from_resource_id(section.slug, activity_ids_from_responses)
       |> Enum.map(fn rev ->
         {total_attempts, avg_score} = Map.get(details_by_activity, rev.resource_id, {0, 0.0})
-        Map.merge(rev, %{total_attempts: total_attempts, avg_score: avg_score})
+
+        Map.merge(rev, %{
+          total_attempts: total_attempts,
+          avg_score: avg_score,
+          has_lti_activity: rev.resource_id in lti_page_ids
+        })
       end)
 
     add_objective_mapper(activities, section.slug)

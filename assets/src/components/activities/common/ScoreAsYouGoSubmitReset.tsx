@@ -18,14 +18,23 @@ interface ModalProps {
   message: any;
 }
 export const ResetModal = ({ onDone, onCancel, message }: ModalProps) => {
+  const [busy, setBusy] = React.useState(false);
+
+  const handleOk = () => {
+    if (busy) return;
+    setBusy(true);
+    Promise.resolve(onDone()).finally(() => setBusy(false));
+  };
+
   return (
     <Modal
       title="Reset Question"
       size={ModalSize.MEDIUM}
-      okLabel="Ok"
+      okLabel={busy ? 'Working…' : 'Ok'}
       cancelLabel="Cancel"
       onCancel={() => onCancel()}
-      onOk={() => onDone()}
+      onOk={handleOk}
+      disableOk={busy}
     >
       {message}
     </Modal>
@@ -66,6 +75,8 @@ function buildConfirmMessage(uiState: ActivityDeliveryState): any {
 export const ScoreAsYouGoSubmitReset: React.FC<Props> = ({ onSubmit, onReset, mode }) => {
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   const { attemptState } = uiState;
+  const didConfirmRef = React.useRef(false);
+  const [modalOpen, setModalOpen] = React.useState(false);
 
   const numberFormat = (value: number | null) => {
     if (value === null) {
@@ -98,14 +109,23 @@ export const ScoreAsYouGoSubmitReset: React.FC<Props> = ({ onSubmit, onReset, mo
                   attemptState.attemptNumber >= uiState.activityContext.maxAttempts)
               }
               onClick={() => {
+                if (modalOpen) return; // debounce: ignore if modal is already open
+                setModalOpen(true);
                 window.oliDispatch(
                   modalActions.display(
                     <ResetModal
                       onDone={() => {
+                        if (didConfirmRef.current) return; // one-shot protection
+                        didConfirmRef.current = true;
+                        setModalOpen(false);
                         window.oliDispatch(modalActions.dismiss());
                         onReset();
                       }}
-                      onCancel={() => window.oliDispatch(modalActions.dismiss())}
+                      onCancel={() => {
+                        didConfirmRef.current = false;
+                        setModalOpen(false);
+                        window.oliDispatch(modalActions.dismiss());
+                      }}
                       message={buildConfirmMessage(uiState)}
                     />,
                   ),

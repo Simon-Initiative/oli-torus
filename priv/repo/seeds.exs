@@ -19,7 +19,9 @@ alias Oli.Accounts.{User, Author}
 alias Oli.Repo
 alias Oli.Utils.DataGenerators.NameGenerator
 alias Oli.GenAI.Completions.{ServiceConfig, RegisteredModel}
-alias Oli.GenAIFeatureConfig
+alias Oli.GenAI.FeatureConfig
+
+import Ecto.Query, only: [from: 2]
 
 # create system roles
 if !Oli.Repo.get_by(Oli.Accounts.SystemRole, id: 1) do
@@ -188,7 +190,8 @@ case Oli.Repo.all(RegisteredModel) do
     })
 
     primary_model =
-      Oli.Repo.get!(RegisteredModel, 1)
+      from(r in RegisteredModel, order_by: [asc: :id], limit: 1)
+      |> Oli.Repo.one!()
 
     # Insert the completions_service_config
     Oli.Repo.insert!(%ServiceConfig{
@@ -201,13 +204,13 @@ case Oli.Repo.all(RegisteredModel) do
     service_config =
       Oli.Repo.get_by!(Oli.GenAI.Completions.ServiceConfig, name: "standard-no-backup")
 
-    Oli.Repo.insert!(%GenAIFeatureConfig{
+    Oli.Repo.insert!(%FeatureConfig{
       feature: :student_dialogue,
       service_config_id: service_config.id,
       section_id: nil
     })
 
-    Oli.Repo.insert!(%GenAIFeatureConfig{
+    Oli.Repo.insert!(%FeatureConfig{
       feature: :instructor_dashboard,
       service_config_id: service_config.id,
       section_id: nil

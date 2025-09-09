@@ -183,7 +183,7 @@ defmodule OliWeb.Certificates.CertificatesSettingsLive do
       </div>
 
       <div :if={@section.certificate_enabled}>
-        <%= render_tab(assigns) %>
+        {render_tab(assigns)}
       </div>
     </div>
     """
@@ -284,7 +284,7 @@ defmodule OliWeb.Certificates.CertificatesSettingsLive do
       ]}
       patch={@current_path <> "?active_tab=#{@active_tab}"}
     >
-      <%= render_slot(@inner_block) %>
+      {render_slot(@inner_block)}
     </.link>
     """
   end

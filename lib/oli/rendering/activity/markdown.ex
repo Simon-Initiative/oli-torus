@@ -13,7 +13,7 @@ defmodule Oli.Rendering.Activity.Markdown do
         %{"activity_id" => activity_id}
       ) do
     model =
-      Map.get(context.activity_map, activity_id, %{unencoded_model: %{}})
+      Map.get(context.activity_map || %{}, activity_id, %{unencoded_model: %{}})
       |> Map.get(:unencoded_model)
 
     stem_content =

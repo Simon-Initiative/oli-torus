@@ -44,10 +44,10 @@ defmodule OliWeb.Admin.AdminView do
             </li>
             <li>
               <a href={~p"/admin/institutions"}>
-                Manage Institutions <%= badge(
+                Manage Institutions {badge(
                   assigns,
                   Oli.Institutions.count_pending_registrations() |> Oli.Utils.positive_or_nil()
-                ) %>
+                )}
               </a>
             </li>
             <li><a href={~p"/admin/invite"}>Invite New Authors</a></li>
@@ -103,6 +103,19 @@ defmodule OliWeb.Admin.AdminView do
         </Group.render>
       <% end %>
       <%= if Accounts.has_admin_role?(@author, :system_admin) do %>
+        <Group.render label="GenAI Features" description="Manage and support GenAI based features">
+          <ul class="link-list">
+            <li>
+              <a href={~p"/admin/gen_ai/registered_models"}>Manage registered LLM models</a>
+            </li>
+            <li>
+              <a href={~p"/admin/gen_ai/service_configs"}>Manage service configurations</a>
+            </li>
+            <li>
+              <a href={~p"/admin/gen_ai/feature_configs"}>Manage feature configurations</a>
+            </li>
+          </ul>
+        </Group.render>
         <Group.render
           label="System Management"
           description="Manage and support system level functionality"
@@ -133,6 +146,11 @@ defmodule OliWeb.Admin.AdminView do
               </a>
             </li>
             <li>
+              <a href={~p"/admin/audit_log"}>
+                View Audit Log
+              </a>
+            </li>
+            <li>
               <a href={~p"/admin/xapi"}>
                 XAPI Upload Pipeline Stats
               </a>
@@ -141,6 +159,16 @@ defmodule OliWeb.Admin.AdminView do
               <a href={~p"/admin/dashboard/home"} target="_blank">
                 <span>View System Performance Dashboard</span>
                 <i class="fas fa-external-link-alt self-center ml-1"></i>
+              </a>
+            </li>
+            <li>
+              <a href={~p"/admin/agent_monitor"}>
+                AI Agent Monitor
+              </a>
+            </li>
+            <li>
+              <a href={~p"/admin/mcp_tokens"}>
+                Manage MCP Bearer Tokens
               </a>
             </li>
           </ul>
@@ -159,7 +187,7 @@ defmodule OliWeb.Admin.AdminView do
         assigns = assign(assigns, badge: badge)
 
         ~H"""
-        <span class="badge badge-pill badge-primary ml-2"><%= @badge %></span>
+        <span class="badge badge-pill badge-primary ml-2">{@badge}</span>
         """
     end
   end

@@ -64,7 +64,10 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsView do
       )
 
     {:ok, table_model} =
-      OliWeb.Sections.SectionsTableModel.new(socket.assigns.ctx, sections, true)
+      OliWeb.Sections.SectionsTableModel.new(socket.assigns.ctx, sections,
+        render_institution_action: true,
+        exclude_columns: [:tags]
+      )
 
     table_model =
       SortableTableModel.update_from_params(table_model, params)
@@ -107,7 +110,7 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsView do
     <div class="container">
       <.modal modal_assigns={@modal_assigns} />
       <h4 class="torus-h4 mb-2">
-        <%= @institution.name %>
+        {@institution.name}
       </h4>
       <div class="flex flex-row justify-between items-center">
         <.tabs active_tab={@selected_tab} institution_id={@institution.id} />
@@ -189,10 +192,10 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsView do
                   #{if active, do: "!border-delivery-primary active", else: "border-transparent"}
                 "}
             >
-              <%= if is_function(label), do: label.(), else: label %>
+              {if is_function(label), do: label.(), else: label}
               <%= if badge do %>
                 <span class="text-xs inline-block py-1 px-2 ml-2 leading-none text-center whitespace-nowrap align-baseline font-bold bg-delivery-primary text-white rounded">
-                  <%= badge %>
+                  {badge}
                 </span>
               <% end %>
             </.link>
@@ -306,7 +309,7 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsView do
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title">
-              Assign institution for <%= @modal_assigns.changeset.data.title %>
+              Assign institution for {@modal_assigns.changeset.data.title}
             </h5>
             <button
               type="button"
@@ -337,7 +340,7 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsView do
                         value={value}
                         selected={value == @modal_assigns.changeset.data.institution_id}
                       >
-                        <%= label %>
+                        {label}
                       </option>
                     <% end %>
                   </select>

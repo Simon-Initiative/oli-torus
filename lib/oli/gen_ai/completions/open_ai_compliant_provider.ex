@@ -20,15 +20,29 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
   def generate(messages, functions, %RegisteredModel{model: model} = registered_model) do
     config = config(:sync, registered_model)
 
-    api_post(
-      config.api_url <> "/v1/chat/completions",
-      [
-        model: model,
-        messages: encode_messages(messages),
-        functions: functions
-      ],
-      config
-    )
+    params =
+      case functions do
+        [] ->
+          [model: model, messages: encode_messages(messages)]
+
+        _ ->
+          [model: model, messages: encode_messages(messages), functions: functions]
+      end
+
+    case api_post(config.api_url <> "/v1/chat/completions", params, config) do
+      {:ok, string_response} ->
+        case Jason.decode!(string_response) do
+          %{"choices" => [%{"message" => %{"content" => content}} | _]} ->
+            {:ok, content}
+
+          _ ->
+            Logger.error("Unexpected OpenAI response format: #{inspect(string_response)}")
+            {:error, :unexpected_response}
+        end
+
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
   def stream(
@@ -104,9 +118,17 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
       |> Map.delete(:input)
     end)
     |> Enum.map(fn message ->
+      # Map :tool role to :function for OpenAI compatibility
+      role =
+        case message.role do
+          :tool -> "function"
+          "tool" -> "function"
+          other -> other
+        end
+
       case message.name do
-        nil -> %{role: message.role, content: message.content}
-        _ -> %{role: message.role, content: message.content, name: message.name}
+        nil -> %{role: role, content: message.content}
+        _ -> %{role: role, content: message.content, name: message.name}
       end
     end)
   end
@@ -136,10 +158,10 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
           |> Enum.map(fn {k, v} -> {String.to_atom(k), v} end)
           |> Map.new()
 
-        {:ok, res}
+        {:ok, normalize_response(res)}
 
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        {:ok, body}
+        {:ok, normalize_response(body)}
 
       {:ok, %HTTPoison.Response{body: {:ok, body}}} ->
         {:error, body}
@@ -260,4 +282,36 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
       api_url: url
     }
   end
+
+  # Normalize OpenAI response to consistent format
+  defp normalize_response(response) when is_binary(response) do
+    case Jason.decode(response) do
+      {:ok, parsed} -> normalize_response(parsed)
+      {:error, _} -> response
+    end
+  end
+
+  defp normalize_response(response) when is_map(response) do
+    case get_in(response, ["choices", Access.at(0), "message"]) do
+      %{"function_call" => function_call} = message ->
+        # Convert old function_call format to new tool_calls format
+        tool_call = %{
+          "id" => "call_" <> Ecto.UUID.generate(),
+          "type" => "function",
+          "function" => function_call
+        }
+
+        normalized_message =
+          message
+          |> Map.delete("function_call")
+          |> Map.put("tool_calls", [tool_call])
+
+        put_in(response, ["choices", Access.at(0), "message"], normalized_message)
+
+      _ ->
+        response
+    end
+  end
+
+  defp normalize_response(response), do: response
 end

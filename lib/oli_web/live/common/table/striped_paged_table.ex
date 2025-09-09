@@ -16,6 +16,7 @@ defmodule OliWeb.Common.StripedPagedTable do
   attr :show_bottom_paging, :boolean, default: true
 
   attr :additional_table_class, :string, default: ""
+  attr :additional_row_class, :string, default: ""
   attr :render_top_info, :boolean, default: true
   attr :scrollable, :boolean, default: true
   attr :show_limit_change, :boolean, default: false
@@ -26,21 +27,22 @@ defmodule OliWeb.Common.StripedPagedTable do
     ~H"""
     <div class={if @scrollable, do: "overflow-x-auto #{@overflow_class}"}>
       <%= if @filter != "" and @render_top_info do %>
-        <strong>Results filtered on &quot;<%= @filter %>&quot;</strong>
+        <strong>Results filtered on &quot;{@filter}&quot;</strong>
       <% end %>
 
       <%= if @total_count > 0 do %>
         <div :if={@total_count <= @limit and @render_top_info} class="px-5 py-2">
-          Showing all results (<%= @total_count %> total)
+          Showing all results ({@total_count} total)
         </div>
         <div class="relative max-h-[650px] overflow-y-auto overflow-x-auto mx-4">
-          <%= render_table(%{
+          {render_table(%{
             allow_selection: @allow_selection,
             table_model: @table_model,
             sort: @sort,
             selection_change: @selection_change,
-            additional_table_class: @additional_table_class
-          }) %>
+            additional_table_class: @additional_table_class,
+            additional_row_class: @additional_row_class
+          })}
         </div>
         <Paging.render
           id="footer_paging"
@@ -56,7 +58,7 @@ defmodule OliWeb.Common.StripedPagedTable do
         />
       <% else %>
         <div class="bg-white dark:bg-gray-800 dark:text-white px-10 my-5">
-          <p><%= @no_records_message %></p>
+          <p>{@no_records_message}</p>
         </div>
       <% end %>
     </div>
@@ -71,6 +73,7 @@ defmodule OliWeb.Common.StripedPagedTable do
         sort={@sort}
         select={@selection_change}
         additional_table_class={@additional_table_class}
+        additional_row_class={@additional_row_class}
       />
       """
     else
@@ -79,6 +82,7 @@ defmodule OliWeb.Common.StripedPagedTable do
         model={@table_model}
         sort={@sort}
         additional_table_class={@additional_table_class}
+        additional_row_class={@additional_row_class}
       />
       """
     end

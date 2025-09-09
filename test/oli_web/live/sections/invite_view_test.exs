@@ -122,7 +122,7 @@ defmodule OliWeb.Sections.InviteViewTest do
       {:ok, view, _html} = live(conn, live_view_invite_route(section.slug))
 
       assert view
-             |> element("button[phx-value-option=\"one_day\"]")
+             |> element("button[phx-value-option='one_day']")
              |> render_click(%{option: "one_day"})
 
       [si | _] = SectionInvites.list_section_invites(section.id)
@@ -139,7 +139,7 @@ defmodule OliWeb.Sections.InviteViewTest do
       {:ok, view, _html} = live(conn, live_view_invite_route(section.slug))
 
       assert view
-             |> element("button[phx-value-option=\"one_week\"]")
+             |> element("button[phx-value-option='one_week']")
              |> render_click(%{option: "one_week"})
 
       [si | _] = SectionInvites.list_section_invites(section.id)
@@ -157,7 +157,7 @@ defmodule OliWeb.Sections.InviteViewTest do
       {:ok, view, _html} = live(conn, live_view_invite_route(section.slug))
 
       assert view
-             |> element("button[phx-value-option=\"section_start\"]")
+             |> element("button[phx-value-option='section_start']")
              |> render_click(%{option: "section_start"})
 
       html = render(view)
@@ -174,7 +174,7 @@ defmodule OliWeb.Sections.InviteViewTest do
       {:ok, view, _html} = live(conn, live_view_invite_route(section.slug))
 
       assert view
-             |> element("button[phx-value-option=\"section_end\"]")
+             |> element("button[phx-value-option='section_end']")
              |> render_click(%{option: "section_end"})
 
       html = render(view)
@@ -187,7 +187,7 @@ defmodule OliWeb.Sections.InviteViewTest do
       {:ok, view, _html} = live(conn, live_view_invite_route(section.slug))
 
       assert view
-             |> element("button[phx-value-option=\"one_day\"]")
+             |> element("button[phx-value-option='one_day']")
              |> render_click(%{option: "one_day"})
 
       assert render(view) =~

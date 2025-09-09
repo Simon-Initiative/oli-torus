@@ -234,7 +234,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.HTMLComponents do
       </button>
     </div>
     <div class="ml-1">
-      <%= @title %>
+      {@title}
     </div>
     """
   end
@@ -272,8 +272,36 @@ defmodule OliWeb.Delivery.InstructorDashboard.HTMLComponents do
             <Icons.chevron_down class="fill-black dark:fill-dark -rotate-180" />
           </div>
         </div>
-        <%= render_slot(@inner_block) %>
+        {render_slot(@inner_block)}
       </div>
+    </div>
+    """
+  end
+
+  attr :title, :string, required: true
+
+  def render_proficiency_label(assigns) do
+    ~H"""
+    <div class="flex items-center gap-x-2">
+      {Icons.info(assigns)}
+      <span>{@title}</span>
+    </div>
+    """
+  end
+
+  attr :title, :string, required: true
+  attr :id, :integer, required: true
+
+  def lti_label_component(assigns) do
+    ~H"""
+    <div
+      id={"lti_title_#{@id}"}
+      phx-hook="GlobalTooltip"
+      data-tooltip="<div>LTI 1.3 External Tool</div>"
+      class="flex items-center gap-2"
+    >
+      <Icons.plug />
+      <span class="uppercase">{@title}</span>
     </div>
     """
   end
@@ -283,9 +311,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.HTMLComponents do
 
   defp view_example_bullet_entry(assigns) do
     ~H"""
-    <span class="text-[#383a44] text-base font-bold dark:text-white"><%= @entry %>:</span>
+    <span class="text-[#383a44] text-base font-bold dark:text-white">{@entry}:</span>
     <span class="text-[#383a44] text-base font-medium dark:text-white">
-      <%= render_slot(@inner_block) %>
+      {render_slot(@inner_block)}
     </span>
     """
   end
@@ -295,7 +323,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.HTMLComponents do
   defp view_example_blue_item(assigns) do
     ~H"""
     <div class="self-stretch text-[#0165da] text-base font-bold dark:text-white">
-      <%= @content %>
+      {@content}
     </div>
     """
   end

@@ -808,8 +808,9 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       assert attempt_state.hasMoreAttempts == false
 
       # now try to reset the guid from the first attempt, simulating the
-      # student clicking 'Reset' in tab A.
-      assert {:error, {:no_more_attempts}} ==
+      # student clicking 'Reset' in tab A. This should fail because attempt 1
+      # is no longer the latest attempt (attempt 2 was created above).
+      assert {:error, {:already_reset}} ==
                ActivityLifecycle.reset_activity(
                  section.slug,
                  activity_attempt.attempt_guid,
@@ -942,6 +943,42 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       # verify that the updated part attempt has the latest datashop session id
       updated_part_attempt = Core.get_part_attempt_by(id: part_attempt.id)
       assert updated_part_attempt.datashop_session_id == datashop_session_id_user1
+    end
+
+    test "processing submission with invalid attempt_guids filters correctly", %{
+      ungraded_page_user1_activity_attempt1_part1_attempt1: part_attempt,
+      section: section,
+      ungraded_page_user1_activity_attempt1: activity_attempt
+    } do
+      datashop_session_id_user1 = UUID.uuid4()
+
+      # Create part_inputs with both valid and invalid attempt_guids
+      part_inputs = [
+        %{attempt_guid: part_attempt.attempt_guid, input: %StudentInput{input: "a"}},
+        %{attempt_guid: "invalid-guid-1", input: %StudentInput{input: "b"}},
+        %{attempt_guid: "invalid-guid-2", input: %StudentInput{input: "c"}}
+      ]
+
+      # This should process only the valid attempt_guid and ignore the invalid ones
+      {:ok, [%{attempt_guid: attempt_guid, out_of: out_of, score: score, feedback: %{id: id}}]} =
+        Evaluate.evaluate_from_input(
+          section.slug,
+          activity_attempt.attempt_guid,
+          part_inputs,
+          datashop_session_id_user1
+        )
+
+      # verify only the valid attempt was processed
+      assert attempt_guid == part_attempt.attempt_guid
+      assert score == 10
+      assert out_of == 10
+      assert id == "1"
+
+      # verify the part attempt record was updated correctly
+      updated_attempt = Oli.Repo.get!(PartAttempt, part_attempt.id)
+      assert updated_attempt.score == 10
+      assert updated_attempt.out_of == 10
+      refute updated_attempt.date_evaluated == nil
     end
 
     test "processing a different submission", %{

@@ -1,0 +1,134 @@
+# Scenario: Product-based sections do not receive MAJOR project updates
+
+# Create initial project with basic content
+- project:
+    name: "source_project"
+    title: "Original Course Content"
+    root:
+      children:
+        - page: "Welcome"
+        - container: "Module 1: Introduction"
+          children:
+            - page: "Getting Started"
+            - page: "Basic Concepts"
+        - container: "Module 2: Core Topics"
+          children:
+            - page: "Topic A"
+            - page: "Topic B"
+
+# Create a product from the project
+# Products serve as fixed templates for creating sections
+- product:
+    name: "course_product"
+    title: "Course Product Template"
+    from: "source_project"
+
+# Create a section from the product
+# This section is bound to the product, not directly to the project
+- section:
+    name: "product_based_section"
+    title: "Fall 2024 Section"
+    from: "course_product"
+    type: enrollable
+
+# Verify initial section structure matches the product
+- verify:
+    to: "product_based_section"
+    structure:
+      root:
+        children:
+          - page: "Welcome"
+          - container: "Module 1: Introduction"
+            children:
+              - page: "Getting Started"
+              - page: "Basic Concepts"
+          - container: "Module 2: Core Topics"
+            children:
+              - page: "Topic A"
+              - page: "Topic B"
+
+# Now add new content to the source project
+- manipulate:
+    to: "source_project"
+    ops:
+      # Add a new module
+      - add_container:
+          title: "Module 3: Advanced Topics"
+
+      # Add pages to the new module
+      - add_page:
+          title: "Advanced Topic 1"
+          to: "Module 3: Advanced Topics"
+
+      - add_page:
+          title: "Advanced Topic 2"
+          to: "Module 3: Advanced Topics"
+
+      # Add a page to an existing module
+      - add_page:
+          title: "Topic C"
+          to: "Module 2: Core Topics"
+
+# Publish the project with the new content
+- publish:
+    to: "source_project"
+    description: "Added Module 3 and additional content"
+
+# Attempt to update the product-based section
+# This update should have NO EFFECT because the section
+# is based on a product, not directly on the project
+- update:
+    from: "source_project"
+    to: "product_based_section"
+
+# Verify that the section STILL has the original structure
+# The new Module 3 and Topic C should NOT appear
+- verify:
+    to: "product_based_section"
+    structure:
+      root:
+        children:
+          - page: "Welcome"
+          - container: "Module 1: Introduction"
+            children:
+              - page: "Getting Started"
+              - page: "Basic Concepts"
+          - container: "Module 2: Core Topics"
+            children:
+              - page: "Topic A"
+              - page: "Topic B"
+              # Note: Topic C is NOT here
+
+# For comparison, create a direct section from the project
+- section:
+    name: "direct_section"
+    title: "Direct Section"
+    from: "source_project"
+    type: enrollable
+
+# The direct section WILL have the new content because it was
+# created after the project was updated
+- verify:
+    to: "direct_section"
+    structure:
+      root:
+        children:
+          - page: "Welcome"
+          - container: "Module 1: Introduction"
+            children:
+              - page: "Getting Started"
+              - page: "Basic Concepts"
+          - container: "Module 2: Core Topics"
+            children:
+              - page: "Topic A"
+              - page: "Topic B"
+              - page: "Topic C"  # This IS present
+          - container: "Module 3: Advanced Topics"  # This IS present
+            children:
+              - page: "Advanced Topic 1"
+              - page: "Advanced Topic 2"
+
+# To update product-based sections, you would need to:
+# 1. Create a new product from the updated project
+# 2. Create new sections from the new product
+# The existing product-based sections remain unchanged

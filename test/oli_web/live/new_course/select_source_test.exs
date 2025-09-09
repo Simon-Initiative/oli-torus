@@ -8,27 +8,20 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
   import Phoenix.LiveViewTest
   import Oli.Factory
 
-  @live_view_admin_route Routes.select_source_path(OliWeb.Endpoint, :admin)
-  @live_view_independent_learner_route Routes.select_source_path(
-                                         OliWeb.Endpoint,
-                                         :independent_learner
-                                       )
-  @live_view_lms_instructor_route Routes.select_source_path(OliWeb.Endpoint, :lms_instructor)
-
   describe "user cannot access when is not logged in" do
     test "redirects to new session when accessing the admin view", %{conn: conn} do
       {:error, {:redirect, %{to: "/authors/log_in"}}} =
-        live(conn, @live_view_admin_route)
+        live(conn, ~p"/admin/sections/create")
     end
 
     test "redirects to new session when accessing the independent instructor view", %{conn: conn} do
       {:error, {:redirect, %{to: "/users/log_in"}}} =
-        live(conn, @live_view_independent_learner_route)
+        live(conn, ~p"/sections/new")
     end
 
     test "redirects to new session when accessing the lms instructor view", %{conn: conn} do
       {:error, {:redirect, %{to: "/users/log_in"}}} =
-        live(conn, @live_view_lms_instructor_route)
+        live(conn, ~p"/sections/new")
     end
   end
 
@@ -36,7 +29,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
     setup [:admin_conn]
 
     test "loads correctly when there are no sections", %{conn: conn} do
-      {:ok, view, _html} = live(conn, @live_view_admin_route)
+      {:ok, view, _html} = live(conn, ~p"/admin/sections/create")
 
       assert has_element?(view, "p", "None exist")
       assert has_element?(view, "button[disabled]", "Next step")
@@ -45,10 +38,10 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
     test "loads correctly when there are sections in table view", %{conn: conn} do
       section = insert(:section, open_and_free: true)
 
-      {:ok, view, _html} = live(conn, @live_view_admin_route)
+      {:ok, view, _html} = live(conn, ~p"/admin/sections/create")
 
       assert has_element?(view, "h2", "Select source")
-      assert has_element?(view, "button[phx-click=\"source_selection\"]")
+      assert has_element?(view, "button[phx-click='source_selection']")
       refute has_element?(view, "img[alt=\"course image\"]")
       refute has_element?(view, "form#update_view_type")
 
@@ -61,7 +54,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       s1 = insert(:section, %{title: "testing", open_and_free: true})
       s2 = insert(:section, open_and_free: true)
 
-      {:ok, view, _html} = live(conn, @live_view_admin_route)
+      {:ok, view, _html} = live(conn, ~p"/admin/sections/create")
 
       view
       |> element("input[placeholder=\"Search...\"]")
@@ -86,10 +79,10 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       insert(:section, %{title: "Testing A", open_and_free: true})
       insert(:section, %{title: "Testing B", open_and_free: true})
 
-      {:ok, view, _html} = live(conn, @live_view_admin_route)
+      {:ok, view, _html} = live(conn, ~p"/admin/sections/create")
 
       view
-      |> element("th[phx-value-sort_by=\"title\"]")
+      |> element("th[phx-value-sort_by='title']")
       |> render_click(%{sort_by: "title"})
 
       assert view
@@ -97,7 +90,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
              |> render() =~ "Testing A"
 
       view
-      |> element("th[phx-value-sort_by=\"title\"")
+      |> element("th[phx-value-sort_by='title']")
       |> render_click(%{sort_by: "title"})
 
       assert view
@@ -111,10 +104,10 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
 
       last_s = List.last(tail)
 
-      {:ok, view, _html} = live(conn, @live_view_admin_route)
+      {:ok, view, _html} = live(conn, ~p"/admin/sections/create")
 
       view
-      |> element("th[phx-value-sort_by=\"title\"")
+      |> element("th[phx-value-sort_by='title']")
       |> render_click(%{sort_by: "title"})
 
       assert has_element?(view, "div", first_s.title)
@@ -131,12 +124,12 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
     test "successfully goes to the next step", %{conn: conn} do
       section = insert(:section, open_and_free: true, type: :blueprint)
 
-      {:ok, view, _html} = live(conn, @live_view_admin_route)
+      {:ok, view, _html} = live(conn, ~p"/admin/sections/create")
 
       assert has_element?(view, "button[disabled]", "Next step")
 
       view
-      |> element("button[phx-click=\"source_selection\"]")
+      |> element("button[phx-click='source_selection']")
       |> render_click(%{id: "product:#{section.id}"})
 
       refute has_element?(view, "h2", "Select source")
@@ -147,7 +140,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       {:ok, conn: conn, ctx: session_context} = set_timezone(context)
       section = insert(:section, open_and_free: true)
 
-      {:ok, view, _html} = live(conn, @live_view_admin_route)
+      {:ok, view, _html} = live(conn, ~p"/admin/sections/create")
 
       assert view
              |> element("tr:last-child > td:last-child")
@@ -160,7 +153,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
     setup [:lms_instructor_conn]
 
     test "loads correctly when there are no sections", %{conn: conn} do
-      {:ok, view, _html} = live(conn, @live_view_lms_instructor_route)
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
 
       assert has_element?(view, "p", "None exist")
       assert has_element?(view, "button[disabled]", "Next step")
@@ -170,10 +163,10 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       %Publication{project: project} = insert(:publication)
       section = insert(:section, %{base_project: project})
 
-      {:ok, view, _html} = live(conn, @live_view_independent_learner_route)
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
 
       assert has_element?(view, "h2", "Select source")
-      refute has_element?(view, "button[phx-click=\"source_selection\"]")
+      refute has_element?(view, "button[phx-click='source_selection']")
       assert has_element?(view, "img[alt=\"course image\"]")
       assert has_element?(view, "form#update_view_type")
       refute has_element?(view, "a[href=\"#{details_view(section)}\"]")
@@ -185,7 +178,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       s1 = insert(:section, %{base_project: project, title: "testing"})
       s2 = insert(:section, %{base_project: project})
 
-      {:ok, view, _html} = live(conn, @live_view_independent_learner_route)
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
 
       view
       |> element("input[placeholder=\"Search...\"]")
@@ -210,13 +203,13 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       %Publication{project: project} = insert(:publication)
       insert(:section, base_project: project)
 
-      {:ok, view, _html} = live(conn, @live_view_independent_learner_route)
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
 
       view
       |> element("form#update_view_type")
       |> render_change(%{"view" => %{"type" => "list"}})
 
-      assert has_element?(view, "button[phx-click=\"source_selection\"]")
+      assert has_element?(view, "button[phx-click='source_selection']")
       refute has_element?(view, "img[alt=\"course image\"]")
     end
 
@@ -225,7 +218,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       insert(:section, %{base_project: project, title: "Testing A"})
       insert(:section, %{base_project: project, title: "Testing B"})
 
-      {:ok, view, _html} = live(conn, @live_view_independent_learner_route)
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
 
       view
       |> element("form#sort")
@@ -252,28 +245,28 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
 
       last_s = List.last(tail)
 
-      {:ok, view, _html} = live(conn, @live_view_independent_learner_route)
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
 
       view
       |> element("form#sort")
       |> render_change(%{sort_by: "title"})
 
-      assert has_element?(view, "a[phx-value-id=\"publication:#{publication_id}\"]")
-      refute has_element?(view, "a[phx-value-id=\"product:#{last_s.id}\"]")
+      assert has_element?(view, "a[phx-value-id='publication:#{publication_id}']")
+      refute has_element?(view, "a[phx-value-id='product:#{last_s.id}']")
 
       view
       |> element(".page-item button", "2")
       |> render_click()
 
-      refute has_element?(view, "a[phx-value-id=\"publication:#{publication_id}\"]")
-      assert has_element?(view, "a[phx-value-id=\"product:#{last_s.id}\"]")
+      refute has_element?(view, "a[phx-value-id='publication:#{publication_id}']")
+      assert has_element?(view, "a[phx-value-id='product:#{last_s.id}']")
     end
 
     test "successfully goes to the next step", %{conn: conn} do
       %Publication{project: project} = insert(:publication)
       section = insert(:section, base_project: project)
 
-      {:ok, view, _html} = live(conn, @live_view_independent_learner_route)
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
 
       assert has_element?(view, "button[disabled]", "Next step")
 
@@ -291,7 +284,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       %Publication{project: project} = insert(:publication)
       section = insert(:section, base_project: project)
 
-      {:ok, view, _html} = live(conn, @live_view_independent_learner_route)
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
 
       assert view
              |> element(".card-deck:last-child")
@@ -304,7 +297,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
     setup [:instructor_conn]
 
     test "loads correctly when there are no sections", %{conn: conn} do
-      {:ok, view, _html} = live(conn, @live_view_independent_learner_route)
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
 
       assert has_element?(view, "p", "None exist")
       assert has_element?(view, "button[disabled]", "Next step")
@@ -314,10 +307,10 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       %Publication{project: project} = insert(:publication)
       section = insert(:section, %{base_project: project})
 
-      {:ok, view, _html} = live(conn, @live_view_independent_learner_route)
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
 
       assert has_element?(view, "h2", "Select source")
-      refute has_element?(view, "button[phx-click=\"source_selection\"]")
+      refute has_element?(view, "button[phx-click='source_selection']")
       assert has_element?(view, "img[alt=\"course image\"]")
       assert has_element?(view, "form#update_view_type")
       refute has_element?(view, "a[href=\"#{details_view(section)}\"]")
@@ -329,7 +322,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       s1 = insert(:section, %{base_project: project, title: "Testing"})
       s2 = insert(:section, %{base_project: project})
 
-      {:ok, view, _html} = live(conn, @live_view_independent_learner_route)
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
 
       view
       |> element("input[placeholder=\"Search...\"]")
@@ -354,13 +347,13 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       %Publication{project: project} = insert(:publication)
       insert(:section, base_project: project)
 
-      {:ok, view, _html} = live(conn, @live_view_independent_learner_route)
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
 
       view
       |> element("form#update_view_type")
       |> render_change(%{"view" => %{"type" => "list"}})
 
-      assert has_element?(view, "button[phx-click=\"source_selection\"]")
+      assert has_element?(view, "button[phx-click='source_selection']")
       refute has_element?(view, "img[alt=\"course image\"]")
     end
 
@@ -369,7 +362,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       insert(:section, %{base_project: project, title: "Testing A"})
       insert(:section, %{base_project: project, title: "Testing B"})
 
-      {:ok, view, _html} = live(conn, @live_view_independent_learner_route)
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
 
       view
       |> element("form#sort")
@@ -396,28 +389,28 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
 
       last_s = List.last(tail)
 
-      {:ok, view, _html} = live(conn, @live_view_independent_learner_route)
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
 
       view
       |> element("form#sort")
       |> render_change(%{sort_by: "title"})
 
-      assert has_element?(view, "a[phx-value-id=\"publication:#{publication_id}\"]")
-      refute has_element?(view, "a[phx-value-id=\"product:#{last_s.id}\"]")
+      assert has_element?(view, "a[phx-value-id='publication:#{publication_id}']")
+      refute has_element?(view, "a[phx-value-id='product:#{last_s.id}']")
 
       view
       |> element(".page-item button", "2")
       |> render_click()
 
-      refute has_element?(view, "a[phx-value-id=\"publication:#{publication_id}\"]")
-      assert has_element?(view, "a[phx-value-id=\"product:#{last_s.id}\"]")
+      refute has_element?(view, "a[phx-value-id='publication:#{publication_id}']")
+      assert has_element?(view, "a[phx-value-id='product:#{last_s.id}']")
     end
 
     test "successfully goes to the next step", %{conn: conn} do
       %Publication{project: project} = insert(:publication)
       section = insert(:section, base_project: project)
 
-      {:ok, view, _html} = live(conn, @live_view_independent_learner_route)
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
 
       assert has_element?(view, "button[disabled]", "Next step")
 
@@ -436,7 +429,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       %Publication{project: project} = insert(:publication)
       section = insert(:section, base_project: project)
 
-      {:ok, view, _html} = live(conn, @live_view_independent_learner_route)
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
 
       assert view
              |> element(".card-deck:last-child")

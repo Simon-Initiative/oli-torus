@@ -1,0 +1,62 @@
+# Scenario: Minor update - changing page title
+# Tests that a minor change to a project (changing the title of a page)
+# is correctly propagated to a section built from that project
+
+- project:
+    name: "source_project"
+    title: "Test Project"
+    root:
+      children:
+        - page: "Original Page Title"
+        - container: "Module 1"
+          children:
+            - page: "Lesson 1 Title"
+            - page: "Lesson 2 Title"
+
+- section:
+    name: "test_section"
+    title: "Test Section"
+    from: "source_project"
+
+# Verify initial state - section has original page title
+- verify:
+    to: "test_section"
+    structure:
+      root:
+        children:
+          - page: "Original Page Title"
+          - container: "Module 1"
+            children:
+              - page: "Lesson 1 Title"
+              - page: "Lesson 2 Title"
+
+# Make a minor update - change the page title
+- manipulate:
+    to: "source_project"
+    ops:
+      - revise:
+          target: "Original Page Title"
+          set:
+            title: "Updated Page Title"
+
+# Publish the minor update
+- publish:
+    to: "source_project"
+    description: "Minor update - changing page title"
+
+# Apply the update to the section
+- update:
+    from: "source_project"
+    to: "test_section"
+
+# Verify the section has the updated page title
+- verify:
+    to: "test_section"
+    structure:
+      root:
+        children:
+          - page: "Updated Page Title"
+          - container: "Module 1"
+            children:
+              - page: "Lesson 1 Title"
+              - page: "Lesson 2 Title"

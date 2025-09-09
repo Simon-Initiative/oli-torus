@@ -20,16 +20,16 @@ defmodule OliWeb.Components.Delivery.CourseLatestVisitedPage do
       <div class="p-4 border-t border-gray-100 dark:border-gray-700">
         <section class="flex flex-row justify-between items-center w-full">
           <h4 class="text-sm font-bold tracking-wide text-gray-800 dark:text-white">
-            <%= @page_revision.title %>
+            {@page_revision.title}
           </h4>
 
           <%= if !@is_instructor do %>
             <span class="w-64 h-10 text-sm tracking-wide text-gray-800 dark:text-white bg-gray-100 dark:bg-gray-500 rounded-sm flex justify-center items-center ml-auto mr-3">
-              <%= DeliveryUtils.get_resource_scheduled_date(
+              {DeliveryUtils.get_resource_scheduled_date(
                 @page_revision.resource_id,
                 @scheduled_dates,
                 @ctx
-              ) %>
+              )}
             </span>
             <.link
               navigate={~p"/sections/#{@section_slug}/page/#{@page_revision.slug}"}

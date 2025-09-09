@@ -91,13 +91,13 @@ defmodule OliWeb.Grades.GradesLive do
 
     ~H"""
     <div class="container mx-auto">
-      <h2><%= dgettext("grades", "Manage Grades") %></h2>
+      <h2>{dgettext("grades", "Manage Grades")}</h2>
 
       <p>
-        <%= dgettext(
+        {dgettext(
           "grades",
           "Grades for this section can be viewed by students and instructors using the LMS gradebook."
-        ) %>
+        )}
       </p>
 
       <div class="my-2">
@@ -121,7 +121,7 @@ defmodule OliWeb.Grades.GradesLive do
       </div>
 
       <div class={"my-2 #{@progress_visible}"}>
-        <p><%= dgettext("grades", "Do not leave this page until this operation completes.") %></p>
+        <p>{dgettext("grades", "Do not leave this page until this operation completes.")}</p>
         <div class="progress">
           <div
             class="progress-bar"

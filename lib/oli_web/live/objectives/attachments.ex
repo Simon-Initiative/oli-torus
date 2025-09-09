@@ -70,10 +70,10 @@ defmodule OliWeb.ObjectivesLive.Attachments do
                     href={link_route(@project.slug, @parent_pages, r.resource_id, r.slug)}
                     target="_blank"
                   >
-                    <%= r.title %>
+                    {r.title}
                   </a>
                 </td>
-                <td><%= get_type(r) %></td>
+                <td>{get_type(r)}</td>
               </tr>
             <% end %>
           </tbody>
@@ -103,11 +103,11 @@ defmodule OliWeb.ObjectivesLive.Attachments do
                     href={link_route(@project.slug, @parent_pages, r.resource_id, r.slug)}
                     target="_blank"
                   >
-                    <%= r.title %>
+                    {r.title}
                   </a>
                 </td>
-                <td><%= get_type(r) %></td>
-                <td><%= locked_by_email(@parent_pages, @locked_by, r.resource_id) %></td>
+                <td>{get_type(r)}</td>
+                <td>{locked_by_email(@parent_pages, @locked_by, r.resource_id)}</td>
               </tr>
             <% end %>
           </tbody>

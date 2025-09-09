@@ -57,12 +57,18 @@ defmodule OliWeb.Sections.SectionsView do
     sections =
       Browse.browse_sections(
         %Paging{offset: 0, limit: @limit},
-        %Sorting{direction: :asc, field: :title},
+        %Sorting{direction: :desc, field: :start_date},
         @default_options
       )
 
     total_count = determine_total(sections)
-    {:ok, table_model} = SectionsTableModel.new(ctx, sections)
+
+    {:ok, table_model} =
+      SectionsTableModel.new(ctx, sections,
+        render_date: :full,
+        sort_by_spec: :start_date,
+        sort_order: :desc
+      )
 
     {:ok,
      assign(socket,
@@ -137,7 +143,7 @@ defmodule OliWeb.Sections.SectionsView do
                   value={type_opt}
                   selected={@options.filter_type == type_opt}
                 >
-                  <%= humanize_type_opt(type_opt) %>
+                  {humanize_type_opt(type_opt)}
                 </option>
               </select>
             </form>
@@ -149,7 +155,7 @@ defmodule OliWeb.Sections.SectionsView do
                   value={status_opt}
                   selected={@options.filter_status == status_opt}
                 >
-                  <%= Phoenix.Naming.humanize(status_opt) %>
+                  {Phoenix.Naming.humanize(status_opt)}
                 </option>
               </select>
             </form>
@@ -283,6 +289,6 @@ defmodule OliWeb.Sections.SectionsView do
   defp toggle_sort_order(:asc), do: :desc
   defp toggle_sort_order(_), do: :asc
 
-  defp humanize_type_opt(:open), do: "Open"
-  defp humanize_type_opt(:lms), do: "LMS"
+  defp humanize_type_opt(:open), do: "DD"
+  defp humanize_type_opt(:lms), do: "LTI"
 end

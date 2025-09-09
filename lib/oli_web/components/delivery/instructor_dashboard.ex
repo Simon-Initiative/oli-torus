@@ -32,7 +32,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
       <Header.delivery_breadcrumb {assigns} />
 
       <div class="relative flex-1 flex flex-col pt-4 pb-[60px]">
-        <%= render_slot(@inner_block) %>
+        {render_slot(@inner_block)}
 
         <OliWeb.Components.Footer.delivery_footer license={
           Map.get(assigns, :has_license) && assigns[:license]
@@ -91,12 +91,12 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
                   #{if active, do: "!border-delivery-primary active", else: "border-transparent"}
                 "}
           >
-            <%= if is_function(label), do: label.(), else: label %>
+            {if is_function(label), do: label.(), else: label}
             <span
               :if={badge}
               class="text-xs inline-block py-1 px-2 ml-2 leading-none text-center whitespace-nowrap align-baseline font-bold bg-delivery-primary text-white rounded"
             >
-              <%= badge %>
+              {badge}
             </span>
           </.link>
         </li>
@@ -137,7 +137,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
           hover:border-white/50
         "}
     >
-      <div class="mx-2"><%= render_slot(@inner_block) %></div>
+      <div class="mx-2">{render_slot(@inner_block)}</div>
     </.link>
     """
   end
@@ -176,8 +176,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
             class="navbar-brand dark torus-logo shrink-0 my-1 mr-auto"
             href={logo_link(@section, @preview_mode)}
           >
-            <%= if assigns[:section],
-              do: brand_logo(Map.merge(assigns, %{class: "d-inline-block align-top mr-2"})) %>
+            {if assigns[:section],
+              do: brand_logo(Map.merge(assigns, %{class: "d-inline-block align-top mr-2"}))}
           </a>
         </div>
 
@@ -248,7 +248,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
       <div class="container mx-auto flex flex-row justify-between">
         <div class="flex-1 flex items-center text-[1.5em]">
           <div class="px-[4px] font-bold text-slate-300">
-            <%= @section.title %>
+            {@section.title}
           </div>
         </div>
       </div>

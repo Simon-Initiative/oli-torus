@@ -80,7 +80,7 @@ defmodule OliWeb.Admin.ExternalTools.UsageViewTest do
       assert has_element?(view, "td", section2.title)
 
       assert has_element?(view, "th", "Title")
-      assert has_element?(view, "th", "Type")
+      assert has_element?(view, "th", "Delivery")
       assert has_element?(view, "th", "# Enrolled")
       assert has_element?(view, "th", "Cost")
       assert has_element?(view, "th", "Start")
@@ -103,7 +103,8 @@ defmodule OliWeb.Admin.ExternalTools.UsageViewTest do
         |> Enum.map(&Floki.text/1)
         |> Enum.map(&String.trim/1)
 
-      assert titles == ~w(ZZZ AAA)
+      assert List.first(titles) =~ "ZZZ"
+      assert List.last(titles) =~ "AAA"
     end
   end
 end

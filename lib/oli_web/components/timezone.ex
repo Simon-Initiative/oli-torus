@@ -9,7 +9,7 @@ defmodule OliWeb.Components.Timezone do
 
   def select(assigns) do
     ~H"""
-    <%= React.component(
+    {React.component(
       @ctx,
       "Components.SelectTimezone",
       %{
@@ -17,7 +17,7 @@ defmodule OliWeb.Components.Timezone do
         submitAction: Routes.static_page_path(OliWeb.Endpoint, :update_timezone)
       },
       id: @id
-    ) %>
+    )}
     """
   end
 end

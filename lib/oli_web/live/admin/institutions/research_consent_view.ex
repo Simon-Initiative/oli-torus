@@ -77,7 +77,7 @@ defmodule OliWeb.Admin.Institutions.ResearchConsentView do
             </label>
           </div>
           <.error :for={error <- Keyword.get_values(@changeset.errors || [], :research_consent)}>
-            <%= translate_error(error) %>
+            {translate_error(error)}
           </.error>
         </div>
 

@@ -20,7 +20,7 @@ defmodule OliWeb.ManualGrading.FilterButton do
       phx-value-key={@key}
       phx-value-active={if @active, do: "false", else: "true"}
     >
-      <%= @label %>
+      {@label}
     </button>
     """
   end

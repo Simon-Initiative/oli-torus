@@ -80,8 +80,11 @@ defmodule OliWeb.Projects.ProjectsLiveTest do
       assert has_element?(view, "##{deleted_project.id}")
     end
 
-    test "applies paging", %{conn: conn} do
-      [first_p | tail] = insert_list(26, :project) |> Enum.sort_by(& &1.title)
+    test "applies paging", %{conn: conn, admin: admin} do
+      [first_p | tail] =
+        insert_list(26, :project, authors: [admin])
+        |> Enum.sort_by(& &1.title)
+
       last_p = List.last(tail)
 
       {:ok, view, _html} = live(conn, Routes.live_path(Endpoint, ProjectsLive))
@@ -90,7 +93,7 @@ defmodule OliWeb.Projects.ProjectsLiveTest do
       refute has_element?(view, "##{last_p.id}")
 
       view
-      |> element("#footer_paging button[phx-click=\"paged_table_page_change\"]", "2")
+      |> element("#footer_paging button[phx-click='paged_table_page_change']", "2")
       |> render_click()
 
       refute has_element?(view, "##{first_p.id}")
@@ -103,14 +106,18 @@ defmodule OliWeb.Projects.ProjectsLiveTest do
 
       {:ok, view, _html} = live(conn, Routes.live_path(Endpoint, ProjectsLive))
 
+      view
+      |> element("th[phx-click='paged_table_sort'][phx-value-sort_by='title']")
+      |> render_click()
+
       assert view
              |> element("tr:first-child > td:first-child")
              |> render() =~
                "Testing A"
 
       view
-      |> element("th[phx-click=\"paged_table_sort\"]:first-of-type")
-      |> render_click(%{sort_by: "title"})
+      |> element("th[phx-click='paged_table_sort'][phx-value-sort_by='title']")
+      |> render_click()
 
       assert view
              |> element("tr:first-child > td:first-child")
@@ -169,24 +176,24 @@ defmodule OliWeb.Projects.ProjectsLiveTest do
     end
 
     test "applies paging", %{conn: conn, author: author} do
-      [first_p | tail] =
-        1..26
-        |> Enum.map(fn _ -> create_project_with_owner(author) end)
-        |> Enum.sort_by(& &1.title)
+      first_p =
+        insert(:project, title: "First Project", inserted_at: yesterday(), authors: [author])
 
-      last_p = List.last(tail)
+      last_p = insert(:project, title: "Last Project", inserted_at: tomorrow(), authors: [author])
+
+      insert_list(26, :project, inserted_at: DateTime.now!("Etc/UTC"), authors: [author])
 
       {:ok, view, _html} = live(conn, Routes.live_path(Endpoint, ProjectsLive))
 
-      assert has_element?(view, "##{first_p.id}")
-      refute has_element?(view, "##{last_p.id}")
+      assert has_element?(view, "##{last_p.id}")
+      refute has_element?(view, "##{first_p.id}")
 
       view
-      |> element("#footer_paging button[phx-click=\"paged_table_page_change\"]", "2")
+      |> element("#footer_paging button[phx-click='paged_table_page_change']", "2")
       |> render_click()
 
-      refute has_element?(view, "##{first_p.id}")
-      assert has_element?(view, "##{last_p.id}")
+      refute has_element?(view, "##{last_p.id}")
+      assert has_element?(view, "##{first_p.id}")
     end
 
     test "applies sorting", %{conn: conn, author: author} do
@@ -195,19 +202,63 @@ defmodule OliWeb.Projects.ProjectsLiveTest do
 
       {:ok, view, _html} = live(conn, Routes.live_path(Endpoint, ProjectsLive))
 
+      view
+      |> element("th[phx-click='paged_table_sort'][phx-value-sort_by='title']")
+      |> render_click(%{sort_by: "title"})
+
       assert view
              |> element("tr:first-child > td:first-child")
              |> render() =~
                "Testing A"
 
       view
-      |> element("th[phx-click=\"paged_table_sort\"]:first-of-type")
+      |> element("th[phx-click='paged_table_sort'][phx-value-sort_by='title']")
       |> render_click(%{sort_by: "title"})
 
       assert view
              |> element("tr:first-child > td:first-child")
              |> render() =~
                "Testing B"
+    end
+  end
+
+  describe "projects with tags" do
+    setup [:admin_conn, :set_timezone]
+
+    test "displays project tags in table", %{conn: conn, admin: admin} do
+      project = create_project_with_owner(admin)
+
+      # Create and associate tags with the project
+      {:ok, biology_tag} = Oli.Tags.create_tag(%{name: "Biology"})
+      {:ok, chemistry_tag} = Oli.Tags.create_tag(%{name: "Chemistry"})
+      {:ok, _} = Oli.Tags.associate_tag_with_project(project, biology_tag)
+      {:ok, _} = Oli.Tags.associate_tag_with_project(project, chemistry_tag)
+
+      {:ok, view, _html} = live(conn, Routes.live_path(Endpoint, ProjectsLive))
+
+      # Check that tags are displayed in the project row
+      project_row = view |> element("##{project.id}") |> render()
+      assert project_row =~ "Biology"
+      assert project_row =~ "Chemistry"
+    end
+
+    test "displays empty tags column when project has no tags", %{conn: conn, admin: admin} do
+      project = create_project_with_owner(admin)
+
+      {:ok, view, _html} = live(conn, Routes.live_path(Endpoint, ProjectsLive))
+
+      # Should not show any tag pills for this project
+      project_row = view |> element("##{project.id}") |> render()
+      # tag pill background color
+      refute project_row =~ "bg-[#f7def8]"
+    end
+
+    test "tags component is rendered in table cell", %{conn: conn, admin: admin} do
+      _project = create_project_with_owner(admin)
+
+      {:ok, view, _html} = live(conn, Routes.live_path(Endpoint, ProjectsLive))
+      # Check that the TagsComponent is rendered
+      assert has_element?(view, "div[phx-hook='TagsComponent']")
     end
   end
 
