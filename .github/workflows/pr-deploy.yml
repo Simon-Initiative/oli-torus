@@ -3,6 +3,12 @@ name: PR Preview Deploy
 on:
   pull_request:
     types: [opened, synchronize, reopened]
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "Branch to deploy"
+        required: true
+        default: "master"
 
 # Limit concurrent PR deployments to prevent resource exhaustion
 concurrency:
@@ -35,6 +41,8 @@ jobs:
     steps:
       - name: 🛎️ Checkout
         uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.inputs.branch || github.head_ref || github.ref_name }}
 
       - name: 🔧 Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
@@ -85,6 +93,8 @@ jobs:
     steps:
       - name: 🛎️ Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch || github.head_ref || github.ref_name }}
 
       - name: 🧾 Build info
         id: info
@@ -101,7 +111,6 @@ jobs:
       - name: 🐳 Pull Docker image
         run: |
           docker pull ghcr.io/simon-initiative/oli-torus:sha-${{ steps.info.outputs.sha_short }}
-          docker tag ghcr.io/simon-initiative/oli-torus:sha-${{ steps.info.outputs.sha_short }} oli-torus:${{ github.sha }}
 
       - name: 📑 Preflight check
         id: preflight
@@ -152,7 +161,7 @@ jobs:
       - name: 🚀 Deploy PR stack
         if: steps.preflight.outputs.memory_insufficient != 'true'
         run: |
-          export PROJECT=pr${{ github.event.number }}
+          export PROJECT=${{ github.event.inputs.branch && format('branch-{0}', github.event.inputs.branch) || format('pr{0}', github.event.number) }} | cut -c1-16
           export APP_IMAGE_TAG=${{ github.sha }}
           export HOST=pr${{ github.event.number }}.plasma.oli.cmu.edu
 
