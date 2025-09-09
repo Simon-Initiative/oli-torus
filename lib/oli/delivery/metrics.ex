@@ -1665,4 +1665,60 @@ defmodule Oli.Delivery.Metrics do
 
     Repo.one(query) || 0
   end
+
+  @doc """
+  Gets individual student proficiency data for a specific learning objective within a section.
+  
+  This function returns detailed proficiency data for each student, which will be used
+  to create the dot distribution visualization showing how students are distributed
+  across proficiency levels. Uses the same tested logic as proficiency_per_student_for_objective/3.
+
+  ## Parameters
+  - section_id: The section ID to filter students by
+  - objective_id: The learning objective resource ID to get proficiency for
+
+  ## Returns
+  List of student proficiency data:
+  [%{student_id: "123", proficiency: 0.85, proficiency_range: "High"}]
+  """
+  @spec student_proficiency_for_objective(section_id :: integer, objective_id :: integer) ::
+          list(map())
+  def student_proficiency_for_objective(section_id, objective_id) do
+    objective_type_id = Oli.Resources.ResourceType.id_for_objective()
+
+    query =
+      from(summary in Oli.Analytics.Summary.ResourceSummary,
+        where:
+          summary.section_id == ^section_id and
+            summary.project_id == -1 and
+            summary.resource_type_id == ^objective_type_id and
+            summary.resource_id == ^objective_id and
+            summary.user_id != -1,
+        group_by: [summary.user_id],
+        select:
+          {summary.user_id,
+           fragment(
+             """
+             (
+               (1 * CAST(SUM(?) as float)) +
+               (0.2 * (CAST(SUM(?) as float) - CAST(SUM(?) as float)))
+             ) /
+             NULLIF(CAST(SUM(?) as float), 0.0)
+             """,
+             summary.num_first_attempts_correct,
+             summary.num_first_attempts,
+             summary.num_first_attempts_correct,
+             summary.num_first_attempts
+           ), sum(summary.num_first_attempts)}
+      )
+
+    Repo.all(query)
+    |> Enum.map(fn {student_id, proficiency, num_first_attempts} ->
+      %{
+        student_id: Integer.to_string(student_id),
+        proficiency: proficiency || 0.0,
+        proficiency_range: proficiency_range(proficiency, num_first_attempts)
+      }
+    end)
+  end
 end

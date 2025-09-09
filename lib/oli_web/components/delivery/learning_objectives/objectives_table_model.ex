@@ -316,18 +316,30 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
   end
 
   # RENDER EXPANDED DETAILS FOR STRIPED TABLE
-  def render_objective_details(assigns, row) do
-    %{resource_id: objective_id, unique_id: unique_id} = row
+  def render_objective_details(assigns, objective) do
+    %{
+      resource_id: objective_id,
+      unique_id: unique_id,
+      student_proficiency_obj_dist: student_proficiency_obj_dist
+    } = objective
+
     section_slug = assigns[:section_slug] || assigns.model.data[:section_slug]
     section_id = assigns[:section_id] || assigns.model.data[:section_id]
 
+    proficiency_distribution =
+      case Map.get(objective, :student_proficiency_subobj_dist) do
+        nil -> student_proficiency_obj_dist
+        student_proficiency_subobj_dist -> student_proficiency_subobj_dist
+      end
+
     assigns =
       assigns
-      |> Map.put(:objective, row)
+      |> Map.put(:objective, objective)
       |> Map.put(:objective_id, objective_id)
       |> Map.put(:unique_id, unique_id)
       |> Map.put(:section_slug, section_slug)
       |> Map.put(:section_id, section_id)
+      |> Map.put(:proficiency_distribution, proficiency_distribution)
 
     ~H"""
     <div class="p-6 bg-Background-bg-secondary">
@@ -337,6 +349,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
         objective={@objective}
         section_id={@section_id}
         section_slug={@section_slug}
+        proficiency_distribution={@proficiency_distribution}
       />
     </div>
     """

@@ -23,6 +23,13 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
 
     sub_objectives_data = get_sub_objectives_data(section_id, section_slug, objective.resource_id)
 
+    # Get individual student proficiency for the dot distribution chart
+    student_proficiency = Metrics.student_proficiency_for_objective(section_id, objective.resource_id)
+    
+    # Calculate proficiency distribution for the main objective
+    proficiency_per_student = Metrics.proficiency_per_student_for_objective(section_id, [objective.resource_id])
+    proficiency_distribution = calculate_proficiency_distribution_from_student_data(proficiency_per_student, objective.resource_id)
+
     socket =
       socket
       |> assign(assigns)
@@ -31,6 +38,8 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
         objective_title: objective.title,
         estimated_students: estimated_students,
         sub_objectives_data: sub_objectives_data,
+        student_proficiency: student_proficiency,
+        proficiency_distribution: proficiency_distribution,
         unique_id: assigns[:unique_id] || "#{objective.resource_id}"
       )
 
@@ -78,11 +87,18 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
     """
   end
 
-  # RENDER DOTS CHART - Placeholder for now
+  # RENDER DOTS CHART - Using React component for detailed visualization
   defp render_dots_chart(assigns) do
-    ~H"""
-    PLACEHOLDER - Dots Chart for Proficiency Distribution
-    """
+    OliWeb.Common.React.component(
+      %{is_liveview: true},
+      "Components.DotDistributionChart",
+      %{
+        proficiency_distribution: assigns.proficiency_distribution,
+        student_proficiency: assigns.student_proficiency,
+        objective_id: assigns.objective_id
+      },
+      id: "dot-distribution-chart-#{assigns.objective_id}"
+    )
   end
 
   # Calculate the estimated number of students for this learning objective
@@ -136,5 +152,18 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
     proficiency_distribution
     |> Map.values()
     |> Enum.sum()
+  end
+
+  # Convert proficiency per student data to distribution counts
+  defp calculate_proficiency_distribution_from_student_data(proficiency_per_student, objective_id) do
+    student_proficiency_levels = Map.get(proficiency_per_student, objective_id, %{})
+    
+    # Count students by proficiency level
+    # proficiency_per_student has structure: %{resource_id => %{student_id => proficiency_level}}
+    student_proficiency_levels
+    |> Map.values()
+    |> Enum.reduce(%{"Not enough data" => 0, "Low" => 0, "Medium" => 0, "High" => 0}, fn level, acc ->
+      Map.update(acc, level, 1, &(&1 + 1))
+    end)
   end
 end
