@@ -466,7 +466,7 @@ defmodule Oli.Delivery.Hierarchy do
 
   defp build_updated_children(children_ids, nodes_by_sr_id) do
     children_ids
-    |> Enum.filter(&Map.has_key?(nodes_by_sr_id, &1))
+    |> Enum.filter(fn id -> Map.get(nodes_by_sr_id, id) != nil end)
     |> Enum.map(&(Map.get(nodes_by_sr_id, &1) |> hierarchy_node_with_children(nodes_by_sr_id)))
   end
 

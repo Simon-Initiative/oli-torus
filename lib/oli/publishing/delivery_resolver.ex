@@ -339,7 +339,8 @@ defmodule Oli.Publishing.DeliveryResolver do
     Map.put(
       node,
       :children,
-      Enum.map(children_ids, fn sr_id ->
+      Enum.filter(children_ids, fn id -> Map.get(nodes_by_sr_id, id) != nil end)
+      |> Enum.map(fn sr_id ->
         Map.get(nodes_by_sr_id, sr_id)
         |> hierarchy_node_with_children(nodes_by_sr_id)
       end)
