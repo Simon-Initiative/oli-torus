@@ -17,7 +17,7 @@ jobs:
     steps:
       - name: 🧹 Cleanup PR Preview Environment
         run: |
-          export PROJECT=${{ github.event.inputs.branch && format('branch-{0}', github.event.inputs.branch) || format('pr{0}', github.event.number) }} | cut -c1-16
+          export PROJECT=$(echo ${{ github.event.inputs.branch && format('branch-{0}', github.event.inputs.branch) || format('pr{0}', github.event.number) }} | cut -c1-32 | sed 's/^[^a-zA-Z]*//; s/[^a-zA-Z]*$//')
 
           echo "Cleaning up PR preview environment: $PROJECT"
 
