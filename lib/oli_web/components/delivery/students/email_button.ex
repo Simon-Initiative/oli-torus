@@ -5,8 +5,16 @@ defmodule OliWeb.Components.Delivery.Students.EmailButton do
   alias Phoenix.LiveView.JS
 
   def render(assigns) do
+    selected_emails =
+      assigns.selected_students
+      |> Oli.Accounts.get_user_emails_by_ids()
+      |> Enum.reject(&is_nil/1)
+      |> Enum.join(", ")
+
+    assigns = assign(assigns, :selected_emails, selected_emails)
+
     ~H"""
-    <div id="email_button_wrapper" class="relative" phx-hook="CopyToClipboardEvent">
+    <div id="email_button_wrapper" class="relative">
       <button
         class={[
           "flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md",
@@ -32,7 +40,10 @@ defmodule OliWeb.Components.Delivery.Students.EmailButton do
       >
         <div class="py-1">
           <button
+            id={"copy-emails-button-#{@id}"}
             class="w-full text-left px-4 py-2 text-sm text-Text-text-high hover:bg-Surface-surface-secondary-hover"
+            phx-hook="CopyToClipboard"
+            data-copy-text={@selected_emails}
             phx-click={JS.push("copy_email_addresses") |> JS.hide(to: "#email-dropdown-#{@id}")}
             phx-target={@myself}
           >
@@ -55,16 +66,7 @@ defmodule OliWeb.Components.Delivery.Students.EmailButton do
   end
 
   def handle_event("copy_email_addresses", _params, socket) do
-    selected_emails =
-      socket.assigns.selected_students
-      |> Oli.Accounts.get_user_emails_by_ids()
-      |> Enum.reject(&is_nil/1)
-      |> Enum.join(", ")
-
-    {:noreply,
-     socket
-     |> push_event("copy_to_clipboard", %{text: selected_emails})
-     |> put_flash(:info, "Email addresses copied to clipboard")}
+    {:noreply, put_flash(socket, :info, "Email addresses copied to clipboard")}
   end
 
   def handle_event("show_email_modal", _params, socket) do

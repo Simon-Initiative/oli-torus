@@ -7,7 +7,6 @@ import { ClickExecJS, HoverAway } from './click_variations';
 import { ConditionalToggle } from './conditional_toggle';
 import { CopyListener } from './copy_listener';
 import { CopyToClipboard } from './copy_to_clipboard';
-import { CopyToClipboardEvent } from './copy_to_clipboard_event';
 import { Countdown } from './countdown';
 import { CountdownTimer } from './countdown_timer';
 import { CustomFocusWrap } from './custom_focus_wrap';
@@ -118,5 +117,4 @@ export const Hooks = {
   SubmitTechSupportForm,
   ConditionalToggle,
   CopyToClipboard,
-  CopyToClipboardEvent,
 };

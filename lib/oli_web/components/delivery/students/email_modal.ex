@@ -7,7 +7,7 @@ defmodule OliWeb.Components.Delivery.Students.EmailModal do
 
   def render(assigns) do
     ~H"""
-    <div id="email_modal_wrapper" phx-hook="CopyToClipboardEvent">
+    <div id="email_modal_wrapper">
       <div
         id="email_modal_container"
         phx-hook="OnMountAndUpdate"
@@ -49,6 +49,14 @@ defmodule OliWeb.Components.Delivery.Students.EmailModal do
                 <div class="border border-Border-border-default rounded-lg p-4 relative">
                   <button
                     class="absolute top-2 right-2 text-Icon-icon-default hover:text-Icon-icon-hover"
+                    id="email_modal_below_expected_button"
+                    phx-hook="CopyToClipboard"
+                    data-copy-text="Hello,
+
+    Your progress on [course material] appears to be below expected levels. Please review the material and continue working through the material. Let me know if you have questions.
+
+    Best,
+    [Instructor Name]"
                     phx-click={JS.push("copy_template", value: %{template: "low_progress"})}
                     phx-target={@myself}
                   >
@@ -74,6 +82,14 @@ defmodule OliWeb.Components.Delivery.Students.EmailModal do
                 <div class="border border-Border-border-default rounded-lg p-4 relative">
                   <button
                     class="absolute top-2 right-2 text-Icon-icon-default hover:text-Icon-icon-hover"
+                    id="email_modal_due_soon_button"
+                    phx-hook="CopyToClipboard"
+                    data-copy-text="Hello,
+
+    This is a reminder that [course material] is due soon and has not yet been completed. Please complete it before the deadline. Let me know if clarification is needed.
+
+    Best,
+    [Instructor Name]"
                     phx-click={JS.push("copy_template", value: %{template: "approaching_due_date"})}
                     phx-target={@myself}
                   >
@@ -112,8 +128,7 @@ defmodule OliWeb.Components.Delivery.Students.EmailModal do
               </button>
               <button
                 role="send email"
-                phx-click={JS.push("send_email") |> JS.push("close_email_modal")}
-                phx-target={@myself}
+                phx-click={Modal.hide_modal(JS.push("send_email", target: @myself), "email_modal")}
                 disabled={String.trim(@email_message) == ""}
                 class={[
                   "text-sm font-semibold leading-[14px] h-[30px] px-4 py-2 rounded-md border justify-center items-center gap-2 inline-flex overflow-hidden",
@@ -175,7 +190,6 @@ defmodule OliWeb.Components.Delivery.Students.EmailModal do
     {:noreply,
      socket
      |> assign(email_message: String.trim(message))
-     |> push_event("copy_to_clipboard", %{text: message})
      |> put_flash(:info, "Template copied to clipboard")}
   end
 
@@ -195,8 +209,9 @@ defmodule OliWeb.Components.Delivery.Students.EmailModal do
 
       # Send flash message to parent LiveView
       send(self(), {:flash_message, {:info, "Emails sent successfully"}})
+      send(self(), {:hide_email_modal})
 
-      {:noreply, assign(socket, email_message: "")}
+      {:noreply, socket}
     else
       {:noreply, socket}
     end
@@ -204,7 +219,7 @@ defmodule OliWeb.Components.Delivery.Students.EmailModal do
 
   def handle_event("close_email_modal", _params, socket) do
     send(self(), {:hide_email_modal})
-    {:noreply, socket |> push_event("remove-overflow-hidden", %{})}
+    {:noreply, socket}
   end
 
   defp send_student_emails(student_emails, message, course_name, instructor_email) do
