@@ -8,7 +8,6 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
   alias Oli.Delivery.Sections.Section
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Repo
-  alias Oli.Resources
   alias Oli.Resources.ResourceType
   alias OliWeb.Common.InstructorDashboardPagedTable
   alias OliWeb.Common.PagingParams
@@ -78,7 +77,8 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
           current_assessment ->
             student_ids = Enum.map(assigns.students, & &1.id)
 
-            activities = get_activities(current_assessment, assigns.section, student_ids)
+            activities =
+              get_activities(current_assessment, assigns.section, assigns[:list_lti_activities])
 
             students_with_attempts =
               DeliveryResolver.students_with_attempts_for_page(
@@ -541,7 +541,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
   defp get_activities(
          current_assessment,
          section,
-         _student_ids
+         list_lti_activities
        ) do
     # Fetch all unique acitivty ids from the v2 tracked responses for this section
     activity_ids_from_responses =
@@ -568,8 +568,6 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
         Map.put(acc, resource_id, {total_attempts, avg_score})
       end)
 
-    lti_page_ids = Resources.get_page_resource_ids_with_lti_activities(section.id)
-
     activities =
       DeliveryResolver.from_resource_id(section.slug, activity_ids_from_responses)
       |> Enum.map(fn rev ->
@@ -578,7 +576,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
         Map.merge(rev, %{
           total_attempts: total_attempts,
           avg_score: avg_score,
-          has_lti_activity: rev.resource_id in lti_page_ids
+          has_lti_activity: rev.activity_type_id in list_lti_activities
         })
       end)
 
