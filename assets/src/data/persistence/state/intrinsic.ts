@@ -127,6 +127,8 @@ export const createNewActivityAttempt = async (
     url,
     method,
     body: JSON.stringify({ seedResponsesWithPrevious }),
+  }).catch((e) => {
+    return null;
   });
   return result;
 };
