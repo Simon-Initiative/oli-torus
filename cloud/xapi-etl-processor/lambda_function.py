@@ -44,9 +44,18 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     Bulk Processing (manual trigger):
     {
         "mode": "bulk",
-        "section_id": "123",
+        "section_ids": [123],  # Single section as list
         "start_date": "2024-01-01",
         "end_date": "2024-12-31",
+        ...
+    }
+
+    Multi-Section Bulk Processing:
+    {
+        "mode": "bulk",
+        "section_ids": [123, 124, 125],  # Multiple sections
+        "batch_size": 5,
+        "force_reprocess": false,
         ...
     }
 
@@ -84,7 +93,7 @@ def is_bulk_processing_event(event: Dict[str, Any]) -> bool:
         return True
 
     # Has bulk processing parameters but no S3 event structure
-    bulk_params = ['section_id', 'start_date', 'end_date', 's3_prefix', 'dry_run', 'force_reprocess']
+    bulk_params = ['section_ids', 'start_date', 'end_date', 's3_prefix', 'dry_run', 'force_reprocess']
     has_bulk_params = any(param in event for param in bulk_params)
     has_s3_structure = parse_s3_event(event) is not None
 
@@ -152,70 +161,164 @@ def handle_event_processing(event: Dict[str, Any], context: Any) -> Dict[str, An
         }
 
 def handle_bulk_processing(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
-    """Handle bulk processing of historical data"""
+    """Handle bulk processing of historical data - unified approach for single or multiple sections"""
     try:
-        # Extract parameters from event
-        section_id = event.get('section_id')
+        # Extract section IDs - required parameter
+        section_ids = event.get('section_ids', [])
+
+        if not section_ids:
+            return {
+                'statusCode': 400,
+                'body': json.dumps({'error': 'section_ids is required for bulk processing'})
+            }
+
+        # Convert all to strings for consistency
+        section_ids = [str(sid) for sid in section_ids]
+
+        # Extract other parameters
         start_date = event.get('start_date')
         end_date = event.get('end_date')
         s3_bucket = event.get('s3_bucket')
         s3_prefix = event.get('s3_prefix', 'section/')
         force_reprocess = event.get('force_reprocess', False)
+        batch_size = event.get('batch_size', 5)
         dry_run = event.get('dry_run', False)
 
-        logger.info(f"Starting bulk processing: section_id={section_id}, start_date={start_date}, end_date={end_date}")
+        logger.info(f"Starting bulk processing: section_ids={section_ids}, batch_size={batch_size}")
 
         # Get default bucket if not specified
         if not s3_bucket:
             config = get_config()
             s3_bucket = config.get('aws', {}).get('default_bucket', 'torus-xapi-dev')
 
-        # Build S3 prefix based on parameters
-        search_prefix = build_search_prefix(s3_prefix, section_id)
-
-        logger.info(f"Searching for files in s3://{s3_bucket}/{search_prefix}")
-
-        # Find files to process
-        files_to_process = find_files_to_process(
-            s3_bucket,
-            search_prefix,
-            start_date,
-            end_date
-        )
-
-        logger.info(f"Found {len(files_to_process)} files to process")
-
-        if dry_run:
-            return {
-                'statusCode': 200,
-                'body': json.dumps({
-                    'dry_run': True,
-                    'files_found': len(files_to_process),
-                    'files': files_to_process[:10],  # Show first 10 files
-                    'section_id': section_id,
-                    'processing_method': 'unified_table'
-                })
-            }
-
         # Initialize ClickHouse client
         clickhouse_client = ClickHouseClient()
 
-        # Process files
-        result = process_files_bulk(
-            clickhouse_client,
-            s3_bucket,
-            files_to_process,
-            section_id,
-            force_reprocess
+        # Track results
+        successful_sections = []
+        failed_sections = []
+        section_results = {}
+
+        # Process sections in batches
+        for i in range(0, len(section_ids), batch_size):
+            batch = section_ids[i:i+batch_size]
+            batch_num = (i // batch_size) + 1
+            total_batches = (len(section_ids) + batch_size - 1) // batch_size
+
+            logger.info(f"Processing batch {batch_num}/{total_batches}: {batch}")
+
+            for section_id in batch:
+                try:
+                    logger.info(f"Processing section {section_id}...")
+
+                    # Build S3 prefix for this section
+                    search_prefix = build_search_prefix(s3_prefix, section_id)
+
+                    # Find files for this section
+                    files_to_process = find_files_to_process(
+                        s3_bucket,
+                        search_prefix,
+                        start_date,
+                        end_date
+                    )
+
+                    if not files_to_process:
+                        logger.warning(f"No files found for section {section_id}")
+                        section_results[section_id] = {
+                            'status': 'skipped',
+                            'reason': 'no_files_found',
+                            'files_found': 0
+                        }
+                        continue
+
+                    if dry_run:
+                        section_results[section_id] = {
+                            'status': 'dry_run',
+                            'files_found': len(files_to_process),
+                            'files': files_to_process[:5]  # Show first 5 files
+                        }
+                        continue
+
+                    # Process files for this section
+                    result = process_files_bulk(
+                        clickhouse_client,
+                        s3_bucket,
+                        files_to_process,
+                        section_id,
+                        force_reprocess
+                    )
+
+                    if result.get('success', True):
+                        successful_sections.append(section_id)
+                        section_results[section_id] = {
+                            'status': 'success',
+                            'total_events_processed': result.get('total_events_processed', 0),
+                            'files_processed': result.get('processed_files', 0),
+                            'processing_method': result.get('processing_method', 'unknown'),
+                            'existing_events_count': result.get('existing_events_count', 0),
+                            'message': result.get('message', '')
+                        }
+                        events_processed = result.get('total_events_processed', 0)
+                        logger.info(f"Successfully processed section {section_id}: {events_processed} events")
+                    else:
+                        failed_sections.append(section_id)
+                        section_results[section_id] = {
+                            'status': 'failed',
+                            'error': result.get('error', 'Unknown error')
+                        }
+
+                except Exception as e:
+                    logger.error(f"Error processing section {section_id}: {str(e)}")
+                    failed_sections.append(section_id)
+                    section_results[section_id] = {
+                        'status': 'failed',
+                        'error': str(e)
+                    }
+
+        # Calculate totals
+        total_events_processed = sum(
+            result.get('total_events_processed', 0)
+            for result in section_results.values()
+            if isinstance(result.get('total_events_processed'), int)
         )
 
-        result['processing_mode'] = 'bulk'
-        result['processing_method'] = 'unified_table'
-        logger.info(f"Bulk processing completed: {result}")
+        # Determine processing mode based on number of sections
+        processing_mode = 'bulk_single_section' if len(section_ids) == 1 else 'bulk_multiple_sections'
+
+        summary_result = {
+            'processing_mode': processing_mode,
+            'processing_method': 'unified_table',
+            'total_sections_requested': len(section_ids),
+            'successful_sections': len(successful_sections),
+            'failed_sections': len(failed_sections),
+            'total_events_processed': total_events_processed,
+            'section_results': section_results,
+            'dry_run': dry_run
+        }
+
+        if successful_sections:
+            summary_result['successful_section_ids'] = successful_sections
+        if failed_sections:
+            summary_result['failed_section_ids'] = failed_sections
+
+        # For single section, also include direct results at top level for convenience
+        if len(section_ids) == 1:
+            section_id = section_ids[0]
+            section_result = section_results.get(section_id, {})
+            summary_result.update({
+                'section_id': section_id,
+                'files_found': len(find_files_to_process(s3_bucket, build_search_prefix(s3_prefix, section_id), start_date, end_date)) if not dry_run else section_result.get('files_found', 0),
+                'processed_files': section_result.get('files_processed', 0),
+                'skipped_files': section_result.get('files_found', 0) - section_result.get('files_processed', 0) if section_result.get('status') == 'success' else 0,
+                'existing_events_count': section_result.get('existing_events_count', 0),
+                'message': section_result.get('message', '')
+            })
+
+        logger.info(f"Bulk processing completed: {summary_result}")
 
         return {
             'statusCode': 200,
-            'body': json.dumps(result)
+            'body': json.dumps(summary_result)
         }
 
     except Exception as e:
@@ -488,6 +591,21 @@ def health_check() -> Dict[str, Any]:
                 'processing_method': 'unified_s3_integration',
                 'table_structure': 'unified_raw_events',
                 'description': 'All events stored in single raw_events table for optimal performance',
+                'capabilities': [
+                    'Single file processing',
+                    'Unified bulk processing (single or multiple sections)',
+                    'Automatic batching for multiple sections'
+                ],
+                'bulk_parameters': {
+                    'section_ids': 'List of section IDs for processing (required)',
+                    'batch_size': 'Number of sections to process per batch (default: 5)',
+                    'force_reprocess': 'Reprocess existing data (default: false)',
+                    'dry_run': 'Preview files without processing (default: false)',
+                    'start_date': 'Filter files by date (ISO format, optional)',
+                    'end_date': 'Filter files by date (ISO format, optional)',
+                    's3_bucket': 'S3 bucket name (optional, uses default)',
+                    's3_prefix': 'S3 prefix for files (default: "section/")'
+                },
                 'timestamp': datetime.utcnow().isoformat()
             })
         }
@@ -509,17 +627,27 @@ if __name__ == "__main__":
         'key': 'section/123/video/2024-01-01T12-00-00.000Z_test-bundle.jsonl'
     }
 
-    # Test bulk processing
-    test_bulk_mode = {
+    # Test single section bulk processing
+    test_single_section = {
         'mode': 'bulk',
-        'section_id': '123',
-        'start_date': '2024-01-01',
-        'end_date': '2024-12-31',
+        'section_ids': [123],
+        'dry_run': True
+    }
+
+    # Test multiple sections bulk processing
+    test_multiple_sections = {
+        'mode': 'bulk',
+        'section_ids': [123, 124, 125],
+        'batch_size': 2,
+        'force_reprocess': False,
         'dry_run': True
     }
 
     print("Event mode test:")
     print(json.dumps(lambda_handler(test_event_mode, None), indent=2))
 
-    print("\nBulk mode test:")
-    print(json.dumps(lambda_handler(test_bulk_mode, None), indent=2))
+    print("\nSingle section bulk mode test:")
+    print(json.dumps(lambda_handler(test_single_section, None), indent=2))
+
+    print("\nMultiple sections bulk mode test:")
+    print(json.dumps(lambda_handler(test_multiple_sections, None), indent=2))
