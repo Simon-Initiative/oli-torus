@@ -161,6 +161,8 @@ jobs:
           export APP_IMAGE_TAG=sha-${{ github.sha }}
           export HOST=pr${{ github.event.number }}.plasma.oli.cmu.edu
 
+          touch devops/.env
+
           # Setup database
           docker-compose -p $PROJECT -f devops/docker-compose.yml run --rm app /app/bin/oli eval "Oli.Release.setup"
 
