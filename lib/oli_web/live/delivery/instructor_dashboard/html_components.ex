@@ -289,6 +289,23 @@ defmodule OliWeb.Delivery.InstructorDashboard.HTMLComponents do
     """
   end
 
+  attr :title, :string, required: true
+  attr :id, :integer, required: true
+
+  def lti_label_component(assigns) do
+    ~H"""
+    <div
+      id={"lti_title_#{@id}"}
+      phx-hook="GlobalTooltip"
+      data-tooltip="<div>LTI 1.3 External Tool</div>"
+      class="flex items-center gap-2"
+    >
+      <Icons.plug />
+      <span class="uppercase">{@title}</span>
+    </div>
+    """
+  end
+
   attr :entry, :string, required: true
   slot :inner_block, required: true
 

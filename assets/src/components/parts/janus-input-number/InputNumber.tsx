@@ -65,6 +65,7 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = ({
     label,
     showLabel,
     showIncrementArrows,
+    enableScrollIncrement = false,
     prompt = '',
   } = model;
 
@@ -305,6 +306,11 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = ({
         className={`${showIncrementArrows ? '' : 'hideIncrementArrows'}`}
         style={inputNumberCompStyles}
         value={inputNumberValue}
+        onWheel={(e) => {
+          if (!enableScrollIncrement) {
+            (e.currentTarget as HTMLInputElement).blur();
+          }
+        }}
       />
       {unitsLabel && <span className="unitsLabel">{unitsLabel}</span>}
     </div>

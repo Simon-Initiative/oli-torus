@@ -22,6 +22,10 @@ defmodule Oli.Scenarios.SectionOps do
     revise_section_resource!(section, target, set_params)
   end
 
+  defp apply_op(%{"change" => params}, section) do
+    change_section!(section, params)
+  end
+
   defp apply_op(op, _section) do
     raise "Unsupported section operation: #{inspect(op)}"
   end
@@ -108,4 +112,23 @@ defmodule Oli.Scenarios.SectionOps do
   defp process_value(_key, value) when is_number(value), do: value
   defp process_value(_key, value) when is_atom(value), do: value
   defp process_value(_key, value), do: value
+
+  defp change_section!(section, params) do
+    # Process the parameters to convert special values
+    change_params =
+      params
+      |> Enum.map(fn {key, value} ->
+        {String.to_atom(key), process_value(key, value)}
+      end)
+      |> Enum.into(%{})
+
+    # Update the section using standard changeset
+    case Sections.update_section(section, change_params) do
+      {:ok, updated_section} ->
+        updated_section
+
+      {:error, changeset} ->
+        raise "Failed to change section settings: #{inspect(changeset.errors)}"
+    end
+  end
 end
