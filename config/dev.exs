@@ -41,7 +41,8 @@ config :oli,
 # ClickHouse OLAP configuration for local development
 config :oli, :clickhouse,
   host: System.get_env("CLICKHOUSE_HOST", "localhost"),
-  port: System.get_env("CLICKHOUSE_PORT", "8123") |> String.to_integer(),
+  http_port: System.get_env("CLICKHOUSE_HTTP_PORT", "8123") |> String.to_integer(),
+  native_port: System.get_env("CLICKHOUSE_NATIVE_PORT", "9090") |> String.to_integer(),
   user: System.get_env("CLICKHOUSE_USER", "default"),
   password: System.get_env("CLICKHOUSE_PASSWORD", "clickhouse"),
   database: System.get_env("CLICKHOUSE_DATABASE", "oli_analytics_dev")

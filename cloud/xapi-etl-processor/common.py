@@ -16,7 +16,7 @@ def get_config() -> Dict[str, Any]:
         'clickhouse': {
             'scheme': os.getenv('CLICKHOUSE_SCHEME', 'http'),
             'host': os.getenv('CLICKHOUSE_HOST', 'localhost'),
-            'port': int(os.getenv('CLICKHOUSE_PORT', '8123')),
+            'port': int(os.getenv('CLICKHOUSE_HTTP_PORT', '8123')),
             'user': os.getenv('CLICKHOUSE_USER', 'default'),
             'password': os.getenv('CLICKHOUSE_PASSWORD', 'clickhouse'),
             'database': os.getenv('CLICKHOUSE_DATABASE', 'oli_analytics_dev')

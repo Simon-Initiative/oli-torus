@@ -378,7 +378,7 @@ defmodule Oli.ClickHouse.Tasks do
   defp execute_clickhouse_query(config, query) do
     try do
       host = config[:host] || "localhost"
-      port = config[:port] || 8123
+      port = config[:http_port] || 8123
       user = config[:user] || "default"
       password = config[:password] || "clickhouse"
 
@@ -407,7 +407,7 @@ defmodule Oli.ClickHouse.Tasks do
   defp build_database_url(config) do
     host = config[:host]
     # goose uses TCP port for ClickHouse, not HTTP
-    port = 9090
+    port = config[:native_port]
     user = config[:user]
     password = config[:password]
     database = config[:database]
@@ -419,7 +419,7 @@ defmodule Oli.ClickHouse.Tasks do
     try do
       # Use HTTP port for connection test
       host = config[:host]
-      port = config[:port]
+      port = config[:http_port]
       user = config[:user]
       password = config[:password]
 

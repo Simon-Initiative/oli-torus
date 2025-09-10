@@ -42,7 +42,8 @@ XAPI_LAMBDA_FUNCTION_NAME=xapi-etl-processor-dev
 
 # ClickHouse configuration
 CLICKHOUSE_HOST=localhost
-CLICKHOUSE_PORT=8123
+CLICKHOUSE_HTTP_PORT=8123
+CLICKHOUSE_NATIVE_PORT=9000
 CLICKHOUSE_USER=default
 CLICKHOUSE_PASSWORD=clickhouse
 CLICKHOUSE_DATABASE=default
@@ -125,7 +126,8 @@ Events are uploaded to S3, then processed by Lambda. Used in production.
 2. **Configure Lambda environment variables** in AWS Console:
 
    - `CLICKHOUSE_HOST` - Your ClickHouse hostname (use ngrok for local testing)
-   - `CLICKHOUSE_PORT` - ClickHouse HTTP port (8123)
+   - `CLICKHOUSE_HTTP_PORT` - ClickHouse HTTP port (8123)
+   - `CLICKHOUSE_NATIVE_PORT` - ClickHouse Native port (9000)
    - `CLICKHOUSE_USER` - ClickHouse username
    - `CLICKHOUSE_PASSWORD` - ClickHouse password
    - `CLICKHOUSE_DATABASE` - ClickHouse database name

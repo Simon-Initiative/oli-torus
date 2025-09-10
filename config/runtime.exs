@@ -445,7 +445,8 @@ if config_env() == :prod do
   # ClickHouse configuration for XAPI analytics
   config :oli, :clickhouse,
     host: System.get_env("CLICKHOUSE_HOST", "localhost"),
-    port: String.to_integer(System.get_env("CLICKHOUSE_PORT", "8123")),
+    http_port: String.to_integer(System.get_env("CLICKHOUSE_HTTP_PORT", "8123")),
+    native_port: String.to_integer(System.get_env("CLICKHOUSE_NATIVE_PORT", "9000")),
     user: System.get_env("CLICKHOUSE_USER", "default"),
     password: System.get_env("CLICKHOUSE_PASSWORD", "clickhouse"),
     database: System.get_env("CLICKHOUSE_DATABASE", "default")

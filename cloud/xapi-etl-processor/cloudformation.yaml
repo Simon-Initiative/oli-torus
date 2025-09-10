@@ -17,10 +17,15 @@ Parameters:
     Description: ClickHouse server hostname
     Default: localhost
 
-  ClickHousePort:
+  ClickHouseHttpPort:
     Type: String
     Description: ClickHouse HTTP port
     Default: "8123"
+
+  ClickHouseNativePort:
+    Type: String
+    Description: ClickHouse Native port
+    Default: "9000"
 
   ClickHouseUser:
     Type: String
@@ -102,7 +107,8 @@ Resources:
       Environment:
         Variables:
           CLICKHOUSE_HOST: !Ref ClickHouseHost
-          CLICKHOUSE_PORT: !Ref ClickHousePort
+          CLICKHOUSE_HTTP_PORT: !Ref ClickHouseHttpPort
+          CLICKHOUSE_NATIVE_PORT: !Ref ClickHouseNativePort
           CLICKHOUSE_DATABASE: !Ref ClickHouseDatabase
           CLICKHOUSE_USERNAME: !Ref ClickHouseUsername
           CLICKHOUSE_PASSWORD: !Ref ClickHousePassword

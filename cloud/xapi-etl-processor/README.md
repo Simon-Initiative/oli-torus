@@ -126,7 +126,8 @@ The Lambda function requires these environment variables:
 
 ```bash
 CLICKHOUSE_HOST=your-clickhouse-host
-CLICKHOUSE_PORT=9000
+CLICKHOUSE_HTTP_PORT=8123
+CLICKHOUSE_NATIVE_PORT=9090
 CLICKHOUSE_DATABASE=xapi_analytics
 CLICKHOUSE_USERNAME=your-username
 CLICKHOUSE_PASSWORD=your-password
