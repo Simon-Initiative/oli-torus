@@ -121,7 +121,7 @@ jobs:
           fi
 
       - name: 💬 Post memory error comment
-        if: steps.preflight.outputs.memory_insufficient == 'true'
+        if: github.event_name == 'pull_request' && steps.preflight.outputs.memory_insufficient == 'true'
         uses: peter-evans/create-or-update-comment@v4
         with:
           token: ${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}
@@ -198,7 +198,7 @@ jobs:
           exit 1
 
       - name: 🔍 Find existing PR preview comment
-        if: steps.preflight.outputs.memory_insufficient != 'true'
+        if: github.event_name == 'pull_request' && steps.preflight.outputs.memory_insufficient != 'true'
         uses: peter-evans/find-comment@v3
         id: fc
         with:
@@ -208,7 +208,7 @@ jobs:
           body-includes: "PR preview deployed at:"
 
       - name: 💬 Post/Update PR Preview URL Comment
-        if: steps.preflight.outputs.memory_insufficient != 'true'
+        if: github.event_name == 'pull_request' && steps.preflight.outputs.memory_insufficient != 'true'
         uses: peter-evans/create-or-update-comment@v4
         with:
           token: ${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}
