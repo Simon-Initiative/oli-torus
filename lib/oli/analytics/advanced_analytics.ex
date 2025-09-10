@@ -311,7 +311,7 @@ defmodule Oli.Analytics.AdvancedAnalytics do
     config = Application.get_env(:oli, :clickhouse) |> Enum.into(%{})
 
     # Include database in the URL path for ClickHouse HTTP interface
-    url = "#{config.host}:#{config.port}/?database=#{config.database}"
+    url = "#{config.host}:#{config.http_port}/?database=#{config.database}"
 
     headers = [
       {"Content-Type", "text/plain"},
