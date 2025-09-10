@@ -1310,10 +1310,30 @@ defmodule OliWeb.Components.Delivery.Students do
         all_student_ids
       end
 
-    table_model_data =
-      Map.put(socket.assigns.table_model.data, :selected_students, selected_students)
+    # Recreate the table model with updated selected_students to refresh the header checkbox
+    certificate_pending_approval_count =
+      Helpers.certificate_pending_approval_count(
+        socket.assigns.table_model.rows,
+        socket.assigns[:certificate]
+      )
 
-    table_model = Map.put(socket.assigns.table_model, :data, table_model_data)
+    {:ok, new_table_model} =
+      EnrollmentsTableModel.new(
+        socket.assigns.table_model.rows,
+        socket.assigns.table_model.data.section,
+        socket.assigns.table_model.data.ctx,
+        socket.assigns[:certificate],
+        certificate_pending_approval_count,
+        socket.assigns.myself,
+        selected_students
+      )
+
+    # Preserve the existing table state (sort, etc.)
+    table_model =
+      Map.merge(new_table_model, %{
+        sort_order: socket.assigns.table_model.sort_order,
+        sort_by_spec: socket.assigns.table_model.sort_by_spec
+      })
 
     {:noreply,
      assign(socket,
@@ -1334,10 +1354,30 @@ defmodule OliWeb.Components.Delivery.Students do
         [selected_student_id | selected_students]
       end
 
-    table_model_data =
-      Map.put(socket.assigns.table_model.data, :selected_students, selected_students)
+    # Recreate the table model with updated selected_students to refresh the header checkbox
+    certificate_pending_approval_count =
+      Helpers.certificate_pending_approval_count(
+        socket.assigns.table_model.rows,
+        socket.assigns[:certificate]
+      )
 
-    table_model = Map.put(socket.assigns.table_model, :data, table_model_data)
+    {:ok, new_table_model} =
+      EnrollmentsTableModel.new(
+        socket.assigns.table_model.rows,
+        socket.assigns.table_model.data.section,
+        socket.assigns.table_model.data.ctx,
+        socket.assigns[:certificate],
+        certificate_pending_approval_count,
+        socket.assigns.myself,
+        selected_students
+      )
+
+    # Preserve the existing table state (sort, etc.)
+    table_model =
+      Map.merge(new_table_model, %{
+        sort_order: socket.assigns.table_model.sort_order,
+        sort_by_spec: socket.assigns.table_model.sort_by_spec
+      })
 
     {:noreply,
      assign(socket,

@@ -102,7 +102,8 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
         ctx: ctx,
         section: section,
         target: target,
-        certificate: certificate
+        certificate: certificate,
+        selected_students: selected_students
       }
     )
   end
