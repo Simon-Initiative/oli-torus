@@ -28,7 +28,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
     
     # Calculate proficiency distribution for the main objective
     proficiency_per_student = Metrics.proficiency_per_student_for_objective(section_id, [objective.resource_id])
-    proficiency_distribution = calculate_proficiency_distribution_from_student_data(proficiency_per_student, objective.resource_id)
+    proficiency_distribution = calculate_proficiency_distribution_from_student_data(proficiency_per_student, objective.resource_id, section_slug)
 
     socket =
       socket
@@ -155,15 +155,23 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
   end
 
   # Convert proficiency per student data to distribution counts
-  defp calculate_proficiency_distribution_from_student_data(proficiency_per_student, objective_id) do
+  defp calculate_proficiency_distribution_from_student_data(proficiency_per_student, objective_id, section_slug) do
     student_proficiency_levels = Map.get(proficiency_per_student, objective_id, %{})
     
-    # Count students by proficiency level
-    # proficiency_per_student has structure: %{resource_id => %{student_id => proficiency_level}}
-    student_proficiency_levels
-    |> Map.values()
-    |> Enum.reduce(%{"Not enough data" => 0, "Low" => 0, "Medium" => 0, "High" => 0}, fn level, acc ->
-      Map.update(acc, level, 1, &(&1 + 1))
-    end)
+    # Get all enrolled students in the section (same logic as in sections.ex)
+    all_student_ids = Oli.Delivery.Sections.enrolled_student_ids(section_slug)
+    
+    # Add "Not enough data" for students who don't have proficiency data 
+    # (same logic as in get_objectives_and_subobjectives/3)
+    complete_student_proficiency =
+      all_student_ids
+      |> Enum.reject(&Map.has_key?(student_proficiency_levels, &1))
+      |> Enum.reduce(student_proficiency_levels, fn user_id, acc ->
+        Map.put(acc, user_id, "Not enough data")
+      end)
+    
+    # Count students by proficiency level using Enum.frequencies_by (same as original)
+    complete_student_proficiency
+    |> Enum.frequencies_by(fn {_student_id, proficiency_level} -> proficiency_level end)
   end
 end
