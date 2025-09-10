@@ -37,6 +37,9 @@ export const createActivityAttempt = createAsyncThunk(
         seedResponses,
       );
       /* console.log({ new_attempt_result }); */
+      if (new_attempt_result === null) {
+        return attempt;
+      }
       attempt = new_attempt_result.attemptState as ActivityState;
       // this should be for the same resource id, which doesn't come back from the server
       // because it's already based on the previous attemptGuid
