@@ -156,13 +156,13 @@ jobs:
 
       - name: 🐳 Pull Docker image
         run: |
-          docker pull ghcr.io/simon-initiative/oli-torus:sha-${{ steps.info.outputs.sha_short }}
+          docker pull ghcr.io/simon-initiative/oli-torus@sha256:${{ github.sha }}
 
       - name: 🚀 Deploy PR stack
         if: steps.preflight.outputs.memory_insufficient != 'true'
         run: |
           export PROJECT=${{ github.event.inputs.branch && format('branch-{0}', github.event.inputs.branch) || format('pr{0}', github.event.number) }} | cut -c1-16
-          export APP_IMAGE_TAG=sha-${{ steps.info.outputs.sha_short }}
+          export APP_IMAGE_TAG=sha256:${{ github.sha }}
           export HOST=pr${{ github.event.number }}.plasma.oli.cmu.edu
 
           # Setup database
