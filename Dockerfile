@@ -102,11 +102,7 @@ RUN apt-get update -y \
   && apt-get install nodejs -y
 
 # Install goose for database migrations
-RUN apt-get update -y \
-  && apt-get install -y wget \
-  && wget -O /tmp/goose https://github.com/pressly/goose/releases/latest/download/goose_linux_amd64 \
-  && chmod +x /tmp/goose \
-  && mv /tmp/goose /usr/local/bin/goose
+RUN curl -fsSL https://raw.githubusercontent.com/pressly/goose/master/install.sh | sh
 
 # Set the locale
 RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && locale-gen
