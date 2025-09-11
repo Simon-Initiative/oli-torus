@@ -33,9 +33,9 @@ defmodule Oli.Scenarios.SectionReviseTest do
                   time_limit: 3600
 
       # Verify the section resource was updated
-      - verify:
-          to: "test_section"
+      - assert:
           resource:
+            to: "test_section"
             target: "Page 1"
             resource:
               max_attempts: 5
@@ -79,9 +79,9 @@ defmodule Oli.Scenarios.SectionReviseTest do
                   late_start: "@atom(disallow)"
 
       # Verify the product resource was updated
-      - verify:
-          to: "test_product"
+      - assert:
           resource:
+            to: "test_product"
             target: "Quiz 1"
             resource:
               max_attempts: 3
@@ -122,9 +122,9 @@ defmodule Oli.Scenarios.SectionReviseTest do
                   hidden: false                # Native boolean
 
       # Verify all types were correctly processed
-      - verify:
-          to: "test_section"
+      - assert:
           resource:
+            to: "test_section"
             target: "Test Page"
             resource:
               max_attempts: 10
@@ -209,18 +209,18 @@ defmodule Oli.Scenarios.SectionReviseTest do
                   time_limit: 1800
 
       # Verify project revision properties
-      - verify:
-          to: "test_project"
+      - assert:
           resource:
+            to: "test_project"
             target: "Page 1"
             resource:
               purpose: "@atom(deliberate_practice)"
               graded: false
 
       # Verify section resource properties
-      - verify:
-          to: "test_section"
+      - assert:
           resource:
+            to: "test_section"
             target: "Page 1"
             resource:
               max_attempts: 5

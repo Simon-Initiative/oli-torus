@@ -151,6 +151,7 @@ Example activity types: Multiple Choice, Short Answer, File Upload, Multi-Input,
 ## Code Style Guidelines
 
 - Follow Elixir formatting standards (use `mix format`)
+- Always put alias and import statements at the top of a file
 - TypeScript code uses ESLint configuration
 - React components should be functional with hooks
 - Prefer composition over inheritance

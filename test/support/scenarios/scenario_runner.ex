@@ -4,16 +4,22 @@ defmodule Oli.Scenarios.ScenarioRunner do
   Provides functionality to discover and run .scenario.yaml files as individual tests.
   """
 
-  alias Oli.Scenarios.Engine
-
   @doc """
-  Discovers all .scenario.yaml files in a given directory.
-  Returns a list of {filename, full_path} tuples.
+  Discovers all .scenario.yaml files in a given directory and subdirectories.
+  Returns a list of {relative_path_name, full_path} tuples.
   """
   def discover_scenarios(directory) do
-    Path.wildcard(Path.join(directory, "*.scenario.yaml"))
+    Path.wildcard(Path.join(directory, "**/*.scenario.yaml"))
     |> Enum.map(fn path ->
-      {Path.basename(path, ".scenario.yaml"), path}
+      # Create a descriptive name including subdirectory
+      relative = Path.relative_to(path, directory)
+
+      name =
+        relative
+        |> String.replace(".scenario.yaml", "")
+        |> String.replace("/", "_")
+
+      {name, path}
     end)
     |> Enum.sort()
   end
@@ -40,7 +46,8 @@ defmodule Oli.Scenarios.ScenarioRunner do
   Runs a single scenario file and returns the result.
   """
   def run_scenario_file(file_path) do
-    Engine.execute_file(file_path)
+    # Use TestSupport to execute with test fixtures
+    Oli.Scenarios.TestSupport.execute_file_with_fixtures(file_path)
   end
 
   @doc """

@@ -1,0 +1,16 @@
+# This file includes another file and adds its own content
+- use:
+    file: nested_include.yaml
+
+- user:
+    name: middle_user
+    type: instructor
+    email: middle@test.edu
+
+- project:
+    name: middle_project
+    title: "Middle Project"
+    root:
+      children:
+        - page: "Middle Page 1"
+        - page: "Middle Page 2"
