@@ -6,6 +6,7 @@ defmodule Oli.TorusDoc.ActivityConverter do
   from ActivityParser into the Torus JSON schema format.
   """
 
+  alias Oli.TorusDoc.ActivityParser
   alias Oli.TorusDoc.Markdown.MarkdownParser
 
   @doc """
@@ -39,17 +40,11 @@ defmodule Oli.TorusDoc.ActivityConverter do
   end
 
   defp convert_mcq(activity) do
-    case Oli.TorusDoc.Activities.MCQConverter.convert(activity) do
-      {:ok, json} -> {:ok, json}
-      error -> error
-    end
+    Oli.TorusDoc.Activities.MCQConverter.convert(activity)
   end
 
   defp convert_short_answer(activity) do
-    case Oli.TorusDoc.Activities.ShortAnswerConverter.convert(activity) do
-      {:ok, json} -> {:ok, json}
-      error -> error
-    end
+    Oli.TorusDoc.Activities.ShortAnswerConverter.convert(activity)
   end
 
   defp convert_cata(_activity) do
@@ -171,8 +166,6 @@ defmodule Oli.TorusDoc.ActivityConverter do
   Convenience function that parses YAML and converts to Torus JSON in one step.
   """
   def from_yaml(yaml_string) do
-    alias Oli.TorusDoc.ActivityParser
-
     with {:ok, parsed} <- ActivityParser.parse(yaml_string),
          {:ok, json} <- to_torus_json(parsed) do
       {:ok, json}

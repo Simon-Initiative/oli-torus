@@ -36,15 +36,13 @@ defmodule Oli.TorusDoc.ActivityParser do
   def parse_activity(_), do: {:error, "Invalid activity structure: expected a map"}
 
   defp validate_activity_type(%{"type" => type}) when is_binary(type) do
-    cond do
-      type == "oli_multi_choice" -> {:ok, :mcq}
-      # Support both variants
-      type == "oli_multiple_choice" -> {:ok, :mcq}
-      type == "oli_short_answer" -> {:ok, :short_answer}
-      type == "oli_check_all_that_apply" -> {:ok, :cata}
-      type == "oli_ordering" -> {:ok, :ordering}
-      type == "oli_multi_input" -> {:ok, :multi_input}
-      true -> {:error, "Unsupported activity type: #{type}"}
+    case type do
+      t when t in ["oli_multi_choice", "oli_multiple_choice"] -> {:ok, :mcq}
+      "oli_short_answer" -> {:ok, :short_answer}
+      "oli_check_all_that_apply" -> {:ok, :cata}
+      "oli_ordering" -> {:ok, :ordering}
+      "oli_multi_input" -> {:ok, :multi_input}
+      _ -> {:error, "Unsupported activity type: #{type}"}
     end
   end
 
@@ -77,12 +75,13 @@ defmodule Oli.TorusDoc.ActivityParser do
   end
 
   defp parse_hints(hints) when is_list(hints) do
-    Enum.map(hints, fn
-      %{"body_md" => body} -> %{body_md: body}
-      hint when is_binary(hint) -> %{body_md: hint}
-      _ -> nil
+    hints
+    |> Enum.reduce([], fn
+      %{"body_md" => body}, acc -> [%{body_md: body} | acc]
+      hint, acc when is_binary(hint) -> [%{body_md: hint} | acc]
+      _, acc -> acc
     end)
-    |> Enum.reject(&is_nil/1)
+    |> Enum.reverse()
   end
 
   defp parse_hints(_), do: []

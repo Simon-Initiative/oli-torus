@@ -11,8 +11,6 @@ defmodule Oli.Scenarios.Directives.Assert.ProficiencyAssertion do
   alias Oli.Scenarios.Engine
   alias Oli.Delivery.Metrics
   alias Oli.Delivery.Sections
-  alias Oli.Resources
-  alias Oli.Repo
 
   @doc """
   Asserts proficiency for a learning objective.
@@ -190,53 +188,26 @@ defmodule Oli.Scenarios.Directives.Assert.ProficiencyAssertion do
     if Enum.empty?(student_ids) do
       {:ok, {0.0, "Not enough data"}}
     else
-      # Get raw proficiency data for all students
-      objective_type_id = Resources.ResourceType.id_for_objective()
-
-      # Query for all students' proficiency data
-      import Ecto.Query
-
-      raw_data =
-        from(summary in Oli.Analytics.Summary.ResourceSummary,
-          where:
-            summary.section_id == ^section.id and
-              summary.project_id == -1 and
-              summary.user_id in ^student_ids and
-              summary.resource_id == ^objective.resource_id and
-              summary.resource_type_id == ^objective_type_id,
-          select: {
-            summary.num_first_attempts_correct,
-            summary.num_first_attempts,
-            summary.num_correct,
-            summary.num_attempts
-          }
+      # Use the Metrics module's raw_proficiency_per_learning_objective function
+      raw_proficiency_map =
+        Metrics.raw_proficiency_per_learning_objective(
+          section.id,
+          objective_ids: [objective.resource_id]
         )
-        |> Repo.all()
 
-      if Enum.empty?(raw_data) do
-        {:ok, {0.0, "Not enough data"}}
-      else
-        # Calculate average proficiency
-        {total_value, total_count} =
-          raw_data
-          |> Enum.reduce({0.0, 0}, fn {first_correct, first_count, _correct, _total},
-                                      {sum, count} ->
-            if first_count > 0 do
-              value = (1.0 * first_correct + 0.2 * (first_count - first_correct)) / first_count
-              {sum + value, count + 1}
-            else
-              {sum, count}
-            end
-          end)
-
-        if total_count > 0 do
-          avg_value = total_value / total_count
-          # Use 3 as minimum for "enough data"
-          bucket = Metrics.proficiency_range(avg_value, 3)
-          {:ok, {avg_value, bucket}}
-        else
+      case Map.get(raw_proficiency_map, objective.resource_id) do
+        nil ->
           {:ok, {0.0, "Not enough data"}}
-        end
+
+        {first_correct, first_count, _correct, _total} when first_count > 0 ->
+          # Calculate proficiency value
+          value = (1.0 * first_correct + 0.2 * (first_count - first_correct)) / first_count
+          # Use 3 as minimum for "enough data"
+          bucket = Metrics.proficiency_range(value, 3)
+          {:ok, {value, bucket}}
+
+        _ ->
+          {:ok, {0.0, "Not enough data"}}
       end
     end
   end

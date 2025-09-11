@@ -88,57 +88,15 @@ defmodule Oli.Scenarios.Directives.AnswerQuestionHandler do
 
   # Find the ActivityAttempt for the given activity
   defp find_activity_attempt(attempt_state, activity_revision) do
-    # For inline activities, the resource_id in the revision might not match
-    # what's in the attempt_hierarchy. We need to find by matching the activity
-    # content or by iterating through all attempts.
-
-    # First try direct lookup by resource_id
     resource_id = activity_revision.resource_id
 
     case Map.get(attempt_state.attempt_hierarchy, resource_id) do
       nil ->
-        # If not found, try to find any activity attempt (for single activity pages)
-        # This is a simplification - in real scenarios we'd need better matching
-        case Map.values(attempt_state.attempt_hierarchy) do
-          [{%{attempt_guid: guid} = activity_attempt, part_attempts}] ->
-            # Single activity on page, use it with part_attempts included
-            activity_attempt_with_parts = %{
-              activity_attempt
-              | part_attempts: Map.values(part_attempts)
-            }
-
-            {:ok, %{attempt_guid: guid, activity_attempt: activity_attempt_with_parts}}
-
-          [%{attemptGuid: guid} = thin_info] ->
-            # Single activity on page (adaptive format)
-            {:ok, %{attempt_guid: guid, activity_attempt: thin_info}}
-
-          [] ->
-            {:error, "No activity attempts found in hierarchy"}
-
-          _ ->
-            # Multiple activities - need better matching logic
-            # For now, take the first one as a workaround
-            case List.first(Map.values(attempt_state.attempt_hierarchy)) do
-              {%{attempt_guid: guid} = activity_attempt, part_attempts} ->
-                activity_attempt_with_parts = %{
-                  activity_attempt
-                  | part_attempts: Map.values(part_attempts)
-                }
-
-                {:ok, %{attempt_guid: guid, activity_attempt: activity_attempt_with_parts}}
-
-              %{attemptGuid: guid} = thin_info ->
-                {:ok, %{attempt_guid: guid, activity_attempt: thin_info}}
-
-              _ ->
-                {:error, "Could not find matching activity attempt"}
-            end
-        end
+        # If not found by resource_id, search for matching activity by content
+        find_activity_by_content(attempt_state, activity_revision)
 
       # Basic page format: {%ActivityAttempt{}, part_attempts}
       {%{attempt_guid: guid} = activity_attempt, part_attempts} ->
-        # Include the part_attempts in the activity_attempt
         activity_attempt_with_parts = %{
           activity_attempt
           | part_attempts: Map.values(part_attempts)
@@ -155,24 +113,73 @@ defmodule Oli.Scenarios.Directives.AnswerQuestionHandler do
     end
   end
 
+  # Search for activity attempt by matching content properties
+  defp find_activity_by_content(attempt_state, activity_revision) do
+    # Try to match by activity type and question content
+    activity_type = activity_revision.content["activityType"] || activity_revision.content["type"]
+
+    matching_attempt =
+      attempt_state.attempt_hierarchy
+      |> Map.values()
+      |> Enum.find(fn
+        {%{revision: %{content: content}}, _} ->
+          # Match by activity type
+          (content["activityType"] || content["type"]) == activity_type
+
+        %{revision: %{content: content}} ->
+          # Adaptive format
+          (content["activityType"] || content["type"]) == activity_type
+
+        _ ->
+          false
+      end)
+
+    case matching_attempt do
+      {%{attempt_guid: guid} = activity_attempt, part_attempts} ->
+        activity_attempt_with_parts = %{
+          activity_attempt
+          | part_attempts: Map.values(part_attempts)
+        }
+
+        {:ok, %{attempt_guid: guid, activity_attempt: activity_attempt_with_parts}}
+
+      %{attemptGuid: guid} = thin_info ->
+        {:ok, %{attempt_guid: guid, activity_attempt: thin_info}}
+
+      nil ->
+        # Fall back to single activity logic if only one activity exists
+        case Map.values(attempt_state.attempt_hierarchy) do
+          [{%{attempt_guid: guid} = activity_attempt, part_attempts}] ->
+            activity_attempt_with_parts = %{
+              activity_attempt
+              | part_attempts: Map.values(part_attempts)
+            }
+
+            {:ok, %{attempt_guid: guid, activity_attempt: activity_attempt_with_parts}}
+
+          [%{attemptGuid: guid} = thin_info] ->
+            {:ok, %{attempt_guid: guid, activity_attempt: thin_info}}
+
+          [] ->
+            {:error, "No activity attempts found in hierarchy"}
+
+          _ ->
+            {:error, "Could not find matching activity attempt for type: #{activity_type}"}
+        end
+    end
+  end
+
   # Format the response based on activity type
   defp format_response(response, activity_revision) do
     activity_type =
       activity_revision.content["activityType"] ||
         activity_revision.content["type"]
 
-    case activity_type do
-      type when type in ["oli_multiple_choice", "oli_multi_choice"] ->
-        # Multiple choice responses need to be wrapped in brackets
-        {:ok, "#{response}"}
-
-      "oli_short_answer" ->
-        # Short answer is just the plain text
-        {:ok, response}
-
-      _ ->
-        # Default to plain response for unknown types
-        {:ok, response}
+    # Simplified formatting - MCQ types get string formatting, everything else is plain
+    if activity_type in ["oli_multiple_choice", "oli_multi_choice"] do
+      {:ok, "#{response}"}
+    else
+      {:ok, response}
     end
   end
 
