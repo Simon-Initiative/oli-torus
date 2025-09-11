@@ -32,175 +32,209 @@ defmodule Oli.Analytics.AdvancedAnalytics do
 
   @doc """
   Provides comprehensive analytics queries for all event types.
+  Returns a map with query atoms as keys and maps containing description and query as values.
   """
   def sample_analytics_queries() do
     raw_events_table = raw_events_table()
 
     %{
       # Video Analytics
-      video_engagement_by_section: """
-        SELECT
-          section_id,
-          count(*) as total_events,
-          countIf(video_time IS NOT NULL AND video_seek_from IS NULL) as play_pause_events,
-          countIf(video_progress IS NOT NULL AND video_played_segments IS NOT NULL) as completion_events,
-          countIf(video_seek_from IS NOT NULL AND video_seek_to IS NOT NULL) as seek_events,
-          avg(video_progress) as avg_progress,
-          uniq(user_id) as unique_users,
-          uniq(content_element_id) as unique_videos
-        FROM #{raw_events_table}
-        WHERE section_id IS NOT NULL AND event_type = 'video'
-        GROUP BY section_id
-        ORDER BY total_events DESC
-      """,
-      video_completion_rates: """
-        SELECT
-          content_element_id,
-          video_title,
-          countIf(video_time IS NOT NULL) as plays,
-          countIf(video_progress IS NOT NULL AND video_played_segments IS NOT NULL) as completions,
-          if(plays > 0, completions / plays * 100, 0) as completion_rate_percent
-        FROM #{raw_events_table}
-        WHERE content_element_id IS NOT NULL AND event_type = 'video'
-        GROUP BY content_element_id, video_title
-        HAVING plays > 5
-        ORDER BY completion_rate_percent DESC
-      """,
-      user_video_engagement: """
-        SELECT
-          user_id,
-          count(*) as total_interactions,
-          countIf(video_time IS NOT NULL) as videos_played,
-          sum(video_play_time) as total_watch_time,
-          avg(video_progress) as avg_completion_rate,
-          max(timestamp) as last_interaction
-        FROM #{raw_events_table}
-        WHERE user_id IS NOT NULL AND event_type = 'video'
-        GROUP BY user_id
-        ORDER BY total_watch_time DESC
-      """,
+      video_engagement_by_section: %{
+        description: "Analyzes video engagement metrics across different sections, including play/pause events, completion rates, and user participation.",
+        query: """
+          SELECT
+            section_id,
+            count(*) as total_events,
+            countIf(video_time IS NOT NULL AND video_seek_from IS NULL) as play_pause_events,
+            countIf(video_progress IS NOT NULL AND video_played_segments IS NOT NULL) as completion_events,
+            countIf(video_seek_from IS NOT NULL AND video_seek_to IS NOT NULL) as seek_events,
+            avg(video_progress) as avg_progress,
+            uniq(user_id) as unique_users,
+            uniq(content_element_id) as unique_videos
+          FROM #{raw_events_table}
+          WHERE section_id IS NOT NULL AND event_type = 'video'
+          GROUP BY section_id
+          ORDER BY total_events DESC
+        """
+      },
+      video_completion_rates: %{
+        description: "Shows completion rates for individual videos, highlighting which content is most engaging to learners.",
+        query: """
+          SELECT
+            content_element_id,
+            video_title,
+            countIf(video_time IS NOT NULL) as plays,
+            countIf(video_progress IS NOT NULL AND video_played_segments IS NOT NULL) as completions,
+            if(plays > 0, completions / plays * 100, 0) as completion_rate_percent
+          FROM #{raw_events_table}
+          WHERE content_element_id IS NOT NULL AND event_type = 'video'
+          GROUP BY content_element_id, video_title
+          HAVING plays > 5
+          ORDER BY completion_rate_percent DESC
+        """
+      },
+      user_video_engagement: %{
+        description: "Provides insights into individual user video watching patterns and engagement levels.",
+        query: """
+          SELECT
+            user_id,
+            count(*) as total_interactions,
+            countIf(video_time IS NOT NULL) as videos_played,
+            sum(video_play_time) as total_watch_time,
+            avg(video_progress) as avg_completion_rate,
+            max(timestamp) as last_interaction
+          FROM #{raw_events_table}
+          WHERE user_id IS NOT NULL AND event_type = 'video'
+          GROUP BY user_id
+          ORDER BY total_watch_time DESC
+        """
+      },
 
       # Activity Attempt Analytics
-      activity_attempt_performance: """
-        SELECT
-          section_id,
-          activity_id,
-          count(*) as total_attempts,
-          avg(score) as avg_score,
-          avg(out_of) as avg_possible_score,
-          avg(scaled_score) as avg_scaled_score,
-          countIf(success = true) as successful_attempts,
-          uniq(user_id) as unique_users
-        FROM #{raw_events_table}
-        WHERE section_id IS NOT NULL AND event_type = 'activity_attempt'
-        GROUP BY section_id, activity_id
-        ORDER BY avg_scaled_score DESC
-      """,
-      activity_attempt_trends: """
-        SELECT
-          toYYYYMM(timestamp) as month,
-          section_id,
-          count(*) as attempts,
-          avg(scaled_score) as avg_performance,
-          uniq(user_id) as active_users
-        FROM #{raw_events_table}
-        WHERE section_id IS NOT NULL AND event_type = 'activity_attempt'
-        GROUP BY month, section_id
-        ORDER BY month DESC, section_id
-      """,
+      activity_attempt_performance: %{
+        description: "Analyzes performance metrics for activity attempts, showing success rates and average scores by section and activity.",
+        query: """
+          SELECT
+            section_id,
+            activity_id,
+            count(*) as total_attempts,
+            avg(score) as avg_score,
+            avg(out_of) as avg_possible_score,
+            avg(scaled_score) as avg_scaled_score,
+            countIf(success = true) as successful_attempts,
+            uniq(user_id) as unique_users
+          FROM #{raw_events_table}
+          WHERE section_id IS NOT NULL AND event_type = 'activity_attempt'
+          GROUP BY section_id, activity_id
+          ORDER BY avg_scaled_score DESC
+        """
+      },
+      activity_attempt_trends: %{
+        description: "Shows monthly trends in activity attempt performance and user engagement over time.",
+        query: """
+          SELECT
+            toYYYYMM(timestamp) as month,
+            section_id,
+            count(*) as attempts,
+            avg(scaled_score) as avg_performance,
+            uniq(user_id) as active_users
+          FROM #{raw_events_table}
+          WHERE section_id IS NOT NULL AND event_type = 'activity_attempt'
+          GROUP BY month, section_id
+          ORDER BY month DESC, section_id
+        """
+      },
 
       # Page Attempt Analytics
-      page_attempt_performance: """
-        SELECT
-          section_id,
-          page_id,
-          count(*) as total_attempts,
-          avg(score) as avg_score,
-          avg(out_of) as avg_possible_score,
-          avg(scaled_score) as avg_scaled_score,
-          countIf(success = true) as successful_attempts,
-          uniq(user_id) as unique_users
-        FROM #{raw_events_table}
-        WHERE section_id IS NOT NULL AND event_type = 'page_attempt'
-        GROUP BY section_id, page_id
-        ORDER BY avg_scaled_score DESC
-      """,
+      page_attempt_performance: %{
+        description: "Evaluates page-level assessment performance, showing which pages students find most challenging.",
+        query: """
+          SELECT
+            section_id,
+            page_id,
+            count(*) as total_attempts,
+            avg(score) as avg_score,
+            avg(out_of) as avg_possible_score,
+            avg(scaled_score) as avg_scaled_score,
+            countIf(success = true) as successful_attempts,
+            uniq(user_id) as unique_users
+          FROM #{raw_events_table}
+          WHERE section_id IS NOT NULL AND event_type = 'page_attempt'
+          GROUP BY section_id, page_id
+          ORDER BY avg_scaled_score DESC
+        """
+      },
 
       # Page Viewed Analytics
-      page_engagement: """
-        SELECT
-          section_id,
-          page_id,
-          page_sub_type,
-          count(*) as total_views,
-          uniq(user_id) as unique_viewers,
-          countIf(completion = true) as completed_views,
-          toHour(timestamp) as hour_of_day,
-          count(*) as views_by_hour
-        FROM #{raw_events_table}
-        WHERE section_id IS NOT NULL AND event_type = 'page_viewed'
-        GROUP BY section_id, page_id, page_sub_type, hour_of_day
-        ORDER BY total_views DESC
-      """,
-      popular_pages: """
-        SELECT
-          page_id,
-          page_sub_type,
-          count(*) as total_views,
-          uniq(user_id) as unique_viewers,
-          avg(if(completion = true, 1, 0)) as completion_rate
-        FROM #{raw_events_table}
-        WHERE page_id IS NOT NULL AND event_type = 'page_viewed'
-        GROUP BY page_id, page_sub_type
-        ORDER BY total_views DESC
-      """,
+      page_engagement: %{
+        description: "Tracks page viewing patterns by time of day and completion rates to understand content engagement.",
+        query: """
+          SELECT
+            section_id,
+            page_id,
+            page_sub_type,
+            count(*) as total_views,
+            uniq(user_id) as unique_viewers,
+            countIf(completion = true) as completed_views,
+            toHour(timestamp) as hour_of_day,
+            count(*) as views_by_hour
+          FROM #{raw_events_table}
+          WHERE section_id IS NOT NULL AND event_type = 'page_viewed'
+          GROUP BY section_id, page_id, page_sub_type, hour_of_day
+          ORDER BY total_views DESC
+        """
+      },
+      popular_pages: %{
+        description: "Identifies the most popular pages based on view counts and completion rates across all sections.",
+        query: """
+          SELECT
+            page_id,
+            page_sub_type,
+            count(*) as total_views,
+            uniq(user_id) as unique_viewers,
+            avg(if(completion = true, 1, 0)) as completion_rate
+          FROM #{raw_events_table}
+          WHERE page_id IS NOT NULL AND event_type = 'page_viewed'
+          GROUP BY page_id, page_sub_type
+          ORDER BY total_views DESC
+        """
+      },
 
       # Part Attempt Analytics
-      part_attempt_analysis: """
-        SELECT
-          section_id,
-          activity_id,
-          part_id,
-          count(*) as total_attempts,
-          avg(score) as avg_score,
-          avg(out_of) as avg_possible_score,
-          avg(scaled_score) as avg_scaled_score,
-          countIf(success = true) as successful_attempts,
-          avg(hints_requested) as avg_hints_used,
-          uniq(user_id) as unique_users
-        FROM #{raw_events_table}
-        WHERE section_id IS NOT NULL AND event_type = 'part_attempt'
-        GROUP BY section_id, activity_id, part_id
-        ORDER BY avg_scaled_score DESC
-      """,
+      part_attempt_analysis: %{
+        description: "Provides detailed analysis of individual question parts within activities, including hint usage patterns.",
+        query: """
+          SELECT
+            section_id,
+            activity_id,
+            part_id,
+            count(*) as total_attempts,
+            avg(score) as avg_score,
+            avg(out_of) as avg_possible_score,
+            avg(scaled_score) as avg_scaled_score,
+            countIf(success = true) as successful_attempts,
+            avg(hints_requested) as avg_hints_used,
+            uniq(user_id) as unique_users
+          FROM #{raw_events_table}
+          WHERE section_id IS NOT NULL AND event_type = 'part_attempt'
+          GROUP BY section_id, activity_id, part_id
+          ORDER BY avg_scaled_score DESC
+        """
+      },
 
       # Cross-Event Analytics
-      comprehensive_section_summary: """
-        SELECT
-          event_type,
-          section_id,
-          count(*) as total_events,
-          uniq(user_id) as unique_users,
-          min(timestamp) as earliest_event,
-          max(timestamp) as latest_event
-        FROM #{raw_events_table}
-        WHERE section_id IS NOT NULL
-        GROUP BY event_type, section_id
-        ORDER BY section_id, event_type
-      """,
+      comprehensive_section_summary: %{
+        description: "Provides a comprehensive overview of all event types by section, showing overall learning activity patterns.",
+        query: """
+          SELECT
+            event_type,
+            section_id,
+            count(*) as total_events,
+            uniq(user_id) as unique_users,
+            min(timestamp) as earliest_event,
+            max(timestamp) as latest_event
+          FROM #{raw_events_table}
+          WHERE section_id IS NOT NULL
+          GROUP BY event_type, section_id
+          ORDER BY section_id, event_type
+        """
+      },
 
       # Event Type Distribution
-      event_type_distribution: """
-        SELECT
-          event_type,
-          count(*) as total_events,
-          uniq(user_id) as unique_users,
-          min(timestamp) as earliest_event,
-          max(timestamp) as latest_event
-        FROM #{raw_events_table}
-        GROUP BY event_type
-        ORDER BY total_events DESC
-      """
+      event_type_distribution: %{
+        description: "Shows the distribution of different event types across the entire platform to understand overall usage patterns.",
+        query: """
+          SELECT
+            event_type,
+            count(*) as total_events,
+            uniq(user_id) as unique_users,
+            min(timestamp) as earliest_event,
+            max(timestamp) as latest_event
+          FROM #{raw_events_table}
+          GROUP BY event_type
+          ORDER BY total_events DESC
+        """
+      }
     }
   end
 

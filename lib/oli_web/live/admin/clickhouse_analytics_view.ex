@@ -9,6 +9,8 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
   on_mount OliWeb.LiveSessionPlugs.SetCtx
 
   def mount(_, _, socket) do
+    sample_queries = AdvancedAnalytics.sample_analytics_queries()
+
     {:ok, assign(socket,
       title: "ClickHouse Analytics",
       breadcrumb: breadcrumb(),
@@ -17,7 +19,8 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
       selected_query: "",
       custom_query: "",
       executing: false,
-      sample_queries: AdvancedAnalytics.sample_analytics_queries()
+      sample_queries: sample_queries,
+      dropdown_options: build_dropdown_options(sample_queries)
     )}
   end
 
@@ -50,49 +53,57 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
             </div>
           <% end %>
         </div>
-        <!-- Sample Queries Section -->
+        <!-- Query Selection and Execution Section -->
         <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg mb-6">
-          <h2 class="text-xl font-semibold mb-4">Sample Analytics Queries</h2>
+          <h2 class="text-xl font-semibold mb-4">Analytics Query</h2>
 
-          <div class="grid gap-4">
-            <%= for {query_name, query} <- @sample_queries do %>
-              <div class="border dark:border-gray-600 rounded-lg p-4">
-                <div class="flex items-center justify-between mb-2">
-                  <h3 class="font-medium text-lg">
-                    <%= AdvancedAnalytics.humanize_query_name(query_name) %>
-                  </h3>
-                  <.button
-                    phx-click="run_sample_query"
-                    phx-value-query={query_name}
-                    class="btn-sm btn-secondary"
-                    disabled={@executing}
-                  >
-                    <%= if @executing, do: "Running...", else: "Run Query" %>
-                  </.button>
-                </div>
-                <pre class="text-xs bg-gray-100 dark:bg-gray-700 p-3 rounded overflow-x-auto"><%= String.trim(query) %></pre>
-              </div>
-            <% end %>
-          </div>
-        </div>
-        <!-- Custom Query Section -->
-        <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg mb-6">
-          <h2 class="text-xl font-semibold mb-4">Custom Query</h2>
-
-          <.form for={%{}} as={:query} phx-submit="run_custom_query">
+          <.form for={%{}} as={:query_form} phx-change="query_selected" phx-submit="execute_query">
             <div class="mb-4">
-              <textarea
-                name="custom_query"
-                rows="6"
-                class="w-full p-3 border rounded-lg dark:bg-gray-700 dark:border-gray-600 font-mono text-sm"
-                placeholder="Enter your ClickHouse SQL query here..."
-                value={@custom_query}
-              ></textarea>
+              <label class="block text-sm font-medium mb-2">Select Query:</label>
+              <select
+                name="selected_query"
+                class="w-full p-3 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                value={@selected_query}
+              >
+                <option value="">-- Select a query --</option>
+                <%= for {value, label} <- @dropdown_options do %>
+                  <option value={value} selected={@selected_query == value}>
+                    <%= label %>
+                  </option>
+                <% end %>
+              </select>
             </div>
 
-            <.button type="submit" class="btn-primary" disabled={@executing}>
-              <%= if @executing, do: "Executing...", else: "Execute Query" %>
-            </.button>
+            <%= if @selected_query != "" do %>
+            <%= if @selected_query == "custom" do %>
+              <div class="mb-4">
+                <label class="block text-sm font-medium mb-2">Custom Query:</label>
+                <div phx-update="ignore" id="custom-query-container">
+                  <textarea
+                    id="custom_query_textarea"
+                    name="custom_query"
+                    rows="6"
+                    class="w-full p-3 border rounded-lg dark:bg-gray-700 dark:border-gray-600 font-mono text-sm"
+                    placeholder="Enter your ClickHouse SQL query here..."
+                  ><%= @custom_query %></textarea>
+                </div>
+              </div>
+
+            <% else %>
+                <p class="text-gray-600 dark:text-gray-400"><%= get_query_description(@selected_query, @sample_queries) %></p>
+
+              <div class="my-4 p-3 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                <pre class="text-xs overflow-x-auto"><%= get_query_text(@selected_query, @sample_queries) %></pre>
+              </div>
+            <% end %>
+
+              <div class="flex items-center gap-4">
+                <.button type="submit" class="btn-primary" disabled={@executing}>
+                  <%= if @executing, do: "Executing...", else: "Execute Query" %>
+                </.button>
+              </div>
+            <% end %>
+
           </.form>
         </div>
         <!-- Results Section -->
@@ -123,24 +134,6 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
             <% end %>
           </div>
         <% end %>
-        <!-- Help Section -->
-        <div class="mt-8 bg-blue-50 dark:bg-blue-900 p-4 rounded-lg">
-          <h3 class="font-semibold mb-2">💡 Getting Started</h3>
-          <ul class="text-sm space-y-1">
-            <li>
-              • Make sure ClickHouse is running:
-              <code class="bg-gray-200 dark:bg-gray-700 px-1 rounded">
-                docker-compose up clickhouse
-              </code>
-            </li>
-            <li>
-              • Run the setup task:
-              <code class="bg-gray-200 dark:bg-gray-700 px-1 rounded">mix oli.clickhouse.setup</code>
-            </li>
-            <li>• Generate video xAPI events by watching videos in the delivery interface</li>
-            <li>• Use the sample queries above to analyze video engagement data</li>
-          </ul>
-        </div>
       </div>
     </div>
     """
@@ -151,12 +144,44 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
     {:noreply, assign(socket, health_status: health_status)}
   end
 
+  def handle_event("query_selected", params, socket) do
+    selected_query = Map.get(params, "selected_query", "")
+    custom_query = Map.get(params, "custom_query", socket.assigns.custom_query)
+
+    {:noreply, assign(socket, selected_query: selected_query, custom_query: custom_query)}
+  end
+
+  def handle_event("execute_query", params, socket) do
+    selected_query = Map.get(params, "selected_query", socket.assigns.selected_query)
+    custom_query = Map.get(params, "custom_query", socket.assigns.custom_query)
+
+    # Preserve the custom_query value regardless of execution
+    socket = assign(socket, executing: true, custom_query: custom_query)
+
+    result = case selected_query do
+      "custom" ->
+        AdvancedAnalytics.execute_query(custom_query, "Custom Query")
+      query_name when query_name != "" ->
+        query_name_atom = String.to_existing_atom(query_name)
+        query_data = socket.assigns.sample_queries[query_name_atom]
+        query_text = if is_map(query_data), do: query_data.query, else: query_data
+        AdvancedAnalytics.execute_query(query_text, query_name_atom)
+      _ ->
+        {:error, "No query selected"}
+    end
+
+    # Ensure custom_query is preserved after execution
+    {:noreply, assign(socket, query_result: result, executing: false, custom_query: custom_query)}
+  end
+
+  # Legacy event handlers for backward compatibility
   def handle_event("run_sample_query", %{"query" => query_name}, socket) do
     query_name_atom = String.to_existing_atom(query_name)
-    query = socket.assigns.sample_queries[query_name_atom]
+    query_data = socket.assigns.sample_queries[query_name_atom]
+    query_text = if is_map(query_data), do: query_data.query, else: query_data
 
     socket = assign(socket, executing: true)
-    result = AdvancedAnalytics.execute_query(query, query_name_atom)
+    result = AdvancedAnalytics.execute_query(query_text, query_name_atom)
 
     {:noreply, assign(socket, query_result: result, executing: false)}
   end
@@ -165,7 +190,44 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
     socket = assign(socket, executing: true, custom_query: query)
     result = AdvancedAnalytics.execute_query(query, "Custom Query")
 
-    {:noreply, assign(socket, query_result: result, executing: false)}
+    # Preserve the custom query text after execution
+    {:noreply, assign(socket, query_result: result, executing: false, custom_query: query)}
+  end
+
+  defp build_dropdown_options(sample_queries) do
+    sample_options =
+      sample_queries
+      |> Enum.map(fn {key, _query_data} ->
+        {Atom.to_string(key), AdvancedAnalytics.humanize_query_name(key)}
+      end)
+      |> Enum.sort_by(fn {_key, label} -> label end)
+
+    sample_options ++ [{"custom", "Custom Query"}]
+  end
+
+  defp get_query_text(selected_query, sample_queries) do
+    case String.to_existing_atom(selected_query) do
+      query_name when is_map_key(sample_queries, query_name) ->
+        query_data = sample_queries[query_name]
+        query_text = if is_map(query_data), do: query_data.query, else: query_data
+        query_text |> String.trim()
+      _ ->
+        ""
+    end
+  rescue
+    ArgumentError -> ""
+  end
+
+  defp get_query_description(selected_query, sample_queries) do
+    case String.to_existing_atom(selected_query) do
+      query_name when is_map_key(sample_queries, query_name) ->
+        query_data = sample_queries[query_name]
+        if is_map(query_data), do: query_data.description, else: "No description available"
+      _ ->
+        ""
+    end
+  rescue
+    ArgumentError -> ""
   end
 
   defp breadcrumb(),

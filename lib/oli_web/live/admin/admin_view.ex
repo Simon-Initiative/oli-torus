@@ -156,6 +156,11 @@ defmodule OliWeb.Admin.AdminView do
               </a>
             </li>
             <li>
+              <a href={~p"/admin/clickhouse"}>
+                Clickhouse Analytics
+              </a>
+            </li>
+            <li>
               <a href={~p"/admin/dashboard/home"} target="_blank">
                 <span>View System Performance Dashboard</span>
                 <i class="fas fa-external-link-alt self-center ml-1"></i>
