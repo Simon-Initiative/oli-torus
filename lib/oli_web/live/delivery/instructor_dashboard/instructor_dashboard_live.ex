@@ -132,6 +132,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       |> assign_new(:activity_types_map, fn %{activities: activities} ->
         Enum.reduce(activities, %{}, fn e, m -> Map.put(m, e.id, e) end)
       end)
+      |> assign_new(:list_lti_activities, fn ->
+        Enum.map(Oli.Activities.list_lti_activity_registrations(), & &1.id)
+      end)
 
     {:noreply, socket}
   end
@@ -613,6 +616,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         students={@students}
         scripts={@scripts}
         activity_types_map={@activity_types_map}
+        list_lti_activities={@list_lti_activities}
         view={@view}
         ctx={@ctx}
       />

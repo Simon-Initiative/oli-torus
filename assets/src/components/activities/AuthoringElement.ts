@@ -15,10 +15,12 @@ export interface AuthoringElementProps<T extends ActivityModelSchema> {
   onRequestMedia: (request: MediaItemRequest) => Promise<string | boolean>;
   onCustomEvent?: (eventName: string, payload: any) => Promise<any>;
   editMode: boolean;
+  mode?: 'authoring' | 'instructor_preview';
   projectSlug: ProjectSlug;
   authoringContext?: any;
   notify?: EventEmitter;
   activityId?: number;
+  student_responses?: any;
 }
 
 /**
@@ -69,6 +71,8 @@ export abstract class AuthoringElement<T extends ActivityModelSchema> extends HT
     const getProp = (key: string) => JSON.parse(this.getAttribute(key) as any);
     const model = this.migrateModelVersion(getProp('model'));
     const editMode: boolean = this.getAttribute('editmode') === 'true';
+    const mode: 'authoring' | 'instructor_preview' =
+      (this.getAttribute('mode') as 'authoring' | 'instructor_preview') || 'authoring';
     const projectSlug: ProjectSlug = this.getAttribute('projectSlug') as string;
 
     const sectionSlug = this.getAttribute('section_slug') || '';
@@ -78,6 +82,11 @@ export abstract class AuthoringElement<T extends ActivityModelSchema> extends HT
     let authoringContext: any = {};
     if (this.getAttribute('authoringcontext')) {
       authoringContext = getProp('authoringcontext');
+    }
+
+    let student_responses: any;
+    if (this.getAttribute('student_responses')) {
+      student_responses = getProp('student_responses');
     }
 
     const onEdit = (model: T) => {
@@ -104,9 +113,11 @@ export abstract class AuthoringElement<T extends ActivityModelSchema> extends HT
       onCustomEvent,
       model,
       editMode,
+      mode,
       projectSlug,
       authoringContext,
       notify: this._notify,
+      student_responses,
     };
   }
 
@@ -180,5 +191,11 @@ export abstract class AuthoringElement<T extends ActivityModelSchema> extends HT
   }
 
   // Lower case here as opposed to camelCase is required
-  static observedAttributes = ['editmode', 'model', 'authoringcontext'];
+  static observedAttributes = [
+    'editmode',
+    'model',
+    'authoringcontext',
+    'mode',
+    'student_responses',
+  ];
 }

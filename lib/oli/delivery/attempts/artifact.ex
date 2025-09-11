@@ -14,7 +14,7 @@ defmodule Oli.Delivery.Attempts.Artifact do
 
     case upload_file(bucket_name, path, file_contents) do
       {:ok, %{status_code: 200}} ->
-        {:ok, "https://#{media_url}/#{path}"}
+        {:ok, "#{media_url}/#{path}"}
 
       e ->
         IO.inspect(e)

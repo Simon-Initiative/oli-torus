@@ -77,7 +77,8 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
           current_assessment ->
             student_ids = Enum.map(assigns.students, & &1.id)
 
-            activities = get_activities(current_assessment, assigns.section, student_ids)
+            activities =
+              get_activities(current_assessment, assigns.section, assigns[:list_lti_activities])
 
             students_with_attempts =
               DeliveryResolver.students_with_attempts_for_page(
@@ -260,6 +261,18 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
           <% else %>
             <p class="pt-9 pb-5">No attempt registered for this question</p>
           <% end %>
+        </div>
+        <div class="flex mt-2 mb-10 bg-white gap-x-20 dark:bg-gray-800 dark:text-white shadow-sm px-6 py-4">
+          <ActivityHelpers.percentage_bar
+            id={Integer.to_string(@selected_activity.id) <> "_first_try_correct"}
+            value={@selected_activity.first_attempt_pct}
+            label="First Try Correct"
+          />
+          <ActivityHelpers.percentage_bar
+            id={Integer.to_string(@selected_activity.id) <> "_eventually_correct"}
+            value={@selected_activity.all_attempt_pct}
+            label="Eventually Correct"
+          />
         </div>
       </div>
     </div>
@@ -528,7 +541,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
   defp get_activities(
          current_assessment,
          section,
-         _student_ids
+         list_lti_activities
        ) do
     # Fetch all unique acitivty ids from the v2 tracked responses for this section
     activity_ids_from_responses =
@@ -559,7 +572,12 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
       DeliveryResolver.from_resource_id(section.slug, activity_ids_from_responses)
       |> Enum.map(fn rev ->
         {total_attempts, avg_score} = Map.get(details_by_activity, rev.resource_id, {0, 0.0})
-        Map.merge(rev, %{total_attempts: total_attempts, avg_score: avg_score})
+
+        Map.merge(rev, %{
+          total_attempts: total_attempts,
+          avg_score: avg_score,
+          has_lti_activity: rev.activity_type_id in list_lti_activities
+        })
       end)
 
     add_objective_mapper(activities, section.slug)

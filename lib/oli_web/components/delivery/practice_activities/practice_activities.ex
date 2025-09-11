@@ -144,45 +144,13 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
                   class="flex flex-row gap-x-2 lowercase"
                   role="student attempts summary"
                 >
-                  <span class="text-xs">
+                  <span class="text-xs font-bold">
                     <%= if activity.students_with_attempts_count == 0 do %>
-                      No student has completed any attempts.
+                      No student has responded
                     <% else %>
-                      {~s{#{activity.students_with_attempts_count} #{Gettext.ngettext(OliWeb.Gettext, "student has", "students have", activity.students_with_attempts_count)} completed #{activity.total_attempts_count} #{Gettext.ngettext(OliWeb.Gettext, "attempt", "attempts", activity.total_attempts_count)}.}}
+                      {~s{#{activity.students_with_attempts_count} #{Gettext.ngettext(OliWeb.Gettext, "student has", "students have", activity.students_with_attempts_count)} responded}}
                     <% end %>
                   </span>
-                  <div
-                    :if={activity.students_with_attempts_count < Enum.count(@students)}
-                    class="flex flex-col gap-x-2 items-center"
-                  >
-                    <span class="text-xs">
-                      {~s{#{Enum.count(activity.student_emails_without_attempts)} #{Gettext.ngettext(OliWeb.Gettext,
-                      "student has",
-                      "students have",
-                      Enum.count(activity.student_emails_without_attempts))} not completed any attempt.}}
-                    </span>
-                    <input
-                      type="text"
-                      id={"email_inputs_#{activity.id}"}
-                      class="form-control hidden"
-                      value={Enum.join(activity.student_emails_without_attempts, "; ")}
-                      readonly
-                    />
-                    <button
-                      id={"copy_emails_button_#{activity.id}"}
-                      class="text-xs text-primary underline ml-auto"
-                      phx-hook="CopyListener"
-                      role="copy emails button"
-                      data-clipboard-target={"#email_inputs_#{activity.id}"}
-                    >
-                      <i class="fa-solid fa-copy mr-2" />{Gettext.ngettext(
-                        OliWeb.Gettext,
-                        "Copy email address",
-                        "Copy email addresses",
-                        Enum.count(activity.student_emails_without_attempts)
-                      )}
-                    </button>
-                  </div>
                 </div>
               </div>
               <div
@@ -198,6 +166,18 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
                 <% else %>
                   <p class="pt-9 pb-5">No attempt registered for this question</p>
                 <% end %>
+              </div>
+              <div class="flex mt-2 mb-10 bg-white gap-x-20 dark:bg-gray-800 dark:text-white shadow-sm px-6 py-4">
+                <ActivityHelpers.percentage_bar
+                  id={Integer.to_string(activity.id) <> "_first_try_correct"}
+                  value={activity.first_attempt_pct}
+                  label="First Try Correct"
+                />
+                <ActivityHelpers.percentage_bar
+                  id={Integer.to_string(activity.id) <> "_eventually_correct"}
+                  value={activity.all_attempt_pct}
+                  label="Eventually Correct"
+                />
               </div>
             </div>
           </div>

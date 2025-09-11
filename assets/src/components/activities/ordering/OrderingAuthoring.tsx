@@ -25,6 +25,7 @@ import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
 import { Explanation } from '../common/explanation/ExplanationAuthoring';
 import { ActivityScoring } from '../common/responses/ActivityScoring';
+import { StudentResponses as _StudentResponses } from '../common/responses/StudentResponses';
 import { TriggerAuthoring, TriggerLabel } from '../common/triggers/TriggerAuthoring';
 import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
 import { VariableActions } from '../common/variables/variableActions';
@@ -34,10 +35,64 @@ import { OrderingSchema } from './schema';
 
 const store = configureStore();
 
+const ControlledTabs: React.FC<{ isInstructorPreview: boolean; children: React.ReactNode }> = ({
+  isInstructorPreview,
+  children,
+}) => {
+  const [activeTab, setActiveTab] = React.useState<number>(0);
+
+  // Force the first visible tab to be active when the mode changes
+  React.useEffect(() => {
+    setActiveTab(0);
+  }, [isInstructorPreview]);
+
+  const validChildren = React.Children.toArray(children).filter(
+    (child): child is React.ReactElement => React.isValidElement(child),
+  );
+
+  return (
+    <>
+      <ul className="nav nav-tabs my-2 flex justify-between" role="tablist">
+        {validChildren.map((child, index) => (
+          <li key={'tab-' + index} className="nav-item" role="presentation">
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setActiveTab(index);
+              }}
+              className={'text-primary nav-link px-3' + (index === activeTab ? ' active' : '')}
+              data-bs-toggle="tab"
+              role="tab"
+              aria-controls={'tab-' + index}
+              aria-selected={index === activeTab}
+            >
+              {child.props.label}
+            </button>
+          </li>
+        ))}
+      </ul>
+      <div className="tab-content">
+        {validChildren.map((child, index) => (
+          <div
+            key={'tab-content-' + index}
+            className={'tab-pane' + (index === activeTab ? ' show active' : '')}
+            role="tabpanel"
+            aria-labelledby={'tab-' + index}
+          >
+            {child.props.children}
+          </div>
+        ))}
+      </div>
+    </>
+  );
+};
+
 export const Ordering: React.FC = () => {
-  const { dispatch, model, editMode, projectSlug, authoringContext } =
+  const { dispatch, model, editMode, mode, projectSlug, authoringContext } =
     useAuthoringElementContext<OrderingSchema>();
   const writerContext = defaultWriterContext({ projectSlug: projectSlug });
+  const isInstructorPreview = mode === 'instructor_preview';
 
   const choices = model.choices.reduce((m: any, c) => {
     m[c.id] = c;
@@ -45,7 +100,7 @@ export const Ordering: React.FC = () => {
   }, {});
 
   return (
-    <TabbedNavigation.Tabs>
+    <ControlledTabs isInstructorPreview={isInstructorPreview}>
       <TabbedNavigation.Tab label="Question">
         <Stem />
         <ChoicesAuthoring
@@ -84,6 +139,7 @@ export const Ordering: React.FC = () => {
       <TabbedNavigation.Tab label="Dynamic Variables">
         <VariableEditorOrNot
           editMode={editMode}
+          mode={mode}
           model={model}
           onEdit={(t) => dispatch(VariableActions.onUpdateTransformations(t))}
         />
@@ -96,7 +152,7 @@ export const Ordering: React.FC = () => {
       )}
 
       <ActivitySettings settings={[shuffleAnswerChoiceSetting(model, dispatch)]} />
-    </TabbedNavigation.Tabs>
+    </ControlledTabs>
   );
 };
 

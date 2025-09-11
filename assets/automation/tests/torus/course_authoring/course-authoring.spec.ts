@@ -3,6 +3,14 @@ import test from "@playwright/test";
 import { TestData } from "../test-data";
 import { NewCourseSetupPO } from "@pom/course/NewCourseSetupPO";
 import { DetailsCourseSetupPO } from "@pom/project/DetailsCourseSetupPO";
+import { OverviewProjectPO } from "@pom/project/OverviewProjectPO";
+import { LearningLanguageType, LicenseOptionType } from "@pom/types/project-attributes-types";
+import { AuthorDashboardPO } from "@pom/workspace/author/AuthorDashboardPO";
+import { SidebarCO } from "@pom/component/SidebarCO";
+import { CurriculumPO } from "@pom/project/CurriculumPO";
+import { BasicPracticePagePO } from "@pom/page/BasicPracticePagePO";
+import { ACTIVITY_TYPE, ActivityType } from "@pom/types/activity-types";
+import { Utils } from "@core/Utils";
 
 const testData = new TestData();
 const loginData = testData.loginData;
@@ -25,43 +33,20 @@ test.describe('Course authoring', () => {
     const endDate = new Date(new Date());
     endDate.setFullYear(endDate.getFullYear() + 1);
 
-    await torus.login(
-      loginData.author.type,
-      loginData.author.pageTitle,
-      loginData.author.role,
-      loginData.author.welcomeText,
-      loginData.author.email,
-      loginData.author.pass,
-      loginData.author.header,
-    );
-
+    await torus.login(loginData.author.type);
     const projectName = await torus.createNewProjectAsOpen(testData.projectNameFilter);
-
     await torus.goToSite();
-    await torus.login(
-      loginData.intructor.type,
-      loginData.intructor.pageTitle,
-      loginData.intructor.role,
-      loginData.intructor.welcomeText,
-      loginData.intructor.email,
-      loginData.intructor.pass,
-      loginData.intructor.header,
-    );
-
+    await torus.login(loginData.instructor.type);
     await torus.verifyProjectAsOpen(projectName);
-
     const courseSetup = new NewCourseSetupPO(page);
     const detailCourse = new DetailsCourseSetupPO(page);
-
     await courseSetup.step1.searchProject(projectName);
     await courseSetup.step1.verifySearchResult(projectName);
     await courseSetup.step1.verifyTextStepperContent('Showing all results (1 total)');
-
     await courseSetup.step2.clickOnCardProject(projectName);
     await courseSetup.step2.fillCourseName(projectName);
     await courseSetup.step2.fillCourseSectionNumber(projectName);
     await courseSetup.step2.goToNextStep();
-
     await courseSetup.step3.fillStartDate(startDate);
     await courseSetup.step3.fillEndDate(endDate);
     await courseSetup.step3.submitSection();
@@ -70,4 +55,304 @@ test.describe('Course authoring', () => {
     await detailCourse.verifyTitle(projectName);
     await detailCourse.verifyUrl(testData.baseUrl, projectName);
   });
+
+  test('Edit project attributes (description, license, etc) with valid details', async ({
+    page,
+  }) => {
+    const overview = new OverviewProjectPO(page);
+    const courseId = 'tqa10automation';
+    const course = `${testData.baseUrl}/workspaces/course_author/${courseId}/overview`;
+    const languageValue: LearningLanguageType = 'be';
+    const licenseValue: LicenseOptionType = 'cc_by';
+
+    await torus.login(loginData.author.type);
+    await torus.goToSite(course);
+
+    await overview.projectAttributes.selectLearningLanguage(languageValue);
+    await overview.projectAttributes.selectLicense(licenseValue);
+    await overview.projectAttributes.clickSave();
+    await overview.projectAttributes.expectSelectedValues(languageValue, licenseValue);
+  });
+
+  test.describe('Enable and verify one activity per test', () => {
+    const projectName = 'TQA-11-Automation';
+    const projectId = 'tqa11automation';
+    const pageOverview = `${testData.baseUrl}/workspaces/course_author/${projectId}/overview`;
+    const activities: ActivityType[] = [
+      'logic_lab',
+      'adaptive',
+      'dnd',
+      'dd',
+      'coding',
+      'file_aupload',
+      'hotspot',
+      'likert',
+      'multi',
+      'embed',
+      'response_multi',
+      'vlab',
+    ];
+
+    for (const activity of activities) {
+      const label = ACTIVITY_TYPE[activity].label;
+      test(label, async () => {
+        await torus.login(loginData.author.type);
+        await torus.goToSite(pageOverview);
+        await torus.project().overview.enableActivity(projectId, activity);
+        await torus.sidebar().clickCourseAuthor();
+        await torus.project().addPageAndEnter('basic-practice', projectName);
+        await torus.project().page.activity.add(activity);
+        await torus.sidebar().clickCourseAuthor();
+        await torus.project().deletePage(projectName);
+        await torus.goToSite(pageOverview);
+        await torus.project().overview.disableActivity(projectId, activity);
+      });
+    }
+  });
+
+  test('Modify text, add an image, and change text formatting in an existing BASIC page.', async ({
+    page,
+  }) => {
+    const practiceNewPage = new BasicPracticePagePO(page);
+    const curriculum = new CurriculumPO(page);
+    const courseId = 'tqa12automation';
+    const course = `${testData.baseUrl}/workspaces/course_author/${courseId}/curriculum`;
+    const paragraphText = 'Text generated by automation';
+    const newParagraphText = 'New text generated by automation';
+    const imageFileName = 'img-mock-05-16-2025.jpg';
+
+    await torus.login(loginData.author.type);
+    await torus.goToSite(course);
+    await curriculum.create.clickEditPageLink();
+    await practiceNewPage.visibleTitlePage();
+    await practiceNewPage.deleteAllActivities();
+    await torus.reloadPage();
+    await practiceNewPage.fillParagraph(paragraphText);
+    await practiceNewPage.waitForChangesSaved();
+    await torus.reloadPage();
+    await practiceNewPage.fillParagraph(newParagraphText);
+    await practiceNewPage.selectElementToolbar('Format');
+    await practiceNewPage.selectElementToolbar('List');
+    await practiceNewPage.clickParagraph(2);
+    await practiceNewPage.selectElementToolbar('Insert Image');
+    const selectImage = await practiceNewPage.clickChoseImage();
+    await selectImage.waitForLabel('Select Image');
+    await selectImage.selectMediaByName(imageFileName);
+    await selectImage.confirmSelection();
+    await torus.reloadPage();
+    await practiceNewPage.visibleTitlePage();
+    await practiceNewPage.expectImage(imageFileName);
+    await practiceNewPage.expectText(newParagraphText, 1);
+  });
+
+    test.describe('Add one of each type of content to a new page', () => {
+    const nameProject = 'TQA-13-Automation';
+    const typePage = 'basic-practice';
+
+    test('Cite', async () => {
+      const citation = {
+        name: 'Newton, I.',
+        id: 'philosophi_naturalis_principia',
+        text: 'Newton, I. (2025). “Philosophiæ naturalis principia mathematica.”',
+      };
+
+      await torus.login(loginData.author.type);
+      await torus.project().addPageAndEnter(typePage, nameProject);
+      await torus.project().page.addCiteVerify(citation.name, citation.id, citation.text);
+      await torus.project().deletePage(nameProject);
+    });
+
+    test('Foreign', async () => {
+      const language = 'arabic';
+      const paragraphText = 'Text generated by automation';
+
+      await torus.login(loginData.author.type);
+      await torus.project().addPageAndEnter(typePage, nameProject);
+      await torus.project().page.addForeignVerify(paragraphText, language);
+      await torus.project().deletePage(nameProject);
+    });
+
+    test('Image', async () => {
+      const imageName = 'img-mock-05-16-2025.jpg';
+
+      await torus.login(loginData.author.type);
+      await torus.project().addPageAndEnter(typePage, nameProject);
+      await torus.project().page.addImageVerify(imageName);
+      await torus.project().deletePage(nameProject);
+    });
+
+    test('Formula', async () => {
+      const formula = '1+2=3';
+
+      await torus.login(loginData.author.type);
+      await torus.project().addPageAndEnter(typePage, nameProject);
+      await torus.project().page.addFormulaVerify(formula);
+      await torus.project().deletePage(nameProject);
+    });
+
+    test('Callout', async () => {
+      const paragraphText =
+        'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.';
+
+      await torus.login(loginData.author.type);
+      await torus.project().addPageAndEnter(typePage, nameProject);
+      await torus.project().page.addCalloutVerify(paragraphText);
+      await torus.project().deletePage(nameProject);
+    });
+
+    test('PopUp', async () => {
+      const paragraphText = 'Text generated by automation';
+      const popupText = 'Popup text';
+
+      await torus.login(loginData.author.type);
+      await torus.project().addPageAndEnter(typePage, nameProject);
+      await torus.project().page.addPopUpVerify(paragraphText, popupText);
+      await torus.project().deletePage(nameProject);
+    });
+
+    test('Dialog', async () => {
+      const dialogTitle = "This is a dialog's title";
+      const dialogSpeaker = 'Leonardo';
+      const dialogContent = 'This is my text';
+
+      await torus.login(loginData.author.type);
+      await torus.project().addPageAndEnter(typePage, nameProject);
+      await torus.project().page.addDialogVerify(dialogTitle, dialogSpeaker, dialogContent);
+      await torus.project().deletePage(nameProject);
+    });
+
+    test('Table', async () => {
+      const tableCaption = 'My table Caption';
+      const tableData = {
+        c1: 'My cell 1',
+        c2: 'My cell 2',
+      };
+
+      await torus.login(loginData.author.type);
+      await torus.project().addPageAndEnter(typePage, nameProject);
+      await torus.project().page.addTableVerify(tableCaption, tableData.c1, tableData.c2);
+      await torus.project().deletePage(nameProject);
+    });
+
+    test('Theorem', async ({ page }) => {
+      const title = 'Theorem Title';
+
+      await torus.login(loginData.author.type);
+      await torus.project().addPageAndEnter(typePage, nameProject);
+      await torus.project().page.addTheoremVerify(title);
+      await torus.project().deletePage(nameProject);
+    });
+
+    test('Conjugation', async ({ page }) => {
+      const dataTable = {
+        headColumn1: 'Singular',
+        headColumn2: 'Plural',
+        headRow1: '1st Person',
+        headRow2: '2nd Person',
+        headRow3: '3rd Person',
+      };
+
+      await torus.login(loginData.author.type);
+      await torus.project().addPageAndEnter(typePage, nameProject);
+      await torus
+        .project()
+        .page.addConjugationVerify(
+          dataTable.headColumn1,
+          dataTable.headColumn2,
+          dataTable.headRow1,
+          dataTable.headRow2,
+          dataTable.headRow3,
+        );
+      await torus.project().deletePage(nameProject);
+    });
+
+    test('Description List', async ({ page }) => {
+      const title = 'My title';
+      const term = 'My term';
+      const definition = 'My definition';
+
+      await torus.login(loginData.author.type);
+      await torus.project().addPageAndEnter(typePage, nameProject);
+      await torus.project().page.addDescriptionListVerify(title, term, definition);
+      await torus.project().deletePage(nameProject);
+    });
+
+    test('Audio clip', async () => {
+      const audioFileName = 'audio-test-01.mp3';
+      const audioCaption = 'My Audio Caption';
+
+      await torus.login(loginData.author.type);
+      await torus.project().addPageAndEnter(typePage, nameProject);
+      await torus.project().page.addAudioClipVerify(audioFileName, audioCaption);
+      await torus.project().deletePage(nameProject);
+    });
+
+    test('Video', async () => {
+      const videoFileName = 'video-test-01.mp4';
+
+      await torus.login(loginData.author.type);
+      await torus.project().addPageAndEnter(typePage, nameProject);
+      await torus.project().page.addVideoVerify(videoFileName);
+      await torus.project().deletePage(nameProject);
+    });
+
+    test('Insert YouTube', async () => {
+      const youtubeUrl = 'https://www.youtube.com/watch?v=2QAMzupR_C4';
+      const youtubeId = '2QAMzupR_C4';
+
+      await torus.login(loginData.author.type);
+      await torus.project().addPageAndEnter(typePage, nameProject);
+      await torus.project().page.addYoutubeVerify(youtubeUrl, youtubeId);
+      await torus.project().deletePage(nameProject);
+    });
+
+    test('Web page', async () => {
+      const webPageUrl = 'https://es.wikipedia.org/wiki/Wikipedia:Portada';
+
+      await torus.login(loginData.author.type);
+      await torus.project().addPageAndEnter(typePage, nameProject);
+      await torus.project().page.addWebPageVerify(webPageUrl);
+      await torus.project().deletePage(nameProject);
+    });
+
+    test('Code block', async () => {
+      const codeType = 'python';
+      const code = 'print("Hola, mundo!")';
+      const caption = 'Test Code block';
+
+      await torus.login(loginData.author.type);
+      await torus.project().addPageAndEnter(typePage, nameProject);
+      await torus.project().page.addCodeBlockVerify(codeType, code, caption);
+      await torus.project().deletePage(nameProject);
+    });
+
+    test('Figure', async () => {
+      const title = 'Test Figure Title';
+
+      await torus.login(loginData.author.type);
+      await torus.project().addPageAndEnter(typePage, nameProject);
+      await torus.project().page.addFigureVerify(title);
+      await torus.project().deletePage(nameProject);
+    });
+
+    test('Page link', async () => {
+      const pageName = 'New Page';
+
+      await torus.login(loginData.author.type);
+      await torus.project().addPageAndEnter(typePage, nameProject);
+      await torus.project().page.addPageLinkVerify(pageName);
+      await torus.project().deletePage(nameProject);
+    });
+
+    test('Definition', async () => {
+      const term = 'Algorithm';
+      const description =
+        'A set of rules or instructions that specify how to solve a problem or perform a task';
+
+      await torus.login(loginData.author.type);
+      await torus.project().addPageAndEnter(typePage, nameProject);
+      await torus.project().page.addDefinitionVerify(term, description);
+      await torus.project().deletePage(nameProject);
+    });
+    });
 });
