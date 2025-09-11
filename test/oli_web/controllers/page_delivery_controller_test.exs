@@ -293,6 +293,11 @@ defmodule OliWeb.PageDeliveryControllerTest do
       revision: revision,
       section: section
     } do
+      {:ok, section} =
+        Sections.update_section(section, %{
+          requires_enrollment: true
+        })
+
       conn =
         conn
         |> get(~p"/sections/#{section.slug}/lesson/#{revision.slug}")
@@ -302,6 +307,11 @@ defmodule OliWeb.PageDeliveryControllerTest do
     end
 
     test "handles student access who is not enrolled", %{conn: conn, section: section} do
+      {:ok, section} =
+        Sections.update_section(section, %{
+          requires_enrollment: true
+        })
+
       conn =
         conn
         |> get(~p"/sections/#{section.slug}")
@@ -328,7 +338,8 @@ defmodule OliWeb.PageDeliveryControllerTest do
           ~p"/sections/#{section.slug}"
         )
 
-      assert html_response(conn, 200) =~ "Not authorized"
+      assert html_response(conn, 302) =~
+               "You are being <a href=\"/sections/some_title/enroll\">redirected"
     end
 
     test "handles student access who is enrolled but has not paid", %{
@@ -1511,6 +1522,11 @@ defmodule OliWeb.PageDeliveryControllerTest do
       other_user = user_fixture()
       stub_current_time(~U[2023-11-04 20:00:00Z])
 
+      {:ok, section} =
+        Sections.update_section(section, %{
+          requires_enrollment: true
+        })
+
       enroll_as_student(%{section: section, user: enrolled_user})
 
       conn =
@@ -1589,7 +1605,8 @@ defmodule OliWeb.PageDeliveryControllerTest do
         Sections.update_section(section, %{
           requires_payment: true,
           amount: Money.new(:USD, 100),
-          has_grace_period: false
+          has_grace_period: false,
+          requires_enrollment: false
         })
 
       conn =
@@ -1618,7 +1635,8 @@ defmodule OliWeb.PageDeliveryControllerTest do
         |> log_in_user(user)
         |> get(~p"/sections/#{section.slug}")
 
-      assert html_response(conn, 200) =~ "Not authorized"
+      assert html_response(conn, 302) =~
+               "You are being <a href=\"/sections/some_title/enroll\">redirected</a>"
     end
 
     test "handles student access who is enrolled but has not paid", %{
@@ -2196,6 +2214,11 @@ defmodule OliWeb.PageDeliveryControllerTest do
       section: section
     } do
       user = insert(:user)
+
+      {:ok, section} =
+        Sections.update_section(section, %{
+          requires_enrollment: true
+        })
 
       conn =
         recycle(conn)

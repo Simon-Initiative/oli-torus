@@ -271,6 +271,11 @@ defmodule OliWeb.CollaborationLiveTest do
            section: section,
            page_revision: page_revision
          } do
+      {:ok, section} =
+        Sections.update_section(section, %{
+          requires_enrollment: true
+        })
+
       assert conn
              |> get(live_view_student_page(section.slug, page_revision.slug))
              |> html_response(302) =~

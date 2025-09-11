@@ -1144,8 +1144,8 @@ defmodule OliWeb.Router do
       :ensure_datashop_id,
       :require_authenticated_user_or_guest,
       :student,
-      :enforce_paywall,
       :require_enrollment,
+      :enforce_paywall,
       :ensure_research_consent,
       :ensure_user_section_visit,
       :force_required_survey
@@ -1241,8 +1241,8 @@ defmodule OliWeb.Router do
       :delivery,
       :redirect_by_attempt_state,
       :delivery_protected,
-      :enforce_paywall,
       :require_enrollment,
+      :enforce_paywall,
       :ensure_user_section_visit,
       :force_required_survey
     ])
