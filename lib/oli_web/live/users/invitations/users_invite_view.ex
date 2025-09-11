@@ -11,7 +11,12 @@ defmodule OliWeb.Users.Invitations.UsersInviteView do
   def mount(%{"token" => token}, session, socket) do
     case Accounts.get_user_token_by_enrollment_invitation_token(token) do
       nil ->
-        {:ok, assign(socket, user: nil, invitation_role: :student)}
+        {:ok,
+         assign(socket,
+           user: nil,
+           invitation_role: :student,
+           authentication_providers: []
+         )}
 
       %UserToken{user: user, context: "enrollment_invitation:" <> section_slug} ->
         section = Sections.get_section_by_slug(section_slug)
@@ -19,6 +24,9 @@ defmodule OliWeb.Users.Invitations.UsersInviteView do
         enrollment =
           Sections.get_enrollment(section.slug, user.id, filter_by_status: false)
           |> Oli.Repo.preload([:context_roles])
+
+        authentication_providers =
+          Oli.AssentAuth.UserAssentAuth.authentication_providers() |> Keyword.keys()
 
         {:ok,
          assign(socket,
@@ -31,7 +39,8 @@ defmodule OliWeb.Users.Invitations.UsersInviteView do
            enrollment: enrollment,
            invitation_role:
              if(hd(enrollment.context_roles).id == 4, do: :student, else: :instructor),
-           step: "accept_or_reject_invitation"
+           step: "accept_or_reject_invitation",
+           authentication_providers: authentication_providers
          )}
     end
   end
@@ -103,6 +112,8 @@ defmodule OliWeb.Users.Invitations.UsersInviteView do
           recaptcha_error={@recaptcha_error}
           check_errors={@check_errors}
           disabled_inputs={[:email]}
+          authentication_providers={@authentication_providers}
+          auth_provider_path_fn={&build_invitation_auth_provider_path(&1, @section.slug)}
         />
       </div>
     </.invite_container>
@@ -123,6 +134,8 @@ defmodule OliWeb.Users.Invitations.UsersInviteView do
           trigger_submit={@trigger_submit}
           submit_event="log_in_existing_user"
           disabled_inputs={[:email]}
+          authentication_providers={@authentication_providers}
+          auth_provider_path_fn={&build_invitation_auth_provider_path(&1, @section.slug)}
         />
       </div>
 
@@ -321,5 +334,15 @@ defmodule OliWeb.Users.Invitations.UsersInviteView do
     else
       assign(socket, form: form)
     end
+  end
+
+  defp build_invitation_auth_provider_path(provider, section_slug) do
+    params =
+      URI.encode_query([
+        {"section", section_slug},
+        {"from_invitation_link?", "true"}
+      ])
+
+    "#{~p"/users/auth/#{provider}/new"}?#{params}"
   end
 end

@@ -800,6 +800,19 @@ defmodule Oli.AccountsTest do
       assert is_nil(user.email_confirmed_at)
       assert is_nil(user.password)
     end
+
+    test "can store a long text as user picture" do
+      email = unique_user_email()
+      long_picture = String.duplicate("a", 500)
+
+      {:ok, user} =
+        Accounts.register_independent_user(
+          valid_user_attributes(email: email, picture: long_picture)
+        )
+
+      assert user.picture == long_picture
+      assert String.length(user.picture) == 500
+    end
   end
 
   describe "change_user_registration/2" do
