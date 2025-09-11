@@ -451,6 +451,11 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       section: section,
       page_1: page_1
     } do
+      {:ok, section} =
+        Sections.update_section(section, %{
+          requires_enrollment: true
+        })
+
       {:error, {:redirect, %{to: redirect_path, flash: _flash_msg}}} =
         live(conn, Utils.prologue_live_path(section.slug, page_1.slug))
 

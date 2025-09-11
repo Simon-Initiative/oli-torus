@@ -283,6 +283,11 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
       section: section,
       page_1: page_1
     } do
+      {:ok, section} =
+        Sections.update_section(section, %{
+          requires_enrollment: true
+        })
+
       attempt = create_attempt(user, section, page_1)
 
       {:error, {:redirect, %{to: redirect_path, flash: _flash_msg}}} =
