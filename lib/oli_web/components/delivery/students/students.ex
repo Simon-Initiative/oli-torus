@@ -39,6 +39,11 @@ defmodule OliWeb.Components.Delivery.Students do
     %{id: 3, name: "High", selected: false}
   ]
 
+  def update(%{show_email_modal: show_email_modal} = _assigns, socket) do
+    # Handle partial updates for show_email_modal
+    {:ok, assign(socket, show_email_modal: show_email_modal)}
+  end
+
   def update(
         %{
           params: params,
@@ -54,6 +59,8 @@ defmodule OliWeb.Components.Delivery.Students do
     certificate_pending_approval_count =
       Helpers.certificate_pending_approval_count(filtered_students, assigns[:certificate])
 
+    selected_students = socket.assigns[:selected_students] || []
+
     {:ok, table_model} =
       EnrollmentsTableModel.new(
         filtered_students,
@@ -61,7 +68,8 @@ defmodule OliWeb.Components.Delivery.Students do
         ctx,
         assigns[:certificate],
         certificate_pending_approval_count,
-        socket.assigns.myself
+        socket.assigns.myself,
+        selected_students
       )
 
     navigation_data = Jason.decode!(params.navigation_data)
@@ -88,6 +96,9 @@ defmodule OliWeb.Components.Delivery.Students do
         sort_by_spec:
           Enum.find(table_model.column_specs, fn col_spec -> col_spec.name == params.sort_by end)
       })
+
+    table_model_data = Map.put(table_model.data, :selected_students, selected_students)
+    table_model = Map.put(table_model, :data, table_model_data)
 
     selected_card_value = Map.get(assigns.params, :selected_card_value, nil)
     students_count = students_count(students, params.filter_by)
@@ -171,7 +182,9 @@ defmodule OliWeb.Components.Delivery.Students do
          assigns[:certificate] &&
            assigns.certificate.requires_instructor_approval,
        certificate_pending_email_notification_count:
-         (assigns[:certificate] && assigns.certificate_pending_email_notification_count) || 0
+         (assigns[:certificate] && assigns.certificate_pending_email_notification_count) || 0,
+       selected_students: socket.assigns[:selected_students] || [],
+       show_email_modal: false
      )}
   end
 
@@ -395,6 +408,7 @@ defmodule OliWeb.Components.Delivery.Students do
   attr(:previous_id, :integer)
   attr(:next_id, :integer)
   attr(:navigation_data, :map, required: true)
+  attr(:show_email_modal, :boolean, default: false)
 
   def render(assigns) do
     ~H"""
@@ -465,7 +479,7 @@ defmodule OliWeb.Components.Delivery.Students do
                 value={@previous_id}
                 phx-target={@myself}
               >
-                <Icons.previous_arrow color={if is_nil(@previous_id), do: "#a3a3a3", else: "#468AEF"} />
+                <Icons.previous_arrow color={if is_nil(@previous_id), do: "#757682", else: "#1B67B2"} />
               </button>
             </div>
             <div class="w-auto px-2 py-1 rounded-md flex-col justify-center items-center text-center inline-flex">
@@ -480,7 +494,7 @@ defmodule OliWeb.Components.Delivery.Students do
                 value={@next_id}
                 phx-target={@myself}
               >
-                <Icons.next_arrow color={if is_nil(@next_id), do: "#a3a3a3", else: "#468AEF"} />
+                <Icons.next_arrow color={if is_nil(@next_id), do: "#757682", else: "#1B67B2"} />
               </button>
             </div>
           </div>
@@ -512,7 +526,8 @@ defmodule OliWeb.Components.Delivery.Students do
           </form>
         </div>
       <% end %>
-      <div class="bg-white dark:bg-gray-800 shadow-sm">
+
+      <div class="bg-Surface-surface-primary shadow-sm">
         <div class="flex flex-row items-center justify-between px-4 pt-8 pb-4">
           <h4 class="self-stretch text-black dark:text-white text-lg font-bold leading-normal">
             {@title} Student Insights
@@ -595,6 +610,17 @@ defmodule OliWeb.Components.Delivery.Students do
             </button>
 
             <.live_component
+              id="email_button_component"
+              module={OliWeb.Components.Delivery.Students.EmailButton}
+              selected_students={@selected_students}
+              students={@table_model.rows}
+              section_title={@section_title}
+              instructor_email={issued_by_email(@current_author, @current_user)}
+              section_slug={@section_slug}
+              show_component={length(@selected_students) > 0}
+            />
+
+            <.live_component
               id="bulk_email_certificate_status_component"
               module={OliWeb.Components.Delivery.Students.Certificates.BulkCertificateStatusEmail}
               show_component={
@@ -616,6 +642,8 @@ defmodule OliWeb.Components.Delivery.Students do
           page_change={JS.push("paged_table_page_change", target: @myself)}
           limit_change={JS.push("paged_table_limit_change", target: @myself)}
           show_limit_change={true}
+          allow_selection={true}
+          selection_change={JS.push("paged_table_selection_change", target: @myself)}
         />
         <HTMLComponents.view_example_student_progress_modal />
 
@@ -629,6 +657,18 @@ defmodule OliWeb.Components.Delivery.Students do
           selected_modal={nil}
           granted_certificate_guid={nil}
           section_slug={@section_slug}
+        />
+
+        <.live_component
+          :if={@show_email_modal}
+          id="email_modal"
+          module={OliWeb.Components.Delivery.Students.EmailModal}
+          selected_students={@selected_students}
+          students={@table_model.rows}
+          section_title={@section_title}
+          instructor_email={issued_by_email(@current_author, @current_user)}
+          section_slug={@section_slug}
+          show_modal={@show_email_modal}
         />
       </div>
     </div>
@@ -684,7 +724,7 @@ defmodule OliWeb.Components.Delivery.Students do
         <div>
           <li class="list-none mt-4 max-h-80 overflow-y-scroll">
             <%= for email <- @add_enrollments_grouped_by_status[:non_existing_users] do %>
-              <ul class="odd:bg-gray-200 dark:odd:bg-neutral-600 even:bg-gray-100 dark:even:bg-neutral-500 p-2 first:rounded-t last:rounded-b">
+              <ul class="odd:bg-Table-table-row-1 even:bg-Table-table-row-2 p-2 first:rounded-t last:rounded-b">
                 <div class="flex items-center justify-between">
                   <p>{email}</p>
                   <button
@@ -715,7 +755,7 @@ defmodule OliWeb.Components.Delivery.Students do
         <div>
           <li class="list-none mt-4 max-h-80 overflow-y-scroll">
             <%= for email <- @add_enrollments_grouped_by_status[:pending_confirmation] do %>
-              <ul class="odd:bg-gray-200 dark:odd:bg-neutral-600 even:bg-gray-100 dark:even:bg-neutral-500 p-2 first:rounded-t last:rounded-b">
+              <ul class="odd:bg-Table-table-row-1 even:bg-Table-table-row-2 p-2 first:rounded-t last:rounded-b">
                 <div class="flex items-center justify-between">
                   <p>{email}</p>
                   <button
@@ -746,7 +786,7 @@ defmodule OliWeb.Components.Delivery.Students do
         <div>
           <li class="list-none mt-4 max-h-80 overflow-y-scroll">
             <%= for email <- @add_enrollments_grouped_by_status[:rejected] do %>
-              <ul class="odd:bg-gray-200 dark:odd:bg-neutral-600 even:bg-gray-100 dark:even:bg-neutral-500 p-2 first:rounded-t last:rounded-b">
+              <ul class="odd:bg-Table-table-row-1 even:bg-Table-table-row-2 p-2 first:rounded-t last:rounded-b">
                 <div class="flex items-center justify-between">
                   <p>{email}</p>
                   <button
@@ -777,7 +817,7 @@ defmodule OliWeb.Components.Delivery.Students do
         <div>
           <li class="list-none mt-4 max-h-80 overflow-y-scroll">
             <%= for email <- @add_enrollments_grouped_by_status[:suspended] do %>
-              <ul class="odd:bg-gray-200 dark:odd:bg-neutral-600 even:bg-gray-100 dark:even:bg-neutral-500 p-2 first:rounded-t last:rounded-b">
+              <ul class="odd:bg-Table-table-row-1 even:bg-Table-table-row-2 p-2 first:rounded-t last:rounded-b">
                 <div class="flex items-center justify-between">
                   <p>{email}</p>
                   <button
@@ -805,7 +845,7 @@ defmodule OliWeb.Components.Delivery.Students do
         <div>
           <li class="list-none mt-4 max-h-80 overflow-y-scroll">
             <%= for email <- @add_enrollments_grouped_by_status[:enrolled] do %>
-              <ul class="odd:bg-gray-200 dark:odd:bg-neutral-600 even:bg-gray-100 dark:even:bg-neutral-500 p-2 first:rounded-t last:rounded-b">
+              <ul class="odd:bg-Table-table-row-1 even:bg-Table-table-row-2 p-2 first:rounded-t last:rounded-b">
                 <div class="flex items-center justify-between">
                   <p>{email}</p>
                   <button
@@ -899,7 +939,7 @@ defmodule OliWeb.Components.Delivery.Students do
     ~H"""
     <div
       :if={show_senders(@current_author, @current_user)}
-      class="mt-5 p-5 border-solid border-2 border-blue-400 rounded"
+      class="mt-5 p-5 border-solid border-2 border-Border-border-bold rounded"
     >
       <p>You're signed with two accounts.</p>
       <p>Please select the one to use as an inviter:</p>
@@ -1258,6 +1298,95 @@ defmodule OliWeb.Components.Delivery.Students do
      )}
   end
 
+  def handle_event("select_all_students", _params, socket) do
+    all_student_ids = Enum.map(socket.assigns.table_model.rows, & &1.id)
+    current_selected = socket.assigns[:selected_students] || []
+
+    # If all students are already selected, deselect all; otherwise select all
+    selected_students =
+      if length(current_selected) > 0 && Enum.all?(all_student_ids, &(&1 in current_selected)) do
+        []
+      else
+        all_student_ids
+      end
+
+    # Recreate the table model with updated selected_students to refresh the header checkbox
+    certificate_pending_approval_count =
+      Helpers.certificate_pending_approval_count(
+        socket.assigns.table_model.rows,
+        socket.assigns[:certificate]
+      )
+
+    {:ok, new_table_model} =
+      EnrollmentsTableModel.new(
+        socket.assigns.table_model.rows,
+        socket.assigns.table_model.data.section,
+        socket.assigns.table_model.data.ctx,
+        socket.assigns[:certificate],
+        certificate_pending_approval_count,
+        socket.assigns.myself,
+        selected_students
+      )
+
+    # Preserve the existing table state (sort, etc.)
+    table_model =
+      Map.merge(new_table_model, %{
+        sort_order: socket.assigns.table_model.sort_order,
+        sort_by_spec: socket.assigns.table_model.sort_by_spec
+      })
+
+    {:noreply,
+     assign(socket,
+       selected_students: selected_students,
+       table_model: table_model,
+       show_email_modal: false
+     )}
+  end
+
+  def handle_event("paged_table_selection_change", %{"id" => selected_student_id}, socket) do
+    # Toggle selection - if already selected, remove it, otherwise add it
+    selected_students = socket.assigns[:selected_students] || []
+
+    selected_students =
+      if selected_student_id in selected_students do
+        List.delete(selected_students, selected_student_id)
+      else
+        [selected_student_id | selected_students]
+      end
+
+    # Recreate the table model with updated selected_students to refresh the header checkbox
+    certificate_pending_approval_count =
+      Helpers.certificate_pending_approval_count(
+        socket.assigns.table_model.rows,
+        socket.assigns[:certificate]
+      )
+
+    {:ok, new_table_model} =
+      EnrollmentsTableModel.new(
+        socket.assigns.table_model.rows,
+        socket.assigns.table_model.data.section,
+        socket.assigns.table_model.data.ctx,
+        socket.assigns[:certificate],
+        certificate_pending_approval_count,
+        socket.assigns.myself,
+        selected_students
+      )
+
+    # Preserve the existing table state (sort, etc.)
+    table_model =
+      Map.merge(new_table_model, %{
+        sort_order: socket.assigns.table_model.sort_order,
+        sort_by_spec: socket.assigns.table_model.sort_by_spec
+      })
+
+    {:noreply,
+     assign(socket,
+       selected_students: selected_students,
+       table_model: table_model,
+       show_email_modal: false
+     )}
+  end
+
   def handle_event("filter_by", %{"filter" => filter}, socket) do
     {:noreply,
      push_patch(socket,
@@ -1362,6 +1491,10 @@ defmodule OliWeb.Components.Delivery.Students do
            update_params(socket.assigns.params, %{navigation_data: navigation_data})
          )
      )}
+  end
+
+  def handle_event("show_email_modal", _params, socket) do
+    {:noreply, assign(socket, show_email_modal: true)}
   end
 
   def decode_params(params) do
