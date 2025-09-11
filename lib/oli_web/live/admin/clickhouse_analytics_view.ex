@@ -102,8 +102,13 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
 
             <%= case @query_result do %>
               <% {:ok, result} -> %>
-                <div class="text-green-600 dark:text-green-400 mb-2">
+                <div class="text-green-600 dark:text-green-400 mb-2 flex items-center">
                   ✅ Query executed successfully
+                  <%= if Map.has_key?(result, :execution_time_ms) and is_number(result.execution_time_ms) do %>
+                    <span class="ml-2 text-sm text-gray-500 dark:text-gray-400">
+                      (executed in <%= :erlang.float_to_binary(result.execution_time_ms / 1, decimals: 2) %>ms)
+                    </span>
+                  <% end %>
                 </div>
                 <%= if result.body != "" do %>
                   <pre class="bg-gray-100 dark:bg-gray-700 p-3 rounded overflow-x-auto text-sm"><%= result.body %></pre>

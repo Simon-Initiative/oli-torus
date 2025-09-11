@@ -726,6 +726,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
                   </path>
                 </svg>
                 Analytics data loaded successfully
+                <%= if Map.has_key?(result, :execution_time_ms) and is_number(result.execution_time_ms) do %>
+                  <span class="ml-2 text-sm text-gray-500 dark:text-gray-400">
+                    (executed in <%= :erlang.float_to_binary(result.execution_time_ms / 1, decimals: 2) %>ms)
+                  </span>
+                <% end %>
               </div>
               <!-- Event Type Cards -->
               <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">

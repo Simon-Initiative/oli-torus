@@ -329,11 +329,22 @@ defmodule Oli.Analytics.AdvancedAnalytics do
 
     Logger.debug("Executing ClickHouse query for #{description}")
 
-    case Oli.HTTP.http().post(url, formatted_query, headers) do
-      {:ok, %{status_code: 200} = response} ->
-        Logger.debug("Successfully executed #{description}")
+    # Time the query execution
+    {execution_time_microseconds, result} = Oli.Timing.run(fn ->
+      Oli.HTTP.http().post(url, formatted_query, headers)
+    end)
 
-        formatted_response = %{response | body: format_query_results(response.body)}
+    execution_time_ms = execution_time_microseconds / 1000
+
+    case result do
+      {:ok, %{status_code: 200} = response} ->
+        Logger.debug("Successfully executed #{description} in #{execution_time_ms}ms")
+
+        formatted_response =
+          response
+          |> Map.put(:body, format_query_results(response.body))
+          |> Map.put(:execution_time_ms, execution_time_ms)
+
         {:ok, formatted_response}
 
       {:ok, %{status_code: status_code, body: body}} ->
