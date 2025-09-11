@@ -633,7 +633,12 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
         []
 
       [_header | data_lines] ->
-        Enum.map(data_lines, fn line ->
+        data_lines
+        |> Enum.filter(fn line ->
+          # Filter out separator lines that contain only dashes and pipes
+          not String.match?(line, ~r/^[\s\-\|]+$/)
+        end)
+        |> Enum.map(fn line ->
           String.split(line, "\t")
         end)
     end
