@@ -15,6 +15,7 @@ defmodule OliWeb.Common.MonacoEditor do
   attr(:set_value, :any)
   attr(:on_mount, :any, default: nil)
   attr(:on_change, :any, default: nil)
+  attr(:target, :any, default: nil)
   attr(:get_value, :any)
   attr(:use_code_lenses, :list)
 
@@ -33,6 +34,7 @@ defmodule OliWeb.Common.MonacoEditor do
       data-default-options={encode_attr(@default_options)}
       data-on-mount={encode_attr(@on_mount)}
       data-on-change={encode_attr(@on_change)}
+      data-target={encode_attr(@target)}
       data-set-options={encode_attr(@set_options)}
       data-set-width-height={encode_attr(@set_width_height)}
       data-set-value={encode_attr(@set_value)}
@@ -50,5 +52,6 @@ defmodule OliWeb.Common.MonacoEditor do
 
   defp encode_attr(nil), do: nil
   defp encode_attr(data) when is_binary(data), do: Jason.encode!(%{type: "string", data: data})
+  defp encode_attr(%Phoenix.LiveComponent.CID{} = cid), do: Jason.encode!(%{type: "string", data: to_string(cid)})
   defp encode_attr(data), do: Jason.encode!(%{type: "object", data: Jason.encode!(data)})
 end

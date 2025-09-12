@@ -22,6 +22,7 @@ export const MonacoEditor = {
     const dataSchemas = this.maybeGetAttribute('data-schemas');
     const onMountEvent = this.maybeGetAttribute('data-on-mount');
     const onChangeEvent = this.maybeGetAttribute('data-on-change');
+    const target = this.maybeGetAttribute('data-target');
     const setOptionsEvent = this.maybeGetAttribute('data-set-options');
     const setWidthHeightEvent = this.maybeGetAttribute('data-set-width-height');
     const setValueEvent = this.maybeGetAttribute('data-set-value');
@@ -93,7 +94,14 @@ export const MonacoEditor = {
       };
 
       const onChange = (value: string) => {
-        this.maybePushEvent(onChangeEvent, value);
+        // If both onChangeEvent and target are provided, create an event object with target
+        // Otherwise, use the simple string event name
+        const eventToSend = Maybe.all({ onChangeEvent, target }).caseOf({
+          just: ({ onChangeEvent, target }) => Maybe.just({ name: onChangeEvent, target }),
+          nothing: () => onChangeEvent,
+        });
+
+        this.maybePushEvent(eventToSend, value);
       };
 
       return (

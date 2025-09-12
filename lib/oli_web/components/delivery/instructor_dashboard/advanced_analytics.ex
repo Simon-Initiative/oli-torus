@@ -1,6 +1,8 @@
 defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
   use OliWeb, :live_component
 
+  alias OliWeb.Common.MonacoEditor
+
   require Logger
 
   @impl true
@@ -320,14 +322,30 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
                     </p>
                   </div>
                   <div class="mb-3">
-                    <form phx-change="update_custom_field" phx-target={@myself}>
-                      <textarea
-                        id="custom-sql-query"
-                        name="custom_sql_query"
-                        class="w-full h-32 p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-mono text-sm"
-                        placeholder="SELECT event_type, count(*) as total_events FROM #{Oli.Analytics.AdvancedAnalytics.raw_events_table()} WHERE section_id = #{@section.id} GROUP BY event_type ORDER BY total_events DESC LIMIT 10"
-                      ><%= @custom_sql_query || get_default_sql_query(@section.id) %></textarea>
-                    </form>
+                    <MonacoEditor.render
+                      id="custom-sql-editor"
+                      language="sql"
+                      height="200px"
+                      validate_schema_uri={nil}
+                      default_value={@custom_sql_query || get_default_sql_query(@section.id)}
+                      default_options={%{
+                        "readOnly" => false,
+                        "selectOnLineNumbers" => true,
+                        "minimap" => %{"enabled" => false},
+                        "scrollBeyondLastLine" => false,
+                        "wordWrap" => "on",
+                        "lineNumbers" => "on",
+                        "tabSize" => 2,
+                        "insertSpaces" => true,
+                        "automaticLayout" => true
+                      }}
+                      set_options="monaco_editor_set_sql_options"
+                      set_value="monaco_editor_set_sql_value"
+                      get_value="monaco_editor_get_sql_value"
+                      use_code_lenses={[]}
+                      on_change="update_custom_sql_field"
+                      target={@myself}
+                    />
                   </div>
                   <button
                     phx-click="execute_custom_query"
@@ -363,14 +381,32 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
                     Define a VegaLite specification to visualize your query results. The data will be automatically injected.
                   </p>
                   <div class="mb-3">
-                    <form phx-change="update_custom_vega_field" phx-target={@myself}>
-                      <textarea
-                        id="custom-vega-spec"
-                        name="custom_vega_spec"
-                        class="w-full h-48 p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-mono text-sm"
-                        placeholder='{"mark": "bar", "encoding": {"x": {"field": "event_type", "type": "nominal"}, "y": {"field": "total_events", "type": "quantitative"}}}'
-                      ><%= @custom_vega_spec || get_default_vega_spec() %></textarea>
-                    </form>
+                    <MonacoEditor.render
+                      id="custom-vega-editor"
+                      language="json"
+                      height="300px"
+                      validate_schema_uri={nil}
+                      default_value={@custom_vega_spec || get_default_vega_spec()}
+                      default_options={%{
+                        "readOnly" => false,
+                        "selectOnLineNumbers" => true,
+                        "minimap" => %{"enabled" => false},
+                        "scrollBeyondLastLine" => false,
+                        "wordWrap" => "on",
+                        "lineNumbers" => "on",
+                        "tabSize" => 2,
+                        "insertSpaces" => true,
+                        "automaticLayout" => true,
+                        "formatOnPaste" => true,
+                        "formatOnType" => true
+                      }}
+                      set_options="monaco_editor_set_vega_options"
+                      set_value="monaco_editor_set_vega_value"
+                      get_value="monaco_editor_get_vega_value"
+                      use_code_lenses={[]}
+                      on_change="update_custom_vega_field"
+                      target={@myself}
+                    />
                   </div>
                   <button
                     phx-click="render_custom_visualization"
@@ -574,17 +610,43 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
   end
 
   @impl true
+  def handle_event("update_custom_sql_field", sql_value, socket) when is_binary(sql_value) do
+    # Handle Monaco Editor SQL changes - Monaco sends the value directly as a string
+    {:noreply, assign(socket, :custom_sql_query, sql_value)}
+  end
+
+  @impl true
+  def handle_event("update_custom_vega_field", vega_value, socket) when is_binary(vega_value) do
+    # Handle Monaco Editor VegaLite JSON changes - Monaco sends the value directly as a string
+    {:noreply, assign(socket, :custom_vega_spec, vega_value)}
+  end
+
+  @impl true
   def handle_event("update_custom_field", params, socket) do
-    # Debug log to see what structure we're getting
-    Logger.info("update_custom_field params: #{inspect(params)}")
-    {:noreply, socket}
+    # Handle Monaco Editor SQL changes
+    case params do
+      %{"value" => sql_value} ->
+        {:noreply, assign(socket, :custom_sql, sql_value)}
+      %{"sql" => sql_value} ->
+        {:noreply, assign(socket, :custom_sql, sql_value)}
+      _ ->
+        Logger.info("Unexpected params in update_custom_field: #{inspect(params)}")
+        {:noreply, socket}
+    end
   end
 
   @impl true
   def handle_event("update_custom_vega_field", params, socket) do
-    # Debug log to see what structure we're getting
-    Logger.info("update_custom_vega_field params: #{inspect(params)}")
-    {:noreply, socket}
+    # Handle Monaco Editor VegaLite JSON changes
+    case params do
+      %{"value" => vega_value} ->
+        {:noreply, assign(socket, :custom_vega_lite, vega_value)}
+      %{"vega" => vega_value} ->
+        {:noreply, assign(socket, :custom_vega_lite, vega_value)}
+      _ ->
+        Logger.info("Unexpected params in update_custom_vega_field: #{inspect(params)}")
+        {:noreply, socket}
+    end
   end
 
   @impl true
