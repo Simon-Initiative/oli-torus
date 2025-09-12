@@ -631,7 +631,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     ~H"""
     <InstructorDashboard.tabs tabs={insights_tabs(@section_slug, @preview_mode, @active_tab)} />
 
-    <div class="mx-10 mb-10">
+    <div class="container mx-auto mb-10">
       <.live_component
         id="practice_activities_tab"
         module={OliWeb.Components.Delivery.PracticeActivities}
@@ -653,7 +653,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     ~H"""
     <InstructorDashboard.tabs tabs={insights_tabs(@section_slug, @preview_mode, @active_tab)} />
 
-    <div class="mx-10 mb-10">
+    <div class="container mx-auto mb-10">
       <.live_component
         id="surveys_tab"
         module={OliWeb.Components.Delivery.Surveys}
@@ -793,6 +793,19 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
        socket |> put_flash(:info, message),
        to:
          ~p"/sections/#{socket.assigns.section_slug}/instructor_dashboard/#{socket.assigns.view}/#{socket.assigns.active_tab}"
+     )}
+  end
+
+  def handle_info(
+        {:selected_card_assessments, value},
+        socket
+      ) do
+    params = Map.merge(socket.assigns.params, %{"selected_card_value" => value})
+
+    {:noreply,
+     push_patch(socket,
+       to:
+         ~p"/sections/#{socket.assigns.section.slug}/instructor_dashboard/insights/practice_activities?#{params}"
      )}
   end
 
