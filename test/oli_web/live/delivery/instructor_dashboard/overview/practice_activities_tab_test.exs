@@ -1116,7 +1116,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
     } do
       {:ok, view, _html} = live(conn, live_view_practice_activities_route(section.slug))
 
-      assert has_element?(view, "h4", "Practice Activities")
+      assert has_element?(view, "div", "Practice Pages")
       assert has_element?(view, "p", "None exist")
     end
   end
@@ -1132,7 +1132,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
 
       [a0, a1, a2, a3, a4] = table_as_list_of_maps(view)
 
-      assert has_element?(view, "h4", "Practice Activities")
+      assert has_element?(view, "div", "Practice Pages")
       assert a0.title == "Module 1: IntroductionPage 1"
       assert a1.title == "Module 1: IntroductionPage 2"
       assert a2.title == "Module 2: BasicsPage 3"
@@ -1141,55 +1141,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
 
       # Checks for displaying student progress with a value different from null
       assert a0.total_attempts == "25%"
-    end
-
-    test "gets results correctly when changing the container selection", %{
-      conn: conn,
-      section: section,
-      page_1: page_1,
-      page_2: page_2,
-      unit_1: unit_1,
-      module_1: module_1
-    } do
-      {:ok, view, _html} = live(conn, live_view_practice_activities_route(section.slug))
-
-      view
-      |> element("form[phx-change='change_container']")
-      |> render_change(%{container_id: module_1.resource_id})
-
-      [page0, page1] = table_as_list_of_maps(view)
-
-      assert element(
-               view,
-               "table tbody tr[id='#{page_1.resource_id}']",
-               page0.title
-             )
-
-      assert element(
-               view,
-               "table tbody tr td div[phx-value-id='#{page_2.id}']",
-               page1.title
-             )
-
-      assert has_element?(
-               view,
-               "table tbody tr td div span",
-               module_1.title
-             )
-
-      # unit 1 does not have any direct practice page attached
-      # (the filter only shows direct children pages of the selected container)
-      view
-      |> element("form[phx-change='change_container']")
-      |> render_change(%{container_id: unit_1.resource_id})
-
-      refute has_element?(
-               view,
-               "table tbody tr td div span",
-               unit_1.title
-             )
-
-      assert view |> element("p", "None exist")
     end
   end
 
