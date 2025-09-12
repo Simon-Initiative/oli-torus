@@ -20,10 +20,6 @@ defmodule OliWeb.Plugs.RequireEnrollment do
       Sections.is_enrolled?(user.id, section.slug) ->
         conn
 
-      !section.requires_enrollment ->
-        # if section does not require enrollment this plug should do nothing
-        conn
-
       section.registration_open ->
         conn
         |> redirect(to: ~p"/sections/#{section.slug}/enroll")
