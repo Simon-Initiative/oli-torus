@@ -21,11 +21,54 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
       |> assign_new(:custom_vega_spec, fn -> nil end)
       |> assign_new(:custom_query_result, fn -> nil end)
       |> assign_new(:custom_visualization_spec, fn -> nil end)
-      |> assign_new(:engagement_start_date, fn -> Date.add(Date.utc_today(), -30) |> Date.to_string() end)
-      |> assign_new(:engagement_end_date, fn -> Date.utc_today() |> Date.to_string() end)
+      |> assign_new(:engagement_start_date, fn ->
+        start_date = case assigns.section.start_date do
+          nil -> Date.add(Date.utc_today(), -30) |> Date.to_string()
+          start_date -> DateTime.to_date(start_date) |> Date.to_string()
+        end
+        Logger.info("=== ENGAGEMENT FILTER DEFAULTS ===")
+        Logger.info("Section start_date: #{inspect(assigns.section.start_date)}")
+        Logger.info("Calculated engagement_start_date: #{start_date}")
+        start_date
+      end)
+      |> assign_new(:engagement_end_date, fn ->
+        end_date = case assigns.section.end_date do
+          nil -> Date.utc_today() |> Date.to_string()
+          end_date -> DateTime.to_date(end_date) |> Date.to_string()
+        end
+        Logger.info("Section end_date: #{inspect(assigns.section.end_date)}")
+        Logger.info("Calculated engagement_end_date: #{end_date}")
+        Logger.info("=== END ENGAGEMENT FILTER DEFAULTS ===")
+        end_date
+      end)
       |> assign_new(:engagement_max_pages, fn -> 25 end)
+      |> assign_new(:resource_title_map, fn -> load_resource_title_map_from_section(assigns.section) end)
 
     {:ok, socket}
+  end
+
+  # Helper function to load the resource title map once when component loads
+  defp load_resource_title_map_from_section(section) do
+    Logger.info("=== LOADING RESOURCE TITLE MAP ===")
+    hierarchy = Oli.Delivery.Sections.SectionResourceDepot.get_full_hierarchy(section, [hidden: false])
+
+    # Debug: Log the hierarchy structure
+    Logger.info("Hierarchy structure: #{inspect(hierarchy, limit: 3)}")
+
+    # Create a mapping from resource_id to title from the hierarchy
+    resource_title_map = extract_resource_titles_from_hierarchy(hierarchy)
+
+    # Debug: Log the resource title map
+    Logger.info("Resource title map: #{inspect(resource_title_map, limit: :infinity)}")
+    Logger.info("=== END LOADING RESOURCE TITLE MAP ===")
+
+    resource_title_map
+  end
+
+  # Public helper function to load resource title mapping for a section by ID
+  def load_resource_title_map(section_id) when is_integer(section_id) do
+    section = Oli.Delivery.Sections.get_section!(section_id)
+    load_resource_title_map_from_section(section)
   end
 
   @impl true
@@ -326,7 +369,6 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
                       id="custom-sql-editor"
                       language="sql"
                       height="200px"
-                      validate_schema_uri={nil}
                       default_value={@custom_sql_query || get_default_sql_query(@section.id)}
                       default_options={%{
                         "readOnly" => false,
@@ -385,7 +427,6 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
                       id="custom-vega-editor"
                       language="json"
                       height="300px"
-                      validate_schema_uri={nil}
                       default_value={@custom_vega_spec || get_default_vega_spec()}
                       default_options={%{
                         "readOnly" => false,
@@ -659,9 +700,9 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
 
     # Reload engagement analytics with new filters
     if socket.assigns.selected_analytics_category == "engagement" do
-      %{engagement_start_date: start_date, engagement_end_date: end_date, engagement_max_pages: max_pages, section: section} = socket.assigns
+      %{engagement_start_date: start_date, engagement_end_date: end_date, engagement_max_pages: max_pages, section: section, resource_title_map: resource_title_map} = socket.assigns
 
-      {data, charts} = get_engagement_analytics_with_filters(section.id, start_date, end_date, max_pages)
+      {data, charts} = get_engagement_analytics_with_filters(section.id, start_date, end_date, max_pages, resource_title_map)
 
       socket =
         socket
@@ -889,6 +930,27 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
     get_engagement_analytics_with_filters(section_id, nil, nil, 25)
   end
 
+  def get_analytics_data_and_spec("engagement", section_id, resource_title_map) do
+    # Use default filters if called without filters, but with provided resource title map
+    get_engagement_analytics_with_filters(section_id, nil, nil, 25, resource_title_map)
+  end
+
+  # Helper function to get analytics data with resource title map from component assigns
+  def get_analytics_data_and_spec_with_resource_map(category, section_id, resource_title_map) do
+    case category do
+      "engagement" -> get_analytics_data_and_spec("engagement", section_id, resource_title_map)
+      _ -> get_analytics_data_and_spec(category, section_id)
+    end
+  end
+
+  # Helper function to get analytics data with filters and resource title map
+  def get_analytics_data_and_spec_with_filters_and_resource_map(category, section_id, start_date, end_date, max_pages, resource_title_map) do
+    case category do
+      "engagement" -> get_engagement_analytics_with_filters(section_id, start_date, end_date, max_pages, resource_title_map)
+      _ -> get_analytics_data_and_spec(category, section_id)
+    end
+  end
+
   def get_analytics_data_and_spec("performance", section_id) do
     query = """
       SELECT
@@ -991,7 +1053,34 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
   def get_analytics_data_and_spec(_, _), do: {[], []}
 
 
-  def get_engagement_analytics_with_filters(section_id, start_date, end_date, max_pages) do
+  def get_engagement_analytics_with_filters(section_id, start_date, end_date, max_pages, resource_title_map \\ nil) do
+    # Use provided resource title map or load it if not provided
+    resource_title_map = case resource_title_map do
+      nil ->
+        # Load the full hierarchy to get page titles
+        section = Oli.Repo.get!(Oli.Delivery.Sections.Section, section_id)
+        hierarchy = Oli.Delivery.Sections.SectionResourceDepot.get_full_hierarchy(section, [hidden: false])
+
+        # Debug: Log the hierarchy structure
+        Logger.info("=== HIERARCHY DEBUG (loading fresh) ===")
+        Logger.info("Hierarchy structure: #{inspect(hierarchy, limit: 3)}")
+
+        # Create a mapping from resource_id to title from the hierarchy
+        title_map = extract_resource_titles_from_hierarchy(hierarchy)
+
+        # Debug: Log the resource title map
+        Logger.info("Resource title map: #{inspect(title_map, limit: :infinity)}")
+        Logger.info("=== END HIERARCHY DEBUG ===")
+
+        title_map
+
+      existing_map ->
+        Logger.info("=== USING CACHED RESOURCE TITLE MAP ===")
+        Logger.info("Resource title map: #{inspect(existing_map, limit: :infinity)}")
+        Logger.info("=== END CACHED RESOURCE TITLE MAP ===")
+        existing_map
+    end
+
     # Build date filter condition
     date_filter = case {start_date, end_date} do
       {nil, nil} -> ""
@@ -1021,25 +1110,35 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
       LIMIT #{max_pages || 25}
     """
 
-    # Heatmap query for time-based analysis with filters
-    heatmap_query = """
-      SELECT
-        page_id,
-        toDate(timestamp) as date,
-        count(*) as view_count
-      FROM #{Oli.Analytics.AdvancedAnalytics.raw_events_table()}
-      WHERE section_id = #{section_id}
-        AND event_type = 'page_viewed'
-        AND page_id IS NOT NULL#{date_filter}
-      GROUP BY page_id, date
-      HAVING view_count >= 1
-      ORDER BY view_count DESC, page_id, date
-      LIMIT #{(max_pages || 25) * 10}
-    """
-
     case execute_analytics_query_json(query, "engagement analytics") do
       {:ok, data, main_query_time} ->
         Logger.info("Engagement analytics - got #{length(data)} rows")
+
+        # Use a WITH clause (CTE) to get heatmap data for only the top pages
+        # This is more reliable than the two-step approach
+        heatmap_query = """
+          WITH top_pages AS (
+            SELECT page_id
+            FROM #{Oli.Analytics.AdvancedAnalytics.raw_events_table()}
+            WHERE section_id = #{section_id} AND event_type = 'page_viewed' AND page_id IS NOT NULL#{date_filter}
+            GROUP BY page_id
+            HAVING count(*) >= 1
+            ORDER BY count(*) DESC
+            LIMIT #{max_pages || 25}
+          )
+          SELECT
+            h.page_id,
+            toDate(h.timestamp) as date,
+            count(*) as view_count
+          FROM #{Oli.Analytics.AdvancedAnalytics.raw_events_table()} h
+          INNER JOIN top_pages tp ON h.page_id = tp.page_id
+          WHERE h.section_id = #{section_id}
+            AND h.event_type = 'page_viewed'
+            AND h.page_id IS NOT NULL#{date_filter}
+          GROUP BY h.page_id, date
+          HAVING view_count >= 1
+          ORDER BY view_count DESC, h.page_id, date
+        """
 
         # Get heatmap data
         {heatmap_data, heatmap_query_time} = case execute_analytics_query_json(heatmap_query, "engagement heatmap") do
@@ -1052,16 +1151,20 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
         end
 
         if length(data) > 0 || length(heatmap_data) > 0 do
-          bar_spec = create_page_engagement_chart(data)
+          # Replace page IDs with titles in both datasets
+          enriched_bar_data = enrich_data_with_titles(data, resource_title_map)
+          enriched_heatmap_data = enrich_heatmap_data_with_titles(heatmap_data, resource_title_map)
+
+          bar_spec = create_page_engagement_chart(enriched_bar_data)
           Logger.info("Bar chart created successfully")
 
-          heatmap_spec = create_engagement_heatmap_chart(heatmap_data)
+          heatmap_spec = create_engagement_heatmap_chart(enriched_heatmap_data)
           Logger.info("Heatmap chart created successfully")
 
           # Return both charts as a list
           combined_data = %{
-            bar_chart_data: data,
-            heatmap_data: heatmap_data
+            bar_chart_data: enriched_bar_data,
+            heatmap_data: enriched_heatmap_data
           }
 
           charts = [
@@ -1071,29 +1174,29 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
 
           {combined_data, charts}
         else
-          # Create dummy data for both charts
+          # Create dummy data for both charts with titles instead of IDs
           dummy_data = [
-            ["1", "lesson", "125", "45", "98", "78.4"],
-            ["2", "assessment", "89", "38", "67", "75.3"],
-            ["3", "reading", "156", "52", "134", "85.9"]
+            ["1", "lesson", "125", "45", "98", "78.4", "Introduction to Biology"],
+            ["2", "assessment", "89", "38", "67", "75.3", "Chapter 1 Quiz"],
+            ["3", "reading", "156", "52", "134", "85.9", "Cell Structure Reading"]
           ]
 
           dummy_heatmap_data = [
-            ["page_1", "2024-09-02", "15"],   # Page 1, Sept 2, 15 views
-            ["page_1", "2024-09-09", "23"],   # Page 1, Sept 9, 23 views
-            ["page_1", "2024-09-16", "18"],   # Page 1, Sept 16, 18 views
-            ["page_2", "2024-09-03", "12"],   # Page 2, Sept 3, 12 views
-            ["page_2", "2024-09-10", "19"],   # Page 2, Sept 10, 19 views
-            ["page_2", "2024-09-17", "25"],   # Page 2, Sept 17, 25 views
-            ["page_3", "2024-09-04", "22"],   # Page 3, Sept 4, 22 views
-            ["page_3", "2024-09-11", "28"],   # Page 3, Sept 11, 28 views
-            ["page_3", "2024-09-18", "31"],   # Page 3, Sept 18, 31 views
-            ["page_4", "2024-09-05", "17"],   # Page 4, Sept 5, 17 views
-            ["page_4", "2024-09-12", "21"],   # Page 4, Sept 12, 21 views
-            ["page_4", "2024-09-19", "16"],   # Page 4, Sept 19, 16 views
-            ["page_5", "2024-09-06", "8"],    # Page 5, Sept 6, 8 views
-            ["page_5", "2024-09-13", "14"],   # Page 5, Sept 13, 14 views
-            ["page_5", "2024-09-20", "12"]    # Page 5, Sept 20, 12 views
+            ["page_1", "2024-09-02", "15", "Lab Exercise 1"],
+            ["page_1", "2024-09-09", "23", "Lab Exercise 1"],
+            ["page_1", "2024-09-16", "18", "Lab Exercise 1"],
+            ["page_2", "2024-09-03", "12", "Homework Assignment"],
+            ["page_2", "2024-09-10", "19", "Homework Assignment"],
+            ["page_2", "2024-09-17", "25", "Homework Assignment"],
+            ["page_3", "2024-09-04", "22", "Discussion Forum"],
+            ["page_3", "2024-09-11", "28", "Discussion Forum"],
+            ["page_3", "2024-09-18", "31", "Discussion Forum"],
+            ["page_4", "2024-09-05", "17", "Video Tutorial"],
+            ["page_4", "2024-09-12", "21", "Video Tutorial"],
+            ["page_4", "2024-09-19", "16", "Video Tutorial"],
+            ["page_5", "2024-09-06", "8", "Practice Problems"],
+            ["page_5", "2024-09-13", "14", "Practice Problems"],
+            ["page_5", "2024-09-20", "12", "Practice Problems"]
           ]
 
           bar_spec = create_page_engagement_chart(dummy_data)
@@ -1434,9 +1537,9 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
     chart_data =
       data
       |> Enum.with_index()
-      |> Enum.map(fn {row, idx} ->
+      |> Enum.map(fn {row, _idx} ->
         # Handle both JSON (map) and TSV (list) data formats
-        {page_id, page_type, views, viewers, _completed, completion_rate} =
+        {page_id, page_type, views, viewers, _completed, completion_rate, title} =
           case row do
             %{} = json_row ->
               # JSON format from JSONEachRow
@@ -1446,16 +1549,20 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
                 Map.get(json_row, "total_views"),
                 Map.get(json_row, "unique_viewers"),
                 Map.get(json_row, "completed_views"),
-                Map.get(json_row, "completion_rate")
+                Map.get(json_row, "completion_rate"),
+                Map.get(json_row, "page_title")
               }
             list when is_list(list) ->
               # TSV format (array)
               case list do
-                [p_id, p_type, views, viewers, completed, rate] -> {p_id, p_type, views, viewers, completed, rate}
-                _ -> {"", "Unknown", "0", "0", "0", "0"}
+                [p_id, p_type, views, viewers, completed, rate, page_title] ->
+                  {p_id, p_type, views, viewers, completed, rate, page_title}
+                [p_id, p_type, views, viewers, completed, rate] ->
+                  {p_id, p_type, views, viewers, completed, rate, "Page #{p_id}"}
+                _ -> {"", "Unknown", "0", "0", "0", "0", "Unknown"}
               end
             _ ->
-              {"", "Unknown", "0", "0", "0", "0"}
+              {"", "Unknown", "0", "0", "0", "0", "Unknown"}
           end
 
         views_num = case views do
@@ -1488,10 +1595,18 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
           _ -> 0.0
         end
 
+        # Truncate title for display but keep full title for tooltip
+        display_title = if String.length(title || "Unknown") > 25 do
+          String.slice(title, 0, 22) <> "..."
+        else
+          title || "Unknown"
+        end
+
         %{
-          "page" => "Page #{idx + 1}",
+          "page" => display_title,
           "page_id" => page_id || "Unknown",
           "page_type" => page_type || "Unknown",
+          "page_title" => title || "Unknown",
           "views" => views_num,
           "unique_viewers" => viewers_num,
           "completion_rate" => completion_rate_num
@@ -1522,7 +1637,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
         "x": {
           "field": "page",
           "type": "nominal",
-          "title": "Pages",
+          "title": "Page Titles",
           "axis": {
             "labelAngle": -45,
             "labelLimit": 120
@@ -1545,7 +1660,14 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
             "scheme": "oranges"
           },
           "title": "Completion Rate (%)"
-        }
+        },
+        "tooltip": [
+          {"field": "page_title", "type": "nominal", "title": "Page Title"},
+          {"field": "views", "type": "quantitative", "title": "Total Views"},
+          {"field": "unique_viewers", "type": "quantitative", "title": "Unique Viewers"},
+          {"field": "completion_rate", "type": "quantitative", "title": "Completion Rate (%)"},
+          {"field": "page_type", "type": "nominal", "title": "Page Type"}
+        ]
       },
       "config": {
         "view": {
@@ -1568,23 +1690,25 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
     chart_data =
       Enum.map(limited_data, fn row ->
         # Handle both JSON (map) and TSV (list) data formats
-        {page_id, date, total_views} =
+        {page_id, date, total_views, title} =
           case row do
             %{} = json_row ->
               # JSON format from JSONEachRow
               {
                 Map.get(json_row, "page_id"),
                 Map.get(json_row, "date"),
-                Map.get(json_row, "view_count")
+                Map.get(json_row, "view_count"),
+                Map.get(json_row, "page_title")
               }
             list when is_list(list) ->
               # TSV format (array)
               case list do
-                [p_id, d, views] -> {p_id, d, views}
-                _ -> ["unknown", "2024-01-01", "0"]
+                [p_id, d, views, page_title] -> {p_id, d, views, page_title}
+                [p_id, d, views] -> {p_id, d, views, "Page #{p_id}"}
+                _ -> ["unknown", "2024-01-01", "0", "Unknown"]
               end
             _ ->
-              {"unknown", "2024-01-01", "0"}
+              {"unknown", "2024-01-01", "0", "Unknown"}
           end
 
         views_num = case total_views do
@@ -1597,8 +1721,17 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
           _ -> 0
         end
 
+        # Truncate title for display
+        display_title = if String.length(title || "Unknown") > 20 do
+          String.slice(title, 0, 17) <> "..."
+        else
+          title || "Unknown"
+        end
+
         %{
           "page_id" => page_id || "unknown",
+          "page_title" => title || "Unknown",
+          "page_display" => display_title,
           "date" => date || "2024-01-01",
           "total_views" => views_num
         }
@@ -1608,7 +1741,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
 
     # Calculate dynamic dimensions based on data
     unique_dates = chart_data |> Enum.map(& &1["date"]) |> Enum.uniq() |> length()
-    unique_pages = chart_data |> Enum.map(& &1["page_id"]) |> Enum.uniq() |> length()
+    unique_pages = chart_data |> Enum.map(& &1["page_display"]) |> Enum.uniq() |> length()
 
     cell_width = 40
     cell_height = 25
@@ -1645,9 +1778,9 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
           }
         },
         "y": {
-          "field": "page_id",
+          "field": "page_display",
           "type": "ordinal",
-          "title": "Page ID",
+          "title": "Page Title",
           "axis": {
             "grid": false,
             "labelLimit": 100
@@ -1673,7 +1806,12 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
             "gradientLength": 200,
             "orient": "right"
           }
-        }
+        },
+        "tooltip": [
+          {"field": "page_title", "type": "nominal", "title": "Page Title"},
+          {"field": "date", "type": "ordinal", "title": "Date"},
+          {"field": "total_views", "type": "quantitative", "title": "Total Views"}
+        ]
       }
     }
     """)
@@ -1873,5 +2011,109 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
       "part_attempts" -> "Avg score: #{additional}"
       _ -> additional
     end
+  end
+
+  # Helper function to recursively extract resource titles from hierarchy
+  defp extract_resource_titles_from_hierarchy(hierarchy) do
+    extract_titles_recursive(hierarchy, %{})
+  end
+
+  defp extract_titles_recursive(%{"children" => children} = node, acc) when is_list(children) do
+    # Extract title from current node if it has resource_id and title
+    acc = case {Map.get(node, "resource_id"), Map.get(node, "title")} do
+      {resource_id, title} when not is_nil(resource_id) and not is_nil(title) ->
+        Map.put(acc, to_string(resource_id), title)
+      _ -> acc
+    end
+
+    # Recursively process children
+    Enum.reduce(children, acc, &extract_titles_recursive/2)
+  end
+
+  defp extract_titles_recursive(%{"resource_id" => resource_id, "title" => title}, acc)
+       when not is_nil(resource_id) and not is_nil(title) do
+    Map.put(acc, to_string(resource_id), title)
+  end
+
+  # Handle the case where the hierarchy root might be a list of nodes
+  defp extract_titles_recursive(nodes, acc) when is_list(nodes) do
+    Enum.reduce(nodes, acc, &extract_titles_recursive/2)
+  end
+
+  defp extract_titles_recursive(_, acc), do: acc
+
+  # Helper function to enrich bar chart data with titles
+  defp enrich_data_with_titles(data, resource_title_map) do
+    Logger.info("=== ENRICHMENT DEBUG ===")
+    Logger.info("Data to enrich: #{inspect(data, limit: 3)}")
+    Logger.info("Resource title map: #{inspect(resource_title_map, limit: :infinity)}")
+
+    enriched = Enum.map(data, fn row ->
+      case row do
+        %{} = json_row ->
+          # JSON format - add title field
+          page_id = Map.get(json_row, "page_id")
+          title = Map.get(resource_title_map, to_string(page_id), "Page #{page_id}")
+          Logger.info("JSON enrichment: page_id=#{page_id}, title=#{title}")
+          Map.put(json_row, "page_title", title)
+
+        list when is_list(list) ->
+          # TSV format - append title to the list
+          case list do
+            [page_id | rest] ->
+              title = Map.get(resource_title_map, to_string(page_id), "Page #{page_id}")
+              Logger.info("TSV enrichment: page_id=#{page_id}, title=#{title}")
+              [page_id | rest] ++ [title]
+            _ ->
+              Logger.info("TSV enrichment: unknown format")
+              list ++ ["Unknown Title"]
+          end
+
+        _ ->
+          Logger.info("Enrichment: unknown row format")
+          row
+      end
+    end)
+
+    Logger.info("Enriched data: #{inspect(enriched, limit: 3)}")
+    Logger.info("=== END ENRICHMENT DEBUG ===")
+    enriched
+  end
+
+  # Helper function to enrich heatmap data with titles
+  defp enrich_heatmap_data_with_titles(data, resource_title_map) do
+    Logger.info("=== HEATMAP ENRICHMENT DEBUG ===")
+    Logger.info("Heatmap data to enrich: #{inspect(data, limit: 3)}")
+
+    enriched = Enum.map(data, fn row ->
+      case row do
+        %{} = json_row ->
+          # JSON format - add title field
+          page_id = Map.get(json_row, "page_id")
+          title = Map.get(resource_title_map, to_string(page_id), "Page #{page_id}")
+          Logger.info("Heatmap JSON enrichment: page_id=#{page_id}, title=#{title}")
+          Map.put(json_row, "page_title", title)
+
+        list when is_list(list) ->
+          # TSV format - append title to the list
+          case list do
+            [page_id, date, count] ->
+              title = Map.get(resource_title_map, to_string(page_id), "Page #{page_id}")
+              Logger.info("Heatmap TSV enrichment: page_id=#{page_id}, title=#{title}")
+              [page_id, date, count, title]
+            _ ->
+              Logger.info("Heatmap TSV enrichment: unknown format")
+              list ++ ["Unknown Title"]
+          end
+
+        _ ->
+          Logger.info("Heatmap enrichment: unknown row format")
+          row
+      end
+    end)
+
+    Logger.info("Heatmap enriched data: #{inspect(enriched, limit: 3)}")
+    Logger.info("=== END HEATMAP ENRICHMENT DEBUG ===")
+    enriched
   end
 end

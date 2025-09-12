@@ -788,15 +788,44 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   end
 
   defp get_analytics_data_and_spec(category, section_id) do
-    # Delegate to the component's analytics functions
-    OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics.get_analytics_data_and_spec(category, section_id)
+    # For engagement analytics, use default filters for initial load
+    case category do
+      "engagement" ->
+        # Get resource title map for engagement analytics
+        resource_title_map = OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics.load_resource_title_map(section_id)
+        # Get section to determine default date range
+        section = Oli.Delivery.Sections.get_section!(section_id)
+        # Use section dates as default filters, fallback to relative dates if not set
+        start_date = case section.start_date do
+          nil -> Date.add(Date.utc_today(), -30) |> Date.to_string()
+          start_date -> DateTime.to_date(start_date) |> Date.to_string()
+        end
+        end_date = case section.end_date do
+          nil -> Date.utc_today() |> Date.to_string()
+          end_date -> DateTime.to_date(end_date) |> Date.to_string()
+        end
+        Logger.info("=== PARENT LIVEVIEW FILTER DEFAULTS ===")
+        Logger.info("Section ID: #{section_id}")
+        Logger.info("Section start_date: #{inspect(section.start_date)}")
+        Logger.info("Section end_date: #{inspect(section.end_date)}")
+        Logger.info("Calculated start_date: #{start_date}")
+        Logger.info("Calculated end_date: #{end_date}")
+        Logger.info("=== END PARENT LIVEVIEW FILTER DEFAULTS ===")
+        max_pages = 25
+        OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics.get_engagement_analytics_with_filters(section_id, start_date, end_date, max_pages, resource_title_map)
+      _ ->
+        # Delegate to the component's analytics functions for other categories
+        OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics.get_analytics_data_and_spec(category, section_id)
+    end
   end
 
   defp get_analytics_data_and_spec_with_filters(category, section_id, start_date, end_date, max_pages) do
     # For engagement analytics, use filters if provided
     case category do
       "engagement" ->
-        OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics.get_engagement_analytics_with_filters(section_id, start_date, end_date, max_pages)
+        # Get resource title map for engagement analytics
+        resource_title_map = OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics.load_resource_title_map(section_id)
+        OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics.get_engagement_analytics_with_filters(section_id, start_date, end_date, max_pages, resource_title_map)
       _ ->
         get_analytics_data_and_spec(category, section_id)
     end

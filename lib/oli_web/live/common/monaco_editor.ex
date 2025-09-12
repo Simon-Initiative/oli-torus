@@ -8,7 +8,7 @@ defmodule OliWeb.Common.MonacoEditor do
   attr(:default_value, :string)
   attr(:width, :string, default: "100%")
   attr(:height, :string)
-  attr(:validate_schema_uri, :string)
+  attr(:validate_schema_uri, :string, default: nil)
   attr(:default_options, :map)
   attr(:set_options, :any)
   attr(:set_width_height, :any, default: nil)
