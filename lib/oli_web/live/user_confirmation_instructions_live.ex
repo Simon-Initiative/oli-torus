@@ -42,7 +42,11 @@ defmodule OliWeb.UserConfirmationInstructionsLive do
 
               <hr class="mt-8 mb-3 h-0.5 w-3/4 mx-auto border-t-0 bg-neutral-100 dark:bg-white/10" />
 
-              <.button variant={:link} href={~p"/users/log_in"} class="!text-white">
+              <.button
+                variant={:link}
+                href={~p"/users/log_in?#{maybe_section_param(@section_slug)}"}
+                class="!text-white"
+              >
                 Sign in
               </.button>
             </:actions>
@@ -53,8 +57,8 @@ defmodule OliWeb.UserConfirmationInstructionsLive do
     """
   end
 
-  def mount(_params, _session, socket) do
-    {:ok, assign(socket, form: to_form(%{}, as: "user"))}
+  def mount(params, _session, socket) do
+    {:ok, assign(socket, form: to_form(%{}, as: "user"), section_slug: params["section_slug"])}
   end
 
   def handle_event("send_instructions", %{"user" => %{"email" => email}}, socket) do
@@ -73,4 +77,7 @@ defmodule OliWeb.UserConfirmationInstructionsLive do
      |> put_flash(:info, info)
      |> redirect(to: ~p"/users/confirm")}
   end
+
+  defp maybe_section_param(nil), do: []
+  defp maybe_section_param(section), do: [section: section]
 end

@@ -18,7 +18,7 @@ defmodule OliWeb.UserRegistrationLive do
           <Components.Auth.registration_form
             title="Create Account"
             form={@form}
-            action={~p"/users/log_in?_action=registered"}
+            action={~p"/users/log_in?_action=registered&#{maybe_section_param(@section)}"}
             log_in_link={~p"/users/log_in"}
             authentication_providers={@authentication_providers}
             auth_provider_path_fn={&~p"/users/auth/#{&1}/new"}
