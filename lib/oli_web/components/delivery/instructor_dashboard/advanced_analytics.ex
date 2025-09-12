@@ -966,7 +966,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
         "type": "rect",
         "tooltip": true,
         "stroke": "white",
-        "strokeWidth": 0  // Set to 0 to avoid visible borders on heatmap cells
+        "strokeWidth": 0
       },
       "encoding": {
         "x": {
@@ -999,7 +999,6 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
         "color": {
           "field": "total_views",
           "type": "quantitative",
-          // Restored original color palette for consistency with other charts
           "scale": {
             "scheme": "blues",
             "type": "linear",
