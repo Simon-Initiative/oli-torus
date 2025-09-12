@@ -464,39 +464,46 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
             <% else %>
 
               <!-- Regular Analytics Interface -->
-              <%= if @analytics_spec && is_list(@analytics_spec) && length(@analytics_spec) > 0 do %>
-                <div class="mb-4">
-                  <%= case @selected_analytics_category do %>
-                    <% "video" -> %>
-                      <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                        This chart shows video completion rates across the most popular videos in your section.
-                        Higher completion rates indicate more engaging content.
-                      </p>
-                    <% "assessment" -> %>
-                      <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                        This scatter plot shows the relationship between average scores and success rates for activities.
-                        Bubble size represents the number of attempts.
-                      </p>
-                    <% "engagement" -> %>
-                      <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                        These charts show page engagement metrics: the bar chart displays page view counts with completion rates,
-                        while the heatmap reveals usage patterns by time of day and day of week.
-                      </p>
-                    <% "performance" -> %>
-                      <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                        This distribution shows how student scores are spread across different ranges.
-                        Color intensity indicates average hint usage.
-                      </p>
-                    <% "cross_event" -> %>
-                      <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                        This timeline shows the evolution of different event types over time,
-                        helping identify usage patterns and trends.
-                      </p>
-                  <% end %>
-                </div>
+              <%= cond do %>
+                <% @analytics_spec == nil -> %>
+                  <div class="flex items-center justify-center py-8">
+                    <div class="text-center">
+                      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                      <p class="text-gray-500 dark:text-gray-400">Loading analytics data...</p>
+                    </div>
+                  </div>
+                <% is_list(@analytics_spec) && length(@analytics_spec) > 0 -> %>
+                  <div class="mb-4">
+                    <%= case @selected_analytics_category do %>
+                      <% "video" -> %>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                          This chart shows video completion rates across the most popular videos in your section.
+                          Higher completion rates indicate more engaging content.
+                        </p>
+                      <% "assessment" -> %>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                          This scatter plot shows the relationship between average scores and success rates for activities.
+                          Bubble size represents the number of attempts.
+                        </p>
+                      <% "engagement" -> %>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                          These charts show page engagement metrics: the bar chart displays page view counts with completion rates,
+                          while the heatmap reveals usage patterns by time of day and day of week.
+                        </p>
+                      <% "performance" -> %>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                          This distribution shows how student scores are spread across different ranges.
+                          Color intensity indicates average hint usage.
+                        </p>
+                      <% "cross_event" -> %>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                          This timeline shows the evolution of different event types over time,
+                          helping identify usage patterns and trends.
+                        </p>
+                    <% end %>
+                  </div>
 
-                <!-- Render all charts vertically -->
-                <%= if @analytics_spec && is_list(@analytics_spec) && length(@analytics_spec) > 0 do %>
+                  <!-- Render all charts vertically -->
                   <%= for {chart, index} <- Enum.with_index(@analytics_spec) do %>
                     <div class="mb-6">
                       <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
@@ -514,14 +521,21 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
                       </div>
                     </div>
                   <% end %>
-                <% else %>
-                  <div class="flex items-center justify-center py-8">
+                <% true -> %>
+                  <div class="flex items-center justify-center py-12">
                     <div class="text-center">
-                      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                      <p class="text-gray-500 dark:text-gray-400">Loading analytics data...</p>
+                      <div class="mb-4">
+                        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
+                      </div>
+                      <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">Not Enough Data</h3>
+                      <p class="text-gray-600 dark:text-gray-400">
+                        There isn't enough data available to generate this visualization.
+                        Try again once there's more student activity in your section.
+                      </p>
                     </div>
                   </div>
-                <% end %>
               <% end %>
 
               <%= if @analytics_data && (
@@ -845,15 +859,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
           charts = [%{title: "Video Completion Analysis (#{format_execution_time(execution_time)})", spec: spec}]
           {data, charts}
         else
-          # Create dummy data if no real data exists
-          dummy_data = [
-            ["1", "Introduction Video", "25", "20", "80.0", "0.85", "15"],
-            ["2", "Tutorial Part 1", "18", "12", "66.7", "0.72", "12"],
-            ["3", "Practice Session", "30", "22", "73.3", "0.78", "18"]
-          ]
-          spec = create_video_completion_chart(dummy_data)
-          charts = [%{title: "Video Completion Analysis (#{format_execution_time(execution_time)})", spec: spec}]
-          {dummy_data, charts}
+          {[], []}
         end
 
       {:error, reason} ->
@@ -887,15 +893,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
           charts = [%{title: "Assessment Performance Analysis (#{format_execution_time(execution_time)})", spec: spec}]
           {data, charts}
         else
-          # Create dummy data
-          dummy_data = [
-            ["1", "45", "0.75", "35", "20"],
-            ["2", "38", "0.82", "30", "18"],
-            ["3", "52", "0.68", "28", "25"]
-          ]
-          spec = create_assessment_performance_chart(dummy_data)
-          charts = [%{title: "Assessment Performance Analysis (#{format_execution_time(execution_time)})", spec: spec}]
-          {dummy_data, charts}
+          {[], []}
         end
 
       {:error, reason} ->
@@ -954,17 +952,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
           charts = [%{title: "Score Distribution Analysis (#{format_execution_time(execution_time)})", spec: spec}]
           {data, charts}
         else
-          # Create dummy data for score distribution
-          dummy_data = [
-            ["0-20%", "15", "2.8"],
-            ["21-40%", "42", "3.2"],
-            ["41-60%", "78", "2.1"],
-            ["61-80%", "124", "1.4"],
-            ["81-100%", "89", "0.6"]
-          ]
-          spec = create_score_distribution_chart(dummy_data)
-          charts = [%{title: "Score Distribution Analysis (#{format_execution_time(execution_time)})", spec: spec}]
-          {dummy_data, charts}
+          {[], []}
         end
 
       {:error, reason} ->
@@ -996,24 +984,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
           charts = [%{title: "Event Timeline Analysis (#{format_execution_time(execution_time)})", spec: spec}]
           {data, charts}
         else
-          # Create dummy data for event timeline
-          dummy_data = [
-            ["video", "245", "35", "202409"],
-            ["page_viewed", "1567", "42", "202409"],
-            ["activity_attempt", "387", "38", "202409"],
-            ["part_attempt", "892", "38", "202409"],
-            ["video", "198", "33", "202408"],
-            ["page_viewed", "1234", "40", "202408"],
-            ["activity_attempt", "298", "35", "202408"],
-            ["part_attempt", "756", "35", "202408"],
-            ["video", "156", "28", "202407"],
-            ["page_viewed", "987", "35", "202407"],
-            ["activity_attempt", "234", "32", "202407"],
-            ["part_attempt", "623", "32", "202407"]
-          ]
-          spec = create_event_timeline_chart(dummy_data)
-          charts = [%{title: "Event Timeline Analysis (#{format_execution_time(execution_time)})", spec: spec}]
-          {dummy_data, charts}
+          {[], []}
         end
 
       {:error, reason} ->
@@ -1143,45 +1114,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
 
           {combined_data, charts}
         else
-          # Create dummy data for both charts with titles instead of IDs
-          dummy_data = [
-            ["1", "lesson", "125", "45", "98", "78.4", "Introduction to Biology"],
-            ["2", "assessment", "89", "38", "67", "75.3", "Chapter 1 Quiz"],
-            ["3", "reading", "156", "52", "134", "85.9", "Cell Structure Reading"]
-          ]
-
-          dummy_heatmap_data = [
-            ["page_1", "2024-09-02", "15", "Lab Exercise 1"],
-            ["page_1", "2024-09-09", "23", "Lab Exercise 1"],
-            ["page_1", "2024-09-16", "18", "Lab Exercise 1"],
-            ["page_2", "2024-09-03", "12", "Homework Assignment"],
-            ["page_2", "2024-09-10", "19", "Homework Assignment"],
-            ["page_2", "2024-09-17", "25", "Homework Assignment"],
-            ["page_3", "2024-09-04", "22", "Discussion Forum"],
-            ["page_3", "2024-09-11", "28", "Discussion Forum"],
-            ["page_3", "2024-09-18", "31", "Discussion Forum"],
-            ["page_4", "2024-09-05", "17", "Video Tutorial"],
-            ["page_4", "2024-09-12", "21", "Video Tutorial"],
-            ["page_4", "2024-09-19", "16", "Video Tutorial"],
-            ["page_5", "2024-09-06", "8", "Practice Problems"],
-            ["page_5", "2024-09-13", "14", "Practice Problems"],
-            ["page_5", "2024-09-20", "12", "Practice Problems"]
-          ]
-
-          bar_spec = create_page_engagement_chart(dummy_data)
-          heatmap_spec = create_engagement_heatmap_chart(dummy_heatmap_data)
-
-          combined_data = %{
-            bar_chart_data: dummy_data,
-            heatmap_data: dummy_heatmap_data
-          }
-
-          charts = [
-            %{title: "Page Engagement (no data)", spec: bar_spec},
-            %{title: "Activity Heatmap (no data)", spec: heatmap_spec}
-          ]
-
-          {combined_data, charts}
+          {%{bar_chart_data: [], heatmap_data: []}, []}
         end
 
       {:error, reason} ->
