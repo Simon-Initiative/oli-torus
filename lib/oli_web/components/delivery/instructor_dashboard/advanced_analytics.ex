@@ -26,9 +26,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
           nil -> Date.add(Date.utc_today(), -30) |> Date.to_string()
           start_date -> DateTime.to_date(start_date) |> Date.to_string()
         end
-        Logger.info("=== ENGAGEMENT FILTER DEFAULTS ===")
-        Logger.info("Section start_date: #{inspect(assigns.section.start_date)}")
-        Logger.info("Calculated engagement_start_date: #{start_date}")
+
         start_date
       end)
       |> assign_new(:engagement_end_date, fn ->
@@ -36,9 +34,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
           nil -> Date.utc_today() |> Date.to_string()
           end_date -> DateTime.to_date(end_date) |> Date.to_string()
         end
-        Logger.info("Section end_date: #{inspect(assigns.section.end_date)}")
-        Logger.info("Calculated engagement_end_date: #{end_date}")
-        Logger.info("=== END ENGAGEMENT FILTER DEFAULTS ===")
+
         end_date
       end)
       |> assign_new(:engagement_max_pages, fn -> 25 end)
@@ -49,20 +45,10 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
 
   # Helper function to load the resource title map once when component loads
   defp load_resource_title_map_from_section(section) do
-    Logger.info("=== LOADING RESOURCE TITLE MAP ===")
     hierarchy = Oli.Delivery.Sections.SectionResourceDepot.get_full_hierarchy(section, [hidden: false])
 
-    # Debug: Log the hierarchy structure
-    Logger.info("Hierarchy structure: #{inspect(hierarchy, limit: 3)}")
-
     # Create a mapping from resource_id to title from the hierarchy
-    resource_title_map = extract_resource_titles_from_hierarchy(hierarchy)
-
-    # Debug: Log the resource title map
-    Logger.info("Resource title map: #{inspect(resource_title_map, limit: :infinity)}")
-    Logger.info("=== END LOADING RESOURCE TITLE MAP ===")
-
-    resource_title_map
+    extract_resource_titles_from_hierarchy(hierarchy)
   end
 
   # Public helper function to load resource title mapping for a section by ID
@@ -812,27 +798,17 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
 
   defp parse_query_result_and_create_spec(query_body, vega_spec_string) do
     try do
-      # Debug: Log the raw query body
-      Logger.info("=== CUSTOM ANALYTICS DEBUG ===")
-      Logger.info("Raw query body: #{inspect(query_body, limit: :infinity)}")
-
       # Parse JSON data (JSONEachRow format - one JSON object per line)
       chart_data = parse_json_each_row_data(query_body)
-      Logger.info("Parsed JSON data: #{inspect(chart_data, limit: :infinity)}")
 
       # Parse the VegaLite spec
-      Logger.info("VegaLite spec string: #{inspect(vega_spec_string)}")
       base_spec = Jason.decode!(vega_spec_string)
-      Logger.info("Parsed VegaLite spec: #{inspect(base_spec, limit: :infinity)}")
 
       # Inject the data into the spec
       final_spec = Map.put(base_spec, "data", %{"values" => chart_data})
-      Logger.info("Final spec with data: #{inspect(final_spec, limit: :infinity)}")
 
       # Convert to VegaLite spec format
       vega_spec = VegaLite.from_json(Jason.encode!(final_spec)) |> VegaLite.to_spec()
-      Logger.info("Final VegaLite spec: #{inspect(vega_spec, limit: :infinity)}")
-      Logger.info("=== END CUSTOM ANALYTICS DEBUG ===")
 
       {:ok, vega_spec}
     rescue
@@ -864,11 +840,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
 
     case execute_analytics_query_json(query, "video analytics") do
       {:ok, data, execution_time} ->
-        Logger.info("Video analytics data: #{inspect(data, limit: :infinity)}")
-
         if length(data) > 0 do
           spec = create_video_completion_chart(data)
-          Logger.info("Video analytics spec: #{inspect(spec, limit: :infinity)}")
           charts = [%{title: "Video Completion Analysis (#{format_execution_time(execution_time)})", spec: spec}]
           {data, charts}
         else
@@ -879,7 +852,6 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
             ["3", "Practice Session", "30", "22", "73.3", "0.78", "18"]
           ]
           spec = create_video_completion_chart(dummy_data)
-          Logger.info("Using dummy video data")
           charts = [%{title: "Video Completion Analysis (#{format_execution_time(execution_time)})", spec: spec}]
           {dummy_data, charts}
         end
@@ -991,7 +963,6 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
             ["81-100%", "89", "0.6"]
           ]
           spec = create_score_distribution_chart(dummy_data)
-          Logger.info("Using dummy performance data")
           charts = [%{title: "Score Distribution Analysis (#{format_execution_time(execution_time)})", spec: spec}]
           {dummy_data, charts}
         end
@@ -1041,7 +1012,6 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
             ["part_attempt", "623", "32", "202407"]
           ]
           spec = create_event_timeline_chart(dummy_data)
-          Logger.info("Using dummy cross-event data")
           charts = [%{title: "Event Timeline Analysis (#{format_execution_time(execution_time)})", spec: spec}]
           {dummy_data, charts}
         end
@@ -1068,23 +1038,12 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
         section = Oli.Repo.get!(Oli.Delivery.Sections.Section, section_id)
         hierarchy = Oli.Delivery.Sections.SectionResourceDepot.get_full_hierarchy(section, [hidden: false])
 
-        # Debug: Log the hierarchy structure
-        Logger.info("=== HIERARCHY DEBUG (loading fresh) ===")
-        Logger.info("Hierarchy structure: #{inspect(hierarchy, limit: 3)}")
-
         # Create a mapping from resource_id to title from the hierarchy
         title_map = extract_resource_titles_from_hierarchy(hierarchy)
-
-        # Debug: Log the resource title map
-        Logger.info("Resource title map: #{inspect(title_map, limit: :infinity)}")
-        Logger.info("=== END HIERARCHY DEBUG ===")
 
         title_map
 
       existing_map ->
-        Logger.info("=== USING CACHED RESOURCE TITLE MAP ===")
-        Logger.info("Resource title map: #{inspect(existing_map, limit: :infinity)}")
-        Logger.info("=== END CACHED RESOURCE TITLE MAP ===")
         existing_map
     end
 
@@ -1108,11 +1067,6 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
       _ -> "LIMIT 25"
     end
 
-    Logger.info("=== MAX PAGES FILTER DEBUG ===")
-    Logger.info("Max pages value: #{inspect(max_pages)}")
-    Logger.info("Generated limit clause: '#{limit_clause}'")
-    Logger.info("=== END MAX PAGES FILTER DEBUG ===")
-
     # Main engagement query for bar chart
     query = """
       SELECT
@@ -1132,8 +1086,6 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
 
     case execute_analytics_query_json(query, "engagement analytics") do
       {:ok, data, main_query_time} ->
-        Logger.info("Engagement analytics - got #{length(data)} rows")
-
         # Use a WITH clause (CTE) to get heatmap data for only the top pages
         # This is more reliable than the two-step approach
         heatmap_query = """
@@ -1163,7 +1115,6 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
         # Get heatmap data
         {heatmap_data, heatmap_query_time} = case execute_analytics_query_json(heatmap_query, "engagement heatmap") do
           {:ok, heatmap_data, heatmap_time} ->
-            Logger.info("Engagement heatmap - got #{length(heatmap_data)} rows")
             {heatmap_data, heatmap_time}
           {:error, reason} ->
             Logger.error("Heatmap query failed: #{inspect(reason)}")
@@ -1176,10 +1127,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
           enriched_heatmap_data = enrich_heatmap_data_with_titles(heatmap_data, resource_title_map)
 
           bar_spec = create_page_engagement_chart(enriched_bar_data)
-          Logger.info("Bar chart created successfully")
 
           heatmap_spec = create_engagement_heatmap_chart(enriched_heatmap_data)
-          Logger.info("Heatmap chart created successfully")
 
           # Return both charts as a list
           combined_data = %{
@@ -1232,7 +1181,6 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
             %{title: "Activity Heatmap (no data)", spec: heatmap_spec}
           ]
 
-          Logger.info("Using dummy engagement data")
           {combined_data, charts}
         end
 
@@ -1270,11 +1218,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
   defp format_execution_time(_), do: "unknown"
 
   defp parse_json_each_row_data(body) when is_binary(body) do
-    Logger.info("=== JSON PARSING DEBUG ===")
-    Logger.info("Raw body: #{inspect(body)}")
-
     lines = String.split(String.trim(body), "\n", trim: true)
-    Logger.info("Split into #{length(lines)} lines")
 
     # Filter out separator lines and empty lines before parsing JSON
     filtered_lines = lines
@@ -1284,13 +1228,10 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
       String.starts_with?(trimmed, "{") && !String.match?(trimmed, ~r/^-+$/)
     end)
 
-    Logger.info("After filtering separators: #{length(filtered_lines)} lines")
-
     result = filtered_lines
     |> Enum.map(fn line ->
       case Jason.decode(String.trim(line)) do
         {:ok, json_obj} ->
-          Logger.info("Successfully parsed JSON line: #{inspect(json_obj)}")
           json_obj
         {:error, error} ->
           Logger.warning("Failed to parse JSON line '#{line}': #{inspect(error)}")
@@ -1298,43 +1239,29 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
       end
     end)
     |> Enum.reject(&is_nil/1)
-
-    Logger.info("Final parsed data: #{inspect(result, limit: :infinity)}")
-    Logger.info("=== END JSON PARSING DEBUG ===")
     result
   end
 
   defp parse_tsv_data(body) when is_binary(body) do
-    Logger.info("=== TSV PARSING DEBUG ===")
-    Logger.info("Raw body: #{inspect(body)}")
-
     lines = String.split(String.trim(body), "\n")
-    Logger.info("Split into #{length(lines)} lines: #{inspect(lines)}")
 
     result = case lines do
       [] ->
-        Logger.info("No lines found")
         []
 
       [header | data_lines] ->
-        Logger.info("Header line: #{inspect(header)}")
-        Logger.info("Data lines: #{inspect(data_lines)}")
-
         # Parse header to handle both pipe and tab separators
         header_columns = if String.contains?(header, "|") do
           String.split(header, "|") |> Enum.map(&String.trim/1)
         else
           String.split(header, "\t")
         end
-        Logger.info("Parsed header columns: #{inspect(header_columns)}")
 
         filtered_lines = data_lines
         |> Enum.filter(fn line ->
           # Filter out separator lines that contain only dashes and pipes
           not String.match?(line, ~r/^[\s\-\|]+$/)
         end)
-
-        Logger.info("After filtering separators: #{inspect(filtered_lines)}")
 
         parsed_data = filtered_lines
         |> Enum.map(fn line ->
@@ -1344,17 +1271,14 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
           else
             String.split(line, "\t")
           end
-          Logger.info("Parsed line '#{line}' into: #{inspect(parsed)}")
+
           parsed
         end)
-
-        Logger.info("Final parsed data: #{inspect(parsed_data)}")
 
         # Return as [header_columns, ...data_rows] format expected by parse_query_result_and_create_spec
         [header_columns | parsed_data]
     end
 
-    Logger.info("=== END TSV PARSING DEBUG ===")
     result
   end
 
@@ -2064,17 +1988,12 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
 
   # Helper function to enrich bar chart data with titles
   defp enrich_data_with_titles(data, resource_title_map) do
-    Logger.info("=== ENRICHMENT DEBUG ===")
-    Logger.info("Data to enrich: #{inspect(data, limit: 3)}")
-    Logger.info("Resource title map: #{inspect(resource_title_map, limit: :infinity)}")
-
     enriched = Enum.map(data, fn row ->
       case row do
         %{} = json_row ->
           # JSON format - add title field
           page_id = Map.get(json_row, "page_id")
           title = Map.get(resource_title_map, to_string(page_id), "Page #{page_id}")
-          Logger.info("JSON enrichment: page_id=#{page_id}, title=#{title}")
           Map.put(json_row, "page_title", title)
 
         list when is_list(list) ->
@@ -2082,36 +2001,27 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
           case list do
             [page_id | rest] ->
               title = Map.get(resource_title_map, to_string(page_id), "Page #{page_id}")
-              Logger.info("TSV enrichment: page_id=#{page_id}, title=#{title}")
               [page_id | rest] ++ [title]
             _ ->
-              Logger.info("TSV enrichment: unknown format")
               list ++ ["Unknown Title"]
           end
 
         _ ->
-          Logger.info("Enrichment: unknown row format")
           row
       end
     end)
 
-    Logger.info("Enriched data: #{inspect(enriched, limit: 3)}")
-    Logger.info("=== END ENRICHMENT DEBUG ===")
     enriched
   end
 
   # Helper function to enrich heatmap data with titles
   defp enrich_heatmap_data_with_titles(data, resource_title_map) do
-    Logger.info("=== HEATMAP ENRICHMENT DEBUG ===")
-    Logger.info("Heatmap data to enrich: #{inspect(data, limit: 3)}")
-
     enriched = Enum.map(data, fn row ->
       case row do
         %{} = json_row ->
           # JSON format - add title field
           page_id = Map.get(json_row, "page_id")
           title = Map.get(resource_title_map, to_string(page_id), "Page #{page_id}")
-          Logger.info("Heatmap JSON enrichment: page_id=#{page_id}, title=#{title}")
           Map.put(json_row, "page_title", title)
 
         list when is_list(list) ->
@@ -2119,21 +2029,16 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
           case list do
             [page_id, date, count] ->
               title = Map.get(resource_title_map, to_string(page_id), "Page #{page_id}")
-              Logger.info("Heatmap TSV enrichment: page_id=#{page_id}, title=#{title}")
               [page_id, date, count, title]
             _ ->
-              Logger.info("Heatmap TSV enrichment: unknown format")
               list ++ ["Unknown Title"]
           end
 
         _ ->
-          Logger.info("Heatmap enrichment: unknown row format")
           row
       end
     end)
 
-    Logger.info("Heatmap enriched data: #{inspect(enriched, limit: 3)}")
-    Logger.info("=== END HEATMAP ENRICHMENT DEBUG ===")
     enriched
   end
 end
