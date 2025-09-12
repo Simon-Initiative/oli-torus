@@ -19,6 +19,9 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
       |> assign_new(:custom_vega_spec, fn -> nil end)
       |> assign_new(:custom_query_result, fn -> nil end)
       |> assign_new(:custom_visualization_spec, fn -> nil end)
+      |> assign_new(:engagement_start_date, fn -> Date.add(Date.utc_today(), -30) |> Date.to_string() end)
+      |> assign_new(:engagement_end_date, fn -> Date.utc_today() |> Date.to_string() end)
+      |> assign_new(:engagement_max_pages, fn -> 25 end)
 
     {:ok, socket}
   end
@@ -248,6 +251,51 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
               <% end %>
             </h2>
 
+            <!-- Engagement Analytics Controls -->
+            <%= if @selected_analytics_category == "engagement" do %>
+              <div class="mb-6 bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
+                <h4 class="text-md font-semibold mb-3 text-gray-900 dark:text-white">Filter Data</h4>
+                <form phx-change="update_engagement_filters" phx-target={@myself} class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Start Date
+                    </label>
+                    <input
+                      type="date"
+                      name="start_date"
+                      value={@engagement_start_date || Date.add(Date.utc_today(), -30) |> Date.to_string()}
+                      class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      End Date
+                    </label>
+                    <input
+                      type="date"
+                      name="end_date"
+                      value={@engagement_end_date || Date.utc_today() |> Date.to_string()}
+                      class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Max Pages
+                    </label>
+                    <select
+                      name="max_pages"
+                      class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
+                    >
+                      <option value="10" selected={@engagement_max_pages == 10}>Top 10 Pages</option>
+                      <option value="25" selected={@engagement_max_pages == 25}>Top 25 Pages</option>
+                      <option value="50" selected={@engagement_max_pages == 50}>Top 50 Pages</option>
+                      <option value="100" selected={@engagement_max_pages == 100}>Top 100 Pages</option>
+                    </select>
+                  </div>
+                </form>
+              </div>
+            <% end %>
+
 
             <!-- Custom Analytics Interface -->
             <%= if @selected_analytics_category == "custom" do %>
@@ -386,13 +434,15 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
                     <div class="mb-6">
                       <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
                         <h4 class="text-sm font-medium mb-3 text-gray-700 dark:text-gray-300 text-center"><%= chart.title %></h4>
-                        <div class="flex justify-center items-center">
-                          <%= {:safe, _chart_html} = OliWeb.Common.React.component(
-                            %{is_liveview: true},
-                            "Components.VegaLiteRenderer",
-                            %{spec: chart.spec},
-                            id: "analytics-chart-#{@selected_analytics_category}-#{index}"
-                          ) %>
+                        <div class="overflow-x-auto overflow-y-hidden" style="max-width: 100%;">
+                          <div class="flex justify-center items-center min-w-max">
+                            <%= {:safe, _chart_html} = OliWeb.Common.React.component(
+                              %{is_liveview: true},
+                              "Components.VegaLiteRenderer",
+                              %{spec: chart.spec},
+                              id: "analytics-chart-#{@selected_analytics_category}-#{index}"
+                            ) %>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -532,6 +582,31 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
     # Debug log to see what structure we're getting
     Logger.info("update_custom_vega_field params: #{inspect(params)}")
     {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event("update_engagement_filters", params, socket) do
+    socket =
+      socket
+      |> assign(:engagement_start_date, Map.get(params, "start_date", socket.assigns.engagement_start_date))
+      |> assign(:engagement_end_date, Map.get(params, "end_date", socket.assigns.engagement_end_date))
+      |> assign(:engagement_max_pages, String.to_integer(Map.get(params, "max_pages", "25")))
+
+    # Reload engagement analytics with new filters
+    if socket.assigns.selected_analytics_category == "engagement" do
+      %{engagement_start_date: start_date, engagement_end_date: end_date, engagement_max_pages: max_pages, section: section} = socket.assigns
+
+      {data, charts} = get_engagement_analytics_with_filters(section.id, start_date, end_date, max_pages)
+
+      socket =
+        socket
+        |> assign(:analytics_data, data)
+        |> assign(:analytics_spec, charts)
+
+      {:noreply, socket}
+    else
+      {:noreply, socket}
+    end
   end
 
   # Helper functions for custom analytics
@@ -745,6 +820,23 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
   end
 
   def get_analytics_data_and_spec("engagement", section_id) do
+    # Use default filters if called without filters
+    get_engagement_analytics_with_filters(section_id, nil, nil, 25)
+  end
+
+  def get_engagement_analytics_with_filters(section_id, start_date, end_date, max_pages) do
+    # Build date filter condition
+    date_filter = case {start_date, end_date} do
+      {nil, nil} -> ""
+      {start_date, nil} when is_binary(start_date) ->
+        " AND toDate(timestamp) >= '#{start_date}'"
+      {nil, end_date} when is_binary(end_date) ->
+        " AND toDate(timestamp) <= '#{end_date}'"
+      {start_date, end_date} when is_binary(start_date) and is_binary(end_date) ->
+        " AND toDate(timestamp) >= '#{start_date}' AND toDate(timestamp) <= '#{end_date}'"
+      _ -> ""
+    end
+
     # Main engagement query for bar chart
     query = """
       SELECT
@@ -755,14 +847,14 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
         countIf(completion = true) as completed_views,
         if(total_views > 0, completed_views / total_views * 100, 0) as completion_rate
       FROM #{Oli.Analytics.AdvancedAnalytics.raw_events_table()}
-      WHERE section_id = #{section_id} AND event_type = 'page_viewed' AND page_id IS NOT NULL
+      WHERE section_id = #{section_id} AND event_type = 'page_viewed' AND page_id IS NOT NULL#{date_filter}
       GROUP BY page_id, page_sub_type
       HAVING total_views >= 1
       ORDER BY total_views DESC
-      LIMIT 20
+      LIMIT #{max_pages || 25}
     """
 
-    # Heatmap query for time-based analysis - simplified to ensure data is returned
+    # Heatmap query for time-based analysis with filters
     heatmap_query = """
       SELECT
         page_id,
@@ -771,11 +863,11 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
       FROM #{Oli.Analytics.AdvancedAnalytics.raw_events_table()}
       WHERE section_id = #{section_id}
         AND event_type = 'page_viewed'
-        AND page_id IS NOT NULL
+        AND page_id IS NOT NULL#{date_filter}
       GROUP BY page_id, date
       HAVING view_count >= 1
       ORDER BY view_count DESC, page_id, date
-      LIMIT 500
+      LIMIT #{(max_pages || 25) * 10}
     """
 
     case execute_analytics_query_json(query, "engagement analytics") do
@@ -1264,7 +1356,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
 
   defp create_page_engagement_chart(data) do
     chart_data =
-      Enum.take(data, 15)
+      data
       |> Enum.with_index()
       |> Enum.map(fn {row, idx} ->
         # Handle both JSON (map) and TSV (list) data formats
@@ -1332,12 +1424,17 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
 
     encoded_data = Jason.encode!(chart_data)
 
+    # Calculate dynamic width based on number of items, with minimum bar width
+    num_items = length(chart_data)
+    min_bar_width = 40
+    chart_width = max(600, num_items * min_bar_width)
+
     VegaLite.from_json("""
     {
-      "width": 600,
-      "height": 300,
+      "width": #{chart_width},
+      "height": 400,
       "title": "Page Engagement Metrics",
-      "description": "Page view counts and completion rates",
+      "description": "Page view counts and completion rates (scroll horizontally for more data)",
       "data": {
         "values": #{encoded_data}
       },
@@ -1351,7 +1448,13 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
           "type": "nominal",
           "title": "Pages",
           "axis": {
-            "labelAngle": -45
+            "labelAngle": -45,
+            "labelLimit": 120
+          },
+          "scale": {
+            "type": "band",
+            "paddingInner": 0.1,
+            "paddingOuter": 0.05
           }
         },
         "y": {
@@ -1366,6 +1469,15 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
             "scheme": "oranges"
           },
           "title": "Completion Rate (%)"
+        }
+      },
+      "config": {
+        "view": {
+          "stroke": "transparent"
+        },
+        "axis": {
+          "grid": false,
+          "domain": false
         }
       }
     }
@@ -1418,12 +1530,21 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
 
     encoded_data = Jason.encode!(chart_data)
 
+    # Calculate dynamic dimensions based on data
+    unique_dates = chart_data |> Enum.map(& &1["date"]) |> Enum.uniq() |> length()
+    unique_pages = chart_data |> Enum.map(& &1["page_id"]) |> Enum.uniq() |> length()
+
+    cell_width = 40
+    cell_height = 25
+    chart_width = max(600, unique_dates * cell_width)
+    chart_height = max(300, unique_pages * cell_height)
+
     VegaLite.from_json("""
     {
-      "width": {"step": 40},
-      "height": {"step": 40},
+      "width": #{chart_width},
+      "height": #{chart_height},
       "title": "Page Views Heatmap by Date",
-      "description": "Heatmap showing page view intensity by page and date",
+      "description": "Heatmap showing page view intensity by page and date (scroll to explore)",
       "data": {
         "values": #{encoded_data}
       },

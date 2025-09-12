@@ -792,6 +792,16 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics.get_analytics_data_and_spec(category, section_id)
   end
 
+  defp get_analytics_data_and_spec_with_filters(category, section_id, start_date, end_date, max_pages) do
+    # For engagement analytics, use filters if provided
+    case category do
+      "engagement" ->
+        OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics.get_engagement_analytics_with_filters(section_id, start_date, end_date, max_pages)
+      _ ->
+        get_analytics_data_and_spec(category, section_id)
+    end
+  end
+
   defp maybe_get_tab_from_params(tab, default) do
     # if the user manually changed the url and entered an invalid tab
     # we prevent the app from crashing by returning the default tab
