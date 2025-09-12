@@ -335,6 +335,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
                       <option value="25" selected={@engagement_max_pages == 25}>Top 25 Pages</option>
                       <option value="50" selected={@engagement_max_pages == 50}>Top 50 Pages</option>
                       <option value="100" selected={@engagement_max_pages == 100}>Top 100 Pages</option>
+                      <option value="all" selected={@engagement_max_pages == "all"}>All Pages</option>
                     </select>
                   </div>
                 </form>
@@ -692,11 +693,17 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
 
   @impl true
   def handle_event("update_engagement_filters", params, socket) do
+    # Handle max_pages value - can be integer or "all"
+    max_pages_value = case Map.get(params, "max_pages", "25") do
+      "all" -> "all"
+      value -> String.to_integer(value)
+    end
+
     socket =
       socket
       |> assign(:engagement_start_date, Map.get(params, "start_date", socket.assigns.engagement_start_date))
       |> assign(:engagement_end_date, Map.get(params, "end_date", socket.assigns.engagement_end_date))
-      |> assign(:engagement_max_pages, String.to_integer(Map.get(params, "max_pages", "25")))
+      |> assign(:engagement_max_pages, max_pages_value)
 
     # Reload engagement analytics with new filters
     if socket.assigns.selected_analytics_category == "engagement" do
@@ -1093,6 +1100,19 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
       _ -> ""
     end
 
+    # Build limit clause based on max_pages setting
+    limit_clause = case max_pages do
+      "all" -> ""
+      nil -> "LIMIT 25"
+      pages when is_integer(pages) -> "LIMIT #{pages}"
+      _ -> "LIMIT 25"
+    end
+
+    Logger.info("=== MAX PAGES FILTER DEBUG ===")
+    Logger.info("Max pages value: #{inspect(max_pages)}")
+    Logger.info("Generated limit clause: '#{limit_clause}'")
+    Logger.info("=== END MAX PAGES FILTER DEBUG ===")
+
     # Main engagement query for bar chart
     query = """
       SELECT
@@ -1107,7 +1127,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
       GROUP BY page_id, page_sub_type
       HAVING total_views >= 1
       ORDER BY total_views DESC
-      LIMIT #{max_pages || 25}
+      #{limit_clause}
     """
 
     case execute_analytics_query_json(query, "engagement analytics") do
@@ -1124,7 +1144,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
             GROUP BY page_id
             HAVING count(*) >= 1
             ORDER BY count(*) DESC
-            LIMIT #{max_pages || 25}
+            #{limit_clause}
           )
           SELECT
             h.page_id,
