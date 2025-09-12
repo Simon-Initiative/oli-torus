@@ -1,0 +1,91 @@
+# Scenario: Demonstrates the hook directive functionality
+# This scenario shows how hooks can be used to extend scenario capabilities
+# with custom Elixir functions for data manipulation, testing, and debugging.
+
+# Create a basic project structure
+- project:
+    name: "demo_project"
+    title: "Hook Demo Project"
+    root:
+      children:
+        - page: "Introduction"
+        - container: "Module 1"
+          children:
+            - page: "Lesson 1"
+            - page: "Lesson 2"
+
+# Log the current state for debugging
+- hook:
+    function: "Oli.Scenarios.Hooks.log_state/1"
+
+# Create a section from the project
+- section:
+    name: "demo_section"
+    title: "Demo Section"
+    from: "demo_project"
+
+# Set a test flag to track hook execution
+- hook:
+    function: "Oli.Scenarios.Hooks.set_test_flag/1"
+
+# Create some test users in bulk
+- hook:
+    function: "Oli.Scenarios.Hooks.create_bulk_users/1"
+
+# Enroll the bulk users in the section
+- enroll:
+    user: "bulk_user_1"
+    section: "demo_section"
+    role: "student"
+
+- enroll:
+    user: "bulk_user_2"
+    section: "demo_section"
+    role: "student"
+
+# Create an activity
+- create_activity:
+    project: "demo_project"
+    title: "Test Question"
+    type: "oli_multiple_choice"
+    content: |
+      stem_md: "What is 2 + 2?"
+      choices:
+        - id: "a"
+          body_md: "3"
+        - id: "b"
+          body_md: "4"
+        - id: "c"
+          body_md: "5"
+      authoring:
+        parts:
+          - id: "1"
+            responses:
+              - rule: "input like {b}"
+                score: 1
+                feedback: "Correct!"
+              - rule: "input like {a}"
+                score: 0
+                feedback: "Too low"
+              - rule: "input like {c}"
+                score: 0
+                feedback: "Too high"
+
+# Log state again to see the changes
+- hook:
+    function: "Oli.Scenarios.Hooks.log_state/1"
+
+# Inject an error condition for testing
+- hook:
+    function: "Oli.Scenarios.Hooks.inject_error/1"
+
+# Validate the state meets certain conditions
+- hook:
+    function: "Oli.Scenarios.Hooks.validate_state/1"
+
+# Verify that hooks were executed by checking the test flag
+- assert:
+    assertions:
+      - type: "custom"
+        description: "Test flag should be set"
+        # This would need a custom assertion implementation to check the test_flags field

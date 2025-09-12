@@ -1,0 +1,99 @@
+# Scenario: Test clone independence when adding new content
+# This scenario verifies that when we clone a project and create sections from both,
+# adding new content to the original project and updating its section does NOT
+# affect the cloned project's section.
+#
+# Steps:
+# 1. Create an original project with 1 unit containing 1 page
+# 2. Clone that project
+# 3. Create sections from both the original and clone
+# 4. Add a new page to the unit in the original project
+# 5. Publish and update the relevant course section
+# 6. Assert that the original section shows the new page
+# 7. Assert that the cloned section does NOT show the new page
+
+# Create initial project with one unit containing one page
+- project:
+    name: "original_project"
+    title: "Original Project"
+    root:
+      children:
+        - container: "Unit 1"
+          children:
+            - page: "Page 1"
+
+# Clone the original project
+- clone:
+    from: "original_project"
+    name: "cloned_project"
+    title: "Cloned Project"
+
+# Create sections from both projects
+- section:
+    name: "original_section"
+    title: "Section from Original"
+    from: "original_project"
+
+- section:
+    name: "cloned_section"
+    title: "Section from Clone"
+    from: "cloned_project"
+
+# Add a new page to the unit in the original project
+- manipulate:
+    to: "original_project"
+    ops:
+      - add_page:
+          title: "New Page"
+          to: "Unit 1"
+
+# Publish the changes to the original project
+- publish:
+    to: "original_project"
+    description: "Added new page to Unit 1"
+
+# Update only the section from the original project
+- update:
+    from: "original_project"
+    to: "original_section"
+
+# Assert that the original section shows the new page
+- assert:
+    structure:
+      to: "original_section"
+      root:
+        children:
+          - container: "Unit 1"
+            children:
+              - page: "Page 1"
+              - page: "New Page"
+
+# Assert that the cloned section does NOT show the new page
+- assert:
+    structure:
+      to: "cloned_section"
+      root:
+        children:
+          - container: "Unit 1"
+            children:
+              - page: "Page 1"
+
+# Also verify the project structures themselves
+- assert:
+    structure:
+      to: "original_project"
+      root:
+        children:
+          - container: "Unit 1"
+            children:
+              - page: "Page 1"
+              - page: "New Page"
+
+- assert:
+    structure:
+      to: "cloned_project"
+      root:
+        children:
+          - container: "Unit 1"
+            children:
+              - page: "Page 1"

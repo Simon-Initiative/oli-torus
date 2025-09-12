@@ -39,9 +39,9 @@ defmodule Oli.Scenarios.ProductRemixTest do
           to: "Module 1"
 
       # Verify the content was added to the product
-      - verify:
-          to: "template"
+      - assert:
           structure:
+            to: "template"
             root:
               children:
                 - container: "Module 1"
@@ -88,9 +88,9 @@ defmodule Oli.Scenarios.ProductRemixTest do
           to: "root"
 
       # Verify the container was added
-      - verify:
-          to: "template"
+      - assert:
           structure:
+            to: "template"
             root:
               children:
                 - page: "Welcome"
@@ -143,9 +143,9 @@ defmodule Oli.Scenarios.ProductRemixTest do
           from: "enhanced_template"
 
       # Verify the section includes the remixed content
-      - verify:
-          to: "enhanced_section"
+      - assert:
           structure:
+            to: "enhanced_section"
             root:
               children:
                 - container: "Main Module"
@@ -201,9 +201,9 @@ defmodule Oli.Scenarios.ProductRemixTest do
                 before: "Page 1"
 
       # Verify final structure
-      - verify:
-          to: "custom_template"
+      - assert:
           structure:
+            to: "custom_template"
             root:
               children:
                 - page: "Extra Page"
