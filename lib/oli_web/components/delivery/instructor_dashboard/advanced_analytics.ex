@@ -470,7 +470,14 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
     if query && String.trim(query) != "" do
       case validate_query_section_filter(query, socket.assigns.section.id) do
         :ok ->
-          result = Oli.Analytics.AdvancedAnalytics.execute_query(query, "custom analytics query")
+          # Add JSONEachRow format for easier parsing in custom analytics
+          formatted_query = if String.contains?(String.downcase(query), "format") do
+            query
+          else
+            query <> " FORMAT JSONEachRow"
+          end
+
+          result = Oli.Analytics.AdvancedAnalytics.execute_query(formatted_query, "custom analytics query")
           {:noreply, assign(socket, custom_query_result: result, custom_sql_query: query)}
         {:error, reason} ->
           error_result = {:error, reason}
@@ -621,63 +628,9 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
       Logger.info("=== CUSTOM ANALYTICS DEBUG ===")
       Logger.info("Raw query body: #{inspect(query_body, limit: :infinity)}")
 
-      # Parse the TSV data from the query result
-      data = parse_tsv_data(query_body)
-      Logger.info("Parsed TSV data: #{inspect(data, limit: :infinity)}")
-
-      # Convert data to the format expected by VegaLite (list of maps)
-      chart_data = case data do
-        [] ->
-          Logger.info("Data is empty!")
-          []
-        [header | rows] when is_list(header) ->
-          Logger.info("Found header: #{inspect(header)}")
-          Logger.info("Found #{length(rows)} data rows")
-          # If we got headers and rows, use the headers as keys
-          result = Enum.map(rows, fn row ->
-            Logger.info("Processing row: #{inspect(row)}")
-            header
-            |> Enum.zip(row)
-            |> Enum.into(%{})
-          end)
-          Logger.info("Converted to maps: #{inspect(result, limit: :infinity)}")
-          result
-        rows ->
-          Logger.info("No header detected, rows: #{inspect(rows, limit: :infinity)}")
-          # Try to infer column names from first row
-          case List.first(rows) do
-            [first | _] when is_binary(first) ->
-              # Try to detect if first row contains headers
-              if Regex.match?(~r/^[a-zA-Z_][a-zA-Z0-9_]*$/, first) do
-                Logger.info("First row looks like headers: #{inspect(first)}")
-                # Looks like a header row
-                [header | data_rows] = rows
-                result = Enum.map(data_rows, fn row ->
-                  header
-                  |> Enum.zip(row)
-                  |> Enum.into(%{})
-                end)
-                Logger.info("Using detected headers, result: #{inspect(result, limit: :infinity)}")
-                result
-              else
-                Logger.info("First row doesn't look like headers, generating generic names")
-                # Generate generic column names
-                first_row = List.first(rows)
-                headers = Enum.with_index(first_row) |> Enum.map(fn {_, i} -> "col_#{i}" end)
-                Logger.info("Generated headers: #{inspect(headers)}")
-                result = Enum.map(rows, fn row ->
-                  headers
-                  |> Enum.zip(row)
-                  |> Enum.into(%{})
-                end)
-                Logger.info("Result with generic headers: #{inspect(result, limit: :infinity)}")
-                result
-              end
-            _ ->
-              Logger.info("Could not process first row")
-              []
-          end
-      end
+      # Parse JSON data (JSONEachRow format - one JSON object per line)
+      chart_data = parse_json_each_row_data(query_body)
+      Logger.info("Parsed JSON data: #{inspect(chart_data, limit: :infinity)}")
 
       # Parse the VegaLite spec
       Logger.info("VegaLite spec string: #{inspect(vega_spec_string)}")
@@ -721,10 +674,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
       LIMIT 20
     """
 
-    case Oli.Analytics.AdvancedAnalytics.execute_query(query, "video analytics") do
-      {:ok, %{body: body}} ->
-        data = parse_tsv_data(body)
-
+    case execute_analytics_query_json(query, "video analytics") do
+      {:ok, data} ->
         Logger.info("Video analytics data: #{inspect(data, limit: :infinity)}")
 
         if length(data) > 0 do
@@ -811,31 +762,42 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
       LIMIT 20
     """
 
-    # Heatmap query for time-based analysis
+    # Heatmap query for time-based analysis - simplified to ensure data is returned
     heatmap_query = """
       SELECT
         page_id,
         toDate(timestamp) as date,
         count(*) as view_count
       FROM #{Oli.Analytics.AdvancedAnalytics.raw_events_table()}
-      WHERE section_id = #{section_id} AND event_type = 'page_viewed'
+      WHERE section_id = #{section_id}
+        AND event_type = 'page_viewed'
+        AND page_id IS NOT NULL
       GROUP BY page_id, date
-      ORDER BY page_id, date
+      HAVING view_count >= 1
+      ORDER BY view_count DESC, page_id, date
+      LIMIT 500
     """
 
-    case Oli.Analytics.AdvancedAnalytics.execute_query(query, "engagement analytics") do
-      {:ok, %{body: body}} ->
-        data = parse_tsv_data(body)
+    case execute_analytics_query_json(query, "engagement analytics") do
+      {:ok, data} ->
+        Logger.info("Engagement analytics - got #{length(data)} rows")
 
         # Get heatmap data
-        heatmap_data = case Oli.Analytics.AdvancedAnalytics.execute_query(heatmap_query, "engagement heatmap") do
-          {:ok, %{body: heatmap_body}} -> parse_tsv_data(heatmap_body)
-          {:error, _} -> []
+        heatmap_data = case execute_analytics_query_json(heatmap_query, "engagement heatmap") do
+          {:ok, heatmap_data} ->
+            Logger.info("Engagement heatmap - got #{length(heatmap_data)} rows")
+            heatmap_data
+          {:error, reason} ->
+            Logger.error("Heatmap query failed: #{inspect(reason)}")
+            []
         end
 
         if length(data) > 0 || length(heatmap_data) > 0 do
           bar_spec = create_page_engagement_chart(data)
+          Logger.info("Bar chart created successfully")
+
           heatmap_spec = create_engagement_heatmap_chart(heatmap_data)
+          Logger.info("Heatmap chart created successfully")
 
           # Return both charts as a list
           combined_data = %{
@@ -999,6 +961,58 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
 
   def get_analytics_data_and_spec(_, _), do: {[], []}
 
+  # Helper function to execute analytics queries with JSON format for easier parsing
+  defp execute_analytics_query_json(query, description) do
+    # Add JSON format to the query
+    formatted_query = if String.contains?(String.downcase(query), "format") do
+      query
+    else
+      query <> " FORMAT JSONEachRow"
+    end
+
+    case Oli.Analytics.AdvancedAnalytics.execute_query(formatted_query, description) do
+      {:ok, %{body: body}} ->
+        {:ok, parse_json_each_row_data(body)}
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp parse_json_each_row_data(body) when is_binary(body) do
+    Logger.info("=== JSON PARSING DEBUG ===")
+    Logger.info("Raw body: #{inspect(body)}")
+
+    lines = String.split(String.trim(body), "\n", trim: true)
+    Logger.info("Split into #{length(lines)} lines")
+
+    # Filter out separator lines and empty lines before parsing JSON
+    filtered_lines = lines
+    |> Enum.filter(fn line ->
+      trimmed = String.trim(line)
+      # Keep lines that start with { (JSON objects) and reject separator lines with just dashes
+      String.starts_with?(trimmed, "{") && !String.match?(trimmed, ~r/^-+$/)
+    end)
+
+    Logger.info("After filtering separators: #{length(filtered_lines)} lines")
+
+    result = filtered_lines
+    |> Enum.map(fn line ->
+      case Jason.decode(String.trim(line)) do
+        {:ok, json_obj} ->
+          Logger.info("Successfully parsed JSON line: #{inspect(json_obj)}")
+          json_obj
+        {:error, error} ->
+          Logger.warning("Failed to parse JSON line '#{line}': #{inspect(error)}")
+          nil
+      end
+    end)
+    |> Enum.reject(&is_nil/1)
+
+    Logger.info("Final parsed data: #{inspect(result, limit: :infinity)}")
+    Logger.info("=== END JSON PARSING DEBUG ===")
+    result
+  end
+
   defp parse_tsv_data(body) when is_binary(body) do
     Logger.info("=== TSV PARSING DEBUG ===")
     Logger.info("Raw body: #{inspect(body)}")
@@ -1059,10 +1073,28 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
       Enum.take(data, 10)
       |> Enum.with_index()
       |> Enum.map(fn {row, idx} ->
-        [_id, title, plays, _completions, completion_rate, _avg_progress, _viewers] =
+        # Handle both JSON (map) and TSV (list) data formats
+        {_id, title, plays, _completions, completion_rate, _avg_progress, _viewers} =
           case row do
-            list when is_list(list) -> list
-            _ -> ["", "Unknown", "0", "0", "0", "0", "0"]
+            %{} = json_row ->
+              # JSON format from JSONEachRow
+              {
+                Map.get(json_row, "content_element_id"),
+                Map.get(json_row, "video_title"),
+                Map.get(json_row, "plays"),
+                Map.get(json_row, "completions"),
+                Map.get(json_row, "completion_rate"),
+                Map.get(json_row, "avg_progress"),
+                Map.get(json_row, "unique_viewers")
+              }
+            list when is_list(list) ->
+              # TSV format (array)
+              case list do
+                [id, t, p, c, cr, ap, v] -> {id, t, p, c, cr, ap, v}
+                _ -> ["", "Unknown", "0", "0", "0", "0", "0"]
+              end
+            _ ->
+              {"", "Unknown", "0", "0", "0", "0", "0"}
           end
 
         %{
@@ -1235,10 +1267,27 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
       Enum.take(data, 15)
       |> Enum.with_index()
       |> Enum.map(fn {row, idx} ->
-        [page_id, page_type, views, viewers, _completed, completion_rate] =
+        # Handle both JSON (map) and TSV (list) data formats
+        {page_id, page_type, views, viewers, _completed, completion_rate} =
           case row do
-            list when is_list(list) -> list
-            _ -> ["", "Unknown", "0", "0", "0", "0"]
+            %{} = json_row ->
+              # JSON format from JSONEachRow
+              {
+                Map.get(json_row, "page_id"),
+                Map.get(json_row, "page_sub_type"),
+                Map.get(json_row, "total_views"),
+                Map.get(json_row, "unique_viewers"),
+                Map.get(json_row, "completed_views"),
+                Map.get(json_row, "completion_rate")
+              }
+            list when is_list(list) ->
+              # TSV format (array)
+              case list do
+                [p_id, p_type, views, viewers, completed, rate] -> {p_id, p_type, views, viewers, completed, rate}
+                _ -> {"", "Unknown", "0", "0", "0", "0"}
+              end
+            _ ->
+              {"", "Unknown", "0", "0", "0", "0"}
           end
 
         views_num = case views do
@@ -1325,12 +1374,29 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
   end
 
   defp create_engagement_heatmap_chart(data) do
+    # Limit data size to prevent browser crashes with too much data
+    limited_data = Enum.take(data, 500)
+
     chart_data =
-      Enum.map(data, fn row ->
-        [page_id, date, total_views] =
+      Enum.map(limited_data, fn row ->
+        # Handle both JSON (map) and TSV (list) data formats
+        {page_id, date, total_views} =
           case row do
-            list when is_list(list) -> list
-            _ -> ["unknown", "2024-01-01", "0"]
+            %{} = json_row ->
+              # JSON format from JSONEachRow
+              {
+                Map.get(json_row, "page_id"),
+                Map.get(json_row, "date"),
+                Map.get(json_row, "view_count")
+              }
+            list when is_list(list) ->
+              # TSV format (array)
+              case list do
+                [p_id, d, views] -> {p_id, d, views}
+                _ -> ["unknown", "2024-01-01", "0"]
+              end
+            _ ->
+              {"unknown", "2024-01-01", "0"}
           end
 
         views_num = case total_views do
@@ -1365,7 +1431,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
         "type": "rect",
         "tooltip": true,
         "stroke": "white",
-        "strokeWidth": 0  // Set to 0 to avoid visible borders on heatmap cells
+        "strokeWidth": 0
       },
       "encoding": {
         "x": {
@@ -1398,7 +1464,6 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
         "color": {
           "field": "total_views",
           "type": "quantitative",
-          // Restored original color palette for consistency with other charts
           "scale": {
             "scheme": "blues",
             "type": "linear",
