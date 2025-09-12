@@ -229,7 +229,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   @impl Phoenix.LiveView
   def handle_params(
-        %{"view" => "insights", "active_tab" => "advanced_analytics"} = params,
+        %{"view" => "insights", "active_tab" => "analytics"} = params,
         _,
         socket
       ) do
@@ -238,7 +238,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       |> assign(
         params: params,
         view: :insights,
-        active_tab: :advanced_analytics,
+        active_tab: :analytics,
         selected_analytics_category: params["analytics_category"],
         analytics_data: nil,
         analytics_spec: nil,
@@ -370,7 +370,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       {"insights", "scored_activities"},
       {"insights", "practice_activities"},
       {"insights", "surveys"},
-      {"insights", "advanced_analytics"},
+      {"insights", "analytics"},
       {"insights", "course_discussion"},
       {"discussions", nil}
     ]
@@ -486,10 +486,10 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         active: is_active_tab?(:surveys, active_tab)
       },
       %TabLink{
-        label: "Advanced Analytics",
-        path: path_for(:insights, :advanced_analytics, section_slug, preview_mode),
+        label: "Analytics",
+        path: path_for(:insights, :analytics, section_slug, preview_mode),
         badge: nil,
-        active: is_active_tab?(:advanced_analytics, active_tab)
+        active: is_active_tab?(:analytics, active_tab)
       }
     ]
   end
@@ -695,13 +695,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     """
   end
 
-  def render(%{view: :insights, active_tab: :advanced_analytics} = assigns) do
+  def render(%{view: :insights, active_tab: :analytics} = assigns) do
     ~H"""
     <InstructorDashboard.tabs tabs={insights_tabs(@section_slug, @preview_mode, @active_tab)} />
 
     <.live_component
-      id="advanced_analytics"
-      module={OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics}
+      id="section_analytics"
+      module={OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics}
       section={@section}
       selected_analytics_category={@selected_analytics_category}
       comprehensive_section_analytics={@comprehensive_section_analytics}
@@ -792,7 +792,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     case category do
       "engagement" ->
         # Get resource title map for engagement analytics
-        resource_title_map = OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics.load_resource_title_map(section_id)
+        resource_title_map = OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics.load_resource_title_map(section_id)
         # Get section to determine default date range
         section = Oli.Delivery.Sections.get_section!(section_id)
         # Use section dates as default filters, fallback to relative dates if not set
@@ -812,10 +812,10 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         Logger.info("Calculated end_date: #{end_date}")
         Logger.info("=== END PARENT LIVEVIEW FILTER DEFAULTS ===")
         max_pages = 25
-        OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics.get_engagement_analytics_with_filters(section_id, start_date, end_date, max_pages, resource_title_map)
+        OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics.get_engagement_analytics_with_filters(section_id, start_date, end_date, max_pages, resource_title_map)
       _ ->
         # Delegate to the component's analytics functions for other categories
-        OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics.get_analytics_data_and_spec(category, section_id)
+        OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics.get_analytics_data_and_spec(category, section_id)
     end
   end
 
@@ -824,8 +824,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     case category do
       "engagement" ->
         # Get resource title map for engagement analytics
-        resource_title_map = OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics.load_resource_title_map(section_id)
-        OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics.get_engagement_analytics_with_filters(section_id, start_date, end_date, max_pages, resource_title_map)
+        resource_title_map = OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics.load_resource_title_map(section_id)
+        OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics.get_engagement_analytics_with_filters(section_id, start_date, end_date, max_pages, resource_title_map)
       _ ->
         get_analytics_data_and_spec(category, section_id)
     end
@@ -940,11 +940,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   @impl Phoenix.LiveView
   def handle_info({:select_analytics_category, category}, socket) do
-    # Navigate to the advanced analytics page with the selected category
+    # Navigate to the section analytics page with the selected category
     {:noreply,
      push_patch(socket,
        to:
-         ~p"/sections/#{socket.assigns.section.slug}/instructor_dashboard/insights/advanced_analytics?analytics_category=#{category}"
+         ~p"/sections/#{socket.assigns.section.slug}/instructor_dashboard/insights/analytics?analytics_category=#{category}"
      )}
   end
 

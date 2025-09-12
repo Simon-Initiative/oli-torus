@@ -1,4 +1,4 @@
-defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
+defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
   use OliWeb, :live_component
 
   alias OliWeb.Common.MonacoEditor
@@ -63,7 +63,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
     <div class="container mx-auto p-6">
       <div class="max-w-6xl mx-auto">
         <h1 class="text-2xl font-bold mb-6 text-gray-900 dark:text-white">
-          Advanced Analytics Dashboard
+          Analytics Dashboard
         </h1>
         <!-- Comprehensive Section Analytics -->
         <div class="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-6 mb-6">

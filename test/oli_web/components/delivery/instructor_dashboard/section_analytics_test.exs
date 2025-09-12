@@ -1,24 +1,24 @@
-defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalyticsTest do
+defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalyticsTest do
   use ExUnit.Case, async: true
-  alias OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics
+  alias OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics
 
   # Since most functions are private, we test through the public interface
   # The main issue was in parse_tsv_data which is called by get_analytics_data_and_spec
 
   describe "get_analytics_data_and_spec/2" do
     test "returns empty data for unknown category" do
-      assert AdvancedAnalytics.get_analytics_data_and_spec("unknown", 123) == {[], []}
+      assert SectionAnalytics.get_analytics_data_and_spec("unknown", 123) == {[], []}
     end
   end
 
   describe "module structure" do
     test "module has required functions" do
       # Test that the public functions we expect are available
-      assert function_exported?(AdvancedAnalytics, :mount, 1)
-      assert function_exported?(AdvancedAnalytics, :update, 2)
-      assert function_exported?(AdvancedAnalytics, :render, 1)
-      assert function_exported?(AdvancedAnalytics, :handle_event, 3)
-      assert function_exported?(AdvancedAnalytics, :get_analytics_data_and_spec, 2)
+      assert function_exported?(SectionAnalytics, :mount, 1)
+      assert function_exported?(SectionAnalytics, :update, 2)
+      assert function_exported?(SectionAnalytics, :render, 1)
+      assert function_exported?(SectionAnalytics, :handle_event, 3)
+      assert function_exported?(SectionAnalytics, :get_analytics_data_and_spec, 2)
     end
   end
 
