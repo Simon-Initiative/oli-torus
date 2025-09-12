@@ -884,10 +884,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
       LIMIT 20
     """
 
-    case Oli.Analytics.AdvancedAnalytics.execute_query(query, "assessment analytics") do
-      {:ok, %{body: body, execution_time_ms: execution_time}} ->
-        data = parse_tsv_data(body)
-
+    case execute_analytics_query_json(query, "assessment analytics") do
+      {:ok, data, execution_time} ->
         if length(data) > 0 do
           spec = create_assessment_performance_chart(data)
           charts = [%{title: "Assessment Performance Analysis (#{format_execution_time(execution_time)})", spec: spec}]
@@ -943,10 +941,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
       ORDER BY score_range
     """
 
-    case Oli.Analytics.AdvancedAnalytics.execute_query(query, "performance analytics") do
-      {:ok, %{body: body, execution_time_ms: execution_time}} ->
-        data = parse_tsv_data(body)
-
+    case execute_analytics_query_json(query, "performance analytics") do
+      {:ok, data, execution_time} ->
         if length(data) > 0 do
           spec = create_score_distribution_chart(data)
           charts = [%{title: "Score Distribution Analysis (#{format_execution_time(execution_time)})", spec: spec}]
@@ -975,10 +971,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
       LIMIT 100
     """
 
-    case Oli.Analytics.AdvancedAnalytics.execute_query(query, "cross-event analytics") do
-      {:ok, %{body: body, execution_time_ms: execution_time}} ->
-        data = parse_tsv_data(body)
-
+    case execute_analytics_query_json(query, "cross-event analytics") do
+      {:ok, data, execution_time} ->
         if length(data) > 0 do
           spec = create_event_timeline_chart(data)
           charts = [%{title: "Event Timeline Analysis (#{format_execution_time(execution_time)})", spec: spec}]
@@ -1175,46 +1169,6 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
     result
   end
 
-  defp parse_tsv_data(body) when is_binary(body) do
-    lines = String.split(String.trim(body), "\n")
-
-    result = case lines do
-      [] ->
-        []
-
-      [header | data_lines] ->
-        # Parse header to handle both pipe and tab separators
-        header_columns = if String.contains?(header, "|") do
-          String.split(header, "|") |> Enum.map(&String.trim/1)
-        else
-          String.split(header, "\t")
-        end
-
-        filtered_lines = data_lines
-        |> Enum.filter(fn line ->
-          # Filter out separator lines that contain only dashes and pipes
-          not String.match?(line, ~r/^[\s\-\|]+$/)
-        end)
-
-        parsed_data = filtered_lines
-        |> Enum.map(fn line ->
-          # Check if the line contains pipes or tabs and split accordingly
-          parsed = if String.contains?(line, "|") do
-            String.split(line, "|") |> Enum.map(&String.trim/1)
-          else
-            String.split(line, "\t")
-          end
-
-          parsed
-        end)
-
-        # Return as [header_columns, ...data_rows] format expected by parse_query_result_and_create_spec
-        [header_columns | parsed_data]
-    end
-
-    result
-  end
-
   # Chart creation functions...
   defp create_video_completion_chart(data) do
     chart_data =
@@ -1319,6 +1273,15 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
       |> Enum.map(fn {row, idx} ->
         [activity_id, attempts, avg_score, successful, _users] =
           case row do
+            %{} = json_row ->
+              # JSON format from JSONEachRow
+              [
+                Map.get(json_row, "activity_id"),
+                Map.get(json_row, "total_attempts"),
+                Map.get(json_row, "avg_score"),
+                Map.get(json_row, "successful_attempts"),
+                Map.get(json_row, "unique_users")
+              ]
             list when is_list(list) -> list
             _ -> ["", "0", "0", "0", "0"]
           end
@@ -1700,6 +1663,13 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
       Enum.map(data, fn row ->
         [score_range, count, avg_hints] =
           case row do
+            %{} = json_row ->
+              # JSON format from JSONEachRow
+              [
+                Map.get(json_row, "score_range"),
+                Map.get(json_row, "attempt_count"),
+                Map.get(json_row, "avg_hints")
+              ]
             list when is_list(list) -> list
             _ -> ["Unknown", "0", "0"]
           end
@@ -1777,11 +1747,23 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
       Enum.map(data, fn row ->
         [event_type, count, users, month] =
           case row do
+            %{} = json_row ->
+              # JSON format from JSONEachRow
+              [
+                Map.get(json_row, "event_type"),
+                Map.get(json_row, "total_events"),
+                Map.get(json_row, "unique_users"),
+                Map.get(json_row, "month")
+              ]
             list when is_list(list) -> list
             _ -> ["unknown", "0", "0", "202401"]
           end
 
-        month_str = month || "202401"
+        month_str = case month do
+          m when is_integer(m) -> Integer.to_string(m)
+          m when is_binary(m) -> m
+          _ -> "202401"
+        end
         year = String.slice(month_str, 0, 4)
         month_num = String.slice(month_str, 4, 2)
 
