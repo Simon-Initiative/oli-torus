@@ -112,7 +112,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       assert Enum.empty?(user1_page_context.resource_attempts)
 
       # Start the attempt and go into the assessment
-      activity_provider = &Oli.Delivery.ActivityProvider.provide/6
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/7
 
       {:ok,
        %Oli.Delivery.Attempts.PageLifecycle.AttemptState{
@@ -413,7 +413,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       user1_activity_attempt1: activity_attempt,
       graded_page_user1_attempt1: resource_attempt1
     } do
-      activity_provider = &Oli.Delivery.ActivityProvider.provide/6
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/7
       datashop_session_id_user1 = UUID.uuid4()
       Sections.enroll(user1.id, section.id, [ContextRoles.get_role(:context_learner)])
 
@@ -468,7 +468,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       user1_part1_attempt1: part_attempt,
       user1_activity_attempt1: activity_attempt
     } do
-      activity_provider = &Oli.Delivery.ActivityProvider.provide/6
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/7
       datashop_session_id_user1 = UUID.uuid4()
       Sections.enroll(user1.id, section.id, [ContextRoles.get_role(:context_learner)])
 
@@ -517,7 +517,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
            graded_page_user2_attempt1: user2_resource_attempt1,
            user2: user2
          } do
-      activity_provider = &Oli.Delivery.ActivityProvider.provide/6
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/7
       datashop_session_id_user1 = UUID.uuid4()
       datashop_session_id_user2 = UUID.uuid4()
 

@@ -57,7 +57,7 @@ defmodule Oli.Utils.Seeder.Attempt do
         datashop_session_id,
         user,
         effective_settings,
-        &Oli.Delivery.ActivityProvider.provide/6
+        &Oli.Delivery.ActivityProvider.provide/7
       )
 
     seeds
