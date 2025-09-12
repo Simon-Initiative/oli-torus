@@ -10,7 +10,9 @@ defmodule OliWeb.Delivery.Content.MultiSelect do
   attr :id, :string
   attr :target, :map, default: %{}
   attr :selected_values, :map, default: %{}
-  attr :selected_proficiency_ids, :list, default: []
+  attr :selected_ids, :list, default: []
+  attr :submit_event, :string, default: "apply_proficiency_filter"
+  attr :label, :string, default: "Proficiency"
 
   def render(assigns) do
     ~H"""
@@ -41,7 +43,7 @@ defmodule OliWeb.Delivery.Content.MultiSelect do
             :if={@selected_values != %{}}
             class="text-[#006CD9] dark:text-[#4CA6FF] text-base font-semibold leading-none"
           >
-            Proficiency is {show_proficiency_selected_values(@selected_values)}
+            {@label} is {show_selected_values(@selected_values)}
           </span>
         </div>
         <.toggle_chevron id={@id} map_values={@selected_values} />
@@ -68,7 +70,7 @@ defmodule OliWeb.Delivery.Content.MultiSelect do
                 name={option.id}
                 value={option.selected}
                 label={option.name}
-                checked={option.id in @selected_proficiency_ids}
+                checked={option.id in @selected_ids}
                 type="checkbox"
                 label_class="text-zinc-900 text-xs font-normal leading-none dark:text-white"
               />
@@ -89,13 +91,13 @@ defmodule OliWeb.Delivery.Content.MultiSelect do
             <button
               class="px-4 py-2 bg-[#0080FF] rounded justify-center items-center gap-2 inline-flex opacity-90 text-right text-white text-xs font-semibold leading-none"
               phx-click={
-                JS.push("apply_proficiency_filter")
+                JS.push(@submit_event)
                 |> JS.hide(to: "##{@id}-options-container")
                 |> JS.hide(to: "##{@id}-up-icon")
                 |> JS.show(to: "##{@id}-down-icon")
               }
               phx-target={@target}
-              phx-value={@selected_proficiency_ids}
+              phx-value={@selected_ids}
               disabled={@disabled}
             >
               Apply
@@ -107,7 +109,7 @@ defmodule OliWeb.Delivery.Content.MultiSelect do
     """
   end
 
-  defp show_proficiency_selected_values(values) do
+  defp show_selected_values(values) do
     Enum.map_join(values, ", ", fn {_id, values} -> values end)
   end
 end
