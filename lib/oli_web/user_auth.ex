@@ -422,7 +422,7 @@ defmodule OliWeb.UserAuth do
         |> renew_session()
         |> delete_resp_cookie(@remember_me_cookie)
         |> put_flash(:info, "You must confirm your email to continue.")
-        |> redirect(to: ~p"/users/confirm")
+        |> redirect(to: ~p"/users/confirm?#{conn.params}")
         |> halt()
 
       _ ->
