@@ -617,60 +617,87 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
 
   defp parse_query_result_and_create_spec(query_body, vega_spec_string) do
     try do
+      # Debug: Log the raw query body
+      Logger.info("=== CUSTOM ANALYTICS DEBUG ===")
+      Logger.info("Raw query body: #{inspect(query_body, limit: :infinity)}")
+
       # Parse the TSV data from the query result
       data = parse_tsv_data(query_body)
+      Logger.info("Parsed TSV data: #{inspect(data, limit: :infinity)}")
 
       # Convert data to the format expected by VegaLite (list of maps)
       chart_data = case data do
         [] ->
+          Logger.info("Data is empty!")
           []
         [header | rows] when is_list(header) ->
+          Logger.info("Found header: #{inspect(header)}")
+          Logger.info("Found #{length(rows)} data rows")
           # If we got headers and rows, use the headers as keys
-          Enum.map(rows, fn row ->
+          result = Enum.map(rows, fn row ->
+            Logger.info("Processing row: #{inspect(row)}")
             header
             |> Enum.zip(row)
             |> Enum.into(%{})
           end)
+          Logger.info("Converted to maps: #{inspect(result, limit: :infinity)}")
+          result
         rows ->
+          Logger.info("No header detected, rows: #{inspect(rows, limit: :infinity)}")
           # Try to infer column names from first row
           case List.first(rows) do
             [first | _] when is_binary(first) ->
               # Try to detect if first row contains headers
               if Regex.match?(~r/^[a-zA-Z_][a-zA-Z0-9_]*$/, first) do
+                Logger.info("First row looks like headers: #{inspect(first)}")
                 # Looks like a header row
                 [header | data_rows] = rows
-                Enum.map(data_rows, fn row ->
+                result = Enum.map(data_rows, fn row ->
                   header
                   |> Enum.zip(row)
                   |> Enum.into(%{})
                 end)
+                Logger.info("Using detected headers, result: #{inspect(result, limit: :infinity)}")
+                result
               else
+                Logger.info("First row doesn't look like headers, generating generic names")
                 # Generate generic column names
                 first_row = List.first(rows)
                 headers = Enum.with_index(first_row) |> Enum.map(fn {_, i} -> "col_#{i}" end)
-                Enum.map(rows, fn row ->
+                Logger.info("Generated headers: #{inspect(headers)}")
+                result = Enum.map(rows, fn row ->
                   headers
                   |> Enum.zip(row)
                   |> Enum.into(%{})
                 end)
+                Logger.info("Result with generic headers: #{inspect(result, limit: :infinity)}")
+                result
               end
             _ ->
+              Logger.info("Could not process first row")
               []
           end
       end
 
       # Parse the VegaLite spec
+      Logger.info("VegaLite spec string: #{inspect(vega_spec_string)}")
       base_spec = Jason.decode!(vega_spec_string)
+      Logger.info("Parsed VegaLite spec: #{inspect(base_spec, limit: :infinity)}")
 
       # Inject the data into the spec
       final_spec = Map.put(base_spec, "data", %{"values" => chart_data})
+      Logger.info("Final spec with data: #{inspect(final_spec, limit: :infinity)}")
 
       # Convert to VegaLite spec format
       vega_spec = VegaLite.from_json(Jason.encode!(final_spec)) |> VegaLite.to_spec()
+      Logger.info("Final VegaLite spec: #{inspect(vega_spec, limit: :infinity)}")
+      Logger.info("=== END CUSTOM ANALYTICS DEBUG ===")
 
       {:ok, vega_spec}
     rescue
       e ->
+        Logger.error("Custom analytics visualization error: #{Exception.message(e)}")
+        Logger.error("Stacktrace: #{inspect(__STACKTRACE__)}")
         {:error, "Failed to parse data or create visualization: #{Exception.message(e)}"}
     end
   end
@@ -973,22 +1000,57 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
   def get_analytics_data_and_spec(_, _), do: {[], []}
 
   defp parse_tsv_data(body) when is_binary(body) do
-    lines = String.split(String.trim(body), "\n")
+    Logger.info("=== TSV PARSING DEBUG ===")
+    Logger.info("Raw body: #{inspect(body)}")
 
-    case lines do
+    lines = String.split(String.trim(body), "\n")
+    Logger.info("Split into #{length(lines)} lines: #{inspect(lines)}")
+
+    result = case lines do
       [] ->
+        Logger.info("No lines found")
         []
 
-      [_header | data_lines] ->
-        data_lines
+      [header | data_lines] ->
+        Logger.info("Header line: #{inspect(header)}")
+        Logger.info("Data lines: #{inspect(data_lines)}")
+
+        # Parse header to handle both pipe and tab separators
+        header_columns = if String.contains?(header, "|") do
+          String.split(header, "|") |> Enum.map(&String.trim/1)
+        else
+          String.split(header, "\t")
+        end
+        Logger.info("Parsed header columns: #{inspect(header_columns)}")
+
+        filtered_lines = data_lines
         |> Enum.filter(fn line ->
           # Filter out separator lines that contain only dashes and pipes
           not String.match?(line, ~r/^[\s\-\|]+$/)
         end)
+
+        Logger.info("After filtering separators: #{inspect(filtered_lines)}")
+
+        parsed_data = filtered_lines
         |> Enum.map(fn line ->
-          String.split(line, "\t")
+          # Check if the line contains pipes or tabs and split accordingly
+          parsed = if String.contains?(line, "|") do
+            String.split(line, "|") |> Enum.map(&String.trim/1)
+          else
+            String.split(line, "\t")
+          end
+          Logger.info("Parsed line '#{line}' into: #{inspect(parsed)}")
+          parsed
         end)
+
+        Logger.info("Final parsed data: #{inspect(parsed_data)}")
+
+        # Return as [header_columns, ...data_rows] format expected by parse_query_result_and_create_spec
+        [header_columns | parsed_data]
     end
+
+    Logger.info("=== END TSV PARSING DEBUG ===")
+    result
   end
 
   # Chart creation functions...
