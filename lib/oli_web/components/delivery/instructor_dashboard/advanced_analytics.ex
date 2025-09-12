@@ -15,6 +15,10 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
       |> assign(assigns)
       |> assign_new(:analytics_data, fn -> nil end)
       |> assign_new(:analytics_spec, fn -> nil end)
+      |> assign_new(:custom_sql_query, fn -> nil end)
+      |> assign_new(:custom_vega_spec, fn -> nil end)
+      |> assign_new(:custom_query_result, fn -> nil end)
+      |> assign_new(:custom_visualization_spec, fn -> nil end)
 
     {:ok, socket}
   end
@@ -209,15 +213,23 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
               </ul>
             </button>
 
-            <div class="bg-gradient-to-br from-gray-50 to-slate-100 dark:from-gray-700 dark:to-gray-600 rounded-lg p-4">
-              <h3 class="font-medium text-gray-900 dark:text-white mb-2">Technical Details</h3>
+            <button
+              phx-click="select_analytics_category"
+              phx-value-category="custom"
+              phx-target={@myself}
+              class={[
+                "bg-gradient-to-br from-gray-50 to-slate-100 dark:from-gray-700 dark:to-gray-600 rounded-lg p-4 text-left hover:shadow-lg transition-shadow duration-200 border-2",
+                if(@selected_analytics_category == "custom", do: "border-gray-500", else: "border-transparent hover:border-gray-300")
+              ]}
+            >
+              <h3 class="font-medium text-gray-900 dark:text-white mb-2">Custom Analytics</h3>
               <ul class="text-sm text-gray-600 dark:text-gray-300 space-y-1">
-                <li>• ClickHouse OLAP storage</li>
-                <li>• Real-time ETL pipeline</li>
-                <li>• Scalable architecture</li>
-                <li>• xAPI standards compliance</li>
+                <li>• Write custom SQL queries</li>
+                <li>• Create custom visualizations</li>
+                <li>• VegaLite specification editor</li>
+                <li>• Direct ClickHouse access</li>
               </ul>
-            </div>
+            </button>
           </div>
         </div>
 
@@ -231,93 +243,196 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
                 <% "engagement" -> %> Engagement Analytics Visualization
                 <% "performance" -> %> Performance Analytics Visualization
                 <% "cross_event" -> %> Cross-Event Analytics Visualization
+                <% "custom" -> %> Custom Analytics Builder
                 <% _ -> %> Analytics Visualization
               <% end %>
             </h2>
 
-            <%= if @analytics_spec && is_list(@analytics_spec) && length(@analytics_spec) > 0 do %>
+
+            <!-- Custom Analytics Interface -->
+            <%= if @selected_analytics_category == "custom" do %>
               <div class="mb-4">
-                <%= case @selected_analytics_category do %>
-                  <% "video" -> %>
-                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                      This chart shows video completion rates across the most popular videos in your section.
-                      Higher completion rates indicate more engaging content.
+                <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  Create custom analytics by writing ClickHouse SQL queries and VegaLite visualization specifications.
+                  Query the raw events table directly to answer specific questions about learner behavior.
+                </p>
+              </div>
+
+              <div class="space-y-6">
+                <!-- SQL Query Editor -->
+                <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
+                  <h4 class="text-md font-semibold mb-3 text-gray-900 dark:text-white">ClickHouse SQL Query</h4>
+                  <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                    Write a SQL query to fetch data from the analytics database.
+                    Use <code class="bg-gray-200 dark:bg-gray-700 px-1 rounded">#{Oli.Analytics.AdvancedAnalytics.raw_events_table()}</code> as the table name.
+                  </p>
+                  <div class="bg-yellow-50 dark:bg-yellow-900 border border-yellow-200 dark:border-yellow-700 rounded-lg p-3 mb-3">
+                    <p class="text-sm text-yellow-800 dark:text-yellow-200">
+                      <strong>Required:</strong> Your query must include <code class="bg-yellow-100 dark:bg-yellow-800 px-1 rounded">WHERE section_id = {@section.id}</code> to filter results to the current section.
                     </p>
-                  <% "assessment" -> %>
-                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                      This scatter plot shows the relationship between average scores and success rates for activities.
-                      Bubble size represents the number of attempts.
-                    </p>
-                  <% "engagement" -> %>
-                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                      These charts show page engagement metrics: the bar chart displays page view counts with completion rates,
-                      while the heatmap reveals usage patterns by time of day and day of week.
-                    </p>
-                  <% "performance" -> %>
-                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                      This distribution shows how student scores are spread across different ranges.
-                      Color intensity indicates average hint usage.
-                    </p>
-                  <% "cross_event" -> %>
-                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                      This timeline shows the evolution of different event types over time,
-                      helping identify usage patterns and trends.
-                    </p>
+                  </div>
+                  <div class="mb-3">
+                    <form phx-change="update_custom_field" phx-target={@myself}>
+                      <textarea
+                        id="custom-sql-query"
+                        name="custom_sql_query"
+                        class="w-full h-32 p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-mono text-sm"
+                        placeholder="SELECT event_type, count(*) as total_events FROM #{Oli.Analytics.AdvancedAnalytics.raw_events_table()} WHERE section_id = #{@section.id} GROUP BY event_type ORDER BY total_events DESC LIMIT 10"
+                      ><%= @custom_sql_query || get_default_sql_query(@section.id) %></textarea>
+                    </form>
+                  </div>
+                  <button
+                    phx-click="execute_custom_query"
+                    phx-target={@myself}
+                    class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
+                  >
+                    Execute Query
+                  </button>
+                </div>
+
+                <!-- Query Results -->
+                <%= if @custom_query_result do %>
+                  <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
+                    <h4 class="text-md font-semibold mb-3 text-gray-900 dark:text-white">Query Results</h4>
+                    <%= case @custom_query_result do %>
+                      <% {:ok, %{body: body}} -> %>
+                        <div class="text-green-600 dark:text-green-400 mb-3 text-sm">✓ Query executed successfully</div>
+                        <pre class="bg-white dark:bg-gray-800 border rounded p-3 text-xs overflow-x-auto max-h-40"><%= body %></pre>
+                      <% {:error, reason} -> %>
+                        <div class="text-red-600 dark:text-red-400 mb-3 text-sm">✗ Query failed</div>
+                        <pre class="bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-700 rounded p-3 text-xs text-red-800 dark:text-red-200"><%= reason %></pre>
+                    <% end %>
+                  </div>
+                <% end %>
+
+                <!-- VegaLite Spec Editor -->
+                <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
+                  <h4 class="text-md font-semibold mb-3 text-gray-900 dark:text-white">VegaLite Visualization Spec</h4>
+                  <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                    Define a VegaLite specification to visualize your query results. The data will be automatically injected.
+                  </p>
+                  <div class="mb-3">
+                    <form phx-change="update_custom_vega_field" phx-target={@myself}>
+                      <textarea
+                        id="custom-vega-spec"
+                        name="custom_vega_spec"
+                        class="w-full h-48 p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-mono text-sm"
+                        placeholder='{"mark": "bar", "encoding": {"x": {"field": "event_type", "type": "nominal"}, "y": {"field": "total_events", "type": "quantitative"}}}'
+                      ><%= @custom_vega_spec || get_default_vega_spec() %></textarea>
+                    </form>
+                  </div>
+                  <button
+                    phx-click="render_custom_visualization"
+                    phx-target={@myself}
+                    class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors"
+                  >
+                    Render Visualization
+                  </button>
+                </div>
+
+                <!-- Custom Visualization -->
+                <%= if @custom_visualization_spec do %>
+                  <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border">
+                    <h4 class="text-md font-semibold mb-3 text-gray-900 dark:text-white text-center">Custom Visualization</h4>
+                    <div class="flex justify-center items-center">
+                      <%= {:safe, _chart_html} = OliWeb.Common.React.component(
+                        %{is_liveview: true},
+                        "Components.VegaLiteRenderer",
+                        %{spec: @custom_visualization_spec},
+                        id: "custom-analytics-chart"
+                      ) %>
+                    </div>
+                  </div>
                 <% end %>
               </div>
 
-              <!-- Render all charts vertically -->
+            <% else %>
+
+              <!-- Regular Analytics Interface -->
               <%= if @analytics_spec && is_list(@analytics_spec) && length(@analytics_spec) > 0 do %>
-                <%= for {chart, index} <- Enum.with_index(@analytics_spec) do %>
-                  <div class="mb-6">
-                    <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
-                      <h4 class="text-sm font-medium mb-3 text-gray-700 dark:text-gray-300 text-center"><%= chart.title %></h4>
-                      <div class="flex justify-center items-center">
-                        <%= {:safe, _chart_html} = OliWeb.Common.React.component(
-                          %{is_liveview: true},
-                          "Components.VegaLiteRenderer",
-                          %{spec: chart.spec},
-                          id: "analytics-chart-#{@selected_analytics_category}-#{index}"
-                        ) %>
+                <div class="mb-4">
+                  <%= case @selected_analytics_category do %>
+                    <% "video" -> %>
+                      <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                        This chart shows video completion rates across the most popular videos in your section.
+                        Higher completion rates indicate more engaging content.
+                      </p>
+                    <% "assessment" -> %>
+                      <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                        This scatter plot shows the relationship between average scores and success rates for activities.
+                        Bubble size represents the number of attempts.
+                      </p>
+                    <% "engagement" -> %>
+                      <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                        These charts show page engagement metrics: the bar chart displays page view counts with completion rates,
+                        while the heatmap reveals usage patterns by time of day and day of week.
+                      </p>
+                    <% "performance" -> %>
+                      <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                        This distribution shows how student scores are spread across different ranges.
+                        Color intensity indicates average hint usage.
+                      </p>
+                    <% "cross_event" -> %>
+                      <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                        This timeline shows the evolution of different event types over time,
+                        helping identify usage patterns and trends.
+                      </p>
+                  <% end %>
+                </div>
+
+                <!-- Render all charts vertically -->
+                <%= if @analytics_spec && is_list(@analytics_spec) && length(@analytics_spec) > 0 do %>
+                  <%= for {chart, index} <- Enum.with_index(@analytics_spec) do %>
+                    <div class="mb-6">
+                      <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
+                        <h4 class="text-sm font-medium mb-3 text-gray-700 dark:text-gray-300 text-center"><%= chart.title %></h4>
+                        <div class="flex justify-center items-center">
+                          <%= {:safe, _chart_html} = OliWeb.Common.React.component(
+                            %{is_liveview: true},
+                            "Components.VegaLiteRenderer",
+                            %{spec: chart.spec},
+                            id: "analytics-chart-#{@selected_analytics_category}-#{index}"
+                          ) %>
+                        </div>
                       </div>
+                    </div>
+                  <% end %>
+                <% else %>
+                  <div class="flex items-center justify-center py-8">
+                    <div class="text-center">
+                      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                      <p class="text-gray-500 dark:text-gray-400">Loading analytics data...</p>
                     </div>
                   </div>
                 <% end %>
               <% end %>
-            <% else %>
-              <div class="flex items-center justify-center py-8">
-                <div class="text-center">
-                  <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                  <p class="text-gray-500 dark:text-gray-400">Loading analytics data...</p>
-                </div>
-              </div>
-            <% end %>
 
-            <%= if @analytics_data && (
-              (@selected_analytics_category == "engagement" && is_map(@analytics_data) &&
-               (length(Map.get(@analytics_data, :bar_chart_data, [])) > 0 || length(Map.get(@analytics_data, :heatmap_data, [])) > 0)) ||
-              (@selected_analytics_category != "engagement" && is_list(@analytics_data) && length(@analytics_data) > 0)
-            ) do %>
-              <div class="mt-6">
-                <h3 class="text-md font-semibold mb-3 text-gray-900 dark:text-white">Raw Data Summary</h3>
-                <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
-                  <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                    <%= if @selected_analytics_category == "engagement" do %>
-                      Showing <%= length(Map.get(@analytics_data, :bar_chart_data, [])) %> page engagement records and <%= length(Map.get(@analytics_data, :heatmap_data, [])) %> time-based activity records.
-                    <% else %>
-                      Showing <%= length(@analytics_data) %> data points for this analysis.
-                    <% end %>
-                  </p>
-                  <details class="text-sm">
-                    <summary class="cursor-pointer text-blue-600 dark:text-blue-400 hover:underline">
-                      View detailed data
-                    </summary>
-                    <div class="mt-2 p-3 bg-white dark:bg-gray-800 rounded border">
-                      <pre class="text-xs overflow-x-auto"><%= inspect(@analytics_data, pretty: true, limit: :infinity) %></pre>
-                    </div>
-                  </details>
+              <%= if @analytics_data && (
+                (@selected_analytics_category == "engagement" && is_map(@analytics_data) &&
+                  (length(Map.get(@analytics_data, :bar_chart_data, [])) > 0 || length(Map.get(@analytics_data, :heatmap_data, [])) > 0)) ||
+                (@selected_analytics_category != "engagement" && is_list(@analytics_data) && length(@analytics_data) > 0)
+              ) do %>
+                <div class="mt-6">
+                  <h3 class="text-md font-semibold mb-3 text-gray-900 dark:text-white">Raw Data Summary</h3>
+                  <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                      <%= if @selected_analytics_category == "engagement" do %>
+                        Showing <%= length(Map.get(@analytics_data, :bar_chart_data, [])) %> page engagement records and <%= length(Map.get(@analytics_data, :heatmap_data, [])) %> time-based activity records.
+                      <% else %>
+                        Showing <%= length(@analytics_data) %> data points for this analysis.
+                      <% end %>
+                    </p>
+                    <details class="text-sm">
+                      <summary class="cursor-pointer text-blue-600 dark:text-blue-400 hover:underline">
+                        View detailed data
+                      </summary>
+                      <div class="mt-2 p-3 bg-white dark:bg-gray-800 rounded border">
+                        <pre class="text-xs overflow-x-auto"><%= inspect(@analytics_data, pretty: true, limit: :infinity) %></pre>
+                      </div>
+                    </details>
+                  </div>
                 </div>
-              </div>
+              <% end %>
             <% end %>
           </div>
         <% end %>
@@ -330,7 +445,234 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
   def handle_event("select_analytics_category", %{"category" => category}, socket) do
     # Send message to parent live view to navigate with analytics category parameter
     send(self(), {:select_analytics_category, category})
+
+    # If selecting custom analytics, initialize with default values if not already set
+    socket = if category == "custom" do
+      socket
+      |> assign_new(:custom_sql_query, fn -> get_default_sql_query(socket.assigns.section.id) end)
+      |> assign_new(:custom_vega_spec, fn -> get_default_vega_spec() end)
+    else
+      socket
+    end
+
     {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event("execute_custom_query", _params, socket) do
+    # Get the current query from assigns, or use default if none exists
+    query = case socket.assigns.custom_sql_query do
+      nil -> get_default_sql_query(socket.assigns.section.id)
+      "" -> get_default_sql_query(socket.assigns.section.id)
+      existing_query -> existing_query
+    end
+
+    if query && String.trim(query) != "" do
+      case validate_query_section_filter(query, socket.assigns.section.id) do
+        :ok ->
+          result = Oli.Analytics.AdvancedAnalytics.execute_query(query, "custom analytics query")
+          {:noreply, assign(socket, custom_query_result: result, custom_sql_query: query)}
+        {:error, reason} ->
+          error_result = {:error, reason}
+          {:noreply, assign(socket, custom_query_result: error_result)}
+      end
+    else
+      error_result = {:error, "Please enter a SQL query"}
+      {:noreply, assign(socket, custom_query_result: error_result)}
+    end
+  end
+
+  @impl true
+  def handle_event("render_custom_visualization", _params, socket) do
+    %{custom_query_result: query_result, custom_vega_spec: vega_spec} = socket.assigns
+
+    # Use default vega spec if none is provided
+    spec_to_use = if vega_spec && String.trim(vega_spec) != "", do: vega_spec, else: get_default_vega_spec()
+
+    case {query_result, spec_to_use} do
+      {{:ok, %{body: body}}, spec} when is_binary(spec) and spec != "" ->
+        case parse_query_result_and_create_spec(body, spec) do
+          {:ok, final_spec} ->
+            {:noreply, assign(socket, custom_visualization_spec: final_spec, custom_vega_spec: spec_to_use)}
+          {:error, reason} ->
+            {:noreply, assign(socket, custom_query_result: {:error, "Visualization error: #{reason}"})}
+        end
+      _ ->
+        error_msg = "Please execute a successful query and provide a VegaLite specification"
+        {:noreply, assign(socket, custom_query_result: {:error, error_msg})}
+    end
+  end
+
+  @impl true
+  def handle_event("update_custom_field", %{"custom_sql_query" => value}, socket) do
+    {:noreply, assign(socket, custom_sql_query: value)}
+  end
+
+  @impl true
+  def handle_event("update_custom_vega_field", %{"custom_vega_spec" => value}, socket) do
+    {:noreply, assign(socket, custom_vega_spec: value)}
+  end
+
+  @impl true
+  def handle_event("update_custom_field", params, socket) do
+    # Debug log to see what structure we're getting
+    Logger.info("update_custom_field params: #{inspect(params)}")
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event("update_custom_vega_field", params, socket) do
+    # Debug log to see what structure we're getting
+    Logger.info("update_custom_vega_field params: #{inspect(params)}")
+    {:noreply, socket}
+  end
+
+  # Helper functions for custom analytics
+  defp validate_query_section_filter(query, current_section_id) do
+    # Normalize the query for easier parsing
+    normalized_query = query
+    |> String.downcase()
+    |> String.replace(~r/\s+/, " ")
+    |> String.trim()
+
+    # Check if there's a WHERE clause
+    unless String.contains?(normalized_query, "where") do
+      {:error, "Query must include a WHERE clause to filter results to the current section"}
+    else
+      # Extract the WHERE clause and everything after it
+      case String.split(normalized_query, "where", parts: 2) do
+        [_before_where] ->
+          {:error, "Query must include a WHERE clause to filter results to the current section"}
+        [_before_where, where_clause] ->
+          validate_section_id_in_where_clause(where_clause, current_section_id)
+      end
+    end
+  end
+
+  defp validate_section_id_in_where_clause(where_clause, current_section_id) do
+    # Check for section_id filter patterns (with and without quotes)
+    section_id_patterns = [
+      ~r/section_id\s*=\s*#{current_section_id}(\s|$|and|or|group|order|limit|having)/,
+      ~r/section_id\s*=\s*'#{current_section_id}'(\s|$|and|or|group|order|limit|having)/,
+      ~r/section_id\s*=\s*"#{current_section_id}"(\s|$|and|or|group|order|limit|having)/
+    ]
+
+    section_filter_found = Enum.any?(section_id_patterns, fn pattern ->
+      Regex.match?(pattern, where_clause)
+    end)
+
+    if section_filter_found do
+      :ok
+    else
+      # Check if section_id is mentioned but with wrong value
+      if String.contains?(where_clause, "section_id") do
+        {:error, "Query contains section_id filter but with incorrect value. Must be: WHERE section_id = #{current_section_id}"}
+      else
+        {:error, "Query must filter results to the current section (WHERE section_id = #{current_section_id})"}
+      end
+    end
+  end
+
+  defp get_default_sql_query(section_id) do
+    """
+    SELECT
+      event_type,
+      count(*) as total_events,
+      uniq(user_id) as unique_users
+    FROM #{Oli.Analytics.AdvancedAnalytics.raw_events_table()}
+    WHERE section_id = #{section_id}
+    GROUP BY event_type
+    ORDER BY total_events DESC
+    LIMIT 10
+    """
+  end
+
+  defp get_default_vega_spec() do
+    """
+    {
+      "mark": {"type": "bar", "tooltip": true},
+      "encoding": {
+        "x": {
+          "field": "event_type",
+          "type": "nominal",
+          "title": "Event Type"
+        },
+        "y": {
+          "field": "total_events",
+          "type": "quantitative",
+          "title": "Total Events"
+        },
+        "color": {
+          "field": "total_events",
+          "type": "quantitative",
+          "scale": {"scheme": "blues"}
+        }
+      },
+      "width": 600,
+      "height": 300,
+      "title": "Event Distribution"
+    }
+    """
+  end
+
+  defp parse_query_result_and_create_spec(query_body, vega_spec_string) do
+    try do
+      # Parse the TSV data from the query result
+      data = parse_tsv_data(query_body)
+
+      # Convert data to the format expected by VegaLite (list of maps)
+      chart_data = case data do
+        [] ->
+          []
+        [header | rows] when is_list(header) ->
+          # If we got headers and rows, use the headers as keys
+          Enum.map(rows, fn row ->
+            header
+            |> Enum.zip(row)
+            |> Enum.into(%{})
+          end)
+        rows ->
+          # Try to infer column names from first row
+          case List.first(rows) do
+            [first | _] when is_binary(first) ->
+              # Try to detect if first row contains headers
+              if Regex.match?(~r/^[a-zA-Z_][a-zA-Z0-9_]*$/, first) do
+                # Looks like a header row
+                [header | data_rows] = rows
+                Enum.map(data_rows, fn row ->
+                  header
+                  |> Enum.zip(row)
+                  |> Enum.into(%{})
+                end)
+              else
+                # Generate generic column names
+                first_row = List.first(rows)
+                headers = Enum.with_index(first_row) |> Enum.map(fn {_, i} -> "col_#{i}" end)
+                Enum.map(rows, fn row ->
+                  headers
+                  |> Enum.zip(row)
+                  |> Enum.into(%{})
+                end)
+              end
+            _ ->
+              []
+          end
+      end
+
+      # Parse the VegaLite spec
+      base_spec = Jason.decode!(vega_spec_string)
+
+      # Inject the data into the spec
+      final_spec = Map.put(base_spec, "data", %{"values" => chart_data})
+
+      # Convert to VegaLite spec format
+      vega_spec = VegaLite.from_json(Jason.encode!(final_spec)) |> VegaLite.to_spec()
+
+      {:ok, vega_spec}
+    rescue
+      e ->
+        {:error, "Failed to parse data or create visualization: #{Exception.message(e)}"}
+    end
   end
 
   # Private functions moved from main module
@@ -623,6 +965,11 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
     end
   end
 
+  def get_analytics_data_and_spec("custom", _section_id) do
+    # For custom analytics, we don't preload data since users will provide their own queries
+    {[], []}
+  end
+
   def get_analytics_data_and_spec(_, _), do: {[], []}
 
   defp parse_tsv_data(body) when is_binary(body) do
@@ -639,17 +986,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
           not String.match?(line, ~r/^[\s\-\|]+$/)
         end)
         |> Enum.map(fn line ->
-          # Try splitting by tab first, then by pipe if only one field
-          fields =
-            case String.split(line, "\t") do
-              [single] ->
-                # Try splitting by pipe if only one field
-                String.split(single, "|")
-              list ->
-                list
-            end
-          # Trim whitespace from each field
-          Enum.map(fields, &String.trim/1)
+          String.split(line, "\t")
         end)
     end
   end
@@ -966,7 +1303,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
         "type": "rect",
         "tooltip": true,
         "stroke": "white",
-        "strokeWidth": 0
+        "strokeWidth": 0  // Set to 0 to avoid visible borders on heatmap cells
       },
       "encoding": {
         "x": {
@@ -999,6 +1336,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
         "color": {
           "field": "total_views",
           "type": "quantitative",
+          // Restored original color palette for consistency with other charts
           "scale": {
             "scheme": "blues",
             "type": "linear",
