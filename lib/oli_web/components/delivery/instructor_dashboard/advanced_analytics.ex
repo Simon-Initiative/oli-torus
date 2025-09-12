@@ -343,6 +343,9 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
                   <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
                     <h4 class="text-md font-semibold mb-3 text-gray-900 dark:text-white">Query Results</h4>
                     <%= case @custom_query_result do %>
+                      <% {:ok, %{body: body, execution_time_ms: execution_time}} -> %>
+                        <div class="text-green-600 dark:text-green-400 mb-3 text-sm">✓ Query executed successfully ({format_execution_time(execution_time)})</div>
+                        <pre class="bg-white dark:bg-gray-800 border rounded p-3 text-xs overflow-x-auto max-h-40"><%= body %></pre>
                       <% {:ok, %{body: body}} -> %>
                         <div class="text-green-600 dark:text-green-400 mb-3 text-sm">✓ Query executed successfully</div>
                         <pre class="bg-white dark:bg-gray-800 border rounded p-3 text-xs overflow-x-auto max-h-40"><%= body %></pre>
@@ -750,13 +753,13 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
     """
 
     case execute_analytics_query_json(query, "video analytics") do
-      {:ok, data} ->
+      {:ok, data, execution_time} ->
         Logger.info("Video analytics data: #{inspect(data, limit: :infinity)}")
 
         if length(data) > 0 do
           spec = create_video_completion_chart(data)
           Logger.info("Video analytics spec: #{inspect(spec, limit: :infinity)}")
-          charts = [%{title: "Video Completion Analysis", spec: spec}]
+          charts = [%{title: "Video Completion Analysis (#{format_execution_time(execution_time)})", spec: spec}]
           {data, charts}
         else
           # Create dummy data if no real data exists
@@ -767,7 +770,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
           ]
           spec = create_video_completion_chart(dummy_data)
           Logger.info("Using dummy video data")
-          charts = [%{title: "Video Completion Analysis", spec: spec}]
+          charts = [%{title: "Video Completion Analysis (#{format_execution_time(execution_time)})", spec: spec}]
           {dummy_data, charts}
         end
 
@@ -794,12 +797,12 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
     """
 
     case Oli.Analytics.AdvancedAnalytics.execute_query(query, "assessment analytics") do
-      {:ok, %{body: body}} ->
+      {:ok, %{body: body, execution_time_ms: execution_time}} ->
         data = parse_tsv_data(body)
 
         if length(data) > 0 do
           spec = create_assessment_performance_chart(data)
-          charts = [%{title: "Assessment Performance Analysis", spec: spec}]
+          charts = [%{title: "Assessment Performance Analysis (#{format_execution_time(execution_time)})", spec: spec}]
           {data, charts}
         else
           # Create dummy data
@@ -809,7 +812,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
             ["3", "52", "0.68", "28", "25"]
           ]
           spec = create_assessment_performance_chart(dummy_data)
-          charts = [%{title: "Assessment Performance Analysis", spec: spec}]
+          charts = [%{title: "Assessment Performance Analysis (#{format_execution_time(execution_time)})", spec: spec}]
           {dummy_data, charts}
         end
 
@@ -823,6 +826,108 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
     # Use default filters if called without filters
     get_engagement_analytics_with_filters(section_id, nil, nil, 25)
   end
+
+  def get_analytics_data_and_spec("performance", section_id) do
+    query = """
+      SELECT
+        if(scaled_score <= 0.2, '0-20%',
+           if(scaled_score <= 0.4, '21-40%',
+              if(scaled_score <= 0.6, '41-60%',
+                 if(scaled_score <= 0.8, '61-80%', '81-100%')))) as score_range,
+        count(*) as attempt_count,
+        avg(hints_requested) as avg_hints
+      FROM #{Oli.Analytics.AdvancedAnalytics.raw_events_table()}
+      WHERE section_id = #{section_id} AND event_type = 'part_attempt' AND scaled_score IS NOT NULL
+      GROUP BY score_range
+      ORDER BY score_range
+    """
+
+    case Oli.Analytics.AdvancedAnalytics.execute_query(query, "performance analytics") do
+      {:ok, %{body: body, execution_time_ms: execution_time}} ->
+        data = parse_tsv_data(body)
+
+        if length(data) > 0 do
+          spec = create_score_distribution_chart(data)
+          charts = [%{title: "Score Distribution Analysis (#{format_execution_time(execution_time)})", spec: spec}]
+          {data, charts}
+        else
+          # Create dummy data for score distribution
+          dummy_data = [
+            ["0-20%", "15", "2.8"],
+            ["21-40%", "42", "3.2"],
+            ["41-60%", "78", "2.1"],
+            ["61-80%", "124", "1.4"],
+            ["81-100%", "89", "0.6"]
+          ]
+          spec = create_score_distribution_chart(dummy_data)
+          Logger.info("Using dummy performance data")
+          charts = [%{title: "Score Distribution Analysis (#{format_execution_time(execution_time)})", spec: spec}]
+          {dummy_data, charts}
+        end
+
+      {:error, reason} ->
+        Logger.error("Performance analytics query failed: #{inspect(reason)}")
+        {[], []}
+    end
+  end
+
+  def get_analytics_data_and_spec("cross_event", section_id) do
+    query = """
+      SELECT
+        event_type,
+        count(*) as total_events,
+        uniq(user_id) as unique_users,
+        toYYYYMM(timestamp) as month
+      FROM #{Oli.Analytics.AdvancedAnalytics.raw_events_table()}
+      WHERE section_id = #{section_id}
+      GROUP BY event_type, month
+      ORDER BY month DESC, event_type
+      LIMIT 100
+    """
+
+    case Oli.Analytics.AdvancedAnalytics.execute_query(query, "cross-event analytics") do
+      {:ok, %{body: body, execution_time_ms: execution_time}} ->
+        data = parse_tsv_data(body)
+
+        if length(data) > 0 do
+          spec = create_event_timeline_chart(data)
+          charts = [%{title: "Event Timeline Analysis (#{format_execution_time(execution_time)})", spec: spec}]
+          {data, charts}
+        else
+          # Create dummy data for event timeline
+          dummy_data = [
+            ["video", "245", "35", "202409"],
+            ["page_viewed", "1567", "42", "202409"],
+            ["activity_attempt", "387", "38", "202409"],
+            ["part_attempt", "892", "38", "202409"],
+            ["video", "198", "33", "202408"],
+            ["page_viewed", "1234", "40", "202408"],
+            ["activity_attempt", "298", "35", "202408"],
+            ["part_attempt", "756", "35", "202408"],
+            ["video", "156", "28", "202407"],
+            ["page_viewed", "987", "35", "202407"],
+            ["activity_attempt", "234", "32", "202407"],
+            ["part_attempt", "623", "32", "202407"]
+          ]
+          spec = create_event_timeline_chart(dummy_data)
+          Logger.info("Using dummy cross-event data")
+          charts = [%{title: "Event Timeline Analysis (#{format_execution_time(execution_time)})", spec: spec}]
+          {dummy_data, charts}
+        end
+
+      {:error, reason} ->
+        Logger.error("Cross-event analytics query failed: #{inspect(reason)}")
+        {[], []}
+    end
+  end
+
+  def get_analytics_data_and_spec("custom", _section_id) do
+    # For custom analytics, we don't preload data since users will provide their own queries
+    {[], []}
+  end
+
+  def get_analytics_data_and_spec(_, _), do: {[], []}
+
 
   def get_engagement_analytics_with_filters(section_id, start_date, end_date, max_pages) do
     # Build date filter condition
@@ -871,17 +976,17 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
     """
 
     case execute_analytics_query_json(query, "engagement analytics") do
-      {:ok, data} ->
+      {:ok, data, main_query_time} ->
         Logger.info("Engagement analytics - got #{length(data)} rows")
 
         # Get heatmap data
-        heatmap_data = case execute_analytics_query_json(heatmap_query, "engagement heatmap") do
-          {:ok, heatmap_data} ->
+        {heatmap_data, heatmap_query_time} = case execute_analytics_query_json(heatmap_query, "engagement heatmap") do
+          {:ok, heatmap_data, heatmap_time} ->
             Logger.info("Engagement heatmap - got #{length(heatmap_data)} rows")
-            heatmap_data
+            {heatmap_data, heatmap_time}
           {:error, reason} ->
             Logger.error("Heatmap query failed: #{inspect(reason)}")
-            []
+            {[], 0}
         end
 
         if length(data) > 0 || length(heatmap_data) > 0 do
@@ -898,8 +1003,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
           }
 
           charts = [
-            %{title: "Page Engagement", spec: bar_spec},
-            %{title: "Activity Heatmap", spec: heatmap_spec}
+            %{title: "Page Engagement (#{format_execution_time(main_query_time)})", spec: bar_spec},
+            %{title: "Activity Heatmap (#{format_execution_time(heatmap_query_time)})", spec: heatmap_spec}
           ]
 
           {combined_data, charts}
@@ -938,8 +1043,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
           }
 
           charts = [
-            %{title: "Page Engagement", spec: bar_spec},
-            %{title: "Activity Heatmap", spec: heatmap_spec}
+            %{title: "Page Engagement (no data)", spec: bar_spec},
+            %{title: "Activity Heatmap (no data)", spec: heatmap_spec}
           ]
 
           Logger.info("Using dummy engagement data")
@@ -952,107 +1057,6 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
     end
   end
 
-  def get_analytics_data_and_spec("performance", section_id) do
-    query = """
-      SELECT
-        if(scaled_score <= 0.2, '0-20%',
-           if(scaled_score <= 0.4, '21-40%',
-              if(scaled_score <= 0.6, '41-60%',
-                 if(scaled_score <= 0.8, '61-80%', '81-100%')))) as score_range,
-        count(*) as attempt_count,
-        avg(hints_requested) as avg_hints
-      FROM #{Oli.Analytics.AdvancedAnalytics.raw_events_table()}
-      WHERE section_id = #{section_id} AND event_type = 'part_attempt' AND scaled_score IS NOT NULL
-      GROUP BY score_range
-      ORDER BY score_range
-    """
-
-    case Oli.Analytics.AdvancedAnalytics.execute_query(query, "performance analytics") do
-      {:ok, %{body: body}} ->
-        data = parse_tsv_data(body)
-
-        if length(data) > 0 do
-          spec = create_score_distribution_chart(data)
-          charts = [%{title: "Score Distribution Analysis", spec: spec}]
-          {data, charts}
-        else
-          # Create dummy data for score distribution
-          dummy_data = [
-            ["0-20%", "15", "2.8"],
-            ["21-40%", "42", "3.2"],
-            ["41-60%", "78", "2.1"],
-            ["61-80%", "124", "1.4"],
-            ["81-100%", "89", "0.6"]
-          ]
-          spec = create_score_distribution_chart(dummy_data)
-          Logger.info("Using dummy performance data")
-          charts = [%{title: "Score Distribution Analysis", spec: spec}]
-          {dummy_data, charts}
-        end
-
-      {:error, reason} ->
-        Logger.error("Performance analytics query failed: #{inspect(reason)}")
-        {[], []}
-    end
-  end
-
-  def get_analytics_data_and_spec("cross_event", section_id) do
-    query = """
-      SELECT
-        event_type,
-        count(*) as total_events,
-        uniq(user_id) as unique_users,
-        toYYYYMM(timestamp) as month
-      FROM #{Oli.Analytics.AdvancedAnalytics.raw_events_table()}
-      WHERE section_id = #{section_id}
-      GROUP BY event_type, month
-      ORDER BY month DESC, event_type
-      LIMIT 100
-    """
-
-    case Oli.Analytics.AdvancedAnalytics.execute_query(query, "cross-event analytics") do
-      {:ok, %{body: body}} ->
-        data = parse_tsv_data(body)
-
-        if length(data) > 0 do
-          spec = create_event_timeline_chart(data)
-          charts = [%{title: "Event Timeline Analysis", spec: spec}]
-          {data, charts}
-        else
-          # Create dummy data for event timeline
-          dummy_data = [
-            ["video", "245", "35", "202409"],
-            ["page_viewed", "1567", "42", "202409"],
-            ["activity_attempt", "387", "38", "202409"],
-            ["part_attempt", "892", "38", "202409"],
-            ["video", "198", "33", "202408"],
-            ["page_viewed", "1234", "40", "202408"],
-            ["activity_attempt", "298", "35", "202408"],
-            ["part_attempt", "756", "35", "202408"],
-            ["video", "156", "28", "202407"],
-            ["page_viewed", "987", "35", "202407"],
-            ["activity_attempt", "234", "32", "202407"],
-            ["part_attempt", "623", "32", "202407"]
-          ]
-          spec = create_event_timeline_chart(dummy_data)
-          Logger.info("Using dummy cross-event data")
-          charts = [%{title: "Event Timeline Analysis", spec: spec}]
-          {dummy_data, charts}
-        end
-
-      {:error, reason} ->
-        Logger.error("Cross-event analytics query failed: #{inspect(reason)}")
-        {[], []}
-    end
-  end
-
-  def get_analytics_data_and_spec("custom", _section_id) do
-    # For custom analytics, we don't preload data since users will provide their own queries
-    {[], []}
-  end
-
-  def get_analytics_data_and_spec(_, _), do: {[], []}
-
   # Helper function to execute analytics queries with JSON format for easier parsing
   defp execute_analytics_query_json(query, description) do
     # Add JSON format to the query
@@ -1063,12 +1067,22 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AdvancedAnalytics do
     end
 
     case Oli.Analytics.AdvancedAnalytics.execute_query(formatted_query, description) do
-      {:ok, %{body: body}} ->
-        {:ok, parse_json_each_row_data(body)}
+      {:ok, %{body: body, execution_time_ms: execution_time_ms}} ->
+        {:ok, parse_json_each_row_data(body), execution_time_ms}
       {:error, reason} ->
         {:error, reason}
     end
   end
+
+  # Helper function to format execution time for display
+  defp format_execution_time(time_ms) when is_number(time_ms) do
+    cond do
+      time_ms < 1 -> "< 1ms"
+      time_ms < 1000 -> "#{:erlang.float_to_binary(time_ms, decimals: 1)}ms"
+      true -> "#{:erlang.float_to_binary(time_ms / 1000, decimals: 2)}s"
+    end
+  end
+  defp format_execution_time(_), do: "unknown"
 
   defp parse_json_each_row_data(body) when is_binary(body) do
     Logger.info("=== JSON PARSING DEBUG ===")
