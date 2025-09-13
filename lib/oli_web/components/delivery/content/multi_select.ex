@@ -99,6 +99,7 @@ defmodule OliWeb.Delivery.Content.MultiSelect do
               phx-target={@target}
               phx-value={@selected_ids}
               disabled={@disabled}
+              data-event={@submit_event}
             >
               Apply
             </button>
