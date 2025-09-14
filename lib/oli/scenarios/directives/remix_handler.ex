@@ -8,8 +8,8 @@ defmodule Oli.Scenarios.Directives.RemixHandler do
   alias Oli.Scenarios.DirectiveTypes.ExecutionState
   alias Oli.Scenarios.Engine
   alias Oli.Publishing
-  alias Oli.Publishing.DeliveryResolver
-  alias Oli.Delivery.{Hierarchy, Sections}
+  alias Oli.Delivery.Remix
+  alias Oli.Delivery.Remix
 
   def handle(
         %RemixDirective{from: from, resource: resource_title, section: section_name, to: to},
@@ -55,21 +55,19 @@ defmodule Oli.Scenarios.Directives.RemixHandler do
             pub
         end
 
-      # Get the section's current hierarchy as HierarchyNode structs
-      hierarchy = DeliveryResolver.full_hierarchy(section.slug)
+      # Initialize Remix state (auth-agnostic; assume current_author is authorized)
+      {:ok, remix_state} = Remix.init(section, state.current_author)
 
-      # Find the target container in the hierarchy
-      # Special case: "root" refers to the top-level container
-      target_container =
-        if to == "root" do
-          hierarchy
-        else
-          find_node_by_title(hierarchy, to)
+      # Select target container
+      remix_state =
+        case to do
+          "root" -> remix_state
+          _ ->
+            node = find_node_by_title(remix_state.hierarchy, to)
+            if node == nil, do: raise("Target container '#{to}' not found in section hierarchy")
+            {:ok, remix_state} = Remix.select_active(remix_state, node.uuid)
+            remix_state
         end
-
-      if !target_container do
-        raise "Target container '#{to}' not found in section hierarchy"
-      end
 
       # Get published resources for this publication
       published_resources_by_resource_id =
@@ -78,31 +76,12 @@ defmodule Oli.Scenarios.Directives.RemixHandler do
       # Create selection tuple like RemixUI does
       selection = [{publication.id, resource_id}]
 
-      # Use Hierarchy.add_materials_to_hierarchy to properly add the content
-      updated_hierarchy =
-        Hierarchy.add_materials_to_hierarchy(
-          hierarchy,
-          target_container,
-          selection,
-          published_resources_by_resource_id
-        )
-        |> Hierarchy.finalize()
+      # Use Remix.add_materials to update state
+      {:ok, remix_state} =
+        Remix.add_materials(remix_state, selection, published_resources_by_resource_id)
 
-      # Get current pinned project publications for the section
-      pinned_project_publications = Sections.get_pinned_project_publications(section.id)
-
-      # Update pinned publications to include the source project if not already there
-      updated_pinned_publications =
-        if Map.has_key?(pinned_project_publications, source_project.project.id) do
-          pinned_project_publications
-        else
-          Map.put(pinned_project_publications, source_project.project.id, publication)
-        end
-
-      # Rebuild the section curriculum with the modified hierarchy
-      Sections.rebuild_section_curriculum(section, updated_hierarchy, updated_pinned_publications)
-
-      refreshed_section = Sections.get_section!(section.id)
+      # Persist via Remix.save/1
+      {:ok, refreshed_section} = Remix.save(remix_state)
 
       # Update state with the refreshed section or product
       updated_state =
