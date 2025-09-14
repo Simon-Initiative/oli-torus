@@ -105,3 +105,9 @@ MnesiaCore.nonode@nohost_1698_943806_800396
 .cursor/mcp.json
 .cursor/rules/user-custom-rules.mdc
 .cursor/rules/oli.mdc
+.codex/log/
+.codex/sessions/
+.codex/auth.json
+.codex/config.toml
+.codex/history.jsonl
+.codex/version.json
