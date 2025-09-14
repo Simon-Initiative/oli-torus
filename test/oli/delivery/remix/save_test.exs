@@ -11,10 +11,26 @@ defmodule Oli.Delivery.Remix.SaveTest do
     author = insert(:author)
     project = insert(:project, authors: [author])
 
-    page = insert(:revision, %{resource_type_id: Oli.Resources.ResourceType.id_for_page(), title: "P"})
-    root = insert(:revision, %{resource_type_id: Oli.Resources.ResourceType.id_for_container(), title: "Root", children: [page.resource_id]})
+    page =
+      insert(:revision, %{resource_type_id: Oli.Resources.ResourceType.id_for_page(), title: "P"})
+
+    root =
+      insert(:revision, %{
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
+        title: "Root",
+        children: [page.resource_id]
+      })
+
     pub = insert(:publication, %{project: project, root_resource_id: root.resource_id})
-    Enum.each([root, page], fn r -> insert(:published_resource, %{publication: pub, resource: r.resource, revision: r, author: author}) end)
+
+    Enum.each([root, page], fn r ->
+      insert(:published_resource, %{
+        publication: pub,
+        resource: r.resource,
+        revision: r,
+        author: author
+      })
+    end)
 
     section = insert(:section, base_project: project)
     {:ok, _} = Sections.create_section_resources(section, pub)
@@ -30,4 +46,3 @@ defmodule Oli.Delivery.Remix.SaveTest do
     assert sr.hidden == true
   end
 end
-

@@ -61,7 +61,9 @@ defmodule Oli.Scenarios.Directives.RemixHandler do
       # Select target container
       remix_state =
         case to do
-          "root" -> remix_state
+          "root" ->
+            remix_state
+
           _ ->
             node = find_node_by_title(remix_state.hierarchy, to)
             if node == nil, do: raise("Target container '#{to}' not found in section hierarchy")

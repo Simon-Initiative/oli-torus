@@ -284,6 +284,7 @@ defmodule OliWeb.Delivery.RemixSection do
     destination_index = String.to_integer(drop_index)
 
     {:ok, state} = Remix.reorder(state, source_index, destination_index)
+
     {:noreply,
      assign(socket,
        remix_state: state,
@@ -719,7 +720,12 @@ defmodule OliWeb.Delivery.RemixSection do
 
     {:noreply,
      socket
-     |> assign(hierarchy: state.hierarchy, active: state.active, has_unsaved_changes: true, remix_state: state)
+     |> assign(
+       hierarchy: state.hierarchy,
+       active: state.active,
+       has_unsaved_changes: true,
+       remix_state: state
+     )
      |> hide_modal(modal_assigns: nil)}
   end
 
@@ -758,7 +764,12 @@ defmodule OliWeb.Delivery.RemixSection do
 
     {:noreply,
      socket
-     |> assign(hierarchy: state.hierarchy, active: state.active, has_unsaved_changes: true, remix_state: state)
+     |> assign(
+       hierarchy: state.hierarchy,
+       active: state.active,
+       has_unsaved_changes: true,
+       remix_state: state
+     )
      |> hide_modal(modal_assigns: nil)}
   end
 
@@ -797,7 +808,12 @@ defmodule OliWeb.Delivery.RemixSection do
 
     {:noreply,
      socket
-     |> assign(hierarchy: state.hierarchy, active: state.active, has_unsaved_changes: true, remix_state: state)
+     |> assign(
+       hierarchy: state.hierarchy,
+       active: state.active,
+       has_unsaved_changes: true,
+       remix_state: state
+     )
      |> hide_modal(modal_assigns: nil)}
   end
 

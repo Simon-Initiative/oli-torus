@@ -11,8 +11,11 @@ defmodule Oli.Delivery.Remix.OpsTest do
     author = insert(:author)
     project = insert(:project, authors: [author])
 
-    page1 = insert(:revision, %{resource_type_id: Oli.Resources.ResourceType.id_for_page(), title: "P1"})
-    page2 = insert(:revision, %{resource_type_id: Oli.Resources.ResourceType.id_for_page(), title: "P2"})
+    page1 =
+      insert(:revision, %{resource_type_id: Oli.Resources.ResourceType.id_for_page(), title: "P1"})
+
+    page2 =
+      insert(:revision, %{resource_type_id: Oli.Resources.ResourceType.id_for_page(), title: "P2"})
 
     root =
       insert(:revision, %{
@@ -22,14 +25,25 @@ defmodule Oli.Delivery.Remix.OpsTest do
       })
 
     pub = insert(:publication, %{project: project, root_resource_id: root.resource_id})
+
     Enum.each([root, page1, page2], fn r ->
-      insert(:published_resource, %{publication: pub, resource: r.resource, revision: r, author: author})
+      insert(:published_resource, %{
+        publication: pub,
+        resource: r.resource,
+        revision: r,
+        author: author
+      })
     end)
 
     section = insert(:section, base_project: project, title: "S1")
     {:ok, _} = Sections.create_section_resources(section, pub)
 
-    {:ok, state: (fn -> {:ok, s} = Remix.init(section, author); s end).()}
+    {:ok,
+     state:
+       (fn ->
+          {:ok, s} = Remix.init(section, author)
+          s
+        end).()}
   end
 
   test "reorder preserves multiset and updates order", %{state: state} do
@@ -57,17 +71,34 @@ defmodule Oli.Delivery.Remix.OpsTest do
 
     {:ok, state} = Remix.toggle_hidden(state, target_uuid)
     sr_after = find_sr(state.hierarchy, target_uuid)
-    assert (sr_before && sr_after) && sr_after.hidden != hidden_before
+    assert sr_before && sr_after && sr_after.hidden != hidden_before
   end
 
   test "add_materials appends from other publication", %{state: state} do
     # create another project/pub with one page
     author = insert(:author)
     proj = insert(:project, authors: [author])
-    page = insert(:revision, %{resource_type_id: Oli.Resources.ResourceType.id_for_page(), title: "NP"})
-    root = insert(:revision, %{resource_type_id: Oli.Resources.ResourceType.id_for_container(), title: "R2", children: [page.resource_id]})
+
+    page =
+      insert(:revision, %{resource_type_id: Oli.Resources.ResourceType.id_for_page(), title: "NP"})
+
+    root =
+      insert(:revision, %{
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
+        title: "R2",
+        children: [page.resource_id]
+      })
+
     pub = insert(:publication, %{project: proj, root_resource_id: root.resource_id})
-    Enum.each([root, page], fn r -> insert(:published_resource, %{publication: pub, resource: r.resource, revision: r, author: author}) end)
+
+    Enum.each([root, page], fn r ->
+      insert(:published_resource, %{
+        publication: pub,
+        resource: r.resource,
+        revision: r,
+        author: author
+      })
+    end)
 
     pr_by_pub = Publishing.get_published_resources_for_publications([pub.id])
     sel = [{pub.id, page.resource_id}]
@@ -86,4 +117,3 @@ defmodule Oli.Delivery.Remix.OpsTest do
     end
   end
 end
-

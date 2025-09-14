@@ -19,7 +19,13 @@ defmodule Oli.Delivery.Remix.InitTest do
         })
 
       pub = insert(:publication, %{project: project, root_resource_id: root.resource_id})
-      insert(:published_resource, %{publication: pub, resource: root.resource, revision: root, author: author})
+
+      insert(:published_resource, %{
+        publication: pub,
+        resource: root.resource,
+        revision: root,
+        author: author
+      })
 
       section = insert(:section, base_project: project, title: "S1")
       {:ok, _} = Sections.create_section_resources(section, pub)
@@ -32,4 +38,3 @@ defmodule Oli.Delivery.Remix.InitTest do
     end
   end
 end
-

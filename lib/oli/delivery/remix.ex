@@ -248,8 +248,10 @@ defmodule Oli.Delivery.Remix do
   end
 
   defp container_revision?(nil), do: false
+
   defp container_revision?(%{revision: rev}) when is_map(rev) do
     rev.resource_type_id == Oli.Resources.ResourceType.id_for_container()
   end
+
   defp container_revision?(_), do: false
 end
