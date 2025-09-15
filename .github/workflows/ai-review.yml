@@ -193,7 +193,8 @@ jobs:
 
           # Prepare Codex config dir in a writable temp location
           export XDG_CONFIG_HOME="${RUNNER_TEMP}/codex-config"
-          mkdir -p "$XDG_CONFIG_HOME"
+          export HOME="${RUNNER_TEMP}/codex-home"
+          mkdir -p "$XDG_CONFIG_HOME/codex" "$HOME/.config/codex"
 
           # Determine API key from either OPENAI_API_KEY or OPENAI_KEY
           KEY="${OPENAI_API_KEY:-${OPENAI_KEY:-}}"
@@ -201,7 +202,11 @@ jobs:
           echo "Codex binary: $(command -v codex || echo 'not found')"
           codex --version || true
 
-          codex login --api-key "$KEY" || true
+          # Try login; if it errors with ENOENT again, log dirs to help debug
+          if ! codex login --api-key "$KEY" 2> ai/${ROLE}.login.err; then
+            echo "Codex login failed; dumping debug of config dirs:"; ls -la "$XDG_CONFIG_HOME" || true; ls -la "$XDG_CONFIG_HOME/codex" || true; ls -la "$HOME/.config/codex" || true
+            echo "Codex login stderr:"; sed -n '1,200p' ai/${ROLE}.login.err || true
+          fi
 
           codex exec --full-auto < ai/prompt.${ROLE}.txt > ai/${ROLE}.raw.txt || true
 
