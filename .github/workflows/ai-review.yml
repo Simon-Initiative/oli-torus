@@ -149,15 +149,7 @@ jobs:
             echo "---DIFF END---";
           } > ai/prompt.${ROLE}.txt
 
-          echo "DIFF size (bytes): $(wc -c < diff.patch || echo 0)"
-          echo "PROMPT size (bytes): $(wc -c < ai/prompt.${ROLE}.txt || echo 0)"
-
-          echo "::group::AI Prompt (${ROLE}) — first 4000 bytes"
-          head -c 4000 ai/prompt.${ROLE}.txt || true; echo
-          echo "..."
-          echo "AI Prompt (${ROLE}) — last 2000 bytes"
-          tail -c 2000 ai/prompt.${ROLE}.txt || true; echo
-          echo "::endgroup::"
+          # Debug output suppressed for cleaner logs
 
           # Run Codex reviewer (non-streaming output). Some versions don't support --no-stream;
           # relying on default behavior with --stdin and --format json.
@@ -195,13 +187,7 @@ jobs:
 
           codex exec --full-auto --skip-git-repo-check < ai/prompt.${ROLE}.txt > ai/${ROLE}.raw.txt || true
 
-          echo "RAW size (bytes): $(wc -c < ai/${ROLE}.raw.txt || echo 0)"
-          echo "::group::AI Raw Output (${ROLE}) — first 4000 bytes"
-          head -c 4000 ai/${ROLE}.raw.txt || true; echo
-          echo "..."
-          echo "AI Raw Output (${ROLE}) — last 2000 bytes"
-          tail -c 2000 ai/${ROLE}.raw.txt || true; echo
-          echo "::endgroup::"
+          # Debug output suppressed for cleaner logs
 
           # Extract the first JSON object from output robustly.
           node -e '
@@ -229,20 +215,59 @@ jobs:
             if(!["pass","warn","fail"].includes(s.verdict)) process.exit(3);
           '
 
+      - name: Post per-role review comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const role = `"${{ matrix.role }}"`.replace(/"/g,'');
+            const path = `ai/${role}.json`;
+            const data = JSON.parse(fs.readFileSync(path, 'utf8'));
+            const findings = Array.isArray(data.findings) ? data.findings : [];
+            const header = `<!-- ai-review:${role} -->\n### AI Review — ${role}\nVerdict: \`${data.verdict}\` (conf ${data.confidence})`;
+            const summary = data.summary ? `\n\n${data.summary}\n` : "\n";
+            const lines = [header, summary];
+            if (findings.length) {
+              lines.push("\n**Findings**\n");
+              for (const f of findings) {
+                const sev = f.severity || "";
+                const loc = `${f.path || "?"}:${f.line || "?"}`;
+                const title = f.title || "(no title)";
+                lines.push(`- ${sev} ${loc} — ${title}`);
+                if (f.advice) lines.push(`  > ${String(f.advice).replace(/\n/g, ' ')}`);
+              }
+            } else {
+              lines.push("\n_(no findings)_\n");
+            }
+            const body = lines.join("\n");
+            // Upsert a single sticky comment per role
+            const { data: comments } = await github.rest.issues.listComments({
+              ...context.repo,
+              issue_number: context.issue.number,
+              per_page: 100
+            });
+            const marker = `<!-- ai-review:${role} -->`;
+            const existing = comments.find(c => c.user && c.user.type === 'Bot' && typeof c.body === 'string' && c.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                ...context.repo,
+                comment_id: existing.id,
+                body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                ...context.repo,
+                issue_number: context.issue.number,
+                body
+              });
+            }
+
       - uses: actions/upload-artifact@v4
         with:
           name: ai-results-${{ matrix.role }}
           path: ai/${{ matrix.role }}.json
           if-no-files-found: error
 
-      - name: Upload AI debug artifacts (prompt + raw)
-        uses: actions/upload-artifact@v4
-        with:
-          name: ai-debug-${{ matrix.role }}
-          path: |
-            ai/prompt.${{ matrix.role }}.txt
-            ai/${{ matrix.role }}.raw.txt
-          if-no-files-found: warn
 
       - name: Ensure no repo changes (tracked files only)
         run: |
@@ -259,6 +284,8 @@ jobs:
           pattern: ai-results-*
           path: ai
           merge-multiple: true
+
+      # Aggregate job retained only to collect artifacts. No summary comment or gating.
 
       - uses: actions/download-artifact@v4
         with:
@@ -340,12 +367,3 @@ jobs:
               }
             }
           '
-
-      - name: Fail or pass the check
-        run: |
-          s=$(jq -r .status < ai/verdict.json)
-          echo "AI review status: ${s}"
-          if [ "$s" != "pass" ]; then
-            echo "Hard fail criteria met (see AI Review Summary)."
-            exit 1
-          fi
