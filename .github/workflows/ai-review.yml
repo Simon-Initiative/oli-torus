@@ -119,6 +119,8 @@ jobs:
         with:
           name: ai-results
           path: ai/${{ matrix.role }}.json
+          if-no-files-found: error
+          overwrite: true
 
       - name: Ensure no repo changes (tracked files only)
         run: |
@@ -131,7 +133,9 @@ jobs:
     needs: [specialist]
     steps:
       - uses: actions/download-artifact@v4
-        with: { name: ai-results, path: ai }
+        with:
+          name: ai-results
+          path: ai
 
       - name: Aggregate & decide
         id: agg
