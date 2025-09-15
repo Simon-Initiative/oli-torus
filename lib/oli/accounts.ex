@@ -344,8 +344,6 @@ defmodule Oli.Accounts do
     # an LTI user can be enrolled in multiple sections, but all sections must be from
     # the same institution.
 
-    IO.inspect("testing")
-
     results =
       from(e in Enrollment,
         join: s in Section,
