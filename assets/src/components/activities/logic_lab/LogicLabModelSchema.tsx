@@ -160,7 +160,7 @@ export type LabActivity = {
  * @returns The maximum points for the activity.
  */
 export const maxPoints = (activity: LabActivity | unknown): number => {
-  return isLabActivity(activity) ? (activity.spec.maximumScore ?? 1) : 1;
+  return isLabActivity(activity) ? activity.spec.maximumScore ?? 1 : 1;
 };
 
 /**
