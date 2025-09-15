@@ -50,6 +50,7 @@ jobs:
         run: |
           set -euo pipefail
           ROLE="${{ matrix.role }}"
+          export ROLE
 
           {
             echo "You are a specialist reviewer for ${ROLE}.";
@@ -84,9 +85,10 @@ jobs:
           node -e '
             const fs=require("fs");
             const role=process.env.ROLE;
+            if(!role){ console.error("ROLE env missing"); process.exit(2); }
             const raw=fs.readFileSync(`ai/${role}.raw.txt`,`utf8`);
             const m=raw.match(/\{[\s\S]*?\}/);
-            if(!m){ process.exit(2) }
+            if(!m){ console.error("No JSON object found in output"); process.exit(2) }
             fs.writeFileSync(`ai/${role}.json`, m[0]);
           '
 
