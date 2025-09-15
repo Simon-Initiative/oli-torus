@@ -75,7 +75,9 @@ jobs:
             echo "---DIFF END---";
           } > ai/prompt.${ROLE}.txt
 
-          codex exec --no-stream --stdin --format json < ai/prompt.${ROLE}.txt > ai/${ROLE}.raw.txt
+          # Run Codex reviewer (non-streaming output). Some versions don't support --no-stream;
+          # relying on default behavior with --stdin and --format json.
+          codex exec --stdin --format json < ai/prompt.${ROLE}.txt > ai/${ROLE}.raw.txt
 
           # Extract the first JSON object from output robustly.
           node -e '
