@@ -4,6 +4,7 @@ defmodule OliWeb.Common.Monaco do
   alias Oli.Utils.SchemaResolver
 
   attr(:id, :string)
+  attr(:class, :string, default: nil)
   attr(:language, :string)
   attr(:default_value, :string)
   attr(:width, :string, default: "100%")
@@ -18,6 +19,7 @@ defmodule OliWeb.Common.Monaco do
   attr(:target, :any, default: nil)
   attr(:get_value, :any, default: nil)
   attr(:use_code_lenses, :list, default: nil)
+  attr(:resizable, :boolean, default: false)
 
   def editor(assigns) do
     ~H"""
@@ -25,6 +27,7 @@ defmodule OliWeb.Common.Monaco do
       id={@id}
       phx-hook="MonacoEditor"
       phx-update="ignore"
+      class={if @resizable, do: "resize overflow-auto border border-gray-300 min-h-[400px] h-96 w-full #{@class}", else: @class}
       data-language={encode_attr(@language)}
       data-schema-uri={encode_attr(@validate_schema_uri)}
       data-schemas={if @validate_schema_uri, do: encode_attr(SchemaResolver.all())}
@@ -40,6 +43,7 @@ defmodule OliWeb.Common.Monaco do
       data-set-value={encode_attr(@set_value)}
       data-get-value={encode_attr(@get_value)}
       data-use-code-lenses={if @use_code_lenses, do: encode_attr(@use_code_lenses)}
+      data-resizable={encode_attr(@resizable)}
     >
       <div class="text-center">
         <div class="spinner-border text-secondary" role="status">

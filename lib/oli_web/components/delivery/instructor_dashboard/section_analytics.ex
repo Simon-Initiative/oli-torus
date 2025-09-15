@@ -354,8 +354,10 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
                   <div class="mb-3">
                     <Monaco.editor
                       id="custom-sql-editor"
+                      class="min-w-full max-w-full"
                       language="sql"
                       height="200px"
+                      resizable={true}
                       default_value={@custom_sql_query || get_default_sql_query(@section.id)}
                       default_options={%{
                         "readOnly" => false,
@@ -412,8 +414,10 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
                   <div class="mb-3">
                     <Monaco.editor
                       id="custom-vega-editor"
+                      class="min-w-full max-w-full"
                       language="json"
                       height="300px"
+                      resizable={true}
                       default_value={@custom_vega_spec || get_default_vega_spec()}
                       default_options={%{
                         "readOnly" => false,
@@ -560,8 +564,10 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
                       <div class="mt-2 p-3 bg-white dark:bg-gray-800 rounded border">
                         <Monaco.editor
                           id={"raw-data-#{@selected_analytics_category}"}
+                          class="min-w-full max-w-full"
                           language="elixir"
                           height="300px"
+                          resizable={true}
                           default_value={inspect(@analytics_data, pretty: true, limit: :infinity)}
                           default_options={%{
                             "readOnly" => true,
