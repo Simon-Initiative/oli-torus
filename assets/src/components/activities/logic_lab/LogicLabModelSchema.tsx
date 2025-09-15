@@ -49,6 +49,8 @@ export interface LogicLabModelSchema extends ActivityModelSchema {
   context?: ContextInfo;
   authoring: {
     version: 1;
+    // TODO possibly extend parts to correspond to lab activity objectives?
+    // However, parts is currently reserved in case an activity set type has to be implemented.
     parts: Part[]; // required in use
     transformations: Transformation[];
     previewText: string;
@@ -157,8 +159,8 @@ export type LabActivity = {
  * @param activity The LabActivity.
  * @returns The maximum points for the activity.
  */
-export const maxPoints = (activity: LabActivity): number => {
-  return activity?.spec?.maximumScore ?? 1;
+export const maxPoints = (activity: LabActivity | unknown): number => {
+  return isLabActivity(activity) ? (activity.spec.maximumScore ?? 1) : 1;
 };
 
 /**
@@ -166,6 +168,6 @@ export const maxPoints = (activity: LabActivity): number => {
  * @param activity - The activity to check.
  * @returns True if the activity is a LabActivity, false otherwise.
  */
-export function isLabActivity(activity: unknown): activity is LabActivity {
+export function isLabActivity(activity: LabActivity | unknown): activity is LabActivity {
   return !!activity && typeof activity == 'object' && 'id' in activity && 'spec' in activity;
 }

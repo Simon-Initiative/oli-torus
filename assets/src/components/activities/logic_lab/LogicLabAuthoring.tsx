@@ -135,12 +135,15 @@ const updateActivity =
       makeUndoable('Set LogicLab activity', [
         Operations.replace('$.activity', clone(model.activity)),
         Operations.setKey('$.authoring', 'source', model.authoring.source),
+        Operations.setKey('$.authoring.parts[0]', 'outOf', maxPoints(model.activity)),
       ]),
     );
     Operations.apply(model, Operations.replace('$.activity', activity));
     Operations.apply(model, Operations.setKey('$.authoring', 'source', source));
-    // TODO set maxPoints in authoring to activity.spec.maximumScore
-    const _maxPoints = maxPoints(activity);
+    Operations.apply(
+      model,
+      Operations.setKey('$.authoring.parts[0]', 'outOf', maxPoints(activity)),
+    );
   };
 
 // Check fetch response for bad responses statuses and throws if needed.
