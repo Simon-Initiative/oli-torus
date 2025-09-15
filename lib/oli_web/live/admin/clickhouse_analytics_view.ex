@@ -1,7 +1,7 @@
 defmodule OliWeb.Admin.ClickHouseAnalyticsView do
   use OliWeb, :live_view
 
-  alias Oli.Analytics.AdvancedAnalytics
+  alias Oli.Analytics.ClickhouseAnalytics
   alias OliWeb.Common.Breadcrumb
   require Logger
 
@@ -9,7 +9,7 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
   on_mount OliWeb.LiveSessionPlugs.SetCtx
 
   def mount(_, _, socket) do
-    sample_queries = AdvancedAnalytics.sample_analytics_queries()
+    sample_queries = ClickhouseAnalytics.sample_analytics_queries()
 
     {:ok, assign(socket,
       title: "ClickHouse Analytics",
@@ -140,7 +140,7 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
   end
 
   def handle_event("health_check", _params, socket) do
-    health_status = AdvancedAnalytics.health_check()
+    health_status = ClickhouseAnalytics.health_check()
     {:noreply, assign(socket, health_status: health_status)}
   end
 
@@ -160,12 +160,12 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
 
     result = case selected_query do
       "custom" ->
-        AdvancedAnalytics.execute_query(custom_query, "Custom Query")
+        ClickhouseAnalytics.execute_query(custom_query, "Custom Query")
       query_name when query_name != "" ->
         query_name_atom = String.to_existing_atom(query_name)
         query_data = socket.assigns.sample_queries[query_name_atom]
         query_text = if is_map(query_data), do: query_data.query, else: query_data
-        AdvancedAnalytics.execute_query(query_text, query_name_atom)
+        ClickhouseAnalytics.execute_query(query_text, query_name_atom)
       _ ->
         {:error, "No query selected"}
     end
@@ -181,14 +181,14 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
     query_text = if is_map(query_data), do: query_data.query, else: query_data
 
     socket = assign(socket, executing: true)
-    result = AdvancedAnalytics.execute_query(query_text, query_name_atom)
+    result = ClickhouseAnalytics.execute_query(query_text, query_name_atom)
 
     {:noreply, assign(socket, query_result: result, executing: false)}
   end
 
   def handle_event("run_custom_query", %{"custom_query" => query}, socket) do
     socket = assign(socket, executing: true, custom_query: query)
-    result = AdvancedAnalytics.execute_query(query, "Custom Query")
+    result = ClickhouseAnalytics.execute_query(query, "Custom Query")
 
     # Preserve the custom query text after execution
     {:noreply, assign(socket, query_result: result, executing: false, custom_query: query)}
@@ -198,7 +198,7 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
     sample_options =
       sample_queries
       |> Enum.map(fn {key, _query_data} ->
-        {Atom.to_string(key), AdvancedAnalytics.humanize_query_name(key)}
+        {Atom.to_string(key), ClickhouseAnalytics.humanize_query_name(key)}
       end)
       |> Enum.sort_by(fn {_key, label} -> label end)
 

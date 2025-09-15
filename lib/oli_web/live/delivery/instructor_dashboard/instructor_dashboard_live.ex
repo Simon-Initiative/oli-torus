@@ -243,7 +243,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         analytics_data: nil,
         analytics_spec: nil,
         comprehensive_section_analytics:
-          Oli.Analytics.AdvancedAnalytics.comprehensive_section_analytics(
+          Oli.Analytics.ClickhouseAnalytics.comprehensive_section_analytics(
             socket.assigns.section.id
           )
       )
@@ -816,18 +816,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       _ ->
         # Delegate to the component's analytics functions for other categories
         OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics.get_analytics_data_and_spec(category, section_id)
-    end
-  end
-
-  defp get_analytics_data_and_spec_with_filters(category, section_id, start_date, end_date, max_pages) do
-    # For engagement analytics, use filters if provided
-    case category do
-      "engagement" ->
-        # Get resource title map for engagement analytics
-        resource_title_map = OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics.load_resource_title_map(section_id)
-        OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics.get_engagement_analytics_with_filters(section_id, start_date, end_date, max_pages, resource_title_map)
-      _ ->
-        get_analytics_data_and_spec(category, section_id)
     end
   end
 

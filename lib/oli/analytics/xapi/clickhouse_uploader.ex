@@ -7,7 +7,7 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
 
   alias Oli.Analytics.XAPI.StatementBundle
   alias Oli.HTTP
-  alias Oli.Analytics.AdvancedAnalytics
+  alias Oli.Analytics.ClickhouseAnalytics
 
   require Logger
 
@@ -313,7 +313,7 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
   end
 
   defp build_raw_events_insert_query() do
-    raw_events_table = AdvancedAnalytics.raw_events_table()
+    raw_events_table = ClickhouseAnalytics.raw_events_table()
 
     """
     INSERT INTO #{raw_events_table} (

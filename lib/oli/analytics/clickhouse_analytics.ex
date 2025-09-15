@@ -1,4 +1,4 @@
-defmodule Oli.Analytics.AdvancedAnalytics do
+defmodule Oli.Analytics.ClickhouseAnalytics do
   @moduledoc """
   Provides advanced analytics capabilities for events stored in ClickHouse.
 
