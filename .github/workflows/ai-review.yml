@@ -119,6 +119,7 @@ jobs:
           IS_FORK: ${{ github.event.pull_request.head.repo.fork }}
         run: |
           set -euo pipefail
+          mkdir -p ai
           ROLE="${{ matrix.role }}"
           export ROLE
 
