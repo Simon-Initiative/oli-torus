@@ -83,6 +83,7 @@ rules:
       - "lib/oli_web/plugs/**"
       - "lib/oli_web/user_auth.ex"
       - "lib/oli/accounts/**"
+      - "lib/oli/accounts.ex"
 
   - key: caching_depot
     weight: 3
