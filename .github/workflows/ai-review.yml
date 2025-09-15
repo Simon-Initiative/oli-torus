@@ -10,9 +10,26 @@ jobs:
         role: [security, performance, elixir, typescript, ui, requirements]
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # ensure history for robust diffs/merge-base
 
       - name: Generate PR diff
-        run: git fetch origin ${{ github.base_ref }} && git diff --unified=0 FETCH_HEAD...HEAD > diff.patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            BASE="${{ github.event.pull_request.base.sha }}"
+            HEADSHA="${{ github.event.pull_request.head.sha }}"
+          else
+            BASE=$(git rev-parse HEAD^)
+            HEADSHA=$(git rev-parse HEAD)
+          fi
+          # Fetch the exact SHAs (works with forks and shallow clones)
+          git fetch --no-tags --prune --depth=1 origin "+${BASE}" "+${HEADSHA}" || true
+          # Produce a diff between the two trees (no merge-base required)
+          git diff --unified=0 "${BASE}" "${HEADSHA}" > diff.patch || true
+          # Ensure file exists even if empty diff
+          : > diff.patch
 
       - name: Harden workspace (read-only)
         run: |

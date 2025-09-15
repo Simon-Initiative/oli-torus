@@ -1,4 +1,4 @@
-import { danger, fail, warn, markdown } from "danger"
+import { danger, fail, warn, markdown, schedule } from "danger"
 import fs from "node:fs"
 import yaml from "js-yaml"
 import micromatch from "micromatch"
@@ -58,10 +58,16 @@ try {
   const low = cfg.thresholds?.low ?? 3
   const tier = score >= high ? "high" : score > low ? "medium" : "low"
 
-  await danger.github.api.issues.addLabels({
-    ...danger.github.thisPR,
-    issue_number: danger.github.thisPR.number,
-    labels: [`risk/${tier}`],
+  schedule(async () => {
+    try {
+      await danger.github.api.issues.addLabels({
+        ...danger.github.thisPR,
+        issue_number: danger.github.thisPR.number,
+        labels: [`risk/${tier}`],
+      })
+    } catch (e) {
+      warn(`Could not add risk label: ${String(e)}`)
+    }
   })
 
   markdown(`**Risk score:** ${score} → \`risk/${tier}\``)
