@@ -187,42 +187,107 @@ jobs:
         with:
           script: |
             const fs = require('fs');
+
             const role = `"${{ matrix.role }}"`.replace(/"/g,'');
-            const header = `<!-- ai-review:${role} -->\n### AI Review — ${role}`;
+            const headerMarker = `<!-- ai-review:${role} -->`;
+            const headerTitle = `### AI Review — ${role}`;
+            const header = `${headerMarker}\n${headerTitle}`;
+            const MAX_BODY = 65000;
+
+            // Remove a single outer ``` code fence if present
+            function stripOuterCodeFence(s) {
+              const m = s.match(/^```[\w-]*\n([\s\S]*?)\n```$/);
+              return m ? m[1].trim() : (s ?? '').trim();
+            }
+
+            // Accept variations: FINDINGS_START / findings start / findings-start / findings_start
+            function extractBetweenSentinels(s) {
+              const startRe = /<!--\s*findings(?:\s*|[_-]+)start\s*-->/ig;
+              const endRe   = /<!--\s*findings(?:\s*|[_-]+)end\s*-->/ig;
+
+              const starts = [...s.matchAll(startRe)];
+              const ends   = [...s.matchAll(endRe)];
+              if (!starts.length || !ends.length) return '';
+
+              const chunks = [];
+              let endIdx = 0;
+              for (const st of starts) {
+                while (endIdx < ends.length && ends[endIdx].index < st.index) endIdx++;
+                if (endIdx >= ends.length) break;
+                const startPos = st.index + st[0].length;
+                const endPos   = ends[endIdx].index;
+                chunks.push(s.slice(startPos, endPos));
+                endIdx++;
+              }
+              return chunks.map(c => stripOuterCodeFence(c)).filter(Boolean).join('\n\n').trim();
+            }
+
+            // Heuristic fallback: take the first "### " AFTER the DIFF END marker
+            function heuristicExtractAfterDiff(s) {
+              const diffEndRe = /---\s*DIFF\s*END\s*---/i;
+              const m = diffEndRe.exec(s);
+              const from = m ? (m.index + m[0].length) : 0;
+
+              const tail = s.slice(from);
+              const startIdxRel = tail.search(/(^|\n)###\s+/);
+              if (startIdxRel < 0) return '';
+
+              const body = tail.slice(startIdxRel);
+              // Stop at obvious boundaries
+              const boundaryRel = body.search(/(^|\n)(---\s*DIFF\s*START\s*---|---\s*CHECKLIST\s*START\s*---|<!--\s*findings|^```)/mi);
+              const slice = boundaryRel > 0 ? body.slice(0, boundaryRel) : body;
+              return stripOuterCodeFence(slice);
+            }
+
+            function truncateForGithub(body) {
+              if (body.length <= MAX_BODY) return body;
+              const head = body.slice(0, MAX_BODY - 80);
+              return `${head}\n\n… _truncated to fit GitHub comment size limit_`;
+            }
+
+            // --- main ---
             let bodyText = '';
             try {
               bodyText = fs.readFileSync(`ai/${role}.raw.txt`, 'utf8');
-            } catch {}
+            } catch { /* ignore */ }
+
             let findings = '';
-            if (bodyText) {
-              const m = bodyText.match(/<!--\s*FINDINGS_START\s*-->([\s\S]*?)<!--\s*FINDINGS_END\s*-->/i);
-              if (m) {
-                findings = m[1].trim();
-              } else {
-                const idx = bodyText.indexOf('### ');
-                if (idx >= 0) findings = bodyText.slice(idx).trim();
+            if (bodyText && bodyText.trim()) {
+              const raw = stripOuterCodeFence(bodyText);
+
+              // Prefer explicit sentinels
+              findings = extractBetweenSentinels(raw);
+
+              // Fallback: first "###" AFTER DIFF END
+              if (!findings) {
+                findings = heuristicExtractAfterDiff(raw);
               }
             }
+
             if (!findings) findings = 'No issues found';
-            const body = `${header}\n\n${findings}`;
-            // Upsert a single sticky comment per role
+
+            const composed = truncateForGithub(`${header}\n\n${findings}`);
+
+            // Upsert: update if an existing role-specific comment is present
             const { data: comments } = await github.rest.issues.listComments({
               ...context.repo,
               issue_number: context.issue.number,
-              per_page: 100
+              per_page: 100,
             });
-            const marker = `<!-- ai-review:${role} -->`;
-            const existing = comments.find(c => c.user && c.user.type === 'Bot' && typeof c.body === 'string' && c.body.includes(marker));
+
+            const existing = comments.find(c => typeof c.body === 'string' && c.body.includes(headerMarker));
+
             if (existing) {
               await github.rest.issues.updateComment({
                 ...context.repo,
                 comment_id: existing.id,
-                body
+                body: composed,
               });
             } else {
               await github.rest.issues.createComment({
                 ...context.repo,
                 issue_number: context.issue.number,
-                body
+                body: composed,
               });
             }
+
