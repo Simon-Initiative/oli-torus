@@ -1,7 +1,7 @@
 import { danger, fail, warn, markdown, schedule } from "danger"
-import fs from "node:fs"
-import yaml from "js-yaml"
-import micromatch from "micromatch"
+import * as fs from "node:fs"
+import * as yaml from "js-yaml"
+import * as micromatch from "micromatch"
 
 // 1) Basic size guard
 const modified = (danger.github?.pr?.additions || 0) + (danger.github?.pr?.deletions || 0)
