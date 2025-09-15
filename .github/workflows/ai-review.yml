@@ -108,7 +108,6 @@ jobs:
           # Ensure file exists (do not truncate if already written)
           [ -f diff.patch ] || touch diff.patch
 
-      - name: Harden workspace (read-only)
         run: |
           set -euo pipefail
           mkdir -p ai
