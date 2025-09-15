@@ -203,7 +203,7 @@ jobs:
 
           codex login --api-key "$KEY" || true
 
-          codex exec --full-auto --no-ansi < ai/prompt.${ROLE}.txt > ai/${ROLE}.raw.txt || true
+          codex exec --full-auto < ai/prompt.${ROLE}.txt > ai/${ROLE}.raw.txt || true
 
           # If auth failed, create a clear failing JSON so the dev knows what to fix
           if grep -qi "401 Unauthorized" ai/${ROLE}.raw.txt; then
