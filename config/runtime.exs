@@ -104,6 +104,7 @@ if config_env() == :prod do
 
   config :oli, Oli.Repo,
     url: database_url,
+    ssl: get_env_as_boolean.("DB_SSL", "false"),
     database: System.get_env("DB_NAME", "oli"),
     pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
     timeout: db_timeout,
