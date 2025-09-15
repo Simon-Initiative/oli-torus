@@ -70,7 +70,8 @@ jobs:
           [[ "${{ steps.filter.outputs.requirements }}" == 'true' ]] && roles+=("requirements")
           # Ensure at least one role runs; default to 'requirements'
           if [ ${#roles[@]} -eq 0 ]; then roles+=("requirements"); fi
-          json=$(printf '%s\n' "${roles[@]}" | jq -R . | jq -c -s .)
+          # Always run performance and security; de-duplicate at JSON stage
+          json=$(printf '%s\n' "${roles[@]}" performance security | jq -R . | jq -c -s 'unique')
           echo "roles=${json}" >> "$GITHUB_OUTPUT"
 
   specialist:
@@ -154,6 +155,16 @@ jobs:
             echo "---DIFF END---";
           } > ai/prompt.${ROLE}.txt
 
+          echo "DIFF size (bytes): $(wc -c < diff.patch || echo 0)"
+          echo "PROMPT size (bytes): $(wc -c < ai/prompt.${ROLE}.txt || echo 0)"
+
+          echo "::group::AI Prompt (${ROLE}) — first 4000 bytes"
+          head -c 4000 ai/prompt.${ROLE}.txt || true; echo
+          echo "..."
+          echo "AI Prompt (${ROLE}) — last 2000 bytes"
+          tail -c 2000 ai/prompt.${ROLE}.txt || true; echo
+          echo "::endgroup::"
+
           # Run Codex reviewer (non-streaming output). Some versions don't support --no-stream;
           # relying on default behavior with --stdin and --format json.
           # Feed prompt via STDIN (portable across Codex CLI versions)
@@ -164,6 +175,14 @@ jobs:
           fi
 
           codex exec < ai/prompt.${ROLE}.txt > ai/${ROLE}.raw.txt || true
+
+          echo "RAW size (bytes): $(wc -c < ai/${ROLE}.raw.txt || echo 0)"
+          echo "::group::AI Raw Output (${ROLE}) — first 4000 bytes"
+          head -c 4000 ai/${ROLE}.raw.txt || true; echo
+          echo "..."
+          echo "AI Raw Output (${ROLE}) — last 2000 bytes"
+          tail -c 2000 ai/${ROLE}.raw.txt || true; echo
+          echo "::endgroup::"
 
           # Extract the first JSON object from output robustly.
           node -e '
@@ -196,6 +215,15 @@ jobs:
           name: ai-results-${{ matrix.role }}
           path: ai/${{ matrix.role }}.json
           if-no-files-found: error
+
+      - name: Upload AI debug artifacts (prompt + raw)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-debug-${{ matrix.role }}
+          path: |
+            ai/prompt.${{ matrix.role }}.txt
+            ai/${{ matrix.role }}.raw.txt
+          if-no-files-found: warn
 
       - name: Ensure no repo changes (tracked files only)
         run: |
