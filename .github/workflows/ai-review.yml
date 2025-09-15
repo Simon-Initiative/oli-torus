@@ -131,10 +131,12 @@ jobs:
             echo "DENYLIST: node_modules/**, deps/**, build/**, _build/**, .git/**";
             echo "Limits: at most 5 extra files total, and ≤1000 lines per file. Prefer narrow ranges near the changed lines.";
             echo "";
-            echo "Return ONLY strict JSON matching .review/CONTRACT.json, extended with:";
-            echo '  "context_used": [{"path":"","lines":"L10-L80"}]';
-            echo "If you cannot produce valid JSON, output this minimal object:";
-            echo '{"verdict":"warn","confidence":0.3,"summary":"Could not parse; returning minimal","findings":[],"context_used":[]}';
+            echo "Return ONLY well-structured Markdown with one or more findings; if none, write 'No issues found'.";
+            echo "For each finding, use this exact format:";
+            echo "### <short title>";
+            echo "file: <path>, line: <line number>";
+            echo "Description: <what/why this is a problem in this codebase>";
+            echo "Suggestion: <specific, actionable code change>";
             echo "";
             echo "Rules:";
             echo "- Focus on changed lines; use extra context only when necessary.";
@@ -189,57 +191,19 @@ jobs:
 
           # Debug output suppressed for cleaner logs
 
-          # Extract the first JSON object from output robustly.
-          node -e '
-            const fs=require("fs");
-            const role=process.env.ROLE;
-            if(!role){ console.error("ROLE env missing"); process.exit(2); }
-            const fallback = { verdict: "warn", confidence: 0.3, summary: "AI output missing JSON; fallback applied", findings: [], context_used: [] };
-            try {
-              const raw=fs.readFileSync(`ai/${role}.raw.txt`,`utf8`);
-              const m=raw.match(/\{[\s\S]*?\}/);
-              if(!m){ fs.writeFileSync(`ai/${role}.json`, JSON.stringify(fallback)); process.exit(0); }
-              const obj = JSON.parse(m[0]);
-              if(!obj || !obj.verdict){ fs.writeFileSync(`ai/${role}.json`, JSON.stringify(fallback)); process.exit(0); }
-              fs.writeFileSync(`ai/${role}.json`, JSON.stringify(obj));
-            } catch(e) {
-              fs.writeFileSync(`ai/${role}.json`, JSON.stringify(fallback));
-            }
-          '
-
-      - name: Validate JSON against contract
-        run: |
-          node -e '
-            const fs=require("fs");
-            const s=JSON.parse(fs.readFileSync("ai/${{ matrix.role }}.json","utf8"));
-            if(!["pass","warn","fail"].includes(s.verdict)) process.exit(3);
-          '
-
       - name: Post per-role review comment
         uses: actions/github-script@v7
         with:
           script: |
             const fs = require('fs');
             const role = `"${{ matrix.role }}"`.replace(/"/g,'');
-            const path = `ai/${role}.json`;
-            const data = JSON.parse(fs.readFileSync(path, 'utf8'));
-            const findings = Array.isArray(data.findings) ? data.findings : [];
-            const header = `<!-- ai-review:${role} -->\n### AI Review — ${role}\nVerdict: \`${data.verdict}\` (conf ${data.confidence})`;
-            const summary = data.summary ? `\n\n${data.summary}\n` : "\n";
-            const lines = [header, summary];
-            if (findings.length) {
-              lines.push("\n**Findings**\n");
-              for (const f of findings) {
-                const sev = f.severity || "";
-                const loc = `${f.path || "?"}:${f.line || "?"}`;
-                const title = f.title || "(no title)";
-                lines.push(`- ${sev} ${loc} — ${title}`);
-                if (f.advice) lines.push(`  > ${String(f.advice).replace(/\n/g, ' ')}`);
-              }
-            } else {
-              lines.push("\n_(no findings)_\n");
-            }
-            const body = lines.join("\n");
+            const header = `<!-- ai-review:${role} -->\n### AI Review — ${role}`;
+            let bodyText = '';
+            try {
+              bodyText = fs.readFileSync(`ai/${role}.raw.txt`, 'utf8');
+            } catch {}
+            if (!bodyText || !bodyText.trim()) bodyText = 'No issues found';
+            const body = `${header}\n\n${bodyText}`;
             // Upsert a single sticky comment per role
             const { data: comments } = await github.rest.issues.listComments({
               ...context.repo,
@@ -274,96 +238,4 @@ jobs:
           git status --porcelain --untracked-files=no
           test -z "$(git status --porcelain --untracked-files=no)" || (echo "Workspace mutated!"; git --no-pager diff; exit 1)
 
-  aggregate:
-    name: ai/review
-    runs-on: ubuntu-latest
-    needs: [specialist]
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          pattern: ai-results-*
-          path: ai
-          merge-multiple: true
-
-      # Aggregate job retained only to collect artifacts. No summary comment or gating.
-
-      - uses: actions/download-artifact@v4
-        with:
-          pattern: ai-debug-*
-          path: ai-debug
-          merge-multiple: true
-
-      - name: Aggregate & decide
-        id: agg
-        run: |
-          node -e '
-            const fs=require("fs"), path=require("path");
-            const files=fs.readdirSync("ai").filter(f=>f.endsWith(".json"));
-            const results=files.map(f=>({role:f.replace(".json",""), ...JSON.parse(fs.readFileSync(path.join("ai",f),"utf8"))}));
-            // Strict policy: fail if any fail with confidence >= 0.6 OR 2+ warns
-            const fails=results.filter(r=>r.verdict==="fail" && r.confidence>=0.6);
-            const warns=results.filter(r=>r.verdict==="warn");
-            const status = (fails.length || warns.length>=2) ? "fail" : "pass";
-
-            const lines=[`### AI Review Summary`, `Status: **${status.toUpperCase()}**`, ""];
-            for(const r of results){
-              lines.push(`- **${r.role}**: ${r.verdict} (conf ${r.confidence}) — ${(r.findings?.length||0)} findings`);
-              const findings = Array.isArray(r.findings)? r.findings: [];
-              if(findings.length){
-                const top = findings.slice(0,10);
-                for(const f of top){
-                  lines.push(`  - ${f.severity||""} ${f.path||"?"}:${f.line||"?"} — ${f.title||"(no title)"}`);
-                  if(f.advice){ lines.push(`    > ${f.advice.replace(/\n/g, " ")}`); }
-                }
-                if(findings.length>10){ lines.push(`  - … ${findings.length-10} more findings`); }
-              }
-              // Attach raw/prompt snippets when available
-              try{
-                const promptPath = path.join("ai-debug", `prompt.${r.role}.txt`);
-                const rawPath = path.join("ai-debug", `${r.role}.raw.txt`);
-                const hasPrompt = fs.existsSync(promptPath);
-                const hasRaw = fs.existsSync(rawPath);
-                if(hasPrompt || hasRaw){
-                  lines.push("  <details><summary>AI debug (prompt/raw)</summary>");
-                  if(hasPrompt){
-                    const p = fs.readFileSync(promptPath, "utf8");
-                    lines.push("\n  Prompt (first 600 chars):\n\n");
-                    lines.push("```\n" + p.slice(0,600) + (p.length>600?"…":"") + "\n```");
-                  }
-                  if(hasRaw){
-                    const rv = fs.readFileSync(rawPath, "utf8");
-                    lines.push("\n  Raw (first 600 chars):\n\n");
-                    lines.push("```\n" + rv.slice(0,600) + (rv.length>600?"…":"") + "\n```");
-                  }
-                  lines.push("  </details>");
-                }
-              }catch(e){}
-            }
-            const md = lines.join("\n");
-            fs.writeFileSync("ai/verdict.json", JSON.stringify({status, results, markdown: md}, null, 2));
-          '
-
-      - name: Post single summary comment
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            const v = JSON.parse(fs.readFileSync('ai/verdict.json','utf8'));
-            // one tidy summary comment
-            await github.rest.issues.createComment({
-              ...context.repo,
-              issue_number: context.issue.number,
-              body: v.markdown
-            });
-
-      - name: Convert findings to annotations (optional)
-        run: |
-          node -e '
-            const fs=require("fs"), v=JSON.parse(fs.readFileSync("ai/verdict.json","utf8"));
-            for(const r of v.results){
-              for(const f of (r.findings||[])){
-                const lvl = f.severity==="high" ? "error" : (f.severity==="medium" ? "warning" : "notice");
-                console.log(`::${lvl} file=${f.path},line=${f.line}::[${r.role}] ${f.title} — ${f.advice}`);
-              }
-            }
-          '
+  # aggregate job removed per request; per-role comments are posted by each specialist job
