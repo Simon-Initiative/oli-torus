@@ -70,8 +70,8 @@ jobs:
           [[ "${{ steps.filter.outputs.requirements }}" == 'true' ]] && roles+=("requirements")
           # Ensure at least one role runs; default to 'requirements'
           if [ ${#roles[@]} -eq 0 ]; then roles+=("requirements"); fi
-          json=$(printf '%s\n' "${roles[@]}" | jq -R . | jq -s .)
-          echo "roles=$json" >> "$GITHUB_OUTPUT"
+          json=$(printf '%s\n' "${roles[@]}" | jq -R . | jq -c -s .)
+          echo "roles=${json}" >> "$GITHUB_OUTPUT"
 
   specialist:
     name: ai/${{ matrix.role }}
