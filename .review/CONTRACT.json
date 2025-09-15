@@ -1,0 +1,13 @@
+{
+  "verdict": "pass | warn | fail",
+  "confidence": 0.0,
+  "findings": [
+    {
+      "title": "string",
+      "path": "file/path.ext",
+      "line": 123,
+      "severity": "low | medium | high",
+      "advice": "actionable suggestion"
+    }
+  ]
+}

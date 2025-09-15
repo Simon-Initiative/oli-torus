@@ -1,0 +1,19 @@
+name: danger
+on: pull_request
+
+permissions:
+  contents: read
+  pull-requests: write     # for PR comments/reviews
+  checks: write            # if using the Checks API
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - run: npm i -D danger js-yaml micromatch typescript ts-node
+      - run: npx danger ci
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
