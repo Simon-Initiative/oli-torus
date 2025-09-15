@@ -123,6 +123,7 @@ jobs:
         shell: bash
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_KEY: ${{ secrets.OPENAI_KEY }}
           IS_FORK: ${{ github.event.pull_request.head.repo.fork }}
           # Optional: if using org/project-based keys, add them here
           # OPENAI_ORG_ID: ${{ secrets.OPENAI_ORG_ID }}
@@ -190,9 +191,19 @@ jobs:
             exit 0
           fi
 
-          codex login --api-key "${OPENAI_API_KEY}" || true
+          # Prepare Codex config dir in a writable temp location
+          export XDG_CONFIG_HOME="${RUNNER_TEMP}/codex-config"
+          mkdir -p "$XDG_CONFIG_HOME"
 
-          codex exec --full-auto < ai/prompt.${ROLE}.txt > ai/${ROLE}.raw.txt || true
+          # Determine API key from either OPENAI_API_KEY or OPENAI_KEY
+          KEY="${OPENAI_API_KEY:-${OPENAI_KEY:-}}"
+          echo "Using API key from: ${OPENAI_API_KEY:+OPENAI_API_KEY}${OPENAI_KEY:+OPENAI_KEY}"
+          echo "Codex binary: $(command -v codex || echo 'not found')"
+          codex --version || true
+
+          codex login --api-key "$KEY" || true
+
+          codex exec --full-auto --no-ansi < ai/prompt.${ROLE}.txt > ai/${ROLE}.raw.txt || true
 
           # If auth failed, create a clear failing JSON so the dev knows what to fix
           if grep -qi "401 Unauthorized" ai/${ROLE}.raw.txt; then
