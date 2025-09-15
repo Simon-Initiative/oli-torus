@@ -191,52 +191,9 @@ jobs:
           echo "Codex binary: $(command -v codex || echo 'not found')"
           codex --version || true
 
-          # Headless login per docs; if login fails, emit a FAIL JSON and stop
-          if ! codex login --api-key "$KEY" 2> ai/${ROLE}.login.err; then
-            echo "Codex login failed; capturing stderr and emitting FAIL JSON."
-            err=$(head -c 300 ai/${ROLE}.login.err | sed 's/"/\\"/g')
-            printf '%s\n' \
-              '{' \
-              '  "verdict": "fail",' \
-              '  "confidence": 1.0,' \
-              "  \"summary\": \"Codex login failed. $err\"," \
-              '  "findings": [' \
-              '    {' \
-              '      "path": ".github/workflows/ai-review.yml",' \
-              '      "line": 1,' \
-              '      "severity": "high",' \
-              '      "title": "Codex login failed",' \
-              '      "advice": "Verify OPENAI_API_KEY secret and that Codex CLI can write ~/.config/codex."' \
-              '    }' \
-              '  ],' \
-              '  "context_used": []' \
-              '}' > ai/${ROLE}.json
-            exit 0
-          fi
+          codex login --api-key "${OPENAI_API_KEY}"
 
-          codex exec --full-auto < ai/prompt.${ROLE}.txt > ai/${ROLE}.raw.txt || true
-
-          # If auth failed, create a clear failing JSON so the dev knows what to fix
-          if grep -qi "401 Unauthorized" ai/${ROLE}.raw.txt; then
-            echo "AI reviewer authentication failed (401). Emitting blocking JSON with guidance."
-            printf '%s\n' \
-              '{' \
-              '  "verdict": "fail",' \
-              '  "confidence": 1.0,' \
-              '  "summary": "AI reviewer authentication failed (401). Ensure OPENAI_API_KEY is configured for this workflow/run. Forked PRs do not receive secrets.",' \
-              '  "findings": [' \
-              '    {' \
-              '      "path": ".github/workflows/ai-review.yml",' \
-              '      "line": 1,' \
-              '      "severity": "high",' \
-              '      "title": "AI reviewer auth failed (401)",' \
-              '      "advice": "Set repo/Org secret OPENAI_API_KEY; guard Codex step for forks (no secrets)."' \
-              '    }' \
-              '  ],' \
-              '  "context_used": []' \
-              '}' > ai/${ROLE}.json
-            exit 0
-          fi
+          codex exec --full-auto --skip-git-repo-check < ai/prompt.${ROLE}.txt > ai/${ROLE}.raw.txt || true
 
           echo "RAW size (bytes): $(wc -c < ai/${ROLE}.raw.txt || echo 0)"
           echo "::group::AI Raw Output (${ROLE}) — first 4000 bytes"
