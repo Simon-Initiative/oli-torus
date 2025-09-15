@@ -123,10 +123,8 @@ jobs:
         shell: bash
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          OPENAI_KEY: ${{ secrets.OPENAI_KEY }}
           IS_FORK: ${{ github.event.pull_request.head.repo.fork }}
-          # Optional: if using org/project-based keys, add them here
-          # OPENAI_ORG_ID: ${{ secrets.OPENAI_ORG_ID }}
+          OPENAI_ORG_KEY: ${{ secrets.OPENAI_ORG_KEY }}
         run: |
           set -euo pipefail
           ROLE="${{ matrix.role }}"
@@ -196,14 +194,11 @@ jobs:
           export HOME="${RUNNER_TEMP}/codex-home"
           mkdir -p "$XDG_CONFIG_HOME/codex" "$HOME/.config/codex"
 
-          # Determine API key from either OPENAI_API_KEY or OPENAI_KEY
-          KEY="${OPENAI_API_KEY:-${OPENAI_KEY:-}}"
+          KEY="${OPENAI_API_KEY}"
           # Normalize env so Codex can pick up the key regardless of variable name
           export OPENAI_KEY="$KEY"
           export OPENAI_API_KEY="$KEY"
-          export CODEX_API_KEY="$KEY"
-          whichVar="${OPENAI_API_KEY:+OPENAI_API_KEY}${OPENAI_KEY:+OPENAI_KEY}"
-          echo "Using API key from: ${whichVar:-(normalized)}"
+
           echo "Codex binary: $(command -v codex || echo 'not found')"
           codex --version || true
 
