@@ -803,7 +803,6 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       {:ok, section} = Oli.Delivery.Gating.update_resource_gating_index(section)
 
-
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
       ensure_content_is_visible(view)
 

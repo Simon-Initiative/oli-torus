@@ -614,5 +614,4 @@ defmodule Oli.Delivery.Sections.Updates do
       _ -> {:error, :unexpected_count}
     end
   end
-
 end
