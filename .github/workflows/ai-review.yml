@@ -179,15 +179,14 @@ jobs:
           # Fork/secret guard: on forks or missing key, emit WARN and skip Codex
           if [ "${IS_FORK:-false}" = "true" ] || [ -z "${OPENAI_API_KEY:-}" ]; then
             echo "Forked PR or missing OPENAI_API_KEY; emitting WARN and skipping Codex."
-            cat > ai/${ROLE}.json <<'JSON'
-{
-  "verdict": "warn",
-  "confidence": 0.2,
-  "summary": "AI reviewer skipped (forked PR or missing OPENAI_API_KEY).",
-  "findings": [],
-  "context_used": []
-}
-JSON
+            printf '%s\n' \
+              '{' \
+              '  "verdict": "warn",' \
+              '  "confidence": 0.2,' \
+              '  "summary": "AI reviewer skipped (forked PR or missing OPENAI_API_KEY).",' \
+              '  "findings": [],' \
+              '  "context_used": []' \
+              '}' > ai/${ROLE}.json
             exit 0
           fi
 
@@ -198,23 +197,22 @@ JSON
           # If auth failed, create a clear failing JSON so the dev knows what to fix
           if grep -qi "401 Unauthorized" ai/${ROLE}.raw.txt; then
             echo "AI reviewer authentication failed (401). Emitting blocking JSON with guidance."
-            cat > ai/${ROLE}.json <<'JSON'
-{
-  "verdict": "fail",
-  "confidence": 1.0,
-  "summary": "AI reviewer authentication failed (401). Ensure OPENAI_API_KEY is configured for this workflow/run. Forked PRs do not receive secrets.",
-  "findings": [
-    {
-      "path": ".github/workflows/ai-review.yml",
-      "line": 1,
-      "severity": "high",
-      "title": "AI reviewer auth failed (401)",
-      "advice": "Set repo/Org secret OPENAI_API_KEY; guard Codex step for forks (no secrets)."
-    }
-  ],
-  "context_used": []
-}
-JSON
+            printf '%s\n' \
+              '{' \
+              '  "verdict": "fail",' \
+              '  "confidence": 1.0,' \
+              '  "summary": "AI reviewer authentication failed (401). Ensure OPENAI_API_KEY is configured for this workflow/run. Forked PRs do not receive secrets.",' \
+              '  "findings": [' \
+              '    {' \
+              '      "path": ".github/workflows/ai-review.yml",' \
+              '      "line": 1,' \
+              '      "severity": "high",' \
+              '      "title": "AI reviewer auth failed (401)",' \
+              '      "advice": "Set repo/Org secret OPENAI_API_KEY; guard Codex step for forks (no secrets)."' \
+              '    }' \
+              '  ],' \
+              '  "context_used": []' \
+              '}' > ai/${ROLE}.json
             exit 0
           fi
 
