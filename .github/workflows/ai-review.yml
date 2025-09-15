@@ -15,6 +15,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
+      - name: Debug changed files
+        run: |
+          echo "Base ref: ${{ github.base_ref }} | Head ref: ${{ github.head_ref }}"
+          git fetch origin ${{ github.base_ref }} --depth=1 || true
+          echo "Changed files (GitHub API reports): ${{ github.event.pull_request.changed_files }}"
+          echo "Changed files (git diff --name-only):"
+          git diff --name-only origin/${{ github.base_ref }}...HEAD || true
       - id: filter
         uses: dorny/paths-filter@v3
         with:
@@ -53,18 +60,23 @@ jobs:
     strategy:
       matrix:
         role: [security, performance, elixir, typescript, ui, requirements]
-    # Run a role only if relevant files changed; allow 'requirements' always on PR body/title changes
-    if: |
+    # Run a role only if relevant files changed
+    if: ${{
       (matrix.role == 'elixir' && needs.changes.outputs.elixir == 'true') ||
       (matrix.role == 'typescript' && needs.changes.outputs.typescript == 'true') ||
       (matrix.role == 'ui' && needs.changes.outputs.ui == 'true') ||
       (matrix.role == 'requirements' && needs.changes.outputs.requirements == 'true') ||
       (matrix.role == 'security' && needs.changes.outputs.security == 'true') ||
       (matrix.role == 'performance' && needs.changes.outputs.performance == 'true')
+    }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0  # ensure history for robust diffs/merge-base
+      - name: Echo role being run
+        run: |
+          echo "Running reviewer role: ${{ matrix.role }}"
+          echo "Filter outputs: elixir=${{ needs.changes.outputs.elixir }}, ts=${{ needs.changes.outputs.typescript }}, ui=${{ needs.changes.outputs.ui }}, perf=${{ needs.changes.outputs.performance }}, sec=${{ needs.changes.outputs.security }}, req=${{ needs.changes.outputs.requirements }}"
 
       - name: Generate PR diff
         shell: bash
