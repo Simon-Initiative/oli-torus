@@ -506,7 +506,7 @@ defmodule Oli.Delivery.Sections do
       # Enrollment exists, we are potentially just updating it
       e -> e
     end
-    |> Enrollment.changeset(%{section_id: section_id})
+    |> Enrollment.changeset(%{section_id: section_id, status: status})
     |> Ecto.Changeset.put_assoc(:context_roles, context_roles)
     |> Repo.insert_or_update()
   end
