@@ -43,19 +43,13 @@ jobs:
               - 'lib/**/*.leex'
               - 'lib/**/live/**/*.ex'
             requirements:
-              - 'docs/features/**'
-              - '.review/**'
+              - 'docs/features/**/prd.md'
             security:
-              - 'lib/**/plugs/**'
-              - 'lib/oli_web/user_auth.ex'
-              - 'lib/oli/accounts/**'
-              - 'lib/oli/lti/**'
+              - 'lib/**'
+              - 'assets/src/**'
               - 'config/**'
             performance:
-              - 'lib/oli/delivery/**'
-              - 'lib/oli/publishing/**'
-              - 'lib/oli/resources/**'
-              - 'lib/oli/activities/**'
+              - 'lib/**'
 
       - id: build_matrix
         name: Build matrix roles
@@ -68,10 +62,7 @@ jobs:
           [[ "${{ steps.filter.outputs.security }}" == 'true' ]] && roles+=("security")
           [[ "${{ steps.filter.outputs.performance }}" == 'true' ]] && roles+=("performance")
           [[ "${{ steps.filter.outputs.requirements }}" == 'true' ]] && roles+=("requirements")
-          # Ensure at least one role runs; default to 'requirements'
-          if [ ${#roles[@]} -eq 0 ]; then roles+=("requirements"); fi
-          # Always run performance and security; de-duplicate at JSON stage
-          json=$(printf '%s\n' "${roles[@]}" performance security | jq -R . | jq -c -s 'unique')
+          json=$(printf '%s\n' "${roles[@]}" | jq -R . | jq -c -s .)
           echo "roles=${json}" >> "$GITHUB_OUTPUT"
 
   specialist:
@@ -290,4 +281,3 @@ jobs:
                 body: composed,
               });
             }
-
