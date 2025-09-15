@@ -198,7 +198,12 @@ jobs:
 
           # Determine API key from either OPENAI_API_KEY or OPENAI_KEY
           KEY="${OPENAI_API_KEY:-${OPENAI_KEY:-}}"
-          echo "Using API key from: ${OPENAI_API_KEY:+OPENAI_API_KEY}${OPENAI_KEY:+OPENAI_KEY}"
+          # Normalize env so Codex can pick up the key regardless of variable name
+          export OPENAI_KEY="$KEY"
+          export OPENAI_API_KEY="$KEY"
+          export CODEX_API_KEY="$KEY"
+          whichVar="${OPENAI_API_KEY:+OPENAI_API_KEY}${OPENAI_KEY:+OPENAI_KEY}"
+          echo "Using API key from: ${whichVar:-(normalized)}"
           echo "Codex binary: $(command -v codex || echo 'not found')"
           codex --version || true
 
