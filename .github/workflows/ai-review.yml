@@ -189,20 +189,40 @@ jobs:
             exit 0
           fi
 
-          # Prepare writable temp directories (just in case CLI needs them)
-          export XDG_CONFIG_HOME="${RUNNER_TEMP}/codex-config"
-          export HOME="${RUNNER_TEMP}/codex-home"
-          mkdir -p "$XDG_CONFIG_HOME" "$HOME/.config"
+          # Ensure Codex config dir under HOME is writable and exists
+          mkdir -p "$HOME/.config/codex"
+          : > "$HOME/.config/codex/config.json" || true
+          : > "$HOME/.config/codex/config.md" || true
 
           KEY="${OPENAI_API_KEY}"
           export OPENAI_API_KEY="$KEY"
-          # Prefer passing the API key directly to exec to avoid login/config writes
-
           echo "Codex binary: $(command -v codex || echo 'not found')"
           codex --version || true
 
-          # Exec with explicit API key and without ANSI output flags (some versions don't support --no-ansi)
-          codex exec --full-auto --api-key "$KEY" < ai/prompt.${ROLE}.txt > ai/${ROLE}.raw.txt || true
+          # Headless login per docs; if login fails, emit a FAIL JSON and stop
+          if ! codex login --api-key "$KEY" 2> ai/${ROLE}.login.err; then
+            echo "Codex login failed; capturing stderr and emitting FAIL JSON."
+            err=$(head -c 300 ai/${ROLE}.login.err | sed 's/"/\\"/g')
+            printf '%s\n' \
+              '{' \
+              '  "verdict": "fail",' \
+              '  "confidence": 1.0,' \
+              "  \"summary\": \"Codex login failed. $err\"," \
+              '  "findings": [' \
+              '    {' \
+              '      "path": ".github/workflows/ai-review.yml",' \
+              '      "line": 1,' \
+              '      "severity": "high",' \
+              '      "title": "Codex login failed",' \
+              '      "advice": "Verify OPENAI_API_KEY secret and that Codex CLI can write ~/.config/codex."' \
+              '    }' \
+              '  ],' \
+              '  "context_used": []' \
+              '}' > ai/${ROLE}.json
+            exit 0
+          fi
+
+          codex exec --full-auto < ai/prompt.${ROLE}.txt > ai/${ROLE}.raw.txt || true
 
           # If auth failed, create a clear failing JSON so the dev knows what to fix
           if grep -qi "401 Unauthorized" ai/${ROLE}.raw.txt; then
