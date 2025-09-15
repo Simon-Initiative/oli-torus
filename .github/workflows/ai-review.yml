@@ -25,11 +25,11 @@ jobs:
             HEADSHA=$(git rev-parse HEAD)
           fi
           # Fetch the exact SHAs (works with forks and shallow clones)
-          git fetch --no-tags --prune --depth=1 origin "+${BASE}" "+${HEADSHA}" || true
+          git fetch --no-tags --prune --depth=1 origin "+${BASE}" "+${HEADSHA}"
           # Produce a diff between the two trees (no merge-base required)
-          git diff --unified=0 "${BASE}" "${HEADSHA}" > diff.patch || true
-          # Ensure file exists even if empty diff
-          : > diff.patch
+          git diff --unified=0 "${BASE}" "${HEADSHA}" > diff.patch
+          # Ensure file exists (do not truncate if already written)
+          [ -f diff.patch ] || touch diff.patch
 
       - name: Harden workspace (read-only)
         run: |
@@ -78,7 +78,7 @@ jobs:
           # Run Codex reviewer (non-streaming output). Some versions don't support --no-stream;
           # relying on default behavior with --stdin and --format json.
           # Feed prompt via STDIN (portable across Codex CLI versions)
-          codex exec --format json < ai/prompt.${ROLE}.txt > ai/${ROLE}.raw.txt
+          codex exec < ai/prompt.${ROLE}.txt > ai/${ROLE}.raw.txt
 
           # Extract the first JSON object from output robustly.
           node -e '
@@ -103,10 +103,10 @@ jobs:
           name: ai-results
           path: ai/${{ matrix.role }}.json
 
-      - name: Ensure no repo changes
+      - name: Ensure no repo changes (tracked files only)
         run: |
-          git status --porcelain
-          test -z "$(git status --porcelain)" || (echo "Workspace mutated!"; git --no-pager diff; exit 1)
+          git status --porcelain --untracked-files=no
+          test -z "$(git status --porcelain --untracked-files=no)" || (echo "Workspace mutated!"; git --no-pager diff; exit 1)
 
   aggregate:
     name: ai/review
