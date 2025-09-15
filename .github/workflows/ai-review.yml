@@ -123,7 +123,9 @@ jobs:
         shell: bash
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          OPENAI_ORG_KEY: ${{ secrets.OPENAI_ORG_KEY }}
+          IS_FORK: ${{ github.event.pull_request.head.repo.fork }}
+          # Optional: if using org/project-based keys, add them here
+          # OPENAI_ORG_ID: ${{ secrets.OPENAI_ORG_ID }}
         run: |
           set -euo pipefail
           ROLE="${{ matrix.role }}"
@@ -174,7 +176,47 @@ jobs:
             exit 0
           fi
 
-          codex exec < ai/prompt.${ROLE}.txt > ai/${ROLE}.raw.txt || true
+          # Fork/secret guard: on forks or missing key, emit WARN and skip Codex
+          if [ "${IS_FORK:-false}" = "true" ] || [ -z "${OPENAI_API_KEY:-}" ]; then
+            echo "Forked PR or missing OPENAI_API_KEY; emitting WARN and skipping Codex."
+            cat > ai/${ROLE}.json <<'JSON'
+{
+  "verdict": "warn",
+  "confidence": 0.2,
+  "summary": "AI reviewer skipped (forked PR or missing OPENAI_API_KEY).",
+  "findings": [],
+  "context_used": []
+}
+JSON
+            exit 0
+          fi
+
+          codex login --api-key "${OPENAI_API_KEY}" || true
+
+          codex exec --full-auto < ai/prompt.${ROLE}.txt > ai/${ROLE}.raw.txt || true
+
+          # If auth failed, create a clear failing JSON so the dev knows what to fix
+          if grep -qi "401 Unauthorized" ai/${ROLE}.raw.txt; then
+            echo "AI reviewer authentication failed (401). Emitting blocking JSON with guidance."
+            cat > ai/${ROLE}.json <<'JSON'
+{
+  "verdict": "fail",
+  "confidence": 1.0,
+  "summary": "AI reviewer authentication failed (401). Ensure OPENAI_API_KEY is configured for this workflow/run. Forked PRs do not receive secrets.",
+  "findings": [
+    {
+      "path": ".github/workflows/ai-review.yml",
+      "line": 1,
+      "severity": "high",
+      "title": "AI reviewer auth failed (401)",
+      "advice": "Set repo/Org secret OPENAI_API_KEY; guard Codex step for forks (no secrets)."
+    }
+  ],
+  "context_used": []
+}
+JSON
+            exit 0
+          fi
 
           echo "RAW size (bytes): $(wc -c < ai/${ROLE}.raw.txt || echo 0)"
           echo "::group::AI Raw Output (${ROLE}) — first 4000 bytes"
@@ -241,6 +283,12 @@ jobs:
           path: ai
           merge-multiple: true
 
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: ai-debug-*
+          path: ai-debug
+          merge-multiple: true
+
       - name: Aggregate & decide
         id: agg
         run: |
@@ -248,16 +296,46 @@ jobs:
             const fs=require("fs"), path=require("path");
             const files=fs.readdirSync("ai").filter(f=>f.endsWith(".json"));
             const results=files.map(f=>({role:f.replace(".json",""), ...JSON.parse(fs.readFileSync(path.join("ai",f),"utf8"))}));
-            // Policy: fail if any fail with confidence >= 0.6 OR 2+ warns
+            // Strict policy: fail if any fail with confidence >= 0.6 OR 2+ warns
             const fails=results.filter(r=>r.verdict==="fail" && r.confidence>=0.6);
             const warns=results.filter(r=>r.verdict==="warn");
             const status = (fails.length || warns.length>=2) ? "fail" : "pass";
-            const md = [
-              `### AI Review Summary`,
-              `Status: **${status.toUpperCase()}**`,
-              "",
-              ...results.map(r=>`- **${r.role}**: ${r.verdict} (conf ${r.confidence}) — ${r.findings?.length||0} findings`)
-            ].join("\n");
+
+            const lines=[`### AI Review Summary`, `Status: **${status.toUpperCase()}**`, ""];
+            for(const r of results){
+              lines.push(`- **${r.role}**: ${r.verdict} (conf ${r.confidence}) — ${(r.findings?.length||0)} findings`);
+              const findings = Array.isArray(r.findings)? r.findings: [];
+              if(findings.length){
+                const top = findings.slice(0,10);
+                for(const f of top){
+                  lines.push(`  - ${f.severity||""} ${f.path||"?"}:${f.line||"?"} — ${f.title||"(no title)"}`);
+                  if(f.advice){ lines.push(`    > ${f.advice.replace(/\n/g, " ")}`); }
+                }
+                if(findings.length>10){ lines.push(`  - … ${findings.length-10} more findings`); }
+              }
+              // Attach raw/prompt snippets when available
+              try{
+                const promptPath = path.join("ai-debug", `prompt.${r.role}.txt`);
+                const rawPath = path.join("ai-debug", `${r.role}.raw.txt`);
+                const hasPrompt = fs.existsSync(promptPath);
+                const hasRaw = fs.existsSync(rawPath);
+                if(hasPrompt || hasRaw){
+                  lines.push("  <details><summary>AI debug (prompt/raw)</summary>");
+                  if(hasPrompt){
+                    const p = fs.readFileSync(promptPath, "utf8");
+                    lines.push("\n  Prompt (first 600 chars):\n\n");
+                    lines.push("```\n" + p.slice(0,600) + (p.length>600?"…":"") + "\n```");
+                  }
+                  if(hasRaw){
+                    const rv = fs.readFileSync(rawPath, "utf8");
+                    lines.push("\n  Raw (first 600 chars):\n\n");
+                    lines.push("```\n" + rv.slice(0,600) + (rv.length>600?"…":"") + "\n```");
+                  }
+                  lines.push("  </details>");
+                }
+              }catch(e){}
+            }
+            const md = lines.join("\n");
             fs.writeFileSync("ai/verdict.json", JSON.stringify({status, results, markdown: md}, null, 2));
           '
 
@@ -288,4 +366,9 @@ jobs:
 
       - name: Fail or pass the check
         run: |
-          test "$(jq -r .status < ai/verdict.json)" = "pass" || exit 1
+          s=$(jq -r .status < ai/verdict.json)
+          echo "AI review status: ${s}"
+          if [ "$s" != "pass" ]; then
+            echo "Hard fail criteria met (see AI Review Summary)."
+            exit 1
+          fi
