@@ -57,20 +57,32 @@ try {
   const high = cfg.thresholds?.high ?? 9
   const low = cfg.thresholds?.low ?? 3
   const tier = score >= high ? "high" : score > low ? "medium" : "low"
+  const label = `risk/${tier}`
 
   schedule(async () => {
+    const { owner, repo, number } = danger.github.thisPR
+    const colors: Record<string, string> = { low: "66c2a5", medium: "ffd92f", high: "fc8d62" }
+    const color = colors[tier] || "cccccc"
     try {
-      await danger.github.api.issues.addLabels({
-        ...danger.github.thisPR,
-        issue_number: danger.github.thisPR.number,
-        labels: [`risk/${tier}`],
-      })
+      // Ensure label exists (create if missing)
+      try {
+        await danger.github.api.issues.getLabel({ owner, repo, name: label })
+      } catch {
+        try {
+          await danger.github.api.issues.createLabel({ owner, repo, name: label, color })
+        } catch (e) {
+          // If creation fails (permissions), continue; we'll still try to add
+          warn(`Could not create label '${label}': ${String(e)}`)
+        }
+      }
+      // Add label
+      await danger.github.api.issues.addLabels({ owner, repo, issue_number: number, labels: [label] })
     } catch (e) {
-      warn(`Could not add risk label: ${String(e)}`)
+      warn(`Could not add risk label '${label}': ${String(e)}`)
     }
   })
 
-  markdown(`**Risk score:** ${score} → \`risk/${tier}\``)
+  markdown(`**Risk score:** ${score} → \`${label}\``)
 } catch {
   // Optional – rules file absent
 }
