@@ -17,8 +17,9 @@ const allChanged = [...modifiedFiles, ...createdFiles]
 console.log(`[danger] Changed files count: ${allChanged.length}`)
 const exChanges = allChanged.filter((f) => f.endsWith(".ex"))
 const hasTests = allChanged.some((f) => f.startsWith("test/") || f.includes("_test.exs"))
-if (exChanges.length && !hasTests) {
-  fail("Changes to Elixir code but no tests were modified or added.")
+const missingTests = exChanges.length && !hasTests
+if (missingTests) {
+  warn("Elixir code changed but no tests were modified or added.")
 }
 
 // Risk labeler from repo rules
@@ -37,6 +38,14 @@ try {
       score += w
       console.log(`[danger] Size rule matched (>${thr}) adding ${w}`)
     }
+  }
+
+  // If Elixir changed without tests, automatically escalate risk to HIGH
+  if (missingTests) {
+    const highThr = cfg.thresholds?.high ?? 9
+    // Ensure score meets/exceeds HIGH threshold
+    score = Math.max(score, highThr + 1)
+    console.log("[danger] Missing tests for Elixir changes → forcing risk/high")
   }
 
   // Path rules: add weight if any changed file matches any glob
