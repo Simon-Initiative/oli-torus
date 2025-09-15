@@ -184,6 +184,7 @@ jobs:
 
           # Ensure Codex config dir under HOME is writable and exists
           mkdir -p "$HOME/.config/codex"
+          chmod -R u+rw "$HOME/.config/codex" || true
           : > "$HOME/.config/codex/config.json" || true
           : > "$HOME/.config/codex/config.md" || true
 
