@@ -8,6 +8,8 @@ import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { Provider, useDispatch } from 'react-redux';
 import { ScoreAsYouGoHeaderBase } from 'components/activities/common/ScoreAsYouGoHeader';
+import { ErrorBoundary } from 'components/common/ErrorBoundary';
+import { LoadingSpinner } from 'components/common/LoadingSpinner';
 import {
   activityDeliverySlice,
   listenForParentSurveyReset,
@@ -18,7 +20,13 @@ import { configureStore } from 'state/store';
 import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
 import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
 import { Manifest } from '../types';
-import { LogicLabModelSchema, getLabServer, isLabMessage } from './LogicLabModelSchema';
+import {
+  LabActivity,
+  LogicLabModelSchema,
+  getLabServer,
+  isLabActivity,
+  isLabMessage,
+} from './LogicLabModelSchema';
 
 type LogicLabDeliveryProps = DeliveryElementProps<LogicLabModelSchema>;
 
@@ -41,7 +49,7 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
     mode,
   } = useDeliveryElementContext<LogicLabModelSchema>();
   const dispatch = useDispatch();
-  const [activity, setActivity] = useState<string>(model.activity);
+  const [activity, setActivity] = useState<string | LabActivity>(model.activity);
 
   useEffect(() => {
     // This looks like boilerplate code for dealing with embedded activities.
@@ -122,14 +130,11 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
                 break;
               // lab is requesting activity state
               case 'load':
-                if (mode !== 'preview') {
-                  const saved = activityState?.parts[0].response?.input;
-                  if (saved && e.source) {
-                    // post saved state back to lab.
-
-                    e.source.postMessage(saved, { targetOrigin: lab.origin });
-                  }
-                } // TODO if in preview, load appropriate content
+                const save = ['delivery', 'review'].includes(mode)
+                  ? activityState?.parts[0].response?.input
+                  : undefined;
+                e.source?.postMessage({ activity, save }, { targetOrigin: lab.origin });
+                // TODO if in preview, load appropriate content
                 // Preview feature in lab servlet is not complete.
                 break;
               case 'log':
@@ -150,48 +155,47 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
     return () => window.removeEventListener('message', onMessage);
   }, [activityState, model, context]);
 
-  const [loading, setLoading] = useState<'loading' | 'loaded' | 'error'>('loading');
+  const [loading, setLoading] = useState<'loading' | 'loaded'>('loading');
   const [baseUrl, setBaseUrl] = useState<string>('');
   useEffect(() => {
+    setLoading('loading');
     const controller = new AbortController();
     const signal = controller.signal;
-    try {
-      const server = getLabServer(context);
-      const url = new URL(`api/v1/activities/lab/${activity}`, server);
-      url.searchParams.append('activity', activity);
-      url.searchParams.append('mode', mode);
-      url.searchParams.append('attemptGuid', activityState.attemptGuid);
-      // Using promise because react's useEffect does not handle async.
-      // toString because tsc does not accept the valid URL.
-      fetch(url.toString(), { signal, method: 'HEAD' })
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error(response.statusText);
-          }
-          setLoading('loaded');
-          setBaseUrl(url.toString());
-        })
-        .catch(() => setLoading('error'));
-    } catch (err) {
-      console.error(err);
-      setLoading('error');
+    if (!activity) {
+      throw new Error(
+        'LogicLab activity is not configured.  Please contact the course author for assistance.',
+      );
     }
+    const server = getLabServer(context);
+    if (!server) {
+      throw new Error('LogicLab server is not configured.  Please contact support for assistance.');
+    }
+    // If the activity is a LabActivity, then use message passing to get the activity configuration.
+    // Otherwise, use the activity ID to get the configuration from the logiclab server.
+    const url = new URL(isLabActivity(activity) ? '' : `api/v1/activities/${activity}/lab`, server);
+    url.searchParams.append('mode', mode);
+    url.searchParams.append('attemptGuid', activityState.attemptGuid);
+    if (!isLabActivity(activity)) {
+      url.searchParams.append('activity', activity);
+    }
+    // Using promise because react's useEffect does not handle async.
+    // toString because tsc does not accept the valid URL.
+    // Test if the URL is reachable.
+    fetch(url.toString(), { signal, method: 'HEAD' })
+      .then((response) => {
+        if (controller.signal.aborted) return;
+        if (!response.ok) {
+          throw new Error(response.statusText);
+        }
+        setBaseUrl(url.toString());
+      })
+      .finally(() => setLoading('loaded'));
     return () => controller.abort();
   }, [context, activity, mode, activityState]);
 
   return (
     <>
-      {loading === 'loading' && (
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden sr-only">Loading...</span>
-        </div>
-      )}
-      {loading === 'error' && (
-        <div className="alert alert-danger">
-          The LogicLab server is unreachable or not properly configured. Please contact support if
-          this issue persists.
-        </div>
-      )}
+      {loading === 'loading' && <LoadingSpinner />}
       {loading === 'loaded' && (
         <div>
           <ScoreAsYouGoHeaderBase
@@ -207,7 +211,10 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
             allow="fullscreen"
             height="800"
             width="100%"
-            data-activity-mode={mode}
+            // data attributes only work if same-site, so using message passing instead.
+            data-oli-activity-mode={mode}
+            data-logiclab-activity={JSON.stringify(activity)}
+            data-oli-attempt-guid={activityState.attemptGuid}
           ></iframe>
         </div>
       )}
@@ -227,7 +234,9 @@ export class LogicLabDelivery extends DeliveryElement<LogicLabModelSchema> {
     ReactDOM.render(
       <Provider store={store}>
         <DeliveryElementProvider {...props}>
-          <LogicLab {...props} />
+          <ErrorBoundary>
+            <LogicLab {...props} />
+          </ErrorBoundary>
         </DeliveryElementProvider>
       </Provider>,
       mountPoint,
