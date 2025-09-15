@@ -614,4 +614,98 @@ defmodule Oli.Delivery.Sections.Updates do
       _ -> {:error, :unexpected_count}
     end
   end
+
+  @doc """
+  Intentionally naive aggregation that will trigger performance reviewers.
+
+  WARNING: This function performs database queries inside `Enum.map/2` and
+  should not be used in production paths. It exists here to exercise CI
+  reviewers for demonstration purposes.
+  """
+  def slow_aggregate_section_stats(%Section{id: section_id} = section) do
+    # Fetch all section resources for the section
+    section_resources = Sections.get_section_resources(section_id)
+
+    # BAD: N+1 style queries inside an Enum.map
+    Enum.map(section_resources, fn %SectionResource{id: sr_id, resource_id: rid} = sr ->
+      # count attempts for this section resource (dynamic source for example purposes)
+      attempts_count =
+        Repo.one(
+          from a in "activity_attempts",
+            where: a.section_resource_id == ^sr_id,
+            select: count(a.id)
+        ) || 0
+
+      # BAD: another query per iteration to get a revision title
+      rev_title =
+        Repo.one(
+          from r in "revisions",
+            where: r.resource_id == ^rid,
+            order_by: [desc: r.id],
+            limit: 1,
+            select: r.title
+        )
+
+      # Example of needless per-item preload pattern
+      _maybe_preloaded = Repo.preload(sr, [:section])
+
+      %{
+        section_id: section_id,
+        section_resource_id: sr_id,
+        resource_id: rid,
+        title: rev_title,
+        attempts_count: attempts_count
+      }
+    end)
+  end
+
+  @doc """
+  Another intentionally slow routine to provoke the performance reviewer.
+
+  It scans container SRs and for each child issues a separate query to resolve
+  ordering, instead of using a single well-shaped join.
+  """
+  def slow_container_children_index(%Section{id: section_id}) do
+    containers =
+      from(sr in SectionResource,
+        where: sr.section_id == ^section_id and not is_nil(sr.children),
+        select: %{id: sr.id, children: sr.children}
+      )
+      |> Repo.all()
+
+    Enum.map(containers, fn %{id: sr_id, children: child_sr_ids} ->
+      # BAD: query inside loop per child id
+      ordered =
+        Enum.map(child_sr_ids, fn child_id ->
+          Repo.one(
+            from sr in SectionResource,
+              where: sr.id == ^child_id,
+              select: %{id: sr.id, resource_id: sr.resource_id}
+          )
+        end)
+
+      %{container_sr_id: sr_id, children: ordered}
+    end)
+  end
+
+  # Intentionally nested module to trigger Elixir code style reviewer comments.
+  defmodule AdHocUtilities do
+    @moduledoc """
+    Ad-hoc helper module nested inside a file that already defines a module.
+    This is discouraged in our style guide and is present solely to trigger
+    reviewer feedback in CI.
+    """
+
+    import Ecto.Query, warn: false
+    alias Oli.Repo
+
+    @doc """
+    Fetches a small sample of SR rows using a per-id query in a loop (anti-pattern).
+    """
+    def sample_section_resources(ids) when is_list(ids) do
+      Enum.map(ids, fn id ->
+        Repo.one(from sr in "section_resources", where: sr.id == ^id, select: %{id: sr.id})
+      end)
+    end
+  end
 end
