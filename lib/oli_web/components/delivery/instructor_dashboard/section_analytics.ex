@@ -1,7 +1,7 @@
 defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
   use OliWeb, :live_component
 
-  alias OliWeb.Common.MonacoEditor
+  alias OliWeb.Common.Monaco
 
   require Logger
 
@@ -352,7 +352,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
                     </p>
                   </div>
                   <div class="mb-3">
-                    <MonacoEditor.render
+                    <Monaco.editor
                       id="custom-sql-editor"
                       language="sql"
                       height="200px"
@@ -410,7 +410,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
                     Define a VegaLite specification to visualize your query results. The data will be automatically injected.
                   </p>
                   <div class="mb-3">
-                    <MonacoEditor.render
+                    <Monaco.editor
                       id="custom-vega-editor"
                       language="json"
                       height="300px"
@@ -558,7 +558,25 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
                         View detailed data
                       </summary>
                       <div class="mt-2 p-3 bg-white dark:bg-gray-800 rounded border">
-                        <pre class="text-xs overflow-x-auto"><%= inspect(@analytics_data, pretty: true, limit: :infinity) %></pre>
+                        <Monaco.editor
+                          id={"raw-data-#{@selected_analytics_category}"}
+                          language="elixir"
+                          height="300px"
+                          default_value={inspect(@analytics_data, pretty: true, limit: :infinity)}
+                          default_options={%{
+                            "readOnly" => true,
+                            "selectOnLineNumbers" => true,
+                            "minimap" => %{"enabled" => false},
+                            "scrollBeyondLastLine" => false,
+                            "wordWrap" => "on",
+                            "lineNumbers" => "on",
+                            "tabSize" => 2,
+                            "insertSpaces" => true,
+                            "automaticLayout" => true,
+                            "formatOnPaste" => true,
+                            "formatOnType" => true
+                          }}
+                        />
                       </div>
                     </details>
                   </div>

@@ -1,4 +1,4 @@
-defmodule OliWeb.Common.MonacoEditor do
+defmodule OliWeb.Common.Monaco do
   use OliWeb, :html
 
   alias Oli.Utils.SchemaResolver
@@ -10,16 +10,16 @@ defmodule OliWeb.Common.MonacoEditor do
   attr(:height, :string)
   attr(:validate_schema_uri, :string, default: nil)
   attr(:default_options, :map)
-  attr(:set_options, :any)
+  attr(:set_options, :any, default: nil)
   attr(:set_width_height, :any, default: nil)
-  attr(:set_value, :any)
+  attr(:set_value, :any, default: nil)
   attr(:on_mount, :any, default: nil)
   attr(:on_change, :any, default: nil)
   attr(:target, :any, default: nil)
-  attr(:get_value, :any)
-  attr(:use_code_lenses, :list)
+  attr(:get_value, :any, default: nil)
+  attr(:use_code_lenses, :list, default: nil)
 
-  def render(assigns) do
+  def editor(assigns) do
     ~H"""
     <div
       id={@id}
