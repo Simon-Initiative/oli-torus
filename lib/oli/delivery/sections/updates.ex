@@ -622,7 +622,7 @@ defmodule Oli.Delivery.Sections.Updates do
   should not be used in production paths. It exists here to exercise CI
   reviewers for demonstration purposes.
   """
-  def slow_aggregate_section_stats(%Section{id: section_id} = section) do
+  def slow_aggregate_section_stats(%Section{id: section_id} = _section) do
     # Fetch all section resources for the section
     section_resources = Sections.get_section_resources(section_id)
 
