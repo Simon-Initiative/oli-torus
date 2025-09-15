@@ -112,8 +112,8 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p ai
-          chmod -R a-w .
-          chmod u+w ai
+          # chmod -R a-w .
+          # chmod u+w ai
 
       - name: Install Codex CLI
         run: npm i -g @openai/codex
@@ -189,26 +189,20 @@ jobs:
             exit 0
           fi
 
-          # Prepare Codex config dir in a writable temp location
+          # Prepare writable temp directories (just in case CLI needs them)
           export XDG_CONFIG_HOME="${RUNNER_TEMP}/codex-config"
           export HOME="${RUNNER_TEMP}/codex-home"
-          mkdir -p "$XDG_CONFIG_HOME/codex" "$HOME/.config/codex"
+          mkdir -p "$XDG_CONFIG_HOME" "$HOME/.config"
 
           KEY="${OPENAI_API_KEY}"
-          # Normalize env so Codex can pick up the key regardless of variable name
-          export OPENAI_KEY="$KEY"
           export OPENAI_API_KEY="$KEY"
+          # Prefer passing the API key directly to exec to avoid login/config writes
 
           echo "Codex binary: $(command -v codex || echo 'not found')"
           codex --version || true
 
-          # Try login; if it errors with ENOENT again, log dirs to help debug
-          if ! codex login --api-key "$KEY" 2> ai/${ROLE}.login.err; then
-            echo "Codex login failed; dumping debug of config dirs:"; ls -la "$XDG_CONFIG_HOME" || true; ls -la "$XDG_CONFIG_HOME/codex" || true; ls -la "$HOME/.config/codex" || true
-            echo "Codex login stderr:"; sed -n '1,200p' ai/${ROLE}.login.err || true
-          fi
-
-          codex exec --full-auto < ai/prompt.${ROLE}.txt > ai/${ROLE}.raw.txt || true
+          # Exec with explicit API key and without ANSI output flags (some versions don't support --no-ansi)
+          codex exec --full-auto --api-key "$KEY" < ai/prompt.${ROLE}.txt > ai/${ROLE}.raw.txt || true
 
           # If auth failed, create a clear failing JSON so the dev knows what to fix
           if grep -qi "401 Unauthorized" ai/${ROLE}.raw.txt; then
