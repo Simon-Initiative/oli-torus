@@ -342,7 +342,7 @@ def process_single_file_s3_integration(bucket: str, key: str, section_id: Option
 
         # Process the file using S3 integration
         section_id_int = int(section_id) if section_id else None
-        result = clickhouse_client._process_single_s3_file_unified(s3_path, section_id_int)
+        result = clickhouse_client.process_single_s3_file(s3_path, section_id_int)
 
         result['success'] = True
         result['processing_method'] = 'unified_s3_integration'

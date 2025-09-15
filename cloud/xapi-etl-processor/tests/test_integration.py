@@ -106,7 +106,7 @@ class TestUnifiedSystemIntegration(unittest.TestCase):
             'page_viewed_events_processed': 1,
             'part_attempt_events_processed': 0
         }
-        mock_client_instance._process_single_s3_file_unified.return_value = s3_result
+        mock_client_instance.process_single_s3_file.return_value = s3_result
         mock_clickhouse_client_class.return_value = mock_client_instance
 
         # Create test event
@@ -134,7 +134,7 @@ class TestUnifiedSystemIntegration(unittest.TestCase):
         self.assertEqual(response_body['total_events_processed'], 3)
 
         # Verify unified S3 processing was called
-        mock_client_instance._process_single_s3_file_unified.assert_called_once()
+        mock_client_instance.process_single_s3_file.assert_called_once()
 
     def test_unified_bulk_s3_processing_simulation(self):
         """Test S3 bulk processing with unified table approach (simulated)"""

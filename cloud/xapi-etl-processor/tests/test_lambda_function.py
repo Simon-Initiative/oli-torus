@@ -77,7 +77,7 @@ class TestLambdaFunctionUnified(unittest.TestCase):
             'page_viewed_events_processed': 150,
             'part_attempt_events_processed': 50
         }
-        mock_client_instance._process_single_s3_file_unified.return_value = s3_result
+        mock_client_instance.process_single_s3_file.return_value = s3_result
         mock_clickhouse_client_class.return_value = mock_client_instance
 
         # Execute Lambda function
@@ -91,7 +91,7 @@ class TestLambdaFunctionUnified(unittest.TestCase):
 
         # Verify ClickHouse client was called correctly
         mock_client_instance.health_check.assert_called_once()
-        mock_client_instance._process_single_s3_file_unified.assert_called_once()
+        mock_client_instance.process_single_s3_file.assert_called_once()
 
     @patch('lambda_function.get_config')
     @patch('lambda_function.ClickHouseClient')
@@ -116,7 +116,7 @@ class TestLambdaFunctionUnified(unittest.TestCase):
         mock_client_instance = Mock()
         mock_client_instance.health_check.return_value = False
 
-        mock_client_instance._process_single_s3_file_unified.side_effect = Exception("ClickHouse health check failed")
+        mock_client_instance.process_single_s3_file.side_effect = Exception("ClickHouse health check failed")
         mock_clickhouse_client_class.return_value = mock_client_instance
 
         # Execute Lambda function
@@ -150,7 +150,7 @@ class TestLambdaFunctionUnified(unittest.TestCase):
         mock_client_instance = Mock()
         mock_client_instance.health_check.return_value = True
         mock_client_instance.bulk_insert_from_s3.side_effect = Exception("Processing failed")
-        mock_client_instance._process_single_s3_file_unified.side_effect = Exception("Processing failed")
+        mock_client_instance.process_single_s3_file.side_effect = Exception("Processing failed")
         mock_clickhouse_client_class.return_value = mock_client_instance
 
         # Execute Lambda function
@@ -236,7 +236,7 @@ class TestLambdaFunctionUnified(unittest.TestCase):
             'page_viewed_events_processed': 150,
             'part_attempt_events_processed': 50
         }
-        mock_client_instance._process_single_s3_file_unified.return_value = s3_result
+        mock_client_instance.process_single_s3_file.return_value = s3_result
         mock_clickhouse_client_class.return_value = mock_client_instance
 
         # Execute Lambda function
@@ -249,7 +249,7 @@ class TestLambdaFunctionUnified(unittest.TestCase):
         self.assertEqual(response_body['total_events_processed'], 1500)
 
         # Verify that S3 integration method was called for the first file
-        mock_client_instance._process_single_s3_file_unified.assert_called_once()
+        mock_client_instance.process_single_s3_file.assert_called_once()
 
 
 if __name__ == '__main__':

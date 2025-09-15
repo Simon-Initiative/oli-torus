@@ -577,7 +577,7 @@ class ClickHouseClient:
 
                 # Process each file individually in this batch
                 for s3_path in batch_paths:
-                    file_results = self._process_single_s3_file_unified(s3_path, section_id)
+                    file_results = self.process_single_s3_file(s3_path, section_id)
                     for key in results:
                         results[key] += file_results.get(key, 0)
 
@@ -590,7 +590,7 @@ class ClickHouseClient:
         logger.info(f"S3 integration complete: {results['total_events_processed']} total events processed")
         return results
 
-    def _process_single_s3_file_unified(self, s3_path: str, section_id: Optional[int] = None) -> Dict[str, int]:
+    def process_single_s3_file(self, s3_path: str, section_id: Optional[int] = None) -> Dict[str, int]:
         """Process a single S3 file into the unified raw_events table"""
         table_name = self.get_raw_events_table()
 
