@@ -4,7 +4,9 @@ on: pull_request
 permissions:
   contents: read
   pull-requests: write     # for PR comments/reviews
+  issues: write            # label add (if used)
   checks: write            # if using the Checks API
+  statuses: write          # allow setting commit status
 
 jobs:
   run:
@@ -16,4 +18,5 @@ jobs:
       - run: npm i -D danger js-yaml micromatch typescript ts-node
       - run: npx danger ci
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DANGER_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
