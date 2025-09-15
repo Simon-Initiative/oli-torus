@@ -38,7 +38,6 @@
 - [ ] **Performance & Scalability**
   - Prefer **one tailored query** instead of multiple reused queries when feasible.
   - If a single query becomes planner-hostile, **split into simpler queries**.
-  - **No DB queries in `Enum.map` or any loop**.
   - Prefer **aggregated tables** (`ResourceSummary`, `ResponseSummary`) over scanning `ActivityAttempt`/`PartAttempt`.
   - **Delivery code uses `SectionResourceDepot`** for page titles, hierarchy, schedules, page details (do not hand-roll resolver queries).
   - LiveViews **optimize TTFB** via **async assigns**; assigns contain only what’s needed to render.

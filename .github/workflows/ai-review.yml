@@ -132,7 +132,7 @@ jobs:
             echo "";
             echo "IMPORTANT: Return ONLY the summary of findings, wrapped between these markers:";
             echo "<!-- FINDINGS_START -->";
-            echo "<your findings in markdown go here>";
+            echo "";
             echo "<!-- FINDINGS_END -->";
             echo "Do NOT include the prompt, your reasoning, or any other text outside those markers.";
             echo "Within the markers, use this exact format for each finding:";
