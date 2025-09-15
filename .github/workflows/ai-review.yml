@@ -126,26 +126,27 @@ jobs:
           {
             echo "You are a specialist reviewer for ${ROLE}.";
             echo "PRIMARY SOURCE: the DIFF below.";
-            echo "If the DIFF is insufficient to judge correctness/safety, you MAY open files in the workspace to gather LIMITED context.";
+            echo "If the DIFF is insufficient to judge correctness/safety, you MAY open files in the workspace to gather context.";
             echo "ALLOWED PATHS: lib/**, assets/src/**, config/**, priv/repo/migrations/**";
             echo "DENYLIST: node_modules/**, deps/**, build/**, _build/**, .git/**";
-            echo "Limits: at most 5 extra files total, and ≤1000 lines per file. Prefer narrow ranges near the changed lines.";
             echo "";
-            echo "Return ONLY well-structured Markdown with one or more findings; if none, write 'No issues found'.";
-            echo "For each finding, use this exact format:";
+            echo "IMPORTANT: Return ONLY the summary of findings, wrapped between these markers:";
+            echo "<!-- FINDINGS_START -->";
+            echo "<your findings in markdown go here>";
+            echo "<!-- FINDINGS_END -->";
+            echo "Do NOT include the prompt, your reasoning, or any other text outside those markers.";
+            echo "Within the markers, use this exact format for each finding:";
             echo "### <short title>";
             echo "file: <path>, line: <line number>";
             echo "Description: <what/why this is a problem in this codebase>";
             echo "Suggestion: <specific, actionable code change>";
             echo "";
-            echo "Rules:";
-            echo "- Focus on changed lines; use extra context only when necessary.";
-            echo "- Fail only for truly blocking issues; include file+line and a concrete fix.";
-            echo "- Confidence = 0..1.";
-            echo "";
+            echo "Coding Review Guidelines and Checklist:";
             echo "---CHECKLIST START---";
             [ -f ".review/${ROLE}.md" ] && cat ".review/${ROLE}.md" || echo "(no checklist for ${ROLE})";
             echo "---CHECKLIST END---";
+            echo "";
+            echo "DIFF (unified format, 0 lines of context):";
             echo "---DIFF START---";
             head -c 150000 diff.patch;
             echo "---DIFF END---";
@@ -158,21 +159,11 @@ jobs:
           # Feed prompt via STDIN (portable across Codex CLI versions)
           # If diff is empty, short-circuit with a PASS
           if [[ ! -s diff.patch ]]; then
-            echo '{"verdict":"pass","confidence":0.8,"summary":"Empty diff","findings":[],"context_used":[]}' > ai/${ROLE}.json
             exit 0
           fi
 
           # Fork/secret guard: on forks or missing key, emit WARN and skip Codex
           if [ "${IS_FORK:-false}" = "true" ] || [ -z "${OPENAI_API_KEY:-}" ]; then
-            echo "Forked PR or missing OPENAI_API_KEY; emitting WARN and skipping Codex."
-            printf '%s\n' \
-              '{' \
-              '  "verdict": "warn",' \
-              '  "confidence": 0.2,' \
-              '  "summary": "AI reviewer skipped (forked PR or missing OPENAI_API_KEY).",' \
-              '  "findings": [],' \
-              '  "context_used": []' \
-              '}' > ai/${ROLE}.json
             exit 0
           fi
 
@@ -202,8 +193,18 @@ jobs:
             try {
               bodyText = fs.readFileSync(`ai/${role}.raw.txt`, 'utf8');
             } catch {}
-            if (!bodyText || !bodyText.trim()) bodyText = 'No issues found';
-            const body = `${header}\n\n${bodyText}`;
+            let findings = '';
+            if (bodyText) {
+              const m = bodyText.match(/<!--\s*FINDINGS_START\s*-->([\s\S]*?)<!--\s*FINDINGS_END\s*-->/i);
+              if (m) {
+                findings = m[1].trim();
+              } else {
+                const idx = bodyText.indexOf('### ');
+                if (idx >= 0) findings = bodyText.slice(idx).trim();
+              }
+            }
+            if (!findings) findings = 'No issues found';
+            const body = `${header}\n\n${findings}`;
             // Upsert a single sticky comment per role
             const { data: comments } = await github.rest.issues.listComments({
               ...context.repo,
@@ -225,17 +226,3 @@ jobs:
                 body
               });
             }
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: ai-results-${{ matrix.role }}
-          path: ai/${{ matrix.role }}.json
-          if-no-files-found: error
-
-
-      - name: Ensure no repo changes (tracked files only)
-        run: |
-          git status --porcelain --untracked-files=no
-          test -z "$(git status --porcelain --untracked-files=no)" || (echo "Workspace mutated!"; git --no-pager diff; exit 1)
-
-  # aggregate job removed per request; per-role comments are posted by each specialist job
