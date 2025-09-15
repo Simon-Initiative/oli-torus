@@ -64,14 +64,7 @@ jobs:
       matrix:
         role: [security, performance, elixir, typescript, ui, requirements]
     # Run a role only if relevant files changed
-    if: ${{
-      (matrix.role == 'elixir' && needs.changes.outputs.elixir == 'true') ||
-      (matrix.role == 'typescript' && needs.changes.outputs.typescript == 'true') ||
-      (matrix.role == 'ui' && needs.changes.outputs.ui == 'true') ||
-      (matrix.role == 'requirements' && needs.changes.outputs.requirements == 'true') ||
-      (matrix.role == 'security' && needs.changes.outputs.security == 'true') ||
-      (matrix.role == 'performance' && needs.changes.outputs.performance == 'true')
-    }}
+    if: ${{ (matrix.role == 'elixir' && needs.changes.outputs.elixir == 'true') || (matrix.role == 'typescript' && needs.changes.outputs.typescript == 'true') || (matrix.role == 'ui' && needs.changes.outputs.ui == 'true') || (matrix.role == 'requirements' && needs.changes.outputs.requirements == 'true') || (matrix.role == 'security' && needs.changes.outputs.security == 'true') || (matrix.role == 'performance' && needs.changes.outputs.performance == 'true') }}
     steps:
       - uses: actions/checkout@v4
         with:
