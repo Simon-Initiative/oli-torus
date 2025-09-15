@@ -15,6 +15,7 @@ jobs:
       requirements: ${{ steps.filter.outputs.requirements }}
       security: ${{ steps.filter.outputs.security }}
       performance: ${{ steps.filter.outputs.performance }}
+      roles: ${{ steps.build_matrix.outputs.roles }}
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
@@ -56,15 +57,29 @@ jobs:
               - 'lib/oli/resources/**'
               - 'lib/oli/activities/**'
 
+      - id: build_matrix
+        name: Build matrix roles
+        shell: bash
+        run: |
+          roles=()
+          [[ "${{ steps.filter.outputs.elixir }}" == 'true' ]] && roles+=("elixir")
+          [[ "${{ steps.filter.outputs.typescript }}" == 'true' ]] && roles+=("typescript")
+          [[ "${{ steps.filter.outputs.ui }}" == 'true' ]] && roles+=("ui")
+          [[ "${{ steps.filter.outputs.security }}" == 'true' ]] && roles+=("security")
+          [[ "${{ steps.filter.outputs.performance }}" == 'true' ]] && roles+=("performance")
+          [[ "${{ steps.filter.outputs.requirements }}" == 'true' ]] && roles+=("requirements")
+          # Ensure at least one role runs; default to 'requirements'
+          if [ ${#roles[@]} -eq 0 ]; then roles+=("requirements"); fi
+          json=$(printf '%s\n' "${roles[@]}" | jq -R . | jq -s .)
+          echo "roles=$json" >> "$GITHUB_OUTPUT"
+
   specialist:
     name: ai/${{ matrix.role }}
     runs-on: ubuntu-latest
     needs: [changes]
     strategy:
       matrix:
-        role: [security, performance, elixir, typescript, ui, requirements]
-    # Run a role only if relevant files changed
-    if: ${{ (matrix.role == 'elixir' && needs.changes.outputs.elixir == 'true') || (matrix.role == 'typescript' && needs.changes.outputs.typescript == 'true') || (matrix.role == 'ui' && needs.changes.outputs.ui == 'true') || (matrix.role == 'requirements' && needs.changes.outputs.requirements == 'true') || (matrix.role == 'security' && needs.changes.outputs.security == 'true') || (matrix.role == 'performance' && needs.changes.outputs.performance == 'true') }}
+        role: ${{ fromJSON(needs.changes.outputs.roles) }}
     steps:
       - uses: actions/checkout@v4
         with:
