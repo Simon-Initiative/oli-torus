@@ -5,6 +5,7 @@ import micromatch from "micromatch"
 
 // 1) Basic size guard
 const modified = (danger.github?.pr?.additions || 0) + (danger.github?.pr?.deletions || 0)
+console.log(`[danger] PR size additions+deletions: ${modified}`)
 if (modified > 800) {
   warn(`PR is large (${modified} LOC changed). Consider splitting.`)
 }
@@ -13,6 +14,7 @@ if (modified > 800) {
 const modifiedFiles = danger.git.modified_files || []
 const createdFiles = danger.git.created_files || []
 const allChanged = [...modifiedFiles, ...createdFiles]
+console.log(`[danger] Changed files count: ${allChanged.length}`)
 const exChanges = allChanged.filter((f) => f.endsWith(".ex"))
 const hasTests = allChanged.some((f) => f.startsWith("test/") || f.includes("_test.exs"))
 if (exChanges.length && !hasTests) {
@@ -21,6 +23,7 @@ if (exChanges.length && !hasTests) {
 
 // Risk labeler from repo rules
 try {
+  console.log(`[danger] Loading .ci/RISK_RULES.yaml ...`)
   const raw = fs.readFileSync(".ci/RISK_RULES.yaml", "utf8")
   const cfg: any = yaml.load(raw)
   let score = 0
@@ -30,7 +33,10 @@ try {
   if (size) {
     const thr = typeof size.threshold === "number" ? size.threshold : 400
     const w = typeof size.weight === "number" ? size.weight : 3
-    if (modified > thr) score += w
+    if (modified > thr) {
+      score += w
+      console.log(`[danger] Size rule matched (>${thr}) adding ${w}`)
+    }
   }
 
   // Path rules: add weight if any changed file matches any glob
@@ -38,8 +44,11 @@ try {
   for (const r of rules) {
     const globs: string[] = Array.isArray(r?.globs) ? r.globs : []
     if (!globs.length) continue
-    if (micromatch(allChanged, globs).length > 0) {
-      score += (typeof r.weight === "number" ? r.weight : 0)
+    const hit = micromatch(allChanged, globs)
+    if (hit.length > 0) {
+      const w = (typeof r.weight === "number" ? r.weight : 0)
+      score += w
+      console.log(`[danger] Rule '${r.key || "(unnamed)"}' matched ${hit.length} file(s); +${w}`)
     }
   }
 
@@ -58,6 +67,7 @@ try {
   const low = cfg.thresholds?.low ?? 3
   const tier = score >= high ? "high" : score > low ? "medium" : "low"
   const label = `risk/${tier}`
+  console.log(`[danger] Risk score=${score}, tier=${tier}, label='${label}'`)
 
   schedule(async () => {
     const { owner, repo, number } = danger.github.thisPR
@@ -66,25 +76,34 @@ try {
     try {
       // Ensure label exists (create if missing)
       try {
+        console.log(`[danger] Checking for existing label '${label}'`)
         await danger.github.api.issues.getLabel({ owner, repo, name: label })
       } catch {
         try {
+          console.log(`[danger] Creating label '${label}' with color ${color}`)
           await danger.github.api.issues.createLabel({ owner, repo, name: label, color })
         } catch (e) {
-          // If creation fails (permissions), continue; we'll still try to add
-          warn(`Could not create label '${label}': ${String(e)}`)
+          const msg = (e as any)?.message || String(e)
+          console.log(`[danger] WARN could not create label '${label}': ${msg}`)
+          warn(`Could not create label '${label}': ${msg}`)
         }
       }
       // Add label
+      console.log(`[danger] Adding label '${label}' to PR #${number}`)
       await danger.github.api.issues.addLabels({ owner, repo, issue_number: number, labels: [label] })
+      console.log(`[danger] Label '${label}' added successfully`)
     } catch (e) {
-      warn(`Could not add risk label '${label}': ${String(e)}`)
+      const msg = (e as any)?.message || String(e)
+      console.log(`[danger] WARN could not add risk label '${label}': ${msg}`)
+      warn(`Could not add risk label '${label}': ${msg}`)
     }
   })
 
   markdown(`**Risk score:** ${score} → \`${label}\``)
-} catch {
-  // Optional – rules file absent
+} catch (e) {
+  const msg = (e as any)?.message || String(e)
+  console.log(`[danger] RISK_RULES not loaded or parse failed: ${msg}`)
+  markdown(`_Note: risk rules not loaded — ${msg}_`)
 }
 
 // 5) Aggregate AI reviewer (optional): if ai/verdict.json exists, summarize
