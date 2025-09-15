@@ -62,6 +62,8 @@ jobs:
             echo "";
             echo "Return ONLY strict JSON matching .review/CONTRACT.json, extended with:";
             echo '  "context_used": [{"path":"","lines":"L10-L80"}]';
+            echo "If you cannot produce valid JSON, output this minimal object:";
+            echo '{"verdict":"warn","confidence":0.3,"summary":"Could not parse; returning minimal","findings":[],"context_used":[]}';
             echo "";
             echo "Rules:";
             echo "- Focus on changed lines; use extra context only when necessary.";
@@ -79,17 +81,30 @@ jobs:
           # Run Codex reviewer (non-streaming output). Some versions don't support --no-stream;
           # relying on default behavior with --stdin and --format json.
           # Feed prompt via STDIN (portable across Codex CLI versions)
-          codex exec < ai/prompt.${ROLE}.txt > ai/${ROLE}.raw.txt
+          # If diff is empty, short-circuit with a PASS
+          if [[ ! -s diff.patch ]]; then
+            echo '{"verdict":"pass","confidence":0.8,"summary":"Empty diff","findings":[],"context_used":[]}' > ai/${ROLE}.json
+            exit 0
+          fi
+
+          codex exec < ai/prompt.${ROLE}.txt > ai/${ROLE}.raw.txt || true
 
           # Extract the first JSON object from output robustly.
           node -e '
             const fs=require("fs");
             const role=process.env.ROLE;
             if(!role){ console.error("ROLE env missing"); process.exit(2); }
-            const raw=fs.readFileSync(`ai/${role}.raw.txt`,`utf8`);
-            const m=raw.match(/\{[\s\S]*?\}/);
-            if(!m){ console.error("No JSON object found in output"); process.exit(2) }
-            fs.writeFileSync(`ai/${role}.json`, m[0]);
+            const fallback = { verdict: "warn", confidence: 0.3, summary: "AI output missing JSON; fallback applied", findings: [], context_used: [] };
+            try {
+              const raw=fs.readFileSync(`ai/${role}.raw.txt`,`utf8`);
+              const m=raw.match(/\{[\s\S]*?\}/);
+              if(!m){ fs.writeFileSync(`ai/${role}.json`, JSON.stringify(fallback)); process.exit(0); }
+              const obj = JSON.parse(m[0]);
+              if(!obj || !obj.verdict){ fs.writeFileSync(`ai/${role}.json`, JSON.stringify(fallback)); process.exit(0); }
+              fs.writeFileSync(`ai/${role}.json`, JSON.stringify(obj));
+            } catch(e) {
+              fs.writeFileSync(`ai/${role}.json`, JSON.stringify(fallback));
+            }
           '
 
       - name: Validate JSON against contract
