@@ -1153,6 +1153,11 @@ defmodule OliWeb.Router do
         "/:view/:active_tab/:assessment_id",
         Delivery.InstructorDashboard.InstructorDashboardLive
       )
+
+      live(
+        "/insights/learning_objectives/related_activities/:resource_id",
+        Delivery.InstructorDashboard.LearningObjectives.RelatedActivitiesLive
+      )
     end
   end
 

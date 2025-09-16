@@ -41,6 +41,7 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Resources.ResourceType
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Resources.Revision
+  alias Oli.Resources.Resource
   alias Oli.Publishing.PublishedResource
   alias Oli.Publishing.Publications.{PublicationDiff}
   alias Oli.Accounts.User
@@ -5667,5 +5668,178 @@ defmodule Oli.Delivery.Sections do
     Enum.any?(@instructor_roles, fn r ->
       ContextRoles.contains_role?(roles, r)
     end)
+  end
+
+  @doc """
+  Gets a single resource by ID from the published resources
+  """
+  def get_resource_by_id(resource_id) do
+    from(rev in Revision,
+      join: r in Resource,
+      on: rev.resource_id == r.id,
+      where: r.id == ^resource_id,
+      order_by: [desc: rev.inserted_at],
+      limit: 1,
+      select: %{
+        resource_id: r.id,
+        title: rev.title,
+        content: rev.content
+      }
+    )
+    |> Repo.one()
+  end
+
+  @doc """
+  Gets all activities that have a specific objective attached to them in the given section
+  """
+  def get_activities_for_objective(section, resource_id) do
+    activity_type_id = Oli.Resources.ResourceType.id_for_activity()
+
+    # Query activities that have the objective in their JSONB objectives field
+    query =
+      from([rev: rev, sr: sr, s: s] in DeliveryResolver.section_resource_revisions(section.slug))
+      |> where(
+        [rev: rev, sr: sr, s: s],
+        rev.deleted == false and
+          rev.resource_type_id == ^activity_type_id and
+          fragment("EXISTS (
+          SELECT 1 FROM jsonb_each(?) AS obj(part_id, objective_ids)
+          WHERE jsonb_array_length(objective_ids::jsonb) > 0
+          AND objective_ids::jsonb @> ?::jsonb
+        )", rev.objectives, ^[resource_id])
+      )
+      |> select([rev: rev, sr: sr, s: s], %{
+        resource_id: rev.resource_id,
+        title: rev.title,
+        content: rev.content,
+        slug: rev.slug
+      })
+
+    activities = Repo.all(query)
+
+    # Get all activity IDs for bulk metrics calculation
+    activity_ids = Enum.map(activities, & &1.resource_id)
+
+    # Single query to get all metrics at once
+    metrics_map = calculate_all_activity_metrics(section, activity_ids)
+
+    # Map activities with their pre-calculated metrics
+    activities
+    |> Enum.map(fn activity ->
+      question_stem = extract_question_stem(activity.content)
+      {attempts, percent_correct} = Map.get(metrics_map, activity.resource_id, {0, 0})
+
+      %{
+        resource_id: activity.resource_id,
+        title: activity.title,
+        question_stem: question_stem,
+        attempts: attempts,
+        percent_correct: percent_correct,
+        slug: activity.slug
+      }
+    end)
+  end
+
+  defp extract_question_stem(%{"stem" => %{"content" => content}}) when is_list(content) do
+    content
+    |> Enum.find(&match?(%{"type" => "p"}, &1))
+    |> case do
+      %{"children" => children} when is_list(children) ->
+        children
+        |> Enum.map(&extract_text_from_item/1)
+        |> Enum.join("")
+        |> String.trim()
+
+      _ ->
+        "No question stem available"
+    end
+  rescue
+    _ -> "No question stem available"
+  end
+
+  defp extract_question_stem(content) when is_map(content) do
+    case Map.get(content, "stem") do
+      %{"content" => stem_content} ->
+        extract_text_from_content(stem_content)
+
+      stem_text when is_binary(stem_text) ->
+        stem_text
+
+      _ ->
+        case Map.get(content, "content") do
+          content_list when is_list(content_list) -> extract_text_from_content(content_list)
+          _ -> "No question stem available"
+        end
+    end
+  end
+
+  defp extract_question_stem(_), do: "No question stem available"
+
+  defp extract_text_from_content(content) when is_list(content) do
+    content
+    |> Enum.map(&extract_text_from_item/1)
+    |> Enum.join("")
+    |> String.trim()
+    |> case do
+      "" -> "No question stem available"
+      text -> text
+    end
+  end
+
+  defp extract_text_from_content(_), do: "No question stem available"
+
+  defp extract_text_from_item(%{"text" => text}), do: text
+
+  defp extract_text_from_item(%{"children" => children}) when is_list(children) do
+    children |> Enum.map(&extract_text_from_item/1) |> Enum.join("")
+  end
+
+  defp extract_text_from_item(_), do: ""
+
+  defp calculate_all_activity_metrics(section, activity_ids) when is_list(activity_ids) do
+    if Enum.empty?(activity_ids) do
+      %{}
+    else
+      # Single query to get all attempt data for all activities at once
+      query =
+        from(aa in Oli.Delivery.Attempts.Core.ActivityAttempt,
+          join: ra in Oli.Delivery.Attempts.Core.ResourceAttempt,
+          on: aa.resource_attempt_id == ra.id,
+          join: rac in Oli.Delivery.Attempts.Core.ResourceAccess,
+          on: ra.resource_access_id == rac.id,
+          join: e in Oli.Delivery.Sections.Enrollment,
+          on: rac.user_id == e.user_id and rac.section_id == ^section.id,
+          where: aa.resource_id in ^activity_ids and e.status == :enrolled,
+          select: %{
+            resource_id: aa.resource_id,
+            score: aa.score,
+            out_of: aa.out_of
+          }
+        )
+
+      attempts_data = Repo.all(query)
+
+      # Group by resource_id and calculate metrics
+      attempts_data
+      |> Enum.group_by(& &1.resource_id)
+      |> Enum.reduce(%{}, fn {resource_id, attempts}, acc ->
+        total_attempts = length(attempts)
+
+        correct_attempts =
+          attempts
+          |> Enum.count(fn attempt ->
+            attempt.score && attempt.out_of && attempt.score == attempt.out_of
+          end)
+
+        percent_correct =
+          if total_attempts > 0 do
+            (correct_attempts / total_attempts * 100) |> Float.round(1)
+          else
+            0
+          end
+
+        Map.put(acc, resource_id, {total_attempts, percent_correct})
+      end)
+    end
   end
 end
