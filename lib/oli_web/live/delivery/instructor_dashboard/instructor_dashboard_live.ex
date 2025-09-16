@@ -451,7 +451,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         active: is_active_tab?(:scored_activities, active_tab)
       },
       %TabLink{
-        label: "Practice Activities",
+        label: "Practice Pages",
         path: path_for(:insights, :practice_activities, section_slug, preview_mode),
         badge: nil,
         active: is_active_tab?(:practice_activities, active_tab)
