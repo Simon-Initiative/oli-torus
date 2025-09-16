@@ -120,8 +120,8 @@ jobs:
             echo "PRIMARY SOURCE: the DIFF below.";
             echo "HARD CONSTRAINTS:";
             echo "1) REVIEW ONLY lines changed in the DIFF; ignore any other code.";
-            echo "2) DO NOT open or read repository files outside the DIFF.";
-            echo "3) If the DIFF is insufficient for a judgment, output 'No issues found'.";
+            echo "2) You may read some other files outside the DIFF ONLY for CONTEXT.";
+            echo "3) IMPORTANT: NEVER comment about findings in files or lines not included in the DIFF.";
             echo "";
             echo "IMPORTANT: Return ONLY the summary of findings, wrapped between these markers:";
             echo "<!-- FINDINGS_START -->";
