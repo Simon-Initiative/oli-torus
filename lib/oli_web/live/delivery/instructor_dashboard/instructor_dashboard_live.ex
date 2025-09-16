@@ -445,7 +445,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         active: is_active_tab?(:learning_objectives, active_tab)
       },
       %TabLink{
-        label: "Scored Activities",
+        label: "Scored Pages",
         path: path_for(:insights, :scored_activities, section_slug, preview_mode),
         badge: nil,
         active: is_active_tab?(:scored_activities, active_tab)
@@ -478,6 +478,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         ctx={@ctx}
         section={@section}
         view={@view}
+        active_tab={@active_tab}
         students={@users}
         certificate={@certificate}
         certificate_pending_email_notification_count={@certificate_pending_email_notification_count}
@@ -557,6 +558,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         ctx={@ctx}
         section={@section}
         view={@view}
+        active_tab={@active_tab}
         students={@users}
         dropdown_options={@dropdown_options}
       />
@@ -575,6 +577,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         params={@params}
         section_slug={@section.slug}
         view={@view}
+        active_tab={@active_tab}
         containers={@containers}
         patch_url_type={:instructor_dashboard}
       />
