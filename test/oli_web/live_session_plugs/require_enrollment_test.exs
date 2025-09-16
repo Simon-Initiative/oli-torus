@@ -20,12 +20,42 @@ defmodule OliWeb.LiveSessionPlugs.RequireEnrollmentTest do
   end
 
   describe "on_mount: :default with section that doesn't require enrollment" do
-    test "allows access when section requires_enrollment is false" do
+    test "auto-enrolls user and sets is_enrolled when section requires_enrollment is false", %{
+      user: user
+    } do
+      section = insert(:section, requires_enrollment: false)
+
+      socket = %LiveView.Socket{
+        endpoint: OliWeb.Endpoint,
+        assigns: %{__changed__: %{}, current_user: user, current_author: nil, section: section}
+      }
+
+      assert {:cont, updated_socket} = RequireEnrollment.on_mount(:default, %{}, %{}, socket)
+      assert updated_socket.assigns.is_enrolled == true
+
+      assert Sections.is_enrolled?(user.id, section.slug)
+    end
+
+    test "sets is_enrolled for author when section requires_enrollment is false", %{
+      author: author
+    } do
+      section = insert(:section, requires_enrollment: false)
+
+      socket = %LiveView.Socket{
+        endpoint: OliWeb.Endpoint,
+        assigns: %{__changed__: %{}, current_user: nil, current_author: author, section: section}
+      }
+
+      assert {:cont, updated_socket} = RequireEnrollment.on_mount(:default, %{}, %{}, socket)
+      assert updated_socket.assigns.is_enrolled == true
+    end
+
+    test "falls through to default clause when both current_user and current_author are nil" do
       section = %Sections.Section{requires_enrollment: false}
 
       socket = %LiveView.Socket{
         endpoint: OliWeb.Endpoint,
-        assigns: %{__changed__: %{}, section: section}
+        assigns: %{__changed__: %{}, current_user: nil, current_author: nil, section: section}
       }
 
       assert {:cont, ^socket} = RequireEnrollment.on_mount(:default, %{}, %{}, socket)
@@ -55,7 +85,7 @@ defmodule OliWeb.LiveSessionPlugs.RequireEnrollmentTest do
     test "redirects to login when no user is present" do
       socket = %LiveView.Socket{
         endpoint: OliWeb.Endpoint,
-        assigns: %{__changed__: %{}, current_author: nil, flash: %{}}
+        assigns: %{__changed__: %{}, current_user: nil, flash: %{}}
       }
 
       assert {:halt, redirected_socket} =
