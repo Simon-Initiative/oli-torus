@@ -119,6 +119,31 @@ Example activity types: Multiple Choice, Short Answer, File Upload, Multi-Input,
 - Integration tests for critical workflows
 - Always run tests before committing
 
+## Code Reviews
+
+When a code review is requested (e.g., with @codex review), the review must always consult the guidelines in the .review directory.
+
+Use the appropriate guideline file(s) based on the nature of the changes in the PR:
+
+- .review/elixir.md → Backend / Elixir code changes
+- .review/performance.md → Performance considerations
+- .review/requirements.md → Verification of PRD requirements
+- .review/security.md → General security review
+- .review/ui.md → UI and frontend changes
+
+### Rules for Applying Guidelines
+
+- Always perform a security review.
+- Always perform a performance review.
+
+For other reviews (Elixir, UI, Requirements), only apply the relevant guideline files if the PR contains those types of changes. The requirements
+review should be run when a `docs/features/**/prd.md` file is added or
+changed in the PR.
+
+Example: If a PR does not include any UI changes, skip the UI review.
+
+The review process should first assess the scope of the PR, then load the appropriate guidelines from .review and use them to structure the findings.
+
 ## Common Development Tasks
 
 ### Adding a New Page/LiveView
