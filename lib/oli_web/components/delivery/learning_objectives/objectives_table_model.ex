@@ -43,6 +43,12 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
         label: "Proficiency Distribution",
         sortable: false,
         render_fn: &custom_render/3
+      },
+      %ColumnSpec{
+        name: :related_activities_count,
+        label: "Related Activities",
+        render_fn: &custom_render/3,
+        tooltip: "Number of activities that have this learning objective attached"
       }
     ]
 
@@ -189,6 +195,45 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
           <p>{label}: {value}%</p>
         <% end %>
       </div>
+    </div>
+    """
+  end
+
+  # RELATED ACTIVITIES COUNT
+  defp custom_render(assigns, objective, %ColumnSpec{name: :related_activities_count}) do
+    count = Map.get(objective, :related_activities_count, 0)
+    section_slug = Map.get(assigns, :section_slug)
+
+    # Build URL with current page parameters as "back_params"
+    base_url =
+      "/sections/#{section_slug}/instructor_dashboard/insights/learning_objectives/related_activities/#{objective.resource_id}"
+
+    # Get current page parameters from assigns (passed by parent LiveView)
+    current_params = Map.get(assigns, :current_params, %{})
+
+    full_url =
+      if map_size(current_params) > 0 do
+        # Encode the entire params map as a single "back_params" parameter
+        encoded_params = current_params |> Jason.encode!() |> URI.encode()
+        "#{base_url}?back_params=#{encoded_params}"
+      else
+        base_url
+      end
+
+    assigns =
+      Map.merge(assigns, %{
+        count: count,
+        navigate_url: full_url
+      })
+
+    ~H"""
+    <div class="text-center">
+      <.link
+        navigate={@navigate_url}
+        class="text-Text-text-link"
+      >
+        {@count}
+      </.link>
     </div>
     """
   end

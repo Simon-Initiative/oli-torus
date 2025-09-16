@@ -4936,7 +4936,7 @@ defmodule Oli.Delivery.Sections do
     student_id = if opts[:student_id], do: opts[:student_id], else: nil
 
     exclude_sub_objectives = if opts[:exclude_sub_objectives], do: true, else: false
-
+    include_related_activities_count = opts[:include_related_activities_count] || false
     # get the minimal fields for all objectives from the database
     objective_id = Oli.Resources.ResourceType.id_for_objective()
 
@@ -5007,11 +5007,70 @@ defmodule Oli.Delivery.Sections do
       end)
 
     objectives =
-      Enum.map(objectives, fn obj ->
-        Map.merge(obj, %{
-          container_ids: Map.get(objective_to_container_ids_map, obj.resource_id, [])
-        })
-      end)
+      if include_related_activities_count do
+        # This logic won't be excecuted for the student dashboard.
+        # Calculate related activities count for each objective using a single query with same SQL logic as detail view
+        activity_type_id = Oli.Resources.ResourceType.id_for_activity()
+        objective_ids = Enum.map(objectives, & &1.resource_id)
+
+        # Single query to get all activities and their objective attachments
+        activities_with_objectives =
+          from(
+            [rev: rev, sr: sr, s: s] in DeliveryResolver.section_resource_revisions(section_slug)
+          )
+          |> where(
+            [rev: rev, sr: sr, s: s],
+            rev.deleted == false and
+              rev.resource_type_id == ^activity_type_id and
+              not is_nil(rev.objectives)
+          )
+          |> select([rev: rev], %{
+            resource_id: rev.resource_id,
+            objectives: rev.objectives
+          })
+          |> Repo.all()
+
+        # Count activities for each objective using the same logic as get_activities_for_objective
+        related_activities_count_map =
+          objective_ids
+          |> Enum.reduce(%{}, fn obj_id, acc ->
+            count =
+              activities_with_objectives
+              |> Enum.count(fn activity ->
+                case activity.objectives do
+                  objectives_map when is_map(objectives_map) ->
+                    objectives_map
+                    |> Enum.any?(fn {_part_id, activity_objective_ids} ->
+                      case activity_objective_ids do
+                        obj_list when is_list(obj_list) and length(obj_list) > 0 ->
+                          obj_id in obj_list
+
+                        _ ->
+                          false
+                      end
+                    end)
+
+                  _ ->
+                    false
+                end
+              end)
+
+            Map.put(acc, obj_id, count)
+          end)
+
+        Enum.map(objectives, fn obj ->
+          Map.merge(obj, %{
+            container_ids: Map.get(objective_to_container_ids_map, obj.resource_id, []),
+            related_activities_count: Map.get(related_activities_count_map, obj.resource_id, 0)
+          })
+        end)
+      else
+        Enum.map(objectives, fn obj ->
+          Map.merge(obj, %{
+            container_ids: Map.get(objective_to_container_ids_map, obj.resource_id, [])
+          })
+        end)
+      end
 
     lookup_map =
       Enum.reduce(objectives, %{}, fn obj, acc ->
