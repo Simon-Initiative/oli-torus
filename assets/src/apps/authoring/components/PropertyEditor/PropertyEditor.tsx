@@ -112,7 +112,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({
 
           setFormData(updatedData);
 
-          // If backspace triggered, skip calling handler until blur
+          // If backspace triggered skip calling handler until blur
           if (backspacePressed.current && isExpertMode) return;
 
           if (shouldTriggerChange || changedPropType === 'boolean') {
