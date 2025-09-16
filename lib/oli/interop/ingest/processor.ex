@@ -23,6 +23,9 @@ defmodule Oli.Interop.Ingest.Processor do
     InternalActivityRefs
   }
 
+  # for prior error such as bad zip file
+  def process(%State{entries: nil}), do: {:error, "no entries to process"}
+
   def process(%State{} = state) do
     Repo.transaction(fn _ ->
       state

@@ -94,7 +94,7 @@ defmodule OliWeb.Components.Delivery.StudentProgressTabelModel do
       assigns = Map.merge(assigns, %{row: row})
 
       ~H"""
-      <span><%= "#{@row.score} / #{@row.out_of}" %></span>
+      <span>{"#{@row.score} / #{@row.out_of}"}</span>
       <%= if @row.was_late do %>
         <span class="ml-2 badge badge-xs badge-pill badge-danger">LATE</span>
       <% end %>

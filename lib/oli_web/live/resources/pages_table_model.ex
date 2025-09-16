@@ -69,7 +69,7 @@ defmodule OliWeb.Resources.PagesTableModel do
 
     ~H"""
     <a href={Routes.resource_path(OliWeb.Endpoint, :edit, @project_slug, @slug)}>
-      <%= @title %>
+      {@title}
     </a>
     """
   end
@@ -87,7 +87,7 @@ defmodule OliWeb.Resources.PagesTableModel do
     ~H"""
     <%= if @parent !== nil do %>
       <a href={Routes.container_path(OliWeb.Endpoint, :index, @project_slug, @parent.slug)}>
-        <%= @parent.title %>
+        {@parent.title}
       </a>
     <% end %>
     """

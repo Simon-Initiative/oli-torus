@@ -15,14 +15,14 @@
   </script>
 
   <%= if Oli.Resources.ResourceType.is_container(@revision) do %>
-    <%= render(
+    {render(
       OliWeb.PageDeliveryView,
       "container.html",
       Map.merge(assigns, %{
         children: @hierarchy_node.children,
         active_page: nil
       })
-    ) %>
+    )}
   <% else %>
     <%= unless @graded && not @review_mode do %>
       <div class="mb-8">
@@ -31,18 +31,18 @@
     <% end %>
 
     <div class="content">
-      <%= raw(@html) %>
+      {raw(@html)}
     </div>
 
     <div class="container mt-5">
-      <%= live_render(@conn, OliWeb.CollaborationLive.CollabSpaceConfigView,
+      {live_render(@conn, OliWeb.CollaborationLive.CollabSpaceConfigView,
         session: %{
           "collab_space_config" => @collab_space_config,
           "section_slug" => @section_slug,
           "resource_slug" => @revision.slug,
           "is_delivery" => true
         }
-      ) %>
+      )}
     </div>
   <% end %>
 </div>

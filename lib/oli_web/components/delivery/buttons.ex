@@ -12,7 +12,7 @@ defmodule OliWeb.Components.Delivery.Buttons do
   def button(assigns) do
     ~H"""
     <button type={@type} class={["torus-button primary", @class]} disabled={@disabled}>
-      <%= render_slot(@inner_block) %>
+      {render_slot(@inner_block)}
     </button>
     """
   end
@@ -50,7 +50,7 @@ defmodule OliWeb.Components.Delivery.Buttons do
             class={[@button_class, @class]}
             disabled={@disabled}
           >
-            <%= render_slot(@inner_block) %>
+            {render_slot(@inner_block)}
           </a>
         <% else %>
           <button
@@ -61,7 +61,7 @@ defmodule OliWeb.Components.Delivery.Buttons do
             class={[@button_class, @class]}
             disabled={@disabled}
           >
-            <%= render_slot(@inner_block) %>
+            {render_slot(@inner_block)}
           </button>
         <% end %>
         <button type="button" phx-click={toggle_options(@id)} class={@dropdown_button_class}>
@@ -94,7 +94,7 @@ defmodule OliWeb.Components.Delivery.Buttons do
                 tabindex="-1"
                 id={"menu-item-#{@id}-#{index}"}
               >
-                <%= option.text %>
+                {option.text}
                 <%= if option[:target] == "_blank" do %>
                   <i class="fa-solid fa-arrow-up-right-from-square ml-2"></i>
                 <% end %>
@@ -108,7 +108,7 @@ defmodule OliWeb.Components.Delivery.Buttons do
                 tabindex="-1"
                 id={"menu-item-#{@id}-#{index}"}
               >
-                <%= option.text %>
+                {option.text}
               </button>
             <% end %>
           <% end %>
@@ -130,10 +130,18 @@ defmodule OliWeb.Components.Delivery.Buttons do
     ~H"""
     <div>
       <div id={"#{@id}-down-icon"}>
-        <Icons.chevron_down class={"dark:fill-white " <> if @map_values != %{}, do: "fill-blue-400 dark:fill-blue-400", else: ""} />
+        <Icons.chevron_down
+          class={"dark:fill-white " <> if @map_values not in [%{}, nil], do: "fill-[#006CD9] dark:fill-[#4CA6FF]", else: ""}
+          width="16"
+          height="16"
+        />
       </div>
       <div class="hidden" id={"#{@id}-up-icon"}>
-        <Icons.chevron_down class={"rotate-180 dark:fill-white " <> if(@map_values != %{}, do: "fill-blue-400 dark:fill-blue-400", else: "")} />
+        <Icons.chevron_down
+          class={"rotate-180 dark:fill-white " <> if(@map_values not in [%{}, nil], do: "fill-[#006CD9] dark:fill-[#4CA6FF]", else: "")}
+          width="16"
+          height="16"
+        />
       </div>
     </div>
     """

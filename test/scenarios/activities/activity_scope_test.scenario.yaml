@@ -1,0 +1,145 @@
+# Scenario: Test create_activity directive scope attribute
+# This scenario verifies that activities can be created with different scopes:
+# - "embedded" (default)
+# - "banked"
+# The test creates activities with each scope type and verifies they are stored correctly.
+
+# Create a project to contain the activities
+- project:
+    name: "activity_scope_test"
+    title: "Activity Scope Test Project"
+    root:
+      children:
+        - page: "Practice Page"
+        - container: "Unit 1"
+          children:
+            - page: "Lesson 1"
+
+# Create an embedded activity (default scope)
+- create_activity:
+    project: "activity_scope_test"
+    title: "Embedded MCQ"
+    virtual_id: "embedded_mcq_1"
+    type: "oli_multiple_choice"
+    content: |
+      stem_md: "What is the default scope for activities?"
+      choices:
+        - id: "a"
+          body_md: "banked"
+        - id: "b"
+          body_md: "embedded"
+          correct: true
+        - id: "c"
+          body_md: "global"
+
+# Create an explicitly embedded activity
+- create_activity:
+    project: "activity_scope_test"
+    title: "Explicit Embedded MCQ"
+    virtual_id: "embedded_mcq_2"
+    scope: "embedded"
+    type: "oli_multiple_choice"
+    content: |
+      stem_md: "This activity is explicitly marked as embedded"
+      choices:
+        - id: "a"
+          body_md: "Option A"
+        - id: "b"
+          body_md: "Option B"
+          correct: true
+
+# Create a banked activity
+- create_activity:
+    project: "activity_scope_test"
+    title: "Banked MCQ"
+    virtual_id: "banked_mcq_1"
+    scope: "banked"
+    type: "oli_multiple_choice"
+    content: |
+      stem_md: "This is a banked activity that can be reused"
+      choices:
+        - id: "a"
+          body_md: "Reusable option A"
+        - id: "b"
+          body_md: "Reusable option B"
+        - id: "c"
+          body_md: "Reusable option C"
+          correct: true
+
+# Create another banked multiple choice activity
+- create_activity:
+    project: "activity_scope_test"
+    title: "Another Banked MCQ"
+    virtual_id: "banked_mcq_2"
+    scope: "banked"
+    type: "oli_multiple_choice"
+    content: |
+      stem_md: "What are the two types of activity scopes?"
+      choices:
+        - id: "a"
+          body_md: "embedded and global"
+        - id: "b"
+          body_md: "embedded and banked"
+          correct: true
+        - id: "c"
+          body_md: "banked and shared"
+
+# Edit a page to include both embedded and banked activities
+- edit_page:
+    project: "activity_scope_test"
+    page: "Practice Page"
+    content: |
+      title: "Practice Page"
+      graded: false
+      children:
+        - type: "activity-reference"
+          virtual_id: "embedded_mcq_1"
+        - type: "activity-reference"
+          virtual_id: "banked_mcq_1"
+        - type: "activity-reference"
+          virtual_id: "embedded_mcq_2"
+
+# Edit another page to reuse a banked activity
+- edit_page:
+    project: "activity_scope_test"
+    page: "Lesson 1"
+    content: |
+      title: "Lesson 1"
+      graded: false
+      children:
+        - type: "content"
+          children:
+            - type: "p"
+              children:
+                - text: "This lesson reuses a banked activity:"
+        - type: "activity-reference"
+          virtual_id: "banked_mcq_1"
+        - type: "content"
+          children:
+            - type: "p"
+              children:
+                - text: "And includes another banked activity:"
+        - type: "activity-reference"
+          virtual_id: "banked_mcq_2"
+
+# Publish the project
+- publish:
+    to: "activity_scope_test"
+    description: "Publishing activities with different scopes"
+
+# Create a section to test the activities
+- section:
+    name: "scope_test_section"
+    title: "Scope Test Section"
+    from: "activity_scope_test"
+
+# Verify the section structure includes all activities
+- assert:
+    structure:
+      to: "scope_test_section"
+      root:
+        children:
+          - page: "Practice Page"
+          - container: "Unit 1"
+            children:
+              - page: "Lesson 1"

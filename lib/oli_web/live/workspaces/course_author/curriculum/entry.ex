@@ -47,11 +47,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.Entry do
     >
       <div class="flex-grow-1 d-flex flex-column self-center">
         <div class="flex-1">
-          <%= entry_icon(assigns) %>
+          {entry_icon(assigns)}
           <%= if Oli.Resources.ResourceType.get_type_by_id(@child.resource_type_id) == "container" do %>
-            <%= container_link(@child, @project, @numberings, "ml-1 mr-1 entry-title") %>
+            {container_link(@child, @project, @numberings, "ml-1 mr-1 entry-title")}
           <% else %>
-            <span class="ml-1 mr-1 entry-title"><%= @child.title %></span>
+            <span class="ml-1 mr-1 entry-title">{@child.title}</span>
             <.edit_link
               project_slug={@project.slug}
               child={@child}
@@ -59,7 +59,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.Entry do
             />
           <% end %>
           <span :if={@editor} class="badge">
-            <%= Map.get(@editor, :name) || "Someone" %> is editing this
+            {Map.get(@editor, :name) || "Someone"} is editing this
           </span>
         </div>
 
@@ -152,7 +152,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.Entry do
     assigns = %{path: path, class: class, title: title}
 
     ~H"""
-    <.link navigate={@path} class={@class}><%= @title %></.link>
+    <.link navigate={@path} class={@class}>{@title}</.link>
     """
   end
 end

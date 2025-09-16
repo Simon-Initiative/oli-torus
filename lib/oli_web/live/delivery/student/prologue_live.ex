@@ -169,13 +169,13 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
           data-tooltip-target-id="attempt_tooltip"
           class="opacity-80 cursor-help dark:text-white text-sm font-bold font-['Open Sans'] uppercase tracking-wider"
         >
-          Attempts <%= get_attempts_count(@page_context) %>/<%= get_max_attempts(@page_context) %>
+          Attempts {get_attempts_count(@page_context)}/{get_max_attempts(@page_context)}
         </div>
         <div
           id="attempt_tooltip"
           class="absolute hidden left-32 -top-2 text-xs bg-white py-2 px-4 text-black rounded-lg shadow-lg"
         >
-          <%= @attempt_message %>
+          {@attempt_message}
         </div>
       </div>
       <div class="self-stretch flex-col justify-start items-start flex">
@@ -210,7 +210,7 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
         if(!@allow_attempt?, do: "opacity-50 dark:opacity-20 disabled !cursor-not-allowed")
       ]}
     >
-      Begin <%= get_ordinal_attempt(@page_context) %> Attempt
+      Begin {get_ordinal_attempt(@page_context)} Attempt
     </button>
     """
   end
@@ -241,7 +241,7 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
     >
       <div class="justify-start items-center flex">
         <div class="w-[92px] opacity-40 dark:text-white text-xs font-bold font-['Open Sans'] uppercase leading-normal tracking-wide">
-          Attempt <%= @index %>:
+          Attempt {@index}:
         </div>
         <div class="py-1 justify-end items-center gap-1.5 flex text-green-700 dark:text-green-500">
           <div
@@ -260,13 +260,13 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
           <div class="w-4 h-4 relative"><Icons.star /></div>
           <div class="justify-end items-center gap-1 flex text-xs font-semibold tracking-tight">
             <div role="attempt score">
-              <%= Float.round(@attempt.score, 2) %>
+              {Float.round(@attempt.score, 2)}
             </div>
             <div class="tracking-[4px]">
               /
             </div>
             <div role="attempt out of">
-              <%= Float.round(@attempt.out_of, 2) %>
+              {Float.round(@attempt.out_of, 2)}
             </div>
           </div>
         </div>
@@ -277,11 +277,11 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
             Submitted:
           </div>
           <div class="dark:text-white text-xs font-normal font-['Open Sans']">
-            <%= FormatDateTime.to_formatted_datetime(
+            {FormatDateTime.to_formatted_datetime(
               @attempt.date_submitted,
               @ctx,
               "{WDshort} {Mshort} {D}, {YYYY}"
-            ) %>
+            )}
           </div>
         </div>
         <div
@@ -314,7 +314,7 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
       <div class="flex flex-col gap-y-2">
         <%= for feedback <- @feedback_texts do %>
           <p class="w-full text-black font-normal dark:text-neutral-500" readonly>
-            <%= feedback %>
+            {feedback}
           </p>
         <% end %>
       </div>

@@ -44,10 +44,10 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
           >
             <div :if={week_range} class="flex self-stretch justify-between items-baseline">
               <div role="schedule_title" class="dark:text-white text-lg font-bold tracking-tight">
-                <%= this_or_next_week(week_range) %>
+                {this_or_next_week(week_range)}
               </div>
               <div role="schedule_date_range" class="dark:text-white text-sm font-bold tracking-tight">
-                <%= Phoenix.HTML.raw(week_range(week_range)) %>
+                {Phoenix.HTML.raw(week_range(week_range))}
               </div>
             </div>
             <div class="flex flex-col w-full h-fit gap-2.5">
@@ -92,19 +92,19 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
         <div class="grow shrink basis-0 self-stretch flex-col justify-start items-start gap-2.5 flex">
           <div role="container_label" class="justify-start items-start gap-2 flex uppercase">
             <div class="dark:text-white text-opacity-60 text-xs font-bold whitespace-nowrap">
-              <%= @item.unit_label %>
+              {@item.unit_label}
             </div>
 
             <div :if={@item.module_id} class="flex items-center gap-2">
               <div class="dark:text-white text-opacity-60 text-xs font-bold">•</div>
               <div class="dark:text-white text-opacity-60 text-xs font-bold whitespace-nowrap">
-                <%= @item.module_label %>
+                {@item.module_label}
               </div>
             </div>
           </div>
           <div role="title" class="self-stretch pb-2.5 justify-start items-start gap-2.5 flex">
             <div class="grow shrink basis-0 dark:text-white text-opacity-90 text-lg font-semibold">
-              <%= @item.container_title %>
+              {@item.container_title}
             </div>
           </div>
         </div>
@@ -151,19 +151,19 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
           <div class="grow shrink basis-0 self-stretch flex-col justify-start items-start gap-2.5 flex">
             <div role="container_label" class="justify-start items-start gap-2 flex uppercase">
               <div class="dark:text-white text-opacity-60 text-xs font-bold whitespace-nowrap">
-                <%= @item.unit_label %>
+                {@item.unit_label}
               </div>
 
               <div :if={@item.module_id} class="flex items-center gap-2">
                 <div class="dark:text-white text-opacity-60 text-xs font-bold">•</div>
                 <div class="dark:text-white text-opacity-60 text-xs font-bold whitespace-nowrap">
-                  <%= @item.module_label %>
+                  {@item.module_label}
                 </div>
               </div>
             </div>
             <div role="title" class="self-stretch pb-2.5 justify-start items-start gap-2.5 flex">
               <div class="grow shrink basis-0 dark:text-white text-opacity-90 text-lg font-semibold">
-                <%= @resource.resource.title %>
+                {@resource.resource.title}
               </div>
             </div>
           </div>
@@ -229,22 +229,20 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
           <div class="text-green-700 dark:text-green-500 flex justify-end items-center gap-1">
             <div class="w-4 h-4 relative"><Icons.star /></div>
             <div class="text-sm font-semibold tracking-tight">
-              <%= Utils.parse_score(@resource.raw_avg_score[:score]) %>
+              {Utils.parse_score(@resource.raw_avg_score[:score])}
             </div>
             <div class="text-sm font-semibold tracking-widest">
               /
             </div>
             <div class="text-sm font-semibold tracking-tight">
-              <%= Utils.parse_score(@resource.raw_avg_score[:out_of]) %>
+              {Utils.parse_score(@resource.raw_avg_score[:out_of])}
             </div>
           </div>
         </div>
 
         <div class="py-px justify-end items-start gap-2.5 flex">
           <div class="text-right dark:text-white text-opacity-60 text-sm font-semibold">
-            Attempt <%= @resource.resource_attempt_count %> of <%= max_attempts(
-              @resource.effective_settings
-            ) %>
+            Attempt {@resource.resource_attempt_count} of {max_attempts(@resource.effective_settings)}
           </div>
         </div>
       </div>
@@ -255,7 +253,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
               Time Remaining:
             </div>
             <div role="countdown" class="dark:text-white text-xs font-semibold">
-              <%= effective_attempt_expiration_date(@resource) |> Utils.format_time_remaining() %>
+              {effective_attempt_expiration_date(@resource) |> Utils.format_time_remaining()}
             </div>
           </div>
         </div>
@@ -265,11 +263,11 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
             Last Submitted:
           </div>
           <div class="dark:text-white text-xs font-semibold">
-            <%= FormatDateTime.to_formatted_datetime(
+            {FormatDateTime.to_formatted_datetime(
               @resource.last_attempt[:date_submitted],
               @ctx,
               "{WDshort} {Mshort} {D}, {YYYY}"
-            ) %>
+            )}
           </div>
         </div>
       <% end %>
@@ -295,7 +293,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
           <div class="text-right dark:text-white text-opacity-90 text-xs font-semibold h-5">
             <span :if={@completed}>Completed</span>
             <span :if={!@completed and @has_scheduled_resources?} role="schedule details">
-              <%= if is_nil(hd(@resources).effective_settings),
+              {if is_nil(hd(@resources).effective_settings),
                 do:
                   Utils.days_difference(
                     hd(@resources).end_date,
@@ -305,7 +303,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
                 else:
                   Utils.coalesce(hd(@resources).effective_settings.end_date, hd(@resources).end_date)
                   |> Utils.coalesce(hd(@resources).effective_settings.start_date)
-                  |> Utils.days_difference(grouped_scheduling_type(@resources), @ctx) %>
+                  |> Utils.days_difference(grouped_scheduling_type(@resources), @ctx)}
             </span>
           </div>
           <Icons.check :if={@completed} progress={1.0} />
@@ -356,7 +354,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
         ]}>
           <div role="count" class="pl-1 justify-start items-center gap-2.5 flex">
             <div class="dark:text-white text-xs font-semibold">
-              <%= length(@resources) %> pages
+              {length(@resources)} pages
             </div>
           </div>
           <div class="w-4 h-4">
@@ -392,7 +390,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
                   </div>
                   <div class="w-6 justify-start items-center gap-2.5 flex">
                     <div class="grow shrink basis-0 opacity-60 text-xs font-semibold capitalize">
-                      <%= resource.resource.numbering_index %>
+                      {resource.resource.numbering_index}
                     </div>
                   </div>
                 </div>
@@ -401,7 +399,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
                     if(resource_completed, do: "opacity-60", else: "opacity-90"),
                     "text-base font-normal whitespace-normal"
                   ]}>
-                    <%= resource.resource.title %>
+                    {resource.resource.title}
                   </div>
                 </div>
               </div>

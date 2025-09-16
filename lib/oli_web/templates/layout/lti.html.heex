@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <Phoenix.Component.live_title>
-      <%= assigns[:page_title] || assigns[:title] || Oli.VendorProperties.product_short_name() %>
+      {assigns[:page_title] || assigns[:title] || Oli.VendorProperties.product_short_name()}
     </Phoenix.Component.live_title>
 
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
@@ -38,9 +38,7 @@
     >
     </script>
     <!-- Typeahead -->
-    <script
-      src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-3-typeahead/4.0.2/bootstrap3-typeahead.min.js"
-    >
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-3-typeahead/4.0.2/bootstrap3-typeahead.min.js">
     </script>
 
     <link
@@ -60,7 +58,7 @@
     <script src="https://www.google.com/recaptcha/api.js">
     </script>
 
-    <%= csrf_meta_tag() %>
+    {csrf_meta_tag()}
     <script type="text/javascript" src={Routes.static_path(@conn, "/js/vendor.js")}>
     </script>
     <script type="text/javascript" src={Routes.static_path(@conn, "/js/app.js")}>
@@ -73,10 +71,10 @@
   </head>
   <body>
     <main role="main" class="container mx-auto">
-      <%= Map.get(assigns, :inner_layout) || @inner_content %>
+      {Map.get(assigns, :inner_layout) || @inner_content}
     </main>
-    <%= live_render(@conn, OliWeb.TechSupportLive,
+    {live_render(@conn, OliWeb.TechSupportLive,
       session: OliWeb.CollectHelpRequestInfo.collect(@conn)
-    ) %>
+    )}
   </body>
 </html>

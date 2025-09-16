@@ -241,4 +241,19 @@ defmodule Oli.Conversation.TriggersTest do
     trigger = Triggers.check_for_hint_trigger(activity_attempt, part_attempt, model, hint, false)
     assert is_nil(trigger)
   end
+
+  test "verify_access returns error when user_id is nil" do
+    result = Triggers.verify_access("some-section-slug", nil)
+    assert result == {:error, :no_access}
+  end
+
+  test "verify_access returns error when section_slug is nil" do
+    result = Triggers.verify_access(nil, 123)
+    assert result == {:error, :no_access}
+  end
+
+  test "verify_access returns error when both user_id and section_slug are nil" do
+    result = Triggers.verify_access(nil, nil)
+    assert result == {:error, :no_access}
+  end
 end

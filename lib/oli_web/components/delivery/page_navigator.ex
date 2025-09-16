@@ -102,7 +102,7 @@ defmodule OliWeb.Components.Delivery.PageNavigator do
         id={"#{@id}_popover"}
         class="absolute right-1/2 translate-x-1/2 p-2 -bottom-20 mb-0 hidden bg-delivery-primary/80 text-white w-56 h-16 text-center whitespace-normal"
       >
-        Enter a page between <%= @min_page %> and <%= @max_page %> and press enter
+        Enter a page between {@min_page} and {@max_page} and press enter
       </p>
       <%= if @show_navigation_arrows and @next_page do %>
         <a

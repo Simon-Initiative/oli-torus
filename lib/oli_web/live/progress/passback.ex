@@ -17,7 +17,7 @@ defmodule OliWeb.Progress.Passback do
           </p>
 
           <blockquote>
-            <%= @last_failed.details %>
+            {@last_failed.details}
           </blockquote>
 
           <p>To resolve this problem, try manually sending the grade to the LMS.</p>
@@ -33,7 +33,7 @@ defmodule OliWeb.Progress.Passback do
       <button class="btn btn-primary mb-4" phx-disable-with="Sending..." phx-click={@click}>
         Send Grade to LMS
       </button>
-      <%= render_result(assigns, @grade_sync_result) %>
+      {render_result(assigns, @grade_sync_result)}
     </div>
     """
   end
@@ -48,7 +48,7 @@ defmodule OliWeb.Progress.Passback do
 
         ~H"""
         <div class="alert alert-info" role="alert">
-          <%= @result %>
+          {@result}
         </div>
         """
     end

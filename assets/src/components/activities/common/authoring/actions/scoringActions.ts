@@ -1,22 +1,16 @@
 import { ActivityLevelScoring, Part, Response, ScoringStrategy } from 'components/activities/types';
 import {
-  getCorrectResponse,
-  getIncorrectResponse,
+  getIncorrectPoints,
   getOutOfPoints,
+  multiHasCustomScoring,
 } from 'data/activities/model/responses';
-
-// Migrated qs may have non-default point values but no customScoring attribute. To allow for this,
-// this method should be used rather than checking attribute. Attribute will get set if toggled
-export const usesCustomScoring = (model: ActivityLevelScoring) =>
-  model.customScoring ||
-  model.authoring.parts.some((part: Part) => part.responses.some((r: Response) => r.score > 1));
 
 export const ScoringActions = {
   toggleActivityDefaultScoring() {
-    // This toggles an activity-level default scoring flag, currently only used for multi input questions.
+    // This toggles an activity-level default scoring flag, used for potentially multipart questions
     return (model: ActivityLevelScoring) => {
       // attribute may not exist on migrated qs; this will set it
-      model.customScoring = !usesCustomScoring(model);
+      model.customScoring = !multiHasCustomScoring(model);
 
       if (model.customScoring) {
         // going from default to custom, so all responses should already be 1 or 0.
@@ -28,8 +22,10 @@ export const ScoringActions = {
         model.scoringStrategy = ScoringStrategy.average;
         model.authoring?.parts?.forEach((part: Part) => {
           const oldCorrectScore = getOutOfPoints(model, part.id);
-          part.outOf = 1;
-          part.incorrectScore = 0;
+          // code part same as for single-part default scoring. TargetedFeedback component
+          // on part doesn't know if it is part of single or multipart activity.
+          part.outOf = null;
+          part.incorrectScore = null;
           part.responses?.forEach((response) => {
             response.score = response.score === oldCorrectScore ? 1 : 0;
           });
@@ -58,7 +54,7 @@ export const ScoringActions = {
 
   editPartScore(
     partId: string,
-    correctScore: number | null,
+    correctScore: number | null, // non-null if custom; null => set default scoring
     incorrectScore: number | null,
     scoringStrategy: string | undefined = undefined,
   ) {
@@ -68,42 +64,32 @@ export const ScoringActions = {
         console.warn('Could not set score for part', partId);
         return;
       }
-      // outOf attribute may not exist on migrated questions
-      const oldCorrectScore = getOutOfPoints(model, part.id);
+      // fetch current special point values before modifying anything
+      const oldCorrectPoints = getOutOfPoints(model, partId);
+      const oldIncorrectPoints = getIncorrectPoints(model, partId);
+
+      // update correct/incorrect scores in all responses, using score
+      // match to hit alternate correct/incorrect in targeted feedbacks
+      const newCorrectPoints = correctScore ?? 1;
+      const newIncorrectPoints = incorrectScore ?? 0;
+      part.responses?.forEach((response: Response) => {
+        if (response.score === oldCorrectPoints) response.score = newCorrectPoints;
+        else if (response.score === oldIncorrectPoints) response.score = newIncorrectPoints;
+        else {
+          // Partial credit response.
+          if (correctScore === null) {
+            // Going to default scoring. No more partial credit, so just treat
+            // all non-correct as wrong.
+            response.score = 0;
+          }
+        }
+      });
+
+      // update part-wide scoring params. nullish outOf codes for default scoring
       part.outOf = correctScore;
       part.incorrectScore = incorrectScore;
-
       if (scoringStrategy) {
         part.scoringStrategy = scoringStrategy;
-      }
-
-      // if changing to default, reset the scores for each part to 1 or 0
-      if (part.outOf == null) {
-        model.authoring?.parts?.forEach((part: Part) => {
-          part.responses?.forEach((response) => {
-            response.score = response.score === oldCorrectScore ? 1 : 0;
-          });
-        });
-      } else {
-        // When we change the correct & incorrect scores, we also need to update the responses for the correct & incorrect answers
-
-        try {
-          const correctResponse = getCorrectResponse(model, partId);
-          if (correctResponse) {
-            correctResponse.score = correctScore ?? 1;
-          }
-        } catch (e) {
-          console.warn('Could not find correct response for part', partId);
-        }
-
-        try {
-          const incorrectResponse = getIncorrectResponse(model, partId);
-          if (incorrectResponse) {
-            incorrectResponse.score = incorrectScore ?? 0;
-          }
-        } catch (e) {
-          console.warn('Could not find incorrect response for part', partId);
-        }
       }
     };
   },

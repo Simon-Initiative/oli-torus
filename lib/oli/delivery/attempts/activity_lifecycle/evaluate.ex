@@ -326,6 +326,89 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
   end
 
   @doc """
+  Performs a test evaluation of an activity for external agents to test activities.
+
+  Takes an activity JSON model, an activity type slug, and part inputs to simulate
+  a student submission and returns the matching response from the activity model.
+
+  ## Parameters
+  - `activity_json`: JSON string containing the activity model
+  - `activity_type_slug`: The slug of the activity type (e.g., "oli_multiple_choice")
+  - `part_inputs`: List of maps containing part_id and input values
+
+  ## Returns
+  - `{:ok, evaluations}` with the evaluation results for each part
+  - `{:error, reason}` if evaluation fails
+  """
+  @spec perform_test_eval(String.t(), String.t(), [map()]) :: {:ok, [map()]} | {:error, any}
+  def perform_test_eval(activity_json, activity_type_slug, part_inputs) do
+    with {:ok, activity_map} <- Jason.decode(activity_json),
+         {:ok, registration} <- get_activity_registration(activity_type_slug),
+         {:ok, evaluations} <- do_test_evaluation(activity_map, registration, part_inputs) do
+      {:ok, evaluations}
+    else
+      {:error, reason} -> {:error, reason}
+      error -> {:error, inspect(error)}
+    end
+  end
+
+  defp get_activity_registration(activity_type_slug) do
+    case Oli.Activities.get_registration_by_slug(activity_type_slug) do
+      nil -> {:error, "Activity type '#{activity_type_slug}' not found"}
+      registration -> {:ok, registration}
+    end
+  end
+
+  defp do_test_evaluation(activity_map, _registration, part_inputs) do
+    case Model.parse(activity_map) do
+      {:ok, %Model{parts: parts}} ->
+        part_map = Enum.reduce(parts, %{}, fn p, m -> Map.put(m, p.id, p) end)
+
+        evaluations =
+          Enum.map(part_inputs, fn part_input ->
+            part_id = Map.get(part_input, "part_id") || Map.get(part_input, :part_id)
+            input = Map.get(part_input, "input") || Map.get(part_input, :input)
+
+            case Map.get(part_map, part_id) do
+              nil ->
+                %{
+                  part_id: part_id,
+                  error: "Part with id '#{part_id}' not found in activity model"
+                }
+
+              part ->
+                # Create evaluation context for testing
+                context = %EvaluationContext{
+                  resource_attempt_number: 1,
+                  activity_attempt_number: 1,
+                  part_attempt_number: 1,
+                  page_id: 1,
+                  activity_attempt_guid: "test_activity_#{System.unique_integer([:positive])}",
+                  part_attempt_guid: "test_part_#{System.unique_integer([:positive])}",
+                  input: input
+                }
+
+                case Oli.Delivery.Evaluation.Evaluator.evaluate(part, context, 1.0) do
+                  {:ok, result} ->
+                    Map.put(result, :part_id, part_id)
+
+                  {:error, error} ->
+                    %{
+                      part_id: part_id,
+                      error: "Evaluation failed: #{inspect(error)}"
+                    }
+                end
+            end
+          end)
+
+        {:ok, evaluations}
+
+      {:error, reason} ->
+        {:error, "Failed to parse activity model: #{inspect(reason)}"}
+    end
+  end
+
+  @doc """
   Processes a preview mode or test evaluation.
   """
   @spec evaluate_from_preview(map(), [map()]) :: {:ok, [map()]} | {:error, any}

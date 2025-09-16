@@ -56,7 +56,7 @@ defmodule OliWeb.Components.HierarchySelector do
           :for={{item_name, _item_id} <- @selected_values}
           class="hierarchy-selector__selected-item"
         >
-          <%= item_name %>
+          {item_name}
         </div>
       </div>
       <div class="hierarchy-selector__list-container">
@@ -70,7 +70,7 @@ defmodule OliWeb.Components.HierarchySelector do
           phx-update="ignore"
         >
           <%= for item <- @items do %>
-            <%= render_resource_option(Map.merge(assigns, %{item: item, level: 0})) %>
+            {render_resource_option(Map.merge(assigns, %{item: item, level: 0}))}
           <% end %>
         </div>
         <div class="bg-transparent h-5" />
@@ -104,11 +104,11 @@ defmodule OliWeb.Components.HierarchySelector do
           class="form-check-input"
           phx-value-item={"#{@item.name}-#{@item.id}"}
         />
-        <label for={"hierarchy-selector__checkbox-#{@item.id}"}><%= @item.name %></label>
+        <label for={"hierarchy-selector__checkbox-#{@item.id}"}>{@item.name}</label>
       </div>
       <div class="hierarchy-selector__item-children">
         <%= for children_item <- @item.children do %>
-          <%= render_resource_option(Map.merge(assigns, %{item: children_item, level: @level + 1})) %>
+          {render_resource_option(Map.merge(assigns, %{item: children_item, level: @level + 1}))}
         <% end %>
       </div>
     </div>

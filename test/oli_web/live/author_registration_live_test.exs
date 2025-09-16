@@ -30,7 +30,7 @@ defmodule OliWeb.AuthorRegistrationLiveTest do
         |> render_change(author: %{"email" => "with spaces", "password" => "too short"})
 
       assert result =~ "Create account"
-      assert result =~ "must have the @ sign and no spaces"
+      assert result =~ "must be a valid email address"
       assert result =~ "should be at least 12 character"
     end
   end
@@ -41,7 +41,7 @@ defmodule OliWeb.AuthorRegistrationLiveTest do
 
       {:ok, conn} =
         lv
-        |> element(~s|a:fl-contains("Sign in to existing account")|)
+        |> element("a", "Sign in to existing account")
         |> render_click()
         |> follow_redirect(conn, ~p"/authors/log_in")
 

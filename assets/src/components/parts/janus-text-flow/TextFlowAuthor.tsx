@@ -158,6 +158,7 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
     height,
     overrideWidth = true,
     overrideHeight = false,
+    padding = '',
   } = model;
 
   const styles: any = {
@@ -166,6 +167,9 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
   };
   if (overrideWidth) {
     styles.width = width;
+  }
+  if (padding?.trim()?.length) {
+    styles.padding = padding;
   }
   if (overrideHeight) {
     styles.height = height;
@@ -384,7 +388,7 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
       */}
           {`
         .text-flow-authoring-preview {
-          font-size: 13px;
+          font-size: 16px;
         }
         .text-flow-authoring-preview p {
           margin: 0;

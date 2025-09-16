@@ -59,7 +59,7 @@ defmodule OliWeb.Components.Delivery.CourseContent do
         <%= if get_current_node(@current_level_nodes, @current_position)["level"] != "-1" do %>
           <section class="flex flex-row justify-between p-8">
             <div class="text-xs absolute -mt-5">
-              <%= render_breadcrumbs(%{breadcrumbs_tree: @breadcrumbs_tree, myself: @myself}) %>
+              {render_breadcrumbs(%{breadcrumbs_tree: @breadcrumbs_tree, myself: @myself})}
             </div>
             <button
               phx-click="previous_node"
@@ -73,17 +73,17 @@ defmodule OliWeb.Components.Delivery.CourseContent do
                 id="course_browser_node_title"
                 class="text-lg font-semibold tracking-wide text-gray-800 dark:text-white mx-auto h-9"
               >
-                <%= get_resource_name(
+                {get_resource_name(
                   @current_level_nodes,
                   @current_position,
                   @section.display_curriculum_item_numbering,
                   @section.customizations
-                ) %>
+                )}
               </h4>
               <%= if !assigns[:is_instructor] do %>
                 <div class="flex items-center justify-center space-x-3 mt-1">
                   <span class="uppercase text-[10px] tracking-wide text-gray-800 dark:text-white">
-                    <%= "#{get_resource_prefix(get_current_node(@current_level_nodes, @current_position), @section.display_curriculum_item_numbering, @section.customizations)} overall progress" %>
+                    {"#{get_resource_prefix(get_current_node(@current_level_nodes, @current_position), @section.display_curriculum_item_numbering, @section.customizations)} overall progress"}
                   </span>
                   <div id="browser_overall_progress_bar" class="w-52 rounded-full bg-gray-200 h-2">
                     <div
@@ -117,19 +117,19 @@ defmodule OliWeb.Components.Delivery.CourseContent do
               phx-value-selected_resource_index={index}
               phx-value-resource_type={resource["type"]}
             >
-              <%= if resource["type"] == "container" and @section.display_curriculum_item_numbering,
+              {if resource["type"] == "container" and @section.display_curriculum_item_numbering,
                 do:
                   "#{get_current_node(@current_level_nodes, @current_position)["index"]}.#{resource["index"]} #{resource["title"]}",
-                else: resource["title"] %>
+                else: resource["title"]}
             </h4>
 
             <%= if !assigns[:is_instructor] do %>
               <span class="w-64 h-10 text-sm tracking-wide text-gray-800 dark:text-white bg-gray-100 dark:bg-gray-500 rounded-sm flex justify-center items-center ml-auto mr-3">
-                <%= DeliveryUtils.get_resource_scheduled_date(
+                {DeliveryUtils.get_resource_scheduled_date(
                   String.to_integer(resource["id"]),
                   @scheduled_dates,
                   @ctx
-                ) %>
+                )}
               </span>
               <button
                 class="torus-button primary h-10"
@@ -189,7 +189,7 @@ defmodule OliWeb.Components.Delivery.CourseContent do
           phx-value-target_level={target_level}
           phx-value-target_position={target_position}
         >
-          <%= text %>
+          {text}
         </button>
       <% end %>
       <%= for {target_level, target_position, text} <- Enum.drop(@breadcrumbs_tree, 1) do %>
@@ -200,7 +200,7 @@ defmodule OliWeb.Components.Delivery.CourseContent do
           phx-value-target_level={target_level}
           phx-value-target_position={target_position}
         >
-          <%= text %>
+          {text}
         </button>
       <% end %>
     </div>

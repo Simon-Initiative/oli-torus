@@ -203,6 +203,7 @@ const TextFlow: React.FC<PartComponentProps<TextFlowModel>> = (props: any) => {
     height,
     overrideWidth = true,
     overrideHeight = false,
+    padding = '',
   } = model;
 
   const styles: any = {
@@ -215,6 +216,11 @@ const TextFlow: React.FC<PartComponentProps<TextFlowModel>> = (props: any) => {
   if (overrideHeight) {
     styles.height = height;
   }
+
+  if (padding?.trim()?.length) {
+    styles.padding = padding;
+  }
+
   if (fontSize) {
     styles.fontSize = `${fontSize}px`;
   }

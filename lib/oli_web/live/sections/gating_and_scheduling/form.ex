@@ -17,8 +17,8 @@ defmodule OliWeb.Sections.GatingAndScheduling.Form do
   def render(assigns) do
     ~H"""
     <div>
-      <%= render_user_selection(assigns) %>
-      <%= render_resource_selection(assigns) %>
+      {render_user_selection(assigns)}
+      {render_resource_selection(assigns)}
 
       <div class="form-group">
         <label for="conditionTypeSelect">Availability</label>
@@ -36,7 +36,7 @@ defmodule OliWeb.Sections.GatingAndScheduling.Form do
             value={c.type()}
             {maybe_type_selected(assigns, c.type())}
           >
-            <%= name %>
+            {name}
           </option>
         </select>
       </div>
@@ -54,12 +54,12 @@ defmodule OliWeb.Sections.GatingAndScheduling.Form do
             value={policy}
             {policy_selected(assigns, policy)}
           >
-            <%= policy_desc(policy) %>
+            {policy_desc(policy)}
           </option>
         </select>
       </div>
 
-      <%= render_condition_options(assigns) %>
+      {render_condition_options(assigns)}
 
       <div class="d-flex mb-5">
         <div :if={@create_or_update == :update}>
@@ -83,10 +83,10 @@ defmodule OliWeb.Sections.GatingAndScheduling.Form do
           disabled={create_disabled(@gating_condition, @parent_gate)}
           phx-click={create_or_update_action(@create_or_update)}
         >
-          <%= create_or_update_name(@create_or_update) %>
+          {create_or_update_name(@create_or_update)}
         </button>
       </div>
-      <%= render_exceptions(assigns) %>
+      {render_exceptions(assigns)}
     </div>
     """
   end
@@ -153,7 +153,7 @@ defmodule OliWeb.Sections.GatingAndScheduling.Form do
       <hr class="mt-5" />
       <div class="alert alert-primary" role="alert">
         <div class="d-flex w-100 justify-content-between">
-          This gate has <%= render_count(assigns.count_exceptions) %>.
+          This gate has {render_count(assigns.count_exceptions)}.
           <a
             class="btn btn-primary"
             href={
@@ -273,7 +273,7 @@ defmodule OliWeb.Sections.GatingAndScheduling.Form do
 
     ~H"""
     <div class="form-group">
-      <label for="conditionTypeSelect">Start Date <small>(<%= @ctx.local_tz %>)</small></label>
+      <label for="conditionTypeSelect">Start Date <small>({@ctx.local_tz})</small></label>
       <div
         id="start_date"
         phx-hook="DateTimeLocalInputListener"
@@ -284,7 +284,7 @@ defmodule OliWeb.Sections.GatingAndScheduling.Form do
       </div>
     </div>
     <div class="form-group">
-      <label for="conditionTypeSelect">End Date <small>(<%= @ctx.local_tz %>)</small></label>
+      <label for="conditionTypeSelect">End Date <small>({@ctx.local_tz})</small></label>
       <div
         id="end_date"
         phx-hook="DateTimeLocalInputListener"

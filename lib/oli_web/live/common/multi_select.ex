@@ -51,9 +51,9 @@ defmodule OliWeb.Common.MultiSelectInput do
         id={"#{@id}-selected-options-container"}
       >
         <div class="flex gap-1 flex-wrap">
-          <span :if={@selected_values == %{}}><%= @placeholder %></span>
+          <span :if={@selected_values == %{}}>{@placeholder}</span>
           <div :for={{id, name} <- @selected_values} class="bg-blue-500 rounded-lg px-2 flex gap-1">
-            <span class="whitespace-nowrap text-white"><%= name %></span>
+            <span class="whitespace-nowrap text-white">{name}</span>
             <div
               class="stroke-white hover:stroke-white/50 w-2 h-2 mr-2"
               phx-click="remove_selected"

@@ -16,7 +16,7 @@ defmodule OliWeb.Components.Delivery.ExplorationShade do
             Your Exploration Activities
           </h4>
           <%= if @exploration_pages && length(@exploration_pages) > 0 do %>
-            <span class="badge badge-info rounded-full"><%= length(@exploration_pages) %></span>
+            <span class="badge badge-info rounded-full">{length(@exploration_pages)}</span>
           <% end %>
         </div>
 

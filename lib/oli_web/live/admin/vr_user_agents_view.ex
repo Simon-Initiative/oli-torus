@@ -68,7 +68,7 @@ defmodule OliWeb.Admin.VrUserAgentsView do
               phx-click="sort_by"
               phx-value-sort-column={sort_field}
             >
-              <%= col_title %>
+              {col_title}
               <% sort_data = @data_manager[:sort] %>
               <i :if={match?(^sort_data, {:asc, sort_field})} class="fa fa-sort-up"></i>
               <i :if={match?(^sort_data, {:desc, sort_field})} class="fa fa-sort-down"></i>
@@ -78,10 +78,10 @@ defmodule OliWeb.Admin.VrUserAgentsView do
         <tbody>
           <tr :for={vr_user_agent <- @vr_user_agents}>
             <td class="mx-auto text-center">
-              <%= vr_user_agent.id %>
+              {vr_user_agent.id}
             </td>
             <td class="mx-auto text-center">
-              <%= vr_user_agent.user_agent %>
+              {vr_user_agent.user_agent}
             </td>
             <td class="mx-auto text-center">
               <button

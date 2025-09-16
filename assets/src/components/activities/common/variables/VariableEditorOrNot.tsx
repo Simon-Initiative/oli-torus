@@ -7,6 +7,7 @@ const defaultExpresssion = '\n\n\nmodule.exports = {};\n';
 
 export interface VariableEditorOrNotProps {
   editMode: boolean;
+  mode?: 'authoring' | 'instructor_preview';
   model: ActivityModelSchema;
   onEdit: (transformations: any) => void;
   activetab?: boolean;
@@ -35,7 +36,8 @@ export class VariableEditorOrNot extends React.Component<
   }
 
   render() {
-    const { editMode, model, onEdit } = this.props;
+    const { editMode, mode, model, onEdit } = this.props;
+    const isInstructorPreview = mode === 'instructor_preview';
 
     const variableTransformer = model.authoring.transformations.filter(
       (t: any) => t.operation === 'variable_substitution',
@@ -64,14 +66,16 @@ export class VariableEditorOrNot extends React.Component<
             variables={variableTransformer[0].data}
             activetab={this.props.activetab || false}
           />
-          <div className="card text-center mt-5">
-            <div className="card-body">
-              {featureDesc}
-              <button className="btn btn-outline-danger mt-4" onClick={onDisable}>
-                Disable Dynamic Variables
-              </button>
+          {!isInstructorPreview && (
+            <div className="card text-center mt-5">
+              <div className="card-body">
+                {featureDesc}
+                <button className="btn btn-outline-danger mt-4" onClick={onDisable}>
+                  Disable Dynamic Variables
+                </button>
+              </div>
             </div>
-          </div>
+          )}
         </>
       );
     }
@@ -105,9 +109,11 @@ export class VariableEditorOrNot extends React.Component<
       <div className="card text-center">
         <div className="card-body">
           {featureDesc}
-          <button className="btn btn-warning mt-4" onClick={onEnable}>
-            Enable Dynamic Variables
-          </button>
+          {!isInstructorPreview && (
+            <button className="btn btn-warning mt-4" onClick={onEnable}>
+              Enable Dynamic Variables
+            </button>
+          )}
         </div>
       </div>
     );

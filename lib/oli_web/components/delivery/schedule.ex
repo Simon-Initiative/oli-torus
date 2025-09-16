@@ -33,7 +33,7 @@ defmodule OliWeb.Components.Delivery.Schedule do
       ]}>
         <div class="flex flex-row">
           <.maybe_current_week_indicator is_current_week={@is_current_week} />
-          <div>Week <%= @week_number %>:</div>
+          <div>Week {@week_number}:</div>
         </div>
       </div>
 
@@ -47,7 +47,7 @@ defmodule OliWeb.Components.Delivery.Schedule do
             )
           ]}>
             <div class="font-bold text-gray-700 dark:text-gray-300 group-[.past-start]:text-gray-400 dark:group-[.past-start]:text-gray-700">
-              <%= render_date_range(date_range, @ctx) %>
+              {render_date_range(date_range, @ctx)}
             </div>
 
             <%= for %ScheduledContainerGroup{module_label: module_label, unit_label: unit_label, graded: graded, progress: container_progress, resources: scheduled_resources} <- container_groups do %>
@@ -57,9 +57,9 @@ defmodule OliWeb.Components.Delivery.Schedule do
                   <div class="flex flex-row">
                     <.progress_icon progress={container_progress} />
                     <div>
-                      <%= page_or_assessment_label(graded) %>
+                      {page_or_assessment_label(graded)}
                       <div class="uppercase font-bold text-sm text-gray-700 dark:text-gray-300 group-[.past-start]:text-gray-400 dark:group-[.past-start]:text-gray-700">
-                        <%= container_label %>
+                        {container_label}
                       </div>
                     </div>
                   </div>
@@ -85,27 +85,37 @@ defmodule OliWeb.Components.Delivery.Schedule do
                             }
                             class="hover:no-underline"
                           >
-                            <%= resource.title %>
+                            {resource.title}
                           </.link>
 
                           <div class="text-sm text-gray-700 dark:text-gray-300 group-[.past-start]:text-gray-400 dark:group-[.past-start]:text-gray-700">
-                            <%= resource_scheduling_label(resource.scheduling_type) %>
-                            <%= if is_nil(effective_settings),
-                              do:
-                                date(
-                                  Utils.coalesce(resource.end_date, resource.start_date),
-                                  ctx: @ctx,
-                                  precision: :date
-                                ),
-                              else:
-                                date(
-                                  Utils.coalesce(
-                                    effective_settings.end_date,
-                                    effective_settings.start_date
+                            <span>
+                              Available:
+                              <%= if effective_settings.start_date do %>
+                                {date(effective_settings.start_date, ctx: @ctx, precision: :date)}
+                              <% else %>
+                                Now
+                              <% end %>
+                            </span>
+                            <span class="ml-6">
+                              {resource_scheduling_label(resource.scheduling_type)}
+                              {if is_nil(effective_settings),
+                                do:
+                                  date(
+                                    Utils.coalesce(resource.end_date, resource.start_date),
+                                    ctx: @ctx,
+                                    precision: :date
                                   ),
-                                  ctx: @ctx,
-                                  precision: :date
-                                ) %>
+                                else:
+                                  date(
+                                    Utils.coalesce(
+                                      effective_settings.end_date,
+                                      effective_settings.start_date
+                                    ),
+                                    ctx: @ctx,
+                                    precision: :date
+                                  )}
+                            </span>
                           </div>
                         </div>
 
@@ -177,7 +187,7 @@ defmodule OliWeb.Components.Delivery.Schedule do
                       <.non_scheduled_page_icon progress={progress} graded={graded} purpose={purpose} />
                       <div class="w-[26px] justify-start items-center">
                         <div class="grow shrink basis-0 opacity-60 dark:text-white text-[13px] font-semibold font-['Open Sans'] capitalize">
-                          <%= resource.numbering_index %>
+                          {resource.numbering_index}
                         </div>
                       </div>
                     </div>
@@ -191,7 +201,7 @@ defmodule OliWeb.Components.Delivery.Schedule do
                           }
                           class="text-left dark:text-white opacity-90 text-base font-['Open Sans'] hover:no-underline"
                         >
-                          <%= resource.title %>
+                          {resource.title}
                         </.link>
                       </div>
                       <div :if={graded} class="flex flex-col justify-center">
@@ -224,7 +234,7 @@ defmodule OliWeb.Components.Delivery.Schedule do
   def container_label(%{module_id: module_id} = assigns) when not is_nil(module_id) do
     ~H"""
     <h3 class="ml-12 dark:text-white text-base font-bold font-['Open Sans']">
-      <%= @title %>
+      {@title}
     </h3>
     """
   end
@@ -232,7 +242,7 @@ defmodule OliWeb.Components.Delivery.Schedule do
   def container_label(%{unit_id: unit_id} = assigns) when not is_nil(unit_id) do
     ~H"""
     <h3 class="dark:text-white text-xl font-bold font-['Open Sans']">
-      <%= "#{@unit_label}: #{@title}" %>
+      {"#{@unit_label}: #{@title}"}
     </h3>
     """
   end

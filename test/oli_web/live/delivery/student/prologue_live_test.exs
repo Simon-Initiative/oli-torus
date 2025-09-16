@@ -857,7 +857,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
                "You have no attempts remaining out of 2 total attempts."
              )
 
-      assert has_element?(view, "button[id='begin_attempt_button'][disabled='disabled']")
+      assert has_element?(view, "button[id='begin_attempt_button'][disabled]")
     end
 
     test "can see page info on header", %{
@@ -1100,6 +1100,8 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
         view
         |> element(~s{div[role="back_link"] a})
         |> render()
+        |> Floki.parse_document!()
+        |> Floki.find("a")
         |> Floki.attribute("href")
 
       assert href ==
@@ -1143,7 +1145,8 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
 
       {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
 
-      assert view |> element("#page_due_terms") |> render() =~ "This assignment was due on"
+      assert view |> element("#page_due_terms") |> render() =~
+               "<li id=\"page_due_terms\">\n      \n  This assignment was available on\n  <b>\n    Fri Nov 10, 2023 at 8:00pm.\n  </b>\n\nand was due on\n<b>\n  Tue Nov 14, 2023 by 8:00pm.\n</b></li>"
 
       assert view |> element("#page_due_terms") |> render() =~ "Tue Nov 14, 2023 by 8:00pm."
     end
@@ -1205,7 +1208,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
 
       assert view |> element("#page_due_terms") |> render() =~
-               "This assignment was due on"
+               "<li id=\"page_due_terms\">\n      \n  This assignment was available on\n  <b>\n    Fri Nov 10, 2023 at 8:00pm.\n  </b>\n\nand was due on\n<b>\n  Tue Nov 14, 2023 by 8:00pm.\n</b></li>"
 
       assert view |> element("#page_time_limit_term") |> render() =~
                "<li id=\"page_time_limit_term\">\n  You have <b>1 minute</b>\n  to complete the assessment from the time you begin.\n</li>"

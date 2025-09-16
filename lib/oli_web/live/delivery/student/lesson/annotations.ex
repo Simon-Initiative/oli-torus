@@ -95,7 +95,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
         <% nil -> %>
           <Common.loading_spinner />
         <% [] -> %>
-          <div class="text-center p-4 text-gray-500"><%= empty_label(@active_tab) %></div>
+          <div class="text-center p-4 text-gray-500">{empty_label(@active_tab)}</div>
         <% annotations -> %>
           <%= for annotation <- annotations do %>
             <.post
@@ -163,18 +163,18 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
     ]}>
       <div class="flex flex-row justify-between mb-1">
         <div class="font-semibold">
-          <%= post_creator(@post, @current_user) %>
+          {post_creator(@post, @current_user)}
         </div>
         <div class="text-sm text-gray-500">
-          <%= Timex.from_now(@post.inserted_at) %>
+          {Timex.from_now(@post.inserted_at)}
         </div>
       </div>
       <p class="my-2">
         <%= case @post.headline["message"] do %>
           <% nil -> %>
-            <%= @post.content.message %>
+            {@post.content.message}
           <% message -> %>
-            <%= raw(message) %>
+            {raw(message)}
         <% end %>
       </p>
       <%= case @post.replies do %>
@@ -219,7 +219,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
       phx-click="toggle_notes_sidebar"
     >
       <div class="p-1.5 rounded justify-start items-center gap-2.5 inline-flex">
-        <%= render_slot(@inner_block) %>
+        {render_slot(@inner_block)}
       </div>
     </button>
     """
@@ -284,7 +284,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   defp tab_group(assigns) do
     ~H"""
     <div class={["flex flex-row", @rest[:class]]}>
-      <%= render_slot(@inner_block) %>
+      {render_slot(@inner_block)}
     </div>
     """
   end
@@ -307,7 +307,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
         )
       ]}
     >
-      <%= render_slot(@inner_block) %>
+      {render_slot(@inner_block)}
     </button>
     """
   end
@@ -418,7 +418,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
           <% end %>
           <div class="flex flex-row-reverse justify-start gap-2 mt-3">
             <Common.button variant={:primary}>
-              <%= @save_label %>
+              {@save_label}
             </Common.button>
             <Common.button type="button" variant={:secondary} phx-click="cancel_create_annotation">
               Cancel
@@ -468,11 +468,11 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
             class="w-2 h-2 my-2 mr-3 bg-primary rounded-full"
           />
           <div class="font-semibold" role="user name">
-            <%= post_creator(@post, @current_user) %>
+            {post_creator(@post, @current_user)}
           </div>
         </div>
         <div role="posted at" class="text-sm text-gray-500">
-          <%= Timex.from_now(@post.inserted_at) %>
+          {Timex.from_now(@post.inserted_at)}
         </div>
       </div>
       <p class="my-2" role="post content">
@@ -480,7 +480,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
           <% :deleted -> %>
             <span class="italic text-gray-500">(deleted)</span>
           <% _ -> %>
-            <%= @post.content.message %>
+            {@post.content.message}
         <% end %>
       </p>
       <.post_actions
@@ -560,7 +560,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
               <% nil -> %>
                 <.like_icon />
               <% %{count: count, reacted: reacted} -> %>
-                <.like_icon active={reacted} /> <%= if(count > 0, do: count) %>
+                <.like_icon active={reacted} /> {if(count > 0, do: count)}
             <% end %>
           </button>
           <button
@@ -574,9 +574,9 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
             phx-value-post-id={assigns.post.id}
           >
             <.replies_bubble_icon active={@has_unread_replies} />
-            <%= if(@post.replies_count > 0,
+            {if(@post.replies_count > 0,
               do: @post.replies_count
-            ) %>
+            )}
           </button>
           <div class="flex-1" />
           <%= case @go_to_post_href do %>
@@ -718,10 +718,10 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
     <div class="flex flex-col my-2 pl-4 border-l-2 border-gray-200 dark:border-gray-800">
       <div class="flex flex-row justify-between mb-1">
         <div class="font-semibold">
-          <%= post_creator(@post, @current_user) %>
+          {post_creator(@post, @current_user)}
         </div>
         <div class="text-sm text-gray-500">
-          <%= Timex.from_now(@post.inserted_at) %>
+          {Timex.from_now(@post.inserted_at)}
         </div>
       </div>
       <p class="my-2">
@@ -729,7 +729,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
           <% :deleted -> %>
             <span class="italic text-gray-500">(deleted)</span>
           <% _ -> %>
-            <%= @post.content.message %>
+            {@post.content.message}
         <% end %>
       </p>
       <.post_actions post={@post} current_user={@current_user} on_toggle_reaction="toggle_reaction" />
@@ -853,7 +853,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
               if(@active, do: "fill-white", else: "fill-gray-500 dark:fill-gray-200")
             ]}
           >
-            <%= @count %>
+            {@count}
           </text>
       <% end %>
     </svg>

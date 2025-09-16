@@ -34,12 +34,12 @@ defmodule OliWeb.Progress.PageAttemptSummary do
         class="block"
       >
         <div class="d-flex w-100 justify-content-between">
-          <h5 class="mb-1">Attempt <%= @attempt.attempt_number %></h5>
+          <h5 class="mb-1">Attempt {@attempt.attempt_number}</h5>
           <span>Not Submitted Yet</span>
         </div>
-        <p class="mb-1">Started: <%= Utils.render_date(@attempt, :inserted_at, @ctx) %></p>
+        <p class="mb-1">Started: {Utils.render_date(@attempt, :inserted_at, @ctx)}</p>
         <small class="text-muted">
-          Time elapsed: <%= duration(@attempt.inserted_at, DateTime.utc_now()) %>.
+          Time elapsed: {duration(@attempt.inserted_at, DateTime.utc_now())}.
         </small>
       </.link>
       <%= if @revision.graded do %>
@@ -71,24 +71,24 @@ defmodule OliWeb.Progress.PageAttemptSummary do
         class="block"
       >
         <div class="d-flex w-100 justify-content-between">
-          <h5 class="mb-1">Attempt <%= @attempt.attempt_number %></h5>
-          <span><%= Utils.format_score(@attempt.score) %> / <%= @attempt.out_of || "-" %></span>
+          <h5 class="mb-1">Attempt {@attempt.attempt_number}</h5>
+          <span>{Utils.format_score(@attempt.score)} / {@attempt.out_of || "-"}</span>
         </div>
         <div class="d-flex flex-row">
           <%= if @attempt.was_late do %>
             <.badge variant={:danger}>LATE</.badge>
           <% end %>
           <p class="mb-1 text-muted">
-            Submitted: <%= Utils.render_date(@attempt, :date_evaluated, @ctx) %> (<%= Utils.render_relative_date(
+            Submitted: {Utils.render_date(@attempt, :date_evaluated, @ctx)} ({Utils.render_relative_date(
               @attempt,
               :date_evaluated,
               @ctx
-            ) %>)
+            )})
           </p>
         </div>
 
         <small class="text-muted">
-          Time elapsed: <%= duration(@attempt.inserted_at, @attempt.date_evaluated) %>.
+          Time elapsed: {duration(@attempt.inserted_at, @attempt.date_evaluated)}.
         </small>
       </.link>
 
@@ -123,18 +123,18 @@ defmodule OliWeb.Progress.PageAttemptSummary do
         class="block"
       >
         <div class="d-flex w-100 justify-content-between">
-          <h5 class="mb-1">Attempt <%= @attempt.attempt_number %></h5>
+          <h5 class="mb-1">Attempt {@attempt.attempt_number}</h5>
           <span>Submitted</span>
         </div>
         <p class="mb-1 text-muted">
-          Submitted: <%= Utils.render_date(@attempt, :date_submitted, @ctx) %> (<%= Utils.render_relative_date(
+          Submitted: {Utils.render_date(@attempt, :date_submitted, @ctx)} ({Utils.render_relative_date(
             @attempt,
             :date_submitted,
             @ctx
-          ) %>)
+          )})
         </p>
         <small class="text-muted">
-          Time elapsed: <%= duration(@attempt.inserted_at, @attempt.date_submitted) %>.
+          Time elapsed: {duration(@attempt.inserted_at, @attempt.date_submitted)}.
         </small>
       </.link>
     </div>

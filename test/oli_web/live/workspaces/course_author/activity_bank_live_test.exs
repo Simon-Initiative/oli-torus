@@ -78,8 +78,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.ActivityBankLiveTest do
 
       render_hook(view, "survey_scripts_loaded", %{"success" => "success"})
 
-      html = render(view)
-      [activity_bank_html] = Floki.find(html, "#activity-bank")
+      [activity_bank_html] =
+        render(view) |> Floki.parse_document!() |> Floki.find("#activity-bank")
+
       props_json = Floki.attribute(activity_bank_html, "data-live-react-props") |> List.first()
       {:ok, props} = Jason.decode(props_json)
       editor_map = props["editorMap"]

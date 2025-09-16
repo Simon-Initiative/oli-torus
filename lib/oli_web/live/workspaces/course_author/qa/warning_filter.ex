@@ -15,8 +15,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.Qa.WarningFilter do
           aria-label={"Checkbox for #{@type}"}
         />
         <label for={"filter-#{@type}"} class="flex flex-row align-items-center ml-2">
-          <%= String.capitalize(@type) %>
-          <span class="badge badge-info ml-2"><%= length(@warnings) %></span>
+          {String.capitalize(@type)}
+          <span class="badge badge-info ml-2">{length(@warnings)}</span>
         </label>
       </div>
     </div>

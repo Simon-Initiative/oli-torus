@@ -25,7 +25,7 @@ defmodule OliWeb.Delivery.ManageSourceMaterials.ApplyUpdateModal do
       <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">Apply Update - <%= @newest_publication.project.title %></h5>
+            <h5 class="modal-title">Apply Update - {@newest_publication.project.title}</h5>
             <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
               <i class="fa-solid fa-xmark fa-xl"></i>
             </button>
@@ -35,11 +35,11 @@ defmodule OliWeb.Delivery.ManageSourceMaterials.ApplyUpdateModal do
             <h6 class="mb-3">
               Do you want to apply this update from
               <strong>
-                <%= Utils.render_version(
+                {Utils.render_version(
                   @current_publication.edition,
                   @current_publication.major,
                   @current_publication.minor
-                ) %>
+                )}
               </strong>
               to <strong> <%= Utils.render_version(@newest_publication.edition, @newest_publication.major, @newest_publication.minor) %></strong>?
             </h6>
@@ -48,9 +48,9 @@ defmodule OliWeb.Delivery.ManageSourceMaterials.ApplyUpdateModal do
 
             <div class="alert alert-secondary" role="alert">
               <div class="d-flex justify-content-between align-items-center">
-                <p class="mb-auto"><%= @newest_publication.description %></p>
+                <p class="mb-auto">{@newest_publication.description}</p>
                 <small>
-                  Published <%= date(@newest_publication.published, precision: :relative) %>
+                  Published {date(@newest_publication.published, precision: :relative)}
                 </small>
               </div>
             </div>
@@ -63,8 +63,8 @@ defmodule OliWeb.Delivery.ManageSourceMaterials.ApplyUpdateModal do
             <ul class="my-3">
               <%= for {status, %{revision: revision}} <- Map.values(@changes) do %>
                 <li>
-                  <span class={"badge badge-secondary badge-#{status} mr-2"}><%= status %></span>
-                  <span><%= revision.title %></span>
+                  <span class={"badge badge-secondary badge-#{status} mr-2"}>{status}</span>
+                  <span>{revision.title}</span>
                 </li>
               <% end %>
             </ul>

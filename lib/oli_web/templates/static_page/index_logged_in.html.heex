@@ -1,6 +1,6 @@
 <div class="relative h-[calc(100vh-112px)] flex justify-center items-center">
   <div class="absolute h-[calc(100vh-112px)] w-full top-0 left-0">
-    <%= OliWeb.Backgrounds.student_sign_in(%{}) %>
+    {OliWeb.Backgrounds.student_sign_in(%{})}
   </div>
   <div class="flex flex-col gap-y-10 self-start pt-32 w-full relative z-50">
     <div class="w-full flex justify-center">
@@ -10,13 +10,13 @@
             Welcome back to
           </span>
           <span class="text-white text-4xl font-bold font-['Open Sans'] leading-10">
-            <%= Oli.VendorProperties.product_short_name() %>
+            {Oli.VendorProperties.product_short_name()}
           </span>
         </div>
         <div class="">
           <div class="justify-center items-end gap-px flex">
             <div class="self-start px-1 py-2 justify-center items-center flex">
-              <%= OliWeb.Icons.graduation_cap(%{stroke: "stroke-white"}) %>
+              {OliWeb.Icons.graduation_cap(%{stroke: "stroke-white"})}
             </div>
             <div class="w-40 h-11 text-center text-white text-4xl font-bold font-['Open Sans']">
               Student
@@ -27,13 +27,13 @@
           <div class="flex justify-center max-w-max items-center mt-12 gap-x-1 border-white border-b hover:border-zinc-300">
             <.link
               class="flex items-center gap-x-1 no-underline hover:no-underline text-white hover:text-zinc-300"
-              navigate={~p"/workspaces/student"}
+              navigate={OliWeb.Common.Links.my_courses_path(@conn.assigns.current_user)}
             >
               <div class="text-xl font-normal font-['Inter'] leading-normal">
                 Access my courses
               </div>
               <div>
-                <%= OliWeb.Icons.right_arrow_login(%{}) %>
+                {OliWeb.Icons.right_arrow_login(%{})}
               </div>
             </.link>
           </div>

@@ -8,7 +8,7 @@ defmodule OliWeb.Sections.Instructors do
     ~H"""
     <ul class="list-group">
       <li :for={u <- @users} class="list-group-item">
-        <%= name(u) %>
+        {name(u)}
       </li>
     </ul>
     """

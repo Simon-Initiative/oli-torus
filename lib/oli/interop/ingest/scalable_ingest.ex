@@ -1,13 +1,6 @@
 defmodule Oli.Interop.Ingest.ScalableIngest do
   alias Oli.Interop.Ingest.State
 
-  def unzip_then_preprocess(%State{} = state, file) do
-    case unzip(state, file) do
-      %State{entries: nil} = state -> state
-      %State{} = state -> Oli.Interop.Ingest.Preprocessor.preprocess(state)
-    end
-  end
-
   def unzip(%State{} = state, file) do
     state = State.notify_step_start(state, :unzip)
 

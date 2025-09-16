@@ -107,7 +107,7 @@
   },
   "amount": {
     "currency": "USD",
-    "amount": "25.00"
+    "amount": 25
   },
   "welcomeTitle": {},
   "encouragingSubtitle": null,

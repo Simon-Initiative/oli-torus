@@ -15,8 +15,8 @@ defmodule OliWeb.Common.FormContainer do
         <div class={@bs_col_class}>
           <div class="card signin my-5">
             <div class="card-body">
-              <h5 class="card-title text-center"><%= @title %></h5>
-              <%= render_slot(@inner_block) %>
+              <h5 class="card-title text-center">{@title}</h5>
+              {render_slot(@inner_block)}
             </div>
           </div>
         </div>

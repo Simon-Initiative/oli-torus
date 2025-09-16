@@ -500,4 +500,29 @@ defmodule Oli.Lti.PlatformExternalTools do
       ) do
     Repo.delete(deep_link)
   end
+
+  @doc """
+  Soft delete a Deployment and its related Platform Instance.
+  In the current iteration there is not expected to ever be more than one deployment per platform instance.
+  See: https://eliterate.atlassian.net/browse/MER-4745
+  """
+
+  @spec soft_delete_activity_deployment_and_platform_instance(
+          LtiExternalToolActivityDeployment.t()
+        ) :: {:ok, LtiExternalToolActivityDeployment.t()} | {:error, Ecto.Changeset.t()}
+  def soft_delete_activity_deployment_and_platform_instance(
+        %LtiExternalToolActivityDeployment{} = deployment
+      ) do
+    deployment = Repo.preload(deployment, :platform_instance)
+
+    Ecto.Multi.new()
+    |> Ecto.Multi.run(:soft_delete_activity_deployment, fn _, _ ->
+      update_lti_external_tool_activity_deployment(deployment, %{status: :deleted})
+    end)
+    |> Ecto.Multi.update(
+      :soft_delete_platform_instance,
+      change_platform_instance(deployment.platform_instance, %{status: :deleted})
+    )
+    |> Repo.transaction()
+  end
 end

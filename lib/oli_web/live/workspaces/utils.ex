@@ -153,7 +153,7 @@ defmodule OliWeb.Workspaces.Utils do
       @additional_classes
     ]}>
       <div :if={@sub_menu_item.icon} class="w-5 flex items-center justify-center">
-        <%= apply(Icons, String.to_existing_atom(@sub_menu_item.icon), [assigns]) %>
+        {apply(Icons, String.to_existing_atom(@sub_menu_item.icon), [assigns])}
       </div>
       <div class={[
         "text-[#757682] dark:text-[#BAB8BF] text-sm font-medium tracking-tight flex flex-row justify-between",
@@ -163,12 +163,12 @@ defmodule OliWeb.Workspaces.Utils do
           :if={@sidebar_expanded || @sub_menu_item.parent_view}
           class={if(!@sidebar_expanded, do: "whitespace-nowrap")}
         >
-          <%= @sub_menu_item.text %>
+          {@sub_menu_item.text}
         </div>
 
         <%= if @sidebar_expanded and @badge do %>
           <div>
-            <.badge variant={:primary} class="ml-2"><%= @badge %></.badge>
+            <.badge variant={:primary} class="ml-2">{@badge}</.badge>
           </div>
         <% end %>
       </div>
@@ -197,7 +197,7 @@ defmodule OliWeb.Workspaces.Utils do
   def title(assigns) do
     ~H"""
     <div class={"#{if @sidebar_expanded, do: "block", else: "hidden"} truncate text-[14px] h-[24px] font-bold ml-5 dark:text-[#B8B4BF] text-[#353740] tracking-[-1%] leading-6 uppercase"}>
-      <%= @resource_title %>
+      {@resource_title}
     </div>
     """
   end

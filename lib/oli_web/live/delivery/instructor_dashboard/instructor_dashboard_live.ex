@@ -2,6 +2,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   use OliWeb, :live_view
   use OliWeb.Common.Modal
 
+  require Logger
+
   alias Oli.Delivery.Metrics
   alias Oli.Delivery.Sections
   alias OliWeb.Delivery.InstructorDashboard.HTMLComponents
@@ -80,7 +82,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         %{
           objectives:
             Sections.get_objectives_and_subobjectives(socket.assigns.section,
-              exclude_sub_objectives: true
+              exclude_sub_objectives: false
             ),
           filter_options:
             Sections.get_units_and_modules_from_a_section(socket.assigns.section.slug)
@@ -129,6 +131,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       end)
       |> assign_new(:activity_types_map, fn %{activities: activities} ->
         Enum.reduce(activities, %{}, fn e, m -> Map.put(m, e.id, e) end)
+      end)
+      |> assign_new(:list_lti_activities, fn ->
+        Enum.map(Oli.Activities.list_lti_activity_registrations(), & &1.id)
       end)
 
     {:noreply, socket}
@@ -584,7 +589,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
     <div class="container mx-auto">
       <.live_component
-        id="objectives_table_#{@section_slug}"
+        id={"objectives_table_#{@section_slug}"}
         module={OliWeb.Components.Delivery.LearningObjectives}
         params={@params}
         view={@view}
@@ -611,6 +616,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         students={@students}
         scripts={@scripts}
         activity_types_map={@activity_types_map}
+        list_lti_activities={@list_lti_activities}
         view={@view}
         ctx={@ctx}
       />
@@ -728,6 +734,17 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     rescue
       _e -> default
     end
+  end
+
+  @impl Phoenix.LiveView
+  def handle_event(event, params, socket) do
+    # Catch-all for UI-only events from functional components
+    # that don't need handling (like dropdown toggles)
+    Logger.warning(
+      "Unhandled event in InstructorDashboardLive: #{inspect(event)}, #{inspect(params)}"
+    )
+
+    {:noreply, socket}
   end
 
   @impl Phoenix.LiveView

@@ -98,7 +98,7 @@ defmodule OliWeb.ProductControllerTest do
       |> Seeder.create_product(
         %{
           title: "My 1st product",
-          amount: Money.new(:USD, 100),
+          amount: Money.new(100, "USD"),
           requires_payment: true,
           grace_period_days: 14,
           cover_image: "https://someurl.com/some-image.png"
@@ -106,7 +106,7 @@ defmodule OliWeb.ProductControllerTest do
         :prod1
       )
       |> Seeder.create_product(
-        %{title: "My 2nd product", amount: Money.new(:USD, "24.99"), description: nil},
+        %{title: "My 2nd product", amount: Money.from_float("USD", 24.99), description: nil},
         :prod2
       )
 

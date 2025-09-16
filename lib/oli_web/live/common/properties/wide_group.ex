@@ -8,15 +8,15 @@ defmodule OliWeb.Common.Properties.WideGroup do
     ~H"""
     <div class="grid grid-cols-12 py-5">
       <div class="md:col-span-12">
-        <h4><%= @label %></h4>
+        <h4>{@label}</h4>
         <div class="text-muted">
-          <%= @description %>
+          {@description}
         </div>
       </div>
     </div>
     <div class="grid grid-cols-12 border-b">
       <div class="md:col-span-12">
-        <%= render_slot(@inner_block) %>
+        {render_slot(@inner_block)}
       </div>
     </div>
     """

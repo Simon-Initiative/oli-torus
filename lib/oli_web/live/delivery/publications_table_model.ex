@@ -33,7 +33,7 @@ defmodule OliWeb.Common.Hierarchy.Publications.TableModel do
         phx-click="HierarchyPicker.select_publication"
         phx-value-id={@publication.id}
       >
-        <%= @publication.project.title %>
+        {@publication.project.title}
       </button>
     </div>
     """

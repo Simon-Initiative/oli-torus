@@ -1,0 +1,5 @@
+# This file will be included by another include file to test nesting
+- user:
+    name: nested_user
+    type: student
+    email: nested@test.edu

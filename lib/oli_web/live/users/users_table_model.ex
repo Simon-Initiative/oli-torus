@@ -53,7 +53,7 @@ defmodule OliWeb.Users.UsersTableModel do
 
         ~H"""
         <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Users.AuthorsDetailView, @author_id)}>
-          <span class="badge badge-dark"><%= @author.email %></span>
+          <span class="badge badge-dark">{@author.email}</span>
         </a>
         """
     end
@@ -69,7 +69,7 @@ defmodule OliWeb.Users.UsersTableModel do
 
     ~H"""
     <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, @id)}>
-      <%= name(@name, @given_name, @family_name) %>
+      {name(@name, @given_name, @family_name)}
     </a>
     """
   end
@@ -105,8 +105,8 @@ defmodule OliWeb.Users.UsersTableModel do
 
     ~H"""
     <div>
-      <%= @primary_badge %>
-      <%= @secondary_badge %>
+      {@primary_badge}
+      {@secondary_badge}
     </div>
     """
   end

@@ -55,10 +55,14 @@ defmodule OliWeb.Grades.UpdatesTableModel do
     {fn r ->
        case name do
          :score ->
-           if !is_nil(r.score) and r.out_of != 0 do
-             r.score / r.out_of
-           else
-             0.0
+           case {r.score, r.out_of} do
+             # Sort nil scores to the beginning
+             {nil, _} -> -1
+             # Sort nil out_of to the beginning
+             {_, nil} -> -1
+             # Handle division by zero
+             {_, 0} -> 0.0
+             {score, out_of} -> score / out_of
            end
        end
      end, direction}
@@ -67,10 +71,11 @@ defmodule OliWeb.Grades.UpdatesTableModel do
   def custom_render(_, row, %ColumnSpec{name: name}) do
     case name do
       :score ->
-        if !is_nil(row.score) do
-          "#{row.score} / #{row.out_of}"
-        else
-          ""
+        case {row.score, row.out_of} do
+          {nil, nil} -> "No score"
+          {nil, out_of} -> "- / #{out_of}"
+          {score, nil} -> "#{score} / -"
+          {score, out_of} -> "#{score} / #{out_of}"
         end
     end
   end

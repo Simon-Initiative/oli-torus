@@ -59,7 +59,7 @@ defmodule OliWeb.Resources.AlternativesEditor do
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
-    <%= render_modal(assigns) %>
+    {render_modal(assigns)}
 
     <div class="alternatives-groups container">
       <h2>Alternatives</h2>
@@ -91,7 +91,7 @@ defmodule OliWeb.Resources.AlternativesEditor do
     <div class="alternatives-group bg-gray-100 dark:bg-neutral-800 dark:border-gray-700 border p-3 my-2">
       <div class="d-flex flex-row align-items-center">
         <div>
-          <b><%= @group.title %></b>
+          <b>{@group.title}</b>
         </div>
         <div class="flex-grow-1"></div>
         <.icon_button
@@ -166,14 +166,14 @@ defmodule OliWeb.Resources.AlternativesEditor do
     form_body_fn = fn assigns ->
       ~H"""
       <div class="form-group">
-        <%= text_input(
+        {text_input(
           @form,
           :name,
           class: "form-control my-2" <> error_class(@form, :name, "is-invalid"),
           placeholder: "Enter the name of the experiment decision point from Upgrade",
           phx_hook: "InputAutoSelect",
           required: true
-        ) %>
+        )}
       </div>
       """
     end
@@ -205,14 +205,14 @@ defmodule OliWeb.Resources.AlternativesEditor do
     form_body_fn = fn assigns ->
       ~H"""
       <div class="form-group">
-        <%= text_input(
+        {text_input(
           @form,
           :name,
           class: "form-control my-2" <> error_class(@form, :name, "is-invalid"),
           placeholder: "Enter a name for the alternative",
           phx_hook: "InputAutoSelect",
           required: true
-        ) %>
+        )}
       </div>
       """
     end
@@ -262,17 +262,17 @@ defmodule OliWeb.Resources.AlternativesEditor do
     form_body_fn = fn assigns ->
       ~H"""
       <div class="form-group">
-        <%= hidden_input(@form, :id) %>
-        <%= hidden_input(@form, :resource_id) %>
+        {hidden_input(@form, :id)}
+        {hidden_input(@form, :resource_id)}
 
-        <%= text_input(
+        {text_input(
           @form,
           :name,
           class: "form-control my-2" <> error_class(@form, :name, "is-invalid"),
           placeholder: "Enter a name",
           phx_hook: "InputAutoSelect",
           required: true
-        ) %>
+        )}
       </div>
       """
     end
@@ -343,7 +343,7 @@ defmodule OliWeb.Resources.AlternativesEditor do
       [] ->
         preview_fn = fn assigns ->
           ~H"""
-          <div class="text-center mt-3"><b><%= @group.title %></b></div>
+          <div class="text-center mt-3"><b>{@group.title}</b></div>
           """
         end
 
@@ -412,17 +412,17 @@ defmodule OliWeb.Resources.AlternativesEditor do
     form_body_fn = fn assigns ->
       ~H"""
       <div class="form-group">
-        <%= hidden_input(@form, :id) %>
-        <%= hidden_input(@form, :resource_id) %>
+        {hidden_input(@form, :id)}
+        {hidden_input(@form, :resource_id)}
 
-        <%= text_input(
+        {text_input(
           @form,
           :title,
           class: "form-control my-2" <> error_class(@form, :name, "is-invalid"),
           placeholder: "Enter a title",
           phx_hook: "InputAutoSelect",
           required: true
-        ) %>
+        )}
       </div>
       """
     end
@@ -490,17 +490,17 @@ defmodule OliWeb.Resources.AlternativesEditor do
     form_body_fn = fn assigns ->
       ~H"""
       <div class="form-group">
-        <%= hidden_input(@form, :id) %>
-        <%= hidden_input(@form, :resource_id) %>
+        {hidden_input(@form, :id)}
+        {hidden_input(@form, :resource_id)}
 
-        <%= text_input(
+        {text_input(
           @form,
           :name,
           class: "form-control my-2" <> error_class(@form, :name, "is-invalid"),
           placeholder: "Enter a name",
           phx_hook: "InputAutoSelect",
           required: true
-        ) %>
+        )}
       </div>
       """
     end

@@ -66,7 +66,7 @@ defmodule OliWeb.Components.Delivery.Progress do
     ~H"""
     <div class="mx-10 mb-10 bg-white">
       <div class="flex flex-col sm:flex-row sm:items-end px-6 py-4 instructor_dashboard_table">
-        <h4 class="pl-9 !py-2 torus-h4 mr-auto"><%= @title %></h4>
+        <h4 class="pl-9 !py-2 torus-h4 mr-auto">{@title}</h4>
         <form
           for="search"
           phx-target={@myself}

@@ -1,14 +1,14 @@
-/* eslint-disable react/prop-types */
 import React, { CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
 import debounce from 'lodash/debounce';
 import { clone } from 'utils/common';
 import { AuthorPartComponentProps } from '../types/parts';
 import { ImageModel } from './schema';
 
+// 🔹 Module-level variable persists across re-renders and re-mounts
+let lastSavedSize: { width?: number; height?: number } = {};
 const ImageAuthor: React.FC<AuthorPartComponentProps<ImageModel>> = (props) => {
   const { model, onSaveConfigure } = props;
   const [ready, setReady] = useState<boolean>(false);
-  const [imgSrc, setImgSrc] = useState<string>('');
   const id: string = props.id;
 
   useEffect(() => {
@@ -22,14 +22,14 @@ const ImageAuthor: React.FC<AuthorPartComponentProps<ImageModel>> = (props) => {
     props.onReady({ id, responses: [] });
   }, [ready]);
 
-  const { width, height, src, imageSrc, alt, defaultSrc } = model;
+  const { width, height, src, alt, defaultSrc, lockAspectRatio } = model;
   const imageStyles: CSSProperties = {
     width,
     height,
   };
 
   const debounceWaitTime = 1000;
-  const debounceImage = useCallback(
+  const debounceImageAdjust = useCallback(
     debounce((updatedModel: any) => {
       manipulateImageSize(updatedModel, true);
     }, debounceWaitTime),
@@ -37,13 +37,10 @@ const ImageAuthor: React.FC<AuthorPartComponentProps<ImageModel>> = (props) => {
   );
 
   useEffect(() => {
-    //Image Source will take precedence ( if there is an image link present in it). If Image Sorce is blank then it will display image link from src.
-    const imageSource = imageSrc?.length && imageSrc != defaultSrc ? imageSrc : src;
-    setImgSrc(imageSource);
-    if (imageSource != defaultSrc && model?.lockAspectRatio) {
-      debounceImage(model);
+    if (src?.length && src !== defaultSrc && lockAspectRatio) {
+      debounceImageAdjust(model);
     }
-  }, [model]);
+  }, [model, lockAspectRatio]);
   const imageContainerRef = useRef<HTMLImageElement>(null);
   const manipulateImageSize = (updatedModel: ImageModel, isfromDebaunce: boolean) => {
     if (!imageContainerRef?.current || !isfromDebaunce) {
@@ -54,15 +51,7 @@ const ImageAuthor: React.FC<AuthorPartComponentProps<ImageModel>> = (props) => {
 
     const currentWidth = imageContainerRef.current.width;
     const currentHeight = imageContainerRef.current.height;
-
-    const updatedWidth = updatedModel?.width || 0;
-    if (
-      naturalWidth <= 0 ||
-      naturalHeight <= 0 ||
-      currentWidth <= 0 ||
-      currentHeight <= 0 ||
-      updatedWidth <= 0
-    ) {
+    if (naturalWidth <= 0 || naturalHeight <= 0 || currentWidth <= 0 || currentHeight <= 0) {
       return;
     }
     const ratioWidth = naturalWidth / currentWidth;
@@ -80,7 +69,13 @@ const ImageAuthor: React.FC<AuthorPartComponentProps<ImageModel>> = (props) => {
     const modelClone = clone(updatedModel);
     modelClone.height = newAdjustedHeight;
     modelClone.width = newAdjustedWidth;
-    if (newAdjustedHeight != updatedModel.height || newAdjustedWidth != updatedModel.width) {
+    if (
+      (newAdjustedHeight != updatedModel.height || newAdjustedWidth != updatedModel.width) &&
+      newAdjustedWidth !== lastSavedSize.width &&
+      newAdjustedHeight !== lastSavedSize.height
+    ) {
+      // Update module-level tracker
+      lastSavedSize = { width: newAdjustedWidth, height: newAdjustedHeight };
       //we need to save the new width and height of the image so that the custom property is updated with adjusted values
       onSaveConfigure({ id, snapshot: modelClone });
     }
@@ -89,16 +84,15 @@ const ImageAuthor: React.FC<AuthorPartComponentProps<ImageModel>> = (props) => {
     <img
       ref={imageContainerRef}
       onLoad={() => {
-        manipulateImageSize(model, false);
+        lockAspectRatio && manipulateImageSize(model, false);
       }}
       draggable="false"
       alt={alt}
-      src={imgSrc}
+      src={src}
       style={imageStyles}
     />
   ) : null;
 };
 
 export const tagName = 'janus-image';
-
 export default ImageAuthor;

@@ -30,7 +30,7 @@ defmodule OliWeb.Common.Modal.FormModal do
               phx_submit: @on_submit],
             fn f -> %>
             <div class="modal-header">
-              <h5 class="modal-title"><%= @title %></h5>
+              <h5 class="modal-title">{@title}</h5>
               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
               </button>
             </div>
@@ -39,7 +39,7 @@ defmodule OliWeb.Common.Modal.FormModal do
             </div>
             <div class="modal-footer">
               <button type="button" class="btn btn-link" data-bs-dismiss="modal">Cancel</button>
-              <%= submit(@submit_label, class: "btn btn-primary") %>
+              {submit(@submit_label, class: "btn btn-primary")}
             </div>
           <% end %>
         </div>

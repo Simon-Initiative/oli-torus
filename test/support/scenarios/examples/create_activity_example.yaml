@@ -1,0 +1,131 @@
+# Example of using the create_activity directive to create activities
+# from TorusDoc YAML content
+
+# First, create a project
+- project:
+    name: physics_course
+    title: "Introduction to Physics"
+    root:
+      type: container
+      title: "Course Root"
+      children:
+        - type: container
+          title: "Module 1: Mechanics"
+          children:
+            - type: page
+              title: "Kinematics"
+            - type: page
+              title: "Practice Problems"
+
+# Create an embedded MCQ activity for the Kinematics page
+- create_activity:
+    project: physics_course
+    title: "Velocity Concept Check"
+    scope: embedded
+    type: oli_multiple_choice
+    content: |
+      stem_md: |
+        A car travels at a constant velocity of 60 km/h for 2 hours.
+        
+        What is the total distance traveled?
+      
+      choices:
+        - id: "A"
+          body_md: "30 km"
+          score: 0
+          feedback_md: "Remember: distance = velocity × time"
+        
+        - id: "B"
+          body_md: "60 km"
+          score: 0
+          feedback_md: "Check your calculation: 60 km/h × 2 h = ?"
+        
+        - id: "C"
+          body_md: "120 km"
+          score: 1
+          feedback_md: "Correct! Distance = 60 km/h × 2 h = 120 km"
+        
+        - id: "D"
+          body_md: "240 km"
+          score: 0
+          feedback_md: "Check your units and calculation"
+      
+      shuffle: true
+      
+      hints:
+        - body_md: "Use the formula: distance = velocity × time"
+        - body_md: "The velocity is 60 km/h and the time is 2 hours"
+      
+      explanation_md: |
+        The distance traveled at constant velocity is calculated using:
+        
+        **d = v × t**
+        
+        Where:
+        - d = distance
+        - v = velocity = 60 km/h
+        - t = time = 2 h
+        
+        Therefore: d = 60 km/h × 2 h = 120 km
+
+# Create a banked activity that can be reused across multiple pages
+- create_activity:
+    project: physics_course
+    title: "Acceleration Problem Bank 1"
+    scope: banked
+    type: oli_multiple_choice
+    content: |
+      objectives: [2423, 1345]  # Reference to learning objectives
+      tags: [4534]               # Reference to tags
+      
+      stem_md: |
+        An object starts from rest and accelerates uniformly at 2 m/s².
+        
+        What is its velocity after 5 seconds?
+      
+      choices:
+        - id: "A"
+          body_md: "2 m/s"
+          score: 0
+          feedback_md: "This would be the velocity after 1 second"
+        
+        - id: "B"
+          body_md: "5 m/s"
+          score: 0
+          feedback_md: "Remember to multiply acceleration by time"
+        
+        - id: "C"
+          body_md: "10 m/s"
+          score: 1
+          feedback_md: "Correct! v = at = 2 m/s² × 5 s = 10 m/s"
+        
+        - id: "D"
+          body_md: "25 m/s"
+          score: 0
+          feedback_md: "Check your calculation"
+      
+      incorrect_feedback_md: |
+        Use the equation: v = v₀ + at
+        Since the object starts from rest, v₀ = 0
+
+# Create a short answer activity
+- create_activity:
+    project: physics_course
+    title: "Define Velocity"
+    scope: embedded
+    type: oli_short_answer
+    content: |
+      stem_md: "In your own words, define velocity and explain how it differs from speed."
+      
+      input_type: textarea
+      
+      hints:
+        - body_md: "Consider the role of direction"
+        - body_md: "Think about vector vs. scalar quantities"
+
+# Future directives would reference activities by title
+# For example (not yet implemented):
+# - add_to_page:
+#     page: "Practice Problems"
+#     activity: "Velocity Concept Check"
+#     project: physics_course

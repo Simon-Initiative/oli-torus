@@ -209,11 +209,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
   defp step(_view_and_ctx, _operation, assert_or_refute \\ :assert)
 
   defp step({view, ctx}, :test_has_button_download_experiment_json, assert_or_refute) do
-    to_evaluate =
-      view
-      |> render()
-      |> Floki.find("a:fl-contains('Download Experiment JSON')")
-      |> Floki.text() =~ "Download Experiment JSON"
+    to_evaluate = has_element?(view, "a", "Download Experiment JSON")
 
     evaluate_assertion(to_evaluate, assert_or_refute)
 
@@ -221,11 +217,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
   end
 
   defp step({view, ctx}, :test_has_button_download_segment_json, assert_or_refute) do
-    to_evaluate =
-      view
-      |> render()
-      |> Floki.find("a:fl-contains('Download Segment JSON')")
-      |> Floki.text() =~ "Download Segment JSON"
+    to_evaluate = has_element?(view, "a", "Download Segment JSON")
 
     evaluate_assertion(to_evaluate, assert_or_refute)
 
@@ -245,7 +237,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
     to_evaluate =
       has_element?(
         view,
-        "button[phx-click=\"show_edit_group_modal\"][phx-value-resource-id=\"#{resource_id}\"] > .fa-pencil"
+        "button[phx-click='show_edit_group_modal'][phx-value-resource-id='#{resource_id}'] > .fa-pencil"
       )
 
     evaluate_assertion(to_evaluate, assert_or_refute)
@@ -290,7 +282,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
     to_evaluate =
       has_element?(
         view,
-        "button[phx-click=\"show_edit_option_modal\"][phx-value-option-id=\"#{option_1["id"]}\"] > .fa-pencil"
+        "button[phx-click='show_edit_option_modal'][phx-value-option-id=\"#{option_1["id"]}\"] > .fa-pencil"
       )
 
     evaluate_assertion(to_evaluate, assert_or_refute)
@@ -305,7 +297,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
     to_evaluate =
       has_element?(
         view,
-        "button[phx-click=\"show_edit_option_modal\"][phx-value-option-id=\"#{option_2["id"]}\"] > .fa-pencil"
+        "button[phx-click='show_edit_option_modal'][phx-value-option-id=\"#{option_2["id"]}\"] > .fa-pencil"
       )
 
     evaluate_assertion(to_evaluate, assert_or_refute)
@@ -319,7 +311,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
     to_evaluate =
       has_element?(
         view,
-        "button[phx-click=\"show_delete_option_modal\"][phx-value-option-id=\"#{option_1["id"]}\"] > .fa-trash"
+        "button[phx-click='show_delete_option_modal'][phx-value-option-id=\"#{option_1["id"]}\"] > .fa-trash"
       )
 
     evaluate_assertion(to_evaluate, assert_or_refute)
@@ -333,7 +325,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
     to_evaluate =
       has_element?(
         view,
-        "button[phx-click=\"show_delete_option_modal\"][phx-value-option-id=\"#{option_2["id"]}\"] > .fa-trash"
+        "button[phx-click='show_delete_option_modal'][phx-value-option-id=\"#{option_2["id"]}\"] > .fa-trash"
       )
 
     evaluate_assertion(to_evaluate, assert_or_refute)
@@ -347,7 +339,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
     to_evaluate =
       has_element?(
         view,
-        "button[phx-click=\"show_create_option_modal\"][phx-value-resource_id=\"#{resource_id}\"]"
+        "button[phx-click='show_create_option_modal'][phx-value-resource_id='#{resource_id}']"
       )
 
     evaluate_assertion(to_evaluate, assert_or_refute)
@@ -356,7 +348,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
   end
 
   defp step({view, ctx}, :click_on_checkbox, _assert_or_refute) do
-    view |> element("input[phx-click=\"enable_upgrade\"]") |> render_click()
+    view |> element("input[phx-click='enable_upgrade']") |> render_click()
     {view, ctx}
   end
 
@@ -366,7 +358,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
 
     view
     |> element(
-      "button[phx-click=\"show_create_option_modal\"][phx-value-resource_id=\"#{resource_id}\"]"
+      "button[phx-click='show_create_option_modal'][phx-value-resource_id='#{resource_id}']"
     )
     |> render_click()
 
@@ -432,8 +424,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
   defp step({view, ctx}, :put_resource_id, _assert_or_refute) do
     [resource_id] =
       view
-      |> element("button[phx-click=\"show_edit_group_modal\"]")
+      |> element("button[phx-click='show_edit_group_modal']")
       |> render()
+      |> Floki.parse_document!()
+      |> Floki.find("button[phx-click='show_edit_group_modal']")
       |> Floki.attribute("phx-value-resource-id")
 
     {view, Map.put(ctx, :resource_id, resource_id)}

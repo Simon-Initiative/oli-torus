@@ -184,7 +184,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.IndexLive do
                 Welcome to
               </span>
               <span class="text-white font-bold font-['Open Sans'] leading-10">
-                <%= Oli.VendorProperties.product_short_name() %>
+                {Oli.VendorProperties.product_short_name()}
               </span>
             </div>
             <div class="w-48 h-11 justify-start items-center gap-1 inline-flex">
@@ -223,7 +223,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.IndexLive do
 
   def render(assigns) do
     ~H"""
-    <%= render_modal(assigns) %>
+    {render_modal(assigns)}
     <div class="flex-1 flex flex-col">
       <div class="relative flex items-center h-[247px]">
         <div class="absolute top-0 h-full w-full">

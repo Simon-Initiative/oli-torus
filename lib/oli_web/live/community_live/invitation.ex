@@ -38,7 +38,7 @@ defmodule OliWeb.CommunityLive.Invitation do
                   else: false
               }
             >
-              <%= institution.name %>
+              {institution.name}
             </option>
           </select>
         <% else %>
@@ -55,18 +55,18 @@ defmodule OliWeb.CommunityLive.Invitation do
         <datalist id={@list_id}>
           <%= for match <- @matches do %>
             <option value={Map.get(match, @search_field)}>
-              <%= Map.get(match, @main_fields[:primary]) %>
+              {Map.get(match, @main_fields[:primary])}
             </option>
           <% end %>
         </datalist>
       </div>
-      <button class="form-button btn btn-outline-primary" type="submit"><%= @button_text %></button>
+      <button class="form-button btn btn-outline-primary" type="submit">{@button_text}</button>
     </.form>
     <%= for collaborator <- @collaborators do %>
       <div class="d-flex justify-content-between align-items-center mb-3">
         <div class="d-flex flex-column">
-          <div><%= Map.get(collaborator, @main_fields[:primary]) %></div>
-          <div class="text-muted"><%= Map.get(collaborator, @main_fields[:secondary]) %></div>
+          <div>{Map.get(collaborator, @main_fields[:primary])}</div>
+          <div class="text-muted">{Map.get(collaborator, @main_fields[:secondary])}</div>
         </div>
         <div :if={@allow_removal} class="user-actions">
           <button

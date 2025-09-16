@@ -40,7 +40,7 @@ defmodule OliWeb.Experiments.ExperimentsView do
 
   def render(assigns) do
     ~H"""
-    <%= render_modal(assigns) %>
+    {render_modal(assigns)}
     <div class="flex flex-col gap-y-6 ml-8 mt-4">
       <h3>A/B Testing with UpGrade</h3>
       <p>
@@ -128,17 +128,17 @@ defmodule OliWeb.Experiments.ExperimentsView do
     form_body_fn = fn assigns ->
       ~H"""
       <div class="form-group">
-        <%= hidden_input(@form, :id) %>
-        <%= hidden_input(@form, :resource_id) %>
+        {hidden_input(@form, :id)}
+        {hidden_input(@form, :resource_id)}
 
-        <%= text_input(
+        {text_input(
           @form,
           :name,
           class: "form-control my-2" <> error_class(@form, :name, "is-invalid"),
           placeholder: "Enter a name",
           phx_hook: "InputAutoSelect",
           required: true
-        ) %>
+        )}
       </div>
       """
     end
@@ -200,17 +200,17 @@ defmodule OliWeb.Experiments.ExperimentsView do
     form_body_fn = fn assigns ->
       ~H"""
       <div class="form-group">
-        <%= hidden_input(@form, :id) %>
-        <%= hidden_input(@form, :resource_id) %>
+        {hidden_input(@form, :id)}
+        {hidden_input(@form, :resource_id)}
 
-        <%= text_input(
+        {text_input(
           @form,
           :title,
           class: "form-control my-2" <> error_class(@form, :name, "is-invalid"),
           placeholder: "Enter a title",
           phx_hook: "InputAutoSelect",
           required: true
-        ) %>
+        )}
       </div>
       """
     end
@@ -347,17 +347,17 @@ defmodule OliWeb.Experiments.ExperimentsView do
     form_body_fn = fn assigns ->
       ~H"""
       <div class="form-group">
-        <%= hidden_input(@form, :id) %>
-        <%= hidden_input(@form, :resource_id) %>
+        {hidden_input(@form, :id)}
+        {hidden_input(@form, :resource_id)}
 
-        <%= text_input(
+        {text_input(
           @form,
           :name,
           class: "form-control my-2" <> error_class(@form, :name, "is-invalid"),
           placeholder: "Enter a name",
           phx_hook: "InputAutoSelect",
           required: true
-        ) %>
+        )}
       </div>
       """
     end

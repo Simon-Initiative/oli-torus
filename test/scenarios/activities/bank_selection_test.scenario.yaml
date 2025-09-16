@@ -1,0 +1,169 @@
+# Scenario: Test bank-selection with tag and objective title resolution
+# This scenario verifies that bank-selection blocks correctly resolve
+# tag and objective titles to their resource IDs
+
+# Create a project with tags and objectives
+- project:
+    name: "bank_test"
+    title: "Bank Selection Test Project"
+    tags:
+      - "easy"
+      - "medium" 
+      - "hard"
+      - "concept"
+      - "practice"
+    objectives:
+      - "Understand basics"
+      - "Apply knowledge"
+      - "Analyze problems"
+      - "Create solutions"
+    root:
+      children:
+        - page: "Practice Page"
+        - container: "Unit 1"
+          children:
+            - page: "Assessment"
+
+# Create some banked activities with tags and objectives
+- create_activity:
+    project: "bank_test"
+    title: "Easy Concept Question"
+    virtual_id: "easy_concept_1"
+    scope: "banked"
+    type: "oli_multiple_choice"
+    tags: ["easy", "concept"]
+    objectives: ["Understand basics"]
+    content: |
+      stem_md: "What is 2 + 2?"
+      choices:
+        - id: "a"
+          body_md: "3"
+        - id: "b"
+          body_md: "4"
+          correct: true
+        - id: "c"
+          body_md: "5"
+
+- create_activity:
+    project: "bank_test"
+    title: "Medium Practice Question"
+    virtual_id: "medium_practice_1"
+    scope: "banked"
+    type: "oli_multiple_choice"
+    tags: ["medium", "practice"]
+    objectives: ["Apply knowledge"]
+    content: |
+      stem_md: "Solve: 3x + 5 = 14"
+      choices:
+        - id: "a"
+          body_md: "x = 3"
+          correct: true
+        - id: "b"
+          body_md: "x = 4"
+        - id: "c"
+          body_md: "x = 5"
+
+- create_activity:
+    project: "bank_test"
+    title: "Hard Analysis Question"
+    virtual_id: "hard_analysis_1"
+    scope: "banked"
+    type: "oli_multiple_choice"
+    tags: ["hard", "practice"]
+    objectives: ["Analyze problems", "Apply knowledge"]
+    content: |
+      stem_md: "Which algorithm has the best time complexity?"
+      choices:
+        - id: "a"
+          body_md: "O(n²)"
+        - id: "b"
+          body_md: "O(n log n)"
+        - id: "c"
+          body_md: "O(log n)"
+          correct: true
+
+# Edit a page to include bank-selection with title-based clauses
+- edit_page:
+    project: "bank_test"
+    page: "Practice Page"
+    content: |
+      title: "Practice Page"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "## Select activities based on tags"
+        - type: bank-selection
+          id: "tag_selection"
+          count: 2
+          points: 10
+          clauses:
+            - field: "tags"
+              op: "includes"
+              value: ["medium", "hard"]
+        - type: prose
+          body_md: "## Select activities based on objectives"
+        - type: bank-selection
+          id: "objective_selection"
+          count: 1
+          points: 5
+          clauses:
+            - field: "objectives"
+              op: "includes"
+              value: ["Apply knowledge"]
+        - type: prose
+          body_md: "## Combined selection"
+        - type: bank-selection
+          id: "combined_selection"
+          count: 1
+          points: 15
+          clauses:
+            - field: "tags"
+              op: "includes"
+              value: ["practice"]
+            - field: "objectives"
+              op: "includes"
+              value: ["Analyze problems"]
+
+# Edit another page with mixed ID and title values
+- edit_page:
+    project: "bank_test"
+    page: "Assessment"
+    content: |
+      title: "Assessment"
+      graded: true
+      blocks:
+        - type: prose
+          body_md: "## Assessment Questions"
+        - type: bank-selection
+          id: "mixed_selection"
+          count: 2
+          points: 20
+          clauses:
+            - field: "tags"
+              op: "includes"
+              value: ["easy", "concept"]
+            - field: "objectives"
+              op: "equals"
+              value: ["Understand basics"]
+
+# Publish the project
+- publish:
+    to: "bank_test"
+    description: "Publishing with bank selections"
+
+# Create a section to test the bank selections
+- section:
+    name: "bank_test_section"
+    title: "Bank Test Section"
+    from: "bank_test"
+
+# Verify the section structure
+- assert:
+    structure:
+      to: "bank_test_section"
+      root:
+        children:
+          - page: "Practice Page"
+          - container: "Unit 1"
+            children:
+              - page: "Assessment"

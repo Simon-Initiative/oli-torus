@@ -2,10 +2,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
   use OliWeb, :live_view
   use OliWeb.Common.Modal
 
+  require Logger
+
   import Oli.Utils, only: [value_or: 2]
   import Oli.Authoring.Editing.Utils
   import OliWeb.Curriculum.Utils
-
   alias Oli.Authoring.Editing.ContainerEditor
 
   alias OliWeb.Curriculum.{
@@ -33,7 +34,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
   alias OliWeb.Common.Breadcrumb
   alias Oli.Delivery.Hierarchy
   alias Oli.Resources.Revision
-  alias Oli.Resources
   alias Oli.Delivery.Hierarchy.HierarchyNode
   alias OliWeb.Components.Modal
   alias OliWeb.Curriculum.Container.ContainerLiveHelpers
@@ -161,38 +161,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
   end
 
   def handle_event("validate-options", %{"revision" => revision_params}, socket) do
-    %{options_modal_assigns: %{revision: revision} = modal_assigns} = socket.assigns
-
-    revision_params = ContainerLiveHelpers.decode_revision_params(revision_params)
-
-    changeset =
-      revision
-      |> Resources.change_revision(revision_params)
-      |> Map.put(:action, :validate)
-      |> to_form()
-
-    {:noreply, assign(socket, options_modal_assigns: %{modal_assigns | form: changeset})}
+    ContainerLiveHelpers.handle_validate_options(socket, revision_params)
   end
 
   def handle_event("save-options", %{"revision" => revision_params}, socket) do
-    %{options_modal_assigns: %{redirect_url: redirect_url, revision: revision}, project: project} =
-      socket.assigns
-
-    revision_params = ContainerLiveHelpers.decode_revision_params(revision_params)
-
-    case ContainerEditor.edit_page(project, revision.slug, revision_params) do
-      {:ok, _} ->
-        {:noreply,
-         socket
-         |> put_flash(
-           :info,
-           "#{resource_type_label(revision) |> String.capitalize()} options saved"
-         )
-         |> push_navigate(to: redirect_url)}
-
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, assign(socket, :changeset, changeset)}
-    end
+    ContainerLiveHelpers.handle_save_options(socket, revision_params)
   end
 
   def handle_event("show_move_modal", %{"slug" => slug}, socket) do
@@ -493,6 +466,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
      push_patch(socket,
        to: Routes.live_path(socket, __MODULE__, socket.assigns.project.slug, params)
      )}
+  end
+
+  @impl Phoenix.LiveView
+  def handle_event(event, params, socket) do
+    # Catch-all for UI-only events from functional components
+    # that don't need handling (like dropdown toggles)
+    Logger.warning("Unhandled event in CurriculumLive: #{inspect(event)}, #{inspect(params)}")
+    {:noreply, socket}
   end
 
   # Here we respond to notifications for edits made

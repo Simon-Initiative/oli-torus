@@ -2,6 +2,4 @@
 
 </style>
 <ul>
-  <%# <%= render_many @list_items, OliWeb.SharedView, "_list_item.html",
-    %{conn: @conn, as: :list_item} %> %>
 </ul>

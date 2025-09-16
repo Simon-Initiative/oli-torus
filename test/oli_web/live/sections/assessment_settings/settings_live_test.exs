@@ -762,6 +762,34 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       |> has_element?()
     end
 
+    test "can remove password", ctx do
+      %{conn: conn, section: section, page_1: %{resource_id: resource_id}} = ctx
+
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
+
+      # Set a password to page 1
+      set_password(view, resource_id, "strong_password!")
+
+      # Verify change of password
+      assert view |> element("input[type=password][value='****************']") |> has_element?()
+
+      # Remove password - Set to ""
+      set_password(view, resource_id, "")
+
+      assert view
+             |> element("input[placeholder='Enter password'][name='password-#{resource_id}']")
+             |> has_element?()
+    end
+
+    defp set_password(view, resource_id, password) do
+      view
+      |> form(~s{form[for="settings_table"]})
+      |> render_change(%{
+        "_target" => ["password-#{resource_id}"],
+        "password-#{resource_id}" => password
+      })
+    end
+
     test "exception count links to corresponding student exceptions for that assessment",
          %{
            conn: conn,
@@ -1107,7 +1135,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       # click on the next page button
       view
-      |> element("button[phx-value-offset=\"2\"][phx-value-limit=\"2\"]", "2")
+      |> element("button[phx-value-offset='2'][phx-value-limit='2']", "2")
       |> render_click()
 
       # assert that the next two assessments are shown
@@ -1681,12 +1709,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assert Settings.fetch_all_settings_changes() == []
 
       # we change page 3 password setting to "asdf"
-      view
-      |> form(~s{form[for="settings_table"]})
-      |> render_change(%{
-        "_target" => ["password-#{page_3.resource.id}"],
-        "password-#{page_3.resource.id}" => "asdf"
-      })
+      set_password(view, page_3.resource_id, "asdf")
 
       changes = Settings.fetch_all_settings_changes()
       change_for_page_3 = hd(changes)
@@ -1818,7 +1841,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       assert has_element?(
                view,
-               ~s{button[phx-click=show_modal][disabled=disabled]},
+               ~s{button[phx-click=show_modal][disabled]},
                "Remove Selected"
              )
     end
@@ -1994,7 +2017,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       |> form(~s{form[id=assessment_select]})
       |> render_change(%{"assessment_id" => page_2.resource.id})
 
-      target_element = ~s{select[id=assessment_select_assessment_id] > option[selected=selected]}
+      target_element = ~s{select[id=assessment_select_assessment_id] > option[selected]}
 
       assert view |> element(target_element) |> render() =~ "Page 2"
 
@@ -2040,7 +2063,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       assert has_element?(
                view,
-               ~s{button[disabled=disabled][phx-value-modal_name=add_student_exception]},
+               ~s{button[disabled][phx-value-modal_name=add_student_exception]},
                "Add New"
              )
     end
@@ -2527,7 +2550,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       # click on the next page button
       view
-      |> element("button[phx-value-offset=\"2\"][phx-value-limit=\"2\"]", "2")
+      |> element("button[phx-value-offset='2'][phx-value-limit='2']", "2")
       |> render_click()
 
       # assert that the next two assessments are shown

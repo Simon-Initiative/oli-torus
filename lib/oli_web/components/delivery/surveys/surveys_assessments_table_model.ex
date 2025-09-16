@@ -58,10 +58,10 @@ defmodule OliWeb.Delivery.Surveys.SurveysAssessmentsTableModel do
       phx-value-id={@id}
     >
       <%= if @container_label do %>
-        <span class="text-gray-600 font-bold text-sm"><%= @container_label %></span>
+        <span class="text-gray-600 font-bold text-sm">{@container_label}</span>
       <% end %>
       <span>
-        <%= @title %>
+        {@title}
       </span>
     </div>
     """
@@ -72,7 +72,7 @@ defmodule OliWeb.Delivery.Surveys.SurveysAssessmentsTableModel do
 
     ~H"""
     <div class={if @avg_score < 0.40, do: "text-red-600 font-bold"}>
-      <%= format_value(@avg_score) %>
+      {format_value(@avg_score)}
     </div>
     """
   end
@@ -81,7 +81,7 @@ defmodule OliWeb.Delivery.Surveys.SurveysAssessmentsTableModel do
     assigns = Map.merge(assigns, %{total_attempts: assessment.total_attempts})
 
     ~H"""
-    <%= @total_attempts || "-" %>
+    {@total_attempts || "-"}
     """
   end
 
@@ -95,7 +95,7 @@ defmodule OliWeb.Delivery.Surveys.SurveysAssessmentsTableModel do
     ~H"""
     <%= if @avg_score != nil do %>
       <div class={if @students_completion < 0.40, do: "text-red-600 font-bold"}>
-        <%= format_value(@students_completion) %>
+        {format_value(@students_completion)}
       </div>
     <% else %>
       -

@@ -78,7 +78,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
         <label for="introduction_content">Introduction content</label>
       </div>
       <div id="rich_text_editor_wrapper" phx-update="ignore">
-        <%= React.component(
+        {React.component(
           @ctx,
           "Components.RichTextEditor",
           %{
@@ -94,7 +94,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
             allowBlockElements: false
           },
           id: "rich_text_editor_react_component"
-        ) %>
+        )}
       </div>
 
       <div class="modal-footer">
@@ -134,7 +134,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
       </div>
       <div class="text-lg mb-6 flex w-full">
         <span :if={@resource_urls != []}>
-          <%= "Select #{humanize_and_pluralize_atom(@step)}," %> &nbsp
+          {"Select #{humanize_and_pluralize_atom(@step)},"} &nbsp
         </span>
         <a
           href="#"
@@ -144,11 +144,11 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
           }
           phx-target={@myself}
         >
-          <%= if @resource_urls != [],
+          {if @resource_urls != [],
             do: "upload a new one",
-            else: "Upload #{humanize_and_pluralize_atom(@step)}" %>
+            else: "Upload #{humanize_and_pluralize_atom(@step)}"}
         </a>
-        <span class="ml-2 text-xs text-gray-500">(max size: <%= @max_upload_size[@step] %> MB)</span>
+        <span class="ml-2 text-xs text-gray-500">(max size: {@max_upload_size[@step]} MB)</span>
         <.form
           :if={@step == :intro_video}
           for={@intro_video_form}
@@ -288,10 +288,10 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
           <div :if={fetch_field(@form.source, @step) == "uploaded_one"}>
             <%= for entry <- @uploads[@step].entries do %>
               <progress :if={entry.valid? and entry.progress != 100} value={entry.progress} max="100">
-                <%= entry.progress %>%
+                {entry.progress}%
               </progress>
               <%= for err <- upload_errors(@uploads[@step], entry) do %>
-                <p class="alert alert-danger"><%= error_to_string(err, @step) %></p>
+                <p class="alert alert-danger">{error_to_string(err, @step)}</p>
               <% end %>
             <% end %>
           </div>
@@ -349,7 +349,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
                 <label for="title">Title</label>
                 <.input type="text" field={@form[:title]} class="form-control" />
                 <small id="title_description" class="form-text text-muted">
-                  The title is used to identify this <%= resource_type_label(@revision) %>.
+                  The title is used to identify this {resource_type_label(@revision)}.
                 </small>
               </div>
               <.intro_content_input form={@form} target={@myself} />
@@ -568,7 +568,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
 
           <div class="form-group">
             <label for="purpose">Purpose</label>
-            <%= select(
+            {select(
               @form,
               :purpose,
               [
@@ -578,7 +578,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
               ],
               prompt: "Purpose",
               class: "form-control custom-select"
-            ) %>
+            )}
           </div>
 
           <div class="form-group">
@@ -600,7 +600,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
             <label for="title">Title</label>
             <.input type="text" field={@form[:title]} class="form-control" />
             <small id="title_description" class="form-text text-muted">
-              The title is used to identify this <%= resource_type_label(@revision) %>.
+              The title is used to identify this {resource_type_label(@revision)}.
             </small>
           </div>
           <.intro_content_input form={@form} target={@myself} />
@@ -860,7 +860,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
       <.input type="hidden" name="revision[intro_content]" field={@form[:intro_content] || %{}} />
       <div class="form-control overflow-hidden truncate-form-control min-h-[34px]">
         <div :if={fetch_field(@form.source, :intro_content) not in [nil, "", %{}]}>
-          <%= Phoenix.HTML.raw(
+          {Phoenix.HTML.raw(
             Oli.Rendering.Content.render(
               %Oli.Rendering.Context{},
               fetch_field(@form.source, :intro_content)[
@@ -868,7 +868,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
               ],
               Oli.Rendering.Content.Html
             )
-          ) %>
+          )}
         </div>
       </div>
 
@@ -1122,6 +1122,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
 
     case Regex.run(regex, url) do
       [_, _, video_id] when byte_size(video_id) == 11 ->
+        # `rel=0` limits related videos to same channel
         "https://www.youtube.com/embed/#{video_id}?autoplay=0&rel=0"
 
       _ ->

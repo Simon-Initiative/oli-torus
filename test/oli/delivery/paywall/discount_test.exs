@@ -48,7 +48,7 @@ defmodule Oli.Delivery.Paywall.DiscountTest do
     test "valid fixed amount discount", %{institution: institution} do
       attrs = %{
         type: :fixed_amount,
-        amount: Money.new(:USD, 20),
+        amount: Money.new(20, "USD"),
         institution_id: institution.id
       }
 
@@ -70,7 +70,7 @@ defmodule Oli.Delivery.Paywall.DiscountTest do
     test "fixed amount discount fails if amount is too small", %{institution: institution} do
       attrs = %{
         type: :fixed_amount,
-        amount: Money.new(:USD, 0.5),
+        amount: Money.new(0.5, "USD"),
         institution_id: institution.id
       }
 

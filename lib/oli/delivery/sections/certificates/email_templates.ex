@@ -14,8 +14,8 @@ defmodule Oli.Delivery.Sections.Certificates.EmailTemplates do
   def student_approval(assigns) do
     ~H"""
     <p class="text-[#373a44] dark:text-white" style="text-align: left;">
-      Dear <%= @student_name %>, <br />
-      <br /> Congratulations! You have earned a Certificate of Completion for <%= @course_name %>.
+      Dear {@student_name}, <br />
+      <br /> Congratulations! You have earned a Certificate of Completion for {@course_name}.
       <.link href={@certificate_link} class="text-[#0062f2]">
         Access your certificate here
       </.link>
@@ -30,7 +30,7 @@ defmodule Oli.Delivery.Sections.Certificates.EmailTemplates do
       <br />
       If you have any questions or need further assistance, feel free to contact our support team.
       <br />
-      <br /> Best regards, <br /> <%= @platform_name %> Team
+      <br /> Best regards, <br /> {@platform_name} Team
     </p>
     """
   end
@@ -43,16 +43,16 @@ defmodule Oli.Delivery.Sections.Certificates.EmailTemplates do
   def student_denial(assigns) do
     ~H"""
     <p class="text-[#373a44] dark:text-white" style="text-align: left;">
-      Dear <%= @student_name %>, <br />
-      <br /> Thank you for completing the <%= @course_name %> on <%= @platform_name %>. <br />
+      Dear {@student_name}, <br />
+      <br /> Thank you for completing the {@course_name} on {@platform_name}. <br />
       <br />
       After reviewing your progress, we regret to inform you that you did not meet the requirements necessary to earn a certificate for this course. Please note that the certificate eligibility is based on the completion of all requirements and achieving the minimum score threshold.
       <br />
       <br />
-      If you have any questions or would like feedback on your progress, please contact your instructor at <%= @instructor_email %>.
+      If you have any questions or would like feedback on your progress, please contact your instructor at {@instructor_email}.
       <br />
       <br /> Thank you for your participation. <br />
-      <br /> Best regards, <br /> <%= @platform_name %> Team
+      <br /> Best regards, <br /> {@platform_name} Team
     </p>
     """
   end
@@ -72,9 +72,9 @@ defmodule Oli.Delivery.Sections.Certificates.EmailTemplates do
       Dear <strong><%= @instructor_name %></strong>, <br />
 
       <br />
-      <strong><%= @student_name %></strong>
-      has met the thresholds set in place to receive their certificate for <%= @course_name %>. You are required to approve this status before
-      <strong><%= @student_name %></strong>
+      <strong>{@student_name}</strong>
+      has met the thresholds set in place to receive their certificate for {@course_name}. You are required to approve this status before
+      <strong>{@student_name}</strong>
       will be issued a <strong><%= @certificate_type %></strong>. <br />
 
       <br />

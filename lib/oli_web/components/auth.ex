@@ -19,7 +19,7 @@ defmodule OliWeb.Components.Auth do
     ~H"""
     <div class={["w-96 dark:bg-neutral-700 rounded-md sm:shadow-lg dark:text-white", @class]}>
       <div class="text-center text-xl font-normal leading-7 py-8">
-        <%= @title %>
+        {@title}
       </div>
 
       <div
@@ -43,47 +43,47 @@ defmodule OliWeb.Components.Auth do
       >
         <div class="w-80 mx-auto flex flex-col gap-2 py-8">
           <div>
-            <%= email_input(f, :email,
+            {email_input(f, :email,
               class:
                 "w-full dark:placeholder:text-zinc-300 pl-6 dark:bg-stone-900 rounded-md border dark:border-zinc-300 dark:text-zinc-300 leading-snug",
               placeholder: "Email",
               required: true,
               autofocus: focusHelper(f, :email, default: true),
               disabled: :email in @disabled_inputs
-            ) %>
-            <%= error_tag(f, :email) %>
+            )}
+            {error_tag(f, :email)}
           </div>
           <div>
-            <%= password_input(f, :password,
+            {password_input(f, :password,
               class:
                 "w-full dark:placeholder:text-zinc-300 pl-6 dark:bg-stone-900 rounded-md border dark:border-zinc-300 dark:text-zinc-300 leading-snug",
               placeholder: "Password",
               required: true,
               autofocus: focusHelper(f, :password, default: true),
               disabled: :password in @disabled_inputs
-            ) %>
-            <%= error_tag(f, :password) %>
+            )}
+            {error_tag(f, :password)}
           </div>
 
           <div class="flex flex-row justify-between mb-6">
             <div class="flex items-center gap-x-2 custom-control custom-checkbox">
-              <%= checkbox(f, :remember_me, class: "w-4 h-4 dark:#171717 border dark:border-white") %>
-              <%= label(f, :remember_me, "Remember me", class: "text-center leading-snug") %>
+              {checkbox(f, :remember_me, class: "w-4 h-4 dark:#171717 border dark:border-white")}
+              {label(f, :remember_me, "Remember me", class: "text-center leading-snug")}
             </div>
             <div class="custom-control">
-              <%= link("Forgot password?",
+              {link("Forgot password?",
                 to: @reset_password_link,
                 class: "text-center text-[#4ca6ff] font-bold leading-snug"
-              ) %>
+              )}
             </div>
           </div>
 
           <%= if @from_invitation_link? do %>
-            <%= hidden_input(f, :from_invitation_link?, value: @from_invitation_link?) %>
+            {hidden_input(f, :from_invitation_link?, value: @from_invitation_link?)}
           <% end %>
 
           <%= if @section do %>
-            <%= hidden_input(f, :section, value: @section) %>
+            {hidden_input(f, :section, value: @section)}
           <% end %>
 
           <.button
@@ -134,7 +134,7 @@ defmodule OliWeb.Components.Auth do
       @class
     ]}>
       <div class="text-center text-xl font-normal leading-7 py-8">
-        <%= @title %>
+        {@title}
       </div>
 
       <div
@@ -232,19 +232,19 @@ defmodule OliWeb.Components.Auth do
             >
             </div>
 
-            <.error :if={@recaptcha_error}><%= @recaptcha_error %></.error>
+            <.error :if={@recaptcha_error}>{@recaptcha_error}</.error>
           </div>
 
           <%= if @link_account do %>
-            <%= hidden_input(f, :link_account, value: @link_account) %>
+            {hidden_input(f, :link_account, value: @link_account)}
           <% end %>
 
           <%= if @from_invitation_link? do %>
-            <%= hidden_input(f, :from_invitation_link?, value: @from_invitation_link?) %>
+            {hidden_input(f, :from_invitation_link?, value: @from_invitation_link?)}
           <% end %>
 
           <%= if @section do %>
-            <%= hidden_input(f, :section, value: @section) %>
+            {hidden_input(f, :section, value: @section)}
           <% end %>
 
           <.button
@@ -311,7 +311,7 @@ defmodule OliWeb.Components.Auth do
   def authorization_link(%{provider: :google} = assigns) do
     ~H"""
     <.sign_in_with_google navigate={@navigate} {@rest}>
-      <%= render_slot(@inner_block) || "Sign in with Google" %>
+      {render_slot(@inner_block) || "Sign in with Google"}
     </.sign_in_with_google>
     """
   end
@@ -319,7 +319,7 @@ defmodule OliWeb.Components.Auth do
   def authorization_link(%{provider: :github} = assigns) do
     ~H"""
     <.sign_in_with_github navigate={@navigate} {@rest}>
-      <%= render_slot(@inner_block) || "Sign in with GitHub" %>
+      {render_slot(@inner_block) || "Sign in with GitHub"}
     </.sign_in_with_github>
     """
   end
@@ -332,7 +332,7 @@ defmodule OliWeb.Components.Auth do
       class="bg-white border border-gray-400 rounded-md p-2 text-body dark:text-body-dark text-center hover:no-underline"
       {@rest}
     >
-      <%= render_slot(@inner_block) || "Sign in with #{provider_title(@provider)}" %>
+      {render_slot(@inner_block) || "Sign in with #{provider_title(@provider)}"}
     </.link>
     """
   end
@@ -386,7 +386,7 @@ defmodule OliWeb.Components.Auth do
   def deauthorization_link(assigns) do
     ~H"""
     <.link href={@navigate} method="delete" {@rest}>
-      Remove <%= provider_title(@provider) %> credentials
+      Remove {provider_title(@provider)} credentials
     </.link>
     """
   end
@@ -442,7 +442,7 @@ defmodule OliWeb.Components.Auth do
         </svg>
       </div>
       <div class="flex-1 text-sm text-google-text-gray text-center tracking-wider mr-[36px]">
-        <%= render_slot(@inner_block) %>
+        {render_slot(@inner_block)}
       </div>
     </.link>
     """
@@ -474,7 +474,7 @@ defmodule OliWeb.Components.Auth do
         <path d="M896 128q209 0 385.5 103t279.5 279.5 103 385.5q0 251-146.5 451.5t-378.5 277.5q-27 5-40-7t-13-30q0-3 .5-76.5t.5-134.5q0-97-52-142 57-6 102.5-18t94-39 81-66.5 53-105 20.5-150.5q0-119-79-206 37-91-8-204-28-9-81 11t-92 44l-38 24q-93-26-192-26t-192 26q-16-11-42.5-27t-83.5-38.5-85-13.5q-45 113-8 204-79 87-79 206 0 85 20.5 150t52.5 105 80.5 67 94 39 102.5 18q-39 36-49 103-21 10-45 15t-57 5-65.5-21.5-55.5-62.5q-19-32-48.5-52t-49.5-24l-20-3q-21 0-29 4.5t-5 11.5 9 14 13 12l7 5q22 10 43.5 38t31.5 51l10 23q13 38 44 61.5t67 30 69.5 7 55.5-3.5l23-4q0 38 .5 88.5t.5 54.5q0 18-13 30t-40 7q-232-77-378.5-277.5t-146.5-451.5q0-209 103-385.5t279.5-279.5 385.5-103zm-477 1103q3-7-7-12-10-3-13 2-3 7 7 12 9 6 13-2zm31 34q7-5-2-16-10-9-16-3-7 5 2 16 10 10 16 3zm30 45q9-7 0-19-8-13-17-6-9 5 0 18t17 7zm42 42q8-8-4-19-12-12-20-3-9 8 4 19 12 12 20 3zm57 25q3-11-13-16-15-4-19 7t13 15q15 6 19-6zm63 5q0-13-17-11-16 0-16 11 0 13 17 11 16 0 16-11zm58-10q-2-11-18-9-16 3-14 15t18 8 14-14z">
         </path>
       </svg>
-      <%= render_slot(@inner_block) %>
+      {render_slot(@inner_block)}
     </.link>
     """
   end

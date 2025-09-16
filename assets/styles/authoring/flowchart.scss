@@ -720,4 +720,15 @@ $hover: #dce7f9;
   }
 }
 
+.dark .flowchart-editor .fixed-right-panel input[type='text'],
+.dark .flowchart-editor .fixed-right-panel input[type='number'],
+.dark .flowchart-editor .fixed-right-panel .form-label {
+  --tw-border-opacity: 1;
+  border-color: rgb(82 82 82 / var(--tw-border-opacity)) !important;
+  --tw-bg-opacity: 1;
+  background-color: rgb(30 30 30 / var(--tw-bg-opacity)) !important;
+  --tw-text-opacity: 1;
+  color: rgb(255 255 255 / var(--tw-text-opacity));
+}
+
 @import 'react-flow.scss';

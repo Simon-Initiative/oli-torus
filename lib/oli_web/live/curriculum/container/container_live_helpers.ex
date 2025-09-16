@@ -1,4 +1,6 @@
 defmodule OliWeb.Curriculum.Container.ContainerLiveHelpers do
+  import Phoenix.Component, only: [assign: 2, assign: 3]
+  import Phoenix.LiveView, only: [push_navigate: 2, put_flash: 3]
   alias Oli.Publishing.AuthoringResolver
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Resources
@@ -62,5 +64,53 @@ defmodule OliWeb.Curriculum.Container.ContainerLiveHelpers do
       from_container: active,
       active: active
     }
+  end
+
+  @doc """
+  Shared handler for save-options event in curriculum, container, and pages LiveViews
+  """
+  def handle_save_options(socket, revision_params) do
+    %{
+      options_modal_assigns: %{redirect_url: redirect_url, revision: revision},
+      project: project,
+      author: author
+    } =
+      socket.assigns
+
+    revision_params =
+      revision_params
+      |> Map.put("author_id", author.id)
+      |> decode_revision_params()
+
+    case Oli.Authoring.Editing.ContainerEditor.edit_page(project, revision.slug, revision_params) do
+      {:ok, _} ->
+        {:noreply,
+         socket
+         |> put_flash(
+           :info,
+           "#{OliWeb.Curriculum.Utils.resource_type_label(revision) |> String.capitalize()} options saved"
+         )
+         |> push_navigate(to: redirect_url)}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:noreply, assign(socket, :changeset, changeset)}
+    end
+  end
+
+  @doc """
+  Shared handler for validate-options event in curriculum, container, and pages LiveViews
+  """
+  def handle_validate_options(socket, revision_params) do
+    %{options_modal_assigns: %{revision: revision} = modal_assigns} = socket.assigns
+
+    revision_params = decode_revision_params(revision_params)
+
+    changeset =
+      revision
+      |> Oli.Resources.change_revision(revision_params)
+      |> Map.put(:action, :validate)
+      |> Phoenix.Component.to_form()
+
+    {:noreply, assign(socket, options_modal_assigns: %{modal_assigns | form: changeset})}
   end
 end

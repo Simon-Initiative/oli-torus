@@ -11,6 +11,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   alias OliWeb.Common.SessionContext
   alias OliWeb.Common.React
   alias OliWeb.Components.Timezone
+  alias OliWeb.Common.Links
 
   attr(:id, :string, required: true)
   attr(:ctx, SessionContext)
@@ -126,7 +127,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   def account_label(assigns) do
     ~H"""
     <div role="account label" class={["text-sm font-bold font-['Roboto'] p-[5px]", @class]}>
-      <%= @label %>
+      {@label}
     </div>
     """
   end
@@ -217,7 +218,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     <.menu_item_timezone_selector id={"#{@id}-tz-selector"} ctx={@ctx} />
     <.menu_divider />
     <.menu_item :if={@show_support_link}>
-      <%= OliWeb.Components.Common.tech_support_button(%{id: "tech_support_author_menu"}) %>
+      {OliWeb.Components.Common.tech_support_button(%{id: "tech_support_author_menu"})}
     </.menu_item>
     <.menu_item_link href={~p"/authors/log_out"} method={:delete}>
       Sign out
@@ -250,7 +251,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
       user={@ctx.user}
     />
     <.menu_item :if={@show_support_link}>
-      <%= OliWeb.Components.Common.tech_support_button(%{id: "tech_support_user_menu"}) %>
+      {OliWeb.Components.Common.tech_support_button(%{id: "tech_support_user_menu"})}
     </.menu_item>
     <.menu_item_link href={~p"/users/log_out"} method={:delete}>
       Sign out
@@ -275,7 +276,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     <.menu_divider />
     <.maybe_research_consent_link ctx={@ctx} />
     <.menu_item :if={@show_support_link}>
-      <%= OliWeb.Components.Common.tech_support_button(%{id: "tech_support_guess_menu"}) %>
+      {OliWeb.Components.Common.tech_support_button(%{id: "tech_support_guess_menu"})}
     </.menu_item>
     <.menu_item_link href={~p"/users/log_out"} method={:delete}>
       Leave Guest account
@@ -295,7 +296,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
       class={"hidden absolute top-[55px] right-[0px] z-50 py-2 px-4 whitespace-nowrap bg-white w-[280px] dark:bg-[#0F0D0F] rounded-xl shadow-xl #{@class}"}
     >
       <ul>
-        <%= render_slot(@inner_block) %>
+        {render_slot(@inner_block)}
       </ul>
     </div>
     """
@@ -306,7 +307,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   def menu_item(assigns) do
     ~H"""
     <li class="block p-1 whitespace-normal">
-      <%= render_slot(@inner_block) %>
+      {render_slot(@inner_block)}
     </li>
     """
   end
@@ -329,14 +330,14 @@ defmodule OliWeb.Components.Delivery.UserAccount do
       nil ->
         ~H"""
         <%= link to: @href, class: "w-full text-gray-800 hover:text-gray-800 dark:text-white hover:text-white text-sm font-normal font-['Roboto'] h-[26px] p-[5px] rounded-md justify-start items-center inline-flex block hover:no-underline dark:hover:bg-white/5 hover:bg-gray-100 cursor-pointer", target: @target do %>
-          <%= render_slot(@inner_block) %>
+          {render_slot(@inner_block)}
         <% end %>
         """
 
       _method ->
         ~H"""
         <%= link to: @href, method: @method, class: "w-full text-gray-800 hover:text-white dark:text-white text-sm font-normal font-['Roboto'] h-8 px-1.5 py-2 mt-[10px] m-[5px] rounded-md border border-rose-400 justify-center items-center gap-2.5 inline-flex cursor-pointer hover:no-underline hover:bg-red-300 hover:border-red-500 dark:hover:bg-[#33181A]", target: @target do %>
-          <%= render_slot(@inner_block) %>
+          {render_slot(@inner_block)}
         <% end %>
         """
     end
@@ -351,7 +352,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
       {@rest}
       class="w-full text-gray-800 hover:text-gray-800 dark:text-white hover:text-white text-sm font-normal font-['Roboto'] h-[26px] p-[5px] rounded-md justify-start items-center inline-flex block hover:no-underline dark:hover:bg-white/5 hover:bg-gray-100 cursor-pointer"
     >
-      <%= render_slot(@inner_block) %>
+      {render_slot(@inner_block)}
     </button>
     """
   end
@@ -372,7 +373,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
 
         <.menu_item_link href={~p"/users/link_account"}>
           <div class="overflow-hidden text-ellipsis" role="linked authoring account email">
-            <%= linked_author_account_email %>
+            {linked_author_account_email}
           </div>
         </.menu_item_link>
     <% end %>
@@ -410,10 +411,12 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   attr(:user, User, required: true)
 
   def maybe_my_courses_menu_item_link(assigns) do
+    assigns = assign(assigns, :my_courses_path, Links.my_courses_path(assigns[:user]))
+
     ~H"""
     <%= if is_independent_learner?(@user) do %>
       <.menu_item>
-        <.menu_item_link href={~p"/workspaces/student"}>
+        <.menu_item_link href={@my_courses_path}>
           My Courses
         </.menu_item_link>
       </.menu_item>
@@ -431,14 +434,14 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     <.menu_item>
       <.menu_item_label>Theme</.menu_item_label>
       <div>
-        <%= React.component(
+        {React.component(
           @ctx,
           "Components.DarkModeSelector",
           %{
             showLabels: false
           },
           id: @id
-        ) %>
+        )}
       </div>
     </.menu_item>
     """
@@ -463,7 +466,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   defp menu_item_label(assigns) do
     ~H"""
     <div class="text-gray-500 dark:text-gray-400 text-xs font-medium font-['Roboto'] mb-[10px] uppercase">
-      <%= render_slot(@inner_block) %>
+      {render_slot(@inner_block)}
     </div>
     """
   end
@@ -514,7 +517,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     <%= case @user.picture do %>
       <% nil -> %>
         <div class="w-8 h-8 bg-delivery-primary-700 dark:bg-zinc-800 rounded-full flex justify-center items-center text-white text-sm font-semibold leading-[14px]">
-          <%= to_initials(@user) %>
+          {to_initials(@user)}
         </div>
       <% picture -> %>
         <div class="flex justify-center items-center">

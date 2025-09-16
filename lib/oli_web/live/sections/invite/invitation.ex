@@ -47,14 +47,14 @@ defmodule OliWeb.Sections.Invites.Invitation do
       </div>
       <%= if @active do %>
         <p class="mb-1">
-          Expires: <%= Utils.render_precise_date(@invitation, :date_expires, @ctx) %>
+          Expires: {Utils.render_precise_date(@invitation, :date_expires, @ctx)}
         </p>
         <small class="text-muted">
-          Time remaining: <%= duration(@invitation.date_expires, DateTime.utc_now()) %>.
+          Time remaining: {duration(@invitation.date_expires, DateTime.utc_now())}.
         </small>
       <% else %>
         <p class="mb-1">
-          Expired: <%= Utils.render_precise_date(@invitation, :date_expires, @ctx) %>
+          Expired: {Utils.render_precise_date(@invitation, :date_expires, @ctx)}
         </p>
       <% end %>
     </li>

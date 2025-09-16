@@ -27,12 +27,12 @@ defmodule OliWeb.Common.PagedTable do
     ~H"""
     <div class={if @scrollable, do: "overflow-x-scroll"}>
       <%= if @filter != "" and @render_top_info do %>
-        <strong>Results filtered on &quot;<%= @filter %>&quot;</strong>
+        <strong>Results filtered on &quot;{@filter}&quot;</strong>
       <% end %>
 
       <%= if @total_count > 0 do %>
         <div :if={@total_count <= @limit and @render_top_info} class="py-2">
-          Showing all results (<%= @total_count %> total)
+          Showing all results ({@total_count} total)
         </div>
         <%= if @show_top_paging do %>
           <Paging.render
@@ -45,16 +45,16 @@ defmodule OliWeb.Common.PagedTable do
             show_limit_change={@show_limit_change}
           />
         <% end %>
-        <%= render_table(%{
+        {render_table(%{
           allow_selection: @allow_selection,
           table_model: @table_model,
           sort: @sort,
           selection_change: @selection_change,
           additional_table_class: @additional_table_class,
           additional_row_class: @additional_row_class
-        }) %>
+        })}
         <div :if={@total_count <= @limit and @render_bottom_info} class="py-2">
-          Showing all results (<%= @total_count %> total)
+          Showing all results ({@total_count} total)
         </div>
         <%= if @show_bottom_paging do %>
           <Paging.render
@@ -68,7 +68,7 @@ defmodule OliWeb.Common.PagedTable do
         <% end %>
       <% else %>
         <div class="bg-white dark:bg-gray-800 dark:text-white px-10 my-5">
-          <p><%= @no_records_message %></p>
+          <p>{@no_records_message}</p>
         </div>
       <% end %>
     </div>

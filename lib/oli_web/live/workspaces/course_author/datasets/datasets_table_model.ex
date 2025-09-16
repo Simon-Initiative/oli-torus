@@ -92,7 +92,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Datasets.DatasetsTableModel do
 
     ~H"""
     <div class={badge_class(@job.status)}>
-      <%= @job.status %>
+      {@job.status}
     </div>
     """
   end
@@ -108,7 +108,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Datasets.DatasetsTableModel do
         @job.project_slug
       )
     }>
-      <%= @job.project_title %>
+      {@job.project_title}
     </a>
     """
   end

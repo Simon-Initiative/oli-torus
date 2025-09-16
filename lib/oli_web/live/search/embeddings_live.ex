@@ -42,12 +42,12 @@ defmodule OliWeb.Search.EmbeddingsLive do
     <div>
       <h3>Revision Embedding Status</h3>
 
-      <p><%= @total %> pages embedded across <%= @total_embedded %> chunks</p>
-      <p><%= @total_to_embed %> pages need to be embedded</p>
+      <p>{@total} pages embedded across {@total_embedded} chunks</p>
+      <p>{@total_to_embed} pages need to be embedded</p>
 
       <%= if @processing do %>
-        <p>Remaining: <%= @remaining %></p>
-        <p>Failed: <%= @failed %></p>
+        <p>Remaining: {@remaining}</p>
+        <p>Failed: {@failed}</p>
       <% end %>
 
       <button class="btn btn-primary" phx-click="calculate">Calculate Embeddings</button>
@@ -57,8 +57,8 @@ defmodule OliWeb.Search.EmbeddingsLive do
       <h3>Semantic Search</h3>
       <p><small class="text-muted">Enter some text and see what chunks are returned</small></p>
 
-      <%= render_input(assigns) %>
-      <%= render_results(assigns) %>
+      {render_input(assigns)}
+      {render_results(assigns)}
     </div>
     """
   end
@@ -67,11 +67,11 @@ defmodule OliWeb.Search.EmbeddingsLive do
     ~H"""
     <.form :let={f} for={@changeset} phx-submit="update">
       <div class="relative">
-        <%= textarea(f, :content,
+        {textarea(f, :content,
           class:
             "resize-none ml-2 w-95 p-2 w-full rounded-md border-2 border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent",
           required: true
-        ) %>
+        )}
         <div class="absolute inset-y-0 right-0 flex items-center">
           <button
             class="h-full rounded-md border-0 bg-transparent py-0 px-2 text-gray-500 focus:ring-2 focus:ring-inset focus:ring-blue-500 sm:text-sm"
@@ -91,11 +91,11 @@ defmodule OliWeb.Search.EmbeddingsLive do
       <tbody>
         <%= for result <- @results do %>
           <tr>
-            <td><%= result.title %></td>
-            <td><%= result.chunk_type %></td>
-            <td><%= result.chunk_ordinal %></td>
-            <td><%= result.distance %></td>
-            <td><%= result.content %></td>
+            <td>{result.title}</td>
+            <td>{result.chunk_type}</td>
+            <td>{result.chunk_ordinal}</td>
+            <td>{result.distance}</td>
+            <td>{result.content}</td>
           </tr>
         <% end %>
       </tbody>

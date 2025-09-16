@@ -71,7 +71,7 @@ defmodule OliWeb.Products.Payments.TableModel do
             :overview
           )
         }>
-          <span><%= @section.title %></span>
+          <span>{@section.title}</span>
         </a>
         """
     end
@@ -96,7 +96,7 @@ defmodule OliWeb.Products.Payments.TableModel do
           )
         }>
           <span>
-            <%= "#{safe_get(@user.family_name, "Unknown")}, #{safe_get(@user.given_name, "Unknown")}" %>
+            {"#{safe_get(@user.family_name, "Unknown")}, #{safe_get(@user.given_name, "Unknown")}"}
           </span>
         </a>
         """
@@ -117,14 +117,14 @@ defmodule OliWeb.Products.Payments.TableModel do
       :direct ->
         ~H"""
         <div>
-          Direct: <span class="badge badge-success"><%= @payment.provider_type %></span>
+          Direct: <span class="badge badge-success">{@payment.provider_type}</span>
         </div>
         """
 
       :deferred ->
         ~H"""
         <div>
-          Code: <code><%= @code %></code>
+          Code: <code>{@code}</code>
         </div>
         """
     end

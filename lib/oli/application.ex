@@ -12,6 +12,8 @@ defmodule Oli.Application do
     # List all child processes to be supervised
     children =
       [
+        Oli.Vault,
+
         # libcluster config
         {Cluster.Supervisor,
          [Application.fetch_env!(:libcluster, :topologies), [name: Oli.ClusterSupervisor]]},
@@ -74,7 +76,16 @@ defmodule Oli.Application do
         Lti_1p3.Examples.KeyProviderConfig.child_spec(),
 
         # a supervisor which can be used to dynamically supervise tasks
-        {Task.Supervisor, name: Oli.TaskSupervisor}
+        {Task.Supervisor, name: Oli.TaskSupervisor},
+
+        # MCP (Model Context Protocol) server for AI agents
+        Anubis.Server.Registry,
+
+        # AI Agent system
+        Oli.GenAI.Agent.Registry,
+        Oli.GenAI.Agent.ToolBroker,
+        Oli.GenAI.Agent.RunSupervisor,
+        {Oli.MCP.Server, transport: :streamable_http}
       ] ++ maybe_node_js_config()
 
     if log_incomplete_requests?() do

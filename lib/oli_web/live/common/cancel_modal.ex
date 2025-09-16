@@ -20,10 +20,10 @@ defmodule OliWeb.Common.Cancel do
       <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title"><%= assigns.title %></h5>
+            <h5 class="modal-title">{assigns.title}</h5>
           </div>
           <div class="modal-body">
-            <%= render_slot(@inner_block) %>
+            {render_slot(@inner_block)}
           </div>
           <div class="modal-footer">
             <button

@@ -1,4 +1,35 @@
 defmodule Oli.Factory do
+  @moduledoc """
+    Provides test data factories for use across the application, based on `ExMachina`.
+
+    This module is the canonical and preferred way to generate test data.
+
+    ### Purpose
+
+    `Oli.Factory` centralizes and standardizes test data generation using clear, composable patterns.
+    It replaces the previously used `Oli.Seeder` module, which is now deprecated.
+
+    ### What this module provides
+
+    - Reusable factory functions for key entities like users, projects, sections, etc.
+    - Clean and minimal setup code for tests.
+    - Integration with `ExMachina` to support `insert/1`, `insert/2`, `build/1`, `build/2`, etc.
+
+    ### Example usage
+
+        insert(:user)
+        insert(:project, title: "Intro to Elixir")
+        insert(:section_with_associations)
+
+    ### Notes
+
+    - Use this module exclusively for generating test data.
+    - Avoid using `Oli.Seeder`, as it is deprecated and will be removed.
+    - Factories live in `test/support/factory.ex` and are available throughout the test suite.
+
+    For more complex setups, consider composing multiple factory calls or defining new factories.
+  """
+
   use ExMachina.Ecto, repo: Oli.Repo
 
   alias Oli.Accounts.VrUserAgent
@@ -51,6 +82,7 @@ defmodule Oli.Factory do
   alias Oli.Resources.{Resource, ResourceType, Revision}
   alias Oli.Resources.Collaboration.{CollabSpaceConfig, Post, PostContent, UserReactionPost}
   alias Oli.Search.RevisionEmbedding
+  alias Oli.Tags.{Tag, ProjectTag, SectionTag}
 
   def author_factory() do
     now = DateTime.utc_now() |> DateTime.truncate(:second)
@@ -434,7 +466,7 @@ defmodule Oli.Factory do
   def payment_factory() do
     %Payment{
       type: :direct,
-      amount: Money.new(:USD, 25),
+      amount: Money.new(25, "USD"),
       provider_type: :stripe,
       section: anonymous_build(:section),
       enrollment: anonymous_build(:enrollment),
@@ -732,7 +764,8 @@ defmodule Oli.Factory do
       keyset_url: "some keyset_url",
       login_url: "some login_url",
       redirect_uris: "some redirect_uris",
-      target_link_uri: "some target_link_uri"
+      target_link_uri: "some target_link_uri",
+      status: :active
     }
   end
 
@@ -742,6 +775,57 @@ defmodule Oli.Factory do
       activity_registration: build(:activity_registration),
       platform_instance: build(:platform_instance),
       status: :enabled
+    }
+  end
+
+  def activity_registration_project_factory() do
+    %Oli.Activities.ActivityRegistrationProject{
+      activity_registration_id: build(:activity_registration).id,
+      project_id: build(:project).id,
+      status: :enabled
+    }
+  end
+
+  def scoped_feature_flag_state_factory() do
+    %Oli.ScopedFeatureFlags.ScopedFeatureFlagState{
+      feature_name: "mcp_authoring",
+      project: build(:project)
+    }
+  end
+
+  def scoped_feature_flag_state_for_project_factory() do
+    %Oli.ScopedFeatureFlags.ScopedFeatureFlagState{
+      feature_name: "mcp_authoring",
+      project: build(:project)
+    }
+  end
+
+  def scoped_feature_flag_state_for_section_factory() do
+    # Note: This factory uses mcp_authoring which is authoring-only
+    # In real usage, you'd need a delivery-scoped feature for sections
+    %Oli.ScopedFeatureFlags.ScopedFeatureFlagState{
+      feature_name: "mcp_authoring",
+      section: build(:section)
+    }
+  end
+
+  def tag_factory() do
+    %Tag{
+      name: sequence("tag", &"Tag #{&1}")
+    }
+  end
+
+  def project_tag_factory() do
+    %ProjectTag{
+      project: build(:project),
+      tag: build(:tag)
+    }
+  end
+
+  def section_tag_factory() do
+    %SectionTag{
+      section: build(:section),
+      tag: build(:tag)
     }
   end
 

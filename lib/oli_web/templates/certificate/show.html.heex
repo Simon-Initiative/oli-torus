@@ -3,7 +3,7 @@
     <embed src={@certificate.url} type="application/pdf" style="width: 66vw; height: 66vh;">
     </embed>
     <p class="text-blue-400 mt-4">
-      Certificate ID: <span class="font-semibold"><%= @certificate.guid %></span>
+      Certificate ID: <span class="font-semibold">{@certificate.guid}</span>
     </p>
   <% else %>
     <h2>A certificate with that ID does not exist</h2>

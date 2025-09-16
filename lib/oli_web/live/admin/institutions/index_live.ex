@@ -67,7 +67,7 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
               <% 0 -> %>
                 <span class="badge badge-pill badge-secondary">0</span>
               <% count -> %>
-                <span class="badge badge-pill badge-primary"><%= count %></span>
+                <span class="badge badge-pill badge-primary">{count}</span>
             <% end %>
           </b>
         </li>
@@ -80,10 +80,10 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
           aria-labelledby="institutions_tab"
           class="flex flex-col gap-2"
         >
-          <%= link("New Institution",
+          {link("New Institution",
             to: Routes.institution_path(OliWeb.Endpoint, :new),
             class: "btn btn-md btn-outline-primary self-end"
-          ) %>
+          )}
 
           <%= if Enum.count(@institutions) == 0 do %>
             <div class="my-5 text-center">
@@ -103,7 +103,7 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
               <tbody>
                 <tr :for={institution <- @institutions}>
                   <td>
-                    <%= link(institution.name,
+                    {link(institution.name,
                       to:
                         Routes.live_path(
                           OliWeb.Endpoint,
@@ -111,17 +111,17 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
                           institution.id,
                           :sections
                         )
-                    ) %>
+                    )}
                   </td>
-                  <td><%= institution.country_code %></td>
-                  <td><%= institution.institution_email %></td>
-                  <td><%= institution.institution_url %></td>
+                  <td>{institution.country_code}</td>
+                  <td>{institution.institution_email}</td>
+                  <td>{institution.institution_url}</td>
 
                   <td class="text-nowrap">
-                    <%= link("Details",
+                    {link("Details",
                       to: Routes.institution_path(OliWeb.Endpoint, :show, institution),
                       class: "btn btn-sm btn-outline-primary"
-                    ) %>
+                    )}
                   </td>
                 </tr>
               </tbody>
@@ -151,11 +151,11 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
               </thead>
               <tbody>
                 <tr :for={pending_registration <- @pending_registrations}>
-                  <td><%= pending_registration.name %></td>
-                  <td><%= pending_registration.institution_url %></td>
-                  <td><%= pending_registration.institution_email %></td>
+                  <td>{pending_registration.name}</td>
+                  <td>{pending_registration.institution_url}</td>
+                  <td>{pending_registration.institution_email}</td>
                   <td>
-                    <%= OliWeb.Common.Utils.render_date(pending_registration, :inserted_at, @ctx) %>
+                    {OliWeb.Common.Utils.render_date(pending_registration, :inserted_at, @ctx)}
                   </td>
 
                   <td class="text-nowrap">
@@ -198,7 +198,7 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
       />
       <div :if={@registration_changeset} class="contents">
         <p>
-          Are you sure you want to decline this request from "<%= @registration_changeset.name %>"?
+          Are you sure you want to decline this request from "{@registration_changeset.name}"?
         </p>
         <div :if={@registration_changeset} class="flex justify-end border-0">
           <button

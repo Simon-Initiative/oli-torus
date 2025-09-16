@@ -21,7 +21,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.FormModal do
       <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title"><%= title(@action) %></h5>
+            <h5 class="modal-title">{title(@action)}</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
             </button>
           </div>
@@ -43,7 +43,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.FormModal do
                   class="form-button btn btn-md btn-primary btn-block w-auto float-right mt-4"
                   type="submit"
                 >
-                  <%= button_text(@action) %>
+                  {button_text(@action)}
                 </button>
               </.form>
             </div>

@@ -293,6 +293,7 @@ const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
       autoplay: autoPlay ? 1 : 0,
       loop: autoPlay ? 1 : 0,
       controls: !_videoIsCompleted || enableReplay ? 1 : 0,
+      rel: 0, // Always limit related videos to same channel
     },
   };
   if (youtubeRegex.test(finalSrc)) {

@@ -185,7 +185,7 @@ defmodule OliWeb.Sections.GatingAndScheduling do
         <TextSearch.render id="text-search" />
         <div class="flex-grow-1"></div>
         <.link class="btn btn-primary ml-2" href={link_new(assigns)}>
-          <i class="fas fa-plus"></i> New <%= render_type(assigns) %>
+          <i class="fas fa-plus"></i> New {render_type(assigns)}
         </.link>
       </div>
 

@@ -10,6 +10,8 @@ defmodule Oli.Accounts.Author do
     field :email, :string
     field :email_verified, :boolean, virtual: true
     field :password, :string, virtual: true, redact: true
+    field :current_password, :string, virtual: true, redact: true
+    field :password_confirmation, :string, virtual: true, redact: true
     field :password_hash, :string, redact: true
     field :email_confirmed_at, :utc_datetime
 
@@ -116,8 +118,7 @@ defmodule Oli.Accounts.Author do
   defp validate_email(changeset, opts) do
     changeset
     |> validate_required([:email])
-    |> validate_format(:email, ~r/^[^\s]+@[^\s]+$/, message: "must have the @ sign and no spaces")
-    |> validate_length(:email, max: 160)
+    |> validate_change(:email, &Oli.Accounts.validate_email/2)
     |> maybe_validate_unique_email(opts)
   end
 
@@ -165,8 +166,20 @@ defmodule Oli.Accounts.Author do
   It requires the email to change otherwise an error is added.
   """
   def email_changeset(author, attrs, opts \\ []) do
+    fields =
+      if Keyword.get(opts, :require_current_password, false),
+        do: [:email, :current_password],
+        else: [:email]
+
+    # :email is already required in validate_email/2
+    required_fields =
+      if Keyword.get(opts, :require_current_password, false),
+        do: [:current_password],
+        else: []
+
     author
-    |> cast(attrs, [:email])
+    |> cast(attrs, fields)
+    |> validate_required(required_fields)
     |> validate_email(opts)
     |> case do
       %{changes: %{email: _}} = changeset -> changeset
@@ -187,9 +200,21 @@ defmodule Oli.Accounts.Author do
       Defaults to `true`.
   """
   def password_changeset(author, attrs, opts \\ []) do
+    fields =
+      if Keyword.get(opts, :require_current_password, false),
+        do: [:current_password, :password, :password_confirmation],
+        else: [:password]
+
+    # :password is already required in validate_password/2
+    required_fields =
+      if Keyword.get(opts, :require_current_password, false),
+        do: [:current_password, :password_confirmation],
+        else: []
+
     author
-    |> cast(attrs, [:password])
-    |> validate_confirmation(:password, message: "does not match password")
+    |> cast(attrs, fields)
+    |> validate_required(required_fields)
+    |> validate_confirmation(:password, message: "does not match new password")
     |> validate_password(opts)
   end
 
@@ -284,6 +309,8 @@ defmodule Oli.Accounts.Author do
       :email_confirmed_at
     ])
     |> cast_embed(:preferences)
+    |> validate_change(:email, &Oli.Accounts.validate_email/2)
+    |> common_name_validations()
     |> unique_constraint(:email)
     |> default_system_role()
     |> maybe_hash_password([])

@@ -13,21 +13,21 @@
           <img class="self-center mx-auto" src={Oli.VendorProperties.workspace_logo()} />
         </a>
       </div>
-      <%= render(OliWeb.LayoutView, "_workspace_header.html", assigns) %>
+      {render(OliWeb.LayoutView, "_workspace_header.html", assigns)}
     </div>
     <div class="d-flex flex-grow-1">
       <div class="workspace-left">
-        <%= render(
+        {render(
           OliWeb.LayoutView,
           "_#{if @conn.params["project_id"], do: "project", else: "workspace"}_sidebar.html",
           assigns
-        ) %>
+        )}
       </div>
       <div class="workspace-right">
         <main role="main" id="main-content" class="flex-1">
-          <%= @inner_content %>
+          {@inner_content}
         </main>
-        <%= OliWeb.Components.Footer.global_footer(%{}) %>
+        {OliWeb.Components.Footer.global_footer(%{})}
       </div>
     </div>
   </div>
