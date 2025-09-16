@@ -5690,7 +5690,7 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
-  Gets all activities that have a specific objective attached to them in the given section
+  Gets all evaluated activities that have a specific objective attached to them in the given section
   """
   def get_activities_for_objective(section, resource_id) do
     activity_type_id = Oli.Resources.ResourceType.id_for_activity()
@@ -5807,9 +5807,9 @@ defmodule Oli.Delivery.Sections do
           on: aa.resource_attempt_id == ra.id,
           join: rac in Oli.Delivery.Attempts.Core.ResourceAccess,
           on: ra.resource_access_id == rac.id,
-          join: e in Oli.Delivery.Sections.Enrollment,
-          on: rac.user_id == e.user_id and rac.section_id == ^section.id,
-          where: aa.resource_id in ^activity_ids and e.status == :enrolled,
+          where:
+            rac.section_id == ^section.id and aa.resource_id in ^activity_ids and
+              aa.lifecycle_state == :evaluated,
           select: %{
             resource_id: aa.resource_id,
             score: aa.score,
