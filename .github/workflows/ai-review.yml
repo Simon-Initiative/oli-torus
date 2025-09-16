@@ -103,7 +103,7 @@ jobs:
       - name: Install Codex CLI
         run: npm i -g @openai/codex
 
-      - name: Run Codex reviewer (diff-first, self-serve context)
+      - name: Run Codex reviewer (strictly diff-only)
         id: run
         shell: bash
         env:
@@ -118,9 +118,10 @@ jobs:
           {
             echo "You are a specialist reviewer for ${ROLE}.";
             echo "PRIMARY SOURCE: the DIFF below.";
-            echo "If the DIFF is insufficient to judge correctness/safety, you MAY open files in the workspace to gather context.";
-            echo "ALLOWED PATHS: lib/**, assets/src/**, config/**, priv/repo/migrations/**";
-            echo "DENYLIST: node_modules/**, deps/**, build/**, _build/**, .git/**";
+            echo "HARD CONSTRAINTS:";
+            echo "1) REVIEW ONLY lines changed in the DIFF; ignore any other code.";
+            echo "2) You may read some other files outside the DIFF ONLY for CONTEXT.";
+            echo "3) IMPORTANT: NEVER comment about findings in files or lines not included in the DIFF.";
             echo "";
             echo "IMPORTANT: Return ONLY the summary of findings, wrapped between these markers:";
             echo "<!-- FINDINGS_START -->";
@@ -174,11 +175,12 @@ jobs:
 
           # Debug output suppressed for cleaner logs
 
-      - name: Post per-role review comment
+      - name: Post per-role review comment (filtered to PR lines)
         uses: actions/github-script@v7
         with:
           script: |
             const fs = require('fs');
+            const path = require('path');
 
             const role = `"${{ matrix.role }}"`.replace(/"/g,'');
             const headerMarker = `<!-- ai-review:${role} -->`;
@@ -243,6 +245,71 @@ jobs:
               bodyText = fs.readFileSync(`ai/${role}.raw.txt`, 'utf8');
             } catch { /* ignore */ }
 
+            // --- Build allowlist of changed files and line numbers from diff.patch ---
+            function parseDiffAddedLines(diffText) {
+              const fileAdds = new Map(); // file -> Set(lineNumbers)
+              let currentFile = null;
+              let lnNew = 0;
+              const lines = diffText.split(/\r?\n/);
+              for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                // File header
+                if (line.startsWith('diff --git ')) {
+                  currentFile = null;
+                  lnNew = 0;
+                  continue;
+                }
+                // Target filename
+                if (line.startsWith('+++ ')) {
+                  // format: +++ b/path or +++ /dev/null
+                  const m = /^\+\+\+\s+(.*)$/.exec(line);
+                  if (!m) continue;
+                  const raw = m[1].trim();
+                  if (raw === '/dev/null') { currentFile = null; continue; }
+                  const filePath = raw.replace(/^b\//, '');
+                  currentFile = filePath;
+                  if (!fileAdds.has(currentFile)) fileAdds.set(currentFile, new Set());
+                  continue;
+                }
+                // Hunk header: @@ -a,b +c,d @@
+                const hunk = /^@@\s+-\d+(?:,\d+)?\s+\+(\d+)(?:,(\d+))?\s+@@/.exec(line);
+                if (hunk) {
+                  lnNew = parseInt(hunk[1], 10);
+                  continue;
+                }
+                if (!currentFile) continue;
+                // Added lines start with '+' (but skip '+++' file header handled above)
+                if (line.startsWith('+')) {
+                  fileAdds.get(currentFile).add(lnNew);
+                  lnNew++;
+                  continue;
+                }
+                // Removed lines ('-') advance old side only; unchanged/context lines are rare with -U0
+                if (line.startsWith('-')) {
+                  // do not change lnNew
+                  continue;
+                }
+              }
+              return fileAdds;
+            }
+
+            function loadDiffAdds() {
+              try {
+                const diff = fs.readFileSync('diff.patch', 'utf8');
+                return parseDiffAddedLines(diff);
+              } catch {
+                return new Map();
+              }
+            }
+
+            const addedLinesByFile = loadDiffAdds();
+
+            function isOnChangedLine(filePath, lineNumber) {
+              const adds = addedLinesByFile.get(filePath) || addedLinesByFile.get(filePath.replace(/^\.<\//, ''));
+              if (!adds) return false;
+              return adds.has(Number(lineNumber));
+            }
+
             let findings = '';
             if (bodyText && bodyText.trim()) {
               const raw = stripOuterCodeFence(bodyText);
@@ -258,7 +325,26 @@ jobs:
 
             if (!findings) findings = 'No issues found';
 
-            const composed = truncateForGithub(`${header}\n\n${findings}`);
+            // --- Enforce: keep only findings that target changed lines ---
+            function filterFindingsToChangedLines(text) {
+              const blocks = text.split(/\n(?=###\s+)/).filter(Boolean);
+              const kept = [];
+              for (const block of blocks) {
+                const m = /\bfile:\s*([^,\n]+)\s*,\s*line:\s*(\d+)/i.exec(block);
+                if (!m) continue;
+                const filePath = m[1].trim();
+                const lineNum = Number(m[2]);
+                if (isOnChangedLine(filePath, lineNum)) {
+                  kept.push(block.trim());
+                }
+              }
+              return kept.join('\n\n');
+            }
+
+            const filtered = filterFindingsToChangedLines(findings);
+            const finalFindings = filtered || 'No issues found';
+
+            const composed = truncateForGithub(`${header}\n\n${finalFindings}`);
 
             // Upsert: update if an existing role-specific comment is present
             const { data: comments } = await github.rest.issues.listComments({
