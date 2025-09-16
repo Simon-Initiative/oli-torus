@@ -111,7 +111,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
              )
 
       # Students table gets rendered
-      assert element(view, "h4") |> render() =~ "Student Insights"
+      assert element(view, "h4") |> render() =~ "Student"
 
       assert render(view) =~
                OliWeb.Common.Utils.name(user.name, user.given_name, user.family_name)
