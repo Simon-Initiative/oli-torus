@@ -45,7 +45,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
       {:ok, view, _html} =
         live(conn, live_view_related_activities_route(section.slug, objective_a.resource_id))
 
-      assert has_element?(view, "h4", objective_a.title)
+      assert has_element?(view, "h1", objective_a.title)
     end
 
     test "denies non-enrolled users", %{conn: conn} do
@@ -328,7 +328,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
         live(conn, live_view_related_activities_route(section.slug, objective_a.resource_id))
 
       # Should show the objective title
-      assert has_element?(view, "h4", objective_a.title)
+      assert has_element?(view, "h1", objective_a.title)
 
       # Should show activities that have this objective attached
       # Activity 1 has objective_a
@@ -357,7 +357,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
         live(conn, live_view_related_activities_route(section.slug, objective_a.resource_id))
 
       # Should show the objective title
-      assert has_element?(view, "h4", objective_a.title)
+      assert has_element?(view, "h1", objective_a.title)
 
       # Should initially show both activities
       assert has_element?(view, "td", activity_1.title)
@@ -369,7 +369,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
       |> render_change()
 
       # Should still show the objective title
-      assert has_element?(view, "h4", objective_a.title)
+      assert has_element?(view, "h1", objective_a.title)
 
       # Should show activity_1 (contains "2 + 2")
       assert has_element?(view, "td", activity_1.title)
@@ -424,7 +424,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
           )
         )
 
-      assert has_element?(view, "h4", objective_without_activities.title)
+      assert has_element?(view, "h1", objective_without_activities.title)
       assert has_element?(view, "p", "No activities found for this learning objective.")
     end
 
@@ -507,7 +507,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
         live(conn, live_view_related_activities_route(section.slug, objective_a.resource_id))
 
       # Should show the objective title
-      assert has_element?(view, "h4", objective_a.title)
+      assert has_element?(view, "h1", objective_a.title)
 
       # Should show activities with their data
       assert has_element?(view, "td", activity_3.title)
@@ -541,7 +541,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
         live(conn, live_view_related_activities_route(section.slug, sub_objective_a1.resource_id))
 
       # Should show the sub-objective title
-      assert has_element?(view, "h4", sub_objective_a1.title)
+      assert has_element?(view, "h1", sub_objective_a1.title)
 
       # Should show activities that have this sub-objective attached
       # Activity 3 has sub_objective_a1 (and objective_a)
