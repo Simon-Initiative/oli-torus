@@ -183,7 +183,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
           <% else %>
             <div class="text-center py-8">
               <p class="text-gray-500 dark:text-gray-400">
-                No activities found for this learning objective.
+                <%= if @params.text_search && @params.text_search != "" do %>
+                  No activities found for <strong><%= @params.text_search %></strong>.
+                <% else %>
+                  No activities found for this learning objective.
+                <% end %>
               </p>
             </div>
           <% end %>
