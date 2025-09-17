@@ -263,19 +263,45 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
 
   # RENDER PROFICIENCY DATA CHART
   defp render_proficiency_data_chart(objective_id, data) do
-    data =
-      @proficiency_labels
-      |> Enum.map(fn label ->
-        %{proficiency: label, count: Map.get(data, label, 0)}
-      end)
+    # Order labels correctly and calculate positions manually (like DotDistributionChart.tsx)
+    ordered_labels = ["Not enough data", "Low", "Medium", "High"]
+    counts = Enum.map(ordered_labels, fn label -> Map.get(data, label, 0) end)
+    total = Enum.sum(counts)
+
+    data_with_positions =
+      if total == 0 do
+        []
+      else
+        {result, _} =
+          Enum.reduce(ordered_labels, {[], 0}, fn label, {acc, cumulative_start} ->
+            count = Map.get(data, label, 0)
+
+            if count > 0 do
+              item = %{
+                proficiency: label,
+                count: count,
+                start: cumulative_start,
+                end: cumulative_start + count
+              }
+
+              {[item | acc], cumulative_start + count}
+            else
+              {acc, cumulative_start}
+            end
+          end)
+
+        Enum.reverse(result)
+      end
 
     spec = %{
       mark: "bar",
-      data: %{values: data},
+      data: %{values: data_with_positions},
       encoding: %{
-        x: %{aggregate: "sum", field: "count"},
+        x: %{field: "start", type: "quantitative", scale: %{nice: false}},
+        x2: %{field: "end"},
         color: %{
           field: "proficiency",
+          type: "nominal",
           scale: %{
             domain: ["Not enough data", "Low", "Medium", "High"],
             range: ["#C2C2C2", "#E6D4FA", "#B37CEA", "#7B19C1"]
@@ -342,7 +368,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
       |> Map.put(:proficiency_distribution, proficiency_distribution)
 
     ~H"""
-    <div class="p-6 bg-Background-bg-secondary">
+    <div class="p-6">
       <.live_component
         module={OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView}
         id={"expanded-objective-#{@unique_id}"}

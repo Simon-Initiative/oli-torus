@@ -220,7 +220,7 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
 
     ~H"""
     <tr id={"details-#{@unique_id}"} class="hidden">
-      <td colspan={@col_span} class="bg-gray-50 dark:bg-gray-900 p-4">
+      <td colspan={@col_span} class="bg-Table-table-hover p-4">
         <%= if @details_render_fn do %>
           {@details_render_fn.(assigns, @row)}
         <% end %>

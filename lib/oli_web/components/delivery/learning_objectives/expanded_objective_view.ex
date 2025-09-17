@@ -23,12 +23,21 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
 
     sub_objectives_data = get_sub_objectives_data(section_id, section_slug, objective.resource_id)
 
-    # Get individual student proficiency for the dot distribution chart
-    student_proficiency = Metrics.student_proficiency_for_objective(section_id, objective.resource_id)
-    
     # Calculate proficiency distribution for the main objective
-    proficiency_per_student = Metrics.proficiency_per_student_for_objective(section_id, [objective.resource_id])
-    proficiency_distribution = calculate_proficiency_distribution_from_student_data(proficiency_per_student, objective.resource_id, section_slug)
+    proficiency_per_student =
+      Metrics.proficiency_per_student_for_objective(section_id, [objective.resource_id])
+
+    # Get individual student proficiency for the dot distribution chart
+    # Start with real proficiency data and add missing students to ensure consistency
+    real_student_proficiency = Metrics.student_proficiency_for_objective(section_id, objective.resource_id)
+    student_proficiency = add_missing_students_to_proficiency_data(real_student_proficiency, section_slug)
+
+    proficiency_distribution =
+      calculate_proficiency_distribution_from_student_data(
+        proficiency_per_student,
+        objective.resource_id,
+        section_slug
+      )
 
     socket =
       socket
@@ -155,23 +164,62 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
   end
 
   # Convert proficiency per student data to distribution counts
-  defp calculate_proficiency_distribution_from_student_data(proficiency_per_student, objective_id, section_slug) do
+  defp calculate_proficiency_distribution_from_student_data(
+         proficiency_per_student,
+         objective_id,
+         section_slug
+       ) do
     student_proficiency_levels = Map.get(proficiency_per_student, objective_id, %{})
-    
-    # Get all enrolled students in the section (same logic as in sections.ex)
+
+    # Get all enrolled students in the section (excludes instructors)
     all_student_ids = Oli.Delivery.Sections.enrolled_student_ids(section_slug)
-    
-    # Add "Not enough data" for students who don't have proficiency data 
-    # (same logic as in get_objectives_and_subobjectives/3)
+
+    # Filter proficiency data to only include enrolled students (exclude instructors)
+    filtered_student_proficiency_levels =
+      student_proficiency_levels
+      |> Enum.filter(fn {user_id, _proficiency_level} -> user_id in all_student_ids end)
+      |> Map.new()
+
+    # Add "Not enough data" for students who don't have proficiency data
     complete_student_proficiency =
       all_student_ids
-      |> Enum.reject(&Map.has_key?(student_proficiency_levels, &1))
-      |> Enum.reduce(student_proficiency_levels, fn user_id, acc ->
+      |> Enum.reject(&Map.has_key?(filtered_student_proficiency_levels, &1))
+      |> Enum.reduce(filtered_student_proficiency_levels, fn user_id, acc ->
         Map.put(acc, user_id, "Not enough data")
       end)
-    
-    # Count students by proficiency level using Enum.frequencies_by (same as original)
+
+    # Count students by proficiency level using Enum.frequencies_by
     complete_student_proficiency
     |> Enum.frequencies_by(fn {_student_id, proficiency_level} -> proficiency_level end)
+  end
+
+  # Add missing students to proficiency data to ensure consistency with proficiency_distribution
+  # This takes real proficiency data and adds students who don't have any proficiency data
+  defp add_missing_students_to_proficiency_data(real_student_proficiency, section_slug) do
+    # Get all enrolled students (excludes instructors)
+    all_student_ids = Oli.Delivery.Sections.enrolled_student_ids(section_slug)
+    
+    # Filter proficiency data to only include enrolled students (exclude instructors)
+    filtered_student_proficiency =
+      real_student_proficiency
+      |> Enum.filter(fn student -> String.to_integer(student.student_id) in all_student_ids end)
+    
+    # Create a set of student IDs that already have proficiency data
+    existing_student_ids = MapSet.new(filtered_student_proficiency, fn student -> String.to_integer(student.student_id) end)
+    
+    # Find students that are missing from proficiency data
+    missing_students = 
+      all_student_ids
+      |> Enum.reject(&MapSet.member?(existing_student_ids, &1))
+      |> Enum.map(fn student_id ->
+        %{
+          student_id: Integer.to_string(student_id),
+          proficiency: 0.0,
+          proficiency_range: "Not enough data"
+        }
+      end)
+    
+    # Combine filtered proficiency data with missing students
+    filtered_student_proficiency ++ missing_students
   end
 end

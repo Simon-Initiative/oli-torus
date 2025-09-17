@@ -221,12 +221,14 @@ export const DotDistributionChart: React.FC<DotDistributionChartProps> = ({
           domain: false,
           ticks: false,
           labels: false,
-          title: false,
+          title: null,
         },
         legend: { disable: true },
-        view: {
-          continuousWidth: 400,
-          continuousHeight: 12,
+        background: null,
+        padding: 0,
+        autosize: {
+          type: 'fit',
+          contains: 'content',
         },
       },
     };
@@ -258,18 +260,11 @@ export const DotDistributionChart: React.FC<DotDistributionChartProps> = ({
   return (
     <div className="w-full">
       {/* Main chart container */}
-      <div ref={containerRef} className="relative bg-white dark:bg-gray-800 p-4 rounded-lg border">
-        {/* Y-axis label - rotated 90 degrees */}
-        <div className="absolute left-1 top-1/2 transform -translate-y-1/2 -rotate-90">
-          <span className="text-xs font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap">
-            # of Students
-          </span>
-        </div>
-
-        {/* Container with margin for Y-axis label */}
-        <div className="ml-8" style={{ width: 'calc(100% - 2rem)' }}>
+      <div ref={containerRef} className="relative py-4">
+        {/* Container with margin for axis labels on the right */}
+        <div style={{ width: 'calc(95% - 4rem)', position: 'relative' }}>
           {/* Dots area - above the bar */}
-          <div className="relative mb-4" style={{ width: '100%', minWidth: '300px' }}>
+          <div className="relative mb-1" style={{ width: '100%', minWidth: '300px' }}>
             {dotData.length > 0 && renderDots(dotData, barData)}
           </div>
 
@@ -290,13 +285,27 @@ export const DotDistributionChart: React.FC<DotDistributionChartProps> = ({
           <style>
             {`
             .vega-embed {
-              width: 100%;`}
+              width: 100%;
+              height: auto;
+              padding: 0;
+              margin: 0;
+            }
+            .vega-embed details {
+              display: none;
+            }
+            .vega-embed .vega-actions {
+              display: none;
+            }
+            .vega-embed canvas, .vega-embed svg {
+              width: 100% !important;
+              height: auto !important;
+            }`}
           </style>
 
           {/* Proficiency labels below the bar */}
           <div className="relative mt-2">
             <div className="flex w-full">
-              {barData.map((item, index) => {
+              {barData.map((item) => {
                 const totalStudents = barData.reduce((sum, d) => sum + d.count, 0);
                 const widthPercent = totalStudents > 0 ? (item.count / totalStudents) * 100 : 25;
 
@@ -314,13 +323,20 @@ export const DotDistributionChart: React.FC<DotDistributionChartProps> = ({
               })}
             </div>
           </div>
+        </div>
 
-          {/* Centered "Proficiency" label below */}
-          <div className="text-center mt-2">
-            <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
-              Proficiency
-            </span>
-          </div>
+        {/* Y-axis label positioned vertically above Proficiency label */}
+        <div className="absolute" style={{ right: '5px', top: 'calc(50% + 20px)' }}>
+          <span className="text-xs font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap block transform -rotate-90 origin-bottom-left">
+            # of Students
+          </span>
+        </div>
+
+        {/* X-axis label positioned to the right of bar chart */}
+        <div className="absolute" style={{ right: '35px', top: 'calc(50% + 52px)' }}>
+          <span className="text-xs font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap">
+            Proficiency
+          </span>
         </div>
 
         {/* Message when no proficiency data available */}
@@ -336,34 +352,99 @@ export const DotDistributionChart: React.FC<DotDistributionChartProps> = ({
   );
 };
 
+// HELPER FUNCTION: Calculate symmetric distribution of subtowers for "Not enough data"
+function calculateSymmetricDistribution(totalStudents: number): { subtowers: number[] } {
+  if (totalStudents <= 0) return { subtowers: [] };
+  if (totalStudents <= 2) return { subtowers: [totalStudents] };
+
+  const maxTowerHeight = 5; // Maximum height per subtower to avoid too tall towers
+
+  // Calculate number of subtowers needed
+  const numTowers = Math.ceil(totalStudents / maxTowerHeight);
+
+  // Distribute students as evenly as possible
+  const baseHeight = Math.floor(totalStudents / numTowers);
+  const remainder = totalStudents % numTowers;
+
+  // Create subtowers array
+  const subtowers: number[] = [];
+  for (let i = 0; i < numTowers; i++) {
+    // Distribute remainder to middle towers for symmetry
+    const extraDot = i < remainder ? 1 : 0;
+    subtowers.push(baseHeight + extraDot);
+  }
+
+  // Sort to create symmetric pattern (tallest in middle, shortest on edges)
+  subtowers.sort((a, b) => b - a); // Sort descending
+
+  // Rearrange for symmetry: alternate placement from center outward
+  const symmetricTowers: number[] = [];
+  const center = Math.floor(subtowers.length / 2);
+
+  if (subtowers.length % 2 === 1) {
+    // Odd number of towers: place tallest in center
+    symmetricTowers[center] = subtowers[0];
+    for (let i = 1; i < subtowers.length; i++) {
+      const offset = Math.ceil(i / 2);
+      if (i % 2 === 1) {
+        // Place to the right of center
+        symmetricTowers[center + offset] = subtowers[i];
+      } else {
+        // Place to the left of center
+        symmetricTowers[center - offset] = subtowers[i];
+      }
+    }
+  } else {
+    // Even number of towers: distribute symmetrically
+    for (let i = 0; i < subtowers.length; i++) {
+      const offset = Math.floor(i / 2);
+      if (i % 2 === 0) {
+        // Place to the left of center
+        symmetricTowers[center - 1 - offset] = subtowers[i];
+      } else {
+        // Place to the right of center
+        symmetricTowers[center + offset] = subtowers[i];
+      }
+    }
+  }
+
+  return { subtowers: symmetricTowers.filter((h) => h > 0) };
+}
+
 // HELPER FUNCTION: Render dots using React (not VegaLite)
 // This function creates the dots that represent students
 function renderDots(dotData: any[], barData: any[]) {
-  const dotSize = 6; // Size of each dot in pixels
-  const padding = 1; // Space between dots
+  const dotSize = 11; // Size of each dot in pixels (11px diameter)
+  const padding = 2; // Space between dots
   const totalStudents = barData.reduce((sum, item) => sum + item.count, 0);
 
   if (totalStudents === 0) return null;
 
-  // Create groups of students by proficiency level for better positioning
-  const groupedDots: { [key: string]: any[] } = {};
+  // Group dots by proficiency level, then by proficiency value to create towers
+  const groupedByLevelAndValue: { [key: string]: { [key: number]: any[] } } = {};
+
   dotData.forEach((dot) => {
-    if (!groupedDots[dot.proficiency]) {
-      groupedDots[dot.proficiency] = [];
+    if (!groupedByLevelAndValue[dot.proficiency]) {
+      groupedByLevelAndValue[dot.proficiency] = {};
     }
-    groupedDots[dot.proficiency].push(dot);
+    if (!groupedByLevelAndValue[dot.proficiency][dot.proficiency_value]) {
+      groupedByLevelAndValue[dot.proficiency][dot.proficiency_value] = [];
+    }
+    groupedByLevelAndValue[dot.proficiency][dot.proficiency_value].push(dot);
   });
 
   return (
-    <svg className="w-full h-full" style={{ minHeight: '100px' }}>
+    <svg className="w-full h-full" style={{ minHeight: '140px' }}>
       {PROFICIENCY_LABELS.map((level) => {
-        const levelDots = groupedDots[level] || [];
-        if (levelDots.length === 0) return null;
+        const levelGroups = groupedByLevelAndValue[level] || {};
+        const proficiencyValues = Object.keys(levelGroups).map(Number).sort();
+
+        if (proficiencyValues.length === 0) return null;
 
         const levelData = barData.find((item) => item.proficiency === level);
         if (!levelData || levelData.count === 0) return null;
 
-        // Calculate X position of this segment's center (based on relative position in stacked bar)
+        // Calculate the boundaries of this proficiency level segment in the bar chart
         let cumulativeWidth = 0;
         for (let i = 0; i < PROFICIENCY_LABELS.indexOf(level); i++) {
           const prevLevel = PROFICIENCY_LABELS[i];
@@ -373,41 +454,102 @@ function renderDots(dotData: any[], barData: any[]) {
         }
 
         const levelWidth = (levelData.count / totalStudents) * 100;
-        const centerX = cumulativeWidth + levelWidth / 2;
+        const levelStartX = cumulativeWidth;
 
-        // Organize dots in columns within this section
-        const dotsPerRow = Math.max(1, Math.floor(levelWidth / 2)); // Dots per row based on section width
+        // Handle "Not enough data" level differently from others
+        if (level === 'Not enough data') {
+          // For "Not enough data", create multiple symmetric subtowers in the center
+          const allStudents = proficiencyValues.flatMap((value) => levelGroups[value]);
+          const totalStudents = allStudents.length;
 
-        return levelDots.map((dot, dotIndex) => {
-          // Calculate position within the group
-          const row = Math.floor(dotIndex / dotsPerRow);
-          const col = dotIndex % dotsPerRow;
+          if (totalStudents === 0) return null;
 
-          // Distribute horizontally within the section
-          const offsetRange = Math.min(levelWidth * 0.8, dotsPerRow * (dotSize + padding));
-          const startOffset = -offsetRange / 2;
-          const colOffset =
-            dotsPerRow > 1 ? startOffset + (col * offsetRange) / (dotsPerRow - 1) : 0;
+          // Calculate optimal distribution of subtowers
+          const { subtowers } = calculateSymmetricDistribution(totalStudents);
+          const centerX = levelStartX + levelWidth / 2;
+          const subtowerSpacing = Math.min(levelWidth / (subtowers.length + 1), dotSize + 4);
 
-          const xPercent = centerX + (colOffset / levelWidth) * levelWidth;
-          const yPosition = 95 - row * (dotSize + padding + 2);
+          let studentIndex = 0;
+          return subtowers
+            .map((towerHeight, towerIndex) => {
+              // Calculate X position for each subtower symmetrically around center
+              const offsetFromCenter = (towerIndex - (subtowers.length - 1) / 2) * subtowerSpacing;
+              const xPositionPercent = centerX + (offsetFromCenter / levelWidth) * levelWidth;
 
-          return (
-            <circle
-              key={`${dot.student_id}-${dotIndex}`}
-              cx={`${Math.max(1, Math.min(99, xPercent))}%`}
-              cy={yPosition}
-              r={dotSize / 2}
-              fill={dot.color}
-              stroke="rgba(255,255,255,0.5)"
-              strokeWidth="0.5"
-              className="transition-all hover:opacity-80 hover:r-1.5"
-              style={{ cursor: 'pointer' }}
-            >
-              <title>{`Student ${dot.student_id}: ${dot.proficiency_value}% proficiency`}</title>
-            </circle>
-          );
-        });
+              // Create dots for this subtower
+              const towerDots = [];
+              for (let i = 0; i < towerHeight; i++) {
+                const student = allStudents[studentIndex++];
+                if (!student) break;
+
+                const yPosition = 130 - i * (dotSize + padding);
+
+                towerDots.push(
+                  <circle
+                    key={`${student.student_id}-notEnoughData-${towerIndex}-${i}`}
+                    cx={`${Math.max(1, Math.min(99, xPositionPercent))}%`}
+                    cy={yPosition}
+                    r={dotSize / 2}
+                    fill={student.color}
+                    stroke="rgba(255,255,255,0.5)"
+                    strokeWidth="0.5"
+                  >
+                    <title>{`Student ${student.student_id}: ${student.proficiency_value}% proficiency`}</title>
+                  </circle>,
+                );
+              }
+              return towerDots;
+            })
+            .flat();
+        } else {
+          // For Low, Medium, High: always respect exact proficiency value position
+          return proficiencyValues
+            .map((proficiencyValue) => {
+              const studentsInTower = levelGroups[proficiencyValue];
+
+              // Calculate X position based on proficiency value within the level segment
+              const minValue = Math.min(...proficiencyValues);
+              const maxValue = Math.max(...proficiencyValues);
+
+              let xPositionPercent: number;
+              if (minValue === maxValue) {
+                // Even if all have same value, position based on the actual proficiency value
+                // Map proficiency value (0-100) to position within the level segment
+                const margin = levelWidth * 0.1;
+                const availableWidth = levelWidth - 2 * margin;
+                // For level segments, use proficiency value directly (0-100 scale)
+                const normalizedPosition = proficiencyValue / 100;
+                xPositionPercent = levelStartX + margin + normalizedPosition * availableWidth;
+              } else {
+                // Distribute towers proportionally based on proficiency value within the level segment
+                const valueRange = maxValue - minValue;
+                const normalizedValue = (proficiencyValue - minValue) / valueRange;
+                const margin = levelWidth * 0.1;
+                const availableWidth = levelWidth - 2 * margin;
+                xPositionPercent = levelStartX + margin + normalizedValue * availableWidth;
+              }
+
+              // Create dots in this tower (stacked vertically)
+              return studentsInTower.map((dot, studentIndex) => {
+                const yPosition = 130 - studentIndex * (dotSize + padding);
+
+                return (
+                  <circle
+                    key={`${dot.student_id}-${proficiencyValue}`}
+                    cx={`${Math.max(1, Math.min(99, xPositionPercent))}%`}
+                    cy={yPosition}
+                    r={dotSize / 2}
+                    fill={dot.color}
+                    stroke="rgba(255,255,255,0.5)"
+                    strokeWidth="0.5"
+                  >
+                    <title>{`Student ${dot.student_id}: ${dot.proficiency_value}% proficiency`}</title>
+                  </circle>
+                );
+              });
+            })
+            .flat();
+        }
       }).flat()}
     </svg>
   );
