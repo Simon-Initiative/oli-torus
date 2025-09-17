@@ -66,11 +66,11 @@ defmodule Oli.Application do
 
         # Cache assistant replies for AI page triggers (per-node, capped)
         Supervisor.child_spec(
-          {Cachex,
-           name: :ai_page_trigger_reply_cache,
-           # Keep at most 10k entries, evict oldest first
-           limit: 10_000,
-           policy: Cachex.Policy.LRW},
+          {
+            Cachex,
+            # Keep at most 10k entries, evict oldest first
+            name: :ai_page_trigger_reply_cache, limit: 10_000, policy: Cachex.Policy.LRW
+          },
           id: :ai_page_trigger_reply_cache
         ),
 

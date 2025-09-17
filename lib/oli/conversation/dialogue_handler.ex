@@ -85,6 +85,7 @@ defmodule Oli.Conversation.DialogueHandler do
               case socket.assigns[:last_trigger_meta] do
                 %{type: :page, revision_id: rid} when is_binary(socket.assigns.active_message) ->
                   PageTriggerReplyCache.put(rid, socket.assigns.active_message)
+
                 _ ->
                   :ok
               end
@@ -101,7 +102,7 @@ defmodule Oli.Conversation.DialogueHandler do
                    active_message: nil,
                    allow_submission?: allow_submission?,
                    last_trigger_meta: nil
-                  )}
+                 )}
 
               [trigger | rest] ->
                 prompt = Oli.Conversation.Triggers.assemble_trigger_prompt(trigger)

@@ -96,19 +96,19 @@ defmodule OliWeb.Dialogue.WindowLive do
            build_dialogue(section, project, session["revision_id"], current_user_id, self()),
          form: to_form(UserInput.changeset(%UserInput{}, %{content: ""})),
          streaming: false,
-          allow_submission?: true,
-          trigger_queue: [],
+         allow_submission?: true,
+         trigger_queue: [],
          last_trigger_meta: nil,
          active_message: nil,
-          function_call: nil,
-          title: "Dot",
-          current_user: Oli.Accounts.get_user!(current_user_id),
-          height: 500,
-          width: 400,
-          section: section,
-          resource_id: session["resource_id"],
+         function_call: nil,
+         title: "Dot",
+         current_user: Oli.Accounts.get_user!(current_user_id),
+         height: 500,
+         width: 400,
+         section: section,
+         resource_id: session["resource_id"],
          revision_id: session["revision_id"],
-          is_page: session["is_page"] == true || false
+         is_page: session["is_page"] == true || false
        )}
     else
       {:ok, assign(socket, enabled: false)}
