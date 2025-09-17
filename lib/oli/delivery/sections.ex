@@ -5361,7 +5361,10 @@ defmodule Oli.Delivery.Sections do
         false ->
           {student_proficiency_obj, student_proficiency_obj_dist} =
             case Map.get(proficiency_dist_for_objectives, objective.resource_id) do
-              nil -> {"Not enough data", %{}}
+              nil ->
+                # When there's no proficiency data, create distribution with all students as "Not enough data"
+                not_enough_data_dist = %{"Not enough data" => length(student_ids)}
+                {"Not enough data", not_enough_data_dist}
               prof -> {prof[:proficiency_mode], prof[:proficiency_dist]}
             end
 
@@ -5387,7 +5390,10 @@ defmodule Oli.Delivery.Sections do
 
                   {student_proficiency_subobj, student_proficiency_subobj_dist} =
                     case Map.get(proficiency_dist_for_objectives, sub_objective.resource_id) do
-                      nil -> {"Not enough data", %{}}
+                      nil ->
+                        # When there's no proficiency data, create distribution with all students as "Not enough data"
+                        not_enough_data_dist = %{"Not enough data" => length(student_ids)}
+                        {"Not enough data", not_enough_data_dist}
                       prof -> {prof[:proficiency_mode], prof[:proficiency_dist]}
                     end
 
