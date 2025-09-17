@@ -18,26 +18,30 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
       section_slug: section_slug
     } = assigns
 
-    # Calculate real estimated students count based on enrolled students
-    estimated_students = calculate_estimated_students(section_slug)
+    # Get all enrolled students in the section (excludes instructors)
+    all_student_ids = Oli.Delivery.Sections.enrolled_student_ids(section_slug)
 
+    # Calculate real estimated students count based on enrolled students
+    estimated_students = length(all_student_ids)
+
+    # Fetch sub-objectives data for the main objective
     sub_objectives_data = get_sub_objectives_data(section_id, section_slug, objective.resource_id)
 
     # Calculate proficiency distribution for the main objective
-    proficiency_per_student =
-      Metrics.proficiency_per_student_for_objective(section_id, [objective.resource_id])
+    proficiency_distribution =
+      section_id
+      |> Metrics.proficiency_per_student_for_objective([objective.resource_id])
+      |> calculate_proficiency_distribution_from_student_data(
+        objective.resource_id,
+        all_student_ids
+      )
 
     # Get individual student proficiency for the dot distribution chart
     # Start with real proficiency data and add missing students to ensure consistency
-    real_student_proficiency = Metrics.student_proficiency_for_objective(section_id, objective.resource_id)
-    student_proficiency = add_missing_students_to_proficiency_data(real_student_proficiency, section_slug)
-
-    proficiency_distribution =
-      calculate_proficiency_distribution_from_student_data(
-        proficiency_per_student,
-        objective.resource_id,
-        section_slug
-      )
+    student_proficiency =
+      section_id
+      |> Metrics.student_proficiency_for_objective(objective.resource_id)
+      |> add_missing_students_to_proficiency_data(all_student_ids)
 
     socket =
       socket
@@ -110,14 +114,6 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
     )
   end
 
-  # Calculate the estimated number of students for this learning objective
-  # This represents the total enrolled students in the section
-  defp calculate_estimated_students(section_slug) do
-    section_slug
-    |> Oli.Delivery.Sections.enrolled_student_ids()
-    |> length()
-  end
-
   # Get real sub-objectives data from database
   defp get_sub_objectives_data(section_id, section_slug, objective_id) do
     # Use the existing Metrics function to get sub-objectives proficiency data
@@ -167,12 +163,9 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
   defp calculate_proficiency_distribution_from_student_data(
          proficiency_per_student,
          objective_id,
-         section_slug
+         all_student_ids
        ) do
     student_proficiency_levels = Map.get(proficiency_per_student, objective_id, %{})
-
-    # Get all enrolled students in the section (excludes instructors)
-    all_student_ids = Oli.Delivery.Sections.enrolled_student_ids(section_slug)
 
     # Filter proficiency data to only include enrolled students (exclude instructors)
     filtered_student_proficiency_levels =
@@ -195,20 +188,20 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
 
   # Add missing students to proficiency data to ensure consistency with proficiency_distribution
   # This takes real proficiency data and adds students who don't have any proficiency data
-  defp add_missing_students_to_proficiency_data(real_student_proficiency, section_slug) do
-    # Get all enrolled students (excludes instructors)
-    all_student_ids = Oli.Delivery.Sections.enrolled_student_ids(section_slug)
-    
+  defp add_missing_students_to_proficiency_data(real_student_proficiency, all_student_ids) do
     # Filter proficiency data to only include enrolled students (exclude instructors)
     filtered_student_proficiency =
       real_student_proficiency
       |> Enum.filter(fn student -> String.to_integer(student.student_id) in all_student_ids end)
-    
+
     # Create a set of student IDs that already have proficiency data
-    existing_student_ids = MapSet.new(filtered_student_proficiency, fn student -> String.to_integer(student.student_id) end)
-    
+    existing_student_ids =
+      MapSet.new(filtered_student_proficiency, fn student ->
+        String.to_integer(student.student_id)
+      end)
+
     # Find students that are missing from proficiency data
-    missing_students = 
+    missing_students =
       all_student_ids
       |> Enum.reject(&MapSet.member?(existing_student_ids, &1))
       |> Enum.map(fn student_id ->
@@ -218,7 +211,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
           proficiency_range: "Not enough data"
         }
       end)
-    
+
     # Combine filtered proficiency data with missing students
     filtered_student_proficiency ++ missing_students
   end
