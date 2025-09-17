@@ -231,6 +231,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
       <.link
         navigate={@navigate_url}
         class="text-Text-text-link"
+        aria-label={~s(View #{@count} related activities)}
       >
         {@count}
       </.link>

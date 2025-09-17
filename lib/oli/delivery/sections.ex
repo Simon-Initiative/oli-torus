@@ -5036,32 +5036,40 @@ defmodule Oli.Delivery.Sections do
           })
           |> Repo.all()
 
-        # Count activities for each objective using the same logic as get_activities_for_objective
+        # Count activities for each objective using optimized single-pass algorithm
+        objective_id_set = MapSet.new(objective_ids)
+
         related_activities_count_map =
-          objective_ids
-          |> Enum.reduce(%{}, fn obj_id, acc ->
-            count =
-              activities_with_objectives
-              |> Enum.count(fn activity ->
-                case activity.objectives do
-                  objectives_map when is_map(objectives_map) ->
-                    objectives_map
-                    |> Enum.any?(fn {_part_id, activity_objective_ids} ->
-                      case activity_objective_ids do
-                        obj_list when is_list(obj_list) and length(obj_list) > 0 ->
-                          obj_id in obj_list
+          activities_with_objectives
+          |> Enum.reduce(%{}, fn activity, acc ->
+            case activity.objectives do
+              objectives_map when is_map(objectives_map) ->
+                # Extract all unique objective IDs from this activity
+                activity_objective_ids =
+                  objectives_map
+                  |> Enum.flat_map(fn {_part_id, obj_list} ->
+                    case obj_list do
+                      obj_list when is_list(obj_list) and length(obj_list) > 0 ->
+                        obj_list
 
-                        _ ->
-                          false
-                      end
-                    end)
+                      _ ->
+                        []
+                    end
+                  end)
+                  |> MapSet.new()
 
-                  _ ->
-                    false
-                end
-              end)
+                # Find intersection with our objective set
+                matching_objective_ids =
+                  MapSet.intersection(activity_objective_ids, objective_id_set)
 
-            Map.put(acc, obj_id, count)
+                # Increment count for each matching objective
+                Enum.reduce(matching_objective_ids, acc, fn obj_id, acc ->
+                  Map.update(acc, obj_id, 1, &(&1 + 1))
+                end)
+
+              _ ->
+                acc
+            end
           end)
 
         Enum.map(objectives, fn obj ->

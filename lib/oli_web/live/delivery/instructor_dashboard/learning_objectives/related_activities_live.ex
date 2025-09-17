@@ -79,10 +79,18 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
   end
 
   @impl Phoenix.LiveView
-  def handle_event("paged_table_sort", %{"sort_by" => sort_by}, socket) do
+  def handle_event("paged_table_sort", params, socket) do
+    sort_by =
+      Params.get_atom_param(
+        params,
+        "sort_by",
+        [:question_stem, :attempts, :percent_correct],
+        :question_stem
+      )
+
     {:noreply,
      push_patch(socket,
-       to: route_for(socket, %{sort_by: String.to_existing_atom(sort_by)})
+       to: route_for(socket, %{sort_by: sort_by})
      )}
   end
 
@@ -123,7 +131,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
-    <div class="container mx-auto">
+    <main class="container mx-auto">
       <div class="flex flex-col gap-2 mb-10">
         <!-- Back to Learning Objectives Button -->
         <div class="my-4 ml-2">
@@ -140,9 +148,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
         <div class="bg-white shadow-sm dark:bg-gray-800">
           <div class="flex justify-between items-center px-4 pt-8 pb-4 instructor_dashboard_table">
             <div>
-              <h4 class="text-Text-text-high text-lg font-bold leading-normal">
+              <h1 class="text-Text-text-high text-lg font-bold leading-normal">
                 {@objective.title}
-              </h4>
+              </h1>
             </div>
           </div>
           
@@ -150,7 +158,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
 
           <div class="flex w-fit gap-2 mx-4 mt-4 mb-4 shadow-[0px_2px_6.099999904632568px_0px_rgba(0,0,0,0.10)] border border-Border-border-default bg-Background-bg-secondary">
             <div class="flex p-2 gap-2">
-              <.form for={%{}} phx-change="search_activity" class="w-56">
+              <.form for={%{}} phx-debounce="300" phx-change="search_activity" class="w-56">
+                <label for="activity_search_input-input" class="sr-only">Search activities</label>
                 <SearchInput.render
                   id="activity_search_input"
                   name="activity_name"
@@ -193,7 +202,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
           <% end %>
         </div>
       </div>
-    </div>
+    </main>
     """
   end
 
