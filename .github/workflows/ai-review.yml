@@ -82,22 +82,55 @@ jobs:
           echo "Running reviewer role: ${{ matrix.role }}"
           echo "Filter outputs: elixir=${{ needs.changes.outputs.elixir }}, ts=${{ needs.changes.outputs.typescript }}, ui=${{ needs.changes.outputs.ui }}, perf=${{ needs.changes.outputs.performance }}, sec=${{ needs.changes.outputs.security }}, req=${{ needs.changes.outputs.requirements }}"
 
-      - name: Generate PR diff
+      - name: Generate PR diff (exactly what GitHub shows)
+        if: ${{ github.event_name == 'pull_request' }}
+        run: |
+          curl -sSL "${{ github.event.pull_request.patch_url }}" -o diff.patch
+
+      - name: Generate PR diff (merge-base fallback)
+        if: ${{ github.event_name != 'pull_request' }}
         shell: bash
         run: |
           set -euo pipefail
+          git fetch --no-tags --prune origin +refs/heads/*:refs/remotes/origin/*
+          MB=$(git merge-base HEAD~1 HEAD)
+          git diff --unified=0 "${MB}" HEAD > diff.patch
+          [ -f diff.patch ] || touch diff.patch
+
+      - name: Narrow diff to this role's files
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROLE="${{ matrix.role }}"
+          if [[ "$ROLE" == "requirements" ]]; then
+            # Requirements reviewers need the full diff (PRD plus all other files)
+            [ -f diff.patch ] || touch diff.patch
+            exit 0
+          fi
+          case "$ROLE" in
+            elixir)      GLOBS=(":(glob)lib/**/*.ex" ":(glob)lib/**/*.exs" ":(glob)test/**/*.exs");;
+            typescript)  GLOBS=(":(glob)assets/src/**/*.ts" ":(glob)assets/src/**/*.tsx");;
+            ui)          GLOBS=(":(glob)assets/src/**/*" ":(glob)lib/**/*.heex" ":(glob)lib/**/*.leex" ":(glob)lib/**/live/**/*.ex");;
+            security)    GLOBS=(":(glob)lib/**" ":(glob)assets/src/**" ":(glob)config/**");;
+            performance) GLOBS=(":(glob)lib/**");;
+            *)           GLOBS=(":(glob)**/*");;
+          esac
+
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
             BASE="${{ github.event.pull_request.base.sha }}"
             HEADSHA="${{ github.event.pull_request.head.sha }}"
+            git fetch --no-tags --prune origin +refs/heads/*:refs/remotes/origin/*
+            MB=$(git merge-base "$BASE" "$HEADSHA")
+            git diff --unified=0 "$MB" "$HEADSHA" -- "${GLOBS[@]}" > diff.role.patch
           else
-            BASE=$(git rev-parse HEAD^)
-            HEADSHA=$(git rev-parse HEAD)
+            git fetch --no-tags --prune origin +refs/heads/*:refs/remotes/origin/* || true
+            MB=$(git merge-base HEAD~1 HEAD)
+            git diff --unified=0 "$MB" HEAD -- "${GLOBS[@]}" > diff.role.patch
           fi
-          # Fetch the exact SHAs (works with forks and shallow clones)
-          git fetch --no-tags --prune --depth=1 origin "+${BASE}" "+${HEADSHA}"
-          # Produce a diff between the two trees (no merge-base required)
-          git diff --unified=0 "${BASE}" "${HEADSHA}" > diff.patch
-          # Ensure file exists (do not truncate if already written)
+
+          if [[ -s diff.role.patch ]]; then
+            mv diff.role.patch diff.patch
+          fi
           [ -f diff.patch ] || touch diff.patch
 
       - name: Install Codex CLI
@@ -122,6 +155,8 @@ jobs:
             echo "1) REVIEW ONLY lines changed in the DIFF; ignore any other code.";
             echo "2) You may read some other files outside the DIFF ONLY for CONTEXT.";
             echo "3) IMPORTANT: NEVER comment about findings in files or lines not included in the DIFF.";
+            echo "4) If you notice issues outside the DIFF, list them only under an 'Out-of-scope notes' section at the end.";
+            echo "5) Do NOT attempt to recalculate or expand the diff; rely strictly on the DIFF provided.";
             echo "";
             echo "IMPORTANT: Return ONLY the summary of findings, wrapped between these markers:";
             echo "<!-- FINDINGS_START -->";
@@ -130,9 +165,11 @@ jobs:
             echo "Do NOT include the prompt, your reasoning, or any other text outside those markers.";
             echo "Within the markers, use this exact format for each finding:";
             echo "### <short title>";
-            echo "file: <path>, line: <line number>";
+            echo "file: <path>";
+            echo "line: <single line number from the DIFF>";
             echo "Description: <what/why this is a problem in this codebase>";
             echo "Suggestion: <specific, actionable code change>";
+            echo "If you have notes about issues outside the DIFF, add them in an 'Out-of-scope notes' section after the findings.";
             echo "";
             echo "Coding Review Guidelines and Checklist:";
             echo "---CHECKLIST START---";
@@ -246,6 +283,13 @@ jobs:
             } catch { /* ignore */ }
 
             // --- Build allowlist of changed files and line numbers from diff.patch ---
+            function normalizePath(p) {
+              return p.trim()
+                .replace(/^['"]|['"]$/g, '')
+                .replace(/^\.\//, '')
+                .replace(/^b\//, '');
+            }
+
             function parseDiffAddedLines(diffText) {
               const fileAdds = new Map(); // file -> Set(lineNumbers)
               let currentFile = null;
@@ -266,7 +310,7 @@ jobs:
                   if (!m) continue;
                   const raw = m[1].trim();
                   if (raw === '/dev/null') { currentFile = null; continue; }
-                  const filePath = raw.replace(/^b\//, '');
+                  const filePath = normalizePath(raw);
                   currentFile = filePath;
                   if (!fileAdds.has(currentFile)) fileAdds.set(currentFile, new Set());
                   continue;
@@ -284,9 +328,13 @@ jobs:
                   lnNew++;
                   continue;
                 }
-                // Removed lines ('-') advance old side only; unchanged/context lines are rare with -U0
+                // Context lines (start with space) advance the new-side counter
+                if (line.startsWith(' ')) {
+                  lnNew++;
+                  continue;
+                }
+                // Removed lines ('-') advance old side only
                 if (line.startsWith('-')) {
-                  // do not change lnNew
                   continue;
                 }
               }
@@ -305,7 +353,8 @@ jobs:
             const addedLinesByFile = loadDiffAdds();
 
             function isOnChangedLine(filePath, lineNumber) {
-              const adds = addedLinesByFile.get(filePath) || addedLinesByFile.get(filePath.replace(/^\.<\//, ''));
+              const normalized = normalizePath(filePath);
+              const adds = addedLinesByFile.get(normalized);
               if (!adds) return false;
               return adds.has(Number(lineNumber));
             }
@@ -330,10 +379,13 @@ jobs:
               const blocks = text.split(/\n(?=###\s+)/).filter(Boolean);
               const kept = [];
               for (const block of blocks) {
-                const m = /\bfile:\s*([^,\n]+)\s*,\s*line:\s*(\d+)/i.exec(block);
-                if (!m) continue;
-                const filePath = m[1].trim();
-                const lineNum = Number(m[2]);
+                const fileMatch = /\bfile:\s*([^\n]+)/i.exec(block);
+                const lineMatch = /\bline:\s*(\d+)/i.exec(block);
+                if (!fileMatch || !lineMatch) continue;
+                const filePath = fileMatch[1].trim();
+                const lineNum = Number(lineMatch[1]);
+                if (!Number.isInteger(lineNum)) continue;
+                if (!addedLinesByFile.has(normalizePath(filePath))) continue;
                 if (isOnChangedLine(filePath, lineNum)) {
                   kept.push(block.trim());
                 }
