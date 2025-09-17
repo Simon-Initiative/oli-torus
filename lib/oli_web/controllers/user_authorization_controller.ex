@@ -19,7 +19,7 @@ defmodule OliWeb.UserAuthorizationController do
   plug :load_session_params when action in [:callback]
   # plug :load_user_by_invitation_token when action in [:callback]
 
-  def new(conn, %{"provider" => provider}) do
+  def new(conn, %{"provider" => provider} = params) do
     config = conn.assigns.assent_auth_config
 
     conn =
@@ -35,6 +35,12 @@ defmodule OliWeb.UserAuthorizationController do
         nil ->
           conn
       end
+
+    # Store section and invitation context for post-auth handling
+    conn =
+      conn
+      |> maybe_store_section_context(params["section"])
+      |> maybe_store_invitation_context(params["from_invitation_link?"])
 
     provider
     |> AssentAuthWeb.authorize_url(config)
@@ -86,7 +92,7 @@ defmodule OliWeb.UserAuthorizationController do
 
     # The session params (used for OAuth 2.0 and OIDC strategies) stored in the
     # request phase will be used in the callback phase
-    redirect_to = conn.assigns[:user_return_to] || ~p"/users/log_in"
+    redirect_to = determine_redirect_path(conn)
 
     case AssentAuthWeb.provider_callback(provider, params, conn.assigns.session_params, config) do
       # Authorization successful
@@ -107,10 +113,12 @@ defmodule OliWeb.UserAuthorizationController do
 
           {:ok, _status, conn} ->
             conn
+            |> clear_enrollment_session_data()
             |> redirect(to: redirect_to)
 
           {:email_confirmation_required, _status, conn} ->
             conn
+            |> clear_enrollment_session_data()
             |> put_flash(
               :info,
               "Please confirm your email address to continue. A confirmation email has been sent."
@@ -149,6 +157,7 @@ defmodule OliWeb.UserAuthorizationController do
         Logger.error("Error requesting authorization URL: #{inspect(error)}")
 
         conn
+        |> clear_enrollment_session_data()
         |> put_flash(:error, "Something went wrong. Please try again or contact support.")
         |> redirect(to: redirect_to)
     end
@@ -207,4 +216,46 @@ defmodule OliWeb.UserAuthorizationController do
     do: put_session(conn, :user_return_to, user_return_to)
 
   defp maybe_store_user_return_to(conn), do: conn
+
+  defp maybe_store_section_context(conn, nil), do: conn
+
+  defp maybe_store_section_context(conn, section) when is_binary(section) do
+    put_session(conn, :pending_section_enrollment, section)
+  end
+
+  defp maybe_store_invitation_context(conn, nil), do: conn
+
+  defp maybe_store_invitation_context(conn, "true") do
+    put_session(conn, :from_invitation_link, true)
+  end
+
+  defp maybe_store_invitation_context(conn, _), do: conn
+
+  defp clear_enrollment_session_data(conn) do
+    conn
+    |> delete_session(:pending_section_enrollment)
+    |> delete_session(:from_invitation_link)
+  end
+
+  defp determine_redirect_path(conn) do
+    cond do
+      # Check if there's a pending section enrollment
+      section_slug = get_session(conn, :pending_section_enrollment) ->
+        from_invitation = get_session(conn, :from_invitation_link)
+
+        if from_invitation do
+          ~p"/sections/#{section_slug}/enroll"
+        else
+          ~p"/sections/#{section_slug}"
+        end
+
+      # Fall back to normal user_return_to behavior
+      user_return_to = conn.assigns[:user_return_to] ->
+        user_return_to
+
+      # Default fallback
+      true ->
+        ~p"/users/log_in"
+    end
+  end
 end

@@ -269,7 +269,7 @@ defmodule Oli.Delivery.Attempts.Core do
       |> Enum.map(& &1.resource_id)
 
     ResourceAccess
-    |> where([r], r.resource_id in ^graded_pages_resource_ids)
+    |> where([r], r.resource_id in ^graded_pages_resource_ids and r.section_id == ^section_id)
     |> select([r], r)
   end
 

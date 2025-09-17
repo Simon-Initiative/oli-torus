@@ -343,6 +343,7 @@ defmodule Oli.Accounts do
     # using enrollment records, we can infer the user's institution. This is because
     # an LTI user can be enrolled in multiple sections, but all sections must be from
     # the same institution.
+
     results =
       from(e in Enrollment,
         join: s in Section,
