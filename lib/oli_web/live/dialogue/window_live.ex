@@ -16,6 +16,7 @@ defmodule OliWeb.Dialogue.WindowLive do
   alias Oli.Conversation.Message
   alias Phoenix.LiveView.JS
   alias Oli.Conversation.Triggers
+  alias Oli.Conversation.PageTriggerReplyCache
 
   alias Phoenix.PubSub
 
@@ -95,17 +96,19 @@ defmodule OliWeb.Dialogue.WindowLive do
            build_dialogue(section, project, session["revision_id"], current_user_id, self()),
          form: to_form(UserInput.changeset(%UserInput{}, %{content: ""})),
          streaming: false,
-         allow_submission?: true,
-         trigger_queue: [],
+          allow_submission?: true,
+          trigger_queue: [],
+         last_trigger_meta: nil,
          active_message: nil,
-         function_call: nil,
-         title: "Dot",
-         current_user: Oli.Accounts.get_user!(current_user_id),
-         height: 500,
-         width: 400,
-         section: section,
-         resource_id: session["resource_id"],
-         is_page: session["is_page"] == true || false
+          function_call: nil,
+          title: "Dot",
+          current_user: Oli.Accounts.get_user!(current_user_id),
+          height: 500,
+          width: 400,
+          section: section,
+          resource_id: session["resource_id"],
+         revision_id: session["revision_id"],
+          is_page: session["is_page"] == true || false
        )}
     else
       {:ok, assign(socket, enabled: false)}
@@ -612,23 +615,90 @@ defmodule OliWeb.Dialogue.WindowLive do
             trigger.section_id
           )
 
-        pid = self()
+        # If this is a page trigger and we have a revision_id, try cache first
+        case {trigger.trigger_type, socket.assigns[:revision_id]} do
+          {:page, rid} when not is_nil(rid) ->
+            case PageTriggerReplyCache.get(rid) do
+              {:hit, reply_text} ->
+                pid = self()
 
-        Task.async(fn ->
-          Dialogue.engage(dialogue, :async)
-          send(pid, {:reply_finished})
-        end)
+                # Simulate a full streamed reply in one shot
+                Task.async(fn ->
+                  send(pid, {:reply_chunk, :content, reply_text})
+                  send(pid, {:reply_finished})
+                end)
 
-        socket =
-          push_event(socket, "wakeup-dot", %{
-            to: "#ai_bot_collapsed"
-          })
+                socket =
+                  push_event(socket, "wakeup-dot", %{
+                    to: "#ai_bot_collapsed"
+                  })
 
-        {:noreply,
-         assign(socket,
-           dialogue: dialogue,
-           streaming: true
-         )}
+                {:noreply,
+                 assign(socket,
+                   dialogue: dialogue,
+                   streaming: true,
+                   last_trigger_meta: nil
+                 )}
+
+              :miss ->
+                pid = self()
+
+                Task.async(fn ->
+                  Dialogue.engage(dialogue, :async)
+                  send(pid, {:reply_finished})
+                end)
+
+                socket =
+                  push_event(socket, "wakeup-dot", %{
+                    to: "#ai_bot_collapsed"
+                  })
+
+                {:noreply,
+                 assign(socket,
+                   dialogue: dialogue,
+                   streaming: true,
+                   last_trigger_meta: %{type: :page, revision_id: rid}
+                 )}
+
+              {:error, _} ->
+                pid = self()
+
+                Task.async(fn ->
+                  Dialogue.engage(dialogue, :async)
+                  send(pid, {:reply_finished})
+                end)
+
+                socket =
+                  push_event(socket, "wakeup-dot", %{
+                    to: "#ai_bot_collapsed"
+                  })
+
+                {:noreply,
+                 assign(socket,
+                   dialogue: dialogue,
+                   streaming: true
+                 )}
+            end
+
+          _ ->
+            pid = self()
+
+            Task.async(fn ->
+              Dialogue.engage(dialogue, :async)
+              send(pid, {:reply_finished})
+            end)
+
+            socket =
+              push_event(socket, "wakeup-dot", %{
+                to: "#ai_bot_collapsed"
+              })
+
+            {:noreply,
+             assign(socket,
+               dialogue: dialogue,
+               streaming: true
+             )}
+        end
     end
   end
 

@@ -9,6 +9,8 @@ defmodule Oli.Conversation.DialogueHandler do
 
   defmacro __before_compile__(_env) do
     quote do
+      alias Oli.Conversation.PageTriggerReplyCache
+
       def handle_info({:reply_chunk, type, content}, socket) do
         case type do
           :function_call ->
@@ -78,6 +80,15 @@ defmodule Oli.Conversation.DialogueHandler do
                 true
               end
 
+            # Cache the assistant reply for a page trigger if requested
+            _ =
+              case socket.assigns[:last_trigger_meta] do
+                %{type: :page, revision_id: rid} when is_binary(socket.assigns.active_message) ->
+                  PageTriggerReplyCache.put(rid, socket.assigns.active_message)
+                _ ->
+                  :ok
+              end
+
             # Here we check if there are any triggers in the queue
             # and if so, we process the first one
             # and remove it from the queue
@@ -88,8 +99,9 @@ defmodule Oli.Conversation.DialogueHandler do
                    dialogue: dialogue,
                    streaming: false,
                    active_message: nil,
-                   allow_submission?: allow_submission?
-                 )}
+                   allow_submission?: allow_submission?,
+                   last_trigger_meta: nil
+                  )}
 
               [trigger | rest] ->
                 prompt = Oli.Conversation.Triggers.assemble_trigger_prompt(trigger)
@@ -103,19 +115,76 @@ defmodule Oli.Conversation.DialogueHandler do
                     trigger.section_id
                   )
 
-                pid = self()
+                # If the queued trigger is a page trigger and revision_id is available,
+                # consult the cache to possibly bypass the LLM call.
+                case {trigger.trigger_type, socket.assigns[:revision_id]} do
+                  {:page, rid} when not is_nil(rid) ->
+                    case PageTriggerReplyCache.get(rid) do
+                      {:hit, reply_text} ->
+                        pid = self()
 
-                Task.async(fn ->
-                  Oli.Conversation.Dialogue.engage(dialogue, :async)
-                  send(pid, {:reply_finished})
-                end)
+                        Task.async(fn ->
+                          send(pid, {:reply_chunk, :content, reply_text})
+                          send(pid, {:reply_finished})
+                        end)
 
-                {:noreply,
-                 assign(socket,
-                   dialogue: dialogue,
-                   active_message: socket.assigns.active_message <> "\n\n",
-                   trigger_queue: rest
-                 )}
+                        {:noreply,
+                         assign(socket,
+                           dialogue: dialogue,
+                           active_message: socket.assigns.active_message <> "\n\n",
+                           trigger_queue: rest,
+                           last_trigger_meta: nil
+                         )}
+
+                      :miss ->
+                        pid = self()
+
+                        Task.async(fn ->
+                          Oli.Conversation.Dialogue.engage(dialogue, :async)
+                          send(pid, {:reply_finished})
+                        end)
+
+                        {:noreply,
+                         assign(socket,
+                           dialogue: dialogue,
+                           active_message: socket.assigns.active_message <> "\n\n",
+                           trigger_queue: rest,
+                           last_trigger_meta: %{type: :page, revision_id: rid}
+                         )}
+
+                      {:error, _} ->
+                        pid = self()
+
+                        Task.async(fn ->
+                          Oli.Conversation.Dialogue.engage(dialogue, :async)
+                          send(pid, {:reply_finished})
+                        end)
+
+                        {:noreply,
+                         assign(socket,
+                           dialogue: dialogue,
+                           active_message: socket.assigns.active_message <> "\n\n",
+                           trigger_queue: rest,
+                           last_trigger_meta: nil
+                         )}
+                    end
+
+                  _ ->
+                    pid = self()
+
+                    Task.async(fn ->
+                      Oli.Conversation.Dialogue.engage(dialogue, :async)
+                      send(pid, {:reply_finished})
+                    end)
+
+                    {:noreply,
+                     assign(socket,
+                       dialogue: dialogue,
+                       active_message: socket.assigns.active_message <> "\n\n",
+                       trigger_queue: rest,
+                       last_trigger_meta: nil
+                     )}
+                end
             end
 
           fc ->
@@ -141,7 +210,12 @@ defmodule Oli.Conversation.DialogueHandler do
               send(pid, {:reply_finished})
             end)
 
-            {:noreply, assign(socket, dialogue: dialogue, function_call: nil)}
+            {:noreply,
+             assign(socket,
+               dialogue: dialogue,
+               function_call: nil,
+               last_trigger_meta: nil
+             )}
         end
       end
 
