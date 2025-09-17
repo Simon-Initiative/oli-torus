@@ -8674,10 +8674,6 @@ table.table-striped tbody tr:nth-child(even) {
   order: 2;
 }
 
-.order-last {
-  order: 9999;
-}
-
 .col-span-10 {
   grid-column: span 10 / span 10;
 }
@@ -13336,6 +13332,10 @@ table.table-striped tbody tr:nth-child(even) {
 .py-px {
   padding-top: 1px;
   padding-bottom: 1px;
+}
+
+.\!pl-10 {
+  padding-left: 2.5rem !important;
 }
 
 .\!pl-9 {
@@ -22951,10 +22951,6 @@ Not supports in Firefox and IE */
 
   .sm\:items-center {
     align-items: center;
-  }
-
-  .sm\:justify-between {
-    justify-content: space-between;
   }
 
   .sm\:rounded-lg {
