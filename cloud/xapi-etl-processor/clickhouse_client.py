@@ -622,9 +622,9 @@ class ClickHouseClient:
             -- Generate a UUID for event_id since XAPI statements don't always have 'id' field
             generateUUIDv4(),
             COALESCE(
-                JSON_VALUE(s.json, '$.actor.account.name'),
-                JSON_VALUE(s.json, '$.actor.mbox'),
-                ''
+            JSON_VALUE(s.json, '$.actor.account.name'),
+            JSON_VALUE(s.json, '$.actor.mbox'),
+            ''
             ),
             JSON_VALUE(s.json, '$.context.extensions.\"http://oli.cmu.edu/extensions/host_name\"'),
             toInt32OrZero(JSON_VALUE(s.json, '$.context.extensions.\"http://oli.cmu.edu/extensions/section_id\"')),
@@ -634,28 +634,28 @@ class ClickHouseClient:
 
             -- Determine event type based on verb and object type
             multiIf(
-                JSON_VALUE(s.json, '$.verb.id') IN (
-                    'https://w3id.org/xapi/video/verbs/played',
-                    'https://w3id.org/xapi/video/verbs/paused',
-                    'https://w3id.org/xapi/video/verbs/seeked',
-                    'https://w3id.org/xapi/video/verbs/completed',
-                    'http://adlnet.gov/expapi/verbs/experienced'
-                ), 'video',
+            JSON_VALUE(s.json, '$.verb.id') IN (
+                'https://w3id.org/xapi/video/verbs/played',
+                'https://w3id.org/xapi/video/verbs/paused',
+                'https://w3id.org/xapi/video/verbs/seeked',
+                'https://w3id.org/xapi/video/verbs/completed',
+                'http://adlnet.gov/expapi/verbs/experienced'
+            ), 'video',
 
-                (JSON_VALUE(s.json, '$.verb.id') = 'http://adlnet.gov/expapi/verbs/completed') AND
-                (JSON_VALUE(s.json, '$.object.definition.type') = 'http://oli.cmu.edu/extensions/activity_attempt'), 'activity_attempt',
+            (JSON_VALUE(s.json, '$.verb.id') = 'http://adlnet.gov/expapi/verbs/completed') AND
+            (JSON_VALUE(s.json, '$.object.definition.type') = 'http://oli.cmu.edu/extensions/activity_attempt'), 'activity_attempt',
 
-                (JSON_VALUE(s.json, '$.verb.id') = 'http://adlnet.gov/expapi/verbs/completed') AND
-                (JSON_VALUE(s.json, '$.object.definition.type') = 'http://oli.cmu.edu/extensions/page_attempt'), 'page_attempt',
+            (JSON_VALUE(s.json, '$.verb.id') = 'http://adlnet.gov/expapi/verbs/completed') AND
+            (JSON_VALUE(s.json, '$.object.definition.type') = 'http://oli.cmu.edu/extensions/page_attempt'), 'page_attempt',
 
-                (JSON_VALUE(s.json, '$.verb.id') = 'http://id.tincanapi.com/verb/viewed') AND
-                (JSON_VALUE(s.json, '$.object.definition.type') = 'http://oli.cmu.edu/extensions/types/page'), 'page_viewed',
+            (JSON_VALUE(s.json, '$.verb.id') = 'http://id.tincanapi.com/verb/viewed') AND
+            (JSON_VALUE(s.json, '$.object.definition.type') = 'http://oli.cmu.edu/extensions/types/page'), 'page_viewed',
 
-                (JSON_VALUE(s.json, '$.verb.id') = 'http://adlnet.gov/expapi/verbs/completed') AND
-                (JSON_VALUE(s.json, '$.object.definition.type') = 'http://adlnet.gov/expapi/activities/question'), 'part_attempt',
+            (JSON_VALUE(s.json, '$.verb.id') = 'http://adlnet.gov/expapi/verbs/completed') AND
+            (JSON_VALUE(s.json, '$.object.definition.type') = 'http://adlnet.gov/expapi/activities/question'), 'part_attempt',
 
-                'unknown'
-            ),
+            'unknown'
+            ) AS event_type,
 
             -- Common fields
             JSON_VALUE(s.json, '$.context.extensions.\"http://oli.cmu.edu/extensions/attempt_guid\"'),
@@ -664,16 +664,29 @@ class ClickHouseClient:
 
             -- Video-specific fields
             COALESCE(
-                JSON_VALUE(s.json, '$.result.extensions.content_element_id'),
-                JSON_VALUE(s.json, '$.context.extensions.\"http://oli.cmu.edu/extensions/content_element_id\"'),
-                NULL
+            JSON_VALUE(s.json, '$.result.extensions.content_element_id'),
+            JSON_VALUE(s.json, '$.context.extensions.\"http://oli.cmu.edu/extensions/content_element_id\"'),
+            NULL
+            ),
+            -- Only use $.object.id if event_type is 'video', otherwise NULL
+            multiIf(
+            (
+                JSON_VALUE(s.json, '$.verb.id') IN (
+                'https://w3id.org/xapi/video/verbs/played',
+                'https://w3id.org/xapi/video/verbs/paused',
+                'https://w3id.org/xapi/video/verbs/seeked',
+                'https://w3id.org/xapi/video/verbs/completed',
+                'http://adlnet.gov/expapi/verbs/experienced'
+                )
             ),
             JSON_VALUE(s.json, '$.object.id'),
+            NULL
+            ),
             JSON_VALUE(s.json, '$.object.definition.name.\"en-US\"'),
             toFloat64OrZero(JSON_VALUE(s.json, '$.result.extensions.\"https://w3id.org/xapi/video/extensions/time\"')),
             COALESCE(
-                toFloat64OrZero(JSON_VALUE(s.json, '$.result.extensions.\"https://w3id.org/xapi/video/extensions/length\"')),
-                toFloat64OrZero(JSON_VALUE(s.json, '$.context.extensions.\"https://w3id.org/xapi/video/extensions/length\"'))
+            toFloat64OrZero(JSON_VALUE(s.json, '$.result.extensions.\"https://w3id.org/xapi/video/extensions/length\"')),
+            toFloat64OrZero(JSON_VALUE(s.json, '$.context.extensions.\"https://w3id.org/xapi/video/extensions/length\"'))
             ),
             toFloat64OrZero(JSON_VALUE(s.json, '$.result.extensions.\"https://w3id.org/xapi/video/extensions/progress\"')),
             JSON_VALUE(s.json, '$.result.extensions.\"https://w3id.org/xapi/video/extensions/played-segments\"'),
