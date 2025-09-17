@@ -4931,6 +4931,12 @@ defmodule Oli.Delivery.Sections do
   above example, with the aggregated proficiency for its parent shown.  For objectives that are
   top level objectives, they appear with their proficiency for only those activities that
   directly attached to them.
+
+  ## Options
+
+  * `:student_id` - If provided, filters proficiency results for a specific student
+  * `:exclude_sub_objectives` - If true, only returns top-level objectives (default: false)
+  * `:include_related_activities_count` - If true, includes `related_activities_count` field for each objective. A related activity is any activity that has the objective attached to it in its objectives map (default: false)
   """
   def get_objectives_and_subobjectives(%Section{slug: section_slug} = section, opts \\ []) do
     student_id = if opts[:student_id], do: opts[:student_id], else: nil

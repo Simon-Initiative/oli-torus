@@ -2878,471 +2878,7 @@ defmodule Oli.Delivery.SectionsTest do
 
   describe "get_activities_for_objective/2" do
     setup do
-      # Create author and project
-      author = insert(:author)
-      project = insert(:project, authors: [author])
-
-      # Create objectives following the specified structure
-      objective_a =
-        insert(:revision,
-          resource_type_id: ResourceType.id_for_objective(),
-          title: "Objective A"
-        )
-
-      objective_b =
-        insert(:revision,
-          resource_type_id: ResourceType.id_for_objective(),
-          title: "Objective B"
-        )
-
-      objective_c =
-        insert(:revision,
-          resource_type_id: ResourceType.id_for_objective(),
-          title: "Objective C"
-        )
-
-      objective_d =
-        insert(:revision,
-          resource_type_id: ResourceType.id_for_objective(),
-          title: "Objective D"
-        )
-
-      sub_objective_a1 =
-        insert(:revision,
-          resource_type_id: ResourceType.id_for_objective(),
-          title: "Sub-objective A.1"
-        )
-
-      sub_objective_a2 =
-        insert(:revision,
-          resource_type_id: ResourceType.id_for_objective(),
-          title: "Sub-objective A.2"
-        )
-
-      sub_objective_b1 =
-        insert(:revision,
-          resource_type_id: ResourceType.id_for_objective(),
-          title: "Sub-objective B.1"
-        )
-
-      sub_objective_b2 =
-        insert(:revision,
-          resource_type_id: ResourceType.id_for_objective(),
-          title: "Sub-objective B.2"
-        )
-
-      # Create activities with objectives as specified
-      # Page 1 activities
-      page_1_mcq_1 =
-        insert(:revision,
-          resource_type_id: ResourceType.id_for_activity(),
-          title: "Page 1 MCQ 1",
-          content: %{
-            "stem" => %{
-              "content" => [
-                %{
-                  "type" => "p",
-                  "children" => [%{"text" => "What is the capital of France?"}]
-                }
-              ]
-            }
-          },
-          objectives: %{"1" => [objective_a.resource_id]}
-        )
-
-      page_1_mcq_2 =
-        insert(:revision,
-          resource_type_id: ResourceType.id_for_activity(),
-          title: "Page 1 MCQ 2",
-          content: %{
-            "stem" => %{
-              "content" => [
-                %{
-                  "type" => "p",
-                  "children" => [%{"text" => "What is 2 + 2?"}]
-                }
-              ]
-            }
-          },
-          objectives: %{"1" => [sub_objective_a1.resource_id]}
-        )
-
-      page_1_mcq_3 =
-        insert(:revision,
-          resource_type_id: ResourceType.id_for_activity(),
-          title: "Page 1 MCQ 3",
-          content: %{
-            "stem" => %{
-              "content" => [
-                %{
-                  "type" => "p",
-                  "children" => [%{"text" => "What is 3 + 3?"}]
-                }
-              ]
-            }
-          },
-          objectives: %{"1" => [sub_objective_a2.resource_id]}
-        )
-
-      page_1_mcq_4 =
-        insert(:revision,
-          resource_type_id: ResourceType.id_for_activity(),
-          title: "Page 1 MCQ 4",
-          content: %{
-            "stem" => %{
-              "content" => [
-                %{
-                  "type" => "p",
-                  "children" => [%{"text" => "Multiple objectives question?"}]
-                }
-              ]
-            }
-          },
-          objectives: %{"1" => [objective_b.resource_id, objective_c.resource_id]}
-        )
-
-      # Page 2 activity
-      page_2_mcq =
-        insert(:revision,
-          resource_type_id: ResourceType.id_for_activity(),
-          title: "Page 2 MCQ",
-          content: %{
-            "stem" => %{
-              "content" => [
-                %{
-                  "type" => "p",
-                  "children" => [%{"text" => "Page 2 question?"}]
-                }
-              ]
-            }
-          },
-          objectives: %{"1" => [sub_objective_b1.resource_id]}
-        )
-
-      # Page 3 activity
-      page_3_mcq =
-        insert(:revision,
-          resource_type_id: ResourceType.id_for_activity(),
-          title: "Page 3 MCQ",
-          content: %{
-            "stem" => %{
-              "content" => [
-                %{
-                  "type" => "p",
-                  "children" => [%{"text" => "Page 3 question?"}]
-                }
-              ]
-            }
-          },
-          objectives: %{"1" => [sub_objective_b2.resource_id]}
-        )
-
-      # Page 4 activities
-      page_4_mcq_1 =
-        insert(:revision,
-          resource_type_id: ResourceType.id_for_activity(),
-          title: "Page 4 MCQ 1",
-          content: %{
-            "stem" => %{
-              "content" => [
-                %{
-                  "type" => "p",
-                  "children" => [%{"text" => "Page 4 first question?"}]
-                }
-              ]
-            }
-          },
-          objectives: %{"1" => [objective_c.resource_id]}
-        )
-
-      page_4_mcq_2 =
-        insert(:revision,
-          resource_type_id: ResourceType.id_for_activity(),
-          title: "Page 4 MCQ 2",
-          content: %{
-            "stem" => %{
-              "content" => [
-                %{
-                  "type" => "p",
-                  "children" => [%{"text" => "Page 4 second question?"}]
-                }
-              ]
-            }
-          },
-          objectives: %{"1" => [objective_d.resource_id]}
-        )
-
-      # Page 5 activity
-      page_5_mcq =
-        insert(:revision,
-          resource_type_id: ResourceType.id_for_activity(),
-          title: "Page 5 MCQ",
-          content: %{
-            "stem" => %{
-              "content" => [
-                %{
-                  "type" => "p",
-                  "children" => [%{"text" => "Page 5 question?"}]
-                }
-              ]
-            }
-          },
-          objectives: %{"1" => [objective_c.resource_id]}
-        )
-
-      # Page 6 activity (practice)
-      page_6_mcq =
-        insert(:revision,
-          resource_type_id: ResourceType.id_for_activity(),
-          title: "Page 6 MCQ",
-          content: %{
-            "stem" => %{
-              "content" => [
-                %{
-                  "type" => "p",
-                  "children" => [%{"text" => "Practice question?"}]
-                }
-              ]
-            }
-          },
-          objectives: %{"1" => [objective_d.resource_id]}
-        )
-
-      # Create pages with activities in content model, not children
-      page_1 =
-        insert(:revision,
-          resource_type_id: ResourceType.id_for_page(),
-          title: "Page 1",
-          graded: true,
-          children: [],
-          content: %{
-            "model" => [
-              %{
-                "activity_id" => page_1_mcq_1.resource_id,
-                "id" => 1,
-                "type" => "activity-reference"
-              },
-              %{
-                "activity_id" => page_1_mcq_2.resource_id,
-                "id" => 2,
-                "type" => "activity-reference"
-              },
-              %{
-                "activity_id" => page_1_mcq_3.resource_id,
-                "id" => 3,
-                "type" => "activity-reference"
-              },
-              %{
-                "activity_id" => page_1_mcq_4.resource_id,
-                "id" => 4,
-                "type" => "activity-reference"
-              }
-            ]
-          }
-        )
-
-      page_2 =
-        insert(:revision,
-          resource_type_id: ResourceType.id_for_page(),
-          title: "Page 2",
-          graded: true,
-          children: [],
-          content: %{
-            "model" => [
-              %{
-                "activity_id" => page_2_mcq.resource_id,
-                "id" => 1,
-                "type" => "activity-reference"
-              }
-            ]
-          }
-        )
-
-      page_3 =
-        insert(:revision,
-          resource_type_id: ResourceType.id_for_page(),
-          title: "Page 3",
-          graded: true,
-          children: [],
-          content: %{
-            "model" => [
-              %{
-                "activity_id" => page_3_mcq.resource_id,
-                "id" => 1,
-                "type" => "activity-reference"
-              }
-            ]
-          }
-        )
-
-      page_4 =
-        insert(:revision,
-          resource_type_id: ResourceType.id_for_page(),
-          title: "Page 4",
-          graded: true,
-          children: [],
-          content: %{
-            "model" => [
-              %{
-                "activity_id" => page_4_mcq_1.resource_id,
-                "id" => 1,
-                "type" => "activity-reference"
-              },
-              %{
-                "activity_id" => page_4_mcq_2.resource_id,
-                "id" => 2,
-                "type" => "activity-reference"
-              }
-            ]
-          }
-        )
-
-      page_5 =
-        insert(:revision,
-          resource_type_id: ResourceType.id_for_page(),
-          title: "Page 5",
-          graded: true,
-          children: [],
-          content: %{
-            "model" => [
-              %{
-                "activity_id" => page_5_mcq.resource_id,
-                "id" => 1,
-                "type" => "activity-reference"
-              }
-            ]
-          }
-        )
-
-      page_6 =
-        insert(:revision,
-          resource_type_id: ResourceType.id_for_page(),
-          title: "Page 6",
-          graded: false,
-          children: [],
-          content: %{
-            "model" => [
-              %{
-                "activity_id" => page_6_mcq.resource_id,
-                "id" => 1,
-                "type" => "activity-reference"
-              }
-            ]
-          }
-        )
-
-      # Create root container
-      root_container =
-        insert(:revision,
-          resource_type_id: ResourceType.id_for_container(),
-          title: "Root Container",
-          children: [
-            page_1.resource_id,
-            page_2.resource_id,
-            page_3.resource_id,
-            page_4.resource_id,
-            page_5.resource_id,
-            page_6.resource_id
-          ]
-        )
-
-      # Associate all resources to project (including activities as they should be project resources)
-      all_revisions = [
-        objective_a,
-        objective_b,
-        objective_c,
-        objective_d,
-        sub_objective_a1,
-        sub_objective_a2,
-        sub_objective_b1,
-        sub_objective_b2,
-        page_1_mcq_1,
-        page_1_mcq_2,
-        page_1_mcq_3,
-        page_1_mcq_4,
-        page_2_mcq,
-        page_3_mcq,
-        page_4_mcq_1,
-        page_4_mcq_2,
-        page_5_mcq,
-        page_6_mcq,
-        page_1,
-        page_2,
-        page_3,
-        page_4,
-        page_5,
-        page_6,
-        root_container
-      ]
-
-      Enum.each(all_revisions, fn revision ->
-        insert(:project_resource, %{
-          project_id: project.id,
-          resource_id: revision.resource_id
-        })
-      end)
-
-      # Create publication
-      publication =
-        insert(:publication, %{
-          project: project,
-          root_resource_id: root_container.resource_id
-        })
-
-      # Publish all resources
-      Enum.each(all_revisions, fn revision ->
-        insert(:published_resource, %{
-          publication: publication,
-          resource: revision.resource,
-          revision: revision,
-          author: author
-        })
-      end)
-
-      # Create section
-      section = insert(:section, base_project: project)
-
-      # Create section resources
-      {:ok, section} = Sections.create_section_resources(section, publication)
-      {:ok, _} = Sections.rebuild_contained_pages(section)
-      Sections.rebuild_contained_objectives(section)
-
-      %{
-        section: section,
-        project: project,
-        publication: publication,
-        author: author,
-        objectives: %{
-          objective_a: objective_a,
-          objective_b: objective_b,
-          objective_c: objective_c,
-          objective_d: objective_d,
-          sub_objective_a1: sub_objective_a1,
-          sub_objective_a2: sub_objective_a2,
-          sub_objective_b1: sub_objective_b1,
-          sub_objective_b2: sub_objective_b2
-        },
-        activities: %{
-          page_1_mcq_1: page_1_mcq_1,
-          page_1_mcq_2: page_1_mcq_2,
-          page_1_mcq_3: page_1_mcq_3,
-          page_1_mcq_4: page_1_mcq_4,
-          page_2_mcq: page_2_mcq,
-          page_3_mcq: page_3_mcq,
-          page_4_mcq_1: page_4_mcq_1,
-          page_4_mcq_2: page_4_mcq_2,
-          page_5_mcq: page_5_mcq,
-          page_6_mcq: page_6_mcq
-        },
-        pages: %{
-          page_1: page_1,
-          page_2: page_2,
-          page_3: page_3,
-          page_4: page_4,
-          page_5: page_5,
-          page_6: page_6
-        }
-      }
+      setup_objectives_and_activities_test()
     end
 
     test "returns activities for objective A", %{
@@ -3535,6 +3071,189 @@ defmodule Oli.Delivery.SectionsTest do
     end
   end
 
+  describe "get_objectives_and_subobjectives/2" do
+    setup do
+      setup_objectives_and_activities_test()
+    end
+
+    test "returns objectives and subobjectives with default options", %{
+      section: section,
+      objectives: %{objective_a: objective_a, objective_b: objective_b}
+    } do
+      result = Sections.get_objectives_and_subobjectives(section)
+
+      # Should return 9 items: 5 top-level objectives + 4 subobjectives
+      assert length(result) == 9
+
+      # Find top-level objectives
+      top_level_a = Enum.find(result, &(&1.objective_resource_id == objective_a.resource_id))
+      top_level_b = Enum.find(result, &(&1.objective_resource_id == objective_b.resource_id))
+
+      # Verify top-level objective A structure
+      assert top_level_a.objective == "Objective A"
+      assert top_level_a.objective_resource_id == objective_a.resource_id
+      assert top_level_a.subobjective == nil
+      assert top_level_a.subobjective_resource_id == nil
+      assert top_level_a.student_proficiency_subobj == nil
+      assert top_level_a.section_id == section.id
+      assert is_list(top_level_a.container_ids)
+
+      # Verify top-level objective B structure
+      assert top_level_b.objective == "Objective B"
+      assert top_level_b.objective_resource_id == objective_b.resource_id
+      assert top_level_b.subobjective == nil
+      assert top_level_b.subobjective_resource_id == nil
+      assert top_level_b.student_proficiency_subobj == nil
+      assert top_level_b.section_id == section.id
+      assert is_list(top_level_b.container_ids)
+
+      # Find subobjectives
+      subobjectives = Enum.filter(result, &(&1.subobjective != nil))
+      assert length(subobjectives) == 4
+
+      sub_a1 = Enum.find(subobjectives, &(&1.subobjective == "Sub-objective A.1"))
+      sub_a2 = Enum.find(subobjectives, &(&1.subobjective == "Sub-objective A.2"))
+      sub_b1 = Enum.find(subobjectives, &(&1.subobjective == "Sub-objective B.1"))
+      sub_b2 = Enum.find(subobjectives, &(&1.subobjective == "Sub-objective B.2"))
+
+      # Verify subobjective structure
+      assert sub_a1.objective == "Objective A"
+      assert sub_a1.objective_resource_id == objective_a.resource_id
+      assert sub_a1.subobjective == "Sub-objective A.1"
+      assert sub_a1.subobjective_resource_id != nil
+      assert sub_a1.section_id == section.id
+      assert is_list(sub_a1.container_ids)
+
+      assert sub_a2.objective == "Objective A"
+      assert sub_a2.objective_resource_id == objective_a.resource_id
+      assert sub_a2.subobjective == "Sub-objective A.2"
+      assert sub_a2.subobjective_resource_id != nil
+      assert sub_a2.section_id == section.id
+      assert is_list(sub_a2.container_ids)
+
+      assert sub_b1.objective == "Objective B"
+      assert sub_b1.objective_resource_id == objective_b.resource_id
+      assert sub_b1.subobjective == "Sub-objective B.1"
+      assert sub_b1.subobjective_resource_id != nil
+      assert sub_b1.section_id == section.id
+      assert is_list(sub_b1.container_ids)
+
+      assert sub_b2.objective == "Objective B"
+      assert sub_b2.objective_resource_id == objective_b.resource_id
+      assert sub_b2.subobjective == "Sub-objective B.2"
+      assert sub_b2.subobjective_resource_id != nil
+      assert sub_b2.section_id == section.id
+      assert is_list(sub_b2.container_ids)
+    end
+
+    test "excludes subobjectives when exclude_sub_objectives is true", %{
+      section: section,
+      objectives: %{objective_a: objective_a, objective_b: objective_b}
+    } do
+      result = Sections.get_objectives_and_subobjectives(section, exclude_sub_objectives: true)
+
+      # Should return only 5 top-level objectives
+      assert length(result) == 5
+
+      # Verify only top-level objectives are returned
+      objective_ids = Enum.map(result, & &1.objective_resource_id)
+      assert objective_a.resource_id in objective_ids
+      assert objective_b.resource_id in objective_ids
+
+      # Verify no subobjectives are included
+      subobjectives = Enum.filter(result, &(&1.subobjective != nil))
+      assert length(subobjectives) == 0
+    end
+
+    test "includes related activities count when include_related_activities_count is true", %{
+      section: section,
+      objectives: %{objective_a: objective_a, objective_b: objective_b}
+    } do
+      result =
+        Sections.get_objectives_and_subobjectives(section, include_related_activities_count: true)
+
+      # Find top-level objectives
+      top_level_a = Enum.find(result, &(&1.objective_resource_id == objective_a.resource_id))
+      top_level_b = Enum.find(result, &(&1.objective_resource_id == objective_b.resource_id))
+
+      # Verify related_activities_count is included
+      assert Map.has_key?(top_level_a, :related_activities_count)
+      assert Map.has_key?(top_level_b, :related_activities_count)
+
+      # Objective A should have 1 related activity (page_1_mcq_1)
+      assert top_level_a.related_activities_count == 1
+
+      # Objective B should have 1 related activity (page_1_mcq_4)
+      assert top_level_b.related_activities_count == 1
+
+      # Find subobjectives and verify they also have the count
+      subobjectives = Enum.filter(result, &(&1.subobjective != nil))
+
+      Enum.each(subobjectives, fn sub ->
+        assert Map.has_key?(sub, :related_activities_count)
+        assert is_integer(sub.related_activities_count)
+      end)
+    end
+
+    test "filters by student_id when provided", %{
+      section: section,
+      objectives: %{objective_a: objective_a}
+    } do
+      # Create a student
+      student = insert(:user)
+
+      result = Sections.get_objectives_and_subobjectives(section, student_id: student.id)
+
+      # Should still return the same structure but with student-specific proficiency
+      assert length(result) > 0
+
+      top_level_a = Enum.find(result, &(&1.objective_resource_id == objective_a.resource_id))
+      assert top_level_a != nil
+      assert top_level_a.section_id == section.id
+    end
+
+    test "returns proficiency data with correct structure", %{section: section} do
+      result = Sections.get_objectives_and_subobjectives(section)
+
+      # All results should have proficiency data
+      Enum.each(result, fn item ->
+        assert Map.has_key?(item, :student_proficiency_obj)
+        assert Map.has_key?(item, :student_proficiency_obj_dist)
+        assert is_map(item.student_proficiency_obj_dist)
+
+        # If it's a subobjective, it should also have subobjective proficiency
+        if item.subobjective != nil do
+          assert Map.has_key?(item, :student_proficiency_subobj)
+          assert Map.has_key?(item, :student_proficiency_subobj_dist)
+          assert is_map(item.student_proficiency_subobj_dist)
+        end
+      end)
+    end
+
+    test "handles section with no objectives", %{section: section} do
+      # Create a section with no objectives
+      empty_section = insert(:section, base_project: section.base_project)
+
+      result = Sections.get_objectives_and_subobjectives(empty_section)
+      assert result == []
+    end
+
+    test "handles objectives with no activities", %{
+      section: section,
+      objectives: %{objective_no_activities: objective_no_activities}
+    } do
+      result =
+        Sections.get_objectives_and_subobjectives(section, include_related_activities_count: true)
+
+      # Find objective with no activities
+      no_activities_obj =
+        Enum.find(result, &(&1.objective_resource_id == objective_no_activities.resource_id))
+
+      # Objective with no activities should have 0 related activities
+      assert no_activities_obj.related_activities_count == 0
+    end
+  end
+
   # Helper function for creating attempts
   # activities_data should be a map of activity_id => %{score: X, out_of: Y, revision: revision}
   # If an activity is not provided, it will get a score of 0
@@ -3627,5 +3346,497 @@ defmodule Oli.Delivery.SectionsTest do
         section: section,
         resource: revision.resource
       })
+  end
+
+  # Helper function to create a test section with objectives and activities
+  defp setup_objectives_and_activities_test do
+    # Create author and project
+    author = insert(:author)
+    project = insert(:project, authors: [author])
+
+    # Create objectives following the specified structure
+    objective_a =
+      insert(:revision,
+        resource_type_id: ResourceType.id_for_objective(),
+        title: "Objective A"
+      )
+
+    objective_b =
+      insert(:revision,
+        resource_type_id: ResourceType.id_for_objective(),
+        title: "Objective B"
+      )
+
+    objective_c =
+      insert(:revision,
+        resource_type_id: ResourceType.id_for_objective(),
+        title: "Objective C"
+      )
+
+    objective_d =
+      insert(:revision,
+        resource_type_id: ResourceType.id_for_objective(),
+        title: "Objective D"
+      )
+
+    sub_objective_a1 =
+      insert(:revision,
+        resource_type_id: ResourceType.id_for_objective(),
+        title: "Sub-objective A.1"
+      )
+
+    sub_objective_a2 =
+      insert(:revision,
+        resource_type_id: ResourceType.id_for_objective(),
+        title: "Sub-objective A.2"
+      )
+
+    sub_objective_b1 =
+      insert(:revision,
+        resource_type_id: ResourceType.id_for_objective(),
+        title: "Sub-objective B.1"
+      )
+
+    sub_objective_b2 =
+      insert(:revision,
+        resource_type_id: ResourceType.id_for_objective(),
+        title: "Sub-objective B.2"
+      )
+
+    # Create an objective with no activities attached
+    objective_no_activities =
+      insert(:revision,
+        resource_type_id: ResourceType.id_for_objective(),
+        title: "Objective No Activities",
+        children: []
+      )
+
+    # Update parent objectives to include children
+    objective_a
+    |> Ecto.Changeset.change(
+      children: [sub_objective_a1.resource_id, sub_objective_a2.resource_id]
+    )
+    |> Oli.Repo.update!()
+
+    objective_b
+    |> Ecto.Changeset.change(
+      children: [sub_objective_b1.resource_id, sub_objective_b2.resource_id]
+    )
+    |> Oli.Repo.update!()
+
+    # Create activities with objectives as specified
+    # Page 1 activities
+    page_1_mcq_1 =
+      insert(:revision,
+        resource_type_id: ResourceType.id_for_activity(),
+        title: "Page 1 MCQ 1",
+        content: %{
+          "stem" => %{
+            "content" => [
+              %{
+                "type" => "p",
+                "children" => [%{"text" => "What is the capital of France?"}]
+              }
+            ]
+          }
+        },
+        objectives: %{"1" => [objective_a.resource_id]}
+      )
+
+    page_1_mcq_2 =
+      insert(:revision,
+        resource_type_id: ResourceType.id_for_activity(),
+        title: "Page 1 MCQ 2",
+        content: %{
+          "stem" => %{
+            "content" => [
+              %{
+                "type" => "p",
+                "children" => [%{"text" => "What is 2 + 2?"}]
+              }
+            ]
+          }
+        },
+        objectives: %{"1" => [sub_objective_a1.resource_id]}
+      )
+
+    page_1_mcq_3 =
+      insert(:revision,
+        resource_type_id: ResourceType.id_for_activity(),
+        title: "Page 1 MCQ 3",
+        content: %{
+          "stem" => %{
+            "content" => [
+              %{
+                "type" => "p",
+                "children" => [%{"text" => "What is 3 + 3?"}]
+              }
+            ]
+          }
+        },
+        objectives: %{"1" => [sub_objective_a2.resource_id]}
+      )
+
+    page_1_mcq_4 =
+      insert(:revision,
+        resource_type_id: ResourceType.id_for_activity(),
+        title: "Page 1 MCQ 4",
+        content: %{
+          "stem" => %{
+            "content" => [
+              %{
+                "type" => "p",
+                "children" => [%{"text" => "Multiple objectives question?"}]
+              }
+            ]
+          }
+        },
+        objectives: %{"1" => [objective_b.resource_id, objective_c.resource_id]}
+      )
+
+    # Page 2 activity
+    page_2_mcq =
+      insert(:revision,
+        resource_type_id: ResourceType.id_for_activity(),
+        title: "Page 2 MCQ",
+        content: %{
+          "stem" => %{
+            "content" => [
+              %{
+                "type" => "p",
+                "children" => [%{"text" => "Page 2 question?"}]
+              }
+            ]
+          }
+        },
+        objectives: %{"1" => [sub_objective_b1.resource_id]}
+      )
+
+    # Page 3 activity
+    page_3_mcq =
+      insert(:revision,
+        resource_type_id: ResourceType.id_for_activity(),
+        title: "Page 3 MCQ",
+        content: %{
+          "stem" => %{
+            "content" => [
+              %{
+                "type" => "p",
+                "children" => [%{"text" => "Page 3 question?"}]
+              }
+            ]
+          }
+        },
+        objectives: %{"1" => [sub_objective_b2.resource_id]}
+      )
+
+    # Page 4 activities
+    page_4_mcq_1 =
+      insert(:revision,
+        resource_type_id: ResourceType.id_for_activity(),
+        title: "Page 4 MCQ 1",
+        content: %{
+          "stem" => %{
+            "content" => [
+              %{
+                "type" => "p",
+                "children" => [%{"text" => "Page 4 first question?"}]
+              }
+            ]
+          }
+        },
+        objectives: %{"1" => [objective_c.resource_id]}
+      )
+
+    page_4_mcq_2 =
+      insert(:revision,
+        resource_type_id: ResourceType.id_for_activity(),
+        title: "Page 4 MCQ 2",
+        content: %{
+          "stem" => %{
+            "content" => [
+              %{
+                "type" => "p",
+                "children" => [%{"text" => "Page 4 second question?"}]
+              }
+            ]
+          }
+        },
+        objectives: %{"1" => [objective_d.resource_id]}
+      )
+
+    # Page 5 activity
+    page_5_mcq =
+      insert(:revision,
+        resource_type_id: ResourceType.id_for_activity(),
+        title: "Page 5 MCQ",
+        content: %{
+          "stem" => %{
+            "content" => [
+              %{
+                "type" => "p",
+                "children" => [%{"text" => "Page 5 question?"}]
+              }
+            ]
+          }
+        },
+        objectives: %{"1" => [objective_c.resource_id]}
+      )
+
+    # Page 6 activity (practice)
+    page_6_mcq =
+      insert(:revision,
+        resource_type_id: ResourceType.id_for_activity(),
+        title: "Page 6 MCQ",
+        content: %{
+          "stem" => %{
+            "content" => [
+              %{
+                "type" => "p",
+                "children" => [%{"text" => "Practice question?"}]
+              }
+            ]
+          }
+        },
+        objectives: %{"1" => [objective_d.resource_id]}
+      )
+
+    # Create pages with activities in content model, not children
+    page_1 =
+      insert(:revision,
+        resource_type_id: ResourceType.id_for_page(),
+        title: "Page 1",
+        graded: true,
+        children: [],
+        content: %{
+          "model" => [
+            %{
+              "activity_id" => page_1_mcq_1.resource_id,
+              "id" => 1,
+              "type" => "activity-reference"
+            },
+            %{
+              "activity_id" => page_1_mcq_2.resource_id,
+              "id" => 2,
+              "type" => "activity-reference"
+            },
+            %{
+              "activity_id" => page_1_mcq_3.resource_id,
+              "id" => 3,
+              "type" => "activity-reference"
+            },
+            %{
+              "activity_id" => page_1_mcq_4.resource_id,
+              "id" => 4,
+              "type" => "activity-reference"
+            }
+          ]
+        }
+      )
+
+    page_2 =
+      insert(:revision,
+        resource_type_id: ResourceType.id_for_page(),
+        title: "Page 2",
+        graded: true,
+        children: [],
+        content: %{
+          "model" => [
+            %{
+              "activity_id" => page_2_mcq.resource_id,
+              "id" => 1,
+              "type" => "activity-reference"
+            }
+          ]
+        }
+      )
+
+    page_3 =
+      insert(:revision,
+        resource_type_id: ResourceType.id_for_page(),
+        title: "Page 3",
+        graded: true,
+        children: [],
+        content: %{
+          "model" => [
+            %{
+              "activity_id" => page_3_mcq.resource_id,
+              "id" => 1,
+              "type" => "activity-reference"
+            }
+          ]
+        }
+      )
+
+    page_4 =
+      insert(:revision,
+        resource_type_id: ResourceType.id_for_page(),
+        title: "Page 4",
+        graded: true,
+        children: [],
+        content: %{
+          "model" => [
+            %{
+              "activity_id" => page_4_mcq_1.resource_id,
+              "id" => 1,
+              "type" => "activity-reference"
+            },
+            %{
+              "activity_id" => page_4_mcq_2.resource_id,
+              "id" => 2,
+              "type" => "activity-reference"
+            }
+          ]
+        }
+      )
+
+    page_5 =
+      insert(:revision,
+        resource_type_id: ResourceType.id_for_page(),
+        title: "Page 5",
+        graded: true,
+        children: [],
+        content: %{
+          "model" => [
+            %{
+              "activity_id" => page_5_mcq.resource_id,
+              "id" => 1,
+              "type" => "activity-reference"
+            }
+          ]
+        }
+      )
+
+    page_6 =
+      insert(:revision,
+        resource_type_id: ResourceType.id_for_page(),
+        title: "Page 6",
+        graded: false,
+        children: [],
+        content: %{
+          "model" => [
+            %{
+              "activity_id" => page_6_mcq.resource_id,
+              "id" => 1,
+              "type" => "activity-reference"
+            }
+          ]
+        }
+      )
+
+    # Create root container
+    root_container =
+      insert(:revision,
+        resource_type_id: ResourceType.id_for_container(),
+        title: "Root Container",
+        children: [
+          page_1.resource_id,
+          page_2.resource_id,
+          page_3.resource_id,
+          page_4.resource_id,
+          page_5.resource_id,
+          page_6.resource_id
+        ]
+      )
+
+    # Associate all resources to project (including activities as they should be project resources)
+    all_revisions = [
+      objective_a,
+      objective_b,
+      objective_c,
+      objective_d,
+      sub_objective_a1,
+      sub_objective_a2,
+      sub_objective_b1,
+      sub_objective_b2,
+      objective_no_activities,
+      page_1_mcq_1,
+      page_1_mcq_2,
+      page_1_mcq_3,
+      page_1_mcq_4,
+      page_2_mcq,
+      page_3_mcq,
+      page_4_mcq_1,
+      page_4_mcq_2,
+      page_5_mcq,
+      page_6_mcq,
+      page_1,
+      page_2,
+      page_3,
+      page_4,
+      page_5,
+      page_6,
+      root_container
+    ]
+
+    Enum.each(all_revisions, fn revision ->
+      insert(:project_resource, %{
+        project_id: project.id,
+        resource_id: revision.resource_id
+      })
+    end)
+
+    # Create publication
+    publication =
+      insert(:publication, %{
+        project: project,
+        root_resource_id: root_container.resource_id
+      })
+
+    # Publish all resources
+    Enum.each(all_revisions, fn revision ->
+      insert(:published_resource, %{
+        publication: publication,
+        resource: revision.resource,
+        revision: revision,
+        author: author
+      })
+    end)
+
+    # Create section
+    section = insert(:section, base_project: project)
+
+    # Create section resources
+    {:ok, section} = Sections.create_section_resources(section, publication)
+    {:ok, _} = Sections.rebuild_contained_pages(section)
+    Sections.rebuild_contained_objectives(section)
+
+    %{
+      section: section,
+      project: project,
+      publication: publication,
+      author: author,
+      objectives: %{
+        objective_a: objective_a,
+        objective_b: objective_b,
+        objective_c: objective_c,
+        objective_d: objective_d,
+        sub_objective_a1: sub_objective_a1,
+        sub_objective_a2: sub_objective_a2,
+        sub_objective_b1: sub_objective_b1,
+        sub_objective_b2: sub_objective_b2,
+        objective_no_activities: objective_no_activities
+      },
+      activities: %{
+        page_1_mcq_1: page_1_mcq_1,
+        page_1_mcq_2: page_1_mcq_2,
+        page_1_mcq_3: page_1_mcq_3,
+        page_1_mcq_4: page_1_mcq_4,
+        page_2_mcq: page_2_mcq,
+        page_3_mcq: page_3_mcq,
+        page_4_mcq_1: page_4_mcq_1,
+        page_4_mcq_2: page_4_mcq_2,
+        page_5_mcq: page_5_mcq,
+        page_6_mcq: page_6_mcq
+      },
+      pages: %{
+        page_1: page_1,
+        page_2: page_2,
+        page_3: page_3,
+        page_4: page_4,
+        page_5: page_5,
+        page_6: page_6
+      }
+    }
   end
 end
