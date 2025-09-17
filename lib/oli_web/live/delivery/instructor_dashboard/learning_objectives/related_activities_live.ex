@@ -2,17 +2,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
   use OliWeb, :live_view
 
   alias Oli.Delivery.Sections
+  alias Oli.Publishing.DeliveryResolver
   alias OliWeb.Common.{Params, StripedPagedTable, SearchInput}
   alias OliWeb.Components.Delivery.LearningObjectives.RelatedActivitiesTableModel
   alias OliWeb.Router.Helpers, as: Routes
   alias Phoenix.LiveView.JS
-
-  on_mount {OliWeb.UserAuth, :ensure_authenticated}
-  on_mount OliWeb.LiveSessionPlugs.SetCtx
-  on_mount OliWeb.LiveSessionPlugs.SetSection
-  on_mount OliWeb.LiveSessionPlugs.SetBrand
-  on_mount OliWeb.LiveSessionPlugs.SetPreviewMode
-  on_mount OliWeb.Delivery.InstructorDashboard.InitialAssigns
 
   @default_params %{
     offset: 0,
@@ -23,61 +17,57 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
   }
 
   @impl Phoenix.LiveView
-  def mount(_params, _session, socket) do
-    {:ok, assign(socket, view: :insights)}
+  def mount(params, _session, socket) do
+    %{section: section} = socket.assigns
+    resource_id = String.to_integer(params["resource_id"])
+
+    case DeliveryResolver.from_resource_id(section.slug, resource_id) do
+      nil ->
+        {:ok,
+         socket
+         |> put_flash(:error, "Learning objective not found")
+         |> redirect(to: back_to_objectives_path(socket))}
+
+      objective ->
+        # Fetch related activities for this objective
+        activities = Sections.get_activities_for_objective(section, resource_id)
+
+        {:ok,
+         assign(socket,
+           objective: objective,
+           activities: activities,
+           view: :insights
+         )}
+    end
   end
 
   @impl Phoenix.LiveView
-  def handle_params(%{"resource_id" => resource_id} = params, _uri, socket) do
-    case Integer.parse(resource_id) do
-      {resource_id_int, ""} ->
-        # Fetch the objective/subobjective details
-        case Sections.get_resource_by_id(resource_id_int) do
-          nil ->
-            {:noreply,
-             socket
-             |> put_flash(:error, "Learning objective not found")
-             |> redirect(to: back_to_objectives_path(socket))}
+  def handle_params(params, _uri, socket) do
+    %{activities: activities} = socket.assigns
 
-          objective ->
-            # Fetch related activities for this objective
-            activities =
-              Sections.get_activities_for_objective(socket.assigns.section, resource_id_int)
+    # Decode and apply filters
+    decoded_params = decode_params(params)
+    {total_count, filtered_activities} = apply_filters(activities, decoded_params)
 
-            # Decode and apply filters
-            decoded_params = decode_params(params)
-            {total_count, filtered_activities} = apply_filters(activities, decoded_params)
+    # Create table model
+    {:ok, table_model} = RelatedActivitiesTableModel.new(filtered_activities)
 
-            # Create table model
-            {:ok, table_model} = RelatedActivitiesTableModel.new(filtered_activities)
+    table_model =
+      Map.merge(table_model, %{
+        rows: filtered_activities,
+        sort_order: decoded_params.sort_order,
+        sort_by_spec:
+          Enum.find(table_model.column_specs, fn col_spec ->
+            col_spec.name == decoded_params.sort_by
+          end)
+      })
 
-            table_model =
-              Map.merge(table_model, %{
-                rows: filtered_activities,
-                sort_order: decoded_params.sort_order,
-                sort_by_spec:
-                  Enum.find(table_model.column_specs, fn col_spec ->
-                    col_spec.name == decoded_params.sort_by
-                  end)
-              })
-
-            {:noreply,
-             assign(socket,
-               resource_id: resource_id_int,
-               objective: objective,
-               activities: activities,
-               table_model: table_model,
-               total_count: total_count,
-               params: decoded_params
-             )}
-        end
-
-      _ ->
-        {:noreply,
-         socket
-         |> put_flash(:error, "Invalid learning objective ID")
-         |> redirect(to: back_to_objectives_path(socket))}
-    end
+    {:noreply,
+     assign(socket,
+       table_model: table_model,
+       total_count: total_count,
+       params: decoded_params
+     )}
   end
 
   @impl Phoenix.LiveView
@@ -271,14 +261,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
   defp sort_by(activities, _sort_by, _sort_order), do: activities
 
   defp route_for(socket, new_params) do
-    IO.inspect(socket.assigns.params, label: "los params del socket.assigns")
     params = update_params(socket.assigns.params, new_params)
 
     Routes.live_path(
       socket,
       __MODULE__,
       socket.assigns.section_slug,
-      socket.assigns.resource_id,
+      socket.assigns.objective.resource_id,
       params
     )
   end
@@ -292,11 +281,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
   end
 
   defp update_params(params, new_param) do
-    IO.inspect(params)
-    IO.inspect(new_param)
-
     Map.merge(params, new_param)
-    |> IO.inspect(label: "updated params")
   end
 
   defp extract_back_url_params(params) do

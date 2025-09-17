@@ -41,7 +41,6 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Resources.ResourceType
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Resources.Revision
-  alias Oli.Resources.Resource
   alias Oli.Publishing.PublishedResource
   alias Oli.Publishing.Publications.{PublicationDiff}
   alias Oli.Accounts.User
@@ -5668,25 +5667,6 @@ defmodule Oli.Delivery.Sections do
     Enum.any?(@instructor_roles, fn r ->
       ContextRoles.contains_role?(roles, r)
     end)
-  end
-
-  @doc """
-  Gets a single resource by ID from the published resources
-  """
-  def get_resource_by_id(resource_id) do
-    from(rev in Revision,
-      join: r in Resource,
-      on: rev.resource_id == r.id,
-      where: r.id == ^resource_id,
-      order_by: [desc: rev.inserted_at],
-      limit: 1,
-      select: %{
-        resource_id: r.id,
-        title: rev.title,
-        content: rev.content
-      }
-    )
-    |> Repo.one()
   end
 
   @doc """
