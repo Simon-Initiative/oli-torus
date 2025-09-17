@@ -298,6 +298,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.HTMLComponents do
       id={"lti_title_#{@id}"}
       phx-hook="GlobalTooltip"
       data-tooltip="<div>LTI 1.3 External Tool</div>"
+      data-tooltip-align="left"
       class="flex items-center gap-2"
     >
       <Icons.plug />

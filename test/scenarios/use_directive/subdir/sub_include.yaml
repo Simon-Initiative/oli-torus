@@ -1,0 +1,8 @@
+# File in subdirectory that includes a neighbor file
+- use:
+    file: neighbor.yaml
+
+- user:
+    name: subdir_user
+    type: student
+    email: subdir@test.edu

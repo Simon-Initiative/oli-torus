@@ -59,9 +59,9 @@ defmodule Oli.Scenarios.ProductComprehensiveTest do
           to: "Module 1"
 
       # Verify the customized and remixed product structure
-      - verify:
-          to: "standard_course"
+      - assert:
           structure:
+            to: "standard_course"
             root:
               children:
                 - page: "Course Welcome"
@@ -86,9 +86,9 @@ defmodule Oli.Scenarios.ProductComprehensiveTest do
           from: "standard_course"
 
       # Verify both sections have the customized structure
-      - verify:
-          to: "fall_2024"
+      - assert:
           structure:
+            to: "fall_2024"
             root:
               children:
                 - page: "Course Welcome"
@@ -101,9 +101,9 @@ defmodule Oli.Scenarios.ProductComprehensiveTest do
                     - page: "Lesson 2.1"
                 - page: "Final Exam"
 
-      - verify:
-          to: "spring_2025"
+      - assert:
           structure:
+            to: "spring_2025"
             root:
               children:
                 - page: "Course Welcome"
@@ -125,9 +125,9 @@ defmodule Oli.Scenarios.ProductComprehensiveTest do
                 before: "Module 2"
 
       # Verify spring section has additional customization
-      - verify:
-          to: "spring_2025"
+      - assert:
           structure:
+            to: "spring_2025"
             root:
               children:
                 - page: "Course Welcome"

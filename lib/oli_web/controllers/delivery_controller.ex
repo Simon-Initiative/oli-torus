@@ -192,7 +192,7 @@ defmodule OliWeb.DeliveryController do
   end
 
   def enroll_independent(conn, %{"section_invite_slug" => _invite_slug} = params),
-    do: show_enroll(conn, params)
+    do: show_enroll(conn, Map.put(params, "from_invitation_link?", true))
 
   defp recaptcha_verified?(g_recaptcha_response) do
     Oli.Utils.Recaptcha.verify(g_recaptcha_response) == {:success, true}

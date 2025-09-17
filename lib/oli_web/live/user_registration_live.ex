@@ -18,10 +18,10 @@ defmodule OliWeb.UserRegistrationLive do
           <Components.Auth.registration_form
             title="Create Account"
             form={@form}
-            action={~p"/users/log_in?_action=registered"}
+            action={~p"/users/log_in?_action=registered&#{maybe_section_param(@section)}"}
             log_in_link={~p"/users/log_in"}
             authentication_providers={@authentication_providers}
-            auth_provider_path_fn={&~p"/users/auth/#{&1}/new"}
+            auth_provider_path_fn={&build_auth_provider_path(&1, @section, @from_invitation_link?)}
             trigger_submit={@trigger_submit}
             check_errors={@check_errors}
             recaptcha_error={@recaptcha_error}
@@ -116,4 +116,20 @@ defmodule OliWeb.UserRegistrationLive do
 
   defp maybe_section_param(nil), do: []
   defp maybe_section_param(section), do: [section: section]
+
+  defp build_auth_provider_path(provider, section, from_invitation_link?) do
+    base_path = ~p"/users/auth/#{provider}/new"
+
+    params =
+      []
+      |> maybe_add_param("section", section)
+      |> maybe_add_param("from_invitation_link?", from_invitation_link?)
+      |> URI.encode_query()
+
+    if params == "", do: base_path, else: "#{base_path}?#{params}"
+  end
+
+  defp maybe_add_param(params, _key, nil), do: params
+  defp maybe_add_param(params, _key, false), do: params
+  defp maybe_add_param(params, key, value), do: [{key, value} | params]
 end

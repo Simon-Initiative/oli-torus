@@ -262,7 +262,6 @@ defmodule Oli.Delivery.ActivityProvider do
 
             {:partial, %Result{} = result} ->
               missing = selection.count - result.rowCount
-
               error = "Selection failed to fulfill completely with #{missing} missing activities"
 
               new_prototypes =

@@ -10,7 +10,7 @@ defmodule Oli.Scenarios.TestHelpers do
   Executes a YAML specification file and returns the result.
   """
   def execute_spec(yaml_path) do
-    Engine.execute_file(yaml_path)
+    Oli.Scenarios.TestSupport.execute_file_with_fixtures(yaml_path)
   end
 
   @doc """
@@ -19,7 +19,7 @@ defmodule Oli.Scenarios.TestHelpers do
   def execute_yaml(yaml_content) do
     yaml_content
     |> DirectiveParser.parse_yaml!()
-    |> Engine.execute()
+    |> Oli.Scenarios.TestSupport.execute_with_fixtures()
   end
 
   @doc """
@@ -99,20 +99,27 @@ defmodule Oli.Scenarios.TestHelpers do
   Creates a verify specification as a string.
   """
   def verify_yaml(target, expected_structure) do
-    # Indent the expected structure properly for YAML
+    # Parse the structure string and re-indent properly
+    lines = expected_structure |> String.trim() |> String.split("\n")
+
+    # Add proper YAML indentation - each line needs to be indented under "structure:"
+    # The base indentation for items under "structure:" is 6 spaces
     indented_structure =
-      expected_structure
-      |> String.split("\n")
+      lines
       |> Enum.map(fn line ->
-        if String.trim(line) == "", do: "", else: "          #{line}"
+        if String.trim(line) == "" do
+          ""
+        else
+          # Add 6 spaces base indentation
+          "      #{line}"
+        end
       end)
       |> Enum.join("\n")
-      |> String.trim_trailing()
 
     """
-    - verify:
-        to: "#{target}"
+    - assert:
         structure:
+          to: "#{target}"
     #{indented_structure}
     """
   end

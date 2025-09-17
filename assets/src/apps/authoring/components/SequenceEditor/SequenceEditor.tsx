@@ -735,15 +735,15 @@ const SequenceEditor: React.FC<any> = (props: any) => {
                 lastSavedOrder.current = currentOrder; // store only if changed
 
                 // Recursively set each node's layerRef to its parent's sequenceId
-                // Ensures correct parent-child relationships after drag-and-drop
+                // If there is no parent, clear layerRef for root-level nodes
                 const assignLayerRef = (nodes: any, parentSequenceId = '') => {
                   return nodes.map((node: any) => {
                     const newNode = { ...node, custom: { ...node.custom } };
 
-                    if (parentSequenceId) {
-                      newNode.custom.layerRef = parentSequenceId;
-                    }
+                    // If this node has a parent, set layerRef, otherwise clear it
+                    newNode.custom.layerRef = parentSequenceId || '';
 
+                    // Process children recursively, passing current node's ID as parent
                     const nodeSequenceId = node?.custom?.sequenceId || '';
                     if (newNode.children?.length) {
                       newNode.children = assignLayerRef(newNode.children, nodeSequenceId);
