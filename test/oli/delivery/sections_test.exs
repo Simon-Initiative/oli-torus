@@ -2875,4 +2875,757 @@ defmodule Oli.Delivery.SectionsTest do
       assert sr2.retake_mode == :targeted
     end
   end
+
+  describe "get_activities_for_objective/2" do
+    setup do
+      # Create author and project
+      author = insert(:author)
+      project = insert(:project, authors: [author])
+
+      # Create objectives following the specified structure
+      objective_a =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_objective(),
+          title: "Objective A"
+        )
+
+      objective_b =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_objective(),
+          title: "Objective B"
+        )
+
+      objective_c =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_objective(),
+          title: "Objective C"
+        )
+
+      objective_d =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_objective(),
+          title: "Objective D"
+        )
+
+      sub_objective_a1 =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_objective(),
+          title: "Sub-objective A.1"
+        )
+
+      sub_objective_a2 =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_objective(),
+          title: "Sub-objective A.2"
+        )
+
+      sub_objective_b1 =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_objective(),
+          title: "Sub-objective B.1"
+        )
+
+      sub_objective_b2 =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_objective(),
+          title: "Sub-objective B.2"
+        )
+
+      # Create activities with objectives as specified
+      # Page 1 activities
+      page_1_mcq_1 =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_activity(),
+          title: "Page 1 MCQ 1",
+          content: %{
+            "stem" => %{
+              "content" => [
+                %{
+                  "type" => "p",
+                  "children" => [%{"text" => "What is the capital of France?"}]
+                }
+              ]
+            }
+          },
+          objectives: %{"1" => [objective_a.resource_id]}
+        )
+
+      page_1_mcq_2 =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_activity(),
+          title: "Page 1 MCQ 2",
+          content: %{
+            "stem" => %{
+              "content" => [
+                %{
+                  "type" => "p",
+                  "children" => [%{"text" => "What is 2 + 2?"}]
+                }
+              ]
+            }
+          },
+          objectives: %{"1" => [sub_objective_a1.resource_id]}
+        )
+
+      page_1_mcq_3 =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_activity(),
+          title: "Page 1 MCQ 3",
+          content: %{
+            "stem" => %{
+              "content" => [
+                %{
+                  "type" => "p",
+                  "children" => [%{"text" => "What is 3 + 3?"}]
+                }
+              ]
+            }
+          },
+          objectives: %{"1" => [sub_objective_a2.resource_id]}
+        )
+
+      page_1_mcq_4 =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_activity(),
+          title: "Page 1 MCQ 4",
+          content: %{
+            "stem" => %{
+              "content" => [
+                %{
+                  "type" => "p",
+                  "children" => [%{"text" => "Multiple objectives question?"}]
+                }
+              ]
+            }
+          },
+          objectives: %{"1" => [objective_b.resource_id, objective_c.resource_id]}
+        )
+
+      # Page 2 activity
+      page_2_mcq =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_activity(),
+          title: "Page 2 MCQ",
+          content: %{
+            "stem" => %{
+              "content" => [
+                %{
+                  "type" => "p",
+                  "children" => [%{"text" => "Page 2 question?"}]
+                }
+              ]
+            }
+          },
+          objectives: %{"1" => [sub_objective_b1.resource_id]}
+        )
+
+      # Page 3 activity
+      page_3_mcq =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_activity(),
+          title: "Page 3 MCQ",
+          content: %{
+            "stem" => %{
+              "content" => [
+                %{
+                  "type" => "p",
+                  "children" => [%{"text" => "Page 3 question?"}]
+                }
+              ]
+            }
+          },
+          objectives: %{"1" => [sub_objective_b2.resource_id]}
+        )
+
+      # Page 4 activities
+      page_4_mcq_1 =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_activity(),
+          title: "Page 4 MCQ 1",
+          content: %{
+            "stem" => %{
+              "content" => [
+                %{
+                  "type" => "p",
+                  "children" => [%{"text" => "Page 4 first question?"}]
+                }
+              ]
+            }
+          },
+          objectives: %{"1" => [objective_c.resource_id]}
+        )
+
+      page_4_mcq_2 =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_activity(),
+          title: "Page 4 MCQ 2",
+          content: %{
+            "stem" => %{
+              "content" => [
+                %{
+                  "type" => "p",
+                  "children" => [%{"text" => "Page 4 second question?"}]
+                }
+              ]
+            }
+          },
+          objectives: %{"1" => [objective_d.resource_id]}
+        )
+
+      # Page 5 activity
+      page_5_mcq =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_activity(),
+          title: "Page 5 MCQ",
+          content: %{
+            "stem" => %{
+              "content" => [
+                %{
+                  "type" => "p",
+                  "children" => [%{"text" => "Page 5 question?"}]
+                }
+              ]
+            }
+          },
+          objectives: %{"1" => [objective_c.resource_id]}
+        )
+
+      # Page 6 activity (practice)
+      page_6_mcq =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_activity(),
+          title: "Page 6 MCQ",
+          content: %{
+            "stem" => %{
+              "content" => [
+                %{
+                  "type" => "p",
+                  "children" => [%{"text" => "Practice question?"}]
+                }
+              ]
+            }
+          },
+          objectives: %{"1" => [objective_d.resource_id]}
+        )
+
+      # Create pages with activities in content model, not children
+      page_1 =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_page(),
+          title: "Page 1",
+          graded: true,
+          children: [],
+          content: %{
+            "model" => [
+              %{
+                "activity_id" => page_1_mcq_1.resource_id,
+                "id" => 1,
+                "type" => "activity-reference"
+              },
+              %{
+                "activity_id" => page_1_mcq_2.resource_id,
+                "id" => 2,
+                "type" => "activity-reference"
+              },
+              %{
+                "activity_id" => page_1_mcq_3.resource_id,
+                "id" => 3,
+                "type" => "activity-reference"
+              },
+              %{
+                "activity_id" => page_1_mcq_4.resource_id,
+                "id" => 4,
+                "type" => "activity-reference"
+              }
+            ]
+          }
+        )
+
+      page_2 =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_page(),
+          title: "Page 2",
+          graded: true,
+          children: [],
+          content: %{
+            "model" => [
+              %{
+                "activity_id" => page_2_mcq.resource_id,
+                "id" => 1,
+                "type" => "activity-reference"
+              }
+            ]
+          }
+        )
+
+      page_3 =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_page(),
+          title: "Page 3",
+          graded: true,
+          children: [],
+          content: %{
+            "model" => [
+              %{
+                "activity_id" => page_3_mcq.resource_id,
+                "id" => 1,
+                "type" => "activity-reference"
+              }
+            ]
+          }
+        )
+
+      page_4 =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_page(),
+          title: "Page 4",
+          graded: true,
+          children: [],
+          content: %{
+            "model" => [
+              %{
+                "activity_id" => page_4_mcq_1.resource_id,
+                "id" => 1,
+                "type" => "activity-reference"
+              },
+              %{
+                "activity_id" => page_4_mcq_2.resource_id,
+                "id" => 2,
+                "type" => "activity-reference"
+              }
+            ]
+          }
+        )
+
+      page_5 =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_page(),
+          title: "Page 5",
+          graded: true,
+          children: [],
+          content: %{
+            "model" => [
+              %{
+                "activity_id" => page_5_mcq.resource_id,
+                "id" => 1,
+                "type" => "activity-reference"
+              }
+            ]
+          }
+        )
+
+      page_6 =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_page(),
+          title: "Page 6",
+          graded: false,
+          children: [],
+          content: %{
+            "model" => [
+              %{
+                "activity_id" => page_6_mcq.resource_id,
+                "id" => 1,
+                "type" => "activity-reference"
+              }
+            ]
+          }
+        )
+
+      # Create root container
+      root_container =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_container(),
+          title: "Root Container",
+          children: [
+            page_1.resource_id,
+            page_2.resource_id,
+            page_3.resource_id,
+            page_4.resource_id,
+            page_5.resource_id,
+            page_6.resource_id
+          ]
+        )
+
+      # Associate all resources to project (including activities as they should be project resources)
+      all_revisions = [
+        objective_a,
+        objective_b,
+        objective_c,
+        objective_d,
+        sub_objective_a1,
+        sub_objective_a2,
+        sub_objective_b1,
+        sub_objective_b2,
+        page_1_mcq_1,
+        page_1_mcq_2,
+        page_1_mcq_3,
+        page_1_mcq_4,
+        page_2_mcq,
+        page_3_mcq,
+        page_4_mcq_1,
+        page_4_mcq_2,
+        page_5_mcq,
+        page_6_mcq,
+        page_1,
+        page_2,
+        page_3,
+        page_4,
+        page_5,
+        page_6,
+        root_container
+      ]
+
+      Enum.each(all_revisions, fn revision ->
+        insert(:project_resource, %{
+          project_id: project.id,
+          resource_id: revision.resource_id
+        })
+      end)
+
+      # Create publication
+      publication =
+        insert(:publication, %{
+          project: project,
+          root_resource_id: root_container.resource_id
+        })
+
+      # Publish all resources
+      Enum.each(all_revisions, fn revision ->
+        insert(:published_resource, %{
+          publication: publication,
+          resource: revision.resource,
+          revision: revision,
+          author: author
+        })
+      end)
+
+      # Create section
+      section = insert(:section, base_project: project)
+
+      # Create section resources
+      {:ok, section} = Sections.create_section_resources(section, publication)
+      {:ok, _} = Sections.rebuild_contained_pages(section)
+      Sections.rebuild_contained_objectives(section)
+
+      %{
+        section: section,
+        project: project,
+        publication: publication,
+        author: author,
+        objectives: %{
+          objective_a: objective_a,
+          objective_b: objective_b,
+          objective_c: objective_c,
+          objective_d: objective_d,
+          sub_objective_a1: sub_objective_a1,
+          sub_objective_a2: sub_objective_a2,
+          sub_objective_b1: sub_objective_b1,
+          sub_objective_b2: sub_objective_b2
+        },
+        activities: %{
+          page_1_mcq_1: page_1_mcq_1,
+          page_1_mcq_2: page_1_mcq_2,
+          page_1_mcq_3: page_1_mcq_3,
+          page_1_mcq_4: page_1_mcq_4,
+          page_2_mcq: page_2_mcq,
+          page_3_mcq: page_3_mcq,
+          page_4_mcq_1: page_4_mcq_1,
+          page_4_mcq_2: page_4_mcq_2,
+          page_5_mcq: page_5_mcq,
+          page_6_mcq: page_6_mcq
+        },
+        pages: %{
+          page_1: page_1,
+          page_2: page_2,
+          page_3: page_3,
+          page_4: page_4,
+          page_5: page_5,
+          page_6: page_6
+        }
+      }
+    end
+
+    test "returns activities for objective A", %{
+      section: section,
+      objectives: %{objective_a: objective_a},
+      activities: activities
+    } do
+      result = Sections.get_activities_for_objective(section, objective_a.resource_id)
+
+      # Should return 1 activity that has objective A
+      assert length(result) == 1
+
+      activity = List.first(result)
+      assert activity.resource_id == activities.page_1_mcq_1.resource_id
+      assert activity.title == "Page 1 MCQ 1"
+      assert activity.question_stem == "What is the capital of France?"
+      assert activity.attempts == 0
+      assert activity.percent_correct == 0
+    end
+
+    test "returns activities for objective C (multiple activities)", %{
+      section: section,
+      objectives: %{objective_c: objective_c},
+      activities: activities
+    } do
+      result = Sections.get_activities_for_objective(section, objective_c.resource_id)
+
+      # Should return 3 activities that have objective C:
+      # - page_1_mcq_4 (has both objective_b and objective_c)
+      # - page_4_mcq_1 (has objective_c)
+      # - page_5_mcq (has objective_c)
+      assert length(result) == 3
+
+      activity_ids = Enum.map(result, & &1.resource_id)
+      assert activities.page_1_mcq_4.resource_id in activity_ids
+      assert activities.page_4_mcq_1.resource_id in activity_ids
+      assert activities.page_5_mcq.resource_id in activity_ids
+    end
+
+    test "returns activities for objective D (graded and practice)", %{
+      section: section,
+      objectives: %{objective_d: objective_d},
+      activities: activities
+    } do
+      result = Sections.get_activities_for_objective(section, objective_d.resource_id)
+
+      # Should return 2 activities that have objective D:
+      # - page_4_mcq_2 (graded)
+      # - page_6_mcq (practice)
+      assert length(result) == 2
+
+      activity_ids = Enum.map(result, & &1.resource_id)
+      assert activities.page_4_mcq_2.resource_id in activity_ids
+      assert activities.page_6_mcq.resource_id in activity_ids
+    end
+
+    test "returns activities for sub-objective A.1", %{
+      section: section,
+      objectives: %{sub_objective_a1: sub_objective_a1},
+      activities: activities
+    } do
+      result = Sections.get_activities_for_objective(section, sub_objective_a1.resource_id)
+
+      # Should return 1 activity that has sub-objective A.1
+      assert length(result) == 1
+
+      activity = List.first(result)
+      assert activity.resource_id == activities.page_1_mcq_2.resource_id
+      assert activity.title == "Page 1 MCQ 2"
+      assert activity.question_stem == "What is 2 + 2?"
+    end
+
+    test "returns empty list for non-existent objective", %{section: section} do
+      non_existent_objective_id = 99999
+      result = Sections.get_activities_for_objective(section, non_existent_objective_id)
+
+      assert result == []
+    end
+
+    test "handles activities with no question stem", %{
+      section: section,
+      objectives: %{objective_a: objective_a},
+      author: author,
+      publication: publication
+    } do
+      # Create activity with no stem
+      activity_no_stem =
+        insert(:revision,
+          resource_type_id: ResourceType.id_for_activity(),
+          title: "Activity No Stem",
+          content: %{},
+          objectives: %{"1" => [objective_a.resource_id]}
+        )
+
+      # Add to publication only (not as a project resource since activities are contained in pages)
+      insert(:published_resource, %{
+        publication: publication,
+        resource: activity_no_stem.resource,
+        revision: activity_no_stem,
+        author: author
+      })
+
+      # Create section resource for the new activity
+      {:ok, _} =
+        Sections.Updates.ensure_section_resource_exists(
+          section.slug,
+          activity_no_stem.resource_id
+        )
+
+      {:ok, _} = Sections.rebuild_contained_pages(section)
+      Sections.rebuild_contained_objectives(section)
+
+      result = Sections.get_activities_for_objective(section, objective_a.resource_id)
+
+      # Should now return 2 activities (original + new one)
+      assert length(result) == 2
+
+      activity_no_stem_result =
+        Enum.find(result, &(&1.resource_id == activity_no_stem.resource_id))
+
+      assert activity_no_stem_result.question_stem == "No question stem available"
+    end
+
+    test "returns activities with zero attempts when no attempts exist", %{
+      section: section,
+      objectives: %{objective_a: objective_a}
+    } do
+      result = Sections.get_activities_for_objective(section, objective_a.resource_id)
+
+      # All activities should have 0 attempts and 0% correct when no attempts exist
+      assert length(result) > 0
+
+      Enum.each(result, fn activity ->
+        assert activity.attempts == 0
+        assert activity.percent_correct == 0.0
+      end)
+    end
+
+    test "calculates attempts and percent correct accurately", %{
+      section: section,
+      objectives: %{objective_a: objective_a},
+      activities: activities,
+      pages: %{page_1: page_1}
+    } do
+      # Create test students
+      student1 = insert(:user)
+      student2 = insert(:user)
+
+      # Enroll students in section
+      Sections.enroll(student1.id, section.id, [
+        Lti_1p3.Roles.ContextRoles.get_role(:context_learner)
+      ])
+
+      Sections.enroll(student2.id, section.id, [
+        Lti_1p3.Roles.ContextRoles.get_role(:context_learner)
+      ])
+
+      # Get activities for objective A initially
+      result = Sections.get_activities_for_objective(section, objective_a.resource_id)
+      first_activity = List.first(result)
+
+      # Initially should have 0 attempts and 0% correct
+      assert first_activity.attempts == 0
+      assert first_activity.percent_correct == 0.0
+
+      # Create some attempts using the helper function
+      # Student 1: 2 attempts, 1 correct (50%)
+      create_attempt(student1, section, page_1, %{
+        activities.page_1_mcq_1.resource_id => %{score: 0.0, out_of: 1.0}
+      })
+
+      create_attempt(student1, section, page_1, %{
+        activities.page_1_mcq_1.resource_id => %{score: 1.0, out_of: 1.0}
+      })
+
+      # Student 2: 1 attempt, 1 correct (100%)
+      create_attempt(student2, section, page_1, %{
+        activities.page_1_mcq_1.resource_id => %{score: 1.0, out_of: 1.0}
+      })
+
+      # Get fresh results after creating attempts
+      updated_result = Sections.get_activities_for_objective(section, objective_a.resource_id)
+
+      updated_activity =
+        Enum.find(updated_result, &(&1.resource_id == activities.page_1_mcq_1.resource_id))
+
+      # Verify calculations: 3 total attempts, 2 correct = 66.67%
+      assert updated_activity.attempts == 3
+      assert_in_delta updated_activity.percent_correct, 66.67, 0.1
+    end
+  end
+
+  # Helper function for creating attempts
+  # activities_data should be a map of activity_id => %{score: X, out_of: Y, revision: revision}
+  # If an activity is not provided, it will get a score of 0
+  defp create_attempt(
+         student,
+         section,
+         page_revision,
+         activities_data
+       ) do
+    resource_access = get_or_insert_resource_access(student, section, page_revision)
+
+    # Get all activity references from the page
+    page_activity_ids = Oli.Resources.activity_references(page_revision)
+
+    # Create activity attempts for each activity in the page
+    {activity_attempts, total_score, total_out_of} =
+      page_activity_ids
+      |> Enum.reduce({[], 0.0, 0.0}, fn activity_id, {attempts_acc, score_acc, out_of_acc} ->
+        activity_data = Map.get(activities_data, activity_id, %{})
+
+        activity_revision =
+          activity_data[:revision] || get_activity_revision(section, activity_id)
+
+        activity_score = activity_data[:score] || 0.0
+        activity_out_of = activity_data[:out_of] || 0.0
+
+        # Create activity attempt directly with the correct resource_id
+        activity_attempt =
+          %Oli.Delivery.Attempts.Core.ActivityAttempt{
+            attempt_guid: Ecto.UUID.generate(),
+            attempt_number: 1,
+            lifecycle_state: activity_data[:lifecycle_state] || :evaluated,
+            date_submitted: activity_data[:date_submitted] || ~U[2023-11-14 20:00:00Z],
+            date_evaluated: activity_data[:date_evaluated] || ~U[2023-11-14 20:30:00Z],
+            score: activity_score,
+            out_of: activity_out_of,
+            scoreable: activity_data[:scoreable] != false,
+            transformed_model: activity_data[:transformed_model] || %{},
+            # Use the original activity_id
+            resource_id: activity_id,
+            revision_id: activity_revision.id,
+            inserted_at:
+              activity_data[:inserted_at] || DateTime.utc_now() |> DateTime.truncate(:second)
+          }
+          |> Oli.Repo.insert!()
+
+        {[activity_attempt | attempts_acc], score_acc + activity_score,
+         out_of_acc + activity_out_of}
+      end)
+
+    # Create resource attempt with calculated scores
+    resource_attempt =
+      insert(:resource_attempt, %{
+        resource_access: resource_access,
+        revision: page_revision,
+        date_submitted: ~U[2023-11-14 20:00:00Z],
+        date_evaluated: ~U[2023-11-14 20:30:00Z],
+        score: total_score,
+        out_of: total_out_of,
+        lifecycle_state: :evaluated,
+        content: %{model: []},
+        inserted_at: DateTime.utc_now() |> DateTime.truncate(:second)
+      })
+
+    # Update activity attempts with the resource_attempt reference
+    activity_attempts
+    |> Enum.each(fn activity_attempt ->
+      activity_attempt
+      |> Ecto.Changeset.change(resource_attempt_id: resource_attempt.id)
+      |> Oli.Repo.update!()
+    end)
+
+    %{resource_attempt: resource_attempt, activity_attempts: activity_attempts}
+  end
+
+  # Helper to get activity revision from section
+  defp get_activity_revision(section, activity_id) do
+    Oli.Publishing.DeliveryResolver.from_resource_id(section.slug, activity_id)
+  end
+
+  defp get_or_insert_resource_access(student, section, revision) do
+    Oli.Repo.get_by(
+      Oli.Delivery.Attempts.Core.ResourceAccess,
+      user_id: student.id,
+      section_id: section.id,
+      resource_id: revision.resource_id
+    ) ||
+      insert(:resource_access, %{
+        user: student,
+        section: section,
+        resource: revision.resource
+      })
+  end
 end
