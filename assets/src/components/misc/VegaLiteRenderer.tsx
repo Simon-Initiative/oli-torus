@@ -12,20 +12,39 @@ export const VegaLiteRenderer: React.FC<Props> = ({ spec }) => {
 
   // Theme updates
   useEffect(() => {
-    const view = viewRef.current;
-    if (!view) return;
-    view.signal('isDarkMode', darkMode);
-    view.background(darkMode ? '#262626' : 'white');
-    view.run();
+    const timeoutId = setTimeout(() => {
+      if (viewRef.current) {
+        try {
+          const view = viewRef.current;
+          if (!view) return;
+          view.signal('isDarkMode', darkMode);
+          view.background(darkMode ? '#262626' : 'white');
+          view.run();
+        } catch (error) {
+          console.warn('VegaLite theme update failed:', error);
+        }
+      }
+    }, 100);
+
+    return () => clearTimeout(timeoutId);
   }, [darkMode]);
 
   // Observe container size → trigger Vega's re-measure
   useEffect(() => {
-    if (!containerRef.current || !viewRef.current) return;
-    const ro = new ResizeObserver(() => viewRef.current?.resize().run());
-    ro.observe(containerRef.current);
-    return () => ro.disconnect();
-  }, [spec]); // reattach if spec changes
+    let timeoutId: NodeJS.Timeout;
+
+    const observer = new MutationObserver(() => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        const isDark = document.documentElement.classList.contains('dark');
+        setDarkMode(isDark);
+      }, 50);
+    });
+
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class'],
+    });
 
   // Also handle window resize & Bootstrap tab activation
   useEffect(() => {
@@ -34,9 +53,8 @@ export const VegaLiteRenderer: React.FC<Props> = ({ spec }) => {
     window.addEventListener('orientationchange', trigger);
     document.addEventListener('shown.bs.tab', trigger as any); // Bootstrap 5 tabs
     return () => {
-      window.removeEventListener('resize', trigger);
-      window.removeEventListener('orientationchange', trigger);
-      document.removeEventListener('shown.bs.tab', trigger as any);
+      observer.disconnect();
+      clearTimeout(timeoutId);
     };
   }, []);
 
@@ -67,10 +85,13 @@ export const VegaLiteRenderer: React.FC<Props> = ({ spec }) => {
         className="w-100"
         onNewView={(view) => {
           viewRef.current = view;
-          view.signal('isDarkMode', darkMode);
-          view.background(darkMode ? '#262626' : 'white');
-          // Make sure the very first paint happens after layout
-          requestAnimationFrame(() => view.resize().run());
+          try {
+            view.signal('isDarkMode', darkMode);
+            view.background(darkMode ? '#262626' : 'white');
+            view.run();
+          } catch (error) {
+            console.warn('VegaLite initialization failed:', error);
+          }
         }}
       />
     </div>

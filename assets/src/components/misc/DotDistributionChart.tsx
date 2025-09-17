@@ -45,19 +45,32 @@ export const DotDistributionChart: React.FC<DotDistributionChartProps> = ({
 
   // Update the 'isDarkMode' parameter and background color when 'darkMode' changes
   useEffect(() => {
-    if (viewRef.current) {
-      const view = viewRef.current;
-      view.signal('isDarkMode', darkMode);
-      view.background(darkMode ? '#262626' : 'white');
-      view.run();
-    }
+    const timeoutId = setTimeout(() => {
+      if (viewRef.current) {
+        try {
+          const view = viewRef.current;
+          view.signal('isDarkMode', darkMode);
+          view.background(darkMode ? '#262626' : 'white');
+          view.run();
+        } catch (error) {
+          console.warn('VegaLite theme update failed:', error);
+        }
+      }
+    }, 100);
+
+    return () => clearTimeout(timeoutId);
   }, [darkMode]);
 
   // Set up a MutationObserver to listen for changes to the 'class' attribute
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+
     const observer = new MutationObserver(() => {
-      const isDark = document.documentElement.classList.contains('dark');
-      setDarkMode(isDark);
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        const isDark = document.documentElement.classList.contains('dark');
+        setDarkMode(isDark);
+      }, 50);
     });
 
     observer.observe(document.documentElement, {
@@ -65,7 +78,10 @@ export const DotDistributionChart: React.FC<DotDistributionChartProps> = ({
       attributeFilter: ['class'],
     });
 
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      clearTimeout(timeoutId);
+    };
   }, []);
 
   // IntersectionObserver to detect when component becomes visible
@@ -224,7 +240,7 @@ export const DotDistributionChart: React.FC<DotDistributionChartProps> = ({
           title: null,
         },
         legend: { disable: true },
-        background: null,
+        background: 'transparent',
         padding: 0,
         autosize: {
           type: 'fit',
@@ -276,9 +292,13 @@ export const DotDistributionChart: React.FC<DotDistributionChartProps> = ({
               tooltip={darkMode ? darkTooltipTheme : lightTooltipTheme}
               onNewView={(view) => {
                 viewRef.current = view;
-                view.signal('isDarkMode', darkMode);
-                view.background(darkMode ? '#262626' : 'white');
-                view.run();
+                try {
+                  view.signal('isDarkMode', darkMode);
+                  view.background(darkMode ? '#262626' : 'white');
+                  view.run();
+                } catch (error) {
+                  console.warn('VegaLite initialization failed:', error);
+                }
               }}
             />
           </div>
