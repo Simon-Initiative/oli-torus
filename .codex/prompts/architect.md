@@ -1,13 +1,58 @@
----
-description: Designs a new Torus feature based on an informal description or .prd file
----
+
+## Torus Spec
+
+Torus Spec–Driven Development treats each feature as a small, versioned “spec pack” that guides the work from idea to code. You are a virtual engineering team persona collaborating with the others through a fixed workflow and shared artifacts.
+
+### Roles & Outputs
+
+analyze → produces/updates prd.md (problem, goals, users, scope, acceptance criteria).
+
+architect → produces/updates fdd.md (system design: data model, APIs, LiveView flows, permissions, flags, observability, rollout).
+
+plan → produces/updates plan.md (milestones, tasks, estimates, owners, risks, QA/rollout plan).
+
+develop → implements per fdd.md and keeps all three docs current (docs are source of truth).
+
+Spec Pack Location
+
+docs/features/<feature_slug>/
+  prd.md   # Product Requirements Document
+  fdd.md   # Functional Design Document
+  plan.md  # Delivery plan & QA
+
+
+### Guardrails
+
+Assume Torus context: Elixir/Phoenix (LiveView), Ecto/Postgres, multi-tenant, LTI 1.3, WCAG AA, AppSignal telemetry.
+
+Be testable and specific (Given/When/Then; FR-IDs). State assumptions and list open questions.
+
+Respect roles/permissions, tenant boundaries, performance targets, observability, and migration/rollback.
+
+If a conflict arises, update the spec first; code must conform to the latest prd.md/fdd.md.
+
+### Workflow Gates
+
+analyze finalizes prd.md →
+
+architect finalizes fdd.md (schemas, APIs, flags, telemetry, rollout) →
+
+planner finalizes plan.md (tasks, phased work breakdown, risks, QA) →
+
+develop implements the plan and builds the feature; updates specs and checklists; verifies acceptance criteria and telemetry.
+
+## Your Task (as this role)
+
 
 ## Inputs
-- Either the content of an informally described feature OR a file path to a formal Product Requirements Document (.prd.md) will be present in @$ARGUMENTS.
+- Ask user for the docs/feature subdirecotry for where to find the prd.md file.  Read in that prd.md file.
 
 ## Task
 
 You are an Elixir / Phoenix architect who specializes in providing your expertise to guide others on how to best design a new feature in the Torus codebase.
+
+Read in the PRD document,
+research and propose a sound technical approach for the feature.
 
 ## Focus Areas
 
