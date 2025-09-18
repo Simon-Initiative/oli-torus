@@ -445,13 +445,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         active: is_active_tab?(:learning_objectives, active_tab)
       },
       %TabLink{
-        label: "Scored Activities",
+        label: "Scored Pages",
         path: path_for(:insights, :scored_activities, section_slug, preview_mode),
         badge: nil,
         active: is_active_tab?(:scored_activities, active_tab)
       },
       %TabLink{
-        label: "Practice Activities",
+        label: "Practice Pages",
         path: path_for(:insights, :practice_activities, section_slug, preview_mode),
         badge: nil,
         active: is_active_tab?(:practice_activities, active_tab)
@@ -478,6 +478,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         ctx={@ctx}
         section={@section}
         view={@view}
+        active_tab={@active_tab}
         students={@users}
         certificate={@certificate}
         certificate_pending_email_notification_count={@certificate_pending_email_notification_count}
@@ -557,6 +558,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         ctx={@ctx}
         section={@section}
         view={@view}
+        active_tab={@active_tab}
         students={@users}
         dropdown_options={@dropdown_options}
       />
@@ -575,6 +577,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         params={@params}
         section_slug={@section.slug}
         view={@view}
+        active_tab={@active_tab}
         containers={@containers}
         patch_url_type={:instructor_dashboard}
       />
@@ -628,7 +631,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     ~H"""
     <InstructorDashboard.tabs tabs={insights_tabs(@section_slug, @preview_mode, @active_tab)} />
 
-    <div class="mx-10 mb-10">
+    <div class="container mx-auto mb-10">
       <.live_component
         id="practice_activities_tab"
         module={OliWeb.Components.Delivery.PracticeActivities}
@@ -650,7 +653,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     ~H"""
     <InstructorDashboard.tabs tabs={insights_tabs(@section_slug, @preview_mode, @active_tab)} />
 
-    <div class="mx-10 mb-10">
+    <div class="container mx-auto mb-10">
       <.live_component
         id="surveys_tab"
         module={OliWeb.Components.Delivery.Surveys}
@@ -790,6 +793,19 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
        socket |> put_flash(:info, message),
        to:
          ~p"/sections/#{socket.assigns.section_slug}/instructor_dashboard/#{socket.assigns.view}/#{socket.assigns.active_tab}"
+     )}
+  end
+
+  def handle_info(
+        {:selected_card_assessments, value},
+        socket
+      ) do
+    params = Map.merge(socket.assigns.params, %{"selected_card_value" => value})
+
+    {:noreply,
+     push_patch(socket,
+       to:
+         ~p"/sections/#{socket.assigns.section.slug}/instructor_dashboard/insights/practice_activities?#{params}"
      )}
   end
 

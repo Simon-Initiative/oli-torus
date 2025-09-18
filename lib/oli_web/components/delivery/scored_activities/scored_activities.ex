@@ -166,7 +166,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
               <% end %>
             </div>
           <% else %>
-            <h4 class="torus-h4 whitespace-nowrap">Scored Activities</h4>
+            <h4 class="torus-h4 whitespace-nowrap">Scored Pages</h4>
           <% end %>
           <div class="flex flex-col">
             <form

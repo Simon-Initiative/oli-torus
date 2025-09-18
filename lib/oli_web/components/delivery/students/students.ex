@@ -45,7 +45,8 @@ defmodule OliWeb.Components.Delivery.Students do
           section: section,
           ctx: ctx,
           students: students,
-          dropdown_options: dropdown_options
+          dropdown_options: dropdown_options,
+          active_tab: active_tab
         } = assigns,
         socket
       ) do
@@ -126,7 +127,10 @@ defmodule OliWeb.Components.Delivery.Students do
       end)
 
     title =
-      get_container_title(navigation_data, params.container_id, assigns[:title])
+      case(active_tab) do
+        :students -> "Students"
+        :content -> get_container_title(navigation_data, params.container_id, assigns[:title])
+      end
 
     {:ok,
      assign(socket,
@@ -514,28 +518,40 @@ defmodule OliWeb.Components.Delivery.Students do
       <% end %>
       <div class="bg-white dark:bg-gray-800 shadow-sm">
         <div class="flex flex-row items-center justify-between px-4 pt-8 pb-4">
-          <h4 class="self-stretch text-black dark:text-white text-lg font-bold leading-normal">
-            {@title} Student Insights
+          <h4 class="self-center text-black dark:text-white text-lg font-bold leading-normal">
+            {@title}
           </h4>
-          <%= if @show_progress_csv_download do %>
-            <a
-              class="flex flex-row items-center gap-x-1 self-end text-Fill-Buttons-fill-primary text-sm font-bold leading-none"
-              href={
-                ~p(/sections/#{@section_slug}/instructor_dashboard/downloads/progress/#{@params.container_id || ""}/#{@title})
-              }
-              download="progress.csv"
+          <div class="flex flex-row items-center gap-x-4">
+            <button
+              :if={@section_open_and_free}
+              phx-click="open"
+              phx-target="#students_table_add_enrollments_modal"
+              class="btn btn-sm rounded-md bg-Fill-Buttons-fill-primary text-Text-text-white text-sm font-semibold leading-none px-4 py-2"
             >
-              Download Student Progress CSV
-              <Icons.download stroke_class="stroke-Fill-Buttons-fill-primary" />
-            </a>
-          <% else %>
-            <a
-              href={Routes.delivery_path(OliWeb.Endpoint, :download_students_progress, @section_slug)}
-              class="self-end text-Fill-Buttons-fill-primary text-sm font-bold leading-none"
-            >
-              Download <Icons.download stroke_class="stroke-Fill-Buttons-fill-primary" />
-            </a>
-          <% end %>
+              Add Enrollments
+            </button>
+            <%= if @show_progress_csv_download do %>
+              <a
+                class="flex flex-row items-center gap-x-1 text-Fill-Buttons-fill-primary text-sm font-bold leading-none"
+                href={
+                  ~p(/sections/#{@section_slug}/instructor_dashboard/downloads/progress/#{@params.container_id || ""}/#{@title})
+                }
+                download="progress.csv"
+              >
+                Download Student Progress CSV
+                <Icons.download stroke_class="stroke-Fill-Buttons-fill-primary" />
+              </a>
+            <% else %>
+              <a
+                href={
+                  Routes.delivery_path(OliWeb.Endpoint, :download_students_progress, @section_slug)
+                }
+                class="flex flex-row items-center gap-x-1 text-Fill-Buttons-fill-primary text-sm font-bold leading-none"
+              >
+                Download <Icons.download stroke_class="stroke-Fill-Buttons-fill-primary" />
+              </a>
+            <% end %>
+          </div>
         </div>
 
         <div class="flex flex-row mx-4 gap-x-4">
@@ -571,7 +587,7 @@ defmodule OliWeb.Components.Delivery.Students do
               id="proficiency_select"
               options={@proficiency_options}
               selected_values={@selected_proficiency_options}
-              selected_proficiency_ids={@selected_proficiency_ids}
+              selected_ids={@selected_proficiency_ids}
               target={@myself}
               disabled={@selected_proficiency_ids == %{}}
               placeholder="Proficiency"
@@ -1648,6 +1664,6 @@ defmodule OliWeb.Components.Delivery.Students do
         _ -> "Section"
       end
 
-    "#{container_type} #{container_index}: #{title}"
+    "#{container_type} #{container_index}: #{title} Student Insights"
   end
 end
