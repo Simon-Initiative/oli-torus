@@ -46,6 +46,12 @@ export const VegaLiteRenderer: React.FC<Props> = ({ spec }) => {
       attributeFilter: ['class'],
     });
 
+    return () => {
+      observer.disconnect();
+      clearTimeout(timeoutId);
+    };
+  }, []);
+
   // Also handle window resize & Bootstrap tab activation
   useEffect(() => {
     const trigger = () => viewRef.current?.resize().run();
@@ -53,18 +59,10 @@ export const VegaLiteRenderer: React.FC<Props> = ({ spec }) => {
     window.addEventListener('orientationchange', trigger);
     document.addEventListener('shown.bs.tab', trigger as any); // Bootstrap 5 tabs
     return () => {
-      observer.disconnect();
-      clearTimeout(timeoutId);
+      window.removeEventListener('resize', trigger);
+      window.removeEventListener('orientationchange', trigger);
+      document.removeEventListener('shown.bs.tab', trigger as any);
     };
-  }, []);
-
-  // Track dark mode via <html class="dark">
-  useEffect(() => {
-    const obs = new MutationObserver(() =>
-      setDarkMode(document.documentElement.classList.contains('dark')),
-    );
-    obs.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-    return () => obs.disconnect();
   }, []);
 
   const darkTooltipTheme = {
