@@ -118,7 +118,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
   defp get_sub_objectives_data(section_id, section_slug, objective_id) do
     # Use the existing Metrics function to get sub-objectives proficiency data
     sub_objectives_raw_data =
-      Metrics.sub_objectives_proficiency(section_id, objective_id)
+      Metrics.sub_objectives_proficiency(section_id, section_slug, objective_id)
 
     # Transform the data to match the table model structure
     sub_objectives_raw_data
@@ -141,7 +141,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
     end)
   end
 
-  # Calculate overall proficiency based on distribution (similar to logic in sub_objectives_list.ex)
+  # Calculate overall proficiency based on distribution
   defp calculate_overall_proficiency(proficiency_distribution) do
     total = get_total_students(proficiency_distribution)
 

@@ -263,9 +263,8 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
 
   # RENDER PROFICIENCY DATA CHART
   defp render_proficiency_data_chart(objective_id, data) do
-    # Order labels correctly and calculate positions manually (like DotDistributionChart.tsx)
-    ordered_labels = ["Not enough data", "Low", "Medium", "High"]
-    counts = Enum.map(ordered_labels, fn label -> Map.get(data, label, 0) end)
+    # Order labels correctly and calculate positions manually
+    counts = Enum.map(@proficiency_labels, fn label -> Map.get(data, label, 0) end)
     total = Enum.sum(counts)
 
     data_with_positions =
@@ -273,7 +272,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
         []
       else
         {result, _} =
-          Enum.reduce(ordered_labels, {[], 0}, fn label, {acc, cumulative_start} ->
+          Enum.reduce(@proficiency_labels, {[], 0}, fn label, {acc, cumulative_start} ->
             count = Map.get(data, label, 0)
 
             if count > 0 do

@@ -20,7 +20,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.SubObjectivesList do
       <OliWeb.Common.SortableTable.Table.render
         model={@sub_objectives_table_model}
         sort={JS.push("sub_objectives_sort", target: @myself)}
-        additional_table_class="table-sm"
+        additional_row_class="bg-Table-table-row-1"
       />
     </div>
     """
