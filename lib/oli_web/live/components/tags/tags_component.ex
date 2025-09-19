@@ -211,7 +211,7 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
           <!-- Edit mode container - full cell -->
           <div class="relative w-full h-full">
             <!-- Edit mode input with selected tags - full cell -->
-            <div class="bg-Specially-Tokens-Fill-fill-input border border-Table-table-border rounded-[3px] text-sm w-full h-full min-h-[36px] flex flex-col items-center gap-1 p-2">
+            <div class="bg-Specially-Tokens-Fill-fill-input border border-Table-table-border rounded-[3px] text-sm w-full h-full min-h-[100px] flex flex-col items-center gap-1 p-2">
               <!-- Show currently selected tags with X buttons -->
               <%= for tag <- @current_tags do %>
                 <span
@@ -240,7 +240,7 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
                   phx-keydown="handle_keydown"
                   phx-target={@myself}
                   value={@input_value}
-                  class="w-full px-3 border-0 outline-none text-[#757682] font-semibold focus:outline-none focus:ring-0 focus:border-transparent"
+                  class="w-full px-3 border-0 outline-none text-[#757682] font-semibold focus:bg-transparent focus:outline-none focus:ring-0 focus:border-transparent"
                   id={"tag-input-#{@id}"}
                   style="font-family: 'Open Sans', sans-serif;"
                 />
@@ -281,7 +281,7 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
       <% else %>
         <!-- Display mode - clean pills without X buttons -->
         <div
-          class="cursor-pointer w-full min-h-[32px] flex items-start p-2"
+          class="cursor-pointer w-full min-h-[100px] flex items-start p-2 hover:border hover:border-Border-border-active hover:bg-Table-table-hover"
           phx-click="toggle_edit"
           phx-target={@myself}
         >
