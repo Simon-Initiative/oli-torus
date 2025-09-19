@@ -362,19 +362,17 @@ defmodule Oli.Authoring.Course do
 
     query =
       Project
-      |> join(:left, [p], ap in AuthorProject, on: ap.project_id == p.id)
-      |> join(:left, [p, ap], a in Author, on: ap.author_id == a.id)
-      |> join(:left, [p, ap, a], pv in ProjectVisibility, on: pv.project_id == p.id)
-      |> join(:left, [p, ap, a, pv], pub in Publication,
-        on: pub.project_id == p.id and not is_nil(pub.published)
+      |> join(:left, [p], ap in AuthorProject,
+        on: ap.project_id == p.id and ap.status == ^:accepted
       )
-      |> join(:left, [p, ap, a, pv, pub], op in AuthorProject,
+      |> join(:left, [p, ap], a in Author, on: ap.author_id == a.id)
+      |> join(:left, [p, ap, a], op in AuthorProject,
         on: op.project_id == p.id and op.project_role_id == ^owner_id
       )
-      |> join(:left, [p, ap, a, pv, pub, op], owner in Author, on: owner.id == op.author_id)
+      |> join(:left, [p, ap, a, op], owner in Author, on: owner.id == op.author_id)
       |> where(^filter_by_status)
       |> where(^filter_by_text)
-      |> group_by([p, ap, a, pv, pub, op, owner], [
+      |> group_by([p, ap, a, op, owner], [
         p.id,
         p.slug,
         p.title,
@@ -385,14 +383,18 @@ defmodule Oli.Authoring.Course do
         owner.name,
         owner.email
       ])
-      |> select([p, ap, a, pv, pub, op, owner], %{
+      |> select([p, ap, a, op, owner], %{
         id: p.id,
         slug: p.slug,
         title: p.title,
         inserted_at: p.inserted_at,
         status: p.status,
         visibility: p.visibility,
-        published: fragment("bool_or(?)", not is_nil(pub.id)),
+        published:
+          fragment(
+            "EXISTS (SELECT 1 FROM publications pub WHERE pub.project_id = ? AND pub.published IS NOT NULL)",
+            p.id
+          ),
         owner_id: owner.id,
         name: owner.name,
         email: owner.email,
@@ -408,35 +410,34 @@ defmodule Oli.Authoring.Course do
     query =
       case field do
         :name ->
-          order_by(query, [_, _, _, _, _, _, owner], {^direction, owner.name})
+          order_by(query, [_, _, _, _, owner], {^direction, owner.name})
 
         :collaborators ->
-          order_by(
-            query,
-            [_, _, a],
-            {^direction, fragment("string_agg(DISTINCT ?, ', ')", a.name)}
-          )
+          order_by(query, [_, _, a, _, _], {
+            ^direction,
+            fragment("string_agg(DISTINCT ?, ', ')", a.name)
+          })
 
         :published ->
-          order_by(
-            query,
-            [_, _, _, _, pub],
-            {^direction, fragment("bool_or(?)", not is_nil(pub.id))}
-          )
+          order_by(query, [p, _, _, _, _], {
+            ^direction,
+            fragment(
+              "EXISTS (SELECT 1 FROM publications pub WHERE pub.project_id = ? AND pub.published IS NOT NULL)",
+              p.id
+            )
+          })
 
         :visibility ->
-          order_by(
-            query,
-            [p],
-            {^direction,
-             fragment(
-               "CASE ? WHEN 'global' THEN 0 WHEN 'selected' THEN 1 WHEN 'authors' THEN 2 ELSE 3 END",
-               p.visibility
-             )}
-          )
+          order_by(query, [p, _, _, _, _], {
+            ^direction,
+            fragment(
+              "CASE ? WHEN 'global' THEN 0 WHEN 'selected' THEN 1 WHEN 'authors' THEN 2 ELSE 3 END",
+              p.visibility
+            )
+          })
 
         _ ->
-          order_by(query, [p, _, _, _, _, _, _], {^direction, field(p, ^field)})
+          order_by(query, [p, _, _, _, _], {^direction, field(p, ^field)})
       end
 
     Repo.all(query)
@@ -451,32 +452,30 @@ defmodule Oli.Authoring.Course do
     owner_id = ProjectRole.role_id().owner
 
     filter_by_collaborator =
-      dynamic([_, ap, _, _, _, _, _], ap.author_id == ^id and ap.status == ^:accepted)
+      dynamic([_, ap, _, _, _, _], ap.author_id == ^id and ap.status == ^:accepted)
 
     filter_by_status =
-      if include_deleted, do: true, else: dynamic([p, _, _, _, _, _, _], p.status == ^:active)
+      if include_deleted, do: true, else: dynamic([p, _, _, _, _, _], p.status == ^:active)
 
     filter_by_text =
       if text_search == "",
         do: true,
-        else: dynamic([p, _, _, _, _, _, _], ilike(p.title, ^"%#{text_search}%"))
+        else: dynamic([p, _, _, _, _, _], ilike(p.title, ^"%#{text_search}%"))
 
     query =
       Project
-      |> join(:left, [p], ap in AuthorProject, on: ap.project_id == p.id)
-      |> join(:left, [p, ap], a in Author, on: ap.author_id == a.id)
-      |> join(:left, [p, ap, a], pv in ProjectVisibility, on: pv.project_id == p.id)
-      |> join(:left, [p, ap, a, pv], pub in Publication,
-        on: pub.project_id == p.id and not is_nil(pub.published)
+      |> join(:left, [p], ap in AuthorProject,
+        on: ap.project_id == p.id and ap.status == ^:accepted
       )
-      |> join(:left, [p, ap, a, pv, pub], op in AuthorProject,
+      |> join(:left, [p, ap], a in Author, on: ap.author_id == a.id)
+      |> join(:left, [p, ap, a], op in AuthorProject,
         on: op.project_id == p.id and op.project_role_id == ^owner_id
       )
-      |> join(:left, [p, ap, a, pv, pub, op], owner in Author, on: owner.id == op.author_id)
+      |> join(:left, [p, ap, a, op], owner in Author, on: owner.id == op.author_id)
       |> where(^filter_by_collaborator)
       |> where(^filter_by_status)
       |> where(^filter_by_text)
-      |> group_by([p, ap, a, pv, pub, op, owner], [
+      |> group_by([p, ap, a, op, owner], [
         p.id,
         p.slug,
         p.title,
@@ -487,14 +486,18 @@ defmodule Oli.Authoring.Course do
         owner.name,
         owner.email
       ])
-      |> select([p, ap, a, pv, pub, op, owner], %{
+      |> select([p, ap, a, op, owner], %{
         id: p.id,
         slug: p.slug,
         title: p.title,
         inserted_at: p.inserted_at,
         status: p.status,
         visibility: p.visibility,
-        published: fragment("bool_or(?)", not is_nil(pub.id)),
+        published:
+          fragment(
+            "EXISTS (SELECT 1 FROM publications pub WHERE pub.project_id = ? AND pub.published IS NOT NULL)",
+            p.id
+          ),
         owner_id: owner.id,
         name: owner.name,
         email: owner.email,
@@ -510,35 +513,34 @@ defmodule Oli.Authoring.Course do
     query =
       case field do
         :name ->
-          order_by(query, [_, _, _, _, _, _, owner], {^direction, owner.name})
+          order_by(query, [_, _, _, _, owner], {^direction, owner.name})
 
         :collaborators ->
-          order_by(
-            query,
-            [_, _, a],
-            {^direction, fragment("string_agg(DISTINCT ?, ', ')", a.name)}
-          )
+          order_by(query, [_, _, a, _, _], {
+            ^direction,
+            fragment("string_agg(DISTINCT ?, ', ')", a.name)
+          })
 
         :published ->
-          order_by(
-            query,
-            [_, _, _, _, pub],
-            {^direction, fragment("bool_or(?)", not is_nil(pub.id))}
-          )
+          order_by(query, [p, _, _, _, _], {
+            ^direction,
+            fragment(
+              "EXISTS (SELECT 1 FROM publications pub WHERE pub.project_id = ? AND pub.published IS NOT NULL)",
+              p.id
+            )
+          })
 
         :visibility ->
-          order_by(
-            query,
-            [p],
-            {^direction,
-             fragment(
-               "CASE ? WHEN 'global' THEN 0 WHEN 'selected' THEN 1 WHEN 'authors' THEN 2 ELSE 3 END",
-               p.visibility
-             )}
-          )
+          order_by(query, [p, _, _, _, _], {
+            ^direction,
+            fragment(
+              "CASE ? WHEN 'global' THEN 0 WHEN 'selected' THEN 1 WHEN 'authors' THEN 2 ELSE 3 END",
+              p.visibility
+            )
+          })
 
         _ ->
-          order_by(query, [p, _, _, _, _, _, _], {^direction, field(p, ^field)})
+          order_by(query, [p, _, _, _, _], {^direction, field(p, ^field)})
       end
 
     Repo.all(query)

@@ -141,7 +141,7 @@ defmodule OliWeb.ProjectsController do
           escape_csv_field(Date.to_string(DateTime.to_date(project.inserted_at))),
           escape_csv_field(project.name || ""),
           escape_csv_field(project.email || ""),
-          escape_csv_field(format_collaborators(project.collaborators)),
+          escape_csv_field(csv_safe(format_collaborators(project.collaborators))),
           escape_csv_field(format_published(Map.get(project, :published))),
           escape_csv_field(format_visibility(project.visibility || "")),
           escape_csv_field(format_status(project.status))
@@ -189,4 +189,10 @@ defmodule OliWeb.ProjectsController do
   end
 
   defp format_collaborators(_), do: ""
+
+  defp csv_safe(value) do
+    s = to_string(value || "")
+
+    if String.starts_with?(s, ["=", "+", "-", "@", "\t"]), do: "'" <> s, else: s
+  end
 end

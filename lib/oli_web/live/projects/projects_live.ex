@@ -53,6 +53,8 @@ defmodule OliWeb.Projects.ProjectsLive do
 
     total_count = determine_total(projects)
 
+    export_filename = "projects-" <> Date.to_iso8601(Date.utc_today()) <> ".csv"
+
     {:ok,
      assign(
        socket,
@@ -64,7 +66,8 @@ defmodule OliWeb.Projects.ProjectsLive do
        show_all: show_all,
        show_deleted: show_deleted,
        title: "Projects",
-       limit: @limit
+       limit: @limit,
+       export_filename: export_filename
      )}
   end
 
@@ -210,9 +213,10 @@ defmodule OliWeb.Projects.ProjectsLive do
           </button>
         </div>
         <a
+          role="button"
           class="group mr-4 inline-flex items-center gap-1 text-sm text-Text-text-button font-bold leading-none hover:text-Text-text-button-hover"
           href={~p"/authoring/projects/export?#{current_params(assigns)}"}
-          download={"projects-" <> Timex.format!(Timex.now(), "{YYYY}-{0M}-{0D}") <> ".csv"}
+          download={@export_filename}
         >
           Download CSV
           <Icons.download stroke_class="group-hover:stroke-Text-text-button-hover stroke-Text-text-button" />
