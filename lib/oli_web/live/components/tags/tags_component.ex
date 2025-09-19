@@ -240,7 +240,7 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
                   phx-keydown="handle_keydown"
                   phx-target={@myself}
                   value={@input_value}
-                  class="w-full px-3 border-0 outline-none text-[#757682] font-semibold focus:bg-transparent focus:outline-none focus:ring-0 focus:border-transparent"
+                  class="w-full px-3 border-0 outline-none text-[#757682] font-semibold focus:bg-transparent focus:ring-0 focus:border-transparent"
                   id={"tag-input-#{@id}"}
                   style="font-family: 'Open Sans', sans-serif;"
                 />
@@ -281,9 +281,10 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
       <% else %>
         <!-- Display mode - clean pills without X buttons -->
         <div
-          class="cursor-pointer w-full min-h-[100px] flex items-start p-2 hover:border hover:border-Border-border-active hover:bg-Table-table-hover"
+          class="cursor-pointer w-full min-h-[100px] flex items-start p-2 border border-transparent hover:border-Border-border-active hover:bg-Table-table-hover focus:border focus:border-Border-border-active focus:bg-Table-table-hover focus:outline-none"
           phx-click="toggle_edit"
           phx-target={@myself}
+          tabindex="0"
         >
           <%= if length(@current_tags || []) > 0 do %>
             <div class="flex flex-col gap-1">
