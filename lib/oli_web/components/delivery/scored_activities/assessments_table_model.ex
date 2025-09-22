@@ -16,7 +16,7 @@ defmodule OliWeb.Delivery.ScoredActivities.AssessmentsTableModel do
       },
       %ColumnSpec{
         name: :title,
-        label: "ASSESSMENT",
+        label: "Page Title",
         render_fn: &render_assessment_column/3,
         th_class: "pl-10"
       },

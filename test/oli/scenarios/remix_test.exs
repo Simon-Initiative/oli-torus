@@ -31,9 +31,9 @@ defmodule Oli.Scenarios.RemixTest do
           from: "dest"
 
       # Verify initial structure
-      - verify:
-          to: "section"
+      - assert:
           structure:
+            to: "section"
             root:
               children:
                 - container: "Target Module"
@@ -48,9 +48,9 @@ defmodule Oli.Scenarios.RemixTest do
           to: "Target Module"
 
       # Verify page was added
-      - verify:
-          to: "section"
+      - assert:
           structure:
+            to: "section"
             root:
               children:
                 - container: "Target Module"
@@ -99,9 +99,9 @@ defmodule Oli.Scenarios.RemixTest do
           to: "Existing Module"
 
       # Verify container with children was added
-      - verify:
-          to: "section"
+      - assert:
           structure:
+            to: "section"
             root:
               children:
                 - container: "Existing Module"
@@ -147,9 +147,9 @@ defmodule Oli.Scenarios.RemixTest do
           to: "root"
 
       # Verify page was added to root
-      - verify:
-          to: "section"
+      - assert:
           structure:
+            to: "section"
             root:
               children:
                 - page: "Existing Page"

@@ -113,3 +113,10 @@ __pycache__/
 cloud/xapi-etl-processor/xapi-etl-processor.zip
 cloud/xapi-etl-processor/.env
 devops/.env
+
+.codex/log/
+.codex/sessions/
+.codex/auth.json
+.codex/config.toml
+.codex/history.jsonl
+.codex/version.json

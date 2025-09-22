@@ -1,0 +1,128 @@
+# Scenario: Test activity bank selection with null/empty logic conditions
+# This scenario verifies that activity bank selections handle null logic gracefully
+# by creating a bank selection with valid logic, then nullifying it via a hook
+
+# Create a project with a page and tag
+- project:
+    name: "null_logic_project"
+    title: "Null Logic Test Project"
+    tags:
+      - "easy"
+    root:
+      children:
+        - page: "Test Page"
+
+# Edit the page to add an activity bank selection with valid logic
+# The selection targets activities with the "easy" tag
+- edit_page:
+    project: "null_logic_project"
+    page: "Test Page"
+    content: |
+      title: "Test Page"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "## Activity Bank Selection Test"
+        - type: bank-selection
+          id: "test_selection"
+          count: 1
+          points: 10
+          clauses:
+            - field: "tags"
+              op: "includes"
+              value: ["easy"]
+
+# Create a bank-scoped MCQ activity that targets the "easy" tag
+- create_activity:
+    project: "null_logic_project"
+    title: "Easy Question"
+    scope: "banked"
+    type: "oli_multiple_choice"
+    tags:
+      - "easy"
+    content: |
+      stem_md: "What is 1 + 1?"
+      choices:
+        - id: "a"
+          body_md: "1"
+        - id: "b"
+          body_md: "2"
+          score: 1
+        - id: "c"
+          body_md: "3"
+
+# Publish the project
+- publish:
+    to: "null_logic_project"
+    description: "Initial publication with activity bank"
+
+# Create a course section from the project
+- section:
+    name: "null_logic_section"
+    title: "Null Logic Test Section"
+    from: "null_logic_project"
+
+# Create a student user
+- user:
+    name: "test_student"
+    type: "student"
+    email: "student@test.edu"
+
+# Enroll the student in the section
+- enroll:
+    user: "test_student"
+    section: "null_logic_section"
+    role: "student"
+
+# Use hook to nullify the logic conditions in the activity bank selection
+# This simulates what might happen with corrupted or invalid data
+- hook:
+    function: "Oli.Scenarios.Activities.NullLogicHooks.nil_logic/1"
+
+# Have the student view the page with the nullified logic
+# This should handle gracefully without errors
+- view_practice_page:
+    student: "test_student"
+    section: "null_logic_section"
+    page: "Test Page"
+
+# Verify the page can still be accessed (basic assertion)
+# The system should handle null logic gracefully
+- assert:
+    structure:
+      to: "null_logic_section"
+      root:
+        children:
+          - page: "Test Page"
+
+# Create a second student user
+- user:
+    name: "test_student_2"
+    type: "student"
+    email: "student2@test.edu"
+
+# Enroll the second student in the section
+- enroll:
+    user: "test_student_2"
+    section: "null_logic_section"
+    role: "student"
+
+# Use hook to completely set logic to nil (not just conditions)
+# This tests an even more extreme edge case
+- hook:
+    function: "Oli.Scenarios.Activities.NullLogicHooks.set_logic_nil/1"
+
+# Have the second student view the page with completely nil logic
+# This should also handle gracefully without errors
+- view_practice_page:
+    student: "test_student_2"
+    section: "null_logic_section"
+    page: "Test Page"
+
+# Verify the page can still be accessed after more extreme corruption
+- assert:
+    structure:
+      to: "null_logic_section"
+      root:
+        children:
+          - page: "Test Page"

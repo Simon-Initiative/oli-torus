@@ -25,9 +25,9 @@ defmodule Oli.Scenarios.ProductCustomizeTest do
           from: "base_project"
 
       # Verify initial product structure
-      - verify:
-          to: "template"
+      - assert:
           structure:
+            to: "template"
             root:
               children:
                 - page: "Welcome"
@@ -45,9 +45,9 @@ defmodule Oli.Scenarios.ProductCustomizeTest do
                 from: "Quiz"
 
       # Verify the quiz was removed from the product
-      - verify:
-          to: "template"
+      - assert:
           structure:
+            to: "template"
             root:
               children:
                 - page: "Welcome"
@@ -89,9 +89,9 @@ defmodule Oli.Scenarios.ProductCustomizeTest do
                 before: "Page A"
 
       # Verify the new order
-      - verify:
-          to: "template"
+      - assert:
           structure:
+            to: "template"
             root:
               children:
                 - page: "Page C"
@@ -135,9 +135,9 @@ defmodule Oli.Scenarios.ProductCustomizeTest do
           from: "template"
 
       # Verify the section has the customized structure
-      - verify:
-          to: "derived_section"
+      - assert:
           structure:
+            to: "derived_section"
             root:
               children:
                 - page: "Original Page 1"

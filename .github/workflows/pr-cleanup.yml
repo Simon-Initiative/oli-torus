@@ -3,6 +3,12 @@ name: PR Preview Cleanup
 on:
   pull_request:
     types: [closed]
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "Branch to clean up"
+        required: true
+        default: "master"
 
 jobs:
   cleanup-preview:
@@ -11,7 +17,7 @@ jobs:
     steps:
       - name: 🧹 Cleanup PR Preview Environment
         run: |
-          export PROJECT=pr${{ github.event.number }}
+          export PROJECT=$(echo ${{ github.event.inputs.branch && format('branch-{0}', github.event.inputs.branch) || format('pr{0}', github.event.number) }} | cut -c1-32 | sed 's/^[^a-zA-Z]*//; s/[^a-zA-Z]*$//')
 
           echo "Cleaning up PR preview environment: $PROJECT"
 

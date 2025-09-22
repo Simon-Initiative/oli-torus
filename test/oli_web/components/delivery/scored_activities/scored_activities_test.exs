@@ -115,7 +115,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivitiesTest do
       }
 
       html = render_component(&ScoredActivities.render/1, assigns)
-      assert html =~ "Scored Activities"
+      assert html =~ "Scored Pages"
       assert html =~ "instructor_dashboard_table"
     end
 

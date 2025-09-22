@@ -197,6 +197,11 @@ defmodule OliWeb.Delivery.Student.DiscussionsLiveTest do
     end
 
     test "can not access when not enrolled to course", %{conn: conn, section: section} do
+      {:ok, section} =
+        Sections.update_section(section, %{
+          requires_enrollment: true
+        })
+
       {:error, {:redirect, %{to: redirect_path, flash: _flash_msg}}} =
         live(conn, live_view_discussions_live_route(section.slug))
 

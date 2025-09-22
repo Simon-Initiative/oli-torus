@@ -283,12 +283,13 @@ defmodule OliWeb.UserAuthTest do
       conn =
         conn
         |> fetch_flash()
+        |> fetch_query_params()
         |> UserAuth.create_session(user)
         |> assign(:current_user, user)
         |> UserAuth.require_authenticated_user([])
 
       assert conn.halted
-      assert redirected_to(conn) == ~p"/users/confirm"
+      assert redirected_to(conn) == ~p"/users/confirm?#{conn.params}"
 
       assert Phoenix.Flash.get(conn.assigns.flash, :info) ==
                "You must confirm your email to continue."

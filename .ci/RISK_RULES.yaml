@@ -1,0 +1,128 @@
+############################################################
+# RISK_RULES.yaml — first draft tuned for OLI Torus
+#
+# How scoring works (recommended):
+# - Each matched signal contributes its weight to the total score.
+# - Size multipliers can boost score for very large PRs.
+# - The Dangerfile maps score → risk/{low|medium|high} using thresholds.
+############################################################
+
+thresholds:
+  low: 3          # < low  → risk/low
+  high: 9         # > high → risk/high; otherwise medium
+
+# Co-located rules: each rule carries its weight and the globs it matches.
+rules:
+  - key: db_migration
+    weight: 5
+    globs: ["priv/repo/migrations/**"]
+
+  - key: router_changes
+    weight: 2
+    globs:
+      - "lib/**/router.ex"
+      - "lib/**/endpoint.ex"
+
+  - key: liveview_changes
+    weight: 2
+    globs:
+      - "lib/**/live/**/*.ex"
+      - "lib/**/live/**/*.heex"
+
+  - key: core_delivery_changes
+    weight: 3
+    globs:
+      - "lib/oli/delivery/**"
+      - "lib/oli/activities/**"
+      - "lib/oli/resources/**"
+
+  - key: publishing_changes
+    weight: 4
+    globs: ["lib/oli/publishing/**"]
+
+  - key: section_updates
+    weight: 4
+    globs:
+      - "lib/oli/delivery/sections/updates.ex"
+
+  - key: activity_lifecycle
+    weight: 5
+    globs: ["lib/oli/delivery/attempts/activity_lifecycle/**"]
+
+  - key: page_lifecycle
+    weight: 5
+    globs:
+    - "lib/oli/delivery/attempts/page_lifecycle/**"
+    - "lib/oli/delivery/attempts/page_lifecycle.ex"
+
+  - key: grade_passback
+    weight: 10
+    globs:
+      - "lib/oli/grading.ex"
+      - "lib/oli/delivery/attempts/page_lifecycle/grade_update_worker.ex"
+
+  - key: metrics
+    weight: 5
+    globs:
+      - "lib/oli/delivery/metrics.ex"
+
+  - key: paywall
+    weight: 5
+    globs:
+      - "lib/oli/delivery/paywall/**"
+      - "lib/oli/delivery/paywall.ex"
+
+  - key: gen_ai_integration
+    weight: 4
+    globs:
+      - "lib/oli/gen_ai/**"
+
+  - key: auth_security
+    weight: 5
+    globs:
+      - "lib/oli_web/plugs/**"
+      - "lib/oli_web/user_auth.ex"
+      - "lib/oli/accounts/**"
+      - "lib/oli/accounts.ex"
+
+  - key: caching_depot
+    weight: 3
+    globs:
+      - "lib/oli/delivery/sections/section_resource_depot.ex"
+      - "lib/oli/delivery/singleton_depot_coordinator.ex"
+      - "lib/oli/delivery/distributed_depot_coordinator.ex"
+      - "lib/oli/delivery/depot/**"
+      - "lib/oli/delivery/depot_coordinator.ex"
+
+  - key: config_runtime
+    weight: 3
+    globs:
+      - "config/*.exs"
+      - "config/*.exs.example"
+      - "config/runtime*.exs"
+
+  - key: frontend_core
+    weight: 2
+    globs: ["assets/src/**"]
+
+  - key: dependency_update
+    weight: 2
+    globs:
+      - "mix.lock"
+      - "assets/yarn.lock"
+      - "assets/package-lock.json"
+
+# Size-based signals co-located here for clarity
+size:
+  big_diff_loc:
+    threshold: 400     # additions+deletions over this adds weight
+    weight: 3
+
+# Optional multipliers applied after base scoring.
+multipliers:
+  very_large_pr:                  # additions+deletions > 1200 LOC
+    threshold: 1200
+    factor: 1.5
+  huge_pr:
+    threshold: 2500
+    factor: 2.0

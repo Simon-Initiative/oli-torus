@@ -2144,6 +2144,11 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       conn: conn,
       section: section
     } do
+      {:ok, section} =
+        Sections.update_section(section, %{
+          requires_enrollment: true
+        })
+
       {:error, {:redirect, %{to: redirect_path, flash: _flash_msg}}} =
         live(conn, Utils.learn_live_path(section.slug, selected_view: :outline))
 
@@ -2154,6 +2159,11 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       conn: conn,
       section: section
     } do
+      {:ok, section} =
+        Sections.update_section(section, %{
+          requires_enrollment: true
+        })
+
       {:error, {:redirect, %{to: redirect_path, flash: _flash_msg}}} =
         live(conn, Utils.learn_live_path(section.slug))
 
