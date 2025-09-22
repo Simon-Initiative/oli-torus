@@ -14,12 +14,11 @@ defmodule OliWeb.LiveSessionPlugs.RequireEnrollment do
         %{
           assigns: %{
             current_user: user,
-            current_author: author,
             section: %Sections.Section{requires_enrollment: false} = section
           }
         } = socket
       )
-      when not is_nil(user) or not is_nil(author) do
+      when not is_nil(user) do
     if user, do: Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
     {:cont, assign(socket, is_enrolled: true)}
   end

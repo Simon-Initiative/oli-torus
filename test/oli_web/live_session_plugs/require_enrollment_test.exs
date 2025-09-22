@@ -36,26 +36,12 @@ defmodule OliWeb.LiveSessionPlugs.RequireEnrollmentTest do
       assert Sections.is_enrolled?(user.id, section.slug)
     end
 
-    test "sets is_enrolled for author when section requires_enrollment is false", %{
-      author: author
-    } do
-      section = insert(:section, requires_enrollment: false)
-
-      socket = %LiveView.Socket{
-        endpoint: OliWeb.Endpoint,
-        assigns: %{__changed__: %{}, current_user: nil, current_author: author, section: section}
-      }
-
-      assert {:cont, updated_socket} = RequireEnrollment.on_mount(:default, %{}, %{}, socket)
-      assert updated_socket.assigns.is_enrolled == true
-    end
-
-    test "falls through to default clause when both current_user and current_author are nil" do
+    test "falls through to default clause when current_user is nil" do
       section = %Sections.Section{requires_enrollment: false}
 
       socket = %LiveView.Socket{
         endpoint: OliWeb.Endpoint,
-        assigns: %{__changed__: %{}, current_user: nil, current_author: nil, section: section}
+        assigns: %{__changed__: %{}, current_user: nil, section: section}
       }
 
       assert {:cont, ^socket} = RequireEnrollment.on_mount(:default, %{}, %{}, socket)
