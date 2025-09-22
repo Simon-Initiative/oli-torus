@@ -187,14 +187,15 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
     assigns =
       Map.merge(assigns, %{
         objective_id: objective_id,
-        proficiency_distribution: proficiency_distribution
+        proficiency_distribution: proficiency_distribution,
+        proficiency_labels: @proficiency_labels
       })
 
     ~H"""
     <div class="group flex relative">
       {render_proficiency_data_chart(@objective_id, @proficiency_distribution)}
       <div class="-translate-y-[calc(100%-90px)] absolute left-1/2 -translate-x-1/2 bg-black text-white text-sm px-4 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity shadow-lg whitespace-nowrap inline-block z-50">
-        <%= for {label, value} <- calc_percentages(@proficiency_distribution) do %>
+        <%= for label <- @proficiency_labels, value = Map.get(calc_percentages(@proficiency_distribution), label, 0) do %>
           <p>{label}: {value}%</p>
         <% end %>
       </div>
@@ -357,6 +358,8 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
         student_proficiency_subobj_dist -> student_proficiency_subobj_dist
       end
 
+    current_user = assigns[:current_user] || assigns.model.data[:current_user]
+
     assigns =
       assigns
       |> Map.put(:objective, objective)
@@ -365,6 +368,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
       |> Map.put(:section_slug, section_slug)
       |> Map.put(:section_id, section_id)
       |> Map.put(:proficiency_distribution, proficiency_distribution)
+      |> Map.put(:current_user, current_user)
 
     ~H"""
     <div class="p-6">
@@ -375,6 +379,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
         section_id={@section_id}
         section_slug={@section_slug}
         proficiency_distribution={@proficiency_distribution}
+        current_user={@current_user}
       />
     </div>
     """

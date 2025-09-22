@@ -88,12 +88,13 @@ defmodule OliWeb.Delivery.LearningObjectives.SubObjectivesTableModel do
       assigns
       |> Map.put(:sub_objective_id, sub_objective.id)
       |> Map.put(:proficiency_distribution, proficiency_distribution)
+      |> Map.put(:proficiency_labels, @proficiency_labels)
 
     ~H"""
     <div class="group flex relative">
       {render_proficiency_chart(@sub_objective_id, @proficiency_distribution)}
       <div class="-translate-y-[calc(100%-90px)] absolute left-1/2 -translate-x-1/2 bg-black text-white text-sm px-4 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity shadow-lg whitespace-nowrap inline-block z-50">
-        <%= for {label, value} <- calc_percentages(@proficiency_distribution) do %>
+        <%= for label <- @proficiency_labels, value = Map.get(calc_percentages(@proficiency_distribution), label, 0) do %>
           <p>{label}: {value}%</p>
         <% end %>
       </div>

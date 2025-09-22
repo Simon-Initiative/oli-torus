@@ -120,6 +120,12 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
     sub_objectives_raw_data =
       Metrics.sub_objectives_proficiency(section_id, section_slug, objective_id)
 
+    # Extract all sub-objective IDs for batch activity count query
+    sub_objective_ids = Enum.map(sub_objectives_raw_data, & &1.sub_objective_id)
+
+    # Get activity counts for all sub-objectives in a single query
+    activity_counts = Metrics.related_activities_count_for_subobjectives(section_slug, sub_objective_ids)
+
     # Transform the data to match the table model structure
     sub_objectives_raw_data
     |> Enum.map(fn %{
@@ -135,8 +141,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
         title: title,
         student_proficiency: student_proficiency,
         proficiency_distribution: distribution,
-        activities_count:
-          Metrics.related_activities_count_for_subobjective(section_slug, sub_obj_id)
+        activities_count: Map.get(activity_counts, sub_obj_id, 0)
       }
     end)
   end
@@ -168,9 +173,10 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
     student_proficiency_levels = Map.get(proficiency_per_student, objective_id, %{})
 
     # Filter proficiency data to only include enrolled students (exclude instructors)
+    student_set = MapSet.new(all_student_ids)
     filtered_student_proficiency_levels =
       student_proficiency_levels
-      |> Enum.filter(fn {user_id, _proficiency_level} -> user_id in all_student_ids end)
+      |> Enum.filter(fn {user_id, _proficiency_level} -> MapSet.member?(student_set, user_id) end)
       |> Map.new()
 
     # Add "Not enough data" for students who don't have proficiency data

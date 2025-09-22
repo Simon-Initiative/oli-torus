@@ -1597,7 +1597,7 @@ defmodule Oli.Delivery.Metrics do
         sub_objective_revisions =
           from(r in Revision,
             where: r.resource_id in ^sub_objective_ids,
-            order_by: [desc: r.inserted_at],
+            order_by: [asc: r.resource_id, desc: r.inserted_at],
             distinct: r.resource_id,
             select: {r.resource_id, r.title}
           )
@@ -1621,9 +1621,13 @@ defmodule Oli.Delivery.Metrics do
             student_proficiency = Map.get(sub_objectives_proficiency, sub_obj_id, %{})
 
             # Filter proficiency data to only include enrolled students (exclude instructors)
+            student_set = MapSet.new(student_ids)
+
             filtered_student_proficiency =
               student_proficiency
-              |> Enum.filter(fn {user_id, _proficiency_level} -> user_id in student_ids end)
+              |> Enum.filter(fn {user_id, _proficiency_level} ->
+                MapSet.member?(student_set, user_id)
+              end)
               |> Map.new()
 
             # Add "Not enough data" for students who don't have proficiency data
@@ -1683,16 +1687,40 @@ defmodule Oli.Delivery.Metrics do
         ),
         where: rev.resource_type_id == ^activity_type_id,
         where: fragment("? != '{}'", rev.objectives),
-        where:
-          fragment(
-            "?::text LIKE ?",
-            rev.objectives,
-            ^"%#{sub_objective_id_str}%"
-          ),
+        where: fragment("?::jsonb \\? ?", rev.objectives, ^sub_objective_id_str),
         select: count(fragment("DISTINCT ?", rev.resource_id))
       )
 
     Repo.one(query) || 0
+  end
+
+  @doc """
+  Gets related activities count for multiple sub-objectives in a single query.
+
+  ## Parameters
+  - section_slug: String identifier for the section
+  - sub_objective_ids: List of sub-objective resource IDs to search for
+
+  ## Returns
+  Map with sub_objective_id as key and count as value
+  """
+  @spec related_activities_count_for_subobjectives(
+          section_slug :: String.t(),
+          sub_objective_ids :: list(integer)
+        ) ::
+          map()
+  def related_activities_count_for_subobjectives(_section_slug, sub_objective_ids)
+      when sub_objective_ids == [],
+      do: %{}
+
+  def related_activities_count_for_subobjectives(section_slug, sub_objective_ids) do
+    # For now, fall back to individual queries to avoid the PostgreSQL complexity
+    # This can be optimized later with a different approach
+    sub_objective_ids
+    |> Enum.reduce(%{}, fn sub_obj_id, acc ->
+      count = related_activities_count_for_subobjective(section_slug, sub_obj_id)
+      Map.put(acc, sub_obj_id, count)
+    end)
   end
 
   @doc """

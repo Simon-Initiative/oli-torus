@@ -602,6 +602,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         section_id={@section.id}
         v25_migration={@section.v25_migration}
         patch_url_type={:instructor_dashboard}
+        current_user={@current_user}
       />
     </div>
     """
