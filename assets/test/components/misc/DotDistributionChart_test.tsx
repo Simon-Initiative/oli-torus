@@ -1,7 +1,11 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { DotDistributionChart, ProficiencyDistribution, StudentProficiency } from '../../../src/components/misc/DotDistributionChart';
+import { render, screen } from '@testing-library/react';
+import {
+  DotDistributionChart,
+  ProficiencyDistribution,
+  StudentProficiency,
+} from '../../../src/components/misc/DotDistributionChart';
 
 // Mock VegaLite component
 jest.mock('react-vega', () => {
@@ -23,7 +27,7 @@ jest.mock('react-vega', () => {
 
       return mockReact.createElement('div', {
         'data-testid': 'vega-lite-chart',
-        children: JSON.stringify(spec)
+        children: JSON.stringify(spec),
       });
     },
   };
@@ -120,7 +124,9 @@ describe('DotDistributionChart', () => {
 
       render(<DotDistributionChart {...emptyProps} />);
 
-      expect(screen.getByText(/No individual student proficiency data available/)).toBeInTheDocument();
+      expect(
+        screen.getByText(/No individual student proficiency data available/),
+      ).toBeInTheDocument();
     });
 
     it('handles empty proficiency distribution', () => {
@@ -162,8 +168,18 @@ describe('DotDistributionChart', () => {
         expect(spec).toHaveProperty('config');
 
         // Check color scale
-        expect(spec.encoding.color.scale.domain).toEqual(['Not enough data', 'Low', 'Medium', 'High']);
-        expect(spec.encoding.color.scale.range).toEqual(['#C2C2C2', '#E6D4FA', '#B37CEA', '#7B19C1']);
+        expect(spec.encoding.color.scale.domain).toEqual([
+          'Not enough data',
+          'Low',
+          'Medium',
+          'High',
+        ]);
+        expect(spec.encoding.color.scale.range).toEqual([
+          '#C2C2C2',
+          '#E6D4FA',
+          '#B37CEA',
+          '#7B19C1',
+        ]);
       }
     });
 
@@ -198,7 +214,7 @@ describe('DotDistributionChart', () => {
       const studentsWithSameProficiency: StudentProficiency[] = [
         { student_id: '1', proficiency: 0.85, proficiency_range: 'High' },
         { student_id: '2', proficiency: 0.85, proficiency_range: 'High' },
-        { student_id: '3', proficiency: 0.90, proficiency_range: 'High' },
+        { student_id: '3', proficiency: 0.9, proficiency_range: 'High' },
       ];
 
       const props = {
@@ -271,7 +287,9 @@ describe('DotDistributionChart', () => {
 
       render(<DotDistributionChart {...props} />);
 
-      expect(screen.getByText(/No individual student proficiency data available/)).toBeInTheDocument();
+      expect(
+        screen.getByText(/No individual student proficiency data available/),
+      ).toBeInTheDocument();
     });
 
     it('handles proficiency distribution with only one non-zero value', () => {

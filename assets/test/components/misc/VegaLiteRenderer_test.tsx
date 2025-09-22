@@ -1,8 +1,8 @@
 import React from 'react';
-import { render, screen, act } from '@testing-library/react';
-import '@testing-library/jest-dom';
-import { VegaLiteRenderer } from '../../../src/components/misc/VegaLiteRenderer';
 import { VisualizationSpec } from 'react-vega';
+import '@testing-library/jest-dom';
+import { act, render, screen } from '@testing-library/react';
+import { VegaLiteRenderer } from '../../../src/components/misc/VegaLiteRenderer';
 
 // Mock VegaLite component
 const mockView = {
@@ -30,7 +30,7 @@ jest.mock('react-vega', () => {
         'data-testid': 'vega-lite-renderer',
         'data-spec': JSON.stringify(spec),
         'data-tooltip': JSON.stringify(tooltip),
-        children: 'VegaLite Chart'
+        children: 'VegaLite Chart',
       });
     },
   };
@@ -63,11 +63,16 @@ jest.useFakeTimers();
 describe('VegaLiteRenderer', () => {
   const mockSpec: VisualizationSpec = {
     mark: 'bar',
-    data: { values: [{ a: 'A', b: 28 }, { a: 'B', b: 55 }] },
+    data: {
+      values: [
+        { a: 'A', b: 28 },
+        { a: 'B', b: 55 },
+      ],
+    },
     encoding: {
       x: { field: 'a', type: 'ordinal' },
-      y: { field: 'b', type: 'quantitative' }
-    }
+      y: { field: 'b', type: 'quantitative' },
+    },
   };
 
   beforeEach(() => {
@@ -157,13 +162,10 @@ describe('VegaLiteRenderer', () => {
     it('sets up MutationObserver to watch for dark mode changes', () => {
       render(<VegaLiteRenderer spec={mockSpec} />);
 
-      expect(MockMutationObserver.observeMock).toHaveBeenCalledWith(
-        document.documentElement,
-        {
-          attributes: true,
-          attributeFilter: ['class'],
-        }
-      );
+      expect(MockMutationObserver.observeMock).toHaveBeenCalledWith(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['class'],
+      });
     });
 
     it('disconnects MutationObserver on unmount', () => {
@@ -289,8 +291,8 @@ describe('VegaLiteRenderer', () => {
         data: { values: [{ x: 1, y: 2 }] },
         encoding: {
           x: { field: 'x', type: 'quantitative' },
-          y: { field: 'y', type: 'quantitative' }
-        }
+          y: { field: 'y', type: 'quantitative' },
+        },
       };
 
       rerender(<VegaLiteRenderer spec={newSpec} />);
@@ -332,17 +334,17 @@ describe('VegaLiteRenderer', () => {
         data: {
           values: Array.from({ length: 100 }, (_, i) => ({
             category: `Cat${i}`,
-            value: Math.random() * 100
-          }))
+            value: Math.random() * 100,
+          })),
         },
         encoding: {
           x: { field: 'category', type: 'ordinal', axis: { labelAngle: -45 } },
-          y: { field: 'value', type: 'quantitative', scale: { domain: [0, 100] } }
+          y: { field: 'value', type: 'quantitative', scale: { domain: [0, 100] } },
         },
         config: {
           axis: { grid: false },
-          legend: { orient: 'bottom' }
-        }
+          legend: { orient: 'bottom' },
+        },
       };
 
       render(<VegaLiteRenderer spec={complexSpec} />);

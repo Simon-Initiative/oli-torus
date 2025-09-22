@@ -36,7 +36,9 @@ export const DotDistributionChart: React.FC<DotDistributionChartProps> = ({
   student_proficiency = [],
 }) => {
   // State to detect dark mode (like VegaLiteRenderer)
-  const [darkMode, setDarkMode] = useState(() => typeof document !== 'undefined' && document.documentElement.classList.contains('dark'));
+  const [darkMode, setDarkMode] = useState(
+    () => typeof document !== 'undefined' && document.documentElement.classList.contains('dark'),
+  );
   // State to force re-render when component becomes visible
   const [isVisible, setIsVisible] = useState(false);
 
@@ -365,13 +367,15 @@ export const DotDistributionChart: React.FC<DotDistributionChartProps> = ({
           <ul>
             {barData.map((item) => (
               <li key={item.proficiency}>
-                {item.proficiency}: {item.count} students ({Math.round((item.count / barData.reduce((sum, d) => sum + d.count, 0)) * 100)}%)
+                {item.proficiency}: {item.count} students (
+                {Math.round((item.count / barData.reduce((sum, d) => sum + d.count, 0)) * 100)}%)
               </li>
             ))}
           </ul>
           {dotData.length > 0 && (
             <p>
-              Individual student dots are positioned within each proficiency level based on their specific proficiency scores.
+              Individual student dots are positioned within each proficiency level based on their
+              specific proficiency scores.
             </p>
           )}
         </div>
@@ -471,7 +475,9 @@ function renderDots(dotData: any[], barData: any[]) {
   });
 
   const chartTitle = `Student proficiency distribution with ${totalStudents} students`;
-  const chartDescription = `Dot chart showing student distribution across proficiency levels: ${barData.map(item => `${item.count} students at ${item.proficiency} level`).join(', ')}`;
+  const chartDescription = `Dot chart showing student distribution across proficiency levels: ${barData
+    .map((item) => `${item.count} students at ${item.proficiency} level`)
+    .join(', ')}`;
 
   return (
     <svg

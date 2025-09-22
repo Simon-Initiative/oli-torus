@@ -124,7 +124,8 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
     sub_objective_ids = Enum.map(sub_objectives_raw_data, & &1.sub_objective_id)
 
     # Get activity counts for all sub-objectives in a single query
-    activity_counts = Metrics.related_activities_count_for_subobjectives(section_slug, sub_objective_ids)
+    activity_counts =
+      Metrics.related_activities_count_for_subobjectives(section_slug, sub_objective_ids)
 
     # Transform the data to match the table model structure
     sub_objectives_raw_data
@@ -174,6 +175,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
 
     # Filter proficiency data to only include enrolled students (exclude instructors)
     student_set = MapSet.new(all_student_ids)
+
     filtered_student_proficiency_levels =
       student_proficiency_levels
       |> Enum.filter(fn {user_id, _proficiency_level} -> MapSet.member?(student_set, user_id) end)

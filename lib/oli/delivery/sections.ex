@@ -5365,7 +5365,9 @@ defmodule Oli.Delivery.Sections do
                 # When there's no proficiency data, create distribution with all students as "Not enough data"
                 not_enough_data_dist = %{"Not enough data" => length(student_ids)}
                 {"Not enough data", not_enough_data_dist}
-              prof -> {prof[:proficiency_mode], prof[:proficiency_dist]}
+
+              prof ->
+                {prof[:proficiency_mode], prof[:proficiency_dist]}
             end
 
           objective =
@@ -5394,7 +5396,9 @@ defmodule Oli.Delivery.Sections do
                         # When there's no proficiency data, create distribution with all students as "Not enough data"
                         not_enough_data_dist = %{"Not enough data" => length(student_ids)}
                         {"Not enough data", not_enough_data_dist}
-                      prof -> {prof[:proficiency_mode], prof[:proficiency_dist]}
+
+                      prof ->
+                        {prof[:proficiency_mode], prof[:proficiency_dist]}
                     end
 
                   Map.merge(sub_objective, %{
