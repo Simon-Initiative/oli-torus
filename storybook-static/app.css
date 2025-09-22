@@ -9794,16 +9794,8 @@ table.table-striped tbody tr:nth-child(even) {
   min-height: 300px;
 }
 
-.min-h-\[32px\] {
-  min-height: 32px;
-}
-
 .min-h-\[34px\] {
   min-height: 34px;
-}
-
-.min-h-\[36px\] {
-  min-height: 36px;
 }
 
 .min-h-\[40px\] {
@@ -19476,6 +19468,14 @@ Not supports in Firefox and IE */
   background-color: #FFFFFF1A;
 }
 
+.hover\:border-Border-border-active:hover {
+  border-color: #353740;
+}
+
+.dark .hover\:border-Border-border-active:hover {
+  border-color: #EEEBF5;
+}
+
 .hover\:text-Text-text-button:hover {
   color: #006CD9;
 }
@@ -19505,6 +19505,22 @@ Not supports in Firefox and IE */
 }
 
 .dark .hover\:bg-Table-table-hover:hover {
+  background-color: #0A203A;
+}
+
+.focus\:border-Border-border-active:focus {
+  border-color: #353740;
+}
+
+.dark .focus\:border-Border-border-active:focus {
+  border-color: #EEEBF5;
+}
+
+.focus\:bg-Table-table-hover:focus {
+  background-color: #F2F9FF;
+}
+
+.dark .focus\:bg-Table-table-hover:focus {
   background-color: #0A203A;
 }
 
@@ -20483,6 +20499,10 @@ Not supports in Firefox and IE */
   margin-right: 0px;
 }
 
+.focus\:border:focus {
+  border-width: 1px;
+}
+
 .focus\:border-blue-500:focus {
   --tw-border-opacity: 1;
   border-color: rgb(59 118 211 / var(--tw-border-opacity));
@@ -20514,6 +20534,10 @@ Not supports in Firefox and IE */
 .focus\:bg-blue-600:focus {
   --tw-bg-opacity: 1;
   background-color: rgb(39 92 175 / var(--tw-bg-opacity));
+}
+
+.focus\:bg-transparent:focus {
+  background-color: transparent;
 }
 
 .focus\:font-bold:focus {
