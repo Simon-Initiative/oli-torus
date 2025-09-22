@@ -359,6 +359,23 @@ export const DotDistributionChart: React.FC<DotDistributionChartProps> = ({
           </span>
         </div>
 
+        {/* Accessible summary for screen readers */}
+        <div className="sr-only">
+          <h3>Student Proficiency Distribution Summary</h3>
+          <ul>
+            {barData.map((item) => (
+              <li key={item.proficiency}>
+                {item.proficiency}: {item.count} students ({Math.round((item.count / barData.reduce((sum, d) => sum + d.count, 0)) * 100)}%)
+              </li>
+            ))}
+          </ul>
+          {dotData.length > 0 && (
+            <p>
+              Individual student dots are positioned within each proficiency level based on their specific proficiency scores.
+            </p>
+          )}
+        </div>
+
         {/* Message when no proficiency data available */}
         {dotData.length === 0 && (
           <div className="mt-4 text-center">
@@ -453,8 +470,19 @@ function renderDots(dotData: any[], barData: any[]) {
     groupedByLevelAndValue[dot.proficiency][dot.proficiency_value].push(dot);
   });
 
+  const chartTitle = `Student proficiency distribution with ${totalStudents} students`;
+  const chartDescription = `Dot chart showing student distribution across proficiency levels: ${barData.map(item => `${item.count} students at ${item.proficiency} level`).join(', ')}`;
+
   return (
-    <svg className="w-full h-full" style={{ minHeight: '140px' }}>
+    <svg
+      className="w-full h-full"
+      style={{ minHeight: '140px' }}
+      role="img"
+      aria-labelledby="dotChartTitle"
+      aria-describedby="dotChartDesc"
+    >
+      <title id="dotChartTitle">{chartTitle}</title>
+      <desc id="dotChartDesc">{chartDescription}</desc>
       {PROFICIENCY_LABELS.map((level) => {
         const levelGroups = groupedByLevelAndValue[level] || {};
         const proficiencyValues = Object.keys(levelGroups).map(Number).sort();
@@ -513,9 +541,8 @@ function renderDots(dotData: any[], barData: any[]) {
                     fill={student.color}
                     stroke="rgba(255,255,255,0.5)"
                     strokeWidth="0.5"
-                  >
-                    <title>{`Student ${student.student_id}: ${student.proficiency_value}% proficiency`}</title>
-                  </circle>,
+                    aria-hidden="true"
+                  />,
                 );
               }
               return towerDots;
@@ -562,9 +589,8 @@ function renderDots(dotData: any[], barData: any[]) {
                     fill={dot.color}
                     stroke="rgba(255,255,255,0.5)"
                     strokeWidth="0.5"
-                  >
-                    <title>{`Student ${dot.student_id}: ${dot.proficiency_value}% proficiency`}</title>
-                  </circle>
+                    aria-hidden="true"
+                  />
                 );
               });
             })

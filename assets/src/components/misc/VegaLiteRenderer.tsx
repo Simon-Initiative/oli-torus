@@ -54,7 +54,7 @@ export const VegaLiteRenderer: React.FC<Props> = ({ spec }) => {
 
   // Reintroduce ResizeObserver for responsive charts
   useEffect(() => {
-    if (!containerRef.current || !viewRef.current) return;
+    if (!containerRef.current) return;
 
     const resizeObserver = new ResizeObserver(() => {
       if (viewRef.current) {
