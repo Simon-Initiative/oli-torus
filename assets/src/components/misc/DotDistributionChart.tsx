@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { VegaLite, VisualizationSpec } from 'react-vega';
+import type { View } from 'vega';
 
 // Define interfaces for TypeScript
 export interface StudentProficiency {
@@ -18,7 +19,6 @@ export interface ProficiencyDistribution {
 export interface DotDistributionChartProps {
   proficiency_distribution: ProficiencyDistribution;
   student_proficiency?: StudentProficiency[]; // Individual student proficiency data
-  objective_id: number;
 }
 
 // Colors that match the existing system
@@ -36,11 +36,11 @@ export const DotDistributionChart: React.FC<DotDistributionChartProps> = ({
   student_proficiency = [],
 }) => {
   // State to detect dark mode (like VegaLiteRenderer)
-  const [darkMode, setDarkMode] = useState(document.documentElement.classList.contains('dark'));
+  const [darkMode, setDarkMode] = useState(() => typeof document !== 'undefined' && document.documentElement.classList.contains('dark'));
   // State to force re-render when component becomes visible
   const [isVisible, setIsVisible] = useState(false);
 
-  const viewRef = useRef<any>(null);
+  const viewRef = useRef<View | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Update the 'isDarkMode' parameter and background color when 'darkMode' changes
@@ -63,7 +63,7 @@ export const DotDistributionChart: React.FC<DotDistributionChartProps> = ({
 
   // Set up a MutationObserver to listen for changes to the 'class' attribute
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
+    let timeoutId: ReturnType<typeof setTimeout>;
 
     const observer = new MutationObserver(() => {
       clearTimeout(timeoutId);

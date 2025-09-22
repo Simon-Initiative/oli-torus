@@ -29,9 +29,9 @@ export const VegaLiteRenderer: React.FC<Props> = ({ spec }) => {
     return () => clearTimeout(timeoutId);
   }, [darkMode]);
 
-  // Observe container size → trigger Vega's re-measure
+  // Observe dark mode changes
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
+    let timeoutId: ReturnType<typeof setTimeout>;
 
     const observer = new MutationObserver(() => {
       clearTimeout(timeoutId);
@@ -51,6 +51,21 @@ export const VegaLiteRenderer: React.FC<Props> = ({ spec }) => {
       clearTimeout(timeoutId);
     };
   }, []);
+
+  // Reintroduce ResizeObserver for responsive charts
+  useEffect(() => {
+    if (!containerRef.current || !viewRef.current) return;
+
+    const resizeObserver = new ResizeObserver(() => {
+      if (viewRef.current) {
+        viewRef.current.resize().run();
+      }
+    });
+
+    resizeObserver.observe(containerRef.current);
+
+    return () => resizeObserver.disconnect();
+  }, [spec]);
 
   // Also handle window resize & Bootstrap tab activation
   useEffect(() => {
