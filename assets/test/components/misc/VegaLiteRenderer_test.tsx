@@ -57,6 +57,28 @@ Object.defineProperty(window, 'MutationObserver', {
   value: MockMutationObserver,
 });
 
+// Mock ResizeObserver
+class MockResizeObserver {
+  static observeMock = jest.fn();
+  static disconnectMock = jest.fn();
+
+  callback: ResizeObserverCallback;
+
+  constructor(callback: ResizeObserverCallback) {
+    this.callback = callback;
+  }
+
+  observe = MockResizeObserver.observeMock;
+  disconnect = MockResizeObserver.disconnectMock;
+  unobserve = jest.fn();
+}
+
+Object.defineProperty(window, 'ResizeObserver', {
+  writable: true,
+  configurable: true,
+  value: MockResizeObserver,
+});
+
 // Mock setTimeout and clearTimeout
 jest.useFakeTimers();
 
@@ -83,10 +105,19 @@ describe('VegaLiteRenderer', () => {
     // Reset static mocks
     MockMutationObserver.observeMock.mockClear();
     MockMutationObserver.disconnectMock.mockClear();
+    MockResizeObserver.observeMock.mockClear();
+    MockResizeObserver.disconnectMock.mockClear();
+    // Reset mockView to default behavior
+    mockView.signal.mockImplementation(() => {});
+    mockView.background.mockImplementation(() => {});
+    mockView.run.mockImplementation(() => {});
   });
 
   afterEach(() => {
+    // Suppress console.warn during timer cleanup to avoid noise from error tests
+    const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
     jest.runOnlyPendingTimers();
+    consoleSpy.mockRestore();
     jest.useRealTimers();
     jest.useFakeTimers();
   });
@@ -175,6 +206,20 @@ describe('VegaLiteRenderer', () => {
 
       expect(MockMutationObserver.disconnectMock).toHaveBeenCalled();
     });
+
+    it('sets up ResizeObserver to watch for container size changes', () => {
+      render(<VegaLiteRenderer spec={mockSpec} />);
+
+      expect(MockResizeObserver.observeMock).toHaveBeenCalled();
+    });
+
+    it('disconnects ResizeObserver on unmount', () => {
+      const { unmount } = render(<VegaLiteRenderer spec={mockSpec} />);
+
+      unmount();
+
+      expect(MockResizeObserver.disconnectMock).toHaveBeenCalled();
+    });
   });
 
   describe('View Updates and Error Handling', () => {
@@ -210,7 +255,7 @@ describe('VegaLiteRenderer', () => {
         jest.advanceTimersByTime(100);
       });
 
-      expect(consoleSpy).toHaveBeenCalledWith('VegaLite initialization failed:', expect.any(Error));
+      expect(consoleSpy).toHaveBeenCalledWith('VegaLite theme update failed:', expect.any(Error));
 
       consoleSpy.mockRestore();
     });
@@ -218,10 +263,12 @@ describe('VegaLiteRenderer', () => {
     it('handles initialization errors gracefully', () => {
       const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
 
-      // Make onNewView callback throw an error
-      mockView.run.mockImplementation(() => {
+      // Reset mockView and make only .signal throw an error during initialization
+      mockView.signal.mockImplementation(() => {
         throw new Error('Initialization failed');
       });
+      mockView.background.mockImplementation(() => {});
+      mockView.run.mockImplementation(() => {});
 
       render(<VegaLiteRenderer spec={mockSpec} />);
 
