@@ -63,6 +63,9 @@ export const DotDistributionChart: React.FC<DotDistributionChartProps> = ({
   );
   // State to force re-render when component becomes visible
   const [isVisible, setIsVisible] = useState(false);
+  // State for section interactions
+  const [hoveredSection, setHoveredSection] = useState<string | null>(null);
+  const [selectedSection, setSelectedSection] = useState<string | null>(null);
 
   const viewRef = useRef<View | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -290,24 +293,40 @@ export const DotDistributionChart: React.FC<DotDistributionChartProps> = ({
       <div ref={containerRef} className="relative py-4">
         {/* Container with margin for axis labels on the right */}
         <div style={{ width: 'calc(95% - 4rem)', position: 'relative' }}>
-          {/* Dots area - above the bar */}
-          <div className="relative mb-1" style={{ width: '100%', minWidth: '300px' }}>
-            {dotData.length > 0 && renderDots(dotData, barData)}
+          {/* Chart content area */}
+          <div className="relative" style={{ width: '100%', minWidth: '300px' }}>
+            {/* Dots area - above the bar with extended rectangles */}
+            <div className="relative mb-1" style={{ width: '100%', zIndex: 20 }}>
+              {dotData.length > 0 &&
+                renderDots(
+                  dotData,
+                  barData,
+                  hoveredSection,
+                  selectedSection,
+                  setHoveredSection,
+                  setSelectedSection,
+                  darkMode,
+                )}
+            </div>
+
+            {/* VegaLite bar chart */}
+            <div
+              className="relative w-full"
+              style={{ width: '100%', marginTop: '-25px', zIndex: 10 }}
+            >
+              <VegaLite
+                spec={vegaSpec}
+                actions={false}
+                tooltip={darkMode ? darkTooltipTheme : lightTooltipTheme}
+                onNewView={(view) => {
+                  viewRef.current = view;
+                  view.background(darkMode ? '#262626' : 'white');
+                  view.run();
+                }}
+              />
+            </div>
           </div>
 
-          {/* VegaLite bar chart */}
-          <div className="relative w-full" style={{ width: '100%' }}>
-            <VegaLite
-              spec={vegaSpec}
-              actions={false}
-              tooltip={darkMode ? darkTooltipTheme : lightTooltipTheme}
-              onNewView={(view) => {
-                viewRef.current = view;
-                view.background(darkMode ? '#262626' : 'white');
-                view.run();
-              }}
-            />
-          </div>
           <style>
             {`
             .vega-embed {
@@ -458,7 +477,15 @@ function calculateSymmetricDistribution(totalStudents: number): { subtowers: num
 
 // HELPER FUNCTION: Render dots using React (not VegaLite)
 // This function creates the dots that represent students
-function renderDots(dotData: DotDatum[], barData: BarDatum[]) {
+function renderDots(
+  dotData: DotDatum[],
+  barData: BarDatum[],
+  hoveredSection: string | null,
+  selectedSection: string | null,
+  setHoveredSection: (section: string | null) => void,
+  setSelectedSection: (section: string | null) => void,
+  darkMode: boolean,
+) {
   const dotSize = 11; // Size of each dot in pixels (11px diameter)
   const padding = 2; // Space between dots
   const totalStudents = barData.reduce((sum, item) => sum + item.count, 0);
@@ -483,16 +510,42 @@ function renderDots(dotData: DotDatum[], barData: BarDatum[]) {
     .map((item) => `${item.count} students at ${item.proficiency} level`)
     .join(', ')}`;
 
+  // Calculate section boundaries for interactive rectangles
+  const calculateSectionBounds = (level: string) => {
+    // Calculate the boundaries of this proficiency level segment
+    let cumulativeWidth = 0;
+    for (let i = 0; i < PROFICIENCY_LABELS.indexOf(level); i++) {
+      const prevLevel = PROFICIENCY_LABELS[i];
+      const prevLevelData = barData.find((item) => item.proficiency === prevLevel);
+      const prevLevelCount = prevLevelData ? prevLevelData.count : 0;
+      cumulativeWidth += (prevLevelCount / totalStudents) * 100;
+    }
+
+    const levelData = barData.find((item) => item.proficiency === level);
+    const levelWidth = levelData ? (levelData.count / totalStudents) * 100 : 0;
+
+    return {
+      startX: cumulativeWidth,
+      width: levelWidth,
+      endX: cumulativeWidth + levelWidth,
+    };
+  };
+
   return (
     <svg
       className="w-full h-full"
-      style={{ minHeight: '140px' }}
+      style={{
+        height: '175px',
+        overflow: 'visible',
+      }}
       role="img"
       aria-labelledby="dotChartTitle"
       aria-describedby="dotChartDesc"
     >
       <title id="dotChartTitle">{chartTitle}</title>
       <desc id="dotChartDesc">{chartDescription}</desc>
+
+      {/* Render dots first */}
       {PROFICIENCY_LABELS.map((level) => {
         const levelGroups = groupedByLevelAndValue[level] || {};
         const proficiencyValues = Object.keys(levelGroups).map(Number).sort();
@@ -517,7 +570,10 @@ function renderDots(dotData: DotDatum[], barData: BarDatum[]) {
         // Handle "Not enough data" level differently from others
         if (level === 'Not enough data') {
           // For "Not enough data", create multiple symmetric subtowers in the center
-          const allStudents = proficiencyValues.flatMap((value) => levelGroups[value]);
+          const allStudents = proficiencyValues.reduce(
+            (acc, value) => acc.concat(levelGroups[value]),
+            [] as any[],
+          );
           const totalStudents = allStudents.length;
 
           if (totalStudents === 0) return null;
@@ -557,7 +613,7 @@ function renderDots(dotData: DotDatum[], barData: BarDatum[]) {
               }
               return towerDots;
             })
-            .flat();
+            .reduce((acc, val) => acc.concat(val), []);
         } else {
           // For Low, Medium, High: always respect exact proficiency value position
           return proficiencyValues
@@ -604,9 +660,109 @@ function renderDots(dotData: DotDatum[], barData: BarDatum[]) {
                 );
               });
             })
-            .flat();
+            .reduce((acc, val) => acc.concat(val), []);
         }
-      }).flat()}
+      }).reduce((acc, val) => acc.concat(val || []), [] as any[])}
+
+      {/* Interactive rectangles for each section - render last for maximum precedence */}
+      {PROFICIENCY_LABELS.map((level) => {
+        const levelData = barData.find((item) => item.proficiency === level);
+        if (!levelData || levelData.count === 0) return null;
+
+        const bounds = calculateSectionBounds(level);
+        const isHovered = hoveredSection === level;
+        const isSelected = selectedSection === level;
+        const showRectangle = isHovered || isSelected;
+
+        return (
+          <g key={`section-${level}`}>
+            {/* Interactive area (invisible) */}
+            <rect
+              x={`${bounds.startX}%`}
+              y="0"
+              width={`${bounds.width}%`}
+              height="170"
+              fill="transparent"
+              stroke="none"
+              style={{ cursor: selectedSection === level ? 'default' : 'pointer' }}
+              onMouseEnter={() => {
+                setHoveredSection(level);
+              }}
+              onMouseLeave={() => {
+                setHoveredSection(null);
+              }}
+              onClick={() => {
+                if (selectedSection !== level) {
+                  setSelectedSection(level);
+                }
+              }}
+            />
+
+            {/* Visual rectangle */}
+            {showRectangle && (
+              <>
+                <rect
+                  x={`${bounds.startX}%`}
+                  y="1"
+                  width={`${bounds.width}%`}
+                  height="167"
+                  fill="none"
+                  stroke={
+                    isSelected
+                      ? darkMode
+                        ? '#2C2D40'
+                        : '#353740'
+                      : darkMode
+                      ? '#524D59'
+                      : '#8AB8E5'
+                  }
+                  strokeWidth="1"
+                  rx="2"
+                  style={{ pointerEvents: 'none' }}
+                />
+
+                {/* Close button for selected sections */}
+                {isSelected && (
+                  <g>
+                    {/* Larger invisible clickable area */}
+                    <rect
+                      x={`${bounds.endX - 2}%`}
+                      y="2"
+                      width="24"
+                      height="24"
+                      fill="transparent"
+                      style={{ cursor: 'pointer' }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedSection(null);
+                        // Check if mouse is still over the area to trigger hover
+                        setHoveredSection(level);
+                      }}
+                    />
+                    {/* Visible close icon */}
+                    <svg
+                      x={`${bounds.endX - 2}%`}
+                      y="6"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      style={{ pointerEvents: 'none' }}
+                    >
+                      <path
+                        d="M6 18L18 6M6 6L18 18"
+                        stroke={darkMode ? '#FFFFFF' : '#6b7280'}
+                        strokeWidth="2"
+                        strokeLinejoin="round"
+                        fill="none"
+                      />
+                    </svg>
+                  </g>
+                )}
+              </>
+            )}
+          </g>
+        );
+      })}
     </svg>
   );
 }
