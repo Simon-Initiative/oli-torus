@@ -17,35 +17,41 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
       |> assign(assigns)
       |> assign_new(:analytics_data, fn -> nil end)
       |> assign_new(:analytics_spec, fn -> nil end)
+      |> assign_new(:section_analytics_load_state, fn -> :loaded end)
       |> assign_new(:custom_sql_query, fn -> nil end)
       |> assign_new(:custom_vega_spec, fn -> nil end)
       |> assign_new(:custom_query_result, fn -> nil end)
       |> assign_new(:custom_visualization_spec, fn -> nil end)
       |> assign_new(:engagement_start_date, fn ->
-        start_date = case assigns.section.start_date do
-          nil -> Date.add(Date.utc_today(), -30) |> Date.to_string()
-          start_date -> DateTime.to_date(start_date) |> Date.to_string()
-        end
+        start_date =
+          case assigns.section.start_date do
+            nil -> Date.add(Date.utc_today(), -30) |> Date.to_string()
+            start_date -> DateTime.to_date(start_date) |> Date.to_string()
+          end
 
         start_date
       end)
       |> assign_new(:engagement_end_date, fn ->
-        end_date = case assigns.section.end_date do
-          nil -> Date.utc_today() |> Date.to_string()
-          end_date -> DateTime.to_date(end_date) |> Date.to_string()
-        end
+        end_date =
+          case assigns.section.end_date do
+            nil -> Date.utc_today() |> Date.to_string()
+            end_date -> DateTime.to_date(end_date) |> Date.to_string()
+          end
 
         end_date
       end)
       |> assign_new(:engagement_max_pages, fn -> 25 end)
-      |> assign_new(:resource_title_map, fn -> load_resource_title_map_from_section(assigns.section) end)
+      |> assign_new(:resource_title_map, fn ->
+        load_resource_title_map_from_section(assigns.section)
+      end)
 
     {:ok, socket}
   end
 
   # Helper function to load the resource title map once when component loads
   defp load_resource_title_map_from_section(section) do
-    hierarchy = Oli.Delivery.Sections.SectionResourceDepot.get_full_hierarchy(section, [hidden: false])
+    hierarchy =
+      Oli.Delivery.Sections.SectionResourceDepot.get_full_hierarchy(section, hidden: false)
 
     # Create a mapping from resource_id to title from the hierarchy
     extract_resource_titles_from_hierarchy(hierarchy)
@@ -65,535 +71,696 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
         <h1 class="text-2xl font-bold mb-6 text-gray-900 dark:text-white">
           Analytics Dashboard
         </h1>
-        <!-- Comprehensive Section Analytics -->
-        <div class="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-6 mb-6">
-          <h2 class="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
-            Event Summary
-          </h2>
-          <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-            Overview of all learner activity events in this section.
-          </p>
 
-          <%= case @comprehensive_section_analytics do %>
-            <% {:ok, result} -> %>
-              <div class="text-green-600 dark:text-green-400 mb-3 flex items-center">
-                <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+        <%= case @section_analytics_load_state do %>
+          <% :not_loaded -> %>
+            <div class="bg-yellow-50 dark:bg-yellow-900 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+              <h3 class="text-md font-semibold text-yellow-900 dark:text-yellow-100 mb-2">
+                Section analytics have not been loaded yet
+              </h3>
+              <p class="text-sm text-yellow-800 dark:text-yellow-200 mb-4">
+                Load the historical analytics for this section from S3 into ClickHouse to unlock the dashboards below. This may take a few minutes depending on the amount of data.
+              </p>
+              <button
+                phx-click="bulk_load_section_analytics"
+                phx-target={@myself}
+                class="inline-flex items-center px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg text-sm font-medium transition-colors"
+              >
+                <svg
+                  class="w-4 h-4 mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                >
                   <path
-                    fill-rule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                    clip-rule="evenodd"
-                  >
-                  </path>
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H10m-6 11v-5h-.582m0 0a8.003 8.003 0 0015.356 0M20 20v-5h.582m0 0A8.001 8.001 0 0010 4"
+                  />
                 </svg>
-                Analytics data loaded successfully
-                <%= if Map.has_key?(result, :execution_time_ms) and is_number(result.execution_time_ms) do %>
-                  <span class="ml-2 text-sm text-gray-500 dark:text-gray-400">
-                    (executed in <%= :erlang.float_to_binary(result.execution_time_ms / 1, decimals: 2) %>ms)
-                  </span>
-                <% end %>
-              </div>
-              <!-- Event Type Cards -->
-              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-                <%= for line <- String.split(result.body, "\n") |> Enum.reject(&(&1 == "" or String.starts_with?(&1, "event_type"))) do %>
-                  <% parts = String.split(line, "\t") %>
-                  <%= if length(parts) >= 6 do %>
-                    <% [event_type, total_events, unique_users, _earliest, _latest, additional] =
-                      Enum.take(parts, 6) %>
-                    <div class="bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-700 dark:to-gray-600 rounded-lg p-4">
-                      <div class="flex items-center justify-between mb-2">
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">
-                          <%= humanize_event_type(event_type) %>
-                        </span>
-                      </div>
-                      <div>
-                        <p class="text-2xl font-bold text-gray-900 dark:text-white">
-                          <%= total_events %>
-                        </p>
-                        <p class="text-sm text-gray-600 dark:text-gray-300">
-                          events from <%= unique_users %> users
-                        </p>
-                        <%= if additional != "" and additional != "0" do %>
-                          <p class="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                            <%= format_additional_info(event_type, additional) %>
+                Load Section Analytics
+              </button>
+            </div>
+          <% :loading -> %>
+            <div class="flex items-center bg-gray-50 dark:bg-gray-900 border rounded-lg p-4">
+              <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mr-3"></div>
+              <p class="text-sm text-gray-600 dark:text-gray-300">
+                Loading section analytics from S3. This page will refresh automatically when the data is ready.
+              </p>
+            </div>
+          <% {:error, reason} -> %>
+            <div class="bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-800 rounded-lg p-4">
+              <h3 class="text-md font-semibold text-red-800 dark:text-red-100 mb-2">
+                Unable to load section analytics
+              </h3>
+              <p class="text-sm text-red-700 dark:text-red-200 mb-3">
+                {reason}
+              </p>
+              <button
+                phx-click="bulk_load_section_analytics"
+                phx-target={@myself}
+                class="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors"
+              >
+                Retry Load
+              </button>
+            </div>
+          <% _ -> %>
+            
+    <!-- Comprehensive Section Analytics -->
+            <div class="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-6 mb-6">
+              <h2 class="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
+                Event Summary
+              </h2>
+              <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                Overview of all learner activity events in this section.
+              </p>
+
+              <%= case @comprehensive_section_analytics do %>
+                <% {:ok, result} -> %>
+                  <div class="text-green-600 dark:text-green-400 mb-3 flex items-center">
+                    <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                      <path
+                        fill-rule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                        clip-rule="evenodd"
+                      >
+                      </path>
+                    </svg>
+                    Analytics data loaded successfully
+                    <%= if Map.has_key?(result, :execution_time_ms) and is_number(result.execution_time_ms) do %>
+                      <span class="ml-2 text-sm text-gray-500 dark:text-gray-400">
+                        (executed in {:erlang.float_to_binary(result.execution_time_ms / 1,
+                          decimals: 2
+                        )}ms)
+                      </span>
+                    <% end %>
+                  </div>
+                  <!-- Event Type Cards -->
+                  <% summary_rows = comprehensive_summary_rows(result) %>
+                  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                    <%= for %{event_type: event_type, total_events: total_events, unique_users: unique_users, additional_info: additional} <- summary_rows do %>
+                      <div class="bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-700 dark:to-gray-600 rounded-lg p-4">
+                        <div class="flex items-center justify-between mb-2">
+                          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">
+                            {humanize_event_type(event_type)}
+                          </span>
+                        </div>
+                        <div>
+                          <p class="text-2xl font-bold text-gray-900 dark:text-white">
+                            {total_events}
                           </p>
-                        <% end %>
-                      </div>
-                    </div>
-                  <% end %>
-                <% end %>
-              </div>
-              <!-- Raw Data Table -->
-              <pre class="bg-gray-50 dark:bg-gray-900 border rounded-lg p-4 text-xs overflow-x-auto"><%= result.body %></pre>
-            <% {:error, reason} -> %>
-              <div class="text-red-600 dark:text-red-400 mb-3 flex items-start">
-                <svg class="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path
-                    fill-rule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                    clip-rule="evenodd"
-                  >
-                  </path>
-                </svg>
-                Analytics query failed
-              </div>
-              <div class="bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-800 rounded-lg p-4">
-                <pre class="text-sm text-red-800 dark:text-red-200 whitespace-pre-wrap"><%= reason %></pre>
-              </div>
-            <% _ -> %>
-              <div class="bg-gray-50 dark:bg-gray-900 border rounded-lg p-4">
-                <p class="text-sm text-gray-600 dark:text-gray-400">
-                  Loading comprehensive analytics data...
-                </p>
-              </div>
-          <% end %>
-        </div>
-        <!-- Available Analytics Section -->
-        <div class="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-6 mb-6">
-          <h2 class="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
-            Available Analytics
-          </h2>
-          <p class="text-sm text-gray-600 dark:text-gray-400 mb-6">
-            Click on any category below to view detailed analytics and visualizations for this section.
-          </p>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <button
-              phx-click="select_analytics_category"
-              phx-value-category="video"
-              phx-target={@myself}
-              class={[
-                "bg-gradient-to-br from-green-50 to-emerald-100 dark:from-gray-700 dark:to-gray-600 rounded-lg p-4 text-left hover:shadow-lg transition-shadow duration-200 border-2",
-                if(@selected_analytics_category == "video", do: "border-green-500", else: "border-transparent hover:border-green-300")
-              ]}
-            >
-              <h3 class="font-medium text-gray-900 dark:text-white mb-2">Video Analytics</h3>
-              <ul class="text-sm text-gray-600 dark:text-gray-300 space-y-1">
-                <li>• Play/pause patterns</li>
-                <li>• Completion rates</li>
-                <li>• Seek behavior</li>
-                <li>• Engagement time</li>
-              </ul>
-            </button>
-
-            <button
-              phx-click="select_analytics_category"
-              phx-value-category="assessment"
-              phx-target={@myself}
-              class={[
-                "bg-gradient-to-br from-blue-50 to-cyan-100 dark:from-gray-700 dark:to-gray-600 rounded-lg p-4 text-left hover:shadow-lg transition-shadow duration-200 border-2",
-                if(@selected_analytics_category == "assessment", do: "border-blue-500", else: "border-transparent hover:border-blue-300")
-              ]}
-            >
-              <h3 class="font-medium text-gray-900 dark:text-white mb-2">Assessment Analytics</h3>
-              <ul class="text-sm text-gray-600 dark:text-gray-300 space-y-1">
-                <li>• Activity performance</li>
-                <li>• Page attempt scores</li>
-                <li>• Part-level analysis</li>
-                <li>• Success patterns</li>
-              </ul>
-            </button>
-
-            <button
-              phx-click="select_analytics_category"
-              phx-value-category="engagement"
-              phx-target={@myself}
-              class={[
-                "bg-gradient-to-br from-purple-50 to-violet-100 dark:from-gray-700 dark:to-gray-600 rounded-lg p-4 text-left hover:shadow-lg transition-shadow duration-200 border-2",
-                if(@selected_analytics_category == "engagement", do: "border-purple-500", else: "border-transparent hover:border-purple-300")
-              ]}
-            >
-              <h3 class="font-medium text-gray-900 dark:text-white mb-2">Engagement Analytics</h3>
-              <ul class="text-sm text-gray-600 dark:text-gray-300 space-y-1">
-                <li>• Page view patterns</li>
-                <li>• Content preferences</li>
-                <li>• Learning paths</li>
-                <li>• Time-based trends</li>
-              </ul>
-            </button>
-
-            <button
-              phx-click="select_analytics_category"
-              phx-value-category="performance"
-              phx-target={@myself}
-              class={[
-                "bg-gradient-to-br from-yellow-50 to-orange-100 dark:from-gray-700 dark:to-gray-600 rounded-lg p-4 text-left hover:shadow-lg transition-shadow duration-200 border-2",
-                if(@selected_analytics_category == "performance", do: "border-yellow-500", else: "border-transparent hover:border-yellow-300")
-              ]}
-            >
-              <h3 class="font-medium text-gray-900 dark:text-white mb-2">Performance Insights</h3>
-              <ul class="text-sm text-gray-600 dark:text-gray-300 space-y-1">
-                <li>• Score distributions</li>
-                <li>• Hint usage patterns</li>
-                <li>• Feedback effectiveness</li>
-                <li>• Learning objective alignment</li>
-              </ul>
-            </button>
-
-            <button
-              phx-click="select_analytics_category"
-              phx-value-category="cross_event"
-              phx-target={@myself}
-              class={[
-                "bg-gradient-to-br from-pink-50 to-rose-100 dark:from-gray-700 dark:to-gray-600 rounded-lg p-4 text-left hover:shadow-lg transition-shadow duration-200 border-2",
-                if(@selected_analytics_category == "cross_event", do: "border-pink-500", else: "border-transparent hover:border-pink-300")
-              ]}
-            >
-              <h3 class="font-medium text-gray-900 dark:text-white mb-2">Cross-Event Analysis</h3>
-              <ul class="text-sm text-gray-600 dark:text-gray-300 space-y-1">
-                <li>• Multi-modal learning</li>
-                <li>• Comprehensive summaries</li>
-                <li>• User journey mapping</li>
-                <li>• Predictive insights</li>
-              </ul>
-            </button>
-
-            <button
-              phx-click="select_analytics_category"
-              phx-value-category="custom"
-              phx-target={@myself}
-              class={[
-                "bg-gradient-to-br from-gray-50 to-slate-100 dark:from-gray-700 dark:to-gray-600 rounded-lg p-4 text-left hover:shadow-lg transition-shadow duration-200 border-2",
-                if(@selected_analytics_category == "custom", do: "border-gray-500", else: "border-transparent hover:border-gray-300")
-              ]}
-            >
-              <h3 class="font-medium text-gray-900 dark:text-white mb-2">Custom Analytics</h3>
-              <ul class="text-sm text-gray-600 dark:text-gray-300 space-y-1">
-                <li>• Write custom SQL queries</li>
-                <li>• Create custom visualizations</li>
-                <li>• VegaLite specification editor</li>
-                <li>• Direct ClickHouse access</li>
-              </ul>
-            </button>
-          </div>
-        </div>
-
-        <!-- Analytics Visualization -->
-        <%= if @selected_analytics_category do %>
-          <div class="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-6">
-            <h2 class="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
-              <%= case @selected_analytics_category do %>
-                <% "video" -> %> Video Analytics Visualization
-                <% "assessment" -> %> Assessment Analytics Visualization
-                <% "engagement" -> %> Engagement Analytics Visualization
-                <% "performance" -> %> Performance Analytics Visualization
-                <% "cross_event" -> %> Cross-Event Analytics Visualization
-                <% "custom" -> %> Custom Analytics Builder
-                <% _ -> %> Analytics Visualization
-              <% end %>
-            </h2>
-
-            <!-- Engagement Analytics Controls -->
-            <%= if @selected_analytics_category == "engagement" do %>
-              <div class="mb-6 bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
-                <h4 class="text-md font-semibold mb-3 text-gray-900 dark:text-white">Filter Data</h4>
-                <form phx-change="update_engagement_filters" phx-target={@myself} class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Start Date
-                    </label>
-                    <input
-                      type="date"
-                      name="start_date"
-                      value={@engagement_start_date || Date.add(Date.utc_today(), -30) |> Date.to_string()}
-                      class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      End Date
-                    </label>
-                    <input
-                      type="date"
-                      name="end_date"
-                      value={@engagement_end_date || Date.utc_today() |> Date.to_string()}
-                      class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Max Pages
-                    </label>
-                    <select
-                      name="max_pages"
-                      class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
-                    >
-                      <option value="10" selected={@engagement_max_pages == 10}>Top 10 Pages</option>
-                      <option value="25" selected={@engagement_max_pages == 25}>Top 25 Pages</option>
-                      <option value="50" selected={@engagement_max_pages == 50}>Top 50 Pages</option>
-                      <option value="100" selected={@engagement_max_pages == 100}>Top 100 Pages</option>
-                      <option value="all" selected={@engagement_max_pages == "all"}>All Pages</option>
-                    </select>
-                  </div>
-                </form>
-              </div>
-            <% end %>
-
-
-            <!-- Custom Analytics Interface -->
-            <%= if @selected_analytics_category == "custom" do %>
-              <div class="mb-4">
-                <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                  Create custom analytics by writing ClickHouse SQL queries and VegaLite visualization specifications.
-                  Query the raw events table directly to answer specific questions about learner behavior.
-                </p>
-              </div>
-
-              <div class="space-y-6">
-                <!-- SQL Query Editor -->
-                <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
-                  <h4 class="text-md font-semibold mb-3 text-gray-900 dark:text-white">ClickHouse SQL Query</h4>
-                  <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                    Write a SQL query to fetch data from the analytics database.
-                    Use <code class="bg-gray-200 dark:bg-gray-700 px-1 rounded">#{Oli.Analytics.ClickhouseAnalytics.raw_events_table()}</code> as the table name.
-                  </p>
-                  <div class="bg-yellow-50 dark:bg-yellow-900 border border-yellow-200 dark:border-yellow-700 rounded-lg p-3 mb-3">
-                    <p class="text-sm text-yellow-800 dark:text-yellow-200">
-                      <strong>Required:</strong> Your query must include <code class="bg-yellow-100 dark:bg-yellow-800 px-1 rounded">WHERE section_id = {@section.id}</code> to filter results to the current section.
-                    </p>
-                  </div>
-                  <div class="mb-3">
-                    <Monaco.editor
-                      id="custom-sql-editor"
-                      class="min-w-full max-w-full"
-                      language="sql"
-                      height="200px"
-                      resizable={true}
-                      default_value={@custom_sql_query || get_default_sql_query(@section.id)}
-                      default_options={%{
-                        "readOnly" => false,
-                        "selectOnLineNumbers" => true,
-                        "minimap" => %{"enabled" => false},
-                        "scrollBeyondLastLine" => false,
-                        "wordWrap" => "on",
-                        "lineNumbers" => "on",
-                        "tabSize" => 2,
-                        "insertSpaces" => true,
-                        "automaticLayout" => true
-                      }}
-                      set_options="monaco_editor_set_sql_options"
-                      set_value="monaco_editor_set_sql_value"
-                      get_value="monaco_editor_get_sql_value"
-                      use_code_lenses={[]}
-                      on_change="update_custom_sql_field"
-                      target={@myself}
-                    />
-                  </div>
-                  <button
-                    phx-click="execute_custom_query"
-                    phx-target={@myself}
-                    class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
-                  >
-                    Execute Query
-                  </button>
-                </div>
-
-                <!-- Query Results -->
-                <%= if @custom_query_result do %>
-                  <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
-                    <h4 class="text-md font-semibold mb-3 text-gray-900 dark:text-white">Query Results</h4>
-                    <%= case @custom_query_result do %>
-                      <% {:ok, %{body: body, execution_time_ms: execution_time}} -> %>
-                        <div class="text-green-600 dark:text-green-400 mb-3 text-sm">✓ Query executed successfully ({format_execution_time(execution_time)})</div>
-                        <pre class="bg-white dark:bg-gray-800 border rounded p-3 text-xs overflow-x-auto max-h-40"><%= body %></pre>
-                      <% {:ok, %{body: body}} -> %>
-                        <div class="text-green-600 dark:text-green-400 mb-3 text-sm">✓ Query executed successfully</div>
-                        <pre class="bg-white dark:bg-gray-800 border rounded p-3 text-xs overflow-x-auto max-h-40"><%= body %></pre>
-                      <% {:error, reason} -> %>
-                        <div class="text-red-600 dark:text-red-400 mb-3 text-sm">✗ Query failed</div>
-                        <pre class="bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-700 rounded p-3 text-xs text-red-800 dark:text-red-200"><%= reason %></pre>
-                    <% end %>
-                  </div>
-                <% end %>
-
-                <!-- VegaLite Spec Editor -->
-                <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
-                  <h4 class="text-md font-semibold mb-3 text-gray-900 dark:text-white">VegaLite Visualization Spec</h4>
-                  <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                    Define a VegaLite specification to visualize your query results. The data will be automatically injected.
-                  </p>
-                  <div class="mb-3">
-                    <Monaco.editor
-                      id="custom-vega-editor"
-                      class="min-w-full max-w-full"
-                      language="json"
-                      height="300px"
-                      resizable={true}
-                      default_value={@custom_vega_spec || get_default_vega_spec()}
-                      default_options={%{
-                        "readOnly" => false,
-                        "selectOnLineNumbers" => true,
-                        "minimap" => %{"enabled" => false},
-                        "scrollBeyondLastLine" => false,
-                        "wordWrap" => "on",
-                        "lineNumbers" => "on",
-                        "tabSize" => 2,
-                        "insertSpaces" => true,
-                        "automaticLayout" => true,
-                        "formatOnPaste" => true,
-                        "formatOnType" => true
-                      }}
-                      set_options="monaco_editor_set_vega_options"
-                      set_value="monaco_editor_set_vega_value"
-                      get_value="monaco_editor_get_vega_value"
-                      use_code_lenses={[]}
-                      on_change="update_custom_vega_field"
-                      target={@myself}
-                    />
-                  </div>
-                  <button
-                    phx-click="render_custom_visualization"
-                    phx-target={@myself}
-                    class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors"
-                  >
-                    Render Visualization
-                  </button>
-                </div>
-
-                <!-- Custom Visualization -->
-                <%= if @custom_visualization_spec do %>
-                  <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border">
-                    <h4 class="text-md font-semibold mb-3 text-gray-900 dark:text-white text-center">Custom Visualization</h4>
-                    <div class="flex justify-center items-center">
-                      <%= {:safe, _chart_html} = OliWeb.Common.React.component(
-                        %{is_liveview: true},
-                        "Components.VegaLiteRenderer",
-                        %{spec: @custom_visualization_spec},
-                        id: "custom-analytics-chart"
-                      ) %>
-                    </div>
-                  </div>
-                <% end %>
-              </div>
-
-            <% else %>
-
-              <!-- Regular Analytics Interface -->
-              <%= cond do %>
-                <% @analytics_spec == nil -> %>
-                  <div class="flex items-center justify-center py-8">
-                    <div class="text-center">
-                      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                      <p class="text-gray-500 dark:text-gray-400">Loading analytics data...</p>
-                    </div>
-                  </div>
-                <% is_list(@analytics_spec) && length(@analytics_spec) > 0 -> %>
-                  <div class="mb-4">
-                    <%= case @selected_analytics_category do %>
-                      <% "video" -> %>
-                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                          This chart shows video completion rates across the most popular videos in your section.
-                          Higher completion rates indicate more engaging content.
-                        </p>
-                      <% "assessment" -> %>
-                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                          This scatter plot shows the relationship between average scores and success rates for activities.
-                          Bubble size represents the number of attempts.
-                        </p>
-                      <% "engagement" -> %>
-                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                          These charts show page engagement metrics: the bar chart displays page view counts with completion rates,
-                          while the heatmap reveals usage patterns by time of day and day of week.
-                        </p>
-                      <% "performance" -> %>
-                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                          This distribution shows how student scores are spread across different ranges.
-                          Color intensity indicates average hint usage.
-                        </p>
-                      <% "cross_event" -> %>
-                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                          This timeline shows the evolution of different event types over time,
-                          helping identify usage patterns and trends.
-                        </p>
-                    <% end %>
-                  </div>
-
-                  <!-- Render all charts vertically -->
-                  <%= for {chart, index} <- Enum.with_index(@analytics_spec) do %>
-                    <div class="mb-6">
-                      <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
-                        <h4 class="text-sm font-medium mb-3 text-gray-700 dark:text-gray-300 text-center"><%= chart.title %></h4>
-                        <div class="overflow-x-auto overflow-y-hidden" style="max-width: 100%;">
-                          <div class="flex justify-center items-center min-w-max">
-                            <%= {:safe, _chart_html} = OliWeb.Common.React.component(
-                              %{is_liveview: true},
-                              "Components.VegaLiteRenderer",
-                              %{spec: chart.spec},
-                              id: "analytics-chart-#{@selected_analytics_category}-#{index}"
-                            ) %>
-                          </div>
+                          <p class="text-sm text-gray-600 dark:text-gray-300">
+                            events from {unique_users} users
+                          </p>
+                          <%= if additional not in [nil, "", "0"] do %>
+                            <p class="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                              {format_additional_info(event_type, additional)}
+                            </p>
+                          <% end %>
                         </div>
                       </div>
-                    </div>
-                  <% end %>
-                <% true -> %>
-                  <div class="flex items-center justify-center py-12">
-                    <div class="text-center">
-                      <div class="mb-4">
-                        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                        </svg>
-                      </div>
-                      <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">Not Enough Data</h3>
-                      <p class="text-gray-600 dark:text-gray-400">
-                        There isn't enough data available to generate this visualization.
-                        Try again once there's more student activity in your section.
-                      </p>
-                    </div>
+                    <% end %>
+                  </div>
+                <% {:error, reason} -> %>
+                  <div class="text-red-600 dark:text-red-400 mb-3 flex items-start">
+                    <svg
+                      class="w-4 h-4 mr-2 mt-0.5 flex-shrink-0"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fill-rule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                        clip-rule="evenodd"
+                      >
+                      </path>
+                    </svg>
+                    Analytics query failed
+                  </div>
+                  <div class="bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                    <pre class="text-sm text-red-800 dark:text-red-200 whitespace-pre-wrap"><%= reason %></pre>
+                  </div>
+                <% _ -> %>
+                  <div class="bg-gray-50 dark:bg-gray-900 border rounded-lg p-4">
+                    <p class="text-sm text-gray-600 dark:text-gray-400">
+                      Loading comprehensive analytics data...
+                    </p>
                   </div>
               <% end %>
+            </div>
+            <!-- Available Analytics Section -->
+            <div class="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-6 mb-6">
+              <h2 class="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
+                Available Analytics
+              </h2>
+              <p class="text-sm text-gray-600 dark:text-gray-400 mb-6">
+                Click on any category below to view detailed analytics and visualizations for this section.
+              </p>
 
-              <%= if @analytics_data && (
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <button
+                  phx-click="select_analytics_category"
+                  phx-value-category="video"
+                  phx-target={@myself}
+                  class={[
+                    "bg-gradient-to-br from-green-50 to-emerald-100 dark:from-gray-700 dark:to-gray-600 rounded-lg p-4 text-left hover:shadow-lg transition-shadow duration-200 border-2",
+                    if(@selected_analytics_category == "video",
+                      do: "border-green-500",
+                      else: "border-transparent hover:border-green-300"
+                    )
+                  ]}
+                >
+                  <h3 class="font-medium text-gray-900 dark:text-white mb-2">Video Analytics</h3>
+                  <ul class="text-sm text-gray-600 dark:text-gray-300 space-y-1">
+                    <li>• Play/pause patterns</li>
+                    <li>• Completion rates</li>
+                    <li>• Seek behavior</li>
+                    <li>• Engagement time</li>
+                  </ul>
+                </button>
+
+                <button
+                  phx-click="select_analytics_category"
+                  phx-value-category="assessment"
+                  phx-target={@myself}
+                  class={[
+                    "bg-gradient-to-br from-blue-50 to-cyan-100 dark:from-gray-700 dark:to-gray-600 rounded-lg p-4 text-left hover:shadow-lg transition-shadow duration-200 border-2",
+                    if(@selected_analytics_category == "assessment",
+                      do: "border-blue-500",
+                      else: "border-transparent hover:border-blue-300"
+                    )
+                  ]}
+                >
+                  <h3 class="font-medium text-gray-900 dark:text-white mb-2">Assessment Analytics</h3>
+                  <ul class="text-sm text-gray-600 dark:text-gray-300 space-y-1">
+                    <li>• Activity performance</li>
+                    <li>• Page attempt scores</li>
+                    <li>• Part-level analysis</li>
+                    <li>• Success patterns</li>
+                  </ul>
+                </button>
+
+                <button
+                  phx-click="select_analytics_category"
+                  phx-value-category="engagement"
+                  phx-target={@myself}
+                  class={[
+                    "bg-gradient-to-br from-purple-50 to-violet-100 dark:from-gray-700 dark:to-gray-600 rounded-lg p-4 text-left hover:shadow-lg transition-shadow duration-200 border-2",
+                    if(@selected_analytics_category == "engagement",
+                      do: "border-purple-500",
+                      else: "border-transparent hover:border-purple-300"
+                    )
+                  ]}
+                >
+                  <h3 class="font-medium text-gray-900 dark:text-white mb-2">Engagement Analytics</h3>
+                  <ul class="text-sm text-gray-600 dark:text-gray-300 space-y-1">
+                    <li>• Page view patterns</li>
+                    <li>• Content preferences</li>
+                    <li>• Learning paths</li>
+                    <li>• Time-based trends</li>
+                  </ul>
+                </button>
+
+                <button
+                  phx-click="select_analytics_category"
+                  phx-value-category="performance"
+                  phx-target={@myself}
+                  class={[
+                    "bg-gradient-to-br from-yellow-50 to-orange-100 dark:from-gray-700 dark:to-gray-600 rounded-lg p-4 text-left hover:shadow-lg transition-shadow duration-200 border-2",
+                    if(@selected_analytics_category == "performance",
+                      do: "border-yellow-500",
+                      else: "border-transparent hover:border-yellow-300"
+                    )
+                  ]}
+                >
+                  <h3 class="font-medium text-gray-900 dark:text-white mb-2">Performance Insights</h3>
+                  <ul class="text-sm text-gray-600 dark:text-gray-300 space-y-1">
+                    <li>• Score distributions</li>
+                    <li>• Hint usage patterns</li>
+                    <li>• Feedback effectiveness</li>
+                    <li>• Learning objective alignment</li>
+                  </ul>
+                </button>
+
+                <button
+                  phx-click="select_analytics_category"
+                  phx-value-category="cross_event"
+                  phx-target={@myself}
+                  class={[
+                    "bg-gradient-to-br from-pink-50 to-rose-100 dark:from-gray-700 dark:to-gray-600 rounded-lg p-4 text-left hover:shadow-lg transition-shadow duration-200 border-2",
+                    if(@selected_analytics_category == "cross_event",
+                      do: "border-pink-500",
+                      else: "border-transparent hover:border-pink-300"
+                    )
+                  ]}
+                >
+                  <h3 class="font-medium text-gray-900 dark:text-white mb-2">Cross-Event Analysis</h3>
+                  <ul class="text-sm text-gray-600 dark:text-gray-300 space-y-1">
+                    <li>• Multi-modal learning</li>
+                    <li>• Comprehensive summaries</li>
+                    <li>• User journey mapping</li>
+                    <li>• Predictive insights</li>
+                  </ul>
+                </button>
+
+                <button
+                  phx-click="select_analytics_category"
+                  phx-value-category="custom"
+                  phx-target={@myself}
+                  class={[
+                    "bg-gradient-to-br from-gray-50 to-slate-100 dark:from-gray-700 dark:to-gray-600 rounded-lg p-4 text-left hover:shadow-lg transition-shadow duration-200 border-2",
+                    if(@selected_analytics_category == "custom",
+                      do: "border-gray-500",
+                      else: "border-transparent hover:border-gray-300"
+                    )
+                  ]}
+                >
+                  <h3 class="font-medium text-gray-900 dark:text-white mb-2">Custom Analytics</h3>
+                  <ul class="text-sm text-gray-600 dark:text-gray-300 space-y-1">
+                    <li>• Write custom SQL queries</li>
+                    <li>• Create custom visualizations</li>
+                    <li>• VegaLite specification editor</li>
+                    <li>• Direct ClickHouse access</li>
+                  </ul>
+                </button>
+              </div>
+            </div>
+            
+    <!-- Analytics Visualization -->
+            <%= if @selected_analytics_category do %>
+              <div class="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-6">
+                <h2 class="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
+                  <%= case @selected_analytics_category do %>
+                    <% "video" -> %>
+                      Video Analytics Visualization
+                    <% "assessment" -> %>
+                      Assessment Analytics Visualization
+                    <% "engagement" -> %>
+                      Engagement Analytics Visualization
+                    <% "performance" -> %>
+                      Performance Analytics Visualization
+                    <% "cross_event" -> %>
+                      Cross-Event Analytics Visualization
+                    <% "custom" -> %>
+                      Custom Analytics Builder
+                    <% _ -> %>
+                      Analytics Visualization
+                  <% end %>
+                </h2>
+                
+    <!-- Engagement Analytics Controls -->
+                <%= if @selected_analytics_category == "engagement" do %>
+                  <div class="mb-6 bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
+                    <h4 class="text-md font-semibold mb-3 text-gray-900 dark:text-white">
+                      Filter Data
+                    </h4>
+                    <form
+                      phx-change="update_engagement_filters"
+                      phx-target={@myself}
+                      class="grid grid-cols-1 md:grid-cols-3 gap-4"
+                    >
+                      <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Start Date
+                        </label>
+                        <input
+                          type="date"
+                          name="start_date"
+                          value={
+                            @engagement_start_date ||
+                              Date.add(Date.utc_today(), -30) |> Date.to_string()
+                          }
+                          class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          End Date
+                        </label>
+                        <input
+                          type="date"
+                          name="end_date"
+                          value={@engagement_end_date || Date.utc_today() |> Date.to_string()}
+                          class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Max Pages
+                        </label>
+                        <select
+                          name="max_pages"
+                          class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
+                        >
+                          <option value="10" selected={@engagement_max_pages == 10}>
+                            Top 10 Pages
+                          </option>
+                          <option value="25" selected={@engagement_max_pages == 25}>
+                            Top 25 Pages
+                          </option>
+                          <option value="50" selected={@engagement_max_pages == 50}>
+                            Top 50 Pages
+                          </option>
+                          <option value="100" selected={@engagement_max_pages == 100}>
+                            Top 100 Pages
+                          </option>
+                          <option value="all" selected={@engagement_max_pages == "all"}>
+                            All Pages
+                          </option>
+                        </select>
+                      </div>
+                    </form>
+                  </div>
+                <% end %>
+                
+    <!-- Custom Analytics Interface -->
+                <%= if @selected_analytics_category == "custom" do %>
+                  <div class="mb-4">
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                      Create custom analytics by writing ClickHouse SQL queries and VegaLite visualization specifications.
+                      Query the raw events table directly to answer specific questions about learner behavior.
+                    </p>
+                  </div>
+
+                  <div class="space-y-6">
+                    <!-- SQL Query Editor -->
+                    <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
+                      <h4 class="text-md font-semibold mb-3 text-gray-900 dark:text-white">
+                        ClickHouse SQL Query
+                      </h4>
+                      <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                        Write a SQL query to fetch data from the analytics database.
+                        Use
+                        <code class="bg-gray-200 dark:bg-gray-700 px-1 rounded">
+                          #{Oli.Analytics.ClickhouseAnalytics.raw_events_table()}
+                        </code>
+                        as the table name.
+                      </p>
+                      <div class="bg-yellow-50 dark:bg-yellow-900 border border-yellow-200 dark:border-yellow-700 rounded-lg p-3 mb-3">
+                        <p class="text-sm text-yellow-800 dark:text-yellow-200">
+                          <strong>Required:</strong>
+                          Your query must include
+                          <code class="bg-yellow-100 dark:bg-yellow-800 px-1 rounded">
+                            WHERE section_id = {@section.id}
+                          </code>
+                          to filter results to the current section.
+                        </p>
+                      </div>
+                      <div class="mb-3">
+                        <Monaco.editor
+                          id="custom-sql-editor"
+                          class="min-w-full max-w-full"
+                          language="sql"
+                          height="200px"
+                          resizable={true}
+                          default_value={@custom_sql_query || get_default_sql_query(@section.id)}
+                          default_options={
+                            %{
+                              "readOnly" => false,
+                              "selectOnLineNumbers" => true,
+                              "minimap" => %{"enabled" => false},
+                              "scrollBeyondLastLine" => false,
+                              "wordWrap" => "on",
+                              "lineNumbers" => "on",
+                              "tabSize" => 2,
+                              "insertSpaces" => true,
+                              "automaticLayout" => true
+                            }
+                          }
+                          set_options="monaco_editor_set_sql_options"
+                          set_value="monaco_editor_set_sql_value"
+                          get_value="monaco_editor_get_sql_value"
+                          use_code_lenses={[]}
+                          on_change="update_custom_sql_field"
+                          target={@myself}
+                        />
+                      </div>
+                      <button
+                        phx-click="execute_custom_query"
+                        phx-target={@myself}
+                        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
+                      >
+                        Execute Query
+                      </button>
+                    </div>
+                    
+    <!-- Query Results -->
+                    <%= if @custom_query_result do %>
+                      <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
+                        <h4 class="text-md font-semibold mb-3 text-gray-900 dark:text-white">
+                          Query Results
+                        </h4>
+                        <%= case @custom_query_result do %>
+                          <% {:ok, %{body: body, execution_time_ms: execution_time}} -> %>
+                            <div class="text-green-600 dark:text-green-400 mb-3 text-sm">
+                              ✓ Query executed successfully ({format_execution_time(execution_time)})
+                            </div>
+                            <pre class="bg-white dark:bg-gray-800 border rounded p-3 text-xs overflow-x-auto max-h-40"><%= body %></pre>
+                          <% {:ok, %{body: body}} -> %>
+                            <div class="text-green-600 dark:text-green-400 mb-3 text-sm">
+                              ✓ Query executed successfully
+                            </div>
+                            <pre class="bg-white dark:bg-gray-800 border rounded p-3 text-xs overflow-x-auto max-h-40"><%= body %></pre>
+                          <% {:error, reason} -> %>
+                            <div class="text-red-600 dark:text-red-400 mb-3 text-sm">
+                              ✗ Query failed
+                            </div>
+                            <pre class="bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-700 rounded p-3 text-xs text-red-800 dark:text-red-200"><%= reason %></pre>
+                        <% end %>
+                      </div>
+                    <% end %>
+                    
+    <!-- VegaLite Spec Editor -->
+                    <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
+                      <h4 class="text-md font-semibold mb-3 text-gray-900 dark:text-white">
+                        VegaLite Visualization Spec
+                      </h4>
+                      <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                        Define a VegaLite specification to visualize your query results. The data will be automatically injected.
+                      </p>
+                      <div class="mb-3">
+                        <Monaco.editor
+                          id="custom-vega-editor"
+                          class="min-w-full max-w-full"
+                          language="json"
+                          height="300px"
+                          resizable={true}
+                          default_value={@custom_vega_spec || get_default_vega_spec()}
+                          default_options={
+                            %{
+                              "readOnly" => false,
+                              "selectOnLineNumbers" => true,
+                              "minimap" => %{"enabled" => false},
+                              "scrollBeyondLastLine" => false,
+                              "wordWrap" => "on",
+                              "lineNumbers" => "on",
+                              "tabSize" => 2,
+                              "insertSpaces" => true,
+                              "automaticLayout" => true,
+                              "formatOnPaste" => true,
+                              "formatOnType" => true
+                            }
+                          }
+                          set_options="monaco_editor_set_vega_options"
+                          set_value="monaco_editor_set_vega_value"
+                          get_value="monaco_editor_get_vega_value"
+                          use_code_lenses={[]}
+                          on_change="update_custom_vega_field"
+                          target={@myself}
+                        />
+                      </div>
+                      <button
+                        phx-click="render_custom_visualization"
+                        phx-target={@myself}
+                        class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors"
+                      >
+                        Render Visualization
+                      </button>
+                    </div>
+                    
+    <!-- Custom Visualization -->
+                    <%= if @custom_visualization_spec do %>
+                      <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border">
+                        <h4 class="text-md font-semibold mb-3 text-gray-900 dark:text-white text-center">
+                          Custom Visualization
+                        </h4>
+                        <div class="flex justify-center items-center">
+                          {{:safe, _chart_html} =
+                            OliWeb.Common.React.component(
+                              %{is_liveview: true},
+                              "Components.VegaLiteRenderer",
+                              %{spec: @custom_visualization_spec},
+                              id: "custom-analytics-chart"
+                            )}
+                        </div>
+                      </div>
+                    <% end %>
+                  </div>
+                <% else %>
+                  
+    <!-- Regular Analytics Interface -->
+                  <%= cond do %>
+                    <% @analytics_spec == nil -> %>
+                      <div class="flex items-center justify-center py-8">
+                        <div class="text-center">
+                          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4">
+                          </div>
+                          <p class="text-gray-500 dark:text-gray-400">Loading analytics data...</p>
+                        </div>
+                      </div>
+                    <% is_list(@analytics_spec) && length(@analytics_spec) > 0 -> %>
+                      <div class="mb-4">
+                        <%= case @selected_analytics_category do %>
+                          <% "video" -> %>
+                            <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                              This chart shows video completion rates across the most popular videos in your section.
+                              Higher completion rates indicate more engaging content.
+                            </p>
+                          <% "assessment" -> %>
+                            <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                              This scatter plot shows the relationship between average scores and success rates for activities.
+                              Bubble size represents the number of attempts.
+                            </p>
+                          <% "engagement" -> %>
+                            <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                              These charts show page engagement metrics: the bar chart displays page view counts with completion rates,
+                              while the heatmap reveals usage patterns by time of day and day of week.
+                            </p>
+                          <% "performance" -> %>
+                            <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                              This distribution shows how student scores are spread across different ranges.
+                              Color intensity indicates average hint usage.
+                            </p>
+                          <% "cross_event" -> %>
+                            <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                              This timeline shows the evolution of different event types over time,
+                              helping identify usage patterns and trends.
+                            </p>
+                        <% end %>
+                      </div>
+                      
+    <!-- Render all charts vertically -->
+                      <%= for {chart, index} <- Enum.with_index(@analytics_spec) do %>
+                        <div class="mb-6">
+                          <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
+                            <h4 class="text-sm font-medium mb-3 text-gray-700 dark:text-gray-300 text-center">
+                              {chart.title}
+                            </h4>
+                            <div class="overflow-x-auto overflow-y-hidden" style="max-width: 100%;">
+                              <div class="flex justify-center items-center min-w-max">
+                                {{:safe, _chart_html} =
+                                  OliWeb.Common.React.component(
+                                    %{is_liveview: true},
+                                    "Components.VegaLiteRenderer",
+                                    %{spec: chart.spec},
+                                    id: "analytics-chart-#{@selected_analytics_category}-#{index}"
+                                  )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      <% end %>
+                    <% true -> %>
+                      <div class="flex items-center justify-center py-12">
+                        <div class="text-center">
+                          <div class="mb-4">
+                            <svg
+                              class="mx-auto h-12 w-12 text-gray-400"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                              />
+                            </svg>
+                          </div>
+                          <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                            Not Enough Data
+                          </h3>
+                          <p class="text-gray-600 dark:text-gray-400">
+                            There isn't enough data available to generate this visualization.
+                            Try again once there's more student activity in your section.
+                          </p>
+                        </div>
+                      </div>
+                  <% end %>
+
+                  <%= if @analytics_data && (
                 (@selected_analytics_category == "engagement" && is_map(@analytics_data) &&
                   (length(Map.get(@analytics_data, :bar_chart_data, [])) > 0 || length(Map.get(@analytics_data, :heatmap_data, [])) > 0)) ||
                 (@selected_analytics_category != "engagement" && is_list(@analytics_data) && length(@analytics_data) > 0)
               ) do %>
-                <div class="mt-6">
-                  <h3 class="text-md font-semibold mb-3 text-gray-900 dark:text-white">Raw Data Summary</h3>
-                  <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
-                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                      <%= if @selected_analytics_category == "engagement" do %>
-                        Showing <%= length(Map.get(@analytics_data, :bar_chart_data, [])) %> page engagement records and <%= length(Map.get(@analytics_data, :heatmap_data, [])) %> time-based activity records.
-                      <% else %>
-                        Showing <%= length(@analytics_data) %> data points for this analysis.
-                      <% end %>
-                    </p>
-                    <details class="text-sm">
-                      <summary class="cursor-pointer text-blue-600 dark:text-blue-400 hover:underline">
-                        View detailed data
-                      </summary>
-                      <div class="mt-2 p-3 bg-white dark:bg-gray-800 rounded border">
-                        <Monaco.editor
-                          id={"raw-data-#{@selected_analytics_category}"}
-                          class="min-w-full max-w-full"
-                          language="elixir"
-                          height="300px"
-                          resizable={true}
-                          default_value={inspect(@analytics_data, pretty: true, limit: :infinity)}
-                          default_options={%{
-                            "readOnly" => true,
-                            "selectOnLineNumbers" => true,
-                            "minimap" => %{"enabled" => false},
-                            "scrollBeyondLastLine" => false,
-                            "wordWrap" => "on",
-                            "lineNumbers" => "on",
-                            "tabSize" => 2,
-                            "insertSpaces" => true,
-                            "automaticLayout" => true,
-                            "formatOnPaste" => true,
-                            "formatOnType" => true
-                          }}
-                        />
+                    <div class="mt-6">
+                      <h3 class="text-md font-semibold mb-3 text-gray-900 dark:text-white">
+                        Raw Data Summary
+                      </h3>
+                      <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                          <%= if @selected_analytics_category == "engagement" do %>
+                            Showing {length(Map.get(@analytics_data, :bar_chart_data, []))} page engagement records and {length(
+                              Map.get(@analytics_data, :heatmap_data, [])
+                            )} time-based activity records.
+                          <% else %>
+                            Showing {length(@analytics_data)} data points for this analysis.
+                          <% end %>
+                        </p>
+                        <details class="text-sm">
+                          <summary class="cursor-pointer text-blue-600 dark:text-blue-400 hover:underline">
+                            View detailed data
+                          </summary>
+                          <div class="mt-2 p-3 bg-white dark:bg-gray-800 rounded border">
+                            <Monaco.editor
+                              id={"raw-data-#{@selected_analytics_category}"}
+                              class="min-w-full max-w-full"
+                              language="elixir"
+                              height="300px"
+                              resizable={true}
+                              default_value={inspect(@analytics_data, pretty: true, limit: :infinity)}
+                              default_options={
+                                %{
+                                  "readOnly" => true,
+                                  "selectOnLineNumbers" => true,
+                                  "minimap" => %{"enabled" => false},
+                                  "scrollBeyondLastLine" => false,
+                                  "wordWrap" => "on",
+                                  "lineNumbers" => "on",
+                                  "tabSize" => 2,
+                                  "insertSpaces" => true,
+                                  "automaticLayout" => true,
+                                  "formatOnPaste" => true,
+                                  "formatOnType" => true
+                                }
+                              }
+                            />
+                          </div>
+                        </details>
                       </div>
-                    </details>
-                  </div>
-                </div>
-              <% end %>
+                    </div>
+                  <% end %>
+                <% end %>
+              </div>
             <% end %>
-          </div>
         <% end %>
       </div>
     </div>
     """
+  end
+
+  @impl true
+  def handle_event("bulk_load_section_analytics", _params, socket) do
+    case socket.assigns[:section] do
+      %{id: section_id} ->
+        send(self(), {:load_section_analytics, section_id})
+        {:noreply, assign(socket, :section_analytics_load_state, :loading)}
+
+      _ ->
+        {:noreply, socket}
+    end
   end
 
   @impl true
@@ -602,13 +769,16 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
     send(self(), {:select_analytics_category, category})
 
     # If selecting custom analytics, initialize with default values if not already set
-    socket = if category == "custom" do
-      socket
-      |> assign_new(:custom_sql_query, fn -> get_default_sql_query(socket.assigns.section.id) end)
-      |> assign_new(:custom_vega_spec, fn -> get_default_vega_spec() end)
-    else
-      socket
-    end
+    socket =
+      if category == "custom" do
+        socket
+        |> assign_new(:custom_sql_query, fn ->
+          get_default_sql_query(socket.assigns.section.id)
+        end)
+        |> assign_new(:custom_vega_spec, fn -> get_default_vega_spec() end)
+      else
+        socket
+      end
 
     {:noreply, socket}
   end
@@ -616,24 +786,32 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
   @impl true
   def handle_event("execute_custom_query", _params, socket) do
     # Get the current query from assigns, or use default if none exists
-    query = case socket.assigns.custom_sql_query do
-      nil -> get_default_sql_query(socket.assigns.section.id)
-      "" -> get_default_sql_query(socket.assigns.section.id)
-      existing_query -> existing_query
-    end
+    query =
+      case socket.assigns.custom_sql_query do
+        nil -> get_default_sql_query(socket.assigns.section.id)
+        "" -> get_default_sql_query(socket.assigns.section.id)
+        existing_query -> existing_query
+      end
 
     if query && String.trim(query) != "" do
       case validate_query_section_filter(query, socket.assigns.section.id) do
         :ok ->
           # Add JSONEachRow format for easier parsing in custom analytics
-          formatted_query = if String.contains?(String.downcase(query), "format") do
-            query
-          else
-            query <> " FORMAT JSONEachRow"
-          end
+          formatted_query =
+            if String.contains?(String.downcase(query), "format") do
+              query
+            else
+              query <> " FORMAT JSONEachRow"
+            end
 
-          result = Oli.Analytics.ClickhouseAnalytics.execute_query(formatted_query, "custom analytics query")
+          result =
+            Oli.Analytics.ClickhouseAnalytics.execute_query(
+              formatted_query,
+              "custom analytics query"
+            )
+
           {:noreply, assign(socket, custom_query_result: result, custom_sql_query: query)}
+
         {:error, reason} ->
           error_result = {:error, reason}
           {:noreply, assign(socket, custom_query_result: error_result)}
@@ -649,16 +827,21 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
     %{custom_query_result: query_result, custom_vega_spec: vega_spec} = socket.assigns
 
     # Use default vega spec if none is provided
-    spec_to_use = if vega_spec && String.trim(vega_spec) != "", do: vega_spec, else: get_default_vega_spec()
+    spec_to_use =
+      if vega_spec && String.trim(vega_spec) != "", do: vega_spec, else: get_default_vega_spec()
 
     case {query_result, spec_to_use} do
       {{:ok, %{body: body}}, spec} when is_binary(spec) and spec != "" ->
         case parse_query_result_and_create_spec(body, spec) do
           {:ok, final_spec} ->
-            {:noreply, assign(socket, custom_visualization_spec: final_spec, custom_vega_spec: spec_to_use)}
+            {:noreply,
+             assign(socket, custom_visualization_spec: final_spec, custom_vega_spec: spec_to_use)}
+
           {:error, reason} ->
-            {:noreply, assign(socket, custom_query_result: {:error, "Visualization error: #{reason}"})}
+            {:noreply,
+             assign(socket, custom_query_result: {:error, "Visualization error: #{reason}"})}
         end
+
       _ ->
         error_msg = "Please execute a successful query and provide a VegaLite specification"
         {:noreply, assign(socket, custom_query_result: {:error, error_msg})}
@@ -693,8 +876,10 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
     case params do
       %{"value" => sql_value} ->
         {:noreply, assign(socket, :custom_sql, sql_value)}
+
       %{"sql" => sql_value} ->
         {:noreply, assign(socket, :custom_sql, sql_value)}
+
       _ ->
         Logger.info("Unexpected params in update_custom_field: #{inspect(params)}")
         {:noreply, socket}
@@ -707,8 +892,10 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
     case params do
       %{"value" => vega_value} ->
         {:noreply, assign(socket, :custom_vega_lite, vega_value)}
+
       %{"vega" => vega_value} ->
         {:noreply, assign(socket, :custom_vega_lite, vega_value)}
+
       _ ->
         Logger.info("Unexpected params in update_custom_vega_field: #{inspect(params)}")
         {:noreply, socket}
@@ -718,22 +905,42 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
   @impl true
   def handle_event("update_engagement_filters", params, socket) do
     # Handle max_pages value - can be integer or "all"
-    max_pages_value = case Map.get(params, "max_pages", "25") do
-      "all" -> "all"
-      value -> String.to_integer(value)
-    end
+    max_pages_value =
+      case Map.get(params, "max_pages", "25") do
+        "all" -> "all"
+        value -> String.to_integer(value)
+      end
 
     socket =
       socket
-      |> assign(:engagement_start_date, Map.get(params, "start_date", socket.assigns.engagement_start_date))
-      |> assign(:engagement_end_date, Map.get(params, "end_date", socket.assigns.engagement_end_date))
+      |> assign(
+        :engagement_start_date,
+        Map.get(params, "start_date", socket.assigns.engagement_start_date)
+      )
+      |> assign(
+        :engagement_end_date,
+        Map.get(params, "end_date", socket.assigns.engagement_end_date)
+      )
       |> assign(:engagement_max_pages, max_pages_value)
 
     # Reload engagement analytics with new filters
     if socket.assigns.selected_analytics_category == "engagement" do
-      %{engagement_start_date: start_date, engagement_end_date: end_date, engagement_max_pages: max_pages, section: section, resource_title_map: resource_title_map} = socket.assigns
+      %{
+        engagement_start_date: start_date,
+        engagement_end_date: end_date,
+        engagement_max_pages: max_pages,
+        section: section,
+        resource_title_map: resource_title_map
+      } = socket.assigns
 
-      {data, charts} = get_engagement_analytics_with_filters(section.id, start_date, end_date, max_pages, resource_title_map)
+      {data, charts} =
+        get_engagement_analytics_with_filters(
+          section.id,
+          start_date,
+          end_date,
+          max_pages,
+          resource_title_map
+        )
 
       socket =
         socket
@@ -749,10 +956,11 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
   # Helper functions for custom analytics
   defp validate_query_section_filter(query, current_section_id) do
     # Normalize the query for easier parsing
-    normalized_query = query
-    |> String.downcase()
-    |> String.replace(~r/\s+/, " ")
-    |> String.trim()
+    normalized_query =
+      query
+      |> String.downcase()
+      |> String.replace(~r/\s+/, " ")
+      |> String.trim()
 
     # Check if there's a WHERE clause
     unless String.contains?(normalized_query, "where") do
@@ -762,6 +970,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
       case String.split(normalized_query, "where", parts: 2) do
         [_before_where] ->
           {:error, "Query must include a WHERE clause to filter results to the current section"}
+
         [_before_where, where_clause] ->
           validate_section_id_in_where_clause(where_clause, current_section_id)
       end
@@ -776,21 +985,214 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
       ~r/section_id\s*=\s*"#{current_section_id}"(\s|$|and|or|group|order|limit|having)/
     ]
 
-    section_filter_found = Enum.any?(section_id_patterns, fn pattern ->
-      Regex.match?(pattern, where_clause)
-    end)
+    section_filter_found =
+      Enum.any?(section_id_patterns, fn pattern ->
+        Regex.match?(pattern, where_clause)
+      end)
 
     if section_filter_found do
       :ok
     else
       # Check if section_id is mentioned but with wrong value
       if String.contains?(where_clause, "section_id") do
-        {:error, "Query contains section_id filter but with incorrect value. Must be: WHERE section_id = #{current_section_id}"}
+        {:error,
+         "Query contains section_id filter but with incorrect value. Must be: WHERE section_id = #{current_section_id}"}
       else
-        {:error, "Query must filter results to the current section (WHERE section_id = #{current_section_id})"}
+        {:error,
+         "Query must filter results to the current section (WHERE section_id = #{current_section_id})"}
       end
     end
   end
+
+  defp comprehensive_summary_rows(%{parsed_body: %{"data" => data} = parsed_body})
+       when is_list(data) do
+    meta = Map.get(parsed_body, "meta", [])
+
+    Enum.map(data, fn
+      row when is_map(row) ->
+        build_summary_row(row)
+
+      row when is_list(row) ->
+        row_map = build_row_from_meta(row, meta)
+        build_summary_row(row_map)
+
+      _ ->
+        build_summary_row(%{})
+    end)
+  end
+
+  defp comprehensive_summary_rows(%{parsed_body: data}) when is_list(data) do
+    Enum.map(data, &build_summary_row/1)
+  end
+
+  defp comprehensive_summary_rows(%{body: body}) when is_binary(body) do
+    body
+    |> String.split("\n")
+    |> Enum.reject(&(&1 == "" or String.starts_with?(&1, "event_type")))
+    |> Enum.flat_map(fn line ->
+      case String.split(line, "\t") do
+        parts when length(parts) >= 6 ->
+          [summary_row_from_parts(parts)]
+
+        _ ->
+          []
+      end
+    end)
+  end
+
+  defp comprehensive_summary_rows(_), do: []
+
+  defp build_summary_row(row) when is_map(row) do
+    %{
+      event_type:
+        fetch_row_value(row, [:event_type, "event_type"])
+        |> to_string_or_unknown(),
+      total_events:
+        fetch_row_value(row, [:total_events, "total_events"])
+        |> to_string_or_zero(),
+      unique_users:
+        fetch_row_value(row, [:unique_users, "unique_users"])
+        |> to_string_or_zero(),
+      additional_info:
+        fetch_row_value(row, [:additional_info, "additional_info"])
+        |> to_string_or_nil()
+    }
+  end
+
+  defp build_summary_row(_),
+    do: %{event_type: "unknown", total_events: "0", unique_users: "0", additional_info: nil}
+
+  defp summary_row_from_parts(parts) do
+    [event_type, total_events, unique_users, _earliest, _latest, additional] = Enum.take(parts, 6)
+
+    %{
+      event_type: event_type,
+      total_events: total_events,
+      unique_users: unique_users,
+      additional_info: additional
+    }
+  end
+
+  defp build_row_from_meta(values, meta) when is_list(values) and is_list(meta) do
+    Enum.zip(meta, values)
+    |> Enum.with_index()
+    |> Enum.reduce(%{}, fn
+      {{%{"name" => name}, value}, index}, acc ->
+        key = name || "column_#{index}"
+        Map.put(acc, key, value)
+
+      {{_meta_entry, value}, index}, acc ->
+        Map.put(acc, "column_#{index}", value)
+    end)
+  end
+
+  defp build_row_from_meta(values, _meta) when is_list(values) do
+    values
+    |> Enum.with_index()
+    |> Enum.reduce(%{}, fn {value, index}, acc ->
+      Map.put(acc, "column_#{index}", value)
+    end)
+  end
+
+  defp build_row_from_meta(_values, _meta), do: %{}
+
+  defp fetch_row_value(row, keys) when is_list(keys) do
+    Enum.reduce_while(keys, nil, fn key, _acc ->
+      case fetch_row_value(row, key) do
+        nil -> {:cont, nil}
+        value -> {:halt, value}
+      end
+    end)
+  end
+
+  defp fetch_row_value(row, key) when is_map(row) and is_atom(key) do
+    Map.get(row, key) || Map.get(row, Atom.to_string(key))
+  end
+
+  defp fetch_row_value(row, key) when is_map(row) and is_binary(key) do
+    Map.get(row, key) ||
+      case safe_to_existing_atom(key) do
+        {:ok, atom_key} -> Map.get(row, atom_key)
+        :error -> nil
+      end
+  end
+
+  defp fetch_row_value(_, _), do: nil
+
+  defp safe_to_existing_atom(key) do
+    try do
+      {:ok, String.to_existing_atom(key)}
+    rescue
+      ArgumentError -> :error
+    end
+  end
+
+  defp to_string_or_zero(value) when is_number(value), do: to_string(value)
+
+  defp to_string_or_zero(value) when is_binary(value) do
+    trimmed = String.trim(value)
+
+    cond do
+      trimmed == "" ->
+        "0"
+
+      trimmed == "total_events" ->
+        "0"
+
+      trimmed == "unique_users" ->
+        "0"
+
+      true ->
+        case Integer.parse(trimmed) do
+          {int_val, _} ->
+            Integer.to_string(int_val)
+
+          :error ->
+            case Float.parse(trimmed) do
+              {float_val, _} ->
+                float_val
+                |> Float.round(2)
+                |> :erlang.float_to_binary(decimals: 2)
+                |> to_string()
+
+              :error ->
+                "0"
+            end
+        end
+    end
+  end
+
+  defp to_string_or_zero(_), do: "0"
+
+  defp to_string_or_unknown(value) when is_binary(value) do
+    trimmed = String.trim(value)
+
+    if trimmed == "" or trimmed == "event_type" do
+      "unknown"
+    else
+      trimmed
+    end
+  end
+
+  defp to_string_or_unknown(value) when is_atom(value) do
+    value |> Atom.to_string() |> to_string_or_unknown()
+  end
+
+  defp to_string_or_unknown(nil), do: "unknown"
+  defp to_string_or_unknown(value), do: to_string(value)
+
+  defp to_string_or_nil(value) when is_binary(value) do
+    trimmed = String.trim(value)
+
+    cond do
+      trimmed == "" -> nil
+      trimmed == "additional_info" -> nil
+      true -> trimmed
+    end
+  end
+
+  defp to_string_or_nil(nil), do: nil
+  defp to_string_or_nil(value), do: to_string(value)
 
   defp get_default_sql_query(section_id) do
     """
@@ -880,7 +1282,14 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
       {:ok, data, execution_time} ->
         if length(data) > 0 do
           spec = create_video_completion_chart(data)
-          charts = [%{title: "Video Completion Analysis (#{format_execution_time(execution_time)})", spec: spec}]
+
+          charts = [
+            %{
+              title: "Video Completion Analysis (#{format_execution_time(execution_time)})",
+              spec: spec
+            }
+          ]
+
           {data, charts}
         else
           {[], []}
@@ -912,7 +1321,14 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
       {:ok, data, execution_time} ->
         if length(data) > 0 do
           spec = create_assessment_performance_chart(data)
-          charts = [%{title: "Assessment Performance Analysis (#{format_execution_time(execution_time)})", spec: spec}]
+
+          charts = [
+            %{
+              title: "Assessment Performance Analysis (#{format_execution_time(execution_time)})",
+              spec: spec
+            }
+          ]
+
           {data, charts}
         else
           {[], []}
@@ -948,7 +1364,14 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
       {:ok, data, execution_time} ->
         if length(data) > 0 do
           spec = create_score_distribution_chart(data)
-          charts = [%{title: "Score Distribution Analysis (#{format_execution_time(execution_time)})", spec: spec}]
+
+          charts = [
+            %{
+              title: "Score Distribution Analysis (#{format_execution_time(execution_time)})",
+              spec: spec
+            }
+          ]
+
           {data, charts}
         else
           {[], []}
@@ -978,7 +1401,14 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
       {:ok, data, execution_time} ->
         if length(data) > 0 do
           spec = create_event_timeline_chart(data)
-          charts = [%{title: "Event Timeline Analysis (#{format_execution_time(execution_time)})", spec: spec}]
+
+          charts = [
+            %{
+              title: "Event Timeline Analysis (#{format_execution_time(execution_time)})",
+              spec: spec
+            }
+          ]
+
           {data, charts}
         else
           {[], []}
@@ -1011,49 +1441,82 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
   end
 
   # Helper function to get analytics data with filters and resource title map
-  def get_analytics_data_and_spec_with_filters_and_resource_map(category, section_id, start_date, end_date, max_pages, resource_title_map) do
+  def get_analytics_data_and_spec_with_filters_and_resource_map(
+        category,
+        section_id,
+        start_date,
+        end_date,
+        max_pages,
+        resource_title_map
+      ) do
     case category do
-      "engagement" -> get_engagement_analytics_with_filters(section_id, start_date, end_date, max_pages, resource_title_map)
-      _ -> get_analytics_data_and_spec(category, section_id)
+      "engagement" ->
+        get_engagement_analytics_with_filters(
+          section_id,
+          start_date,
+          end_date,
+          max_pages,
+          resource_title_map
+        )
+
+      _ ->
+        get_analytics_data_and_spec(category, section_id)
     end
   end
 
-  def get_engagement_analytics_with_filters(section_id, start_date, end_date, max_pages, resource_title_map \\ nil) do
+  def get_engagement_analytics_with_filters(
+        section_id,
+        start_date,
+        end_date,
+        max_pages,
+        resource_title_map \\ nil
+      ) do
     # Use provided resource title map or load it if not provided
-    resource_title_map = case resource_title_map do
-      nil ->
-        # Load the full hierarchy to get page titles
-        section = Oli.Repo.get!(Oli.Delivery.Sections.Section, section_id)
-        hierarchy = Oli.Delivery.Sections.SectionResourceDepot.get_full_hierarchy(section, [hidden: false])
+    resource_title_map =
+      case resource_title_map do
+        nil ->
+          # Load the full hierarchy to get page titles
+          section = Oli.Repo.get!(Oli.Delivery.Sections.Section, section_id)
 
-        # Create a mapping from resource_id to title from the hierarchy
-        title_map = extract_resource_titles_from_hierarchy(hierarchy)
+          hierarchy =
+            Oli.Delivery.Sections.SectionResourceDepot.get_full_hierarchy(section, hidden: false)
 
-        title_map
+          # Create a mapping from resource_id to title from the hierarchy
+          title_map = extract_resource_titles_from_hierarchy(hierarchy)
 
-      existing_map ->
-        existing_map
-    end
+          title_map
+
+        existing_map ->
+          existing_map
+      end
 
     # Build date filter condition
-    date_filter = case {start_date, end_date} do
-      {nil, nil} -> ""
-      {start_date, nil} when is_binary(start_date) ->
-        " AND toDate(timestamp) >= '#{start_date}'"
-      {nil, end_date} when is_binary(end_date) ->
-        " AND toDate(timestamp) <= '#{end_date}'"
-      {start_date, end_date} when is_binary(start_date) and is_binary(end_date) ->
-        " AND toDate(timestamp) >= '#{start_date}' AND toDate(timestamp) <= '#{end_date}'"
-      _ -> ""
-    end
+    date_filter =
+      case {start_date, end_date} do
+        {nil, nil} ->
+          ""
+
+        {start_date, nil} when is_binary(start_date) ->
+          " AND toDate(timestamp) >= '#{start_date}'"
+
+        {nil, end_date} when is_binary(end_date) ->
+          " AND toDate(timestamp) <= '#{end_date}'"
+
+        {start_date, end_date} when is_binary(start_date) and is_binary(end_date) ->
+          " AND toDate(timestamp) >= '#{start_date}' AND toDate(timestamp) <= '#{end_date}'"
+
+        _ ->
+          ""
+      end
 
     # Build limit clause based on max_pages setting
-    limit_clause = case max_pages do
-      "all" -> ""
-      nil -> "LIMIT 25"
-      pages when is_integer(pages) -> "LIMIT #{pages}"
-      _ -> "LIMIT 25"
-    end
+    limit_clause =
+      case max_pages do
+        "all" -> ""
+        nil -> "LIMIT 25"
+        pages when is_integer(pages) -> "LIMIT #{pages}"
+        _ -> "LIMIT 25"
+      end
 
     # Main engagement query for bar chart
     query = """
@@ -1101,18 +1564,22 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
         """
 
         # Get heatmap data
-        {heatmap_data, heatmap_query_time} = case execute_analytics_query_json(heatmap_query, "engagement heatmap") do
-          {:ok, heatmap_data, heatmap_time} ->
-            {heatmap_data, heatmap_time}
-          {:error, reason} ->
-            Logger.error("Heatmap query failed: #{inspect(reason)}")
-            {[], 0}
-        end
+        {heatmap_data, heatmap_query_time} =
+          case execute_analytics_query_json(heatmap_query, "engagement heatmap") do
+            {:ok, heatmap_data, heatmap_time} ->
+              {heatmap_data, heatmap_time}
+
+            {:error, reason} ->
+              Logger.error("Heatmap query failed: #{inspect(reason)}")
+              {[], 0}
+          end
 
         if length(data) > 0 || length(heatmap_data) > 0 do
           # Replace page IDs with titles in both datasets
           enriched_bar_data = enrich_data_with_titles(data, resource_title_map)
-          enriched_heatmap_data = enrich_heatmap_data_with_titles(heatmap_data, resource_title_map)
+
+          enriched_heatmap_data =
+            enrich_heatmap_data_with_titles(heatmap_data, resource_title_map)
 
           bar_spec = create_page_engagement_chart(enriched_bar_data)
 
@@ -1125,8 +1592,14 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
           }
 
           charts = [
-            %{title: "Page Engagement (#{format_execution_time(main_query_time)})", spec: bar_spec},
-            %{title: "Activity Heatmap (#{format_execution_time(heatmap_query_time)})", spec: heatmap_spec}
+            %{
+              title: "Page Engagement (#{format_execution_time(main_query_time)})",
+              spec: bar_spec
+            },
+            %{
+              title: "Activity Heatmap (#{format_execution_time(heatmap_query_time)})",
+              spec: heatmap_spec
+            }
           ]
 
           {combined_data, charts}
@@ -1143,15 +1616,21 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
   # Helper function to execute analytics queries with JSON format for easier parsing
   defp execute_analytics_query_json(query, description) do
     # Add JSON format to the query
-    formatted_query = if String.contains?(String.downcase(query), "format") do
-      query
-    else
-      query <> " FORMAT JSONEachRow"
-    end
+    formatted_query =
+      if String.contains?(String.downcase(query), "format") do
+        query
+      else
+        query <> " FORMAT JSONEachRow"
+      end
 
     case Oli.Analytics.ClickhouseAnalytics.execute_query(formatted_query, description) do
+      {:ok, %{parsed_body: parsed, execution_time_ms: execution_time_ms}}
+      when is_list(parsed) ->
+        {:ok, parsed, execution_time_ms}
+
       {:ok, %{body: body, execution_time_ms: execution_time_ms}} ->
         {:ok, parse_json_each_row_data(body), execution_time_ms}
+
       {:error, reason} ->
         {:error, reason}
     end
@@ -1165,30 +1644,35 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
       true -> "#{:erlang.float_to_binary(time_ms / 1000, decimals: 2)}s"
     end
   end
+
   defp format_execution_time(_), do: "unknown"
 
   defp parse_json_each_row_data(body) when is_binary(body) do
     lines = String.split(String.trim(body), "\n", trim: true)
 
     # Filter out separator lines and empty lines before parsing JSON
-    filtered_lines = lines
-    |> Enum.filter(fn line ->
-      trimmed = String.trim(line)
-      # Keep lines that start with { (JSON objects) and reject separator lines with just dashes
-      String.starts_with?(trimmed, "{") && !String.match?(trimmed, ~r/^-+$/)
-    end)
+    filtered_lines =
+      lines
+      |> Enum.filter(fn line ->
+        trimmed = String.trim(line)
+        # Keep lines that start with { (JSON objects) and reject separator lines with just dashes
+        String.starts_with?(trimmed, "{") && !String.match?(trimmed, ~r/^-+$/)
+      end)
 
-    result = filtered_lines
-    |> Enum.map(fn line ->
-      case Jason.decode(String.trim(line)) do
-        {:ok, json_obj} ->
-          json_obj
-        {:error, error} ->
-          Logger.warning("Failed to parse JSON line '#{line}': #{inspect(error)}")
-          nil
-      end
-    end)
-    |> Enum.reject(&is_nil/1)
+    result =
+      filtered_lines
+      |> Enum.map(fn line ->
+        case Jason.decode(String.trim(line)) do
+          {:ok, json_obj} ->
+            json_obj
+
+          {:error, error} ->
+            Logger.warning("Failed to parse JSON line '#{line}': #{inspect(error)}")
+            nil
+        end
+      end)
+      |> Enum.reject(&is_nil/1)
+
     result
   end
 
@@ -1212,12 +1696,14 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
                 Map.get(json_row, "avg_progress"),
                 Map.get(json_row, "unique_viewers")
               }
+
             list when is_list(list) ->
               # TSV format (array)
               case list do
                 [id, t, p, c, cr, ap, v] -> {id, t, p, c, cr, ap, v}
                 _ -> ["", "Unknown", "0", "0", "0", "0", "0"]
               end
+
             _ ->
               {"", "Unknown", "0", "0", "0", "0", "0"}
           end
@@ -1225,24 +1711,34 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
         %{
           "video" => "Video #{idx + 1}",
           "title" => String.slice(title || "Unknown", 0, 20),
-          "completion_rate" => case completion_rate do
-            rate when is_binary(rate) ->
-              case Float.parse(rate) do
-                {float_val, _} -> float_val
-                :error -> 0.0
-              end
-            rate when is_number(rate) -> rate
-            _ -> 0.0
-          end,
-          "plays" => case plays do
-            p when is_binary(p) ->
-              case Integer.parse(p) do
-                {int_val, _} -> int_val
-                :error -> 0
-              end
-            p when is_number(p) -> p
-            _ -> 0
-          end
+          "completion_rate" =>
+            case completion_rate do
+              rate when is_binary(rate) ->
+                case Float.parse(rate) do
+                  {float_val, _} -> float_val
+                  :error -> 0.0
+                end
+
+              rate when is_number(rate) ->
+                rate
+
+              _ ->
+                0.0
+            end,
+          "plays" =>
+            case plays do
+              p when is_binary(p) ->
+                case Integer.parse(p) do
+                  {int_val, _} -> int_val
+                  :error -> 0
+                end
+
+              p when is_number(p) ->
+                p
+
+              _ ->
+                0
+            end
         }
       end)
 
@@ -1305,39 +1801,58 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
                 Map.get(json_row, "successful_attempts"),
                 Map.get(json_row, "unique_users")
               ]
-            list when is_list(list) -> list
-            _ -> ["", "0", "0", "0", "0"]
+
+            list when is_list(list) ->
+              list
+
+            _ ->
+              ["", "0", "0", "0", "0"]
           end
 
-        attempts_num = case attempts do
-          a when is_binary(a) ->
-            case Integer.parse(a) do
-              {int_val, _} -> int_val
-              :error -> 0
-            end
-          a when is_number(a) -> a
-          _ -> 0
-        end
+        attempts_num =
+          case attempts do
+            a when is_binary(a) ->
+              case Integer.parse(a) do
+                {int_val, _} -> int_val
+                :error -> 0
+              end
 
-        avg_score_num = case avg_score do
-          s when is_binary(s) ->
-            case Float.parse(s) do
-              {float_val, _} -> float_val * 100
-              :error -> 0.0
-            end
-          s when is_number(s) -> s * 100
-          _ -> 0.0
-        end
+            a when is_number(a) ->
+              a
 
-        successful_num = case successful do
-          s when is_binary(s) ->
-            case Integer.parse(s) do
-              {int_val, _} -> int_val
-              :error -> 0
-            end
-          s when is_number(s) -> s
-          _ -> 0
-        end
+            _ ->
+              0
+          end
+
+        avg_score_num =
+          case avg_score do
+            s when is_binary(s) ->
+              case Float.parse(s) do
+                {float_val, _} -> float_val * 100
+                :error -> 0.0
+              end
+
+            s when is_number(s) ->
+              s * 100
+
+            _ ->
+              0.0
+          end
+
+        successful_num =
+          case successful do
+            s when is_binary(s) ->
+              case Integer.parse(s) do
+                {int_val, _} -> int_val
+                :error -> 0
+              end
+
+            s when is_number(s) ->
+              s
+
+            _ ->
+              0
+          end
 
         success_rate = if attempts_num > 0, do: successful_num / attempts_num * 100, else: 0
 
@@ -1415,55 +1930,76 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
                 Map.get(json_row, "completion_rate"),
                 Map.get(json_row, "page_title")
               }
+
             list when is_list(list) ->
               # TSV format (array)
               case list do
                 [p_id, p_type, views, viewers, completed, rate, page_title] ->
                   {p_id, p_type, views, viewers, completed, rate, page_title}
+
                 [p_id, p_type, views, viewers, completed, rate] ->
                   {p_id, p_type, views, viewers, completed, rate, "Page #{p_id}"}
-                _ -> {"", "Unknown", "0", "0", "0", "0", "Unknown"}
+
+                _ ->
+                  {"", "Unknown", "0", "0", "0", "0", "Unknown"}
               end
+
             _ ->
               {"", "Unknown", "0", "0", "0", "0", "Unknown"}
           end
 
-        views_num = case views do
-          v when is_binary(v) ->
-            case Integer.parse(v) do
-              {int_val, _} -> int_val
-              :error -> 0
-            end
-          v when is_number(v) -> v
-          _ -> 0
-        end
+        views_num =
+          case views do
+            v when is_binary(v) ->
+              case Integer.parse(v) do
+                {int_val, _} -> int_val
+                :error -> 0
+              end
 
-        viewers_num = case viewers do
-          v when is_binary(v) ->
-            case Integer.parse(v) do
-              {int_val, _} -> int_val
-              :error -> 0
-            end
-          v when is_number(v) -> v
-          _ -> 0
-        end
+            v when is_number(v) ->
+              v
 
-        completion_rate_num = case completion_rate do
-          r when is_binary(r) ->
-            case Float.parse(r) do
-              {float_val, _} -> float_val
-              :error -> 0.0
-            end
-          r when is_number(r) -> r
-          _ -> 0.0
-        end
+            _ ->
+              0
+          end
+
+        viewers_num =
+          case viewers do
+            v when is_binary(v) ->
+              case Integer.parse(v) do
+                {int_val, _} -> int_val
+                :error -> 0
+              end
+
+            v when is_number(v) ->
+              v
+
+            _ ->
+              0
+          end
+
+        completion_rate_num =
+          case completion_rate do
+            r when is_binary(r) ->
+              case Float.parse(r) do
+                {float_val, _} -> float_val
+                :error -> 0.0
+              end
+
+            r when is_number(r) ->
+              r
+
+            _ ->
+              0.0
+          end
 
         # Truncate title for display but keep full title for tooltip
-        display_title = if String.length(title || "Unknown") > 25 do
-          String.slice(title, 0, 22) <> "..."
-        else
-          title || "Unknown"
-        end
+        display_title =
+          if String.length(title || "Unknown") > 25 do
+            String.slice(title, 0, 22) <> "..."
+          else
+            title || "Unknown"
+          end
 
         %{
           "page" => display_title,
@@ -1563,6 +2099,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
                 Map.get(json_row, "view_count"),
                 Map.get(json_row, "page_title")
               }
+
             list when is_list(list) ->
               # TSV format (array)
               case list do
@@ -1570,26 +2107,33 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
                 [p_id, d, views] -> {p_id, d, views, "Page #{p_id}"}
                 _ -> ["unknown", "2024-01-01", "0", "Unknown"]
               end
+
             _ ->
               {"unknown", "2024-01-01", "0", "Unknown"}
           end
 
-        views_num = case total_views do
-          v when is_binary(v) ->
-            case Integer.parse(v) do
-              {int_val, _} -> int_val
-              :error -> 0
-            end
-          v when is_number(v) -> v
-          _ -> 0
-        end
+        views_num =
+          case total_views do
+            v when is_binary(v) ->
+              case Integer.parse(v) do
+                {int_val, _} -> int_val
+                :error -> 0
+              end
+
+            v when is_number(v) ->
+              v
+
+            _ ->
+              0
+          end
 
         # Truncate title for display
-        display_title = if String.length(title || "Unknown") > 20 do
-          String.slice(title, 0, 17) <> "..."
-        else
-          title || "Unknown"
-        end
+        display_title =
+          if String.length(title || "Unknown") > 20 do
+            String.slice(title, 0, 17) <> "..."
+          else
+            title || "Unknown"
+          end
 
         %{
           "page_id" => page_id || "unknown",
@@ -1693,29 +2237,43 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
                 Map.get(json_row, "attempt_count"),
                 Map.get(json_row, "avg_hints")
               ]
-            list when is_list(list) -> list
-            _ -> ["Unknown", "0", "0"]
+
+            list when is_list(list) ->
+              list
+
+            _ ->
+              ["Unknown", "0", "0"]
           end
 
-        count_num = case count do
-          c when is_binary(c) ->
-            case Integer.parse(c) do
-              {int_val, _} -> int_val
-              :error -> 0
-            end
-          c when is_number(c) -> c
-          _ -> 0
-        end
+        count_num =
+          case count do
+            c when is_binary(c) ->
+              case Integer.parse(c) do
+                {int_val, _} -> int_val
+                :error -> 0
+              end
 
-        hints_num = case avg_hints do
-          h when is_binary(h) ->
-            case Float.parse(h) do
-              {float_val, _} -> float_val
-              :error -> 0.0
-            end
-          h when is_number(h) -> h
-          _ -> 0.0
-        end
+            c when is_number(c) ->
+              c
+
+            _ ->
+              0
+          end
+
+        hints_num =
+          case avg_hints do
+            h when is_binary(h) ->
+              case Float.parse(h) do
+                {float_val, _} -> float_val
+                :error -> 0.0
+              end
+
+            h when is_number(h) ->
+              h
+
+            _ ->
+              0.0
+          end
 
         %{
           "score_range" => score_range || "Unknown",
@@ -1778,37 +2336,53 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
                 Map.get(json_row, "unique_users"),
                 Map.get(json_row, "month")
               ]
-            list when is_list(list) -> list
-            _ -> ["unknown", "0", "0", "202401"]
+
+            list when is_list(list) ->
+              list
+
+            _ ->
+              ["unknown", "0", "0", "202401"]
           end
 
-        month_str = case month do
-          m when is_integer(m) -> Integer.to_string(m)
-          m when is_binary(m) -> m
-          _ -> "202401"
-        end
+        month_str =
+          case month do
+            m when is_integer(m) -> Integer.to_string(m)
+            m when is_binary(m) -> m
+            _ -> "202401"
+          end
+
         year = String.slice(month_str, 0, 4)
         month_num = String.slice(month_str, 4, 2)
 
-        count_num = case count do
-          c when is_binary(c) ->
-            case Integer.parse(c) do
-              {int_val, _} -> int_val
-              :error -> 0
-            end
-          c when is_number(c) -> c
-          _ -> 0
-        end
+        count_num =
+          case count do
+            c when is_binary(c) ->
+              case Integer.parse(c) do
+                {int_val, _} -> int_val
+                :error -> 0
+              end
 
-        users_num = case users do
-          u when is_binary(u) ->
-            case Integer.parse(u) do
-              {int_val, _} -> int_val
-              :error -> 0
-            end
-          u when is_number(u) -> u
-          _ -> 0
-        end
+            c when is_number(c) ->
+              c
+
+            _ ->
+              0
+          end
+
+        users_num =
+          case users do
+            u when is_binary(u) ->
+              case Integer.parse(u) do
+                {int_val, _} -> int_val
+                :error -> 0
+              end
+
+            u when is_number(u) ->
+              u
+
+            _ ->
+              0
+          end
 
         %{
           "event_type" => event_type || "unknown",
@@ -1902,11 +2476,14 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
 
   defp extract_titles_recursive(%{"children" => children} = node, acc) when is_list(children) do
     # Extract title from current node if it has resource_id and title
-    acc = case {Map.get(node, "resource_id"), Map.get(node, "title")} do
-      {resource_id, title} when not is_nil(resource_id) and not is_nil(title) ->
-        Map.put(acc, to_string(resource_id), title)
-      _ -> acc
-    end
+    acc =
+      case {Map.get(node, "resource_id"), Map.get(node, "title")} do
+        {resource_id, title} when not is_nil(resource_id) and not is_nil(title) ->
+          Map.put(acc, to_string(resource_id), title)
+
+        _ ->
+          acc
+      end
 
     # Recursively process children
     Enum.reduce(children, acc, &extract_titles_recursive/2)
@@ -1926,56 +2503,60 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
 
   # Helper function to enrich bar chart data with titles
   defp enrich_data_with_titles(data, resource_title_map) do
-    enriched = Enum.map(data, fn row ->
-      case row do
-        %{} = json_row ->
-          # JSON format - add title field
-          page_id = Map.get(json_row, "page_id")
-          title = Map.get(resource_title_map, to_string(page_id), "Page #{page_id}")
-          Map.put(json_row, "page_title", title)
+    enriched =
+      Enum.map(data, fn row ->
+        case row do
+          %{} = json_row ->
+            # JSON format - add title field
+            page_id = Map.get(json_row, "page_id")
+            title = Map.get(resource_title_map, to_string(page_id), "Page #{page_id}")
+            Map.put(json_row, "page_title", title)
 
-        list when is_list(list) ->
-          # TSV format - append title to the list
-          case list do
-            [page_id | rest] ->
-              title = Map.get(resource_title_map, to_string(page_id), "Page #{page_id}")
-              [page_id | rest] ++ [title]
-            _ ->
-              list ++ ["Unknown Title"]
-          end
+          list when is_list(list) ->
+            # TSV format - append title to the list
+            case list do
+              [page_id | rest] ->
+                title = Map.get(resource_title_map, to_string(page_id), "Page #{page_id}")
+                [page_id | rest] ++ [title]
 
-        _ ->
-          row
-      end
-    end)
+              _ ->
+                list ++ ["Unknown Title"]
+            end
+
+          _ ->
+            row
+        end
+      end)
 
     enriched
   end
 
   # Helper function to enrich heatmap data with titles
   defp enrich_heatmap_data_with_titles(data, resource_title_map) do
-    enriched = Enum.map(data, fn row ->
-      case row do
-        %{} = json_row ->
-          # JSON format - add title field
-          page_id = Map.get(json_row, "page_id")
-          title = Map.get(resource_title_map, to_string(page_id), "Page #{page_id}")
-          Map.put(json_row, "page_title", title)
+    enriched =
+      Enum.map(data, fn row ->
+        case row do
+          %{} = json_row ->
+            # JSON format - add title field
+            page_id = Map.get(json_row, "page_id")
+            title = Map.get(resource_title_map, to_string(page_id), "Page #{page_id}")
+            Map.put(json_row, "page_title", title)
 
-        list when is_list(list) ->
-          # TSV format - append title to the list
-          case list do
-            [page_id, date, count] ->
-              title = Map.get(resource_title_map, to_string(page_id), "Page #{page_id}")
-              [page_id, date, count, title]
-            _ ->
-              list ++ ["Unknown Title"]
-          end
+          list when is_list(list) ->
+            # TSV format - append title to the list
+            case list do
+              [page_id, date, count] ->
+                title = Map.get(resource_title_map, to_string(page_id), "Page #{page_id}")
+                [page_id, date, count, title]
 
-        _ ->
-          row
-      end
-    end)
+              _ ->
+                list ++ ["Unknown Title"]
+            end
+
+          _ ->
+            row
+        end
+      end)
 
     enriched
   end

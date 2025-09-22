@@ -5,7 +5,13 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
   This module includes health checks, queries, and utility functions
   for working with ClickHouse data.
   """
+  alias Jason
   require Logger
+
+  defp clickhouse_config do
+    Application.get_env(:oli, :clickhouse, [])
+    |> Enum.into(%{})
+  end
 
   @doc """
   Checks if ClickHouse is available and responsive.
@@ -26,7 +32,7 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
 
   # Gets the fully qualified table name for the unified raw events table
   def raw_events_table() do
-    config = Application.get_env(:oli, :clickhouse) |> Enum.into(%{})
+    config = clickhouse_config()
     "#{config.database}.raw_events"
   end
 
@@ -40,7 +46,8 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
     %{
       # Video Analytics
       video_engagement_by_section: %{
-        description: "Analyzes video engagement metrics across different sections, including play/pause events, completion rates, and user participation.",
+        description:
+          "Analyzes video engagement metrics across different sections, including play/pause events, completion rates, and user participation.",
         query: """
           SELECT
             section_id,
@@ -58,7 +65,8 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
         """
       },
       video_completion_rates: %{
-        description: "Shows completion rates for individual videos, highlighting which content is most engaging to learners.",
+        description:
+          "Shows completion rates for individual videos, highlighting which content is most engaging to learners.",
         query: """
           SELECT
             content_element_id,
@@ -74,7 +82,8 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
         """
       },
       user_video_engagement: %{
-        description: "Provides insights into individual user video watching patterns and engagement levels.",
+        description:
+          "Provides insights into individual user video watching patterns and engagement levels.",
         query: """
           SELECT
             user_id,
@@ -92,7 +101,8 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
 
       # Activity Attempt Analytics
       activity_attempt_performance: %{
-        description: "Analyzes performance metrics for activity attempts, showing success rates and average scores by section and activity.",
+        description:
+          "Analyzes performance metrics for activity attempts, showing success rates and average scores by section and activity.",
         query: """
           SELECT
             section_id,
@@ -110,7 +120,8 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
         """
       },
       activity_attempt_trends: %{
-        description: "Shows monthly trends in activity attempt performance and user engagement over time.",
+        description:
+          "Shows monthly trends in activity attempt performance and user engagement over time.",
         query: """
           SELECT
             toYYYYMM(timestamp) as month,
@@ -127,7 +138,8 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
 
       # Page Attempt Analytics
       page_attempt_performance: %{
-        description: "Evaluates page-level assessment performance, showing which pages students find most challenging.",
+        description:
+          "Evaluates page-level assessment performance, showing which pages students find most challenging.",
         query: """
           SELECT
             section_id,
@@ -147,7 +159,8 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
 
       # Page Viewed Analytics
       page_engagement: %{
-        description: "Tracks page viewing patterns by time of day and completion rates to understand content engagement.",
+        description:
+          "Tracks page viewing patterns by time of day and completion rates to understand content engagement.",
         query: """
           SELECT
             section_id,
@@ -165,7 +178,8 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
         """
       },
       popular_pages: %{
-        description: "Identifies the most popular pages based on view counts and completion rates across all sections.",
+        description:
+          "Identifies the most popular pages based on view counts and completion rates across all sections.",
         query: """
           SELECT
             page_id,
@@ -182,7 +196,8 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
 
       # Part Attempt Analytics
       part_attempt_analysis: %{
-        description: "Provides detailed analysis of individual question parts within activities, including hint usage patterns.",
+        description:
+          "Provides detailed analysis of individual question parts within activities, including hint usage patterns.",
         query: """
           SELECT
             section_id,
@@ -204,7 +219,8 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
 
       # Cross-Event Analytics
       comprehensive_section_summary: %{
-        description: "Provides a comprehensive overview of all event types by section, showing overall learning activity patterns.",
+        description:
+          "Provides a comprehensive overview of all event types by section, showing overall learning activity patterns.",
         query: """
           SELECT
             event_type,
@@ -222,7 +238,8 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
 
       # Event Type Distribution
       event_type_distribution: %{
-        description: "Shows the distribution of different event types across the entire platform to understand overall usage patterns.",
+        description:
+          "Shows the distribution of different event types across the entire platform to understand overall usage patterns.",
         query: """
           SELECT
             event_type,
@@ -341,8 +358,235 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
     |> execute_query("comprehensive section analytics for section #{section_id}")
   end
 
-  def execute_query(query, description) when is_binary(query) and byte_size(query) > 0 do
-    config = Application.get_env(:oli, :clickhouse) |> Enum.into(%{})
+  @doc """
+  Returns `{:ok, true}` when the ClickHouse raw events table already contains
+  analytics data for the given section, and `{:ok, false}` when no records have
+  been loaded yet. Any error returned from ClickHouse is propagated.
+  """
+  def section_analytics_loaded?(section_id) when is_integer(section_id) do
+    raw_events_table = raw_events_table()
+
+    """
+    SELECT count() > 0 AS has_data
+    FROM #{raw_events_table}
+    WHERE section_id = #{section_id}
+    """
+    |> execute_query("section analytics load status for section #{section_id}")
+    |> case do
+      {:ok, %{parsed_body: %{"data" => data}} = result} when is_list(data) ->
+        {:ok, parse_boolean_from_json(data) || parse_boolean_result(result.body)}
+
+      {:ok, %{parsed_body: data} = result} when is_list(data) ->
+        {:ok, parse_boolean_from_rows(data) || parse_boolean_result(result.body)}
+
+      {:ok, %{body: body}} ->
+        {:ok, parse_boolean_result(body)}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  def section_analytics_loaded?(_), do: {:error, :invalid_section_id}
+
+  @doc """
+  Convenience wrapper that fetches AWS credentials from the environment before
+  executing the bulk load operation.
+  """
+  def bulk_load_section_analytics(section_id) when is_integer(section_id) do
+    with {:ok, {access_key, secret_key}} <- fetch_aws_credentials() do
+      bulk_load_section_analytics(section_id, access_key, secret_key)
+    end
+  end
+
+  def bulk_load_section_analytics(section_id, aws_access_key, aws_secret_key) do
+    raw_events_table = raw_events_table()
+
+    """
+    INSERT INTO #{raw_events_table} (
+        event_id, user_id, host_name, section_id, project_id, publication_id,
+        timestamp, event_type, attempt_guid, attempt_number, page_id,
+        content_element_id, video_url, video_title, video_time, video_length,
+        video_progress, video_played_segments, video_play_time, video_seek_from,
+        video_seek_to, activity_attempt_guid, activity_attempt_number,
+        page_attempt_guid, page_attempt_number, part_attempt_guid,
+        part_attempt_number, activity_id, activity_revision_id, part_id,
+        page_sub_type, score, out_of, scaled_score, success, completion,
+        response, feedback, hints_requested, attached_objectives, session_id
+    )
+    SELECT
+        /* event_id: generate if source lacks a stable id */
+        generateUUIDv4() AS event_id,
+
+        /* user_id: prefer actor.account.name, fallback to mbox; cast to String in case it's numeric */
+        coalesce(
+          JSON_VALUE(json, '$.actor.account.name'),
+          JSON_VALUE(json, '$.actor.mbox'),
+          toString(JSONExtract(json, 'actor.account.name', 'Int64')),
+          ''
+        ) AS user_id,
+
+        /* host_name and ids (defaults to 0 if absent) */
+        JSON_VALUE(json, '$.context.extensions."http://oli.cmu.edu/extensions/host_name"') AS host_name,
+        toUInt64OrZero(JSON_VALUE(json, '$.context.extensions."http://oli.cmu.edu/extensions/section_id"'))     AS section_id,
+        toUInt64OrZero(JSON_VALUE(json, '$.context.extensions."http://oli.cmu.edu/extensions/project_id"'))     AS project_id,
+        toUInt64OrZero(JSON_VALUE(json, '$.context.extensions."http://oli.cmu.edu/extensions/publication_id"')) AS publication_id,
+
+        /* timestamp -> DateTime64(3) (handles ISO8601 + Z) */
+        parseDateTime64BestEffortOrNull(JSON_VALUE(json, '$.timestamp'), 3) AS timestamp,
+
+        /* event_type from verb/object.type (matches your earlier logic) */
+        multiIf(
+          JSON_VALUE(json, '$.verb.id') IN (
+            'https://w3id.org/xapi/video/verbs/played',
+            'https://w3id.org/xapi/video/verbs/paused',
+            'https://w3id.org/xapi/video/verbs/seeked',
+            'https://w3id.org/xapi/video/verbs/completed',
+            'http://adlnet.gov/expapi/verbs/experienced'
+          ), 'video',
+
+          (JSON_VALUE(json, '$.verb.id') = 'http://adlnet.gov/expapi/verbs/completed')
+            AND (JSON_VALUE(json, '$.object.definition.type') = 'http://oli.cmu.edu/extensions/activity_attempt'),
+          'activity_attempt',
+
+          (JSON_VALUE(json, '$.verb.id') = 'http://adlnet.gov/expapi/verbs/completed')
+            AND (JSON_VALUE(json, '$.object.definition.type') = 'http://oli.cmu.edu/extensions/page_attempt'),
+          'page_attempt',
+
+          (JSON_VALUE(json, '$.verb.id') = 'http://id.tincanapi.com/verb/viewed')
+            AND (JSON_VALUE(json, '$.object.definition.type') = 'http://oli.cmu.edu/extensions/types/page'),
+          'page_viewed',
+
+          (JSON_VALUE(json, '$.verb.id') = 'http://adlnet.gov/expapi/verbs/completed')
+            AND (JSON_VALUE(json, '$.object.definition.type') = 'http://adlnet.gov/expapi/activities/question'),
+          'part_attempt',
+
+          'unknown'
+        ) AS event_type,
+
+        /* attempt/page fields (some may be absent) */
+        JSON_VALUE(json, '$.context.extensions."http://oli.cmu.edu/extensions/attempt_guid"') AS attempt_guid,
+        toInt32OrZero(JSON_VALUE(json, '$.context.extensions."http://oli.cmu.edu/extensions/attempt_number"'))    AS attempt_number,
+        toUInt64OrZero(JSON_VALUE(json, '$.context.extensions."http://oli.cmu.edu/extensions/page_id"'))          AS page_id,
+
+        /* video fields (NULL when non-video) */
+        coalesce(
+          JSON_VALUE(json, '$.result.extensions.content_element_id'),
+          JSON_VALUE(json, '$.context.extensions."http://oli.cmu.edu/extensions/content_element_id"'),
+          NULL
+        ) AS content_element_id,
+        multiIf(
+          JSON_VALUE(json, '$.verb.id') IN (
+            'https://w3id.org/xapi/video/verbs/played',
+            'https://w3id.org/xapi/video/verbs/paused',
+            'https://w3id.org/xapi/video/verbs/seeked',
+            'https://w3id.org/xapi/video/verbs/completed',
+            'http://adlnet.gov/expapi/verbs/experienced'
+          ),
+          JSON_VALUE(json, '$.object.id'),
+          NULL
+        ) AS video_url,
+        JSON_VALUE(json, '$.object.definition.name."en-US"') AS video_title,
+        toFloat64OrZero(JSON_VALUE(json, '$.result.extensions."https://w3id.org/xapi/video/extensions/time"'))     AS video_time,
+        coalesce(
+          toFloat64OrZero(JSON_VALUE(json, '$.result.extensions."https://w3id.org/xapi/video/extensions/length"')),
+          toFloat64OrZero(JSON_VALUE(json, '$.context.extensions."https://w3id.org/xapi/video/extensions/length"'))
+        ) AS video_length,
+        toFloat64OrZero(JSON_VALUE(json, '$.result.extensions."https://w3id.org/xapi/video/extensions/progress"')) AS video_progress,
+        JSON_VALUE(json, '$.result.extensions."https://w3id.org/xapi/video/extensions/played-segments"')          AS video_played_segments,
+        toFloat64OrZero(JSON_VALUE(json, '$.result.extensions.video_play_time'))                                   AS video_play_time,
+        toFloat64OrZero(JSON_VALUE(json, '$.result.extensions."https://w3id.org/xapi/video/extensions/time-from"')) AS video_seek_from,
+        toFloat64OrZero(JSON_VALUE(json, '$.result.extensions."https://w3id.org/xapi/video/extensions/time-to"'))   AS video_seek_to,
+
+        /* activity/page/part specific fields */
+          JSON_VALUE(json, '$.context.extensions."http://oli.cmu.edu/extensions/activity_attempt_guid"')   AS activity_attempt_guid,
+          toInt32OrZero(JSON_VALUE(json, '$.context.extensions."http://oli.cmu.edu/extensions/activity_attempt_number"')) AS activity_attempt_number,
+          JSON_VALUE(json, '$.context.extensions."http://oli.cmu.edu/extensions/page_attempt_guid"')       AS page_attempt_guid,
+          toInt32OrZero(JSON_VALUE(json, '$.context.extensions."http://oli.cmu.edu/extensions/page_attempt_number"'))    AS page_attempt_number,
+          JSON_VALUE(json, '$.context.extensions."http://oli.cmu.edu/extensions/part_attempt_guid"')       AS part_attempt_guid,
+          toInt32OrZero(JSON_VALUE(json, '$.context.extensions."http://oli.cmu.edu/extensions/part_attempt_number"'))    AS part_attempt_number,
+          toUInt64OrZero(JSON_VALUE(json, '$.context.extensions."http://oli.cmu.edu/extensions/activity_id"'))           AS activity_id,
+          toUInt64OrZero(JSON_VALUE(json, '$.context.extensions."http://oli.cmu.edu/extensions/activity_revision_id"'))  AS activity_revision_id,
+          JSON_VALUE(json, '$.context.extensions."http://oli.cmu.edu/extensions/part_id"')                  AS part_id,
+
+          /* page subtype */
+          JSON_VALUE(json, '$.object.definition.subType') AS page_sub_type,
+
+          /* result metrics */
+          toFloat64OrZero(JSON_VALUE(json, '$.result.score.raw'))    AS score,
+          toFloat64OrZero(JSON_VALUE(json, '$.result.score.max'))    AS out_of,
+          toFloat64OrZero(JSON_VALUE(json, '$.result.score.scaled')) AS scaled_score,
+          (toUInt8OrZero(JSON_VALUE(json, '$.result.success'))    = 1) AS success,
+          (toUInt8OrZero(JSON_VALUE(json, '$.result.completion')) = 1) AS completion,
+
+          /* response can be a string or an object; prefer string, then object.input, then raw JSON */
+          coalesce(
+            JSON_VALUE(json, '$.result.response'),
+            JSON_VALUE(json, '$.result.response.input'),
+            JSON_QUERY(json, '$.result.response')
+          ) AS response,
+
+          /* optional extras (often absent in sample) */
+          JSON_VALUE(json, '$.result.extensions."http://oli.cmu.edu/extensions/feedback"') AS feedback,
+          toInt32OrZero(JSON_VALUE(json, '$.context.extensions."http://oli.cmu.edu/extensions/hints_requested"')) AS hints_requested,
+          JSON_VALUE(json, '$.context.extensions."http://oli.cmu.edu/extensions/attached_objectives"') AS attached_objectives,
+          JSON_VALUE(json, '$.context.extensions."http://oli.cmu.edu/extensions/session_id"') AS session_id
+
+      FROM s3(
+        '#{build_s3_path(section_id)}',
+        '#{aws_access_key}',
+        '#{aws_secret_key}',
+        'JSONAsString', 'json String'
+      )
+    """
+    |> execute_query(
+      "bulk load section analytics for section #{section_id}"
+    )
+  end
+
+  defp build_s3_path(section_id) when is_integer(section_id) do
+    # bucket = Application.get_env(:oli, :s3_xapi_bucket_name)
+     # TODO: Replace this!!
+     bucket = "torus-xapi-prod"
+
+    section_prefix =
+      Application.get_env(:oli, :s3_xapi_section_prefix, "section")
+      |> to_string()
+      |> String.trim("/")
+      |> case do
+        "" -> "section"
+        value -> value
+      end
+
+    "https://s3.amazonaws.com/#{bucket}/#{section_prefix}/#{section_id}/**/*.jsonl"
+  end
+
+  defp fetch_aws_credentials do
+    access_key =
+      System.get_env("AWS_S3_ACCESS_KEY_ID") ||
+        System.get_env("AWS_ACCESS_KEY_ID")
+
+    secret_key =
+      System.get_env("AWS_S3_SECRET_ACCESS_KEY") ||
+        System.get_env("AWS_SECRET_ACCESS_KEY")
+
+    case {access_key, secret_key} do
+      {nil, _} ->
+        {:error,
+         "Missing AWS access key. Please configure AWS_S3_ACCESS_KEY_ID or AWS_ACCESS_KEY_ID."}
+
+      {_, nil} ->
+        {:error,
+         "Missing AWS secret key. Please configure AWS_S3_SECRET_ACCESS_KEY or AWS_SECRET_ACCESS_KEY."}
+
+      {access_key, secret_key} ->
+        {:ok, {access_key, secret_key}}
+    end
+  end
+
+  def execute_query(query, description, opts \\ [])
+      when is_binary(query) and byte_size(query) > 0 do
+    config = clickhouse_config()
 
     # Include database in the URL path for ClickHouse HTTP interface
     url = "#{config.host}:#{config.http_port}/?database=#{config.database}"
@@ -354,12 +598,7 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
     ]
 
     # Add FORMAT clause to include headers in the output
-    formatted_query =
-      if String.contains?(String.downcase(query), "format") do
-        query
-      else
-        query <> " FORMAT TSVWithNames"
-      end
+    {formatted_query, response_format} = normalize_query_format(query)
 
     Logger.debug("Executing ClickHouse query for #{description}")
 
@@ -374,9 +613,12 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
       {:ok, %{status_code: 200} = response} ->
         Logger.debug("Successfully executed #{description} in #{execution_time_ms}ms")
 
+        parsed_body = parse_query_body(response.body, response_format)
+
         formatted_response =
           response
-          |> Map.put(:body, format_query_results(response.body))
+          |> Map.put(:body, format_query_results(response.body, response_format))
+          |> maybe_put_parsed_body(parsed_body)
           |> Map.put(:execution_time_ms, execution_time_ms)
 
         {:ok, formatted_response}
@@ -391,19 +633,194 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
 
   def execute_query(_), do: {:error, "Empty query"}
 
-  defp format_query_results(body) when is_binary(body) do
-    case String.trim(body) do
-      "" ->
+  defp format_query_results(body, format) when is_binary(body) do
+    case {String.trim(body), format} do
+      {"", _} ->
         ""
 
-      result ->
-        lines = String.split(result, "\n", trim: true)
-        format_tsv_with_alignment(lines)
+      {result, :json} ->
+        format_json(result)
+
+      {result, :jsoncompact} ->
+        format_json(result)
+
+      {result, :jsoncompacteachrow} ->
+        format_json_each_row(result)
+
+      {result, :jsonlines} ->
+        format_json_each_row(result)
+
+      {result, :tsvwithnames} ->
+        result
+        |> String.split("\n", trim: true)
+        |> format_tsv_with_alignment()
+
+      {result, _} ->
+        result
+    end
+  end
+
+  defp parse_query_body(body, format) when is_binary(body) do
+    case format do
+      format when format in [:json, :jsoncompact] ->
+        case Jason.decode(body) do
+          {:ok, decoded} -> {:ok, decoded}
+          _ -> :error
+        end
+
+      format when format in [:jsoncompacteachrow, :jsonlines] ->
+        body
+        |> String.split("\n", trim: true)
+        |> Enum.reduce_while([], fn line, acc ->
+          case Jason.decode(line) do
+            {:ok, decoded} -> {:cont, [decoded | acc]}
+            _ -> {:halt, :error}
+          end
+        end)
+        |> case do
+          :error -> :error
+          decoded_rows -> {:ok, Enum.reverse(decoded_rows)}
+        end
+
+      _ ->
+        :error
+    end
+  end
+
+  defp maybe_put_parsed_body(map, {:ok, parsed}), do: Map.put(map, :parsed_body, parsed)
+  defp maybe_put_parsed_body(map, _), do: map
+
+  defp parse_boolean_result(body) when is_binary(body) do
+    body
+    |> String.split("\n")
+    |> Enum.map(&String.trim/1)
+    |> Enum.reject(&(&1 == ""))
+    |> case do
+      [_header, value | _] -> parse_boolean_string(value)
+      [value] -> parse_boolean_string(value)
+      _ -> false
+    end
+  end
+
+  defp parse_boolean_string(value) when is_binary(value) do
+    case String.downcase(value) do
+      "1" -> true
+      "t" -> true
+      "true" -> true
+      "0" -> false
+      "f" -> false
+      "false" -> false
+      _ -> false
+    end
+  end
+
+  defp parse_boolean_from_json([]), do: nil
+
+  defp parse_boolean_from_json([row | _]) when is_map(row) do
+    row
+    |> fetch_has_data_field()
+    |> case do
+      nil -> nil
+      value when is_boolean(value) -> value
+      value when is_integer(value) -> value != 0
+      value when is_binary(value) -> parse_boolean_string(value)
+      _ -> nil
+    end
+  end
+
+  defp parse_boolean_from_json(_), do: nil
+
+  defp parse_boolean_from_rows([]), do: nil
+
+  defp parse_boolean_from_rows([row | _]) when is_map(row) do
+    row
+    |> fetch_has_data_field()
+    |> case do
+      nil -> nil
+      value when is_boolean(value) -> value
+      value when is_integer(value) -> value != 0
+      value when is_binary(value) -> parse_boolean_string(value)
+      _ -> nil
+    end
+  end
+
+  defp parse_boolean_from_rows(_), do: nil
+
+  defp fetch_has_data_field(row) do
+    cond do
+      Map.has_key?(row, "has_data") -> Map.get(row, "has_data")
+      Map.has_key?(row, :has_data) -> Map.get(row, :has_data)
+      true -> nil
     end
   end
 
   defp format_tsv_with_alignment([]), do: ""
   defp format_tsv_with_alignment([single_line]), do: single_line
+
+  defp normalize_query_format(query) do
+    case extract_explicit_format(query) do
+      {:ok, format} ->
+        {query, format}
+
+      :none ->
+        if select_query?(query) do
+          {query <> " FORMAT JSON", :json}
+        else
+          {query, :unknown}
+        end
+    end
+  end
+
+  defp select_query?(query) when is_binary(query) do
+    query
+    |> String.trim_leading()
+    |> String.downcase()
+    |> String.starts_with?("select")
+  end
+
+  defp extract_explicit_format(query) do
+    case Regex.run(~r/FORMAT\s+([A-Za-z_]+)/i, query, capture: :all_but_first) do
+      [format] ->
+        {:ok, format_atom(format)}
+
+      _ ->
+        :none
+    end
+  end
+
+  defp format_atom(format) do
+    format
+    |> String.trim()
+    |> String.downcase()
+    |> case do
+      "json" -> :json
+      "jsoncompact" -> :jsoncompact
+      "jsoncompacteachrow" -> :jsoncompacteachrow
+      "jsoneachrow" -> :jsonlines
+      "jsonlines" -> :jsonlines
+      "tsvwithnames" -> :tsvwithnames
+      value -> String.to_atom(value)
+    end
+  end
+
+  defp format_json(result) do
+    case Jason.decode(result) do
+      {:ok, decoded} -> Jason.encode!(decoded, pretty: true)
+      _ -> result
+    end
+  end
+
+  defp format_json_each_row(result) do
+    result
+    |> String.split("\n", trim: true)
+    |> Enum.map(fn row ->
+      case Jason.decode(row) do
+        {:ok, decoded} -> Jason.encode!(decoded)
+        _ -> row
+      end
+    end)
+    |> Enum.join("\n")
+  end
 
   defp format_tsv_with_alignment([header | data_lines]) do
     # Parse all lines into columns

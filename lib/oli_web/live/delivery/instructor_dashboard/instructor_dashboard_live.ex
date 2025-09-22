@@ -4,6 +4,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   require Logger
 
+  @section_analytics_poll_interval 2_000
+  @section_analytics_poll_timeout_ms 300_000
+  @section_analytics_max_poll_attempts div(
+                                         @section_analytics_poll_timeout_ms,
+                                         @section_analytics_poll_interval
+                                       )
+
   alias Oli.Delivery.Metrics
   alias Oli.Delivery.Sections
   alias OliWeb.Delivery.InstructorDashboard.HTMLComponents
@@ -236,6 +243,47 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         _,
         socket
       ) do
+    section_id = socket.assigns.section.id
+    previous_state = Map.get(socket.assigns, :section_analytics_load_state)
+    previous_poll_attempt = Map.get(socket.assigns, :section_analytics_poll_attempt, 0)
+    previous_poll_started_at = Map.get(socket.assigns, :section_analytics_poll_started_at)
+
+    {load_state, comprehensive_section_analytics, poll_attempt, poll_started_at} =
+      case Oli.Analytics.ClickhouseAnalytics.section_analytics_loaded?(section_id) do
+        {:ok, true} ->
+          {
+            :loaded,
+            Oli.Analytics.ClickhouseAnalytics.comprehensive_section_analytics(section_id),
+            0,
+            nil
+          }
+
+        {:ok, false} ->
+          cond do
+            previous_state == :loading ->
+              # Continue showing loading state and ensure polling resumes
+              if previous_poll_attempt == 0 do
+                schedule_section_analytics_poll(section_id, 1)
+              end
+
+              {
+                :loading,
+                socket.assigns[:comprehensive_section_analytics],
+                if(previous_poll_attempt == 0, do: 1, else: previous_poll_attempt),
+                previous_poll_started_at || System.monotonic_time(:millisecond)
+              }
+
+            true ->
+              {:not_loaded, nil, 0, nil}
+          end
+
+        {:error, reason} ->
+          error_message = if is_binary(reason), do: reason, else: inspect(reason)
+
+          {{:error, error_message}, socket.assigns[:comprehensive_section_analytics],
+           previous_poll_attempt, previous_poll_started_at}
+      end
+
     socket =
       socket
       |> assign(
@@ -245,10 +293,10 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         selected_analytics_category: params["analytics_category"],
         analytics_data: nil,
         analytics_spec: nil,
-        comprehensive_section_analytics:
-          Oli.Analytics.ClickhouseAnalytics.comprehensive_section_analytics(
-            socket.assigns.section.id
-          )
+        section_analytics_load_state: load_state,
+        comprehensive_section_analytics: comprehensive_section_analytics,
+        section_analytics_poll_attempt: poll_attempt,
+        section_analytics_poll_started_at: poll_started_at
       )
       |> maybe_load_analytics_data()
 
@@ -712,6 +760,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       section={@section}
       selected_analytics_category={@selected_analytics_category}
       comprehensive_section_analytics={@comprehensive_section_analytics}
+      section_analytics_load_state={@section_analytics_load_state}
       analytics_data={@analytics_data}
       analytics_spec={@analytics_spec}
     />
@@ -778,11 +827,15 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   end
 
   defp maybe_load_analytics_data(socket) do
-    case socket.assigns[:selected_analytics_category] do
-      nil ->
+    case {socket.assigns[:selected_analytics_category],
+          socket.assigns[:section_analytics_load_state]} do
+      {nil, _} ->
         socket
 
-      category ->
+      {_, state} when state != :loaded ->
+        socket
+
+      {category, :loaded} ->
         pid = self()
 
         Task.async(fn ->
@@ -799,18 +852,26 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     case category do
       "engagement" ->
         # Get resource title map for engagement analytics
-        resource_title_map = OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics.load_resource_title_map(section_id)
+        resource_title_map =
+          OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics.load_resource_title_map(
+            section_id
+          )
+
         # Get section to determine default date range
         section = Oli.Delivery.Sections.get_section!(section_id)
         # Use section dates as default filters, fallback to relative dates if not set
-        start_date = case section.start_date do
-          nil -> Date.add(Date.utc_today(), -30) |> Date.to_string()
-          start_date -> DateTime.to_date(start_date) |> Date.to_string()
-        end
-        end_date = case section.end_date do
-          nil -> Date.utc_today() |> Date.to_string()
-          end_date -> DateTime.to_date(end_date) |> Date.to_string()
-        end
+        start_date =
+          case section.start_date do
+            nil -> Date.add(Date.utc_today(), -30) |> Date.to_string()
+            start_date -> DateTime.to_date(start_date) |> Date.to_string()
+          end
+
+        end_date =
+          case section.end_date do
+            nil -> Date.utc_today() |> Date.to_string()
+            end_date -> DateTime.to_date(end_date) |> Date.to_string()
+          end
+
         Logger.info("=== PARENT LIVEVIEW FILTER DEFAULTS ===")
         Logger.info("Section ID: #{section_id}")
         Logger.info("Section start_date: #{inspect(section.start_date)}")
@@ -819,10 +880,21 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         Logger.info("Calculated end_date: #{end_date}")
         Logger.info("=== END PARENT LIVEVIEW FILTER DEFAULTS ===")
         max_pages = 25
-        OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics.get_engagement_analytics_with_filters(section_id, start_date, end_date, max_pages, resource_title_map)
+
+        OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics.get_engagement_analytics_with_filters(
+          section_id,
+          start_date,
+          end_date,
+          max_pages,
+          resource_title_map
+        )
+
       _ ->
         # Delegate to the component's analytics functions for other categories
-        OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics.get_analytics_data_and_spec(category, section_id)
+        OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics.get_analytics_data_and_spec(
+          category,
+          section_id
+        )
     end
   end
 
@@ -957,6 +1029,88 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   end
 
   @impl Phoenix.LiveView
+  def handle_info({:load_section_analytics, section_id}, socket) do
+    cond do
+      section_id != socket.assigns.section.id ->
+        {:noreply, socket}
+
+      socket.assigns.section_analytics_load_state == :loading ->
+        {:noreply, socket}
+
+      true ->
+        pid = self()
+
+        Task.start(fn ->
+          result =
+            Oli.Analytics.ClickhouseAnalytics.bulk_load_section_analytics(section_id) |> dbg()
+
+          send(pid, {:section_analytics_load_completed, section_id, result})
+        end)
+
+        {:noreply,
+         assign(socket,
+           section_analytics_load_state: :loading,
+           section_analytics_poll_attempt: 0,
+           section_analytics_poll_started_at: System.monotonic_time(:millisecond)
+         )}
+    end
+  end
+
+  @impl Phoenix.LiveView
+  def handle_info({:section_analytics_load_completed, section_id, {:ok, _response}}, socket) do
+    if section_id != socket.assigns.section.id do
+      {:noreply, socket}
+    else
+      case Oli.Analytics.ClickhouseAnalytics.section_analytics_loaded?(section_id) do
+        {:ok, true} ->
+          {:noreply, handle_section_analytics_loaded(socket, section_id)}
+
+        {:ok, false} ->
+          schedule_section_analytics_poll(section_id, 1)
+
+          {:noreply,
+           assign(socket,
+             section_analytics_load_state: :loading,
+             section_analytics_poll_attempt: 1,
+             section_analytics_poll_started_at:
+               socket.assigns[:section_analytics_poll_started_at] ||
+                 System.monotonic_time(:millisecond)
+           )}
+
+        {:error, reason} ->
+          error_message = if is_binary(reason), do: reason, else: inspect(reason)
+
+          {:noreply,
+           assign(socket,
+             section_analytics_load_state: {:error, error_message},
+             section_analytics_poll_attempt: 0,
+             section_analytics_poll_started_at: nil
+           )}
+      end
+    end
+  end
+
+  @impl Phoenix.LiveView
+  def handle_info({:section_analytics_load_completed, section_id, {:error, reason}}, socket) do
+    if section_id != socket.assigns.section.id do
+      {:noreply, socket}
+    else
+      Logger.error(
+        "Bulk load section analytics failed for section #{section_id}: #{inspect(reason)}"
+      )
+
+      error_message = if is_binary(reason), do: reason, else: inspect(reason)
+
+      {:noreply,
+       assign(socket,
+         section_analytics_load_state: {:error, error_message},
+         section_analytics_poll_attempt: 0,
+         section_analytics_poll_started_at: nil
+       )}
+    end
+  end
+
+  @impl Phoenix.LiveView
   def handle_info({:analytics_data_loaded, category, data, spec}, socket) do
     # Only update if this data is for the currently selected category
     if socket.assigns.selected_analytics_category == category do
@@ -964,6 +1118,86 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     else
       {:noreply, socket}
     end
+  end
+
+  defp schedule_section_analytics_poll(section_id, attempt) do
+    if attempt <= @section_analytics_max_poll_attempts do
+      Process.send_after(
+        self(),
+        {:poll_section_analytics_load, section_id, attempt},
+        @section_analytics_poll_interval
+      )
+    end
+  end
+
+  @impl Phoenix.LiveView
+  def handle_info({:poll_section_analytics_load, section_id, attempt}, socket) do
+    cond do
+      section_id != socket.assigns.section.id ->
+        {:noreply, socket}
+
+      socket.assigns.section_analytics_load_state != :loading ->
+        {:noreply, socket}
+
+      true ->
+        started_at =
+          socket.assigns[:section_analytics_poll_started_at] ||
+            System.monotonic_time(:millisecond)
+
+        elapsed_ms = System.monotonic_time(:millisecond) - started_at
+
+        case Oli.Analytics.ClickhouseAnalytics.section_analytics_loaded?(section_id) do
+          {:ok, true} ->
+            {:noreply, handle_section_analytics_loaded(socket, section_id)}
+
+          {:ok, false} ->
+            if elapsed_ms >= @section_analytics_poll_timeout_ms or
+                 attempt >= @section_analytics_max_poll_attempts do
+              {:noreply,
+               assign(socket,
+                 section_analytics_load_state:
+                   {:error, "Timed out while loading section analytics. Please try again."},
+                 section_analytics_poll_attempt: 0,
+                 section_analytics_poll_started_at: nil
+               )}
+            else
+              schedule_section_analytics_poll(section_id, attempt + 1)
+
+              {:noreply,
+               assign(socket,
+                 section_analytics_load_state: :loading,
+                 section_analytics_poll_attempt: attempt + 1,
+                 section_analytics_poll_started_at: started_at
+               )}
+            end
+
+          {:error, reason} ->
+            error_message = if is_binary(reason), do: reason, else: inspect(reason)
+
+            {:noreply,
+             assign(socket,
+               section_analytics_load_state: {:error, error_message},
+               section_analytics_poll_attempt: 0,
+               section_analytics_poll_started_at: nil
+             )}
+        end
+    end
+  end
+
+  defp handle_section_analytics_loaded(socket, section_id) do
+    analytics_result =
+      Oli.Analytics.ClickhouseAnalytics.comprehensive_section_analytics(section_id)
+
+    socket
+    |> assign(
+      section_analytics_load_state: :loaded,
+      comprehensive_section_analytics: analytics_result,
+      analytics_data: nil,
+      analytics_spec: nil,
+      section_analytics_poll_attempt: 0,
+      section_analytics_poll_started_at: nil
+    )
+    |> maybe_load_analytics_data()
   end
 
   @impl Phoenix.LiveView
