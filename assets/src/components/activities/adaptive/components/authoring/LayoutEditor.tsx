@@ -651,11 +651,20 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
             margin-bottom: 20px;
             width: calc(50% - 10px);
             background-color: rgba(255, 0, 0, 0.1); /* Debug: temporary red background */
+            clear: right; /* Ensure each right part starts below the previous one */
           }
 
           /* Ensure right-aligned parts stack properly */
           .responsive-align-right + .responsive-align-right {
             margin-top: 0;
+            clear: right;
+          }
+
+          /* Force all right-aligned parts to stack vertically */
+          .responsive-layout .responsive-align-right {
+            display: block;
+            float: right;
+            clear: right;
           }
 
           /* Ensure left-aligned parts stack properly */
@@ -666,6 +675,11 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
           /* Ensure proper spacing between left and right columns */
           .responsive-item.half-width:not(:last-child) {
             margin-bottom: 20px;
+          }
+
+          /* Ensure the last right-aligned part is properly positioned */
+          .responsive-layout .responsive-align-right:last-of-type {
+            margin-bottom: 0;
           }
 
           /* Handle single 50% items in a row */
