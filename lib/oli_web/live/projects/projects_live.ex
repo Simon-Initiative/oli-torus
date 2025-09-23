@@ -53,6 +53,8 @@ defmodule OliWeb.Projects.ProjectsLive do
 
     total_count = determine_total(projects)
 
+    export_filename = "projects-" <> Date.to_iso8601(Date.utc_today()) <> ".csv"
+
     {:ok,
      assign(
        socket,
@@ -64,7 +66,8 @@ defmodule OliWeb.Projects.ProjectsLive do
        show_all: show_all,
        show_deleted: show_deleted,
        title: "Projects",
-       limit: @limit
+       limit: @limit,
+       export_filename: export_filename
      )}
   end
 
@@ -209,13 +212,15 @@ defmodule OliWeb.Projects.ProjectsLive do
             <Icons.trash /> Clear All Filters
           </button>
         </div>
-        <button
+        <a
+          role="button"
           class="group mr-4 inline-flex items-center gap-1 text-sm text-Text-text-button font-bold leading-none hover:text-Text-text-button-hover"
-          phx-click="export_csv"
+          href={~p"/authoring/projects/export?#{current_params(assigns)}"}
+          download={@export_filename}
         >
           Download CSV
           <Icons.download stroke_class="group-hover:stroke-Text-text-button-hover stroke-Text-text-button" />
-        </button>
+        </a>
       </div>
 
       <div class="grid grid-cols-12">
@@ -302,15 +307,6 @@ defmodule OliWeb.Projects.ProjectsLive do
     patch_with(socket, %{limit: new_limit, offset: new_offset})
   end
 
-  def handle_event("export_csv", _params, socket) do
-    # Build URL with current table state
-    params = current_params(socket)
-    export_url = ~p"/authoring/projects/export?#{params}"
-
-    # Redirect to CSV export endpoint
-    {:noreply, redirect(socket, external: export_url)}
-  end
-
   def handle_event("clear_all_filters", _params, socket) do
     {:noreply, push_patch(socket, to: ~p"/authoring/projects")}
   end
@@ -328,15 +324,17 @@ defmodule OliWeb.Projects.ProjectsLive do
      )}
   end
 
-  defp current_params(socket) do
+  defp current_params(%Phoenix.LiveView.Socket{} = socket), do: current_params(socket.assigns)
+
+  defp current_params(assigns) do
     %{
-      sort_by: socket.assigns.table_model.sort_by_spec.name,
-      sort_order: socket.assigns.table_model.sort_order,
-      offset: socket.assigns.offset,
-      limit: socket.assigns.limit,
-      show_deleted: socket.assigns.show_deleted,
-      text_search: socket.assigns.text_search,
-      show_all: socket.assigns.show_all
+      sort_by: assigns.table_model.sort_by_spec.name,
+      sort_order: assigns.table_model.sort_order,
+      offset: assigns.offset,
+      limit: assigns.limit,
+      show_deleted: assigns.show_deleted,
+      text_search: assigns.text_search,
+      show_all: assigns.show_all
     }
   end
 
