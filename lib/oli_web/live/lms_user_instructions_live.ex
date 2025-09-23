@@ -2,6 +2,7 @@ defmodule OliWeb.LmsUserInstructionsLive do
   use OliWeb, :live_view
 
   alias Oli.Delivery.Sections
+  alias Oli.VendorProperties
 
   on_mount {OliWeb.UserAuth, :mount_current_user}
 
@@ -45,7 +46,7 @@ defmodule OliWeb.LmsUserInstructionsLive do
             </p>
             <p>
               <strong><%= "#{@section_title}" %></strong>
-              requires you to use a login account. Please log out of your current account with the button below, visit the enrollment URL again, and create a new Torus account using either email and password, or Sign In With Google.
+              requires you to use a login account. Please log out of your current account with the button below, visit the enrollment URL again, and create a new <%= VendorProperties.product_short_name() %> account using either email and password, or Sign In With Google.
             </p>
           </div>
           <%= link to: @logout_path, method: :delete, class: "btn btn-primary" do %>

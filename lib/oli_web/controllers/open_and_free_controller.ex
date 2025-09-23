@@ -304,9 +304,15 @@ defmodule OliWeb.OpenAndFreeController do
     if is_nil(conn.assigns.current_user) do
       {:ok, nil}
     else
-      Sections.enroll(conn.assigns.current_user.id, section.id, [
-        ContextRoles.get_role(:context_instructor)
-      ])
+      with :ok <-
+             Sections.ensure_direct_delivery_enrollment_allowed(
+               conn.assigns.current_user,
+               section
+             ) do
+        Sections.enroll(conn.assigns.current_user.id, section.id, [
+          ContextRoles.get_role(:context_instructor)
+        ])
+      end
     end
   end
 end

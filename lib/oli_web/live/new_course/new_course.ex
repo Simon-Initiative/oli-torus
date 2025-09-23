@@ -432,9 +432,15 @@ defmodule OliWeb.Delivery.NewCourse do
     if is_nil(socket.assigns.current_user) do
       {:ok, nil}
     else
-      Sections.enroll(socket.assigns.current_user.id, section.id, [
-        ContextRoles.get_role(:context_instructor)
-      ])
+      with :ok <-
+             Sections.ensure_direct_delivery_enrollment_allowed(
+               socket.assigns.current_user,
+               section
+             ) do
+        Sections.enroll(socket.assigns.current_user.id, section.id, [
+          ContextRoles.get_role(:context_instructor)
+        ])
+      end
     end
   end
 
