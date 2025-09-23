@@ -16,11 +16,6 @@ export interface ProficiencyDistribution {
   High: number;
 }
 
-export interface DotDistributionChartProps {
-  proficiency_distribution: ProficiencyDistribution;
-  student_proficiency?: StudentProficiency[]; // Individual student proficiency data
-}
-
 // Define precise types for proficiency handling
 export type ProficiencyLabel = keyof ProficiencyDistribution;
 
@@ -52,10 +47,18 @@ const PROFICIENCY_COLORS: Record<ProficiencyLabel, string> = {
 };
 
 const PROFICIENCY_LABELS: ProficiencyLabel[] = ['Not enough data', 'Low', 'Medium', 'High'];
+export interface DotDistributionChartProps {
+  proficiency_distribution: ProficiencyDistribution;
+  student_proficiency?: StudentProficiency[];
+  unique_id: string;
+  pushEventTo?: (selectorOrTarget: string, event: string, payload: any) => void;
+}
 
 export const DotDistributionChart: React.FC<DotDistributionChartProps> = ({
   proficiency_distribution,
   student_proficiency = [],
+  unique_id,
+  pushEventTo,
 }) => {
   // State to detect dark mode (like VegaLiteRenderer)
   const [darkMode, setDarkMode] = useState(
@@ -306,6 +309,8 @@ export const DotDistributionChart: React.FC<DotDistributionChartProps> = ({
                   setHoveredSection,
                   setSelectedSection,
                   darkMode,
+                  unique_id,
+                  pushEventTo,
                 )}
             </div>
 
@@ -485,6 +490,8 @@ function renderDots(
   setHoveredSection: (section: string | null) => void,
   setSelectedSection: (section: string | null) => void,
   darkMode: boolean,
+  unique_id?: string,
+  pushEventTo?: (selectorOrTarget: string, event: string, payload: any) => void,
 ) {
   const dotSize = 11; // Size of each dot in pixels (11px diameter)
   const padding = 2; // Space between dots
@@ -694,6 +701,12 @@ function renderDots(
               onClick={() => {
                 if (selectedSection !== level) {
                   setSelectedSection(level);
+                  // Send event to LiveView when a section is selected
+                  if (pushEventTo) {
+                    pushEventTo(`#expanded-objective-${unique_id}`, 'show_students_list', {
+                      proficiency_level: level,
+                    });
+                  }
                 }
               }}
             />
@@ -735,6 +748,10 @@ function renderDots(
                       onClick={(e) => {
                         e.stopPropagation();
                         setSelectedSection(null);
+                        // Send event to LiveView to hide the placeholder
+                        if (pushEventTo) {
+                          pushEventTo(`#expanded-objective-${unique_id}`, 'hide_students_list', {});
+                        }
                         // Check if mouse is still over the area to trigger hover
                         setHoveredSection(level);
                       }}

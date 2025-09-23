@@ -294,6 +294,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
       end
 
     spec = %{
+      height: 12,
       mark: "bar",
       data: %{values: data_with_positions},
       encoding: %{
