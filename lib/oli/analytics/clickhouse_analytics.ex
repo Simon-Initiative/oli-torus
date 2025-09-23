@@ -429,7 +429,8 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
   query has been recorded yet, `{:ok, :none}` is returned.
   """
   def latest_section_analytics_query_status(section_id, opts \\ [])
-      when is_integer(section_id) do
+
+  def latest_section_analytics_query_status(section_id, opts) when is_integer(section_id) do
     prefix = section_analytics_query_prefix(section_id, opts)
 
     """
@@ -635,7 +636,9 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
   defp build_s3_path(section_id) when is_integer(section_id) do
     # TODO: For demo purposes, we want to be able to set the bucket from environment variable
     # for directly loading analytics. In production, this should always come from s3_xapi_bucket_name.
-    bucket = System.get_env("S3_ANALYTICS_BUCKET_NAME") || Application.get_env(:oli, :s3_xapi_bucket_name)
+    bucket =
+      System.get_env("S3_ANALYTICS_BUCKET_NAME") ||
+        Application.get_env(:oli, :s3_xapi_bucket_name)
 
     section_prefix =
       Application.get_env(:oli, :s3_xapi_section_prefix, "section")
@@ -1097,6 +1100,30 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
   defp format_tsv_with_alignment([]), do: ""
   defp format_tsv_with_alignment([single_line]), do: single_line
 
+  defp format_tsv_with_alignment([header | data_lines]) do
+    # Parse all lines into columns
+    all_rows = [header | data_lines] |> Enum.map(&String.split(&1, "\t"))
+
+    # Calculate max width for each column
+    column_widths = calculate_column_widths(all_rows)
+
+    # Format header
+    formatted_header = format_row(String.split(header, "\t"), column_widths)
+
+    # Create separator line
+    separator = create_separator_line(column_widths)
+
+    # Format data rows
+    formatted_data =
+      data_lines
+      |> Enum.map(&String.split(&1, "\t"))
+      |> Enum.map(&format_row(&1, column_widths))
+
+    # Combine all parts
+    [formatted_header, separator | formatted_data]
+    |> Enum.join("\n")
+  end
+
   defp normalize_query_format(query) do
     case extract_explicit_format(query) do
       {:ok, format} ->
@@ -1159,30 +1186,6 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
         _ -> row
       end
     end)
-    |> Enum.join("\n")
-  end
-
-  defp format_tsv_with_alignment([header | data_lines]) do
-    # Parse all lines into columns
-    all_rows = [header | data_lines] |> Enum.map(&String.split(&1, "\t"))
-
-    # Calculate max width for each column
-    column_widths = calculate_column_widths(all_rows)
-
-    # Format header
-    formatted_header = format_row(String.split(header, "\t"), column_widths)
-
-    # Create separator line
-    separator = create_separator_line(column_widths)
-
-    # Format data rows
-    formatted_data =
-      data_lines
-      |> Enum.map(&String.split(&1, "\t"))
-      |> Enum.map(&format_row(&1, column_widths))
-
-    # Combine all parts
-    [formatted_header, separator | formatted_data]
     |> Enum.join("\n")
   end
 

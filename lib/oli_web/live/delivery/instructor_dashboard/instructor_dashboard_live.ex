@@ -1232,85 +1232,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     end
   end
 
-  defp schedule_section_analytics_poll(section_id, attempt) do
-    if attempt <= @section_analytics_max_poll_attempts do
-      Process.send_after(
-        self(),
-        {:poll_section_analytics_load, section_id, attempt},
-        @section_analytics_poll_interval
-      )
-    end
-  end
-
-  defp maybe_handle_section_analytics_query_completion(socket, section_id) do
-    query_id = Map.get(socket.assigns, :section_analytics_query_id)
-
-    cond do
-      is_nil(query_id) ->
-        {:keep_polling, nil}
-
-      true ->
-        case Oli.Analytics.ClickhouseAnalytics.section_analytics_query_status(query_id) do
-          {:ok, %{status: :completed} = info} ->
-            log_section_analytics_query_completion(section_id, query_id, info)
-            {:loaded, info}
-
-          {:ok, %{status: :failed} = info} ->
-            message = build_section_analytics_query_error(info, query_id)
-
-            Logger.error(
-              "ClickHouse bulk load for section #{section_id} (query #{query_id}) failed: #{message}"
-            )
-
-            {:error, message, info}
-
-          {:ok, info} ->
-            {:keep_polling, info}
-
-          {:error, reason} ->
-            Logger.debug(
-              "Unable to fetch ClickHouse status for query #{query_id}: #{inspect(reason)}"
-            )
-
-            {:keep_polling, nil}
-        end
-    end
-  end
-
-  defp log_section_analytics_query_completion(section_id, query_id, info) do
-    details =
-      info
-      |> Map.take([:rows_read, :rows_written, :query_duration_ms])
-      |> Enum.reject(fn {_key, value} -> is_nil(value) end)
-      |> Enum.map(fn {key, value} -> "#{key}=#{value}" end)
-      |> Enum.join(", ")
-
-    message_suffix = if details == "", do: "", else: ": #{details}"
-
-    Logger.info(
-      "ClickHouse bulk load for section #{section_id} (query #{query_id}) completed#{message_suffix}"
-    )
-  end
-
-  defp build_section_analytics_query_error(info, query_id) do
-    error = Map.get(info, :error)
-    code = Map.get(info, :exception_code)
-
-    cond do
-      is_binary(error) and error != "" and is_integer(code) ->
-        "#{error} (code #{code})"
-
-      is_binary(error) and error != "" ->
-        error
-
-      is_integer(code) ->
-        "ClickHouse query #{query_id} failed with code #{code}"
-
-      true ->
-        "ClickHouse query #{query_id} failed"
-    end
-  end
-
   @impl Phoenix.LiveView
   def handle_info({:poll_section_analytics_load, section_id, attempt}, socket) do
     cond do
@@ -1402,6 +1323,90 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     end
   end
 
+  @impl Phoenix.LiveView
+  def handle_info(_any, socket) do
+    {:noreply, socket}
+  end
+
+  defp schedule_section_analytics_poll(section_id, attempt) do
+    if attempt <= @section_analytics_max_poll_attempts do
+      Process.send_after(
+        self(),
+        {:poll_section_analytics_load, section_id, attempt},
+        @section_analytics_poll_interval
+      )
+    end
+  end
+
+  defp maybe_handle_section_analytics_query_completion(socket, section_id) do
+    query_id = Map.get(socket.assigns, :section_analytics_query_id)
+
+    cond do
+      is_nil(query_id) ->
+        {:keep_polling, nil}
+
+      true ->
+        case Oli.Analytics.ClickhouseAnalytics.section_analytics_query_status(query_id) do
+          {:ok, %{status: :completed} = info} ->
+            log_section_analytics_query_completion(section_id, query_id, info)
+            {:loaded, info}
+
+          {:ok, %{status: :failed} = info} ->
+            message = build_section_analytics_query_error(info, query_id)
+
+            Logger.error(
+              "ClickHouse bulk load for section #{section_id} (query #{query_id}) failed: #{message}"
+            )
+
+            {:error, message, info}
+
+          {:ok, info} ->
+            {:keep_polling, info}
+
+          {:error, reason} ->
+            Logger.debug(
+              "Unable to fetch ClickHouse status for query #{query_id}: #{inspect(reason)}"
+            )
+
+            {:keep_polling, nil}
+        end
+    end
+  end
+
+  defp log_section_analytics_query_completion(section_id, query_id, info) do
+    details =
+      info
+      |> Map.take([:rows_read, :rows_written, :query_duration_ms])
+      |> Enum.reject(fn {_key, value} -> is_nil(value) end)
+      |> Enum.map(fn {key, value} -> "#{key}=#{value}" end)
+      |> Enum.join(", ")
+
+    message_suffix = if details == "", do: "", else: ": #{details}"
+
+    Logger.info(
+      "ClickHouse bulk load for section #{section_id} (query #{query_id}) completed#{message_suffix}"
+    )
+  end
+
+  defp build_section_analytics_query_error(info, query_id) do
+    error = Map.get(info, :error)
+    code = Map.get(info, :exception_code)
+
+    cond do
+      is_binary(error) and error != "" and is_integer(code) ->
+        "#{error} (code #{code})"
+
+      is_binary(error) and error != "" ->
+        error
+
+      is_integer(code) ->
+        "ClickHouse query #{query_id} failed with code #{code}"
+
+      true ->
+        "ClickHouse query #{query_id} failed"
+    end
+  end
+
   defp handle_section_analytics_loaded(socket, section_id) do
     analytics_result =
       Oli.Analytics.ClickhouseAnalytics.comprehensive_section_analytics(section_id)
@@ -1437,9 +1442,4 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   defp normalize_section_identifier({id, slug}) when is_integer(id), do: {id, slug}
   defp normalize_section_identifier(id) when is_integer(id), do: {id, nil}
-
-  @impl Phoenix.LiveView
-  def handle_info(_any, socket) do
-    {:noreply, socket}
-  end
 end
