@@ -54,15 +54,24 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
         sub_objectives_data: sub_objectives_data,
         student_proficiency: student_proficiency,
         proficiency_distribution: proficiency_distribution,
-        unique_id: assigns[:unique_id] || "#{objective.resource_id}"
+        unique_id: assigns[:unique_id] || "#{objective.resource_id}",
+        selected_proficiency_level: nil
       )
 
     {:ok, socket}
   end
 
+  def handle_event("show_students_list", %{"proficiency_level" => proficiency_level}, socket) do
+    {:noreply, assign(socket, selected_proficiency_level: proficiency_level)}
+  end
+
+  def handle_event("hide_students_list", _params, socket) do
+    {:noreply, assign(socket, selected_proficiency_level: nil)}
+  end
+
   def render(assigns) do
     ~H"""
-    <div class="expanded-objective-view w-full">
+    <div id={"expanded-objective-#{@unique_id}"} class="expanded-objective-view w-full">
       <!-- Estimated Learning Header -->
       <div class="mb-4">
         <h3 class="text-lg font-medium text-Text-text-high">
@@ -79,8 +88,17 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
         {render_dots_chart(assigns)}
       </div>
       
-    <!-- Sub-objectives Table -->
-      <div class="mt-4">
+    <!-- Selected Proficiency Level Message (when a level is selected) -->
+      <%= if @selected_proficiency_level do %>
+        <div class="mb-4 p-4 bg-blue-50 dark:bg-blue-900 border border-blue-200 dark:border-blue-700 rounded-lg">
+          <p class="text-lg font-medium text-blue-800 dark:text-blue-200">
+            PROFICIENCY LEVEL SELECTED: {@selected_proficiency_level}
+          </p>
+        </div>
+      <% end %>
+
+      <!-- Sub-objectives Table (always shown) -->
+      <div id="sub-objectives-list" class="mt-4">
         <%= if @sub_objectives_data == [] do %>
           No sub-objectives found
         <% else %>
@@ -109,7 +127,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
       %{
         proficiency_distribution: assigns.proficiency_distribution,
         student_proficiency: assigns.student_proficiency,
-        objective_id: assigns.objective_id
+        unique_id: assigns.unique_id
       },
       id: "dot-distribution-chart-#{assigns.objective_id}"
     )
