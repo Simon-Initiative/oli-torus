@@ -10,6 +10,7 @@ import ReactDOM from 'react-dom';
 import { Provider } from 'react-redux';
 import { ErrorBoundary } from 'components/common/ErrorBoundary';
 import { LoadingSpinner } from 'components/common/LoadingSpinner';
+import { getGlobalLastPromise, setGlobalLastPromise } from 'components/common/MathJaxFormula';
 import { configureStore } from 'state/store';
 import { clone } from 'utils/common';
 import { Operations } from 'utils/pathOperations';
@@ -37,15 +38,11 @@ const typeset = () => {
   if (typeof window.MathJax === 'undefined') {
     return;
   }
-  // Workaround limited MathJaxMinimal implementation.
-  const math = window.MathJax as any;
-  // For MathJax 3+ use typesetPromise if available (MathJax 4 only supports this).
-  if (typeof math.typesetPromise === 'function') {
-    math.typesetPromise().catch((err: unknown) => console.error('MathJax typeset failed', err));
-  }
-  // fallback to typeset if available.
-  else if (typeof math.typeset === 'function') {
-    math.typeset();
+  if (typeof window.MathJax.typesetPromise === 'function') {
+    // Torus idiom to manage unique MathJax async typesetting promise to avoid concurrency issues
+    let lastPromise = getGlobalLastPromise();
+    lastPromise = lastPromise.then(() => window.MathJax.typesetPromise());
+    setGlobalLastPromise(lastPromise);
   }
 };
 

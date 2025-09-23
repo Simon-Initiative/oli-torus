@@ -15,7 +15,7 @@ import { sanitizeMathML } from '../../utils/mathmlSanitizer';
 
 const cssClass = (inline: boolean) => (inline ? 'formula-inline' : 'formula');
 
-const getGlobalLastPromise = () => {
+export const getGlobalLastPromise = () => {
   /* istanbul ignore next */
   let lastPromise = window?.MathJax?.startup?.promise;
   /* istanbul ignore next */
@@ -30,8 +30,14 @@ const getGlobalLastPromise = () => {
   return lastPromise;
 };
 
-const setGlobalLastPromise = (promise: Promise<any>) => {
+export const setGlobalLastPromise = (promise: Promise<any>) => {
   window.MathJax.startup.promise = promise;
+};
+
+export const safeTypesetPromise = (elements?: HTMLElement | HTMLElement[]) => {
+  let lastPromise = getGlobalLastPromise();
+  lastPromise = lastPromise.then(() => window.MathJax.typesetPromise());
+  setGlobalLastPromise(lastPromise);
 };
 
 /**
@@ -132,7 +138,7 @@ MathJaxLatexFormula.defaultProps = { style: {} };
 
 // Add some types to window to satisfy our minimal needs instead of loading the full mathjax type definitions.
 interface MathJaxMinimal {
-  typesetPromise: (nodes: HTMLElement[]) => Promise<void>;
+  typesetPromise: (nodes?: HTMLElement[]) => Promise<void>;
   startup: {
     promise: Promise<void>;
     load?: () => void;
