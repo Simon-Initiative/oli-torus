@@ -10,7 +10,7 @@ import ReactDOM from 'react-dom';
 import { Provider } from 'react-redux';
 import { ErrorBoundary } from 'components/common/ErrorBoundary';
 import { LoadingSpinner } from 'components/common/LoadingSpinner';
-import { getGlobalLastPromise, setGlobalLastPromise } from 'components/common/MathJaxFormula';
+import { safelyTypesetPromise } from 'components/common/MathJaxFormula';
 import { configureStore } from 'state/store';
 import { clone } from 'utils/common';
 import { Operations } from 'utils/pathOperations';
@@ -38,12 +38,8 @@ const typeset = () => {
   if (typeof window.MathJax === 'undefined') {
     return;
   }
-  if (typeof window.MathJax.typesetPromise === 'function') {
-    // Torus idiom to manage unique MathJax async typesetting promise to avoid concurrency issues
-    let lastPromise = getGlobalLastPromise();
-    lastPromise = lastPromise.then(() => window.MathJax.typesetPromise());
-    setGlobalLastPromise(lastPromise);
-  }
+  // Torus utility manages unique MathJax async typesetting promise to avoid concurrency issues
+  safelyTypesetPromise();
 };
 
 type DetailsProps = { activity?: LabActivity };
