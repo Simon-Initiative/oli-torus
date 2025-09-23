@@ -1687,7 +1687,7 @@ defmodule Oli.Delivery.Metrics do
         ),
         where: rev.resource_type_id == ^activity_type_id,
         where: fragment("? != '{}'", rev.objectives),
-        where: fragment("?::jsonb \\? ?", rev.objectives, ^sub_objective_id_str),
+        where: fragment("?::text LIKE ?", rev.objectives, ^"%#{sub_objective_id_str}%"),
         select: count(fragment("DISTINCT ?", rev.resource_id))
       )
 
@@ -1714,11 +1714,39 @@ defmodule Oli.Delivery.Metrics do
       do: %{}
 
   def related_activities_count_for_subobjectives(section_slug, sub_objective_ids) do
-    # For now, fall back to individual queries to avoid the PostgreSQL complexity
-    # This can be optimized later with a different approach
+    activity_type_id = Oli.Resources.ResourceType.id_for_activity()
+
+    # Single query to get all activities that have any of the target sub-objectives
+    query =
+      from(
+        [s: s, sr: sr, spp: spp, pr: pr, rev: rev] in DeliveryResolver.section_resource_revisions(
+          section_slug
+        ),
+        where: rev.resource_type_id == ^activity_type_id,
+        where: fragment("? != '{}'", rev.objectives),
+        select: %{
+          resource_id: rev.resource_id,
+          objectives: rev.objectives
+        }
+      )
+
+    activities = Repo.all(query)
+
+    # Count activities per sub-objective using the same LIKE logic that worked before
     sub_objective_ids
     |> Enum.reduce(%{}, fn sub_obj_id, acc ->
-      count = related_activities_count_for_subobjective(section_slug, sub_obj_id)
+      sub_obj_id_str = Integer.to_string(sub_obj_id)
+
+      count =
+        activities
+        |> Enum.filter(fn activity ->
+          # Use the same logic as the LIKE: check if the string representation contains the ID
+          objectives_text = Jason.encode!(activity.objectives)
+          String.contains?(objectives_text, sub_obj_id_str)
+        end)
+        |> Enum.uniq_by(& &1.resource_id)
+        |> length()
+
       Map.put(acc, sub_obj_id, count)
     end)
   end

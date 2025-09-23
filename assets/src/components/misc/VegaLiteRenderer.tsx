@@ -12,21 +12,17 @@ export const VegaLiteRenderer: React.FC<Props> = ({ spec }) => {
 
   // Theme updates
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (viewRef.current) {
-        try {
-          const view = viewRef.current;
-          if (!view) return;
-          view.signal('isDarkMode', darkMode);
-          view.background(darkMode ? '#262626' : 'white');
-          view.run();
-        } catch (error) {
-          console.warn('VegaLite theme update failed:', error);
-        }
+    if (viewRef.current) {
+      try {
+        const view = viewRef.current;
+        if (!view) return;
+        view.signal('isDarkMode', darkMode);
+        view.background(darkMode ? '#262626' : 'white');
+        view.run();
+      } catch (error) {
+        console.warn('VegaLite theme update failed:', error);
       }
-    }, 100);
-
-    return () => clearTimeout(timeoutId);
+    }
   }, [darkMode]);
 
   // Observe dark mode changes
@@ -101,7 +97,7 @@ export const VegaLiteRenderer: React.FC<Props> = ({ spec }) => {
           try {
             view.signal('isDarkMode', darkMode);
             view.background(darkMode ? '#262626' : 'white');
-            view.run();
+            view.resize().run();
           } catch (error) {
             console.warn('VegaLite initialization failed:', error);
           }

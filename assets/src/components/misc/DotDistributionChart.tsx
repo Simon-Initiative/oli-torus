@@ -21,15 +21,37 @@ export interface DotDistributionChartProps {
   student_proficiency?: StudentProficiency[]; // Individual student proficiency data
 }
 
-// Colors that match the existing system
-const PROFICIENCY_COLORS: Record<string, string> = {
+// Define precise types for proficiency handling
+export type ProficiencyLabel = keyof ProficiencyDistribution;
+
+// Define DotDatum type for type safety
+export interface DotDatum {
+  student_id: string;
+  color: string;
+  proficiency: ProficiencyLabel;
+  proficiency_index: number;
+  proficiency_value: number;
+  proficiency_value_index: number;
+  student_index: number;
+}
+
+// Define BarDatum type for type safety
+export interface BarDatum {
+  proficiency: ProficiencyLabel;
+  count: number;
+  start: number;
+  end: number;
+}
+
+// Colors that match the existing system - now with precise typing
+const PROFICIENCY_COLORS: Record<ProficiencyLabel, string> = {
   'Not enough data': '#C2C2C2',
   Low: '#E6D4FA',
   Medium: '#B37CEA',
   High: '#7B19C1',
 };
 
-const PROFICIENCY_LABELS = ['Not enough data', 'Low', 'Medium', 'High'];
+const PROFICIENCY_LABELS: ProficiencyLabel[] = ['Not enough data', 'Low', 'Medium', 'High'];
 
 export const DotDistributionChart: React.FC<DotDistributionChartProps> = ({
   proficiency_distribution,
@@ -45,22 +67,13 @@ export const DotDistributionChart: React.FC<DotDistributionChartProps> = ({
   const viewRef = useRef<View | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Update the 'isDarkMode' parameter and background color when 'darkMode' changes
+  // Update the background color when 'darkMode' changes
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (viewRef.current) {
-        try {
-          const view = viewRef.current;
-          view.signal('isDarkMode', darkMode);
-          view.background(darkMode ? '#262626' : 'white');
-          view.run();
-        } catch (error) {
-          console.warn('VegaLite theme update failed:', error);
-        }
-      }
-    }, 100);
-
-    return () => clearTimeout(timeoutId);
+    if (viewRef.current) {
+      const view = viewRef.current;
+      view.background(darkMode ? '#262626' : 'white');
+      view.run();
+    }
   }, [darkMode]);
 
   // Set up a MutationObserver to listen for changes to the 'class' attribute
@@ -129,8 +142,8 @@ export const DotDistributionChart: React.FC<DotDistributionChartProps> = ({
   }, [isVisible]);
 
   // STEP 1: Create data with manually calculated positions
-  const createBarData = () => {
-    const orderedLabels = ['Not enough data', 'Low', 'Medium', 'High'];
+  const createBarData = (): BarDatum[] => {
+    const orderedLabels: ProficiencyLabel[] = ['Not enough data', 'Low', 'Medium', 'High'];
     const counts = orderedLabels.map(
       (label) => proficiency_distribution[label as keyof ProficiencyDistribution] || 0,
     );
@@ -159,7 +172,7 @@ export const DotDistributionChart: React.FC<DotDistributionChartProps> = ({
   };
 
   // STEP 2: Process student_proficiency to create dot data
-  const createDotData = () => {
+  const createDotData = (): DotDatum[] => {
     if (!student_proficiency || student_proficiency.length === 0) {
       return [];
     }
@@ -183,7 +196,7 @@ export const DotDistributionChart: React.FC<DotDistributionChartProps> = ({
     });
 
     // Create data for each dot
-    const dotData: any[] = [];
+    const dotData: DotDatum[] = [];
 
     PROFICIENCY_LABELS.forEach((level, levelIndex) => {
       const proficiencyValuesInLevel = groupedByProficiency[level] || {};
@@ -194,17 +207,13 @@ export const DotDistributionChart: React.FC<DotDistributionChartProps> = ({
 
         studentsWithProficiency.forEach((student, studentIndex) => {
           dotData.push({
-            proficiency: level,
+            proficiency: level as ProficiencyLabel,
             proficiency_index: levelIndex,
             proficiency_value: proficiencyValue,
             proficiency_value_index: proficiencyIndex,
             student_index: studentIndex,
             student_id: student.student_id,
-            color: PROFICIENCY_COLORS[level],
-            // X position based on proficiency level
-            x_position: levelIndex,
-            // Y position based on tower of students with same proficiency value
-            y_position: studentIndex,
+            color: PROFICIENCY_COLORS[level as ProficiencyLabel],
           });
         });
       });
@@ -294,13 +303,8 @@ export const DotDistributionChart: React.FC<DotDistributionChartProps> = ({
               tooltip={darkMode ? darkTooltipTheme : lightTooltipTheme}
               onNewView={(view) => {
                 viewRef.current = view;
-                try {
-                  view.signal('isDarkMode', darkMode);
-                  view.background(darkMode ? '#262626' : 'white');
-                  view.run();
-                } catch (error) {
-                  console.warn('VegaLite initialization failed:', error);
-                }
+                view.background(darkMode ? '#262626' : 'white');
+                view.run();
               }}
             />
           </div>
@@ -454,7 +458,7 @@ function calculateSymmetricDistribution(totalStudents: number): { subtowers: num
 
 // HELPER FUNCTION: Render dots using React (not VegaLite)
 // This function creates the dots that represent students
-function renderDots(dotData: any[], barData: any[]) {
+function renderDots(dotData: DotDatum[], barData: BarDatum[]) {
   const dotSize = 11; // Size of each dot in pixels (11px diameter)
   const padding = 2; // Space between dots
   const totalStudents = barData.reduce((sum, item) => sum + item.count, 0);
@@ -462,7 +466,7 @@ function renderDots(dotData: any[], barData: any[]) {
   if (totalStudents === 0) return null;
 
   // Group dots by proficiency level, then by proficiency value to create towers
-  const groupedByLevelAndValue: { [key: string]: { [key: number]: any[] } } = {};
+  const groupedByLevelAndValue: { [key: string]: { [key: number]: DotDatum[] } } = {};
 
   dotData.forEach((dot) => {
     if (!groupedByLevelAndValue[dot.proficiency]) {
@@ -588,7 +592,7 @@ function renderDots(dotData: any[], barData: any[]) {
 
                 return (
                   <circle
-                    key={`${dot.student_id}-${proficiencyValue}`}
+                    key={`${level}-${dot.student_id}-${proficiencyValue}`}
                     cx={`${Math.max(1, Math.min(99, xPositionPercent))}%`}
                     cy={yPosition}
                     r={dotSize / 2}
