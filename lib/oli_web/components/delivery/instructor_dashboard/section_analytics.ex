@@ -106,7 +106,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
             <div class="flex items-center bg-gray-50 dark:bg-gray-900 border rounded-lg p-4">
               <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mr-3"></div>
               <p class="text-sm text-gray-600 dark:text-gray-300">
-                Loading section analytics from S3. This page will refresh automatically when the data is ready.
+                Loading section analytics. This page will refresh automatically when the data is ready.
               </p>
             </div>
           <% {:error, reason} -> %>
@@ -126,7 +126,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
               </button>
             </div>
           <% _ -> %>
-            
+
     <!-- Comprehensive Section Analytics -->
             <div class="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-6 mb-6">
               <h2 class="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
@@ -346,7 +346,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
                 </button>
               </div>
             </div>
-            
+
     <!-- Analytics Visualization -->
             <%= if @selected_analytics_category do %>
               <div class="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-6">
@@ -368,7 +368,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
                       Analytics Visualization
                   <% end %>
                 </h2>
-                
+
     <!-- Engagement Analytics Controls -->
                 <%= if @selected_analytics_category == "engagement" do %>
                   <div class="mb-6 bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
@@ -433,7 +433,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
                     </form>
                   </div>
                 <% end %>
-                
+
     <!-- Custom Analytics Interface -->
                 <%= if @selected_analytics_category == "custom" do %>
                   <div class="mb-4">
@@ -504,7 +504,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
                         Execute Query
                       </button>
                     </div>
-                    
+
     <!-- Query Results -->
                     <%= if @custom_query_result do %>
                       <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
@@ -530,7 +530,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
                         <% end %>
                       </div>
                     <% end %>
-                    
+
     <!-- VegaLite Spec Editor -->
                     <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
                       <h4 class="text-md font-semibold mb-3 text-gray-900 dark:text-white">
@@ -578,7 +578,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
                         Render Visualization
                       </button>
                     </div>
-                    
+
     <!-- Custom Visualization -->
                     <%= if @custom_visualization_spec do %>
                       <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border">
@@ -598,7 +598,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
                     <% end %>
                   </div>
                 <% else %>
-                  
+
     <!-- Regular Analytics Interface -->
                   <%= cond do %>
                     <% @analytics_spec == nil -> %>
@@ -639,7 +639,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
                             </p>
                         <% end %>
                       </div>
-                      
+
     <!-- Render all charts vertically -->
                       <%= for {chart, index} <- Enum.with_index(@analytics_spec) do %>
                         <div class="mb-6">
@@ -754,8 +754,14 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
   @impl true
   def handle_event("bulk_load_section_analytics", _params, socket) do
     case socket.assigns[:section] do
-      %{id: section_id} ->
-        send(self(), {:load_section_analytics, section_id})
+      %{id: section_id} = section ->
+        payload =
+          case Map.get(section, :slug) || Map.get(section, "slug") do
+            nil -> section_id
+            slug -> %{id: section_id, slug: slug}
+          end
+
+        send(self(), {:load_section_analytics, payload})
         {:noreply, assign(socket, :section_analytics_load_state, :loading)}
 
       _ ->

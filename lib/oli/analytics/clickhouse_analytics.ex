@@ -390,17 +390,103 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
   def section_analytics_loaded?(_), do: {:error, :invalid_section_id}
 
   @doc """
-  Convenience wrapper that fetches AWS credentials from the environment before
-  executing the bulk load operation.
+  Returns the execution status for a bulk section analytics load identified by
+  the given ClickHouse `query_id`.
+
+  When successful, the response map will include `:status` along with optional
+  metadata such as `:rows_read`, `:rows_written`, `:query_duration_ms`, and
+  `:error` when the query terminated with an exception.
   """
-  def bulk_load_section_analytics(section_id) when is_integer(section_id) do
-    with {:ok, {access_key, secret_key}} <- fetch_aws_credentials() do
-      bulk_load_section_analytics(section_id, access_key, secret_key)
+  def section_analytics_query_status(query_id)
+      when is_binary(query_id) and byte_size(query_id) > 0 do
+    """
+    SELECT
+      query_id,
+      type,
+      exception,
+      exception_code,
+      read_rows AS rows_read,
+      written_rows AS rows_written,
+      query_duration_ms,
+      event_time AS last_event_time
+    FROM system.query_log
+    WHERE query_id = '#{query_id}'
+      AND type IN ('QueryFinish', 'ExceptionBeforeStart', 'ExceptionWhileProcessing')
+    ORDER BY event_time DESC
+    LIMIT 1
+    """
+    |> execute_query("section analytics query status for #{query_id}")
+    |> case do
+      {:ok, response} -> parse_section_analytics_query_status(response)
+      other -> other
     end
   end
 
-  def bulk_load_section_analytics(section_id, aws_access_key, aws_secret_key) do
+  def section_analytics_query_status(_), do: {:error, :invalid_query_id}
+
+  @doc """
+  Returns the most recent ClickHouse query status for the given section. When no
+  query has been recorded yet, `{:ok, :none}` is returned.
+  """
+  def latest_section_analytics_query_status(section_id, opts \\ [])
+      when is_integer(section_id) do
+    prefix = section_analytics_query_prefix(section_id, opts)
+
+    """
+    SELECT
+      query_id,
+      argMax(type, event_time) AS type,
+      argMax(exception, event_time) AS exception,
+      argMax(exception_code, event_time) AS exception_code,
+      argMax(read_rows, event_time) AS rows_read,
+      argMax(written_rows, event_time) AS rows_written,
+      argMax(query_duration_ms, event_time) AS query_duration_ms,
+      max(event_time) AS last_event_time
+    FROM system.query_log
+    WHERE query_id LIKE '#{prefix}%'
+    GROUP BY query_id
+    ORDER BY last_event_time DESC
+    LIMIT 1
+    """
+    |> execute_query("latest section analytics query status for section #{section_id}")
+    |> case do
+      {:ok, response} ->
+        with {:ok, rows} <- extract_rows(response) do
+          case rows do
+            [] -> {:ok, :none}
+            data -> parse_section_analytics_query_status_from_data(data)
+          end
+        end
+
+      other ->
+        other
+    end
+  end
+
+  def latest_section_analytics_query_status(_, _), do: {:error, :invalid_section_id}
+
+  @doc """
+  Convenience wrapper that fetches AWS credentials from the environment before
+  executing the bulk load operation.
+  """
+  def bulk_load_section_analytics(section_id, opts \\ []) when is_integer(section_id) do
+    with {:ok, {access_key, secret_key}} <- fetch_aws_credentials() do
+      bulk_load_section_analytics(section_id, access_key, secret_key, opts)
+    end
+  end
+
+  def bulk_load_section_analytics(section_id, aws_access_key, aws_secret_key, opts \\ []) do
     raw_events_table = raw_events_table()
+    query_id = Keyword.get(opts, :query_id) || section_analytics_query_id(section_id, opts)
+
+    query_params =
+      opts
+      |> Keyword.get(:query_params, %{})
+      |> Map.new(fn {key, value} -> {key, value} end)
+      |> Map.put_new(:wait_end_of_query, "0")
+      |> Map.put_new(:query_id, query_id)
+
+    headers = Keyword.get(opts, :headers, [])
 
     """
     INSERT INTO #{raw_events_table} (
@@ -540,14 +626,16 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
       )
     """
     |> execute_query(
-      "bulk load section analytics for section #{section_id}"
+      "bulk load section analytics for section #{section_id}",
+      headers: [{"X-ClickHouse-Query-Id", query_id} | headers],
+      query_params: query_params
     )
   end
 
   defp build_s3_path(section_id) when is_integer(section_id) do
     # bucket = Application.get_env(:oli, :s3_xapi_bucket_name)
-     # TODO: Replace this!!
-     bucket = "torus-xapi-prod"
+    # TODO: CHANGE THIS!!
+    bucket = "torus-xapi-prod"
 
     section_prefix =
       Application.get_env(:oli, :s3_xapi_section_prefix, "section")
@@ -589,23 +677,48 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
     config = clickhouse_config()
 
     # Include database in the URL path for ClickHouse HTTP interface
-    url = "#{config.host}:#{config.http_port}/?database=#{config.database}"
+    query_params = build_query_params(config, Keyword.get(opts, :query_params, %{}))
+    url = build_clickhouse_url(config, query_params)
 
-    headers = [
-      {"Content-Type", "text/plain"},
-      {"X-ClickHouse-User", config.user},
-      {"X-ClickHouse-Key", config.password}
-    ]
+    extra_headers = Keyword.get(opts, :headers, [])
+
+    headers =
+      [
+        {"Content-Type", "text/plain"},
+        {"X-ClickHouse-User", config.user},
+        {"X-ClickHouse-Key", config.password}
+      ] ++ extra_headers
 
     # Add FORMAT clause to include headers in the output
     {formatted_query, response_format} = normalize_query_format(query)
 
     Logger.debug("Executing ClickHouse query for #{description}")
 
+    http_options = build_http_options(config, opts)
+
+    http_client =
+      Oli.HTTP.http()
+      |> ensure_http_client_module()
+
     # Time the query execution
-    {execution_time_microseconds, result} = Oli.Timing.run(fn ->
-      Oli.HTTP.http().post(url, formatted_query, headers)
-    end)
+    {execution_time_microseconds, result} =
+      Oli.Timing.run(fn ->
+        cond do
+          function_exported?(http_client, :post, 4) ->
+            apply(http_client, :post, [url, formatted_query, headers, http_options])
+
+          function_exported?(http_client, :post, 3) ->
+            Logger.debug(
+              "HTTP client #{inspect(http_client)} only supports post/3; using default timeouts"
+            )
+
+            apply(http_client, :post, [url, formatted_query, headers])
+
+          true ->
+            raise ArgumentError,
+                  "Configured HTTP client #{inspect(http_client)} does not define post/3 or post/4"
+        end
+      end)
 
     execution_time_ms = execution_time_microseconds / 1000
 
@@ -632,6 +745,117 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
   end
 
   def execute_query(_), do: {:error, "Empty query"}
+
+  def section_analytics_query_id(section_id, opts \\ []) when is_integer(section_id) do
+    base_slug = Keyword.get(opts, :section_slug)
+
+    sanitized_slug = sanitize_section_slug(base_slug, section_id)
+    unique_suffix = System.unique_integer([:positive]) |> Integer.to_string(36)
+
+    "section_analytics_load__#{sanitized_slug}_#{section_id}_#{unique_suffix}"
+  end
+
+  defp build_http_options(config, opts) do
+    provided =
+      opts
+      |> Keyword.get(:http_options, [])
+      |> normalize_keyword_options()
+
+    default_http_options(config)
+    |> Keyword.merge(provided, fn _key, _default, override -> override end)
+  end
+
+  defp default_http_options(config) do
+    base = [
+      timeout: Map.get(config, :http_timeout_ms, 15_000),
+      recv_timeout: Map.get(config, :http_recv_timeout_ms, 60_000)
+    ]
+
+    config
+    |> Map.get(:http_options, [])
+    |> normalize_keyword_options()
+    |> Keyword.merge(base, fn _key, _base_value, config_value -> config_value end)
+  end
+
+  defp build_query_params(config, params) do
+    params
+    |> normalize_query_params()
+    |> Map.put_new("database", config.database)
+  end
+
+  defp build_clickhouse_url(config, params) do
+    query_string = URI.encode_query(params)
+    "#{config.host}:#{config.http_port}/?#{query_string}"
+  end
+
+  defp normalize_query_params(params) when is_list(params) do
+    Enum.reduce(params, %{}, fn {key, value}, acc ->
+      Map.put(acc, to_string(key), normalize_query_param_value(value))
+    end)
+  end
+
+  defp normalize_query_params(%{} = params) do
+    Enum.reduce(params, %{}, fn {key, value}, acc ->
+      Map.put(acc, to_string(key), normalize_query_param_value(value))
+    end)
+  end
+
+  defp normalize_query_params(_), do: %{}
+
+  defp normalize_query_param_value(value) when is_binary(value), do: value
+
+  defp normalize_query_param_value(value) when is_boolean(value),
+    do: if(value, do: "1", else: "0")
+
+  defp normalize_query_param_value(value) when is_integer(value), do: Integer.to_string(value)
+
+  defp normalize_query_param_value(value) when is_float(value) do
+    :erlang.float_to_binary(value, [:compact])
+  end
+
+  defp normalize_query_param_value(value), do: to_string(value)
+
+  defp sanitize_section_slug(nil, section_id), do: "section_#{section_id}"
+
+  defp sanitize_section_slug(slug, section_id) do
+    slug
+    |> to_string()
+    |> String.downcase()
+    |> String.replace(~r/[^a-z0-9]+/u, "_")
+    |> String.trim("_")
+    |> case do
+      "" -> "section_#{section_id}"
+      value -> value
+    end
+  end
+
+  defp normalize_keyword_options(value) when is_list(value), do: value
+  defp normalize_keyword_options(%{} = map), do: Enum.into(map, [])
+  defp normalize_keyword_options(_), do: []
+
+  defp section_analytics_query_prefix(section_id, opts) do
+    slug = Keyword.get(opts, :section_slug)
+    sanitized_slug = sanitize_section_slug(slug, section_id)
+
+    "section_analytics_load__#{sanitized_slug}_#{section_id}_"
+  end
+
+  defp ensure_http_client_module({module, _default_opts}), do: ensure_http_client_module(module)
+
+  defp ensure_http_client_module(module) when is_atom(module) do
+    case Code.ensure_loaded(module) do
+      {:module, ^module} ->
+        module
+
+      {:error, reason} ->
+        raise ArgumentError,
+              "Configured HTTP client #{inspect(module)} could not be loaded: #{inspect(reason)}"
+    end
+  end
+
+  defp ensure_http_client_module(other) do
+    raise ArgumentError, "Invalid HTTP client configuration: #{inspect(other)}"
+  end
 
   defp format_query_results(body, format) when is_binary(body) do
     case {String.trim(body), format} do
@@ -753,6 +977,122 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
       true -> nil
     end
   end
+
+  defp parse_section_analytics_query_status(%{parsed_body: parsed}) when is_map(parsed) do
+    parsed
+    |> Map.get("data")
+    |> case do
+      nil -> {:ok, %{status: :running}}
+      data -> parse_section_analytics_query_status_from_data(data)
+    end
+  end
+
+  defp parse_section_analytics_query_status(%{parsed_body: parsed}) when is_list(parsed) do
+    parse_section_analytics_query_status_from_data(parsed)
+  end
+
+  defp parse_section_analytics_query_status(_), do: {:ok, %{status: :running}}
+
+  defp parse_section_analytics_query_status_from_data([]), do: {:ok, %{status: :running}}
+
+  defp parse_section_analytics_query_status_from_data([row | _]) when is_map(row) do
+    status =
+      row
+      |> fetch_row_value("type")
+      |> case do
+        "QueryFinish" -> :completed
+        "ExceptionBeforeStart" -> :failed
+        "ExceptionWhileProcessing" -> :failed
+        _ -> :running
+      end
+
+    info =
+      %{
+        query_id: fetch_row_value(row, "query_id"),
+        status: status,
+        rows_read: parse_integer_field(row, "rows_read"),
+        rows_written: parse_integer_field(row, "rows_written"),
+        query_duration_ms: parse_integer_field(row, "query_duration_ms"),
+        exception_code: parse_integer_field(row, "exception_code"),
+        error: parse_error_message(row),
+        last_event_time: parse_event_time_field(row, "last_event_time")
+      }
+      |> Enum.reduce(%{}, fn {key, value}, acc ->
+        cond do
+          key == :status -> Map.put(acc, key, value)
+          is_nil(value) -> acc
+          true -> Map.put(acc, key, value)
+        end
+      end)
+
+    {:ok, info}
+  end
+
+  defp parse_section_analytics_query_status_from_data(_), do: {:ok, %{status: :running}}
+
+  defp fetch_row_value(row, key) do
+    string_key = if is_atom(key), do: Atom.to_string(key), else: to_string(key)
+    Map.get(row, string_key) || Map.get(row, key)
+  end
+
+  defp parse_integer_field(row, key) do
+    row
+    |> fetch_row_value(key)
+    |> normalize_integer_value()
+  end
+
+  defp normalize_integer_value(nil), do: nil
+  defp normalize_integer_value(value) when is_integer(value), do: value
+  defp normalize_integer_value(value) when is_float(value), do: trunc(value)
+
+  defp normalize_integer_value(value) when is_binary(value) do
+    trimmed = String.trim(value)
+
+    cond do
+      trimmed == "" ->
+        nil
+
+      true ->
+        case Integer.parse(trimmed) do
+          {int, _} ->
+            int
+
+          :error ->
+            case Float.parse(trimmed) do
+              {float, _} -> trunc(float)
+              :error -> nil
+            end
+        end
+    end
+  end
+
+  defp normalize_integer_value(_), do: nil
+
+  defp parse_error_message(row) do
+    row
+    |> fetch_row_value("exception")
+    |> case do
+      nil -> nil
+      "" -> nil
+      message -> message
+    end
+  end
+
+  defp parse_event_time_field(row, key) do
+    row
+    |> fetch_row_value(key)
+    |> case do
+      nil -> nil
+      %DateTime{} = dt -> dt
+      %NaiveDateTime{} = dt -> dt
+      value when is_binary(value) -> value
+      value -> to_string(value)
+    end
+  end
+
+  defp extract_rows(%{parsed_body: %{"data" => data}}) when is_list(data), do: {:ok, data}
+  defp extract_rows(%{parsed_body: data}) when is_list(data), do: {:ok, data}
+  defp extract_rows(_), do: {:ok, []}
 
   defp format_tsv_with_alignment([]), do: ""
   defp format_tsv_with_alignment([single_line]), do: single_line
