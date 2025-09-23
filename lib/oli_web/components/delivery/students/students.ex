@@ -54,7 +54,7 @@ defmodule OliWeb.Components.Delivery.Students do
         } = assigns,
         socket
       ) do
-    {total_count, filtered_students} = apply_filters(students, params)
+    {total_count, filtered_students, all_students} = apply_filters(students, params)
 
     certificate_pending_approval_count =
       Helpers.certificate_pending_approval_count(filtered_students, assigns[:certificate])
@@ -149,6 +149,7 @@ defmodule OliWeb.Components.Delivery.Students do
        section_open_and_free: section.open_and_free,
        section_title: section.title,
        section_certificate_enabled: section.certificate_enabled,
+       all_students: all_students,
        dropdown_options: dropdown_options,
        view: assigns[:view],
        title: title,
@@ -198,7 +199,7 @@ defmodule OliWeb.Components.Delivery.Students do
       |> maybe_filter_by_proficiency(params.selected_proficiency_ids)
       |> sort_by(params.sort_by, params.sort_order)
 
-    {length(students), students |> Enum.drop(params.offset) |> Enum.take(params.limit)}
+    {length(students), students |> Enum.drop(params.offset) |> Enum.take(params.limit), students}
   end
 
   defp maybe_filter_by_proficiency(students, "[]") do
@@ -613,7 +614,7 @@ defmodule OliWeb.Components.Delivery.Students do
               id="email_button_component"
               module={OliWeb.Components.Delivery.Students.EmailButton}
               selected_students={@selected_students}
-              students={@table_model.rows}
+              students={@all_students}
               section_title={@section_title}
               instructor_email={issued_by_email(@current_author, @current_user)}
               section_slug={@section_slug}
@@ -664,7 +665,7 @@ defmodule OliWeb.Components.Delivery.Students do
           id="email_modal"
           module={OliWeb.Components.Delivery.Students.EmailModal}
           selected_students={@selected_students}
-          students={@table_model.rows}
+          students={@all_students}
           section_title={@section_title}
           instructor_email={issued_by_email(@current_author, @current_user)}
           section_slug={@section_slug}
@@ -1299,7 +1300,7 @@ defmodule OliWeb.Components.Delivery.Students do
   end
 
   def handle_event("select_all_students", _params, socket) do
-    all_student_ids = Enum.map(socket.assigns.table_model.rows, & &1.id)
+    all_student_ids = Enum.map(socket.assigns.all_students, & &1.id)
     current_selected = socket.assigns[:selected_students] || []
 
     # If all students are already selected, deselect all; otherwise select all
