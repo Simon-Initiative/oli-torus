@@ -30,18 +30,6 @@ import {
 
 const STORE = configureStore();
 
-/**
- * Checks if MathJax's typeset function is available and runs it.
- */
-const typeset = () => {
-  // abort if MathJax is not available.
-  if (typeof window.MathJax === 'undefined') {
-    return;
-  }
-  // Torus utility manages unique MathJax async typesetting promise to avoid concurrency issues
-  safelyTypesetPromise();
-};
-
 type DetailsProps = { activity?: LabActivity };
 
 /**
@@ -51,6 +39,23 @@ type DetailsProps = { activity?: LabActivity };
  * @component
  */
 const Details: FC<DetailsProps> = ({ activity }) => {
+  const previewDiv = useRef<HTMLDivElement | null>(null);
+
+  // Checks if MathJax's typeset function is available and runs it on previewDiv
+  const typeset = () => {
+    // abort if MathJax is not available.
+    if (typeof window.MathJax === 'undefined') {
+      return;
+    }
+    // Torus utility manages unique MathJax async typesetting promise to avoid concurrency issues
+    if (previewDiv.current) safelyTypesetPromise([previewDiv.current]);
+  };
+
+  // Typeset math in previews.
+  useEffect(() => {
+    if (activity) typeset();
+  }, [activity]);
+
   if (!isLabActivity(activity)) {
     // if no activity then show warning.
     return <p className="alert alert-warning">No activity.</p>;
@@ -115,7 +120,11 @@ const Details: FC<DetailsProps> = ({ activity }) => {
         </tbody>
       </table>
       {activity.spec.preview && (
-        <div className="card" dangerouslySetInnerHTML={{ __html: activity.spec.preview }}></div>
+        <div
+          className="card"
+          ref={previewDiv}
+          dangerouslySetInnerHTML={{ __html: activity.spec.preview }}
+        ></div>
       )}
     </div>
   );
@@ -308,11 +317,6 @@ const Authoring: FC<LogicLabAuthoringProps> = (props: LogicLabAuthoringProps) =>
     }
     setActivity(activities?.find((a) => a.id === activityId));
   }, [activityId, activities]);
-
-  // Typeset math in previews.
-  useEffect(() => {
-    if (activity) typeset();
-  }, [activity]);
 
   const [sort, setSort] = useState<string>('id-asc'); // current sort order
   const isTutored = (activity: LabActivity | string | undefined): boolean =>
@@ -673,13 +677,6 @@ const Preview: FC<LogicLabAuthoringProps> = ({
 
     return () => controller.current?.abort('Component unmounted or model changed.');
   }, [model, authoringContext]);
-
-  // on setting activity, typeset the math.
-  useEffect(() => {
-    if (activity) {
-      typeset();
-    }
-  }, [activity]);
 
   return (
     <>
