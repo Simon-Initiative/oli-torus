@@ -643,6 +643,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
             margin-right: 20px;
             margin-bottom: 20px;
             width: calc(50% - 10px);
+            background-color: rgba(0, 0, 255, 0.1); /* Debug: temporary blue background for left parts */
           }
 
           .responsive-align-right {
@@ -660,17 +661,12 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
             clear: right;
           }
 
-          /* Force all right-aligned parts to stack vertically */
-          .responsive-layout .responsive-align-right {
-            display: block;
-            float: right;
-            clear: right;
-          }
-
           /* Ensure left-aligned parts stack properly */
           .responsive-align-left + .responsive-align-left {
             margin-top: 0;
+            clear: left; /* Only clear when there are consecutive left parts */
           }
+
 
           /* Ensure proper spacing between left and right columns */
           .responsive-item.half-width:not(:last-child) {
@@ -787,7 +783,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
 
               // Determine width class and alignment
               const widthClass =
-                part.custom.responsiveLayoutWidth === '100%' ? 'full-width' : 'half-width';
+                part.custom.responsiveLayoutWidth === '100%' || part.custom.responsiveLayoutWidth === undefined || part.custom.responsiveLayoutWidth === null ? 'full-width' : 'half-width';
               const alignmentClass =
                 part.custom.responsiveLayoutWidth === '50% align right'
                   ? 'responsive-align-right'
