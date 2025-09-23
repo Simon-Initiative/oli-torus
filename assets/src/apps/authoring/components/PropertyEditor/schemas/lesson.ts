@@ -40,12 +40,16 @@ const lessonSchema: JSONSchema7 = {
                   default: '/css/delivery_adaptive_themes_default_light.css',
                 },
                 { type: 'string', title: 'Custom Theme' },
-                { type: 'string', title: 'Responsive Layout', const: 'responsive' },
               ],
             },
             customCssUrl: {
               type: 'string',
               title: 'Custom CSS URL',
+            },
+            responsiveLayout: {
+              type: 'boolean',
+              title: 'Responsive Layout',
+              default: false,
             },
             backgroundImageURL: {
               type: 'string',
@@ -64,11 +68,6 @@ const lessonSchema: JSONSchema7 = {
               type: 'boolean',
               title: 'Enable Dark Mode',
               default: 'false',
-            },
-            responsiveLayout: {
-              type: 'boolean',
-              title: 'Responsive Layout',
-              default: false,
             },
           },
         },
@@ -268,16 +267,13 @@ export const lessonUiSchema: UiSchema = {
     Appearance: {
       'ui:ObjectFieldTemplate': CustomFieldTemplate,
       'ui:title': 'Lesson Appearance',
-      theme: {
-        'ui:widget': 'select',
-        'ui:options': {
-          hideOnSelect: {
-            'responsive': ['customCssUrl']
-          }
-        }
-      },
       backgroundImageURL: {
         'ui:widget': 'TorusImageBrowser',
+      },
+      responsiveLayout: {
+        'ui:title': 'Enable Responsive Layout',
+        'ui:description': 'Use responsive layout for parts instead of fixed positioning',
+        classNames: 'col-span-12',
       },
     },
     FinishPanel: {
@@ -314,7 +310,7 @@ export const lessonUiSchema: UiSchema = {
 
 export const transformModelToSchema = (model: any) => {
   const [themeUrl, customCssUrl] = model.additionalStylesheets;
-
+  console.log('LESSON MODEL -> SCHEMA', model, { model, themeUrl, customCssUrl });
   return {
     Properties: {
       Size: { width: model.custom.defaultScreenWidth, height: model.custom.defaultScreenHeight },
@@ -350,7 +346,7 @@ export const transformModelToSchema = (model: any) => {
 };
 
 export const transformSchemaToModel = (schema: any) => {
-  /* console.log('LESSON SCHEMA -> MODEL', schema); */
+  console.log('LESSON SCHEMA -> MODEL', schema);
 
   const additionalStylesheets = [
     schema.Properties.Appearance.theme,

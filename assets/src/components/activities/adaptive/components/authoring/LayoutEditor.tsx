@@ -66,7 +66,7 @@ const getPartAndCapabilities = (
 
 const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
   const pusherContext = useContext(NotificationContext);
-
+  console.log('LE RENDER', { props });
   const pusher = useMemo(
     () => pusherContext || new EventEmitter().setMaxListeners(50),
     [pusherContext],
@@ -108,7 +108,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
     }
   }, [parts]);
 
-  const isResponsive = true;
+  const isResponsive = false;
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Calculate toolbar position
@@ -543,75 +543,6 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
             clear: both;
           }
 
-          .responsive-row {
-            display: flex;
-            width: 100%;
-            gap: 10px;
-            min-height: 100px;
-            align-items: flex-start;
-          }
-
-          .responsive-row.full {
-            /* Full width row - single item takes full width */
-          }
-
-          .responsive-row.half {
-            /* Half width row - items can be 50% each or single 50% aligned */
-            justify-content: flex-start;
-            align-items: flex-start;
-          }
-
-          .responsive-row.half:has(.responsive-align-right:only-child) {
-            /* If row has only a right-aligned item, justify to the right */
-            justify-content: flex-end;
-          }
-
-          /* Handle mixed alignment in same row */
-          .responsive-row.half:has(.responsive-align-left):has(.responsive-align-right) {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-          }
-
-          /* Left column in mixed row */
-          .responsive-row.half:has(.responsive-align-left):has(.responsive-align-right) .responsive-align-left {
-            width: calc(50% - 5px);
-            flex: 0 0 calc(50% - 5px);
-          }
-
-          /* Right column in mixed row - stack vertically */
-          .responsive-row.half:has(.responsive-align-left):has(.responsive-align-right) .responsive-align-right {
-            width: calc(50% - 5px);
-            flex: 0 0 calc(50% - 5px);
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-          }
-
-          /* Handle multiple left-aligned parts in same row */
-          .responsive-row.half:has(.responsive-align-left:not(:only-child)) {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-          }
-
-          .responsive-row.half:has(.responsive-align-left:not(:only-child)) .responsive-item {
-            width: calc(50% - 5px);
-            margin-bottom: 10px;
-          }
-
-          /* Handle multiple right-aligned parts in same row */
-          .responsive-row.half:has(.responsive-align-right:not(:only-child)) {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-          }
-
-          .responsive-row.half:has(.responsive-align-right:not(:only-child)) .responsive-item {
-            width: calc(50% - 5px);
-            margin-bottom: 10px;
-          }
-
           .responsive-item {
             position: relative;
             min-height: 100px;
@@ -631,12 +562,6 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
             margin-bottom: 20px;
           }
 
-          /* When multiple half-width parts are in same row, stack them vertically */
-          .responsive-row.half:has(.responsive-item:not(:only-child)) .responsive-item.half-width {
-            width: calc(50% - 5px);
-            flex: 0 0 calc(50% - 5px);
-          }
-
           .responsive-align-left {
             /* Left alignment for 50% width items */
             float: left;
@@ -644,6 +569,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
             margin-bottom: 20px;
             width: calc(50% - 10px);
             background-color: rgba(0, 0, 255, 0.1); /* Debug: temporary blue background for left parts */
+            clear: left; /* Only clear left floats, allow natural flow */
           }
 
           .responsive-align-right {
@@ -664,24 +590,11 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
           /* Ensure left-aligned parts stack properly */
           .responsive-align-left + .responsive-align-left {
             margin-top: 0;
-            clear: left; /* Only clear when there are consecutive left parts */
           }
 
-
-          /* Ensure proper spacing between left and right columns */
-          .responsive-item.half-width:not(:last-child) {
-            margin-bottom: 20px;
-          }
-
-          /* Ensure the last right-aligned part is properly positioned */
-          .responsive-layout .responsive-align-right:last-of-type {
-            margin-bottom: 0;
-          }
-
-          /* Handle single 50% items in a row */
-          .responsive-row.half .responsive-item:only-child {
-            width: calc(50% - 5px);
-            flex: 0 0 calc(50% - 5px);
+          /* Allow left parts to flow naturally after right parts */
+          .responsive-align-right + .responsive-align-left {
+            clear: none; /* Allow left part to flow naturally */
           }
 
           /* Override absolute positioning for responsive mode */
@@ -783,7 +696,11 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
 
               // Determine width class and alignment
               const widthClass =
-                part.custom.responsiveLayoutWidth === '100%' || part.custom.responsiveLayoutWidth === undefined || part.custom.responsiveLayoutWidth === null ? 'full-width' : 'half-width';
+                part.custom.responsiveLayoutWidth === '100%' ||
+                part.custom.responsiveLayoutWidth === undefined ||
+                part.custom.responsiveLayoutWidth === null
+                  ? 'full-width'
+                  : 'half-width';
               const alignmentClass =
                 part.custom.responsiveLayoutWidth === '50% align right'
                   ? 'responsive-align-right'
@@ -794,7 +711,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
                 id: part.id,
                 responsiveLayoutWidth: part.custom.responsiveLayoutWidth,
                 widthClass,
-                alignmentClass
+                alignmentClass,
               });
 
               return (
@@ -813,8 +730,8 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
                       height: part.custom.height || 100,
                     }}
                     position={{
-                      x: 0, // Ignore x position in responsive mode
-                      y: 0, // Ignore y position in responsive mode
+                      x: 0, // Ignore x position in responsive mode (but preserve original x in data)
+                      y: 0, // Ignore y position in responsive mode (but preserve original y in data)
                     }}
                     disabled={!!disableDrag}
                     style={{ zIndex: part?.custom?.z || 0 }}
