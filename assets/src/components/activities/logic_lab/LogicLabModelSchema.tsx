@@ -1,7 +1,7 @@
 /*
   Models for Torus LogicLab activity data and data exchange.
 */
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityModelSchema, Feedback, Part, Transformation } from '../types';
 
 // Typing and type checking for existence of variables in a context.
@@ -25,22 +25,31 @@ export function getLabServer(context: ContextVariables | unknown): string {
 }
 export function useLabServer(context: ContextVariables | unknown): string | undefined {
   const [server, setServer] = useState<string | undefined>();
-  try {
-    const url = getLabServer(context);
-    fetch(url, { method: 'HEAD' }).then((response) => {
-      if (response.ok) {
-        setServer(url);
+  useEffect(() => {
+    const abortController = new AbortController();
+    (async () => {
+      try {
+        const url = getLabServer(context);
+        // Attempt to fetch the server URL to ensure it is reachable.
+        const response = await fetch(url, { method: 'HEAD', signal: abortController.signal });
+        if (response.ok) {
+          setServer(url);
+        }
+      } catch (e) {
+        if (e instanceof ReferenceError) {
+          console.warn('LogicLab server URL not set in context, using default.');
+          // Default LogicLab server URL.
+          // This should be removed once the environment variable is consistently set in deployment environments.
+          setServer('https://logiclab.oli.cmu.edu');
+        }
       }
-    });
-  } catch (e) {
-    if (e instanceof ReferenceError) {
-      console.warn('LogicLab server URL not set in context, using default.');
-      // Default LogicLab server URL.
-      // This should be removed once the environment variable is consistently set in deployment environments.
-      setServer('https://logiclab.oli.cmu.edu');
-    }
-    throw e; // rethrow other errors
-  }
+    })();
+    // Cleanup function to abort the fetch request if the component unmounts before it completes.
+    // This prevents memory leaks and unnecessary network requests.
+    return () => {
+      abortController.abort(); // Clean up the fetch request on component unmount
+    };
+  }, [context]);
   return server;
 }
 
@@ -127,8 +136,8 @@ type ActivitySpecification = {
   type: keyof typeof LogiclabActivityTypes.en;
   objectives: {
     category: string;
-    required: string; // 'required' | 'optional' | 'as_required' | 'provided' | 'absent'
-    mode?: string; // 'novice' | 'expert'
+    required: 'required' | 'optional' | 'as_required' | 'provided' | 'absent';
+    mode?: 'novice' | 'expert';
   }[];
   // score: string; // Deprecated, use maximumScore instead
   maximumScore?: number;

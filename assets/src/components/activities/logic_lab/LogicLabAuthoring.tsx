@@ -41,19 +41,9 @@ type DetailsProps = { activity?: LabActivity };
 const Details: FC<DetailsProps> = ({ activity }) => {
   const previewDiv = useRef<HTMLDivElement | null>(null);
 
-  // Checks if MathJax's typeset function is available and runs it on previewDiv
-  const typeset = () => {
-    // abort if MathJax is not available.
-    if (typeof window.MathJax === 'undefined') {
-      return;
-    }
-    // Torus utility manages unique MathJax async typesetting promise to avoid concurrency issues
-    if (previewDiv.current) safelyTypesetPromise([previewDiv.current]);
-  };
-
   // Typeset math in previews.
   useEffect(() => {
-    if (activity) typeset();
+    if (activity && previewDiv.current) safelyTypesetPromise([previewDiv.current]);
   }, [activity]);
 
   if (!isLabActivity(activity)) {
@@ -164,8 +154,11 @@ const checkResponse = async (response: Response) => {
     }
     if (response.status === 400) {
       // TODO process the error json message from the server.
-      const error = await response.json();
-      throw new Error(error.detail.message ?? 'Invalid File.');
+      if (response.headers.get('Content-Type')?.includes('application/json')) {
+        const error = await response.json();
+        throw new Error(error.detail.message ?? 'Invalid activity file.');
+      }
+      throw new Error('Invalid activity file.');
     }
     throw new Error(response.statusText || 'LogicLab server returned an error.');
   }
@@ -241,7 +234,9 @@ const useLogicLabActivityList = (server?: string) => {
 
 /** Generate a unique id, shim for react^18's useId. */
 const useId = (): string => {
-  const [id] = useState<string>(crypto.randomUUID());
+  const [id] = useState<string>(
+    crypto?.randomUUID?.() ?? `uid_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+  );
   return id;
 };
 
@@ -340,60 +335,60 @@ const Authoring: FC<LogicLabAuthoringProps> = (props: LogicLabAuthoringProps) =>
         <div className="w-full p-2 border border-secondary rounded-lg shadow-sm">
           <form>
             <p>Either select an existing activity or upload a new one.</p>
-            <div className="mx-3 ml-5 ms-5 mb-2">
-              <span className="text-sm font-medium">
-                Activity&nbsp;Types included in selection:
-              </span>
-              <div className="flex items-baseline gap-2 flex-wrap border border-secondary rounded-lg p-1">
+            <fieldset className="mx-3 ml-5 ms-5 mb-2 border border-secondary rounded-lg p-1 relative py-3 mt-3">
+              <label className="text-sm font-medium px-2 absolute -top-3 left-2 bg-base">
+                Activity Types included in selection:
+              </label>
+              <div className="flex items-baseline gap-2 flex-wrap">
                 <FilterCheckbox
                   name="argument_diagram"
                   checked={filters.includes('argument_diagram')}
                   onChange={setFilter}
-                  disabled={!activities || activities.length === 0 || loading === 'loading'}
+                  disabled={!activities || activities.length === 0}
                 />
                 <FilterCheckbox
                   name="chase_truth"
                   checked={filters.includes('chase_truth')}
                   onChange={setFilter}
-                  disabled={!activities || activities.length === 0 || loading === 'loading'}
+                  disabled={!activities || activities.length === 0}
                 />
                 <FilterCheckbox
                   name="derivation"
                   checked={filters.includes('derivation')}
                   onChange={setFilter}
-                  disabled={!activities || activities.length === 0 || loading === 'loading'}
+                  disabled={!activities || activities.length === 0}
                 />
                 <FilterCheckbox
                   name="parse_tree"
                   checked={filters.includes('parse_tree')}
                   onChange={setFilter}
-                  disabled={!activities || activities.length === 0 || loading === 'loading'}
+                  disabled={!activities || activities.length === 0}
                 />
                 <FilterCheckbox
                   name="truth_table"
                   checked={filters.includes('truth_table')}
                   onChange={setFilter}
-                  disabled={!activities || activities.length === 0 || loading === 'loading'}
+                  disabled={!activities || activities.length === 0}
                 />
                 <FilterCheckbox
                   name="truth_tree"
                   checked={filters.includes('truth_tree')}
                   onChange={setFilter}
-                  disabled={!activities || activities.length === 0 || loading === 'loading'}
+                  disabled={!activities || activities.length === 0}
                 />
                 {allowSets ? (
                   <FilterCheckbox
                     name="activities"
                     checked={filters.includes('activities')}
                     onChange={setFilter}
-                    disabled={!activities || activities.length === 0 || loading === 'loading'}
+                    disabled={!activities || activities.length === 0}
                   />
                 ) : null}
               </div>
-            </div>
-            <div className="mx-3 ml-5 ms-5 mb-2 flex flex-wrap">
-              <span className="mr-2 me-2 text-sm font-medium">Sort Activities in selection:</span>
-              <ul className="items-center inline w-fit text-sm font-medium border border-secondary rounded-lg flex">
+            </fieldset>
+            <fieldset className="mx-3 ml-5 ms-5 mb-2 flex flex-wrap border border-secondary rounded-lg">
+              <legend className="mx-4 text-sm font-medium">Sort Activities in selection:</legend>
+              <ul className="items-center inline w-fit text-sm font-medium border border-secondary rounded-lg flex mx-3 mb-2">
                 <li className="border-b border-secondary sm:border-b-0 sm:border-r">
                   <label className="mx-2 my-1">
                     <input
@@ -404,7 +399,8 @@ const Authoring: FC<LogicLabAuthoringProps> = (props: LogicLabAuthoringProps) =>
                       checked={sort === 'id-asc'}
                       onChange={() => setSort('id-asc')}
                     />
-                    Id <i className="fa-solid fa-sort-alpha-down"></i>
+                    Id <i aria-hidden="true" className="fa-solid fa-sort-alpha-down"></i>
+                    <span className="sr-only">Sort by id ascending</span>
                   </label>
                 </li>
                 <li className="border-b border-secondary sm:border-b-0 sm:border-r">
@@ -417,7 +413,8 @@ const Authoring: FC<LogicLabAuthoringProps> = (props: LogicLabAuthoringProps) =>
                       checked={sort === 'id-dec'}
                       onChange={() => setSort('id-dec')}
                     />
-                    Id <i className="fa-solid fa-sort-alpha-up"></i>
+                    Id <i aria-hidden="true" className="fa-solid fa-sort-alpha-up"></i>
+                    <span className="sr-only">Sort by id descending</span>
                   </label>
                 </li>
                 <li className="border-b border-secondary sm:border-b-0 sm:border-r">
@@ -430,7 +427,8 @@ const Authoring: FC<LogicLabAuthoringProps> = (props: LogicLabAuthoringProps) =>
                       checked={sort === 'title-asc'}
                       onChange={() => setSort('title-asc')}
                     />
-                    Title <i className="fa-solid fa-sort-alpha-down"></i>
+                    Title <i aria-hidden="true" className="fa-solid fa-sort-alpha-down"></i>
+                    <span className="sr-only">Sort by title ascending</span>
                   </label>
                 </li>
                 <li className="">
@@ -443,11 +441,12 @@ const Authoring: FC<LogicLabAuthoringProps> = (props: LogicLabAuthoringProps) =>
                       checked={sort === 'title-dec'}
                       onChange={() => setSort('title-dec')}
                     />
-                    Title <i className="fa-solid fa-sort-alpha-up"></i>
+                    Title <i aria-hidden="true" className="fa-solid fa-sort-alpha-up"></i>
+                    <span className="sr-only">Sort by title descending</span>
                   </label>
                 </li>
               </ul>
-            </div>
+            </fieldset>
             <div className="m-3 ms-5 ml-5 flex flex-row gap-2 items-center">
               <label htmlFor={`${id}-search`} className="flex-none text-sm font-medium">
                 Text Filter:
@@ -467,8 +466,12 @@ const Authoring: FC<LogicLabAuthoringProps> = (props: LogicLabAuthoringProps) =>
                   type="button"
                   className="btn btn-secondary rounded-none rounded-e-lg rounded-r-lg"
                   onClick={() => setSearch('')}
+                  aria-label="Clear text filter"
+                  title="Clear text filter"
                 >
-                  <i className="fa-solid fa-broom"></i>
+                  <i className="fa-solid fa-broom">
+                    <span className="sr-only">Clear text filter</span>
+                  </i>
                 </button>
               </div>
             </div>
@@ -476,47 +479,58 @@ const Authoring: FC<LogicLabAuthoringProps> = (props: LogicLabAuthoringProps) =>
               <label htmlFor={id} className="font-medium text-primary">
                 Select activity
               </label>
-              <select
-                className="border rounded-lg focus:ring-primary focus:border-primary block w-full p-2.5"
-                id={id}
-                value={isLabActivity(activityId) ? activityId.id : activityId}
-                disabled={!activities || activities.length === 0 || loading === 'loading'}
-                onChange={(e) => {
-                  const id = e.target.value;
-                  const activity = activities.find((a) => a.id === id);
-                  if (!activity) return;
-                  dispatch(updateActivity(activity));
-                }}
-              >
-                <option>---</option>
-                {[...activities] // copy to avoid mutating original, use .toSorted with lib target es2023+
-                  .filter(
-                    (p) =>
-                      filters.includes(p.spec.type) ||
-                      (isLabActivity(activityId) ? activityId.id : activityId) === p.id,
-                  ) // include if type is selected
-                  .filter((p) => {
-                    if (!search) return true;
-                    const needle = search.toLowerCase();
-                    if (p.id.toLowerCase().includes(needle)) return true;
-                    if (p.title.toLowerCase().includes(needle)) return true;
-                    if (p.keywords.some((k) => k.toLowerCase().includes(needle))) return true;
-                    if (p.comment && p.comment.toLowerCase().includes(needle)) return true;
-                    return false;
-                  })
-                  .sort(
-                    (a, b) =>
-                      (sort.endsWith('-asc') ? 1 : -1) *
-                      (sort.includes('title')
-                        ? a.title.localeCompare(b.title)
-                        : a.id.localeCompare(b.id)),
-                  )
-                  .map((p) => (
-                    <option key={p.id} value={p.id} className="overflow-hidden text-ellipsis">
-                      {p.title} ({translateActivityType(p.spec.type)})
-                    </option>
-                  ))}
-              </select>
+              {loading === 'loading' ? (
+                <div className="border rounded-lg w-full p-2.5 animate-pulse h-">
+                  <span className="invisible">Loading activities</span>
+                </div>
+              ) : (
+                <select
+                  className="border rounded-lg focus:ring-primary focus:border-primary block w-full p-2.5 overflow-hidden"
+                  id={id}
+                  value={isLabActivity(activityId) ? activityId.id : activityId}
+                  disabled={!activities || activities.length === 0}
+                  onChange={(e) => {
+                    const id = e.target.value;
+                    const activity = activities.find((a) => a.id === id);
+                    if (!activity) return;
+                    dispatch(updateActivity(activity));
+                  }}
+                >
+                  <option>---</option>
+                  {[...activities] // copy to avoid mutating original, use .toSorted with lib target es2023+
+                    .filter(
+                      (p) =>
+                        filters.includes(p.spec.type) ||
+                        (isLabActivity(activityId) ? activityId.id : activityId) === p.id,
+                    ) // include if type is selected
+                    .filter((p) => {
+                      if (!search) return true;
+                      const needle = search.toLowerCase();
+                      if (p.id.toLowerCase().includes(needle)) return true;
+                      if (p.title.toLowerCase().includes(needle)) return true;
+                      if (p.keywords.some((k) => k.toLowerCase().includes(needle))) return true;
+                      if (p.comment && p.comment.toLowerCase().includes(needle)) return true;
+                      return false;
+                    })
+                    .sort(
+                      (a, b) =>
+                        (sort.endsWith('-asc') ? 1 : -1) *
+                        (sort.includes('title')
+                          ? a.title.localeCompare(b.title)
+                          : a.id.localeCompare(b.id)),
+                    )
+                    .map((p) => (
+                      <option
+                        key={p.id}
+                        value={p.id}
+                        title={`${p.title} (${translateActivityType(p.spec.type)})`}
+                        className="text-ellipsis"
+                      >
+                        {p.title} ({translateActivityType(p.spec.type)})
+                      </option>
+                    ))}
+                </select>
+              )}
             </div>
             <hr className="mt-2 w-3/4 mx-auto" />
             <div className="m-3">
@@ -626,11 +640,13 @@ const Preview: FC<LogicLabAuthoringProps> = ({
   const [activity, setActivity] = useState<LabActivity | undefined>();
   // Loading state
   const [loading, setLoading] = useState<'loading' | 'loaded'>('loading');
+  const [error, setError] = useState<Error | null>(null);
 
   const controller = useRef<AbortController | null>(null);
   // When props change, load the activity details.
   useEffect(() => {
     const getActivity = async () => {
+      setError(null);
       if (isLabActivity(model.activity)) {
         setActivity(model.activity);
         setLoading('loaded');
@@ -672,13 +688,21 @@ const Preview: FC<LogicLabAuthoringProps> = ({
         // ignore abort errors
         return;
       }
-      throw err;
-    }); // let error boundary handle errors
+      setError(err instanceof Error ? err : new Error('Unknown error'));
+      console.error(err);
+    });
 
     return () => controller.current?.abort('Component unmounted or model changed.');
   }, [model, authoringContext]);
 
-  return (
+  return error ? (
+    <div className="alert alert-danger">
+      <details>
+        <summary>Error loading activity details.</summary>
+        {error.message}
+      </details>
+    </div>
+  ) : (
     <>
       {loading === 'loading' && <LoadingSpinner />}
       {loading === 'loaded' && <Details activity={activity} />}
@@ -698,7 +722,7 @@ export class LogicLabAuthoring extends AuthoringElement<LogicLabModelSchema> {
           <div className="card">
             <h4 className="card-title">AProS LogicLab Activity</h4>
             <div className="card-content">
-              <ErrorBoundary>
+              <ErrorBoundary errorMessage>
                 {props.editMode ? <Authoring {...props} /> : <Preview {...props} />}
               </ErrorBoundary>
             </div>

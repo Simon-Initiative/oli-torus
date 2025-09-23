@@ -172,7 +172,7 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
     }
     // If the activity is a LabActivity, then use message passing to get the activity configuration.
     // Otherwise, use the activity ID to get the configuration from the logiclab server.
-    const url = new URL(isLabActivity(activity) ? '' : `api/v1/activities/${activity}/lab`, server);
+    const url = new URL(server);
     url.searchParams.append('mode', mode);
     url.searchParams.append('attemptGuid', activityState.attemptGuid);
     if (!isLabActivity(activity)) {
@@ -181,15 +181,14 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
     // Using promise because react's useEffect does not handle async.
     // toString because tsc does not accept the valid URL.
     // Test if the URL is reachable.
-    fetch(url.toString(), { signal, method: 'HEAD' })
-      .then((response) => {
-        if (controller.signal.aborted) return;
-        if (!response.ok) {
-          throw new Error(response.statusText);
-        }
-        setBaseUrl(url.toString());
-      })
-      .finally(() => setLoading('loaded'));
+    fetch(url.toString(), { signal, method: 'HEAD' }).then((response) => {
+      if (controller.signal.aborted) return;
+      if (!response.ok) {
+        throw new Error(response.statusText);
+      }
+      setBaseUrl(url.toString());
+      setLoading('loaded');
+    });
     return () => controller.abort();
   }, [context, activity, mode, activityState]);
 
@@ -213,7 +212,7 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
             width="100%"
             // data attributes only work if same-site, so using message passing instead.
             data-oli-activity-mode={mode}
-            data-logiclab-activity={JSON.stringify(activity)}
+            // data-logiclab-activity={JSON.stringify(activity)} // use message passing instead of data attribute.
             data-oli-attempt-guid={activityState.attemptGuid}
           ></iframe>
         </div>
