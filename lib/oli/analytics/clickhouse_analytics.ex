@@ -633,9 +633,9 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
   end
 
   defp build_s3_path(section_id) when is_integer(section_id) do
-    # bucket = Application.get_env(:oli, :s3_xapi_bucket_name)
-    # TODO: CHANGE THIS!!
-    bucket = "torus-xapi-prod"
+    # TODO: For demo purposes, we want to be able to set the bucket from environment variable
+    # for directly loading analytics. In production, this should always come from s3_xapi_bucket_name.
+    bucket = System.get_env("S3_ANALYTICS_BUCKET_NAME") || Application.get_env(:oli, :s3_xapi_bucket_name)
 
     section_prefix =
       Application.get_env(:oli, :s3_xapi_section_prefix, "section")
