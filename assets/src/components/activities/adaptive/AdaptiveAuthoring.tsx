@@ -21,6 +21,7 @@ import { AdaptiveModelSchema } from './schema';
 const Adaptive = (
   props: AuthoringElementProps<AdaptiveModelSchema> & { hostRef?: HTMLElement },
 ) => {
+  console.log('[AdaptiveAuthoring] props', props);
   // we create this to be able to further send down notifcations that came from the parent notifier
   const [pusher, _setPusher] = useState(new EventEmitter().setMaxListeners(50));
 
@@ -185,6 +186,7 @@ const Adaptive = (
           backgroundColor={props.model.content?.custom?.palette.backgroundColor || '#fff'}
           selected={selectedPartId}
           parts={parts}
+          responsiveLayout={props.responsiveLayout}
           onChange={handleLayoutChange}
           onCopyPart={handleCopyComponent}
           onConfigurePart={handleConfigurePart}

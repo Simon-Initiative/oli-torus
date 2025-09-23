@@ -26,6 +26,7 @@ interface LayoutEditorProps {
   selected: string;
   hostRef?: HTMLElement;
   configurePortalId?: string;
+  responsiveLayout?: boolean;
   onChange: (parts: AnyPartComponent[], selectedPartId?: string, isDeleted?: boolean) => void;
   onSelect: (partId: string) => void;
   onCopyPart?: (part: any) => Promise<any>;
@@ -108,7 +109,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
     }
   }, [parts]);
 
-  const isResponsive = false;
+  const isResponsive = props.responsiveLayout || false;
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Calculate toolbar position
@@ -474,7 +475,6 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
             .activity-content {
               position: absolute;
               border: 1px solid #ccc;
-              background-color: ${props.backgroundColor || '#fff'};
               width: ${props.width || 1000}px;
               height: ${props.height || 500}px;
             }
@@ -533,7 +533,6 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
             height: 100%;
             padding: 20px;
             box-sizing: border-box;
-            background-color: rgba(0, 255, 0, 0.1); /* Debug: temporary green background for container */
           }
 
           /* Create a two-column layout for 50% parts */
@@ -767,8 +766,8 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
                         resizeData: {
                           width: part.custom.width || 100, // Keep original width in responsive mode
                           height: parseInt(ref.style.height, 10), // Allow height resizing
-                          x: 0, // Ignore x position in responsive mode
-                          y: 0, // Ignore y position in responsive mode
+                          x: part.custom.x || 0, // Preserve original x position in data
+                          y: part.custom.y || 0, // Preserve original y position in data
                         },
                       });
                     }}

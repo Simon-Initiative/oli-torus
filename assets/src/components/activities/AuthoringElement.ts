@@ -21,6 +21,7 @@ export interface AuthoringElementProps<T extends ActivityModelSchema> {
   notify?: EventEmitter;
   activityId?: number;
   student_responses?: any;
+  responsiveLayout?: boolean;
 }
 
 /**
@@ -71,6 +72,7 @@ export abstract class AuthoringElement<T extends ActivityModelSchema> extends HT
     const getProp = (key: string) => JSON.parse(this.getAttribute(key) as any);
     const model = this.migrateModelVersion(getProp('model'));
     const editMode: boolean = this.getAttribute('editmode') === 'true';
+    const responsiveLayout: boolean = this.getAttribute('responsiveLayout') === 'true';
     const mode: 'authoring' | 'instructor_preview' =
       (this.getAttribute('mode') as 'authoring' | 'instructor_preview') || 'authoring';
     const projectSlug: ProjectSlug = this.getAttribute('projectSlug') as string;
@@ -103,7 +105,7 @@ export abstract class AuthoringElement<T extends ActivityModelSchema> extends HT
     const onCustomEvent = (eventName: string, payload: any) => {
       return this.dispatch('customEvent', { eventName, payload });
     };
-
+    console.log('responsiveLayout', responsiveLayout);
     return {
       activityId: parseInt(activityId, 10),
       sectionSlug,
@@ -113,6 +115,7 @@ export abstract class AuthoringElement<T extends ActivityModelSchema> extends HT
       onCustomEvent,
       model,
       editMode,
+      responsiveLayout,
       mode,
       projectSlug,
       authoringContext,

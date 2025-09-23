@@ -112,6 +112,7 @@ const EditingCanvas: React.FC = () => {
     return true;
   };
   useEffect(() => {
+    console.log({ _currentLessonCustom });
     let interfaceSettingClass = '';
     if (_currentLessonCustom.grid) {
       interfaceSettingClass += ' show-grid';
@@ -214,6 +215,7 @@ const EditingCanvas: React.FC = () => {
                 activityModel={activity as any}
                 editMode={activity.id === currentActivityId}
                 configEditorId={configEditorId}
+                responsiveLayout={_currentLessonCustom?.responsiveLayout || false}
                 onSelectPart={handlePartSelect}
                 onCopyPart={handlePartCopy}
                 onConfigurePart={handlePartConfigure}
