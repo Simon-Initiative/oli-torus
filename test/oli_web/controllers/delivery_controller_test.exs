@@ -463,8 +463,8 @@ defmodule OliWeb.DeliveryControllerTest do
       conn: conn,
       oaf_section_1: section
     } do
-      enrolled_user = user_fixture(%{independent_learner: false})
-      other_user = user_fixture(%{independent_learner: false})
+      enrolled_user = user_fixture(%{independent_learner: true})
+      other_user = user_fixture(%{independent_learner: true})
 
       {:ok, _enrollment} =
         Sections.enroll(enrolled_user.id, section.id, [ContextRoles.get_role(:context_learner)])
