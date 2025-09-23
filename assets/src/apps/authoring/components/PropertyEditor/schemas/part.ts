@@ -24,6 +24,13 @@ const partSchema: JSONSchema7 = {
         height: { type: 'number', title: 'Height' },
       },
     },
+    responsiveLayoutWidth: {
+      title: 'Responsive Layout Width',
+      type: 'string',
+      description: 'specifies the responsive layout width',
+      enum: ['100%', '50% align left', '50% align right'],
+      default: '100%',
+    },
     Scoring: {
       type: 'object',
       title: 'Scoring',
@@ -55,6 +62,11 @@ export const partUiSchema = {
   type: {
     'ui:title': 'Part Type',
     'ui:readonly': true,
+  },
+  responsiveLayoutWidth: {
+    'ui:title': 'Layout Width',
+    'ui:description': 'Choose how this part should be displayed in the layout',
+    classNames: 'col-span-12',
   },
   Position: {
     'ui:ObjectFieldTemplate': CustomFieldTemplate,
@@ -103,7 +115,8 @@ export const simplifiedPartUiSchema = {
 
 export const transformModelToSchema = (model: any) => {
   const { id, type } = model;
-  const { x, y, z, width, height, requiresManualGrading, maxScore } = model.custom;
+  const { x, y, z, width, height, requiresManualGrading, responsiveLayoutWidth, maxScore } =
+    model.custom;
   const result: any = {
     id,
     type,
@@ -116,6 +129,7 @@ export const transformModelToSchema = (model: any) => {
       width,
       height,
     },
+    responsiveLayoutWidth,
     Scoring: {
       requiresManualGrading: !!requiresManualGrading,
       maxScore: parseNumString(maxScore) || 1,
@@ -129,7 +143,7 @@ export const transformModelToSchema = (model: any) => {
 };
 
 export const transformSchemaToModel = (schema: any) => {
-  const { id, type, Position, Size, palette, Scoring } = schema;
+  const { id, type, Position, Size, palette, Scoring, responsiveLayoutWidth } = schema;
   const result = {
     id,
     type,
@@ -141,6 +155,7 @@ export const transformSchemaToModel = (schema: any) => {
       width: Size.width,
       height: Size.height,
       requiresManualGrading: Scoring.requiresManualGrading,
+      responsiveLayoutWidth: responsiveLayoutWidth,
       maxScore: Scoring.maxScore,
     },
   };

@@ -12,6 +12,7 @@ export interface JanusAbsolutePositioned extends CustomProperties {
   z?: number;
   width?: number;
   height?: number;
+  responsiveLayoutWidth?: string;
 }
 
 export interface AnyPartModel extends JanusCustomCss, JanusAbsolutePositioned {

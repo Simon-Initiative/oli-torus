@@ -108,13 +108,64 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
     }
   }, [parts]);
 
-  const toolbarPosition = { x: 0, y: 0 };
-  if (selectedPartAndCapabilities) {
-    const x = selectedPartAndCapabilities?.custom.x || 0;
-    const y = (selectedPartAndCapabilities?.custom.y || 0) + toolBarTopOffset;
-    toolbarPosition.x = x;
-    toolbarPosition.y = y;
-  }
+  const isResponsive = true;
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Calculate toolbar position
+  const getToolbarPosition = () => {
+    if (!selectedPartAndCapabilities) return { x: 0, y: 0 };
+
+    if (isResponsive) {
+      // In responsive mode, position toolbar at the top of the selected part
+      const selectedPartElement = document.querySelector(
+        `[data-part-id="${selectedPartAndCapabilities.id}"]`,
+      );
+      if (selectedPartElement && containerRef.current) {
+        const rect = selectedPartElement.getBoundingClientRect();
+        const containerRect = containerRef.current.getBoundingClientRect();
+        return {
+          x: rect.left - containerRect.left,
+          y: rect.top - containerRect.top + toolBarTopOffset,
+        };
+      } else {
+        // Fallback: use a default position if element not found
+        console.warn('Selected part element not found, using fallback position');
+        return { x: 100, y: 100 };
+      }
+    } else {
+      // In non-responsive mode, use the part's x,y coordinates
+      const x = selectedPartAndCapabilities?.custom.x || 0;
+      const y = (selectedPartAndCapabilities?.custom.y || 0) + toolBarTopOffset;
+      return { x, y };
+    }
+  };
+
+  const [toolbarPosition, setToolbarPosition] = useState({ x: 0, y: 0 });
+
+  // Update toolbar position when selection changes
+  useEffect(() => {
+    if (selectedPartAndCapabilities) {
+      const updatePosition = () => {
+        const newPosition = getToolbarPosition();
+        console.log('Toolbar position update:', {
+          selectedPart: selectedPartAndCapabilities.id,
+          position: newPosition,
+          isResponsive,
+        });
+        setToolbarPosition(newPosition);
+      };
+
+      // Update immediately
+      updatePosition();
+
+      // Update after a short delay to ensure DOM is ready
+      const timeoutId = setTimeout(updatePosition, 10);
+
+      return () => clearTimeout(timeoutId);
+    } else {
+      setToolbarPosition({ x: 0, y: 0 });
+    }
+  }, [selectedPartAndCapabilities, isResponsive]);
 
   // this effect is to cover the case when the user is clicking "off" of a part to deselect it
   useEffect(() => {
@@ -389,8 +440,6 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
     };
   }, [configurePartId, handlePartCancelConfigure, selectedPartAndCapabilities, pusher]);
 
-  const containerRef = useRef<HTMLDivElement>(null);
-
   const handlePartInit = async ({ id, responses }: { id: string; responses: any[] }) => {
     console.log('LE:PartInit', { id, responses });
     return {
@@ -416,66 +465,231 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
     },
     [dragSize, isDragging, selectedPartId],
   );
-
   return parts && parts.length ? (
     <NotificationContext.Provider value={pusher}>
       <div ref={containerRef} className="activity-content">
         <style>
           {`
-          .activity-content {
-            position: absolute;
-            border: 1px solid #ccc;
-            background-color: ${props.backgroundColor || '#fff'};
-            width: ${props.width || 1000}px;
-            height: ${props.height || 500}px;
-          }
-          .react-draggable {
-            position: absolute;
-            cursor: pointer;
-          }
-          .react-draggable.selected {
-            cursor: move;
-          }
-          .react-draggable:hover::before{
-            content: "";
-            width: calc(100% + 10px);
-            height: calc(100% + 10px);
-            position: absolute;
-            top: -5px;
-            left: -5px;
-            border: 1px #ccc solid;
-            z-index: -1;
-          }
-          .react-draggable.selected::before{
-            content: "";
-            width: calc(100% + 10px);
-            height: calc(100% + 10px);
-            position: absolute;
-            top: -5px;
-            left: -5px;
-            border: 2px #00ff00 dashed;
-            z-index: -1;
-          }
-          .active-selection-toolbar {
-            position: absolute;
-            background-color: #fafafa;
-            z-index: 999;
-            min-width: 110px;
-          }
-          .part-config-container {
-            position: absolute;
-            top: 0;
-            left: 0;
+
+            .activity-content {
+              position: absolute;
+              border: 1px solid #ccc;
+              background-color: ${props.backgroundColor || '#fff'};
+              width: ${props.width || 1000}px;
+              height: ${props.height || 500}px;
+            }
+            .react-draggable {
+              position: absolute;
+              cursor: pointer;
+            }
+            .react-draggable.selected {
+              cursor: move;
+            }
+            .react-draggable:hover::before{
+              content: "";
+              width: calc(100% + 10px);
+              height: calc(100% + 10px);
+              position: absolute;
+              top: -5px;
+              left: -5px;
+              border: 1px #ccc solid;
+              z-index: -1;
+            }
+            .react-draggable.selected::before{
+              content: "";
+              width: calc(100% + 10px);
+              height: calc(100% + 10px);
+              position: absolute;
+              top: -5px;
+              left: -5px;
+              border: 2px #00ff00 dashed;
+              z-index: -1;
+            }
+            .active-selection-toolbar {
+              position: absolute;
+              background-color: #fafafa;
+              z-index: 999;
+              min-width: 110px;
+            }
+            .part-config-container {
+              position: absolute;
+              top: 0;
+              left: 0;
+              width: 100%;
+              height: 100%;
+              background-color: rgba(0, 0, 0, 0.5);
+              z-index: 9999;
+            }
+            .part-config-container-inner > :first-child {
+              position: absolute;
+              top: 15px;
+              left: 25%;
+              background-color: #fff;
+            }
+          /* Responsive Layout Styles - Flow-based */
+          .responsive-layout {
+            display: block;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            z-index: 9999;
+            padding: 20px;
+            box-sizing: border-box;
+            background-color: rgba(0, 255, 0, 0.1); /* Debug: temporary green background for container */
           }
-          .part-config-container-inner > :first-child {
-            position: absolute;
-            top: 15px;
-            left: 25%;
-            background-color: #fff;
+
+          /* Create a two-column layout for 50% parts */
+          .responsive-layout::after {
+            content: "";
+            display: table;
+            clear: both;
+          }
+
+          .responsive-row {
+            display: flex;
+            width: 100%;
+            gap: 10px;
+            min-height: 100px;
+            align-items: flex-start;
+          }
+
+          .responsive-row.full {
+            /* Full width row - single item takes full width */
+          }
+
+          .responsive-row.half {
+            /* Half width row - items can be 50% each or single 50% aligned */
+            justify-content: flex-start;
+            align-items: flex-start;
+          }
+
+          .responsive-row.half:has(.responsive-align-right:only-child) {
+            /* If row has only a right-aligned item, justify to the right */
+            justify-content: flex-end;
+          }
+
+          /* Handle mixed alignment in same row */
+          .responsive-row.half:has(.responsive-align-left):has(.responsive-align-right) {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+          }
+
+          /* Left column in mixed row */
+          .responsive-row.half:has(.responsive-align-left):has(.responsive-align-right) .responsive-align-left {
+            width: calc(50% - 5px);
+            flex: 0 0 calc(50% - 5px);
+          }
+
+          /* Right column in mixed row - stack vertically */
+          .responsive-row.half:has(.responsive-align-left):has(.responsive-align-right) .responsive-align-right {
+            width: calc(50% - 5px);
+            flex: 0 0 calc(50% - 5px);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+          }
+
+          /* Handle multiple left-aligned parts in same row */
+          .responsive-row.half:has(.responsive-align-left:not(:only-child)) {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+          }
+
+          .responsive-row.half:has(.responsive-align-left:not(:only-child)) .responsive-item {
+            width: calc(50% - 5px);
+            margin-bottom: 10px;
+          }
+
+          /* Handle multiple right-aligned parts in same row */
+          .responsive-row.half:has(.responsive-align-right:not(:only-child)) {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+          }
+
+          .responsive-row.half:has(.responsive-align-right:not(:only-child)) .responsive-item {
+            width: calc(50% - 5px);
+            margin-bottom: 10px;
+          }
+
+          .responsive-item {
+            position: relative;
+            min-height: 100px;
+            border: none;
+            background-color: transparent;
+            display: block;
+          }
+
+          .responsive-item.full-width {
+            width: 100%;
+            margin-bottom: 20px;
+            clear: both;
+          }
+
+          .responsive-item.half-width {
+            width: calc(50% - 10px);
+            margin-bottom: 20px;
+          }
+
+          /* When multiple half-width parts are in same row, stack them vertically */
+          .responsive-row.half:has(.responsive-item:not(:only-child)) .responsive-item.half-width {
+            width: calc(50% - 5px);
+            flex: 0 0 calc(50% - 5px);
+          }
+
+          .responsive-align-left {
+            /* Left alignment for 50% width items */
+            float: left;
+            margin-right: 20px;
+            margin-bottom: 20px;
+            width: calc(50% - 10px);
+          }
+
+          .responsive-align-right {
+            /* Right alignment for 50% width items */
+            float: right;
+            margin-bottom: 20px;
+            width: calc(50% - 10px);
+            background-color: rgba(255, 0, 0, 0.1); /* Debug: temporary red background */
+          }
+
+          /* Ensure right-aligned parts stack properly */
+          .responsive-align-right + .responsive-align-right {
+            margin-top: 0;
+          }
+
+          /* Ensure left-aligned parts stack properly */
+          .responsive-align-left + .responsive-align-left {
+            margin-top: 0;
+          }
+
+          /* Ensure proper spacing between left and right columns */
+          .responsive-item.half-width:not(:last-child) {
+            margin-bottom: 20px;
+          }
+
+          /* Handle single 50% items in a row */
+          .responsive-row.half .responsive-item:only-child {
+            width: calc(50% - 5px);
+            flex: 0 0 calc(50% - 5px);
+          }
+
+          /* Override absolute positioning for responsive mode */
+          .responsive-layout .react-draggable {
+            position: relative !important;
+            top: auto !important;
+            left: auto !important;
+            width: 100% !important;
+            /* Don't override height - let it use the actual part height */
+          }
+
+          /* Ensure responsive items maintain their width regardless of resize */
+          .responsive-item.full-width .react-draggable {
+            width: 100% !important;
+          }
+
+          .responsive-item.half-width .react-draggable {
+            width: 100% !important;
           }
         `}
         </style>
@@ -490,7 +704,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
           id={`active-selection-toolbar-${props.id}`}
           className={`active-selection-toolbar ${selectedPartAndCapabilities?.type}`}
           style={{
-            display: selectedPartAndCapabilities && !isDragging ? 'block' : 'none',
+            display: selectedPartAndCapabilities ? 'block' : 'none',
             top: toolbarPosition.y,
             left: toolbarPosition.x,
           }}
@@ -537,82 +751,194 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
             }}
           />
         </div>
-        {parts.map((part) => {
-          const partProps = {
-            id: part.id,
-            type: part.type,
-            model: decorateModelWithDragWidthHeight(part.id, part.custom),
-            state: {},
-            configureMode: part.id === configurePartId,
-            editMode: true,
-            portal: portalId,
-            onInit: handlePartInit,
-            onReady: defaultHandler,
-            onSave: defaultHandler,
-            onSubmit: defaultHandler,
-            onResize: defaultHandler,
-          };
+        {isResponsive ? (
+          <div className="responsive-layout">
+            {parts.map((part: AnyPartComponent, idx: number) => {
+              const partProps = {
+                id: part.id,
+                type: part.type,
+                model: decorateModelWithDragWidthHeight(part.id, part.custom),
+                state: {},
+                configureMode: part.id === configurePartId,
+                editMode: true,
+                portal: portalId,
+                onInit: handlePartInit,
+                onReady: defaultHandler,
+                onSave: defaultHandler,
+                onSubmit: defaultHandler,
+                onResize: defaultHandler,
+              };
+              const disableDrag =
+                selectedPartAndCapabilities && !selectedPartAndCapabilities.capabilities.move;
 
-          const disableDrag =
-            selectedPartAndCapabilities && !selectedPartAndCapabilities.capabilities.move;
+              // Determine width class and alignment
+              const widthClass =
+                part.custom.responsiveLayoutWidth === '100%' ? 'full-width' : 'half-width';
+              const alignmentClass =
+                part.custom.responsiveLayoutWidth === '50% align right'
+                  ? 'responsive-align-right'
+                  : 'responsive-align-left';
 
-          return (
-            <ResizeContainer
-              key={part.id}
-              dragGrid={[5, 5]}
-              resizeGrid={[1, 1]}
-              selected={part.id === selectedPartId}
-              size={{ width: part.custom.width || 100, height: part.custom.height || 100 }}
-              position={{
-                x: part.custom.x || 0,
-                y: part.custom.y || 0,
-              }}
-              disabled={!!disableDrag}
-              style={{ zIndex: part?.custom?.z || 0 }}
-              onResizeStart={() => {
-                props.onSelect(part.id);
-                setDragSize({ width: part.custom.width || 0, height: part.custom.height || 0 });
-                setIsDragging(true);
-              }}
-              onDragStart={() => {
-                props.onSelect(part.id);
-                setDragSize({ width: part.custom.width || 0, height: part.custom.height || 0 });
-                setIsDragging(true);
-              }}
-              onDragStop={(e, d) => {
-                handlePartDrag({ partId: part.id, dragData: d });
-              }}
-              onResize={(e, direction, ref) => {
-                setDragSize({
-                  width: parseInt(ref.style.width, 10),
-                  height: parseInt(ref.style.height, 10),
-                });
-              }}
-              onResizeStop={(e, direction, ref, delta, position) => {
-                handlePartResize({
-                  partId: part.id,
-                  resizeData: {
+              // Debug logging
+              console.log('Part rendering:', {
+                id: part.id,
+                responsiveLayoutWidth: part.custom.responsiveLayoutWidth,
+                widthClass,
+                alignmentClass
+              });
+
+              return (
+                <div
+                  key={part.id}
+                  data-part-id={part.id}
+                  className={`responsive-item ${widthClass} ${alignmentClass}`}
+                >
+                  <ResizeContainer
+                    key={part.id}
+                    dragGrid={[5, 5]}
+                    resizeGrid={[0, 1]} // Only allow vertical resizing (0 = no horizontal resize)
+                    selected={part.id === selectedPartId}
+                    size={{
+                      width: part.custom.width || 100,
+                      height: part.custom.height || 100,
+                    }}
+                    position={{
+                      x: 0, // Ignore x position in responsive mode
+                      y: 0, // Ignore y position in responsive mode
+                    }}
+                    disabled={!!disableDrag}
+                    style={{ zIndex: part?.custom?.z || 0 }}
+                    onResizeStart={() => {
+                      props.onSelect(part.id);
+                      setDragSize({
+                        width: part.custom.width || 0,
+                        height: part.custom.height || 0,
+                      });
+                      setIsDragging(true);
+                    }}
+                    onDragStart={() => {
+                      props.onSelect(part.id);
+                      setDragSize({
+                        width: part.custom.width || 0,
+                        height: part.custom.height || 0,
+                      });
+                      setIsDragging(true);
+                    }}
+                    onDragStop={(e, d) => {
+                      // In responsive mode, we don't update position
+                      // handlePartDrag({ partId: part.id, dragData: d });
+                    }}
+                    onResize={(e, direction, ref) => {
+                      setDragSize({
+                        width: parseInt(ref.style.width, 10),
+                        height: parseInt(ref.style.height, 10),
+                      });
+                    }}
+                    onResizeStop={(e, direction, ref, delta, position) => {
+                      handlePartResize({
+                        partId: part.id,
+                        resizeData: {
+                          width: part.custom.width || 100, // Keep original width in responsive mode
+                          height: parseInt(ref.style.height, 10), // Allow height resizing
+                          x: 0, // Ignore x position in responsive mode
+                          y: 0, // Ignore y position in responsive mode
+                        },
+                      });
+                    }}
+                  >
+                    <PartComponent
+                      {...partProps}
+                      className={selectedPartId === part.id ? 'selected' : ''}
+                      onClick={(event) => handlePartClick(event, { id: part.id })}
+                      onConfigure={({ configure, context }) =>
+                        handlePartConfigure(part.id, configure, context)
+                      }
+                      onSaveConfigure={handlePartSaveConfigure}
+                      onCancelConfigure={handlePartCancelConfigure}
+                    />
+                  </ResizeContainer>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          parts.map((part) => {
+            const partProps = {
+              id: part.id,
+              type: part.type,
+              model: decorateModelWithDragWidthHeight(part.id, part.custom),
+              state: {},
+              configureMode: part.id === configurePartId,
+              editMode: true,
+              portal: portalId,
+              onInit: handlePartInit,
+              onReady: defaultHandler,
+              onSave: defaultHandler,
+              onSubmit: defaultHandler,
+              onResize: defaultHandler,
+            };
+
+            const disableDrag =
+              selectedPartAndCapabilities && !selectedPartAndCapabilities.capabilities.move;
+
+            return (
+              <ResizeContainer
+                key={part.id}
+                dragGrid={[5, 5]}
+                resizeGrid={[1, 1]}
+                selected={part.id === selectedPartId}
+                size={{ width: part.custom.width || 100, height: part.custom.height || 100 }}
+                position={{
+                  x: part.custom.x || 0,
+                  y: part.custom.y || 0,
+                }}
+                disabled={!!disableDrag}
+                style={{ zIndex: part?.custom?.z || 0 }}
+                onResizeStart={() => {
+                  props.onSelect(part.id);
+                  setDragSize({ width: part.custom.width || 0, height: part.custom.height || 0 });
+                  setIsDragging(true);
+                }}
+                onDragStart={() => {
+                  props.onSelect(part.id);
+                  setDragSize({ width: part.custom.width || 0, height: part.custom.height || 0 });
+                  setIsDragging(true);
+                }}
+                onDragStop={(e, d) => {
+                  handlePartDrag({ partId: part.id, dragData: d });
+                }}
+                onResize={(e, direction, ref) => {
+                  setDragSize({
                     width: parseInt(ref.style.width, 10),
                     height: parseInt(ref.style.height, 10),
-                    x: Math.round(position.x),
-                    y: Math.round(position.y),
-                  },
-                });
-              }}
-            >
-              <PartComponent
-                {...partProps}
-                className={selectedPartId === part.id ? 'selected' : ''}
-                onClick={(event) => handlePartClick(event, { id: part.id })}
-                onConfigure={({ configure, context }) =>
-                  handlePartConfigure(part.id, configure, context)
-                }
-                onSaveConfigure={handlePartSaveConfigure}
-                onCancelConfigure={handlePartCancelConfigure}
-              />
-            </ResizeContainer>
-          );
-        })}
+                  });
+                }}
+                onResizeStop={(e, direction, ref, delta, position) => {
+                  handlePartResize({
+                    partId: part.id,
+                    resizeData: {
+                      width: parseInt(ref.style.width, 10),
+                      height: parseInt(ref.style.height, 10),
+                      x: Math.round(position.x),
+                      y: Math.round(position.y),
+                    },
+                  });
+                }}
+              >
+                <PartComponent
+                  {...partProps}
+                  className={selectedPartId === part.id ? 'selected' : ''}
+                  onClick={(event) => handlePartClick(event, { id: part.id })}
+                  onConfigure={({ configure, context }) =>
+                    handlePartConfigure(part.id, configure, context)
+                  }
+                  onSaveConfigure={handlePartSaveConfigure}
+                  onCancelConfigure={handlePartCancelConfigure}
+                />
+              </ResizeContainer>
+            );
+          })
+        )}
       </div>
     </NotificationContext.Provider>
   ) : (

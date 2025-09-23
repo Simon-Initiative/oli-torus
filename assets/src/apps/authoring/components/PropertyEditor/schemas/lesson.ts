@@ -40,6 +40,7 @@ const lessonSchema: JSONSchema7 = {
                   default: '/css/delivery_adaptive_themes_default_light.css',
                 },
                 { type: 'string', title: 'Custom Theme' },
+                { type: 'string', title: 'Responsive Layout', const: 'responsive' },
               ],
             },
             customCssUrl: {
@@ -63,6 +64,11 @@ const lessonSchema: JSONSchema7 = {
               type: 'boolean',
               title: 'Enable Dark Mode',
               default: 'false',
+            },
+            responsiveLayout: {
+              type: 'boolean',
+              title: 'Responsive Layout',
+              default: false,
             },
           },
         },
@@ -262,6 +268,14 @@ export const lessonUiSchema: UiSchema = {
     Appearance: {
       'ui:ObjectFieldTemplate': CustomFieldTemplate,
       'ui:title': 'Lesson Appearance',
+      theme: {
+        'ui:widget': 'select',
+        'ui:options': {
+          hideOnSelect: {
+            'responsive': ['customCssUrl']
+          }
+        }
+      },
       backgroundImageURL: {
         'ui:widget': 'TorusImageBrowser',
       },
@@ -311,6 +325,7 @@ export const transformModelToSchema = (model: any) => {
         backgroundImageScaleContent: model.custom.backgroundImageScaleContent,
         displayApplicationChrome: model.displayApplicationChrome,
         darkModeSetting: model.custom.darkModeSetting || false,
+        responsiveLayout: model.custom.responsiveLayout || false,
       },
       FinishPanel: {
         logoutMessage: model.custom.logoutMessage,
@@ -362,6 +377,7 @@ export const transformSchemaToModel = (schema: any) => {
       backgroundImageURL: schema.Properties.Appearance.backgroundImageURL,
       backgroundImageScaleContent: schema.Properties.Appearance.backgroundImageScaleContent,
       darkModeSetting: schema.Properties.Appearance.darkModeSetting,
+      responsiveLayout: schema.Properties.Appearance.responsiveLayout,
       grid: schema.Properties.InterfaceSettings.grid,
       centerpoint: schema.Properties.InterfaceSettings.centerpoint,
       columnGuides: schema.Properties.InterfaceSettings.columnGuides,
