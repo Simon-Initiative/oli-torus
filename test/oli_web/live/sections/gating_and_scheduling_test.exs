@@ -705,6 +705,54 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
       assert view
              |> element("input[phx-value-change=\"change-min-score\"]")
     end
+
+    test "gates that require a page reject container sources", %{conn: conn, section_1: section} do
+      {:ok, view, _html} =
+        live(
+          conn,
+          gating_condition_new_route(section.slug)
+        )
+
+      [
+        %{type: "progress", picker: "show-ungraded-picker"},
+        %{type: "finished", picker: "show-graded-picker"},
+        %{type: "started", picker: "show-all-picker"}
+      ]
+      |> Enum.each(fn %{type: type, picker: picker} ->
+        view
+        |> element("select[phx-change=\"select-condition\"]")
+        |> render_change(%{"value" => type})
+
+        view
+        |> element("button[phx-click=\"#{picker}\"]")
+        |> render_click()
+
+        element_splitted =
+          view
+          |> element("div[phx-click=\"HierarchyPicker.select\"]", "Unit 1")
+          |> render()
+          |> String.split("\"")
+
+        prev_uuid_index =
+          Enum.with_index(element_splitted)
+          |> Enum.find(fn elem -> elem(elem, 0) == " phx-value-uuid=" end)
+          |> elem(1)
+
+        selection_uuid = Enum.at(element_splitted, prev_uuid_index + 1)
+
+        render_hook(view, "select_source", %{selection: selection_uuid})
+
+        assert view
+               |> element("div#flash")
+               |> render() =~
+                 "Only pages can be selected for this type of gating condition"
+
+        refute view
+               |> element("#source")
+               |> render() =~
+                 "value="
+      end)
+    end
   end
 
   defp setup_admin_session(%{conn: conn}) do
