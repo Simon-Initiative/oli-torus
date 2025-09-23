@@ -21,7 +21,6 @@ import {
   AllActivityTypes,
   LabActivity,
   LogicLabModelSchema,
-  getLabServer,
   isLabActivity,
   maxPoints,
   translateActivityType,
@@ -335,10 +334,10 @@ const Authoring: FC<LogicLabAuthoringProps> = (props: LogicLabAuthoringProps) =>
         <div className="w-full p-2 border border-secondary rounded-lg shadow-sm">
           <form>
             <p>Either select an existing activity or upload a new one.</p>
-            <fieldset className="mx-3 ml-5 ms-5 mb-2 border border-secondary rounded-lg p-1 relative py-3 mt-3">
-              <label className="text-sm font-medium px-2 absolute -top-3 left-2 bg-base">
+            <fieldset className="mx-3 ml-5 ms-5 mb-2 border border-secondary rounded-lg p-1 py-3 mt-3">
+              <legend className="text-sm font-medium mx-4">
                 Activity Types included in selection:
-              </label>
+              </legend>
               <div className="flex items-baseline gap-2 flex-wrap">
                 <FilterCheckbox
                   name="argument_diagram"
@@ -620,7 +619,7 @@ const Authoring: FC<LogicLabAuthoringProps> = (props: LogicLabAuthoringProps) =>
       {activity ? (
         <Details activity={activity} />
       ) : (
-        <p className="alert alert-warning">No selected activity.</p>
+        <p className="alert alert-warning">Please select an activity.</p>
       )}
     </>
   );
@@ -641,6 +640,7 @@ const Preview: FC<LogicLabAuthoringProps> = ({
   // Loading state
   const [loading, setLoading] = useState<'loading' | 'loaded'>('loading');
   const [error, setError] = useState<Error | null>(null);
+  const server = useLabServer(authoringContext);
 
   const controller = useRef<AbortController | null>(null);
   // When props change, load the activity details.
@@ -656,7 +656,6 @@ const Preview: FC<LogicLabAuthoringProps> = ({
         controller.current = new AbortController();
         const signal = controller.current.signal;
         setLoading('loading');
-        const server = getLabServer(authoringContext);
         const url = new URL(`api/v1/activities/${model.activity}`, server);
         const response = await fetch(url.toString(), {
           signal,
@@ -693,7 +692,7 @@ const Preview: FC<LogicLabAuthoringProps> = ({
     });
 
     return () => controller.current?.abort('Component unmounted or model changed.');
-  }, [model, authoringContext]);
+  }, [model, server]);
 
   return error ? (
     <div className="alert alert-danger">

@@ -23,9 +23,9 @@ import { Manifest } from '../types';
 import {
   LabActivity,
   LogicLabModelSchema,
-  getLabServer,
   isLabActivity,
   isLabMessage,
+  useLabServer,
 } from './LogicLabModelSchema';
 
 type LogicLabDeliveryProps = DeliveryElementProps<LogicLabModelSchema>;
@@ -50,6 +50,7 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
   } = useDeliveryElementContext<LogicLabModelSchema>();
   const dispatch = useDispatch();
   const [activity, setActivity] = useState<string | LabActivity>(model.activity);
+  const labServer = useLabServer(context);
 
   useEffect(() => {
     // This looks like boilerplate code for dealing with embedded activities.
@@ -61,8 +62,9 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
     let partGuid = activityState.parts[0].attemptGuid; // Moving to higher scope which helps state saving to work.
 
     const onMessage = async (e: MessageEvent) => {
+      if (!labServer) return; // lab server not set, so ignore messages.
       try {
-        const lab = new URL(getLabServer(context));
+        const lab = new URL(labServer);
         const origin = new URL(e.origin);
         // filter so we do not process torus events.
         if (origin.host === lab.host) {
@@ -134,8 +136,6 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
                   ? activityState?.parts[0].response?.input
                   : undefined;
                 e.source?.postMessage({ activity, save }, { targetOrigin: lab.origin });
-                // TODO if in preview, load appropriate content
-                // Preview feature in lab servlet is not complete.
                 break;
               case 'log':
                 // Currently logging to console, TODO link into torus/oli logging
@@ -153,9 +153,10 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
     window.addEventListener('message', onMessage);
 
     return () => window.removeEventListener('message', onMessage);
-  }, [activityState, model, context]);
+  }, [activityState, model, labServer]);
 
-  const [loading, setLoading] = useState<'loading' | 'loaded'>('loading');
+  const [loading, setLoading] = useState<'loading' | 'loaded' | 'error'>('loading');
+  const [error, setError] = useState<string>('');
   const [baseUrl, setBaseUrl] = useState<string>('');
   useEffect(() => {
     setLoading('loading');
@@ -166,13 +167,12 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
         'LogicLab activity is not configured.  Please contact the course author for assistance.',
       );
     }
-    const server = getLabServer(context);
-    if (!server) {
+    if (!labServer) {
       throw new Error('LogicLab server is not configured.  Please contact support for assistance.');
     }
     // If the activity is a LabActivity, then use message passing to get the activity configuration.
     // Otherwise, use the activity ID to get the configuration from the logiclab server.
-    const url = new URL(server);
+    const url = new URL(labServer);
     url.searchParams.append('mode', mode);
     url.searchParams.append('attemptGuid', activityState.attemptGuid);
     if (!isLabActivity(activity)) {
@@ -181,19 +181,36 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
     // Using promise because react's useEffect does not handle async.
     // toString because tsc does not accept the valid URL.
     // Test if the URL is reachable.
-    fetch(url.toString(), { signal, method: 'HEAD' }).then((response) => {
-      if (controller.signal.aborted) return;
-      if (!response.ok) {
-        throw new Error(response.statusText);
-      }
-      setBaseUrl(url.toString());
-      setLoading('loaded');
-    });
+    fetch(url.toString(), { signal, method: 'HEAD' })
+      .then((response) => {
+        if (controller.signal.aborted) return;
+        if (!response.ok) {
+          throw new Error(response.statusText);
+        }
+        setBaseUrl(url.toString());
+        setLoading('loaded');
+      })
+      .catch((err) => {
+        if (controller.signal.aborted) return;
+        console.error(err);
+        setLoading('error');
+        setError(
+          `The LogicLab server is not reachable at this time. Please try again later. (${
+            err instanceof Error ? err.message : String(err)
+          })`,
+        );
+      });
     return () => controller.abort();
-  }, [context, activity, mode, activityState]);
+  }, [activity, mode, activityState, labServer]);
 
   return (
     <>
+      {loading === 'error' && (
+        <div className="p-4 border border-red-400 bg-red-50 text-red-700 rounded">
+          <p className="font-bold mb-2">Error loading LogicLab activity</p>
+          <p>{error}</p>
+        </div>
+      )}
       {loading === 'loading' && <LoadingSpinner />}
       {loading === 'loaded' && (
         <div>

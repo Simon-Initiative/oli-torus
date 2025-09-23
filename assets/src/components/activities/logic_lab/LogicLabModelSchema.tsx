@@ -14,7 +14,7 @@ function contextHasVariables(ctx: ContextVariables | unknown): ctx is ContextVar
  * @param context deploy context or activity edit context
  * @returns url to use as a base for logiclab service calls
  */
-export function getLabServer(context: ContextVariables | unknown): string {
+function getLabServer(context: ContextVariables | unknown): string {
   if (contextHasVariables(context)) {
     const variables = context.variables;
     if ('ACTIVITY_LOGICLAB_URL' in variables && variables.ACTIVITY_LOGICLAB_URL) {
@@ -23,32 +23,25 @@ export function getLabServer(context: ContextVariables | unknown): string {
   }
   throw new ReferenceError('ACTIVITY_LOGICLAB_URL is not set.');
 }
+/**
+ * Extract the LogicLab server URL from a context with null safety.
+ * @param context deploy context or activity edit context
+ * @returns the LogicLab server URL or undefined if not reachable
+ */
 export function useLabServer(context: ContextVariables | unknown): string | undefined {
   const [server, setServer] = useState<string | undefined>();
   useEffect(() => {
-    const abortController = new AbortController();
-    (async () => {
-      try {
-        const url = getLabServer(context);
-        // Attempt to fetch the server URL to ensure it is reachable.
-        const response = await fetch(url, { method: 'HEAD', signal: abortController.signal });
-        if (response.ok) {
-          setServer(url);
-        }
-      } catch (e) {
-        if (e instanceof ReferenceError) {
-          console.warn('LogicLab server URL not set in context, using default.');
-          // Default LogicLab server URL.
-          // This should be removed once the environment variable is consistently set in deployment environments.
-          setServer('https://logiclab.oli.cmu.edu');
-        }
+    try {
+      const url = getLabServer(context);
+      setServer(url);
+    } catch (e) {
+      if (e instanceof ReferenceError) {
+        console.warn('LogicLab server URL not set in context, using default.');
+        // Default LogicLab server URL.
+        // This should be removed once the environment variable is consistently set in deployment environments.
+        setServer('https://logiclab.oli.cmu.edu');
       }
-    })();
-    // Cleanup function to abort the fetch request if the component unmounts before it completes.
-    // This prevents memory leaks and unnecessary network requests.
-    return () => {
-      abortController.abort(); // Clean up the fetch request on component unmount
-    };
+    }
   }, [context]);
   return server;
 }
