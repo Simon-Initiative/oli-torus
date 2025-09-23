@@ -737,6 +737,25 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
+  Returns the titles of active LTI course sections that the given user is currently enrolled in.
+  """
+  @spec list_user_enrolled_lti_section_titles(%User{}) :: [String.t()]
+  def list_user_enrolled_lti_section_titles(%User{id: user_id}) do
+    from(
+      s in Section,
+      join: e in Enrollment,
+      on: e.section_id == s.id,
+      where:
+        e.user_id == ^user_id and s.status == :active and e.status == :enrolled and
+          not is_nil(s.lti_1p3_deployment_id),
+      distinct: true,
+      order_by: [asc: s.title],
+      select: s.title
+    )
+    |> Repo.all()
+  end
+
+  @doc """
   Returns the list of sections.
   ## Examples
       iex> list_sections()

@@ -1,96 +1,66 @@
 defmodule OliWeb.LmsUserInstructionsLive do
   use OliWeb, :live_view
 
+  alias Oli.Delivery.Sections
+
+  on_mount {OliWeb.UserAuth, :mount_current_user}
+
   @impl true
-  def mount(_params, _session, socket) do
-    {:ok, socket}
+  def mount(params, _session, socket) do
+    if socket.assigns.current_user do
+      logout_path = build_logout_path(params["request_path"])
+
+      lms_course_titles =
+        Sections.list_user_enrolled_lti_section_titles(socket.assigns.current_user)
+
+      socket =
+        socket
+        |> assign(:lms_course_titles, lms_course_titles)
+        |> assign(:section_title, params["section_title"])
+        |> assign(:logout_path, logout_path)
+
+      {:ok, socket}
+    else
+      {:ok, redirect(socket, to: ~p"/")}
+    end
   end
 
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="container-fluid">
-      <div class="row">
-        <div class="col-12">
-          <div class="card">
-            <div class="card-header">
-              <h1 class="h3 mb-0">Account Type Mismatch</h1>
-            </div>
-            <div class="card-body">
-              <div class="alert alert-info" role="alert">
-                <h4 class="alert-heading">Different Account Types Required</h4>
-                <p>
-                  You are currently logged in with an LMS-connected account, but this course requires a Direct Delivery account.
-                </p>
-              </div>
-
-              <div class="mb-4">
-                <h5>Why is this happening?</h5>
-                <p>
-                  Torus has two different types of accounts:
-                </p>
-                <ul>
-                  <li><strong>LMS-connected accounts:</strong> Used for courses accessed through your school's Learning Management System (Canvas, Blackboard, etc.)</li>
-                  <li><strong>Direct Delivery accounts:</strong> Used for courses that don't require LMS integration</li>
-                </ul>
-                <p>
-                  The course you're trying to access requires a Direct Delivery account, but you're currently logged in with an LMS-connected account.
-                </p>
-              </div>
-
-              <div class="mb-4">
-                <h5>How to access this course:</h5>
-                <ol>
-                  <li>
-                    <strong>Log out of your current account</strong> using the menu at the top right of the page
-                  </li>
-                  <li>
-                    <strong>Return to this enrollment URL</strong> and create a new Torus account using either:
-                    <ul>
-                      <li>Email and password</li>
-                      <li>Sign In With Google</li>
-                    </ul>
-                  </li>
-                  <li>
-                    <strong>Complete the enrollment process</strong> with your new Direct Delivery account
-                  </li>
-                </ol>
-              </div>
-
-              <div class="mb-4">
-                <h5>Important notes:</h5>
-                <ul>
-                  <li>Your LMS-connected account will continue to work for courses accessed through your school's LMS</li>
-                  <li>Your Direct Delivery account will be used for courses that don't require LMS integration</li>
-                  <li>Both accounts can use the same email address</li>
-                  <li>Your work and progress will be separate between the two account types</li>
-                </ul>
-              </div>
-
-              <div class="mb-4">
-                <h5>Need help?</h5>
-                <p>
-                  If you have questions about which type of account to use for a specific course,
-                  please contact your instructor. They can clarify whether the course should be
-                  accessed through your school's LMS or through a Direct Delivery account.
-                </p>
-              </div>
-
-              <div class="d-flex gap-2">
-                <a href="/users/log_out" class="btn btn-primary">
-                  <i class="fas fa-sign-out-alt me-1"></i>
-                  Log Out and Create New Account
-                </a>
-                <a href="/" class="btn btn-secondary">
-                  <i class="fas fa-home me-1"></i>
-                  Go to Home
-                </a>
-              </div>
-            </div>
+    <div id="lms_user_warning" class="container flex items-center justify-center h-[70vh]">
+      <div class="grid grid-cols-12">
+        <div class="col-span-12 text-center pt-4">
+          <p><i class="far fa-hand-paper" aria-hidden="true" style="font-size: 64px"></i></p>
+          <h2 class="mt-4 mb-4">Account Type Mismatch</h2>
+          <div class="my-10">
+            <p>
+              The account <strong><%= "#{@current_user.email}" %></strong>
+              you use to access these courses
+              <i>
+                <%= if @lms_course_titles != [],
+                  do: "- #{Enum.join(@lms_course_titles, ", ")} -" %>
+              </i>
+              only works with single sign-on through your school’s LMS.
+            </p>
+            <p>
+              <strong><%= "#{@section_title}" %></strong>
+              requires you to use a login account. Please log out of your current account with the button below, visit the enrollment URL again, and create a new Torus account using either email and password, or Sign In With Google.
+            </p>
           </div>
+          <%= link to: @logout_path, method: :delete, class: "btn btn-primary" do %>
+            <i class="fas fa-sign-out-alt me-1"></i> Log Out
+          <% end %>
         </div>
       </div>
     </div>
     """
+  end
+
+  defp build_logout_path(nil), do: ~p"/users/log_out"
+  defp build_logout_path(""), do: ~p"/users/log_out"
+
+  defp build_logout_path(request_path) do
+    ~p"/users/log_out?#{[request_path: request_path]}"
   end
 end

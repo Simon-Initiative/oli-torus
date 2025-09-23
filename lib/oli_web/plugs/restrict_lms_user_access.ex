@@ -12,13 +12,12 @@ defmodule OliWeb.Plugs.RestrictLmsUserAccess do
   import Plug.Conn
   import Phoenix.Controller
 
-  alias Oli.Delivery.Sections
-
   def init(opts), do: opts
 
   def call(conn, _opts) do
     user = conn.assigns[:current_user]
     section = conn.assigns[:section]
+    request_path = capture_request_path(conn)
 
     # Check if user is LMS (independent_learner = false)
     is_lms_user = user && !user.independent_learner
@@ -28,11 +27,23 @@ defmodule OliWeb.Plugs.RestrictLmsUserAccess do
 
     if is_lms_user && is_non_lms_section do
       conn
-      |> put_flash(:error, "LMS users cannot access non-LMS sections directly.")
-      |> redirect(to: ~p"/lms_user_instructions")
+      |> redirect(
+        to:
+          ~p"/lms_user_instructions?#{[section_title: section.title, request_path: request_path]}"
+      )
       |> halt()
     else
       conn
     end
   end
+
+  defp capture_request_path(%{request_path: nil}), do: nil
+
+  defp capture_request_path(conn) do
+    build_full_path(conn.request_path, conn.query_string)
+  end
+
+  defp build_full_path(path, ""), do: path
+  defp build_full_path(path, nil), do: path
+  defp build_full_path(path, query), do: path <> "?" <> query
 end
