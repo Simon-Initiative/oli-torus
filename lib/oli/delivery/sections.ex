@@ -18,6 +18,7 @@ defmodule Oli.Delivery.Sections do
     SectionCache,
     ContainedPage,
     SectionResource,
+    SectionResourceDepot,
     ContainedObjective,
     SectionsProjectsPublications,
     Enrollment,
@@ -4943,19 +4944,18 @@ defmodule Oli.Delivery.Sections do
 
     exclude_sub_objectives = if opts[:exclude_sub_objectives], do: true, else: false
     include_related_activities_count = opts[:include_related_activities_count] || false
-    # get the minimal fields for all objectives from the database
-    objective_id = Oli.Resources.ResourceType.id_for_objective()
 
+    # Get objectives from SectionResourceDepot with related_activities field
     objectives =
-      from([rev: rev, s: s] in DeliveryResolver.section_resource_revisions(section_slug))
-      |> where([rev: rev, s: s], rev.deleted == false and rev.resource_type_id == ^objective_id)
-      |> group_by([rev: rev], [rev.title, rev.resource_id, rev.children])
-      |> select([rev: rev], %{
-        title: rev.title,
-        resource_id: rev.resource_id,
-        children: rev.children
-      })
-      |> Repo.all()
+      SectionResourceDepot.objectives(section.id)
+      |> Enum.map(fn sr ->
+        %{
+          title: sr.title,
+          resource_id: sr.resource_id,
+          children: sr.children || [],
+          related_activities: sr.related_activities || []
+        }
+      end)
 
     id_list = Enum.map(objectives, & &1.resource_id)
 
@@ -5014,68 +5014,11 @@ defmodule Oli.Delivery.Sections do
 
     objectives =
       if include_related_activities_count do
-        # This logic won't be excecuted for the student dashboard.
-        # Calculate related activities count for each objective using a single query with same SQL logic as detail view
-        activity_type_id = Oli.Resources.ResourceType.id_for_activity()
-        objective_ids = Enum.map(objectives, & &1.resource_id)
-
-        # Single query to get all activities and their objective attachments
-        activities_with_objectives =
-          from(
-            [rev: rev, sr: sr, s: s] in DeliveryResolver.section_resource_revisions(section_slug)
-          )
-          |> where(
-            [rev: rev, sr: sr, s: s],
-            rev.deleted == false and
-              rev.resource_type_id == ^activity_type_id and
-              not is_nil(rev.objectives)
-          )
-          |> select([rev: rev], %{
-            resource_id: rev.resource_id,
-            objectives: rev.objectives
-          })
-          |> Repo.all()
-
-        # Count activities for each objective using optimized single-pass algorithm
-        objective_id_set = MapSet.new(objective_ids)
-
-        related_activities_count_map =
-          activities_with_objectives
-          |> Enum.reduce(%{}, fn activity, acc ->
-            case activity.objectives do
-              objectives_map when is_map(objectives_map) ->
-                # Extract all unique objective IDs from this activity
-                activity_objective_ids =
-                  objectives_map
-                  |> Enum.flat_map(fn {_part_id, obj_list} ->
-                    case obj_list do
-                      obj_list when is_list(obj_list) and length(obj_list) > 0 ->
-                        obj_list
-
-                      _ ->
-                        []
-                    end
-                  end)
-                  |> MapSet.new()
-
-                # Find intersection with our objective set
-                matching_objective_ids =
-                  MapSet.intersection(activity_objective_ids, objective_id_set)
-
-                # Increment count for each matching objective
-                Enum.reduce(matching_objective_ids, acc, fn obj_id, acc ->
-                  Map.update(acc, obj_id, 1, &(&1 + 1))
-                end)
-
-              _ ->
-                acc
-            end
-          end)
-
+        # Use pre-calculated related_activities field for performance
         Enum.map(objectives, fn obj ->
           Map.merge(obj, %{
             container_ids: Map.get(objective_to_container_ids_map, obj.resource_id, []),
-            related_activities_count: Map.get(related_activities_count_map, obj.resource_id, 0)
+            related_activities_count: length(obj.related_activities || [])
           })
         end)
       else
@@ -5684,111 +5627,99 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
-  Gets all evaluated activities that have a specific objective attached to them in the given section
+  Gets all evaluated activities that have a specific objective attached to them in the given section.
+  Now uses the pre-calculated related_activities field from SectionResourceDepot for performance.
   """
   def get_activities_for_objective(section, resource_id) do
-    activity_type_id = Oli.Resources.ResourceType.id_for_activity()
+    # Get the objective section resource with its pre-calculated related_activities
+    case SectionResourceDepot.get_section_resource(section.id, resource_id) do
+      nil ->
+        []
 
-    # Query activities that have the objective in their JSONB objectives field
-    query =
-      from([rev: rev, sr: sr, s: s] in DeliveryResolver.section_resource_revisions(section.slug))
-      |> where(
-        [rev: rev, sr: sr, s: s],
-        rev.deleted == false and
-          rev.resource_type_id == ^activity_type_id and
-          fragment("EXISTS (
-          SELECT 1 FROM jsonb_each(?) AS obj(part_id, objective_ids)
-          WHERE jsonb_array_length(objective_ids::jsonb) > 0
-          AND objective_ids::jsonb @> ?::jsonb
-        )", rev.objectives, ^[resource_id])
-      )
-      |> select([rev: rev, sr: sr, s: s], %{
-        resource_id: rev.resource_id,
-        title: rev.title,
-        content: rev.content,
-        slug: rev.slug
-      })
+      objective_sr ->
+        # Get the related activity IDs from the pre-calculated field
+        activity_ids = objective_sr.related_activities || []
 
-    activities = Repo.all(query)
+        if Enum.empty?(activity_ids) do
+          []
+        else
+          # Resolve activity revisions for the related activities
+          activities =
+            activity_ids
+            |> Enum.map(fn activity_resource_id ->
+              case DeliveryResolver.from_resource_id(section.slug, activity_resource_id) do
+                nil ->
+                  nil
 
-    # Get all activity IDs for bulk metrics calculation
-    activity_ids = Enum.map(activities, & &1.resource_id)
+                revision ->
+                  %{
+                    resource_id: revision.resource_id,
+                    title: revision.title,
+                    content: revision.content,
+                    slug: revision.slug
+                  }
+              end
+            end)
+            |> Enum.reject(&is_nil/1)
 
-    # Single query to get all metrics at once
-    metrics_map = calculate_all_activity_metrics(section, activity_ids)
+          # Single query to get all metrics at once
+          metrics_map = calculate_all_activity_metrics(section, activity_ids)
 
-    # Map activities with their pre-calculated metrics
-    activities
-    |> Enum.map(fn activity ->
-      question_stem = extract_question_stem(activity.content)
-      {attempts, percent_correct} = Map.get(metrics_map, activity.resource_id, {0, 0})
+          # Map activities with their pre-calculated metrics
+          activities
+          |> Enum.map(fn activity ->
+            question_stem = extract_question_stem(activity.content)
+            {attempts, percent_correct} = Map.get(metrics_map, activity.resource_id, {0, 0})
 
-      %{
-        resource_id: activity.resource_id,
-        title: activity.title,
-        question_stem: question_stem,
-        attempts: attempts,
-        percent_correct: percent_correct,
-        slug: activity.slug
-      }
-    end)
-  end
-
-  defp extract_question_stem(%{"stem" => %{"content" => content}}) when is_list(content) do
-    content
-    |> Enum.find(&match?(%{"type" => "p"}, &1))
-    |> case do
-      %{"children" => children} when is_list(children) ->
-        children
-        |> Enum.map(&extract_text_from_item/1)
-        |> Enum.join("")
-        |> String.trim()
-
-      _ ->
-        "No question stem available"
+            %{
+              resource_id: activity.resource_id,
+              title: activity.title,
+              question_stem: question_stem,
+              attempts: attempts,
+              percent_correct: percent_correct,
+              slug: activity.slug
+            }
+          end)
+        end
     end
-  rescue
-    _ -> "No question stem available"
   end
 
+  # Extracts question text from activity content for display purposes.
+  # 
+  # This function follows the same pattern as activity renderers to extract text from 
+  # activity content structures. It prioritizes the activity stem content, falls back
+  # to general activity content, and leverages the robust content rendering system.
+  #
+  # Content Structure Patterns:
+  # - content["stem"]["content"] - Structured activity stem content (most common)
+  # - content["stem"] - Simple stem text string  
+  # - content["content"] - General activity content as fallback
+  #
+  # Returns "No question stem available" if no text can be extracted.
   defp extract_question_stem(content) when is_map(content) do
+    # Follow the same pattern as the activity renderers
     case Map.get(content, "stem") do
-      %{"content" => stem_content} ->
-        extract_text_from_content(stem_content)
+      %{"content" => stem_content} when is_list(stem_content) ->
+        OliWeb.Common.Utils.extract_text_from_content(stem_content)
 
       stem_text when is_binary(stem_text) ->
         stem_text
 
       _ ->
+        # Fallback to activity content field
         case Map.get(content, "content") do
-          content_list when is_list(content_list) -> extract_text_from_content(content_list)
-          _ -> "No question stem available"
+          content_list when is_list(content_list) ->
+            OliWeb.Common.Utils.extract_text_from_content(content_list)
+
+          _ ->
+            "No question stem available"
         end
     end
+  rescue
+    _ -> "No question stem available"
   end
 
   defp extract_question_stem(_), do: "No question stem available"
-
-  defp extract_text_from_content(content) when is_list(content) do
-    content
-    |> Enum.map(&extract_text_from_item/1)
-    |> Enum.join("")
-    |> String.trim()
-    |> case do
-      "" -> "No question stem available"
-      text -> text
-    end
-  end
-
-  defp extract_text_from_content(_), do: "No question stem available"
-
-  defp extract_text_from_item(%{"text" => text}), do: text
-
-  defp extract_text_from_item(%{"children" => children}) when is_list(children) do
-    children |> Enum.map(&extract_text_from_item/1) |> Enum.join("")
-  end
-
-  defp extract_text_from_item(_), do: ""
 
   defp calculate_all_activity_metrics(section, activity_ids) when is_list(activity_ids) do
     if Enum.empty?(activity_ids) do
