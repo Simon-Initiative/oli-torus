@@ -635,21 +635,31 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
 
   defp build_s3_path(section_id) when is_integer(section_id) do
     # TODO: For demo purposes, we want to be able to set the bucket from environment variable
-    # for directly loading analytics. In production, this should always come from s3_xapi_bucket_name.
-    bucket =
-      System.get_env("S3_ANALYTICS_BUCKET_NAME") ||
-        Application.get_env(:oli, :s3_xapi_bucket_name)
+    # for directly loading analytics. In production, this should always come from
+    # s3 config and s3_xapi_bucket_name.
+    case System.get_env("S3_ANALYTICS_BUCKET_URL") do
+      nil ->
+        bucket = Application.get_env(:oli, :s3_xapi_bucket_name)
 
-    section_prefix =
-      Application.get_env(:oli, :s3_xapi_section_prefix, "section")
-      |> to_string()
-      |> String.trim("/")
-      |> case do
-        "" -> "section"
-        value -> value
-      end
+        ex_aws_s3_config = Application.get_env(:ex_aws, :s3)
 
-    "https://s3.amazonaws.com/#{bucket}/#{section_prefix}/#{section_id}/**/*.jsonl"
+        scheme = ex_aws_s3_config[:scheme]
+        host = ex_aws_s3_config[:host]
+
+        port =
+          case ex_aws_s3_config[:port] do
+            nil -> ""
+            p when p == 443 and scheme == "https" -> ""
+            p when p == 80 and scheme == "http" -> ""
+            p -> ":#{p}"
+          end
+
+        "#{scheme}://#{host}#{port}/#{bucket}/section/#{section_id}/**/*.jsonl"
+
+      url ->
+        "#{url}/section/#{section_id}/**/*.jsonl"
+    end
+    |> dbg
   end
 
   defp fetch_aws_credentials do
