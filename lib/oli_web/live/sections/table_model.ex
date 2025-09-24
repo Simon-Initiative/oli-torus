@@ -13,7 +13,8 @@ defmodule OliWeb.Sections.SectionsTableModel do
     render_date: :relative,
     exclude_columns: [],
     sort_by_spec: :start_date,
-    sort_order: :desc
+    sort_order: :desc,
+    search_term: ""
   ]
 
   def new(%SessionContext{} = ctx, sections, opts \\ []) do
