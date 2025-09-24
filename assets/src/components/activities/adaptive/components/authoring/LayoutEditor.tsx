@@ -67,7 +67,7 @@ const getPartAndCapabilities = (
 
 const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
   const pusherContext = useContext(NotificationContext);
-  console.log('LE RENDER', { props });
+
   const pusher = useMemo(
     () => pusherContext || new EventEmitter().setMaxListeners(50),
     [pusherContext],
@@ -148,11 +148,6 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
     if (selectedPartAndCapabilities) {
       const updatePosition = () => {
         const newPosition = getToolbarPosition();
-        console.log('Toolbar position update:', {
-          selectedPart: selectedPartAndCapabilities.id,
-          position: newPosition,
-          isResponsive,
-        });
         setToolbarPosition(newPosition);
       };
 
@@ -475,6 +470,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
             .activity-content {
               position: absolute;
               border: 1px solid #ccc;
+              background-color: ${props.backgroundColor || '#fff'};
               width: ${props.width || 1000}px;
               height: ${props.height || 500}px;
             }

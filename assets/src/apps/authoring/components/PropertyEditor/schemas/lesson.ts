@@ -310,6 +310,7 @@ export const lessonUiSchema: UiSchema = {
 
 export const transformModelToSchema = (model: any) => {
   const [themeUrl, customCssUrl] = model.additionalStylesheets;
+
   return {
     Properties: {
       Size: { width: model.custom.defaultScreenWidth, height: model.custom.defaultScreenHeight },
