@@ -375,15 +375,21 @@ export const DotDistributionChart: React.FC<DotDistributionChartProps> = ({
           </div>
         </div>
 
-        {/* Y-axis label positioned vertically above Proficiency label */}
-        <div className="absolute" style={{ right: '5px', top: 'calc(50% + 20px)' }}>
+        {/* Y-axis label positioned vertically above Proficiency label - Responsive positioning */}
+        <div
+          className="absolute right-1 sm:right-[-28px] md:right-[-21px] lg:right-[-23px] xl:right-1 2xl:right-1"
+          style={{ top: 'calc(50% + 20px)' }}
+        >
           <span className="text-xs font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap block transform -rotate-90 origin-bottom-left">
             # of Students
           </span>
         </div>
 
-        {/* X-axis label positioned to the right of bar chart */}
-        <div className="absolute" style={{ right: '35px', top: 'calc(50% + 52px)' }}>
+        {/* X-axis label positioned to the right of bar chart - Responsive positioning */}
+        <div
+          className="absolute right-8 sm:right-[1px] md:right-[7px] lg:right-[7px] xl:right-9 2xl:right-8"
+          style={{ top: 'calc(50% + 52px)' }}
+        >
           <span className="text-xs font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap">
             Proficiency
           </span>
