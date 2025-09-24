@@ -909,6 +909,8 @@ defmodule Oli.Authoring.Course do
     |> Repo.update()
   end
 
+  defp project_search_patterns(nil), do: []
+
   defp project_search_patterns(text_search) do
     text_search
     |> String.trim()
