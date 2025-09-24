@@ -850,6 +850,10 @@ select {
   accent-color: #0D0C0F;
 }
 
+.bg-Surface-surface-primary {
+  background-color: #FFFFFF;
+}
+
 .dark .bg-Surface-surface-primary {
   background-color: #1B191F;
 }
@@ -1310,6 +1314,10 @@ select {
   color: #0062F2;
 }
 
+.border-Fill-Buttons-fill-primary {
+  border-color: #0080FF;
+}
+
 .dark .border-Fill-Buttons-fill-primary {
   border-color: #0062F2;
 }
@@ -1484,6 +1492,10 @@ select {
 
 .dark .accent-Fill-Buttons-fill-secondary-hover {
   accent-color: #FFFFFF1A;
+}
+
+.bg-Fill-Buttons-fill-muted {
+  background-color: #FFFFFF;
 }
 
 .dark .bg-Fill-Buttons-fill-muted {
@@ -2050,6 +2062,10 @@ select {
   color: #2B282E;
 }
 
+.border-Border-border-subtle {
+  border-color: #E6E9F2;
+}
+
 .dark .border-Border-border-subtle {
   border-color: #2B282E;
 }
@@ -2200,6 +2216,10 @@ select {
 
 .dark .text-Border-border-bold {
   color: #FFFFFF80;
+}
+
+.border-Border-border-bold {
+  border-color: #8AB8E5;
 }
 
 .dark .border-Border-border-bold {
@@ -2468,6 +2488,10 @@ select {
 
 .dark .bg-Text-text-low-alpha {
   background-color: #EEEBF5BF;
+}
+
+.text-Text-text-low-alpha {
+  color: #757682;
 }
 
 .dark .text-Text-text-low-alpha {
@@ -3368,6 +3392,10 @@ select {
 
 .dark .bg-Icon-icon-default {
   background-color: #BAB8BF;
+}
+
+.text-Icon-icon-default {
+  color: #757682;
 }
 
 .dark .text-Icon-icon-default {
@@ -10230,6 +10258,10 @@ table.table-striped tbody tr:nth-child(even) {
   width: 797px;
 }
 
+.w-\[800px\] {
+  width: 800px;
+}
+
 .w-\[808px\] {
   width: 808px;
 }
@@ -11774,11 +11806,6 @@ table.table-striped tbody tr:nth-child(even) {
 .border-blue-300 {
   --tw-border-opacity: 1;
   border-color: rgb(126 165 226 / var(--tw-border-opacity));
-}
-
-.border-blue-400 {
-  --tw-border-opacity: 1;
-  border-color: rgb(93 141 219 / var(--tw-border-opacity));
 }
 
 .border-blue-500 {
@@ -19514,12 +19541,44 @@ Not supports in Firefox and IE */
   color: rgb(225 29 72 / var(--tw-text-opacity));
 }
 
+.odd\:bg-Table-table-row-1:nth-child(odd) {
+  background-color: #F3F4F8;
+}
+
+.dark .odd\:bg-Table-table-row-1:nth-child(odd) {
+  background-color: #0D0C0F;
+}
+
+.even\:bg-Table-table-row-2:nth-child(even) {
+  background-color: #E3E7EB;
+}
+
+.dark .even\:bg-Table-table-row-2:nth-child(even) {
+  background-color: #201D21;
+}
+
+.hover\:bg-Surface-surface-secondary-hover:hover {
+  background-color: #F2F9FF;
+}
+
+.dark .hover\:bg-Surface-surface-secondary-hover:hover {
+  background-color: #2F2C33;
+}
+
 .hover\:bg-Fill-fill-hover:hover {
   background-color: #0000001A;
 }
 
 .dark .hover\:bg-Fill-fill-hover:hover {
   background-color: #FFFFFF1A;
+}
+
+.hover\:bg-Fill-Buttons-fill-primary-hover:hover {
+  background-color: #0075EB;
+}
+
+.dark .hover\:bg-Fill-Buttons-fill-primary-hover:hover {
+  background-color: #0D70FF;
 }
 
 .hover\:border-Border-border-active:hover {
@@ -19560,6 +19619,22 @@ Not supports in Firefox and IE */
 
 .dark .hover\:bg-Table-table-hover:hover {
   background-color: #0A203A;
+}
+
+.hover\:text-Icon-icon-hover:hover {
+  color: #353740;
+}
+
+.dark .hover\:text-Icon-icon-hover:hover {
+  color: #FFFFFF;
+}
+
+.focus\:ring-Fill-Buttons-fill-primary:focus {
+  --tw-ring-color: #0080FF;
+}
+
+.dark .focus\:ring-Fill-Buttons-fill-primary:focus {
+  --tw-ring-color: #0062F2;
 }
 
 .focus\:border-Border-border-active:focus {
@@ -19894,11 +19969,6 @@ Not supports in Firefox and IE */
 
 .last\:border-none:last-child {
   border-style: none;
-}
-
-.odd\:bg-gray-200:nth-child(odd) {
-  --tw-bg-opacity: 1;
-  background-color: rgb(229 229 229 / var(--tw-bg-opacity));
 }
 
 .even\:bg-gray-100:nth-child(even) {
@@ -22333,6 +22403,10 @@ Not supports in Firefox and IE */
   outline-color: #fff;
 }
 
+.dark .dark\:ring-offset-gray-800 {
+  --tw-ring-offset-color: #262626;
+}
+
 .dark .dark\:placeholder\:text-zinc-300::-moz-placeholder {
   --tw-text-opacity: 1;
   color: rgb(212 212 216 / var(--tw-text-opacity));
@@ -22367,19 +22441,9 @@ Not supports in Firefox and IE */
   background-color: rgb(140 188 255 / var(--tw-bg-opacity));
 }
 
-.dark .dark\:odd\:bg-neutral-600:nth-child(odd) {
-  --tw-bg-opacity: 1;
-  background-color: rgb(82 82 82 / var(--tw-bg-opacity));
-}
-
 .dark .dark\:even\:bg-gray-700:nth-child(even) {
   --tw-bg-opacity: 1;
   background-color: rgb(64 64 64 / var(--tw-bg-opacity));
-}
-
-.dark .dark\:even\:bg-neutral-500:nth-child(even) {
-  --tw-bg-opacity: 1;
-  background-color: rgb(115 115 115 / var(--tw-bg-opacity));
 }
 
 .dark .dark\:hover\:border-\[\#0056ad\]:hover {
@@ -22695,6 +22759,11 @@ Not supports in Firefox and IE */
 .dark .dark\:focus\:ring-blue-500:focus {
   --tw-ring-opacity: 1;
   --tw-ring-color: rgb(59 118 211 / var(--tw-ring-opacity));
+}
+
+.dark .dark\:focus\:ring-blue-600:focus {
+  --tw-ring-opacity: 1;
+  --tw-ring-color: rgb(39 92 175 / var(--tw-ring-opacity));
 }
 
 .dark .dark\:focus\:ring-blue-700:focus {
