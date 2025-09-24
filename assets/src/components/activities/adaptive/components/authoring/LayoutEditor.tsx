@@ -447,6 +447,15 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
     };
   };
 
+  const getWidth = (width: any) => {
+    if (typeof width === 'number') {
+      return width;
+    }
+    if (width === '100%') {
+      return 960;
+    }
+    return 470;
+  };
   // Given a part ID and a model for that part, will return the model with the width & height
   // filled in if it's being actively dragged. This is so we can display the part-component properly
   // sized during the drag before the new width/height is committed .
@@ -691,23 +700,15 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
 
               // Determine width class and alignment
               const widthClass =
-                part.custom.responsiveLayoutWidth === '100%' ||
-                part.custom.responsiveLayoutWidth === undefined ||
-                part.custom.responsiveLayoutWidth === null
+                part.custom.width === '100%' ||
+                part.custom.width === undefined ||
+                part.custom.width === null
                   ? 'full-width'
                   : 'half-width';
               const alignmentClass =
-                part.custom.responsiveLayoutWidth === '50% align right'
+                part.custom.width === '50% align right'
                   ? 'responsive-align-right'
                   : 'responsive-align-left';
-
-              // Debug logging
-              console.log('Part rendering:', {
-                id: part.id,
-                responsiveLayoutWidth: part.custom.responsiveLayoutWidth,
-                widthClass,
-                alignmentClass,
-              });
 
               return (
                 <div
@@ -733,7 +734,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
                     onResizeStart={() => {
                       props.onSelect(part.id);
                       setDragSize({
-                        width: part.custom.width || 0,
+                        width: getWidth(part.custom.width) || 0,
                         height: part.custom.height || 0,
                       });
                       setIsDragging(true);
@@ -741,7 +742,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
                     onDragStart={() => {
                       props.onSelect(part.id);
                       setDragSize({
-                        width: part.custom.width || 0,
+                        width: getWidth(part.custom.width) || 0,
                         height: part.custom.height || 0,
                       });
                       setIsDragging(true);
@@ -760,7 +761,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
                       handlePartResize({
                         partId: part.id,
                         resizeData: {
-                          width: part.custom.width || 100, // Keep original width in responsive mode
+                          width: getWidth(part.custom.width) || 100, // Keep original width in responsive mode
                           height: parseInt(ref.style.height, 10), // Allow height resizing
                           x: part.custom.x || 0, // Preserve original x position in data
                           y: part.custom.y || 0, // Preserve original y position in data
@@ -818,12 +819,18 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
                 style={{ zIndex: part?.custom?.z || 0 }}
                 onResizeStart={() => {
                   props.onSelect(part.id);
-                  setDragSize({ width: part.custom.width || 0, height: part.custom.height || 0 });
+                  setDragSize({
+                    width: getWidth(part.custom.width) || 0,
+                    height: part.custom.height || 0,
+                  });
                   setIsDragging(true);
                 }}
                 onDragStart={() => {
                   props.onSelect(part.id);
-                  setDragSize({ width: part.custom.width || 0, height: part.custom.height || 0 });
+                  setDragSize({
+                    width: getWidth(part.custom.width) || 0,
+                    height: part.custom.height || 0,
+                  });
                   setIsDragging(true);
                 }}
                 onDragStop={(e, d) => {

@@ -273,7 +273,7 @@ export const lessonUiSchema: UiSchema = {
       },
       responsiveLayout: {
         'ui:title': 'Enable Responsive Layout',
-        classNames: 'col-span-6',
+        classNames: 'col-span-12',
       },
     },
     FinishPanel: {
