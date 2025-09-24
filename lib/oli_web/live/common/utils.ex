@@ -301,7 +301,7 @@ defmodule OliWeb.Common.Utils do
 
     text
     |> escape_html()
-    |> String.replace(regex, "<em>\\0</em>")
+    |> String.replace(regex, "<span class=\"search-highlight\">\\0</span>")
   end
 
   defp escape_html(text) do
