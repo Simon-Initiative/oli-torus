@@ -72,7 +72,7 @@ export abstract class AuthoringElement<T extends ActivityModelSchema> extends HT
     const getProp = (key: string) => JSON.parse(this.getAttribute(key) as any);
     const model = this.migrateModelVersion(getProp('model'));
     const editMode: boolean = this.getAttribute('editmode') === 'true';
-    const responsiveLayout: boolean = this.getAttribute('responsiveLayout') === 'true';
+    const responsiveLayout: boolean = this.getAttribute('responsivelayout') === 'true';
     const mode: 'authoring' | 'instructor_preview' =
       (this.getAttribute('mode') as 'authoring' | 'instructor_preview') || 'authoring';
     const projectSlug: ProjectSlug = this.getAttribute('projectSlug') as string;
@@ -200,5 +200,6 @@ export abstract class AuthoringElement<T extends ActivityModelSchema> extends HT
     'authoringcontext',
     'mode',
     'student_responses',
+    'responsivelayout',
   ];
 }

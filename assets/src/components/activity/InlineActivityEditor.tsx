@@ -31,6 +31,7 @@ export interface ActivityEditorProps extends ActivityEditContext {
   onRegisterNewTag: (o: Tag) => void;
   onRemove: () => void;
   onDuplicate?: () => void;
+  responsiveLayout?: boolean;
 }
 
 // This is the state of our activity editing that is undoable
@@ -150,6 +151,7 @@ export class InlineActivityEditor extends React.Component<
       activity_id: `activity_${this.props.activityId}`,
       model: JSON.stringify(this.props.model),
       editmode: new Boolean(this.props.editMode).toString(),
+      responsivelayout: new Boolean(this.props.responsiveLayout).toString(),
       projectslug: this.props.projectSlug,
       authoringcontext: JSON.stringify({
         contentBreaksExist,
