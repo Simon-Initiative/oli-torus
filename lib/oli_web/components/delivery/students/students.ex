@@ -1350,10 +1350,14 @@ defmodule OliWeb.Components.Delivery.Students do
     selected_students = socket.assigns[:selected_students] || []
 
     selected_students =
-      if selected_student_id in selected_students do
-        List.delete(selected_students, selected_student_id)
+      if Enum.any?(socket.assigns.all_students, &(&1.id == selected_student_id)) do
+        if selected_student_id in selected_students do
+          List.delete(selected_students, selected_student_id)
+        else
+          [selected_student_id | selected_students]
+        end
       else
-        [selected_student_id | selected_students]
+        selected_students
       end
 
     # Recreate the table model with updated selected_students to refresh the header checkbox
