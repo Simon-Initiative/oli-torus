@@ -472,7 +472,10 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
   );
   return parts && parts.length ? (
     <NotificationContext.Provider value={pusher}>
-      <div ref={containerRef} className="activity-content">
+      <div
+        ref={containerRef}
+        className={`activity-content ${isResponsive ? 'responsive-layout-active' : ''}`}
+      >
         <style>
           {`
 
@@ -482,6 +485,9 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
               background-color: ${props.backgroundColor || '#fff'};
               width: ${props.width || 1000}px;
               height: ${props.height || 500}px;
+            }
+            .responsive-layout-active{
+              width: 1200px;
             }
             .react-draggable {
               position: absolute;
