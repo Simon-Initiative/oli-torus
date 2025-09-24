@@ -21,7 +21,6 @@ import { AdaptiveModelSchema } from './schema';
 const Adaptive = (
   props: AuthoringElementProps<AdaptiveModelSchema> & { hostRef?: HTMLElement },
 ) => {
-  console.log('[AdaptiveAuthoring] props', props);
   // we create this to be able to further send down notifcations that came from the parent notifier
   const [pusher, _setPusher] = useState(new EventEmitter().setMaxListeners(50));
 

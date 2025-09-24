@@ -65,7 +65,6 @@ export const partUiSchema = {
   },
   responsiveLayoutWidth: {
     'ui:title': 'Layout Width',
-    'ui:description': 'Choose how this part should be displayed in the layout',
     classNames: 'col-span-12',
   },
   Position: {

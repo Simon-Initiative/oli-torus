@@ -112,7 +112,6 @@ const EditingCanvas: React.FC = () => {
     return true;
   };
   useEffect(() => {
-    console.log({ _currentLessonCustom });
     let interfaceSettingClass = '';
     if (_currentLessonCustom.grid) {
       interfaceSettingClass += ' show-grid';

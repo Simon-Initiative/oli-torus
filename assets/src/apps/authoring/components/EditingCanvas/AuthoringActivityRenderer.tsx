@@ -149,7 +149,6 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
     console.warn('Bad Activity Data', activityModel);
     return null;
   }
-  console.log({ elementProps });
   return isReady
     ? React.createElement(activityModel.activityType?.authoring_element, elementProps, null)
     : null;

@@ -105,7 +105,6 @@ export abstract class AuthoringElement<T extends ActivityModelSchema> extends HT
     const onCustomEvent = (eventName: string, payload: any) => {
       return this.dispatch('customEvent', { eventName, payload });
     };
-    console.log('responsiveLayout', responsiveLayout);
     return {
       activityId: parseInt(activityId, 10),
       sectionSlug,

@@ -49,6 +49,7 @@ const lessonSchema: JSONSchema7 = {
             responsiveLayout: {
               type: 'boolean',
               title: 'Responsive Layout',
+              description: 'Use responsive layout for parts instead of fixed positioning',
               default: false,
             },
             backgroundImageURL: {
@@ -272,8 +273,7 @@ export const lessonUiSchema: UiSchema = {
       },
       responsiveLayout: {
         'ui:title': 'Enable Responsive Layout',
-        'ui:description': 'Use responsive layout for parts instead of fixed positioning',
-        classNames: 'col-span-12',
+        classNames: 'col-span-6',
       },
     },
     FinishPanel: {
@@ -310,7 +310,6 @@ export const lessonUiSchema: UiSchema = {
 
 export const transformModelToSchema = (model: any) => {
   const [themeUrl, customCssUrl] = model.additionalStylesheets;
-  console.log('LESSON MODEL -> SCHEMA', model, { model, themeUrl, customCssUrl });
   return {
     Properties: {
       Size: { width: model.custom.defaultScreenWidth, height: model.custom.defaultScreenHeight },
@@ -346,7 +345,7 @@ export const transformModelToSchema = (model: any) => {
 };
 
 export const transformSchemaToModel = (schema: any) => {
-  console.log('LESSON SCHEMA -> MODEL', schema);
+  /* console.log('LESSON SCHEMA -> MODEL', schema); */
 
   const additionalStylesheets = [
     schema.Properties.Appearance.theme,
