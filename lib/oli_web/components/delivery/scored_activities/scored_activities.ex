@@ -9,7 +9,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Repo
   alias Oli.Resources.ResourceType
-  alias OliWeb.Common.InstructorDashboardPagedTable
+  alias OliWeb.Common.StripedPagedTable
   alias OliWeb.Common.PagingParams
   alias OliWeb.Common.Params
   alias OliWeb.Common.SearchInput
@@ -114,7 +114,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
                    assigns.section.slug,
                    current_assessment.resource_id
                  ),
-               activities: activities,
+               activities: rows,
                table_model: table_model,
                total_count: total_count,
                students_with_attempts_count: Enum.count(students_with_attempts),
@@ -140,103 +140,117 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
         <div class="w-36 h-9 justify-start items-start gap-3.5 inline-flex">
           <div class="px-1.5 py-2 border-zinc-700 justify-start items-center gap-1 flex">
             <Icons.chevron_down class="fill-blue-400 rotate-90" />
-            <div class="text-zinc-700 text-sm font-semibold tracking-tight">
-              Back to Activities
-            </div>
+            <div class="justify-center text-[#373a44] dark:text-white text-sm font-semibold tracking-tight">Back to Scored Pages</div>
           </div>
         </div>
       </button>
       <.loader :if={!@table_model} />
       <div :if={@table_model} class="bg-white shadow-sm dark:bg-gray-800 dark:text-white">
-        <div class="flex flex-col space-y-4 lg:space-y-0 lg:flex-row lg:justify-between px-9">
+        <div class="flex flex-col space-y-4 lg:space-y-0 lg:flex-row lg:justify-between px-4 pt-8 pb-4 lg:items-center instructor_dashboard_table dark:bg-[#262626]">
           <%= if @current_assessment != nil do %>
-            <div class="flex flex-col">
+            <div class="flex flex-col gap-y-1">
               <%= if @current_assessment.container_label do %>
-                <h4 class="torus-h4 whitespace-nowrap">{@current_assessment.container_label}</h4>
+                <span class="text-Text-text-high text-base font-bold leading-none">{@current_assessment.container_label}</span>
 
-                <div class="flex flex-row items-center">
+                <div class="flex flex-row items-center gap-x-1">
                   <%= if !@current_assessment.batch_scoring do %>
                     <Icons.score_as_you_go />
                   <% end %>
 
-                  <span class="text-lg ml-1">{@current_assessment.title}</span>
+                  <span class="text-Text-text-high text-lg font-bold leading-normal">{@current_assessment.title}</span>
                 </div>
               <% else %>
-                <h4 class="torus-h4 whitespace-nowrap">{@current_assessment.title}</h4>
+                <span class="text-Text-text-high text-lg font-bold leading-normal">{@current_assessment.title}</span>
               <% end %>
             </div>
           <% else %>
-            <h4 class="torus-h4 whitespace-nowrap">Scored Pages</h4>
+            <span class="self-stretch justify-center text-zinc-700 text-lg font-bold leading-normal dark:text-white">
+              Scored Pages
+            </span>
+            <a
+              href=""
+              class="flex items-center justify-center gap-x-2 text-Text-text-button font-bold leading-none"
+            >
+              Download CSV <Icons.download />
+            </a>
           <% end %>
-          <div class="flex flex-col">
-            <form
-              for="search"
-              phx-target={@myself}
-              phx-change="search_assessment"
-              class="pb-6 lg:ml-auto lg:pt-7"
-            >
-              <SearchInput.render
-                id="assessments_search_input"
-                name="assessment_name"
-                text={@params.text_search}
-              />
-            </form>
-            <div
-              :if={@current_assessment != nil}
-              id="student_attempts_summary"
-              class="flex flex-row mt-auto"
-            >
-              <span class="text-xs">
-                <%= if @students_with_attempts_count == 0 do %>
-                  No student has completed any attempts.
-                <% else %>
-                  {~s{#{@students_with_attempts_count} #{Gettext.ngettext(OliWeb.Gettext, "student has", "students have", @students_with_attempts_count)} completed #{@total_attempts_count} #{Gettext.ngettext(OliWeb.Gettext, "attempt", "attempts", @total_attempts_count)}.}}
-                <% end %>
-              </span>
-              <div :if={@students_with_attempts_count < Enum.count(@students)} class="flex flex-col">
-                <span class="text-xs ml-2">
-                  {~s{#{Enum.count(@student_emails_without_attempts)} #{Gettext.ngettext(OliWeb.Gettext,
-                  "student has",
-                  "students have",
-                  Enum.count(@student_emails_without_attempts))} not completed any attempt.}}
-                </span>
-                <input
-                  type="text"
-                  id="email_inputs"
-                  class="form-control hidden"
-                  value={Enum.join(@student_emails_without_attempts, "; ")}
-                  readonly
+        </div>
+        <div class="flex flex-row justify-between items-center">
+          <div class="flex w-fit gap-2 mx-4 my-4 shadow-[0px_2px_6.099999904632568px_0px_rgba(0,0,0,0.10)] border border-Border-border-default bg-Background-bg-secondary">
+            <div class="flex p-2 gap-2">
+              <.form for={%{}} phx-target={@myself} phx-change={if @current_assessment == nil, do: "search_page", else: "search_assessment"} class="w-56">
+                <SearchInput.render
+                  id="scored_activities_search_input"
+                  name={if @current_assessment == nil, do: "page_name", else: "assessment_name"}
+                  text={@params.text_search}
                 />
-                <button
-                  id="copy_emails_button"
-                  class="text-xs text-primary underline ml-auto mb-6"
-                  phx-hook="CopyListener"
-                  data-clipboard-target="#email_inputs"
-                >
-                  <i class="fa-solid fa-copy mr-2" />{Gettext.ngettext(
-                    OliWeb.Gettext,
-                    "Copy email address",
-                    "Copy email addresses",
-                    Enum.count(@student_emails_without_attempts)
-                  )}
-                </button>
-              </div>
+              </.form>
+
+              <button
+                class="ml-2 mr-6 text-center text-Text-text-high text-sm font-normal leading-none flex items-center gap-x-2 hover:text-Text-text-button"
+                phx-click="clear_all_filters"
+                phx-target={@myself}
+              >
+                <Icons.trash /> Clear All Filters
+              </button>
+            </div>
+          </div>
+          <div
+            :if={@current_assessment != nil}
+            id="student_attempts_summary"
+            class="flex flex-row mx-4"
+          >
+            <span class="text-xs">
+              <%= if @students_with_attempts_count == 0 do %>
+                No student has completed any attempts.
+              <% else %>
+                {~s{#{@students_with_attempts_count} #{Gettext.ngettext(OliWeb.Gettext, "student has", "students have", @students_with_attempts_count)} completed #{@total_attempts_count} #{Gettext.ngettext(OliWeb.Gettext, "attempt", "attempts", @total_attempts_count)}.}}
+              <% end %>
+            </span>
+            <div :if={@students_with_attempts_count < Enum.count(@students)} class="flex flex-col">
+              <span class="text-xs ml-2">
+                {~s{#{Enum.count(@student_emails_without_attempts)} #{Gettext.ngettext(OliWeb.Gettext,
+                "student has",
+                "students have",
+                Enum.count(@student_emails_without_attempts))} not completed any attempt.}}
+              </span>
+              <input
+                type="text"
+                id="email_inputs"
+                class="form-control hidden"
+                value={Enum.join(@student_emails_without_attempts, "; ")}
+                readonly
+              />
+              <button
+                id="copy_emails_button"
+                class="text-xs text-primary underline ml-auto"
+                phx-hook="CopyListener"
+                data-clipboard-target="#email_inputs"
+              >
+                <i class="fa-solid fa-copy mr-2" />{Gettext.ngettext(
+                  OliWeb.Gettext,
+                  "Copy email address",
+                  "Copy email addresses",
+                  Enum.count(@student_emails_without_attempts)
+                )}
+              </button>
             </div>
           </div>
         </div>
 
-        <InstructorDashboardPagedTable.render
+        <StripedPagedTable.render
           table_model={@table_model}
           total_count={@total_count}
           offset={@params.offset}
           limit={@params.limit}
-          page_change={JS.push("paged_table_page_change", target: @myself)}
-          selection_change={JS.push("paged_table_selection_change", target: @myself)}
-          sort={JS.push("paged_table_sort", target: @myself)}
+          render_top_info={false}
           additional_table_class="instructor_dashboard_table"
+          sort={JS.push("paged_table_sort", target: @myself)}
+          page_change={JS.push("paged_table_page_change", target: @myself)}
+          limit_change={JS.push("paged_table_limit_change", target: @myself)}
+          selection_change={JS.push("paged_table_selection_change", target: @myself)}
           allow_selection={!is_nil(@current_assessment)}
           show_bottom_paging={false}
-          limit_change={JS.push("paged_table_limit_change", target: @myself)}
           show_limit_change={true}
           no_records_message="There are no activities to show"
         />
@@ -279,6 +293,24 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
     """
   end
 
+  def handle_event("clear_all_filters", _params, socket) do
+    case socket.assigns.params.assessment_id do
+      nil ->
+        # No assessment selected, clear all filters and go to main page
+        section_slug = socket.assigns.section.slug
+        path = ~p"/sections/#{section_slug}/instructor_dashboard/insights/scored_activities"
+        {:noreply, push_patch(socket, to: path)}
+
+      _assessment_id ->
+        # Assessment is selected, clear only search filters but keep assessment selected
+        updated_params = update_params(socket.assigns.params, %{
+          text_search: nil,
+          offset: 0
+        })
+        {:noreply, push_patch(socket, to: route_to(socket, updated_params))}
+    end
+  end
+
   def handle_event("back", _params, socket) do
     socket =
       assign(socket,
@@ -290,6 +322,35 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
      push_patch(socket,
        to: route_to(socket, socket.assigns.params.assessment_table_params)
      )}
+  end
+
+  def handle_event(
+        "search_page",
+        %{"page_name" => page_name},
+        socket
+      ) do
+    {:noreply,
+     socket
+     |> push_patch(
+       to:
+         route_to(
+           socket,
+           update_params(socket.assigns.params, %{
+             text_search: page_name,
+             offset: 0
+           })
+         )
+     )}
+  end
+
+  def handle_event("search_assessment", %{"assessment_name" => assessment_name}, socket) do
+    updated_params =
+      update_params(socket.assigns.params, %{
+        text_search: assessment_name,
+        offset: 0
+      })
+
+    {:noreply, push_patch(socket, to: route_to(socket, updated_params))}
   end
 
   def handle_event("paged_table_selection_change", %{"id" => activity_resource_id}, socket)
@@ -322,20 +383,6 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
     {:noreply,
      push_patch(socket,
        to: route_to(socket, %{assessment_table_params: assessment_table_params})
-     )}
-  end
-
-  def handle_event("search_assessment", %{"assessment_name" => assessment_name}, socket) do
-    {:noreply,
-     push_patch(socket,
-       to:
-         route_to(
-           socket,
-           update_params(socket.assigns.params, %{
-             text_search: assessment_name,
-             offset: 0
-           })
-         )
      )}
   end
 
