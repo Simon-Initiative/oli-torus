@@ -89,6 +89,10 @@ defmodule OliWeb.Projects.ProjectsLiveTest do
 
       {:ok, view, _html} = live(conn, Routes.live_path(Endpoint, ProjectsLive))
 
+      view
+      |> element("th[phx-click='paged_table_sort'][phx-value-sort_by='title']")
+      |> render_click()
+
       assert has_element?(view, "##{first_p.id}")
       refute has_element?(view, "##{last_p.id}")
 
