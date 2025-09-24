@@ -297,7 +297,6 @@ defmodule OliWeb.Common.Utils do
 
   def highlight_search_term(text, search_term) do
     pattern = Regex.escape(search_term)
-    # case insensitive match
     regex = ~r/#{pattern}/i
 
     text

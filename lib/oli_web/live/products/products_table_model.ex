@@ -4,10 +4,12 @@ defmodule OliWeb.Products.ProductsTableModel do
 
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Common.FormatDateTime
+  alias OliWeb.Common.Utils
 
   def new(products, ctx, project_slug \\ "", opts \\ []) do
     default_td_class = "!border-r border-Table-table-border"
     default_th_class = "!border-r border-Table-table-border"
+    search_term = Keyword.get(opts, :search_term, "")
 
     column_specs = [
       %ColumnSpec{
@@ -63,7 +65,7 @@ defmodule OliWeb.Products.ProductsTableModel do
       id_field: [:id],
       sort_by_spec: sort_by_spec,
       sort_order: sort_order,
-      data: %{ctx: ctx}
+      data: %{ctx: ctx, search_term: search_term}
     )
   end
 
@@ -83,7 +85,15 @@ defmodule OliWeb.Products.ProductsTableModel do
         project_slug -> ~p"/workspaces/course_author/#{project_slug}/products/#{slug}"
       end
 
-    assigns = Map.merge(assigns, %{title: title, slug: slug, route_path: route_path})
+    search_term = Map.get(assigns, :search_term, "")
+
+    assigns =
+      Map.merge(assigns, %{
+        title: title,
+        slug: slug,
+        route_path: route_path,
+        search_term: search_term
+      })
 
     ~H"""
     <div class="flex flex-col">
@@ -91,10 +101,10 @@ defmodule OliWeb.Products.ProductsTableModel do
         href={@route_path}
         class="text-Text-text-link text-base font-medium leading-normal"
       >
-        {@title}
+        {Phoenix.HTML.raw(Utils.highlight_search_term(@title || "", @search_term))}
       </a>
       <span class="text-Text-text-low text-sm font-normal leading-tight">
-        ID: {@slug}
+        ID: {Phoenix.HTML.raw(Utils.highlight_search_term(@slug || "", @search_term))}
       </span>
     </div>
     """
@@ -107,7 +117,14 @@ defmodule OliWeb.Products.ProductsTableModel do
         _project_slug -> ~p"/workspaces/course_author/#{base_project}/overview"
       end
 
-    assigns = Map.merge(assigns, %{base_project: base_project, route_path: route_path})
+    search_term = Map.get(assigns, :search_term, "")
+
+    assigns =
+      Map.merge(assigns, %{
+        base_project: base_project,
+        route_path: route_path,
+        search_term: search_term
+      })
 
     ~H"""
     <div class="flex flex-col">
@@ -115,10 +132,10 @@ defmodule OliWeb.Products.ProductsTableModel do
         href={@route_path}
         class="text-Text-text-link text-base font-medium leading-normal"
       >
-        {@base_project.title}
+        {Phoenix.HTML.raw(Utils.highlight_search_term(@base_project.title || "", @search_term))}
       </a>
       <span class="text-Text-text-low text-sm font-normal leading-tight">
-        ID: {@base_project.slug}
+        ID: {Phoenix.HTML.raw(Utils.highlight_search_term(@base_project.slug || "", @search_term))}
       </span>
     </div>
     """

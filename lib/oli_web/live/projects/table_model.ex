@@ -2,12 +2,13 @@ defmodule OliWeb.Projects.TableModel do
   use Phoenix.Component
   use OliWeb, :verified_routes
 
-  alias OliWeb.Common.{Chip, FormatDateTime, SessionContext}
+  alias OliWeb.Common.{Chip, FormatDateTime, SessionContext, Utils}
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
 
   def new(%SessionContext{} = ctx, sections, opts \\ []) do
     default_td_class = "!border-r border-Table-table-border"
     default_th_class = "!border-r border-Table-table-border"
+    search_term = Keyword.get(opts, :search_term, "")
 
     column_specs = [
       %ColumnSpec{
@@ -81,14 +82,18 @@ defmodule OliWeb.Projects.TableModel do
       sort_by_spec: sort_by_spec,
       sort_order: sort_order,
       data: %{
-        ctx: ctx
+        ctx: ctx,
+        search_term: search_term
       }
     )
   end
 
   # Title
   def custom_render(assigns, project, %ColumnSpec{name: :title}) do
-    assigns = Map.merge(assigns, %{project: project})
+    assigns =
+      assigns
+      |> Map.put_new(:search_term, Map.get(assigns, :search_term, ""))
+      |> Map.merge(%{project: project})
 
     ~H"""
     <div class="flex flex-col">
@@ -96,10 +101,10 @@ defmodule OliWeb.Projects.TableModel do
         href={~p"/workspaces/course_author/#{@project.slug}/overview"}
         class="text-Text-text-link text-base font-medium leading-normal"
       >
-        {@project.title}
+        {Phoenix.HTML.raw(Utils.highlight_search_term(@project.title || "", @search_term))}
       </a>
       <span class="text-Text-text-low text-sm font-normal leading-tight">
-        ID: {@project.slug}
+        ID: {Phoenix.HTML.raw(Utils.highlight_search_term(@project.slug || "", @search_term))}
       </span>
     </div>
     """
@@ -139,7 +144,10 @@ defmodule OliWeb.Projects.TableModel do
 
   # Name
   def custom_render(assigns, project, %ColumnSpec{name: :name}) do
-    assigns = Map.merge(assigns, %{project: project})
+    assigns =
+      assigns
+      |> Map.put_new(:search_term, Map.get(assigns, :search_term, ""))
+      |> Map.merge(%{project: project})
 
     case project.owner_id do
       nil ->
@@ -151,10 +159,10 @@ defmodule OliWeb.Projects.TableModel do
           href={~p"/admin/authors/#{@project.owner_id}"}
           class="text-Text-text-link text-base font-medium leading-normal"
         >
-          {@project.name}
+          {Phoenix.HTML.raw(Utils.highlight_search_term(@project.name || "", @search_term))}
         </a>
         <small class="text-Text-text-low text-xs font-semibold leading-3">
-          {@project.email}
+          {Phoenix.HTML.raw(Utils.highlight_search_term(@project.email || "", @search_term))}
         </small>
         """
     end
@@ -162,7 +170,10 @@ defmodule OliWeb.Projects.TableModel do
 
   # Collaborators
   def custom_render(assigns, project, %ColumnSpec{name: :collaborators}) do
-    assigns = Map.merge(assigns, %{project: project})
+    assigns =
+      assigns
+      |> Map.put_new(:search_term, Map.get(assigns, :search_term, ""))
+      |> Map.merge(%{project: project})
 
     ~H"""
     <div>
@@ -171,7 +182,7 @@ defmodule OliWeb.Projects.TableModel do
           href={~p"/admin/authors/#{collab["id"]}"}
           class="text-Text-text-link text-base font-medium leading-normal"
         >
-          {collab["name"]}
+          {Phoenix.HTML.raw(Utils.highlight_search_term(collab["name"] || "", @search_term))}
         </a>
         <%= if index < length(@project.collaborators) - 1 do %>
           <span class="text-Text-text-high text-base font-medium leading-normal">, </span>

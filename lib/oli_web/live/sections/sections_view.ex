@@ -22,6 +22,7 @@ defmodule OliWeb.Sections.SectionsView do
   alias OliWeb.Icons
 
   @limit 20
+  @min_search_length 3
   @default_options %BrowseOptions{
     institution_id: nil,
     blueprint_id: nil,
@@ -67,7 +68,8 @@ defmodule OliWeb.Sections.SectionsView do
       SectionsTableModel.new(ctx, sections,
         render_date: :full,
         sort_by_spec: :start_date,
-        sort_order: :desc
+        sort_order: :desc,
+        search_term: ""
       )
 
     {:ok,
@@ -77,7 +79,10 @@ defmodule OliWeb.Sections.SectionsView do
        sections: sections,
        total_count: total_count,
        table_model: table_model,
-       options: @default_options
+       options: @default_options,
+       text_search_input: "",
+       offset: 0,
+       limit: @limit
      )}
   end
 
@@ -86,8 +91,11 @@ defmodule OliWeb.Sections.SectionsView do
     offset = get_int_param(params, "offset", 0)
     limit = get_int_param(params, "limit", @limit)
 
+    raw_search = params |> get_param("text_search", "") |> String.trim()
+    applied_search = sanitize_search_term(raw_search)
+
     options = %BrowseOptions{
-      text_search: get_param(params, "text_search", ""),
+      text_search: applied_search,
       active_today: get_boolean_param(params, "active_today", false),
       filter_status:
         get_atom_param(params, "filter_status", Ecto.Enum.values(Section, :status), nil),
@@ -105,7 +113,11 @@ defmodule OliWeb.Sections.SectionsView do
         options
       )
 
-    table_model = Map.put(table_model, :rows, sections)
+    table_model =
+      table_model
+      |> Map.put(:rows, sections)
+      |> Map.update!(:data, &Map.put(&1, :search_term, applied_search))
+
     total_count = determine_total(sections)
 
     {:noreply,
@@ -115,7 +127,8 @@ defmodule OliWeb.Sections.SectionsView do
        table_model: table_model,
        total_count: total_count,
        limit: limit,
-       options: options
+       options: options,
+       text_search_input: raw_search
      )}
   end
 
@@ -171,7 +184,7 @@ defmodule OliWeb.Sections.SectionsView do
       </div>
       <div class="flex w-fit gap-4 p-2 pr-8 mx-4 mt-3 mb-2 shadow-[0px_2px_6.099999904632568px_0px_rgba(0,0,0,0.10)] border border-[#ced1d9] dark:border-[#3B3740] dark:bg-[#000000]">
         <.form for={%{}} phx-change="text_search_change" class="w-56">
-          <SearchInput.render id="text-search" name="section_name" text={@options.text_search} />
+          <SearchInput.render id="text-search" name="section_name" text={@text_search_input} />
         </.form>
 
         <button class="ml-2 text-center text-[#353740] dark:text-[#EEEBF5] text-sm font-normal leading-none flex items-center gap-x-1 opacity-50 hover:cursor-not-allowed">
@@ -214,7 +227,7 @@ defmodule OliWeb.Sections.SectionsView do
     do: patch_with(socket, %{filter_type: type})
 
   def handle_event("text_search_change", %{"section_name" => section_name}, socket) do
-    patch_with(socket, %{text_search: section_name})
+    patch_with(socket, %{text_search: String.trim(section_name)})
   end
 
   def handle_event("paged_table_sort", %{"sort_by" => sort_by_str}, socket) do
@@ -282,7 +295,7 @@ defmodule OliWeb.Sections.SectionsView do
       active_today: socket.assigns.options.active_today,
       filter_status: socket.assigns.options.filter_status,
       filter_type: socket.assigns.options.filter_type,
-      text_search: socket.assigns.options.text_search
+      text_search: socket.assigns.text_search_input
     }
   end
 
@@ -291,4 +304,16 @@ defmodule OliWeb.Sections.SectionsView do
 
   defp humanize_type_opt(:open), do: "DD"
   defp humanize_type_opt(:lms), do: "LTI"
+
+  defp sanitize_search_term(nil), do: ""
+
+  defp sanitize_search_term(search) when is_binary(search) do
+    trimmed = String.trim(search)
+
+    cond do
+      trimmed == "" -> ""
+      String.length(trimmed) < @min_search_length -> ""
+      true -> trimmed
+    end
+  end
 end

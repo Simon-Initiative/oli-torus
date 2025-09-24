@@ -20,6 +20,7 @@ defmodule OliWeb.Projects.ProjectsLive do
   alias OliWeb.Router.Helpers, as: Routes
 
   @limit 20
+  @min_search_length 3
 
   on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
   on_mount OliWeb.LiveSessionPlugs.SetCtx
@@ -36,19 +37,24 @@ defmodule OliWeb.Projects.ProjectsLive do
 
     show_deleted = Accounts.get_author_preference(author, :admin_show_deleted_projects, false)
 
+    initial_search = ""
+    applied_search = sanitize_search_term(initial_search)
+
     projects =
       Course.browse_projects(
         author,
         %Paging{offset: 0, limit: @limit},
         %Sorting{direction: :desc, field: :inserted_at},
         include_deleted: show_deleted,
-        admin_show_all: show_all
+        admin_show_all: show_all,
+        text_search: applied_search
       )
 
     {:ok, table_model} =
       TableModel.new(ctx, projects,
         sort_by_spec: :inserted_at,
-        sort_order: :desc
+        sort_order: :desc,
+        search_term: applied_search
       )
 
     total_count = determine_total(projects)
@@ -67,7 +73,9 @@ defmodule OliWeb.Projects.ProjectsLive do
        show_deleted: show_deleted,
        title: "Projects",
        limit: @limit,
-       export_filename: export_filename
+       export_filename: export_filename,
+       text_search: initial_search,
+       offset: 0
      )}
   end
 
@@ -89,7 +97,8 @@ defmodule OliWeb.Projects.ProjectsLive do
     table_model = SortableTableModel.update_from_params(socket.assigns.table_model, params)
 
     offset = get_int_param(params, "offset", 0)
-    text_search = get_param(params, "text_search", "")
+    text_search = params |> get_param("text_search", "") |> String.trim()
+    applied_search = sanitize_search_term(text_search)
     limit = get_int_param(params, "limit", @limit)
 
     # if author is an admin, get the show_all value and update if its changed
@@ -124,10 +133,14 @@ defmodule OliWeb.Projects.ProjectsLive do
         %Sorting{direction: table_model.sort_order, field: table_model.sort_by_spec.name},
         include_deleted: show_deleted,
         admin_show_all: show_all,
-        text_search: text_search
+        text_search: applied_search
       )
 
-    table_model = %SortableTableModel{table_model | rows: projects}
+    table_model =
+      table_model
+      |> Map.put(:rows, projects)
+      |> Map.update!(:data, &Map.put(&1, :search_term, applied_search))
+
     total_count = determine_total(projects)
 
     {:noreply,
@@ -272,7 +285,7 @@ defmodule OliWeb.Projects.ProjectsLive do
   end
 
   def handle_event("text_search_change", %{"project_name" => project_name}, socket) do
-    patch_with(socket, %{text_search: project_name})
+    patch_with(socket, %{text_search: String.trim(project_name)})
   end
 
   def handle_event("paged_table_sort", %{"sort_by" => sort_by_str}, socket) do
@@ -340,4 +353,16 @@ defmodule OliWeb.Projects.ProjectsLive do
 
   defp toggle_sort_order(:asc), do: :desc
   defp toggle_sort_order(_), do: :asc
+
+  defp sanitize_search_term(nil), do: ""
+
+  defp sanitize_search_term(search) when is_binary(search) do
+    trimmed = String.trim(search)
+
+    cond do
+      trimmed == "" -> ""
+      String.length(trimmed) < @min_search_length -> ""
+      true -> trimmed
+    end
+  end
 end

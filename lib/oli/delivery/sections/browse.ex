@@ -9,7 +9,23 @@ defmodule Oli.Delivery.Sections.Browse do
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
 
-  @chars_to_replace_on_search [" ", "&", ":", ";", "(", ")", "|", "!", "'", "<", ">"]
+  @chars_to_replace_on_search [
+    " ",
+    "&",
+    ":",
+    ";",
+    "(",
+    ")",
+    "|",
+    "!",
+    "'",
+    "<",
+    ">",
+    "-",
+    "_",
+    "@",
+    "."
+  ]
 
   @doc """
     Paged, sorted, filterable queries for course sections. Joins the institution,
@@ -35,11 +51,14 @@ defmodule Oli.Delivery.Sections.Browse do
         dynamic(
           [s, _, i, proj, prod, u],
           fragment(
-            "to_tsvector('simple', ? || ' ' || coalesce(?, ' ') || ' ' || ? || ' ' || coalesce(?, ' ') || ' ' || coalesce(?, ' ')) @@ to_tsquery('simple', ?)",
+            "to_tsvector('simple', concat_ws(' ', ?, coalesce(?, ''), coalesce(?, ''), coalesce(?, ''), coalesce(?, ''), coalesce(?, ''), coalesce(?, ''), coalesce(?, ''))) @@ to_tsquery('simple', ?)",
             s.title,
             i.name,
             proj.title,
             prod.title,
+            s.slug,
+            proj.slug,
+            prod.slug,
             u.name,
             ^search_term
           )
@@ -93,7 +112,12 @@ defmodule Oli.Delivery.Sections.Browse do
           ecr.enrollment_id == e.id and ecr.context_role_id in ^Sections.get_instructor_role_ids() and
             e.status == :enrolled,
         select: %{
-          name: fragment("array_to_string((array_agg(?)), ', ')", u.name),
+          name:
+            fragment(
+              "array_to_string(array_agg(DISTINCT ?) FILTER (WHERE ? IS NOT NULL), ', ')",
+              u.name,
+              u.name
+            ),
           section_id: e.section_id
         },
         group_by: [e.section_id]
@@ -131,7 +155,16 @@ defmodule Oli.Delivery.Sections.Browse do
       |> limit(^limit)
       |> offset(^offset)
       |> preload([:institution, :base_project, :blueprint])
-      |> group_by([s, _, i, proj, prod, u], [s.id, i.name, proj.title, prod.title, u.name])
+      |> group_by([s, _, i, proj, prod, u], [
+        s.id,
+        i.name,
+        proj.title,
+        prod.title,
+        u.name,
+        s.slug,
+        proj.slug,
+        prod.slug
+      ])
       |> select_merge([_, e, i, _, _, u], %{
         enrollments_count: count(e.id),
         total_count: fragment("count(*) OVER()"),

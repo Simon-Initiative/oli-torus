@@ -116,9 +116,16 @@ defmodule Oli.Authoring.Course do
       if include_deleted, do: dynamic([p], true), else: dynamic([p], p.status == :active)
 
     filter_by_text =
-      if text_search == "",
-        do: dynamic([p], true),
-        else: dynamic([p], ilike(p.title, ^"%#{text_search}%"))
+      text_search
+      |> project_search_patterns()
+      |> Enum.reduce(dynamic([p], true), fn pattern, acc ->
+        dynamic(
+          [p, ap, a, _, _, _, owner],
+          ^acc and
+            (ilike(p.title, ^pattern) or ilike(p.slug, ^pattern) or ilike(owner.name, ^pattern) or
+               ilike(owner.email, ^pattern) or ilike(a.name, ^pattern))
+        )
+      end)
 
     where_clause = dynamic([p], ^filter_by_status and ^filter_by_text)
 
@@ -221,9 +228,16 @@ defmodule Oli.Authoring.Course do
       if include_deleted, do: dynamic([_, p], true), else: dynamic([_, p], p.status == :active)
 
     filter_by_text =
-      if text_search == "",
-        do: dynamic([_, p], true),
-        else: dynamic([_, p], ilike(p.title, ^"%#{text_search}%"))
+      text_search
+      |> project_search_patterns()
+      |> Enum.reduce(dynamic([_, p], true), fn pattern, acc ->
+        dynamic(
+          [_, p, a, _, _, _, owner],
+          ^acc and
+            (ilike(p.title, ^pattern) or ilike(p.slug, ^pattern) or ilike(owner.name, ^pattern) or
+               ilike(owner.email, ^pattern) or ilike(a.name, ^pattern))
+        )
+      end)
 
     where_clause =
       dynamic(
@@ -356,7 +370,16 @@ defmodule Oli.Authoring.Course do
     filter_by_status = if include_deleted, do: true, else: dynamic([p], p.status == :active)
 
     filter_by_text =
-      if text_search == "", do: true, else: dynamic([p], ilike(p.title, ^"%#{text_search}%"))
+      text_search
+      |> project_search_patterns()
+      |> Enum.reduce(true, fn pattern, acc ->
+        dynamic(
+          [p, ap, a, _, _, _, owner],
+          ^acc and
+            (ilike(p.title, ^pattern) or ilike(p.slug, ^pattern) or ilike(owner.name, ^pattern) or
+               ilike(owner.email, ^pattern) or ilike(a.name, ^pattern))
+        )
+      end)
 
     owner_id = ProjectRole.role_id().owner
 
@@ -458,9 +481,16 @@ defmodule Oli.Authoring.Course do
       if include_deleted, do: true, else: dynamic([p, _, _, _, _, _], p.status == ^:active)
 
     filter_by_text =
-      if text_search == "",
-        do: true,
-        else: dynamic([p, _, _, _, _, _], ilike(p.title, ^"%#{text_search}%"))
+      text_search
+      |> project_search_patterns()
+      |> Enum.reduce(true, fn pattern, acc ->
+        dynamic(
+          [p, ap, a, op, owner],
+          ^acc and
+            (ilike(p.title, ^pattern) or ilike(p.slug, ^pattern) or ilike(owner.name, ^pattern) or
+               ilike(owner.email, ^pattern) or ilike(a.name, ^pattern))
+        )
+      end)
 
     query =
       Project
@@ -877,5 +907,19 @@ defmodule Oli.Authoring.Course do
     ap
     |> AuthorProject.changeset(attrs)
     |> Repo.update()
+  end
+
+  defp project_search_patterns(text_search) do
+    text_search
+    |> String.trim()
+    |> case do
+      "" ->
+        []
+
+      trimmed ->
+        trimmed
+        |> String.split(~r/\s+/, trim: true)
+        |> Enum.map(&"%#{&1}%")
+    end
   end
 end
