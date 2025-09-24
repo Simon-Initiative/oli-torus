@@ -179,6 +179,22 @@ defmodule Oli.Accounts do
   end
 
   @doc """
+  Returns the list of users by their IDs.
+  ## Examples
+      iex> list_users_by_ids([1, 2, 3])
+      [{1, "Doe, John"}, {2, "Smith, Jane"}, {3, "Brown, Bob"}]
+  """
+
+  @spec list_users_by_ids(list(integer())) :: list({integer(), String.t(), String.t()})
+  def list_users_by_ids(user_ids) when is_list(user_ids) do
+    from(u in User,
+      where: u.id in ^user_ids,
+      select: {u.id, u.family_name, u.given_name}
+    )
+    |> Repo.all()
+  end
+
+  @doc """
   Returns the list of authors.
   ## Examples
       iex> list_authors()

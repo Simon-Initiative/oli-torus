@@ -1,7 +1,9 @@
 defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
   use OliWeb, :live_component
+
   alias Oli.Delivery.Metrics
   alias Oli.Delivery.Sections.SectionResourceDepot
+  alias Oli.Accounts
 
   attr :objective, :map, required: true
   attr :section_id, :integer, required: true
@@ -88,16 +90,19 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
         {render_dots_chart(assigns)}
       </div>
       
-    <!-- Selected Proficiency Level Message (when a level is selected) -->
+    <!-- Student Proficiency List (when a level is selected) -->
       <%= if @selected_proficiency_level do %>
-        <div class="mb-4 p-4 bg-blue-50 dark:bg-blue-900 border border-blue-200 dark:border-blue-700 rounded-lg">
-          <p class="text-lg font-medium text-blue-800 dark:text-blue-200">
-            PROFICIENCY LEVEL SELECTED: {@selected_proficiency_level}
-          </p>
+        <div class="mb-6">
+          <.live_component
+            module={OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyList}
+            id={"student-proficiency-list-#{@unique_id}"}
+            selected_proficiency_level={@selected_proficiency_level}
+            student_proficiency={@student_proficiency}
+          />
         </div>
       <% end %>
-
-      <!-- Sub-objectives Table (always shown) -->
+      
+    <!-- Sub-objectives Table (always shown) -->
       <div id="sub-objectives-list" class="mt-4">
         <%= if @sub_objectives_data == [] do %>
           No sub-objectives found
@@ -105,13 +110,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
           <.live_component
             module={OliWeb.Components.Delivery.LearningObjectives.SubObjectivesList}
             id={"sub-objectives-list-#{@unique_id}"}
-            objective_id={@objective_id}
-            section_slug={@section_slug}
             sub_objectives_data={@sub_objectives_data}
-            main_objective_title={@objective_title}
-            show_back_button={false}
-            expandable_charts={false}
-            use_table_model={true}
           />
         <% end %>
       </div>
@@ -254,13 +253,17 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
         String.to_integer(student.student_id)
       end)
 
+    # Get missing student information including names
+    missing_students_with_names =
+      get_missing_students_with_names(all_student_ids, existing_student_ids)
+
     # Find students that are missing from proficiency data
     missing_students =
-      all_student_ids
-      |> Enum.reject(&MapSet.member?(existing_student_ids, &1))
-      |> Enum.map(fn student_id ->
+      missing_students_with_names
+      |> Enum.map(fn {student_id, student_name} ->
         %{
           student_id: Integer.to_string(student_id),
+          student_name: student_name,
           proficiency: 0.0,
           proficiency_range: "Not enough data"
         }
@@ -268,5 +271,29 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
 
     # Combine filtered proficiency data with missing students
     filtered_student_proficiency ++ missing_students
+  end
+
+  defp get_missing_students_with_names(all_student_ids, existing_student_ids) do
+    missing_student_ids = Enum.reject(all_student_ids, &MapSet.member?(existing_student_ids, &1))
+
+    if Enum.empty?(missing_student_ids) do
+      []
+    else
+      missing_student_ids
+      |> Accounts.list_users_by_ids()
+      |> Enum.map(fn {student_id, family_name, given_name} ->
+        student_name = format_student_name(family_name, given_name)
+        {student_id, student_name}
+      end)
+    end
+  end
+
+  defp format_student_name(family_name, given_name) do
+    case {family_name, given_name} do
+      {nil, nil} -> "Unknown Student"
+      {family, nil} -> family
+      {nil, given} -> given
+      {family, given} -> "#{family}, #{given}"
+    end
   end
 end
