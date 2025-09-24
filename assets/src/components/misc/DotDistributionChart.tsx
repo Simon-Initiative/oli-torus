@@ -299,7 +299,7 @@ export const DotDistributionChart: React.FC<DotDistributionChartProps> = ({
           {/* Chart content area */}
           <div className="relative" style={{ width: '100%', minWidth: '300px' }}>
             {/* Dots area - above the bar with extended rectangles */}
-            <div className="relative mb-1" style={{ width: '100%', zIndex: 20 }}>
+            <div className="relative mb-1" style={{ width: '100%', zIndex: 1 }}>
               {dotData.length > 0 &&
                 renderDots(
                   dotData,
@@ -317,7 +317,7 @@ export const DotDistributionChart: React.FC<DotDistributionChartProps> = ({
             {/* VegaLite bar chart */}
             <div
               className="relative w-full"
-              style={{ width: '100%', marginTop: '-25px', zIndex: 10 }}
+              style={{ width: '100%', marginTop: '-25px', zIndex: 0 }}
             >
               <VegaLite
                 spec={vegaSpec}
