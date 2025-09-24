@@ -142,10 +142,10 @@ defmodule OliWeb.Sections.SectionsTableModel do
         href={~p"/sections/#{@section.slug}/manage"}
         class="text-Text-text-link text-base font-medium leading-normal"
       >
-        {Phoenix.HTML.raw(Utils.highlight_search_term(@section.title || "", @search_term))}
+        {highlight_search_term(@section.title, @search_term)}
       </a>
       <span class="text-Text-text-low text-sm font-normal leading-tight">
-        ID: {Phoenix.HTML.raw(Utils.highlight_search_term(@section.slug || "", @search_term))}
+        ID: {highlight_search_term(@section.slug, @search_term)}
       </span>
     </div>
     """
@@ -208,9 +208,7 @@ defmodule OliWeb.Sections.SectionsTableModel do
             href={~p"/admin/institutions/#{@section.institution.id}"}
             class="text-Text-text-link text-base font-medium leading-normal"
           >
-            {Phoenix.HTML.raw(
-              Utils.highlight_search_term(@section.institution.name || "", @search_term)
-            )}
+            {highlight_search_term(@section.institution.name, @search_term)}
           </a>
         <% end %>
       </span>
@@ -265,10 +263,10 @@ defmodule OliWeb.Sections.SectionsTableModel do
         href={@route_path}
         class="text-Text-text-link text-base font-medium leading-normal"
       >
-        {Phoenix.HTML.raw(Utils.highlight_search_term(@title || "", @search_term))}
+        {highlight_search_term(@title, @search_term)}
       </a>
       <span class="text-Text-text-low text-sm font-normal leading-tight">
-        ID: {Phoenix.HTML.raw(Utils.highlight_search_term(@slug || "", @search_term))}
+        ID: {highlight_search_term(@slug, @search_term)}
       </span>
     </div>
     """
@@ -295,14 +293,14 @@ defmodule OliWeb.Sections.SectionsTableModel do
             href={~p"/admin/authors/#{author_id}"}
             class="text-Text-text-link text-base font-medium leading-normal"
           >
-            {Phoenix.HTML.raw(Utils.highlight_search_term(name || "", @search_term))}
+            {highlight_search_term(name, @search_term)}
           </.link>
         <% else %>
           <.link
             href={~p"/admin/users/#{instructor_id}"}
             class="text-Text-text-link text-base font-medium leading-normal"
           >
-            {Phoenix.HTML.raw(Utils.highlight_search_term(name || "", @search_term))}
+            {highlight_search_term(name, @search_term)}
             <%= if index < length(@instructors) - 1 do %>
               ,
             <% end %>
@@ -353,4 +351,15 @@ defmodule OliWeb.Sections.SectionsTableModel do
     datetime = FormatDateTime.convert_datetime(date, tz)
     Calendar.strftime(datetime, "%B %d, %Y %I:%M %p")
   end
+
+  defp highlight_search_term(text, search_term),
+    do:
+      Phoenix.HTML.raw(
+        Utils.highlight_search_term(
+          text || "",
+          search_term,
+          "span class=\"search-highlight\"",
+          "span"
+        )
+      )
 end

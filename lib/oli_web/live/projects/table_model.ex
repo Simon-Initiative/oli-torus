@@ -101,10 +101,10 @@ defmodule OliWeb.Projects.TableModel do
         href={~p"/workspaces/course_author/#{@project.slug}/overview"}
         class="text-Text-text-link text-base font-medium leading-normal"
       >
-        {Phoenix.HTML.raw(Utils.highlight_search_term(@project.title || "", @search_term))}
+        {highlight_search_term(@project.title, @search_term)}
       </a>
       <span class="text-Text-text-low text-sm font-normal leading-tight">
-        ID: {Phoenix.HTML.raw(Utils.highlight_search_term(@project.slug || "", @search_term))}
+        ID: {highlight_search_term(@project.slug, @search_term)}
       </span>
     </div>
     """
@@ -159,10 +159,10 @@ defmodule OliWeb.Projects.TableModel do
           href={~p"/admin/authors/#{@project.owner_id}"}
           class="text-Text-text-link text-base font-medium leading-normal"
         >
-          {Phoenix.HTML.raw(Utils.highlight_search_term(@project.name || "", @search_term))}
+          {highlight_search_term(@project.name, @search_term)}
         </a>
         <small class="text-Text-text-low text-xs font-semibold leading-3">
-          {Phoenix.HTML.raw(Utils.highlight_search_term(@project.email || "", @search_term))}
+          {highlight_search_term(@project.email, @search_term)}
         </small>
         """
     end
@@ -182,7 +182,7 @@ defmodule OliWeb.Projects.TableModel do
           href={~p"/admin/authors/#{collab["id"]}"}
           class="text-Text-text-link text-base font-medium leading-normal"
         >
-          {Phoenix.HTML.raw(Utils.highlight_search_term(collab["name"] || "", @search_term))}
+          {highlight_search_term(collab["name"], @search_term)}
         </a>
         <%= if index < length(@project.collaborators) - 1 do %>
           <span class="text-Text-text-high text-base font-medium leading-normal">, </span>
@@ -255,4 +255,15 @@ defmodule OliWeb.Projects.TableModel do
     <div>nothing</div>
     """
   end
+
+  defp highlight_search_term(text, search_term),
+    do:
+      Phoenix.HTML.raw(
+        Utils.highlight_search_term(
+          text || "",
+          search_term,
+          "span class=\"search-highlight\"",
+          "span"
+        )
+      )
 end

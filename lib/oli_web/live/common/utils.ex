@@ -279,7 +279,7 @@ defmodule OliWeb.Common.Utils do
   end
 
   @doc """
-  Helper to highlight search term in text. Returns HTML-safe string with matches wrapped in <em> tags.
+  Helper to highlight search term in text. Returns HTML-safe string with matches wrapped in <em> tags by default.
 
   ## Examples
 
@@ -291,17 +291,21 @@ defmodule OliWeb.Common.Utils do
 
       iex> highlight_search_term("Hello World", "")
       "Hello World"
-  """
-  def highlight_search_term(text, nil), do: escape_html(text)
-  def highlight_search_term(text, ""), do: escape_html(text)
 
-  def highlight_search_term(text, search_term) do
+      iex> highlight_search_term("Hello World", "world", "foo", "bar")
+      "Hello <foo>World</bar>"
+  """
+  def highlight_search_term(text, term, tagstart \\ "em", tagend \\ "em")
+  def highlight_search_term(text, nil, _, _), do: escape_html(text)
+  def highlight_search_term(text, "", _, _), do: escape_html(text)
+
+  def highlight_search_term(text, search_term, tagstart, tagend) do
     pattern = Regex.escape(search_term)
     regex = ~r/#{pattern}/i
 
     text
     |> escape_html()
-    |> String.replace(regex, "<span class=\"search-highlight\">\\0</span>")
+    |> String.replace(regex, "<#{tagstart}>\\0</#{tagend}>")
   end
 
   defp escape_html(text) do

@@ -101,10 +101,10 @@ defmodule OliWeb.Products.ProductsTableModel do
         href={@route_path}
         class="text-Text-text-link text-base font-medium leading-normal"
       >
-        {Phoenix.HTML.raw(Utils.highlight_search_term(@title || "", @search_term))}
+        {highlight_search_term(@title, @search_term)}
       </a>
       <span class="text-Text-text-low text-sm font-normal leading-tight">
-        ID: {Phoenix.HTML.raw(Utils.highlight_search_term(@slug || "", @search_term))}
+        ID: {highlight_search_term(@slug, @search_term)}
       </span>
     </div>
     """
@@ -132,10 +132,10 @@ defmodule OliWeb.Products.ProductsTableModel do
         href={@route_path}
         class="text-Text-text-link text-base font-medium leading-normal"
       >
-        {Phoenix.HTML.raw(Utils.highlight_search_term(@base_project.title || "", @search_term))}
+        {highlight_search_term(@base_project.title, @search_term)}
       </a>
       <span class="text-Text-text-low text-sm font-normal leading-tight">
-        ID: {Phoenix.HTML.raw(Utils.highlight_search_term(@base_project.slug || "", @search_term))}
+        ID: {highlight_search_term(@base_project.slug, @search_term)}
       </span>
     </div>
     """
@@ -198,4 +198,15 @@ defmodule OliWeb.Products.ProductsTableModel do
        _ -> Decimal.new(0)
      end, {order, Decimal}}
   end
+
+  defp highlight_search_term(text, search_term),
+    do:
+      Phoenix.HTML.raw(
+        Utils.highlight_search_term(
+          text || "",
+          search_term,
+          "span class=\"search-highlight\"",
+          "span"
+        )
+      )
 end
