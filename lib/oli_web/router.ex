@@ -129,6 +129,10 @@ defmodule OliWeb.Router do
     plug(Oli.Plugs.AuthorizeSectionPreview)
   end
 
+  pipeline :restrict_lms_user_access do
+    plug(OliWeb.Plugs.RestrictLmsUserAccess)
+  end
+
   # Ensure that we have a logged in user
   pipeline :delivery_protected do
     plug(:delivery)
@@ -1527,6 +1531,9 @@ defmodule OliWeb.Router do
     post "/users/accept_invitation", InviteController, :accept_user_invitation
     post "/collaborators/accept_invitation", InviteController, :accept_collaborator_invitation
     post "/authors/accept_invitation", InviteController, :accept_author_invitation
+
+    # LMS User Instructions
+    live "/lms_user_instructions", LmsUserInstructionsLive, :show
   end
 
   ### Sections - Enrollment
@@ -1535,7 +1542,8 @@ defmodule OliWeb.Router do
       :browser,
       :require_section,
       :delivery,
-      :delivery_layout
+      :delivery_layout,
+      :restrict_lms_user_access
     ])
 
     get("/:section_slug/enroll", DeliveryController, :show_enroll)
