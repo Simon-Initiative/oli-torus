@@ -1301,11 +1301,12 @@ defmodule OliWeb.Components.Delivery.Students do
 
   def handle_event("select_all_students", _params, socket) do
     all_student_ids = Enum.map(socket.assigns.all_students, & &1.id)
-    current_selected = socket.assigns[:selected_students] || []
+    current_selected = MapSet.new(socket.assigns[:selected_students] || [])
 
     # If all students are already selected, deselect all; otherwise select all
     selected_students =
-      if length(current_selected) > 0 && Enum.all?(all_student_ids, &(&1 in current_selected)) do
+      if MapSet.size(current_selected) > 0 &&
+           MapSet.equal?(current_selected, MapSet.new(all_student_ids)) do
         []
       else
         all_student_ids
