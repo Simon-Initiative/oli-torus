@@ -1,0 +1,313 @@
+defmodule Mix.Tasks.ProcessCustomActivityLogs do
+  @shortdoc "Process custom activity logs XML data using SweetXml"
+  @moduledoc """
+  This task reads from the custom_activity_logs table and processes the XML info column
+  using SweetXml, matching the processing logic from OliWeb.LegacyLogsController.
+
+  ## Usage
+
+      mix process_custom_activity_logs
+      mix process_custom_activity_logs --section-id 123 --limit 100
+      mix process_custom_activity_logs --action "problem_hint_msg" --xml-output results.xml
+  """
+
+  use Mix.Task
+
+  alias Oli.Repo
+  alias Oli.Delivery.CustomLogs.CustomActivityLog
+
+  import Ecto.Query
+  import SweetXml
+
+  require Logger
+
+  @impl Mix.Task
+  def run(args) do
+    # Parse command line arguments first
+    opts = parse_args(args)
+
+    if opts[:help] do
+      print_help()
+      System.halt(0)
+    end
+
+    # Start minimal application dependencies for database access
+    start_dependencies()
+
+    # Process the logs
+    process_logs(opts)
+  end
+
+  defp parse_args(args) do
+    {opts, _, _} =
+      OptionParser.parse(args,
+        switches: [
+          section_id: :integer,
+          user_id: :integer,
+          action: :string,
+          activity_type: :string,
+          limit: :integer,
+          xml_output: :string,
+          verbose: :boolean,
+          help: :boolean
+        ],
+        aliases: [
+          s: :section_id,
+          u: :user_id,
+          a: :action,
+          t: :activity_type,
+          l: :limit,
+          x: :xml_output,
+          v: :verbose,
+          h: :help
+        ]
+      )
+
+    opts
+  end
+
+  defp start_dependencies do
+    # Start only the essential applications for database access
+    # This avoids issues with Vault and other components that require full env setup
+    {:ok, _} = Application.ensure_all_started(:logger)
+    {:ok, _} = Application.ensure_all_started(:postgrex)
+    {:ok, _} = Application.ensure_all_started(:ecto)
+    {:ok, _} = Application.ensure_all_started(:ecto_sql)
+
+    # Start the repo
+    Oli.Repo.start_link()
+  end
+
+  defp process_logs(opts) do
+    Logger.info("Starting custom activity logs processing...")
+
+    # Build query based on options
+    query = build_query(opts)
+
+    # Execute query
+    logs = Repo.all(query)
+
+    Logger.info("Found #{length(logs)} logs to process")
+
+    # Process each log
+    processed_results =
+      Enum.map(logs, &process_single_log(&1, opts)) |> Enum.filter(fn x -> tutor_message?(x) end)
+
+    # Export to XML if requested
+    case opts[:xml_output] do
+      nil -> :ok
+      filename -> export_to_xml(processed_results, filename)
+    end
+
+    Logger.info("Processing completed")
+  end
+
+  # Check if message is a tutor-related message type
+  defp tutor_message?(message) do
+    ["<context_message", "<tutor_message", "<tool_message"]
+    |> Enum.any?(&String.starts_with?(message, &1))
+  end
+
+  defp build_query(opts) do
+    query =
+      from(log in CustomActivityLog,
+        preload: [:user, :section, :activity_attempt, :revision, :resource]
+      )
+
+    query =
+      case opts[:section_id] do
+        nil -> query
+        section_id -> from(log in query, where: log.section_id == ^section_id)
+      end
+
+    query =
+      case opts[:user_id] do
+        nil -> query
+        user_id -> from(log in query, where: log.user_id == ^user_id)
+      end
+
+    query =
+      case opts[:action] do
+        nil -> query
+        action -> from(log in query, where: log.action == ^action)
+      end
+
+    query =
+      case opts[:activity_type] do
+        nil -> query
+        activity_type -> from(log in query, where: log.activity_type == ^activity_type)
+      end
+
+    query =
+      case opts[:limit] do
+        nil -> query
+        limit -> from(log in query, limit: ^limit)
+      end
+
+    from(log in query, order_by: [desc: log.inserted_at])
+  end
+
+  defp process_single_log(log, opts) do
+    if opts[:verbose] do
+      IO.puts("Processing log ID: #{log.id}, Action: #{log.action}")
+    end
+
+    # Process the XML info using the same logic as LegacyLogsController
+    process_xml_info(log.info, opts)
+  end
+
+  defp process_xml_info(xml_string, opts) when is_binary(xml_string) do
+    try do
+      # Parse the XML document
+      doc = xml_string
+
+      # Extract key information using the same XPath patterns as LegacyLogsController
+      activity_attempt_guid = extract_safe(doc, ~x"//*/@external_object_id"s)
+      action = extract_safe(doc, ~x"//*/@action_id"s)
+      info_type = extract_safe(doc, ~x"//*/@info_type"s)
+
+      if opts[:verbose] do
+        IO.puts("  Info type: #{info_type}")
+        IO.puts("  Activity attempt GUID: #{activity_attempt_guid}")
+        IO.puts("  Action: #{action}")
+      end
+
+      # Process based on info_type, matching LegacyLogsController logic
+      content_result =
+        cond do
+          info_type == "tutor_message.dtd" or info_type == "tutor_message_v2.dtd" ->
+            log_action =
+              extract_safe(doc, ~x"//log_action/text()"s)
+              |> URI.decode()
+              |> process_tutor_related_message_sequence()
+
+            if opts[:verbose], do: IO.puts("  Log action (tutor message): #{log_action}")
+            log_action
+
+          tag_exists?(doc, "log_supplement") ->
+            log_supplement =
+              extract_safe(doc, ~x"//log_supplement/text()"s)
+              |> URI.decode()
+              |> process_tutor_related_message_sequence()
+
+            if opts[:verbose], do: IO.puts("  Log supplement: #{log_supplement}")
+            log_supplement
+
+          true ->
+            log_action =
+              extract_safe(doc, ~x"//log_action/text()"s)
+              |> URI.decode()
+              |> process_tutor_related_message_sequence()
+
+            if opts[:verbose], do: IO.puts("  Log action (other): #{log_action}")
+            log_action
+        end
+
+      content_result
+    rescue
+      error ->
+        Logger.error("Error processing XML for log: #{inspect(error)}")
+
+        %{
+          success: false,
+          error: inspect(error),
+          raw_xml_preview: String.slice(xml_string, 0, 200) <> "..."
+        }
+    end
+  end
+
+  defp process_xml_info(nil, _opts) do
+    %{success: false, error: "XML info is nil"}
+  end
+
+  defp process_xml_info(info, _opts) do
+    %{success: false, error: "XML info is not a string: #{inspect(info)}"}
+  end
+
+  defp process_tutor_related_message_sequence(log_action) do
+    # Return early if log_action is empty
+    if log_action == "" or is_nil(log_action) do
+      ""
+    else
+      # Use regex to extract content between tutor_related_message_sequence tags
+      # This is much simpler and more reliable than xpath for this specific case
+      pattern = ~r/<tutor_related_message_sequence[^>]*>(.*?)<\/tutor_related_message_sequence>/s
+
+      case Regex.run(pattern, log_action, capture: :all_but_first) do
+        [inner_content] -> String.trim(inner_content)
+        _ -> log_action
+      end
+    end
+  end
+
+  # Safe extraction that handles nil results
+  defp extract_safe(doc, xpath) do
+    try do
+      result = xpath(doc, xpath)
+      if result == nil, do: "", else: to_string(result)
+    rescue
+      error ->
+        IO.inspect("error extracting safe: #{inspect(error)}")
+        ""
+    end
+  end
+
+  # Check if a tag exists in the XML, matching LegacyLogsController logic
+  defp tag_exists?(xml_content, tag_name) do
+    try do
+      result = xml_content |> xpath(~x"//#{tag_name}")
+      result != nil
+    rescue
+      _ -> false
+    end
+  end
+
+  defp export_to_xml(results, filename) do
+    Logger.info("Exporting results to XML format: #{filename}")
+
+    # Generate XML content by joining the processed results
+    xml_content = generate_xml_output(results)
+
+    # Write XML file
+    File.write!(filename, xml_content)
+    Logger.info("Exported #{length(results)} records to XML file #{filename}")
+  end
+
+  defp generate_xml_output(results) do
+    xml_header =
+      "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<tutor_related_message_sequence version_number=\"4\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:noNamespaceSchemaLocation=\"http://pslcdatashop.org/dtd/tutor_message_v4.xsd\">\n"
+
+    # Join the processed XML content directly
+    xml_messages = Enum.join(results, "\n")
+
+    xml_footer = "\n</tutor_related_message_sequence>"
+
+    xml_header <> xml_messages <> xml_footer
+  end
+
+  defp print_help do
+    IO.puts("""
+    Usage: mix process_custom_activity_logs [options]
+
+    This task processes XML data from the custom_activity_logs table using the same
+    SweetXml logic as OliWeb.LegacyLogsController.
+
+    Options:
+      -s, --section-id ID      Filter by section ID
+      -u, --user-id ID         Filter by user ID
+      -a, --action ACTION      Filter by action type
+      -t, --activity-type TYPE Filter by activity type
+      -l, --limit N            Limit number of records (default: no limit)
+      -x, --xml-output FILE    Export results to XML file (tutor_related_message_sequence format)
+      -v, --verbose            Show verbose output during processing
+      -h, --help               Show this help
+
+    Examples:
+      mix process_custom_activity_logs
+      mix process_custom_activity_logs --section-id 123 --limit 100 --verbose
+      mix process_custom_activity_logs --action "problem_hint_msg" --xml-output results.xml
+      mix process_custom_activity_logs --activity-type "oli_multiple_choice" --limit 50
+      mix process_custom_activity_logs --section-id 123 --xml-output tutor_messages.xml
+    """)
+  end
+end
