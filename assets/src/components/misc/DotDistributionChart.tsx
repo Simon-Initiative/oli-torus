@@ -538,6 +538,98 @@ function renderDots(
     };
   };
 
+  // Responsive breakpoints configuration for close icon positioning
+  const closeIconBreakpoints = [
+    {
+      name: 'mobile',
+      className: 'sm:hidden',
+      description: 'Mobile (default): Conservative positioning',
+      positionCalculator: (bounds: { startX: number; width: number }) =>
+        bounds.startX + bounds.width - 7,
+    },
+    {
+      name: 'tablet',
+      className: 'hidden sm:block md:hidden',
+      description: 'Tablet (sm): Medium positioning',
+      positionCalculator: (bounds: { startX: number; width: number }) =>
+        bounds.startX + bounds.width - 6.5,
+    },
+    {
+      name: 'smallDesktop',
+      className: 'hidden md:block lg:hidden',
+      description: 'Small Desktop (md): Closer to edge',
+      positionCalculator: (bounds: { startX: number; width: number }) =>
+        bounds.startX + bounds.width - 4,
+    },
+    {
+      name: 'largeDesktop',
+      className: 'hidden lg:block xl:hidden',
+      description: 'Large Desktop (lg): 1024px-1279px',
+      positionCalculator: (bounds: { startX: number; width: number }) =>
+        bounds.startX + bounds.width - 3,
+    },
+    {
+      name: 'extraLargeDesktop',
+      className: 'hidden xl:block 2xl:hidden',
+      description: 'Extra Large Desktop (xl): 1280px-1535px',
+      positionCalculator: (bounds: { startX: number; width: number }) =>
+        bounds.startX + bounds.width - 2.5,
+    },
+    {
+      name: 'ultraWideDesktop',
+      className: 'hidden 2xl:block',
+      description: 'Ultra Wide Desktop (2xl): 1536px+',
+      positionCalculator: (bounds: { startX: number; width: number }) =>
+        bounds.startX + bounds.width - 2,
+    },
+  ];
+
+  // Function to render close icon for a specific breakpoint
+  const renderCloseIconForBreakpoint = (
+    breakpoint: typeof closeIconBreakpoints[0],
+    bounds: { startX: number; width: number },
+    level: string,
+  ) => {
+    const position = breakpoint.positionCalculator(bounds);
+
+    return (
+      <g key={breakpoint.name} className={breakpoint.className}>
+        <rect
+          x={`${position}%`}
+          y="2"
+          width="24"
+          height="24"
+          fill="transparent"
+          style={{ cursor: 'pointer' }}
+          onClick={(e) => {
+            e.stopPropagation();
+            setSelectedSection(null);
+            if (pushEventTo) {
+              pushEventTo(`#expanded-objective-${unique_id}`, 'hide_students_list', {});
+            }
+            setHoveredSection(level);
+          }}
+        />
+        <svg
+          x={`${position}%`}
+          y="3"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          style={{ pointerEvents: 'none' }}
+        >
+          <path
+            d="M6 18L18 6M6 6L18 18"
+            stroke={darkMode ? '#FFFFFF' : '#6b7280'}
+            strokeWidth="2"
+            strokeLinejoin="round"
+            fill="none"
+          />
+        </svg>
+      </g>
+    );
+  };
+
   return (
     <svg
       className="w-full h-full"
@@ -736,44 +828,11 @@ function renderDots(
 
                 {/* Close button for selected sections */}
                 {isSelected && (
-                  <g>
-                    {/* Larger invisible clickable area */}
-                    <rect
-                      x={`${bounds.endX - 2}%`}
-                      y="2"
-                      width="24"
-                      height="24"
-                      fill="transparent"
-                      style={{ cursor: 'pointer' }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedSection(null);
-                        // Send event to LiveView to hide the placeholder
-                        if (pushEventTo) {
-                          pushEventTo(`#expanded-objective-${unique_id}`, 'hide_students_list', {});
-                        }
-                        // Check if mouse is still over the area to trigger hover
-                        setHoveredSection(level);
-                      }}
-                    />
-                    {/* Visible close icon */}
-                    <svg
-                      x={`${bounds.endX - 2}%`}
-                      y="6"
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      style={{ pointerEvents: 'none' }}
-                    >
-                      <path
-                        d="M6 18L18 6M6 6L18 18"
-                        stroke={darkMode ? '#FFFFFF' : '#6b7280'}
-                        strokeWidth="2"
-                        strokeLinejoin="round"
-                        fill="none"
-                      />
-                    </svg>
-                  </g>
+                  <>
+                    {closeIconBreakpoints.map((breakpoint) =>
+                      renderCloseIconForBreakpoint(breakpoint, bounds, level),
+                    )}
+                  </>
                 )}
               </>
             )}
