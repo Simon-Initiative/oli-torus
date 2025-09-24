@@ -707,6 +707,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
               // Determine width class and alignment
               const widthClass =
                 part.custom.width === '100%' ||
+                typeof part.custom.width !== 'string' ||
                 part.custom.width === undefined ||
                 part.custom.width === null
                   ? 'full-width'
