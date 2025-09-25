@@ -143,6 +143,120 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
 
   const [toolbarPosition, setToolbarPosition] = useState({ x: 0, y: 0 });
 
+  // Helper function to render individual parts
+  const renderPart = (part: AnyPartComponent, idx: number) => {
+    const partProps = {
+      id: part.id,
+      type: part.type,
+      model: decorateModelWithDragWidthHeight(part.id, part.custom),
+      state: {},
+      configureMode: part.id === configurePartId,
+      editMode: true,
+      portal: portalId,
+      onInit: handlePartInit,
+      onReady: defaultHandler,
+      onSave: defaultHandler,
+      onSubmit: defaultHandler,
+      onResize: defaultHandler,
+    };
+
+    const disableDrag = selectedPartAndCapabilities && !selectedPartAndCapabilities.capabilities.move;
+
+    // Determine position and size based on responsive mode
+    const position = isResponsive
+      ? { x: 0, y: 0 } // Ignore x,y positions in responsive mode
+      : { x: part.custom.x || 0, y: part.custom.y || 0 };
+
+    const size = {
+      width: part.custom.width || 100,
+      height: part.custom.height || 100
+    };
+
+    // Determine resize grid based on responsive mode
+    const resizeGrid: [number, number] = isResponsive ? [0, 1] : [1, 1]; // Only vertical resize in responsive mode
+
+    const handleDragStop = isResponsive
+      ? (e: any, d: any) => {
+          // In responsive mode, we don't update position
+          // handlePartDrag({ partId: part.id, dragData: d });
+        }
+      : (e: any, d: any) => {
+          handlePartDrag({ partId: part.id, dragData: d });
+        };
+
+    const handleResizeStop = isResponsive
+      ? (e: any, direction: any, ref: any, delta: any, position: any) => {
+          handlePartResize({
+            partId: part.id,
+            resizeData: {
+              width: getWidth(part.custom.width) || 100, // Keep original width in responsive mode
+              height: parseInt(ref.style.height, 10), // Allow height resizing
+              x: part.custom.x || 0, // Preserve original x position in data
+              y: part.custom.y || 0, // Preserve original y position in data
+            },
+          });
+        }
+      : (e: any, direction: any, ref: any, delta: any, position: any) => {
+          handlePartResize({
+            partId: part.id,
+            resizeData: {
+              width: parseInt(ref.style.width, 10),
+              height: parseInt(ref.style.height, 10),
+              x: Math.round(position.x),
+              y: Math.round(position.y),
+            },
+          });
+        };
+
+    return (
+      <ResizeContainer
+        key={part.id}
+        dragGrid={[5, 5]}
+        resizeGrid={resizeGrid}
+        selected={part.id === selectedPartId}
+        size={size}
+        position={position}
+        disabled={!!disableDrag}
+        style={{ zIndex: part?.custom?.z || 0 }}
+        onResizeStart={() => {
+          props.onSelect(part.id);
+          setDragSize({
+            width: getWidth(part.custom.width) || 0,
+            height: part.custom.height || 0,
+          });
+          setIsDragging(true);
+        }}
+        onDragStart={() => {
+          props.onSelect(part.id);
+          setDragSize({
+            width: getWidth(part.custom.width) || 0,
+            height: part.custom.height || 0,
+          });
+          setIsDragging(true);
+        }}
+        onDragStop={handleDragStop}
+        onResize={(e, direction, ref) => {
+          setDragSize({
+            width: parseInt(ref.style.width, 10),
+            height: parseInt(ref.style.height, 10),
+          });
+        }}
+        onResizeStop={handleResizeStop}
+      >
+        <PartComponent
+          {...partProps}
+          className={selectedPartId === part.id ? 'selected' : ''}
+          onClick={(event) => handlePartClick(event, { id: part.id })}
+          onConfigure={({ configure, context }) =>
+            handlePartConfigure(part.id, configure, context)
+          }
+          onSaveConfigure={handlePartSaveConfigure}
+          onCancelConfigure={handlePartCancelConfigure}
+        />
+      </ResizeContainer>
+    );
+  };
+
   // Update toolbar position when selection changes
   useEffect(() => {
     if (selectedPartAndCapabilities) {
@@ -600,24 +714,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
         {isResponsive ? (
           <div className="advance-authoring-responsive-layout">
             {parts.map((part: AnyPartComponent, idx: number) => {
-              const partProps = {
-                id: part.id,
-                type: part.type,
-                model: decorateModelWithDragWidthHeight(part.id, part.custom),
-                state: {},
-                configureMode: part.id === configurePartId,
-                editMode: true,
-                portal: portalId,
-                onInit: handlePartInit,
-                onReady: defaultHandler,
-                onSave: defaultHandler,
-                onSubmit: defaultHandler,
-                onResize: defaultHandler,
-              };
-              const disableDrag =
-                selectedPartAndCapabilities && !selectedPartAndCapabilities.capabilities.move;
-
-              // Determine width class and alignment
+              // Determine width class and alignment for responsive layout
               const widthClass =
                 part.custom.width === '100%' ||
                 typeof part.custom.width !== 'string' ||
@@ -636,157 +733,13 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
                   data-part-id={part.id}
                   className={`responsive-item ${widthClass} ${alignmentClass}`}
                 >
-                  <ResizeContainer
-                    key={part.id}
-                    dragGrid={[5, 5]}
-                    resizeGrid={[0, 1]} // Only allow vertical resizing (0 = no horizontal resize)
-                    selected={part.id === selectedPartId}
-                    size={{
-                      width: part.custom.width || 100,
-                      height: part.custom.height || 100,
-                    }}
-                    position={{
-                      x: 0, // Ignore x position in responsive mode (but preserve original x in data)
-                      y: 0, // Ignore y position in responsive mode (but preserve original y in data)
-                    }}
-                    disabled={!!disableDrag}
-                    style={{ zIndex: part?.custom?.z || 0 }}
-                    onResizeStart={() => {
-                      props.onSelect(part.id);
-                      setDragSize({
-                        width: getWidth(part.custom.width) || 0,
-                        height: part.custom.height || 0,
-                      });
-                      setIsDragging(true);
-                    }}
-                    onDragStart={() => {
-                      props.onSelect(part.id);
-                      setDragSize({
-                        width: getWidth(part.custom.width) || 0,
-                        height: part.custom.height || 0,
-                      });
-                      setIsDragging(true);
-                    }}
-                    onDragStop={(e, d) => {
-                      // In responsive mode, we don't update position
-                      // handlePartDrag({ partId: part.id, dragData: d });
-                    }}
-                    onResize={(e, direction, ref) => {
-                      setDragSize({
-                        width: parseInt(ref.style.width, 10),
-                        height: parseInt(ref.style.height, 10),
-                      });
-                    }}
-                    onResizeStop={(e, direction, ref, delta, position) => {
-                      handlePartResize({
-                        partId: part.id,
-                        resizeData: {
-                          width: getWidth(part.custom.width) || 100, // Keep original width in responsive mode
-                          height: parseInt(ref.style.height, 10), // Allow height resizing
-                          x: part.custom.x || 0, // Preserve original x position in data
-                          y: part.custom.y || 0, // Preserve original y position in data
-                        },
-                      });
-                    }}
-                  >
-                    <PartComponent
-                      {...partProps}
-                      className={selectedPartId === part.id ? 'selected' : ''}
-                      onClick={(event) => handlePartClick(event, { id: part.id })}
-                      onConfigure={({ configure, context }) =>
-                        handlePartConfigure(part.id, configure, context)
-                      }
-                      onSaveConfigure={handlePartSaveConfigure}
-                      onCancelConfigure={handlePartCancelConfigure}
-                    />
-                  </ResizeContainer>
+                  {renderPart(part, idx)}
                 </div>
               );
             })}
           </div>
         ) : (
-          parts.map((part) => {
-            const partProps = {
-              id: part.id,
-              type: part.type,
-              model: decorateModelWithDragWidthHeight(part.id, part.custom),
-              state: {},
-              configureMode: part.id === configurePartId,
-              editMode: true,
-              portal: portalId,
-              onInit: handlePartInit,
-              onReady: defaultHandler,
-              onSave: defaultHandler,
-              onSubmit: defaultHandler,
-              onResize: defaultHandler,
-            };
-
-            const disableDrag =
-              selectedPartAndCapabilities && !selectedPartAndCapabilities.capabilities.move;
-
-            return (
-              <ResizeContainer
-                key={part.id}
-                dragGrid={[5, 5]}
-                resizeGrid={[1, 1]}
-                selected={part.id === selectedPartId}
-                size={{ width: part.custom.width || 100, height: part.custom.height || 100 }}
-                position={{
-                  x: part.custom.x || 0,
-                  y: part.custom.y || 0,
-                }}
-                disabled={!!disableDrag}
-                style={{ zIndex: part?.custom?.z || 0 }}
-                onResizeStart={() => {
-                  props.onSelect(part.id);
-                  setDragSize({
-                    width: getWidth(part.custom.width) || 0,
-                    height: part.custom.height || 0,
-                  });
-                  setIsDragging(true);
-                }}
-                onDragStart={() => {
-                  props.onSelect(part.id);
-                  setDragSize({
-                    width: getWidth(part.custom.width) || 0,
-                    height: part.custom.height || 0,
-                  });
-                  setIsDragging(true);
-                }}
-                onDragStop={(e, d) => {
-                  handlePartDrag({ partId: part.id, dragData: d });
-                }}
-                onResize={(e, direction, ref) => {
-                  setDragSize({
-                    width: parseInt(ref.style.width, 10),
-                    height: parseInt(ref.style.height, 10),
-                  });
-                }}
-                onResizeStop={(e, direction, ref, delta, position) => {
-                  handlePartResize({
-                    partId: part.id,
-                    resizeData: {
-                      width: parseInt(ref.style.width, 10),
-                      height: parseInt(ref.style.height, 10),
-                      x: Math.round(position.x),
-                      y: Math.round(position.y),
-                    },
-                  });
-                }}
-              >
-                <PartComponent
-                  {...partProps}
-                  className={selectedPartId === part.id ? 'selected' : ''}
-                  onClick={(event) => handlePartClick(event, { id: part.id })}
-                  onConfigure={({ configure, context }) =>
-                    handlePartConfigure(part.id, configure, context)
-                  }
-                  onSaveConfigure={handlePartSaveConfigure}
-                  onCancelConfigure={handlePartCancelConfigure}
-                />
-              </ResizeContainer>
-            );
-          })
+          parts.map((part, idx) => renderPart(part, idx))
         )}
       </div>
     </NotificationContext.Provider>
