@@ -1392,6 +1392,49 @@ defmodule Oli.Delivery.Sections do
     )
   end
 
+  # Adds objective hierarchies to the hierarchy definition for objectives that are not in the structural hierarchy
+  defp add_objective_hierarchies_to_definition(
+         hierarchy_definition,
+         published_resources_by_resource_id,
+         processed_structural_ids
+       ) do
+    objective_type_id = ResourceType.id_for_objective()
+    processed_structural_set = MapSet.new(processed_structural_ids)
+
+    # Find objectives that are not in the structural hierarchy but have children
+    objective_hierarchies =
+      published_resources_by_resource_id
+      |> Enum.filter(fn {resource_id, %PublishedResource{revision: revision}} ->
+        revision.resource_type_id == objective_type_id &&
+          !MapSet.member?(processed_structural_set, resource_id) &&
+          revision.children != nil &&
+          length(revision.children) > 0
+      end)
+      |> Enum.reduce(%{}, fn {resource_id, %PublishedResource{revision: revision}}, acc ->
+        # Only include children that are also objectives and published in this publication
+        objective_children =
+          revision.children
+          |> Enum.filter(fn child_resource_id ->
+            case published_resources_by_resource_id[child_resource_id] do
+              %PublishedResource{revision: child_revision} ->
+                child_revision.resource_type_id == objective_type_id
+
+              _ ->
+                false
+            end
+          end)
+
+        if length(objective_children) > 0 do
+          Map.put(acc, resource_id, objective_children)
+        else
+          acc
+        end
+      end)
+
+    # Merge objective hierarchies with existing hierarchy definition
+    Map.merge(hierarchy_definition, objective_hierarchies)
+  end
+
   # For a given section id and the list of resource ids that exist in its hierarchy,
   # determine and return the list of page resource ids that are not reachable from that
   # hierarchy, taking into account links from pages to other pages and the 'relates_to'
@@ -2710,10 +2753,19 @@ defmodule Oli.Delivery.Sections do
         |> select([p], p.required_survey_resource_id)
         |> Repo.one()
 
+      # Add objective hierarchies to hierarchy_definition for non-structural resources
+      hierarchy_definition_with_objectives =
+        add_objective_hierarchies_to_definition(
+          hierarchy_definition,
+          published_resources_by_resource_id,
+          processed_ids
+        )
+
       # create any remaining section resources which are not in the hierarchy
       create_nonstructural_section_resources(section.id, [publication_id],
         skip_resource_ids: processed_ids,
-        required_survey_resource_id: survey_id
+        required_survey_resource_id: survey_id,
+        hierarchy_definition: hierarchy_definition_with_objectives
       )
 
       root_section_resource_id = section_resources_by_resource_id[root_resource_id].id
@@ -3232,7 +3284,8 @@ defmodule Oli.Delivery.Sections do
 
       create_nonstructural_section_resources(section_id, publication_ids,
         skip_resource_ids: processed_resource_ids,
-        required_survey_resource_id: survey_id
+        required_survey_resource_id: survey_id,
+        hierarchy_definition: nil
       )
 
       # Rebuild section previous next index
@@ -4038,10 +4091,11 @@ defmodule Oli.Delivery.Sections do
 
   # creates all non-structural section resources for the given publication ids skipping
   # any that belong to the resource ids in skip_resource_ids
-  defp create_nonstructural_section_resources(section_id, publication_ids,
-         skip_resource_ids: skip_resource_ids,
-         required_survey_resource_id: required_survey_resource_id
-       ) do
+  defp create_nonstructural_section_resources(section_id, publication_ids, opts) do
+    skip_resource_ids = Keyword.get(opts, :skip_resource_ids, [])
+    required_survey_resource_id = Keyword.get(opts, :required_survey_resource_id, nil)
+    hierarchy_definition = Keyword.get(opts, :hierarchy_definition, nil)
+
     published_resources_by_resource_id =
       MinimalHierarchy.published_resources_map(publication_ids)
 
@@ -4086,12 +4140,118 @@ defmodule Oli.Delivery.Sections do
       end)
 
     Database.batch_insert_all(SectionResource, section_resource_rows)
+
+    # Populate children field for objectives if hierarchy_definition is available
+    if hierarchy_definition != nil do
+      populate_children_for_objectives(
+        section_id,
+        published_resources_by_resource_id,
+        hierarchy_definition,
+        skip_set
+      )
+    end
   end
 
   def is_structural?(%Revision{resource_type_id: resource_type_id}) do
     container = ResourceType.id_for_container()
 
     resource_type_id == container
+  end
+
+  # Populates the children field for objectives by looking up their hierarchical relationships
+  defp populate_children_for_objectives(
+         section_id,
+         published_resources_by_resource_id,
+         hierarchy_definition,
+         skip_set
+       ) do
+    objective_type_id = ResourceType.id_for_objective()
+
+    # Get all objectives that were created as section_resources
+    objectives_with_children =
+      published_resources_by_resource_id
+      |> Enum.filter(fn {resource_id, %{resource_type_id: resource_type_id}} ->
+        !MapSet.member?(skip_set, resource_id) &&
+          resource_type_id == objective_type_id &&
+          hierarchy_definition[resource_id] != nil &&
+          length(hierarchy_definition[resource_id]) > 0
+      end)
+      |> Enum.map(fn {resource_id, _} -> resource_id end)
+
+    if length(objectives_with_children) > 0 do
+      # Get section_resource records for these objectives and their potential children
+      all_relevant_resource_ids =
+        objectives_with_children
+        |> Enum.flat_map(fn resource_id ->
+          [resource_id | hierarchy_definition[resource_id]]
+        end)
+        |> Enum.uniq()
+
+      section_resources_by_resource_id =
+        from(sr in SectionResource,
+          where: sr.section_id == ^section_id and sr.resource_id in ^all_relevant_resource_ids,
+          select: {sr.resource_id, sr.id}
+        )
+        |> Repo.all()
+        |> Map.new()
+
+      # Build updates for objectives that have children
+      section_resources_to_update =
+        objectives_with_children
+        |> Enum.map(fn resource_id ->
+          children = hierarchy_definition[resource_id]
+
+          children_sr_ids =
+            children
+            |> Enum.map(fn child_resource_id ->
+              section_resources_by_resource_id[child_resource_id]
+            end)
+            |> Enum.filter(&(&1 != nil))
+
+          if length(children_sr_ids) > 0 do
+            %{
+              id: section_resources_by_resource_id[resource_id],
+              children: children_sr_ids,
+              updated_at: DateTime.utc_now() |> DateTime.truncate(:second)
+            }
+          else
+            nil
+          end
+        end)
+        |> Enum.filter(&(&1 != nil))
+
+      # Update the children field for objectives that have children
+      if length(section_resources_to_update) > 0 do
+        now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+        # Build VALUES clause for single query update
+        values_clauses =
+          section_resources_to_update
+          |> Enum.map(fn update ->
+            children_array =
+              if length(update.children) > 0 do
+                "ARRAY[#{Enum.join(update.children, ",")}]"
+              else
+                "ARRAY[]::integer[]"
+              end
+
+            "(#{update.id}, #{children_array})"
+          end)
+          |> Enum.join(", ")
+
+        # Single query to update all objectives at once
+        sql = """
+        UPDATE section_resources 
+        SET 
+          children = updates.new_children,
+          updated_at = $1
+        FROM (VALUES #{values_clauses}) AS updates(sr_id, new_children)
+        WHERE section_resources.id = updates.sr_id
+        """
+
+        Repo.query(sql, [now])
+      end
+    end
   end
 
   # Function that generates a set of unique slugs that don't collide with any of the existing ones from the
@@ -4946,46 +5106,34 @@ defmodule Oli.Delivery.Sections do
     include_related_activities_count = opts[:include_related_activities_count] || false
 
     # Get objectives from SectionResourceDepot with related_activities field
-    objectives =
+    objectives_section_resources =
       SectionResourceDepot.objectives(section.id)
+
+    # Create a map of section_resource_id -> resource_id for converting children
+    section_resource_id_to_resource_id =
+      objectives_section_resources
+      |> Enum.reduce(%{}, fn sr, acc ->
+        Map.put(acc, sr.id, sr.resource_id)
+      end)
+
+    objectives =
+      objectives_section_resources
       |> Enum.map(fn sr ->
+        # Convert children from section_resource_ids to resource_ids
+        children =
+          (sr.children || [])
+          |> Enum.map(fn section_resource_id ->
+            section_resource_id_to_resource_id[section_resource_id]
+          end)
+          |> Enum.filter(&(&1 != nil))
+
         %{
           title: sr.title,
           resource_id: sr.resource_id,
           revision_id: sr.revision_id,
-          children: [],
+          children: children,
           related_activities: sr.related_activities || []
         }
-      end)
-
-    # Since section_resources of type objective do not have their children
-    # field populated, we need to fetch that value from the revision.
-    # (when building section_resources we only copy children for resources that participate
-    # in the section’s structural hierarchy, and other non-structural resources - like objectives - have their children column empty)
-    revision_children_map =
-      objectives
-      |> Enum.map(& &1.revision_id)
-      |> Enum.reject(&is_nil/1)
-      |> case do
-        [] ->
-          %{}
-
-        revision_ids ->
-          from(rev in Revision,
-            where: rev.id in ^revision_ids,
-            select: {rev.id, rev.children}
-          )
-          |> Repo.all()
-          |> Map.new(fn {revision_id, children} ->
-            {revision_id, children || []}
-          end)
-      end
-
-    # add children key into the objectives map
-    objectives =
-      objectives
-      |> Enum.map(fn obj ->
-        Map.put(obj, :children, Map.get(revision_children_map, obj.revision_id, []))
       end)
 
     id_list = Enum.map(objectives, & &1.resource_id)
