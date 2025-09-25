@@ -1,38 +1,45 @@
 defmodule OliWeb.Delivery.PracticeActivities.PracticeAssessmentsTableModel do
   use Phoenix.Component
+  use OliWeb, :verified_routes
 
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
+  alias OliWeb.Icons
+  alias OliWeb.Delivery.InstructorDashboard.HTMLComponents
 
   def new(assessments, ctx, target) do
     column_specs = [
       %ColumnSpec{
         name: :order,
-        label: "ORDER",
-        render_fn: &__MODULE__.render_order_column/3,
-        th_class: "pl-10"
+        label: "#",
+        th_class: "w-2"
       },
       %ColumnSpec{
         name: :title,
-        label: "ASSESSMENT",
-        render_fn: &__MODULE__.render_assessment_column/3,
-        th_class: "pl-10"
+        label: "Page Title",
+        render_fn: &render_assessment_column/3,
+        th_class: "pl-2"
       },
       %ColumnSpec{
         name: :avg_score,
-        label: "AVG SCORE",
-        render_fn: &__MODULE__.render_avg_score_column/3
+        label: HTMLComponents.render_proficiency_label(%{title: "Avg Score"}),
+        render_fn: &render_avg_score_column/3,
+        td_class: "!pl-10",
+        tooltip: "Average score across all student attempts on this page."
       },
       %ColumnSpec{
         name: :total_attempts,
-        label: "TOTAL ATTEMPTS",
-        render_fn: &__MODULE__.render_attempts_column/3
+        label: HTMLComponents.render_proficiency_label(%{title: "Total Attempts"}),
+        render_fn: &render_attempts_column/3,
+        td_class: "!pl-10",
+        tooltip:
+          "Total number of attempts made by all students. Some students may have multiple attempts based on your course settings."
       },
       %ColumnSpec{
         name: :students_completion,
-        label: "STUDENTS PROGRESS",
-        tooltip:
-          "Progress is percent attempted of activities present on the page from the most recent page attempt. If there are no activities within the page, and if the student has visited that page, we count that as an attempt.",
-        render_fn: &__MODULE__.render_students_completion_column/3
+        label: HTMLComponents.render_proficiency_label(%{title: "Students Progress"}),
+        render_fn: &render_students_completion_column/3,
+        td_class: "!pl-10",
+        tooltip: "Average progress on this page across all students."
       }
     ]
 
@@ -48,30 +55,58 @@ defmodule OliWeb.Delivery.PracticeActivities.PracticeAssessmentsTableModel do
     )
   end
 
-  def render_order_column(assigns, assessment, _) do
-    assigns = Map.merge(assigns, %{order: assessment.order})
-
-    ~H"""
-    <div class="pl-9 pr-4 flex flex-col">
-      <%= @order %>
-    </div>
-    """
-  end
-
   def render_assessment_column(assigns, assessment, _) do
     assigns =
       Map.merge(assigns, %{
         title: assessment.title,
-        container_label: assessment.container_label
+        slug: assessment.slug,
+        container_label: assessment.container_label,
+        resource_id: assessment.resource_id,
+        has_lti_activity: assessment.has_lti_activity,
+        section_slug: assigns.ctx.section.slug
       })
 
     ~H"""
-    <div class="pl-9 pr-4 flex flex-col">
+    <%= if @has_lti_activity do %>
+      <div
+        id={"lti_title_#{@resource_id}"}
+        phx-hook="GlobalTooltip"
+        data-tooltip="<div>LTI 1.3 External Tool</div>"
+        data-tooltip-align="left"
+        class="flex items-center gap-2"
+      >
+        <Icons.plug />
+        <.question_text
+          container_label={@container_label}
+          title={@title}
+          slug={@slug}
+          section_slug={@section_slug}
+        />
+      </div>
+    <% else %>
+      <.question_text
+        container_label={@container_label}
+        title={@title}
+        slug={@slug}
+        section_slug={@section_slug}
+      />
+    <% end %>
+    """
+  end
+
+  defp question_text(assigns) do
+    ~H"""
+    <div class="pl-0 pr-4 flex flex-col gap-y-1 py-2">
       <%= if @container_label do %>
-        <span class="text-gray-600 font-bold text-sm"><%= @container_label %></span>
+        <span class="text-Text-text-high text-sm font-bold leading-none">{@container_label}</span>
       <% end %>
       <span>
-        <%= @title %>
+        <a
+          href={~p"/sections/#{@section_slug}/preview/page/#{@slug}"}
+          class="text-Text-text-link text-base font-medium leading-normal"
+        >
+          {@title}
+        </a>
       </span>
     </div>
     """
@@ -81,8 +116,8 @@ defmodule OliWeb.Delivery.PracticeActivities.PracticeAssessmentsTableModel do
     assigns = Map.merge(assigns, %{avg_score: assessment.avg_score})
 
     ~H"""
-    <div class={if @avg_score < 0.40, do: "text-red-600 font-bold"}>
-      <%= format_value(@avg_score) %>
+    <div class={"text-Text-text-high text-sm font-bold leading-none #{if @avg_score < 0.40, do: "text-Text-text-danger"}"}>
+      {format_value(@avg_score)}
     </div>
     """
   end
@@ -91,7 +126,9 @@ defmodule OliWeb.Delivery.PracticeActivities.PracticeAssessmentsTableModel do
     assigns = Map.merge(assigns, %{total_attempts: assessment.total_attempts})
 
     ~H"""
-    <%= @total_attempts || "-" %>
+    <div class="text-Text-text-high text-sm font-bold leading-none">
+      {@total_attempts || "-"}
+    </div>
     """
   end
 
@@ -103,8 +140,8 @@ defmodule OliWeb.Delivery.PracticeActivities.PracticeAssessmentsTableModel do
       })
 
     ~H"""
-    <div class={if @students_completion < 0.40, do: "text-red-600 font-bold"}>
-      <%= format_value(@students_completion) %>
+    <div class={"text-Text-text-high text-sm font-bold leading-none #{if @students_completion < 0.40, do: "text-Text-text-danger"}"}>
+      {format_value(@students_completion)}
     </div>
     """
   end

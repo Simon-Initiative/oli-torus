@@ -169,8 +169,7 @@ defmodule OliWeb.UserSettingsLiveTest do
       result =
         lv
         |> form("#email_form", %{
-          "current_password" => password,
-          "user" => %{"email" => new_email}
+          "user" => %{"current_password" => password, "email" => new_email}
         })
         |> render_submit()
 
@@ -186,8 +185,7 @@ defmodule OliWeb.UserSettingsLiveTest do
         |> element("#email_form")
         |> render_change(%{
           "action" => "update_email",
-          "current_password" => "invalid",
-          "user" => %{"email" => "with spaces"}
+          "user" => %{"current_password" => "invalid", "email" => "with spaces"}
         })
 
       assert result =~ "Change Email"
@@ -200,8 +198,7 @@ defmodule OliWeb.UserSettingsLiveTest do
       result =
         lv
         |> form("#email_form", %{
-          "current_password" => "invalid",
-          "user" => %{"email" => user.email}
+          "user" => %{"current_password" => "invalid", "email" => user.email}
         })
         |> render_submit()
 
@@ -225,8 +222,8 @@ defmodule OliWeb.UserSettingsLiveTest do
 
       form =
         form(lv, "#password_form", %{
-          "current_password" => password,
           "user" => %{
+            "current_password" => password,
             "email" => user.email,
             "password" => new_password,
             "password_confirmation" => new_password
@@ -254,8 +251,8 @@ defmodule OliWeb.UserSettingsLiveTest do
         lv
         |> element("#password_form")
         |> render_change(%{
-          "current_password" => "invalid",
           "user" => %{
+            "current_password" => "invalid",
             "password" => "too short",
             "password_confirmation" => "does not match"
           }
@@ -272,8 +269,8 @@ defmodule OliWeb.UserSettingsLiveTest do
       result =
         lv
         |> form("#password_form", %{
-          "current_password" => "invalid",
           "user" => %{
+            "current_password" => "invalid",
             "password" => "too short",
             "password_confirmation" => "does not match"
           }

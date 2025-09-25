@@ -1,8 +1,8 @@
-<%= render(
+{render(
   OliWeb.LayoutView,
   "_delivery_header.html",
   Map.merge(assigns, %{logo_link: "#", hide_user: true})
-) %>
+)}
 
 <div class="pb-[60px]">
   <div class="container box-form-container">
@@ -19,22 +19,22 @@
         <table class="table table-sm text-center border">
           <tr>
             <td>
-              <b><%= @pending_registration.name %></b>
+              <b>{@pending_registration.name}</b>
             </td>
           </tr>
           <tr>
             <td>
-              <%= @pending_registration.institution_url %>
+              {@pending_registration.institution_url}
             </td>
           </tr>
           <tr>
             <td>
-              <%= @pending_registration.institution_email %>
+              {@pending_registration.institution_email}
             </td>
           </tr>
           <tr>
             <td>
-              <%= @pending_registration.country_code %>
+              {@pending_registration.country_code}
             </td>
           </tr>
         </table>
@@ -49,8 +49,8 @@
       </p>
     </div>
 
-    <%= OliWeb.Components.Footer.delivery_footer(%{
+    {OliWeb.Components.Footer.delivery_footer(%{
       license: Map.get(assigns, :has_license) && assigns[:license]
-    }) %>
+    })}
   </div>
 </div>

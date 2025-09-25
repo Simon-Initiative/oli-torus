@@ -13,6 +13,9 @@ defmodule Oli.GenAI.Completions.RegisteredModel do
     field :timeout, :integer, default: 8000
     field :recv_timeout, :integer, default: 60000
 
+    # virtual field for count of service configs appearing in
+    field :service_config_count, :integer, virtual: true
+
     timestamps(type: :utc_datetime)
   end
 
@@ -35,7 +38,6 @@ defmodule Oli.GenAI.Completions.RegisteredModel do
       :model,
       :url_template,
       :api_key,
-      :secondary_api_key,
       :timeout,
       :recv_timeout
     ])

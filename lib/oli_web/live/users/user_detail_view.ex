@@ -86,7 +86,7 @@ defmodule OliWeb.Users.UsersDetailView do
   def render(assigns) do
     ~H"""
     <div>
-      <%= render_modal(assigns) %>
+      {render_modal(assigns)}
       <Groups.render>
         <Group.render label="Details" description="User details">
           <.form for={@form} phx-change="change" phx-submit="submit" autocomplete="off">
@@ -181,8 +181,8 @@ defmodule OliWeb.Users.UsersDetailView do
             <ul class="list-group">
               <li :for={lti_params <- @user_lti_params} class="list-group-item">
                 <div class="d-flex pb-2 mb-2 border-b">
-                  <div class="flex-grow-1"><%= lti_params.issuer %></div>
-                  <div>Last Updated: <%= render_date(lti_params, :updated_at, @ctx) %></div>
+                  <div class="flex-grow-1">{lti_params.issuer}</div>
+                  <div>Last Updated: {render_date(lti_params, :updated_at, @ctx)}</div>
                 </div>
                 <div style="max-height: 400px; overflow: scroll;">
                   <pre> <code
@@ -381,9 +381,22 @@ defmodule OliWeb.Users.UsersDetailView do
 
   def handle_event("delete_account", %{"id" => id}, socket) do
     user = user_with_platform_roles(id)
+    admin = socket.assigns.current_author
 
     case Accounts.delete_user(user) do
-      {:ok, _} ->
+      {:ok, deleted_user} ->
+        # Log the deletion
+        Oli.Auditing.log_admin_action(
+          admin,
+          :user_deleted,
+          deleted_user,
+          %{
+            "email" => deleted_user.email,
+            "name" => deleted_user.name,
+            "deleted_by" => admin.email
+          }
+        )
+
         {:noreply,
          socket
          |> put_flash(:info, "User successfully deleted.")

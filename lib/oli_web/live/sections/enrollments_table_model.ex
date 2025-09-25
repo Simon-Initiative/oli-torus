@@ -1,4 +1,5 @@
 defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
+  use OliWeb, :verified_routes
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
 
   alias OliWeb.Components.Delivery.Students.Certificates.{
@@ -6,10 +7,11 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
     StateApprovalComponent
   }
 
-  alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Common.Utils
   alias OliWeb.Common.FormatDateTime
+  alias OliWeb.Common.Chip
   alias OliWeb.Delivery.InstructorDashboard.HTMLComponents
+  alias Phoenix.LiveView.JS
 
   use Phoenix.Component
 
@@ -25,37 +27,44 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
         ctx,
         certificate,
         certificate_pending_approval_count,
-        target
+        target,
+        selected_students \\ []
       ) do
     column_specs =
       [
         %ColumnSpec{
+          name: :selection,
+          label: render_select_all_header(users, selected_students, target),
+          render_fn: &__MODULE__.render_selection_column/3,
+          sortable: false,
+          th_class: "w-4"
+        },
+        %ColumnSpec{
           name: :name,
-          label: "STUDENT NAME",
-          render_fn: &__MODULE__.render_name_column/3,
-          sort_fn: &__MODULE__.sort_name_column/2,
-          th_class: "pl-10"
+          label: "Student Name",
+          render_fn: &render_name_column/3,
+          sort_fn: &sort_name_column/2
         },
         %ColumnSpec{
           name: :email,
-          label: "EMAIL",
-          render_fn: &__MODULE__.render_email_column/3
+          label: "Email",
+          render_fn: &render_email_column/3
         },
         %ColumnSpec{
           name: :last_interaction,
-          label: "LAST INTERACTED",
-          render_fn: &__MODULE__.render_last_interaction_column/3
+          label: "Last Interacted",
+          render_fn: &render_last_interaction_column/3
         },
         %ColumnSpec{
           name: :progress,
-          th_class: "flex items-center gap-1 border-b-0",
-          label: HTMLComponents.student_progress_label(%{title: "COURSE PROGRESS"}),
-          render_fn: &__MODULE__.render_progress_column/3
+          th_class: "flex items-center gap-1 !border-b-0",
+          label: HTMLComponents.student_progress_label(%{title: "Student Progress"}),
+          render_fn: &render_progress_column/3
         },
         %ColumnSpec{
           name: :overall_proficiency,
-          label: "OVERALL COURSE PROFICIENCY",
-          render_fn: &__MODULE__.render_overall_proficiency_column/3,
+          label: "Student Proficiency",
+          render_fn: &render_proficiency_column/3,
           tooltip:
             "For all students, or one specific student, proficiency for a learning objective will be calculated off the percentage of correct answers for first part attempts within first activity attempts - for those parts that have that learning objective or any of its sub-objectives attached to it."
         }
@@ -64,8 +73,8 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
           [
             %ColumnSpec{
               name: :payment_status,
-              label: "PAYMENT STATUS",
-              render_fn: &__MODULE__.render_payment_status/3
+              label: "Payment Status",
+              render_fn: &render_payment_status/3
             }
           ]
         else
@@ -93,7 +102,8 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
         ctx: ctx,
         section: section,
         target: target,
-        certificate: certificate
+        certificate: certificate,
+        selected_students: selected_students
       }
     )
   end
@@ -108,41 +118,76 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
     }
   end
 
+  def render_select_all_header(users, selected_students, target) do
+    all_user_ids = Enum.map(users, & &1.id)
+
+    all_selected =
+      length(selected_students) > 0 && Enum.all?(all_user_ids, &(&1 in selected_students))
+
+    assigns = %{
+      all_selected: all_selected,
+      target: target,
+      has_users: length(users) > 0
+    }
+
+    ~H"""
+    <div class="flex items-center justify-center">
+      <input
+        :if={@has_users}
+        type="checkbox"
+        checked={@all_selected}
+        class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+        phx-click="select_all_students"
+        phx-target={@target}
+      />
+    </div>
+    """
+  end
+
+  def render_selection_column(assigns, user, _) do
+    selected_students = Map.get(assigns, :selected_students, [])
+    is_selected = user.id in selected_students
+
+    assigns = Map.merge(assigns, %{is_selected: is_selected, user_id: user.id})
+
+    ~H"""
+    <div class="flex items-center justify-center">
+      <input
+        type="checkbox"
+        checked={@is_selected}
+        class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+        phx-click={JS.push("paged_table_selection_change", value: %{id: @user_id})}
+        phx-target={@target}
+      />
+    </div>
+    """
+  end
+
   def render_name_column(
         assigns,
         %{
           id: id,
           name: name,
           given_name: given_name,
-          family_name: family_name,
-          progress: progress
+          family_name: family_name
         },
         _
       ) do
     assigns =
       Map.merge(assigns, %{
-        progress: parse_progress(progress),
         name: name,
         family_name: family_name,
         given_name: given_name,
-        link:
-          Routes.live_path(
-            OliWeb.Endpoint,
-            OliWeb.Delivery.StudentDashboard.StudentDashboardLive,
-            assigns.section.slug,
-            id,
-            :content
-          )
+        link: ~p"/sections/#{assigns.section.slug}/student_dashboard/#{id}/content"
       })
 
     ~H"""
-    <div class="flex items-center ml-8 border-b-">
-      <div class={"flex flex-shrink-0 rounded-full w-2 h-2 #{if @progress < 50, do: "bg-red-600", else: "bg-gray-500"}"}>
-      </div>
-      <.link class="ml-6 underline" navigate={@link}>
-        <%= if @name, do: Utils.name(@name, @given_name, @family_name), else: "N/A" %>
-      </.link>
-    </div>
+    <.link
+      navigate={@link}
+      class="text-Text-text-link text-base font-medium leading-normal"
+    >
+      {if @name, do: Utils.name(@name, @given_name, @family_name), else: "N/A"}
+    </.link>
     """
   end
 
@@ -155,7 +200,7 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
 
     ~H"""
     <div class={if @payment_status == :not_paid, do: "text-red-600 font-bold"}>
-      <%= render_label(@payment_status, @payment_date, @section, @ctx) %>
+      {render_label(@payment_status, @payment_date, @section, @ctx)}
     </div>
     """
   end
@@ -164,12 +209,12 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
     assigns = Map.merge(assigns, %{progress: parse_progress(user.progress)})
 
     ~H"""
-    <div
-      class={if @progress < 50, do: "text-red-600 font-bold"}
+    <span
+      class={"text-Text-text-high text-base font-bold leading-normal #{if @progress < 50, do: " text-Text-text-danger"}"}
       data-progress-check={if @progress >= 50, do: "true", else: "false"}
     >
-      <%= @progress %>%
-    </div>
+      {@progress}%
+    </span>
     """
   end
 
@@ -188,17 +233,32 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
       })
 
     ~H"""
-    <%= parse_last_interaction(@last_interaction, @ctx) %>
+    <span class="text-Text-text-high text-base font-medium leading-normal">
+      {parse_last_interaction(@last_interaction, @ctx)}
+    </span>
     """
   end
 
-  def render_overall_proficiency_column(assigns, user, _) do
+  def render_proficiency_column(assigns, user, _) do
     assigns = Map.merge(assigns, %{overall_proficiency: Map.get(user, :overall_proficiency)})
 
+    {bg_color, text_color} =
+      case assigns.overall_proficiency do
+        "High" -> {"bg-Fill-Chip-Green", "text-Text-Chip-Green"}
+        "Medium" -> {"bg-Fill-Accent-fill-accent-orange", "text-Text-Chip-Orange"}
+        "Low" -> {"bg-Fill-fill-danger", "text-Text-text-danger"}
+        _ -> {"bg-Fill-Chip-Gray", "text-Text-Chip-Gray"}
+      end
+
+    assigns =
+      Map.merge(assigns, %{
+        label: assigns.overall_proficiency,
+        bg_color: bg_color,
+        text_color: text_color
+      })
+
     ~H"""
-    <div class={if @overall_proficiency == "Low", do: "text-red-600 font-bold"}>
-      <%= @overall_proficiency %>
-    </div>
+    <Chip.render {assigns} />
     """
   end
 
@@ -206,13 +266,15 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
     assigns = Map.merge(assigns, %{email: Map.get(user, :email)})
 
     ~H"""
-    <div><%= @email %></div>
+    <span class="text-Text-text-high text-base font-medium leading-normal">
+      {@email}
+    </span>
     """
   end
 
   defp render_certificate_status_label(pending_approvals)
        when pending_approvals in [nil, 0],
-       do: "CERTIFICATE STATUS"
+       do: "Certificate Status"
 
   defp render_certificate_status_label(pending_approvals) do
     assigns = %{pending_approvals: pending_approvals}
@@ -223,7 +285,7 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
         id="certificate_pending_approval_count_badge"
         module={PendingApprovalComponent}
         pending_approvals={@pending_approvals}
-      /> CERTIFICATE STATUS
+      /> Certificate Status
     </div>
     """
   end

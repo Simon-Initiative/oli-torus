@@ -23,7 +23,7 @@ export class OverviewProjectPO {
     };
   }
 
-  get advancedActivities() {
+   get advancedActivities() {
     return {
       enableActivity: async (projectId: string, activity: ActivityType) => {
         const enableLink = this.page.locator(

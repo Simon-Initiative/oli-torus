@@ -44,7 +44,7 @@ defmodule OliWeb.Delivery.Actions.SectionsToTransferTableModel do
 
     ~H"""
     <div class="pl-9 pr-4 flex flex-col">
-      <%= @title %>
+      {@title}
     </div>
     """
   end
@@ -53,7 +53,7 @@ defmodule OliWeb.Delivery.Actions.SectionsToTransferTableModel do
     assigns = Map.put(assigns, :start_date, section.start_date)
 
     ~H"""
-    <%= FormatDateTime.format_datetime(@start_date, show_timezone: false) %>
+    {FormatDateTime.format_datetime(@start_date, show_timezone: false)}
     """
   end
 
@@ -61,7 +61,7 @@ defmodule OliWeb.Delivery.Actions.SectionsToTransferTableModel do
     assigns = Map.put(assigns, :end_date, section.end_date)
 
     ~H"""
-    <%= FormatDateTime.format_datetime(@end_date, show_timezone: false) %>
+    {FormatDateTime.format_datetime(@end_date, show_timezone: false)}
     """
   end
 
@@ -95,7 +95,7 @@ defmodule OliWeb.Delivery.Actions.SectionsToTransferTableModel do
     assigns = Map.put(assigns, :instructors, instructors)
 
     ~H"""
-    <%= @instructors %>
+    {@instructors}
     """
   end
 end

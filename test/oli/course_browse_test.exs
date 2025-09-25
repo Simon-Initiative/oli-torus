@@ -82,5 +82,85 @@ defmodule Oli.CourseBrowseTest do
       assert length(projects) == 10
       assert hd(projects).total_count == 22
     end
+
+    test "browse_projects_for_export returns all projects without pagination", %{
+      author: author,
+      admin: admin
+    } do
+      # Test admin can see all projects
+      projects =
+        Course.browse_projects_for_export(
+          admin,
+          %Sorting{field: :title, direction: :asc},
+          include_deleted: false,
+          admin_show_all: true,
+          text_search: ""
+        )
+
+      # 10 admin + 11 author projects
+      assert length(projects) == 21
+
+      # Test author can only see their own projects
+      projects =
+        Course.browse_projects_for_export(
+          author,
+          %Sorting{field: :title, direction: :asc},
+          include_deleted: false,
+          admin_show_all: false,
+          text_search: ""
+        )
+
+      # Only author's projects
+      assert length(projects) == 11
+
+      # Test text search filtering
+      projects =
+        Course.browse_projects_for_export(
+          admin,
+          %Sorting{field: :title, direction: :asc},
+          include_deleted: false,
+          admin_show_all: true,
+          text_search: "admin-"
+        )
+
+      # Only admin projects
+      assert length(projects) == 10
+
+      # Test including deleted projects
+      projects =
+        Course.browse_projects_for_export(
+          admin,
+          %Sorting{field: :title, direction: :asc},
+          include_deleted: true,
+          admin_show_all: true,
+          text_search: ""
+        )
+
+      # All projects including deleted
+      assert length(projects) == 22
+
+      # Test sorting
+      projects_asc =
+        Course.browse_projects_for_export(
+          admin,
+          %Sorting{field: :title, direction: :asc},
+          include_deleted: false,
+          admin_show_all: true,
+          text_search: "admin-"
+        )
+
+      assert hd(projects_asc).title == "admin-A"
+
+      projects_desc =
+        Course.browse_projects_for_export(
+          admin,
+          %Sorting{field: :title, direction: :desc},
+          include_deleted: false,
+          admin_show_all: true,
+          text_search: "admin-"
+        )
+
+      assert hd(projects_desc).title == "admin-J"
+    end
   end
 end

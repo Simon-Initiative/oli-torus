@@ -174,7 +174,7 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
             container_label={Utils.get_container_label(@current_page["id"], @section)}
           />
           <div id="rawContent" class="content w-full mt-16" role="page_content">
-            <%= raw(@html) %>
+            {raw(@html)}
           </div>
           <.link
             href={

@@ -35,7 +35,7 @@ defmodule OliWeb.Components.Common do
       badge_variant_classes(@variant),
       @class
     ]}>
-      <%= render_slot(@inner_block) %>
+      {render_slot(@inner_block)}
     </span>
     """
   end
@@ -219,7 +219,7 @@ defmodule OliWeb.Components.Common do
           ]}
           {@rest}
         >
-          <%= render_slot(@inner_block) %>
+          {render_slot(@inner_block)}
         </button>
       <% _ -> %>
         <a
@@ -232,7 +232,7 @@ defmodule OliWeb.Components.Common do
           ]}
           {@rest}
         >
-          <%= render_slot(@inner_block) %>
+          {render_slot(@inner_block)}
         </a>
     <% end %>
     """
@@ -309,9 +309,11 @@ defmodule OliWeb.Components.Common do
   slot(:inner_block)
 
   def input(%{field: %Phoenix.HTML.FormField{} = field} = assigns) do
+    errors = if Phoenix.Component.used_input?(field), do: field.errors, else: []
+
     assigns
     |> assign(field: nil, id: assigns.id || field.id, field_value: field.value)
-    |> assign(:errors, Enum.map(field.errors, &translate_error(&1)))
+    |> assign(:errors, Enum.map(errors, &translate_error(&1)))
     |> assign_new(:name, fn -> if assigns.multiple, do: field.name <> "[]", else: field.name end)
     |> assign_new(:value, fn -> field.value end)
     |> assign_new(:class, fn -> assigns[:class] end)
@@ -323,7 +325,7 @@ defmodule OliWeb.Components.Common do
       assign_new(assigns, :checked, fn -> Phoenix.HTML.Form.normalize_value("checkbox", value) end)
 
     ~H"""
-    <div class="contents" phx-feedback-for={@name}>
+    <div class="contents">
       <label class={"flex gap-2 items-center #{@label_class}"}>
         <input type="hidden" name={@name} value="false" disabled={@rest[:disabled]} />
         <input
@@ -335,9 +337,9 @@ defmodule OliWeb.Components.Common do
           class={@class}
           {@rest}
         />
-        <%= @label %>
+        {@label}
       </label>
-      <.error :for={msg <- @errors}><%= msg %></.error>
+      <.error :for={msg <- @errors}>{msg}</.error>
     </div>
     """
   end
@@ -346,32 +348,32 @@ defmodule OliWeb.Components.Common do
     assigns = assigns |> set_input_classes() |> set_input_placeholder()
 
     ~H"""
-    <div class={@group_class} phx-feedback-for={@name}>
+    <div class={@group_class}>
       <.label :if={@label && @label_position == :top} class={@label_class} for={@id}>
-        <%= @label %>
+        {@label}
       </.label>
       <select id={@id} name={@name} class={@input_class} multiple={@multiple} {@rest}>
-        <option :if={@prompt} value=""><%= @prompt %></option>
-        <%= Phoenix.HTML.Form.options_for_select(@options, @value) %>
+        <option :if={@prompt} value="">{@prompt}</option>
+        {Phoenix.HTML.Form.options_for_select(@options, @value)}
       </select>
       <.label
         :if={@label && (@label_position == :bottom || @label_position == :responsive)}
         class={@label_class}
         for={@id}
       >
-        <%= @label %>
+        {@label}
       </.label>
-      <.error :for={msg <- @errors}><%= msg %></.error>
+      <.error :for={msg <- @errors}>{msg}</.error>
     </div>
     """
   end
 
   def input(%{type: "textarea"} = assigns) do
     ~H"""
-    <div class={@group_class} phx-feedback-for={@name}>
-      <.label :if={@label} for={@id}><%= @label %></.label>
+    <div class={@group_class}>
+      <.label :if={@label} for={@id}>{@label}</.label>
       <%= if @additional_text do %>
-        <%= @additional_text %>
+        {@additional_text}
       <% end %>
       <textarea
         id={@id}
@@ -382,7 +384,7 @@ defmodule OliWeb.Components.Common do
         ]}
         {@rest}
       ><%= Phoenix.HTML.Form.normalize_value("textarea", @value) %></textarea>
-      <.error :for={msg <- @errors}><%= msg %></.error>
+      <.error :for={msg <- @errors}>{msg}</.error>
     </div>
     """
   end
@@ -398,8 +400,8 @@ defmodule OliWeb.Components.Common do
       end
 
     ~H"""
-    <div class="contents" phx-feedback-for={@name}>
-      <.label :if={@label} for={@id}><%= @label %></.label>
+    <div class="contents">
+      <.label :if={@label} for={@id}>{@label}</.label>
       <input
         type={@type}
         name={@name}
@@ -411,7 +413,7 @@ defmodule OliWeb.Components.Common do
         ]}
         {Map.delete(@rest, :ctx)}
       />
-      <.error :for={msg <- @errors}><%= msg %></.error>
+      <.error :for={msg <- @errors}>{msg}</.error>
     </div>
     """
   end
@@ -438,7 +440,7 @@ defmodule OliWeb.Components.Common do
       data-checked={"#{@is_checked}"}
       for={@id}
     >
-      <span><%= @label %></span>
+      <span>{@label}</span>
       <input
         type="radio"
         name={@name}
@@ -483,7 +485,7 @@ defmodule OliWeb.Components.Common do
         checked={@is_checked}
         class="hidden"
       />
-      <span><%= @label %></span>
+      <span>{@label}</span>
     </label>
     """
   end
@@ -493,14 +495,14 @@ defmodule OliWeb.Components.Common do
     assigns = assigns |> set_input_classes() |> set_input_placeholder()
 
     ~H"""
-    <div class={@group_class} phx-feedback-for={@name}>
+    <div class={@group_class}>
       <.label :if={@label && @label_position == :top} class={@label_class} for={@id}>
-        <%= @label %>
+        {@label}
         <%= if @additional_text do %>
-          <%= @additional_text %>
+          {@additional_text}
         <% end %>
       </.label>
-      <.error :for={msg <- @errors} :if={@error_position == :top}><%= msg %></.error>
+      <.error :for={msg <- @errors} :if={@error_position == :top}>{msg}</.error>
       <input
         type={@type}
         name={@name}
@@ -515,12 +517,12 @@ defmodule OliWeb.Components.Common do
         class={@label_class}
         for={@id}
       >
-        <%= @label %>
+        {@label}
         <%= if @additional_text do %>
-          <%= @additional_text %>
+          {@additional_text}
         <% end %>
       </.label>
-      <.error :for={msg <- @errors} :if={@error_position == :bottom}><%= msg %></.error>
+      <.error :for={msg <- @errors} :if={@error_position == :bottom}>{msg}</.error>
     </div>
     """
   end
@@ -573,11 +575,8 @@ defmodule OliWeb.Components.Common do
 
   def error(assigns) do
     ~H"""
-    <p
-      class="flex gap-3 text-sm leading-6 text-rose-600 phx-no-feedback:hidden"
-      phx-feedback-for={@for}
-    >
-      <%= render_slot(@inner_block) %>
+    <p class="flex gap-3 text-sm leading-6 text-rose-600">
+      {render_slot(@inner_block)}
     </p>
     """
   end
@@ -594,7 +593,7 @@ defmodule OliWeb.Components.Common do
   def label(assigns) do
     ~H"""
     <label :if={@if} for={@for} class={@class} onclick={@onclick}>
-      <%= render_slot(@inner_block) %>
+      {render_slot(@inner_block)}
     </label>
     """
   end
@@ -685,7 +684,7 @@ defmodule OliWeb.Components.Common do
             </div>
           </div>
         <% else %>
-          <%= @percent %>%
+          {@percent}%
         <% end %>
       </div>
     </div>
@@ -714,7 +713,7 @@ defmodule OliWeb.Components.Common do
         role={@role}
         class={[@button_class]}
       >
-        <%= render_slot(@inner_block) %>
+        {render_slot(@inner_block)}
       </button>
       <ul
         class="hidden absolute top-10 rounded-lg bg-white dark:bg-gray-800 dark:border dark:border-gray-900 p-4 z-10 shadow-lg"
@@ -731,8 +730,8 @@ defmodule OliWeb.Components.Common do
               ]}
               role={"dropdown-item #{option.text}"}
             >
-              <span class="text-[14px] leading-[20px] whitespace-nowrap"><%= option.text %></span>
-              <%= Phoenix.HTML.raw(option[:icon]) %>
+              <span class="text-[14px] leading-[20px] whitespace-nowrap">{option.text}</span>
+              {Phoenix.HTML.raw(option[:icon])}
             </button>
           </li>
         <% end %>
@@ -792,9 +791,9 @@ defmodule OliWeb.Components.Common do
           <p :if={@title} class="flex items-center gap-1.5 text-sm font-semibold leading-6">
             <.icon :if={@kind == :info} name="fa-solid fa-circle-info" class="h-4 w-4" />
             <.icon :if={@kind == :error} name="fa-solid fa-circle-exclamation" class="h-4 w-4" />
-            <%= @title %>
+            {@title}
           </p>
-          <p class="mt-2 text-sm leading-5"><%= msg %></p>
+          <p class="mt-2 text-sm leading-5">{msg}</p>
         </div>
         <div>
           <button
@@ -910,7 +909,7 @@ defmodule OliWeb.Components.Common do
     ~H"""
     <div class={["w-full bg-cover bg-center bg-no-repeat py-12 md:py-24 px-8 md:px-16", @class]}>
       <div class="container mx-auto flex flex-col">
-        <%= render_slot(@inner_block) %>
+        {render_slot(@inner_block)}
       </div>
     </div>
     """
@@ -1123,7 +1122,7 @@ defmodule OliWeb.Components.Common do
         aria-hidden="true"
       >
       </span>
-      <%= render_slot(@inner_block) %>
+      {render_slot(@inner_block)}
       <span id={"#{@id}-end"} tabindex="-1" aria-hidden="true"></span>
     </div>
     """
@@ -1141,7 +1140,7 @@ defmodule OliWeb.Components.Common do
   def toggle_switch(assigns) do
     ~H"""
     <div {@rest}>
-      <form id={@id} phx-change={@on_toggle} phx-target={@phx_target}>
+      <form id={@id} phx-change={@on_toggle} phx-target={@phx_target} phx-auto-recover="ignore">
         <label class="inline-flex items-center cursor-pointer">
           <input
             id={"#{@id}_checkbox"}
@@ -1163,7 +1162,7 @@ defmodule OliWeb.Components.Common do
           <%= case @label do %>
             <% nil -> %>
             <% label -> %>
-              <span class="ms-3 text-sm"><%= label %></span>
+              <span class="ms-3 text-sm">{label}</span>
           <% end %>
         </label>
       </form>
@@ -1193,7 +1192,7 @@ defmodule OliWeb.Components.Common do
       />
 
       <div id="rich_text_editor" phx-update="ignore">
-        <%= React.component(
+        {React.component(
           @ctx,
           "Components.RichTextEditor",
           %{
@@ -1207,7 +1206,7 @@ defmodule OliWeb.Components.Common do
             allowBlockElements: false
           },
           id: "rich_text_editor_react_component"
-        ) %>
+        )}
       </div>
     </div>
     """
@@ -1235,8 +1234,8 @@ defmodule OliWeb.Components.Common do
     include: ~w(autocomplete name rel action enctype method novalidate target multipart),
     doc: "the arbitrary HTML attributes to apply to the form tag"
 
-  slot :title, default: nil, doc: "the title of the form"
-  slot :subtitle, default: nil, doc: "the subtitle of the form"
+  slot :title, doc: "the title of the form"
+  slot :subtitle, doc: "the subtitle of the form"
 
   slot :inner_block, required: true
   slot :actions, doc: "the slot for form actions, such as a submit button"
@@ -1245,17 +1244,17 @@ defmodule OliWeb.Components.Common do
     ~H"""
     <div class={["w-96 dark:bg-neutral-700 sm:rounded-md sm:shadow-lg dark:text-white py-8 px-10"]}>
       <div :if={@title} class="text-center text-xl font-normal leading-7 pb-6">
-        <%= render_slot(@title) %>
+        {render_slot(@title)}
       </div>
       <div :if={@subtitle} class="text-center leading-6 pb-6">
-        <%= render_slot(@subtitle) %>
+        {render_slot(@subtitle)}
       </div>
 
       <.form :let={f} for={@for} as={@as} {@rest}>
-        <%= render_slot(@inner_block, f) %>
+        {render_slot(@inner_block, f)}
 
         <div :for={action <- @actions} class="mt-2 flex flex-col items-center justify-between gap-2">
-          <%= render_slot(action, f) %>
+          {render_slot(action, f)}
         </div>
       </.form>
     </div>
@@ -1295,7 +1294,7 @@ defmodule OliWeb.Components.Common do
   def tech_support_link(assigns) do
     ~H"""
     <span id={@id} phx-click={JS.dispatch("click", to: "#trigger-tech-support-modal")} class={@class}>
-      <%= render_slot(@inner_block) %>
+      {render_slot(@inner_block)}
     </span>
     """
   end

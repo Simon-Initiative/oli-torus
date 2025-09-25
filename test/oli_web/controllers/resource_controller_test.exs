@@ -21,7 +21,7 @@ defmodule OliWeb.ResourceControllerTest do
       conn = get(conn, Routes.resource_path(conn, :edit, project.slug, revision.slug))
 
       assert html_response(conn, 200) =~
-               "<h3 class=\"truncate\">\n#{revision.title}"
+               "<h3 class=\"truncate\">\n      #{revision.title}"
     end
 
     test "renders truncate breadcrumbs when page title is too long", %{

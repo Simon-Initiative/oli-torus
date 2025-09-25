@@ -143,7 +143,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
             </div>
             <div class="justify-start items-center flex" role="index">
               <div class="grow shrink basis-0 text-right text-sm leading-none">
-                <%= @item["numbering"]["index"] %>
+                {@item["numbering"]["index"]}
               </div>
             </div>
           </div>
@@ -154,7 +154,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
                   "grow text-base leading-normal",
                   if(@item["graded"], do: "font-semibold")
                 ]}>
-                  <%= @item["title"] %>
+                  {@item["title"]}
                 </div>
               </div>
             </div>
@@ -202,8 +202,8 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
           </div>
 
           <div class="grow shrink basis-0 text-base font-bold leading-normal" role="title">
-            <%= resource_label(@item) %>
-            <%= @item["title"] %>
+            {resource_label(@item)}
+            {@item["title"]}
           </div>
         </div>
         <Common.progress_bar
@@ -249,7 +249,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
       phx-click="toggle_outline_sidebar"
     >
       <div class="p-1.5 rounded justify-start items-center gap-2.5 inline-flex">
-        <%= render_slot(@inner_block) %>
+        {render_slot(@inner_block)}
       </div>
     </button>
     """

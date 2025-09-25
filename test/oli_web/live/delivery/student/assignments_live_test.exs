@@ -346,6 +346,11 @@ defmodule OliWeb.Delivery.Student.AssignmentsLiveTest do
     setup [:user_conn, :create_elixir_project]
 
     test "can not access when not enrolled to course", %{conn: conn, section: section} do
+      {:ok, section} =
+        Sections.update_section(section, %{
+          requires_enrollment: true
+        })
+
       {:error, {:redirect, %{to: redirect_path, flash: _flash_msg}}} =
         live(conn, live_view_assignments_live_route(section.slug))
 
@@ -509,7 +514,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLiveTest do
 
       # open filter
       view
-      |> element("button[phx-click=\"toggle_filter_open\"]")
+      |> element("button[phx-click='toggle_filter_open']")
       |> render_click()
 
       # select only required assignments

@@ -26,7 +26,7 @@ defmodule OliWeb.Grades.TestConnection do
 
             <ul>
               <%= for scope <- Lti_1p3.Tool.Services.AGS.required_scopes() do %>
-                <li><code><%= scope %></code></li>
+                <li><code>{scope}</code></li>
               <% end %>
             </ul>
           </div>
@@ -47,7 +47,7 @@ defmodule OliWeb.Grades.TestConnection do
 
             <ul>
               <%= for scope <- Lti_1p3.Tool.Services.NRPS.required_scopes() do %>
-                <li><code><%= scope %></code></li>
+                <li><code>{scope}</code></li>
               <% end %>
             </ul>
           </div>
@@ -62,7 +62,7 @@ defmodule OliWeb.Grades.TestConnection do
         <%= if !is_nil(@test_output) do %>
           <blockquote>
             <%= for line <- @test_output do %>
-              <%= render_line(assigns, line) %>
+              {render_line(assigns, line)}
             <% end %>
           </blockquote>
         <% end %>
@@ -75,7 +75,7 @@ defmodule OliWeb.Grades.TestConnection do
     assigns = assign(assigns, :text, text)
 
     ~H"""
-    <samp><%= @text %></samp> <br />
+    <samp>{@text}</samp> <br />
     """
   end
 
@@ -83,7 +83,7 @@ defmodule OliWeb.Grades.TestConnection do
     assigns = assign(assigns, :text, text)
 
     ~H"""
-    <samp style="color: darkgreen;"><%= @text %></samp> <br />
+    <samp style="color: darkgreen;">{@text}</samp> <br />
     """
   end
 
@@ -91,7 +91,7 @@ defmodule OliWeb.Grades.TestConnection do
     assigns = assign(assigns, :text, text)
 
     ~H"""
-    <samp style="color: darkred;"><%= @text %></samp> <br />
+    <samp style="color: darkred;">{@text}</samp> <br />
     """
   end
 end

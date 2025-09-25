@@ -8,7 +8,7 @@ defmodule OliWeb.Components.Delivery.DiscussionPost do
   def render(assigns) do
     ~H"""
     <div class="bg-white dark:bg-gray-800 shadow mt-7 py-6 px-7">
-      <span class="font-normal text-base leading-5 tracking-wide"><%= @title %></span>
+      <span class="font-normal text-base leading-5 tracking-wide">{@title}</span>
     </div>
     <div class="flex flex-col gap-y-0.5 mt-0.5">
       <%= if length(@last_posts) > 0 do %>
@@ -19,15 +19,15 @@ defmodule OliWeb.Components.Delivery.DiscussionPost do
                 class="text-delivery-primary hover:text-delivery-primary"
                 href={Routes.page_delivery_path(OliWeb.Endpoint, :page, @section_slug, post.slug)}
               >
-                <h6 class="font-normal text-sm leading-5 text-gray-500"><%= post.title %></h6>
+                <h6 class="font-normal text-sm leading-5 text-gray-500">{post.title}</h6>
               </a>
               <h6 class="font-medium text-sm leading-5">
-                <%= date(post.updated_at, precision: :relative) %>
+                {date(post.updated_at, precision: :relative)}
               </h6>
             </div>
-            <h6 class="font-bold text-sm leading-5 tracking-wide"><%= post.user_name %></h6>
+            <h6 class="font-bold text-sm leading-5 tracking-wide">{post.user_name}</h6>
             <p class="mb-0 font-normal text-sm leading-5 tracking-wide">
-              <%= post.content.message %>
+              {post.content.message}
             </p>
           </div>
         <% end %>

@@ -578,6 +578,11 @@ defmodule OliWeb.Delivery.Student.ScheduleLiveTest do
     setup [:user_conn, :create_elixir_project]
 
     test "can not access when not enrolled to course", %{conn: conn, section: section} do
+      {:ok, section} =
+        Sections.update_section(section, %{
+          requires_enrollment: true
+        })
+
       {:error, {:redirect, %{to: redirect_path, flash: _flash_msg}}} =
         live(conn, ~p"/sections/#{section.slug}/student_schedule")
 

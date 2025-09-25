@@ -1,6 +1,8 @@
 defmodule OliWeb.Admin.ExternalTools.DetailsView do
   use OliWeb, :live_view
 
+  require Logger
+
   alias Lti_1p3.DataProviders.EctoProvider.PlatformInstance
   alias Oli.Lti.{PlatformInstances, PlatformExternalTools}
   alias OliWeb.Common.Breadcrumb
@@ -18,6 +20,7 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
       ] ++ [Breadcrumb.new(%{full_title: "LTI 1.3 External Tool Details"})]
   end
 
+  @impl Phoenix.LiveView
   def mount(%{"platform_instance_id" => platform_instance_id}, _session, socket) do
     case PlatformExternalTools.get_platform_instance_with_deployment(platform_instance_id) do
       nil ->
@@ -41,6 +44,7 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
     end
   end
 
+  @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
     <div class="flex flex-col justify-end mx-12 mt-4">
@@ -54,11 +58,11 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
         action={:delete}
         id="delete_tool_modal"
       />
-      <%= render_custom_flash(@custom_flash) %>
+      {render_custom_flash(@custom_flash)}
       <div class="w-full inline-flex flex-col justify-start items-start gap-3">
         <div class="w-full flex flex-row justify-between items-center">
           <div class="justify-center text-2xl font-normal leading-9">
-            <%= @platform_instance.name %>
+            {@platform_instance.name}
           </div>
           <div :if={!@edit_mode and @deployment.status != :deleted} class="flex flex-row gap-2">
             <.button
@@ -142,10 +146,10 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
         |> Modal.hide_modal(@id)
       }
     >
-      <:title><%= stringify_action(@action) %> <%= @tool_name %>?</:title>
+      <:title>{stringify_action(@action)} {@tool_name}?</:title>
       <.modal_message action={@action} />
       <:cancel>Cancel</:cancel>
-      <:confirm><%= stringify_action(@action) %> Tool</:confirm>
+      <:confirm>{stringify_action(@action)} Tool</:confirm>
     </Modal.modal>
     """
   end
@@ -320,6 +324,14 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
     end
   end
 
+  @impl Phoenix.LiveView
+  def handle_event(event, params, socket) do
+    # Catch-all for UI-only events from functional components
+    # that don't need handling (like dropdown toggles)
+    Logger.warning("Unhandled event in DetailsView: #{inspect(event)}, #{inspect(params)}")
+    {:noreply, socket}
+  end
+
   defp render_custom_flash(nil), do: nil
 
   defp render_custom_flash(%{type: type, message: message}) do
@@ -350,7 +362,7 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
               <Icons.alert />
           <% end %>
           <span class={"text-[#{@text_color}] text-base font-semibold"}>
-            <%= @label %>
+            {@label}
           </span>
         </div>
         <button
@@ -360,7 +372,7 @@ defmodule OliWeb.Admin.ExternalTools.DetailsView do
           ✕
         </button>
       </div>
-      <p class="mt-1 text-[#353740] text-sm font-normal"><%= @message %></p>
+      <p class="mt-1 text-[#353740] text-sm font-normal">{@message}</p>
     </div>
     """
   end

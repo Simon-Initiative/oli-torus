@@ -6,9 +6,9 @@ config :bcrypt_elixir, :log_rounds, 1
 config :oli,
   env: :test,
   depot_coordinator: Oli.Delivery.SingletonDepotCoordinator,
-  s3_media_bucket_name: System.get_env("TEST_S3_MEDIA_BUCKET_NAME"),
-  s3_xapi_bucket_name: System.get_env("S3_XAPI_BUCKET_NAME"),
-  media_url: System.get_env("TEST_MEDIA_URL"),
+  s3_media_bucket_name: "torus-media-test",
+  s3_xapi_bucket_name: "torus-xapi-test",
+  media_url: "http://localhost:9000/s3/oli-torus-media",
   http_client: Oli.Test.MockHTTP,
   aws_client: Oli.Test.MockAws,
   openai_client: Oli.Test.MockOpenAIClient,
@@ -139,3 +139,11 @@ config :ex_aws, :emr, region: System.get_env("AWS_REGION", "us-east-1")
 config :ex_aws, :hackney_opts,
   follow_redirect: true,
   recv_timeout: 200_000
+
+config :oli, Oli.Vault,
+  json_library: Jason,
+  ciphers: [
+    default:
+      {Cloak.Ciphers.AES.GCM,
+       tag: "AES.GCM.V1", key: Base.decode64!("HXCdm5z61eNgUpnXObJRv94k3JnKSrnfwppyb60nz6w=")}
+  ]

@@ -2,6 +2,8 @@ defmodule OliWeb.Users.AuthorsDetailView do
   use OliWeb, :live_view
   use OliWeb.Common.Modal
 
+  require Logger
+
   import OliWeb.Common.Utils
 
   alias Oli.Accounts
@@ -82,7 +84,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
   def render(assigns) do
     ~H"""
     <div>
-      <%= render_modal(assigns) %>
+      {render_modal(assigns)}
 
       <Groups.render>
         <Group.render label="Details" description="User details">
@@ -350,9 +352,22 @@ defmodule OliWeb.Users.AuthorsDetailView do
         socket
       ) do
     author = Accounts.get_author!(id)
+    admin = socket.assigns.current_author
 
     case Accounts.delete_author(author) do
-      {:ok, _} ->
+      {:ok, deleted_author} ->
+        # Log the deletion
+        Oli.Auditing.log_admin_action(
+          admin,
+          :author_deleted,
+          deleted_author,
+          %{
+            "email" => deleted_author.email,
+            "name" => deleted_author.name,
+            "deleted_by" => admin.email
+          }
+        )
+
         {:noreply,
          socket
          |> hide_modal(modal_assigns: nil)
@@ -402,6 +417,14 @@ defmodule OliWeb.Users.AuthorsDetailView do
 
   def handle_event("start_edit", _, socket) do
     {:noreply, socket |> assign(disabled_edit: false)}
+  end
+
+  @impl Phoenix.LiveView
+  def handle_event(event, params, socket) do
+    # Catch-all for UI-only events from functional components
+    # that don't need handling (like dropdown toggles)
+    Logger.warning("Unhandled event in AuthorDetailView: #{inspect(event)}, #{inspect(params)}")
+    {:noreply, socket}
   end
 
   defp author_form(author, attrs \\ %{}) do

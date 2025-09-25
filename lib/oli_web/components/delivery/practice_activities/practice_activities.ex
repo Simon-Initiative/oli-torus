@@ -1,12 +1,13 @@
 defmodule OliWeb.Components.Delivery.PracticeActivities do
   use OliWeb, :live_component
 
-  alias OliWeb.Common.InstructorDashboardPagedTable
-
-  alias OliWeb.Common.{Params, SearchInput}
+  alias OliWeb.Common.{Params, SearchInput, StripedPagedTable}
   alias OliWeb.Common.Table.SortableTableModel
+  alias OliWeb.Components.Delivery.CardHighlights
   alias OliWeb.Delivery.ActivityHelpers
+  alias OliWeb.Delivery.Content.{MultiSelect, Progress}
   alias OliWeb.Delivery.PracticeActivities.PracticeAssessmentsTableModel
+  alias OliWeb.Icons
   alias OliWeb.Router.Helpers, as: Routes
   alias Phoenix.LiveView.JS
 
@@ -16,8 +17,19 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
     sort_order: :asc,
     sort_by: :order,
     text_search: nil,
-    container_id: nil
+    selected_card_value: nil,
+    progress_percentage: 100,
+    progress_selector: nil,
+    avg_score_percentage: 100,
+    avg_score_selector: nil,
+    selected_attempts_ids: Jason.encode!([])
   }
+
+  @attempts_options [
+    %{id: 1, name: "None", selected: false},
+    %{id: 2, name: "Less than 5", selected: false},
+    %{id: 3, name: "More than 5", selected: false}
+  ]
 
   def mount(socket) do
     {:ok,
@@ -44,10 +56,45 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
       })
       |> SortableTableModel.update_sort_params(params.sort_by)
 
+    selected_card_value = Map.get(assigns.params, "selected_card_value", nil)
+    assessments_count = assessments_count(assigns.assessments)
+
+    card_props = [
+      %{
+        title: "Low Scores",
+        count: Map.get(assessments_count, :low_scores),
+        is_selected: selected_card_value == "low_scores",
+        value: :low_scores
+      },
+      %{
+        title: "Low Progress",
+        count: Map.get(assessments_count, :low_progress),
+        is_selected: selected_card_value == "low_progress",
+        value: :low_progress
+      },
+      %{
+        title: "Low or No Attempts",
+        count: Map.get(assessments_count, :low_or_no_attempts),
+        is_selected: selected_card_value == "low_or_no_attempts",
+        value: :low_or_no_attempts
+      }
+    ]
+
+    selected_attempts_ids = Jason.decode!(params.selected_attempts_ids)
+    attempts_options = update_attempts_options(selected_attempts_ids, @attempts_options)
+
+    selected_attempts_options =
+      Enum.reduce(attempts_options, %{}, fn option, acc ->
+        if option.selected,
+          do: Map.put(acc, option.id, option.name),
+          else: acc
+      end)
+
     {:ok,
      assign(socket,
        params: params,
        section: assigns.section,
+       section_slug: assigns.section.slug,
        view: assigns.view,
        ctx: assigns.ctx,
        assessments: assigns.assessments,
@@ -58,72 +105,114 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
        preview_rendered: nil,
        units_and_modules_options: assigns.units_and_modules_options,
        table_model: table_model,
-       total_count: total_count
+       total_count: total_count,
+       card_props: card_props,
+       params_from_url: assigns.params,
+       attempts_options: attempts_options,
+       selected_attempts_ids: selected_attempts_ids,
+       selected_attempts_options: selected_attempts_options
      )}
   end
+
+  attr(:params, :map, required: true)
+  attr(:section_slug, :string, required: true)
+  attr(:card_props, :list)
 
   def render(assigns) do
     ~H"""
     <div>
       <.loader :if={!@table_model} />
       <div :if={@table_model} class="bg-white shadow-sm dark:bg-gray-800 dark:text-white">
-        <div class="flex flex-col space-y-4 lg:space-y-0 lg:flex-row lg:justify-between px-9 lg:items-center">
-          <h4 class="torus-h4 whitespace-nowrap">Practice Activities</h4>
-          <div class="flex flex-col">
-            <div class="flex sm:flex-row gap-y-4 flex-col gap-x-2 items-center sm:justify-between">
-              <form
-                for="search"
-                phx-target={@myself}
-                phx-change="search_assessment"
-                class="pb-6 lg:ml-auto lg:pt-7 order-last"
-              >
-                <SearchInput.render
-                  id="assessments_search_input"
-                  name="assessment_name"
-                  text={@params.text_search}
-                />
-              </form>
-              <.form
-                id="select_container_form"
-                for={%{}}
-                phx-change="change_container"
-                phx-target={@myself}
-              >
-                <div
-                  :if={length(@units_and_modules_options) > 0}
-                  class="inline-flex flex-col gap-1 mr-2"
-                >
-                  <small class="torus-small uppercase">
-                    Container
-                  </small>
-                  <select class="torus-select" name="container_id">
-                    <option value={nil}>All</option>
-                    <option
-                      :for={container <- @units_and_modules_options}
-                      selected={assigns.params.container_id == container.resource_id}
-                      value={container.resource_id}
-                    >
-                      <%= if(container.numbering_level == 1, do: "Unit", else: "Module") %> <%= container.numbering_index %>: <%= container.title %>
-                    </option>
-                  </select>
-                </div>
-              </.form>
-            </div>
+        <div class="flex flex-col space-y-4 lg:space-y-0 lg:flex-row lg:justify-between px-4 pt-8 pb-4 lg:items-center instructor_dashboard_table dark:bg-[#262626]">
+          <div class="self-stretch justify-center text-zinc-700 text-lg font-bold leading-normal dark:text-white">
+            Practice Pages
+          </div>
+          <div>
+            <a
+              href=""
+              class="flex items-center justify-center gap-x-2 text-Text-text-button font-bold leading-none"
+            >
+              Download CSV <Icons.download />
+            </a>
           </div>
         </div>
 
-        <InstructorDashboardPagedTable.render
+        <div class="flex flex-row mx-4 gap-x-4">
+          <%= for card <- @card_props do %>
+            <CardHighlights.render
+              title={card.title}
+              count={card.count}
+              is_selected={card.is_selected}
+              value={card.value}
+              on_click={JS.push("select_card", target: @myself)}
+              container_filter_by={:pages}
+            />
+          <% end %>
+        </div>
+
+        <div class="flex w-fit gap-2 mx-4 mt-4 mb-4 shadow-[0px_2px_6.099999904632568px_0px_rgba(0,0,0,0.10)] border border-Border-border-default bg-Background-bg-secondary">
+          <div class="flex p-2 gap-2">
+            <.form for={%{}} phx-target={@myself} phx-change="search_page" class="w-56">
+              <SearchInput.render
+                id="practice_activities_search_input"
+                name="page_name"
+                text={@params.text_search}
+              />
+            </.form>
+
+            <Progress.render
+              target={@myself}
+              progress_percentage={@params.progress_percentage}
+              progress_selector={@params.progress_selector}
+              params_from_url={@params_from_url}
+            />
+
+            <MultiSelect.render
+              id="attempts_select"
+              label="Attempts"
+              options={@attempts_options}
+              selected_values={@selected_attempts_options}
+              selected_ids={@selected_attempts_ids}
+              target={@myself}
+              disabled={@selected_attempts_ids == %{}}
+              placeholder="Attempts"
+              submit_event="apply_attempts_filter"
+            />
+
+            <Progress.render
+              id="score"
+              label="Score"
+              target={@myself}
+              progress_percentage={@params.avg_score_percentage}
+              progress_selector={@params.avg_score_selector}
+              params_from_url={@params_from_url}
+              submit_event="apply_avg_score_filter"
+              input_name="avg_score_percentage"
+            />
+
+            <button
+              class="ml-2 mr-6 text-center text-Text-text-high text-sm font-normal leading-none flex items-center gap-x-2 hover:text-Text-text-button"
+              phx-click="clear_all_filters"
+              phx-target={@myself}
+            >
+              <Icons.trash /> Clear All Filters
+            </button>
+          </div>
+        </div>
+
+        <StripedPagedTable.render
           table_model={@table_model}
           total_count={@total_count}
           offset={@params.offset}
           limit={@params.limit}
-          page_change={JS.push("paged_table_page_change", target: @myself)}
-          selection_change={JS.push("paged_table_selection_change", target: @myself)}
-          sort={JS.push("paged_table_sort", target: @myself)}
+          render_top_info={false}
           additional_table_class="instructor_dashboard_table"
+          sort={JS.push("paged_table_sort", target: @myself)}
+          page_change={JS.push("paged_table_page_change", target: @myself)}
+          limit_change={JS.push("paged_table_limit_change", target: @myself)}
+          selection_change={JS.push("paged_table_selection_change", target: @myself)}
           allow_selection={true}
           show_bottom_paging={false}
-          limit_change={JS.push("paged_table_limit_change", target: @myself)}
           show_limit_change={true}
         />
       </div>
@@ -137,55 +226,25 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
           <div class="mt-9">
             <div :for={activity <- @activities} class="px-10">
               <div class="flex flex-col bg-white dark:bg-gray-800 dark:text-white w-min whitespace-nowrap rounded-t-md block font-medium text-sm leading-tight uppercase border-x-1 border-t-1 border-b-0 border-gray-300 px-6 py-4 my-4 gap-y-2">
-                <div role="activity_title"><%= activity.title %> - Question details</div>
+                <div role="activity_title">{activity.title} - Question details</div>
                 <div
                   :if={@current_assessment != nil and @activities not in [nil, []]}
-                  id="student_attempts_summary"
+                  id={"student_attempts_summary_#{activity.id}"}
                   class="flex flex-row gap-x-2 lowercase"
+                  role="student attempts summary"
                 >
-                  <span class="text-xs">
+                  <span class="text-xs font-bold">
                     <%= if activity.students_with_attempts_count == 0 do %>
-                      No student has completed any attempts.
+                      No student has responded
                     <% else %>
-                      <%= ~s{#{activity.students_with_attempts_count} #{Gettext.ngettext(OliWeb.Gettext, "student has", "students have", activity.students_with_attempts_count)} completed #{activity.total_attempts_count} #{Gettext.ngettext(OliWeb.Gettext, "attempt", "attempts", activity.total_attempts_count)}.} %>
+                      {~s{#{activity.students_with_attempts_count} #{Gettext.ngettext(OliWeb.Gettext, "student has", "students have", activity.students_with_attempts_count)} responded}}
                     <% end %>
                   </span>
-                  <div
-                    :if={activity.students_with_attempts_count < Enum.count(@students)}
-                    class="flex flex-col gap-x-2 items-center"
-                  >
-                    <span class="text-xs">
-                      <%= ~s{#{Enum.count(activity.student_emails_without_attempts)} #{Gettext.ngettext(OliWeb.Gettext,
-                      "student has",
-                      "students have",
-                      Enum.count(activity.student_emails_without_attempts))} not completed any attempt.} %>
-                    </span>
-                    <input
-                      type="text"
-                      id="email_inputs"
-                      class="form-control hidden"
-                      value={Enum.join(activity.student_emails_without_attempts, "; ")}
-                      readonly
-                    />
-                    <button
-                      id="copy_emails_button"
-                      class="text-xs text-primary underline ml-auto"
-                      phx-hook="CopyListener"
-                      data-clipboard-target="#email_inputs"
-                    >
-                      <i class="fa-solid fa-copy mr-2" /><%= Gettext.ngettext(
-                        OliWeb.Gettext,
-                        "Copy email address",
-                        "Copy email addresses",
-                        Enum.count(activity.student_emails_without_attempts)
-                      ) %>
-                    </button>
-                  </div>
                 </div>
               </div>
               <div
                 class="bg-white dark:bg-gray-800 dark:text-white shadow-sm px-6 -mt-5"
-                id="activity_detail"
+                id={"activity_detail_#{activity.id}"}
                 phx-hook="LoadSurveyScripts"
               >
                 <%= if Map.get(activity, :preview_rendered) != nil do %>
@@ -196,6 +255,18 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
                 <% else %>
                   <p class="pt-9 pb-5">No attempt registered for this question</p>
                 <% end %>
+              </div>
+              <div class="flex mt-2 mb-10 bg-white gap-x-20 dark:bg-gray-800 dark:text-white shadow-sm px-6 py-4">
+                <ActivityHelpers.percentage_bar
+                  id={Integer.to_string(activity.id) <> "_first_try_correct"}
+                  value={activity.first_attempt_pct}
+                  label="First Try Correct"
+                />
+                <ActivityHelpers.percentage_bar
+                  id={Integer.to_string(activity.id) <> "_eventually_correct"}
+                  value={activity.all_attempt_pct}
+                  label="Eventually Correct"
+                />
               </div>
             </div>
           </div>
@@ -261,8 +332,8 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
   end
 
   def handle_event(
-        "search_assessment",
-        %{"assessment_name" => assessment_name},
+        "search_page",
+        %{"page_name" => page_name},
         socket
       ) do
     {:noreply,
@@ -273,7 +344,7 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
          route_to(
            socket,
            update_params(socket.assigns.params, %{
-             text_search: assessment_name,
+             text_search: page_name,
              offset: 0
            })
          )
@@ -344,30 +415,194 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
      )}
   end
 
-  def handle_event("change_container", %{"container_id" => container_id} = _params, socket) do
+  def handle_event("toggle_selected", %{"_target" => [id]}, socket) do
+    selected_id = String.to_integer(id)
+    do_update_selection(socket, selected_id)
+  end
+
+  def handle_event("apply_attempts_filter", _params, socket) do
+    %{
+      selected_attempts_ids: selected_ids,
+      params: params
+    } = socket.assigns
+
     {:noreply,
-     socket
-     |> assign(activities: nil, current_assessment: nil)
-     |> push_patch(
+     push_patch(socket,
        to:
          route_to(
            socket,
-           update_params(socket.assigns.params, %{
-             container_id: container_id,
-             offset: 0
-           })
+           update_params(params, %{selected_attempts_ids: Jason.encode!(selected_ids)})
          )
      )}
+  end
+
+  def handle_event(
+        "apply_progress_filter",
+        %{
+          "progress_percentage" => progress_percentage,
+          "progress" => %{"option" => progress_selector}
+        },
+        socket
+      ) do
+    new_params =
+      %{
+        progress_percentage: progress_percentage,
+        progress_selector: progress_selector
+      }
+
+    {:noreply,
+     push_patch(socket,
+       to: route_to(socket, update_params(socket.assigns.params, new_params))
+     )}
+  end
+
+  def handle_event(
+        "apply_avg_score_filter",
+        %{
+          "avg_score_percentage" => avg_score_percentage,
+          "progress" => %{"option" => avg_score_selector}
+        },
+        socket
+      ) do
+    new_params =
+      %{
+        avg_score_percentage: avg_score_percentage,
+        avg_score_selector: avg_score_selector
+      }
+
+    {:noreply,
+     push_patch(socket,
+       to: route_to(socket, update_params(socket.assigns.params, new_params))
+     )}
+  end
+
+  def handle_event("select_card", %{"selected" => value}, socket) do
+    value =
+      if String.to_existing_atom(value) == Map.get(socket.assigns.params, :selected_card_value),
+        do: nil,
+        else: String.to_existing_atom(value)
+
+    send(self(), {:selected_card_assessments, value})
+
+    {:noreply, socket}
+  end
+
+  def handle_event("clear_all_filters", _params, socket) do
+    section_slug = socket.assigns.section.slug
+    path = ~p"/sections/#{section_slug}/instructor_dashboard/insights/practice_activities"
+    {:noreply, push_patch(socket, to: path)}
   end
 
   defp apply_filters(assessments, params) do
     assessments =
       assessments
-      |> maybe_filter_by_container_resource_id(params.container_id)
       |> maybe_filter_by_text(params.text_search)
+      |> maybe_filter_by_card(params.selected_card_value)
+      |> maybe_filter_by_progress(params.progress_selector, params.progress_percentage)
+      |> maybe_filter_by_avg_score(params.avg_score_selector, params.avg_score_percentage)
+      |> maybe_filter_by_attempts(params.selected_attempts_ids)
       |> sort_by(params.sort_by, params.sort_order)
 
     {length(assessments), assessments |> Enum.drop(params.offset) |> Enum.take(params.limit)}
+  end
+
+  defp maybe_filter_by_card(assessments, :low_scores),
+    do:
+      Enum.filter(assessments, fn assessment ->
+        assessment.avg_score < 0.40
+      end)
+
+  defp maybe_filter_by_card(assessments, :low_progress),
+    do: Enum.filter(assessments, fn assessment -> assessment.students_completion < 0.40 end)
+
+  defp maybe_filter_by_card(assessments, :low_or_no_attempts),
+    do: Enum.filter(assessments, fn assessment -> assessment.total_attempts <= 5 end)
+
+  defp maybe_filter_by_card(assessments, _), do: assessments
+
+  defp maybe_filter_by_progress(assessments, progress_selector, percentage) do
+    case progress_selector do
+      :is_equal_to ->
+        Enum.filter(assessments, fn assessment ->
+          parse_progress(assessment.students_completion || 0.0) == percentage
+        end)
+
+      :is_less_than_or_equal ->
+        Enum.filter(assessments, fn assessment ->
+          parse_progress(assessment.students_completion || 0.0) <= percentage
+        end)
+
+      :is_greather_than_or_equal ->
+        Enum.filter(assessments, fn assessment ->
+          parse_progress(assessment.students_completion || 0.0) >= percentage
+        end)
+
+      nil ->
+        assessments
+    end
+  end
+
+  defp maybe_filter_by_avg_score(assessments, avg_score_selector, avg_score_percentage) do
+    case avg_score_selector do
+      :is_equal_to ->
+        Enum.filter(assessments, fn assessment ->
+          parse_progress(assessment.avg_score || 0.0) == avg_score_percentage
+        end)
+
+      :is_less_than_or_equal ->
+        Enum.filter(assessments, fn assessment ->
+          parse_progress(assessment.avg_score || 0.0) <= avg_score_percentage
+        end)
+
+      :is_greather_than_or_equal ->
+        Enum.filter(assessments, fn assessment ->
+          parse_progress(assessment.avg_score || 0.0) >= avg_score_percentage
+        end)
+
+      nil ->
+        assessments
+    end
+  end
+
+  defp maybe_filter_by_attempts(assessments, "[]"), do: assessments
+
+  defp maybe_filter_by_attempts(assessments, selected_attempts_ids) do
+    selected_attempts_ids = Jason.decode!(selected_attempts_ids)
+
+    Enum.filter(assessments, fn assessment ->
+      Enum.any?(selected_attempts_ids, fn
+        1 -> assessment.total_attempts == 0
+        2 -> assessment.total_attempts < 5
+        3 -> assessment.total_attempts > 5
+        _ -> false
+      end)
+    end)
+  end
+
+  defp parse_progress(progress) do
+    {progress, _} =
+      Float.round(progress * 100)
+      |> Float.to_string()
+      |> Integer.parse()
+
+    progress
+  end
+
+  defp assessments_count(assessments) do
+    %{
+      low_scores:
+        Enum.count(assessments, fn assessment ->
+          assessment.avg_score < 0.40
+        end),
+      low_progress:
+        Enum.count(assessments, fn assessment ->
+          assessment.students_completion < 0.40
+        end),
+      low_or_no_attempts:
+        Enum.count(assessments, fn assessment ->
+          assessment.total_attempts <= 5
+        end)
+    }
   end
 
   defp maybe_filter_by_text(assessments, nil), do: assessments
@@ -379,15 +614,6 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
         String.downcase(assessment.title),
         String.downcase(text_search)
       )
-    end)
-  end
-
-  defp maybe_filter_by_container_resource_id(assessments, nil), do: assessments
-  defp maybe_filter_by_container_resource_id(assessments, ""), do: assessments
-
-  defp maybe_filter_by_container_resource_id(assessments, container_id) do
-    Enum.filter(assessments, fn assessment ->
-      assessment.container_id == container_id
     end)
   end
 
@@ -445,7 +671,33 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
       text_search: Params.get_param(params, "text_search", @default_params.text_search),
       assessment_id: Params.get_int_param(params, "assessment_id", nil),
       selected_activity: Params.get_param(params, "selected_activity", nil),
-      container_id: Params.get_int_param(params, "container_id", nil)
+      selected_card_value:
+        Params.get_atom_param(
+          params,
+          "selected_card_value",
+          [:low_scores, :low_progress, :low_or_no_attempts],
+          @default_params.selected_card_value
+        ),
+      progress_percentage:
+        Params.get_int_param(params, "progress_percentage", @default_params.progress_percentage),
+      progress_selector:
+        Params.get_atom_param(
+          params,
+          "progress_selector",
+          [:is_equal_to, :is_less_than_or_equal, :is_greather_than_or_equal],
+          @default_params.progress_selector
+        ),
+      avg_score_percentage:
+        Params.get_int_param(params, "avg_score_percentage", @default_params.avg_score_percentage),
+      avg_score_selector:
+        Params.get_atom_param(
+          params,
+          "avg_score_selector",
+          [:is_equal_to, :is_less_than_or_equal, :is_greather_than_or_equal],
+          @default_params.avg_score_selector
+        ),
+      selected_attempts_ids:
+        Params.get_param(params, "selected_attempts_ids", @default_params.selected_attempts_ids)
     }
   end
 
@@ -488,6 +740,12 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
     )
   end
 
+  defp update_attempts_options(selected_attempts_ids, attempts_options) do
+    Enum.map(attempts_options, fn option ->
+      if option.id in selected_attempts_ids, do: %{option | selected: true}, else: option
+    end)
+  end
+
   defp assign_selected_assessment(socket, selected_assessment_resource_id)
        when selected_assessment_resource_id in ["", nil] do
     case socket.assigns.table_model.rows do
@@ -506,5 +764,28 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
       })
 
     assign(socket, table_model: table_model)
+  end
+
+  defp do_update_selection(socket, selected_id) do
+    %{attempts_options: attempts_options} = socket.assigns
+
+    updated_options =
+      Enum.map(attempts_options, fn option ->
+        if option.id == selected_id, do: %{option | selected: !option.selected}, else: option
+      end)
+
+    {selected_attempts_options, selected_ids} =
+      Enum.reduce(updated_options, {%{}, []}, fn option, {values, acc_ids} ->
+        if option.selected,
+          do: {Map.put(values, option.id, option.name), [option.id | acc_ids]},
+          else: {values, acc_ids}
+      end)
+
+    {:noreply,
+     assign(socket,
+       selected_attempts_options: selected_attempts_options,
+       attempts_options: updated_options,
+       selected_attempts_ids: selected_ids
+     )}
   end
 end

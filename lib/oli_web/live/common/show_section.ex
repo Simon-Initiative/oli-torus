@@ -9,13 +9,13 @@ defmodule OliWeb.Common.ShowSection do
     ~H"""
     <div class="flex md:grid grid-cols-12 py-5 border-b">
       <div class="md:col-span-4">
-        <h4><%= @section_title %></h4>
+        <h4>{@section_title}</h4>
         <%= unless is_nil(@section_description) do %>
-          <div class="text-muted"><%= @section_description %></div>
+          <div class="text-muted">{@section_description}</div>
         <% end %>
       </div>
       <div class="md:col-span-8">
-        <%= render_slot(@inner_block) %>
+        {render_slot(@inner_block)}
       </div>
     </div>
     """

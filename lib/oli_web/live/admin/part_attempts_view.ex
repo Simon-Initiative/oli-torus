@@ -33,14 +33,14 @@ defmodule OliWeb.Admin.PartAttemptsView do
               <div class="text-yellow-500">Stopped</div>
             <% end %>
             <div class="text-green-500">
-              <span class="mr-5">Batches: <%= @status.batches_complete %></span>
-              <span class="mr-5">Records Visited: <%= @status.records_visited %></span>
-              <span>Records Deleted: <%= @status.records_deleted %></span>
+              <span class="mr-5">Batches: {@status.batches_complete}</span>
+              <span class="mr-5">Records Visited: {@status.records_visited}</span>
+              <span>Records Deleted: {@status.records_deleted}</span>
             </div>
           </div>
 
           <%= for message <- @messages do %>
-            <div><%= message %></div>
+            <div>{message}</div>
           <% end %>
 
           <div class="absolute bottom-3 left-3">

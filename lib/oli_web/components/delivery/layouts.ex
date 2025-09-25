@@ -26,10 +26,10 @@ defmodule OliWeb.Components.Delivery.Layouts do
   def breadcrumb_trail(%{breadcrumbs: breadcrumbs} = assigns) when not is_nil(breadcrumbs) do
     ~H"""
     <nav class="breadcrumb-bar flex flex-row align-items-center border-gray-300 dark:border-neutral-800">
-      <%= live_render(@socket, OliWeb.Breadcrumb.BreadcrumbTrailWorkspaceLive,
+      {live_render(@socket, OliWeb.Breadcrumb.BreadcrumbTrailWorkspaceLive,
         id: "breadcrumb-trail",
         session: %{"breadcrumbs" => @breadcrumbs}
-      ) %>
+      )}
     </nav>
     """
   end
@@ -123,13 +123,13 @@ defmodule OliWeb.Components.Delivery.Layouts do
   def title(assigns) do
     ~H"""
     <span :if={@resource_title} class={["text-2xl text-bold", @rest[:class]]}>
-      <%= @resource_title %>
+      {@resource_title}
     </span>
     <span :if={@section} class={["text-2xl text-bold", @rest[:class]]}>
-      <%= @section.title %><%= if @preview_mode, do: " (Preview Mode)" %>
+      {@section.title}{if @preview_mode, do: " (Preview Mode)"}
     </span>
     <span :if={@project} class={["text-2xl text-bold", @rest[:class]]}>
-      <%= @project.title %>
+      {@project.title}
     </span>
     """
   end
@@ -203,6 +203,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
             discussions_enabled={@discussions_enabled}
             notification_badges={@notification_badges}
             has_scheduled_resources?={@has_scheduled_resources?}
+            platform="desktop"
           />
         </div>
         <div class="p-2 flex-col justify-center items-center gap-4 inline-flex">
@@ -248,6 +249,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
           notes_enabled={@notes_enabled}
           discussions_enabled={@discussions_enabled}
           has_scheduled_resources?={@has_scheduled_resources?}
+          platform="mobile"
         />
       </nav>
     </div>
@@ -503,12 +505,13 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr(:discussions_enabled, :boolean, default: true)
   attr(:has_scheduled_resources?, :boolean, default: false)
   attr(:notification_badges, :map, default: %{})
+  attr(:platform, :string, default: "desktop")
 
   def sidebar_links(assigns) do
     ~H"""
     <div class="w-full p-2 flex-col justify-center items-center gap-4 inline-flex">
       <.nav_link
-        id="home_nav_link"
+        id={"#{@platform}_home_nav_link"}
         href={path_for(:index, @section, @preview_mode, @sidebar_expanded)}
         is_active={@active_tab == :index}
         sidebar_expanded={@sidebar_expanded}
@@ -518,7 +521,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
       </.nav_link>
 
       <.nav_link
-        id="learn_nav_link"
+        id={"#{@platform}_learn_nav_link"}
         href={path_for(:learn, @section, @preview_mode, @sidebar_expanded)}
         is_active={@active_tab == :learn}
         sidebar_expanded={@sidebar_expanded}
@@ -529,7 +532,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
 
       <.nav_link
         :if={@has_scheduled_resources?}
-        id="schedule_nav_link"
+        id={"#{@platform}_schedule_nav_link"}
         href={path_for(:schedule, @section, @preview_mode, @sidebar_expanded)}
         is_active={@active_tab == :schedule}
         sidebar_expanded={@sidebar_expanded}
@@ -540,7 +543,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
 
       <.nav_link
         :if={@notes_enabled || @discussions_enabled}
-        id="discussions_nav_link"
+        id={"#{@platform}_discussions_nav_link"}
         href={path_for(:discussions, @section, @preview_mode, @sidebar_expanded)}
         is_active={@active_tab == :discussions}
         sidebar_expanded={@sidebar_expanded}
@@ -552,7 +555,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
 
       <.nav_link
         :if={section_has_assignments?(@section.id)}
-        id="assignments_nav_link"
+        id={"#{@platform}_assignments_nav_link"}
         href={path_for(:assignments, @section, @preview_mode, @sidebar_expanded)}
         is_active={@active_tab == :assignments}
         sidebar_expanded={@sidebar_expanded}
@@ -563,7 +566,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
 
       <.nav_link
         :if={@section.contains_explorations}
-        id="explorations_nav_link"
+        id={"#{@platform}_explorations_nav_link"}
         href={path_for(:explorations, @section, @preview_mode, @sidebar_expanded)}
         is_active={@active_tab == :explorations}
         sidebar_expanded={@sidebar_expanded}
@@ -574,7 +577,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
 
       <.nav_link
         :if={@section.contains_deliberate_practice}
-        id="practice_nav_link"
+        id={"#{@platform}_practice_nav_link"}
         href={path_for(:practice, @section, @preview_mode, @sidebar_expanded)}
         is_active={@active_tab == :practice}
         sidebar_expanded={@sidebar_expanded}
@@ -745,7 +748,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
       )
     ]}>
       <div class="w-5 h-5 flex items-center justify-center">
-        <%= render_slot(@icon) %>
+        {render_slot(@icon)}
       </div>
       <div
         :if={@sidebar_expanded}
@@ -755,12 +758,12 @@ defmodule OliWeb.Components.Delivery.Layouts do
         ]}
       >
         <div class="whitespace-nowrap">
-          <%= render_slot(@text) %>
+          {render_slot(@text)}
         </div>
 
         <%= if @badge do %>
           <div>
-            <.badge variant={:primary} class="ml-2"><%= @badge %></.badge>
+            <.badge variant={:primary} class="ml-2">{@badge}</.badge>
           </div>
         <% end %>
       </div>
@@ -830,7 +833,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
       <div class="w-full h-9 px-3 py-3 bg-zinc-400 bg-opacity-20 hover:bg-opacity-40 rounded-lg justify-start items-center gap-3 inline-flex">
         <div class="w-5 h-5 flex items-center justify-center"><Icons.exit /></div>
         <div :if={@sidebar_expanded} class="text-sm font-medium tracking-tight whitespace-nowrap">
-          <%= @title %>
+          {@title}
         </div>
       </div>
     </.link>
@@ -901,9 +904,9 @@ defmodule OliWeb.Components.Delivery.Layouts do
             </.link>
           </div>
           <div class="flex flex-row gap-x-1 justify-start items-center grow shrink basis-0 dark:text-white text-xs font-normal overflow-hidden text-ellipsis">
-            <%= maybe_add_icon(@previous_page, @pages_progress) %>
+            {maybe_add_icon(@previous_page, @pages_progress)}
             <span class="overflow-hidden text-ellipsis" title={@previous_page["title"]}>
-              <%= @previous_page["title"] %>
+              {@previous_page["title"]}
             </span>
           </div>
         </div>
@@ -914,9 +917,9 @@ defmodule OliWeb.Components.Delivery.Layouts do
           role="next_page"
         >
           <div class="flex flex-row gap-x-1 justify-end items-center grow shrink basis-0 text-right dark:text-white text-xs font-normal overflow-hidden text-ellipsis">
-            <%= maybe_add_icon(@next_page, @pages_progress) %>
+            {maybe_add_icon(@next_page, @pages_progress)}
             <span class="overflow-hidden text-ellipsis" title={@next_page["title"]}>
-              <%= @next_page["title"] %>
+              {@next_page["title"]}
             </span>
           </div>
           <div class="px-2 lg:px-6 py-2 rounded justify-end items-center gap-2 flex">

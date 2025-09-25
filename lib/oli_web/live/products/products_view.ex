@@ -70,12 +70,12 @@ defmodule OliWeb.Products.ProductsView do
   end
 
   defp mount_as(params, author, is_admin_view, project, breadcrumbs, title, socket) do
-    project_id = if project === nil, do: nil, else: project.id
+    {project_id, project_slug} = {project && project.id, (project && project.slug) || ""}
 
     products =
       Blueprint.browse(
         %Paging{offset: 0, limit: @limit},
-        %Sorting{direction: :asc, field: :title},
+        %Sorting{direction: :desc, field: :inserted_at},
         text_search: Params.get_param(params, "text_search", ""),
         include_archived: Params.get_boolean_param(params, "include_archived", false),
         project_id: project_id
@@ -84,7 +84,12 @@ defmodule OliWeb.Products.ProductsView do
     total_count = determine_total(products)
 
     ctx = socket.assigns.ctx
-    {:ok, table_model} = ProductsTableModel.new(products, ctx)
+
+    {:ok, table_model} =
+      ProductsTableModel.new(products, ctx, project_slug,
+        sort_by_spec: :inserted_at,
+        sort_order: :desc
+      )
 
     published? =
       case project do
@@ -124,22 +129,22 @@ defmodule OliWeb.Products.ProductsView do
           <Check.render
             checked={@include_archived}
             click="include_archived"
-            class="text-[#353740] dark:text-[#EEEBF5] px-4 mt-2"
+            class="text-Text-text-high px-4 mt-2"
           >
             Include Archived Products
           </Check.render>
           <%= if @is_admin_view do %>
-            <div class="flex w-fit gap-4 p-2 pr-8 mx-4 mt-3 mb-2 shadow-[0px_2px_6.099999904632568px_0px_rgba(0,0,0,0.10)] border border-[#ced1d9] dark:border-[#3B3740] dark:bg-[#000000]">
+            <div class="flex w-fit gap-4 p-2 pr-8 mx-4 mt-3 mb-2 shadow-[0px_2px_6.099999904632568px_0px_rgba(0,0,0,0.10)] border border-Border-border-default bg-Background-bg-secondary">
               <.form for={%{}} phx-change="text_search_change" class="w-56">
                 <SearchInput.render id="text-search" name="product_name" text={@text_search} />
               </.form>
 
-              <button class="ml-2 text-center text-[#353740] dark:text-[#EEEBF5] text-sm font-normal leading-none flex items-center gap-x-1 opacity-50 hover:cursor-not-allowed">
-                <Icons.filter class="stroke-[#353740] dark:stroke-[#EEEBF5]" /> Filter
+              <button class="ml-2 text-center text-Text-text-high text-sm font-normal leading-none flex items-center gap-x-1 opacity-50 hover:cursor-not-allowed">
+                <Icons.filter class="stroke-Text-text-high" /> Filter
               </button>
 
               <button
-                class="ml-2 mr-4 text-center text-[#353740] dark:text-[#EEEBF5] text-sm font-normal leading-none flex items-center gap-x-1 hover:text-[#006CD9] dark:hover:text-[#4CA6FF]"
+                class="ml-2 mr-4 text-center text-Text-text-high text-sm font-normal leading-none flex items-center gap-x-1 hover:text-Text-text-button"
                 phx-click="clear_all_filters"
               >
                 <Icons.trash /> Clear All Filters
@@ -170,6 +175,7 @@ defmodule OliWeb.Products.ProductsView do
   end
 
   def handle_params(params, _, socket) do
+    table_model = SortableTableModel.update_from_params(socket.assigns.table_model, params)
     offset = Params.get_int_param(params, "offset", 0)
     text_search = Params.get_param(params, "text_search", "")
     include_archived = Params.get_boolean_param(params, "include_archived", false)
@@ -179,18 +185,15 @@ defmodule OliWeb.Products.ProductsView do
       Blueprint.browse(
         %Paging{offset: offset, limit: limit},
         %Sorting{
-          direction: socket.assigns.table_model.sort_order,
-          field: socket.assigns.table_model.sort_by_spec.name
+          direction: table_model.sort_order,
+          field: table_model.sort_by_spec.name
         },
         text_search: text_search,
         include_archived: include_archived,
         project_id: socket.assigns.project && socket.assigns.project.id
       )
 
-    table_model =
-      socket.assigns.table_model
-      |> Map.put(:rows, products)
-      |> SortableTableModel.update_from_params(params)
+    table_model = %SortableTableModel{table_model | rows: products}
 
     total_count = determine_total(products)
 

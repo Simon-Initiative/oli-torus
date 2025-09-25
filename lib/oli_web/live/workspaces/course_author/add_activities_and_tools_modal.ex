@@ -258,7 +258,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal do
                     label=""
                     checked={MapSet.member?(@current_selected_item_ids, item.id)}
                   />
-                  <span class="text-sm text-gray-900 dark:text-white"><%= item.title %></span>
+                  <span class="text-sm text-gray-900 dark:text-white">{item.title}</span>
                   <.status_indicator status={
                     get_item_status(item.id, @initial_selected_item_ids, @current_selected_item_ids)
                   } />
@@ -307,7 +307,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal do
                     label=""
                     checked={MapSet.member?(@current_selected_item_ids, item.id)}
                   />
-                  <span class="text-sm text-gray-900 dark:text-white"><%= item.title %></span>
+                  <span class="text-sm text-gray-900 dark:text-white">{item.title}</span>
                   <.status_indicator status={
                     get_item_status(item.id, @initial_selected_item_ids, @current_selected_item_ids)
                   } />
@@ -382,22 +382,22 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal do
       <div :if={length(@pending_changes.activities_to_add) > 0} class="flex items-center gap-1">
         <.add />
         <span>
-          <%= change_summary_text(length(@pending_changes.activities_to_add), :activities) %>
+          {change_summary_text(length(@pending_changes.activities_to_add), :activities)}
         </span>
       </div>
       <div :if={length(@pending_changes.activities_to_remove) > 0} class="flex items-center gap-1">
         <.remove />
         <span>
-          <%= change_summary_text(length(@pending_changes.activities_to_remove), :activities) %>
+          {change_summary_text(length(@pending_changes.activities_to_remove), :activities)}
         </span>
       </div>
       <div :if={length(@pending_changes.tools_to_add) > 0} class="flex items-center gap-1">
         <.add />
-        <span><%= change_summary_text(length(@pending_changes.tools_to_add), :tools) %></span>
+        <span>{change_summary_text(length(@pending_changes.tools_to_add), :tools)}</span>
       </div>
       <div :if={length(@pending_changes.tools_to_remove) > 0} class="flex items-center gap-1">
         <.remove />
-        <span><%= change_summary_text(length(@pending_changes.tools_to_remove), :tools) %></span>
+        <span>{change_summary_text(length(@pending_changes.tools_to_remove), :tools)}</span>
       </div>
     </div>
     """

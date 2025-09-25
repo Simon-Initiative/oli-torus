@@ -10,7 +10,7 @@ defmodule OliWeb.Delivery.ManageSourceMaterials.ProjectCard do
     ~H"""
     <div class="card my-4">
       <div class="card-header d-flex align-items-center" id={@id} phx-update="ignore">
-        <h6 class="mb-0 mr-2"><%= @title %></h6>
+        <h6 class="mb-0 mr-2">{@title}</h6>
         <i
           class="fa fa-info-circle"
           aria-hidden="true"
@@ -21,7 +21,7 @@ defmodule OliWeb.Delivery.ManageSourceMaterials.ProjectCard do
         </i>
       </div>
       <div class="card-body overflow-auto" style="max-height: 38rem">
-        <%= render_slot(@inner_block) %>
+        {render_slot(@inner_block)}
       </div>
     </div>
     """

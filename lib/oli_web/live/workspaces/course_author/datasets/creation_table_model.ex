@@ -91,7 +91,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Datasets.CreationTableModel do
 
     ~H"""
     <a href={~p"/sections/#{@section.slug}/manage"} target="_blank">
-      <%= @section.title %>
+      {@section.title}
     </a>
     """
   end

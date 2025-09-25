@@ -71,7 +71,7 @@ defmodule OliWeb.Products.DetailsView do
 
   def render(assigns) do
     ~H"""
-    <%= render_modal(assigns) %>
+    {render_modal(assigns)}
     <div class="overview container">
       <div class="grid grid-cols-12 py-5 border-b">
         <div class="md:col-span-4">
@@ -139,7 +139,7 @@ defmodule OliWeb.Products.DetailsView do
         </div>
         <div class="flex flex-col md:col-span-8 gap-2">
           <div>
-            This product <b>does <%= unless @product.certificate_enabled, do: "not" %></b>
+            This product <b>does {unless @product.certificate_enabled, do: "not"}</b>
             currently produce a certificate.
           </div>
           <div>
@@ -149,6 +149,29 @@ defmodule OliWeb.Products.DetailsView do
           </div>
         </div>
       </div>
+
+      <%= if @is_admin do %>
+        <div class="grid grid-cols-12 py-5 border-b">
+          <div class="md:col-span-4">
+            <h4>Feature Flags</h4>
+            <div class="text-muted">
+              Manage scoped feature flags for this section.
+            </div>
+          </div>
+          <div class="md:col-span-8">
+            <.live_component
+              module={OliWeb.Components.ScopedFeatureFlagsComponent}
+              id="section_scoped_features"
+              scopes={[:delivery, :both]}
+              source_id={@product.id}
+              source_type={:section}
+              source={@product}
+              current_author={@author}
+              title="Section Features"
+            />
+          </div>
+        </div>
+      <% end %>
 
       <div class="grid grid-cols-12 py-5">
         <div class="md:col-span-4">
@@ -314,6 +337,17 @@ defmodule OliWeb.Products.DetailsView do
       })
 
     {:noreply, assign(socket, changeset: changeset)}
+  end
+
+  def handle_info({:scoped_feature_updated, feature_name, enabled, _source}, socket) do
+    action = if enabled, do: "enabled", else: "disabled"
+    message = "Feature '#{feature_name}' #{action} successfully"
+    {:noreply, put_flash(socket, :info, message)}
+  end
+
+  def handle_info({:scoped_feature_error, feature_name, error_message}, socket) do
+    message = "Failed to update feature '#{feature_name}': #{error_message}"
+    {:noreply, put_flash(socket, :error, message)}
   end
 
   defp ext(entry) do

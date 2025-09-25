@@ -39,8 +39,7 @@ defmodule OliWeb.AuthorSettingsLiveTest do
       result =
         lv
         |> form("#email_form", %{
-          "current_password" => password,
-          "author" => %{"email" => new_email}
+          "author" => %{"email" => new_email, "current_password" => password}
         })
         |> render_submit()
 
@@ -55,13 +54,13 @@ defmodule OliWeb.AuthorSettingsLiveTest do
         lv
         |> element("#email_form")
         |> render_change(%{
-          "action" => "update_email",
-          "current_password" => "invalid",
-          "author" => %{"email" => "with spaces"}
+          "author" => %{"current_password" => "invalid", "email" => "invalid@email"}
         })
 
       assert result =~ "Change Email"
       assert result =~ "must be a valid email address"
+      # password validation is triggered on submit, not on change
+      refute result =~ "is not valid"
     end
 
     test "renders errors with invalid data (phx-submit)", %{conn: conn, author: author} do
@@ -70,13 +69,13 @@ defmodule OliWeb.AuthorSettingsLiveTest do
       result =
         lv
         |> form("#email_form", %{
-          "current_password" => "invalid",
-          "author" => %{"email" => author.email}
+          "author" => %{"email" => author.email, "current_password" => "invalid"}
         })
         |> render_submit()
 
       assert result =~ "Change Email"
       assert result =~ "did not change"
+      # password validation is triggered on submit, not on change
       assert result =~ "is not valid"
     end
   end
@@ -95,8 +94,8 @@ defmodule OliWeb.AuthorSettingsLiveTest do
 
       form =
         form(lv, "#password_form", %{
-          "current_password" => password,
           "author" => %{
+            "current_password" => password,
             "email" => author.email,
             "password" => new_password,
             "password_confirmation" => new_password
@@ -124,8 +123,8 @@ defmodule OliWeb.AuthorSettingsLiveTest do
         lv
         |> element("#password_form")
         |> render_change(%{
-          "current_password" => "invalid",
           "author" => %{
+            "current_password" => "invalid",
             "password" => "too short",
             "password_confirmation" => "does not match"
           }
@@ -133,7 +132,7 @@ defmodule OliWeb.AuthorSettingsLiveTest do
 
       assert result =~ "Change Password"
       assert result =~ "should be at least 12 character(s)"
-      assert result =~ "does not match password"
+      assert result =~ "does not match new password"
     end
 
     test "renders errors with invalid data (phx-submit)", %{conn: conn} do
@@ -142,8 +141,8 @@ defmodule OliWeb.AuthorSettingsLiveTest do
       result =
         lv
         |> form("#password_form", %{
-          "current_password" => "invalid",
           "author" => %{
+            "current_password" => "invalid",
             "password" => "too short",
             "password_confirmation" => "does not match"
           }
@@ -152,7 +151,7 @@ defmodule OliWeb.AuthorSettingsLiveTest do
 
       assert result =~ "Change Password"
       assert result =~ "should be at least 12 character(s)"
-      assert result =~ "does not match password"
+      assert result =~ "does not match new password"
       assert result =~ "is not valid"
     end
   end

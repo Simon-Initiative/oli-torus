@@ -66,3 +66,4 @@ export class Utils {
     await searchInput.pressSequentially(text, { delay });
   }
 }
+

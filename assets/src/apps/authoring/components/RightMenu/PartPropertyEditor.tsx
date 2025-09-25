@@ -397,6 +397,7 @@ export const PartPropertyEditor: React.FC<Props> = ({
         onChangeHandler={componentPropertyChangeHandler}
         triggerOnChange={true}
         onfocusHandler={componentPropertyFocusHandler}
+        isExpertMode={appMode === 'expert'}
       />
     </div>
   );

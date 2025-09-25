@@ -50,10 +50,10 @@ defmodule OliWeb.Common.SortableTable.Table do
     >
       <%= if @column_spec.tooltip do %>
         <span id={@column_spec.name} title={@column_spec.tooltip} phx-hook="TooltipInit">
-          <%= @column_spec.label %>
+          {@column_spec.label}
         </span>
       <% else %>
-        <%= @column_spec.label %>
+        {@column_spec.label}
       <% end %>
 
       <%= if @column_spec.sortable do %>
@@ -95,9 +95,9 @@ defmodule OliWeb.Common.SortableTable.Table do
         <td class={"#{column_spec.td_class} border-r p-2"}>
           <div class={if Map.get(@model.data, :fade_data, false), do: "fade-text", else: ""}>
             <%= if is_nil(column_spec.render_fn) do %>
-              <%= ColumnSpec.default_render_fn(column_spec, @row) %>
+              {ColumnSpec.default_render_fn(column_spec, @row)}
             <% else %>
-              <%= column_spec.render_fn.(
+              {column_spec.render_fn.(
                 with_data(
                   %{
                     model: @model,
@@ -109,7 +109,7 @@ defmodule OliWeb.Common.SortableTable.Table do
                 ),
                 @row,
                 column_spec
-              ) %>
+              )}
             <% end %>
           </div>
         </td>
@@ -130,7 +130,7 @@ defmodule OliWeb.Common.SortableTable.Table do
       <thead>
         <tr>
           <%= for column_spec <- @model.column_specs do %>
-            <%= render_th(
+            {render_th(
               with_data(
                 %{
                   model: @model,
@@ -141,13 +141,13 @@ defmodule OliWeb.Common.SortableTable.Table do
                 @model.data
               ),
               column_spec
-            ) %>
+            )}
           <% end %>
         </tr>
       </thead>
       <tbody>
         <%= for row <- @model.rows do %>
-          <%= render_row(
+          {render_row(
             with_data(
               %{
                 model: @model,
@@ -159,7 +159,7 @@ defmodule OliWeb.Common.SortableTable.Table do
               @model.data
             ),
             row
-          ) %>
+          )}
         <% end %>
       </tbody>
     </table>

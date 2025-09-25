@@ -25,12 +25,12 @@ defmodule OliWeb.Components.Delivery.AssignmentCard do
             <i class="fa-solid fa-caret-down text-white hidden group-[.collapsed]:block" />
             <i class="fa-solid fa-caret-up text-white block group-[.collapsed]:hidden" />
           </button>
-          <h3 class="text-white text-xl"><%= @assignment.title %></h3>
+          <h3 class="text-white text-xl">{@assignment.title}</h3>
         </div>
         <div class="flex gap-2">
           <span class="bg-white bg-opacity-10 rounded-sm text-white text-center w-110 p-2">
             <%= if @assignment.end_date do %>
-              <%= due_date_label(@assignment) %> <%= @format_datetime_fn.(@assignment.end_date) %>
+              {due_date_label(@assignment)} {@format_datetime_fn.(@assignment.end_date)}
             <% else %>
               No due date
             <% end %>
@@ -96,10 +96,10 @@ defmodule OliWeb.Components.Delivery.AssignmentCard do
   def render_related_page_info(assigns) do
     ~H"""
     <tr class="border-b border-b-gray-200 last:border-b-0">
-      <td class="w-1/3 border-none"><%= @page.title %></td>
+      <td class="w-1/3 border-none">{@page.title}</td>
       <td class={"w-1/3 border-none text-center #{if !@page.progress, do: "text-red-600"}"}>
         <%= if @page.progress do %>
-          <%= @page.progress * 100.0 %>% Completed
+          {@page.progress * 100.0}% Completed
         <% else %>
           Not attempted
         <% end %>

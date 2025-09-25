@@ -7,20 +7,20 @@
       preview_mode={@preview_mode}
     />
     <div class="container mx-auto max-w-[880px] py-20">
-      <%= render(
+      {render(
         OliWeb.PageDeliveryView,
         "container.html",
         Map.merge(assigns, %{
           children: @container.children,
           active_page: nil
         })
-      ) %>
+      )}
 
-      <%= render(OliWeb.ResourceView, "_preview_previous_next_nav.html",
+      {render(OliWeb.ResourceView, "_preview_previous_next_nav.html",
         conn: @conn,
         context: @context,
         action: :preview
-      ) %>
+      )}
     </div>
   </div>
 <% else %>
@@ -64,21 +64,21 @@
               </div>
 
               <div id="eventIntercept" class="content" phx-update="ignore" role="page content">
-                <%= raw(@content_html) %>
+                {raw(@content_html)}
               </div>
 
-              <%= render(OliWeb.BibliographyView, "_references.html",
+              {render(OliWeb.BibliographyView, "_references.html",
                 conn: @conn,
                 context: @context,
                 bib_app_params: @bib_app_params,
                 action: :preview
-              ) %>
+              )}
 
-              <%= render(OliWeb.ResourceView, "_preview_previous_next_nav.html",
+              {render(OliWeb.ResourceView, "_preview_previous_next_nav.html",
                 conn: @conn,
                 context: @context,
                 action: :preview
-              ) %>
+              )}
             </div>
           </div>
         </div>

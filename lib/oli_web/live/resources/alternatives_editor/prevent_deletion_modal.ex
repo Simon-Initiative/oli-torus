@@ -33,7 +33,7 @@ defmodule OliWeb.Resources.AlternativesEditor.PreventDeletionModal do
                     href={Routes.resource_path(OliWeb.Endpoint, :edit, @project_slug, slug)}
                     target="_blank"
                   >
-                    <%= title %> <i class="fas fa-external-link-alt"></i>
+                    {title} <i class="fas fa-external-link-alt"></i>
                   </a>
                 </li>
               <% end %>

@@ -62,14 +62,14 @@ defmodule OliWeb.ProjectVisibilityTest do
 
       view
       |> element("#users form")
-      |> render_change(%{"search_field" => %{"entity" => "instructors", "query" => email_prefix}})
+      |> render_change(%{"instructor_search_field" => %{"query" => email_prefix}})
 
       refute has_element?(view, "#user_submit")
 
       # It searches by exact email
       view
       |> element("#users form")
-      |> render_change(%{"search_field" => %{"entity" => "instructors", "query" => author.email}})
+      |> render_change(%{"instructor_search_field" => %{"query" => author.email}})
 
       assert view
              |> element("#user_submit select")

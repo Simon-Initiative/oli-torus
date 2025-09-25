@@ -3,10 +3,11 @@ defmodule OliWeb.TechSupportLive do
   alias Oli.Help.HelpContent
   alias Oli.Help.HelpRequest
   alias OliWeb.Components.Modal
+
+  import Oli.Utils, only: [get_base_url: 0]
   import OliWeb.Components.Utils, only: [user_is_guest?: 1]
 
   @modal_id "tech-support-modal"
-  @base_url Oli.Utils.get_base_url()
 
   require Logger
 
@@ -110,8 +111,8 @@ defmodule OliWeb.TechSupportLive do
 
         <div class="hint">
           <p>
-            Add up to <%= @uploads.attached_screenshots.max_entries %> screenshots
-            (max <%= trunc(@uploads.attached_screenshots.max_file_size / 1_000_000) %> MB each)
+            Add up to {@uploads.attached_screenshots.max_entries} screenshots
+            (max {trunc(@uploads.attached_screenshots.max_file_size / 1_000_000)} MB each)
           </p>
           <p>
             Please show full browser window including address bar.
@@ -126,7 +127,7 @@ defmodule OliWeb.TechSupportLive do
         </div>
 
         <.error :for={err <- upload_errors(@uploads.attached_screenshots)}>
-          <%= Phoenix.Naming.humanize(err) %>
+          {Phoenix.Naming.humanize(err)}
         </.error>
 
         <div :for={entry <- @uploads.attached_screenshots.entries} class="entry">
@@ -134,13 +135,13 @@ defmodule OliWeb.TechSupportLive do
 
           <div class="progress">
             <div class="value">
-              <%= entry.progress %>%
+              {entry.progress}%
             </div>
             <div class="bar">
               <span style={"width: #{entry.progress}%"}></span>
             </div>
             <.error :for={err <- upload_errors(@uploads.attached_screenshots, entry)}>
-              <%= Phoenix.Naming.humanize(err) %>
+              {Phoenix.Naming.humanize(err)}
             </.error>
           </div>
 
@@ -152,7 +153,7 @@ defmodule OliWeb.TechSupportLive do
           <%!-- Start Captcha --%>
           <div class="w-80 mx-auto">
             <div
-              id="recaptcha"
+              id="support_recaptcha"
               phx-hook="Recaptcha"
               data-sitekey={Application.fetch_env!(:oli, :recaptcha)[:site_key]}
               data-theme="dark"
@@ -160,7 +161,7 @@ defmodule OliWeb.TechSupportLive do
             >
             </div>
 
-            <.error :if={@recaptcha_error}><%= @recaptcha_error %></.error>
+            <.error :if={@recaptcha_error}>{@recaptcha_error}</.error>
           </div>
 
           <div class="flex w-full justify-around lg:justify-end items-center">
@@ -345,7 +346,7 @@ defmodule OliWeb.TechSupportLive do
       |> Map.take([:title, :start_date, :end_date])
       |> Map.merge(%{
         institution_name: institution_name,
-        course_management_url: "#{@base_url}/sections/#{section.slug}/manage"
+        course_management_url: "#{get_base_url()}/sections/#{section.slug}/manage"
       })
       |> then(fn m -> struct(Oli.Help.CourseData, m) end)
     end
@@ -377,7 +378,7 @@ defmodule OliWeb.TechSupportLive do
       user = session["user"]
 
       if section && user do
-        "#{@base_url}/sections/#{section.slug}/student_dashboard/#{user.id}/content"
+        "#{get_base_url()}/sections/#{section.slug}/student_dashboard/#{user.id}/content"
       end
     end
   end
@@ -385,9 +386,9 @@ defmodule OliWeb.TechSupportLive do
   defp get_user_account_url(session) do
     if user = session["user"] do
       if session["current_user_id"] do
-        "#{@base_url}/admin/users/#{user.id}"
+        "#{get_base_url()}/admin/users/#{user.id}"
       else
-        "#{@base_url}/admin/authors/#{user.id}"
+        "#{get_base_url()}/admin/authors/#{user.id}"
       end
     end
   end

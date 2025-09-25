@@ -89,7 +89,7 @@ defmodule OliWeb.Workspaces.Student do
         style="background: linear-gradient(90deg, #D9D9D9 0%, rgba(217, 217, 217, 0.00) 100%);"
       />
       <h1 class="text-[64px] leading-[87px] tracking-[0.02px] pl-[100px] z-10">
-        Hi, <span class="font-bold"><%= @ctx.author.given_name %></span>
+        Hi, <span class="font-bold">{@ctx.author.given_name}</span>
       </h1>
     </div>
     <div class="flex flex-col items-start py-[60px] px-[100px]">
@@ -117,7 +117,7 @@ defmodule OliWeb.Workspaces.Student do
                 Welcome to
               </span>
               <span class="text-white font-bold font-['Open Sans'] leading-10">
-                <%= Oli.VendorProperties.product_short_name() %>
+                {Oli.VendorProperties.product_short_name()}
               </span>
             </div>
             <div class="w-48 h-11 justify-start items-center gap-1 inline-flex">
@@ -161,7 +161,7 @@ defmodule OliWeb.Workspaces.Student do
         style="background: linear-gradient(90deg, #D9D9D9 0%, rgba(217, 217, 217, 0.00) 100%);"
       />
       <h1 class="text-3xl md:text-[64px] leading-[87px] tracking-[0.02px] px-4 md:pl-[100px] z-10">
-        Hi, <span class="font-bold"><%= user_given_name(@ctx) %></span>
+        Hi, <span class="font-bold">{user_given_name(@ctx)}</span>
       </h1>
     </div>
     <div class="flex flex-col items-start py-6 md:py-[60px] px-4 md:px-[100px]">
@@ -196,7 +196,7 @@ defmodule OliWeb.Workspaces.Student do
               ctx={@ctx}
             />
             <p :if={length(@filtered_sections) == 0} class="mt-4">
-              No course found matching <strong>"<%= @params.text_search %>"</strong>
+              No course found matching <strong>"{@params.text_search}"</strong>
             </p>
           </div>
         <% end %>
@@ -241,14 +241,14 @@ defmodule OliWeb.Workspaces.Student do
             class="justify-center text-[#bab8bf] text-xs font-bold uppercase leading-3"
             role="start_end_date"
           >
-            <%= FormatDateTime.to_formatted_datetime(@section.start_date, @ctx, "{Mshort} {YYYY}") %> - <%= FormatDateTime.to_formatted_datetime(
+            {FormatDateTime.to_formatted_datetime(@section.start_date, @ctx, "{Mshort} {YYYY}")} - {FormatDateTime.to_formatted_datetime(
               @section.end_date,
               @ctx,
               "{Mshort} {YYYY}"
-            ) %>
+            )}
           </div>
           <h5 class="text-2xl md:text-[36px] md:leading-[49px] font-semibold drop-shadow-md">
-            <%= @section.title %>
+            {@section.title}
           </h5>
           <div
             class="justify-center text-[#bab8bf] text-base font-bold leading-normal"
@@ -259,7 +259,7 @@ defmodule OliWeb.Workspaces.Student do
             <% else %>
               Instructors:
             <% end %>
-            <%= list_instructors(Sections.get_instructors_for_section(@section.id)) %>
+            {list_instructors(Sections.get_instructors_for_section(@section.id))}
           </div>
           <div
             class="flex flex-col md:flex-row items-center drop-shadow-md md:mt-4"

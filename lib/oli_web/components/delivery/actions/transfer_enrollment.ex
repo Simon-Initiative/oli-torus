@@ -259,9 +259,9 @@ defmodule OliWeb.Delivery.Actions.TransferEnrollment do
       </p>
       <hr class="my-5" />
       <p class="my-4">
-        Are you sure you want to transfer the <strong><%= @current_student.name %></strong>
-        enrollment's in <strong><%= @current_section.title %></strong>
-        to <strong><%= @target_student.name %></strong>
+        Are you sure you want to transfer the <strong>{@current_student.name}</strong>
+        enrollment's in <strong>{@current_section.title}</strong>
+        to <strong>{@target_student.name}</strong>
         in <strong><%= @target_section.title %></strong>?
       </p>
     </div>

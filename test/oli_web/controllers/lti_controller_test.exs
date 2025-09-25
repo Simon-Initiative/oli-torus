@@ -15,6 +15,9 @@ defmodule OliWeb.LtiControllerTest do
   import Mox
   import Oli.Factory
 
+  setup :verify_on_exit!
+  setup :set_mox_global
+
   describe "lti_controller" do
     setup [:create_fixtures]
 
@@ -149,7 +152,7 @@ defmodule OliWeb.LtiControllerTest do
       platform_jwk = jwk_fixture()
 
       Oli.Test.MockHTTP
-      |> expect(:get, 2, mock_keyset_endpoint("some key_set_url", platform_jwk))
+      |> expect(:get, 1, mock_keyset_endpoint("some key_set_url", platform_jwk))
 
       state = "some-state"
       conn = Plug.Test.init_test_session(conn, state: state)
@@ -193,7 +196,7 @@ defmodule OliWeb.LtiControllerTest do
       platform_jwk = jwk_fixture()
 
       Oli.Test.MockHTTP
-      |> expect(:get, 2, mock_keyset_endpoint("some key_set_url", platform_jwk))
+      |> expect(:get, 1, mock_keyset_endpoint("some key_set_url", platform_jwk))
 
       state = "some-state"
       conn = Plug.Test.init_test_session(conn, state: state)
@@ -214,7 +217,7 @@ defmodule OliWeb.LtiControllerTest do
 
       conn = post(conn, Routes.lti_path(conn, :launch, %{state: state, id_token: id_token}))
 
-      assert redirected_to(conn) == Routes.delivery_path(conn, :index)
+      assert html_response(conn, 200) =~ "This course section is not available"
     end
 
     test "launch successful for valid params and updates lms user", %{
@@ -225,7 +228,7 @@ defmodule OliWeb.LtiControllerTest do
       platform_jwk = jwk_fixture()
 
       Oli.Test.MockHTTP
-      |> expect(:get, 2, mock_keyset_endpoint("some key_set_url", platform_jwk))
+      |> expect(:get, 1, mock_keyset_endpoint("some key_set_url", platform_jwk))
 
       state = "some-state"
       conn = Plug.Test.init_test_session(conn, state: state)
@@ -265,7 +268,7 @@ defmodule OliWeb.LtiControllerTest do
 
       conn = post(conn, Routes.lti_path(conn, :launch, %{state: state, id_token: id_token}))
 
-      assert redirected_to(conn) == Routes.delivery_path(conn, :index)
+      assert redirected_to(conn) =~ "/workspaces/student"
 
       # Check that the user is the same as lti_user, but has some new field defined (it was
       # updated).
@@ -287,7 +290,7 @@ defmodule OliWeb.LtiControllerTest do
       platform_jwk = jwk_fixture()
 
       Oli.Test.MockHTTP
-      |> expect(:get, 2, mock_keyset_endpoint("some key_set_url", platform_jwk))
+      |> expect(:get, 1, mock_keyset_endpoint("some key_set_url", platform_jwk))
 
       state = "some-state"
       conn = Plug.Test.init_test_session(conn, state: state)
@@ -309,7 +312,7 @@ defmodule OliWeb.LtiControllerTest do
 
       conn = post(conn, Routes.lti_path(conn, :launch, %{state: state, id_token: id_token}))
 
-      assert redirected_to(conn) == Routes.delivery_path(conn, :index)
+      assert html_response(conn, 200) =~ "This course section is not available"
     end
 
     test "launch successful for valid params with no email", %{
@@ -319,7 +322,7 @@ defmodule OliWeb.LtiControllerTest do
       platform_jwk = jwk_fixture()
 
       Oli.Test.MockHTTP
-      |> expect(:get, 2, mock_keyset_endpoint("some key_set_url", platform_jwk))
+      |> expect(:get, 1, mock_keyset_endpoint("some key_set_url", platform_jwk))
 
       state = "some-state"
       conn = Plug.Test.init_test_session(conn, state: state)
@@ -341,33 +344,11 @@ defmodule OliWeb.LtiControllerTest do
 
       conn = post(conn, Routes.lti_path(conn, :launch, %{state: state, id_token: id_token}))
 
-      assert redirected_to(conn) == Routes.delivery_path(conn, :index)
+      assert html_response(conn, 200) =~ "This course section is not available"
     end
 
     test "launch handles invalid registration and shows registration form", %{conn: conn} do
       platform_jwk = jwk_fixture()
-
-      Oli.Test.MockHTTP
-      |> expect(:get, 2, fn "some key_set_url" ->
-        {:ok,
-         %HTTPoison.Response{
-           status_code: 200,
-           body:
-             Jason.encode!(%{
-               keys: [
-                 platform_jwk.pem
-                 |> JOSE.JWK.from_pem()
-                 |> JOSE.JWK.to_public()
-                 |> JOSE.JWK.to_map()
-                 |> (fn {_kty, public_jwk} -> public_jwk end).()
-                 |> Map.put("typ", platform_jwk.typ)
-                 |> Map.put("alg", platform_jwk.alg)
-                 |> Map.put("kid", platform_jwk.kid)
-                 |> Map.put("use", "sig")
-               ]
-             })
-         }}
-      end)
 
       state = "some-state"
       conn = Plug.Test.init_test_session(conn, state: state)

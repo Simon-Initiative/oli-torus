@@ -26,20 +26,20 @@ defmodule OliWeb.Common.InstructorDashboardPagedTable do
     ~H"""
     <div class={if @scrollable, do: "overflow-x-scroll #{@overflow_class}"}>
       <%= if @filter != "" and @render_top_info do %>
-        <strong>Results filtered on &quot;<%= @filter %>&quot;</strong>
+        <strong>Results filtered on &quot;{@filter}&quot;</strong>
       <% end %>
 
       <%= if @total_count > 0 do %>
         <div :if={@total_count <= @limit and @render_top_info} class="px-5 py-2">
-          Showing all results (<%= @total_count %> total)
+          Showing all results ({@total_count} total)
         </div>
-        <%= render_table(%{
+        {render_table(%{
           allow_selection: @allow_selection,
           table_model: @table_model,
           sort: @sort,
           selection_change: @selection_change,
           additional_table_class: @additional_table_class
-        }) %>
+        })}
         <Paging.render
           id="footer_paging"
           total_count={@total_count}
@@ -54,7 +54,7 @@ defmodule OliWeb.Common.InstructorDashboardPagedTable do
         />
       <% else %>
         <div class="bg-white dark:bg-gray-800 dark:text-white px-10 my-5">
-          <p><%= @no_records_message %></p>
+          <p>{@no_records_message}</p>
         </div>
       <% end %>
     </div>

@@ -87,15 +87,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLiveTest do
       # Duplicate action is present with the right revision id
       assert view
              |> element(
-               "div[phx-value-slug=\"#{revision_page_one.slug}\"] button[role=\"duplicate_page\"]"
+               "div[phx-value-slug='#{revision_page_one.slug}'] button[role='duplicate_page']"
              )
              |> render =~ "phx-value-id=\"#{revision_page_one.id}\""
 
       # Clicking on duplicate action creates a new entry with the right title name
       view
-      |> element(
-        "div[phx-value-slug=\"#{revision_page_two.slug}\"] button[role=\"duplicate_page\"]"
-      )
+      |> element("div[phx-value-slug='#{revision_page_two.slug}'] button[role='duplicate_page']")
       |> render_click =~
         "entry-title\">Copy of #{revision_page_two.title}</span>"
     end
@@ -114,11 +112,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLiveTest do
       {:ok, view, _html} = live(conn)
 
       assert view
-             |> has_element?("div[phx-value-slug=\"#{adaptive_page_revision.slug}\"]")
+             |> has_element?("div[phx-value-slug='#{adaptive_page_revision.slug}']")
 
       refute view
              |> has_element?(
-               "div[phx-value-slug=\"#{adaptive_page_revision.slug}\"] button[phx-click=\"duplicate_page\"]"
+               "div[phx-value-slug='#{adaptive_page_revision.slug}'] button[phx-click='duplicate_page']"
              )
     end
 
@@ -137,7 +135,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLiveTest do
 
       view
       |> element(
-        "div[phx-value-slug=\"#{revision_page_one.slug}\"] button[role=\"show_options_modal\"]"
+        "div[phx-value-slug='#{revision_page_one.slug}'] button[role=\"show_options_modal\"]"
       )
       |> render_click() =~ "Page Options"
 
@@ -203,7 +201,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLiveTest do
 
       view
       |> element(
-        "div[phx-value-slug=\"#{revision_page_one.slug}\"] button[role=\"show_options_modal\"]"
+        "div[phx-value-slug='#{revision_page_one.slug}'] button[role=\"show_options_modal\"]"
       )
       |> render_click()
 
@@ -235,7 +233,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLiveTest do
 
       view
       |> element(
-        "div[phx-value-slug=\"#{revision_page_one.slug}\"] button[role=\"show_options_modal\"]"
+        "div[phx-value-slug='#{revision_page_one.slug}'] button[role=\"show_options_modal\"]"
       )
       |> render_click()
 
@@ -290,14 +288,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLiveTest do
 
       [edit_link_regular] =
         view
-        |> element("div[phx-value-slug=\"#{revision_page_one.slug}\"]")
+        |> element("div[phx-value-slug='#{revision_page_one.slug}']")
         |> render()
         |> Floki.parse_document!()
         |> Floki.find("a.entry-title.mx-3")
 
       [edit_link_adaptive] =
         view
-        |> element("div[phx-value-slug=\"#{adaptive_page_revision.slug}\"]")
+        |> element("div[phx-value-slug='#{adaptive_page_revision.slug}']")
         |> render()
         |> Floki.parse_document!()
         |> Floki.find("a.entry-title.mx-3")

@@ -451,6 +451,11 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       section: section,
       page_1: page_1
     } do
+      {:ok, section} =
+        Sections.update_section(section, %{
+          requires_enrollment: true
+        })
+
       {:error, {:redirect, %{to: redirect_path, flash: _flash_msg}}} =
         live(conn, Utils.prologue_live_path(section.slug, page_1.slug))
 
@@ -852,7 +857,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
                "You have no attempts remaining out of 2 total attempts."
              )
 
-      assert has_element?(view, "button[id='begin_attempt_button'][disabled='disabled']")
+      assert has_element?(view, "button[id='begin_attempt_button'][disabled]")
     end
 
     test "can see page info on header", %{
@@ -1095,6 +1100,8 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
         view
         |> element(~s{div[role="back_link"] a})
         |> render()
+        |> Floki.parse_document!()
+        |> Floki.find("a")
         |> Floki.attribute("href")
 
       assert href ==

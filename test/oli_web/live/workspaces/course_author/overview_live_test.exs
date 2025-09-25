@@ -50,7 +50,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
 
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
 
-      element(view, "form[phx-submit=\"delete\"]")
+      element(view, "form[phx-submit='delete']")
       |> render_submit()
       |> follow_redirect(conn, "/workspaces/course_author")
 
@@ -76,7 +76,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
 
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
 
-      element(view, "form[phx-submit=\"update\"]")
+      element(view, "form[phx-submit='update']")
       |> render_submit(%{
         "project" => %{
           "title" => "updated title",
@@ -111,7 +111,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
 
       assert view
-             |> element("form[phx-change=\"validate\"]")
+             |> element("form[phx-change='validate']")
              |> render_change(%{
                "project" => %{
                  "title" => nil
@@ -126,7 +126,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
 
       refute has_element?(view, "input[name=\"survey\"][checked]")
 
-      element(view, "form[phx-change=\"set-required-survey\"]")
+      element(view, "form[phx-change='set-required-survey']")
       |> render_change(%{
         survey: "on"
       })
@@ -143,14 +143,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
 
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
 
-      assert has_element?(view, "input[name=\"survey\"][checked]")
+      assert has_element?(view, "input[name='survey'][checked]")
 
-      element(view, "form[phx-change=\"set-required-survey\"]")
-      |> render_change(%{})
+      element(view, "form[phx-change='set-required-survey']")
+      |> render_change(%{"_target" => ["survey"], "survey" => ""})
 
       updated_project = Course.get_project!(project.id)
       assert updated_project.required_survey_resource_id == nil
-      refute has_element?(view, "input[name=\"survey\"][checked]")
+      refute has_element?(view, "input[name='survey'][checked]")
       refute has_element?(view, "a", "Edit survey")
     end
 
@@ -163,7 +163,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
 
       ## Enable required survey
-      element(view, "form[phx-change=\"set-required-survey\"]")
+      element(view, "form[phx-change='set-required-survey']")
       |> render_change(%{
         survey: "on"
       })
@@ -185,7 +185,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
 
       refute project.allow_transfer_payment_codes
 
-      element(view, "form[phx-change=\"set_allow_transfer\"]")
+      element(view, "form[phx-change='set_allow_transfer']")
       |> render_change(%{})
 
       assert Course.get_project!(project.id).allow_transfer_payment_codes
@@ -200,7 +200,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
 
       assert project.allow_transfer_payment_codes
 
-      element(view, "form[phx-change=\"set_allow_transfer\"]")
+      element(view, "form[phx-change='set_allow_transfer']")
       |> render_change(%{})
 
       refute Course.get_project!(project.id).allow_transfer_payment_codes
@@ -482,7 +482,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
 
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
 
-      element(view, "form[phx-submit=\"update\"]")
+      element(view, "form[phx-submit='update']")
       |> render_submit(%{
         "project" => %{
           "attributes" => %{

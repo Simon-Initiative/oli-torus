@@ -33,7 +33,7 @@ defmodule OliWeb.Projects.PublishChangesTableModel do
     assigns = Map.merge(assigns, %{type: change.type})
 
     ~H"""
-    <span class={"badge badge-#{@type} mr-2"}><%= @type %></span>
+    <span class={"badge badge-#{@type} mr-2"}>{@type}</span>
     """
   end
 
@@ -43,7 +43,7 @@ defmodule OliWeb.Projects.PublishChangesTableModel do
     ~H"""
     <div data-is-structural={if @is_structural, do: "true", else: "false"}>
       <span class={if @is_structural, do: "font-bold", else: "font-light"}>
-        <%= if @is_structural, do: "Major", else: "Minor" %>
+        {if @is_structural, do: "Major", else: "Minor"}
       </span>
     </div>
     """

@@ -89,7 +89,7 @@ defmodule OliWeb.Components.Utils do
         <OliWeb.Icons.timezone_world />
       </div>
       <span class="text-sm font-medium leading-4">
-        <%= @timezone %>
+        {@timezone}
       </span>
     </div>
     """

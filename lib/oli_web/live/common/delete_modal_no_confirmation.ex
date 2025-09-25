@@ -30,7 +30,7 @@ defmodule OliWeb.Common.DeleteModalNoConfirmation do
           </div>
           <div class="modal-body">
             <div class="container form-container">
-              <div class="mb-3"><%= @description %></div>
+              <div class="mb-3">{@description}</div>
               <div class="d-flex">
                 <button
                   class="btn btn-outline-danger mt-2 flex-fill"
@@ -39,7 +39,7 @@ defmodule OliWeb.Common.DeleteModalNoConfirmation do
                   disabled={!@delete_enabled}
                   phx-value-id={@entity_id}
                 >
-                  <%= "#{@modal_action} this #{@entity_type}" %>
+                  {"#{@modal_action} this #{@entity_type}"}
                 </button>
               </div>
             </div>

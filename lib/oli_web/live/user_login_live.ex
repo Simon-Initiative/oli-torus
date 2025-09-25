@@ -21,7 +21,7 @@ defmodule OliWeb.UserLoginLive do
                 Welcome to
               </span>
               <span class="text-white text-4xl font-bold font-['Open Sans'] leading-10">
-                <%= product_short_name() %>
+                {product_short_name()}
               </span>
             </div>
             <div class="w-48 h-11 justify-start items-end gap-1 inline-flex">
@@ -73,7 +73,7 @@ defmodule OliWeb.UserLoginLive do
             registration_link={~p"/users/register"}
             reset_password_link={~p"/users/reset_password"}
             authentication_providers={@authentication_providers}
-            auth_provider_path_fn={&~p"/users/auth/#{&1}/new"}
+            auth_provider_path_fn={&build_auth_provider_path(&1, @section, @from_invitation_link?)}
             from_invitation_link?={@from_invitation_link?}
             section={@section}
           />
@@ -110,4 +110,20 @@ defmodule OliWeb.UserLoginLive do
 
     {:noreply, assign(socket, from_invitation_link?: from_invitation_link?, section: section)}
   end
+
+  defp build_auth_provider_path(provider, section, from_invitation_link?) do
+    base_path = ~p"/users/auth/#{provider}/new"
+
+    params =
+      []
+      |> maybe_add_param("section", section)
+      |> maybe_add_param("from_invitation_link?", from_invitation_link?)
+      |> URI.encode_query()
+
+    if params == "", do: base_path, else: "#{base_path}?#{params}"
+  end
+
+  defp maybe_add_param(params, _key, nil), do: params
+  defp maybe_add_param(params, _key, false), do: params
+  defp maybe_add_param(params, key, value), do: [{key, value} | params]
 end

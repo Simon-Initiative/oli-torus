@@ -1,4 +1,4 @@
-<%= render_modal(assigns) %>
+{render_modal(assigns)}
 
 <Modal.modal
   id="options_modal"
@@ -7,7 +7,7 @@
   on_cancel={JS.push("restart_options_modal")}
 >
   <:title>
-    <%= @options_modal_assigns[:title] %>
+    {@options_modal_assigns[:title]}
   </:title>
 
   <%= if @options_modal_assigns do %>
@@ -196,7 +196,7 @@
           class="btn btn-xs btn-outline-primary mr-0.5"
           type="button"
         >
-          Create a <%= new_container_name(@numberings, @container) %>
+          Create a {new_container_name(@numberings, @container)}
         </button>
       </div>
     </div>

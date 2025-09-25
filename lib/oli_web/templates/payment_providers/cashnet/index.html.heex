@@ -7,11 +7,11 @@
     <div class="rounded-md bg-gray-200 basis-1/2 p-10 flex flex-col">
       <div class="grid grid-cols-3">
         <div class="font-semibold ">Course Title:</div>
-        <div class="col-span-2 font-semibold"><%= @section.title %></div>
+        <div class="col-span-2 font-semibold">{@section.title}</div>
       </div>
       <div class="grid grid-cols-3">
         <div class="font-semibold ">User:</div>
-        <div class="col-span-2 font-semibold"><%= @user_name %></div>
+        <div class="col-span-2 font-semibold">{@user_name}</div>
       </div>
       <div class="font-semibold mt-4">Summary</div>
 
@@ -19,19 +19,19 @@
         <tbody>
           <tr>
             <td class="text-left text-gray-700">Price</td>
-            <td class="text-right text-gray-700"><%= @cost %></td>
+            <td class="text-right text-gray-700">{@cost}</td>
           </tr>
         </tbody>
         <tfoot>
           <tr>
             <td class="text-left font-bold text-gray-700">Total</td>
-            <td class="text-right font-bold text-gray-700"><%= @cost %></td>
+            <td class="text-right font-bold text-gray-700">{@cost}</td>
           </tr>
         </tfoot>
       </table>
 
       <div id="cashnet-form">
-        <%= raw(@cashnet_form) %>
+        {raw(@cashnet_form)}
       </div>
       <div id="spinner" class="justify-center flex flex-row">
         <div
@@ -43,12 +43,12 @@
         </div>
         <div class="ml-2 inline-block">Processing...</div>
       </div>
-      <%= live_render(@conn, OliWeb.Sections.PaymentEnd,
+      {live_render(@conn, OliWeb.Sections.PaymentEnd,
         session: %{
           "section" => @section,
           "user" => @user
         }
-      ) %>
+      )}
     </div>
   </div>
 </div>

@@ -12,6 +12,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
   alias Oli.LanguageCodesIso639
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Resources.Collaboration
+  alias Oli.ScopedFeatureFlags
   alias OliWeb.Common.Utils
   alias OliWeb.Components.{Common, Modal, Overview}
   alias OliWeb.Components.Project.{AdvancedActivityItem, AsyncExporter}
@@ -140,7 +141,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
             <%= case @latest_published_publication do %>
               <% %{edition: edition, major: major, minor: minor} -> %>
                 <p class="text-secondary">
-                  <%= Utils.render_version(edition, major, minor) %>
+                  {Utils.render_version(edition, major, minor)}
                 </p>
               <% _ -> %>
                 <p class="text-secondary">This project has not been published</p>
@@ -178,7 +179,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
             </.link>
           </div>
 
-          <%= submit("Save", class: "btn btn-md btn-primary mt-2") %>
+          {submit("Save", class: "btn btn-md btn-primary mt-2")}
         </Overview.section>
         <Overview.section
           title="Project Attributes"
@@ -187,43 +188,39 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
           <div class="d-block">
             <%= inputs_for f, :attributes, fn fp -> %>
               <div :if={@is_admin} class="form-label-group mb-3">
-                <%= checkbox(fp, :calculate_embeddings_on_publish) %>
-                <%= label(fp, :calculate_embeddings_on_publish, "Calculate embeddings on publish",
+                {checkbox(fp, :calculate_embeddings_on_publish)}
+                {label(fp, :calculate_embeddings_on_publish, "Calculate embeddings on publish",
                   class: "control-label"
-                ) %>
+                )}
               </div>
               <div class="form-label-group mb-3">
-                <%= label(fp, :learning_language, "Learning Language (optional)",
-                  class: "control-label"
-                ) %>
-                <%= select(fp, :learning_language, @language_codes,
+                {label(fp, :learning_language, "Learning Language (optional)", class: "control-label")}
+                {select(fp, :learning_language, @language_codes,
                   class: "form-control",
                   required: false,
                   prompt: "What language is being taught in this project?"
-                ) %>
+                )}
               </div>
               <%= inputs_for fp, :license, fn fpp -> %>
-                <%= label(fpp, :license_type, "License (optional)", class: "control-label") %>
-                <%= select(fpp, :license_type, @license_opts,
+                {label(fpp, :license_type, "License (optional)", class: "control-label")}
+                {select(fpp, :license_type, @license_opts,
                   phx_change: "on_select_license_type",
                   class: "form-control",
                   required: false
-                ) %>
+                )}
                 <div :if={@custom_license} class="form-label-group mb-3">
-                  <%= label(fpp, :custom_license_details, "Custom license (URL)",
-                    class: "control-label"
-                  ) %>
-                  <%= text_input(fpp, :custom_license_details,
+                  {label(fpp, :custom_license_details, "Custom license (URL)", class: "control-label")}
+                  {text_input(fpp, :custom_license_details,
                     class: "form-control",
                     placeholder: "https://creativecommons.org/licenses/by/4.0/",
                     required: false
-                  ) %>
+                  )}
                 </div>
               <% end %>
             <% end %>
           </div>
           <div>
-            <%= submit("Save", class: "btn btn-md btn-primary mt-2") %>
+            {submit("Save", class: "btn btn-md btn-primary mt-2")}
           </div>
           <div class="mt-5">
             <div>
@@ -243,22 +240,22 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
         <%= if @is_admin do %>
           <Overview.section title="Content Types" description="Enable optional content types.">
             <div class="form-label-group mb-3 form-check">
-              <%= checkbox(f, :allow_ecl_content_type, required: false) %>
-              <%= label(f, :allow_ecl_content_type, "ECL Code Editor",
+              {checkbox(f, :allow_ecl_content_type, required: false)}
+              {label(f, :allow_ecl_content_type, "ECL Code Editor",
                 class: "control-label form-check-label"
-              ) %>
+              )}
             </div>
 
-            <%= submit("Save", class: "btn btn-md btn-primary mt-2") %>
+            {submit("Save", class: "btn btn-md btn-primary mt-2")}
           </Overview.section>
         <% end %>
       </.form>
 
       <Overview.section title="Project Labels" description="Project wide customization of labels.">
-        <%= live_render(@socket, OliWeb.Projects.CustomizationLive,
+        {live_render(@socket, OliWeb.Projects.CustomizationLive,
           id: "project_customizations",
           session: %{"project_slug" => @project.slug}
-        ) %>
+        )}
       </Overview.section>
 
       <Overview.section
@@ -276,7 +273,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
         >
           <div class="form-group">
             <div class="input-group mb-3">
-              <%= text_input(
+              {text_input(
                 f,
                 :collaborator_emails,
                 class: "form-control" <> error_class(f, :title, "is-invalid"),
@@ -285,21 +282,21 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
                 required: true,
                 autocomplete: "off",
                 autofocus: focusHelper(f, :collaborator_emails, default: false)
-              ) %>
-              <%= error_tag(f, :collaborator_emails) %>
-              <%= hidden_input(f, :authors,
+              )}
+              {error_tag(f, :collaborator_emails)}
+              {hidden_input(f, :authors,
                 value:
-                  @collaborators.accepted
+                  Map.get(@collaborators, :accepted, [])
                   |> Enum.map(fn author_projects -> author_projects.author.email end)
                   |> Enum.join(", ")
-              ) %>
+              )}
               <div class="input-group-append">
-                <%= submit("Send Invite",
+                {submit("Send Invite",
                   id: "button-create-collaborator",
                   class: "btn btn-outline-primary",
                   phx_disable_with: "Adding Collaborator...",
                   form: f.id
-                ) %>
+                )}
               </div>
             </div>
             <div id="recaptcha" class="input-group mb-3" phx-update="ignore">
@@ -308,7 +305,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
                 data-sitekey={Application.fetch_env!(:oli, :recaptcha)[:site_key]}
               />
             </div>
-            <%= error_tag(f, :captcha) %>
+            {error_tag(f, :captcha)}
           </div>
         </.form>
         <.collaborators collaborators={@collaborators} />
@@ -348,19 +345,33 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
         />
       </Overview.section>
 
-      <%= live_render(@socket, OliWeb.Projects.VisibilityLive,
+      <%= if ScopedFeatureFlags.enabled?(:mcp_authoring, @project) do %>
+        <Overview.section
+          title="MCP Access Tokens"
+          description="Generate Bearer tokens for external AI agents to access this project's content via the Model Context Protocol (MCP)."
+        >
+          <.live_component
+            module={OliWeb.Projects.MCPTokenManager}
+            id="mcp-token-manager"
+            project={@project}
+            current_author={@current_author}
+          />
+        </Overview.section>
+      <% end %>
+
+      {live_render(@socket, OliWeb.Projects.VisibilityLive,
         id: "project_visibility",
         session: %{"project_slug" => @project.slug}
-      ) %>
+      )}
 
       <Overview.section
         title="AI Activation Points"
         description="Enable AI activation points for your project to include in your curriculum."
       >
-        <%= render_ai_triggers(assigns) %>
+        {render_ai_triggers(assigns)}
       </Overview.section>
 
-      <%= live_render(@socket, OliWeb.CollaborationLive.CollabSpaceConfigView,
+      {live_render(@socket, OliWeb.CollaborationLive.CollabSpaceConfigView,
         id: "project_collab_space_config",
         session: %{
           "collab_space_config" => @collab_space_config,
@@ -368,7 +379,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
           "resource_slug" => @revision_slug,
           "is_overview_render" => true
         }
-      ) %>
+      )}
 
       <Overview.section
         title="Required Survey"
@@ -395,6 +406,24 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
         />
       </Overview.section>
 
+      <%= if @is_admin do %>
+        <Overview.section
+          title="Feature Flags"
+          description="Manage scoped feature flags for this project."
+        >
+          <.live_component
+            module={OliWeb.Components.ScopedFeatureFlagsComponent}
+            id="project_scoped_features"
+            scopes={[:authoring, :both]}
+            source_id={@project.id}
+            source_type={:project}
+            source={@project}
+            current_author={@ctx.author}
+            title="Project Features"
+          />
+        </Overview.section>
+      <% end %>
+
       <Overview.section title="Actions" is_last={true}>
         <%= if @is_admin do %>
           <div class="flex items-center">
@@ -410,13 +439,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
 
         <div class="flex items-center">
           <div>
-            <%= button("Duplicate",
+            {button("Duplicate",
               to: Routes.project_path(@socket, :clone_project, @project),
               method: :post,
               class:
                 "text-Text-text-button hover:text-Text-text-button-hover hover:underline pr-3 py-2",
               data_confirm: "Are you sure you want to duplicate this project?"
-            ) %>
+            )}
           </div>
           <span>Create a complete copy of this project.</span>
         </div>
@@ -465,15 +494,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
                 Those sections will continue to operate as intended
               </div>
               <div>
-                <p>Please type <strong><%= @project.title %></strong> below to confirm.</p>
+                <p>Please type <strong>{@project.title}</strong> below to confirm.</p>
               </div>
               <.form :let={f} for={%{}} as={:form} phx-submit="delete">
                 <div class="mt-2">
-                  <%= text_input(f, :title,
+                  {text_input(f, :title,
                     class: "form-control",
                     id: "delete-confirm-title",
                     required: true
-                  ) %>
+                  )}
                 </div>
                 <div class="d-flex">
                   <button
@@ -510,13 +539,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
           AI Activation Points are currently <strong>disabled</strong> for this project.
         </p>
 
-        <%= button("Enable AI Activation Points",
+        {button("Enable AI Activation Points",
           to: Routes.project_path(@socket, :enable_triggers, @project),
           method: :post,
           class: "text-Text-text-button hover:text-Text-text-button-hover hover:underline pr-3 py-2",
           data_confirm:
             "The AI Activation Points authoring feature cannot be disabled once it is enabled. Do you want to proceed with enabling AI Activation Points??"
-        ) %>
+        )}
 
         <p class="mt-3">
           Note: AI Activation Points will only work for course sections that have DOT AI enabled.  This must be enabled section by section by a system administrator.
@@ -695,23 +724,34 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
      )}
   end
 
+  def handle_info({:scoped_feature_updated, feature_name, enabled, _source}, socket) do
+    action = if enabled, do: "enabled", else: "disabled"
+    message = "Feature '#{feature_name}' #{action} successfully"
+    {:noreply, put_flash(socket, :info, message)}
+  end
+
+  def handle_info({:scoped_feature_error, feature_name, error_message}, socket) do
+    message = "Failed to update feature '#{feature_name}': #{error_message}"
+    {:noreply, put_flash(socket, :error, message)}
+  end
+
   attr :collaborators, :map, required: true
 
   def collaborators(assigns) do
     ~H"""
     <div class="flex flex-col w-full space-y-3 mb-2">
       <div :if={!is_nil(@collaborators[:accepted])}>
-        <h5><%= "Collaborators (#{length(@collaborators.accepted)})" %></h5>
+        <h5>{"Collaborators (#{length(Map.get(@collaborators, :accepted, []))})"}</h5>
         <div
           :for={collaborator <- @collaborators.accepted}
           class="d-flex justify-content-between align-items-center py-1"
         >
           <div class="d-flex flex-column">
-            <div><%= "#{collaborator.author.name}" %></div>
-            <div class="text-muted"><%= "#{collaborator.author.email}" %></div>
+            <div>{"#{collaborator.author.name}"}</div>
+            <div class="text-muted">{"#{collaborator.author.email}"}</div>
           </div>
           <div class="user-actions">
-            <%= link("Remove",
+            {link("Remove",
               to:
                 Routes.collaborator_path(
                   OliWeb.Endpoint,
@@ -721,23 +761,25 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
                 ),
               method: :delete,
               class: "btn btn-link text-danger"
-            ) %>
+            )}
           </div>
         </div>
       </div>
 
       <div :if={!is_nil(@collaborators[:pending_confirmation])}>
-        <h5><%= "Pending Confirmation (#{length(@collaborators.pending_confirmation)})" %></h5>
+        <h5>
+          {"Pending Confirmation (#{length(Map.get(@collaborators, :pending_confirmation, []))})"}
+        </h5>
         <div
           :for={collaborator <- @collaborators.pending_confirmation}
           class="d-flex justify-content-between align-items-center py-1"
         >
           <div class="d-flex flex-column">
-            <div><%= "#{collaborator.author.name}" %></div>
-            <div class="text-muted"><%= "#{collaborator.author.email}" %></div>
+            <div>{"#{collaborator.author.name}"}</div>
+            <div class="text-muted">{"#{collaborator.author.email}"}</div>
           </div>
           <div class="user-actions">
-            <%= link("Remove",
+            {link("Remove",
               to:
                 Routes.collaborator_path(
                   OliWeb.Endpoint,
@@ -747,23 +789,23 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
                 ),
               method: :delete,
               class: "btn btn-link text-danger"
-            ) %>
+            )}
           </div>
         </div>
       </div>
 
       <div :if={!is_nil(@collaborators[:rejected])}>
-        <h5><%= "Rejected Invitations (#{length(@collaborators.rejected)})" %></h5>
+        <h5>{"Rejected Invitations (#{length(Map.get(@collaborators, :rejected, []))})"}</h5>
         <div
           :for={collaborator <- @collaborators.rejected}
           class="d-flex justify-content-between align-items-center py-1"
         >
           <div class="d-flex flex-column">
-            <div><%= "#{collaborator.author.name}" %></div>
-            <div class="text-muted"><%= "#{collaborator.author.email}" %></div>
+            <div>{"#{collaborator.author.name}"}</div>
+            <div class="text-muted">{"#{collaborator.author.email}"}</div>
           </div>
           <div class="user-actions">
-            <%= link("Remove",
+            {link("Remove",
               to:
                 Routes.collaborator_path(
                   OliWeb.Endpoint,
@@ -773,7 +815,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
                 ),
               method: :delete,
               class: "btn btn-link text-danger"
-            ) %>
+            )}
           </div>
         </div>
       </div>

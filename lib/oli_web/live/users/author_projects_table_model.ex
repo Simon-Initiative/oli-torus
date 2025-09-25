@@ -49,7 +49,7 @@ defmodule OliWeb.Users.AuthorProjectsTableModel do
 
     ~H"""
     <a href={~p"/workspaces/course_author/#{@slug}/overview"}>
-      <%= @title %>
+      {@title}
     </a>
     """
   end
@@ -72,7 +72,7 @@ defmodule OliWeb.Users.AuthorProjectsTableModel do
     assigns = Map.merge(assigns, %{date_created: project.created_at})
 
     ~H"""
-    <%= parse_datetime(@date_created, @ctx) %>
+    {parse_datetime(@date_created, @ctx)}
     """
   end
 
@@ -80,7 +80,7 @@ defmodule OliWeb.Users.AuthorProjectsTableModel do
     assigns = Map.merge(assigns, %{most_recent_edit: project.most_recent_edit})
 
     ~H"""
-    <%= parse_datetime(@most_recent_edit, @ctx) %>
+    {parse_datetime(@most_recent_edit, @ctx)}
     """
   end
 

@@ -1,5 +1,4 @@
 import React, { CSSProperties, useEffect, useRef, useState } from 'react';
-import isEqual from 'lodash/isEqual';
 import { AuthorPartComponentProps } from 'components/parts/types/parts';
 import { clone } from 'utils/common';
 import './Slider-Text.scss';
@@ -29,15 +28,19 @@ const SliderTextAuthor: React.FC<AuthorPartComponentProps<SliderTextModel>> = (p
     props.onReady({ id: `${props.id}` });
   }, []);
 
-  const prevSliderOptionLabelsRef = useRef<string[]>([]);
+  const prevSliderOptionLabelsRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (!isEqual(prevSliderOptionLabelsRef.current?.length, sliderOptionLabels?.length)) {
+    if (prevSliderOptionLabelsRef.current === null) {
+      prevSliderOptionLabelsRef.current = sliderOptionLabels?.length ?? 0;
+      return;
+    }
+    if (prevSliderOptionLabelsRef.current !== sliderOptionLabels?.length) {
       const modelClone = clone(model);
       //The max range will be the total text items - 1.
       modelClone.maximum = sliderOptionLabels?.length - 1;
       onSaveConfigure({ id, snapshot: modelClone });
-      prevSliderOptionLabelsRef.current = sliderOptionLabels;
+      prevSliderOptionLabelsRef.current = sliderOptionLabels?.length ?? 0;
     }
   }, [sliderOptionLabels, model, id, onSaveConfigure]);
 

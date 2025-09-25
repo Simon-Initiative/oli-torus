@@ -125,6 +125,7 @@ defmodule Oli.Delivery.Sections.Section do
     field(:instructors, {:array, {:array, :string}}, virtual: true)
 
     many_to_many(:communities, Oli.Groups.Community, join_through: Oli.Groups.CommunityVisibility)
+    many_to_many(:tags, Oli.Tags.Tag, join_through: Oli.Tags.SectionTag)
 
     belongs_to(:publisher, Oli.Inventories.Publisher)
 
@@ -164,6 +165,8 @@ defmodule Oli.Delivery.Sections.Section do
     field(:encouraging_subtitle, :string)
 
     field(:agenda, :boolean, default: true)
+
+    field(:timezone, :string, default: nil)
 
     timestamps(type: :utc_datetime)
   end
@@ -228,7 +231,8 @@ defmodule Oli.Delivery.Sections.Section do
       :welcome_title,
       :encouraging_subtitle,
       :agenda,
-      :certificate_enabled
+      :certificate_enabled,
+      :timezone
     ])
     |> cast_embed(:customizations, required: false)
     |> validate_required(@required_fields)

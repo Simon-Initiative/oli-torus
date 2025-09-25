@@ -694,7 +694,8 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
         _ -> {:ok, {activity, nil}}
       end
     else
-      error -> error
+      error ->
+        error
     end
   end
 

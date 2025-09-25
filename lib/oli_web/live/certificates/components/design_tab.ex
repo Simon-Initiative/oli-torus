@@ -190,7 +190,7 @@ defmodule OliWeb.Certificates.Components.DesignTab do
               </div>
               <div class="flex flex-col gap-1">
                 <%= for error <- @logo_upload_errors do %>
-                  <p class="text-red-500 text-sm"><%= error %></p>
+                  <p class="text-red-500 text-sm">{error}</p>
                 <% end %>
               </div>
             </section>

@@ -343,6 +343,7 @@ defmodule Oli.Accounts do
     # using enrollment records, we can infer the user's institution. This is because
     # an LTI user can be enrolled in multiple sections, but all sections must be from
     # the same institution.
+
     results =
       from(e in Enrollment,
         join: s in Section,
@@ -407,13 +408,6 @@ defmodule Oli.Accounts do
       error ->
         error
     end
-  end
-
-  @doc """
-  Preloads the user's linked author.
-  """
-  def preload_author(%User{} = user) do
-    Repo.preload(user, :author)
   end
 
   @doc """
@@ -1251,7 +1245,7 @@ defmodule Oli.Accounts do
 
   """
   def change_user_password(user, attrs \\ %{}) do
-    User.password_changeset(user, attrs, hash_password: false)
+    User.password_changeset(user, attrs, hash_password: false, require_current_password: true)
   end
 
   @doc """
@@ -1269,7 +1263,7 @@ defmodule Oli.Accounts do
   def update_user_password(user, password, attrs) do
     changeset =
       user
-      |> User.password_changeset(attrs)
+      |> User.password_changeset(attrs, require_current_password: true)
       |> User.validate_current_password(password)
 
     Ecto.Multi.new()
@@ -1679,7 +1673,7 @@ defmodule Oli.Accounts do
   """
   def apply_author_email(author, password, attrs) do
     author
-    |> Author.email_changeset(attrs)
+    |> Author.email_changeset(attrs, require_current_password: true)
     |> Author.validate_current_password(password)
     |> Ecto.Changeset.apply_action(:update)
   end
@@ -1763,7 +1757,7 @@ defmodule Oli.Accounts do
   def update_author_password(author, password, attrs) do
     changeset =
       author
-      |> Author.password_changeset(attrs)
+      |> Author.password_changeset(attrs, require_current_password: true)
       |> Author.validate_current_password(password)
 
     Ecto.Multi.new()
@@ -2060,4 +2054,7 @@ defmodule Oli.Accounts do
       [email: "must be a valid email address"]
     end
   end
+
+  def get_user_emails_by_ids(user_ids),
+    do: from(u in User, where: u.id in ^user_ids, select: u.email) |> Repo.all()
 end

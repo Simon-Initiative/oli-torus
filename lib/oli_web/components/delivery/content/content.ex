@@ -162,7 +162,7 @@ defmodule OliWeb.Components.Delivery.Content do
       <div class="bg-white dark:bg-[#262626] shadow-sm">
         <div class="flex justify-between gap-2 items-center px-4 pt-8 pb-4 instructor_dashboard_table dark:bg-[#262626]">
           <div class="text-zinc-700 text-lg font-bold leading-none tracking-tight dark:bg-gray-800 dark:text-white">
-            Course <%= if @params.container_filter_by == :units, do: "Units", else: "Modules" %>
+            Course {if @params.container_filter_by == :units, do: "Units", else: "Modules"}
           </div>
           <div>
             <a
@@ -213,14 +213,14 @@ defmodule OliWeb.Components.Delivery.Content do
               id="proficiency_select"
               options={@proficiency_options}
               selected_values={@selected_proficiency_options}
-              selected_proficiency_ids={@selected_proficiency_ids}
+              selected_ids={@selected_proficiency_ids}
               target={@myself}
               disabled={@selected_proficiency_ids == %{}}
               placeholder="Proficiency"
             />
 
             <button
-              class="ml-2 mr-6 text-center text-Text-text-high text-sm font-normal leading-none flex items-center gap-x-2"
+              class="ml-2 mr-6 text-center text-Text-text-high text-sm font-normal leading-none flex items-center gap-x-2 hover:text-Text-text-button"
               phx-click="clear_all_filters"
               phx-target={@myself}
             >
@@ -253,7 +253,7 @@ defmodule OliWeb.Components.Delivery.Content do
 
   def handle_event("apply_proficiency_filter", _params, socket) do
     %{
-      selected_proficiency_ids: selected_proficiency_ids,
+      selected_proficiency_ids: selected_ids,
       patch_url_type: patch_url_type
     } = socket.assigns
 
@@ -262,7 +262,7 @@ defmodule OliWeb.Components.Delivery.Content do
        to:
          route_for(
            socket,
-           %{selected_proficiency_ids: Jason.encode!(selected_proficiency_ids)},
+           %{selected_proficiency_ids: Jason.encode!(selected_ids)},
            patch_url_type
          )
      )}

@@ -146,13 +146,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
       >
         <%= for shortcut <- JobShortcuts.all() do %>
           <option value={shortcut.value} selected={@job_type == shortcut.value}>
-            <%= shortcut.label %>
+            {shortcut.label}
           </option>
         <% end %>
       </select>
 
       <small class="mb-3">
-        <%= @shortcut.description %>
+        {@shortcut.description}
       </small>
 
       <%= if @is_admin? do %>
@@ -184,11 +184,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
       <% end %>
 
       <p class="mt-5">
-        Select the dataset source course sections <%= if !@is_admin? do
+        Select the dataset source course sections {if !@is_admin? do
           "(max 5)"
         else
           ""
-        end %>:
+        end}:
       </p>
 
       <div class="mb-5" />

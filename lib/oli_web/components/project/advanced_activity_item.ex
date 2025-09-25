@@ -10,9 +10,9 @@ defmodule OliWeb.Components.Project.AdvancedActivityItem do
     ~H"""
     <div class="flex flex-row py-3 border-b last:border-b-0">
       <div class="flex flex-1 flex-col justify-center">
-        <div><%= @activity.title %></div>
+        <div>{@activity.title}</div>
         <span :if={@activity.deployment_id} class="text-sm text-[#737373]">
-          Deployment Id: <%= @activity.deployment_id %>
+          Deployment Id: {@activity.deployment_id}
         </span>
       </div>
 
@@ -26,7 +26,7 @@ defmodule OliWeb.Components.Project.AdvancedActivityItem do
           phx-target={@myself}
           class="btn justify-start text-[#0165da] text-base font-medium"
         >
-          <%= if @activity.project_status == :enabled, do: "Disable", else: "Enable" %>
+          {if @activity.project_status == :enabled, do: "Disable", else: "Enable"}
         </button>
       </div>
     </div>

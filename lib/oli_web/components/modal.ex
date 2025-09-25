@@ -86,14 +86,14 @@ defmodule OliWeb.Components.Modal do
                       id={"#{@id}-title"}
                       class="text-xl font-semibold text-gray-900 dark:text-white"
                     >
-                      <%= render_slot(@title) %>
+                      {render_slot(@title)}
                     </h1>
                     <p
                       :if={@subtitle != []}
                       id={"#{@id}-description"}
                       class="mt-2 text-sm leading-6 text-zinc-600"
                     >
-                      <%= render_slot(@subtitle) %>
+                      {render_slot(@subtitle)}
                     </p>
                   </div>
                 </div>
@@ -123,10 +123,10 @@ defmodule OliWeb.Components.Modal do
               </div>
               <!-- Modal body -->
               <div class={@body_class}>
-                <%= render_slot(@inner_block) %>
+                {render_slot(@inner_block)}
               </div>
               <!-- Modal footer -->
-              <%= render_slot(@custom_footer) %>
+              {render_slot(@custom_footer)}
               <div :if={@confirm != [] or @cancel != []}>
                 <div class="flex justify-end p-6 space-x-2">
                   <.button
@@ -134,7 +134,7 @@ defmodule OliWeb.Components.Modal do
                     phx-click={hide_modal(@on_cancel, @id)}
                     class={@cancel_class}
                   >
-                    <%= render_slot(cancel) %>
+                    {render_slot(cancel)}
                   </.button>
 
                   <.button
@@ -144,7 +144,7 @@ defmodule OliWeb.Components.Modal do
                     phx-disable-with
                     class={@confirm_class}
                   >
-                    <%= render_slot(confirm) %>
+                    {render_slot(confirm)}
                   </.button>
                 </div>
               </div>
@@ -230,20 +230,20 @@ defmodule OliWeb.Components.Modal do
                     id={"#{@id}-title"}
                     class="text-zinc-700 dark:text-neutral-300 text-[40px] font-bold font-['Inter'] leading-[60px]"
                   >
-                    <%= render_slot(@title) %>
+                    {render_slot(@title)}
                   </h1>
                   <p
                     :if={@subtitle != []}
                     id={"#{@id}-description"}
                     class="mt-11 text-zinc-700 dark:text-white text-base font-normal font-['Inter'] leading-normal"
                   >
-                    <%= render_slot(@subtitle) %>
+                    {render_slot(@subtitle)}
                   </p>
                 </div>
               </div>
               <!-- Modal body -->
               <div class={@body_class}>
-                <%= render_slot(@inner_block) %>
+                {render_slot(@inner_block)}
               </div>
               <!-- Modal footer -->
               <div :if={@confirm != [] or @cancel != []}>
@@ -253,7 +253,7 @@ defmodule OliWeb.Components.Modal do
                     phx-click={hide_modal(@on_cancel, @id)}
                     class="bg-transparent text-blue-500 hover:underline hover:bg-transparent"
                   >
-                    <%= render_slot(cancel) %>
+                    {render_slot(cancel)}
                   </.button>
 
                   <.button
@@ -264,7 +264,7 @@ defmodule OliWeb.Components.Modal do
                     class="py-2 px-3"
                     variant={:primary}
                   >
-                    <%= render_slot(confirm) %>
+                    {render_slot(confirm)}
                   </.button>
                 </div>
               </div>

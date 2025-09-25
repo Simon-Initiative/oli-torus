@@ -56,6 +56,18 @@ export class BasicPracticePagePO {
 
   async clickParagraph(index: number = 0) {
     await this.utils.sleep(15);
+  async visibleTitlePage(titlePage: string = 'New Page') {
+    const titleSpan = this.page.locator('span.entry-title', { hasText: titlePage });
+    await expect(titleSpan).toBeVisible();
+  }
+
+  async waitForChangesSaved() {
+    await this.utils.paintElement(this.changesSaved);
+    await this.changesSaved.waitFor();
+  }
+
+  async clickParagraph(index: number = 0) {
+    await this.utils.sleep();
     await this.paragraph.nth(index).click();
   }
 

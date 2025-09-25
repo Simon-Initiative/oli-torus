@@ -28,11 +28,11 @@ defmodule OliWeb.Components.Delivery.ScheduleGatingAssessment do
               <li>
                 <%= if name == "schedule" do %>
                   <.link href={path} class={tab_class(@active_tab, name)}>
-                    <%= label %>
+                    {label}
                   </.link>
                 <% else %>
                   <.link navigate={path} class={tab_class(@active_tab, name)}>
-                    <%= label %>
+                    {label}
                   </.link>
                 <% end %>
               </li>

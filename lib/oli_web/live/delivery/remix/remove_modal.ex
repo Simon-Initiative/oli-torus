@@ -20,7 +20,7 @@ defmodule OliWeb.Delivery.Remix.RemoveModal do
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title">
-              Remove <%= resource_type_label(@node.revision) |> String.capitalize() %>
+              Remove {resource_type_label(@node.revision) |> String.capitalize()}
             </h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
             </button>

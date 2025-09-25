@@ -96,15 +96,15 @@ defmodule OliWeb.Resources.AlternativesEditorTest do
 
       # show create alternatives modal
       view
-      |> element(~s|button[phx-click="show_create_modal"|)
+      |> element(~s|button[phx-click='show_create_modal']|)
       |> render_click()
 
-      assert has_element?(view, ~s|div[class="modal-dialog"]|)
+      assert has_element?(view, ~s|div[class=modal-dialog]|)
       assert has_element?(view, "h5", "Create Alternative")
 
       # create alternatives group
       view
-      |> element(~s|form[phx-submit="create_group"|)
+      |> element(~s|form[phx-submit='create_group']|)
       |> render_submit(%{"params" => %{"name" => "Stats Package"}})
 
       # verify new alternatives group was created with no options
@@ -113,15 +113,15 @@ defmodule OliWeb.Resources.AlternativesEditorTest do
 
       # show add option modal
       view
-      |> element(~s|button[phx-click="show_create_option_modal"|)
+      |> element(~s|button[phx-click='show_create_option_modal']|)
       |> render_click()
 
-      assert has_element?(view, ~s|div[class="modal-dialog"]|)
+      assert has_element?(view, ~s|div[class=modal-dialog]|)
       assert has_element?(view, "h5", "Create Option")
 
       # create option
       view
-      |> element(~s|form[phx-submit="create_option"|)
+      |> element(~s|form[phx-submit='create_option']|)
       |> render_submit(%{"params" => %{"name" => "Excel"}})
 
       # verify alternatives group contains new option
@@ -130,15 +130,15 @@ defmodule OliWeb.Resources.AlternativesEditorTest do
 
       # show edit option modal
       view
-      |> element(~s|button[phx-click="show_edit_option_modal"]|)
+      |> element(~s|button[phx-click='show_edit_option_modal']|)
       |> render_click()
 
-      assert has_element?(view, ~s|div[class="modal-dialog"]|)
+      assert has_element?(view, ~s|div[class=modal-dialog]|)
       assert has_element?(view, "h5", "Edit Option")
 
       # edit option
       view
-      |> element(~s|form[phx-submit="edit_option"|)
+      |> element(~s|form[phx-submit='edit_option']|)
       |> render_submit(%{"params" => %{"name" => "Shine"}})
 
       # verify alternatives group contains the edited option
@@ -147,15 +147,15 @@ defmodule OliWeb.Resources.AlternativesEditorTest do
 
       # show delete option modal
       view
-      |> element(~s|button[phx-click="show_delete_option_modal"]|)
+      |> element(~s|button[phx-click='show_delete_option_modal']|)
       |> render_click()
 
-      assert has_element?(view, ~s|div[class="modal-dialog"]|)
+      assert has_element?(view, ~s|div[class=modal-dialog]|)
       assert has_element?(view, "h5", "Delete Option")
 
       # delete option
       view
-      |> element(~s|button[phx-click="delete_option"]|)
+      |> element(~s|button[phx-click='delete_option']|)
       |> render_click()
 
       # verify alternatives group doesn't contain the deleted option

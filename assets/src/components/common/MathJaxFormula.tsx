@@ -15,7 +15,7 @@ import { sanitizeMathML } from '../../utils/mathmlSanitizer';
 
 const cssClass = (inline: boolean) => (inline ? 'formula-inline' : 'formula');
 
-const getGlobalLastPromise = () => {
+export const getGlobalLastPromise = () => {
   /* istanbul ignore next */
   let lastPromise = window?.MathJax?.startup?.promise;
   /* istanbul ignore next */
@@ -30,8 +30,18 @@ const getGlobalLastPromise = () => {
   return lastPromise;
 };
 
-const setGlobalLastPromise = (promise: Promise<any>) => {
+export const setGlobalLastPromise = (promise: Promise<any>) => {
   window.MathJax.startup.promise = promise;
+};
+
+export const safelyTypesetPromise = (elements?: HTMLElement[]) => {
+  // According to the mathJax docs, you should only let 1 instance typeset at a time, so
+  // that's what the promise chain here does.
+  let lastPromise = getGlobalLastPromise();
+  if (lastPromise) {
+    lastPromise = lastPromise.then(() => window.MathJax.typesetPromise(elements));
+    setGlobalLastPromise(lastPromise);
+  }
 };
 
 /**
@@ -46,11 +56,7 @@ const useMathJax = (src: string) => {
   const ref = useCallback(
     (node: HTMLDivElement) => {
       if (node) {
-        // According to the mathJax docs, you should only let 1 instance typeset at a time, so
-        // that's what the promise chain here does.
-        let lastPromise = getGlobalLastPromise();
-        lastPromise = lastPromise.then(() => window.MathJax.typesetPromise([node]));
-        setGlobalLastPromise(lastPromise);
+        safelyTypesetPromise([node]);
       }
     },
     [src],
@@ -132,7 +138,7 @@ MathJaxLatexFormula.defaultProps = { style: {} };
 
 // Add some types to window to satisfy our minimal needs instead of loading the full mathjax type definitions.
 interface MathJaxMinimal {
-  typesetPromise: (nodes: HTMLElement[]) => Promise<void>;
+  typesetPromise: (nodes?: HTMLElement[]) => Promise<void>;
   startup: {
     promise: Promise<void>;
     load?: () => void;

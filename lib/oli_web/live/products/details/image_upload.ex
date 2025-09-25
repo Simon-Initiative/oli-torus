@@ -75,7 +75,7 @@ defmodule OliWeb.Products.Details.ImageUpload do
                               aria-valuemin="0"
                               aria-valuemax="100"
                             >
-                              <%= entry.progress %>%
+                              {entry.progress}%
                             </div>
                           </div>
                         </div>
@@ -94,7 +94,7 @@ defmodule OliWeb.Products.Details.ImageUpload do
                     <% end %>
 
                     <%= for err <- upload_errors(@uploads.cover_image, entry) do %>
-                      <div class="alert danger"><%= upload_error(err) %></div>
+                      <div class="alert danger">{upload_error(err)}</div>
                     <% end %>
                   </article>
                 <% end %>

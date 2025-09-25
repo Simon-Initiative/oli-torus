@@ -261,7 +261,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ActionsTabTest do
       assert view |> element("option[value=#{Integer.to_string(user_role_id)}]")
 
       view
-      |> element("form[phx-change=\"display_confirm_modal\"")
+      |> element("form[phx-change='display_confirm_modal']")
       |> render_change(%{filter_by_role_id: "3"})
 
       assert view
@@ -293,7 +293,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ActionsTabTest do
       assert view |> element("option[value=#{Integer.to_string(user_role_id)}]")
 
       view
-      |> element("form[phx-change=\"display_confirm_modal\"")
+      |> element("form[phx-change='display_confirm_modal']")
       |> render_change(%{filter_by_role_id: "3"})
 
       assert view
@@ -356,7 +356,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ActionsTabTest do
 
       # Button to bypass payment is enabled by default
       view
-      |> element("button[phx-click=\"display_bypass_modal\"]")
+      |> element("button[phx-click='display_bypass_modal']")
       |> render_click()
 
       # and the update payment status action is not visible (since there is no active payment)
@@ -373,7 +373,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ActionsTabTest do
 
       # Button to byppas payment is disabled after bypassing payment
       assert view
-             |> element("button[phx-click=\"display_bypass_modal\"][disabled]")
+             |> element("button[phx-click='display_bypass_modal'][disabled]")
              |> render() =~
                "Apply Bypass Payment"
 
@@ -488,7 +488,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ActionsTabTest do
       # click on section_2 row
       view
       |> element(
-        "tr[phx-value-id=\"#{section_2.id}\"]",
+        "tr[phx-value-id='#{section_2.id}']",
         "#{section_2.title}"
       )
       |> render_click()
@@ -505,7 +505,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ActionsTabTest do
       # click on user_2 row
       view
       |> element(
-        "tr[phx-value-id=\"#{user_2.id}\"]",
+        "tr[phx-value-id='#{user_2.id}']",
         "#{user_2.name}"
       )
       |> render_click()
@@ -581,7 +581,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ActionsTabTest do
       # click on section_2 row
       view
       |> element(
-        "tr[phx-value-id=\"#{section_2.id}\"]",
+        "tr[phx-value-id='#{section_2.id}']",
         "#{section_2.title}"
       )
       |> render_click()

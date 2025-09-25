@@ -344,7 +344,7 @@ defmodule OliWeb.Components.Delivery.Utils do
   def progress_bar(assigns) do
     ~H"""
     <div class="my-2 flex flex-row items-center">
-      <div class="font-bold"><%= @percent %>%</div>
+      <div class="font-bold">{@percent}%</div>
       <div class="flex-1 ml-3">
         <div class={"w-[#{@width}] rounded-full bg-gray-200 h-2"}>
           <div class="rounded-full bg-green-600 h-2" style={"width: #{@percent}%"}></div>

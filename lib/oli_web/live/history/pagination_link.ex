@@ -10,7 +10,7 @@ defmodule OliWeb.RevisionHistory.PaginationLink do
 
     ~H"""
     <li class={"page-item #{if @active do "active" else "" end}"}>
-      <a class="page-link" href="#" phx-click="page" phx-value-ordinal={@str}><%= @str %></a>
+      <a class="page-link" href="#" phx-click="page" phx-value-ordinal={@str}>{@str}</a>
     </li>
     """
   end

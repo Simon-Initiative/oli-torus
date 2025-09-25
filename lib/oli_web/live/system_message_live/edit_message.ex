@@ -32,14 +32,14 @@ defmodule OliWeb.SystemMessageLive.EditMessage do
           <.input
             type="textarea"
             field={@changeset[:message]}
-            id="system_message_message"
+            id={"system_message_message_#{@system_message.id}"}
             class="form-control"
             rows="4"
             placeholder="Type a message for all users in the system"
             maxlength="140"
           />
           <.error :for={error <- Keyword.get_values(@changeset.errors || [], :message)}>
-            <%= translate_error(error) %>
+            {translate_error(error)}
           </.error>
         </div>
       </div>
@@ -54,7 +54,7 @@ defmodule OliWeb.SystemMessageLive.EditMessage do
             class="form-control w-75"
           />
           <.error :for={error <- Keyword.get_values(@changeset.errors || [], :start)}>
-            <%= translate_error(error) %>
+            {translate_error(error)}
           </.error>
         </div>
         <div class="form-group d-flex align-items-center">
@@ -67,7 +67,7 @@ defmodule OliWeb.SystemMessageLive.EditMessage do
             class="form-control w-75"
           />
           <.error :for={error <- Keyword.get_values(@changeset.errors || [], :end)}>
-            <%= translate_error(error) %>
+            {translate_error(error)}
           </.error>
         </div>
       </div>

@@ -462,7 +462,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLive do
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
-    <%= render_modal(assigns) %>
+    {render_modal(assigns)}
 
     <Modal.modal
       id="options_modal"
@@ -471,7 +471,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLive do
       on_cancel={JS.push("restart_options_modal")}
     >
       <:title>
-        <%= @options_modal_assigns[:title] %>
+        {@options_modal_assigns[:title]}
       </:title>
 
       <%= if @options_modal_assigns do %>
@@ -525,7 +525,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLive do
                   value={Kernel.to_string(value)}
                   selected={@options.graded == value}
                 >
-                  <%= str %>
+                  {str}
                 </option>
               </select>
             </form>
@@ -546,7 +546,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLive do
                   value={Kernel.to_string(value)}
                   selected={@options.basic == value}
                 >
-                  <%= str %>
+                  {str}
                 </option>
               </select>
             </form>

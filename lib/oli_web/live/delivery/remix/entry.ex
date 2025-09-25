@@ -33,17 +33,17 @@ defmodule OliWeb.Delivery.Remix.Entry do
     >
       <div class="flex-grow-1 d-flex flex-column self-center">
         <div class="flex-1">
-          <%= icon(assigns) %>
+          {icon(assigns)}
           <%= if is_container?(@node.revision) do %>
             <button
               class="btn btn-link ml-1 mr-1 entry-title"
               phx-click="set_active"
               phx-value-uuid={@node.uuid}
             >
-              <%= @node.revision.title %>
+              {@node.revision.title}
             </button>
           <% else %>
-            <span class="ml-1 mr-1 entry-title"><%= @node.revision.title %></span>
+            <span class="ml-1 mr-1 entry-title">{@node.revision.title}</span>
             <%= if @is_product and !is_nil(@node.project_slug) do %>
               <a
                 id={"product-page-#{@node.revision.slug}"}

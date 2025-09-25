@@ -97,7 +97,7 @@ defmodule OliWeb.Users.UsersDetailViewTest do
         |> live(~p"/admin/users/#{ctx.independent_student.id}")
 
       view
-      |> element("button[phx-click=\"start_edit\"]", "Edit")
+      |> element("button[phx-click='start_edit']", "Edit")
       |> render_click()
 
       # Params with invalid data to display errors
@@ -113,12 +113,12 @@ defmodule OliWeb.Users.UsersDetailViewTest do
 
       document =
         view
-        |> element("form[phx-change=\"change\"")
+        |> element("form[phx-change='change']")
         |> render_change(params)
         |> Floki.parse_document!()
 
       assert document
-             |> Floki.find("[phx-feedback-for='user[email]'] > p")
+             |> Floki.find("p")
              |> Floki.text() =~
                "must be a valid email address"
 
@@ -142,10 +142,10 @@ defmodule OliWeb.Users.UsersDetailViewTest do
       }
 
       assert view
-             |> element("form[phx-submit=\"submit\"")
+             |> element("form[phx-submit='submit']")
              |> render_submit(params)
              |> Floki.parse_document!()
-             |> Floki.find("[phx-feedback-for='user[email]'] > p")
+             |> Floki.find("p")
              |> Floki.text() =~
                "has already been taken"
 
@@ -179,7 +179,7 @@ defmodule OliWeb.Users.UsersDetailViewTest do
       assert has_element?(view, "input[value=\"#{independent_student.email}\"][disabled]")
 
       view
-      |> element("button[phx-click=\"start_edit\"]", "Edit")
+      |> element("button[phx-click='start_edit']", "Edit")
       |> render_click()
 
       # Assert that there is a save button
@@ -191,7 +191,7 @@ defmodule OliWeb.Users.UsersDetailViewTest do
       refute has_element?(view, "input[value=\"#{independent_student.email}\"][disabled]")
 
       view
-      |> element("form[phx-submit=\"submit\"")
+      |> element("form[phx-submit='submit']")
       |> render_submit(%{
         "user" => %{
           "given_name" => new_given_name,
@@ -233,11 +233,11 @@ defmodule OliWeb.Users.UsersDetailViewTest do
       {:ok, view, _html} = live(conn)
 
       view
-      |> element("button[phx-click=\"start_edit\"]", "Edit")
+      |> element("button[phx-click='start_edit']", "Edit")
       |> render_click()
 
       view
-      |> element("form[phx-submit=\"submit\"")
+      |> element("form[phx-submit='submit']")
       |> render_submit(%{
         "user" => %{
           "given_name" => "",
@@ -267,11 +267,11 @@ defmodule OliWeb.Users.UsersDetailViewTest do
       {:ok, view, _html} = live(conn)
 
       view
-      |> element("button[phx-click=\"start_edit\"]", "Edit")
+      |> element("button[phx-click='start_edit']", "Edit")
       |> render_click()
 
       view
-      |> element("form[phx-submit=\"submit\"")
+      |> element("form[phx-submit='submit']")
       |> render_submit(%{
         "user" => %{
           "given_name" => independent_student.given_name,
@@ -302,11 +302,11 @@ defmodule OliWeb.Users.UsersDetailViewTest do
       {:ok, view, _html} = live(conn)
 
       view
-      |> element("button[phx-click=\"start_edit\"]", "Edit")
+      |> element("button[phx-click='start_edit']", "Edit")
       |> render_click()
 
       view
-      |> element("form[phx-submit=\"submit\"")
+      |> element("form[phx-submit='submit']")
       |> render_submit(%{
         "user" => %{
           "given_name" => "",

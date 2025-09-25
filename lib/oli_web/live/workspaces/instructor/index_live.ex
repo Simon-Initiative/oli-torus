@@ -106,31 +106,31 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
                 <table>
                   <tr>
                     <th class="text-left">Name</th>
-                    <td><%= @current_user.name %></td>
+                    <td>{@current_user.name}</td>
                   </tr>
                   <tr>
                     <th class="text-left">Given Name</th>
-                    <td><%= @current_user.given_name %></td>
+                    <td>{@current_user.given_name}</td>
                   </tr>
                   <tr>
                     <th class="text-left">Family Name</th>
-                    <td><%= @current_user.family_name %></td>
+                    <td>{@current_user.family_name}</td>
                   </tr>
                   <tr>
                     <th class="text-left">Email</th>
-                    <td><%= @current_user.email %></td>
+                    <td>{@current_user.email}</td>
                   </tr>
                   <tr>
                     <th class="text-left">Guest?</th>
-                    <td><%= @current_user.guest %></td>
+                    <td>{@current_user.guest}</td>
                   </tr>
                   <tr>
                     <th class="text-left">Hidden?</th>
-                    <td><%= @current_user.hidden %></td>
+                    <td>{@current_user.hidden}</td>
                   </tr>
                   <tr>
                     <th class="text-left">Direct Delivery?</th>
-                    <td><%= @current_user.independent_learner %></td>
+                    <td>{@current_user.independent_learner}</td>
                   </tr>
                 </table>
               </div>
@@ -164,7 +164,7 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
                 Welcome to
               </span>
               <span class="text-white font-bold font-['Open Sans'] leading-10">
-                <%= Oli.VendorProperties.product_short_name() %>
+                {Oli.VendorProperties.product_short_name()}
               </span>
             </div>
             <div class="w-48 h-11 justify-start items-center gap-1 inline-flex">
@@ -245,7 +245,7 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
         </div>
         <div class="flex flex-col md:flex-row md:items-center w-full md:justify-between gap-3">
           <.link
-            href={if(is_independent_instructor?(@current_user), do: ~p"/sections/independent/create")}
+            href={if(is_independent_instructor?(@current_user), do: ~p"/sections/new")}
             class={[
               "px-4 py-2 max-w-[220px] hover:no-underline rounded-md justify-center items-center gap-2 inline-flex",
               "text-white text-base font-normal font-['Inter'] leading-normal whitespace-nowrap",
@@ -280,7 +280,7 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
                 ctx={@ctx}
               />
               <p :if={length(@filtered_sections) == 0} class="mt-4">
-                No course found matching <strong>"<%= @params.text_search %>"</strong>
+                No course found matching <strong>"{@params.text_search}"</strong>
               </p>
             </div>
           <% end %>
@@ -317,18 +317,18 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
           class="justify-center text-[#757682] text-xs font-bold uppercase leading-3"
           role="start_end_date"
         >
-          <%= FormatDateTime.to_formatted_datetime(@section.start_date, @ctx, "{Mshort} {YYYY}") %> - <%= FormatDateTime.to_formatted_datetime(
+          {FormatDateTime.to_formatted_datetime(@section.start_date, @ctx, "{Mshort} {YYYY}")} - {FormatDateTime.to_formatted_datetime(
             @section.end_date,
             @ctx,
             "{Mshort} {YYYY}"
-          ) %>
+          )}
         </div>
         <h5
           class="text-black text-base font-bold font-['Inter'] leading-normal overflow-hidden"
           style="display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical;"
           role="course title"
         >
-          <%= @section.title %>
+          {@section.title}
         </h5>
         <div
           class="justify-center text-[#757682] text-base font-bold leading-normal"
@@ -339,14 +339,14 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
           <% else %>
             Instructors:
           <% end %>
-          <%= list_instructors(Sections.get_instructors_for_section(@section.id)) %>
+          {list_instructors(Sections.get_instructors_for_section(@section.id))}
         </div>
         <div class="text-black text-base font-normal leading-normal h-[100px] overflow-hidden">
           <p
             role="course description"
             style="display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical;"
           >
-            <%= @section.description %>
+            {@section.description}
           </p>
         </div>
         <div class="self-stretch justify-end items-start gap-4 inline-flex">

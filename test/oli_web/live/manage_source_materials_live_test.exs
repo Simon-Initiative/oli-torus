@@ -243,7 +243,7 @@ defmodule OliWeb.ManageSourceMaterialsLiveTest do
 
       assert has_element?(
                view,
-               "button[phx-click=\"show_apply_update_modal\"][phx-value-project-id=\"#{project.id}\"][phx-value-publication-id=\"#{new_publication.id}\"]",
+               "button[phx-click='show_apply_update_modal'][phx-value-project-id='#{project.id}'][phx-value-publication-id='#{new_publication.id}']",
                "View Update"
              )
     end
@@ -289,7 +289,7 @@ defmodule OliWeb.ManageSourceMaterialsLiveTest do
 
       view
       |> element(
-        "button[phx-click=\"show_apply_update_modal\"][phx-value-project-id=\"#{project.id}\"][phx-value-publication-id=\"#{new_publication.id}\"]"
+        "button[phx-click='show_apply_update_modal'][phx-value-project-id='#{project.id}'][phx-value-publication-id='#{new_publication.id}']"
       )
       |> render_click()
 
@@ -302,7 +302,7 @@ defmodule OliWeb.ManageSourceMaterialsLiveTest do
       end
 
       view
-      |> element("button[phx-click=\"apply_update\"]")
+      |> element("button[phx-click='apply_update']")
       |> render_click(%{section: section, publication: new_publication})
 
       refute has_element?(
@@ -313,7 +313,7 @@ defmodule OliWeb.ManageSourceMaterialsLiveTest do
 
       refute has_element?(
                view,
-               "button[phx-click=\"show_apply_update_modal\"][phx-value-project-id=\"#{project.id}\"][phx-value-publication-id=\"#{new_publication.id}\"]",
+               "button[phx-click='show_apply_update_modal'][phx-value-project-id='#{project.id}'][phx-value-publication-id='#{new_publication.id}']",
                "View Update"
              )
     end

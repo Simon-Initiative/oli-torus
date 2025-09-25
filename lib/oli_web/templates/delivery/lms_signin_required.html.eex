@@ -1,8 +1,7 @@
 <div class="text-center my-5">
-<h2>LMS Sign In Required</h2>
+  <h2>LMS Sign In Required</h2>
 
-<p>Your session expired or you may be using a different browser than before.</p>
-
-<p>Please sign in using your institution's learning management system to access course content.<br />If you are viewing this page from an LMS, simply reload the page.</p>
-<p><a href="https://www.instructure.com/canvas/login/free-for-teacher">Canvas</a> ｜ <a href="https://www.blackboard.com/">Blackboard</a> ｜ <a href="https://moodle.org/login/index.php">Moodle</a></p>
+  <p class="my-3">Please sign in using your institution's learning management system to access course content.</p>
+  <p class="my-3">If you are viewing this page from an LMS, simply reload the page.</p>
+  <p class="my-3"><a href="https://www.instructure.com/canvas/login/free-for-teacher">Canvas</a> ｜ <a href="https://www.blackboard.com/">Blackboard</a> ｜ <a href="https://moodle.org/login/index.php">Moodle</a></p>
 </div>

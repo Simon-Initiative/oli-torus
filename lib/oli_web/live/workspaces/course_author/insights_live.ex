@@ -205,12 +205,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.InsightsLive do
       </div>
       <div class="card-body">
         <h5 class="card-title my-4">
-          Viewing analytics by <%= case @selected do
+          Viewing analytics by {case @selected do
             :by_page -> "page"
             :by_activity -> "activity"
             :by_objective -> "objective"
             _ -> "activity"
-          end %>
+          end}
         </h5>
 
         <PagedTable.render

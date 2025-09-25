@@ -11,7 +11,12 @@ defmodule OliWeb.Users.Invitations.UsersInviteView do
   def mount(%{"token" => token}, session, socket) do
     case Accounts.get_user_token_by_enrollment_invitation_token(token) do
       nil ->
-        {:ok, assign(socket, user: nil, invitation_role: :student)}
+        {:ok,
+         assign(socket,
+           user: nil,
+           invitation_role: :student,
+           authentication_providers: []
+         )}
 
       %UserToken{user: user, context: "enrollment_invitation:" <> section_slug} ->
         section = Sections.get_section_by_slug(section_slug)
@@ -19,6 +24,9 @@ defmodule OliWeb.Users.Invitations.UsersInviteView do
         enrollment =
           Sections.get_enrollment(section.slug, user.id, filter_by_status: false)
           |> Oli.Repo.preload([:context_roles])
+
+        authentication_providers =
+          Oli.AssentAuth.UserAssentAuth.authentication_providers() |> Keyword.keys()
 
         {:ok,
          assign(socket,
@@ -31,7 +39,8 @@ defmodule OliWeb.Users.Invitations.UsersInviteView do
            enrollment: enrollment,
            invitation_role:
              if(hd(enrollment.context_roles).id == 4, do: :student, else: :instructor),
-           step: "accept_or_reject_invitation"
+           step: "accept_or_reject_invitation",
+           authentication_providers: authentication_providers
          )}
     end
   end
@@ -65,7 +74,7 @@ defmodule OliWeb.Users.Invitations.UsersInviteView do
           Go to course
         </div>
         <div>
-          <%= OliWeb.Icons.right_arrow_login(%{}) %>
+          {OliWeb.Icons.right_arrow_login(%{})}
         </div>
       </.link>
     </.invite_container>
@@ -75,7 +84,7 @@ defmodule OliWeb.Users.Invitations.UsersInviteView do
   def render(%{step: "accept_or_reject_invitation"} = assigns) do
     ~H"""
     <.invite_container invitation_role={@invitation_role}>
-      <h1 class="text-white">Invitation to <%= @section.title %></h1>
+      <h1 class="text-white">Invitation to {@section.title}</h1>
 
       <div class="flex gap-4">
         <.button type="button" phx-click="accept_invitation" class="btn btn-primary">
@@ -92,7 +101,7 @@ defmodule OliWeb.Users.Invitations.UsersInviteView do
   def render(%{step: "new_user_account_creation"} = assigns) do
     ~H"""
     <.invite_container invitation_role={@invitation_role}>
-      <h1 class="text-white">Invitation to <%= @section.title %></h1>
+      <h1 class="text-white">Invitation to {@section.title}</h1>
 
       <div class="w-full flex items-center justify-center dark">
         <Components.Auth.registration_form
@@ -103,6 +112,8 @@ defmodule OliWeb.Users.Invitations.UsersInviteView do
           recaptcha_error={@recaptcha_error}
           check_errors={@check_errors}
           disabled_inputs={[:email]}
+          authentication_providers={@authentication_providers}
+          auth_provider_path_fn={&build_invitation_auth_provider_path(&1, @section.slug)}
         />
       </div>
     </.invite_container>
@@ -112,7 +123,7 @@ defmodule OliWeb.Users.Invitations.UsersInviteView do
   def render(%{step: "existing_user_login"} = assigns) do
     ~H"""
     <.invite_container invitation_role={@invitation_role}>
-      <h1 class="text-white">Invitation to <%= @section.title %></h1>
+      <h1 class="text-white">Invitation to {@section.title}</h1>
 
       <div class="w-full flex items-center justify-center dark">
         <Components.Auth.login_form
@@ -123,14 +134,16 @@ defmodule OliWeb.Users.Invitations.UsersInviteView do
           trigger_submit={@trigger_submit}
           submit_event="log_in_existing_user"
           disabled_inputs={[:email]}
+          authentication_providers={@authentication_providers}
+          auth_provider_path_fn={&build_invitation_auth_provider_path(&1, @section.slug)}
         />
       </div>
 
       <div :if={!is_nil(@current_user) && @current_user.id != @user.id} class="text-xs text-bold">
         <p role="account warning" class="text-white">
           You are currently logged in as <strong><%= @current_user.email %></strong>.<br />
-          You will be automatically logged in as <strong><%= @user.email %></strong>
-          to access your invitation to <strong>"<%= @section.title %>"</strong>
+          You will be automatically logged in as <strong>{@user.email}</strong>
+          to access your invitation to <strong>"{@section.title}"</strong>
           Course.
         </p>
       </div>
@@ -148,7 +161,7 @@ defmodule OliWeb.Users.Invitations.UsersInviteView do
         <.background_by_role invitation_role={@invitation_role} />
       </div>
       <div class="flex flex-col justify-center items-center gap-y-10 w-full relative z-50 overflow-y-scroll lg:overflow-y-auto h-[calc(100vh-270px)] md:h-[calc(100vh-220px)] lg:h-auto py-4 sm:py-8 lg:py-0">
-        <%= render_slot(@inner_block) %>
+        {render_slot(@inner_block)}
       </div>
     </div>
     """
@@ -321,5 +334,15 @@ defmodule OliWeb.Users.Invitations.UsersInviteView do
     else
       assign(socket, form: form)
     end
+  end
+
+  defp build_invitation_auth_provider_path(provider, section_slug) do
+    params =
+      URI.encode_query([
+        {"section", section_slug},
+        {"from_invitation_link?", "true"}
+      ])
+
+    "#{~p"/users/auth/#{provider}/new"}?#{params}"
   end
 end

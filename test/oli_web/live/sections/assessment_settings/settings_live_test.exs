@@ -777,7 +777,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       set_password(view, resource_id, "")
 
       assert view
-             |> element("input[placeholder='Enter password'][name='password-#{resource_id}]")
+             |> element("input[placeholder='Enter password'][name='password-#{resource_id}']")
              |> has_element?()
     end
 
@@ -1135,7 +1135,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       # click on the next page button
       view
-      |> element("button[phx-value-offset=\"2\"][phx-value-limit=\"2\"]", "2")
+      |> element("button[phx-value-offset='2'][phx-value-limit='2']", "2")
       |> render_click()
 
       # assert that the next two assessments are shown
@@ -1841,7 +1841,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       assert has_element?(
                view,
-               ~s{button[phx-click=show_modal][disabled=disabled]},
+               ~s{button[phx-click=show_modal][disabled]},
                "Remove Selected"
              )
     end
@@ -2017,7 +2017,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       |> form(~s{form[id=assessment_select]})
       |> render_change(%{"assessment_id" => page_2.resource.id})
 
-      target_element = ~s{select[id=assessment_select_assessment_id] > option[selected=selected]}
+      target_element = ~s{select[id=assessment_select_assessment_id] > option[selected]}
 
       assert view |> element(target_element) |> render() =~ "Page 2"
 
@@ -2063,7 +2063,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       assert has_element?(
                view,
-               ~s{button[disabled=disabled][phx-value-modal_name=add_student_exception]},
+               ~s{button[disabled][phx-value-modal_name=add_student_exception]},
                "Add New"
              )
     end
@@ -2550,7 +2550,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       # click on the next page button
       view
-      |> element("button[phx-value-offset=\"2\"][phx-value-limit=\"2\"]", "2")
+      |> element("button[phx-value-offset='2'][phx-value-limit='2']", "2")
       |> render_click()
 
       # assert that the next two assessments are shown

@@ -800,6 +800,19 @@ defmodule Oli.AccountsTest do
       assert is_nil(user.email_confirmed_at)
       assert is_nil(user.password)
     end
+
+    test "can store a long text as user picture" do
+      email = unique_user_email()
+      long_picture = String.duplicate("a", 500)
+
+      {:ok, user} =
+        Accounts.register_independent_user(
+          valid_user_attributes(email: email, picture: long_picture)
+        )
+
+      assert user.picture == long_picture
+      assert String.length(user.picture) == 500
+    end
   end
 
   describe "change_user_registration/2" do
@@ -946,13 +959,15 @@ defmodule Oli.AccountsTest do
   describe "change_user_password/2" do
     test "returns a user changeset" do
       assert %Ecto.Changeset{} = changeset = Accounts.change_user_password(%User{})
-      assert changeset.required == [:password]
+      assert changeset.required == [:password, :current_password, :password_confirmation]
     end
 
     test "allows fields to be set" do
       changeset =
         Accounts.change_user_password(%User{}, %{
-          "password" => "new valid password"
+          "current_password" => valid_user_password(),
+          "password" => "new valid password",
+          "password_confirmation" => "new valid password"
         })
 
       assert changeset.valid?
@@ -989,8 +1004,14 @@ defmodule Oli.AccountsTest do
     end
 
     test "validates current password", %{user: user} do
+      invalid_current_password = "invalid"
+
       {:error, changeset} =
-        Accounts.update_user_password(user, "invalid", %{password: valid_user_password()})
+        Accounts.update_user_password(user, invalid_current_password, %{
+          current_password: invalid_current_password,
+          password: "new_valid_password",
+          password_confirmation: "new_valid_password"
+        })
 
       assert %{current_password: ["is not valid"]} = errors_on(changeset)
     end
@@ -998,7 +1019,9 @@ defmodule Oli.AccountsTest do
     test "updates the password", %{user: user} do
       {:ok, user} =
         Accounts.update_user_password(user, valid_user_password(), %{
-          password: "new valid password"
+          current_password: valid_user_password(),
+          password: "new valid password",
+          password_confirmation: "new valid password"
         })
 
       assert is_nil(user.password)
@@ -1010,7 +1033,9 @@ defmodule Oli.AccountsTest do
 
       {:ok, _} =
         Accounts.update_user_password(user, valid_user_password(), %{
-          password: "new valid password"
+          current_password: valid_user_password(),
+          password: "new valid password",
+          password_confirmation: "new valid password"
         })
 
       refute Repo.get_by(UserToken, user_id: user.id)

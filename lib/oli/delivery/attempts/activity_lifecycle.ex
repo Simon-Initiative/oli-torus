@@ -96,6 +96,10 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
   If the activity attempt cannot be found:
 
   `{:error, {:not_found}}`
+
+  If the activity attempt has already been reset (no longer the latest attempt):
+
+  `{:error, {:already_reset}}`
   """
   def reset_activity(
         section_slug,
@@ -104,97 +108,134 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
         seed_state_from_previous \\ false,
         survey_id \\ nil
       ) do
-    activity_attempt = get_activity_attempt_by(attempt_guid: activity_attempt_guid)
-    resource_attempt = get_resource_attempt_and_revision(activity_attempt.resource_attempt_id)
-
-    effective_settings = Oli.Delivery.Settings.get_combined_settings(resource_attempt)
-
     result =
-      Repo.transaction(fn ->
-        if is_nil(activity_attempt) do
-          Repo.rollback({:not_found})
-        else
-          # We cannot rely on the attempt number from the supplied activity attempt
-          # to determine the total number of attempts - or the next attempt number, since
-          # a client could be resetting an attempt that is not the latest attempt (e.g. from multiple
-          # browser windows).
-          # Instead we will query to determine the count of attempts. This is likely an
-          # area where we want locking in place to ensure that we can never get into a state
-          # where two attempts are generated with the same number
+      Repo.transaction(
+        fn ->
+          # Move all reads inside the transaction and lock the parent resource_attempt
+          activity_attempt = get_activity_attempt_by(attempt_guid: activity_attempt_guid)
 
-          attempt_count =
-            count_activity_attempts(
-              activity_attempt.resource_attempt_id,
-              activity_attempt.resource_id
-            )
-
-          if effective_settings.max_attempts > 0 and
-               effective_settings.max_attempts <= attempt_count do
-            Repo.rollback({:no_more_attempts})
+          if is_nil(activity_attempt) do
+            Repo.rollback({:not_found})
           else
-            part_attempts = get_latest_part_attempts(activity_attempt_guid)
+            # Lock the parent resource_attempt row to prevent concurrent resets
+            resource_attempt =
+              from(r in Oli.Delivery.Attempts.Core.ResourceAttempt,
+                where: r.id == ^activity_attempt.resource_attempt_id,
+                lock: "FOR UPDATE",
+                preload: :revision
+              )
+              |> Repo.one!()
 
-            # Resolve the revision to pick up the latest
-            revision =
-              DeliveryResolver.from_resource_id(section_slug, activity_attempt.resource_id)
+            effective_settings = Oli.Delivery.Settings.get_combined_settings(resource_attempt)
 
-            # parse and transform
-            with {:ok, model} <- Model.parse(revision.content),
-                 {:ok, model_to_store, working_model} <-
-                   maybe_transform_model(activity_attempt, revision, model, effective_settings),
-                 {:ok, new_activity_attempt} <-
-                   create_activity_attempt(%{
-                     attempt_guid: UUID.uuid4(),
-                     attempt_number: activity_attempt.attempt_number + 1,
-                     transformed_model: model_to_store,
-                     resource_id: activity_attempt.resource_id,
-                     group_id: activity_attempt.group_id,
-                     revision_id: revision.id,
-                     resource_attempt_id: activity_attempt.resource_attempt_id,
-                     survey_id: survey_id,
-                     selection_id: activity_attempt.selection_id,
-                     out_of: activity_attempt.out_of,
-                     aggregate_score: activity_attempt.aggregate_score,
-                     aggregate_out_of: activity_attempt.aggregate_out_of
-                   }) do
-              # simulate preloading of the revision
-              new_activity_attempt = Map.put(new_activity_attempt, :revision, revision)
+            # Check if this activity attempt is still the latest one (prevent non concurrent resets)
+            {max_attempt_number} =
+              Repo.one(
+                from(a in ActivityAttempt,
+                  where:
+                    a.resource_attempt_id == ^resource_attempt.id and
+                      a.resource_id == ^activity_attempt.resource_id,
+                  select: {max(a.attempt_number)}
+                )
+              )
 
-              raw_part_attempts =
-                Enum.map(part_attempts, fn p ->
-                  create_raw_part_attempt(
-                    new_activity_attempt.id,
-                    p,
-                    seed_state_from_previous,
-                    datashop_session_id
-                  )
-                end)
+            if activity_attempt.attempt_number != max_attempt_number do
+              Repo.rollback({:already_reset})
+            end
 
-              Repo.insert_all(PartAttempt, raw_part_attempts)
+            # Recount attempts from the locked state
+            {attempt_count} =
+              Repo.one(
+                from(a in ActivityAttempt,
+                  where:
+                    a.resource_attempt_id == ^resource_attempt.id and
+                      a.resource_id == ^activity_attempt.resource_id,
+                  select: {count(a.id)}
+                )
+              )
 
-              new_part_attempts = get_latest_part_attempts(new_activity_attempt.attempt_guid)
+            next_attempt_number = attempt_count + 1
 
-              {ActivityState.from_attempt(
-                 new_activity_attempt |> Repo.preload(:part_attempts),
-                 new_part_attempts,
-                 model,
-                 resource_attempt,
-                 resource_attempt.revision,
-                 effective_settings
-               ), ModelPruner.prune(working_model)}
+            if effective_settings.max_attempts > 0 and
+                 effective_settings.max_attempts <= attempt_count do
+              Repo.rollback({:no_more_attempts})
             else
-              {:error, error} -> Repo.rollback(error)
+              part_attempts = get_latest_part_attempts(activity_attempt_guid)
+
+              # Resolve the revision to pick up the latest
+              revision =
+                DeliveryResolver.from_resource_id(section_slug, activity_attempt.resource_id)
+
+              # parse and transform
+              with {:ok, model} <- Model.parse(revision.content),
+                   {:ok, model_to_store, working_model} <-
+                     maybe_transform_model(activity_attempt, revision, model, effective_settings),
+                   {:ok, new_activity_attempt} <-
+                     create_activity_attempt(%{
+                       attempt_guid: UUID.uuid4(),
+                       attempt_number: next_attempt_number,
+                       transformed_model: model_to_store,
+                       resource_id: activity_attempt.resource_id,
+                       group_id: activity_attempt.group_id,
+                       revision_id: revision.id,
+                       resource_attempt_id: activity_attempt.resource_attempt_id,
+                       survey_id: survey_id,
+                       selection_id: activity_attempt.selection_id,
+                       out_of: activity_attempt.out_of,
+                       aggregate_score: activity_attempt.aggregate_score,
+                       aggregate_out_of: activity_attempt.aggregate_out_of
+                     }) do
+                # simulate preloading of the revision
+                new_activity_attempt = Map.put(new_activity_attempt, :revision, revision)
+
+                raw_part_attempts =
+                  Enum.map(part_attempts, fn p ->
+                    create_raw_part_attempt(
+                      new_activity_attempt.id,
+                      p,
+                      seed_state_from_previous,
+                      datashop_session_id
+                    )
+                  end)
+
+                Repo.insert_all(PartAttempt, raw_part_attempts)
+
+                new_part_attempts = get_latest_part_attempts(new_activity_attempt.attempt_guid)
+
+                {ActivityState.from_attempt(
+                   new_activity_attempt |> Repo.preload(:part_attempts),
+                   new_part_attempts,
+                   model,
+                   resource_attempt,
+                   resource_attempt.revision,
+                   effective_settings
+                 ), ModelPruner.prune(working_model)}
+              else
+                {:error, error} -> Repo.rollback(error)
+              end
             end
           end
-        end
-      end)
-
-    if !is_nil(resource_attempt) do
-      Oli.Delivery.Attempts.PageLifecycle.Broadcaster.broadcast_attempt_updated(
-        resource_attempt.attempt_guid,
-        activity_attempt.attempt_guid,
-        :created
+        end,
+        isolation: :serializable
       )
+
+    # Handle broadcast after successful transaction
+    case result do
+      {:ok, _} ->
+        # Get the resource_attempt for broadcast (outside transaction)
+        with activity_attempt when not is_nil(activity_attempt) <-
+               get_activity_attempt_by(attempt_guid: activity_attempt_guid),
+             resource_attempt when not is_nil(resource_attempt) <-
+               get_resource_attempt_and_revision(activity_attempt.resource_attempt_id) do
+          Oli.Delivery.Attempts.PageLifecycle.Broadcaster.broadcast_attempt_updated(
+            resource_attempt.attempt_guid,
+            activity_attempt.attempt_guid,
+            :created
+          )
+        end
+
+      _ ->
+        nil
     end
 
     result
@@ -279,65 +320,75 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
   Resets a single part attempt.  Returns {:ok, %PartState{}} or error.
   """
   def reset_part(activity_attempt_guid, part_attempt_guid, datashop_session_id) do
-    Repo.transaction(fn ->
-      part_attempt = get_part_attempt_by(attempt_guid: part_attempt_guid)
-      activity_attempt = get_activity_attempt_by(attempt_guid: activity_attempt_guid)
+    Repo.transaction(
+      fn ->
+        part_attempt = get_part_attempt_by(attempt_guid: part_attempt_guid)
+        activity_attempt = get_activity_attempt_by(attempt_guid: activity_attempt_guid)
 
-      if is_nil(part_attempt) or is_nil(activity_attempt) do
-        Repo.rollback({:not_found})
-      else
-        # We cannot rely on the attempt number from the supplied activity attempt
-        # to determine the total number of attempts - or the next attempt number, since
-        # a client could be resetting an attempt that is not the latest attempt (e.g. from multiple
-        # browser windows).
-        # Instead we will query to determine the count of attempts. This is likely an
-        # area where we want locking in place to ensure that we can never get into a state
-        # where two attempts are generated with the same number
+        if is_nil(part_attempt) or is_nil(activity_attempt) do
+          Repo.rollback({:not_found})
+        else
+          # Lock the activity attempt to prevent concurrent part resets for the same activity
+          locked_activity_attempt =
+            from(a in ActivityAttempt,
+              where: a.id == ^activity_attempt.id,
+              lock: "FOR UPDATE"
+            )
+            |> Repo.one!()
 
-        attempt_count =
-          count_part_attempts(
-            activity_attempt.id,
-            part_attempt.part_id
-          )
+          # Recount part attempts from the locked state
+          {attempt_count} =
+            Repo.one(
+              from(p in PartAttempt,
+                where:
+                  p.activity_attempt_id == ^locked_activity_attempt.id and
+                    p.part_id == ^part_attempt.part_id,
+                select: {count(p.id)}
+              )
+            )
 
-        {:ok, parsed_model} =
-          case activity_attempt.transformed_model do
-            nil -> Model.parse(activity_attempt.revision.content)
-            t -> Model.parse(t)
+          {:ok, parsed_model} =
+            case activity_attempt.transformed_model do
+              nil -> Model.parse(activity_attempt.revision.content)
+              t -> Model.parse(t)
+            end
+
+          part = Enum.find(parsed_model.parts, fn p -> p.id == part_attempt.part_id end)
+
+          resource_attempt =
+            get_resource_attempt_and_revision(activity_attempt.resource_attempt_id)
+
+          explanation_provider_fn = fn part, part_attempt ->
+            Explanation.get_explanation(%ExplanationContext{
+              part: part,
+              part_attempt: part_attempt,
+              activity_attempt: activity_attempt,
+              resource_attempt: resource_attempt,
+              resource_revision: resource_attempt.revision,
+              effective_settings: Oli.Delivery.Settings.get_combined_settings(resource_attempt)
+            })
           end
 
-        part = Enum.find(parsed_model.parts, fn p -> p.id == part_attempt.part_id end)
-        resource_attempt = get_resource_attempt_and_revision(activity_attempt.resource_attempt_id)
+          case create_part_attempt(%{
+                 attempt_guid: UUID.uuid4(),
+                 attempt_number: attempt_count + 1,
+                 part_id: part_attempt.part_id,
+                 grading_approach: part_attempt.grading_approach,
+                 response: nil,
+                 activity_attempt_id: activity_attempt.id,
+                 datashop_session_id: datashop_session_id,
+                 hints: part_attempt.hints
+               }) do
+            {:ok, part_attempt} ->
+              PartState.from_attempt(part_attempt, part, explanation_provider_fn)
 
-        explanation_provider_fn = fn part, part_attempt ->
-          Explanation.get_explanation(%ExplanationContext{
-            part: part,
-            part_attempt: part_attempt,
-            activity_attempt: activity_attempt,
-            resource_attempt: resource_attempt,
-            resource_revision: resource_attempt.revision,
-            effective_settings: Oli.Delivery.Settings.get_combined_settings(resource_attempt)
-          })
+            {:error, changeset} ->
+              Repo.rollback(changeset)
+          end
         end
-
-        case create_part_attempt(%{
-               attempt_guid: UUID.uuid4(),
-               attempt_number: attempt_count + 1,
-               part_id: part_attempt.part_id,
-               grading_approach: part_attempt.grading_approach,
-               response: nil,
-               activity_attempt_id: activity_attempt.id,
-               datashop_session_id: datashop_session_id,
-               hints: part_attempt.hints
-             }) do
-          {:ok, part_attempt} ->
-            PartState.from_attempt(part_attempt, part, explanation_provider_fn)
-
-          {:error, changeset} ->
-            Repo.rollback(changeset)
-        end
-      end
-    end)
+      end,
+      isolation: :serializable
+    )
   end
 
   @doc """
@@ -465,29 +516,5 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
     end
     |> ActivityAttemptSaveFile.changeset(changes)
     |> Repo.insert_or_update()
-  end
-
-  defp count_part_attempts(activity_attempt_id, part_id) do
-    {count} =
-      Repo.one(
-        from(p in PartAttempt,
-          where: p.activity_attempt_id == ^activity_attempt_id and p.part_id == ^part_id,
-          select: {count(p.id)}
-        )
-      )
-
-    count
-  end
-
-  defp count_activity_attempts(resource_attempt_id, resource_id) do
-    {count} =
-      Repo.one(
-        from(p in ActivityAttempt,
-          where: p.resource_attempt_id == ^resource_attempt_id and p.resource_id == ^resource_id,
-          select: {count(p.id)}
-        )
-      )
-
-    count
   end
 end

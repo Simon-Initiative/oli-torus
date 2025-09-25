@@ -1,15 +1,12 @@
 defmodule OliWeb.Components.Delivery.Students do
   use OliWeb, :live_component
 
-  import OliWeb.Components.Delivery.Buttons, only: [toggle_chevron: 1]
-
   alias Lti_1p3.Roles.ContextRoles
   alias Oli.Accounts.{Author, User}
   alias Oli.Delivery.Metrics
-  alias OliWeb.Common.{SearchInput, Params, Utils}
-  alias OliWeb.Common.InstructorDashboardPagedTable
+  alias OliWeb.Common.{SearchInput, Params, StripedPagedTable, Utils}
   alias OliWeb.Components.Delivery.CardHighlights
-  alias OliWeb.Delivery.Content.Progress
+  alias OliWeb.Delivery.Content.{Progress, MultiSelect, SelectDropdown}
   alias OliWeb.Delivery.InstructorDashboard.Helpers
   alias OliWeb.Delivery.InstructorDashboard.HTMLComponents
   alias OliWeb.Delivery.Sections.EnrollmentsTableModel
@@ -42,20 +39,28 @@ defmodule OliWeb.Components.Delivery.Students do
     %{id: 3, name: "High", selected: false}
   ]
 
+  def update(%{show_email_modal: show_email_modal} = _assigns, socket) do
+    # Handle partial updates for show_email_modal
+    {:ok, assign(socket, show_email_modal: show_email_modal)}
+  end
+
   def update(
         %{
           params: params,
           section: section,
           ctx: ctx,
           students: students,
-          dropdown_options: dropdown_options
+          dropdown_options: dropdown_options,
+          active_tab: active_tab
         } = assigns,
         socket
       ) do
-    {total_count, filtered_students} = apply_filters(students, params)
+    {total_count, filtered_students, all_students} = apply_filters(students, params)
 
     certificate_pending_approval_count =
       Helpers.certificate_pending_approval_count(filtered_students, assigns[:certificate])
+
+    selected_students = socket.assigns[:selected_students] || []
 
     {:ok, table_model} =
       EnrollmentsTableModel.new(
@@ -64,7 +69,8 @@ defmodule OliWeb.Components.Delivery.Students do
         ctx,
         assigns[:certificate],
         certificate_pending_approval_count,
-        socket.assigns.myself
+        socket.assigns.myself,
+        selected_students
       )
 
     navigation_data = Jason.decode!(params.navigation_data)
@@ -91,6 +97,9 @@ defmodule OliWeb.Components.Delivery.Students do
         sort_by_spec:
           Enum.find(table_model.column_specs, fn col_spec -> col_spec.name == params.sort_by end)
       })
+
+    table_model_data = Map.put(table_model.data, :selected_students, selected_students)
+    table_model = Map.put(table_model, :data, table_model_data)
 
     selected_card_value = Map.get(assigns.params, :selected_card_value, nil)
     students_count = students_count(students, params.filter_by)
@@ -128,6 +137,12 @@ defmodule OliWeb.Components.Delivery.Students do
           else: acc
       end)
 
+    title =
+      case(active_tab) do
+        :students -> "Students"
+        :content -> get_container_title(navigation_data, params.container_id, assigns[:title])
+      end
+
     {:ok,
      assign(socket,
        id: assigns.id,
@@ -138,9 +153,10 @@ defmodule OliWeb.Components.Delivery.Students do
        section_open_and_free: section.open_and_free,
        section_title: section.title,
        section_certificate_enabled: section.certificate_enabled,
+       all_students: all_students,
        dropdown_options: dropdown_options,
        view: assigns[:view],
-       title: Map.get(assigns, :title, "Students"),
+       title: title,
        tab_name: Map.get(assigns, :tab_name, :students),
        show_progress_csv_download: Map.get(assigns, :show_progress_csv_download, false),
        add_enrollments_step: :step_1,
@@ -171,7 +187,9 @@ defmodule OliWeb.Components.Delivery.Students do
          assigns[:certificate] &&
            assigns.certificate.requires_instructor_approval,
        certificate_pending_email_notification_count:
-         (assigns[:certificate] && assigns.certificate_pending_email_notification_count) || 0
+         (assigns[:certificate] && assigns.certificate_pending_email_notification_count) || 0,
+       selected_students: socket.assigns[:selected_students] || [],
+       show_email_modal: false
      )}
   end
 
@@ -185,7 +203,7 @@ defmodule OliWeb.Components.Delivery.Students do
       |> maybe_filter_by_proficiency(params.selected_proficiency_ids)
       |> sort_by(params.sort_by, params.sort_order)
 
-    {length(students), students |> Enum.drop(params.offset) |> Enum.take(params.limit)}
+    {length(students), students |> Enum.drop(params.offset) |> Enum.take(params.limit), students}
   end
 
   defp maybe_filter_by_proficiency(students, "[]") do
@@ -395,6 +413,7 @@ defmodule OliWeb.Components.Delivery.Students do
   attr(:previous_id, :integer)
   attr(:next_id, :integer)
   attr(:navigation_data, :map, required: true)
+  attr(:show_email_modal, :boolean, default: false)
 
   def render(assigns) do
     ~H"""
@@ -452,7 +471,7 @@ defmodule OliWeb.Components.Delivery.Students do
               <div class="flex gap-2 items-center">
                 <Icons.left_chevron_blue />
                 <div class="text-zinc-700 text-sm font-semibold tracking-tight dark:text-white">
-                  Back to <%= String.capitalize(@navigation_data["container_filter_by"]) %>
+                  Back to {String.capitalize(@navigation_data["container_filter_by"])}
                 </div>
               </div>
             </.link>
@@ -465,12 +484,12 @@ defmodule OliWeb.Components.Delivery.Students do
                 value={@previous_id}
                 phx-target={@myself}
               >
-                <Icons.previous_arrow color={if is_nil(@previous_id), do: "#a3a3a3", else: "#468AEF"} />
+                <Icons.previous_arrow color={if is_nil(@previous_id), do: "#757682", else: "#1B67B2"} />
               </button>
             </div>
             <div class="w-auto px-2 py-1 rounded-md flex-col justify-center items-center text-center inline-flex">
               <div class="self-stretch text-zinc-700 text-xl font-bold leading-none tracking-tight dark:text-white">
-                <%= @title %>
+                {@title}
               </div>
             </div>
             <div class="w-auto py-2 flex rounded-md justify-center items-center gap-2">
@@ -480,7 +499,7 @@ defmodule OliWeb.Components.Delivery.Students do
                 value={@next_id}
                 phx-target={@myself}
               >
-                <Icons.next_arrow color={if is_nil(@next_id), do: "#a3a3a3", else: "#468AEF"} />
+                <Icons.next_arrow color={if is_nil(@next_id), do: "#757682", else: "#1B67B2"} />
               </button>
             </div>
           </div>
@@ -488,23 +507,23 @@ defmodule OliWeb.Components.Delivery.Students do
             <div class="flex justify-center items-center">
               <div class="flex flex-col items-start gap-y-2">
                 <%= label class: "form-check-label flex flex-row items-center cursor-pointer gap-x-2" do %>
-                  <%= radio_button(:container, :option, :by_filtered,
+                  {radio_button(:container, :option, :by_filtered,
                     class: "form-check-input",
                     checked: @navigation_data["navigation_criteria"] == "by_filtered"
-                  ) %>
+                  )}
                   <div class="w-full text-zinc-900 text-xs font-normal leading-none dark:text-white">
-                    Navigate within <%= @navigation_data["filtered_count"] %> filtered <%= @navigation_data[
+                    Navigate within {@navigation_data["filtered_count"]} filtered {@navigation_data[
                       "container_filter_by"
-                    ] %> <%= get_card_type(@navigation_data["filter_criteria_card"]) %>
+                    ]} {get_card_type(@navigation_data["filter_criteria_card"])}
                   </div>
                 <% end %>
                 <%= label class: "form-check-label flex flex-row items-center cursor-pointer gap-x-2" do %>
-                  <%= radio_button(:container, :option, :by_all,
+                  {radio_button(:container, :option, :by_all,
                     class: "form-check-input",
                     checked: @navigation_data["navigation_criteria"] == "by_all"
-                  ) %>
+                  )}
                   <div class="w-full text-zinc-900 text-xs font-normal leading-none dark:text-white">
-                    Navigate within ALL <%= @navigation_data["container_filter_by"] %>
+                    Navigate within ALL {@navigation_data["container_filter_by"]}
                   </div>
                 <% end %>
               </div>
@@ -512,59 +531,46 @@ defmodule OliWeb.Components.Delivery.Students do
           </form>
         </div>
       <% end %>
-      <div class="bg-white dark:bg-gray-800 shadow-sm">
-        <div class="flex justify-between sm:items-end px-4 sm:px-9 py-4 instructor_dashboard_table">
-          <div>
-            <h4 class="torus-h4 !py-0 sm:mr-auto mb-2">Students Enrolled in <%= @title %></h4>
+
+      <div class="bg-Surface-surface-primary shadow-sm">
+        <div class="flex flex-row items-center justify-between px-4 pt-8 pb-4">
+          <h4 class="self-center text-black dark:text-white text-lg font-bold leading-normal">
+            {@title}
+          </h4>
+          <div class="flex flex-row items-center gap-x-4">
+            <button
+              :if={@section_open_and_free}
+              phx-click="open"
+              phx-target="#students_table_add_enrollments_modal"
+              class="btn btn-sm rounded-md bg-Fill-Buttons-fill-primary text-Text-text-white text-sm font-semibold leading-none px-4 py-2"
+            >
+              Add Enrollments
+            </button>
             <%= if @show_progress_csv_download do %>
               <a
-                class="self-end"
+                class="flex flex-row items-center gap-x-1 text-Fill-Buttons-fill-primary text-sm font-bold leading-none"
                 href={
                   ~p(/sections/#{@section_slug}/instructor_dashboard/downloads/progress/#{@params.container_id || ""}/#{@title})
                 }
                 download="progress.csv"
               >
-                <i class="fa-solid fa-download mr-1" /> Download student progress CSV
+                Download Student Progress CSV
+                <Icons.download stroke_class="stroke-Fill-Buttons-fill-primary" />
               </a>
             <% else %>
               <a
                 href={
                   Routes.delivery_path(OliWeb.Endpoint, :download_students_progress, @section_slug)
                 }
-                class="self-end"
+                class="flex flex-row items-center gap-x-1 text-Fill-Buttons-fill-primary text-sm font-bold leading-none"
               >
-                <i class="fa-solid fa-download ml-1" /> Download
+                Download <Icons.download stroke_class="stroke-Fill-Buttons-fill-primary" />
               </a>
             <% end %>
           </div>
-          <div class="flex flex-col-reverse sm:flex-row gap-2 items-end">
-            <button
-              :if={@section_open_and_free}
-              phx-click="open"
-              phx-target="#students_table_add_enrollments_modal"
-              class="torus-button primary mr-4"
-            >
-              Add Enrollments
-            </button>
-            <div class="flex w-full sm:w-auto sm:items-end gap-2">
-              <form class="w-full" phx-change="filter_by" phx-target={@myself}>
-                <label class="cursor-pointer inline-flex flex-col gap-1 w-full">
-                  <small class="torus-small uppercase">Filter by</small>
-                  <select class="torus-select" name="filter">
-                    <option
-                      :for={elem <- @dropdown_options}
-                      selected={@params.filter_by == elem.value}
-                      value={elem.value}
-                    >
-                      <%= elem.label %>
-                    </option>
-                  </select>
-                </label>
-              </form>
-            </div>
-          </div>
         </div>
-        <div class="flex flex-row mx-9 my-4 gap-x-4">
+
+        <div class="flex flex-row mx-4 gap-x-4">
           <%= for card <- @card_props do %>
             <CardHighlights.render
               title={card.title}
@@ -577,50 +583,72 @@ defmodule OliWeb.Components.Delivery.Students do
           <% end %>
         </div>
 
-        <div class="flex gap-2 mx-9 mt-4 mb-10 ">
-          <form for="search" phx-target={@myself} phx-change="search_student" class="w-56">
-            <SearchInput.render
-              id="students_search_input"
-              name="student_name"
-              text={@params.text_search}
+        <div class="flex w-fit gap-2 mx-4 mt-4 mb-4 shadow-[0px_2px_6.099999904632568px_0px_rgba(0,0,0,0.10)] border border-Border-border-default bg-Background-bg-secondary">
+          <div class="flex p-2 gap-2">
+            <form for="search" phx-target={@myself} phx-change="search_student" class="w-56">
+              <SearchInput.render
+                id="students_search_input"
+                name="student_name"
+                text={@params.text_search}
+              />
+            </form>
+
+            <Progress.render
+              target={@myself}
+              progress_percentage={@params.progress_percentage}
+              progress_selector={@params.progress_selector}
             />
-          </form>
 
-          <Progress.render
-            target={@myself}
-            progress_percentage={@params.progress_percentage}
-            progress_selector={@params.progress_selector}
-          />
+            <MultiSelect.render
+              id="proficiency_select"
+              options={@proficiency_options}
+              selected_values={@selected_proficiency_options}
+              selected_ids={@selected_proficiency_ids}
+              target={@myself}
+              disabled={@selected_proficiency_ids == %{}}
+              placeholder="Proficiency"
+            />
 
-          <.multi_select
-            id="proficiency_select"
-            options={@proficiency_options}
-            selected_values={@selected_proficiency_options}
-            selected_proficiency_ids={@selected_proficiency_ids}
-            target={@myself}
-            disabled={@selected_proficiency_ids == %{}}
-            placeholder="Proficiency"
-          />
+            <SelectDropdown.render
+              id="filter-select"
+              name="filter"
+              phx_change="filter_by"
+              target={@myself}
+              selected_value={@params[:filter_by]}
+              options={@dropdown_options}
+            />
 
-          <button
-            class="text-center text-blue-500 text-xs font-semibold underline leading-none"
-            phx-click="clear_all_filters"
-            phx-target={@myself}
-          >
-            Clear All Filters
-          </button>
+            <button
+              class="ml-2 mr-6 text-center text-Text-text-high text-sm font-normal leading-none flex items-center gap-x-2 hover:text-Text-text-button"
+              phx-click="clear_all_filters"
+              phx-target={@myself}
+            >
+              <Icons.trash /> Clear All Filters
+            </button>
 
-          <.live_component
-            id="bulk_email_certificate_status_component"
-            module={OliWeb.Components.Delivery.Students.Certificates.BulkCertificateStatusEmail}
-            show_component={
-              @section_certificate_enabled and
-                @certificate_pending_email_notification_count > 0
-            }
-          />
+            <.live_component
+              id="email_button_component"
+              module={OliWeb.Components.Delivery.Students.EmailButton}
+              selected_students={@selected_students}
+              students={@all_students}
+              section_title={@section_title}
+              instructor_email={issued_by_email(@current_author, @current_user)}
+              section_slug={@section_slug}
+              show_component={length(@selected_students) > 0}
+            />
+
+            <.live_component
+              id="bulk_email_certificate_status_component"
+              module={OliWeb.Components.Delivery.Students.Certificates.BulkCertificateStatusEmail}
+              show_component={
+                @section_certificate_enabled and
+                  @certificate_pending_email_notification_count > 0
+              }
+            />
+          </div>
         </div>
 
-        <InstructorDashboardPagedTable.render
+        <StripedPagedTable.render
           table_model={@table_model}
           total_count={@total_count}
           offset={@params.offset}
@@ -631,6 +659,8 @@ defmodule OliWeb.Components.Delivery.Students do
           page_change={JS.push("paged_table_page_change", target: @myself)}
           limit_change={JS.push("paged_table_limit_change", target: @myself)}
           show_limit_change={true}
+          allow_selection={true}
+          selection_change={JS.push("paged_table_selection_change", target: @myself)}
         />
         <HTMLComponents.view_example_student_progress_modal />
 
@@ -645,6 +675,18 @@ defmodule OliWeb.Components.Delivery.Students do
           granted_certificate_guid={nil}
           section_slug={@section_slug}
         />
+
+        <.live_component
+          :if={@show_email_modal}
+          id="email_modal"
+          module={OliWeb.Components.Delivery.Students.EmailModal}
+          selected_students={@selected_students}
+          students={@all_students}
+          section_title={@section_title}
+          instructor_email={issued_by_email(@current_author, @current_user)}
+          section_slug={@section_slug}
+          show_modal={@show_email_modal}
+        />
       </div>
     </div>
     """
@@ -652,106 +694,6 @@ defmodule OliWeb.Components.Delivery.Students do
 
   defp issued_by_email(author, _user) when not is_nil(author), do: author.email
   defp issued_by_email(_author, user), do: user.email
-
-  attr :placeholder, :string, default: "Select an option"
-  attr :disabled, :boolean, default: false
-  attr :options, :list, default: []
-  attr :id, :string
-  attr :target, :map, default: %{}
-  attr :selected_values, :map, default: %{}
-  attr :selected_proficiency_ids, :list, default: []
-
-  def multi_select(assigns) do
-    ~H"""
-    <div class={"flex flex-col border relative rounded-md h-9 #{if @selected_values != %{}, do: "border-blue-500", else: "border-zinc-400"}"}>
-      <div
-        phx-click={
-          if(!@disabled,
-            do:
-              JS.toggle(to: "##{@id}-options-container")
-              |> JS.toggle(to: "##{@id}-down-icon")
-              |> JS.toggle(to: "##{@id}-up-icon")
-          )
-        }
-        class={[
-          "flex gap-x-4 px-4 h-9 justify-between items-center w-auto hover:cursor-pointer rounded",
-          if(@disabled, do: "bg-gray-300 hover:cursor-not-allowed")
-        ]}
-        id={"#{@id}-selected-options-container"}
-      >
-        <div class="flex gap-1 flex-wrap">
-          <span
-            :if={@selected_values == %{}}
-            class="text-zinc-900 text-xs font-semibold leading-none dark:text-white"
-          >
-            <%= @placeholder %>
-          </span>
-          <span :if={@selected_values != %{}} class="text-blue-500 text-xs font-semibold leading-none">
-            Proficiency is <%= show_proficiency_selected_values(@selected_values) %>
-          </span>
-        </div>
-        <.toggle_chevron id={@id} map_values={@selected_values} />
-      </div>
-      <div class="relative">
-        <div
-          class="py-4 hidden z-50 absolute dark:bg-gray-800 bg-white w-48 border overflow-y-scroll top-1 rounded"
-          id={"#{@id}-options-container"}
-          phx-click-away={
-            JS.hide() |> JS.hide(to: "##{@id}-up-icon") |> JS.show(to: "##{@id}-down-icon")
-          }
-        >
-          <div>
-            <.form
-              :let={_f}
-              class="flex flex-column gap-y-3 px-4"
-              for={%{}}
-              as={:options}
-              phx-change="toggle_selected"
-              phx-target={@target}
-            >
-              <.input
-                :for={option <- @options}
-                name={option.id}
-                value={option.selected}
-                label={option.name}
-                checked={option.id in @selected_proficiency_ids}
-                type="checkbox"
-                label_class="text-zinc-900 text-xs font-normal leading-none dark:text-white"
-              />
-            </.form>
-          </div>
-          <div class="w-full border border-gray-200 my-4"></div>
-          <div class="flex flex-row items-center justify-end px-4 gap-x-4">
-            <button
-              class="text-center text-neutral-600 text-xs font-semibold leading-none dark:text-white"
-              phx-click={
-                JS.hide(to: "##{@id}-options-container")
-                |> JS.hide(to: "##{@id}-up-icon")
-                |> JS.show(to: "##{@id}-down-icon")
-              }
-            >
-              Cancel
-            </button>
-            <button
-              class="px-4 py-2 bg-blue-500 rounded justify-center items-center gap-2 inline-flex opacity-90 text-right text-white text-xs font-semibold leading-none"
-              phx-click={
-                JS.push("apply_proficiency_filter")
-                |> JS.hide(to: "##{@id}-options-container")
-                |> JS.hide(to: "##{@id}-up-icon")
-                |> JS.show(to: "##{@id}-down-icon")
-              }
-              phx-target={@target}
-              phx-value={@selected_proficiency_ids}
-              disabled={@disabled}
-            >
-              Apply
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-    """
-  end
 
   #### Add enrollments modal related stuff ####
   def add_enrollments(%{add_enrollments_step: :step_1} = assigns) do
@@ -799,9 +741,9 @@ defmodule OliWeb.Components.Delivery.Students do
         <div>
           <li class="list-none mt-4 max-h-80 overflow-y-scroll">
             <%= for email <- @add_enrollments_grouped_by_status[:non_existing_users] do %>
-              <ul class="odd:bg-gray-200 dark:odd:bg-neutral-600 even:bg-gray-100 dark:even:bg-neutral-500 p-2 first:rounded-t last:rounded-b">
+              <ul class="odd:bg-Table-table-row-1 even:bg-Table-table-row-2 p-2 first:rounded-t last:rounded-b">
                 <div class="flex items-center justify-between">
-                  <p><%= email %></p>
+                  <p>{email}</p>
                   <button
                     phx-click={
                       JS.push("add_enrollments_remove_from_list",
@@ -830,9 +772,9 @@ defmodule OliWeb.Components.Delivery.Students do
         <div>
           <li class="list-none mt-4 max-h-80 overflow-y-scroll">
             <%= for email <- @add_enrollments_grouped_by_status[:pending_confirmation] do %>
-              <ul class="odd:bg-gray-200 dark:odd:bg-neutral-600 even:bg-gray-100 dark:even:bg-neutral-500 p-2 first:rounded-t last:rounded-b">
+              <ul class="odd:bg-Table-table-row-1 even:bg-Table-table-row-2 p-2 first:rounded-t last:rounded-b">
                 <div class="flex items-center justify-between">
-                  <p><%= email %></p>
+                  <p>{email}</p>
                   <button
                     phx-click={
                       JS.push("add_enrollments_remove_from_list",
@@ -861,9 +803,9 @@ defmodule OliWeb.Components.Delivery.Students do
         <div>
           <li class="list-none mt-4 max-h-80 overflow-y-scroll">
             <%= for email <- @add_enrollments_grouped_by_status[:rejected] do %>
-              <ul class="odd:bg-gray-200 dark:odd:bg-neutral-600 even:bg-gray-100 dark:even:bg-neutral-500 p-2 first:rounded-t last:rounded-b">
+              <ul class="odd:bg-Table-table-row-1 even:bg-Table-table-row-2 p-2 first:rounded-t last:rounded-b">
                 <div class="flex items-center justify-between">
-                  <p><%= email %></p>
+                  <p>{email}</p>
                   <button
                     phx-click={
                       JS.push("add_enrollments_remove_from_list",
@@ -892,9 +834,9 @@ defmodule OliWeb.Components.Delivery.Students do
         <div>
           <li class="list-none mt-4 max-h-80 overflow-y-scroll">
             <%= for email <- @add_enrollments_grouped_by_status[:suspended] do %>
-              <ul class="odd:bg-gray-200 dark:odd:bg-neutral-600 even:bg-gray-100 dark:even:bg-neutral-500 p-2 first:rounded-t last:rounded-b">
+              <ul class="odd:bg-Table-table-row-1 even:bg-Table-table-row-2 p-2 first:rounded-t last:rounded-b">
                 <div class="flex items-center justify-between">
-                  <p><%= email %></p>
+                  <p>{email}</p>
                   <button
                     phx-click={
                       JS.push("add_enrollments_remove_from_list",
@@ -920,9 +862,9 @@ defmodule OliWeb.Components.Delivery.Students do
         <div>
           <li class="list-none mt-4 max-h-80 overflow-y-scroll">
             <%= for email <- @add_enrollments_grouped_by_status[:enrolled] do %>
-              <ul class="odd:bg-gray-200 dark:odd:bg-neutral-600 even:bg-gray-100 dark:even:bg-neutral-500 p-2 first:rounded-t last:rounded-b">
+              <ul class="odd:bg-Table-table-row-1 even:bg-Table-table-row-2 p-2 first:rounded-t last:rounded-b">
                 <div class="flex items-center justify-between">
-                  <p><%= email %></p>
+                  <p>{email}</p>
                   <button
                     phx-click={
                       JS.push("add_enrollments_remove_from_list",
@@ -993,7 +935,7 @@ defmodule OliWeb.Components.Delivery.Students do
     </.form>
     <div class="px-4">
       <p>
-        Are you sure you want to send an enrollment email invitation to <%= "#{if @add_enrollments_effective_count == 1, do: "one user", else: "#{@add_enrollments_effective_count} users"}" %>?
+        Are you sure you want to send an enrollment email invitation to {"#{if @add_enrollments_effective_count == 1, do: "one user", else: "#{@add_enrollments_effective_count} users"}"}?
       </p>
       <.inviter
         current_author={@current_author}
@@ -1014,7 +956,7 @@ defmodule OliWeb.Components.Delivery.Students do
     ~H"""
     <div
       :if={show_senders(@current_author, @current_user)}
-      class="mt-5 p-5 border-solid border-2 border-blue-400 rounded"
+      class="mt-5 p-5 border-solid border-2 border-Border-border-bold rounded"
     >
       <p>You're signed with two accounts.</p>
       <p>Please select the one to use as an inviter:</p>
@@ -1029,7 +971,7 @@ defmodule OliWeb.Components.Delivery.Students do
             phx-target={@myself}
             checked={@inviter == "author"}
           />
-          <label for="author" class="ml-2"><%= Map.get(@current_author, :name) %></label>
+          <label for="author" class="ml-2">{Map.get(@current_author, :name)}</label>
         </div>
         <div class="ml-2">
           <input
@@ -1041,7 +983,7 @@ defmodule OliWeb.Components.Delivery.Students do
             phx-target={@myself}
             checked={@inviter == "user"}
           />
-          <label for="user" class="ml-2"><%= Map.get(@current_user, :name) %></label>
+          <label for="user" class="ml-2">{Map.get(@current_user, :name)}</label>
         </div>
       </fieldset>
     </div>
@@ -1373,6 +1315,100 @@ defmodule OliWeb.Components.Delivery.Students do
      )}
   end
 
+  def handle_event("select_all_students", _params, socket) do
+    all_student_ids = Enum.map(socket.assigns.all_students, & &1.id)
+    current_selected = MapSet.new(socket.assigns[:selected_students] || [])
+
+    # If all students are already selected, deselect all; otherwise select all
+    selected_students =
+      if MapSet.size(current_selected) > 0 &&
+           MapSet.equal?(current_selected, MapSet.new(all_student_ids)) do
+        []
+      else
+        all_student_ids
+      end
+
+    # Recreate the table model with updated selected_students to refresh the header checkbox
+    certificate_pending_approval_count =
+      Helpers.certificate_pending_approval_count(
+        socket.assigns.table_model.rows,
+        socket.assigns[:certificate]
+      )
+
+    {:ok, new_table_model} =
+      EnrollmentsTableModel.new(
+        socket.assigns.table_model.rows,
+        socket.assigns.table_model.data.section,
+        socket.assigns.table_model.data.ctx,
+        socket.assigns[:certificate],
+        certificate_pending_approval_count,
+        socket.assigns.myself,
+        selected_students
+      )
+
+    # Preserve the existing table state (sort, etc.)
+    table_model =
+      Map.merge(new_table_model, %{
+        sort_order: socket.assigns.table_model.sort_order,
+        sort_by_spec: socket.assigns.table_model.sort_by_spec
+      })
+
+    {:noreply,
+     assign(socket,
+       selected_students: selected_students,
+       table_model: table_model,
+       show_email_modal: false
+     )}
+  end
+
+  def handle_event("paged_table_selection_change", %{"id" => selected_student_id}, socket) do
+    # Toggle selection - if already selected, remove it, otherwise add it
+    selected_students = socket.assigns[:selected_students] || []
+
+    selected_students =
+      if Enum.any?(socket.assigns.all_students, &(&1.id == selected_student_id)) do
+        if selected_student_id in selected_students do
+          List.delete(selected_students, selected_student_id)
+        else
+          [selected_student_id | selected_students]
+        end
+      else
+        selected_students
+      end
+
+    # Recreate the table model with updated selected_students to refresh the header checkbox
+    certificate_pending_approval_count =
+      Helpers.certificate_pending_approval_count(
+        socket.assigns.table_model.rows,
+        socket.assigns[:certificate]
+      )
+
+    {:ok, new_table_model} =
+      EnrollmentsTableModel.new(
+        socket.assigns.table_model.rows,
+        socket.assigns.table_model.data.section,
+        socket.assigns.table_model.data.ctx,
+        socket.assigns[:certificate],
+        certificate_pending_approval_count,
+        socket.assigns.myself,
+        selected_students
+      )
+
+    # Preserve the existing table state (sort, etc.)
+    table_model =
+      Map.merge(new_table_model, %{
+        sort_order: socket.assigns.table_model.sort_order,
+        sort_by_spec: socket.assigns.table_model.sort_by_spec
+      })
+
+    {:noreply,
+     assign(socket,
+       selected_students: selected_students,
+       table_model: table_model,
+       show_email_modal: false
+     )}
+  end
+
   def handle_event("filter_by", %{"filter" => filter}, socket) do
     {:noreply,
      push_patch(socket,
@@ -1477,6 +1513,10 @@ defmodule OliWeb.Components.Delivery.Students do
            update_params(socket.assigns.params, %{navigation_data: navigation_data})
          )
      )}
+  end
+
+  def handle_event("show_email_modal", _params, socket) do
+    {:noreply, assign(socket, show_email_modal: true)}
   end
 
   def decode_params(params) do
@@ -1665,10 +1705,6 @@ defmodule OliWeb.Components.Delivery.Students do
     end
   end
 
-  defp show_proficiency_selected_values(values) do
-    Enum.map_join(values, ", ", fn {_id, values} -> values end)
-  end
-
   defp update_proficiency_options(selected_proficiency_ids, proficiency_options) do
     Enum.map(proficiency_options, fn option ->
       if option.id in selected_proficiency_ids,
@@ -1740,5 +1776,33 @@ defmodule OliWeb.Components.Delivery.Students do
         Enum.filter(emails, fn e -> e != email end)
       end
     )
+  end
+
+  defp get_container_title(navigation_data, container_id, title) do
+    filtered_containers =
+      case navigation_data["containers"] do
+        nil ->
+          []
+
+        containers ->
+          Enum.filter(containers, fn %{"was_filtered" => was_filtered} -> was_filtered end)
+      end
+
+    container_index =
+      Enum.with_index(filtered_containers)
+      |> Enum.find(fn {%{"id" => id}, _} -> id == container_id end)
+      |> case do
+        {_, index} -> index + 1
+        nil -> nil
+      end
+
+    container_type =
+      case navigation_data["container_filter_by"] do
+        "units" -> "Unit"
+        "modules" -> "Module"
+        _ -> "Section"
+      end
+
+    "#{container_type} #{container_index}: #{title} Student Insights"
   end
 end

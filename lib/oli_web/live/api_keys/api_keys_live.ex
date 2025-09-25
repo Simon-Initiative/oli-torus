@@ -62,7 +62,7 @@ defmodule OliWeb.ApiKeys.ApiKeysLive do
 
           <%= if @created_key != "" do %>
             <p>This is the API key.  Copy this now, this is the only time you will see this.</p>
-            <p><strong><code><%= @created_key %></code></strong></p>
+            <p><strong><code>{@created_key}</code></strong></p>
           <% end %>
         </div>
       </div>
@@ -91,8 +91,8 @@ defmodule OliWeb.ApiKeys.ApiKeysLive do
             <tbody>
               <%= for key <- @keys do %>
                 <tr>
-                  <td><%= key.hint %></td>
-                  <td><%= current(key.status) %></td>
+                  <td>{key.hint}</td>
+                  <td>{current(key.status)}</td>
                   <td>
                     <button
                       type="button"
@@ -108,7 +108,7 @@ defmodule OliWeb.ApiKeys.ApiKeysLive do
                         end
                       }
                     >
-                      <%= key.payments_enabled %>
+                      {key.payments_enabled}
                     </button>
                   </td>
                   <td>
@@ -126,7 +126,7 @@ defmodule OliWeb.ApiKeys.ApiKeysLive do
                         end
                       }
                     >
-                      <%= key.products_enabled %>
+                      {key.products_enabled}
                     </button>
                   </td>
                   <td>
@@ -144,7 +144,7 @@ defmodule OliWeb.ApiKeys.ApiKeysLive do
                         end
                       }
                     >
-                      <%= key.registration_enabled %>
+                      {key.registration_enabled}
                     </button>
                   </td>
                   <td>
@@ -170,7 +170,7 @@ defmodule OliWeb.ApiKeys.ApiKeysLive do
                         end
                       }
                     >
-                      <%= key.automation_setup_enabled %>
+                      {key.automation_setup_enabled}
                     </button>
                   </td>
                   <td>
@@ -181,7 +181,7 @@ defmodule OliWeb.ApiKeys.ApiKeysLive do
                       phx-value-id={key.id}
                       phx-value-action={action(key.status)}
                     >
-                      <%= action(key.status) %>
+                      {action(key.status)}
                     </button>
                   </td>
                 </tr>

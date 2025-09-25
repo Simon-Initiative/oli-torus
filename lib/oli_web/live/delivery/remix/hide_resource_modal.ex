@@ -20,14 +20,14 @@ defmodule OliWeb.Delivery.Remix.HideResourceModal do
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title">
-              <%= get_label_action(@node) |> String.capitalize() %>
-              <%= @node.revision.title |> String.capitalize() %>
+              {get_label_action(@node) |> String.capitalize()}
+              {@node.revision.title |> String.capitalize()}
             </h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
             </button>
           </div>
           <div class="modal-body">
-            Are you sure you want to <%= get_label_action(@node) %> <b><%= @node.revision.title %></b>?
+            Are you sure you want to {get_label_action(@node)} <b><%= @node.revision.title %></b>?
           </div>
           <div class="modal-footer">
             <.button
@@ -45,7 +45,7 @@ defmodule OliWeb.Delivery.Remix.HideResourceModal do
               phx-key="enter"
               phx-click="HideResourceModal.toggle"
             >
-              <%= get_label_action(@node) |> String.capitalize() %>
+              {get_label_action(@node) |> String.capitalize()}
             </.button>
           </div>
         </div>

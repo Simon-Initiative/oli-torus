@@ -76,7 +76,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Activities.ActivitiesTableModel do
 
         ~H"""
         <.link href={~p"/workspaces/course_author/#{@project_slug}/curriculum/#{@slug}/edit"}>
-          <%= @title %>
+          {@title}
         </.link>
         """
     end
