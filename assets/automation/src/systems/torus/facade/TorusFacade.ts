@@ -188,7 +188,7 @@ export class TorusFacade {
 
   async canCreateSections(searchEmail: string, nameLink: string) {
     await this.goToSite('/admin/users');
-    await this.adminAllUsers.searchUserByEmail(searchEmail);
+    await this.adminAllUsers.searchUser(searchEmail);
     await this.adminAllUsers.openUserDetails(nameLink);
     await this.adminUserDetails.clickEditButton();
     await this.adminUserDetails.checkCreateSections();
