@@ -307,9 +307,8 @@ defmodule OliWeb.Common.Utils do
     search_term
     |> String.split(@chars_to_replace_on_search, trim: true)
     |> Stream.map(&Regex.escape/1)
-    |> Stream.map(fn pattern -> {pattern, "<#{tagstart}>#{pattern}</#{tagend}>"} end)
-    |> Enum.reduce(text, fn {from, to}, acc ->
-      String.replace(acc, ~r/#{from}/i, to)
+    |> Enum.reduce(text, fn term, acc ->
+      String.replace(acc, ~r/#{term}/i, fn match -> "<#{tagstart}>#{match}</#{tagend}>" end)
     end)
   end
 
