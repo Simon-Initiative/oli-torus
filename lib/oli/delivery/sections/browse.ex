@@ -9,23 +9,7 @@ defmodule Oli.Delivery.Sections.Browse do
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
 
-  @chars_to_replace_on_search [
-    " ",
-    "&",
-    ":",
-    ";",
-    "(",
-    ")",
-    "|",
-    "!",
-    "'",
-    "<",
-    ">",
-    "-",
-    "_",
-    "@",
-    "."
-  ]
+  @chars_to_replace_on_search [" ", "&", ":", ";", "(", ")", "|", "!", "'", "<", ">"]
 
   @doc """
     Paged, sorted, filterable queries for course sections. Joins the institution,

@@ -6,6 +6,8 @@ defmodule OliWeb.Common.Utils do
 
   require Logger
 
+  @chars_to_replace_on_search [" ", "&", ":", ";", "(", ")", "|", "!", "'", "<", ">"]
+
   def name(%User{guest: true}) do
     "Guest Student"
   end
@@ -300,12 +302,15 @@ defmodule OliWeb.Common.Utils do
   def highlight_search_term(text, "", _, _), do: escape_html(text)
 
   def highlight_search_term(text, search_term, tagstart, tagend) do
-    pattern = Regex.escape(search_term)
-    regex = ~r/#{pattern}/i
+    text = escape_html(text)
 
-    text
-    |> escape_html()
-    |> String.replace(regex, "<#{tagstart}>\\0</#{tagend}>")
+    search_term
+    |> String.split(@chars_to_replace_on_search, trim: true)
+    |> Stream.map(&Regex.escape/1)
+    |> Stream.map(fn pattern -> {pattern, "<#{tagstart}>#{pattern}</#{tagend}>"} end)
+    |> Enum.reduce(text, fn {from, to}, acc ->
+      String.replace(acc, ~r/#{from}/i, to)
+    end)
   end
 
   defp escape_html(text) do
