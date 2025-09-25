@@ -140,7 +140,9 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
         <div class="w-36 h-9 justify-start items-start gap-3.5 inline-flex">
           <div class="px-1.5 py-2 border-zinc-700 justify-start items-center gap-1 flex">
             <Icons.chevron_down class="fill-blue-400 rotate-90" />
-            <div class="justify-center text-[#373a44] dark:text-white text-sm font-semibold tracking-tight">Back to Scored Pages</div>
+            <div class="justify-center text-[#373a44] dark:text-white text-sm font-semibold tracking-tight">
+              Back to Scored Pages
+            </div>
           </div>
         </div>
       </button>
@@ -150,17 +152,23 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
           <%= if @current_assessment != nil do %>
             <div class="flex flex-col gap-y-1">
               <%= if @current_assessment.container_label do %>
-                <span class="text-Text-text-high text-base font-bold leading-none">{@current_assessment.container_label}</span>
+                <span class="text-Text-text-high text-base font-bold leading-none">
+                  {@current_assessment.container_label}
+                </span>
 
                 <div class="flex flex-row items-center gap-x-1">
                   <%= if !@current_assessment.batch_scoring do %>
                     <Icons.score_as_you_go />
                   <% end %>
 
-                  <span class="text-Text-text-high text-lg font-bold leading-normal">{@current_assessment.title}</span>
+                  <span class="text-Text-text-high text-lg font-bold leading-normal">
+                    {@current_assessment.title}
+                  </span>
                 </div>
               <% else %>
-                <span class="text-Text-text-high text-lg font-bold leading-normal">{@current_assessment.title}</span>
+                <span class="text-Text-text-high text-lg font-bold leading-normal">
+                  {@current_assessment.title}
+                </span>
               <% end %>
             </div>
           <% else %>
@@ -178,7 +186,14 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
         <div class="flex flex-row justify-between items-center">
           <div class="flex w-fit gap-2 mx-4 my-4 shadow-[0px_2px_6.099999904632568px_0px_rgba(0,0,0,0.10)] border border-Border-border-default bg-Background-bg-secondary">
             <div class="flex p-2 gap-2">
-              <.form for={%{}} phx-target={@myself} phx-change={if @current_assessment == nil, do: "search_page", else: "search_assessment"} class="w-56">
+              <.form
+                for={%{}}
+                phx-target={@myself}
+                phx-change={
+                  if @current_assessment == nil, do: "search_page", else: "search_assessment"
+                }
+                class="w-56"
+              >
                 <SearchInput.render
                   id="scored_activities_search_input"
                   name={if @current_assessment == nil, do: "page_name", else: "assessment_name"}
@@ -303,10 +318,12 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
 
       _assessment_id ->
         # Assessment is selected, clear only search filters but keep assessment selected
-        updated_params = update_params(socket.assigns.params, %{
-          text_search: nil,
-          offset: 0
-        })
+        updated_params =
+          update_params(socket.assigns.params, %{
+            text_search: nil,
+            offset: 0
+          })
+
         {:noreply, push_patch(socket, to: route_to(socket, updated_params))}
     end
   end

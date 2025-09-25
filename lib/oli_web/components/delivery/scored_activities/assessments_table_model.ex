@@ -7,8 +7,6 @@ defmodule OliWeb.Delivery.ScoredActivities.AssessmentsTableModel do
   alias OliWeb.Icons
   alias Phoenix.LiveView.JS
 
-
-
   def new(assessments, ctx, target) do
     column_specs = [
       %ColumnSpec{
@@ -40,14 +38,14 @@ defmodule OliWeb.Delivery.ScoredActivities.AssessmentsTableModel do
         render_fn: &render_attempts_column/3,
         td_class: "!pl-10",
         tooltip:
-          "Total number of attempts made by all students. Some students may have multiple attempts based on your course settings.",
+          "Total number of attempts made by all students. Some students may have multiple attempts based on your course settings."
       },
       %ColumnSpec{
         name: :students_completion,
         label: HTMLComponents.render_proficiency_label(%{title: "Student Progress"}),
         render_fn: &render_students_completion_column/3,
         td_class: "!pl-10",
-        tooltip: "Average progress on this page across all students.",
+        tooltip: "Average progress on this page across all students."
       }
     ]
 
