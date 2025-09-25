@@ -1,6 +1,7 @@
 defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
   use OliWeb, :live_component
   alias Oli.Delivery.Metrics
+  alias Oli.Delivery.Sections.SectionResourceDepot
 
   attr :objective, :map, required: true
   attr :section_id, :integer, required: true
@@ -114,11 +115,10 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
     )
   end
 
-  # Get real sub-objectives data from database
+  # Get real sub-objectives data using optimized depot approach
   defp get_sub_objectives_data(section_id, section_slug, objective_id) do
-    # Use the existing Metrics function to get sub-objectives proficiency data
-    sub_objectives_raw_data =
-      Metrics.sub_objectives_proficiency(section_id, section_slug, objective_id)
+    # Fetch sub-objectives proficiency data
+    sub_objectives_raw_data = sub_objectives_proficiency(section_id, section_slug, objective_id)
 
     # Extract all sub-objective IDs for batch activity count query
     sub_objective_ids = Enum.map(sub_objectives_raw_data, & &1.sub_objective_id)
@@ -145,6 +145,27 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
         activities_count: Map.get(activity_counts, sub_obj_id, 0)
       }
     end)
+  end
+
+  defp sub_objectives_proficiency(section_id, section_slug, objective_id) do
+    # Step 1: Get the parent objective section resource from the depot
+    with parent_objective when not is_nil(parent_objective) <-
+           SectionResourceDepot.get_section_resource(section_id, objective_id),
+         # Note: This line will become obsolete once we start storing children directly in the section_resources table
+         parent_objective_revision when not is_nil(parent_objective_revision) <-
+           Oli.Resources.get_revision!(parent_objective.revision_id),
+         %{children: sub_objective_ids}
+         when not is_nil(sub_objective_ids) and sub_objective_ids != [] <-
+           parent_objective_revision do
+      # Step 2: Get the sub-objectives section resources from the depot
+      sub_objective_section_resources =
+        SectionResourceDepot.get_resources_by_ids(section_id, sub_objective_ids)
+
+      # Step 3: Call the optimized objectives_proficiency function
+      Metrics.objectives_proficiency(section_id, section_slug, sub_objective_section_resources)
+    else
+      _ -> []
+    end
   end
 
   # Calculate overall proficiency based on distribution

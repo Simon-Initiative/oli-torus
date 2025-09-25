@@ -4,6 +4,7 @@ defmodule Oli.Analytics.Summary.MetricsV2Test do
   import Oli.Factory
 
   alias Oli.Delivery.Sections.ContainedPage
+  alias Oli.Delivery.Sections.SectionResourceDepot
   alias Oli.Delivery.Metrics
   alias Lti_1p3.Roles.ContextRoles
 
@@ -256,7 +257,7 @@ defmodule Oli.Analytics.Summary.MetricsV2Test do
   end
 
   describe "learning objectives expanded visualization tests" do
-    test "sub_objectives_proficiency/2 returns sub-objectives with proficiency distribution" do
+    test "objectives_proficiency/3 returns sub-objectives with proficiency distribution" do
       objective_type_id = Oli.Resources.ResourceType.id_for_objective()
 
       # Create author and project
@@ -367,6 +368,32 @@ defmodule Oli.Analytics.Summary.MetricsV2Test do
         })
         |> Oli.Repo.update()
 
+      # Create SectionResource records needed for the depot
+      insert(:section_resource,
+        section: section,
+        resource_id: parent_resource.id,
+        title: "Parent Objective",
+        children: [sub_obj1_resource.id, sub_obj2_resource.id, sub_obj3_resource.id]
+      )
+
+      insert(:section_resource,
+        section: section,
+        resource_id: sub_obj1_resource.id,
+        title: "Sub Objective 1"
+      )
+
+      insert(:section_resource,
+        section: section,
+        resource_id: sub_obj2_resource.id,
+        title: "Sub Objective 2"
+      )
+
+      insert(:section_resource,
+        section: section,
+        resource_id: sub_obj3_resource.id,
+        title: "Sub Objective 3"
+      )
+
       # Create ResourceSummary records for different proficiency levels
       [
         # Sub objective 1 - High proficiency users
@@ -446,8 +473,15 @@ defmodule Oli.Analytics.Summary.MetricsV2Test do
       ]
       |> Enum.each(fn v -> add_resource_summary(v) end)
 
+      sub_objective_section_resources = [
+        SectionResourceDepot.get_section_resource(section.id, sub_obj1_resource.id),
+        SectionResourceDepot.get_section_resource(section.id, sub_obj2_resource.id),
+        SectionResourceDepot.get_section_resource(section.id, sub_obj3_resource.id)
+      ]
+
       # Test the function
-      result = Metrics.sub_objectives_proficiency(section.id, section.slug, parent_resource.id)
+      result =
+        Metrics.objectives_proficiency(section.id, section.slug, sub_objective_section_resources)
 
       assert length(result) == 3
 
@@ -470,7 +504,7 @@ defmodule Oli.Analytics.Summary.MetricsV2Test do
       assert sub_obj3_result.proficiency_distribution["Low"] == 1
     end
 
-    test "sub_objectives_proficiency/2 returns empty list for objective with no children" do
+    test "objectives_proficiency/3 returns empty list when given empty list" do
       objective_type_id = Oli.Resources.ResourceType.id_for_objective()
 
       author = insert(:author)
@@ -502,14 +536,35 @@ defmodule Oli.Analytics.Summary.MetricsV2Test do
         revision: objective_revision
       )
 
-      result = Metrics.sub_objectives_proficiency(section.id, section.slug, objective_resource.id)
+      # Create SectionResource record needed for the depot
+      insert(:section_resource,
+        section: section,
+        resource_id: objective_resource.id,
+        title: "Solo Objective",
+        children: []
+      )
+
+      # Test with empty list of section resources
+      result = Metrics.objectives_proficiency(section.id, section.slug, [])
       assert result == []
     end
 
-    test "sub_objectives_proficiency/2 returns empty list for non-existent objective" do
+    test "objectives_proficiency/3 handles non-existent section resources gracefully" do
       section = insert(:section)
-      result = Metrics.sub_objectives_proficiency(section.id, section.slug, 99999)
-      assert result == []
+      # Create a mock section resource that doesn't exist in depot
+      non_existent_section_resource = %{
+        resource_id: 99999,
+        title: "Non-existent"
+      }
+
+      result =
+        Metrics.objectives_proficiency(section.id, section.slug, [non_existent_section_resource])
+
+      # Should return one result with empty proficiency distribution
+      assert length(result) == 1
+      assert hd(result).sub_objective_id == 99999
+      assert hd(result).title == "Non-existent"
+      assert hd(result).proficiency_distribution == %{}
     end
 
     test "related_activities_count_for_subobjective/2 counts activities that reference the sub-objective" do

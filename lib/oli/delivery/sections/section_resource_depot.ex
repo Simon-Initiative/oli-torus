@@ -136,6 +136,21 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
   end
 
   @doc """
+  Return the SectionResource records for a given section and a list of resource ids.
+  """
+  def get_resources_by_ids(section_id, resource_ids) do
+    depot_coordinator().init_if_necessary(@depot_desc, section_id, __MODULE__)
+
+    query_conditions = {:resource_id, {:in, resource_ids}}
+
+    Depot.query(
+      @depot_desc,
+      section_id,
+      query_conditions
+    )
+  end
+
+  @doc """
   Returns a list of SectionResource records for all practice pages for a given section.
   """
   def practice_pages(section_id, additional_query_conditions \\ []) do

@@ -1559,103 +1559,79 @@ defmodule Oli.Delivery.Metrics do
   end
 
   @doc """
-  Returns sub-objectives proficiency data for a specific learning objective.
+  Get proficiency data for a list of learning objectives (including sub-objectives) within a section.
+
+  This function takes a list of SectionResource records and returns proficiency distribution
+  data for each of them.
 
   ## Parameters
-  - section_id: The section ID
-  - section_slug: The section slug
-  - objective_id: The learning objective resource ID
+  - section_id: The section ID to get proficiency data from
+  - section_slug: The section slug for filtering students
+  - objective_section_resources: List of SectionResource structs for the objectives
 
   ## Returns
-  List of sub-objective data:
+  List of objective data:
   [%{sub_objective_id: 123, title: "Sub-objective title", proficiency_distribution: %{...}}]
   """
-  @spec sub_objectives_proficiency(
+  @spec objectives_proficiency(
           section_id :: integer,
           section_slug :: String.t(),
-          objective_id :: integer
+          objective_section_resources :: list(map())
         ) :: list(map())
-  def sub_objectives_proficiency(section_id, section_slug, objective_id) do
-    # Get the learning objective revision to find its children (sub-objectives)
-    objective_revision =
-      from(r in Revision,
-        where: r.resource_id == ^objective_id,
-        order_by: [desc: r.inserted_at],
-        limit: 1
-      )
-      |> Repo.one()
+  def objectives_proficiency(section_id, section_slug, objective_section_resources) do
+    # Extract resource IDs from the SectionResource structs
+    objective_ids = Enum.map(objective_section_resources, & &1.resource_id)
 
-    case objective_revision do
-      nil ->
-        []
+    # Get proficiency data for all objectives at once
+    objectives_proficiency =
+      proficiency_per_student_for_objective(section_id, objective_ids)
 
-      %{children: []} ->
-        []
+    student_ids =
+      Sections.enrolled_student_ids(section_slug)
 
-      %{children: sub_objective_ids} ->
-        # Get sub-objective titles and proficiency distributions
-        sub_objective_revisions =
-          from(r in Revision,
-            where: r.resource_id in ^sub_objective_ids,
-            order_by: [asc: r.resource_id, desc: r.inserted_at],
-            distinct: r.resource_id,
-            select: {r.resource_id, r.title}
-          )
-          |> Repo.all()
+    # Process ALL objectives, not just those with proficiency data
+    proficiency_dist_for_objectives =
+      objective_ids
+      |> Enum.reduce(%{}, fn obj_id, acc ->
+        # Get proficiency data for this specific objective
+        student_proficiency = Map.get(objectives_proficiency, obj_id, %{})
+
+        # Filter proficiency data to only include enrolled students (exclude instructors)
+        student_set = MapSet.new(student_ids)
+
+        filtered_student_proficiency =
+          student_proficiency
+          |> Enum.filter(fn {user_id, _proficiency_level} ->
+            MapSet.member?(student_set, user_id)
+          end)
           |> Map.new()
 
-        id_list = Enum.map(sub_objective_revisions, &elem(&1, 0))
-
-        # Get proficiency data for all sub-objectives at once
-        sub_objectives_proficiency =
-          proficiency_per_student_for_objective(section_id, id_list)
-
-        student_ids =
-          Sections.enrolled_student_ids(section_slug)
-
-        # Process ALL sub-objectives, not just those with proficiency data
-        proficiency_dist_for_subobjectives =
-          sub_objective_ids
-          |> Enum.reduce(%{}, fn sub_obj_id, acc ->
-            # Get proficiency data for this specific sub-objective
-            student_proficiency = Map.get(sub_objectives_proficiency, sub_obj_id, %{})
-
-            # Filter proficiency data to only include enrolled students (exclude instructors)
-            student_set = MapSet.new(student_ids)
-
-            filtered_student_proficiency =
-              student_proficiency
-              |> Enum.filter(fn {user_id, _proficiency_level} ->
-                MapSet.member?(student_set, user_id)
-              end)
-              |> Map.new()
-
-            # Add "Not enough data" for students who don't have proficiency data
-            complete_student_proficiency =
-              student_ids
-              |> Enum.reject(&Map.has_key?(filtered_student_proficiency, &1))
-              |> Enum.reduce(filtered_student_proficiency, fn user_id, acc ->
-                Map.put(acc, user_id, "Not enough data")
-              end)
-
-            proficiency_dist =
-              Enum.frequencies_by(complete_student_proficiency, fn {_student_id, proficiency} ->
-                proficiency
-              end)
-
-            Map.put(acc, sub_obj_id, proficiency_dist)
+        # Add "Not enough data" for students who don't have proficiency data
+        complete_student_proficiency =
+          student_ids
+          |> Enum.reject(&Map.has_key?(filtered_student_proficiency, &1))
+          |> Enum.reduce(filtered_student_proficiency, fn user_id, acc ->
+            Map.put(acc, user_id, "Not enough data")
           end)
 
-        # Build result list
-        sub_objective_ids
-        |> Enum.map(fn sub_obj_id ->
-          %{
-            sub_objective_id: sub_obj_id,
-            title: Map.get(sub_objective_revisions, sub_obj_id, "Unknown"),
-            proficiency_distribution: Map.get(proficiency_dist_for_subobjectives, sub_obj_id, %{})
-          }
-        end)
-    end
+        proficiency_dist =
+          Enum.frequencies_by(complete_student_proficiency, fn {_student_id, proficiency} ->
+            proficiency
+          end)
+
+        Map.put(acc, obj_id, proficiency_dist)
+      end)
+
+    # Build result list using the SectionResource titles
+    objective_section_resources
+    |> Enum.map(fn section_resource ->
+      %{
+        sub_objective_id: section_resource.resource_id,
+        title: section_resource.title,
+        proficiency_distribution:
+          Map.get(proficiency_dist_for_objectives, section_resource.resource_id, %{})
+      }
+    end)
   end
 
   @doc """

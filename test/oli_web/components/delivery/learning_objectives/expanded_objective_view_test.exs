@@ -28,6 +28,15 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveViewTes
           resource_type_id: Oli.Resources.ResourceType.get_id_by_type("objective")
         )
 
+      # Create SectionResource record needed for the depot
+      insert(:section_resource,
+        section: section,
+        resource_id: objective.resource_id,
+        title: objective.title || "Test Objective",
+        revision_id: objective.id,
+        children: []
+      )
+
       # Create some enrolled students
       student1 = insert(:user)
       student2 = insert(:user)
