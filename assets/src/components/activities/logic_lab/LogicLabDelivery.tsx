@@ -9,7 +9,6 @@ import ReactDOM from 'react-dom';
 import { Provider, useDispatch } from 'react-redux';
 import { ScoreAsYouGoHeaderBase } from 'components/activities/common/ScoreAsYouGoHeader';
 import { ErrorBoundary } from 'components/common/ErrorBoundary';
-import { LoadingSpinner } from 'components/common/LoadingSpinner';
 import {
   activityDeliverySlice,
   listenForParentSurveyReset,
@@ -161,9 +160,7 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
       return;
     }
     if (!activity) {
-      throw new Error(
-        'LogicLab activity is not configured.  Please contact the course author for assistance.',
-      );
+      throw new Error('LogicLab activity is not configured.  Please contact the course author.');
     }
     // If the activity is a LabActivity, then use message passing to get the activity configuration.
     // Otherwise, use the activity ID to get the configuration from the logiclab server.
@@ -179,7 +176,9 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
   }, [activity, mode, activityState, labServer]);
 
   return !baseUrl ? (
-    <LoadingSpinner />
+    <div className="alert alert-warning" role="alert">
+      Configuring LogicLab... If this message persists, please contact the system administrator.
+    </div>
   ) : (
     <div>
       <ScoreAsYouGoHeaderBase
@@ -191,10 +190,11 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
       />
       <iframe
         title={`LogicLab Activity ${model.context?.title}`}
+        className="mb-3 rounded inset-shadow-sm min-w-[1024px] min-h-[756px] w-full"
+        width={1024}
+        height={756}
         src={baseUrl}
         allow="fullscreen"
-        height="800"
-        width="100%"
         // data attributes only work if same-site, so using message passing instead.
         data-oli-activity-mode={mode}
         // data-logiclab-activity={JSON.stringify(activity)} // use message passing instead of data attribute.
