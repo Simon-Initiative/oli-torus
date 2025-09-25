@@ -1,6 +1,7 @@
 /*
   Models for Torus LogicLab activity data and data exchange.
 */
+import { useEffect, useState } from 'react';
 import { ActivityModelSchema, Feedback, Part, Transformation } from '../types';
 
 // Typing and type checking for existence of variables in a context.
@@ -14,17 +15,22 @@ function contextHasVariables(ctx: ContextVariables | unknown): ctx is ContextVar
  * @returns the LogicLab server URL or undefined if not reachable
  */
 export function useLabServer(context: ContextVariables | unknown): string | undefined {
-  if (contextHasVariables(context)) {
-    const variables = context.variables;
-    if ('ACTIVITY_LOGICLAB_URL' in variables && variables.ACTIVITY_LOGICLAB_URL) {
-      return variables.ACTIVITY_LOGICLAB_URL;
+  const [labServer, setLabServer] = useState<string | undefined>(undefined);
+  useEffect(() => {
+    if (contextHasVariables(context)) {
+      const variables = context.variables;
+      if ('ACTIVITY_LOGICLAB_URL' in variables && variables.ACTIVITY_LOGICLAB_URL) {
+        setLabServer(variables.ACTIVITY_LOGICLAB_URL);
+        return;
+      }
     }
-  }
-  console.warn('LogicLab server URL not set in context, using default.');
-  // Default LogicLab server URL.
-  // This default should be removed once the environment variable is consistently set in deployment environments.
-  return 'https://logiclab.oli.cmu.edu';
-  // throw new ReferenceError('Server configuration error: LogicLab url environment variable is not set.');
+    console.warn('LogicLab server URL not set in context, using default.');
+    // Default LogicLab server URL.
+    // This default should be removed once the environment variable is consistently set in deployment environments.
+    setLabServer('https://logiclab.oli.cmu.edu');
+    // throw new ReferenceError('Server configuration error: LogicLab url environment variable is not set.');
+  }, [context]);
+  return labServer;
 }
 
 export interface LogicLabModelSchema extends ActivityModelSchema {

@@ -157,6 +157,7 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
   const [baseUrl, setBaseUrl] = useState<string>('');
   useEffect(() => {
     if (!labServer) {
+      setBaseUrl('');
       return;
     }
     if (!activity) {
@@ -190,9 +191,10 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
       />
       <iframe
         title={`LogicLab Activity ${model.context?.title}`}
+        // Note: the minimum width and height here are based on the minimum size of the LogicLab UI.
+        // If LogicLab ever supports a responsive UI, these could be changed to better fit the
+        // containing element.
         className="mb-3 rounded inset-shadow-sm min-w-[1024px] min-h-[756px] w-full"
-        width={1024}
-        height={756}
         src={baseUrl}
         allow="fullscreen"
         // data attributes only work if same-site, so using message passing instead.
