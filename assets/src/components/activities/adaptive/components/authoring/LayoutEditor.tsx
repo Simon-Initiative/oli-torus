@@ -598,7 +598,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
           />
         </div>
         {isResponsive ? (
-          <div className="responsive-layout">
+          <div className="advance-authoring-responsive-layout">
             {parts.map((part: AnyPartComponent, idx: number) => {
               const partProps = {
                 id: part.id,
@@ -634,7 +634,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
                 <div
                   key={part.id}
                   data-part-id={part.id}
-                  className={`responsive-item authoring-item ${widthClass} ${alignmentClass}`}
+                  className={`responsive-item ${widthClass} ${alignmentClass}`}
                 >
                   <ResizeContainer
                     key={part.id}

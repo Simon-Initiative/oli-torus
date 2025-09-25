@@ -1,89 +1,79 @@
-/* Responsive Layout Styles - Flow-based */
-.responsive-layout {
+.advance-authoring-responsive-layout {
   display: block;
   width: 100%;
   height: 100%;
   padding: 20px;
   box-sizing: border-box;
-}
 
-/* Create a two-column layout for 50% parts */
-.responsive-layout::after {
-  content: '';
-  display: table;
-  clear: both;
-}
-
-.responsive-item {
-  position: relative;
-  min-height: 100px;
-  border: none;
-  background-color: transparent;
-  display: block;
-  & div:first-child {
-    padding: 5px;
+  &::after {
+    content: '';
+    display: table;
+    clear: both;
   }
-}
 
-.responsive-item.authoring-item {
-  padding: 5px;
-}
-.responsive-item.full-width {
-  width: 100%;
-  margin-bottom: 20px;
-  clear: both;
-}
+  // Responsive Items
+  .responsive-item {
+    position: relative;
+    min-height: 100px;
+    border: none;
+    background-color: transparent;
+    display: block;
 
-.responsive-item.half-width {
-  width: calc(50% - 10px);
-  margin-bottom: 20px;
-}
+    &.full-width {
+      width: 100%;
+      margin-bottom: 20px;
+      clear: both;
+    }
 
-.responsive-align-left {
-  /* Left alignment for 50% width items */
-  float: left;
-  margin-right: 20px;
-  margin-bottom: 20px;
-  width: calc(50% - 10px);
-  background-color: rgba(0, 0, 255, 0.1); /* Debug: temporary blue background for left parts */
-  clear: left; /* Only clear left floats, allow natural flow */
-}
+    &.half-width {
+      width: calc(50% - 10px);
+      margin-bottom: 20px;
+    }
+  }
 
-.responsive-align-right {
-  /* Right alignment for 50% width items */
-  float: right;
-  margin-bottom: 20px;
-  width: calc(50% - 10px);
-  background-color: rgba(255, 0, 0, 0.1); /* Debug: temporary red background */
-  clear: right; /* Ensure each right part starts below the previous one */
-}
+  // Alignment Styles
+  .responsive-align-left,
+  .responsive-align-right {
+    margin-bottom: 20px;
+    width: calc(50% - 10px);
+  }
 
-/* Ensure right-aligned parts stack properly */
-.responsive-align-right + .responsive-align-right {
-  margin-top: 0;
-  clear: right;
-}
+  .responsive-align-left {
+    float: left;
+    margin-right: 20px;
+    background-color: rgba(0, 0, 255, 0.1);
+    clear: left; // Only clear left floats, allow natural flow
 
-/* Ensure left-aligned parts stack properly */
-.responsive-align-left + .responsive-align-left {
-  margin-top: 0;
-}
+    & + .responsive-align-left {
+      margin-top: 0;
+    }
+  }
 
-/* Allow left parts to flow naturally after right parts */
-.responsive-align-right + .responsive-align-left {
-  clear: none; /* Allow left part to flow naturally */
-}
+  .responsive-align-right {
+    float: right;
+    background-color: rgba(255, 0, 0, 0.1);
+    clear: right; // Ensure each right part starts below the previous one
 
-/* Override absolute positioning for responsive mode */
-.responsive-layout .react-draggable {
-  position: relative !important;
-  top: auto !important;
-  left: auto !important;
-  width: 100% !important;
-  /* Don't override height - let it use the actual part height */
-}
+    & + .responsive-align-right {
+      margin-top: 0;
+      clear: right;
+    }
 
-/* Ensure responsive items maintain their width regardless of resize */
-.responsive-layout .react-draggable .react-resizable-handle {
-  display: none; /* Hide resize handles in responsive mode */
+    // Allow left parts to flow naturally after right parts
+    & + .responsive-align-left {
+      clear: none;
+    }
+  }
+
+  // Draggable Overrides
+  .react-draggable {
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    width: 100% !important;
+
+    .react-resizable-handle {
+      display: none;
+    }
+  }
 }
