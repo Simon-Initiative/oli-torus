@@ -5,11 +5,14 @@ import { act, render, screen } from '@testing-library/react';
 import { VegaLiteRenderer } from '../../../src/components/misc/VegaLiteRenderer';
 
 // Mock VegaLite component
-const mockView = {
+const mockView: any = {
   signal: jest.fn(),
   background: jest.fn(),
   run: jest.fn(),
+  resize: jest.fn(),
 };
+// Set up resize to return mockView for chaining after initialization
+mockView.resize = jest.fn(() => mockView);
 
 // Store mockView globally for jest mock
 (global as any).mockViewForTests = mockView;
@@ -40,15 +43,18 @@ jest.mock('react-vega', () => {
 class MockMutationObserver {
   static observeMock = jest.fn();
   static disconnectMock = jest.fn();
+  static instances: MockMutationObserver[] = [];
 
   callback: MutationCallback;
 
   constructor(callback: MutationCallback) {
     this.callback = callback;
+    MockMutationObserver.instances.push(this);
   }
 
   observe = MockMutationObserver.observeMock;
   disconnect = MockMutationObserver.disconnectMock;
+  takeRecords = jest.fn(() => []);
 }
 
 Object.defineProperty(window, 'MutationObserver', {
@@ -105,12 +111,14 @@ describe('VegaLiteRenderer', () => {
     // Reset static mocks
     MockMutationObserver.observeMock.mockClear();
     MockMutationObserver.disconnectMock.mockClear();
+    MockMutationObserver.instances = [];
     MockResizeObserver.observeMock.mockClear();
     MockResizeObserver.disconnectMock.mockClear();
     // Reset mockView to default behavior
     mockView.signal.mockImplementation(() => {});
     mockView.background.mockImplementation(() => {});
     mockView.run.mockImplementation(() => {});
+    mockView.resize.mockImplementation(() => mockView);
   });
 
   afterEach(() => {
@@ -226,18 +234,33 @@ describe('VegaLiteRenderer', () => {
     it('calls view methods on useEffect timeout', async () => {
       render(<VegaLiteRenderer spec={mockSpec} />);
 
-      // Clear initial calls
+      // Find the MutationObserver instance to get its callback
+      const mockInstance = MockMutationObserver.instances[0];
+      expect(mockInstance).toBeDefined();
+
+      // Clear initial calls after getting instance
       jest.clearAllMocks();
 
-      // Fast-forward timers to trigger the timeout
-      act(() => {
-        jest.advanceTimersByTime(100);
-      });
+      const callback = mockInstance?.callback;
+      expect(callback).toBeDefined();
 
-      // Should call view methods (testing the useEffect timeout mechanism)
-      expect(mockView.signal).toHaveBeenCalled();
-      expect(mockView.background).toHaveBeenCalled();
-      expect(mockView.run).toHaveBeenCalled();
+      if (callback) {
+        // Simulate a mutation
+        act(() => {
+          document.documentElement.classList.add('dark');
+          callback([] as MutationRecord[], mockInstance as MutationObserver);
+        });
+
+        // Fast-forward timers to trigger the timeout (50ms debounce)
+        act(() => {
+          jest.advanceTimersByTime(60);
+        });
+
+        // Should call view methods (testing the useEffect timeout mechanism)
+        expect(mockView.signal).toHaveBeenCalled();
+        expect(mockView.background).toHaveBeenCalled();
+        expect(mockView.run).toHaveBeenCalled();
+      }
     });
 
     it('handles view update errors gracefully', () => {
@@ -282,6 +305,9 @@ describe('VegaLiteRenderer', () => {
     it('clears timeout on component unmount', () => {
       const { unmount } = render(<VegaLiteRenderer spec={mockSpec} />);
 
+      // Count initial calls
+      const initialCalls = mockView.signal.mock.calls.length;
+
       // Trigger a state change that would set a timeout
       act(() => {
         document.documentElement.classList.add('dark');
@@ -294,8 +320,8 @@ describe('VegaLiteRenderer', () => {
         jest.advanceTimersByTime(200);
       });
 
-      // Should not cause additional calls since component is unmounted
-      expect(mockView.signal).toHaveBeenCalledTimes(1); // Only initial call
+      // Should not have additional calls beyond what was there after unmount
+      expect(mockView.signal).toHaveBeenCalledTimes(initialCalls); // No additional calls after unmount
     });
 
     it('handles timeout clearing correctly', () => {
