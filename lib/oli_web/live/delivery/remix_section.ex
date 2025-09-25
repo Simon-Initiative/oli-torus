@@ -22,7 +22,7 @@ defmodule OliWeb.Delivery.RemixSection do
     Entry
   }
 
-  alias Oli.Publishing.DeliveryResolver
+  alias Oli.Publishing.{AuthoringResolver, DeliveryResolver}
   alias Oli.Delivery.Hierarchy
   alias Oli.Delivery.Hierarchy.HierarchyNode
   alias OliWeb.Common.Hierarchy.HierarchyPicker.TableModel, as: PagesTableModel
@@ -172,7 +172,9 @@ defmodule OliWeb.Delivery.RemixSection do
     params = %{
       text_filter: "",
       limit: 5,
-      offset: 0
+      offset: 0,
+      sort_by: :title,
+      sort_order: :asc
     }
 
     {:ok, pages_table_model} = PagesTableModel.new([])
@@ -471,15 +473,28 @@ defmodule OliWeb.Delivery.RemixSection do
       modal_assigns: %{selection: selection}
     } = socket.assigns
 
-    publication_ids =
-      selection
-      |> Enum.reduce(%{}, fn {pub_id, _resource_id}, acc ->
-        Map.put(acc, pub_id, true)
-      end)
-      |> Map.keys()
+    # Extract selected publication IDs and build lookup maps
+    unique_pub_ids = selection |> Enum.map(&elem(&1, 0)) |> Enum.uniq()
+    pub_by_id = Map.new(available_publications, &{&1.id, &1})
 
+    # Fetch published resources and build hierarchy indexes per publication
     published_resources_by_resource_id_by_pub =
-      Publishing.get_published_resources_for_publications(publication_ids)
+      Publishing.get_published_resources_for_publications(unique_pub_ids)
+
+    hierarchy_resource_index_per_pub =
+      Map.new(unique_pub_ids, fn pub_id ->
+        pub = Map.fetch!(pub_by_id, pub_id)
+        pub_hierarchy = publication_hierarchy(pub)
+
+        index = build_resource_index(pub_hierarchy)
+        {pub_id, index}
+      end)
+
+    # Sort selection by resource order in original publication
+    selection =
+      Enum.sort_by(selection, fn {pub_id, rid} ->
+        Map.get(hierarchy_resource_index_per_pub[pub_id], rid, :infinity)
+      end)
 
     hierarchy =
       Hierarchy.add_materials_to_hierarchy(
@@ -494,7 +509,7 @@ defmodule OliWeb.Delivery.RemixSection do
     pinned_project_publications =
       selection
       |> Enum.reduce(pinned_project_publications, fn {pub_id, _resource_id}, acc ->
-        pub = Enum.find(available_publications, fn p -> p.id == pub_id end)
+        pub = Map.fetch!(pub_by_id, pub_id)
         Map.put_new(acc, pub.project_id, pub)
       end)
 
@@ -519,7 +534,7 @@ defmodule OliWeb.Delivery.RemixSection do
       Publishing.get_publication!(publication_id)
       |> Repo.preload([:project])
 
-    hierarchy = publication_hierarchy(publication)
+    hierarchy = published_publication_hierarchy(publication)
 
     {total_count, section_pages} =
       Publishing.get_published_pages_by_publication(
@@ -932,6 +947,31 @@ defmodule OliWeb.Delivery.RemixSection do
     Hierarchy.create_hierarchy(root_revision, published_resources_by_resource_id)
   end
 
+  defp published_publication_hierarchy(publication) do
+    published_resources_by_resource_id = Sections.published_resources_map(publication.id)
+
+    published_revisions_by_resource_id =
+      published_resources_by_resource_id
+      |> Enum.map(fn {resource_id, published_resource} ->
+        {resource_id, published_resource.revision}
+      end)
+      |> Enum.into(%{})
+
+    %PublishedResource{revision: root_revision} =
+      published_resources_by_resource_id[publication.root_resource_id]
+
+    {root_node, _numbering_tracker} =
+      AuthoringResolver.hierarchy_node_with_children(
+        root_revision,
+        publication.project,
+        published_revisions_by_resource_id,
+        Oli.Resources.Numbering.init_numbering_tracker(),
+        0
+      )
+
+    root_node
+  end
+
   ## used by add container button, disabled for now
   # defp new_container_name(%HierarchyNode{numbering: numbering} = _active) do
   #   Numbering.container_type_label(%Numbering{numbering | level: numbering.level + 1})
@@ -1016,4 +1056,12 @@ defmodule OliWeb.Delivery.RemixSection do
 
   defp is_product?(%{assigns: %{live_action: :product_remix}} = _socket), do: true
   defp is_product?(_), do: false
+
+  # Builds a map from resource_id to its position in the flattened hierarchy.
+  defp build_resource_index(hierarchy) do
+    hierarchy
+    |> Hierarchy.flatten_hierarchy()
+    |> Enum.with_index()
+    |> Map.new(fn {%{resource_id: rid}, idx} -> {rid, idx} end)
+  end
 end

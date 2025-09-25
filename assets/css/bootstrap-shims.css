@@ -523,7 +523,7 @@ table {
   @apply min-w-full border dark:border-gray-600 dark:text-gray-300;
 }
 table thead th {
-  @apply border-b border-r p-2 bg-gray-100 font-semibold dark:bg-gray-600 dark:border-gray-600;
+  @apply border-b border-r p-2 bg-gray-100 font-semibold dark:bg-gray-600 dark:border-[#3B3740];
 }
 table tr {
   @apply border-b dark:border-gray-600;

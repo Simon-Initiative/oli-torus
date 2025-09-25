@@ -188,7 +188,10 @@ defmodule OliWeb.Delivery.Student.Utils do
         TERMS
       </span>
       <ul class="list-disc ml-6">
-        <li :if={@has_scheduled_resources?} id="page_due_terms">
+        <li
+          :if={@has_scheduled_resources? or not is_nil(@effective_settings.end_date)}
+          id="page_due_terms"
+        >
           <.page_due_term effective_settings={@effective_settings} ctx={@ctx} />
         </li>
         <li :if={!@effective_settings.batch_scoring} id="score_as_you_go_term">
@@ -282,17 +285,41 @@ defmodule OliWeb.Delivery.Student.Utils do
     """
   end
 
-  defp page_due_term(%{effective_settings: %{end_date: end_date}} = assigns) do
+  defp page_due_term(
+         %{effective_settings: %{end_date: end_date, start_date: start_date}} = assigns
+       ) do
     verb_form =
       case DateTime.compare(DateTime.utc_now(), end_date) do
         :gt -> "was"
         :lt -> "is"
       end
 
-    assigns = assign(assigns, verb_form: verb_form)
+    available_verb_form =
+      cond do
+        is_nil(start_date) -> "is"
+        DateTime.compare(DateTime.utc_now(), start_date) == :gt -> "was"
+        true -> "is"
+      end
+
+    assigns =
+      assigns
+      |> assign(verb_form: verb_form)
+      |> assign(available_verb_form: available_verb_form)
 
     ~H"""
-    <%= "This assignment #{@verb_form} #{scheduling_type(@effective_settings.scheduling_type)}" %>
+    <%= if @effective_settings.start_date do %>
+      This assignment <%= @available_verb_form %> available on
+      <b>
+        <%= FormatDateTime.to_formatted_datetime(
+          @effective_settings.start_date,
+          @ctx,
+          "{WDshort} {Mshort} {D}, {YYYY} at {h12}:{m}{am}."
+        ) %>
+      </b>
+    <% else %>
+      This assignment is available <b>Now</b>
+    <% end %>
+    <%= "and #{@verb_form} #{scheduling_type(@effective_settings.scheduling_type)}" %>
     <b>
       <%= FormatDateTime.to_formatted_datetime(
         @effective_settings.end_date,
@@ -364,7 +391,7 @@ defmodule OliWeb.Delivery.Student.Utils do
   def container_label_for_scheduling_type([:read_by]), do: "Read by: "
   def container_label_for_scheduling_type(_), do: "Due by: "
 
-  def label_for_scheduling_type(:due_by), do: "Due by: "
+  def label_for_scheduling_type(type) when type in [:due_by, nil], do: "Due by: "
   def label_for_scheduling_type(:read_by), do: "Read by: "
   def label_for_scheduling_type(:inclass_activity), do: "In-class activity by: "
   def label_for_scheduling_type(_), do: ""

@@ -128,6 +128,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
     breadcrumbs =
       Breadcrumb.trail_to(project_slug, revision_slug, AuthoringResolver, project.customizations)
 
+    is_advanced_authoring =
+      context.content && Map.get(context.content, "advancedAuthoring", false)
+
     content = %{
       active: :curriculum,
       activity_types: activity_types,
@@ -183,6 +186,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
       socket
       |> assign(maybe_scripts_loaded: false)
       |> assign(error: false)
+      |> assign(breadcrumbs: breadcrumbs)
+      |> assign(is_advanced_authoring: is_advanced_authoring)
       |> push_event("load_survey_scripts", %{script_sources: all_scripts})
 
     {:ok, assign(socket, content)}

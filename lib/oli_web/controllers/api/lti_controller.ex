@@ -3,6 +3,8 @@ defmodule OliWeb.Api.LtiController do
 
   alias Lti_1p3.Platform.LoginHint
   alias Lti_1p3.Platform.LoginHints
+  alias Oli.Accounts
+  alias Oli.Delivery.Sections
   alias Oli.Publishing.{DeliveryResolver, AuthoringResolver}
   alias Oli.Lti.PlatformExternalTools
   alias Oli.Lti.PlatformExternalTools.LtiExternalToolActivityDeployment
@@ -23,17 +25,32 @@ defmodule OliWeb.Api.LtiController do
   def launch_details(conn, %{"section_slug" => section_slug, "activity_id" => activity_id}) do
     with %Oli.Resources.Revision{activity_type_id: activity_type_id} <-
            DeliveryResolver.from_resource_id(section_slug, activity_id),
-         %LtiExternalToolActivityDeployment{platform_instance: platform_instance, status: status} =
+         {:ok, section} <- get_section_by_slug(section_slug),
+         %LtiExternalToolActivityDeployment{
+           platform_instance: platform_instance,
+           status: status,
+           deep_linking_enabled: deep_linking_enabled
+         } =
            PlatformExternalTools.get_lti_external_tool_activity_deployment_by(
              activity_registration_id: activity_type_id
            ) do
       user = conn.assigns[:current_user]
+      current_author = conn.assigns[:current_author]
+
+      can_configure_tool =
+        Sections.is_instructor?(user, section_slug) || Accounts.is_admin?(current_author)
 
       {:ok, %LoginHint{value: login_hint}} =
         LoginHints.create_login_hint(user.id, %{
           "section" => section_slug,
           "resource_id" => activity_id
         })
+
+      deep_link =
+        PlatformExternalTools.get_section_resource_deep_link_by(
+          section_id: section.id,
+          resource_id: activity_id
+        )
 
       json(conn, %{
         name: platform_instance.name,
@@ -42,9 +59,12 @@ defmodule OliWeb.Api.LtiController do
           login_hint: login_hint,
           client_id: platform_instance.client_id,
           target_link_uri: platform_instance.target_link_uri,
-          login_url: platform_instance.login_url,
-          status: status
-        }
+          login_url: platform_instance.login_url
+        },
+        status: status,
+        deep_linking_enabled: deep_linking_enabled,
+        deep_link: deep_link,
+        can_configure_tool: can_configure_tool
       })
     else
       _ ->
@@ -58,7 +78,11 @@ defmodule OliWeb.Api.LtiController do
   def launch_details(conn, %{"project_slug" => project_slug, "activity_id" => activity_id}) do
     with %Oli.Resources.Revision{activity_type_id: activity_type_id} <-
            AuthoringResolver.from_resource_id(project_slug, activity_id),
-         %LtiExternalToolActivityDeployment{platform_instance: platform_instance, status: status} =
+         %LtiExternalToolActivityDeployment{
+           platform_instance: platform_instance,
+           status: status,
+           deep_linking_enabled: deep_linking_enabled
+         } =
            PlatformExternalTools.get_lti_external_tool_activity_deployment_by(
              activity_registration_id: activity_type_id
            ) do
@@ -77,8 +101,50 @@ defmodule OliWeb.Api.LtiController do
           login_hint: login_hint,
           client_id: platform_instance.client_id,
           target_link_uri: platform_instance.target_link_uri,
+          login_url: platform_instance.login_url
+        },
+        status: status,
+        deep_linking_enabled: deep_linking_enabled,
+        can_configure_tool: false
+      })
+    else
+      _ ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{error: "Activity not found"})
+        |> halt()
+    end
+  end
+
+  def deep_linking_launch_details(conn, %{
+        "section_slug" => section_slug,
+        "activity_id" => activity_id
+      }) do
+    with %Oli.Resources.Revision{activity_type_id: activity_type_id} <-
+           DeliveryResolver.from_resource_id(section_slug, activity_id),
+         %LtiExternalToolActivityDeployment{platform_instance: platform_instance, status: status} =
+           PlatformExternalTools.get_lti_external_tool_activity_deployment_by(
+             activity_registration_id: activity_type_id
+           ) do
+      user = conn.assigns[:current_user]
+
+      {:ok, %LoginHint{value: login_hint}} =
+        LoginHints.create_login_hint(user.id, %{
+          "section" => section_slug,
+          "resource_id" => activity_id,
+          "configure_deep_linking" => "true"
+        })
+
+      json(conn, %{
+        name: platform_instance.name,
+        launch_params: %{
+          iss: Oli.Utils.get_base_url(),
+          login_hint: login_hint,
+          client_id: platform_instance.client_id,
+          target_link_uri: platform_instance.target_link_uri,
           login_url: platform_instance.login_url,
-          status: status
+          status: status,
+          lti_message_type: "LtiDeepLinkingRequest"
         }
       })
     else
@@ -87,6 +153,16 @@ defmodule OliWeb.Api.LtiController do
         |> put_status(:not_found)
         |> json(%{error: "Activity not found"})
         |> halt()
+    end
+  end
+
+  defp get_section_by_slug(section_slug) do
+    case Sections.get_section_by_slug(section_slug) do
+      %Sections.Section{} = section ->
+        {:ok, section}
+
+      nil ->
+        {:error, :section_not_found}
     end
   end
 
@@ -215,7 +291,8 @@ defmodule OliWeb.Api.LtiController do
          {:ok, scope} <-
            validate_scope(scope, [
              "https://purl.imsglobal.org/spec/lti-ags/scope/result.readonly",
-             "https://purl.imsglobal.org/spec/lti-ags/scope/score"
+             "https://purl.imsglobal.org/spec/lti-ags/scope/score",
+             "https://purl.imsglobal.org/spec/lti-ags/scope/lineitem"
            ]),
          {:ok, access_token, expires_in} <-
            Tokens.issue_access_token(client_id, scope) do
@@ -229,11 +306,15 @@ defmodule OliWeb.Api.LtiController do
       })
     else
       {:error, reason} ->
+        Logger.error("Failed to issue access token: #{inspect(reason)}")
+
         conn
         |> put_status(:unauthorized)
         |> json(%{error: "invalid_request", error_description: to_string(reason)})
 
-      _ ->
+      e ->
+        Logger.error("Failed to issue access token: #{inspect(e)}")
+
         conn
         |> put_status(:bad_request)
         |> json(%{error: "invalid_request"})
@@ -245,7 +326,8 @@ defmodule OliWeb.Api.LtiController do
            peek_jwt(client_assertion),
          %JOSE.JWS{fields: %{"kid" => kid}} <- JOSE.JWT.peek_protected(client_assertion),
          {:ok, _iss, _sub} <- validate_matching_iss_sub(client_id, client_id),
-         {:ok, platform_instance} <- get_platform_instance_by_client_id(client_id),
+         {:ok, platform_instance} <-
+           PlatformInstances.get_platform_instance_by_client_id(client_id),
          {:ok, jwk} <- get_jwk_for_assertion(platform_instance.keyset_url, kid),
          {true, _jwt, _jws} <- JOSE.JWT.verify(jwk, client_assertion) do
       {:ok, %{sub: client_id}}
@@ -264,16 +346,6 @@ defmodule OliWeb.Api.LtiController do
     end
   end
 
-  defp get_platform_instance_by_client_id(client_id) do
-    case PlatformInstances.get_platform_instance_by_client_id(client_id) do
-      nil ->
-        {:error, :platform_instance_not_found}
-
-      platform_instance ->
-        {:ok, platform_instance}
-    end
-  end
-
   defp validate_scope(scope, valid_scopes) do
     scopes =
       scope
@@ -289,9 +361,9 @@ defmodule OliWeb.Api.LtiController do
     end
   end
 
-  defp peek_jwt(client_assertion) do
+  defp peek_jwt(token) do
     try do
-      jwt = JOSE.JWT.peek(client_assertion)
+      jwt = JOSE.JWT.peek(token)
 
       {:ok, jwt}
     rescue

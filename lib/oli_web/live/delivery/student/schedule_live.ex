@@ -1,13 +1,14 @@
 defmodule OliWeb.Delivery.Student.ScheduleLive do
   use OliWeb, :live_view
 
-  alias OliWeb.Common.SessionContext
+  alias OliWeb.Common.{FormatDateTime, SessionContext}
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Scheduling
   alias Oli.Delivery.Attempts.Core
   alias OliWeb.Components.Delivery.{Schedule, Utils}
   alias Oli.Delivery.{Attempts, Settings}
   alias Oli.Delivery.Attempts.{HistoricalGradedAttemptSummary}
+  alias OliWeb.Components.Utils, as: ComponentsUtils
 
   def mount(_params, _session, socket) do
     if connected?(socket) do
@@ -123,6 +124,11 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
     ~H"""
     <div class="my-8 px-3 md:px-16" id="schedule_live" phx-hook="Countdown">
       <div class="flex flex-col">
+        <div class="text-sm font-medium leading-none mb-6">
+          <ComponentsUtils.timezone_info timezone={
+            FormatDateTime.tz_preference_or_default(@ctx.author, @ctx.user, @ctx.browser_timezone)
+          } />
+        </div>
         <%= for {{month, _year}, weekly_schedule} <- @schedule do %>
           <div class="flex flex-col md:flex-row">
             <div class={[

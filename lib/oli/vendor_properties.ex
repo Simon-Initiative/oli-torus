@@ -21,6 +21,9 @@ defmodule Oli.VendorProperties do
   def company_name(), do: Application.fetch_env!(:oli, :vendor_property)[:company_name]
   def company_address(), do: Application.fetch_env!(:oli, :vendor_property)[:company_address]
 
+  def support_email(),
+    do: Application.fetch_env!(:oli, :vendor_property)[:support_email]
+
   def company_faq_url(), do: Application.fetch_env!(:oli, :vendor_property)[:faq_url]
 
   def normalized_workspace_logo(host) do

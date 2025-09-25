@@ -107,7 +107,7 @@ export const createSpokeCorrectCondition = (
   const correctconditions = correctScreens
     .filter((screen: string) => screen?.length)
     .map((correctScreen: any) => {
-      return createCondition(`session.visits.${correctScreen}`, '1', 'equal');
+      return createCondition(`session.visits.${correctScreen}`, '1', 'greaterThanInclusive');
     });
   if (correctconditions?.length) {
     return [...correctconditions];
@@ -141,7 +141,7 @@ const createSpokeDuplicatePathCondition = (
 ) => {
   if (Number.isInteger(selectedSpoke)) {
     return [
-      createCondition(`session.visits.${destinationScreenId}`, '1', 'equal'),
+      createCondition(`session.visits.${destinationScreenId}`, '1', 'greaterThanInclusive'),
       createCondition(`stage.${questionId}.selectedSpoke`, String(selectedSpoke), 'equal'),
     ];
   }

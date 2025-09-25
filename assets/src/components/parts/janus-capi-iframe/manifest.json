@@ -1,7 +1,7 @@
 {
   "id": "janus_capi_iframe",
-  "friendlyName": "CAPI Simulation / VFT / Component",
-  "description": "An advanced Simulation, VFT (Virtual Field Trip), or Component that communicates dynamically through the CAPI interface.",
+  "friendlyName": "Iframe",
+  "description": "A webpage displayed in an iframe, or a simulation, virtual tour, or component that uses CAPI.",
   "icon": "icon-part-capi.svg",
   "author": "Project Janus Team",
   "global": true,

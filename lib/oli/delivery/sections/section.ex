@@ -262,7 +262,7 @@ defmodule Oli.Delivery.Sections.Section do
   def validate_positive_money(changeset) do
     validate_change(changeset, :amount, fn _, amount ->
       if requires_payment?(changeset) do
-        case Money.compare(Money.new(:USD, 1), amount) do
+        case Money.compare(Money.new(1, "USD"), amount) do
           :gt -> [{:amount, "must be greater than or equal to one"}]
           _ -> []
         end
@@ -274,8 +274,8 @@ defmodule Oli.Delivery.Sections.Section do
 
   def enforce_minimum_price(changeset) do
     if !is_nil(get_field(changeset, :amount)) do
-      case Money.compare(get_field(changeset, :amount), Money.new(:USD, 1)) do
-        :lt -> put_change(changeset, :amount, Money.new(:USD, 1))
+      case Money.compare(get_field(changeset, :amount), Money.new(1, "USD")) do
+        :lt -> put_change(changeset, :amount, Money.new(1, "USD"))
         _ -> changeset
       end
     else

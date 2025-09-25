@@ -30,7 +30,7 @@ defmodule OliWeb.AuthorRegistrationLiveTest do
         |> render_change(author: %{"email" => "with spaces", "password" => "too short"})
 
       assert result =~ "Create account"
-      assert result =~ "must have the @ sign and no spaces"
+      assert result =~ "must be a valid email address"
       assert result =~ "should be at least 12 character"
     end
   end

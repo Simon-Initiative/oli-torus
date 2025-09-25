@@ -81,7 +81,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       assert has_element?(
                view,
                "th[phx-value-sort_by=\"student_completion\"]",
-               "STUDENT PROGRESS"
+               "Class Progress"
              )
 
       # Link that triggers the opening of the modal
@@ -498,7 +498,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       {:ok, section_with_payment} =
         Sections.update_section(section, %{
           requires_payment: true,
-          amount: %{amount: "1000", currency: "USD"},
+          amount: Money.new(1000, "USD"),
           has_grace_period: false
         })
 
@@ -550,7 +550,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
           start_date: yesterday(),
           end_date: tomorrow(),
           requires_payment: true,
-          amount: %{amount: "1000", currency: "USD"},
+          amount: Money.new(1000, "USD"),
           has_grace_period: true,
           grace_period_days: 10
         })
@@ -590,7 +590,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       {:ok, section} =
         Sections.update_section(section, %{
           requires_payment: true,
-          amount: Money.new(:USD, 100),
+          amount: Money.new(100, "USD"),
           grace_period_days: 1
         })
 
@@ -946,7 +946,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
         container_filter_by: :units,
         selected_card_value: :zero_student_progress,
         progress_percentage: 100,
-        progress_selector: :is_less_than_or_equal,
         selected_proficiency_ids: Jason.encode!([])
       }
 
@@ -1843,7 +1842,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
         sub: UUID.uuid4(),
         name: "#{v}",
         given_name: "#{v}",
-        family_name: "#{v}",
+        family_name: "name_#{v}",
         middle_name: "",
         picture: "https://platform.example.edu/jane.jpg",
         email: "test#{v}@example.edu",
@@ -1871,7 +1870,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
             type: :direct,
             generation_date: DateTime.utc_now(),
             application_date: DateTime.utc_now(),
-            amount: "$100.00",
+            amount: Money.new(100, "USD"),
             provider_type: :stripe,
             provider_id: "1",
             provider_payload: %{},

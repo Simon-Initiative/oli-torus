@@ -58,10 +58,11 @@ defmodule OliWeb.Users.AuthorsDetailView do
            current_author: socket.assigns.current_author,
            breadcrumbs: set_breadcrumbs(author),
            author: author,
-           changeset: author_changeset(author),
            disabled_edit: true,
            author_roles: SystemRole.role_id(),
-           password_reset_link: ""
+           password_reset_link: "",
+           author_name: author.name,
+           form: author_form(author)
          )}
     end
   end
@@ -71,10 +72,12 @@ defmodule OliWeb.Users.AuthorsDetailView do
   attr(:title, :string, default: "Author Details")
   attr(:author, Author, required: true)
   attr(:modal, :any, default: nil)
-  attr(:changeset, :map)
   attr(:disabled_edit, :boolean, default: true)
+  attr(:disabled_submit, :boolean, default: false)
   attr(:author_roles, :map, default: %{})
   attr(:password_reset_link, :string)
+  attr(:author_name, :string)
+  attr(:form, :map)
 
   def render(assigns) do
     ~H"""
@@ -84,42 +87,41 @@ defmodule OliWeb.Users.AuthorsDetailView do
       <Groups.render>
         <Group.render label="Details" description="User details">
           <.form
-            :let={f}
             id="edit_author"
-            for={@changeset}
+            for={@form}
             phx-change="change"
             phx-submit="submit"
             autocomplete="off"
           >
-            <ReadOnly.render label="Name" value={@author.name} />
+            <ReadOnly.render label="Name" value={@author_name} />
             <div class="form-group">
               <label for="given_name">First Name</label>
               <.input
-                value={fetch_field(@changeset, :given_name)}
+                field={@form[:given_name]}
                 id="given_name"
-                name="author[given_name]"
                 class="form-control"
                 disabled={@disabled_edit}
+                error_position={:bottom}
               />
             </div>
             <div class="form-group">
               <label for="family_name">Last Name</label>
               <.input
-                value={fetch_field(@changeset, :family_name)}
+                field={@form[:family_name]}
                 id="family_name"
-                name="author[family_name]"
                 class="form-control"
                 disabled={@disabled_edit}
+                error_position={:bottom}
               />
             </div>
             <div class="form-group">
               <label for="email">Email</label>
               <.input
-                value={fetch_field(@changeset, :email)}
+                field={@form[:email]}
                 id="email"
-                name="author[email]"
                 class="form-control"
                 disabled={@disabled_edit}
+                error_position={:bottom}
               />
             </div>
             <div class="form-group">
@@ -127,7 +129,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
               <.input
                 type="select"
                 class="form-control"
-                field={f[:system_role_id]}
+                field={@form[:system_role_id]}
                 options={
                   Enum.map(@author_roles, fn {_type, id} ->
                     {role(id), id}
@@ -143,6 +145,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
                 variant={:primary}
                 type="submit"
                 class="float-right btn btn-md btn-primary mt-2"
+                disabled={@disabled_submit}
               >
                 Save
               </.button>
@@ -362,7 +365,15 @@ defmodule OliWeb.Users.AuthorsDetailView do
   end
 
   def handle_event("change", %{"author" => params}, socket) do
-    {:noreply, assign(socket, changeset: author_changeset(socket.assigns.author, params))}
+    form = author_form(socket.assigns.author, params)
+
+    socket =
+      socket
+      |> assign(form: form)
+      |> assign(disabled_submit: !Enum.empty?(form.errors))
+      |> assign(author_name: "#{params["given_name"]} #{params["family_name"]}")
+
+    {:noreply, socket}
   end
 
   def handle_event("submit", %{"author" => params}, socket) do
@@ -373,12 +384,19 @@ defmodule OliWeb.Users.AuthorsDetailView do
          |> put_flash(:info, "Author successfully updated.")
          |> assign(
            author: author,
-           changeset: author_changeset(author, params),
-           disabled_edit: true
+           form: author_form(author, params),
+           disabled_edit: true,
+           author_name: author.name
          )}
 
-      {:error, _error} ->
-        {:noreply, put_flash(socket, :error, "Author couldn't be updated.")}
+      {:error, error} ->
+        form = to_form(error)
+
+        {:noreply,
+         socket
+         |> assign(form: form)
+         |> assign(disabled_submit: !Enum.empty?(form.errors))
+         |> put_flash(:error, "Author couldn't be updated.")}
     end
   end
 
@@ -386,9 +404,11 @@ defmodule OliWeb.Users.AuthorsDetailView do
     {:noreply, socket |> assign(disabled_edit: false)}
   end
 
-  defp author_changeset(author, attrs \\ %{}) do
-    Author.noauth_changeset(author, attrs)
+  defp author_form(author, attrs \\ %{}) do
+    author
+    |> Author.noauth_changeset(attrs)
     |> Map.put(:action, :update)
+    |> to_form()
   end
 
   defp role(system_role_id) do

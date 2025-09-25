@@ -32,8 +32,8 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
     current_user = Map.get(socket.assigns, :current_user)
 
     if connected?(socket) do
-      user = Oli.Delivery.Attempts.Core.get_user_from_attempt_guid(attempt_guid)
-      page_context = PageContext.create_for_review(section.slug, attempt_guid, user, false)
+      student = Oli.Delivery.Attempts.Core.get_user_from_attempt_guid(attempt_guid)
+      page_context = PageContext.create_for_review(section.slug, attempt_guid, student, false)
 
       socket = assign(socket, page_context: page_context)
 
@@ -57,9 +57,14 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
 
       page_revision = page_context.page
 
-      if (is_admin or
-            PageLifecycle.can_access_attempt?(attempt_guid, current_user, section)) and
-           review_allowed?(page_context) do
+      admin_or_instructor? =
+        is_admin || Oli.Delivery.Sections.has_instructor_role?(current_user, section.slug)
+
+      can_access_attempt? =
+        PageLifecycle.can_access_attempt?(attempt_guid, current_user, section) &&
+          review_allowed?(page_context)
+
+      if admin_or_instructor? || can_access_attempt? do
         socket =
           socket
           |> assign(page_context: page_context)

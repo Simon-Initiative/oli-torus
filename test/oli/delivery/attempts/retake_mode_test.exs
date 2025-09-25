@@ -86,13 +86,21 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.RetakeModeTest do
       Attempts.update_activity_attempt(attempt, %{score: 1, out_of: 1})
 
       Map.get(part_map, "1")
-      |> Attempts.update_part_attempt(%{score: 1, out_of: 1, response: %{input: "this was right"}})
+      |> Attempts.update_part_attempt(%{
+        score: 1,
+        out_of: 1,
+        response: %{input: "this was right"}
+      })
 
       {attempt, part_map} = Map.get(attempts, a2.resource.id)
       Attempts.update_activity_attempt(attempt, %{score: 1, out_of: 3})
 
       Map.get(part_map, "1")
-      |> Attempts.update_part_attempt(%{score: 1, out_of: 3, response: %{input: "this was wrong"}})
+      |> Attempts.update_part_attempt(%{
+        score: 1,
+        out_of: 3,
+        response: %{input: "this was wrong"}
+      })
 
       {:ok, resource_attempt2} =
         Hierarchy.create(%VisitContext{
@@ -155,7 +163,11 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.RetakeModeTest do
       Attempts.update_activity_attempt(attempt, %{score: 1, out_of: 1})
 
       Map.get(part_map, "1")
-      |> Attempts.update_part_attempt(%{score: 1, out_of: 1, response: %{input: "this was right"}})
+      |> Attempts.update_part_attempt(%{
+        score: 1,
+        out_of: 1,
+        response: %{input: "this was right"}
+      })
 
       {attempt, part_map} = Map.get(attempts, a2.resource.id)
       Attempts.update_activity_attempt(attempt, %{score: 1, out_of: 1})
@@ -228,7 +240,11 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.RetakeModeTest do
       Attempts.update_activity_attempt(attempt, %{score: 1, out_of: 1})
 
       Map.get(part_map, "1")
-      |> Attempts.update_part_attempt(%{score: 1, out_of: 1, response: %{input: "this was right"}})
+      |> Attempts.update_part_attempt(%{
+        score: 1,
+        out_of: 1,
+        response: %{input: "this was right"}
+      })
 
       {attempt, part_map} = Map.get(attempts, a2.resource.id)
       Attempts.update_activity_attempt(attempt, %{score: 1, out_of: 1})

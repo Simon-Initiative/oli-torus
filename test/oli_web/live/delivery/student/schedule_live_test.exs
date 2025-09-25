@@ -593,6 +593,31 @@ defmodule OliWeb.Delivery.Student.ScheduleLiveTest do
       assert has_element?(view, "h1", "Course Schedule")
     end
 
+    test "displays timezone information component", %{
+      conn: conn,
+      user: user,
+      section: section
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/student_schedule")
+
+      # Verify that the timezone_info component is present
+      assert has_element?(view, "#timezone_info")
+
+      # Verify that it contains the timezone world icon
+      assert has_element?(view, "[role='timezone world icon']")
+
+      # Verify that it displays timezone text
+      assert has_element?(view, "#timezone_info span")
+
+      # Verify that the timezone text is not empty (should display actual timezone)
+      timezone_element = element(view, "#timezone_info span")
+      timezone_text = render(timezone_element)
+      assert timezone_text =~ "Etc/UTC"
+    end
+
     test "can see attempts summary and review historical attempts (if setting enabled by instructor)",
          %{
            conn: conn,

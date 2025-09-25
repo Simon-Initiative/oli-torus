@@ -13,7 +13,7 @@ import {
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
 import { contexts } from '../../../types/applicationContext';
-import { parseBool } from '../../../utils/common';
+import { countSigFigs, parseBool } from '../../../utils/common';
 import { PartComponentProps } from '../types/parts';
 import './InputNumber.scss';
 import { InputNumberModel } from './schema';
@@ -121,6 +121,11 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = ({
           key: 'customCssClass',
           type: CapiVariableTypes.STRING,
           value: model.customCssClass || '',
+        },
+        {
+          key: 'Number of sigfigs',
+          type: CapiVariableTypes.NUMBER,
+          value: 0,
         },
       ],
     });
@@ -240,14 +245,20 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = ({
   }, [id, width, onResize]);
 
   const saveInputText = useCallback(
-    (val: number) => {
+    (normalizedValue: number, rawInput: string) => {
+      const numberOFSigfigs = countSigFigs(rawInput);
       onSave({
         id: `${id}`,
         responses: [
           {
             key: 'value',
             type: CapiVariableTypes.NUMBER,
-            value: val,
+            value: normalizedValue,
+          },
+          {
+            key: 'Number of sigfigs',
+            type: CapiVariableTypes.NUMBER,
+            value: numberOFSigfigs,
           },
         ],
       });
@@ -258,16 +269,19 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = ({
   const debouncetime = 300;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const debounceSave = useCallback(
-    debounce((val) => {
-      saveInputText(val);
+    debounce((normalizedValue, rawInput) => {
+      saveInputText(normalizedValue, rawInput);
     }, debouncetime),
     [saveInputText],
   );
 
   const handleOnChange: ReactEventHandler<HTMLInputElement> = (event) => {
-    const val = sanitizeValue((event.target as HTMLInputElement).value);
-    setInputNumberValue(val);
-    debounceSave(val);
+    // We preserve rawInput (user-typed string) to accurately count significant figures.
+    // For example, "5.0" has 2 sigfigs, while "5" has only 1 — this detail is lost after parsing.
+    const rawInput = (event.target as HTMLInputElement).value;
+    const normalizedValue = sanitizeValue(rawInput);
+    setInputNumberValue(normalizedValue);
+    debounceSave(normalizedValue, rawInput);
   };
 
   return ready ? (

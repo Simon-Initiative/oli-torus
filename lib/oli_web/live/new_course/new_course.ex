@@ -456,14 +456,14 @@ defmodule OliWeb.Delivery.NewCourse do
   end
 
   def handle_event("redirect_to_courses", _, socket) do
-    {:noreply,
-     redirect(socket,
-       to:
-         if(socket.assigns.lti_params,
-           do: Routes.delivery_path(socket, :index),
-           else: Routes.live_path(socket, OliWeb.Workspaces.Instructor)
-         )
-     )}
+    redirect_path =
+      cond do
+        socket.assigns.lti_params -> ~p"/sections"
+        socket.assigns.current_author -> ~p"/admin/sections"
+        true -> ~p"/workspaces/instructor"
+      end
+
+    {:noreply, push_navigate(socket, to: redirect_path)}
   end
 
   def handle_event("source_selection", %{"id" => source}, socket) do

@@ -704,6 +704,7 @@ defmodule OliWeb.Sections.OverviewView do
       <div class="flex py-2 mb-2">
         <div>Enable AI Assistant</div>
         <.toggle_switch
+          id="toggle_assistant_switch"
           class="ml-4"
           checked={@section.assistant_enabled}
           on_toggle="toggle_assistant"
@@ -713,6 +714,7 @@ defmodule OliWeb.Sections.OverviewView do
       <div class="flex py-2 mb-2">
         <div>Enable AI Activation Points</div>
         <.toggle_switch
+          id="toggle_triggers_switch"
           class="ml-4"
           checked={@section.triggers_enabled}
           on_toggle="toggle_triggers"

@@ -33,10 +33,10 @@ test.describe('Course authoring', () => {
   });
 
   test.afterEach(async () => {
-    await torus.closeSite();
+    // await torus.closeSite();
   });
 
-  test('Log in as an author and create a new course project with valid details, set the Publishing Visibility as Open', async ({
+  test('TQA9-Log in as an author and create a new course project with valid details, set the Publishing Visibility as Open', async ({
     page,
   }) => {
     const startDate = new Date();
@@ -66,7 +66,7 @@ test.describe('Course authoring', () => {
     await detailCourse.assertions.verifyUrl(testData.baseUrl, projectName);
   });
 
-  test('Edit project attributes (description, license, etc) with valid details', async ({
+  test('TQA-10 -Edit project attributes (description, license, etc) with valid details', async ({
     page,
   }) => {
     const overview = new OverviewProjectPO(page);
@@ -84,7 +84,7 @@ test.describe('Course authoring', () => {
     await overview.projectAttributes.expectSelectedValues(languageValue, licenseValue);
   });
 
-  test.describe('Enable and verify one activity per test', () => {
+  test.describe('TQA-11 Enable and verify one activity per test', () => {
     const projectName = 'TQA-11-Automation';
     const projectId = 'tqa11automation';
     const pageOverview = `${testData.baseUrl}/workspaces/course_author/${projectId}/overview`;
@@ -120,7 +120,7 @@ test.describe('Course authoring', () => {
     }
   });
 
-  test('Modify text, add an image, and change text formatting in an existing BASIC page.', async ({
+  test('TQA-12 Modify text, add an image, and change text formatting in an existing BASIC page.', async ({
     page,
   }) => {
     const practiceNewPage = new BasicPracticePagePO(page);

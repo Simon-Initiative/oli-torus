@@ -3,11 +3,11 @@
 }
 
 .instructor_dashboard_table th {
-  @apply h-16 border-r-0 border-l-0 bg-white dark:bg-gray-800 text-left font-normal text-xs sm:text-sm relative;
+  @apply h-[50px] border-r-0 border-l-0 bg-Background-bg-secondary text-Text-text-high border-b border-Border-border-default text-left font-normal text-xs sm:text-sm relative;
 }
 
 .instructor_dashboard_table th[data-sort-column='true'] {
-  @apply font-bold text-gray-800 dark:text-white;
+  @apply font-bold text-gray-800 dark:text-[#EEEBF5];
 }
 
 .instructor_dashboard_table_link {
@@ -15,7 +15,7 @@
 }
 
 .instructor_dashboard_table tr {
-  @apply h-14 text-gray-500 dark:text-white font-semibold text-xs sm:text-sm;
+  @apply h-[50px] text-Text-text-high font-semibold text-xs sm:text-sm border-t border-Border-border-default;
 }
 
 .instructor_dashboard_table td {
@@ -43,15 +43,15 @@
 }
 
 .schedule_table tbody tr:nth-child(even) {
-  @apply bg-[#E3E7EB] dark:bg-[#201D21];
+  @apply bg-Table-table-row-2;
 }
 
 .schedule_table tbody tr:nth-child(odd) {
-  @apply bg-[#F3F4F8] dark:bg-[#0D0C0F];
+  @apply bg-Table-table-row-1;
 }
 
-.schedule_table tbody tr{
-  @apply hover:bg-[#F2F9FF] hover:dark:bg-[#0A203A];
+.schedule_table tbody tr {
+  @apply hover:bg-Table-table-hover;
 }
 
 div:has(.instructor_dashboard_table) #header_paging {
@@ -59,7 +59,7 @@ div:has(.instructor_dashboard_table) #header_paging {
 }
 
 div:has(.instructor_dashboard_table) #footer_paging {
-  @apply sticky left-0 dark:bg-neutral-800;
+  @apply sticky left-0 dark:bg-[#262626];
 }
 
 div:has(.remix_materials_table) {

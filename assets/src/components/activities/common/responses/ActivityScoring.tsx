@@ -23,11 +23,10 @@ export const ActivityScoring: React.FC<ActivityScoreProps> = ({ partId, promptFo
   const { model, dispatch, editMode } = useAuthoringElementContext<HasParts>();
   const checkboxInputId = useMemo(() => guid(), []);
   const outOfPoints = getOutOfPoints(model, partId);
-  const incorrect = getIncorrectPoints(model, partId);
+  const incorrectPoints = getIncorrectPoints(model, partId);
   const [useDefaultScoring, setDefaultScoring] = useState(
     !hasCustomScoring(model) && promptForDefault,
   );
-  const incorrectPoints = incorrect || 0;
 
   const onChangeDefault = (e: React.ChangeEvent<HTMLInputElement>) => {
     setDefaultScoring(e.target.checked);

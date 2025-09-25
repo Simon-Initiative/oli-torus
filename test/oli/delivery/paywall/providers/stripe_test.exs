@@ -21,23 +21,23 @@ defmodule Oli.Delivery.Paywall.Providers.StripeTest do
   describe "convert_amount/1" do
     test "it handles value portions correctly" do
       # Test variations of a regular (decimal having) currency
-      assert {10000, _} = Stripe.convert_amount(Money.new(:USD, 100))
-      assert {10050, _} = Stripe.convert_amount(Money.new(:USD, "100.50"))
-      assert {10055, _} = Stripe.convert_amount(Money.new(:USD, "100.55"))
-      assert {10056, _} = Stripe.convert_amount(Money.new(:USD, "100.555"))
+      assert {10000, _} = Stripe.convert_amount(Money.new(100, "USD"))
+      assert {10050, _} = Stripe.convert_amount(Money.from_float("USD", 100.50))
+      assert {10055, _} = Stripe.convert_amount(Money.from_float("USD", 100.55))
+      assert {10056, _} = Stripe.convert_amount(Money.from_float("USD", 100.555))
 
       # Test a zero-decimal currency
-      assert {100, _} = Stripe.convert_amount(Money.new(:BIF, 100))
-      assert {101, _} = Stripe.convert_amount(Money.new(:BIF, "100.555"))
+      assert {100, _} = Stripe.convert_amount(Money.new(100, "BIF"))
+      assert {101, _} = Stripe.convert_amount(Money.from_float("BIF", 100.555))
     end
 
     test "it handles code portions correctly" do
-      assert {_, "usd"} = Stripe.convert_amount(Money.new(:USD, 100))
-      assert {_, "usd"} = Stripe.convert_amount(Money.new("USD", 100))
-      assert {_, "bif"} = Stripe.convert_amount(Money.new(:BIF, 100))
-      assert {_, "bif"} = Stripe.convert_amount(Money.new("BIF", 100))
-      assert {_, "clp"} = Stripe.convert_amount(Money.new(:CLP, 100))
-      assert {_, "clp"} = Stripe.convert_amount(Money.new("CLP", 100))
+      assert {_, "usd"} = Stripe.convert_amount(Money.new(100, "USD"))
+      assert {_, "usd"} = Stripe.convert_amount(Money.new(100, "USD"))
+      assert {_, "bif"} = Stripe.convert_amount(Money.new(100, "BIF"))
+      assert {_, "bif"} = Stripe.convert_amount(Money.new(100, "BIF"))
+      assert {_, "clp"} = Stripe.convert_amount(Money.new(100, "CLP"))
+      assert {_, "clp"} = Stripe.convert_amount(Money.new(100, "CLP"))
     end
   end
 
@@ -254,7 +254,7 @@ defmodule Oli.Delivery.Paywall.Providers.StripeTest do
       Sections.create_section(%{
         type: :blueprint,
         requires_payment: true,
-        amount: Money.new(:USD, 100),
+        amount: Money.new(100, "USD"),
         title: "1",
         registration_open: true,
         grace_period_days: 1,
@@ -270,7 +270,7 @@ defmodule Oli.Delivery.Paywall.Providers.StripeTest do
       Sections.create_section(%{
         type: :enrollable,
         requires_payment: true,
-        amount: Money.new(:USD, 100),
+        amount: Money.new(100, "USD"),
         title: "1",
         registration_open: true,
         has_grace_period: false,

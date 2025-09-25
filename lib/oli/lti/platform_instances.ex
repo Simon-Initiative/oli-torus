@@ -38,14 +38,18 @@ defmodule Oli.Lti.PlatformInstances do
   ## Examples
 
       iex> get_platform_instance_by_client_id("123")
-      %PlatformInstance{}
+      {:ok, %PlatformInstance{}}
 
       iex> get_platform_instance_by_client_id("456")
-      nil
+      {:error, :not_found}
 
   """
-  def get_platform_instance_by_client_id(client_id),
-    do: Repo.get_by(PlatformInstance, client_id: client_id)
+  def get_platform_instance_by_client_id(client_id) do
+    case Repo.get_by(PlatformInstance, client_id: client_id) do
+      nil -> {:error, :not_found}
+      platform_instance -> {:ok, platform_instance}
+    end
+  end
 
   @doc """
   Creates a platform_instance.
@@ -110,5 +114,15 @@ defmodule Oli.Lti.PlatformInstances do
   """
   def change_platform_instance(%PlatformInstance{} = platform_instance, attrs \\ %{}) do
     PlatformInstance.changeset(platform_instance, attrs)
+  end
+
+  @doc """
+  Returns the platform instance unique identifier for a given platform instance.
+  """
+  def platform_instance_guid(platform_instance) do
+    url_config = Application.fetch_env!(:oli, OliWeb.Endpoint)[:url]
+    host = Keyword.get(url_config, :host, "localhost")
+
+    "#{platform_instance.guid}.#{host}"
   end
 end

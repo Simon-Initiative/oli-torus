@@ -11,7 +11,7 @@ defmodule OliWeb.PaymentsLiveTest do
 
   defp create_product(_conn) do
     product =
-      insert(:section, type: :blueprint, requires_payment: true, amount: Money.new(:USD, 10))
+      insert(:section, type: :blueprint, requires_payment: true, amount: Money.new(10, "USD"))
 
     [product: product]
   end

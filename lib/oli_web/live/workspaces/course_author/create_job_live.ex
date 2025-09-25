@@ -174,6 +174,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
         <div class="inline-flex py-2 mb-2">
           <span>Anonymize student identifiers</span>
           <.toggle_switch
+            id="toggle_anonymize_switch"
             class="ml-4"
             checked={@anonymize}
             on_toggle="toggle_anonymize"

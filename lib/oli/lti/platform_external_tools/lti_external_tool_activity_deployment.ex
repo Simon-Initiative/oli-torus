@@ -18,12 +18,19 @@ defmodule Oli.Lti.PlatformExternalTools.LtiExternalToolActivityDeployment do
 
     field :status, Ecto.Enum, values: @status_values, default: :enabled
 
+    field :deep_linking_enabled, :boolean, default: false
+
     timestamps(type: :utc_datetime)
   end
 
   def changeset(lti_external_tool_deployment, attrs \\ %{}) do
     lti_external_tool_deployment
-    |> cast(attrs, [:activity_registration_id, :platform_instance_id, :status])
+    |> cast(attrs, [
+      :activity_registration_id,
+      :platform_instance_id,
+      :status,
+      :deep_linking_enabled
+    ])
     |> validate_required([:activity_registration_id, :platform_instance_id])
     |> validate_inclusion(:status, @status_values)
   end

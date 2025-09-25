@@ -367,12 +367,18 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
   end
 
   def handle_event("clear_all_filters", _params, socket) do
-    %{section_slug: section_slug} = socket.assigns
+    section_slug = socket.assigns.section_slug
 
-    {:noreply,
-     push_patch(socket,
-       to: ~p"/sections/#{section_slug}/instructor_dashboard/insights/learning_objectives"
-     )}
+    path =
+      case Map.get(socket.assigns, :student_id) do
+        nil ->
+          ~p"/sections/#{section_slug}/instructor_dashboard/insights/learning_objectives"
+
+        student_id ->
+          ~p"/sections/#{section_slug}/student_dashboard/#{student_id}/learning_objectives"
+      end
+
+    {:noreply, push_patch(socket, to: path)}
   end
 
   def handle_event("filter_by", %{"filter" => filter}, socket) do
@@ -512,6 +518,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
           "sort_by",
           [
             :objective,
+            :objective_instructor_dashboard,
             :subobjective,
             :student_proficiency_obj,
             :student_proficiency_subobj
@@ -583,6 +590,53 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
       |> Enum.take(params.limit)
 
     {total_count, rows}
+  end
+
+  @proficiency_rank ["High", "Medium", "Low", "Not enough data"]
+                    |> Enum.with_index()
+                    |> Enum.into(%{})
+
+  @proficiency_rank_desc [nil, "High", "Medium", "Low", "Not enough data"]
+                         |> Enum.with_index()
+                         |> Enum.into(%{})
+
+  defp sort_by(objectives, :student_proficiency_obj, sort_order) do
+    Enum.sort_by(
+      objectives,
+      fn objective ->
+        case Map.get(objective, :subobjective) do
+          nil -> @proficiency_rank[objective.student_proficiency_obj]
+          _ -> @proficiency_rank[objective.student_proficiency_subobj]
+        end
+      end,
+      sort_order
+    )
+  end
+
+  defp sort_by(objectives, :objective, sort_order) do
+    Enum.sort_by(objectives, &{&1.title}, sort_order)
+  end
+
+  defp sort_by(objectives, :objective_instructor_dashboard, sort_order) do
+    Enum.sort_by(objectives, &{&1.title}, sort_order)
+  end
+
+  defp sort_by(objectives, :student_proficiency_subobj, sort_order) do
+    case sort_order do
+      :desc ->
+        Enum.sort_by(
+          objectives,
+          &{@proficiency_rank_desc[&1.student_proficiency_subobj]},
+          sort_order
+        )
+
+      :asc ->
+        Enum.sort_by(
+          objectives,
+          &{@proficiency_rank[&1.student_proficiency_subobj]},
+          sort_order
+        )
+    end
   end
 
   defp sort_by(objectives, sort_by, sort_order) do

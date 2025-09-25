@@ -325,7 +325,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
       <option disabled selected={@scoring_strategy_id == nil} hidden value="">-</option>
       <option selected={@scoring_strategy_id == 1} value={1}>Average</option>
       <option selected={@scoring_strategy_id == 2} value={2}>Best</option>
-      <option selected={@scoring_strategy_id == 3} value={3}>Last</option>
+      <option selected={@scoring_strategy_id == 3} value={3}>Most Recent</option>
     </select>
     """
   end

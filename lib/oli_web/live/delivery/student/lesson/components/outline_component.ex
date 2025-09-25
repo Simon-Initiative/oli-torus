@@ -132,7 +132,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
       <div class={[
         "justify-start items-start flex py-1 rounded-lg hover:bg-[#f2f8ff] dark:hover:bg-[#2e2b33]",
         left_indentation(@item["numbering"]["level"]),
-        if(@progress, do: "bg-[#f3f4f8] dark:bg-[#1b191f]")
+        if(@progress, do: "bg-Specially-Tokens-Fill-fill-nav-hover")
       ]}>
         <div class="grow p-2 justify-start items-start gap-5 flex">
           <div class="py-0.5 justify-start items-center gap-5 flex">
@@ -189,7 +189,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
         phx-target={@target}
         class={[
           "w-full grow shrink basis-0 p-2 flex-col justify-start items-start gap-1 inline-flex rounded-lg hover:bg-[#f2f8ff] dark:hover:bg-[#2e2b33] hover:cursor-pointer",
-          if(@progress, do: "bg-[#f3f4f8] dark:bg-[#1b191f]")
+          if(@progress, do: "bg-Specially-Tokens-Fill-fill-nav-hover")
         ]}
       >
         <div class="text-[#353740] dark:text-[#eeebf5] self-stretch justify-start items-start gap-1 inline-flex">

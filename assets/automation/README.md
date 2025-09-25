@@ -44,23 +44,12 @@ npm run show-report
 
 [Playwright Test for VSCode](https://marketplace.visualstudio.com/items?itemName=ms-playwright.playwright)
 
-Withd this plugin we can:
+With this plugin we can:
 
 - pick a locator
 - record a new test
 - select the browser to execute the tests
 - select the settings to apply in to the tests
-
-## Project structure
-
-```code
---src
-  |--> core
-  |--> systems
---test
-  |--> resources
-  |--> torus
-```
 
 ## Required environment variables
 
@@ -79,26 +68,6 @@ EMAIL_ADMIN=your_admin_email@example.com
 PASS_ADMIN=your_admin_password
 
 ```
-
-## Pre-conditions for `user-accounts` suite
-
-To successfully run the `user-accounts` test suite, make sure the following conditions are met:
-
-### ✅ General requirements for `user-accounts`
-
-- All required environment variables listed in the `.env` file must be set (see [Required environment variables](#required-environment-variables)).
-- Playwright must be installed and configured.
-- The `loginData` used in this suite must be correctly set up with valid credentials for each role.
-
-## Pre-conditions for `course-authoring` suite
-
-To successfully run the `course-authoring` test suite, make sure the following conditions are met:
-
-### ✅ General requirements for `course-authoring`
-
-- All required environment variables listed in the `.env` file must be set (see [Required environment variables](#required-environment-variables)).
-- The test data used in this suite assumes that specific projects already exist on the platform with fixed IDs
-
 ### 🧪 Test data setup
 
 Before running this suite, verify that:

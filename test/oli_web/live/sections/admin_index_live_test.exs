@@ -36,7 +36,7 @@ defmodule OliWeb.Sections.AdminIndexLiveTest do
     test "loads correctly when there are no sections", %{conn: conn} do
       {:ok, view, _html} = live(conn, @live_view_index_route)
 
-      assert has_element?(view, "#header_id", "Browse Course Sections")
+      assert has_element?(view, "span", "Browse Course Sections")
       assert has_element?(view, "p", "None exist")
     end
 
@@ -156,25 +156,33 @@ defmodule OliWeb.Sections.AdminIndexLiveTest do
       {:ok, view, _html} = live(conn, @live_view_index_route)
 
       # by title
-      render_hook(view, "text_search_change", %{value: "testing"})
+      view
+      |> element("form[phx-change=\"text_search_change\"]")
+      |> render_change(%{"section_name" => "testing"})
 
       assert has_element?(view, "td", s1.title)
       refute has_element?(view, "td", s2.title)
 
       # by institution
-      render_hook(view, "text_search_change", %{value: "otherins"})
+      view
+      |> element("form[phx-change=\"text_search_change\"]")
+      |> render_change(%{"section_name" => "otherins"})
 
       refute has_element?(view, "td", s1.title)
       assert has_element?(view, "td", s2.title)
 
       # by product
-      render_hook(view, "text_search_change", %{value: "testsection"})
+      view
+      |> element("form[phx-change=\"text_search_change\"]")
+      |> render_change(%{"section_name" => "testsection"})
 
       assert has_element?(view, "td", s1.title)
       refute has_element?(view, "td", s2.title)
 
       # by project
-      render_hook(view, "text_search_change", %{value: "project"})
+      view
+      |> element("form[phx-change=\"text_search_change\"]")
+      |> render_change(%{"section_name" => "project"})
 
       refute has_element?(view, "td", s1.title)
       assert has_element?(view, "td", s2.title)
@@ -183,7 +191,9 @@ defmodule OliWeb.Sections.AdminIndexLiveTest do
       user = insert(:user, name: "Instructor")
       Sections.enroll(user.id, s1.id, [ContextRoles.get_role(:context_instructor)])
 
-      render_hook(view, "text_search_change", %{value: "instructor"})
+      view
+      |> element("form[phx-change=\"text_search_change\"]")
+      |> render_change(%{"section_name" => "instructor"})
 
       assert has_element?(view, "td", s1.title)
       refute has_element?(view, "td", s2.title)
@@ -193,9 +203,20 @@ defmodule OliWeb.Sections.AdminIndexLiveTest do
       project = insert(:project, title: "Project", authors: [])
 
       s1 =
-        insert(:section, type: :enrollable, amount: Money.new(:USD, 100_000), title: "Section A")
+        insert(:section,
+          type: :enrollable,
+          requires_payment: true,
+          amount: Money.new(100_000, "USD"),
+          title: "Section A"
+        )
 
-      s2 = insert(:section, type: :enrollable, base_project: project, title: "Section B")
+      s2 =
+        insert(:section,
+          type: :enrollable,
+          requires_payment: false,
+          base_project: project,
+          title: "Section B"
+        )
 
       {:ok, view, _html} = live(conn, @live_view_index_route)
 
@@ -260,7 +281,7 @@ defmodule OliWeb.Sections.AdminIndexLiveTest do
       refute has_element?(view, "td", last_s.title)
 
       view
-      |> element("#header_paging button[phx-click=\"paged_table_page_change\"]", "2")
+      |> element("#footer_paging button[phx-click=\"paged_table_page_change\"]", "2")
       |> render_click()
 
       refute has_element?(view, "td", first_s.title)

@@ -137,8 +137,8 @@ defmodule Oli.Delivery.Experiments do
     # format right now DateTime.utc_now() as
     # "2020-03-20 14:00:59"
     now = DateTime.utc_now()
-    date = "#{now.year()}-#{now.month()}-#{now.day()}"
-    time = "#{now.hour()}:#{now.minute()}:#{now.second()}"
+    date = "#{now.year}-#{now.month}-#{now.day}"
+    time = "#{now.hour}:#{now.minute}:#{now.second}"
     timestamp = "#{date} #{time}"
 
     body =
