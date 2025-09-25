@@ -9854,6 +9854,10 @@ table.table-striped tbody tr:nth-child(even) {
   min-height: 5rem;
 }
 
+.min-h-\[756px\] {
+  min-height: 756px;
+}
+
 .min-h-\[84px\] {
   min-height: 84px;
 }
@@ -10319,6 +10323,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .min-w-0 {
   min-width: 0px;
+}
+
+.min-w-\[1024px\] {
+  min-width: 1024px;
 }
 
 .min-w-\[180px\] {
