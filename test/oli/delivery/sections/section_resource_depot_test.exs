@@ -428,6 +428,39 @@ defmodule Oli.Delivery.Sections.SectionResourceDepotTest do
     end
   end
 
+  describe "objectives/1 and /2" do
+    setup [:create_section_with_objectives]
+
+    test "returns all objectives for a given section", %{
+      section: %{id: section_id},
+      objective_revision: objective_revision,
+      sub_objective_revision: sub_objective_revision
+    } do
+      revision_ids = [objective_revision.id, sub_objective_revision.id]
+      objective_sr_ids = get_section_resource_ids(revision_ids)
+
+      assert [%SectionResource{id: sr_1}, %SectionResource{id: sr_2}] =
+               SectionResourceDepot.objectives(section_id)
+
+      assert Enum.all?([sr_1, sr_2], &(&1 in objective_sr_ids))
+    end
+
+    test "returns objectives for a given section with additional query conditions", %{
+      section: %{id: section_id},
+      objective_revision: objective_revision,
+      sub_objective_revision: sub_objective_revision
+    } do
+      # Hide the sub-objective
+      sub_objective_sr = Sections.get_section_resource(section_id, sub_objective_revision.resource_id)
+      Sections.update_section_resource(sub_objective_sr, %{hidden: true})
+
+      assert [%SectionResource{revision_id: revision_id}] =
+               SectionResourceDepot.objectives(section_id, hidden: false)
+
+      assert revision_id == objective_revision.id
+    end
+  end
+
   defp setup_depot_warmer_max_number_of_entries_env(max_entries) do
     Application.put_env(:oli, :depot_warmer_max_number_of_entries, max_entries)
   end
@@ -584,6 +617,82 @@ defmodule Oli.Delivery.Sections.SectionResourceDepotTest do
       page_1_revision: page_1_revision,
       page_2_revision: page_2_revision,
       hidden_page_revision: hidden_page_revision
+    }
+  end
+
+  defp create_section_with_objectives(_) do
+    # Create objective revisions
+    objective_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.id_for_objective(),
+        title: "Main Objective"
+      )
+
+    sub_objective_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.id_for_objective(),
+        title: "Sub Objective"
+      )
+
+    # Create a simple page to contain the objectives
+    page_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.id_for_page(),
+        title: "Page with Objectives"
+      )
+
+    # Root container
+    container_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.id_for_container(),
+        title: "Root Container",
+        children: [page_revision.resource_id]
+      )
+
+    instructor = insert(:user)
+    project = insert(:project, authors: [instructor.author])
+
+    all_revisions = [
+      container_revision,
+      page_revision,
+      objective_revision,
+      sub_objective_revision
+    ]
+
+    # Associate resources to project
+    Enum.each(all_revisions, fn revision ->
+      insert(:project_resource, %{
+        project_id: project.id,
+        resource_id: revision.resource_id
+      })
+    end)
+
+    # Publish project
+    publication =
+      insert(:publication, %{project: project, root_resource_id: container_revision.resource_id})
+
+    # Publish resources
+    Enum.each(all_revisions, fn revision ->
+      insert(:published_resource, %{
+        publication: publication,
+        resource: revision.resource,
+        revision: revision,
+        author: instructor.author
+      })
+    end)
+
+    # Create section
+    section = insert(:section, base_project: project, title: "The Project")
+
+    # Create section-resources
+    {:ok, section} = Sections.create_section_resources(section, publication)
+
+    %{
+      section: section,
+      objective_revision: objective_revision,
+      sub_objective_revision: sub_objective_revision,
+      page_revision: page_revision,
+      container_revision: container_revision
     }
   end
 end

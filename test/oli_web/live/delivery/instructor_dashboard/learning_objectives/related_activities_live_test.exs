@@ -276,6 +276,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
       {:ok, section} = Sections.create_section_resources(section, publication)
       {:ok, _} = Sections.rebuild_contained_pages(section)
       Sections.rebuild_contained_objectives(section)
+      Sections.PostProcessing.apply(section, :all)
 
       # Enroll instructor in section
       Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
