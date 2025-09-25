@@ -1,4 +1,4 @@
-import { expect, Page, Locator } from '@playwright/test';
+import { Page, Locator } from '@playwright/test';
 import { AuthorDashboardPO } from './AuthorDashboardPO';
 import { SidebarCO } from '@pom/component/SidebarCO';
 import { OverviewProjectPO } from '@pom/project/OverviewProjectPO';

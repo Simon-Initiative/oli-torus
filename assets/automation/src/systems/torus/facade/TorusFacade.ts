@@ -1,6 +1,6 @@
 import { FileManager } from '@core/FileManager';
 import { Utils } from '@core/Utils';
-import { expect, Page } from '@playwright/test'; 
+import { expect, Page } from '@playwright/test';
 import { CataCO } from '@pom/component/activities/CataCO';
 import { InputCO } from '@pom/component/activities/InputCO';
 import { McqCO } from '@pom/component/activities/McqCO';
@@ -16,7 +16,7 @@ import { ActivityType } from '@pom/types/activity-types';
 import { LanguageCodeType } from '@pom/types/language-code-types';
 import { LanguageType } from '@pom/types/language-types';
 import { MediaKind } from '@pom/types/select-multemedia-types';
-import { USER_TYPES, UserType } from '@pom/types/user-type';
+import { UserType } from '@pom/types/user-type';
 import { AdminAllUsersPO } from '@pom/workspace/administrator/AdminAllUsersPO';
 import { AdminUserDetailsPO } from '@pom/workspace/administrator/AdminUserDetailsPO';
 import { WorkspaceAuthorPO } from '@pom/workspace/author/WorkspaceAuthorPO';
@@ -50,7 +50,10 @@ export class TorusFacade {
   private readonly mcq: McqCO;
   private readonly order: OrderCO;
 
-  constructor(private page: Page, environment?: string) {
+  constructor(
+    private page: Page,
+    environment?: string,
+  ) {
     //data and config
     this.testData = new TestData();
     this.environment = environment ?? '/';
@@ -107,7 +110,7 @@ export class TorusFacade {
     await this.loginpo.verifyWelcomeTitle(dataUser.welcomeTitle);
   }
 
-   async logout() {
+  async logout() {
     await this.menu.open();
     await this.menu.signOut();
   }
@@ -212,7 +215,7 @@ export class TorusFacade {
 
   project() {
     return {
-       overview: {
+      overview: {
         enableActivity: async (projectId: string, activity: ActivityType) => {
           await this.wsa.overviewProject.advancedActivities.enableActivity(projectId, activity);
         },

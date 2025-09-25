@@ -1,9 +1,8 @@
-import { expect, Locator, Page } from '@playwright/test';
+import { Page } from '@playwright/test';
 import { SidebarCO } from '@pom/component/SidebarCO';
 
 export class WorkspaceStudentPO {
-  constructor(private page: Page) {
-  }
+  constructor(private page: Page) {}
 
   get sidebar() {
     return new SidebarCO(this.page);
