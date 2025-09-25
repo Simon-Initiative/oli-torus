@@ -148,7 +148,7 @@ defmodule OliWeb.ProductsLiveTest do
 
       {:ok, product_2} =
         Sections.update_section(product_2, %{
-          amount: Money.new(25, "USD")
+          amount: Money.new(250, "USD")
         })
 
       {:ok, view, _html} = live(conn, @live_view_all_products)
@@ -158,7 +158,7 @@ defmodule OliWeb.ProductsLiveTest do
 
       view
       |> element("form[phx-change=\"text_search_change\"]")
-      |> render_change(%{product_name: "25"})
+      |> render_change(%{product_name: "250"})
 
       wait_while(fn -> has_element?(view, "a", product.title) end)
 
