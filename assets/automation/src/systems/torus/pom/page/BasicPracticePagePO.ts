@@ -7,20 +7,22 @@ import { ToolbarTypes } from '@pom/types/toolbar-types';
 import { PagePreviewPO } from './PagePreviewPO';
 
 export class BasicPracticePagePO {
-  private insertButtonIcon: Locator;
-  private changesSaved: Locator;
-  private paragraph: Locator;
-  private chooseImageButton: Locator;
-  private deleteButton: Locator;
-  private resourceChoicesActivities: Locator;
-  private titleLocator: Locator;
-  private previewButton: Locator;
-  private theoremLocator: Locator;
-  private captionAudio: Locator;
-  private utils: Utils;
+  private readonly pageTitle: Locator;
+
+  private readonly insertButtonIcon: Locator;
+  private readonly changesSaved: Locator;
+  private readonly paragraph: Locator;
+  private readonly chooseImageButton: Locator;
+  private readonly deleteButton: Locator;
+  private readonly resourceChoicesActivities: Locator;
+  private readonly previewButton: Locator;
+  private readonly theoremLocator: Locator;
+  private readonly captionAudio: Locator;
+  private readonly utils: Utils;
   private readonly toolbarCO: ToolbarCO;
 
   constructor(private page: Page) {
+    this.pageTitle = this.page.locator('#page_editor-container div.TitleBar span');
     this.insertButtonIcon = page.locator('span[data-bs-original-title="Insert Content"]').first();
     this.changesSaved = page.getByText('All changes saved');
     this.paragraph = page.locator('[id^="resource-editor-"]').getByRole('paragraph');
@@ -31,7 +33,6 @@ export class BasicPracticePagePO {
       .locator('[id^="resource-editor-"]')
       .getByRole('button', { name: 'delete' });
     this.resourceChoicesActivities = page.locator('.resource-choices.activities');
-    this.titleLocator = page.locator('span.entry-title');
     this.previewButton = page.locator('div.TitleBar button:has-text("Preview")');
     this.theoremLocator = page.locator('h4');
     this.captionAudio = page.getByRole('paragraph').filter({ hasText: 'Caption (optional)' });
@@ -39,27 +40,26 @@ export class BasicPracticePagePO {
     this.toolbarCO = new ToolbarCO(page);
   }
 
+  async verifyTitlePage(titlePage: string = 'New Page') {
+    const title = await this.pageTitle.innerText();
+    expect(title).toEqual(titlePage);
+  }
+
   async fillCaptionAudio(text: string) {
     await this.captionAudio.fill(text);
   }
 
-  async visibleTitlePage(titlePage: string = 'New Page') {
-    const titleSpan = this.page.locator('span.entry-title', { hasText: titlePage });
-    await expect(titleSpan).toBeVisible();
-  }
-
   async waitForChangesSaved() {
+    await this.changesSaved.waitFor({ state: 'visible', timeout: 10000 });
     await this.utils.paintElement(this.changesSaved);
-    await this.changesSaved.waitFor();
   }
 
   async clickParagraph(index: number = 0) {
-    await this.utils.sleep();
+    await this.utils.sleep(15);
     await this.paragraph.nth(index).click();
   }
 
   async clickInsertButtonIcon() {
-    await expect(this.insertButtonIcon).toBeVisible();
     await this.utils.forceClick(this.insertButtonIcon, this.resourceChoicesActivities);
   }
 

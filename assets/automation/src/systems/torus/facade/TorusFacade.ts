@@ -1,5 +1,6 @@
+import { FileManager } from '@core/FileManager';
 import { Utils } from '@core/Utils';
-import { Page } from '@playwright/test'; 
+import { expect, Page } from '@playwright/test'; 
 import { CataCO } from '@pom/component/activities/CataCO';
 import { InputCO } from '@pom/component/activities/InputCO';
 import { McqCO } from '@pom/component/activities/McqCO';
@@ -14,6 +15,7 @@ import { CurriculumPO } from '@pom/project/CurriculumPO';
 import { ActivityType } from '@pom/types/activity-types';
 import { LanguageCodeType } from '@pom/types/language-code-types';
 import { LanguageType } from '@pom/types/language-types';
+import { MediaKind } from '@pom/types/select-multemedia-types';
 import { USER_TYPES, UserType } from '@pom/types/user-type';
 import { AdminAllUsersPO } from '@pom/workspace/administrator/AdminAllUsersPO';
 import { AdminUserDetailsPO } from '@pom/workspace/administrator/AdminUserDetailsPO';
@@ -87,116 +89,27 @@ export class TorusFacade {
     await this.page.reload();
   }
 
-  async log_in(
-    role: UserType,
-    pageTitleVerify: string,
-    roleVerify: string,
-    welcomeTextVerify: string,
-    email: string = 'missing email',
-    password: string = 'missing password',
-    headerVerify: string,
-    coockies: boolean = true,
-  ) {
-    if (coockies) {
-      await this.utils.sleep(2);
-      await this.loginpo.acceptCookies();
-    }
-    await this.loginpo.selectRoleAccount(role);
-    await this.page.waitForLoadState();
-    await this.loginpo.verifyTitle(pageTitleVerify);
-    await this.loginpo.verifyRole(roleVerify);
-    await this.loginpo.verifyWelcomeText(welcomeTextVerify);
-    await this.loginpo.fillEmail(email);
-    await this.loginpo.fillPassword(password);
-    await this.loginpo.clickSignInButton();
-    if (role === USER_TYPES.STUDENT) await this.wss.verifyName(headerVerify);
-    if (role === USER_TYPES.INSTRUCTOR) await this.wsi.verifyHeader(headerVerify);
-    if (role === USER_TYPES.AUTHOR) await this.wsa.verifyHeader(headerVerify);
-    if (role === USER_TYPES.ADMIN) await this.wsa.verifyHeader(headerVerify);
-  }
-
-  async login(role: UserType, coockies: boolean = true) {
-    if (role === USER_TYPES.STUDENT) await this.loginStuden(coockies);
-    if (role === USER_TYPES.INSTRUCTOR) await this.loginInstructor(coockies);
-    if (role === USER_TYPES.AUTHOR) await this.loginAuthor(coockies);
-    if (role === USER_TYPES.ADMIN) await this.loginAdmin(coockies);
-  }
-
-  async loginStuden(coockies: boolean) {
-    const student = this.testData.loginData.student;
-
-    if (coockies) {
-      await this.utils.sleep(2);
+  async login(role: UserType, cookies: boolean = true) {
+    if (cookies) {
       await this.loginpo.acceptCookies();
     }
 
-    await this.loginpo.selectRoleAccount(student.type);
+    const dataUser = this.testData.loginData[role];
+
+    await this.loginpo.selectRoleAccount(dataUser.type);
     await this.page.waitForLoadState();
-    await this.loginpo.verifyTitle(student.pageTitle);
-    await this.loginpo.verifyRole(student.role);
-    await this.loginpo.verifyWelcomeText(student.welcomeText);
-    await this.loginpo.fillEmail(student.email);
-    await this.loginpo.fillPassword(student.pass);
+    await this.loginpo.verifyTitle(dataUser.pageTitle);
+    await this.loginpo.verifyRole(dataUser.role);
+    await this.loginpo.verifyWelcomeText(dataUser.welcomeText);
+    await this.loginpo.fillEmail(dataUser.email);
+    await this.loginpo.fillPassword(dataUser.pass);
     await this.loginpo.clickSignInButton();
-    await this.wss.verifyName(student.name);
+    await this.loginpo.verifyWelcomeTitle(dataUser.welcomeTitle);
   }
 
-  async loginInstructor(coockies: boolean) {
-    const instructor = this.testData.loginData.instructor;
-
-    if (coockies) {
-      await this.utils.sleep(2);
-      await this.loginpo.acceptCookies();
-    }
-
-    await this.loginpo.selectRoleAccount(instructor.type);
-    await this.page.waitForLoadState();
-    await this.loginpo.verifyTitle(instructor.pageTitle);
-    await this.loginpo.verifyRole(instructor.role);
-    await this.loginpo.verifyWelcomeText(instructor.welcomeText);
-    await this.loginpo.fillEmail(instructor.email);
-    await this.loginpo.fillPassword(instructor.pass);
-    await this.loginpo.clickSignInButton();
-    await this.wsi.verifyHeader(instructor.header);
-  }
-
-  async loginAuthor(coockies: boolean) {
-    const author = this.testData.loginData.author;
-
-    if (coockies) {
-      await this.utils.sleep(2);
-      await this.loginpo.acceptCookies();
-    }
-
-    await this.loginpo.selectRoleAccount(author.type);
-    await this.page.waitForLoadState();
-    await this.loginpo.verifyTitle(author.pageTitle);
-    await this.loginpo.verifyRole(author.role);
-    await this.loginpo.verifyWelcomeText(author.welcomeText);
-    await this.loginpo.fillEmail(author.email);
-    await this.loginpo.fillPassword(author.pass);
-    await this.loginpo.clickSignInButton();
-    await this.wsa.verifyHeader(author.header);
-  }
-
-  async loginAdmin(coockies: boolean) {
-    const admin = this.testData.loginData.admin;
-    const author = this.testData.loginData.author;
-
-    if (coockies) {
-      await this.utils.sleep(2);
-      await this.loginpo.acceptCookies();
-    }
-
-    await this.loginpo.selectRoleAccount(author.type);
-    await this.page.waitForLoadState();
-    await this.loginpo.verifyTitle(author.pageTitle);
-    await this.loginpo.verifyRole(author.role);
-    await this.loginpo.verifyWelcomeText(author.welcomeText);
-    await this.loginpo.fillEmail(admin.email);
-    await this.loginpo.fillPassword(admin.pass);
-    await this.loginpo.clickSignInButton();
-    await this.wsa.verifyHeader(author.header);
+   async logout() {
+    await this.menu.open();
+    await this.menu.signOut();
   }
 
   async createNewProjectAsOpen(projectNameFilter: string) {
@@ -219,11 +132,55 @@ export class TorusFacade {
     return projectName;
   }
 
+  async projectExist(projectName: string) {
+    await this.wsa.dashboard.search.fillSearchInput(projectName);
+    const rows = await this.wsa.dashboard.table.getAllRows();
+
+    for await (const row of rows) {
+      if (row[0] === projectName) return true;
+    }
+
+    return false;
+  }
+
   async verifyProjectAsOpen(projectName: string) {
     await this.wsi.dashboard.sectionCreation.clickCreateNewSection();
 
     await this.wsi.newCourseSetup.step1.searchProject(projectName);
     await this.wsi.newCourseSetup.step1.verifySearchResult(projectName);
+  }
+
+  async uploadMediaFile(kind: MediaKind, fileName: string) {
+    await this.bpp.clickParagraph();
+
+    if (kind === 'image') {
+      await this.bpp.selectElementToolbar('More');
+      await this.bpp.selectElementToolbar('Image (Inline)');
+    }
+
+    if (kind === 'audio') {
+      await this.bpp.selectElementToolbar('Insert...');
+      await this.bpp.selectElementToolbar('Audio Clip');
+      await this.selectMultimedia.waitForLabel('Embed audio');
+    }
+
+    if (kind === 'video') {
+      await this.bpp.selectElementToolbar('Insert...');
+      await this.bpp.selectElementToolbar('Video');
+      await this.selectMultimedia.clickChooseVideo();
+      await this.selectMultimedia.waitForLabel('Select Video');
+    }
+
+    const fileChooserPromise = this.page.waitForEvent('filechooser');
+    await this.selectMultimedia.clickUploadButton();
+    const fileChooser = await fileChooserPromise;
+    const mediaPath = FileManager.mediaPath(fileName);
+    await fileChooser.setFiles(mediaPath);
+
+    const isPresent = await this.selectMultimedia.selectedResource(fileName);
+    expect(isPresent).toBeTruthy();
+
+    await this.selectMultimedia.closeSelectMedia();
   }
 
   async canCreateSections(searchEmail: string, nameLink: string) {
@@ -268,22 +225,19 @@ export class TorusFacade {
         const s = this.wsa.dashboard.search;
         const t = this.wsa.dashboard.table;
         const a = this.wsa.sidebar.author;
-        const c = this.wsa.curriculum.create;
 
         await s.fillSearchInput(projectName);
         await t.clickProjectLink(projectName);
-        await this.utils.sleep();
+        await this.wsa.overviewProject.details.waitForEditorReady();
         await a.clickCreate();
-        await this.utils.sleep();
         await a.clickCurriculum();
-        await this.utils.sleep();
 
-        if (type === 'basic-practice') await c.clickBasicPracticeButton();
-        if (type === 'basic-scored') await c.clickBasicScoredButton();
+        if (type === 'basic-practice') await this.curriculum.clickBasicPracticeButton();
+        if (type === 'basic-scored') await this.curriculum.clickBasicScoredButton();
 
-        await this.curriculum.create.clickEditPageLink();
+        await this.wsa.curriculum.clickEditPageLink();
 
-        if (type === 'basic-practice') await this.bpp.visibleTitlePage();
+        if (type === 'basic-practice') await this.bpp.verifyTitlePage();
         if (type === 'basic-scored') await this.bsp.visibleTitlePage();
       },
 
@@ -585,7 +539,7 @@ export class TorusFacade {
         },
         activity: {
           add: async (activity: ActivityType) => {
-            await this.bpp.visibleTitlePage();
+            await this.bpp.verifyTitlePage();
             await this.bpp.clickInsertButtonIcon();
             await this.bpp.selectActivity(activity);
             await this.bpp.waitForChangesSaved();

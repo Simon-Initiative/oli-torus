@@ -36,8 +36,4 @@ export class WorkspaceAuthorPO {
   get curriculum() {
     return new CurriculumPO(this.page);
   }
-
-  async verifyHeader(expectedHeader: string) {
-    await expect(this.header).toContainText(expectedHeader);
-  }
 }

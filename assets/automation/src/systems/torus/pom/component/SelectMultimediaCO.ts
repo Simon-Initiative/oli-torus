@@ -1,6 +1,11 @@
 import { Locator, Page, expect } from '@playwright/test';
-import { MediaType, SelectImageTab, SortOrderType, TitleModal, ViewMode } from '@pom/types/select-multemedia-types';
-
+import {
+  MediaType,
+  SelectImageTab,
+  SortOrderType,
+  TitleModal,
+  ViewMode,
+} from '@pom/types/select-multemedia-types';
 
 export class SelectMultimediaCO {
   private readonly urlInput: Locator;
@@ -88,5 +93,11 @@ export class SelectMultimediaCO {
 
   async clickChooseVideo() {
     await this.chooseVideoButton.click();
+  }
+
+  async selectedResource(name: string) {
+    const l = this.page.getByRole('link', { name });
+    await l.waitFor({ state: 'visible' });
+    return await l.isVisible();
   }
 }

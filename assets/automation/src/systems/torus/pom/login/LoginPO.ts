@@ -1,29 +1,29 @@
 import { Locator, Page, expect } from '@playwright/test';
-import { Utils } from '@core/Utils';
 import { NavbarCO } from '@pom/component/NavbarCO';
 import { USER_TYPES, UserType } from '@pom/types/user-type';
 
 export class LoginPO {
-  private acceptCookiesButton: Locator;
-  private welcomeText: Locator;
-  private mainContent: Locator;
-  private emailInput: Locator;
-  private passwordInput: Locator;
-  private signInButton: Locator;
+  private readonly acceptCookiesButton: Locator;
+  private readonly welcomeText: Locator;
+  private readonly mainContent: Locator;
+  private readonly emailInput: Locator;
+  private readonly passwordInput: Locator;
+  private readonly signInButton: Locator;
+  private readonly welcomeTitle: Locator;
 
   constructor(private page: Page) {
-    this.acceptCookiesButton = page.getByRole('button', { name: 'Accept' });
+    this.acceptCookiesButton = page.locator('#cookie_consent_display button:has-text("Accept")');
     this.welcomeText = page.locator('#main-content');
     this.mainContent = page.locator('#main-content');
-    this.emailInput = page.getByRole('textbox', { name: 'Email' });
-    this.passwordInput = page.getByRole('textbox', { name: 'Password' });
-    this.signInButton = page.getByRole('button', { name: 'Sign in' });
+    this.emailInput = page.locator('#login_form_email');
+    this.passwordInput = page.locator('#login_form_password');
+    this.signInButton = page.locator('#login_form button:has-text("Sign in")');
+    this.welcomeTitle = page.locator('main h1');
   }
 
   async acceptCookies() {
-    if (await this.acceptCookiesButton.isVisible()) {
-      await this.acceptCookiesButton.click();
-    }
+    await this.acceptCookiesButton.waitFor({ state: 'visible' });
+    await this.acceptCookiesButton.click();
   }
 
   async verifyTitle(expectedTitle: string) {
@@ -39,13 +39,14 @@ export class LoginPO {
   }
 
   async fillEmail(email: string) {
-    await new Utils(this.page).sleep(2);
     await this.emailInput.click();
+    await this.emailInput.clear();
     await this.emailInput.fill(email);
   }
 
   async fillPassword(password: string) {
     await this.passwordInput.click();
+    await this.passwordInput.clear();
     await this.passwordInput.fill(password);
   }
 
@@ -58,12 +59,16 @@ export class LoginPO {
 
     if (role === USER_TYPES.STUDENT) {
       await navbarco.clickLogo();
-    } else if (role === USER_TYPES.INSTRUCTOR) {
-      await navbarco.goToInstructorsLogin();
-    } else if (role === USER_TYPES.AUTHOR) {
-      await navbarco.goToAuthorsLogin();
-    } else if (role === USER_TYPES.ADMIN) {
-      await navbarco.goToAdministratorLogin();
     }
+    if (role === USER_TYPES.INSTRUCTOR) {
+      await navbarco.goToInstructorsLogin();
+    }
+    if (role === USER_TYPES.AUTHOR) {
+      await navbarco.goToAuthorsLogin();
+    }
+  }
+
+  async verifyWelcomeTitle(expectedTitle: string) {
+    await expect(this.welcomeTitle).toContainText(expectedTitle);
   }
 }

@@ -2,13 +2,11 @@ import { expect, Locator, Page } from '@playwright/test';
 
 export class ResponseCO {
   private readonly editorTitle: Locator;
-  private readonly questionInput: Locator;
   private readonly exampleQuestionInput: Locator;
   private readonly addInputButton: Locator;
 
   constructor(private page: Page) {
     this.editorTitle = this.page.locator('div').filter({ hasText: 'ResponseMulti Input' }).first();
-    this.questionInput = this.page.getByRole('textbox').filter({ hasText: 'Question' });
     this.exampleQuestionInput = this.page
       .getByRole('textbox')
       .filter({ hasText: 'Example question with a fill' });

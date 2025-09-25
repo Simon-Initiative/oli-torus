@@ -12,9 +12,6 @@ export class PagePreviewPO {
   private readonly dialogTitleLocator: Locator;
   private readonly dialogSpeakerLocator: Locator;
   private readonly dialogContent: Locator;
-  private readonly descriptionListLocator: Locator;
-  private readonly definitionTermLocator: Locator;
-  private readonly definitionTextLocator: Locator;
 
   constructor(private page: Page) {
     this.formulaLocator = this.page.locator('mjx-assistive-mml');
@@ -23,7 +20,6 @@ export class PagePreviewPO {
     this.dialogTitleLocator = this.dialogLocator.locator('h1');
     this.dialogSpeakerLocator = this.dialogLocator.locator('div.dialog-speaker');
     this.dialogContent = this.dialogLocator.locator('div.dialog-content');
-    this.descriptionListLocator = this.page.locator('div.content dl');
   }
 
   async close() {

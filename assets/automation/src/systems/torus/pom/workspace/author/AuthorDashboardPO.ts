@@ -1,5 +1,6 @@
 import { Page, Locator } from '@playwright/test';
 import { Utils } from '@core/Utils';
+import { Table } from '@core/Table';
 
 export class AuthorDashboardPO {
   private utils: Utils;
@@ -22,6 +23,8 @@ export class AuthorDashboardPO {
 
   get table() {
     return {
+      getAllRows: async () => await new Table(this.page).getDataAllRows(),
+
       sortByCreatedDescending: async () => await this.createHeader.click(),
 
       getLastProjectName: async () => {

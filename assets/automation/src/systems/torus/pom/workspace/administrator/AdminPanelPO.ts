@@ -1,7 +1,7 @@
 import { Locator, Page } from '@playwright/test';
 
 export class AdminPanelPO {
-  private manageAccountsLink: Locator;
+  private readonly manageAccountsLink: Locator;
 
   constructor(private page: Page) {
     this.manageAccountsLink = this.page.getByRole('link', {

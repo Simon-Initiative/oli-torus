@@ -7,7 +7,6 @@ export class BasicScoredPagePO {
   private utils: Utils;
   private insertButtonIcon: Locator;
   private changesSaved: Locator;
-  private deleteButton: Locator;
   private resourceChoicesActivities: Locator;
   private titleLocator: Locator;
   private previewButton: Locator;

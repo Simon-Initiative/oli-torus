@@ -1,8 +1,8 @@
 import { expect, Locator, Page } from '@playwright/test';
 
 export class ProductOverviewPO {
-  private header: Locator;
-  private titleInput: Locator;
+  private readonly header: Locator;
+  private readonly titleInput: Locator;
 
   constructor(private page: Page) {
     this.header = page.locator('#header_id');

@@ -54,7 +54,16 @@ export class Utils {
   }
 
   async sleep(seconds: number = 1) {
-    await this.page.waitForTimeout(seconds * 1000);
+    await new Promise((resolve) => setTimeout(resolve, seconds * 1000));
+  }
+
+  async waitForLoadingBar(timeout = 10_000) {
+    const divConnectted = 'div.phx-connected';
+    await this.page.locator(divConnectted).nth(1).waitFor({ state: 'attached', timeout });
+  }
+
+  async writeWithDelay(searchInput: Locator, text: string, delay = 100) {
+    await searchInput.pressSequentially(text, { delay });
   }
 }
 
