@@ -173,6 +173,40 @@ defmodule OliWeb.ProductsLiveTest do
       assert has_element?(view, "a", product_2.title)
     end
 
+    test "search enforces minimum characters and highlights matches", %{
+      conn: conn,
+      product: product
+    } do
+      [{_, other_product} | _] = create_product(conn)
+
+      {:ok, view, _html} = live(conn, @live_view_all_products)
+
+      view
+      |> element("form[phx-change=\"text_search_change\"]")
+      |> render_change(%{product_name: "pr"})
+
+      assert has_element?(view, "a", product.title)
+      assert has_element?(view, "a", other_product.title)
+      refute has_element?(view, "span.search-highlight")
+
+      view
+      |> element("form[phx-change=\"text_search_change\"]")
+      |> render_change(%{product_name: other_product.slug})
+
+      wait_while(fn -> has_element?(view, "a", product.title) end)
+
+      assert has_element?(view, "a", other_product.title)
+      assert has_element?(view, "span.search-highlight")
+
+      view
+      |> element("form[phx-change=\"text_search_change\"]")
+      |> render_change(%{product_name: ""})
+
+      assert has_element?(view, "a", product.title)
+      assert has_element?(view, "a", other_product.title)
+      refute has_element?(view, "span.search-highlight")
+    end
+
     @tag :flaky
     @tag :skip
     test "applies sorting by creation date", %{conn: conn, product: product} do

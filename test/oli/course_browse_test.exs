@@ -4,9 +4,10 @@ defmodule Oli.CourseBrowseTest do
   alias Oli.Course
   alias Oli.Accounts.Author
   alias Oli.Accounts.SystemRole
-  alias Oli.Authoring.Course
+  alias Oli.Authoring.{Collaborators, Course}
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
+  import Oli.Factory
 
   def make_projects(prefix, n, author) do
     65..(65 + (n - 1))
@@ -81,6 +82,27 @@ defmodule Oli.CourseBrowseTest do
       projects = browse(admin, 0, 10, :title, :asc, true, "")
       assert length(projects) == 10
       assert hd(projects).total_count == 22
+    end
+
+    test "search includes owner and collaborator metadata", %{admin: admin} do
+      collaborator = insert(:author, name: "Collaborator Search", email: "collab@oli.org")
+
+      {:ok, %{project: project}} =
+        Course.create_project("Search Meta Project", admin, %{slug: "search-meta-project"})
+
+      {:ok, _} = Collaborators.add_collaborator(collaborator, project)
+
+      result_titles =
+        browse(admin, 0, 50, :title, :asc, false, "collaborator")
+        |> Enum.map(& &1.title)
+
+      assert "Search Meta Project" in result_titles
+
+      result_titles =
+        browse(admin, 0, 50, :title, :asc, false, admin.email)
+        |> Enum.map(& &1.title)
+
+      assert "Search Meta Project" in result_titles
     end
 
     test "browse_projects_for_export returns all projects without pagination", %{
