@@ -3803,19 +3803,6 @@ defmodule Oli.Delivery.SectionsTest do
     {:ok, section} = Sections.create_section_resources(section, publication)
     {:ok, _} = Sections.rebuild_contained_pages(section)
     Sections.rebuild_contained_objectives(section)
-
-    # Fix objective section resources children relationships
-    parent_objectives = [objective_a, objective_b]
-
-    # Update parent objectives' section resources with correct children field
-    Enum.each(parent_objectives, fn parent_revision ->
-      parent_sr = Sections.get_section_resource(section.id, parent_revision.resource_id)
-
-      # Update the section resource with the correct children
-      {:ok, _} =
-        Sections.update_section_resource(parent_sr, %{children: parent_revision.children})
-    end)
-
     Sections.PostProcessing.apply(section, :all)
 
     %{

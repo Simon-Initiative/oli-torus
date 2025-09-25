@@ -4952,9 +4952,40 @@ defmodule Oli.Delivery.Sections do
         %{
           title: sr.title,
           resource_id: sr.resource_id,
-          children: sr.children || [],
+          revision_id: sr.revision_id,
+          children: [],
           related_activities: sr.related_activities || []
         }
+      end)
+
+    # Since section_resources of type objective do not have their children
+    # field populated, we need to fetch that value from the revision.
+    # (when building section_resources we only copy children for resources that participate
+    # in the section’s structural hierarchy, and other non-structural resources - like objectives - have their children column empty)
+    revision_children_map =
+      objectives
+      |> Enum.map(& &1.revision_id)
+      |> Enum.reject(&is_nil/1)
+      |> case do
+        [] ->
+          %{}
+
+        revision_ids ->
+          from(rev in Revision,
+            where: rev.id in ^revision_ids,
+            select: {rev.id, rev.children}
+          )
+          |> Repo.all()
+          |> Map.new(fn {revision_id, children} ->
+            {revision_id, children || []}
+          end)
+      end
+
+    # add children key into the objectives map
+    objectives =
+      objectives
+      |> Enum.map(fn obj ->
+        Map.put(obj, :children, Map.get(revision_children_map, obj.revision_id, []))
       end)
 
     id_list = Enum.map(objectives, & &1.resource_id)
@@ -5685,14 +5716,14 @@ defmodule Oli.Delivery.Sections do
   end
 
   # Extracts question text from activity content for display purposes.
-  # 
-  # This function follows the same pattern as activity renderers to extract text from 
+  #
+  # This function follows the same pattern as activity renderers to extract text from
   # activity content structures. It prioritizes the activity stem content, falls back
   # to general activity content, and leverages the robust content rendering system.
   #
   # Content Structure Patterns:
   # - content["stem"]["content"] - Structured activity stem content (most common)
-  # - content["stem"] - Simple stem text string  
+  # - content["stem"] - Simple stem text string
   # - content["content"] - General activity content as fallback
   #
   # Returns "No question stem available" if no text can be extracted.
