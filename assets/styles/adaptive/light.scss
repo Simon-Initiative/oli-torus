@@ -11,6 +11,7 @@ $headerColor: var(--blue80);
 @import 'layout/content-container';
 @import 'layout/check-container';
 @import 'layout/background';
+@import '../common/responsive-layout.scss';
 
 /*-- Activity Types --*/
 @import 'activities/text-flow';

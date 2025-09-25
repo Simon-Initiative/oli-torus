@@ -418,6 +418,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
           onPartResize={handlePartResize}
           onPartSetData={handleSetData}
           onPartGetData={handleGetData}
+          responsiveLayout={props?.context?.responsiveLayout || false}
         />
       </>
     </NotificationContext.Provider>

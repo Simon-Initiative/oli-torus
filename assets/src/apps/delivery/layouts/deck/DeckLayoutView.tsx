@@ -30,6 +30,7 @@ import {
 import {
   selectBlobStorageProvider,
   selectPageSlug,
+  selectResponsiveLayout,
   selectReviewMode,
   selectSectionSlug,
   selectUserId,
@@ -59,6 +60,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
   const currentLesson = useSelector(selectPageSlug);
   const sectionSlug = useSelector(selectSectionSlug);
   const currentUserId = useSelector(selectUserId);
+  const responsiveLayout = useSelector(selectResponsiveLayout);
   const blobStorageProvider = useSelector(selectBlobStorageProvider);
   const currentUserName = useSelector(selectUserName);
   const historyModeNavigation = useSelector(selectHistoryNavigationActivity);
@@ -673,6 +675,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
           onActivityReady={handleActivityReady}
           onRequestLatestState={handleActivityRequestLatestState}
           blobStorageProvider={blobStorageProvider}
+          responsiveLayout={responsiveLayout || false}
         />
       );
     });
