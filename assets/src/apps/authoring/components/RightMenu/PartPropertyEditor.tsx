@@ -205,7 +205,6 @@ export const PartPropertyEditor: React.FC<Props> = ({
   const dispatch = useDispatch();
   const currentLesson = useSelector(selectPageState);
   const responsiveLayout = currentLesson?.custom?.responsiveLayout || false;
-  console.log('PartPropertyEditor -> responsiveLayout', { responsiveLayout });
   const appMode = useSelector(selectAppMode);
   const partEditMode: PartAuthoringMode = appMode === 'expert' ? 'expert' : 'simple';
 
