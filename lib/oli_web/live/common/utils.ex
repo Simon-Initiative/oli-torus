@@ -281,7 +281,7 @@ defmodule OliWeb.Common.Utils do
 
   @doc """
   Extracts plain text from content structure using the existing content rendering system.
-  
+
   This function leverages the robust `Oli.Rendering.Content` system to handle all content types
   including text, formulas, images, links, videos, math expressions, etc. It provides a unified
   way to extract readable text from complex content structures used throughout the application.

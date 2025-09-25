@@ -451,7 +451,9 @@ defmodule Oli.Delivery.Sections.SectionResourceDepotTest do
       sub_objective_revision: sub_objective_revision
     } do
       # Hide the sub-objective
-      sub_objective_sr = Sections.get_section_resource(section_id, sub_objective_revision.resource_id)
+      sub_objective_sr =
+        Sections.get_section_resource(section_id, sub_objective_revision.resource_id)
+
       Sections.update_section_resource(sub_objective_sr, %{hidden: true})
 
       assert [%SectionResource{revision_id: revision_id}] =
