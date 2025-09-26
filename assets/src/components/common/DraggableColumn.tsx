@@ -8,6 +8,7 @@ import {
   Droppable,
   NotDraggingStyle,
 } from 'react-beautiful-dnd';
+import { TextDirection } from 'data/content/model/elements/types';
 import { ClassName, classNames } from 'utils/classNames';
 import guid from 'utils/guid';
 import styles from './DraggableColumn.modules.scss';
@@ -36,6 +37,7 @@ interface ItemProps {
   displayOutline?: boolean;
   color?: string;
   isDragDisabled?: boolean;
+  direction?: TextDirection | 'auto';
 }
 const Item: React.FC<ItemProps> = ({
   id,
@@ -49,11 +51,13 @@ const Item: React.FC<ItemProps> = ({
   displayOutline,
   color,
   isDragDisabled,
+  direction,
 }) => {
   return (
     <DraggableDND draggableId={id} key={id} index={index} isDragDisabled={isDragDisabled ?? false}>
       {(provided, snapshot) => (
         <div
+          dir={direction}
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
