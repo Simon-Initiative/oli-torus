@@ -6,6 +6,7 @@ on:
 
 jobs:
   changes:
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
     name: detect/changes
     runs-on: ubuntu-latest
     outputs:
@@ -81,28 +82,61 @@ jobs:
           echo "Running reviewer role: ${{ matrix.role }}"
           echo "Filter outputs: elixir=${{ needs.changes.outputs.elixir }}, ts=${{ needs.changes.outputs.typescript }}, ui=${{ needs.changes.outputs.ui }}, perf=${{ needs.changes.outputs.performance }}, sec=${{ needs.changes.outputs.security }}, req=${{ needs.changes.outputs.requirements }}"
 
-      - name: Generate PR diff
+      - name: Generate PR diff (exactly what GitHub shows)
+        if: ${{ github.event_name == 'pull_request' }}
+        run: |
+          curl -sSL "${{ github.event.pull_request.patch_url }}" -o diff.patch
+
+      - name: Generate PR diff (merge-base fallback)
+        if: ${{ github.event_name != 'pull_request' }}
         shell: bash
         run: |
           set -euo pipefail
+          git fetch --no-tags --prune origin +refs/heads/*:refs/remotes/origin/*
+          MB=$(git merge-base HEAD~1 HEAD)
+          git diff --unified=0 "${MB}" HEAD > diff.patch
+          [ -f diff.patch ] || touch diff.patch
+
+      - name: Narrow diff to this role's files
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROLE="${{ matrix.role }}"
+          if [[ "$ROLE" == "requirements" ]]; then
+            # Requirements reviewers need the full diff (PRD plus all other files)
+            [ -f diff.patch ] || touch diff.patch
+            exit 0
+          fi
+          case "$ROLE" in
+            elixir)      GLOBS=(":(glob)lib/**/*.ex" ":(glob)lib/**/*.exs" ":(glob)test/**/*.exs");;
+            typescript)  GLOBS=(":(glob)assets/src/**/*.ts" ":(glob)assets/src/**/*.tsx");;
+            ui)          GLOBS=(":(glob)assets/src/**/*" ":(glob)lib/**/*.heex" ":(glob)lib/**/*.leex" ":(glob)lib/**/live/**/*.ex");;
+            security)    GLOBS=(":(glob)lib/**" ":(glob)assets/src/**" ":(glob)config/**");;
+            performance) GLOBS=(":(glob)lib/**");;
+            *)           GLOBS=(":(glob)**/*");;
+          esac
+
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
             BASE="${{ github.event.pull_request.base.sha }}"
             HEADSHA="${{ github.event.pull_request.head.sha }}"
+            git fetch --no-tags --prune origin +refs/heads/*:refs/remotes/origin/*
+            MB=$(git merge-base "$BASE" "$HEADSHA")
+            git diff --unified=0 "$MB" "$HEADSHA" -- "${GLOBS[@]}" > diff.role.patch
           else
-            BASE=$(git rev-parse HEAD^)
-            HEADSHA=$(git rev-parse HEAD)
+            git fetch --no-tags --prune origin +refs/heads/*:refs/remotes/origin/* || true
+            MB=$(git merge-base HEAD~1 HEAD)
+            git diff --unified=0 "$MB" HEAD -- "${GLOBS[@]}" > diff.role.patch
           fi
-          # Fetch the exact SHAs (works with forks and shallow clones)
-          git fetch --no-tags --prune --depth=1 origin "+${BASE}" "+${HEADSHA}"
-          # Produce a diff between the two trees (no merge-base required)
-          git diff --unified=0 "${BASE}" "${HEADSHA}" > diff.patch
-          # Ensure file exists (do not truncate if already written)
+
+          if [[ -s diff.role.patch ]]; then
+            mv diff.role.patch diff.patch
+          fi
           [ -f diff.patch ] || touch diff.patch
 
       - name: Install Codex CLI
         run: npm i -g @openai/codex
 
-      - name: Run Codex reviewer (diff-first, self-serve context)
+      - name: Run Codex reviewer (strictly diff-only)
         id: run
         shell: bash
         env:
@@ -117,9 +151,12 @@ jobs:
           {
             echo "You are a specialist reviewer for ${ROLE}.";
             echo "PRIMARY SOURCE: the DIFF below.";
-            echo "If the DIFF is insufficient to judge correctness/safety, you MAY open files in the workspace to gather context.";
-            echo "ALLOWED PATHS: lib/**, assets/src/**, config/**, priv/repo/migrations/**";
-            echo "DENYLIST: node_modules/**, deps/**, build/**, _build/**, .git/**";
+            echo "HARD CONSTRAINTS:";
+            echo "1) REVIEW ONLY lines changed in the DIFF; ignore any other code.";
+            echo "2) You may read some other files outside the DIFF ONLY for CONTEXT.";
+            echo "3) IMPORTANT: NEVER comment about findings in files or lines not included in the DIFF.";
+            echo "4) If you notice issues outside the DIFF, list them only under an 'Out-of-scope notes' section at the end.";
+            echo "5) Do NOT attempt to recalculate or expand the diff; rely strictly on the DIFF provided.";
             echo "";
             echo "IMPORTANT: Return ONLY the summary of findings, wrapped between these markers:";
             echo "<!-- FINDINGS_START -->";
@@ -128,9 +165,11 @@ jobs:
             echo "Do NOT include the prompt, your reasoning, or any other text outside those markers.";
             echo "Within the markers, use this exact format for each finding:";
             echo "### <short title>";
-            echo "file: <path>, line: <line number>";
+            echo "file: <path>";
+            echo "line: <single line number from the DIFF>";
             echo "Description: <what/why this is a problem in this codebase>";
             echo "Suggestion: <specific, actionable code change>";
+            echo "If you have notes about issues outside the DIFF, add them in an 'Out-of-scope notes' section after the findings.";
             echo "";
             echo "Coding Review Guidelines and Checklist:";
             echo "---CHECKLIST START---";
@@ -173,11 +212,12 @@ jobs:
 
           # Debug output suppressed for cleaner logs
 
-      - name: Post per-role review comment
+      - name: Post per-role review comment (filtered to PR lines)
         uses: actions/github-script@v7
         with:
           script: |
             const fs = require('fs');
+            const path = require('path');
 
             const role = `"${{ matrix.role }}"`.replace(/"/g,'');
             const headerMarker = `<!-- ai-review:${role} -->`;
@@ -242,6 +282,83 @@ jobs:
               bodyText = fs.readFileSync(`ai/${role}.raw.txt`, 'utf8');
             } catch { /* ignore */ }
 
+            // --- Build allowlist of changed files and line numbers from diff.patch ---
+            function normalizePath(p) {
+              return p.trim()
+                .replace(/^['"]|['"]$/g, '')
+                .replace(/^\.\//, '')
+                .replace(/^b\//, '');
+            }
+
+            function parseDiffAddedLines(diffText) {
+              const fileAdds = new Map(); // file -> Set(lineNumbers)
+              let currentFile = null;
+              let lnNew = 0;
+              const lines = diffText.split(/\r?\n/);
+              for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                // File header
+                if (line.startsWith('diff --git ')) {
+                  currentFile = null;
+                  lnNew = 0;
+                  continue;
+                }
+                // Target filename
+                if (line.startsWith('+++ ')) {
+                  // format: +++ b/path or +++ /dev/null
+                  const m = /^\+\+\+\s+(.*)$/.exec(line);
+                  if (!m) continue;
+                  const raw = m[1].trim();
+                  if (raw === '/dev/null') { currentFile = null; continue; }
+                  const filePath = normalizePath(raw);
+                  currentFile = filePath;
+                  if (!fileAdds.has(currentFile)) fileAdds.set(currentFile, new Set());
+                  continue;
+                }
+                // Hunk header: @@ -a,b +c,d @@
+                const hunk = /^@@\s+-\d+(?:,\d+)?\s+\+(\d+)(?:,(\d+))?\s+@@/.exec(line);
+                if (hunk) {
+                  lnNew = parseInt(hunk[1], 10);
+                  continue;
+                }
+                if (!currentFile) continue;
+                // Added lines start with '+' (but skip '+++' file header handled above)
+                if (line.startsWith('+')) {
+                  fileAdds.get(currentFile).add(lnNew);
+                  lnNew++;
+                  continue;
+                }
+                // Context lines (start with space) advance the new-side counter
+                if (line.startsWith(' ')) {
+                  lnNew++;
+                  continue;
+                }
+                // Removed lines ('-') advance old side only
+                if (line.startsWith('-')) {
+                  continue;
+                }
+              }
+              return fileAdds;
+            }
+
+            function loadDiffAdds() {
+              try {
+                const diff = fs.readFileSync('diff.patch', 'utf8');
+                return parseDiffAddedLines(diff);
+              } catch {
+                return new Map();
+              }
+            }
+
+            const addedLinesByFile = loadDiffAdds();
+
+            function isOnChangedLine(filePath, lineNumber) {
+              const normalized = normalizePath(filePath);
+              const adds = addedLinesByFile.get(normalized);
+              if (!adds) return false;
+              return adds.has(Number(lineNumber));
+            }
+
             let findings = '';
             if (bodyText && bodyText.trim()) {
               const raw = stripOuterCodeFence(bodyText);
@@ -257,7 +374,29 @@ jobs:
 
             if (!findings) findings = 'No issues found';
 
-            const composed = truncateForGithub(`${header}\n\n${findings}`);
+            // --- Enforce: keep only findings that target changed lines ---
+            function filterFindingsToChangedLines(text) {
+              const blocks = text.split(/\n(?=###\s+)/).filter(Boolean);
+              const kept = [];
+              for (const block of blocks) {
+                const fileMatch = /\bfile:\s*([^\n]+)/i.exec(block);
+                const lineMatch = /\bline:\s*(\d+)/i.exec(block);
+                if (!fileMatch || !lineMatch) continue;
+                const filePath = fileMatch[1].trim();
+                const lineNum = Number(lineMatch[1]);
+                if (!Number.isInteger(lineNum)) continue;
+                if (!addedLinesByFile.has(normalizePath(filePath))) continue;
+                if (isOnChangedLine(filePath, lineNum)) {
+                  kept.push(block.trim());
+                }
+              }
+              return kept.join('\n\n');
+            }
+
+            const filtered = filterFindingsToChangedLines(findings);
+            const finalFindings = filtered || 'No issues found';
+
+            const composed = truncateForGithub(`${header}\n\n${finalFindings}`);
 
             // Upsert: update if an existing role-specific comment is present
             const { data: comments } = await github.rest.issues.listComments({

@@ -708,7 +708,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
 
     test "can not access when not enrolled to course", context do
       {:ok, conn: conn, user: _user} = user_conn(context)
-      section = insert(:section)
+      section = insert(:section, requires_enrollment: true)
 
       {:error, {:redirect, %{to: redirect_path, flash: _flash_msg}}} =
         live(conn, ~p"/sections/#{section.slug}")

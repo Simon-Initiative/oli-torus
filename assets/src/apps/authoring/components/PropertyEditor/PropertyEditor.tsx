@@ -1,9 +1,10 @@
-import React, { Fragment, useEffect, useState } from 'react';
+import React, { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import Form from '@rjsf/bootstrap-4';
 import { UiSchema } from '@rjsf/core';
 import { diff } from 'deep-object-diff';
 import { JSONSchema7 } from 'json-schema';
 import { at } from 'lodash';
+import { debounce } from 'lodash';
 import ColorPickerWidget from './custom/ColorPickerWidget';
 import CustomCheckbox from './custom/CustomCheckbox';
 import { DropdownOptionsEditor } from './custom/DropdownOptionsEditor';
@@ -29,6 +30,7 @@ interface PropertyEditorProps {
   onClickHandler?: (changes: unknown) => void;
   triggerOnChange?: boolean | string[];
   onfocusHandler?: (changes: boolean) => void;
+  isExpertMode?: boolean;
 }
 
 const widgets: any = {
@@ -57,8 +59,11 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({
   onChangeHandler,
   triggerOnChange = false,
   onfocusHandler,
+  isExpertMode = false,
 }) => {
   const [formData, setFormData] = useState<any>(value);
+  const backspacePressed = useRef(false);
+
   const findDiffType = (changedProp: any): string => {
     const diffType: Record<string, unknown>[] = Object.values(changedProp);
     if (typeof diffType[0] === 'object') {
@@ -71,71 +76,96 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({
     setFormData(value);
   }, [value]);
 
+  const debouncedOnChangeHandler = useMemo(
+    () =>
+      debounce((data) => {
+        onChangeHandler(data);
+      }, 500),
+    [onChangeHandler],
+  );
+
+  useEffect(() => {
+    return () => debouncedOnChangeHandler.cancel();
+  }, [debouncedOnChangeHandler]);
+
   return (
-    <Form
-      schema={schema}
-      formData={formData}
-      onChange={(e) => {
-        const updatedData = e.formData;
-        const changedProp = diff(formData, updatedData);
-        const changedPropType = findDiffType(changedProp);
-
-        const shouldTriggerChange =
-          typeof triggerOnChange === 'boolean'
-            ? triggerOnChange
-            : Object.keys(changedProp).some((v) => triggerOnChange.indexOf(v) > -1);
-        setFormData(updatedData);
-
-        //console.info('ONCHANGE', { shouldTriggerChange, changedPropType, changedProp });
-
-        if (shouldTriggerChange || changedPropType === 'boolean') {
-          // because 'id' is used to maintain selection, it MUST be onBlur or else bad things happen
-          if (updatedData.id === formData.id) {
-            console.log('ONCHANGE P EDITOR TRIGGERED', {
-              e,
-              updatedData,
-              changedProp,
-              changedPropType,
-              triggerOnChange,
-            });
-            onChangeHandler(updatedData);
-          }
+    <div
+      onKeyDown={(e) => {
+        backspacePressed.current = e.key === 'Backspace';
+        if (backspacePressed.current) {
+          e.stopPropagation(); // prevent global delete shortcut when backspace is pressed
         }
       }}
-      onFocus={() => {
-        if (onfocusHandler) {
-          onfocusHandler(false);
-        }
-      }}
-      onBlur={(key, changed) => {
-        //AdvancedFeedbackNumberRange widget does not call the onFocus hence we are using the onBlur and passing 'partPropertyElementFocus' as key
-        // to identify if this was called from onfocus event of the input
-        if (key === 'partPropertyElementFocus' && onfocusHandler) {
-          onfocusHandler(false);
-          return;
-        }
-        // key will look like root_Position_x
-        // changed will be the new value
-        // formData will be the current state of the form
-        console.info('ONBLUR');
-        const dotPath = key.replace(/_/g, '.').replace('root.', '');
-        const [newValue] = at(value as any, dotPath);
-        // console.log('ONBLUR', { key, changed, formData, value, dotPath, newValue });
-        // specifically using != instead of !== because `changed` is always a string
-        // and the stakes here are not that high, we are just trying to avoid saving so many times
-        if (newValue != changed) {
-          onChangeHandler(formData);
-        }
-        if (onfocusHandler) {
-          onfocusHandler(true);
-        }
-      }}
-      uiSchema={uiSchema}
-      widgets={widgets}
     >
-      <Fragment />
-      {/*  this one is to remove the submit button */}
-    </Form>
+      <Form
+        schema={schema}
+        formData={formData}
+        onChange={(e) => {
+          const updatedData = e.formData;
+          const changedProp = diff(formData, updatedData);
+          const changedPropType = findDiffType(changedProp);
+
+          const shouldTriggerChange =
+            typeof triggerOnChange === 'boolean'
+              ? triggerOnChange
+              : Object.keys(changedProp).some((v) => triggerOnChange.indexOf(v) > -1);
+
+          setFormData(updatedData);
+
+          // If backspace triggered skip calling handler until blur
+          if (backspacePressed.current && isExpertMode) return;
+
+          if (shouldTriggerChange || changedPropType === 'boolean') {
+            if (updatedData.id === formData.id) {
+              debouncedOnChangeHandler(updatedData);
+              if (onfocusHandler) {
+                onfocusHandler(true);
+              }
+            }
+          }
+        }}
+        onFocus={() => {
+          if (onfocusHandler) {
+            onfocusHandler(false);
+          }
+        }}
+        onBlur={(key, changed) => {
+          // If backspace was pressed, trigger save now on blur
+          console.log({
+            key,
+            changed,
+            isExpertMode,
+            backspacePressedcurrent: backspacePressed.current,
+          });
+          if (backspacePressed.current && isExpertMode) {
+            backspacePressed.current = false;
+            onChangeHandler(formData);
+            if (onfocusHandler) {
+              onfocusHandler(true);
+            }
+            return;
+          }
+
+          if (key === 'partPropertyElementFocus' && onfocusHandler) {
+            onfocusHandler(false);
+            return;
+          }
+
+          const dotPath = key.replace(/_/g, '.').replace('root.', '');
+          const [newValue] = at(value as any, dotPath);
+          if (newValue != changed) {
+            onChangeHandler(formData);
+          }
+          if (onfocusHandler) {
+            onfocusHandler(true);
+          }
+        }}
+        uiSchema={uiSchema}
+        widgets={widgets}
+      >
+        <Fragment />
+      </Form>
+    </div>
   );
 };
 export default PropertyEditor;

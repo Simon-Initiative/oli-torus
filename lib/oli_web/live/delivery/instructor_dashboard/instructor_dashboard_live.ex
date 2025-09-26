@@ -446,13 +446,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         active: is_active_tab?(:learning_objectives, active_tab)
       },
       %TabLink{
-        label: "Scored Activities",
+        label: "Scored Pages",
         path: path_for(:insights, :scored_activities, section_slug, preview_mode),
         badge: nil,
         active: is_active_tab?(:scored_activities, active_tab)
       },
       %TabLink{
-        label: "Practice Activities",
+        label: "Practice Pages",
         path: path_for(:insights, :practice_activities, section_slug, preview_mode),
         badge: nil,
         active: is_active_tab?(:practice_activities, active_tab)
@@ -479,6 +479,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         ctx={@ctx}
         section={@section}
         view={@view}
+        active_tab={@active_tab}
         students={@users}
         certificate={@certificate}
         certificate_pending_email_notification_count={@certificate_pending_email_notification_count}
@@ -558,6 +559,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         ctx={@ctx}
         section={@section}
         view={@view}
+        active_tab={@active_tab}
         students={@users}
         dropdown_options={@dropdown_options}
       />
@@ -576,6 +578,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         params={@params}
         section_slug={@section.slug}
         view={@view}
+        active_tab={@active_tab}
         containers={@containers}
         patch_url_type={:instructor_dashboard}
       />
@@ -629,7 +632,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     ~H"""
     <InstructorDashboard.tabs tabs={insights_tabs(@section_slug, @preview_mode, @active_tab)} />
 
-    <div class="mx-10 mb-10">
+    <div class="container mx-auto mb-10">
       <.live_component
         id="practice_activities_tab"
         module={OliWeb.Components.Delivery.PracticeActivities}
@@ -651,7 +654,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     ~H"""
     <InstructorDashboard.tabs tabs={insights_tabs(@section_slug, @preview_mode, @active_tab)} />
 
-    <div class="mx-10 mb-10">
+    <div class="container mx-auto mb-10">
       <.live_component
         id="surveys_tab"
         module={OliWeb.Components.Delivery.Surveys}
@@ -795,6 +798,19 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   end
 
   def handle_info(
+        {:selected_card_assessments, value},
+        socket
+      ) do
+    params = Map.merge(socket.assigns.params, %{"selected_card_value" => value})
+
+    {:noreply,
+     push_patch(socket,
+       to:
+         ~p"/sections/#{socket.assigns.section.slug}/instructor_dashboard/insights/practice_activities?#{params}"
+     )}
+  end
+
+  def handle_info(
         {:selected_card_containers, value},
         socket
       ) do
@@ -843,6 +859,50 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   @impl Phoenix.LiveView
   def handle_info({:flash_message, {type, message}}, socket) when type in [:error, :info] do
     {:noreply, put_flash(socket, type, message)}
+  end
+
+  def handle_info({:show_email_modal, _assigns}, socket) do
+    # Only send update if the Students component is currently rendered
+    case {socket.assigns.view, socket.assigns.active_tab} do
+      {:overview, :students} ->
+        send_update(OliWeb.Components.Delivery.Students,
+          id: "students_table",
+          show_email_modal: true
+        )
+
+      {:insights, :content} ->
+        send_update(OliWeb.Components.Delivery.Students,
+          id: "container_details_table",
+          show_email_modal: true
+        )
+
+      _ ->
+        :ok
+    end
+
+    {:noreply, socket}
+  end
+
+  def handle_info({:hide_email_modal}, socket) do
+    # Only send update if the Students component is currently rendered
+    case {socket.assigns.view, socket.assigns.active_tab} do
+      {:overview, :students} ->
+        send_update(OliWeb.Components.Delivery.Students,
+          id: "students_table",
+          show_email_modal: false
+        )
+
+      {:insights, :content} ->
+        send_update(OliWeb.Components.Delivery.Students,
+          id: "container_details_table",
+          show_email_modal: false
+        )
+
+      _ ->
+        :ok
+    end
+
+    {:noreply, socket}
   end
 
   @impl Phoenix.LiveView

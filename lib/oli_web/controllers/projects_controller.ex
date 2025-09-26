@@ -6,7 +6,17 @@ defmodule OliWeb.ProjectsController do
   alias Oli.Repo.Sorting
   alias Oli.Utils.Time
 
-  @csv_headers ["Slug", "Title", "Created", "Created By", "Email", "Status"]
+  @csv_headers [
+    "Slug",
+    "Title",
+    "Created",
+    "Created By",
+    "Email",
+    "Collaborators",
+    "Published",
+    "Visibility",
+    "Status"
+  ]
   # Configurable safety limit
   @max_export_limit 10_000
 
@@ -25,8 +35,11 @@ defmodule OliWeb.ProjectsController do
       case params["sort_by"] do
         "title" -> :title
         "inserted_at" -> :inserted_at
-        "status" -> :status
         "name" -> :name
+        "collaborators" -> :collaborators
+        "published" -> :published
+        "visibility" -> :visibility
+        "status" -> :status
         _ -> :title
       end
 
@@ -128,6 +141,9 @@ defmodule OliWeb.ProjectsController do
           escape_csv_field(Date.to_string(DateTime.to_date(project.inserted_at))),
           escape_csv_field(project.name || ""),
           escape_csv_field(project.email || ""),
+          escape_csv_field(csv_safe(format_collaborators(project.collaborators))),
+          escape_csv_field(format_published(Map.get(project, :published))),
+          escape_csv_field(format_visibility(project.visibility || "")),
           escape_csv_field(format_status(project.status))
         ]
       end)
@@ -155,4 +171,28 @@ defmodule OliWeb.ProjectsController do
     do: status |> Atom.to_string() |> String.capitalize()
 
   defp format_status(status), do: to_string(status)
+
+  defp format_visibility(:global), do: "Open"
+  defp format_visibility(visibility) when visibility in [:selected, :authors], do: "Restricted"
+  defp format_visibility(visibility), do: to_string(visibility)
+
+  defp format_published(true), do: "Yes"
+  defp format_published(false), do: "No"
+  defp format_published(_), do: ""
+
+  defp format_collaborators(nil), do: ""
+
+  defp format_collaborators(collaborators) when is_list(collaborators) do
+    collaborators
+    |> Enum.map(& &1["name"])
+    |> Enum.join(", ")
+  end
+
+  defp format_collaborators(_), do: ""
+
+  defp csv_safe(value) do
+    s = to_string(value || "")
+
+    if String.starts_with?(s, ["=", "+", "-", "@", "\t"]), do: "'" <> s, else: s
+  end
 end
