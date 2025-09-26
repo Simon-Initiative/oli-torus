@@ -6,8 +6,6 @@ defmodule OliWeb.Common.Utils do
 
   require Logger
 
-  @chars_to_replace_on_search [" ", "&", ":", ";", "(", ")", "|", "!", "'", "<", ">"]
-
   def name(%User{guest: true}) do
     "Guest Student"
   end
@@ -281,7 +279,7 @@ defmodule OliWeb.Common.Utils do
   end
 
   @doc """
-  Helper to highlight search term in text. Returns HTML-safe string with matches wrapped in <em> tags by default.
+  Helper to highlight search term in text. Returns HTML-safe string with matches wrapped in <em> tags.
 
   ## Examples
 
@@ -293,19 +291,30 @@ defmodule OliWeb.Common.Utils do
 
       iex> highlight_search_term("Hello World", "")
       "Hello World"
-
-      iex> highlight_search_term("Hello World", "world", "foo", "bar")
-      "Hello <foo>World</bar>"
   """
-  def highlight_search_term(text, term, tagstart \\ "em", tagend \\ "em")
-  def highlight_search_term(text, nil, _, _), do: escape_html(text)
-  def highlight_search_term(text, "", _, _), do: escape_html(text)
+  def highlight_search_term(text, nil), do: escape_html(text)
+  def highlight_search_term(text, ""), do: escape_html(text)
 
-  def highlight_search_term(text, search_term, tagstart, tagend) do
+  def highlight_search_term(text, search_term) do
+    pattern = Regex.escape(search_term)
+    # case insensitive match
+    regex = ~r/#{pattern}/i
+
+    text
+    |> escape_html()
+    |> String.replace(regex, "<em>\\0</em>")
+  end
+
+  def multi_highlight_search_term(text, term, tagstart \\ "em", tagend \\ "em")
+  def multi_highlight_search_term(text, nil, _, _), do: escape_html(text)
+  def multi_highlight_search_term(text, "", _, _), do: escape_html(text)
+
+  def multi_highlight_search_term(text, search_term, tagstart, tagend) do
     text = escape_html(text)
 
     search_term
-    |> String.split(@chars_to_replace_on_search, trim: true)
+    |> String.split()
+    |> Stream.map(&escape_html/1)
     |> Stream.map(&Regex.escape/1)
     |> Enum.reduce(text, fn term, acc ->
       String.replace(acc, ~r/#{term}/i, fn match -> "<#{tagstart}>#{match}</#{tagend}>" end)

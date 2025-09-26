@@ -259,7 +259,7 @@ defmodule OliWeb.Projects.TableModel do
   defp highlight_search_term(text, search_term),
     do:
       Phoenix.HTML.raw(
-        Utils.highlight_search_term(
+        Utils.multi_highlight_search_term(
           text || "",
           search_term,
           "span class=\"search-highlight\"",
