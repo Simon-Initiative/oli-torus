@@ -39,11 +39,18 @@ export interface BarDatum {
 }
 
 // Colors that match the existing system - now with precise typing
-const PROFICIENCY_COLORS: Record<ProficiencyLabel, string> = {
+const PROFICIENCY_COLORS_LIGHT: Record<ProficiencyLabel, string> = {
   'Not enough data': '#C2C2C2',
   Low: '#E6D4FA',
   Medium: '#B37CEA',
   High: '#7B19C1',
+};
+
+const PROFICIENCY_COLORS_DARK: Record<ProficiencyLabel, string> = {
+  'Not enough data': '#C2C2C2',
+  Low: '#F6EEFF',
+  Medium: '#C6A0EB',
+  High: '#AC57E9',
 };
 
 const PROFICIENCY_LABELS: ProficiencyLabel[] = ['Not enough data', 'Low', 'Medium', 'High'];
@@ -183,6 +190,9 @@ export const DotDistributionChart: React.FC<DotDistributionChartProps> = ({
       return [];
     }
 
+    // Select appropriate color palette based on dark mode
+    const proficiencyColors = darkMode ? PROFICIENCY_COLORS_DARK : PROFICIENCY_COLORS_LIGHT;
+
     // Group students by proficiency level and proficiency value
     const groupedByProficiency: Record<string, Record<number, StudentProficiency[]>> = {};
 
@@ -219,7 +229,7 @@ export const DotDistributionChart: React.FC<DotDistributionChartProps> = ({
             proficiency_value_index: proficiencyIndex,
             student_index: studentIndex,
             student_id: student.student_id,
-            color: PROFICIENCY_COLORS[level as ProficiencyLabel],
+            color: proficiencyColors[level as ProficiencyLabel],
           });
         });
       });
@@ -231,6 +241,11 @@ export const DotDistributionChart: React.FC<DotDistributionChartProps> = ({
   // STEP 3: Create VegaLite specification with pre-calculated positions
   const createVegaSpec = (): VisualizationSpec => {
     const barData = createBarData();
+
+    // Use appropriate color range based on dark mode
+    const colorRange = darkMode
+      ? ['#C2C2C2', '#F6EEFF', '#C6A0EB', '#AC57E9']
+      : ['#C2C2C2', '#E6D4FA', '#B37CEA', '#7B19C1'];
 
     return {
       height: 12,
@@ -245,7 +260,7 @@ export const DotDistributionChart: React.FC<DotDistributionChartProps> = ({
           type: 'nominal',
           scale: {
             domain: ['Not enough data', 'Low', 'Medium', 'High'],
-            range: ['#C2C2C2', '#E6D4FA', '#B37CEA', '#7B19C1'],
+            range: colorRange,
           },
         },
       },
@@ -527,7 +542,7 @@ function renderDots(
   const calculateSectionBounds = (level: string) => {
     // Calculate the boundaries of this proficiency level segment
     let cumulativeWidth = 0;
-    for (let i = 0; i < PROFICIENCY_LABELS.indexOf(level); i++) {
+    for (let i = 0; i < PROFICIENCY_LABELS.indexOf(level as ProficiencyLabel); i++) {
       const prevLevel = PROFICIENCY_LABELS[i];
       const prevLevelData = barData.find((item) => item.proficiency === prevLevel);
       const prevLevelCount = prevLevelData ? prevLevelData.count : 0;
@@ -710,8 +725,7 @@ function renderDots(
                     cy={yPosition}
                     r={dotSize / 2}
                     fill={student.color}
-                    stroke="rgba(255,255,255,0.5)"
-                    strokeWidth="0.5"
+                    stroke={student.color}
                     aria-hidden="true"
                   />,
                 );
@@ -758,7 +772,7 @@ function renderDots(
                     cy={yPosition}
                     r={dotSize / 2}
                     fill={dot.color}
-                    stroke="rgba(255,255,255,0.5)"
+                    stroke={dot.color}
                     strokeWidth="0.5"
                     aria-hidden="true"
                   />
@@ -816,17 +830,9 @@ function renderDots(
                   x={`${bounds.startX}%`}
                   y="1"
                   width={`${bounds.width}%`}
-                  height="167"
+                  height="168"
                   fill="none"
-                  stroke={
-                    isSelected
-                      ? darkMode
-                        ? '#2C2D40'
-                        : '#353740'
-                      : darkMode
-                      ? '#524D59'
-                      : '#8AB8E5'
-                  }
+                  stroke={isSelected ? (darkMode ? '#FFFFFF' : '#353740') : '#8AB8E5'}
                   strokeWidth="1"
                   rx="2"
                   style={{ pointerEvents: 'none' }}

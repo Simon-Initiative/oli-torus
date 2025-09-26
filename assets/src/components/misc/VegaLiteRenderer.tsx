@@ -2,13 +2,43 @@ import React, { useEffect, useRef, useState } from 'react';
 import { VegaLite, VisualizationSpec } from 'react-vega';
 import type { View as VegaView } from 'vega';
 
-type Props = { spec: VisualizationSpec };
+type Props = {
+  spec: VisualizationSpec;
+  dark_mode_colors?: {
+    light: string[];
+    dark: string[];
+  };
+};
 
-export const VegaLiteRenderer: React.FC<Props> = ({ spec }) => {
+export const VegaLiteRenderer: React.FC<Props> = ({ spec, dark_mode_colors }) => {
   const [darkMode, setDarkMode] = useState(document.documentElement.classList.contains('dark'));
 
   const viewRef = useRef<VegaView | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
+
+  // Create dynamic spec with appropriate colors
+  const dynamicSpec: VisualizationSpec = React.useMemo(() => {
+    if (!dark_mode_colors) return spec;
+
+    const updatedSpec = { ...spec };
+
+    // Update color range if it exists in the spec
+    if (
+      updatedSpec.encoding &&
+      typeof updatedSpec.encoding === 'object' &&
+      'color' in updatedSpec.encoding &&
+      updatedSpec.encoding.color &&
+      typeof updatedSpec.encoding.color === 'object' &&
+      'scale' in updatedSpec.encoding.color &&
+      updatedSpec.encoding.color.scale &&
+      typeof updatedSpec.encoding.color.scale === 'object'
+    ) {
+      const colorScale = updatedSpec.encoding.color.scale as any;
+      colorScale.range = darkMode ? dark_mode_colors.dark : dark_mode_colors.light;
+    }
+
+    return updatedSpec;
+  }, [spec, dark_mode_colors, darkMode]);
 
   // Theme updates
   useEffect(() => {
@@ -61,7 +91,7 @@ export const VegaLiteRenderer: React.FC<Props> = ({ spec }) => {
     resizeObserver.observe(containerRef.current);
 
     return () => resizeObserver.disconnect();
-  }, [spec]);
+  }, [dynamicSpec]);
 
   // Also handle window resize & Bootstrap tab activation
   useEffect(() => {
@@ -88,7 +118,7 @@ export const VegaLiteRenderer: React.FC<Props> = ({ spec }) => {
   return (
     <div ref={containerRef} style={{ width: '100%', minWidth: 0 }}>
       <VegaLite
-        spec={spec} // ensure: width: 'container', autosize: {type:'fit-x', contains:'padding', resize:true}
+        spec={dynamicSpec} // ensure: width: 'container', autosize: {type:'fit-x', contains:'padding', resize:true}
         actions={false}
         tooltip={darkMode ? darkTooltipTheme : lightTooltipTheme}
         className="w-100"
