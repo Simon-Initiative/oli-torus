@@ -28,6 +28,7 @@ export const ResponseChoices: React.FC<Props> = ({
           id={choice.id}
           item={choice}
           color={colorMap?.get(choice.id)}
+          direction={choice.textDirection}
         >
           {(choice, index) => (
             <>
