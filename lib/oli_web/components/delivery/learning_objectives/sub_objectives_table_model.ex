@@ -174,7 +174,13 @@ defmodule OliWeb.Delivery.LearningObjectives.SubObjectivesTableModel do
     OliWeb.Common.React.component(
       %{is_liveview: true},
       "Components.VegaLiteRenderer",
-      %{spec: spec},
+      %{
+        spec: spec,
+        dark_mode_colors: %{
+          light: ["#C2C2C2", "#E6D4FA", "#B37CEA", "#7B19C1"],
+          dark: ["#C2C2C2", "#F6EEFF", "#C6A0EB", "#AC57E9"]
+        }
+      },
       id: "proficiency-chart-sub-objective-#{sub_objective_id}"
     )
   end
