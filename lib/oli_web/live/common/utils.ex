@@ -316,9 +316,15 @@ defmodule OliWeb.Common.Utils do
     |> String.split()
     |> Stream.map(&escape_html/1)
     |> Stream.map(&Regex.escape/1)
-    |> Enum.reduce(text, fn term, acc ->
-      String.replace(acc, ~r/#{term}/i, fn match -> "<#{tagstart}>#{match}</#{tagend}>" end)
-    end)
+    |> Enum.join("|")
+    |> Regex.compile("i")
+    |> case do
+      {:ok, regex} ->
+        String.replace(text, regex, fn match -> "<#{tagstart}>#{match}</#{tagend}>" end)
+
+      _ ->
+        text
+    end
   end
 
   defp escape_html(text) do
