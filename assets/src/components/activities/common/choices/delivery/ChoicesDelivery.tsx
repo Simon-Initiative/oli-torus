@@ -47,7 +47,7 @@ export const ChoicesDelivery: React.FC<Props> = ({
           onClick={onClicked(choice.id)}
           className={classNames(styles.choicesChoiceRow, isSelected(choice.id) ? 'selected' : '')}
         >
-          <div className={styles.choicesChoiceWrapper}>
+          <div className={styles.choicesChoiceWrapper} dir={choice.textDirection}>
             <label className={styles.choicesChoiceLabel} htmlFor={`choice-${index}`}>
               <div className="d-flex align-items-center col">
                 {isSelected(choice.id) ? selectedIcon : unselectedIcon}
