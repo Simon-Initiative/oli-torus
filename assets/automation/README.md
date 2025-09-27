@@ -68,3 +68,31 @@ EMAIL_ADMIN=your_admin_email@example.com
 PASS_ADMIN=your_admin_password
 
 ```
+
+## 🧪 Automated Configurations
+
+These configurations are executed **before running the tests** and are already automated.  
+The following processes are included.
+
+### 📁 Project Creation
+
+The following projects are automatically created with these names:
+
+- `TQA-10-automation`
+- `TQA-11-automation`
+- `TQA-12-automation`
+- `TQA-13-automation`
+- `TQA-14-automation`
+- `TQA-15-automation`
+- `TQA-17-automation`
+
+### 🎨 Multimedia File Configuration
+
+The upload of multimedia resources is automated for the following projects:
+
+| 📂 Project Name    | 📄 File Name             | 🏷️ Type |
+| :----------------- | :----------------------- | :------ |
+| TQA-12-automation  | img-mock-05-16-2025.jpg | image   |
+| TQA-13-automation  | img-mock-05-16-2025.jpg | image   |
+| TQA-13-automation  | audio-test-01.mp3       | audio   |
+| TQA-13-automation  | video-test-01.mp4       | video   |
