@@ -45,6 +45,8 @@ const PartsLayoutRenderer: React.FC<PartsLayoutRendererProps> = ({
             // In responsive mode, ignore x,y positions but preserve original data
             x: 0, // Ignore x position in responsive mode (but preserve original x in data)
             y: 0, // Ignore y position in responsive mode (but preserve original y in data)
+            // In responsive mode, set width to 100% for the part
+            width: '100%',
           }
         : partDefinition.custom, // Use original model in non-responsive mode
       state,
@@ -65,21 +67,21 @@ const PartsLayoutRenderer: React.FC<PartsLayoutRendererProps> = ({
     if (responsiveLayout) {
       // Determine width class and alignment for responsive layout
       const widthClass =
+        partDefinition.custom.width === 960 ||
         partDefinition.custom.width === '100%' ||
-        typeof partDefinition.custom.width !== 'string' ||
+        typeof partDefinition.custom.width !== 'number' ||
         partDefinition.custom.width === undefined ||
         partDefinition.custom.width === null
           ? 'full-width'
           : 'half-width';
       const alignmentClass =
-        partDefinition.custom.width === '50% align right'
-          ? 'responsive-align-right'
-          : 'responsive-align-left';
+        partDefinition.custom.width === 471 ? 'responsive-align-right' : 'responsive-align-left';
 
       return (
         <div
           key={partDefinition.id}
           data-part-id={partDefinition.id}
+          style={{ height: partDefinition?.custom?.height }}
           className={`responsive-item ${widthClass} ${alignmentClass}`}
         >
           <PartComponent key={partDefinition.id} {...partProps} />
@@ -94,9 +96,7 @@ const PartsLayoutRenderer: React.FC<PartsLayoutRendererProps> = ({
   return (
     <>
       {responsiveLayout ? (
-        <div className="advance-authoring-responsive-layout">
-          {parts.map(renderPart)}
-        </div>
+        <div className="advance-authoring-responsive-layout">{parts.map(renderPart)}</div>
       ) : (
         parts.map(renderPart)
       )}
