@@ -64,10 +64,14 @@ export const responsivePartSchema: JSONSchema7 = {
       title: 'Dimensions',
       properties: {
         width: {
-          type: 'string',
-          enum: ['100%', '50% align left', '50% align right'],
+          type: 'number',
           title: 'Width',
-          default: '100%',
+          default: 960,
+          anyOf: [
+            { const: 960, title: '100%' },
+            { const: 470, title: '50% align left' },
+            { const: 471, title: '50% align right' },
+          ],
         },
         height: { type: 'number', title: 'Height' },
       },

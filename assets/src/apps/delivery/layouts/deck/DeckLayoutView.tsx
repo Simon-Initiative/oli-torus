@@ -607,7 +607,9 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     const actualCurrentActivity = localActivityTree[localActivityTree.length - 1];
     const config = actualCurrentActivity.content.custom;
     const styles: CSSProperties = {
-      width: config?.width || lessonStyles.width,
+      width: responsiveLayout
+        ? lessonStyles.width || config?.width // swap if responsiveLayout is true
+        : config?.width || lessonStyles.width, // original order if false
     };
     if (config?.palette) {
       if (config.palette.useHtmlProps) {

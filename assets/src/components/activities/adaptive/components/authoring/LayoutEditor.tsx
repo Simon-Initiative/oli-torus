@@ -148,7 +148,14 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
     const partProps = {
       id: part.id,
       type: part.type,
-      model: decorateModelWithDragWidthHeight(part.id, part.custom),
+      model: {
+        ...decorateModelWithDragWidthHeight(part.id, part.custom),
+        // In responsive mode, set width to 100% for the part
+        width: isResponsive ? '100%' : part.custom.width,
+        // Preserve original x & y positions in the model (they will be ignored in rendering)
+        x: part.custom.x || 0,
+        y: part.custom.y || 0,
+      },
       state: {},
       configureMode: part.id === configurePartId,
       editMode: true,
@@ -160,16 +167,17 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
       onResize: defaultHandler,
     };
 
-    const disableDrag = selectedPartAndCapabilities && !selectedPartAndCapabilities.capabilities.move;
+    const disableDrag =
+      selectedPartAndCapabilities && !selectedPartAndCapabilities.capabilities.move;
 
     // Determine position and size based on responsive mode
     const position = isResponsive
-      ? { x: 0, y: 0 } // Ignore x,y positions in responsive mode
+      ? { x: 0, y: 0 } // Ignore x,y positions in responsive mode (but preserve in model)
       : { x: part.custom.x || 0, y: part.custom.y || 0 };
 
     const size = {
       width: part.custom.width || 100,
-      height: part.custom.height || 100
+      height: part.custom.height || 100,
     };
 
     // Determine resize grid based on responsive mode
@@ -247,9 +255,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
           {...partProps}
           className={selectedPartId === part.id ? 'selected' : ''}
           onClick={(event) => handlePartClick(event, { id: part.id })}
-          onConfigure={({ configure, context }) =>
-            handlePartConfigure(part.id, configure, context)
-          }
+          onConfigure={({ configure, context }) => handlePartConfigure(part.id, configure, context)}
           onSaveConfigure={handlePartSaveConfigure}
           onCancelConfigure={handlePartCancelConfigure}
         />
@@ -551,7 +557,6 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
   }, [configurePartId, handlePartCancelConfigure, selectedPartAndCapabilities, pusher]);
 
   const handlePartInit = async ({ id, responses }: { id: string; responses: any[] }) => {
-    console.log('LE:PartInit', { id, responses });
     return {
       snapshot: {},
       context: {
@@ -716,14 +721,14 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
             {parts.map((part: AnyPartComponent, idx: number) => {
               // Determine width class and alignment for responsive layout
               const widthClass =
-                part.custom.width === '100%' ||
-                typeof part.custom.width !== 'string' ||
+                part.custom.width === 960 || part.custom.width === '100%' ||
+                typeof part.custom.width !== 'number' ||
                 part.custom.width === undefined ||
                 part.custom.width === null
                   ? 'full-width'
                   : 'half-width';
               const alignmentClass =
-                part.custom.width === '50% align right'
+                part.custom.width === 471
                   ? 'responsive-align-right'
                   : 'responsive-align-left';
 
