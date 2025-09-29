@@ -9305,10 +9305,6 @@ table.table-striped tbody tr:nth-child(even) {
   margin-top: 9px;
 }
 
-.mt-auto {
-  margin-top: auto;
-}
-
 .box-content {
   box-sizing: content-box;
 }
