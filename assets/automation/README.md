@@ -68,19 +68,31 @@ EMAIL_ADMIN=your_admin_email@example.com
 PASS_ADMIN=your_admin_password
 
 ```
-### 🧪 Test data setup
 
-Before running this suite, verify that:
+## 🧪 Automated Configurations
 
-- The **author** user has access to projects with the following IDs:
-  - `tqa10automation`
-  - `tqa11automation`
-  - `tqa12automation` must have `img-mock-05-16-2025.jpg`
-  - `tqa13automation` must have `img-mock-05-16-2025.jpg` `audio-test-01.mp3` `video-test-01.mp4`
-  - `tqa14automation`
-  - `tqa15automation`
-- The above projects should exist on the platform. Some tests depend on navigating directly to those project URLs.
-- The **media files** used in tests must be uploaded and available in the media library. These include:
-  - `img-mock-05-16-2025.jpg`
-  - `audio-test-01.mp3`
-  - `video-test-01.mp4`
+These configurations are executed **before running the tests** and are already automated.  
+The following processes are included.
+
+### 📁 Project Creation
+
+The following projects are automatically created with these names:
+
+- `TQA-10-automation`
+- `TQA-11-automation`
+- `TQA-12-automation`
+- `TQA-13-automation`
+- `TQA-14-automation`
+- `TQA-15-automation`
+- `TQA-17-automation`
+
+### 🎨 Multimedia File Configuration
+
+The upload of multimedia resources is automated for the following projects:
+
+| 📂 Project Name    | 📄 File Name             | 🏷️ Type |
+| :----------------- | :----------------------- | :------ |
+| TQA-12-automation  | img-mock-05-16-2025.jpg | image   |
+| TQA-13-automation  | img-mock-05-16-2025.jpg | image   |
+| TQA-13-automation  | audio-test-01.mp3       | audio   |
+| TQA-13-automation  | video-test-01.mp4       | video   |

@@ -2,13 +2,11 @@ import { expect, Locator, Page } from '@playwright/test';
 
 export class VlabCO {
   private readonly editorTitle: Locator;
-  private readonly questionInput: Locator;
   private readonly addInputButton: Locator;
   private readonly exampleQuestionInput: Locator;
 
   constructor(private page: Page) {
     this.editorTitle = this.page.locator('div').filter({ hasText: 'Virtual Lab' }).first();
-    this.questionInput = this.page.locator('.stem__delivery p input');
     this.addInputButton = this.page.getByRole('button', { name: 'Add Input' });
     this.exampleQuestionInput = this.page
       .getByRole('textbox')

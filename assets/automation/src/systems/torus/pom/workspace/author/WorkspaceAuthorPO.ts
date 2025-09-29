@@ -1,4 +1,4 @@
-import { expect, Page, Locator } from '@playwright/test';
+import { Page, Locator } from '@playwright/test';
 import { AuthorDashboardPO } from './AuthorDashboardPO';
 import { SidebarCO } from '@pom/component/SidebarCO';
 import { OverviewProjectPO } from '@pom/project/OverviewProjectPO';
@@ -35,9 +35,5 @@ export class WorkspaceAuthorPO {
 
   get curriculum() {
     return new CurriculumPO(this.page);
-  }
-
-  async verifyHeader(expectedHeader: string) {
-    await expect(this.header).toContainText(expectedHeader);
   }
 }

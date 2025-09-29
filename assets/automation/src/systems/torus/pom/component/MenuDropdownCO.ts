@@ -2,6 +2,7 @@ import { Locator, Page } from '@playwright/test';
 
 export class MenuDropdownCO {
   private readonly menuButton: Locator;
+  private readonly menuButtonAdmin: Locator;
   private readonly workspaceMenu: Locator;
   private readonly rol: Locator;
   private readonly adminPanelLink: Locator;
@@ -15,6 +16,7 @@ export class MenuDropdownCO {
 
   constructor(page: Page) {
     this.menuButton = page.locator('#workspace-user-menu');
+    this.menuButtonAdmin = page.locator('#user-account-menu');
     this.workspaceMenu = page.locator('#workspace-user-menu-dropdown');
     this.rol = this.workspaceMenu.locator('role="account label"');
     this.adminPanelLink = this.workspaceMenu.getByRole('link', { name: 'Admin Panel' });
@@ -28,8 +30,12 @@ export class MenuDropdownCO {
     this.signOutLink = page.locator('a[href="/users/log_out"]');
   }
 
-  async open() {
-    await this.menuButton.click();
+  async open(isAdminScreen = false) {
+    if (isAdminScreen) {
+      await this.menuButtonAdmin.click();
+    } else {
+      await this.menuButton.click();
+    }
   }
 
   async getRole() {

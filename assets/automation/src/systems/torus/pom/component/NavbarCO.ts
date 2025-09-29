@@ -1,22 +1,27 @@
 import { Locator, Page } from '@playwright/test';
 
 export class NavbarCO {
-  private readonly logoLink: Locator;
+  private readonly logoLinkNavbar: Locator;
+  private readonly logoLinkHeader: Locator;
   private readonly instructorsLink: Locator;
   private readonly authorsLink: Locator;
   private readonly supportLink: Locator;
   private readonly administratorLink: Locator;
 
   constructor(page: Page) {
-    this.logoLink = page.locator('a.navbar-brand');
-    this.instructorsLink = page.getByRole('link', { name: 'For Instructors' });
+    this.logoLinkNavbar = page.locator('nav  a.navbar-brand');
+    this.logoLinkHeader = page.locator('#header_logo_button');
     this.authorsLink = page.getByRole('link', { name: 'For Course Authors' });
     this.supportLink = page.getByRole('link', { name: 'Support' });
     this.administratorLink = page.getByRole('link', { name: 'Administrator' });
   }
 
   async clickLogo() {
-    await this.logoLink.click();
+    try {
+      await this.logoLinkNavbar.click({ timeout: 10_000 });
+    } catch {
+      await this.logoLinkHeader.click({ timeout: 10_000 });
+    }
   }
 
   async goToInstructorsLogin() {

@@ -10,11 +10,8 @@ export class AdminAllUsersPO {
     this.searchInput = this.page.locator('#text-search-input');
   }
 
-  async searchUserByEmail(email: string) {
-    await this.searchInput.click();
-    await this.utils.sleep(1);
-    await this.searchInput.pressSequentially(email);
-    await this.utils.sleep(1);
+  async searchUser(text: string) {
+    await this.utils.writeWithDelay(this.searchInput, text);
   }
 
   async openUserDetails(name: string) {

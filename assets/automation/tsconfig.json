@@ -4,7 +4,10 @@
     "paths": {
       "@core/*": ["src/core/*"],
       "@pom/*": ["src/systems/torus/pom/*"],
-      "@facade/*": ["src/systems/torus/facade/*"]
-    }
+      "@facade/*": ["src/systems/torus/facade/*"],
+      "@fixture/*": ["src/core/fixture/*"]
+    },
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true
   }
 }

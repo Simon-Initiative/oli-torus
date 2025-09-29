@@ -1,19 +1,29 @@
-import { TorusFacade } from "@facade/TorusFacade";
-import test from "@playwright/test";
-import { TestData } from "../test-data";
-import { NewCourseSetupPO } from "@pom/course/NewCourseSetupPO";
-import { DetailsCourseSetupPO } from "@pom/project/DetailsCourseSetupPO";
-import { OverviewProjectPO } from "@pom/project/OverviewProjectPO";
-import { LearningLanguageType, LicenseOptionType } from "@pom/types/project-attributes-types";
-import { AuthorDashboardPO } from "@pom/workspace/author/AuthorDashboardPO";
-import { SidebarCO } from "@pom/component/SidebarCO";
-import { CurriculumPO } from "@pom/project/CurriculumPO";
-import { BasicPracticePagePO } from "@pom/page/BasicPracticePagePO";
-import { ACTIVITY_TYPE, ActivityType } from "@pom/types/activity-types";
-import { Utils } from "@core/Utils";
+import test from '@playwright/test';
+import { TorusFacade } from '@facade/TorusFacade';
+import { SidebarCO } from '@pom/component/SidebarCO';
+import { CurriculumPO } from '@pom/project/CurriculumPO';
+import { ActivityType, ACTIVITY_TYPE } from '@pom/types/activity-types';
+import { NewCourseSetupPO } from '@pom/course/NewCourseSetupPO';
+import { CourseManagePO } from '@pom/course/CourseManagePO';
+import { Utils } from '@core/Utils';
+import { OverviewProjectPO } from '@pom/project/OverviewProjectPO';
+import { BasicPracticePagePO } from '@pom/page/BasicPracticePagePO';
+import { TestData } from '../test-data';
+import { BasicScoredPagePO } from '@pom/page/BasicScoredPagePO';
+import { VlabCO } from '@pom/component/activities/VlabCO';
+import { DdCO } from '@pom/component/activities/DdCO';
+import { ResponseCO } from '@pom/component/activities/ResponseCO';
+import { MultiCO } from '@pom/component/activities/MultiCO';
+import { LikertCO } from '@pom/component/activities/LikertCO';
+import { DndCO } from '@pom/component/activities/DndCO';
+import { FileUploadCO } from '@pom/component/activities/FileUploadCO';
+import { CodingCO } from '@pom/component/activities/CodingCO';
+import { HotspotCO } from '@pom/component/activities/HotspotCO';
+import { LearningLanguageType, LicenseOptionType } from '@pom/types/project-attributes-types';
 
 const testData = new TestData();
 const loginData = testData.loginData;
+const questionText = 'Question test?';
 let torus: TorusFacade;
 
 test.describe('Course authoring', () => {
@@ -23,7 +33,7 @@ test.describe('Course authoring', () => {
   });
 
   test.afterEach(async () => {
-    await torus.closeSite();
+     await torus.closeSite();
   });
 
   test('Log in as an author and create a new course project with valid details, set the Publishing Visibility as Open', async ({
@@ -39,7 +49,7 @@ test.describe('Course authoring', () => {
     await torus.login(loginData.instructor.type);
     await torus.verifyProjectAsOpen(projectName);
     const courseSetup = new NewCourseSetupPO(page);
-    const detailCourse = new DetailsCourseSetupPO(page);
+    const detailCourse = new CourseManagePO(page);
     await courseSetup.step1.searchProject(projectName);
     await courseSetup.step1.verifySearchResult(projectName);
     await courseSetup.step1.verifyTextStepperContent('Showing all results (1 total)');
@@ -50,10 +60,10 @@ test.describe('Course authoring', () => {
     await courseSetup.step3.fillStartDate(startDate);
     await courseSetup.step3.fillEndDate(endDate);
     await courseSetup.step3.submitSection();
-    await detailCourse.verifyBreadcrumbTrail(projectName);
-    await detailCourse.verifyCourseSectionID(projectName);
-    await detailCourse.verifyTitle(projectName);
-    await detailCourse.verifyUrl(testData.baseUrl, projectName);
+    await detailCourse.assertions.verifyBreadcrumbTrail(projectName);
+    await detailCourse.assertions.verifyCourseSectionID(projectName);
+    await detailCourse.assertions.verifyTitle(projectName);
+    await detailCourse.assertions.verifyUrl(testData.baseUrl, projectName);
   });
 
   test('Edit project attributes (description, license, etc) with valid details', async ({
@@ -123,8 +133,8 @@ test.describe('Course authoring', () => {
 
     await torus.login(loginData.author.type);
     await torus.goToSite(course);
-    await curriculum.create.clickEditPageLink();
-    await practiceNewPage.visibleTitlePage();
+    await curriculum.clickEditPageLink();
+    await practiceNewPage.verifyTitlePage();
     await practiceNewPage.deleteAllActivities();
     await torus.reloadPage();
     await practiceNewPage.fillParagraph(paragraphText);
@@ -140,12 +150,12 @@ test.describe('Course authoring', () => {
     await selectImage.selectMediaByName(imageFileName);
     await selectImage.confirmSelection();
     await torus.reloadPage();
-    await practiceNewPage.visibleTitlePage();
+    await practiceNewPage.verifyTitlePage();
     await practiceNewPage.expectImage(imageFileName);
     await practiceNewPage.expectText(newParagraphText, 1);
   });
 
-    test.describe('Add one of each type of content to a new page', () => {
+  test.describe('Add one of each type of content to a new page', () => {
     const nameProject = 'TQA-13-Automation';
     const typePage = 'basic-practice';
 
@@ -354,5 +364,192 @@ test.describe('Course authoring', () => {
       await torus.project().page.addDefinitionVerify(term, description);
       await torus.project().deletePage(nameProject);
     });
+  });
+
+  test.describe('Add an ungraded page to the curriculum, add at least one type of each activity and edit them', () => {
+    const nameProject = 'TQA-14-Automation';
+
+    test.beforeEach(async () => {
+      await torus.login(loginData.author.type);
+      await torus.project().addPageAndEnter('basic-practice', nameProject);
     });
+
+    test.afterEach(async () => {
+      await torus.project().deletePage(nameProject);
+    });
+
+    test('CATA', async () => {
+      await torus.project().page.activity.addCataVerify(questionText);
+    });
+
+    test('MCQ', async () => {
+      await torus.project().page.activity.addMcqVerify(questionText);
+    });
+
+    test('Order', async () => {
+      await torus.project().page.activity.addOrderVerify(questionText);
+    });
+
+    test('Input', async () => {
+      await torus.project().page.activity.addInputVerify(questionText);
+    });
+  });
+
+  test.describe('Add an ungraded page to the curriculum, add at least one type of each activity and edit them', () => {
+    const nameProject = 'TQA-15-Automation';
+    const projectId = 'tqa15automation';
+    const pageOverview = `${testData.baseUrl}/workspaces/course_author/${projectId}/overview`;
+    let sidebar: SidebarCO;
+    let curriculum: CurriculumPO;
+    let scoredPage: BasicScoredPagePO;
+    let utils: Utils;
+
+    test.beforeEach(async ({ page }) => {
+      sidebar = new SidebarCO(page);
+      curriculum = new CurriculumPO(page);
+      scoredPage = new BasicScoredPagePO(page);
+      utils = new Utils(page);
+
+      await torus.login(loginData.author.type);
+      await torus.project().addPageAndEnter('basic-scored', nameProject);
+      await scoredPage.visibleTitlePage();
+      await scoredPage.clickInsertButtonIcon();
+    });
+
+    test.afterEach(async () => {
+      await utils.sleep(2);
+      await torus.goToSite(pageOverview);
+      await sidebar.author.clickCurriculum();
+      await curriculum.delete.openPageDropdownMenu();
+      await curriculum.delete.clickShowDeleteModalButton();
+      await curriculum.delete.confirmDeletePage();
+    });
+
+    test('Vlab', async ({ page }) => {
+      const activityType = 'vlab';
+      const vlab = new VlabCO(page);
+
+      await scoredPage.selectActivity(activityType);
+      await vlab.expectEditorLoaded();
+      await vlab.fillQuestion(questionText);
+      await vlab.clickAddInputButton();
+      await scoredPage.waitForChangesSaved();
+      const preview = await scoredPage.clickPreview();
+      await preview.verifications.expectVlabActivity(questionText);
+      await preview.close();
+    });
+
+    test('DD', async ({ page }) => {
+      const activityType = 'dd';
+      const dd = new DdCO(page);
+
+      await scoredPage.selectActivity(activityType);
+      await dd.expectEditorLoaded();
+      await dd.fillQuestion(questionText);
+      await scoredPage.waitForChangesSaved();
+      await utils.sleep(2);
+      const preview = await scoredPage.clickPreview();
+      await preview.verifications.expectDdActivity(questionText);
+      await preview.close();
+    });
+
+    test('Response Multi', async ({ page }) => {
+      const activityType = 'response_multi';
+      const response = new ResponseCO(page);
+
+      await scoredPage.selectActivity(activityType);
+      await response.expectEditorLoaded();
+      await response.fillQuestion(questionText);
+      await response.clickAddInputButton();
+      await scoredPage.waitForChangesSaved();
+      const preview = await scoredPage.clickPreview();
+      await preview.verifications.expectResponseActivity(questionText);
+      await preview.close();
+    });
+
+    test('Multi', async ({ page }) => {
+      const activityType = 'multi';
+      const multi = new MultiCO(page);
+
+      await scoredPage.selectActivity(activityType);
+      await multi.expectEditorLoaded();
+      await multi.fillQuestion(questionText);
+      await multi.clickAddInputButton();
+      await scoredPage.waitForChangesSaved();
+      await utils.sleep(2);
+      const preview = await scoredPage.clickPreview();
+      await preview.verifications.expectMultiActivity(questionText);
+      await preview.close();
+    });
+
+    test('Likert', async ({ page }) => {
+      const activityType = 'likert';
+      const likert = new LikertCO(page);
+
+      await scoredPage.selectActivity(activityType);
+      await likert.expectEditorLoaded();
+      await likert.fillPrompt(questionText);
+      await scoredPage.waitForChangesSaved();
+      await utils.sleep(2);
+      const preview = await scoredPage.clickPreview();
+      await preview.verifications.expectLikertActivity(questionText);
+      await preview.close();
+    });
+
+    test('DnD', async ({ page }) => {
+      const activityType = 'dnd';
+      const dnd = new DndCO(page);
+
+      await scoredPage.selectActivity(activityType);
+      await dnd.expectEditorLoaded();
+      await dnd.fillQuestion(questionText);
+      await scoredPage.waitForChangesSaved();
+      await utils.sleep(2);
+      const preview = await scoredPage.clickPreview();
+      await preview.verifications.expectDndActivity(questionText);
+      await preview.close();
+    });
+
+    test('Upload', async ({ page }) => {
+      const activityType = 'file_aupload';
+      const upload = new FileUploadCO(page);
+
+      await scoredPage.selectActivity(activityType);
+      await upload.expectEditorLoaded();
+      await upload.fillQuestion(questionText);
+      await scoredPage.waitForChangesSaved();
+      await utils.sleep(2);
+      const preview = await scoredPage.clickPreview();
+      await preview.verifications.expectUploadActivity(questionText);
+      await preview.close();
+    });
+
+    test('Coding', async ({ page }) => {
+      const activityType = 'coding';
+      const coding = new CodingCO(page);
+
+      await scoredPage.selectActivity(activityType);
+      await coding.expectEditorLoaded();
+      await coding.fillQuestion(questionText);
+      await scoredPage.waitForChangesSaved();
+      await utils.sleep(2);
+      const preview = await scoredPage.clickPreview();
+      await preview.verifications.expectCodingActivity(questionText);
+      await preview.close();
+    });
+
+    test('Hotspot', async ({ page }) => {
+      const activityType = 'hotspot';
+      const hotspot = new HotspotCO(page);
+
+      await scoredPage.selectActivity(activityType);
+      await hotspot.expectEditorLoaded();
+      await hotspot.fillQuestion(questionText);
+      await scoredPage.waitForChangesSaved();
+      await utils.sleep(2);
+      const preview = await scoredPage.clickPreview();
+      await preview.verifications.expectHotspotActivity(questionText);
+      await preview.close();
+    });
+  });
 });
