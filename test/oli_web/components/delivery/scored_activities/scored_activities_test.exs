@@ -173,7 +173,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivitiesTest do
 
       html = render_component(&ScoredActivities.render/1, assigns)
       assert html =~ "Test Assessment"
-      assert html =~ "Back to Activities"
+      assert html =~ "Back to Scored Pages"
       assert html =~ "Question details"
       assert html =~ "student has completed"
     end
