@@ -106,5 +106,30 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
       assert [%BackfillRun{} = run] = Repo.all(BackfillRun)
       assert run.s3_pattern == "s3://torus-xapi-dev/section/test/**/*.jsonl"
     end
+
+    test "renders progress bar for running run", %{conn: conn} do
+      Repo.delete_all(BackfillRun)
+
+      Repo.insert!(%BackfillRun{
+        target_table: "analytics.raw_events",
+        s3_pattern: "s3://bucket/path/**/*.jsonl",
+        format: "JSONAsString",
+        status: :running,
+        dry_run: true,
+        query_id: "progress-query",
+        metadata: %{
+          "progress" => %{
+            "percent" => 42.5,
+            "read_rows" => 425,
+            "total_rows" => 1_000
+          }
+        }
+      })
+
+      {:ok, _view, html} = live(conn, @route)
+
+      assert html =~ "width: 42.5%"
+      assert html =~ "Rows: 425 / 1000 (42.5%)"
+    end
   end
 end

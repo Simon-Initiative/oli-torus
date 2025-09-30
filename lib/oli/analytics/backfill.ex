@@ -12,7 +12,6 @@ defmodule Oli.Analytics.Backfill do
   alias Ecto.Multi
   alias Oli.Analytics.Backfill.BackfillRun
   alias Oli.Analytics.Backfill.Worker
-  alias Oli.Analytics.ClickhouseAnalytics
   alias Oli.Accounts.Author
   alias Oli.Repo
 
@@ -23,7 +22,7 @@ defmodule Oli.Analytics.Backfill do
   """
   @spec default_target_table() :: String.t()
   def default_target_table do
-    ClickhouseAnalytics.raw_events_table()
+    analytics_module().raw_events_table()
   end
 
   @doc """
@@ -240,7 +239,26 @@ defmodule Oli.Analytics.Backfill do
   defp refresh_run_status(%BackfillRun{query_id: nil}), do: :ok
 
   defp refresh_run_status(%BackfillRun{} = run) do
-    case ClickhouseAnalytics.query_status(run.query_id) do
+    module = analytics_module()
+
+    with {:ok, %{status: :running} = progress_info} <- module.query_progress(run.query_id) do
+      progress_metadata =
+        progress_info
+        |> Map.put(:percent, compute_progress_percent(progress_info))
+        |> stringify_keys()
+
+      metadata =
+        run.metadata
+        |> merge_metadata(%{"progress" => progress_metadata})
+
+      attrs =
+        metrics_from_progress(progress_info)
+        |> Map.put(:metadata, metadata)
+
+      update_run(run, attrs)
+    end
+
+    case module.query_status(run.query_id) do
       {:ok, %{status: :completed} = info} ->
         attrs = metrics_from_info(info)
 
@@ -295,6 +313,15 @@ defmodule Oli.Analytics.Backfill do
     |> maybe_put_metric(:duration_ms, info[:query_duration_ms])
   end
 
+  defp metrics_from_progress(progress) do
+    %{}
+    |> maybe_put_metric(:rows_read, progress[:read_rows])
+    |> maybe_put_metric(:rows_written, progress[:written_rows])
+    |> maybe_put_metric(:bytes_read, progress[:read_bytes])
+    |> maybe_put_metric(:bytes_written, progress[:written_bytes])
+    |> maybe_put_metric(:duration_ms, progress[:elapsed_ms])
+  end
+
   defp maybe_put_metric(acc, _key, nil), do: acc
   defp maybe_put_metric(acc, key, value), do: Map.put(acc, key, value)
 
@@ -321,4 +348,29 @@ defmodule Oli.Analytics.Backfill do
   defp format_error(%Ecto.Changeset{} = changeset), do: inspect(changeset)
   defp format_error(reason) when is_binary(reason), do: reason
   defp format_error(reason), do: inspect(reason)
+
+  defp analytics_module do
+    Application.get_env(:oli, :clickhouse_analytics_module, Oli.Analytics.ClickhouseAnalytics)
+  end
+
+  defp compute_progress_percent(progress) do
+    total_rows = progress[:total_rows] || progress[:total_rows_approx]
+    total_bytes = progress[:total_bytes] || progress[:total_bytes_approx]
+
+    cond do
+      is_number(total_rows) and total_rows > 0 and is_number(progress[:read_rows]) ->
+        percent(progress[:read_rows] / total_rows)
+
+      is_number(total_bytes) and total_bytes > 0 and is_number(progress[:read_bytes]) ->
+        percent(progress[:read_bytes] / total_bytes)
+
+      true ->
+        nil
+    end
+  end
+
+  defp percent(ratio) when ratio == :nan or ratio == :infinity, do: nil
+  defp percent(ratio) when ratio < 0, do: 0.0
+  defp percent(ratio) when ratio > 1, do: 100.0
+  defp percent(ratio), do: ratio * 100.0
 end

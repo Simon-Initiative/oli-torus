@@ -424,6 +424,40 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
 
   def query_status(_), do: {:error, :invalid_query_id}
 
+  @doc """
+  Fetches the current progress for a running ClickHouse query by inspecting
+  `system.processes`. Returns `{:ok, %{status: :running, ...}}` when the query is
+  active, `{:ok, :none}` when no matching process exists, or `{:error, reason}`
+  if the lookup fails.
+  """
+  def query_progress(query_id) when is_binary(query_id) and byte_size(query_id) > 0 do
+    sanitized_id = escape_single_quotes(query_id)
+
+    """
+    SELECT
+      read_rows,
+      read_bytes,
+      written_rows,
+      written_bytes,
+      memory_usage,
+      elapsed,
+      total_rows,
+      total_rows_approx,
+      total_bytes,
+      total_bytes_approx
+    FROM system.processes
+    WHERE query_id = '#{sanitized_id}'
+    LIMIT 1
+    """
+    |> execute_query("query progress for #{query_id}")
+    |> case do
+      {:ok, response} -> parse_query_progress(response)
+      other -> other
+    end
+  end
+
+  def query_progress(_), do: {:error, :invalid_query_id}
+
   def execute_query(query, description, opts \\ [])
       when is_binary(query) and byte_size(query) > 0 do
     config = clickhouse_config()
@@ -766,6 +800,40 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
 
   defp parse_query_status_from_data(_), do: {:ok, %{status: :running}}
 
+  defp parse_query_progress(%{parsed_body: %{"data" => [row | _]}}) when is_map(row) do
+    elapsed_seconds = parse_float_field(row, "elapsed")
+    elapsed_ms = if is_number(elapsed_seconds), do: elapsed_seconds * 1_000.0, else: nil
+
+    {:ok,
+     %{
+       status: :running,
+       read_rows: parse_integer_field(row, "read_rows"),
+       read_bytes: parse_integer_field(row, "read_bytes"),
+       written_rows: parse_integer_field(row, "written_rows"),
+       written_bytes: parse_integer_field(row, "written_bytes"),
+       memory_usage: parse_integer_field(row, "memory_usage"),
+       elapsed_ms: elapsed_ms,
+       total_rows: parse_integer_field(row, "total_rows"),
+       total_rows_approx: parse_integer_field(row, "total_rows_approx"),
+       total_bytes: parse_integer_field(row, "total_bytes"),
+       total_bytes_approx: parse_integer_field(row, "total_bytes_approx")
+     }}
+  end
+
+  defp parse_query_progress(%{parsed_body: %{"data" => []}}), do: {:ok, :none}
+  defp parse_query_progress(%{parsed_body: []}), do: {:ok, :none}
+
+  defp parse_query_progress(%{parsed_body: parsed}) when is_map(parsed) do
+    parsed
+    |> Map.get("data", [])
+    |> case do
+      [] -> {:ok, :none}
+      list when is_list(list) -> parse_query_progress(%{parsed_body: %{"data" => list}})
+    end
+  end
+
+  defp parse_query_progress(_), do: {:ok, :none}
+
   defp fetch_row_value(row, key) do
     string_key = if is_atom(key), do: Atom.to_string(key), else: to_string(key)
     Map.get(row, string_key) || Map.get(row, key)
@@ -775,6 +843,12 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
     row
     |> fetch_row_value(key)
     |> normalize_integer_value()
+  end
+
+  defp parse_float_field(row, key) do
+    row
+    |> fetch_row_value(key)
+    |> normalize_float_value()
   end
 
   defp normalize_integer_value(nil), do: nil
@@ -803,6 +877,26 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
   end
 
   defp normalize_integer_value(_), do: nil
+
+  defp normalize_float_value(nil), do: nil
+  defp normalize_float_value(value) when is_float(value), do: value
+  defp normalize_float_value(value) when is_integer(value), do: value * 1.0
+
+  defp normalize_float_value(value) when is_binary(value) do
+    trimmed = String.trim(value)
+
+    cond do
+      trimmed == "" -> nil
+
+      true ->
+        case Float.parse(trimmed) do
+          {float, _} -> float
+          :error -> nil
+        end
+    end
+  end
+
+  defp normalize_float_value(_value), do: nil
 
   defp parse_error_message(row) do
     row

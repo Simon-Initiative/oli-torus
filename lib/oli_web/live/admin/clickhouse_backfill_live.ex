@@ -297,6 +297,19 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
                         <%= if run.query_id do %>
                           <div class="mt-2 text-xs text-gray-500 break-all">Query ID: {run.query_id}</div>
                         <% end %>
+                        <% progress_value = progress_percent(run) %>
+                        <% progress_text = progress_label(run) %>
+                        <div :if={progress_value} class="mt-2">
+                          <div class="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                            <div
+                              class="h-2 bg-blue-500 transition-all"
+                              style={"width: #{Float.round(progress_value, 1)}%"}
+                            ></div>
+                          </div>
+                        </div>
+                        <p :if={progress_text} class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                          {progress_text}
+                        </p>
                         <%= if run.error do %>
                           <div class="mt-2 text-xs text-red-600 break-words">{run.error}</div>
                         <% end %>
@@ -653,4 +666,73 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
   defp format_initiator(%{name: name}) when is_binary(name) and name != "", do: name
   defp format_initiator(%{email: email}) when is_binary(email), do: email
   defp format_initiator(_), do: "Unknown"
+
+  defp progress_metadata(%BackfillRun{metadata: metadata}) when is_map(metadata) do
+    cond do
+      Map.has_key?(metadata, "progress") -> metadata["progress"]
+      Map.has_key?(metadata, :progress) -> metadata[:progress]
+      true -> %{}
+    end
+  end
+
+  defp progress_metadata(_), do: %{}
+
+  defp progress_percent(run) do
+    progress_metadata(run)
+    |> fetch_progress_value(["percent", :percent])
+    |> case do
+      value when is_number(value) ->
+        value
+        |> max(0.0)
+        |> min(100.0)
+
+      _ -> nil
+    end
+  end
+
+  defp progress_label(run) do
+    metadata = progress_metadata(run)
+    read_rows = fetch_progress_value(metadata, ["read_rows", :read_rows])
+    total_rows =
+      fetch_progress_value(metadata, ["total_rows", :total_rows]) ||
+        fetch_progress_value(metadata, ["total_rows_approx", :total_rows_approx])
+
+    read_bytes = fetch_progress_value(metadata, ["read_bytes", :read_bytes])
+    total_bytes =
+      fetch_progress_value(metadata, ["total_bytes", :total_bytes]) ||
+        fetch_progress_value(metadata, ["total_bytes_approx", :total_bytes_approx])
+
+    cond do
+      is_integer(read_rows) and is_integer(total_rows) and total_rows > 0 ->
+        percent = progress_percent(run)
+        label_percent = if percent, do: " (#{format_percent(percent)}%)", else: ""
+        "Rows: #{format_int(read_rows)} / #{format_int(total_rows)}#{label_percent}"
+
+      is_integer(read_rows) ->
+        "Rows read: #{format_int(read_rows)}"
+
+      is_integer(read_bytes) and is_integer(total_bytes) and total_bytes > 0 ->
+        percent = progress_percent(run)
+        label_percent = if percent, do: " (#{format_percent(percent)}%)", else: ""
+        "Bytes: #{format_int(read_bytes)} / #{format_int(total_bytes)}#{label_percent}"
+
+      is_integer(read_bytes) ->
+        "Bytes read: #{format_int(read_bytes)}"
+
+      true ->
+        nil
+    end
+  end
+
+  defp format_percent(percent) when is_number(percent) do
+    :erlang.float_to_binary(percent, decimals: 1)
+  end
+
+  defp format_percent(_), do: nil
+
+  defp fetch_progress_value(map, keys) when is_map(map) do
+    Enum.find_value(keys, fn key -> map[key] end)
+  end
+
+  defp fetch_progress_value(_map, _keys), do: nil
 end
