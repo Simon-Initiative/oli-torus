@@ -72,7 +72,7 @@ defmodule Oli.Repo.Migrations.CascadeDeletePublishedResource do
 
   def get_current_db_user() do
     case System.get_env("DATABASE_URL", nil) do
-      nil -> "postgres"
+      nil -> System.get_env("DB_USER", "postgres")
       url -> parse_user_from_db_url(url, "postgres")
     end
   end
