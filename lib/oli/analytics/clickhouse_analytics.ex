@@ -8,7 +8,6 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
   alias Jason
   require Logger
 
-
   defp clickhouse_config do
     Application.get_env(:oli, :clickhouse, [])
     |> Enum.into(%{})
@@ -441,10 +440,7 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
       written_bytes,
       memory_usage,
       elapsed,
-      total_rows,
-      total_rows_approx,
-      total_bytes,
-      total_bytes_approx
+      total_rows_approx
     FROM system.processes
     WHERE query_id = '#{sanitized_id}'
     LIMIT 1
@@ -535,7 +531,6 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
   defp normalize_keyword_options(value) when is_list(value), do: value
   defp normalize_keyword_options(%{} = map), do: Enum.into(map, [])
   defp normalize_keyword_options(_), do: []
-
 
   defp build_http_options(config, opts) do
     provided =
@@ -886,7 +881,8 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
     trimmed = String.trim(value)
 
     cond do
-      trimmed == "" -> nil
+      trimmed == "" ->
+        nil
 
       true ->
         case Float.parse(trimmed) do
