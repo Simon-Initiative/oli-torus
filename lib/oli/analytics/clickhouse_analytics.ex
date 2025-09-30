@@ -8,6 +8,7 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
   alias Jason
   require Logger
 
+
   defp clickhouse_config do
     Application.get_env(:oli, :clickhouse, [])
     |> Enum.into(%{})
@@ -390,15 +391,11 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
   def section_analytics_loaded?(_), do: {:error, :invalid_section_id}
 
   @doc """
-  Returns the execution status for a bulk section analytics load identified by
-  the given ClickHouse `query_id`.
-
-  When successful, the response map will include `:status` along with optional
-  metadata such as `:rows_read`, `:rows_written`, `:query_duration_ms`, and
-  `:error` when the query terminated with an exception.
+  Retrieves the most recent ClickHouse query status for the provided `query_id`.
   """
-  def section_analytics_query_status(query_id)
-      when is_binary(query_id) and byte_size(query_id) > 0 do
+  def query_status(query_id) when is_binary(query_id) and byte_size(query_id) > 0 do
+    sanitized_id = escape_single_quotes(query_id)
+
     """
     SELECT
       query_id,
@@ -407,283 +404,25 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
       exception_code,
       read_rows AS rows_read,
       written_rows AS rows_written,
+      read_bytes AS bytes_read,
+      written_bytes AS bytes_written,
+      memory_usage,
       query_duration_ms,
       event_time AS last_event_time
     FROM system.query_log
-    WHERE query_id = '#{query_id}'
-      AND type IN ('QueryFinish', 'ExceptionBeforeStart', 'ExceptionWhileProcessing')
+    WHERE query_id = '#{sanitized_id}'
+      AND type IN ('QueryFinish', 'ExceptionBeforeStart', 'ExceptionWhileProcessing', 'QueryStart')
     ORDER BY event_time DESC
     LIMIT 1
     """
-    |> execute_query("section analytics query status for #{query_id}")
+    |> execute_query("query status for #{query_id}")
     |> case do
-      {:ok, response} -> parse_section_analytics_query_status(response)
+      {:ok, response} -> parse_query_status(response)
       other -> other
     end
   end
 
-  def section_analytics_query_status(_), do: {:error, :invalid_query_id}
-
-  @doc """
-  Returns the most recent ClickHouse query status for the given section. When no
-  query has been recorded yet, `{:ok, :none}` is returned.
-  """
-  def latest_section_analytics_query_status(section_id, opts \\ [])
-
-  def latest_section_analytics_query_status(section_id, opts) when is_integer(section_id) do
-    prefix = section_analytics_query_prefix(section_id, opts)
-
-    """
-    SELECT
-      query_id,
-      argMax(type, event_time) AS type,
-      argMax(exception, event_time) AS exception,
-      argMax(exception_code, event_time) AS exception_code,
-      argMax(read_rows, event_time) AS rows_read,
-      argMax(written_rows, event_time) AS rows_written,
-      argMax(query_duration_ms, event_time) AS query_duration_ms,
-      max(event_time) AS last_event_time
-    FROM system.query_log
-    WHERE query_id LIKE '#{prefix}%'
-    GROUP BY query_id
-    ORDER BY last_event_time DESC
-    LIMIT 1
-    """
-    |> execute_query("latest section analytics query status for section #{section_id}")
-    |> case do
-      {:ok, response} ->
-        with {:ok, rows} <- extract_rows(response) do
-          case rows do
-            [] -> {:ok, :none}
-            data -> parse_section_analytics_query_status_from_data(data)
-          end
-        end
-
-      other ->
-        other
-    end
-  end
-
-  def latest_section_analytics_query_status(_, _), do: {:error, :invalid_section_id}
-
-  @doc """
-  Convenience wrapper that fetches AWS credentials from the environment before
-  executing the bulk load operation.
-  """
-  def bulk_load_section_analytics(section_id, opts \\ []) when is_integer(section_id) do
-    with {:ok, {access_key, secret_key}} <- fetch_aws_credentials() do
-      bulk_load_section_analytics(section_id, access_key, secret_key, opts)
-    end
-  end
-
-  def bulk_load_section_analytics(section_id, aws_access_key, aws_secret_key, opts \\ []) do
-    raw_events_table = raw_events_table()
-    query_id = Keyword.get(opts, :query_id) || section_analytics_query_id(section_id, opts)
-
-    query_params =
-      opts
-      |> Keyword.get(:query_params, %{})
-      |> Map.new(fn {key, value} -> {key, value} end)
-      |> Map.put_new(:wait_end_of_query, "0")
-      |> Map.put_new(:query_id, query_id)
-
-    headers = Keyword.get(opts, :headers, [])
-
-    """
-    INSERT INTO #{raw_events_table} (
-        event_id, user_id, host_name, section_id, project_id, publication_id,
-        timestamp, event_type, attempt_guid, attempt_number, page_id,
-        content_element_id, video_url, video_title, video_time, video_length,
-        video_progress, video_played_segments, video_play_time, video_seek_from,
-        video_seek_to, activity_attempt_guid, activity_attempt_number,
-        page_attempt_guid, page_attempt_number, part_attempt_guid,
-        part_attempt_number, activity_id, activity_revision_id, part_id,
-        page_sub_type, score, out_of, scaled_score, success, completion,
-        response, feedback, hints_requested, attached_objectives, session_id
-    )
-    SELECT
-        /* event_id: generate if source lacks a stable id */
-        generateUUIDv4() AS event_id,
-
-        /* user_id: prefer actor.account.name, fallback to mbox; cast to String in case it's numeric */
-        coalesce(
-          JSON_VALUE(json, '$.actor.account.name'),
-          JSON_VALUE(json, '$.actor.mbox'),
-          toString(JSONExtract(json, 'actor.account.name', 'Int64')),
-          ''
-        ) AS user_id,
-
-        /* host_name and ids (defaults to 0 if absent) */
-        JSON_VALUE(json, '$.context.extensions."http://oli.cmu.edu/extensions/host_name"') AS host_name,
-        toUInt64OrZero(JSON_VALUE(json, '$.context.extensions."http://oli.cmu.edu/extensions/section_id"'))     AS section_id,
-        toUInt64OrZero(JSON_VALUE(json, '$.context.extensions."http://oli.cmu.edu/extensions/project_id"'))     AS project_id,
-        toUInt64OrZero(JSON_VALUE(json, '$.context.extensions."http://oli.cmu.edu/extensions/publication_id"')) AS publication_id,
-
-        /* timestamp -> DateTime64(3) (handles ISO8601 + Z) */
-        parseDateTime64BestEffortOrNull(JSON_VALUE(json, '$.timestamp'), 3) AS timestamp,
-
-        /* event_type from verb/object.type (matches your earlier logic) */
-        multiIf(
-          JSON_VALUE(json, '$.verb.id') IN (
-            'https://w3id.org/xapi/video/verbs/played',
-            'https://w3id.org/xapi/video/verbs/paused',
-            'https://w3id.org/xapi/video/verbs/seeked',
-            'https://w3id.org/xapi/video/verbs/completed',
-            'http://adlnet.gov/expapi/verbs/experienced'
-          ), 'video',
-
-          (JSON_VALUE(json, '$.verb.id') = 'http://adlnet.gov/expapi/verbs/completed')
-            AND (JSON_VALUE(json, '$.object.definition.type') = 'http://oli.cmu.edu/extensions/activity_attempt'),
-          'activity_attempt',
-
-          (JSON_VALUE(json, '$.verb.id') = 'http://adlnet.gov/expapi/verbs/completed')
-            AND (JSON_VALUE(json, '$.object.definition.type') = 'http://oli.cmu.edu/extensions/page_attempt'),
-          'page_attempt',
-
-          (JSON_VALUE(json, '$.verb.id') = 'http://id.tincanapi.com/verb/viewed')
-            AND (JSON_VALUE(json, '$.object.definition.type') = 'http://oli.cmu.edu/extensions/types/page'),
-          'page_viewed',
-
-          (JSON_VALUE(json, '$.verb.id') = 'http://adlnet.gov/expapi/verbs/completed')
-            AND (JSON_VALUE(json, '$.object.definition.type') = 'http://adlnet.gov/expapi/activities/question'),
-          'part_attempt',
-
-          'unknown'
-        ) AS event_type,
-
-        /* attempt/page fields (some may be absent) */
-        JSON_VALUE(json, '$.context.extensions."http://oli.cmu.edu/extensions/attempt_guid"') AS attempt_guid,
-        toInt32OrZero(JSON_VALUE(json, '$.context.extensions."http://oli.cmu.edu/extensions/attempt_number"'))    AS attempt_number,
-        toUInt64OrZero(JSON_VALUE(json, '$.context.extensions."http://oli.cmu.edu/extensions/page_id"'))          AS page_id,
-
-        /* video fields (NULL when non-video) */
-        coalesce(
-          JSON_VALUE(json, '$.result.extensions.content_element_id'),
-          JSON_VALUE(json, '$.context.extensions."http://oli.cmu.edu/extensions/content_element_id"'),
-          NULL
-        ) AS content_element_id,
-        multiIf(
-          JSON_VALUE(json, '$.verb.id') IN (
-            'https://w3id.org/xapi/video/verbs/played',
-            'https://w3id.org/xapi/video/verbs/paused',
-            'https://w3id.org/xapi/video/verbs/seeked',
-            'https://w3id.org/xapi/video/verbs/completed',
-            'http://adlnet.gov/expapi/verbs/experienced'
-          ),
-          JSON_VALUE(json, '$.object.id'),
-          NULL
-        ) AS video_url,
-        JSON_VALUE(json, '$.object.definition.name."en-US"') AS video_title,
-        toFloat64OrZero(JSON_VALUE(json, '$.result.extensions."https://w3id.org/xapi/video/extensions/time"'))     AS video_time,
-        coalesce(
-          toFloat64OrZero(JSON_VALUE(json, '$.result.extensions."https://w3id.org/xapi/video/extensions/length"')),
-          toFloat64OrZero(JSON_VALUE(json, '$.context.extensions."https://w3id.org/xapi/video/extensions/length"'))
-        ) AS video_length,
-        toFloat64OrZero(JSON_VALUE(json, '$.result.extensions."https://w3id.org/xapi/video/extensions/progress"')) AS video_progress,
-        JSON_VALUE(json, '$.result.extensions."https://w3id.org/xapi/video/extensions/played-segments"')          AS video_played_segments,
-        toFloat64OrZero(JSON_VALUE(json, '$.result.extensions.video_play_time'))                                   AS video_play_time,
-        toFloat64OrZero(JSON_VALUE(json, '$.result.extensions."https://w3id.org/xapi/video/extensions/time-from"')) AS video_seek_from,
-        toFloat64OrZero(JSON_VALUE(json, '$.result.extensions."https://w3id.org/xapi/video/extensions/time-to"'))   AS video_seek_to,
-
-        /* activity/page/part specific fields */
-          JSON_VALUE(json, '$.context.extensions."http://oli.cmu.edu/extensions/activity_attempt_guid"')   AS activity_attempt_guid,
-          toInt32OrZero(JSON_VALUE(json, '$.context.extensions."http://oli.cmu.edu/extensions/activity_attempt_number"')) AS activity_attempt_number,
-          JSON_VALUE(json, '$.context.extensions."http://oli.cmu.edu/extensions/page_attempt_guid"')       AS page_attempt_guid,
-          toInt32OrZero(JSON_VALUE(json, '$.context.extensions."http://oli.cmu.edu/extensions/page_attempt_number"'))    AS page_attempt_number,
-          JSON_VALUE(json, '$.context.extensions."http://oli.cmu.edu/extensions/part_attempt_guid"')       AS part_attempt_guid,
-          toInt32OrZero(JSON_VALUE(json, '$.context.extensions."http://oli.cmu.edu/extensions/part_attempt_number"'))    AS part_attempt_number,
-          toUInt64OrZero(JSON_VALUE(json, '$.context.extensions."http://oli.cmu.edu/extensions/activity_id"'))           AS activity_id,
-          toUInt64OrZero(JSON_VALUE(json, '$.context.extensions."http://oli.cmu.edu/extensions/activity_revision_id"'))  AS activity_revision_id,
-          JSON_VALUE(json, '$.context.extensions."http://oli.cmu.edu/extensions/part_id"')                  AS part_id,
-
-          /* page subtype */
-          JSON_VALUE(json, '$.object.definition.subType') AS page_sub_type,
-
-          /* result metrics */
-          toFloat64OrZero(JSON_VALUE(json, '$.result.score.raw'))    AS score,
-          toFloat64OrZero(JSON_VALUE(json, '$.result.score.max'))    AS out_of,
-          toFloat64OrZero(JSON_VALUE(json, '$.result.score.scaled')) AS scaled_score,
-          (toUInt8OrZero(JSON_VALUE(json, '$.result.success'))    = 1) AS success,
-          (toUInt8OrZero(JSON_VALUE(json, '$.result.completion')) = 1) AS completion,
-
-          /* response can be a string or an object; prefer string, then object.input, then raw JSON */
-          coalesce(
-            JSON_VALUE(json, '$.result.response'),
-            JSON_VALUE(json, '$.result.response.input'),
-            JSON_QUERY(json, '$.result.response')
-          ) AS response,
-
-          /* optional extras (often absent in sample) */
-          JSON_VALUE(json, '$.result.extensions."http://oli.cmu.edu/extensions/feedback"') AS feedback,
-          toInt32OrZero(JSON_VALUE(json, '$.context.extensions."http://oli.cmu.edu/extensions/hints_requested"')) AS hints_requested,
-          JSON_VALUE(json, '$.context.extensions."http://oli.cmu.edu/extensions/attached_objectives"') AS attached_objectives,
-          JSON_VALUE(json, '$.context.extensions."http://oli.cmu.edu/extensions/session_id"') AS session_id
-
-      FROM s3(
-        '#{build_s3_path(section_id)}',
-        '#{aws_access_key}',
-        '#{aws_secret_key}',
-        'JSONAsString', 'json String'
-      )
-    """
-    |> execute_query(
-      "bulk load section analytics for section #{section_id}",
-      headers: [{"X-ClickHouse-Query-Id", query_id} | headers],
-      query_params: query_params
-    )
-  end
-
-  defp build_s3_path(section_id) when is_integer(section_id) do
-    # TODO: For demo purposes, we want to be able to set the bucket from environment variable
-    # for directly loading analytics. In production, this should always come from
-    # s3 config and s3_xapi_bucket_name.
-    case System.get_env("S3_ANALYTICS_BUCKET_URL") do
-      nil ->
-        bucket = Application.get_env(:oli, :s3_xapi_bucket_name)
-
-        ex_aws_s3_config = Application.get_env(:ex_aws, :s3)
-
-        scheme = ex_aws_s3_config[:scheme]
-        host = ex_aws_s3_config[:host]
-
-        port =
-          case ex_aws_s3_config[:port] do
-            nil -> ""
-            p when p == 443 and scheme == "https" -> ""
-            p when p == 80 and scheme == "http" -> ""
-            p -> ":#{p}"
-          end
-
-        "#{scheme}://#{host}#{port}/#{bucket}/section/#{section_id}/**/*.jsonl"
-
-      url ->
-        "#{url}/section/#{section_id}/**/*.jsonl"
-    end
-    |> dbg
-  end
-
-  defp fetch_aws_credentials do
-    access_key =
-      System.get_env("AWS_S3_ACCESS_KEY_ID") ||
-        System.get_env("AWS_ACCESS_KEY_ID")
-
-    secret_key =
-      System.get_env("AWS_S3_SECRET_ACCESS_KEY") ||
-        System.get_env("AWS_SECRET_ACCESS_KEY")
-
-    case {access_key, secret_key} do
-      {nil, _} ->
-        {:error,
-         "Missing AWS access key. Please configure AWS_S3_ACCESS_KEY_ID or AWS_ACCESS_KEY_ID."}
-
-      {_, nil} ->
-        {:error,
-         "Missing AWS secret key. Please configure AWS_S3_SECRET_ACCESS_KEY or AWS_SECRET_ACCESS_KEY."}
-
-      {access_key, secret_key} ->
-        {:ok, {access_key, secret_key}}
-    end
-  end
+  def query_status(_), do: {:error, :invalid_query_id}
 
   def execute_query(query, description, opts \\ [])
       when is_binary(query) and byte_size(query) > 0 do
@@ -759,14 +498,10 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
 
   def execute_query(_), do: {:error, "Empty query"}
 
-  def section_analytics_query_id(section_id, opts \\ []) when is_integer(section_id) do
-    base_slug = Keyword.get(opts, :section_slug)
+  defp normalize_keyword_options(value) when is_list(value), do: value
+  defp normalize_keyword_options(%{} = map), do: Enum.into(map, [])
+  defp normalize_keyword_options(_), do: []
 
-    sanitized_slug = sanitize_section_slug(base_slug, section_id)
-    unique_suffix = System.unique_integer([:positive]) |> Integer.to_string(36)
-
-    "section_analytics_load__#{sanitized_slug}_#{section_id}_#{unique_suffix}"
-  end
 
   defp build_http_options(config, opts) do
     provided =
@@ -828,30 +563,15 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
 
   defp normalize_query_param_value(value), do: to_string(value)
 
-  defp sanitize_section_slug(nil, section_id), do: "section_#{section_id}"
+  defp escape_single_quotes(nil), do: ""
 
-  defp sanitize_section_slug(slug, section_id) do
-    slug
-    |> to_string()
-    |> String.downcase()
-    |> String.replace(~r/[^a-z0-9]+/u, "_")
-    |> String.trim("_")
-    |> case do
-      "" -> "section_#{section_id}"
-      value -> value
-    end
+  defp escape_single_quotes(value) when is_binary(value) do
+    value
+    |> String.replace("\\", "\\\\")
+    |> String.replace("'", "\\'")
   end
 
-  defp normalize_keyword_options(value) when is_list(value), do: value
-  defp normalize_keyword_options(%{} = map), do: Enum.into(map, [])
-  defp normalize_keyword_options(_), do: []
-
-  defp section_analytics_query_prefix(section_id, opts) do
-    slug = Keyword.get(opts, :section_slug)
-    sanitized_slug = sanitize_section_slug(slug, section_id)
-
-    "section_analytics_load__#{sanitized_slug}_#{section_id}_"
-  end
+  defp escape_single_quotes(value), do: escape_single_quotes(to_string(value))
 
   defp ensure_http_client_module({module, _default_opts}), do: ensure_http_client_module(module)
 
@@ -991,24 +711,24 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
     end
   end
 
-  defp parse_section_analytics_query_status(%{parsed_body: parsed}) when is_map(parsed) do
+  defp parse_query_status(%{parsed_body: parsed}) when is_map(parsed) do
     parsed
     |> Map.get("data")
     |> case do
       nil -> {:ok, %{status: :running}}
-      data -> parse_section_analytics_query_status_from_data(data)
+      data -> parse_query_status_from_data(data)
     end
   end
 
-  defp parse_section_analytics_query_status(%{parsed_body: parsed}) when is_list(parsed) do
-    parse_section_analytics_query_status_from_data(parsed)
+  defp parse_query_status(%{parsed_body: parsed}) when is_list(parsed) do
+    parse_query_status_from_data(parsed)
   end
 
-  defp parse_section_analytics_query_status(_), do: {:ok, %{status: :running}}
+  defp parse_query_status(_), do: {:ok, %{status: :running}}
 
-  defp parse_section_analytics_query_status_from_data([]), do: {:ok, %{status: :running}}
+  defp parse_query_status_from_data([]), do: {:ok, %{status: :running}}
 
-  defp parse_section_analytics_query_status_from_data([row | _]) when is_map(row) do
+  defp parse_query_status_from_data([row | _]) when is_map(row) do
     status =
       row
       |> fetch_row_value("type")
@@ -1025,6 +745,9 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
         status: status,
         rows_read: parse_integer_field(row, "rows_read"),
         rows_written: parse_integer_field(row, "rows_written"),
+        bytes_read: parse_integer_field(row, "bytes_read"),
+        bytes_written: parse_integer_field(row, "bytes_written"),
+        memory_usage: parse_integer_field(row, "memory_usage"),
         query_duration_ms: parse_integer_field(row, "query_duration_ms"),
         exception_code: parse_integer_field(row, "exception_code"),
         error: parse_error_message(row),
@@ -1041,7 +764,7 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
     {:ok, info}
   end
 
-  defp parse_section_analytics_query_status_from_data(_), do: {:ok, %{status: :running}}
+  defp parse_query_status_from_data(_), do: {:ok, %{status: :running}}
 
   defp fetch_row_value(row, key) do
     string_key = if is_atom(key), do: Atom.to_string(key), else: to_string(key)
@@ -1102,10 +825,6 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
       value -> to_string(value)
     end
   end
-
-  defp extract_rows(%{parsed_body: %{"data" => data}}) when is_list(data), do: {:ok, data}
-  defp extract_rows(%{parsed_body: data}) when is_list(data), do: {:ok, data}
-  defp extract_rows(_), do: {:ok, []}
 
   defp format_tsv_with_alignment([]), do: ""
   defp format_tsv_with_alignment([single_line]), do: single_line

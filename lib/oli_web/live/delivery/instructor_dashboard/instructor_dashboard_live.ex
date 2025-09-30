@@ -4,13 +4,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   require Logger
 
-  @section_analytics_poll_interval 2_000
-  @section_analytics_poll_timeout_ms 300_000
-  @section_analytics_max_poll_attempts div(
-                                         @section_analytics_poll_timeout_ms,
-                                         @section_analytics_poll_interval
-                                       )
-
   alias Oli.Delivery.Metrics
   alias Oli.Delivery.Sections
   alias OliWeb.Delivery.InstructorDashboard.HTMLComponents
@@ -244,101 +237,18 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         socket
       ) do
     section_id = socket.assigns.section.id
-    previous_state = Map.get(socket.assigns, :section_analytics_load_state)
-    previous_poll_attempt = Map.get(socket.assigns, :section_analytics_poll_attempt, 0)
-    previous_poll_started_at = Map.get(socket.assigns, :section_analytics_poll_started_at)
-    previous_query_id = Map.get(socket.assigns, :section_analytics_query_id)
-    section_slug = socket.assigns.section.slug
 
-    {load_state, comprehensive_section_analytics, poll_attempt, poll_started_at, query_id,
-     query_status} =
+    {load_state, comprehensive_section_analytics} =
       case Oli.Analytics.ClickhouseAnalytics.section_analytics_loaded?(section_id) do
         {:ok, true} ->
-          {
-            :loaded,
-            Oli.Analytics.ClickhouseAnalytics.comprehensive_section_analytics(section_id),
-            0,
-            nil,
-            nil,
-            nil
-          }
+          {:loaded, Oli.Analytics.ClickhouseAnalytics.comprehensive_section_analytics(section_id)}
 
         {:ok, false} ->
-          cond do
-            previous_state == :loading ->
-              # Continue showing loading state and ensure polling resumes
-              if previous_poll_attempt == 0 do
-                schedule_section_analytics_poll(section_id, 1)
-              end
-
-              {
-                :loading,
-                socket.assigns[:comprehensive_section_analytics],
-                if(previous_poll_attempt == 0, do: 1, else: previous_poll_attempt),
-                previous_poll_started_at || System.monotonic_time(:millisecond),
-                previous_query_id,
-                socket.assigns[:section_analytics_query_status]
-              }
-
-            true ->
-              case Oli.Analytics.ClickhouseAnalytics.latest_section_analytics_query_status(
-                     section_id,
-                     section_slug: section_slug
-                   ) do
-                {:ok, %{status: :running} = info} ->
-                  schedule_section_analytics_poll(section_id, 1)
-
-                  {
-                    :loading,
-                    socket.assigns[:comprehensive_section_analytics],
-                    1,
-                    System.monotonic_time(:millisecond),
-                    Map.get(info, :query_id),
-                    info
-                  }
-
-                {:ok, %{status: :failed} = info} ->
-                  message = build_section_analytics_query_error(info, Map.get(info, :query_id))
-
-                  {{:error, message}, socket.assigns[:comprehensive_section_analytics], 0, nil,
-                   nil, info}
-
-                {:ok, %{status: :completed} = info} ->
-                  log_section_analytics_query_completion(
-                    section_id,
-                    Map.get(info, :query_id),
-                    info
-                  )
-
-                  {
-                    :loaded,
-                    Oli.Analytics.ClickhouseAnalytics.comprehensive_section_analytics(section_id),
-                    0,
-                    nil,
-                    nil,
-                    nil
-                  }
-
-                {:ok, :none} ->
-                  {:not_loaded, nil, 0, nil, nil, nil}
-
-                {:ok, _info} ->
-                  {:not_loaded, nil, 0, nil, nil, nil}
-
-                {:error, reason} ->
-                  error_message = if is_binary(reason), do: reason, else: inspect(reason)
-
-                  {{:error, error_message}, socket.assigns[:comprehensive_section_analytics], 0,
-                   nil, nil, nil}
-              end
-          end
+          {:not_loaded, nil}
 
         {:error, reason} ->
           error_message = if is_binary(reason), do: reason, else: inspect(reason)
-
-          {{:error, error_message}, socket.assigns[:comprehensive_section_analytics],
-           previous_poll_attempt, previous_poll_started_at, previous_query_id,
-           socket.assigns[:section_analytics_query_status]}
+          {{:error, error_message}, nil}
       end
 
     socket =
@@ -351,16 +261,14 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         analytics_data: nil,
         analytics_spec: nil,
         section_analytics_load_state: load_state,
-        comprehensive_section_analytics: comprehensive_section_analytics,
-        section_analytics_poll_attempt: poll_attempt,
-        section_analytics_poll_started_at: poll_started_at,
-        section_analytics_query_id: query_id,
-        section_analytics_query_status: query_status
+        comprehensive_section_analytics: comprehensive_section_analytics
       )
       |> maybe_load_analytics_data()
 
     {:noreply, socket}
   end
+
+
 
   @impl Phoenix.LiveView
   def handle_params(%{"view" => "insights"} = params, _, socket) do
@@ -1087,359 +995,10 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
      )}
   end
 
-  @impl Phoenix.LiveView
-  def handle_info({:load_section_analytics, section_info}, socket) do
-    {section_id, section_slug} = normalize_section_identifier(section_info)
-
-    cond do
-      section_id != socket.assigns.section.id ->
-        {:noreply, socket}
-
-      socket.assigns.section_analytics_load_state == :loading ->
-        {:noreply, socket}
-
-      true ->
-        pid = self()
-
-        query_id =
-          Oli.Analytics.ClickhouseAnalytics.section_analytics_query_id(section_id,
-            section_slug: section_slug
-          )
-
-        slug_for_log = section_slug || "unknown"
-
-        Logger.info(
-          "Starting ClickHouse bulk load for section #{section_id} (slug: #{slug_for_log}) with query_id #{query_id}"
-        )
-
-        Task.start(fn ->
-          result =
-            Oli.Analytics.ClickhouseAnalytics.bulk_load_section_analytics(section_id,
-              section_slug: section_slug,
-              query_id: query_id
-            )
-
-          send(pid, {:section_analytics_load_completed, section_id, result})
-        end)
-
-        {:noreply,
-         assign(socket,
-           section_analytics_load_state: :loading,
-           section_analytics_poll_attempt: 0,
-           section_analytics_poll_started_at: System.monotonic_time(:millisecond),
-           section_analytics_query_id: query_id,
-           section_analytics_query_status: %{status: :running, query_id: query_id}
-         )}
-    end
-  end
-
-  @impl Phoenix.LiveView
-  def handle_info({:section_analytics_load_completed, section_id, {:ok, _response}}, socket) do
-    if section_id != socket.assigns.section.id do
-      {:noreply, socket}
-    else
-      case Oli.Analytics.ClickhouseAnalytics.section_analytics_loaded?(section_id) do
-        {:ok, true} ->
-          {:noreply, handle_section_analytics_loaded(socket, section_id)}
-
-        {:ok, false} ->
-          case maybe_handle_section_analytics_query_completion(socket, section_id) do
-            {:loaded, info} ->
-              socket = assign(socket, :section_analytics_query_status, info)
-              {:noreply, handle_section_analytics_loaded(socket, section_id)}
-
-            {:error, error_message, info} ->
-              query_id = Map.get(socket.assigns, :section_analytics_query_id)
-
-              {:noreply,
-               assign(socket,
-                 section_analytics_load_state: {:error, error_message},
-                 section_analytics_poll_attempt: 0,
-                 section_analytics_poll_started_at: nil,
-                 section_analytics_query_id: nil,
-                 section_analytics_query_status:
-                   info ||
-                     %{status: :failed, query_id: query_id, error: error_message}
-               )}
-
-            {:keep_polling, info} ->
-              schedule_section_analytics_poll(section_id, 1)
-
-              {:noreply,
-               assign(socket,
-                 section_analytics_load_state: :loading,
-                 section_analytics_poll_attempt: 1,
-                 section_analytics_poll_started_at:
-                   socket.assigns[:section_analytics_poll_started_at] ||
-                     System.monotonic_time(:millisecond),
-                 section_analytics_query_status:
-                   info || socket.assigns[:section_analytics_query_status]
-               )}
-          end
-
-        {:error, reason} ->
-          error_message = if is_binary(reason), do: reason, else: inspect(reason)
-
-          {:noreply,
-           assign(socket,
-             section_analytics_load_state: {:error, error_message},
-             section_analytics_poll_attempt: 0,
-             section_analytics_poll_started_at: nil,
-             section_analytics_query_id: nil,
-             section_analytics_query_status: %{
-               status: :failed,
-               error: error_message,
-               query_id: Map.get(socket.assigns, :section_analytics_query_id)
-             }
-           )}
-      end
-    end
-  end
-
-  @impl Phoenix.LiveView
-  def handle_info({:section_analytics_load_completed, section_id, {:error, reason}}, socket) do
-    if section_id != socket.assigns.section.id do
-      {:noreply, socket}
-    else
-      Logger.error(
-        "Bulk load section analytics failed for section #{section_id}: #{inspect(reason)}"
-      )
-
-      error_message = if is_binary(reason), do: reason, else: inspect(reason)
-
-      {:noreply,
-       assign(socket,
-         section_analytics_load_state: {:error, error_message},
-         section_analytics_poll_attempt: 0,
-         section_analytics_poll_started_at: nil,
-         section_analytics_query_id: nil,
-         section_analytics_query_status: %{
-           status: :failed,
-           query_id: Map.get(socket.assigns, :section_analytics_query_id),
-           error: error_message
-         }
-       )}
-    end
-  end
-
-  @impl Phoenix.LiveView
-  def handle_info({:analytics_data_loaded, category, data, spec}, socket) do
-    # Only update if this data is for the currently selected category
-    if socket.assigns.selected_analytics_category == category do
-      {:noreply, assign(socket, analytics_data: data, analytics_spec: spec)}
-    else
-      {:noreply, socket}
-    end
-  end
-
-  @impl Phoenix.LiveView
-  def handle_info({:poll_section_analytics_load, section_id, attempt}, socket) do
-    cond do
-      section_id != socket.assigns.section.id ->
-        {:noreply, socket}
-
-      socket.assigns.section_analytics_load_state != :loading ->
-        {:noreply, socket}
-
-      true ->
-        started_at =
-          socket.assigns[:section_analytics_poll_started_at] ||
-            System.monotonic_time(:millisecond)
-
-        elapsed_ms = System.monotonic_time(:millisecond) - started_at
-
-        case Oli.Analytics.ClickhouseAnalytics.section_analytics_loaded?(section_id) do
-          {:ok, true} ->
-            {:noreply, handle_section_analytics_loaded(socket, section_id)}
-
-          {:ok, false} ->
-            case maybe_handle_section_analytics_query_completion(socket, section_id) do
-              {:loaded, info} ->
-                socket = assign(socket, :section_analytics_query_status, info)
-                {:noreply, handle_section_analytics_loaded(socket, section_id)}
-
-              {:error, error_message, info} ->
-                {:noreply,
-                 assign(socket,
-                   section_analytics_load_state: {:error, error_message},
-                   section_analytics_poll_attempt: 0,
-                   section_analytics_poll_started_at: nil,
-                   section_analytics_query_id: nil,
-                   section_analytics_query_status:
-                     info ||
-                       %{
-                         status: :failed,
-                         query_id: Map.get(socket.assigns, :section_analytics_query_id),
-                         error: error_message
-                       }
-                 )}
-
-              {:keep_polling, info} ->
-                if elapsed_ms >= @section_analytics_poll_timeout_ms or
-                     attempt >= @section_analytics_max_poll_attempts do
-                  {:noreply,
-                   assign(socket,
-                     section_analytics_load_state:
-                       {:error, "Timed out while loading section analytics. Please try again."},
-                     section_analytics_poll_attempt: 0,
-                     section_analytics_poll_started_at: nil,
-                     section_analytics_query_id: nil,
-                     section_analytics_query_status: %{
-                       status: :failed,
-                       query_id: Map.get(socket.assigns, :section_analytics_query_id),
-                       error: "Timed out while loading section analytics. Please try again."
-                     }
-                   )}
-                else
-                  schedule_section_analytics_poll(section_id, attempt + 1)
-
-                  {:noreply,
-                   assign(socket,
-                     section_analytics_load_state: :loading,
-                     section_analytics_poll_attempt: attempt + 1,
-                     section_analytics_poll_started_at: started_at,
-                     section_analytics_query_status:
-                       info || socket.assigns[:section_analytics_query_status]
-                   )}
-                end
-            end
-
-          {:error, reason} ->
-            error_message = if is_binary(reason), do: reason, else: inspect(reason)
-
-            {:noreply,
-             assign(socket,
-               section_analytics_load_state: {:error, error_message},
-               section_analytics_poll_attempt: 0,
-               section_analytics_poll_started_at: nil,
-               section_analytics_query_id: nil,
-               section_analytics_query_status: %{
-                 status: :failed,
-                 query_id: Map.get(socket.assigns, :section_analytics_query_id),
-                 error: error_message
-               }
-             )}
-        end
-    end
-  end
 
   @impl Phoenix.LiveView
   def handle_info(_any, socket) do
     {:noreply, socket}
   end
 
-  defp schedule_section_analytics_poll(section_id, attempt) do
-    if attempt <= @section_analytics_max_poll_attempts do
-      Process.send_after(
-        self(),
-        {:poll_section_analytics_load, section_id, attempt},
-        @section_analytics_poll_interval
-      )
-    end
-  end
-
-  defp maybe_handle_section_analytics_query_completion(socket, section_id) do
-    query_id = Map.get(socket.assigns, :section_analytics_query_id)
-
-    cond do
-      is_nil(query_id) ->
-        {:keep_polling, nil}
-
-      true ->
-        case Oli.Analytics.ClickhouseAnalytics.section_analytics_query_status(query_id) do
-          {:ok, %{status: :completed} = info} ->
-            log_section_analytics_query_completion(section_id, query_id, info)
-            {:loaded, info}
-
-          {:ok, %{status: :failed} = info} ->
-            message = build_section_analytics_query_error(info, query_id)
-
-            Logger.error(
-              "ClickHouse bulk load for section #{section_id} (query #{query_id}) failed: #{message}"
-            )
-
-            {:error, message, info}
-
-          {:ok, info} ->
-            {:keep_polling, info}
-
-          {:error, reason} ->
-            Logger.debug(
-              "Unable to fetch ClickHouse status for query #{query_id}: #{inspect(reason)}"
-            )
-
-            {:keep_polling, nil}
-        end
-    end
-  end
-
-  defp log_section_analytics_query_completion(section_id, query_id, info) do
-    details =
-      info
-      |> Map.take([:rows_read, :rows_written, :query_duration_ms])
-      |> Enum.reject(fn {_key, value} -> is_nil(value) end)
-      |> Enum.map(fn {key, value} -> "#{key}=#{value}" end)
-      |> Enum.join(", ")
-
-    message_suffix = if details == "", do: "", else: ": #{details}"
-
-    Logger.info(
-      "ClickHouse bulk load for section #{section_id} (query #{query_id}) completed#{message_suffix}"
-    )
-  end
-
-  defp build_section_analytics_query_error(info, query_id) do
-    error = Map.get(info, :error)
-    code = Map.get(info, :exception_code)
-
-    cond do
-      is_binary(error) and error != "" and is_integer(code) ->
-        "#{error} (code #{code})"
-
-      is_binary(error) and error != "" ->
-        error
-
-      is_integer(code) ->
-        "ClickHouse query #{query_id} failed with code #{code}"
-
-      true ->
-        "ClickHouse query #{query_id} failed"
-    end
-  end
-
-  defp handle_section_analytics_loaded(socket, section_id) do
-    analytics_result =
-      Oli.Analytics.ClickhouseAnalytics.comprehensive_section_analytics(section_id)
-
-    socket
-    |> assign(
-      section_analytics_load_state: :loaded,
-      comprehensive_section_analytics: analytics_result,
-      analytics_data: nil,
-      analytics_spec: nil,
-      section_analytics_poll_attempt: 0,
-      section_analytics_poll_started_at: nil,
-      section_analytics_query_id: nil,
-      section_analytics_query_status: nil
-    )
-    |> maybe_load_analytics_data()
-  end
-
-  defp normalize_section_identifier(%{id: id} = info) when is_integer(id) do
-    slug =
-      info
-      |> Map.get(:slug)
-      |> case do
-        nil ->
-          Map.get(info, "slug") || Map.get(info, :section_slug) || Map.get(info, "section_slug")
-
-        value ->
-          value
-      end
-
-    {id, slug}
-  end
-
-  defp normalize_section_identifier({id, slug}) when is_integer(id), do: {id, slug}
-  defp normalize_section_identifier(id) when is_integer(id), do: {id, nil}
 end

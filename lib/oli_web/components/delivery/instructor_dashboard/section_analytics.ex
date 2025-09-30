@@ -76,31 +76,11 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
           <% :not_loaded -> %>
             <div class="bg-yellow-50 dark:bg-yellow-900 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
               <h3 class="text-md font-semibold text-yellow-900 dark:text-yellow-100 mb-2">
-                Section analytics have not been loaded yet
+                Section analytics are not available yet
               </h3>
-              <p class="text-sm text-yellow-800 dark:text-yellow-200 mb-4">
-                Load the historical analytics for this section from S3 into ClickHouse to unlock the dashboards below. This may take a few minutes depending on the amount of data.
+              <p class="text-sm text-yellow-800 dark:text-yellow-200">
+                Historical analytics for this section have not been imported. Please contact a Torus administrator to request a ClickHouse backfill run.
               </p>
-              <button
-                phx-click="bulk_load_section_analytics"
-                phx-target={@myself}
-                class="inline-flex items-center px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg text-sm font-medium transition-colors"
-              >
-                <svg
-                  class="w-4 h-4 mr-2"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H10m-6 11v-5h-.582m0 0a8.003 8.003 0 0015.356 0M20 20v-5h.582m0 0A8.001 8.001 0 0010 4"
-                  />
-                </svg>
-                Load Section Analytics
-              </button>
             </div>
           <% :loading -> %>
             <div class="flex items-center bg-gray-50 dark:bg-gray-900 border rounded-lg p-4">
@@ -114,16 +94,12 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
               <h3 class="text-md font-semibold text-red-800 dark:text-red-100 mb-2">
                 Unable to load section analytics
               </h3>
-              <p class="text-sm text-red-700 dark:text-red-200 mb-3">
+              <p class="text-sm text-red-700 dark:text-red-200">
                 {reason}
               </p>
-              <button
-                phx-click="bulk_load_section_analytics"
-                phx-target={@myself}
-                class="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors"
-              >
-                Retry Load
-              </button>
+              <p class="text-sm text-red-700 dark:text-red-200 mt-2">
+                If this issue persists, please contact an administrator to review the ClickHouse backfill job.
+              </p>
             </div>
           <% _ -> %>
 
@@ -751,23 +727,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
     """
   end
 
-  @impl true
-  def handle_event("bulk_load_section_analytics", _params, socket) do
-    case socket.assigns[:section] do
-      %{id: section_id} = section ->
-        payload =
-          case Map.get(section, :slug) || Map.get(section, "slug") do
-            nil -> section_id
-            slug -> %{id: section_id, slug: slug}
-          end
 
-        send(self(), {:load_section_analytics, payload})
-        {:noreply, assign(socket, :section_analytics_load_state, :loading)}
 
-      _ ->
-        {:noreply, socket}
-    end
-  end
 
   @impl true
   def handle_event("select_analytics_category", %{"category" => category}, socket) do
