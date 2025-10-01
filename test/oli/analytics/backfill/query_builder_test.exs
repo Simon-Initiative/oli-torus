@@ -16,8 +16,11 @@ defmodule Oli.Analytics.Backfill.QueryBuilderTest do
     sql = QueryBuilder.insert_sql(run, @creds)
 
     assert sql =~ "INSERT INTO analytics.raw_events"
-    assert sql =~ "FROM s3('s3://bucket/section/**/*.jsonl', 'AKIA_TEST', 'secret', 'JSONAsString', 'json String')"
-    assert sql =~ "coalesce(cityHash64(JSON_VALUE(json, '$.event_id')), cityHash64(json)) AS event_hash"
+
+    assert sql =~
+             "FROM s3('s3://bucket/section/**/*.jsonl', 'AKIA_TEST', 'secret', 'JSONAsString', 'json String')"
+
+    assert sql =~ "cityHash64(json) AS event_hash"
   end
 
   test "builds dry run sql and uses NULL bytes expression for non JSONAsString format" do
@@ -46,6 +49,7 @@ defmodule Oli.Analytics.Backfill.QueryBuilderTest do
 
     sql = QueryBuilder.insert_sql(run, creds)
 
-    assert sql =~ "s3('s3://bucket/it\\'s/**/*.jsonl', 'AKIA\\'TEST', 'sec\\'ret', 'JSONAsString', 'json String')"
+    assert sql =~
+             "s3('s3://bucket/it\\'s/**/*.jsonl', 'AKIA\\'TEST', 'sec\\'ret', 'JSONAsString', 'json String')"
   end
 end

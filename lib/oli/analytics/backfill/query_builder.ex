@@ -9,7 +9,8 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
   Construct the INSERT ... SELECT statement used to ingest events from S3 into
   ClickHouse.
   """
-  @spec insert_sql(BackfillRun.t(), %{access_key_id: String.t(), secret_access_key: String.t()}) :: String.t()
+  @spec insert_sql(BackfillRun.t(), %{access_key_id: String.t(), secret_access_key: String.t()}) ::
+          String.t()
   def insert_sql(%BackfillRun{} = run, aws_creds) do
     target_table = sanitize_target_table(run.target_table)
     s3_source = s3_source_clause(run, aws_creds)
@@ -29,7 +30,7 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
         response, feedback, hints_requested, attached_objectives, session_id
     )
     SELECT
-        coalesce(cityHash64(JSON_VALUE(json, '$.event_id')), cityHash64(json)) AS event_hash,
+        cityHash64(json) AS event_hash,
         now64(3) AS event_version,
         _path AS source_file,
         _file AS source_etag,
@@ -149,7 +150,8 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
   Construct a dry-run statement that inspects the S3 source without inserting
   any data.
   """
-  @spec dry_run_sql(BackfillRun.t(), %{access_key_id: String.t(), secret_access_key: String.t()}) :: String.t()
+  @spec dry_run_sql(BackfillRun.t(), %{access_key_id: String.t(), secret_access_key: String.t()}) ::
+          String.t()
   def dry_run_sql(%BackfillRun{} = run, aws_creds) do
     s3_source = s3_source_clause(run, aws_creds)
 
@@ -167,7 +169,10 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
     """
   end
 
-  defp s3_source_clause(%BackfillRun{format: format, s3_pattern: pattern}, %{access_key_id: key, secret_access_key: secret}) do
+  defp s3_source_clause(%BackfillRun{format: format, s3_pattern: pattern}, %{
+         access_key_id: key,
+         secret_access_key: secret
+       }) do
     escaped_pattern = escape(pattern)
     escaped_key = escape(key)
     escaped_secret = escape(secret)
@@ -211,7 +216,9 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
 
   defp format_setting_value(value) when is_boolean(value), do: if(value, do: "1", else: "0")
   defp format_setting_value(value) when is_integer(value), do: Integer.to_string(value)
-  defp format_setting_value(value) when is_float(value), do: :erlang.float_to_binary(value, [:compact])
+
+  defp format_setting_value(value) when is_float(value),
+    do: :erlang.float_to_binary(value, [:compact])
 
   defp format_setting_value(value) when is_binary(value) do
     "'" <> escape(value) <> "'"

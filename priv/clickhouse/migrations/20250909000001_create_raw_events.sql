@@ -58,11 +58,17 @@ CREATE TABLE IF NOT EXISTS raw_events (
     session_id Nullable(String),
 
     -- Metadata
-    inserted_at DateTime DEFAULT now()
-) ENGINE = MergeTree()
-ORDER BY (timestamp, section_id, user_id, event_type)
+    inserted_at DateTime DEFAULT now(),
+    event_hash String,
+    event_version DateTime64(3) DEFAULT now64(3),
+    source_file Nullable(String),
+    source_etag Nullable(String),
+    source_line Nullable(UInt32)
+) ENGINE = ReplacingMergeTree(event_version)
+ORDER BY event_hash
+PRIMARY KEY event_hash
 PARTITION BY toYYYYMM(timestamp)
-SETTINGS index_granularity = 8192;
+SETTINGS allow_nullable_key = 0, index_granularity = 8192, insert_deduplicate = 1;
 
 -- Create indexes for common query patterns
 -- Index on section_id for section-specific queries
