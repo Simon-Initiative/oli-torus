@@ -11,7 +11,7 @@ Environment variables
 CLICKHOUSE_URL             Optional full base URL (e.g. https://host:8443)
 CLICKHOUSE_HOST            Hostname when CLICKHOUSE_URL is not provided
 CLICKHOUSE_PORT            Port number (defaults to 8443 if secure else 8123)
-CLICKHOUSE_SECURE          "true" | "false" (defaults to true)
+CLICKHOUSE_PROTOCOL        "https" | "http" (defaults to http)
 CLICKHOUSE_PATH            Optional URL path suffix (e.g. /custom/endpoint)
 CLICKHOUSE_DATABASE        Target database (required when using host/port form)
 CLICKHOUSE_TABLE           Target table (required when using host/port form)
@@ -405,10 +405,9 @@ def resolve_clickhouse_url() -> str:
     if not host:
         raise ValueError("CLICKHOUSE_HOST (or CLICKHOUSE_URL) must be set")
 
-    secure = os.getenv("CLICKHOUSE_SECURE", "true").lower() == "true"
-    protocol = "https" if secure else "http"
-    default_port = "8443" if secure else "8123"
-    port = os.getenv("CLICKHOUSE_PORT", default_port)
+    protocol = os.getenv("CLICKHOUSE_PROTOCOL", "http")
+    port = os.getenv("CLICKHOUSE_PORT", "8123")
+
     path = os.getenv("CLICKHOUSE_PATH", "")
     if path and not path.startswith("/"):
         path = f"/{path}"
