@@ -19,7 +19,6 @@ defmodule OliWeb.LiveSessionPlugs.RequireEnrollment do
         } = socket
       )
       when not is_nil(user) do
-
     if user do
       if !Sections.has_enrollment?(user.id, section.slug) do
         Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])

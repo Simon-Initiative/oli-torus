@@ -690,8 +690,7 @@ defmodule Oli.Delivery.Sections do
         e in Enrollment,
         join: s in Section,
         on: e.section_id == s.id,
-        where:
-          e.user_id == ^user_id and s.slug == ^section_slug
+        where: e.user_id == ^user_id and s.slug == ^section_slug
       )
 
     case Repo.one(query) do
