@@ -1,5 +1,6 @@
 defmodule Oli.Delivery.Sections.PostProcessing do
   import Ecto.Query, warn: false
+  require Logger
   alias Oli.Repo
 
   alias Oli.Delivery.Sections
@@ -95,7 +96,7 @@ defmodule Oli.Delivery.Sections.PostProcessing do
   4. Batch updates: Uses raw SQL with CASE statements to update section_resources.related_activities field
   """
 
-  @spec populate_related_activities(Section.t()) :: :ok
+  @spec populate_related_activities(Section.t()) :: :ok | :error
   defp populate_related_activities(section) do
     # Get all objectives in this section
     objectives =
@@ -184,9 +185,19 @@ defmodule Oli.Delivery.Sections.PostProcessing do
         WHERE id = ANY($1)
       """
 
-      Repo.query(update_query, [section_resource_ids])
-    end
+      case Repo.query(update_query, [section_resource_ids]) do
+        {:ok, _result} ->
+          :ok
 
-    :ok
+        {:error, error} ->
+          Logger.error(
+            "[PostProcessing] Failed to update related_activities for section #{section.slug}: #{inspect(error)}"
+          )
+
+          :error
+      end
+    else
+      :ok
+    end
   end
 end
