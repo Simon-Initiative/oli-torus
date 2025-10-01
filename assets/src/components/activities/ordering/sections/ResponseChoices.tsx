@@ -28,11 +28,12 @@ export const ResponseChoices: React.FC<Props> = ({
           id={choice.id}
           item={choice}
           color={colorMap?.get(choice.id)}
+          direction={choice.textDirection}
         >
           {(choice, index) => (
             <>
               <Draggable.DragIndicator isDragDisabled={disabled ?? false} />
-              <div style={{ marginRight: '0.5rem' }}>{index + 1}.</div>
+              <div style={{ marginInlineEnd: '0.5rem' }}>{index + 1}.</div>
               <HtmlContentModelRenderer
                 direction={choice.textDirection}
                 content={choice.content}

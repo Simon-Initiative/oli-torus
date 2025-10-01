@@ -35,6 +35,7 @@ defmodule OliWeb.LaunchController do
     if Oli.Utils.LoadTesting.enabled?() or recaptcha_verified?(g_recaptcha_response) do
       with {:available, section} <- Sections.available?(conn.assigns.section),
            {:ok, user} <- current_or_guest_user(conn, section.requires_enrollment),
+           :ok <- Sections.ensure_direct_delivery_enrollment_allowed(user, section),
            user <- Repo.preload(user, [:platform_roles]) do
         first_page_slug = DeliveryResolver.get_first_page_slug(section.slug)
         first_page_url = ~p"/sections/#{section.slug}/page/#{first_page_slug}"
@@ -60,6 +61,9 @@ defmodule OliWeb.LaunchController do
           |> redirect(to: first_page_url)
         end
       else
+        {:error, :non_independent_user} ->
+          redirect_to_lms_instructions(conn, conn.assigns.section)
+
         {:redirect, nil} ->
           # guest user cant access courses that require enrollment
           redirect_path =
@@ -94,6 +98,25 @@ defmodule OliWeb.LaunchController do
 
       user ->
         {:ok, user}
+    end
+  end
+
+  defp redirect_to_lms_instructions(conn, section) do
+    request_path = build_request_path(conn)
+
+    conn
+    |> redirect(
+      to: ~p"/lms_user_instructions?#{[section_title: section.title, request_path: request_path]}"
+    )
+  end
+
+  defp build_request_path(%{request_path: nil}), do: nil
+
+  defp build_request_path(conn) do
+    case conn.query_string do
+      nil -> conn.request_path
+      "" -> conn.request_path
+      query -> conn.request_path <> "?" <> query
     end
   end
 end

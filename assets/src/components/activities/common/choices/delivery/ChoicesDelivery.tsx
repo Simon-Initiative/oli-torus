@@ -54,7 +54,7 @@ export const ChoicesDelivery: React.FC<Props> = ({
           )}
           style={{ cursor: disabled ? 'default' : 'pointer' }}
         >
-          <div className={styles.choicesChoiceWrapper}>
+          <div className={styles.choicesChoiceWrapper} dir={choice.textDirection}>
             <label className={styles.choicesChoiceLabel} htmlFor={`choice-${index}`}>
               <div className="d-flex align-items-center col">
                 {isSelected(choice.id) ? selectedIcon : unselectedIcon}
