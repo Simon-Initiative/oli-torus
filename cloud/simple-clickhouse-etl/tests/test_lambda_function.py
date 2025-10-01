@@ -1,3 +1,4 @@
+import hashlib
 import importlib.util
 import json
 import os
@@ -190,6 +191,96 @@ class LambdaFunctionTests(TestCase):
         self.assertIn("runtime", payload)
         self.assertIn("pyarrow", payload["dependencies"])
 
+    def test_transform_xapi_statement_maps_expected_fields(self):
+        event = {
+            "id": "d7f92ff8-4bde-4966-b1e3-f1be9a9098fa",
+            "actor": {
+                "account": {
+                    "homePage": "https://proton.oli.cmu.edu",
+                    "name": 15474,
+                },
+                "objectType": "Agent",
+            },
+            "context": {
+                "extensions": {
+                    "http://oli.cmu.edu/extensions/activity_attempt_guid": "c282871f-9253-4f73-af64-45794c024a95",
+                    "http://oli.cmu.edu/extensions/activity_attempt_number": 1,
+                    "http://oli.cmu.edu/extensions/activity_id": 80772,
+                    "http://oli.cmu.edu/extensions/activity_revision_id": 388148,
+                    "http://oli.cmu.edu/extensions/attached_objectives": [120498],
+                    "http://oli.cmu.edu/extensions/hints_requested": [],
+                    "http://oli.cmu.edu/extensions/page_attempt_guid": "48e1e3b4-7d3b-435d-92b4-ec10002a507b",
+                    "http://oli.cmu.edu/extensions/page_attempt_number": 1,
+                    "http://oli.cmu.edu/extensions/page_id": 81181,
+                    "http://oli.cmu.edu/extensions/part_attempt_guid": "bb2f47c4-ee8d-4cd3-b29e-93fc7e1004b3",
+                    "http://oli.cmu.edu/extensions/part_attempt_number": 1,
+                    "http://oli.cmu.edu/extensions/part_id": "132824041",
+                    "http://oli.cmu.edu/extensions/project_id": 1719,
+                    "http://oli.cmu.edu/extensions/publication_id": 8625,
+                    "http://oli.cmu.edu/extensions/section_id": 2161,
+                    "http://oli.cmu.edu/extensions/session_id": "70a20ff3-1373-4fe1-af64-59774295d22e",
+                }
+            },
+            "object": {
+                "definition": {
+                    "name": {"en-US": "Part Attempt"},
+                    "type": "http://adlnet.gov/expapi/activities/question",
+                },
+                "id": "https://proton.oli.cmu.edu/part_attempt/bb2f47c4-ee8d-4cd3-b29e-93fc7e1004b3",
+                "objectType": "Activity",
+            },
+            "result": {
+                "completion": True,
+                "extensions": {
+                    "http://oli.cmu.edu/extensions/feedback": {
+                        "content": [
+                            {
+                                "children": [
+                                    {"text": "Incorrect."},
+                                ],
+                                "id": "8vynyuekul3yctz",
+                                "type": "p",
+                            }
+                        ],
+                        "id": "2475577451",
+                    }
+                },
+                "response": {"input": ".138"},
+                "score": {"max": 1.0, "min": 0, "raw": 0.0, "scaled": 0.0},
+                "success": True,
+            },
+            "timestamp": "2025-05-21T13:41:06Z",
+            "verb": {
+                "display": {"en-US": "completed"},
+                "id": "http://adlnet.gov/expapi/verbs/completed",
+            },
+        }
+
+        raw_line = json.dumps(event).encode("utf-8")
+
+        transformed = lambda_function.transform_xapi_statement(
+            event,
+            raw_bytes=raw_line,
+            bucket="bucket",
+            key="path/to/file.jsonl",
+            etag='"etag"',
+            line_number=1,
+        )
+
+        self.assertEqual(transformed["event_type"], "part_attempt")
+        self.assertEqual(transformed["section_id"], 2161)
+        self.assertEqual(transformed["project_id"], 1719)
+        self.assertEqual(transformed["publication_id"], 8625)
+        self.assertEqual(transformed["session_id"], "70a20ff3-1373-4fe1-af64-59774295d22e")
+        self.assertEqual(transformed["response"], ".138")
+        self.assertEqual(transformed["activity_id"], 80772)
+        self.assertEqual(transformed["part_id"], "132824041")
+        self.assertTrue(transformed["success"])
+        self.assertIsInstance(transformed["attached_objectives"], str)
+        self.assertEqual(transformed["source_file"], "s3://bucket/path/to/file.jsonl")
+        self.assertEqual(transformed["source_line"], 1)
+        self.assertEqual(transformed["source_etag"], "etag")
+        self.assertEqual(transformed["event_hash"], hashlib.sha256(raw_line).hexdigest())
     def test_build_insert_query_uses_default_columns(self):
         with mock.patch.dict(
             os.environ,

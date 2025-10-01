@@ -29,18 +29,21 @@ source mappings with the "ReportBatchItemFailures" feature.
 """
 from __future__ import annotations
 
+import hashlib
 import importlib
 import io
 import json
 import logging
+import math
 import os
 import platform
 import time
 import sys
+import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Dict, Iterable, List, Optional
-from urllib.parse import unquote_plus
+from urllib.parse import unquote_plus, urlparse
 
 import boto3
 from botocore.config import Config
@@ -361,10 +364,23 @@ def load_json_lines_as_table(ref: S3ObjectRef) -> Optional[pa.Table]:
         if not raw_line:
             continue
         try:
-            rows.append(json.loads(raw_line))
+            statement = json.loads(raw_line)
+            transformed = transform_xapi_statement(
+                statement,
+                raw_bytes=raw_line,
+                bucket=ref.bucket,
+                key=ref.key,
+                etag=response.get("ETag"),
+                line_number=index,
+            )
+            rows.append(transformed)
         except json.JSONDecodeError as exc:
             raise ValueError(
                 f"Invalid JSON in s3://{ref.bucket}/{ref.key}: {raw_line[:200]!r}"
+            ) from exc
+        except Exception as exc:  # pylint: disable=broad-except
+            raise ValueError(
+                f"Failed to transform JSON in s3://{ref.bucket}/{ref.key}: line {index}"
             ) from exc
 
         now = time.perf_counter()
@@ -582,6 +598,314 @@ def _get_clickhouse_type_map() -> Dict[str, "pa.DataType"]:
     return _CLICKHOUSE_TYPE_MAP
 
 
+def transform_xapi_statement(
+    statement: Dict[str, Any],
+    *,
+    raw_bytes: bytes,
+    bucket: str,
+    key: str,
+    etag: Optional[str],
+    line_number: int,
+) -> Dict[str, Any]:
+    """Map an xAPI statement into the raw_events column structure."""
+
+    context = statement.get("context", {}) or {}
+    extensions = context.get("extensions", {}) or {}
+    actor = statement.get("actor", {}) or {}
+    account = actor.get("account", {}) or {}
+    verb = statement.get("verb", {}) or {}
+    result = statement.get("result", {}) or {}
+    result_extensions = result.get("extensions", {}) or {}
+    obj = statement.get("object", {}) or {}
+    object_definition = obj.get("definition", {}) or {}
+    object_extensions = object_definition.get("extensions", {}) or {}
+
+    timestamp_raw = statement.get("timestamp")
+    if not isinstance(timestamp_raw, str) or not timestamp_raw.strip():
+        timestamp_raw = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+    verb_id = verb.get("id", "") or ""
+    object_type = object_definition.get("type", "") or ""
+    event_type = _determine_event_type(verb_id, object_type)
+
+    event_id = statement.get("id") or statement.get("event_id") or str(uuid.uuid4())
+    event_id = str(event_id)
+
+    user_id = account.get("name") or actor.get("mbox") or ""
+    if not isinstance(user_id, str):
+        user_id = str(user_id)
+
+    host_name = extensions.get("http://oli.cmu.edu/extensions/host_name")
+    if not host_name:
+        home_page = account.get("homePage")
+        if isinstance(home_page, str):
+            host_name = _extract_hostname(home_page)
+        if not host_name:
+            object_id = obj.get("id")
+            if isinstance(object_id, str):
+                host_name = _extract_hostname(object_id)
+    if host_name is not None and not isinstance(host_name, str):
+        host_name = str(host_name)
+
+    section_id = _safe_int(extensions.get("http://oli.cmu.edu/extensions/section_id"))
+    project_id = _safe_int(extensions.get("http://oli.cmu.edu/extensions/project_id"))
+    publication_id = _safe_int(extensions.get("http://oli.cmu.edu/extensions/publication_id"))
+
+    attempt_guid = extensions.get("http://oli.cmu.edu/extensions/attempt_guid")
+    if attempt_guid is not None and not isinstance(attempt_guid, str):
+        attempt_guid = str(attempt_guid)
+
+    content_element_id = (
+        result_extensions.get("content_element_id")
+        or extensions.get("http://oli.cmu.edu/extensions/content_element_id")
+    )
+    if content_element_id is not None and not isinstance(content_element_id, str):
+        content_element_id = str(content_element_id)
+
+    video_url = obj.get("id") if event_type == "video" else None
+    if video_url is not None and not isinstance(video_url, str):
+        video_url = str(video_url)
+
+    video_title = _get_nested(object_definition, ["name", "en-US"])
+    if video_title is not None and not isinstance(video_title, str):
+        video_title = str(video_title)
+
+    video_played_segments = result_extensions.get(
+        "https://w3id.org/xapi/video/extensions/played-segments"
+    )
+    if video_played_segments is not None and not isinstance(video_played_segments, str):
+        video_played_segments = json.dumps(video_played_segments)
+
+    activity_attempt_guid = extensions.get("http://oli.cmu.edu/extensions/activity_attempt_guid")
+    if activity_attempt_guid is not None and not isinstance(activity_attempt_guid, str):
+        activity_attempt_guid = str(activity_attempt_guid)
+
+    page_attempt_guid = extensions.get("http://oli.cmu.edu/extensions/page_attempt_guid")
+    if page_attempt_guid is not None and not isinstance(page_attempt_guid, str):
+        page_attempt_guid = str(page_attempt_guid)
+
+    part_attempt_guid = extensions.get("http://oli.cmu.edu/extensions/part_attempt_guid")
+    if part_attempt_guid is not None and not isinstance(part_attempt_guid, str):
+        part_attempt_guid = str(part_attempt_guid)
+
+    part_id = extensions.get("http://oli.cmu.edu/extensions/part_id")
+    if part_id is not None and not isinstance(part_id, str):
+        part_id = str(part_id)
+
+    session_id = extensions.get("http://oli.cmu.edu/extensions/session_id")
+    if session_id is not None and not isinstance(session_id, str):
+        session_id = str(session_id)
+
+    feedback = result_extensions.get("http://oli.cmu.edu/extensions/feedback")
+    if feedback is not None and not isinstance(feedback, str):
+        feedback = json.dumps(feedback)
+
+    response_value = result.get("response")
+    if isinstance(response_value, dict):
+        response_value = response_value.get("input") or json.dumps(response_value)
+    elif response_value is not None and not isinstance(response_value, str):
+        response_value = str(response_value)
+
+    attached_objectives = extensions.get("http://oli.cmu.edu/extensions/attached_objectives")
+    if attached_objectives is not None and not isinstance(attached_objectives, str):
+        attached_objectives = json.dumps(attached_objectives)
+
+    hints_requested = extensions.get("http://oli.cmu.edu/extensions/hints_requested")
+    if isinstance(hints_requested, list):
+        hints_requested_value: Optional[int] = len(hints_requested)
+    else:
+        hints_requested_value = _safe_int(hints_requested)
+
+    raw_hash = hashlib.sha256(raw_bytes).hexdigest()
+
+    transformed: Dict[str, Any] = {
+        "event_id": event_id,
+        "user_id": user_id,
+        "host_name": host_name or "",
+        "section_id": section_id,
+        "project_id": project_id,
+        "publication_id": publication_id,
+        "timestamp": timestamp_raw,
+        "event_type": event_type,
+        "attempt_guid": attempt_guid,
+        "attempt_number": _safe_int(extensions.get("http://oli.cmu.edu/extensions/attempt_number")),
+        "page_id": _safe_int(extensions.get("http://oli.cmu.edu/extensions/page_id")),
+        "content_element_id": content_element_id,
+        "video_url": video_url,
+        "video_title": video_title,
+        "video_time": _safe_float(result_extensions.get("https://w3id.org/xapi/video/extensions/time")),
+        "video_length": _safe_float(
+            result_extensions.get("https://w3id.org/xapi/video/extensions/length")
+            or extensions.get("https://w3id.org/xapi/video/extensions/length")
+            or object_extensions.get("https://w3id.org/xapi/video/extensions/length")
+        ),
+        "video_progress": _safe_float(
+            result_extensions.get("https://w3id.org/xapi/video/extensions/progress")
+        ),
+        "video_played_segments": video_played_segments,
+        "video_play_time": _safe_float(result_extensions.get("video_play_time")),
+        "video_seek_from": _safe_float(
+            result_extensions.get("https://w3id.org/xapi/video/extensions/time-from")
+        ),
+        "video_seek_to": _safe_float(
+            result_extensions.get("https://w3id.org/xapi/video/extensions/time-to")
+        ),
+        "activity_attempt_guid": activity_attempt_guid,
+        "activity_attempt_number": _safe_int(
+            extensions.get("http://oli.cmu.edu/extensions/activity_attempt_number")
+        ),
+        "page_attempt_guid": page_attempt_guid,
+        "page_attempt_number": _safe_int(
+            extensions.get("http://oli.cmu.edu/extensions/page_attempt_number")
+        ),
+        "part_attempt_guid": part_attempt_guid,
+        "part_attempt_number": _safe_int(
+            extensions.get("http://oli.cmu.edu/extensions/part_attempt_number")
+        ),
+        "activity_id": _safe_int(extensions.get("http://oli.cmu.edu/extensions/activity_id")),
+        "activity_revision_id": _safe_int(
+            extensions.get("http://oli.cmu.edu/extensions/activity_revision_id")
+        ),
+        "part_id": part_id,
+        "page_sub_type": object_definition.get("subType"),
+        "score": _safe_float(_get_nested(result, ["score", "raw"])),
+        "out_of": _safe_float(_get_nested(result, ["score", "max"])),
+        "scaled_score": _safe_float(_get_nested(result, ["score", "scaled"])),
+        "success": _coerce_bool(result.get("success")),
+        "completion": _coerce_bool(result.get("completion")),
+        "response": response_value,
+        "feedback": feedback,
+        "hints_requested": hints_requested_value,
+        "attached_objectives": attached_objectives,
+        "session_id": session_id,
+        "event_hash": raw_hash,
+        "source_file": f"s3://{bucket}/{key}",
+        "source_etag": etag.strip('"') if isinstance(etag, str) else etag,
+        "source_line": line_number,
+    }
+
+    return transformed
+
+
+def _determine_event_type(verb_id: str, object_type: str) -> str:
+    verb_id = verb_id or ""
+    object_type = object_type or ""
+
+    video_verbs = {
+        "https://w3id.org/xapi/video/verbs/played",
+        "https://w3id.org/xapi/video/verbs/paused",
+        "https://w3id.org/xapi/video/verbs/seeked",
+        "https://w3id.org/xapi/video/verbs/completed",
+        "http://adlnet.gov/expapi/verbs/experienced",
+    }
+    if verb_id in video_verbs:
+        return "video"
+    if (
+        verb_id == "http://adlnet.gov/expapi/verbs/completed"
+        and object_type == "http://oli.cmu.edu/extensions/activity_attempt"
+    ):
+        return "activity_attempt"
+    if (
+        verb_id == "http://adlnet.gov/expapi/verbs/completed"
+        and object_type == "http://oli.cmu.edu/extensions/page_attempt"
+    ):
+        return "page_attempt"
+    if (
+        verb_id == "http://id.tincanapi.com/verb/viewed"
+        and object_type == "http://oli.cmu.edu/extensions/types/page"
+    ):
+        return "page_viewed"
+    if (
+        verb_id == "http://adlnet.gov/expapi/verbs/completed"
+        and object_type == "http://adlnet.gov/expapi/activities/question"
+    ):
+        return "part_attempt"
+    return "unknown"
+
+
+def _safe_int(value: Any) -> Optional[int]:
+    if value is None or value == "":
+        return None
+    if isinstance(value, bool):
+        return int(value)
+    if isinstance(value, (int,)):
+        return value
+    if isinstance(value, float):
+        if math.isnan(value) or math.isinf(value):
+            return None
+        return int(value)
+    if isinstance(value, str):
+        try:
+            if "." in value:
+                return int(float(value))
+            return int(value)
+        except ValueError:
+            return None
+    try:
+        return int(value)  # type: ignore[arg-type]
+    except Exception:  # pylint: disable=broad-except
+        return None
+
+
+def _safe_float(value: Any) -> Optional[float]:
+    if value is None or value == "":
+        return None
+    if isinstance(value, bool):
+        return float(value)
+    if isinstance(value, (int, float)):
+        if isinstance(value, float) and (math.isnan(value) or math.isinf(value)):
+            return None
+        return float(value)
+    if isinstance(value, str):
+        try:
+            return float(value)
+        except ValueError:
+            return None
+    try:
+        return float(value)  # type: ignore[arg-type]
+    except Exception:  # pylint: disable=broad-except
+        return None
+
+
+def _coerce_bool(value: Any) -> Optional[bool]:
+    if value is None:
+        return None
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return bool(value)
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"true", "1", "t", "yes", "y"}:
+            return True
+        if normalized in {"false", "0", "f", "no", "n"}:
+            return False
+    return None
+
+
+def _get_nested(data: Any, path: List[str]) -> Any:
+    current = data
+    for key in path:
+        if not isinstance(current, dict):
+            return None
+        current = current.get(key)
+        if current is None:
+            return None
+    return current
+
+
+def _extract_hostname(url: str) -> Optional[str]:
+    try:
+        parsed = urlparse(url)
+        if parsed.hostname:
+            return parsed.hostname
+        if parsed.path and "://" not in url:
+            return parsed.path.split("/")[0]
+        return None
+    except Exception:  # pylint: disable=broad-except
+        return None
+
+
 def insert_into_clickhouse(parquet_payload: bytes, row_count: int) -> None:
     url = resolve_clickhouse_url()
     query = build_insert_query()
@@ -624,8 +948,22 @@ def resolve_clickhouse_url() -> str:
     if not host:
         raise ValueError("CLICKHOUSE_HOST (or CLICKHOUSE_URL) must be set")
 
-    protocol = os.getenv("CLICKHOUSE_PROTOCOL", "http")
-    port = os.getenv("CLICKHOUSE_PORT", "8123")
+    protocol_override = os.getenv("CLICKHOUSE_PROTOCOL")
+    secure_env = os.getenv("CLICKHOUSE_SECURE")
+    port_env = os.getenv("CLICKHOUSE_PORT")
+
+    if protocol_override:
+        protocol = protocol_override.lower()
+        secure = protocol == "https"
+    else:
+        if secure_env is not None:
+            secure = secure_env.lower() == "true"
+        else:
+            secure = port_env not in {None, "80", "8123"}
+        protocol = "https" if secure else "http"
+
+    default_port = "8443" if protocol == "https" else "8123"
+    port = port_env or default_port
 
     path = os.getenv("CLICKHOUSE_PATH", "")
     if path and not path.startswith("/"):
@@ -804,4 +1142,5 @@ __all__ = [
     "collect_runtime_diagnostics",
     "env_flag",
     "ensure_pyarrow_available",
+    "transform_xapi_statement",
 ]
