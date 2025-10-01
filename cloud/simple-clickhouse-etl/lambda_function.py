@@ -16,6 +16,7 @@ CLICKHOUSE_PATH            Optional URL path suffix (e.g. /custom/endpoint)
 CLICKHOUSE_DATABASE        Target database (required when using host/port form)
 CLICKHOUSE_TABLE           Target table (required when using host/port form)
 CLICKHOUSE_INSERT_SQL      Full INSERT statement override (optional)
+CLICKHOUSE_INSERT_COLUMNS  Comma separated column projection for inserts (optional)
 CLICKHOUSE_USER            Basic auth user (optional)
 CLICKHOUSE_PASSWORD        Basic auth password (optional)
 CLICKHOUSE_SETTINGS        Comma separated ClickHouse setting overrides
@@ -37,6 +38,7 @@ import platform
 import time
 import sys
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from typing import Any, Dict, Iterable, List, Optional
 from urllib.parse import unquote_plus
 
@@ -103,6 +105,61 @@ s3_client = boto3.client(
         retries={"max_attempts": _S3_MAX_ATTEMPTS},
     ),
 )
+
+
+# Column order for the unified raw_events table as defined in
+# priv/clickhouse/migrations/20250909000001_create_raw_events.sql. Columns with
+# ClickHouse defaults (e.g., inserted_at, event_version) are intentionally
+# omitted so the server supplies those values automatically.
+DEFAULT_CLICKHOUSE_INSERT_COLUMNS: List[str] = [
+    "event_id",
+    "user_id",
+    "host_name",
+    "section_id",
+    "project_id",
+    "publication_id",
+    "timestamp",
+    "event_type",
+    "attempt_guid",
+    "attempt_number",
+    "page_id",
+    "content_element_id",
+    "video_url",
+    "video_title",
+    "video_time",
+    "video_length",
+    "video_progress",
+    "video_played_segments",
+    "video_play_time",
+    "video_seek_from",
+    "video_seek_to",
+    "activity_attempt_guid",
+    "activity_attempt_number",
+    "page_attempt_guid",
+    "page_attempt_number",
+    "part_attempt_guid",
+    "part_attempt_number",
+    "activity_id",
+    "activity_revision_id",
+    "part_id",
+    "page_sub_type",
+    "score",
+    "out_of",
+    "scaled_score",
+    "success",
+    "completion",
+    "response",
+    "feedback",
+    "hints_requested",
+    "attached_objectives",
+    "session_id",
+    "event_hash",
+    "source_file",
+    "source_etag",
+    "source_line",
+]
+
+_CLICKHOUSE_TYPE_MAP: Optional[Dict[str, "pa.DataType"]] = None
 
 
 @dataclass(frozen=True)
@@ -327,6 +384,7 @@ def load_json_lines_as_table(ref: S3ObjectRef) -> Optional[pa.Table]:
 
     try:
         table = pa.Table.from_pylist(rows)
+        table = normalize_table_schema(table)
         logger.debug(
             "Constructed Arrow table with %d rows and schema %s from s3://%s/%s",
             table.num_rows,
@@ -361,6 +419,167 @@ def table_to_parquet(table: pa.Table) -> bytes:
     buffer = io.BytesIO()
     pq.write_table(table, buffer, compression=compression)
     return buffer.getvalue()
+
+
+def normalize_table_schema(table: pa.Table) -> pa.Table:
+    """Apply predictable type conversions before writing to Parquet."""
+    ensure_pyarrow_available()
+
+    timestamp_idx = table.schema.get_field_index("timestamp")
+    if timestamp_idx != -1:
+        column = table.column(timestamp_idx)
+        if pa.types.is_string(column.type):
+            try:
+                converted = _coerce_iso8601_timestamp_column(column)
+                field = table.schema.field(timestamp_idx).with_type(converted.type)
+                table = table.set_column(timestamp_idx, field, converted)
+            except Exception as exc:  # pylint: disable=broad-except
+                logger.warning(
+                    "Failed to coerce timestamp column to Arrow timestamp: %s",
+                    exc,
+                )
+    return _project_table_to_clickhouse_columns(table)
+
+
+def _coerce_iso8601_timestamp_column(column: pa.ChunkedArray) -> pa.Array:
+    ensure_pyarrow_available()
+    values = column.to_pylist()
+    parsed: List[Optional[datetime]] = []
+    for raw in values:
+        if raw is None:
+            parsed.append(None)
+            continue
+        parsed.append(_parse_iso8601_timestamp(raw))
+
+    # Normalize everything to UTC millisecond precision to match ClickHouse DateTime64(3)
+    return pa.array(parsed, type=pa.timestamp("ms", tz="UTC"))
+
+
+def _parse_iso8601_timestamp(raw: Any) -> datetime:
+    if isinstance(raw, datetime):
+        dt = raw
+    else:
+        if not isinstance(raw, str):
+            raise TypeError(f"Unsupported timestamp value type: {type(raw)!r}")
+        text = raw.strip()
+        if not text:
+            raise ValueError("Empty timestamp string")
+        if text.endswith("Z"):
+            text = text[:-1] + "+00:00"
+
+        try:
+            dt = datetime.fromisoformat(text)
+        except ValueError as exc:
+            dot_index = text.find(".")
+            if dot_index != -1:
+                tz_start = max(text.find("+", dot_index), text.find("-", dot_index))
+                if tz_start == -1:
+                    tz_start = len(text)
+                fractional = text[dot_index + 1 : tz_start]
+                if fractional and len(fractional) > 6:
+                    trimmed = text[: dot_index + 1] + fractional[:6] + text[tz_start:]
+                    dt = datetime.fromisoformat(trimmed)
+                else:
+                    raise ValueError(f"Invalid ISO-8601 timestamp: {text}") from exc
+            else:
+                raise ValueError(f"Invalid ISO-8601 timestamp: {text}") from exc
+
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+
+    return dt.astimezone(timezone.utc)
+
+
+def _project_table_to_clickhouse_columns(table: pa.Table) -> pa.Table:
+    columns = resolve_clickhouse_insert_columns()
+    if not columns:
+        return table
+
+    type_map = _get_clickhouse_type_map()
+    arrays = []
+    names: List[str] = []
+    row_count = table.num_rows
+
+    for column_name in columns:
+        expected_type = type_map.get(column_name)
+        if column_name in table.schema.names:
+            column = table.column(column_name)
+            if expected_type is not None and not column.type.equals(expected_type):
+                try:
+                    column = column.cast(expected_type)
+                except Exception as exc:  # pylint: disable=broad-except
+                    raise ValueError(
+                        f"Column '{column_name}' cannot be cast from {column.type} to {expected_type}"
+                    ) from exc
+            arrays.append(column)
+        else:
+            if expected_type is None:
+                raise ValueError(
+                    f"Missing ClickHouse column '{column_name}' and no type information available"
+                )
+            logger.debug(
+                "Filling missing ClickHouse column '%s' with NULL values (expected type %s)",
+                column_name,
+                expected_type,
+            )
+            arrays.append(pa.nulls(row_count, type=expected_type))
+        names.append(column_name)
+
+    return pa.Table.from_arrays(arrays, names=names)
+
+
+def _get_clickhouse_type_map() -> Dict[str, "pa.DataType"]:
+    ensure_pyarrow_available()
+    global _CLICKHOUSE_TYPE_MAP  # noqa: PLW0603 -- module level cache for performance
+    if _CLICKHOUSE_TYPE_MAP is None:
+        _CLICKHOUSE_TYPE_MAP = {
+            "event_id": pa.string(),
+            "user_id": pa.string(),
+            "host_name": pa.string(),
+            "section_id": pa.uint64(),
+            "project_id": pa.uint64(),
+            "publication_id": pa.uint64(),
+            "timestamp": pa.timestamp("ms", tz="UTC"),
+            "event_type": pa.string(),
+            "attempt_guid": pa.string(),
+            "attempt_number": pa.uint32(),
+            "page_id": pa.uint64(),
+            "content_element_id": pa.string(),
+            "video_url": pa.string(),
+            "video_title": pa.string(),
+            "video_time": pa.float64(),
+            "video_length": pa.float64(),
+            "video_progress": pa.float64(),
+            "video_played_segments": pa.string(),
+            "video_play_time": pa.float64(),
+            "video_seek_from": pa.float64(),
+            "video_seek_to": pa.float64(),
+            "activity_attempt_guid": pa.string(),
+            "activity_attempt_number": pa.uint32(),
+            "page_attempt_guid": pa.string(),
+            "page_attempt_number": pa.uint32(),
+            "part_attempt_guid": pa.string(),
+            "part_attempt_number": pa.uint32(),
+            "activity_id": pa.uint64(),
+            "activity_revision_id": pa.uint64(),
+            "part_id": pa.string(),
+            "page_sub_type": pa.string(),
+            "score": pa.float64(),
+            "out_of": pa.float64(),
+            "scaled_score": pa.float64(),
+            "success": pa.bool_(),
+            "completion": pa.bool_(),
+            "response": pa.string(),
+            "feedback": pa.string(),
+            "hints_requested": pa.uint32(),
+            "attached_objectives": pa.string(),
+            "session_id": pa.string(),
+            "event_hash": pa.string(),
+            "source_file": pa.string(),
+            "source_etag": pa.string(),
+            "source_line": pa.uint32(),
+        }
+    return _CLICKHOUSE_TYPE_MAP
 
 
 def insert_into_clickhouse(parquet_payload: bytes, row_count: int) -> None:
@@ -426,12 +645,33 @@ def build_insert_query() -> str:
         raise ValueError(
             "CLICKHOUSE_DATABASE and CLICKHOUSE_TABLE must be set when CLICKHOUSE_INSERT_SQL is not provided"
         )
+    columns = resolve_clickhouse_insert_columns()
+    column_clause = ""
+    if columns:
+        column_clause = " (" + ", ".join(quote_identifier(col) for col in columns) + ")"
 
-    return f"INSERT INTO {quote_identifier(database)}.{quote_identifier(table)} FORMAT Parquet"
+    return (
+        f"INSERT INTO {quote_identifier(database)}.{quote_identifier(table)}"
+        f"{column_clause} FORMAT Parquet"
+    )
 
 
 def quote_identifier(identifier: str) -> str:
     return f"`{identifier.replace('`', '``')}`"
+
+
+def resolve_clickhouse_insert_columns() -> List[str]:
+    env_value = os.getenv("CLICKHOUSE_INSERT_COLUMNS")
+    if env_value is not None:
+        parsed = [item.strip() for item in env_value.split(",") if item.strip()]
+        if parsed and parsed != ["*"]:
+            return parsed
+        if parsed == ["*"]:
+            return []
+        if not parsed:
+            # Explicitly set to empty string → disable column projection
+            return []
+    return DEFAULT_CLICKHOUSE_INSERT_COLUMNS
 
 
 def parse_clickhouse_settings() -> Dict[str, str]:

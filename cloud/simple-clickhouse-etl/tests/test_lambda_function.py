@@ -189,3 +189,32 @@ class LambdaFunctionTests(TestCase):
         payload = json.loads(result["body"])
         self.assertIn("runtime", payload)
         self.assertIn("pyarrow", payload["dependencies"])
+
+    def test_build_insert_query_uses_default_columns(self):
+        with mock.patch.dict(
+            os.environ,
+            {
+                "CLICKHOUSE_DATABASE": "db",
+                "CLICKHOUSE_TABLE": "raw_events",
+            },
+            clear=False,
+        ):
+            query = lambda_function.build_insert_query()
+
+        self.assertTrue(query.startswith("INSERT INTO `db`.`raw_events`"))
+        self.assertIn("`event_id`", query)
+        self.assertTrue(query.endswith("FORMAT Parquet"))
+
+    def test_build_insert_query_respects_column_override(self):
+        with mock.patch.dict(
+            os.environ,
+            {
+                "CLICKHOUSE_DATABASE": "db",
+                "CLICKHOUSE_TABLE": "raw_events",
+                "CLICKHOUSE_INSERT_COLUMNS": "event_id,timestamp",
+            },
+            clear=False,
+        ):
+            query = lambda_function.build_insert_query()
+
+        self.assertIn("(`event_id`, `timestamp`)", query)
