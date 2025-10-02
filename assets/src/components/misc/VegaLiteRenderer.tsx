@@ -23,17 +23,19 @@ export const VegaLiteRenderer: React.FC<Props> = ({ spec, dark_mode_colors }) =>
     const updatedSpec = { ...spec };
 
     // Update color range if it exists in the spec
+    // Type guard to check if the spec has encoding property
+    const specWithEncoding = updatedSpec as any;
     if (
-      updatedSpec.encoding &&
-      typeof updatedSpec.encoding === 'object' &&
-      'color' in updatedSpec.encoding &&
-      updatedSpec.encoding.color &&
-      typeof updatedSpec.encoding.color === 'object' &&
-      'scale' in updatedSpec.encoding.color &&
-      updatedSpec.encoding.color.scale &&
-      typeof updatedSpec.encoding.color.scale === 'object'
+      specWithEncoding.encoding &&
+      typeof specWithEncoding.encoding === 'object' &&
+      'color' in specWithEncoding.encoding &&
+      specWithEncoding.encoding.color &&
+      typeof specWithEncoding.encoding.color === 'object' &&
+      'scale' in specWithEncoding.encoding.color &&
+      specWithEncoding.encoding.color.scale &&
+      typeof specWithEncoding.encoding.color.scale === 'object'
     ) {
-      const colorScale = updatedSpec.encoding.color.scale as any;
+      const colorScale = specWithEncoding.encoding.color.scale as any;
       colorScale.range = darkMode ? dark_mode_colors.dark : dark_mode_colors.light;
     }
 
