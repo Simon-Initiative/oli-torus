@@ -4,7 +4,10 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.SubObjectivesList do
   def update(assigns, socket) do
     # Create the sub-objectives table model and add computed assigns
     {:ok, sub_objectives_table_model} =
-      OliWeb.Delivery.LearningObjectives.SubObjectivesTableModel.new(assigns.sub_objectives_data)
+      OliWeb.Delivery.LearningObjectives.SubObjectivesTableModel.new(
+        assigns.sub_objectives_data,
+        assigns.parent_unique_id
+      )
 
     socket =
       socket
@@ -49,7 +52,10 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.SubObjectivesList do
 
     # Create new table model with sorted data
     {:ok, new_table_model} =
-      OliWeb.Delivery.LearningObjectives.SubObjectivesTableModel.new(sorted_rows)
+      OliWeb.Delivery.LearningObjectives.SubObjectivesTableModel.new(
+        sorted_rows,
+        socket.assigns[:parent_unique_id]
+      )
 
     updated_table_model =
       Map.merge(new_table_model, %{

@@ -103,7 +103,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
       <% end %>
       
     <!-- Sub-objectives Table (always shown) -->
-      <div id="sub-objectives-list" class="mt-4">
+      <div id={"sub-objectives-list-container-#{@unique_id}"} class="mt-4">
         <%= if @sub_objectives_data == [] do %>
           No sub-objectives found
         <% else %>
@@ -111,6 +111,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
             module={OliWeb.Components.Delivery.LearningObjectives.SubObjectivesList}
             id={"sub-objectives-list-#{@unique_id}"}
             sub_objectives_data={@sub_objectives_data}
+            parent_unique_id={@unique_id}
           />
         <% end %>
       </div>
@@ -128,7 +129,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
         student_proficiency: assigns.student_proficiency,
         unique_id: assigns.unique_id
       },
-      id: "dot-distribution-chart-#{assigns.objective_id}"
+      id: "dot-distribution-chart-#{assigns.unique_id}"
     )
   end
 
