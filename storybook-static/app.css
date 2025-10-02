@@ -19107,6 +19107,19 @@ a.download::after {
   content: '\f019';
 }
 
+.search-highlight {
+  background-color: #fde68a;
+  color: inherit;
+  border-radius: 0.25rem;
+  padding: 0 0.15rem;
+  font-style: normal;
+}
+
+.dark .search-highlight {
+  background-color: #2563eb;
+  color: #0f172a;
+}
+
 .slate-editor p:last-child {
   margin-bottom: 0px;
 }
