@@ -42,7 +42,7 @@ defmodule Oli.Delivery.CustomLogs.LegacyLogs do
         on: aa.revision_id == r2.id,
         join: at in assoc(r2, :activity_type),
         where: aa.attempt_guid == ^activity_attempt_guid,
-        select: {aa, ra, a, r1, r2, sr.project_id, spp.publication_id, s, at}
+        select: {aa, ra, a, r1, sr.project_id, spp.publication_id, s, at}
       )
       |> Repo.one()
 
@@ -60,7 +60,6 @@ defmodule Oli.Delivery.CustomLogs.LegacyLogs do
           _resource_attempt,
           resource_access,
           resource_revision,
-          _activity_revision,
           project_id,
           publication_id,
           section,
@@ -153,14 +152,13 @@ defmodule Oli.Delivery.CustomLogs.LegacyLogs do
     end
   end
 
-  # Updated to handle the 9-element tuple from the enhanced query
+  # Updated to handle the 8-element tuple from the optimized query
   defp to_attrs(
          {
            activity_attempt,
            _resource_attempt,
            resource_access,
            _resource_revision,
-           _activity_revision,
            _project_id,
            _publication_id,
            _section,
