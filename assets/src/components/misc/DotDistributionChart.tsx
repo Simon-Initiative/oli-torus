@@ -616,6 +616,7 @@ function renderDots(
     return (
       <g key={breakpoint.name} className={breakpoint.className}>
         <rect
+          data-testid={`close-button-${level}-${breakpoint.name}`}
           x={`${position}%`}
           y="2"
           width="24"
@@ -797,6 +798,7 @@ function renderDots(
           <g key={`section-${level}`}>
             {/* Interactive area (invisible) */}
             <rect
+              data-testid={`interactive-area-${level}`}
               x={`${bounds.startX}%`}
               y="0"
               width={`${bounds.width}%`}
@@ -827,6 +829,7 @@ function renderDots(
             {showRectangle && (
               <>
                 <rect
+                  data-testid={`visual-rectangle-${level}`}
                   x={`${bounds.startX}%`}
                   y="1"
                   width={`${bounds.width}%`}

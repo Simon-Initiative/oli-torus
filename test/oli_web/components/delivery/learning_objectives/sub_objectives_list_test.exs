@@ -61,7 +61,8 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.SubObjectivesListTest do
       {:ok, view, _html} =
         live_component_isolated(conn, SubObjectivesList, %{
           id: "sub-objectives-list-test",
-          sub_objectives_data: sub_objectives_data
+          sub_objectives_data: sub_objectives_data,
+          parent_unique_id: "test-parent-id"
         })
 
       # Check that the component renders
@@ -81,7 +82,8 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.SubObjectivesListTest do
       {:ok, view, _html} =
         live_component_isolated(conn, SubObjectivesList, %{
           id: "sub-objectives-list-test",
-          sub_objectives_data: sub_objectives_data
+          sub_objectives_data: sub_objectives_data,
+          parent_unique_id: "test-parent-id"
         })
 
       # Check that proficiency levels are displayed
@@ -94,7 +96,8 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.SubObjectivesListTest do
       {:ok, view, _html} =
         live_component_isolated(conn, SubObjectivesList, %{
           id: "sub-objectives-list-test",
-          sub_objectives_data: []
+          sub_objectives_data: [],
+          parent_unique_id: "test-parent-id"
         })
 
       # Should still render table structure but with no data rows
@@ -110,7 +113,8 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.SubObjectivesListTest do
       {:ok, view, _html} =
         live_component_isolated(conn, SubObjectivesList, %{
           id: "sub-objectives-list-test",
-          sub_objectives_data: sub_objectives_data
+          sub_objectives_data: sub_objectives_data,
+          parent_unique_id: "test-parent-id"
         })
 
       # Check initial order before sorting (should be: 1, 2, 3)
@@ -161,7 +165,8 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.SubObjectivesListTest do
       {:ok, view, _html} =
         live_component_isolated(conn, SubObjectivesList, %{
           id: "sub-objectives-list-test",
-          sub_objectives_data: sub_objectives_data
+          sub_objectives_data: sub_objectives_data,
+          parent_unique_id: "test-parent-id"
         })
 
       # Check initial order before sorting (High, Medium, Low)
@@ -194,7 +199,8 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.SubObjectivesListTest do
       {:ok, view, _html} =
         live_component_isolated(conn, SubObjectivesList, %{
           id: "sub-objectives-list-test",
-          sub_objectives_data: sub_objectives_with_missing_data
+          sub_objectives_data: sub_objectives_with_missing_data,
+          parent_unique_id: "test-parent-id"
         })
 
       # Should render without errors
@@ -209,7 +215,8 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.SubObjectivesListTest do
       {:ok, view, _html} =
         live_component_isolated(conn, SubObjectivesList, %{
           id: "sub-objectives-list-test",
-          sub_objectives_data: sub_objectives_data
+          sub_objectives_data: sub_objectives_data,
+          parent_unique_id: "test-parent-id"
         })
 
       # Check that the actual activities count values are displayed in the table
@@ -253,7 +260,8 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.SubObjectivesListTest do
       {:ok, view, _html} =
         live_component_isolated(conn, SubObjectivesList, %{
           id: "sub-objectives-list-test",
-          sub_objectives_data: extreme_data
+          sub_objectives_data: extreme_data,
+          parent_unique_id: "test-parent-id"
         })
 
       # Should render without errors
@@ -298,7 +306,8 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.SubObjectivesListTest do
       {:ok, view, _html} =
         live_component_isolated(conn, SubObjectivesList, %{
           id: "sub-objectives-list-test",
-          sub_objectives_data: unsorted_data
+          sub_objectives_data: unsorted_data,
+          parent_unique_id: "test-parent-id"
         })
 
       # Check initial order (should maintain input order: Zebra, Alpha, Beta)
@@ -369,7 +378,8 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.SubObjectivesListTest do
       {:ok, view, _html} =
         live_component_isolated(conn, SubObjectivesList, %{
           id: "sub-objectives-list-test",
-          sub_objectives_data: mixed_proficiency_data
+          sub_objectives_data: mixed_proficiency_data,
+          parent_unique_id: "test-parent-id"
         })
 
       # Check initial order (Low, High, Medium, No Data)
