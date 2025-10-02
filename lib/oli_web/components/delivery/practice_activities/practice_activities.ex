@@ -482,7 +482,7 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
         do: nil,
         else: String.to_existing_atom(value)
 
-    send(self(), {:selected_card_assessments, value})
+    send(self(), {:selected_card_assessments, value, :practice_activities})
 
     {:noreply, socket}
   end
@@ -516,7 +516,10 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
     do: Enum.filter(assessments, fn assessment -> assessment.students_completion < 0.40 end)
 
   defp maybe_filter_by_card(assessments, :low_or_no_attempts),
-    do: Enum.filter(assessments, fn assessment -> assessment.total_attempts <= 5 end)
+    do:
+      Enum.filter(assessments, fn assessment ->
+        assessment.total_attempts <= 5 || assessment.total_attempts == nil
+      end)
 
   defp maybe_filter_by_card(assessments, _), do: assessments
 
@@ -571,9 +574,9 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
 
     Enum.filter(assessments, fn assessment ->
       Enum.any?(selected_attempts_ids, fn
-        1 -> assessment.total_attempts == 0
-        2 -> assessment.total_attempts < 5
-        3 -> assessment.total_attempts > 5
+        1 -> assessment.total_attempts in [nil, 0]
+        2 -> not is_nil(assessment.total_attempts) and assessment.total_attempts <= 5
+        3 -> not is_nil(assessment.total_attempts) and assessment.total_attempts > 5
         _ -> false
       end)
     end)
@@ -600,7 +603,7 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
         end),
       low_or_no_attempts:
         Enum.count(assessments, fn assessment ->
-          assessment.total_attempts <= 5
+          assessment.total_attempts <= 5 || assessment.total_attempts == nil
         end)
     }
   end
