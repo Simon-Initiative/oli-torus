@@ -214,7 +214,7 @@ config :ex_aws, :s3,
 config :oli, :xapi_upload_pipeline,
   producer_module: Oli.Analytics.XAPI.QueueProducer,
   uploader_module: Oli.Analytics.XAPI.LocalFileUploader,
-  suppress_event_emitting: true,
+  suppress_event_emitting: System.get_env("SUPPRESS_DEV_EVENT_EMITTING", "true") == "true",
   xapi_local_output_dir: System.get_env("XAPI_LOCAL_OUTPUT_DIR", "./xapi_output")
 
 config :ex_aws, :hackney_opts,
