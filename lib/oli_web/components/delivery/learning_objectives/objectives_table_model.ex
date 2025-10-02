@@ -33,10 +33,13 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
       },
       %ColumnSpec{
         name: :student_proficiency_obj,
-        label: HTMLComponents.render_proficiency_label(%{title: "Student Proficiency"}),
-        render_fn: &custom_render/3,
-        tooltip:
-          "For all students, or one specific student, proficiency for a learning objective will be calculated off the percentage of correct answers for first part attempts within first activity attempts - for those parts that have that learning objective or any of its sub-objectives attached to it."
+        label:
+          HTMLComponents.render_label(%{
+            title: "Student Proficiency",
+            info_tooltip:
+              "For all students, or one specific student, proficiency for a learning objective will be calculated off the percentage of correct answers for first part attempts within first activity attempts - for those parts that have that learning objective or any of its sub-objectives attached to it."
+          }),
+        render_fn: &custom_render/3
       },
       %ColumnSpec{
         name: :student_proficiency_distribution,
