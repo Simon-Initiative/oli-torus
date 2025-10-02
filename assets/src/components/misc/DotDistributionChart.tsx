@@ -659,11 +659,11 @@ function renderDots(
         overflow: 'visible',
       }}
       role="img"
-      aria-labelledby="dotChartTitle"
-      aria-describedby="dotChartDesc"
+      aria-labelledby={`dotChartTitle-${unique_id}`}
+      aria-describedby={`dotChartDesc-${unique_id}`}
     >
-      <title id="dotChartTitle">{chartTitle}</title>
-      <desc id="dotChartDesc">{chartDescription}</desc>
+      <title id={`dotChartTitle-${unique_id}`}>{chartTitle}</title>
+      <desc id={`dotChartDesc-${unique_id}`}>{chartDescription}</desc>
 
       {/* Render dots first */}
       {PROFICIENCY_LABELS.map((level) => {
