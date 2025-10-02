@@ -22,7 +22,6 @@ defmodule Oli.Delivery.CustomLogs.LegacyLogs do
     activity_attempt_guid = to_string(xpath(doc, ~x"//*/@external_object_id"))
     action = to_string(xpath(doc, ~x"//*/@action_id"))
 
-    # Fetch all the necessary context information to be able to create activity log
     result =
       from(
         aa in ActivityAttempt,
