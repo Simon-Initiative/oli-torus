@@ -45,10 +45,20 @@ defmodule OliWeb.Components.Delivery.ScoredActivitiesTest do
         section: %Section{id: 1, slug: "section"},
         view: :scored_activities,
         ctx: %{user: %{id: 1}},
-        assessments: [%{id: 1, title: "A1", order: 1, resource_id: 1, avg_score: 0.67, students_completion: 0.75, total_attempts: 10}],
+        assessments: [
+          %{
+            id: 1,
+            title: "A1",
+            order: 1,
+            resource_id: 1,
+            avg_score: 0.67,
+            students_completion: 0.75,
+            total_attempts: 10
+          }
+        ],
         students: [%{id: 1, email: "student@example.com"}],
         scripts: [],
-        activity_types_map: %{},
+        activity_types_map: %{}
       }
 
       socket = %Phoenix.LiveView.Socket{assigns: %{myself: :self, __changed__: %{}}}

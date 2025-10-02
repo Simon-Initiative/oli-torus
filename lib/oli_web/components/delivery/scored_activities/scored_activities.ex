@@ -151,13 +151,15 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
                 if s.id in students_with_attempts, do: acc, else: [s.email | acc]
               end)
 
-
             percentage_score =
-              Metrics.avg_score_across_for_pages(assigns.section, [current_assessment.resource_id], student_ids)
+              Metrics.avg_score_across_for_pages(
+                assigns.section,
+                [current_assessment.resource_id],
+                student_ids
+              )
               |> Map.get(current_assessment.resource_id, 0)
               |> Kernel.*(100)
               |> round()
-
 
             selected_activity_card_value =
               Map.get(assigns.params, "selected_activity_card_value", nil)
