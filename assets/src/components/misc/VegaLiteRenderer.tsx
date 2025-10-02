@@ -118,7 +118,7 @@ export const VegaLiteRenderer: React.FC<Props> = ({ spec, dark_mode_colors }) =>
   return (
     <div ref={containerRef} style={{ width: '100%', minWidth: 0 }}>
       <VegaLite
-        spec={dynamicSpec} // ensure: width: 'container', autosize: {type:'fit-x', contains:'padding', resize:true}
+        spec={dynamicSpec}
         actions={false}
         tooltip={darkMode ? darkTooltipTheme : lightTooltipTheme}
         className="w-100"

@@ -192,15 +192,29 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
     end
   end
 
-  # Calculate overall proficiency based on distribution
+  # Calculate overall proficiency based on distribution using the same logic as objectives
   defp calculate_overall_proficiency(proficiency_distribution) do
     total = get_total_students(proficiency_distribution)
 
-    cond do
-      total == 0 -> "Not enough data"
-      Map.get(proficiency_distribution, "High", 0) / total >= 0.6 -> "High"
-      Map.get(proficiency_distribution, "Medium", 0) / total >= 0.4 -> "Medium"
-      true -> "Low"
+    if total == 0 do
+      "Not enough data"
+    else
+      # Find the most frequent proficiency level (mode)
+      proficiency_distribution
+      |> Enum.map(fn {key, value} ->
+        ordinal =
+          case String.downcase(key) do
+            "low" -> 0
+            "medium" -> 1
+            "high" -> 2
+            _ -> 3
+          end
+
+        {key, value, ordinal}
+      end)
+      |> Enum.sort_by(fn {_key, _value, ordinal} -> ordinal end)
+      |> Enum.max_by(fn {_key, value, _ordinal} -> value end)
+      |> elem(0)
     end
   end
 
