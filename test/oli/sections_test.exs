@@ -641,6 +641,76 @@ defmodule Oli.SectionsTest do
       assert Enum.find(section_resources, &(&1.resource_id == parent4.id)) == nil
     end
 
+    test "create_section_resources/1 populates children field for objectives with parent-child relationships",
+         %{
+           section_1: section,
+           child1: %{resource: child1},
+           child2: %{resource: child2},
+           child3: %{resource: child3},
+           child4: %{resource: child4},
+           parent1: %{resource: parent1},
+           parent2: %{resource: parent2}
+         } do
+      section_resources =
+        from(sr in SectionResource,
+          as: :sr,
+          join: s in Section,
+          as: :s,
+          on: s.id == sr.section_id,
+          where: s.slug == ^section.slug,
+          select: sr
+        )
+        |> Repo.all()
+
+      # Find the parent objectives in section resources
+      parent1_sr = Enum.find(section_resources, &(&1.resource_id == parent1.id))
+      parent2_sr = Enum.find(section_resources, &(&1.resource_id == parent2.id))
+
+      # Find the child objectives in section resources
+      child1_sr = Enum.find(section_resources, &(&1.resource_id == child1.id))
+      child2_sr = Enum.find(section_resources, &(&1.resource_id == child2.id))
+      child3_sr = Enum.find(section_resources, &(&1.resource_id == child3.id))
+      child4_sr = Enum.find(section_resources, &(&1.resource_id == child4.id))
+
+      # Verify parent objectives have their children section resource IDs populated
+      # parent1 should have child1, child2, child3 as children
+      assert length(parent1_sr.children) == 3
+      assert child1_sr.id in parent1_sr.children
+      assert child2_sr.id in parent1_sr.children
+      assert child3_sr.id in parent1_sr.children
+
+      # parent2 should have child4 as a child
+      assert [child4_sr.id] == parent2_sr.children
+
+      # Child objectives should have empty children arrays
+      assert child1_sr.children == []
+      assert child2_sr.children == []
+      assert child3_sr.children == []
+      assert child4_sr.children == []
+    end
+
+    test "create_section_resources/1 handles objectives without children correctly", %{
+      section_1: section,
+      child1: %{resource: child1}
+    } do
+      section_resources =
+        from(sr in SectionResource,
+          as: :sr,
+          join: s in Section,
+          as: :s,
+          on: s.id == sr.section_id,
+          where: s.slug == ^section.slug,
+          select: sr
+        )
+        |> Repo.all()
+
+      # Find a child objective (which has no children)
+      child1_sr = Enum.find(section_resources, &(&1.resource_id == child1.id))
+
+      # Verify it has an empty children array (not nil)
+      assert child1_sr.children == []
+    end
+
     test "get_existing_slugs/1 returns an empty list when passing no slugs" do
       assert Sections.get_existing_slugs([]) == []
     end

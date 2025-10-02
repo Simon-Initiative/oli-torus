@@ -82,7 +82,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         %{
           objectives:
             Sections.get_objectives_and_subobjectives(socket.assigns.section,
-              exclude_sub_objectives: false
+              exclude_sub_objectives: false,
+              include_related_activities_count: true
             ),
           filter_options:
             Sections.get_units_and_modules_from_a_section(socket.assigns.section.slug)
