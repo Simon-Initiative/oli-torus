@@ -155,7 +155,7 @@ defmodule Oli.Delivery.CustomLogs.LegacyLogs do
   defp to_attrs(
          {
            activity_attempt,
-           resource_attempt,
+           _resource_attempt,
            resource_access,
            _resource_revision,
            _project_id,
