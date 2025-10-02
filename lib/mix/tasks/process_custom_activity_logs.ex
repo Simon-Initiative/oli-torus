@@ -249,10 +249,13 @@ defmodule Mix.Tasks.ProcessCustomActivityLogs do
   defp stream_export_to_xml(query, filename, opts) do
     Logger.info("Streaming export to XML format: #{filename}")
 
-    # Prepare output file
-    path = Path.dirname(Path.expand(filename)) <> "/datashop_output"
-    File.mkdir_p!(path)
-    full_filename = path <> "/" <> filename
+    # Sanitize filename to prevent directory traversal attacks
+    sanitized_filename = sanitize_filename(filename)
+
+    # Prepare output file in secure directory
+    base_path = Path.expand("./datashop_output")
+    File.mkdir_p!(base_path)
+    full_filename = Path.join(base_path, sanitized_filename)
 
     xml_header =
       "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<tutor_related_message_sequence version_number=\"4\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:noNamespaceSchemaLocation=\"http://pslcdatashop.org/dtd/tutor_message_v4.xsd\">\n"
@@ -287,6 +290,22 @@ defmodule Mix.Tasks.ProcessCustomActivityLogs do
       end)
 
     Logger.info("Exported #{count} records to XML file #{full_filename}")
+  end
+
+  # Sanitize filename to prevent directory traversal attacks
+  defp sanitize_filename(filename) do
+    # Extract just the basename to remove any directory components
+    basename = Path.basename(filename)
+
+    # Remove or replace dangerous characters
+    basename
+    |> String.replace(~r/[^\w\-_\.]/, "_")  # Replace non-alphanumeric chars (except dash, underscore, dot)
+    |> String.replace(~r/\.{2,}/, ".")      # Replace multiple dots with single dot
+    |> String.trim(".")                     # Remove leading/trailing dots
+    |> case do
+      "" -> "output.xml"                    # Default filename if sanitization results in empty string
+      sanitized -> sanitized
+    end
   end
 
   defp print_help do
