@@ -84,19 +84,21 @@ defmodule Mix.Tasks.ProcessCustomActivityLogs do
     # Build query based on options
     query = build_query(opts)
 
-    # Execute query
-    logs = Repo.all(query)
-
-    Logger.info("Found #{length(logs)} logs to process")
-
-    # Process each log
-    processed_results =
-      Enum.map(logs, &process_single_log(&1, opts)) |> Enum.filter(fn x -> tutor_message?(x) end)
-
-    # Export to XML if requested
+    # Process logs in streaming fashion to avoid memory exhaustion
     case opts[:xml_output] do
-      nil -> :ok
-      filename -> export_to_xml(processed_results, filename)
+      nil ->
+        # Just process without collecting results
+        Repo.transaction(fn ->
+          query
+          |> Repo.stream()
+          |> Stream.map(&process_single_log(&1, opts))
+          |> Stream.filter(&tutor_message?/1)
+          |> Stream.run()
+        end)
+
+      filename ->
+        # Stream process and write directly to file
+        stream_export_to_xml(query, filename, opts)
     end
 
     Logger.info("Processing completed")
@@ -109,10 +111,7 @@ defmodule Mix.Tasks.ProcessCustomActivityLogs do
   end
 
   defp build_query(opts) do
-    query =
-      from(log in CustomActivityLog,
-        preload: [:user, :section, :activity_attempt, :revision, :resource]
-      )
+    query = from(log in CustomActivityLog)
 
     query =
       case opts[:section_id] do
@@ -247,30 +246,46 @@ defmodule Mix.Tasks.ProcessCustomActivityLogs do
     end
   end
 
-  defp export_to_xml(results, filename) do
-    Logger.info("Exporting results to XML format: #{filename}")
+  defp stream_export_to_xml(query, filename, opts) do
+    Logger.info("Streaming export to XML format: #{filename}")
 
-    # Generate XML content by joining the processed results
-    xml_content = generate_xml_output(results)
-
-    # Write XML file
+    # Prepare output file
     path = Path.dirname(Path.expand(filename)) <> "/datashop_output"
     File.mkdir_p!(path)
-    filename = path <> "/" <> filename
-    File.write!(filename, xml_content)
-    Logger.info("Exported #{length(results)} records to XML file #{filename}")
-  end
+    full_filename = path <> "/" <> filename
 
-  defp generate_xml_output(results) do
     xml_header =
       "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<tutor_related_message_sequence version_number=\"4\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:noNamespaceSchemaLocation=\"http://pslcdatashop.org/dtd/tutor_message_v4.xsd\">\n"
 
-    # Join the processed XML content directly
-    xml_messages = Enum.join(results, "\n")
-
     xml_footer = "\n</tutor_related_message_sequence>"
 
-    xml_header <> xml_messages <> xml_footer
+    # Stream process and write directly to file
+    {count, _} = Repo.transaction(fn ->
+      File.open!(full_filename, [:write], fn file ->
+        # Write header
+        IO.binwrite(file, xml_header)
+
+        # Stream process and write each message
+        count =
+          query
+          |> Repo.stream()
+          |> Stream.map(&process_single_log(&1, opts))
+          |> Stream.filter(&tutor_message?/1)
+          |> Stream.with_index()
+          |> Enum.reduce(0, fn {message, index}, acc ->
+            # Add newline separator for messages after the first
+            if index > 0, do: IO.binwrite(file, "\n")
+            IO.binwrite(file, message)
+            acc + 1
+          end)
+
+        # Write footer
+        IO.binwrite(file, xml_footer)
+        count
+      end)
+    end)
+
+    Logger.info("Exported #{count} records to XML file #{full_filename}")
   end
 
   defp print_help do
