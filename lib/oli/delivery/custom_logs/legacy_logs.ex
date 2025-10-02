@@ -40,8 +40,9 @@ defmodule Oli.Delivery.CustomLogs.LegacyLogs do
         on: ra.revision_id == r1.id,
         join: r2 in Revision,
         on: aa.revision_id == r2.id,
+        join: at in assoc(r2, :activity_type),
         where: aa.attempt_guid == ^activity_attempt_guid,
-        select: {aa, ra, a, r1, r2, sr.project_id, spp.publication_id, s}
+        select: {aa, ra, a, r1, r2, sr.project_id, spp.publication_id, s, at}
       )
       |> Repo.one()
 
@@ -62,14 +63,15 @@ defmodule Oli.Delivery.CustomLogs.LegacyLogs do
           _activity_revision,
           project_id,
           publication_id,
-          section
+          section,
+          _activity_type
         },
         host_name,
         doc
       ) do
     message =
       extract_message(doc)
-      |> URI.decode()
+      |> safe_uri_decode()
       |> extract_sequence()
 
     if tutor_message?(message) do
@@ -151,23 +153,22 @@ defmodule Oli.Delivery.CustomLogs.LegacyLogs do
     end
   end
 
-  # Updated to handle the 8-element tuple from the enhanced query
+  # Updated to handle the 9-element tuple from the enhanced query
   defp to_attrs(
          {
            activity_attempt,
            _resource_attempt,
            resource_access,
            _resource_revision,
-           activity_revision,
+           _activity_revision,
            _project_id,
            _publication_id,
-           _section
+           _section,
+           activity_type
          },
          action,
          info
        ) do
-    activity_revision = Repo.preload(activity_revision, :activity_type)
-
     now =
       DateTime.utc_now()
       |> DateTime.truncate(:second)
@@ -179,7 +180,7 @@ defmodule Oli.Delivery.CustomLogs.LegacyLogs do
       activity_attempt_id: activity_attempt.id,
       revision_id: activity_attempt.revision_id,
       attempt_number: activity_attempt.attempt_number,
-      activity_type: activity_revision.activity_type.slug,
+      activity_type: activity_type.slug,
       action: action,
       info: info,
       inserted_at: now,
@@ -205,5 +206,14 @@ defmodule Oli.Delivery.CustomLogs.LegacyLogs do
 
     :crypto.hash(:md5, guids)
     |> Base.encode16()
+  end
+
+  # Safely decode URI-encoded strings, falling back to original string on error
+  defp safe_uri_decode(string) do
+    try do
+      URI.decode(string)
+    rescue
+      ArgumentError -> string
+    end
   end
 end
