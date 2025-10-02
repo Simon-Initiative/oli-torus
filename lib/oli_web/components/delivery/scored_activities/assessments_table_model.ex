@@ -27,25 +27,34 @@ defmodule OliWeb.Delivery.ScoredActivities.AssessmentsTableModel do
       },
       %ColumnSpec{
         name: :avg_score,
-        label: HTMLComponents.render_proficiency_label(%{title: "Avg Score"}),
+        label:
+          HTMLComponents.render_label(%{
+            title: "Avg Score",
+            info_tooltip: "Average score across all student attempts on this page."
+          }),
         render_fn: &render_avg_score_column/3,
-        td_class: "!pl-10",
-        tooltip: "Average score across all student attempts on this page."
+        td_class: "!pl-10"
       },
       %ColumnSpec{
         name: :total_attempts,
-        label: HTMLComponents.render_proficiency_label(%{title: "Total Attempts"}),
+        label:
+          HTMLComponents.render_label(%{
+            title: "Total Attempts",
+            info_tooltip:
+              "Total number of attempts made by all students. Some students may have multiple attempts based on your course settings."
+          }),
         render_fn: &render_attempts_column/3,
-        td_class: "!pl-10",
-        tooltip:
-          "Total number of attempts made by all students. Some students may have multiple attempts based on your course settings."
+        td_class: "!pl-10"
       },
       %ColumnSpec{
         name: :students_completion,
-        label: HTMLComponents.render_proficiency_label(%{title: "Student Progress"}),
+        label:
+          HTMLComponents.render_label(%{
+            title: "Student Progress",
+            info_tooltip: "Average progress on this page across all students."
+          }),
         render_fn: &render_students_completion_column/3,
-        td_class: "!pl-10",
-        tooltip: "Average progress on this page across all students."
+        td_class: "!pl-10"
       }
     ]
 

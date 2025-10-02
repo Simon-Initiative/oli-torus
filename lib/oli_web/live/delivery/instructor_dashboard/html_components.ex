@@ -279,11 +279,20 @@ defmodule OliWeb.Delivery.InstructorDashboard.HTMLComponents do
   end
 
   attr :title, :string, required: true
+  attr :info_tooltip, :string, required: false
 
-  def render_proficiency_label(assigns) do
+  def render_label(assigns) do
     ~H"""
-    <div class="flex items-center gap-x-2">
-      {Icons.info(assigns)}
+    <div class="flex items-center gap-x-2 bg-transparent">
+      <span class="group relative flex cursor-pointer items-center text-Text-text-high">
+        {Icons.info(assigns)}
+        <dialog
+          :if={assigns[:info_tooltip]}
+          class="absolute top-[150%] left-full -translate-x-1/2 p-0 m-0 w-80 rounded-md border border-Border-border-default bg-Surface-surface-background px-4 py-2 text-left text-sm font-normal leading-normal text-Text-text-high shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] group-hover:flex before:absolute before:content-[''] before:-top-4 before:left-0 before:right-0 before:h-4"
+        >
+          {@info_tooltip}
+        </dialog>
+      </span>
       <span>{@title}</span>
     </div>
     """
