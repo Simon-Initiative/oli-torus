@@ -9677,6 +9677,10 @@ table.table-striped tbody tr:nth-child(even) {
   height: 70px;
 }
 
+.h-\[70vh\] {
+  height: 70vh;
+}
+
 .h-\[72px\] {
   height: 72px;
 }
