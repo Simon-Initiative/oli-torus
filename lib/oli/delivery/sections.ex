@@ -440,6 +440,91 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
+  Ensures a user is permitted to enroll in a direct-delivery section.
+
+  The section must be flagged as open-and-free and the enrolling user must be an
+  independent learner (not an LMS account). This guards against scenarios where LMS
+  identities attempt to enter direct-delivery courses, which can cause conflicting
+  account state such as duplicate emails tied to mixed enrollment types.
+  """
+  @spec ensure_direct_delivery_enrollment_allowed(User.t() | nil, Section.t()) ::
+          :ok | {:error, :non_independent_user}
+  def ensure_direct_delivery_enrollment_allowed(_user, %Section{open_and_free: false}), do: :ok
+
+  def ensure_direct_delivery_enrollment_allowed(nil, %Section{}), do: :ok
+
+  def ensure_direct_delivery_enrollment_allowed(%User{} = user, %Section{open_and_free: true}) do
+    if user.independent_learner do
+      :ok
+    else
+      {:error, :non_independent_user}
+    end
+  end
+
+  @doc """
+  Validates a batch enrollment into a direct-delivery section.
+
+  When the section is open-and-free, every user in the list must be an independent learner.
+  This prevents LMS accounts from being bulk-enrolled into direct-delivery courses, which
+  could otherwise produce the mixed-account scenario.
+  """
+  @spec ensure_direct_delivery_batch_enrollment_allowed(list(), Section.t()) ::
+          :ok | {:error, {:non_independent_users, [integer()]}}
+  def ensure_direct_delivery_batch_enrollment_allowed(_user_entries, %Section{
+        open_and_free: false
+      }),
+      do: :ok
+
+  def ensure_direct_delivery_batch_enrollment_allowed(user_entries, _section) do
+    user_entries
+    |> normalize_user_ids()
+    |> case do
+      [] -> :ok
+      user_ids -> validate_independent_users(user_ids)
+    end
+  end
+
+  defp validate_independent_users(user_ids) do
+    non_independent_ids =
+      from(u in User,
+        where: u.id in ^user_ids and u.independent_learner == false,
+        select: u.id
+      )
+      |> Repo.all()
+
+    case non_independent_ids do
+      [] -> :ok
+      ids -> {:error, {:non_independent_users, ids}}
+    end
+  end
+
+  defp normalize_user_ids(user_entries) do
+    user_entries
+    |> List.wrap()
+    |> Enum.map(fn
+      %User{id: id} ->
+        id
+
+      %{id: id} ->
+        id
+
+      id when is_integer(id) ->
+        id
+
+      id when is_binary(id) ->
+        case Integer.parse(id) do
+          {value, ""} -> value
+          _ -> nil
+        end
+
+      _ ->
+        nil
+    end)
+    |> Enum.reject(&is_nil/1)
+    |> Enum.uniq()
+  end
+
+  @doc """
   Enrolls a user or users in a course section
   ## Examples
       iex> enroll(user_id, section_id, [%ContextRole{}])
@@ -599,6 +684,25 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
+  Determines if a particular user has an enrollment record in a section.
+
+  """
+  def has_enrollment?(user_id, section_slug) do
+    query =
+      from(
+        e in Enrollment,
+        join: s in Section,
+        on: e.section_id == s.id,
+        where: e.user_id == ^user_id and s.slug == ^section_slug
+      )
+
+    case Repo.one(query) do
+      nil -> false
+      _ -> true
+    end
+  end
+
+  @doc """
   Returns a listing of all enrollments for a given section.
 
   """
@@ -737,6 +841,25 @@ defmodule Oli.Delivery.Sections do
       )
 
     Repo.all(query)
+  end
+
+  @doc """
+  Returns the titles of active LTI course sections that the given user is currently enrolled in.
+  """
+  @spec list_user_enrolled_lti_section_titles(%User{}) :: [String.t()]
+  def list_user_enrolled_lti_section_titles(%User{id: user_id}) do
+    from(
+      s in Section,
+      join: e in Enrollment,
+      on: e.section_id == s.id,
+      where:
+        e.user_id == ^user_id and s.status == :active and e.status == :enrolled and
+          not is_nil(s.lti_1p3_deployment_id),
+      distinct: true,
+      order_by: [asc: s.title],
+      select: s.title
+    )
+    |> Repo.all()
   end
 
   @doc """
