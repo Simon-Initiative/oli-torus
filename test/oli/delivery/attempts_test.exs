@@ -82,7 +82,7 @@ defmodule Oli.Delivery.AttemptsTest do
     } do
       Attempts.track_access(p1.resource.id, section.id, user.id)
 
-      activity_provider = &Oli.Delivery.ActivityProvider.provide/6
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/7
       datashop_session_id = UUID.uuid4()
 
       refute Attempts.has_any_attempts?(user, section, p1.revision.resource_id)
@@ -96,7 +96,7 @@ defmodule Oli.Delivery.AttemptsTest do
           user: user,
           audience_role: :student,
           activity_provider: activity_provider,
-          blacklisted_activity_ids: [],
+          blacklisted_activities: [],
           publication_id: pub.id,
           effective_settings:
             Oli.Delivery.Settings.get_combined_settings(p1.revision, section.id, user.id)
@@ -156,7 +156,7 @@ defmodule Oli.Delivery.AttemptsTest do
            section: section,
            user1: user1
          } = map do
-      activity_provider = &Oli.Delivery.ActivityProvider.provide/6
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/7
       datashop_session_id = UUID.uuid4()
 
       {:ok, revision} = Oli.Resources.update_revision(revision, %{graded: false})
@@ -227,7 +227,7 @@ defmodule Oli.Delivery.AttemptsTest do
       section: section,
       user1: user1
     } do
-      activity_provider = &Oli.Delivery.ActivityProvider.provide/6
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/7
       datashop_session_id = UUID.uuid4()
 
       effective_settings =
@@ -292,7 +292,7 @@ defmodule Oli.Delivery.AttemptsTest do
       user1: user1,
       user2: user2
     } do
-      activity_provider = &Oli.Delivery.ActivityProvider.provide/6
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/7
       datashop_session_id_user1 = UUID.uuid4()
       datashop_session_id_user2 = UUID.uuid4()
 
@@ -491,7 +491,7 @@ defmodule Oli.Delivery.AttemptsTest do
       graded_page: %{revision: revision},
       user1: user1
     } do
-      activity_provider = &Oli.Delivery.ActivityProvider.provide/6
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/7
       datashop_session_id_user1 = UUID.uuid4()
 
       effective_settings =
@@ -535,7 +535,7 @@ defmodule Oli.Delivery.AttemptsTest do
       user1: user1,
       user2: user2
     } do
-      activity_provider = &Oli.Delivery.ActivityProvider.provide/6
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/7
       datashop_session_id_user1 = UUID.uuid4()
       datashop_session_id_user2 = UUID.uuid4()
 
@@ -689,7 +689,7 @@ defmodule Oli.Delivery.AttemptsTest do
       section: section,
       user1: user1
     } do
-      activity_provider = &Oli.Delivery.ActivityProvider.provide/6
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/7
       datashop_session_id_user1 = UUID.uuid4()
 
       effective_settings =
