@@ -303,10 +303,6 @@ defmodule OliWeb.LegacySuperactivityController do
         end
 
       {:numeric, score, out_of} ->
-        IO.inspect(
-          "----------------------------------score: #{score}, out_of: #{out_of} --------------------------------"
-        )
-
         eval_numeric_score(context, score, out_of, part_attempt)
     end
   end
@@ -505,10 +501,6 @@ defmodule OliWeb.LegacySuperactivityController do
     client_evaluations = [
       create_evaluation(context, score, out_of, part_attempt)
     ]
-
-    IO.inspect(
-      "----------------------------------client_evaluations: #{inspect(client_evaluations)} --------------------------------"
-    )
 
     case ActivityEvaluation.apply_client_evaluation(
            context.section.slug,
