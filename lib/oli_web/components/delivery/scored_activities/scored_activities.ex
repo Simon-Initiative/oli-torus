@@ -5,6 +5,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
 
   alias Oli.Analytics.Summary.ResourceSummary
   alias Oli.Analytics.Summary.ResponseSummary
+  alias Oli.Delivery.Metrics
   alias Oli.Delivery.Sections.Section
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Repo
@@ -14,6 +15,8 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
   alias OliWeb.Common.Params
   alias OliWeb.Common.SearchInput
   alias OliWeb.Common.Table.SortableTableModel
+  alias OliWeb.Components.Delivery.CardHighlights
+  alias OliWeb.Delivery.Content.{MultiSelect, Progress}
   alias OliWeb.Delivery.ActivityHelpers
   alias OliWeb.Delivery.ScoredActivities.ActivitiesTableModel
   alias OliWeb.Delivery.ScoredActivities.AssessmentsTableModel
@@ -28,8 +31,23 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
     limit: 20,
     sort_order: :asc,
     sort_by: :order,
-    text_search: nil
+    text_search: nil,
+    selected_card_value: nil,
+    selected_activity_card_value: nil,
+    progress_percentage: 100,
+    progress_selector: nil,
+    avg_score_percentage: 100,
+    avg_score_selector: nil,
+    selected_attempts_ids: Jason.encode!([]),
+    card_props: [],
+    card_activity_props: []
   }
+
+  @attempts_options [
+    %{id: 1, name: "None", selected: false},
+    %{id: 2, name: "Less than 5", selected: false},
+    %{id: 3, name: "More than 5", selected: false}
+  ]
 
   def mount(socket) do
     {:ok, assign(socket, scripts_loaded: false, table_model: nil, current_assessment: nil)}
@@ -48,7 +66,10 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
         students: assigns.students,
         scripts: assigns.scripts,
         activity_types_map: assigns.activity_types_map,
-        selected_activity: nil
+        selected_activity: nil,
+        card_props: [],
+        card_activity_props: [],
+        attempts_options: @attempts_options
       )
 
     case params.assessment_id do
@@ -61,11 +82,49 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
           Map.merge(table_model, %{rows: rows, sort_order: params.sort_order})
           |> SortableTableModel.update_sort_params(params.sort_by)
 
+        selected_card_value = Map.get(assigns.params, "selected_card_value", nil)
+        assessments_count = assessments_count(assigns.assessments)
+
+        card_props = [
+          %{
+            title: "Low Scores",
+            count: Map.get(assessments_count, :low_scores),
+            is_selected: selected_card_value == "low_scores",
+            value: :low_scores
+          },
+          %{
+            title: "Low Progress",
+            count: Map.get(assessments_count, :low_progress),
+            is_selected: selected_card_value == "low_progress",
+            value: :low_progress
+          },
+          %{
+            title: "Low or No Attempts",
+            count: Map.get(assessments_count, :low_or_no_attempts),
+            is_selected: selected_card_value == "low_or_no_attempts",
+            value: :low_or_no_attempts
+          }
+        ]
+
+        selected_attempts_ids = Jason.decode!(params.selected_attempts_ids)
+        attempts_options = update_attempts_options(selected_attempts_ids, @attempts_options)
+
+        selected_attempts_options =
+          Enum.reduce(attempts_options, %{}, fn option, acc ->
+            if option.selected,
+              do: Map.put(acc, option.id, option.name),
+              else: acc
+          end)
+
         {:ok,
          assign(socket,
            table_model: table_model,
            total_count: total_count,
-           current_assessment: nil
+           current_assessment: nil,
+           card_props: card_props,
+           attempts_options: attempts_options,
+           selected_attempts_options: selected_attempts_options,
+           selected_attempts_ids: selected_attempts_ids
          )}
 
       assessment_id ->
@@ -90,6 +149,44 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
             student_emails_without_attempts =
               Enum.reduce(assigns.students, [], fn s, acc ->
                 if s.id in students_with_attempts, do: acc, else: [s.email | acc]
+              end)
+
+
+            percentage_score =
+              Metrics.avg_score_across_for_pages(assigns.section, [current_assessment.resource_id], student_ids)
+              |> Map.get(current_assessment.resource_id, 0)
+              |> Kernel.*(100)
+              |> round()
+
+
+            selected_activity_card_value =
+              Map.get(assigns.params, "selected_activity_card_value", nil)
+
+            activities_count = activities_count(activities)
+
+            card_activity_props = [
+              %{
+                title: "Low Accuracy",
+                count: Map.get(activities_count, :low_accuracy),
+                is_selected: selected_activity_card_value == "low_accuracy",
+                value: :low_accuracy
+              },
+              %{
+                title: "Low or No Attempts",
+                count: Map.get(activities_count, :low_or_no_attempts),
+                is_selected: selected_activity_card_value == "low_or_no_attempts",
+                value: :low_or_no_attempts
+              }
+            ]
+
+            selected_attempts_ids = Jason.decode!(params.selected_attempts_ids)
+            attempts_options = update_attempts_options(selected_attempts_ids, @attempts_options)
+
+            selected_attempts_options =
+              Enum.reduce(attempts_options, %{}, fn option, acc ->
+                if option.selected,
+                  do: Map.put(acc, option.id, option.name),
+                  else: acc
               end)
 
             {total_count, rows} = apply_filters(activities, params)
@@ -121,7 +218,12 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
                student_emails_without_attempts: student_emails_without_attempts,
                total_attempts_count:
                  count_attempts(current_assessment, assigns.section, student_ids),
-               rendered_activity_id: UUID.uuid4()
+               rendered_activity_id: UUID.uuid4(),
+               card_activity_props: card_activity_props,
+               attempts_options: attempts_options,
+               selected_attempts_options: selected_attempts_options,
+               selected_attempts_ids: selected_attempts_ids,
+               avg_score_percentage: percentage_score
              )
              |> assign_selected_activity(selected_activity)}
         end
@@ -183,6 +285,45 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
             </a>
           <% end %>
         </div>
+        <%= if is_nil(@current_assessment) do %>
+          <div class="flex flex-row mx-4 gap-x-4">
+            <%= for card <- @card_props do %>
+              <CardHighlights.render
+                title={card.title}
+                count={card.count}
+                is_selected={card.is_selected}
+                value={card.value}
+                on_click={JS.push("select_card", target: @myself)}
+                container_filter_by={:pages}
+              />
+            <% end %>
+          </div>
+        <% else %>
+          <div class="flex flex-row mx-4 gap-x-4">
+            <div class="inline-flex flex-col justify-start items-start gap-3 p-6 h-32 rounded-2xl
+         cursor-pointer transition-colors">
+              <div class="text-gray-700 text-base font-semibold leading-normal dark:text-[#EEEBF5]">
+                Average Score
+              </div>
+
+              <div class="flex justify-start items-end gap-2 w-full">
+                <div class="text-[32px] font-bold leading-[44px] text-[#353740] dark:text-[#EEEBF5]">
+                  {@avg_score_percentage}%
+                </div>
+              </div>
+            </div>
+            <%= for card <- @card_activity_props do %>
+              <CardHighlights.render
+                title={card.title}
+                count={card.count}
+                is_selected={card.is_selected}
+                value={card.value}
+                on_click={JS.push("select_activity_card", target: @myself)}
+                container_filter_by={:questions}
+              />
+            <% end %>
+          </div>
+        <% end %>
         <div class="flex flex-row justify-between items-center">
           <div class="flex w-fit gap-2 mx-4 my-4 shadow-[0px_2px_6.099999904632568px_0px_rgba(0,0,0,0.10)] border border-Border-border-default bg-Background-bg-secondary">
             <div class="flex p-2 gap-2">
@@ -200,6 +341,38 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
                   text={@params.text_search}
                 />
               </.form>
+
+              <%= if is_nil(@current_assessment) do %>
+                <Progress.render
+                  target={@myself}
+                  progress_percentage={@params.progress_percentage}
+                  progress_selector={@params.progress_selector}
+                  params_from_url={@params}
+                />
+              <% end %>
+
+              <MultiSelect.render
+                id="attempts_select"
+                label="Attempts"
+                options={@attempts_options}
+                selected_values={@selected_attempts_options}
+                selected_ids={@selected_attempts_ids}
+                target={@myself}
+                disabled={@selected_attempts_ids == %{}}
+                placeholder="Attempts"
+                submit_event="apply_attempts_filter"
+              />
+
+              <Progress.render
+                id="score"
+                label="Score"
+                target={@myself}
+                progress_percentage={@params.avg_score_percentage}
+                progress_selector={@params.avg_score_selector}
+                params_from_url={@params}
+                submit_event="apply_avg_score_filter"
+                input_name="avg_score_percentage"
+              />
 
               <button
                 class="ml-2 mr-6 text-center text-Text-text-high text-sm font-normal leading-none flex items-center gap-x-2 hover:text-Text-text-button"
@@ -318,26 +491,49 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
 
       _assessment_id ->
         # Assessment is selected, clear only search filters but keep assessment selected
-        updated_params =
-          update_params(socket.assigns.params, %{
-            text_search: nil,
-            offset: 0
-          })
+        section_slug = socket.assigns.section.slug
 
-        {:noreply, push_patch(socket, to: route_to(socket, updated_params))}
+        path =
+          ~p"/sections/#{section_slug}/instructor_dashboard/insights/scored_activities/#{socket.assigns.params.assessment_id}"
+
+        {:noreply, push_patch(socket, to: path)}
     end
   end
 
+  def handle_event("select_card", %{"selected" => value}, socket) do
+    value =
+      if String.to_existing_atom(value) == Map.get(socket.assigns.params, :selected_card_value),
+        do: nil,
+        else: String.to_existing_atom(value)
+
+    send(self(), {:selected_card_assessments, value, :scored_activities})
+
+    {:noreply, socket}
+  end
+
+  def handle_event("select_activity_card", %{"selected" => value}, socket) do
+    value =
+      if String.to_existing_atom(value) ==
+           Map.get(socket.assigns.params, :selected_activity_card_value),
+         do: nil,
+         else: String.to_existing_atom(value)
+
+    send(self(), {:selected_activity_card, value, :scored_activities})
+
+    {:noreply, socket}
+  end
+
   def handle_event("back", _params, socket) do
-    socket =
-      assign(socket,
-        params: Map.put(socket.assigns.params, :assessment_id, nil),
-        current_assessment: nil
-      )
+    section_slug = socket.assigns.section.slug
 
     {:noreply,
-     push_patch(socket,
-       to: route_to(socket, socket.assigns.params.assessment_table_params)
+     socket
+     |> assign(
+       params: Map.put(socket.assigns.params, :assessment_id, nil),
+       current_assessment: nil
+     )
+     |> push_patch(
+       to: ~p"/sections/#{section_slug}/instructor_dashboard/insights/scored_activities"
      )}
   end
 
@@ -412,6 +608,67 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
            update_params(socket.assigns.params, %{limit: limit, offset: offset})
          )
      )}
+  end
+
+  def handle_event(
+        "apply_progress_filter",
+        %{
+          "progress_percentage" => progress_percentage,
+          "progress" => %{"option" => progress_selector}
+        },
+        socket
+      ) do
+    new_params =
+      %{
+        progress_percentage: progress_percentage,
+        progress_selector: progress_selector
+      }
+
+    {:noreply,
+     push_patch(socket,
+       to: route_to(socket, update_params(socket.assigns.params, new_params))
+     )}
+  end
+
+  def handle_event(
+        "apply_avg_score_filter",
+        %{
+          "avg_score_percentage" => avg_score_percentage,
+          "progress" => %{"option" => avg_score_selector}
+        },
+        socket
+      ) do
+    new_params =
+      %{
+        avg_score_percentage: avg_score_percentage,
+        avg_score_selector: avg_score_selector
+      }
+
+    {:noreply,
+     push_patch(socket,
+       to: route_to(socket, update_params(socket.assigns.params, new_params))
+     )}
+  end
+
+  def handle_event("apply_attempts_filter", _params, socket) do
+    %{
+      selected_attempts_ids: selected_ids,
+      params: params
+    } = socket.assigns
+
+    {:noreply,
+     push_patch(socket,
+       to:
+         route_to(
+           socket,
+           update_params(params, %{selected_attempts_ids: Jason.encode!(selected_ids)})
+         )
+     )}
+  end
+
+  def handle_event("toggle_selected", %{"_target" => [id]}, socket) do
+    selected_id = String.to_integer(id)
+    do_update_selection(socket, selected_id)
   end
 
   def handle_event("paged_table_limit_change", params, socket) do
@@ -495,6 +752,10 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
     assessments =
       assessments
       |> maybe_filter_by_text(params.text_search)
+      |> maybe_filter_by_card(params.selected_card_value || params.selected_activity_card_value)
+      |> maybe_filter_by_progress(params.progress_selector, params.progress_percentage)
+      |> maybe_filter_by_avg_score(params.avg_score_selector, params.avg_score_percentage)
+      |> maybe_filter_by_attempts(params.selected_attempts_ids)
       |> sort_by(params.sort_by, params.sort_order)
 
     {length(assessments), assessments |> Enum.drop(params.offset) |> Enum.take(params.limit)}
@@ -506,6 +767,88 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
   defp maybe_filter_by_text(assessments, text_search) do
     Enum.filter(assessments, fn assessment ->
       String.contains?(String.downcase(assessment.title), String.downcase(text_search))
+    end)
+  end
+
+  defp maybe_filter_by_card(assessments, :low_scores),
+    do:
+      Enum.filter(assessments, fn assessment ->
+        assessment.avg_score < 0.40
+      end)
+
+  defp maybe_filter_by_card(assessments, :low_progress),
+    do: Enum.filter(assessments, fn assessment -> assessment.students_completion < 0.40 end)
+
+  defp maybe_filter_by_card(assessments, :low_or_no_attempts),
+    do:
+      Enum.filter(assessments, fn assessment ->
+        assessment.total_attempts <= 5 || assessment.total_attempts == nil
+      end)
+
+  defp maybe_filter_by_card(assessments, :low_accuracy),
+    do:
+      Enum.filter(assessments, fn assessment ->
+        assessment.avg_score < 0.40
+      end)
+
+  defp maybe_filter_by_card(assessments, _), do: assessments
+
+  defp maybe_filter_by_progress(assessments, progress_selector, percentage) do
+    case progress_selector do
+      :is_equal_to ->
+        Enum.filter(assessments, fn assessment ->
+          parse_progress(assessment.students_completion || 0.0) == percentage
+        end)
+
+      :is_less_than_or_equal ->
+        Enum.filter(assessments, fn assessment ->
+          parse_progress(assessment.students_completion || 0.0) <= percentage
+        end)
+
+      :is_greather_than_or_equal ->
+        Enum.filter(assessments, fn assessment ->
+          parse_progress(assessment.students_completion || 0.0) >= percentage
+        end)
+
+      nil ->
+        assessments
+    end
+  end
+
+  defp maybe_filter_by_avg_score(assessments, avg_score_selector, avg_score_percentage) do
+    case avg_score_selector do
+      :is_equal_to ->
+        Enum.filter(assessments, fn assessment ->
+          parse_progress(assessment.avg_score || 0.0) == avg_score_percentage
+        end)
+
+      :is_less_than_or_equal ->
+        Enum.filter(assessments, fn assessment ->
+          parse_progress(assessment.avg_score || 0.0) <= avg_score_percentage
+        end)
+
+      :is_greather_than_or_equal ->
+        Enum.filter(assessments, fn assessment ->
+          parse_progress(assessment.avg_score || 0.0) >= avg_score_percentage
+        end)
+
+      nil ->
+        assessments
+    end
+  end
+
+  defp maybe_filter_by_attempts(assessments, "[]"), do: assessments
+
+  defp maybe_filter_by_attempts(assessments, selected_attempts_ids) do
+    selected_attempts_ids = Jason.decode!(selected_attempts_ids)
+
+    Enum.filter(assessments, fn assessment ->
+      Enum.any?(selected_attempts_ids, fn
+        1 -> assessment.total_attempts in [nil, 0]
+        2 -> not is_nil(assessment.total_attempts) and assessment.total_attempts <= 5
+        3 -> not is_nil(assessment.total_attempts) and assessment.total_attempts > 5
+        _ -> false
+      end)
     end)
   end
 
@@ -550,8 +893,113 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
       text_search: Params.get_param(params, "text_search", @default_params.text_search),
       assessment_id: Params.get_int_param(params, "assessment_id", nil),
       assessment_table_params: params["assessment_table_params"],
-      selected_activity: Params.get_param(params, "selected_activity", nil)
+      selected_activity: Params.get_param(params, "selected_activity", nil),
+      selected_card_value:
+        Params.get_atom_param(
+          params,
+          "selected_card_value",
+          [:low_scores, :low_progress, :low_or_no_attempts],
+          @default_params.selected_card_value
+        ),
+      selected_activity_card_value:
+        Params.get_atom_param(
+          params,
+          "selected_activity_card_value",
+          [:low_accuracy, :low_or_no_attempts],
+          @default_params.selected_activity_card_value
+        ),
+      progress_percentage:
+        Params.get_int_param(params, "progress_percentage", @default_params.progress_percentage),
+      progress_selector:
+        Params.get_atom_param(
+          params,
+          "progress_selector",
+          [:is_equal_to, :is_less_than_or_equal, :is_greather_than_or_equal],
+          @default_params.progress_selector
+        ),
+      avg_score_percentage:
+        Params.get_int_param(params, "avg_score_percentage", @default_params.avg_score_percentage),
+      avg_score_selector:
+        Params.get_atom_param(
+          params,
+          "avg_score_selector",
+          [:is_equal_to, :is_less_than_or_equal, :is_greather_than_or_equal],
+          @default_params.avg_score_selector
+        ),
+      selected_attempts_ids:
+        Params.get_param(params, "selected_attempts_ids", @default_params.selected_attempts_ids),
+      card_props: Params.get_param(params, "card_props", @default_params.card_props),
+      card_activity_props:
+        Params.get_param(params, "card_activity_props", @default_params.card_activity_props)
     }
+  end
+
+  defp parse_progress(progress) do
+    {progress, _} =
+      Float.round(progress * 100)
+      |> Float.to_string()
+      |> Integer.parse()
+
+    progress
+  end
+
+  defp assessments_count(assessments) do
+    %{
+      low_scores:
+        Enum.count(assessments, fn assessment ->
+          assessment.avg_score < 0.40
+        end),
+      low_progress:
+        Enum.count(assessments, fn assessment ->
+          assessment.students_completion < 0.40
+        end),
+      low_or_no_attempts:
+        Enum.count(assessments, fn assessment ->
+          assessment.total_attempts <= 5 || assessment.total_attempts == nil
+        end)
+    }
+  end
+
+  defp activities_count(activities) do
+    %{
+      low_accuracy:
+        Enum.count(activities, fn activity ->
+          activity.avg_score < 0.40
+        end),
+      low_or_no_attempts:
+        Enum.count(activities, fn activity ->
+          activity.total_attempts <= 5 || activity.total_attempts == nil
+        end)
+    }
+  end
+
+  defp update_attempts_options(selected_attempts_ids, attempts_options) do
+    Enum.map(attempts_options, fn option ->
+      if option.id in selected_attempts_ids, do: %{option | selected: true}, else: option
+    end)
+  end
+
+  defp do_update_selection(socket, selected_id) do
+    %{attempts_options: attempts_options} = socket.assigns
+
+    updated_options =
+      Enum.map(attempts_options, fn option ->
+        if option.id == selected_id, do: %{option | selected: !option.selected}, else: option
+      end)
+
+    {selected_attempts_options, selected_ids} =
+      Enum.reduce(updated_options, {%{}, []}, fn option, {values, acc_ids} ->
+        if option.selected,
+          do: {Map.put(values, option.id, option.name), [option.id | acc_ids]},
+          else: {values, acc_ids}
+      end)
+
+    {:noreply,
+     assign(socket,
+       selected_attempts_options: selected_attempts_options,
+       attempts_options: updated_options,
+       selected_attempts_ids: selected_ids
+     )}
   end
 
   defp update_params(%{sort_by: sort_by} = params, %{sort_by: sort_by}) do
