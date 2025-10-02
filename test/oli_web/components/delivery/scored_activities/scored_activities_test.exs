@@ -6,6 +6,29 @@ defmodule OliWeb.Components.Delivery.ScoredActivitiesTest do
   alias OliWeb.Components.Delivery.ScoredActivities
   alias Oli.Delivery.Sections.Section
 
+  @attempts_options [
+    %{id: 1, name: "None", selected: false},
+    %{id: 2, name: "Less than 5", selected: false},
+    %{id: 3, name: "More than 5", selected: false}
+  ]
+
+  @default_params %{
+    offset: 0,
+    limit: 20,
+    sort_order: :asc,
+    sort_by: :order,
+    text_search: nil,
+    selected_card_value: nil,
+    selected_activity_card_value: nil,
+    progress_percentage: 100,
+    progress_selector: nil,
+    avg_score_percentage: 100,
+    avg_score_selector: nil,
+    selected_attempts_ids: Jason.encode!([]),
+    card_props: [],
+    card_activity_props: []
+  }
+
   describe "mount/1" do
     test "mounts with default assigns" do
       {:ok, socket} = ScoredActivities.mount(%Phoenix.LiveView.Socket{})
@@ -22,10 +45,10 @@ defmodule OliWeb.Components.Delivery.ScoredActivitiesTest do
         section: %Section{id: 1, slug: "section"},
         view: :scored_activities,
         ctx: %{user: %{id: 1}},
-        assessments: [%{id: 1, title: "A1", order: 1}],
+        assessments: [%{id: 1, title: "A1", order: 1, resource_id: 1, avg_score: 0.67, students_completion: 0.75, total_attempts: 10}],
         students: [%{id: 1, email: "student@example.com"}],
         scripts: [],
-        activity_types_map: %{}
+        activity_types_map: %{},
       }
 
       socket = %Phoenix.LiveView.Socket{assigns: %{myself: :self, __changed__: %{}}}
@@ -103,7 +126,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivitiesTest do
           }
         },
         current_assessment: nil,
-        params: %{text_search: nil, offset: 0, limit: 20},
+        params: @default_params,
         total_count: 1,
         view: :scored_activities,
         section: %{slug: "section"},
@@ -111,7 +134,12 @@ defmodule OliWeb.Components.Delivery.ScoredActivitiesTest do
         activity_types_map: %{},
         scripts: [],
         assessments: [%{id: 1, title: "A1"}],
-        myself: :self
+        myself: :self,
+        attempts_options: @attempts_options,
+        selected_attempts_options: %{},
+        selected_attempts_ids: [],
+        avg_score_percentage: 67,
+        card_props: []
       }
 
       html = render_component(&ScoredActivities.render/1, assigns)
@@ -156,7 +184,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivitiesTest do
           batch_scoring: false
         },
         activities: [%{id: 1, title: "Q1"}],
-        params: %{text_search: nil, offset: 0, limit: 20},
+        params: @default_params,
         total_count: 1,
         view: :scored_activities,
         section: %{slug: "section"},
@@ -168,7 +196,12 @@ defmodule OliWeb.Components.Delivery.ScoredActivitiesTest do
         students_with_attempts_count: 1,
         total_attempts_count: 5,
         student_emails_without_attempts: [],
-        selected_activity: %{id: 1, title: "Q1", first_attempt_pct: 75.0, all_attempt_pct: 85.0}
+        selected_activity: %{id: 1, title: "Q1", first_attempt_pct: 75.0, all_attempt_pct: 85.0},
+        attempts_options: @attempts_options,
+        selected_attempts_options: %{},
+        selected_attempts_ids: [],
+        avg_score_percentage: 67,
+        card_activity_props: []
       }
 
       html = render_component(&ScoredActivities.render/1, assigns)

@@ -1268,7 +1268,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       assert page2.title == "Module 1: IntroductionPage 2"
     end
 
-    test "Attempts filter works correctly", %{
+    test "Attemps filter works correctly", %{
       conn: conn,
       section: section,
       page_1: page_1,
@@ -1545,7 +1545,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       assert page2.title == "Module 1: IntroductionPage 2"
       assert page3.title == "Module 2: BasicsPage 3"
       assert page4.title == "Module 2: BasicsPage 4"
-      assert orphaned_page.title == "Curriculum 1: Root Container Orphaned Page"
+      assert orphaned_page.title == "Curriculum 1: Root ContainerOrphaned Page"
     end
   end
 
