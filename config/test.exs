@@ -32,6 +32,8 @@ config :oli, :xapi_upload_pipeline,
   processor_concurrency: 1,
   suppress_event_emitting: true
 
+config :oli, :xapi_local_output_dir, System.get_env("XAPI_LOCAL_OUTPUT_DIR", "./xapi_output")
+
 # Configure your database
 config :oli, Oli.Repo,
   username: System.get_env("DB_USER", "postgres"),

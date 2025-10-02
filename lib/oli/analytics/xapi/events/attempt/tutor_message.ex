@@ -1,4 +1,4 @@
-defmodule Oli.Analytics.XAPI.Events.Attempt.TutorActivityMessage do
+defmodule Oli.Analytics.XAPI.Events.Attempt.TutorMessage do
   alias Oli.Analytics.XAPI.Events.Context
   alias Oli.Delivery.Attempts.Core.ActivityAttempt
 
@@ -39,12 +39,12 @@ defmodule Oli.Analytics.XAPI.Events.Attempt.TutorActivityMessage do
         }
       },
       "object" => %{
-        "id" => "#{host_name}/tutor_activity_message/#{attempt_guid}}",
+        "id" => "#{host_name}/tutor_message/#{attempt_guid}",
         "definition" => %{
           "name" => %{
-            "en-US" => "Tutor Activity Message"
+            "en-US" => "Tutor Message"
           },
-          "type" => "http://oli.cmu.edu/extensions/tutor_activity_message"
+          "type" => "http://oli.cmu.edu/extensions/tutor_message"
         },
         "objectType" => "Tutor"
       },
