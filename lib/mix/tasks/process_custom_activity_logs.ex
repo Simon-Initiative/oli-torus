@@ -299,11 +299,15 @@ defmodule Mix.Tasks.ProcessCustomActivityLogs do
 
     # Remove or replace dangerous characters
     basename
-    |> String.replace(~r/[^\w\-_\.]/, "_")  # Replace non-alphanumeric chars (except dash, underscore, dot)
-    |> String.replace(~r/\.{2,}/, ".")      # Replace multiple dots with single dot
-    |> String.trim(".")                     # Remove leading/trailing dots
+    # Replace non-alphanumeric chars (except dash, underscore, dot)
+    |> String.replace(~r/[^\w\-_\.]/, "_")
+    # Replace multiple dots with single dot
+    |> String.replace(~r/\.{2,}/, ".")
+    # Remove leading/trailing dots
+    |> String.trim(".")
     |> case do
-      "" -> "output.xml"                    # Default filename if sanitization results in empty string
+      # Default filename if sanitization results in empty string
+      "" -> "output.xml"
       sanitized -> sanitized
     end
   end
