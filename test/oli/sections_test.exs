@@ -1949,6 +1949,50 @@ defmodule Oli.SectionsTest do
     end
   end
 
+  describe "list_user_enrolled_lti_section_titles/1" do
+    setup do
+      student = insert(:user)
+      lti_section_1 = insert(:section, title: "Alpha LTI Course")
+      lti_section_2 = insert(:section, title: "Beta LTI Course")
+
+      non_lti_section =
+        insert(:section,
+          lti_1p3_deployment: nil,
+          lti_1p3_deployment_id: nil,
+          title: "Independent Course"
+        )
+
+      Sections.enroll(student.id, lti_section_1.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(student.id, lti_section_2.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(student.id, non_lti_section.id, [ContextRoles.get_role(:context_learner)])
+
+      {:ok,
+       %{
+         student: student,
+         lti_section_1: lti_section_1,
+         lti_section_2: lti_section_2,
+         non_lti_section: non_lti_section
+       }}
+    end
+
+    test "returns titles for LTI sections only", %{
+      student: student,
+      lti_section_1: lti_section_1,
+      lti_section_2: lti_section_2,
+      non_lti_section: non_lti_section
+    } do
+      titles = Sections.list_user_enrolled_lti_section_titles(student)
+
+      assert titles == [lti_section_1.title, lti_section_2.title]
+      refute non_lti_section.title in titles
+    end
+
+    test "returns empty list when user is not enrolled in LTI sections", %{} do
+      student = insert(:user)
+      assert Sections.list_user_enrolled_lti_section_titles(student) == []
+    end
+  end
+
   describe "has_visited_section/2" do
     setup do
       student = insert(:user)

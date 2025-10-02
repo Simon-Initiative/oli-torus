@@ -516,27 +516,28 @@ defmodule Oli.Delivery.Sections.Blueprint do
         else: dynamic([s, _], s.status in [:active, :deleted])
 
     filter_by_text =
-      case opts[:text_search] do
-        "" ->
-          true
+      opts[:text_search]
+      |> search_patterns()
+      |> Enum.reduce(dynamic([s, bp], true), fn pattern, acc ->
+        token = String.trim(pattern, "%")
 
-        text_search ->
-          dynamic(
-            [s, bp],
-            fragment(
-              """
-              ((? ILIKE ?) OR (? ILIKE ?) OR (? AND ? ->> 'amount' ILIKE ?))
-              """,
-              s.title,
-              ^"%#{text_search}%",
-              bp.title,
-              ^"%#{text_search}%",
-              s.requires_payment,
-              s.amount,
-              ^"#{text_search}%"
+        amount_filter =
+          if token == "" do
+            dynamic([_s, _bp], false)
+          else
+            dynamic(
+              [s, _bp],
+              s.requires_payment and fragment("? ->> 'amount' ILIKE ?", s.amount, ^"#{token}%")
             )
-          )
-      end
+          end
+
+        dynamic(
+          [s, bp],
+          ^acc and
+            (ilike(s.title, ^pattern) or ilike(s.slug, ^pattern) or ilike(bp.title, ^pattern) or
+               ilike(bp.slug, ^pattern) or ^amount_filter)
+        )
+      end)
 
     query =
       Section
@@ -606,5 +607,21 @@ defmodule Oli.Delivery.Sections.Blueprint do
       select: section
     )
     |> Repo.all()
+  end
+
+  defp search_patterns(nil), do: []
+
+  defp search_patterns(text_search) do
+    text_search
+    |> String.trim()
+    |> case do
+      "" ->
+        []
+
+      trimmed ->
+        trimmed
+        |> String.split(~r/\s+/, trim: true)
+        |> Enum.map(&"%#{&1}%")
+    end
   end
 end

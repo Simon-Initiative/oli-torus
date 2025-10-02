@@ -128,6 +128,61 @@ defmodule OliWeb.Projects.ProjectsLiveTest do
              |> render() =~
                "Testing B"
     end
+
+    test "search filters across multiple fields with highlighting", %{conn: conn, admin: admin} do
+      project =
+        admin
+        |> create_project_with_owner(%{
+          slug: "search-slug",
+          title: "Searchable Project",
+          authors: []
+        })
+
+      other_project =
+        admin
+        |> create_project_with_owner(%{
+          slug: "other-project",
+          title: "Other Listing",
+          authors: []
+        })
+
+      {:ok, view, _html} = live(conn, Routes.live_path(Endpoint, ProjectsLive))
+
+      # fewer than three characters should not filter or highlight
+      view
+      |> element("form[phx-change=\"text_search_change\"]")
+      |> render_change(%{"project_name" => "se"})
+
+      assert has_element?(view, "##{project.id}")
+      assert has_element?(view, "##{other_project.id}")
+      refute has_element?(view, "span.search-highlight")
+
+      # search by slug
+      view
+      |> element("form[phx-change=\"text_search_change\"]")
+      |> render_change(%{"project_name" => "search"})
+
+      assert has_element?(view, "##{project.id}")
+      refute has_element?(view, "##{other_project.id}")
+      assert has_element?(view, "span.search-highlight", "search")
+
+      # reset search
+      view
+      |> element("form[phx-change=\"text_search_change\"]")
+      |> render_change(%{"project_name" => ""})
+
+      assert has_element?(view, "##{project.id}")
+      assert has_element?(view, "##{other_project.id}")
+      refute has_element?(view, "span.search-highlight")
+
+      # search by owner email
+      view
+      |> element("form[phx-change=\"text_search_change\"]")
+      |> render_change(%{"project_name" => admin.email})
+
+      assert has_element?(view, "##{project.id}")
+      assert has_element?(view, "span.search-highlight", admin.email)
+    end
   end
 
   describe "projects live as author" do
