@@ -797,7 +797,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   end
 
   def handle_info(
-        {:selected_card_assessments, value},
+        {:selected_card_assessments, value, view},
         socket
       ) do
     params = Map.merge(socket.assigns.params, %{"selected_card_value" => value})
@@ -805,7 +805,20 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     {:noreply,
      push_patch(socket,
        to:
-         ~p"/sections/#{socket.assigns.section.slug}/instructor_dashboard/insights/practice_activities?#{params}"
+         ~p"/sections/#{socket.assigns.section.slug}/instructor_dashboard/insights/#{Atom.to_string(view)}?#{params}"
+     )}
+  end
+
+  def handle_info(
+        {:selected_activity_card, value, view},
+        socket
+      ) do
+    params = Map.merge(socket.assigns.params, %{"selected_activity_card_value" => value})
+
+    {:noreply,
+     push_patch(socket,
+       to:
+         ~p"/sections/#{socket.assigns.section.slug}/instructor_dashboard/insights/#{Atom.to_string(view)}?#{params}"
      )}
   end
 

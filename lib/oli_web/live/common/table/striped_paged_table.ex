@@ -57,7 +57,7 @@ defmodule OliWeb.Common.StripedPagedTable do
           is_page_size_right={true}
         />
       <% else %>
-        <div class="bg-white dark:bg-gray-800 dark:text-white px-10 my-5">
+        <div class="bg-white dark:bg-gray-800 dark:text-white px-10 py-5">
           <p>{@no_records_message}</p>
         </div>
       <% end %>
