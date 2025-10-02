@@ -148,7 +148,7 @@ defmodule OliWeb.ProductsLiveTest do
 
       {:ok, product_2} =
         Sections.update_section(product_2, %{
-          amount: Money.new(25, "USD")
+          amount: Money.new(250, "USD")
         })
 
       {:ok, view, _html} = live(conn, @live_view_all_products)
@@ -158,7 +158,7 @@ defmodule OliWeb.ProductsLiveTest do
 
       view
       |> element("form[phx-change=\"text_search_change\"]")
-      |> render_change(%{product_name: "25"})
+      |> render_change(%{product_name: "250"})
 
       wait_while(fn -> has_element?(view, "a", product.title) end)
 
@@ -171,6 +171,40 @@ defmodule OliWeb.ProductsLiveTest do
 
       assert has_element?(view, "a", product.title)
       assert has_element?(view, "a", product_2.title)
+    end
+
+    test "search enforces minimum characters and highlights matches", %{
+      conn: conn,
+      product: product
+    } do
+      [{_, other_product} | _] = create_product(conn)
+
+      {:ok, view, _html} = live(conn, @live_view_all_products)
+
+      view
+      |> element("form[phx-change=\"text_search_change\"]")
+      |> render_change(%{product_name: "pr"})
+
+      assert has_element?(view, "a", product.title)
+      assert has_element?(view, "a", other_product.title)
+      refute has_element?(view, "span.search-highlight")
+
+      view
+      |> element("form[phx-change=\"text_search_change\"]")
+      |> render_change(%{product_name: other_product.slug})
+
+      wait_while(fn -> has_element?(view, "a", product.title) end)
+
+      assert has_element?(view, "a", other_product.title)
+      assert has_element?(view, "span.search-highlight")
+
+      view
+      |> element("form[phx-change=\"text_search_change\"]")
+      |> render_change(%{product_name: ""})
+
+      assert has_element?(view, "a", product.title)
+      assert has_element?(view, "a", other_product.title)
+      refute has_element?(view, "span.search-highlight")
     end
 
     @tag :flaky

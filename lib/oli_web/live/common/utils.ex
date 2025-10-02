@@ -305,6 +305,28 @@ defmodule OliWeb.Common.Utils do
     |> String.replace(regex, "<em>\\0</em>")
   end
 
+  def multi_highlight_search_term(text, term, tagstart \\ "em", tagend \\ "em")
+  def multi_highlight_search_term(text, nil, _, _), do: escape_html(text)
+  def multi_highlight_search_term(text, "", _, _), do: escape_html(text)
+
+  def multi_highlight_search_term(text, search_term, tagstart, tagend) do
+    text = escape_html(text)
+
+    search_term
+    |> String.split()
+    |> Stream.map(&escape_html/1)
+    |> Stream.map(&Regex.escape/1)
+    |> Enum.join("|")
+    |> Regex.compile("i")
+    |> case do
+      {:ok, regex} ->
+        String.replace(text, regex, fn match -> "<#{tagstart}>#{match}</#{tagend}>" end)
+
+      _ ->
+        text
+    end
+  end
+
   defp escape_html(text) do
     text
     |> Phoenix.HTML.html_escape()

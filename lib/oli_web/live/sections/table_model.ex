@@ -5,6 +5,7 @@ defmodule OliWeb.Sections.SectionsTableModel do
   alias OliWeb.Common.FormatDateTime
   alias OliWeb.Common.SessionContext
   alias OliWeb.Common.Table.{ColumnSpec, Common, SortableTableModel}
+  alias OliWeb.Common.Utils
   alias OliWeb.Router.Helpers, as: Routes
 
   @default_opts [
@@ -12,7 +13,8 @@ defmodule OliWeb.Sections.SectionsTableModel do
     render_date: :relative,
     exclude_columns: [],
     sort_by_spec: :start_date,
-    sort_order: :desc
+    sort_order: :desc,
+    search_term: ""
   ]
 
   def new(%SessionContext{} = ctx, sections, opts \\ []) do
@@ -23,6 +25,8 @@ defmodule OliWeb.Sections.SectionsTableModel do
 
     default_td_class = "!border-r border-Table-table-border"
     default_th_class = "!border-r border-Table-table-border"
+
+    search_term = Keyword.get(opts, :search_term, "")
 
     column_specs = [
       %ColumnSpec{
@@ -123,13 +127,15 @@ defmodule OliWeb.Sections.SectionsTableModel do
       data: %{
         ctx: ctx,
         fade_data: true,
-        render_institution_action: opts[:render_institution_action]
+        render_institution_action: opts[:render_institution_action],
+        search_term: search_term
       }
     )
   end
 
   def custom_render(assigns, section, %ColumnSpec{name: :title}) do
-    assigns = Map.merge(assigns, %{section: section})
+    search_term = Map.get(assigns, :search_term, "")
+    assigns = Map.merge(assigns, %{section: section, search_term: search_term})
 
     ~H"""
     <div class="flex flex-col">
@@ -137,10 +143,10 @@ defmodule OliWeb.Sections.SectionsTableModel do
         href={~p"/sections/#{@section.slug}/manage"}
         class="text-Text-text-link text-base font-medium leading-normal"
       >
-        {@section.title}
+        {highlight_search_term(@section.title, @search_term)}
       </a>
       <span class="text-Text-text-low text-sm font-normal leading-tight">
-        ID: {@section.slug}
+        ID: {highlight_search_term(@section.slug, @search_term)}
       </span>
     </div>
     """
@@ -192,7 +198,8 @@ defmodule OliWeb.Sections.SectionsTableModel do
   end
 
   def custom_render(assigns, section, %ColumnSpec{name: :institution}) do
-    assigns = Map.merge(assigns, %{section: section})
+    search_term = Map.get(assigns, :search_term, "")
+    assigns = Map.merge(assigns, %{section: section, search_term: search_term})
 
     ~H"""
     <div class="flex space-x-2 items-center">
@@ -202,7 +209,7 @@ defmodule OliWeb.Sections.SectionsTableModel do
             href={~p"/admin/institutions/#{@section.institution.id}"}
             class="text-Text-text-link text-base font-medium leading-normal"
           >
-            {@section.institution.name}
+            {highlight_search_term(@section.institution.name, @search_term)}
           </a>
         <% end %>
       </span>
@@ -241,7 +248,15 @@ defmodule OliWeb.Sections.SectionsTableModel do
          section.base_project.title, section.base_project.slug}
       end
 
-    assigns = Map.merge(assigns, %{route_path: route_path, title: title, slug: slug})
+    search_term = Map.get(assigns, :search_term, "")
+
+    assigns =
+      Map.merge(assigns, %{
+        route_path: route_path,
+        title: title,
+        slug: slug,
+        search_term: search_term
+      })
 
     ~H"""
     <div class="flex flex-col">
@@ -249,16 +264,16 @@ defmodule OliWeb.Sections.SectionsTableModel do
         href={@route_path}
         class="text-Text-text-link text-base font-medium leading-normal"
       >
-        {@title}
+        {highlight_search_term(@title, @search_term)}
       </a>
       <span class="text-Text-text-low text-sm font-normal leading-tight">
-        ID: {@slug}
+        ID: {highlight_search_term(@slug, @search_term)}
       </span>
     </div>
     """
   end
 
-  def custom_render(_assigns, section, %ColumnSpec{name: :instructor}) do
+  def custom_render(assigns, section, %ColumnSpec{name: :instructor}) do
     instructors =
       section.id
       |> Oli.Delivery.Sections.get_instructors_for_section()
@@ -268,7 +283,8 @@ defmodule OliWeb.Sections.SectionsTableModel do
         {instructor.name, instructor.id, author_id}
       end)
 
-    assigns = %{instructors: instructors}
+    search_term = Map.get(assigns, :search_term, "")
+    assigns = %{instructors: instructors, search_term: search_term}
 
     ~H"""
     <div class="flex flex-wrap gap-1">
@@ -278,14 +294,14 @@ defmodule OliWeb.Sections.SectionsTableModel do
             href={~p"/admin/authors/#{author_id}"}
             class="text-Text-text-link text-base font-medium leading-normal"
           >
-            {name}
+            {highlight_search_term(name, @search_term)}
           </.link>
         <% else %>
           <.link
             href={~p"/admin/users/#{instructor_id}"}
             class="text-Text-text-link text-base font-medium leading-normal"
           >
-            {name}
+            {highlight_search_term(name, @search_term)}
             <%= if index < length(@instructors) - 1 do %>
               ,
             <% end %>
@@ -336,4 +352,15 @@ defmodule OliWeb.Sections.SectionsTableModel do
     datetime = FormatDateTime.convert_datetime(date, tz)
     Calendar.strftime(datetime, "%B %d, %Y %I:%M %p")
   end
+
+  defp highlight_search_term(text, search_term),
+    do:
+      Phoenix.HTML.raw(
+        Utils.multi_highlight_search_term(
+          text || "",
+          search_term,
+          "span class=\"search-highlight\"",
+          "span"
+        )
+      )
 end
