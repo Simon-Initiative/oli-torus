@@ -87,7 +87,13 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
     case get_in(event, ["verb", "id"]) do
       "http://adlnet.gov/expapi/verbs/answered" ->
         # Check if it has activity attempt context
-        activity_attempt_guid = get_in(event, ["context", "extensions", "https://oli.cmu.edu/extensions/activity_attempt_guid"])
+        activity_attempt_guid =
+          get_in(event, [
+            "context",
+            "extensions",
+            "https://oli.cmu.edu/extensions/activity_attempt_guid"
+          ])
+
         not is_nil(activity_attempt_guid)
 
       _ ->
@@ -99,8 +105,20 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
     case get_in(event, ["verb", "id"]) do
       "http://adlnet.gov/expapi/verbs/answered" ->
         # Check if it has page attempt context but no activity attempt context
-        page_attempt_guid = get_in(event, ["context", "extensions", "https://oli.cmu.edu/extensions/page_attempt_guid"])
-        activity_attempt_guid = get_in(event, ["context", "extensions", "https://oli.cmu.edu/extensions/activity_attempt_guid"])
+        page_attempt_guid =
+          get_in(event, [
+            "context",
+            "extensions",
+            "https://oli.cmu.edu/extensions/page_attempt_guid"
+          ])
+
+        activity_attempt_guid =
+          get_in(event, [
+            "context",
+            "extensions",
+            "https://oli.cmu.edu/extensions/activity_attempt_guid"
+          ])
+
         not is_nil(page_attempt_guid) and is_nil(activity_attempt_guid)
 
       _ ->
@@ -123,7 +141,13 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
     case get_in(event, ["verb", "id"]) do
       "http://adlnet.gov/expapi/verbs/answered" ->
         # Check if it has part attempt context
-        part_attempt_guid = get_in(event, ["context", "extensions", "https://oli.cmu.edu/extensions/part_attempt_guid"])
+        part_attempt_guid =
+          get_in(event, [
+            "context",
+            "extensions",
+            "https://oli.cmu.edu/extensions/part_attempt_guid"
+          ])
+
         not is_nil(part_attempt_guid)
 
       _ ->
@@ -153,11 +177,10 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
       host_name: get_in(context_extensions, ["https://oli.cmu.edu/extensions/host_name"]),
       section_id: get_in(context_extensions, ["https://oli.cmu.edu/extensions/section_id"]),
       project_id: get_in(context_extensions, ["https://oli.cmu.edu/extensions/project_id"]),
-      publication_id: get_in(context_extensions, ["https://oli.cmu.edu/extensions/publication_id"]),
+      publication_id:
+        get_in(context_extensions, ["https://oli.cmu.edu/extensions/publication_id"]),
       timestamp: parse_timestamp(event["timestamp"]),
       event_type: "video",
-      attempt_guid: get_in(context_extensions, ["https://oli.cmu.edu/extensions/attempt_guid"]),
-      attempt_number: get_in(context_extensions, ["https://oli.cmu.edu/extensions/attempt_number"]),
       page_id: get_in(context_extensions, ["https://oli.cmu.edu/extensions/page_id"]),
       content_element_id: get_in(event, ["object", "id"]),
       video_url: get_in(extensions, ["https://w3id.org/xapi/video/extensions/session-id"]),
@@ -165,10 +188,27 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
       video_time: get_in(extensions, ["https://w3id.org/xapi/video/extensions/time"]),
       video_length: get_in(extensions, ["https://w3id.org/xapi/video/extensions/length"]),
       video_progress: get_in(extensions, ["https://w3id.org/xapi/video/extensions/progress"]),
-      video_played_segments: get_in(extensions, ["https://w3id.org/xapi/video/extensions/played-segments"]),
+      video_played_segments:
+        get_in(extensions, ["https://w3id.org/xapi/video/extensions/played-segments"]),
       video_play_time: get_in(extensions, ["https://w3id.org/xapi/video/extensions/time-from"]),
       video_seek_from: get_in(extensions, ["https://w3id.org/xapi/video/extensions/time-from"]),
-      video_seek_to: get_in(extensions, ["https://w3id.org/xapi/video/extensions/time-to"])
+      video_seek_to: get_in(extensions, ["https://w3id.org/xapi/video/extensions/time-to"]),
+      activity_attempt_guid:
+        get_in(context_extensions, ["https://oli.cmu.edu/extensions/activity_attempt_guid"]),
+      activity_attempt_number:
+        get_in(context_extensions, ["https://oli.cmu.edu/extensions/activity_attempt_number"]),
+      page_attempt_guid:
+        get_in(context_extensions, ["https://oli.cmu.edu/extensions/page_attempt_guid"]),
+      page_attempt_number:
+        get_in(context_extensions, ["https://oli.cmu.edu/extensions/page_attempt_number"]),
+      part_attempt_guid:
+        get_in(context_extensions, ["https://oli.cmu.edu/extensions/part_attempt_guid"]),
+      part_attempt_number:
+        get_in(context_extensions, ["https://oli.cmu.edu/extensions/part_attempt_number"]),
+      activity_id: get_in(context_extensions, ["https://oli.cmu.edu/extensions/activity_id"]),
+      activity_revision_id:
+        get_in(context_extensions, ["https://oli.cmu.edu/extensions/activity_revision_id"]),
+      part_id: get_in(context_extensions, ["https://oli.cmu.edu/extensions/part_id"])
     }
   end
 
@@ -183,15 +223,21 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
       host_name: get_in(context_extensions, ["https://oli.cmu.edu/extensions/host_name"]),
       section_id: get_in(context_extensions, ["https://oli.cmu.edu/extensions/section_id"]),
       project_id: get_in(context_extensions, ["https://oli.cmu.edu/extensions/project_id"]),
-      publication_id: get_in(context_extensions, ["https://oli.cmu.edu/extensions/publication_id"]),
+      publication_id:
+        get_in(context_extensions, ["https://oli.cmu.edu/extensions/publication_id"]),
       timestamp: parse_timestamp(event["timestamp"]),
       event_type: "activity_attempt",
-      activity_attempt_guid: get_in(context_extensions, ["https://oli.cmu.edu/extensions/activity_attempt_guid"]),
-      activity_attempt_number: get_in(context_extensions, ["https://oli.cmu.edu/extensions/activity_attempt_number"]),
-      page_attempt_guid: get_in(context_extensions, ["https://oli.cmu.edu/extensions/page_attempt_guid"]),
-      page_attempt_number: get_in(context_extensions, ["https://oli.cmu.edu/extensions/page_attempt_number"]),
+      activity_attempt_guid:
+        get_in(context_extensions, ["https://oli.cmu.edu/extensions/activity_attempt_guid"]),
+      activity_attempt_number:
+        get_in(context_extensions, ["https://oli.cmu.edu/extensions/activity_attempt_number"]),
+      page_attempt_guid:
+        get_in(context_extensions, ["https://oli.cmu.edu/extensions/page_attempt_guid"]),
+      page_attempt_number:
+        get_in(context_extensions, ["https://oli.cmu.edu/extensions/page_attempt_number"]),
       activity_id: get_in(context_extensions, ["https://oli.cmu.edu/extensions/activity_id"]),
-      activity_revision_id: get_in(context_extensions, ["https://oli.cmu.edu/extensions/activity_revision_id"]),
+      activity_revision_id:
+        get_in(context_extensions, ["https://oli.cmu.edu/extensions/activity_revision_id"]),
       score: get_in(result, ["score", "raw"]),
       out_of: get_in(result, ["score", "max"]),
       scaled_score: get_in(result, ["score", "scaled"]),
@@ -213,11 +259,14 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
       host_name: get_in(context_extensions, ["https://oli.cmu.edu/extensions/host_name"]),
       section_id: get_in(context_extensions, ["https://oli.cmu.edu/extensions/section_id"]),
       project_id: get_in(context_extensions, ["https://oli.cmu.edu/extensions/project_id"]),
-      publication_id: get_in(context_extensions, ["https://oli.cmu.edu/extensions/publication_id"]),
+      publication_id:
+        get_in(context_extensions, ["https://oli.cmu.edu/extensions/publication_id"]),
       timestamp: parse_timestamp(event["timestamp"]),
       event_type: "page_attempt",
-      page_attempt_guid: get_in(context_extensions, ["https://oli.cmu.edu/extensions/page_attempt_guid"]),
-      page_attempt_number: get_in(context_extensions, ["https://oli.cmu.edu/extensions/page_attempt_number"]),
+      page_attempt_guid:
+        get_in(context_extensions, ["https://oli.cmu.edu/extensions/page_attempt_guid"]),
+      page_attempt_number:
+        get_in(context_extensions, ["https://oli.cmu.edu/extensions/page_attempt_number"]),
       page_id: get_in(context_extensions, ["https://oli.cmu.edu/extensions/page_id"]),
       score: get_in(result, ["score", "raw"]),
       out_of: get_in(result, ["score", "max"]),
@@ -240,7 +289,8 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
       host_name: get_in(context_extensions, ["https://oli.cmu.edu/extensions/host_name"]),
       section_id: get_in(context_extensions, ["https://oli.cmu.edu/extensions/section_id"]),
       project_id: get_in(context_extensions, ["https://oli.cmu.edu/extensions/project_id"]),
-      publication_id: get_in(context_extensions, ["https://oli.cmu.edu/extensions/publication_id"]),
+      publication_id:
+        get_in(context_extensions, ["https://oli.cmu.edu/extensions/publication_id"]),
       timestamp: parse_timestamp(event["timestamp"]),
       event_type: "page_viewed",
       page_id: get_in(context_extensions, ["https://oli.cmu.edu/extensions/page_id"]),
@@ -260,11 +310,14 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
       host_name: get_in(context_extensions, ["https://oli.cmu.edu/extensions/host_name"]),
       section_id: get_in(context_extensions, ["https://oli.cmu.edu/extensions/section_id"]),
       project_id: get_in(context_extensions, ["https://oli.cmu.edu/extensions/project_id"]),
-      publication_id: get_in(context_extensions, ["https://oli.cmu.edu/extensions/publication_id"]),
+      publication_id:
+        get_in(context_extensions, ["https://oli.cmu.edu/extensions/publication_id"]),
       timestamp: parse_timestamp(event["timestamp"]),
       event_type: "part_attempt",
-      part_attempt_guid: get_in(context_extensions, ["https://oli.cmu.edu/extensions/part_attempt_guid"]),
-      part_attempt_number: get_in(context_extensions, ["https://oli.cmu.edu/extensions/part_attempt_number"]),
+      part_attempt_guid:
+        get_in(context_extensions, ["https://oli.cmu.edu/extensions/part_attempt_guid"]),
+      part_attempt_number:
+        get_in(context_extensions, ["https://oli.cmu.edu/extensions/part_attempt_number"]),
       activity_id: get_in(context_extensions, ["https://oli.cmu.edu/extensions/activity_id"]),
       part_id: get_in(context_extensions, ["https://oli.cmu.edu/extensions/part_id"]),
       score: get_in(result, ["score", "raw"]),
@@ -275,7 +328,8 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
       response: get_in(extensions, ["https://oli.cmu.edu/extensions/response"]),
       feedback: get_in(extensions, ["https://oli.cmu.edu/extensions/feedback"]),
       hints_requested: get_in(extensions, ["https://oli.cmu.edu/extensions/hints_requested"]),
-      attached_objectives: get_in(extensions, ["https://oli.cmu.edu/extensions/attached_objectives"]),
+      attached_objectives:
+        get_in(extensions, ["https://oli.cmu.edu/extensions/attached_objectives"]),
       session_id: get_in(context_extensions, ["https://oli.cmu.edu/extensions/session_id"])
     }
   end
@@ -325,8 +379,6 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
       publication_id,
       timestamp,
       event_type,
-      attempt_guid,
-      attempt_number,
       page_id,
       content_element_id,
       video_url,
@@ -372,8 +424,6 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
       escape_value(event[:publication_id]),
       escape_value(event[:timestamp]),
       escape_value(event[:event_type]),
-      escape_value(event[:attempt_guid]),
-      escape_value(event[:attempt_number]),
       escape_value(event[:page_id]),
       escape_value(event[:content_element_id]),
       escape_value(event[:video_url]),

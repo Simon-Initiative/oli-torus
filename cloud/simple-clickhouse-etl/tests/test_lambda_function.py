@@ -294,6 +294,7 @@ class LambdaFunctionTests(TestCase):
 
         self.assertTrue(query.startswith("INSERT INTO `db`.`raw_events`"))
         self.assertIn("`event_id`", query)
+        self.assertNotIn("`attempt_guid`", query)
         self.assertTrue(query.endswith("FORMAT Parquet"))
 
     def test_build_insert_query_respects_column_override(self):

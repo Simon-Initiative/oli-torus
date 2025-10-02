@@ -12,9 +12,7 @@ CREATE TABLE IF NOT EXISTS raw_events (
     timestamp DateTime64(3),
     event_type LowCardinality(String), -- 'video', 'activity_attempt', 'page_attempt', 'page_viewed', 'part_attempt'
 
-    -- Common attempt tracking fields (nullable for events that don't use them)
-    attempt_guid Nullable(String),
-    attempt_number Nullable(UInt32),
+    -- Page reference (nullable for events that don't use it)
     page_id Nullable(UInt64),
 
     -- Video-specific fields (nullable)

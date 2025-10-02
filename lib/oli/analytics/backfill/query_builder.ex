@@ -20,7 +20,7 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
     INSERT INTO #{target_table} (
         event_hash, event_version, source_file, source_etag, source_line, inserted_at,
         event_id, user_id, host_name, section_id, project_id, publication_id,
-        timestamp, event_type, attempt_guid, attempt_number, page_id,
+        timestamp, event_type, page_id,
         content_element_id, video_url, video_title, video_time, video_length,
         video_progress, video_played_segments, video_play_time, video_seek_from,
         video_seek_to, activity_attempt_guid, activity_attempt_number,
@@ -81,8 +81,6 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
           'unknown'
         ) AS event_type,
 
-        JSON_VALUE(json, '$.context.extensions."http://oli.cmu.edu/extensions/attempt_guid"') AS attempt_guid,
-        toUInt32OrNull(JSON_VALUE(json, '$.context.extensions."http://oli.cmu.edu/extensions/attempt_number"')) AS attempt_number,
         toUInt64OrNull(JSON_VALUE(json, '$.context.extensions."http://oli.cmu.edu/extensions/page_id"')) AS page_id,
 
         coalesce(

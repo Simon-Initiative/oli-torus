@@ -123,8 +123,6 @@ DEFAULT_CLICKHOUSE_INSERT_COLUMNS: List[str] = [
     "publication_id",
     "timestamp",
     "event_type",
-    "attempt_guid",
-    "attempt_number",
     "page_id",
     "content_element_id",
     "video_url",
@@ -557,8 +555,6 @@ def _get_clickhouse_type_map() -> Dict[str, "pa.DataType"]:
             "publication_id": pa.uint64(),
             "timestamp": pa.timestamp("ms", tz="UTC"),
             "event_type": pa.string(),
-            "attempt_guid": pa.string(),
-            "attempt_number": pa.uint32(),
             "page_id": pa.uint64(),
             "content_element_id": pa.string(),
             "video_url": pa.string(),
@@ -651,10 +647,6 @@ def transform_xapi_statement(
     project_id = _safe_int(extensions.get("http://oli.cmu.edu/extensions/project_id"))
     publication_id = _safe_int(extensions.get("http://oli.cmu.edu/extensions/publication_id"))
 
-    attempt_guid = extensions.get("http://oli.cmu.edu/extensions/attempt_guid")
-    if attempt_guid is not None and not isinstance(attempt_guid, str):
-        attempt_guid = str(attempt_guid)
-
     content_element_id = (
         result_extensions.get("content_element_id")
         or extensions.get("http://oli.cmu.edu/extensions/content_element_id")
@@ -727,8 +719,6 @@ def transform_xapi_statement(
         "publication_id": publication_id,
         "timestamp": timestamp_raw,
         "event_type": event_type,
-        "attempt_guid": attempt_guid,
-        "attempt_number": _safe_int(extensions.get("http://oli.cmu.edu/extensions/attempt_number")),
         "page_id": _safe_int(extensions.get("http://oli.cmu.edu/extensions/page_id")),
         "content_element_id": content_element_id,
         "video_url": video_url,
