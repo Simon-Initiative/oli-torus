@@ -260,30 +260,31 @@ defmodule Mix.Tasks.ProcessCustomActivityLogs do
     xml_footer = "\n</tutor_related_message_sequence>"
 
     # Stream process and write directly to file
-    {count, _} = Repo.transaction(fn ->
-      File.open!(full_filename, [:write], fn file ->
-        # Write header
-        IO.binwrite(file, xml_header)
+    {count, _} =
+      Repo.transaction(fn ->
+        File.open!(full_filename, [:write], fn file ->
+          # Write header
+          IO.binwrite(file, xml_header)
 
-        # Stream process and write each message
-        count =
-          query
-          |> Repo.stream()
-          |> Stream.map(&process_single_log(&1, opts))
-          |> Stream.filter(&tutor_message?/1)
-          |> Stream.with_index()
-          |> Enum.reduce(0, fn {message, index}, acc ->
-            # Add newline separator for messages after the first
-            if index > 0, do: IO.binwrite(file, "\n")
-            IO.binwrite(file, message)
-            acc + 1
-          end)
+          # Stream process and write each message
+          count =
+            query
+            |> Repo.stream()
+            |> Stream.map(&process_single_log(&1, opts))
+            |> Stream.filter(&tutor_message?/1)
+            |> Stream.with_index()
+            |> Enum.reduce(0, fn {message, index}, acc ->
+              # Add newline separator for messages after the first
+              if index > 0, do: IO.binwrite(file, "\n")
+              IO.binwrite(file, message)
+              acc + 1
+            end)
 
-        # Write footer
-        IO.binwrite(file, xml_footer)
-        count
+          # Write footer
+          IO.binwrite(file, xml_footer)
+          count
+        end)
       end)
-    end)
 
     Logger.info("Exported #{count} records to XML file #{full_filename}")
   end
