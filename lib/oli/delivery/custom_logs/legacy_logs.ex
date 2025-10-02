@@ -20,7 +20,8 @@ defmodule Oli.Delivery.CustomLogs.LegacyLogs do
 
   def create(doc, host_name) do
     activity_attempt_guid = to_string(xpath(doc, ~x"//*/@external_object_id"))
-   
+    action = to_string(xpath(doc, ~x"//*/@action_id"))
+
     # Fetch all the necessary context information to be able to create activity log
     result =
       from(
@@ -44,11 +45,12 @@ defmodule Oli.Delivery.CustomLogs.LegacyLogs do
       )
       |> Repo.one()
 
-    send_to_xapi(result, host_name, doc)
+    # TODO: Remove this once we have a way to send the activity log to xapi repository.
+    # Keep for now until we are relatively sure it does not impact ongoing courses.
+    to_attrs(result, action, doc)
+    |> create_activity_log()
 
-    # # TODO: Remove this once we have a way to send the activity log to xapi repository
-    # to_attrs(result, action, doc)
-    # |> create_activity_log()
+    send_to_xapi(result, host_name, doc)
   end
 
   def send_to_xapi(
@@ -65,13 +67,10 @@ defmodule Oli.Delivery.CustomLogs.LegacyLogs do
         host_name,
         doc
       ) do
-
     message =
       extract_message(doc)
       |> URI.decode()
       |> extract_sequence()
-      |> IO.inspect(label: "message--------------------------------------")
-
 
     if tutor_message?(message) do
       # Wrap the message in a message tag
@@ -111,11 +110,19 @@ defmodule Oli.Delivery.CustomLogs.LegacyLogs do
   end
 
   defp extract_message(doc) do
+    # Convert doc to string if it's a list
+    doc_string =
+      case doc do
+        doc when is_binary(doc) -> doc
+        doc when is_list(doc) -> Enum.join(doc, "")
+        _ -> to_string(doc)
+      end
+
     supplement_pattern = ~r/<log_supplement[^>]*>(.*?)<\/log_supplement>/s
     action_pattern = ~r/<log_action[^>]*>(.*?)<\/log_action>/s
 
-    with nil <- Regex.run(supplement_pattern, doc, capture: :all_but_first),
-         nil <- Regex.run(action_pattern, doc, capture: :all_but_first) do
+    with nil <- Regex.run(supplement_pattern, doc_string, capture: :all_but_first),
+         nil <- Regex.run(action_pattern, doc_string, capture: :all_but_first) do
       ""
     else
       [inner_content] -> String.trim(inner_content)
@@ -143,28 +150,6 @@ defmodule Oli.Delivery.CustomLogs.LegacyLogs do
       end
     end
   end
-
-  # # Safe extraction that handles nil results
-  # defp extract_safe(doc, xpath) do
-  #   try do
-  #     result = xpath(doc, xpath)
-  #     if result == nil, do: "", else: to_string(result)
-  #   rescue
-  #     error ->
-  #       IO.inspect("error extracting safe: #{inspect(error)}")
-  #       ""
-  #   end
-  # end
-
-  # # Check if a tag exists in the XML, matching LegacyLogsController logic
-  # defp tag_exists?(xml_content, tag_name) do
-  #   try do
-  #     result = xml_content |> xpath(~x"//#{tag_name}")
-  #     result != nil
-  #   rescue
-  #     _ -> false
-  #   end
-  # end
 
   # Updated to handle the 8-element tuple from the enhanced query
   defp to_attrs(

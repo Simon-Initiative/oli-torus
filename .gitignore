@@ -81,6 +81,8 @@ postgres.env
 /amisc/
 /dataset/
 /xapi_output/
+/xapi_test_output/
+/datashop_output/
 /docker-compose-dev.yml
 assets/yarn.lock
 lib/oli/analytics/test.xml

@@ -30,9 +30,8 @@ config :oli, :xapi_upload_pipeline,
   batch_size: 2,
   batch_timeout: 1,
   processor_concurrency: 1,
-  suppress_event_emitting: true
-
-config :oli, :xapi_local_output_dir, System.get_env("XAPI_LOCAL_OUTPUT_DIR", "./xapi_output")
+  suppress_event_emitting: true,
+  xapi_local_output_dir: System.get_env("XAPI_LOCAL_TEST_OUTPUT_DIR", "./xapi_test_output")
 
 # Configure your database
 config :oli, Oli.Repo,

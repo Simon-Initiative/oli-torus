@@ -14,7 +14,9 @@ defmodule Oli.Analytics.XAPI.LocalFileUploader do
         bundle_id: bundle_id,
         body: body
       }) do
-    base_dir = Application.get_env(:oli, :xapi_local_output_dir, "./xapi_output")
+    config = Application.fetch_env!(:oli, :xapi_upload_pipeline)
+
+    base_dir = Keyword.get(config, :xapi_local_output_dir, "./xapi_output")
 
     {:ok, datetime} = DateTime.now("Etc/UTC")
 

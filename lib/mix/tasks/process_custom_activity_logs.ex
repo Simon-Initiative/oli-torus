@@ -1,13 +1,13 @@
 defmodule Mix.Tasks.ProcessCustomActivityLogs do
   @shortdoc "Process custom activity logs XML data using SweetXml"
   @moduledoc """
-  This task reads from the custom_activity_logs table and processes the XML info column
-  using SweetXml, matching the processing logic from OliWeb.LegacyLogsController.
+  This task reads from the custom_activity_logs table and processes the XML info column and outputs datashop XML.
 
   ## Usage
 
       mix process_custom_activity_logs
       mix process_custom_activity_logs --section-id 123 --limit 100
+      mix process_custom_activity_logs --section-id 8 --xml-output results.xml --limit 10
       mix process_custom_activity_logs --action "problem_hint_msg" --xml-output results.xml
   """
 
@@ -173,37 +173,12 @@ defmodule Mix.Tasks.ProcessCustomActivityLogs do
       end
 
       # Process based on info_type, matching LegacyLogsController logic
-      content_result =
-        cond do
-          info_type == "tutor_message.dtd" or info_type == "tutor_message_v2.dtd" ->
-            log_action =
-              extract_safe(doc, ~x"//log_action/text()"s)
-              |> URI.decode()
-              |> process_tutor_related_message_sequence()
+      message =
+        extract_message(doc)
+        |> URI.decode()
+        |> extract_sequence()
 
-            if opts[:verbose], do: IO.puts("  Log action (tutor message): #{log_action}")
-            log_action
-
-          tag_exists?(doc, "log_supplement") ->
-            log_supplement =
-              extract_safe(doc, ~x"//log_supplement/text()"s)
-              |> URI.decode()
-              |> process_tutor_related_message_sequence()
-
-            if opts[:verbose], do: IO.puts("  Log supplement: #{log_supplement}")
-            log_supplement
-
-          true ->
-            log_action =
-              extract_safe(doc, ~x"//log_action/text()"s)
-              |> URI.decode()
-              |> process_tutor_related_message_sequence()
-
-            if opts[:verbose], do: IO.puts("  Log action (other): #{log_action}")
-            log_action
-        end
-
-      content_result
+      message
     rescue
       error ->
         Logger.error("Error processing XML for log: #{inspect(error)}")
@@ -224,7 +199,27 @@ defmodule Mix.Tasks.ProcessCustomActivityLogs do
     %{success: false, error: "XML info is not a string: #{inspect(info)}"}
   end
 
-  defp process_tutor_related_message_sequence(log_action) do
+  defp extract_message(doc) do
+    # Convert doc to string if it's a list
+    doc_string =
+      case doc do
+        doc when is_binary(doc) -> doc
+        doc when is_list(doc) -> Enum.join(doc, "")
+        _ -> to_string(doc)
+      end
+
+    supplement_pattern = ~r/<log_supplement[^>]*>(.*?)<\/log_supplement>/s
+    action_pattern = ~r/<log_action[^>]*>(.*?)<\/log_action>/s
+
+    with nil <- Regex.run(supplement_pattern, doc_string, capture: :all_but_first),
+         nil <- Regex.run(action_pattern, doc_string, capture: :all_but_first) do
+      ""
+    else
+      [inner_content] -> String.trim(inner_content)
+    end
+  end
+
+  defp extract_sequence(log_action) do
     # Return early if log_action is empty
     if log_action == "" or is_nil(log_action) do
       ""
@@ -252,16 +247,6 @@ defmodule Mix.Tasks.ProcessCustomActivityLogs do
     end
   end
 
-  # Check if a tag exists in the XML, matching LegacyLogsController logic
-  defp tag_exists?(xml_content, tag_name) do
-    try do
-      result = xml_content |> xpath(~x"//#{tag_name}")
-      result != nil
-    rescue
-      _ -> false
-    end
-  end
-
   defp export_to_xml(results, filename) do
     Logger.info("Exporting results to XML format: #{filename}")
 
@@ -269,6 +254,9 @@ defmodule Mix.Tasks.ProcessCustomActivityLogs do
     xml_content = generate_xml_output(results)
 
     # Write XML file
+    path = Path.dirname(Path.expand(filename)) <> "/datashop_output"
+    File.mkdir_p!(path)
+    filename = path <> "/" <> filename
     File.write!(filename, xml_content)
     Logger.info("Exported #{length(results)} records to XML file #{filename}")
   end
@@ -289,8 +277,7 @@ defmodule Mix.Tasks.ProcessCustomActivityLogs do
     IO.puts("""
     Usage: mix process_custom_activity_logs [options]
 
-    This task processes XML data from the custom_activity_logs table using the same
-    SweetXml logic as OliWeb.LegacyLogsController.
+    This task processes XML data from the custom_activity_logs table and outputs datashop XML.
 
     Options:
       -s, --section-id ID      Filter by section ID
