@@ -56,7 +56,7 @@ defmodule Oli.Delivery.CustomLogs.LegacyLogs do
   def send_to_xapi(
         {
           activity_attempt,
-          _resource_attempt,
+          resource_attempt,
           resource_access,
           resource_revision,
           project_id,
@@ -85,9 +85,9 @@ defmodule Oli.Delivery.CustomLogs.LegacyLogs do
       }
 
       details = %{
-        attempt_guid: activity_attempt.attempt_guid,
-        attempt_number: activity_attempt.attempt_number,
-        resource_id: resource_revision.resource_id,
+        attempt_guid: resource_attempt.attempt_guid,
+        attempt_number: resource_attempt.attempt_number,
+        resource_id: resource_access.resource_id,
         message: message,
         timestamp: DateTime.utc_now()
       }
@@ -155,7 +155,7 @@ defmodule Oli.Delivery.CustomLogs.LegacyLogs do
   defp to_attrs(
          {
            activity_attempt,
-           _resource_attempt,
+           resource_attempt,
            resource_access,
            _resource_revision,
            _project_id,

@@ -105,10 +105,13 @@ defmodule Mix.Tasks.ProcessCustomActivityLogs do
   end
 
   # Check if message is a tutor-related message type
-  defp tutor_message?(message) do
+  defp tutor_message?(message) when is_binary(message) do
     ["<context_message", "<tutor_message", "<tool_message"]
     |> Enum.any?(&String.starts_with?(message, &1))
   end
+
+  # Handle non-binary values (e.g., error maps from failed XML parsing)
+  defp tutor_message?(_), do: false
 
   defp build_query(opts) do
     query = from(log in CustomActivityLog)
