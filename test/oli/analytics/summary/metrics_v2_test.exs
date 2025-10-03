@@ -864,4 +864,434 @@ defmodule Oli.Analytics.Summary.MetricsV2Test do
       assert user_new_result.proficiency_range == user_existing_result
     end
   end
+
+  describe "student_activities_attempted_count/3" do
+    setup do
+      # Create test data
+      author = insert(:author)
+      project = insert(:project, authors: [author])
+      section = insert(:section)
+      publication = insert(:publication, project: project)
+
+      insert(:section_project_publication,
+        section: section,
+        project: project,
+        publication: publication
+      )
+
+      # Create users
+      user1 = insert(:user)
+      user2 = insert(:user)
+      user3 = insert(:user)
+
+      # Create activities
+      activity1_resource = insert(:resource)
+      activity1_revision = insert(:revision,
+        resource: activity1_resource,
+        author: author,
+        title: "Activity 1",
+        resource_type_id: Oli.Resources.ResourceType.id_for_activity(),
+        content: %{}
+      )
+
+      activity2_resource = insert(:resource)
+      activity2_revision = insert(:revision,
+        resource: activity2_resource,
+        author: author,
+        title: "Activity 2",
+        resource_type_id: Oli.Resources.ResourceType.id_for_activity(),
+        content: %{}
+      )
+
+      activity3_resource = insert(:resource)
+      activity3_revision = insert(:revision,
+        resource: activity3_resource,
+        author: author,
+        title: "Activity 3",
+        resource_type_id: Oli.Resources.ResourceType.id_for_activity(),
+        content: %{}
+      )
+
+      # Publish activities
+      insert(:published_resource,
+        publication: publication,
+        resource: activity1_resource,
+        revision: activity1_revision
+      )
+      insert(:published_resource,
+        publication: publication,
+        resource: activity2_resource,
+        revision: activity2_revision
+      )
+      insert(:published_resource,
+        publication: publication,
+        resource: activity3_resource,
+        revision: activity3_revision
+      )
+
+      %{
+        section: section,
+        user1: user1,
+        user2: user2,
+        user3: user3,
+        activity1_resource: activity1_resource,
+        activity1_revision: activity1_revision,
+        activity2_resource: activity2_resource,
+        activity2_revision: activity2_revision,
+        activity3_resource: activity3_resource,
+        activity3_revision: activity3_revision
+      }
+    end
+
+    test "returns empty map when given empty related_activity_ids", %{
+      section: section,
+      user1: user1,
+      user2: user2
+    } do
+      result = Metrics.student_activities_attempted_count(
+        section.id,
+        [user1.id, user2.id],
+        []
+      )
+
+      assert result == %{}
+    end
+
+    test "returns empty map when no students have attempted any activities", %{
+      section: section,
+      user1: user1,
+      user2: user2,
+      activity1_resource: activity1_resource,
+      activity2_resource: activity2_resource
+    } do
+      result = Metrics.student_activities_attempted_count(
+        section.id,
+        [user1.id, user2.id],
+        [activity1_resource.id, activity2_resource.id]
+      )
+
+      assert result == %{}
+    end
+
+    test "counts distinct activities attempted by each student", %{
+      section: section,
+      user1: user1,
+      user2: user2,
+      user3: user3,
+      activity1_resource: activity1_resource,
+      activity1_revision: activity1_revision,
+      activity2_resource: activity2_resource,
+      activity2_revision: activity2_revision,
+      activity3_resource: activity3_resource,
+      activity3_revision: activity3_revision
+    } do
+      # Create page resources for accesses
+      page1_resource = insert(:resource)
+      page2_resource = insert(:resource)
+      page3_resource = insert(:resource)
+
+      # Create resource accesses for users
+      access1 = insert(:resource_access,
+        section: section,
+        user: user1,
+        resource: page1_resource
+      )
+      access2 = insert(:resource_access,
+        section: section,
+        user: user2,
+        resource: page2_resource
+      )
+      access3 = insert(:resource_access,
+        section: section,
+        user: user3,
+        resource: page3_resource
+      )
+
+      # Create resource attempts
+      attempt1 = insert(:resource_attempt,
+        resource_access: access1,
+        revision: activity1_revision
+      )
+      attempt2 = insert(:resource_attempt,
+        resource_access: access2,
+        revision: activity1_revision
+      )
+      attempt3 = insert(:resource_attempt,
+        resource_access: access2,
+        revision: activity2_revision
+      )
+      attempt4 = insert(:resource_attempt,
+        resource_access: access3,
+        revision: activity1_revision
+      )
+      attempt5 = insert(:resource_attempt,
+        resource_access: access3,
+        revision: activity2_revision
+      )
+      attempt6 = insert(:resource_attempt,
+        resource_access: access3,
+        revision: activity3_revision
+      )
+
+      # Create activity attempts
+      # User1 attempts activity1 multiple times (should count as 1)
+      insert(:activity_attempt,
+        resource_attempt: attempt1,
+        revision: activity1_revision,
+        attempt_number: 1
+      )
+      insert(:activity_attempt,
+        resource_attempt: attempt1,
+        revision: activity1_revision,
+        attempt_number: 2
+      )
+
+      # User2 attempts activity1 and activity2 (should count as 2)
+      insert(:activity_attempt,
+        resource_attempt: attempt2,
+        revision: activity1_revision,
+        attempt_number: 1
+      )
+      insert(:activity_attempt,
+        resource_attempt: attempt3,
+        revision: activity2_revision,
+        attempt_number: 1
+      )
+
+      # User3 attempts all three activities (should count as 3)
+      insert(:activity_attempt,
+        resource_attempt: attempt4,
+        revision: activity1_revision,
+        attempt_number: 1
+      )
+      insert(:activity_attempt,
+        resource_attempt: attempt5,
+        revision: activity2_revision,
+        attempt_number: 1
+      )
+      insert(:activity_attempt,
+        resource_attempt: attempt6,
+        revision: activity3_revision,
+        attempt_number: 1
+      )
+
+      result = Metrics.student_activities_attempted_count(
+        section.id,
+        [user1.id, user2.id, user3.id],
+        [activity1_resource.id, activity2_resource.id, activity3_resource.id]
+      )
+
+      assert result[user1.id] == 1  # attempted activity1 only
+      assert result[user2.id] == 2  # attempted activity1 and activity2
+      assert result[user3.id] == 3  # attempted all three activities
+    end
+
+    test "only counts activities in the provided related_activity_ids list", %{
+      section: section,
+      user1: user1,
+      activity1_resource: activity1_resource,
+      activity1_revision: activity1_revision,
+      activity2_resource: activity2_resource,
+      activity2_revision: activity2_revision,
+      activity3_resource: _activity3_resource,
+      activity3_revision: activity3_revision
+    } do
+      # Create page resource for access
+      page_resource = insert(:resource)
+
+      # Create resource access
+      access = insert(:resource_access,
+        section: section,
+        user: user1,
+        resource: page_resource
+      )
+
+      # Create resource attempts for all activities
+      attempt1 = insert(:resource_attempt,
+        resource_access: access,
+        revision: activity1_revision
+      )
+      attempt2 = insert(:resource_attempt,
+        resource_access: access,
+        revision: activity2_revision
+      )
+      attempt3 = insert(:resource_attempt,
+        resource_access: access,
+        revision: activity3_revision
+      )
+
+      # Create activity attempts for all three activities
+      insert(:activity_attempt,
+        resource_attempt: attempt1,
+        revision: activity1_revision,
+        attempt_number: 1
+      )
+      insert(:activity_attempt,
+        resource_attempt: attempt2,
+        revision: activity2_revision,
+        attempt_number: 1
+      )
+      insert(:activity_attempt,
+        resource_attempt: attempt3,
+        revision: activity3_revision,
+        attempt_number: 1
+      )
+
+      # Only include activity1 and activity2 in the filter
+      result = Metrics.student_activities_attempted_count(
+        section.id,
+        [user1.id],
+        [activity1_resource.id, activity2_resource.id]
+      )
+
+      # Should only count 2 activities, not 3
+      assert result[user1.id] == 2
+    end
+
+    test "only includes students from the provided student_ids list", %{
+      section: section,
+      user1: user1,
+      user2: user2,
+      user3: user3,
+      activity1_resource: activity1_resource,
+      activity1_revision: activity1_revision
+    } do
+      # Create page resources for accesses
+      page1_resource = insert(:resource)
+      page2_resource = insert(:resource)
+      page3_resource = insert(:resource)
+
+      # Create resource accesses for all users
+      access1 = insert(:resource_access,
+        section: section,
+        user: user1,
+        resource: page1_resource
+      )
+      access2 = insert(:resource_access,
+        section: section,
+        user: user2,
+        resource: page2_resource
+      )
+      access3 = insert(:resource_access,
+        section: section,
+        user: user3,
+        resource: page3_resource
+      )
+
+      # Create resource attempts for all users
+      attempt1 = insert(:resource_attempt,
+        resource_access: access1,
+        revision: activity1_revision
+      )
+      attempt2 = insert(:resource_attempt,
+        resource_access: access2,
+        revision: activity1_revision
+      )
+      attempt3 = insert(:resource_attempt,
+        resource_access: access3,
+        revision: activity1_revision
+      )
+
+      # Create activity attempts for all users
+      insert(:activity_attempt,
+        resource_attempt: attempt1,
+        revision: activity1_revision,
+        attempt_number: 1
+      )
+      insert(:activity_attempt,
+        resource_attempt: attempt2,
+        revision: activity1_revision,
+        attempt_number: 1
+      )
+      insert(:activity_attempt,
+        resource_attempt: attempt3,
+        revision: activity1_revision,
+        attempt_number: 1
+      )
+
+      # Only include user1 and user2 in the query
+      result = Metrics.student_activities_attempted_count(
+        section.id,
+        [user1.id, user2.id],
+        [activity1_resource.id]
+      )
+
+      # Should only include user1 and user2, not user3
+      assert Map.has_key?(result, user1.id)
+      assert Map.has_key?(result, user2.id)
+      refute Map.has_key?(result, user3.id)
+      assert result[user1.id] == 1
+      assert result[user2.id] == 1
+    end
+
+    test "only includes attempts from the specified section", %{
+      section: section,
+      user1: user1,
+      activity1_resource: activity1_resource,
+      activity1_revision: activity1_revision
+    } do
+      # Create another section
+      other_section = insert(:section)
+
+      # Create page resources for accesses
+      page1_resource = insert(:resource)
+      page2_resource = insert(:resource)
+
+      # Create resource accesses in both sections
+      access_correct_section = insert(:resource_access,
+        section: section,
+        user: user1,
+        resource: page1_resource
+      )
+      access_other_section = insert(:resource_access,
+        section: other_section,
+        user: user1,
+        resource: page2_resource
+      )
+
+      # Create resource attempts in both sections
+      attempt_correct_section = insert(:resource_attempt,
+        resource_access: access_correct_section,
+        revision: activity1_revision
+      )
+      attempt_other_section = insert(:resource_attempt,
+        resource_access: access_other_section,
+        revision: activity1_revision
+      )
+
+      # Create activity attempts in both sections
+      insert(:activity_attempt,
+        resource_attempt: attempt_correct_section,
+        revision: activity1_revision,
+        attempt_number: 1
+      )
+      insert(:activity_attempt,
+        resource_attempt: attempt_other_section,
+        revision: activity1_revision,
+        attempt_number: 1
+      )
+
+      result = Metrics.student_activities_attempted_count(
+        section.id,
+        [user1.id],
+        [activity1_resource.id]
+      )
+
+      # Should only count the attempt from the correct section
+      assert result[user1.id] == 1
+    end
+
+    test "handles empty student_ids list", %{
+      section: section,
+      activity1_resource: activity1_resource
+    } do
+      result = Metrics.student_activities_attempted_count(
+        section.id,
+        [],
+        [activity1_resource.id]
+      )
+
+      assert result == %{}
+    end
+  end
 end
