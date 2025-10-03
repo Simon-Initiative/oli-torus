@@ -123,9 +123,16 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
     # Extract all sub-objective IDs for batch activity count query
     sub_objective_ids = Enum.map(sub_objectives_raw_data, & &1.sub_objective_id)
 
-    # Get activity counts for all sub-objectives in a single query
-    activity_counts =
-      Metrics.related_activities_count_for_subobjectives(section_slug, sub_objective_ids)
+    # Get activities count from related_activities field using depot batch query
+    activities_count =
+      SectionResourceDepot.get_resources_by_ids(section_id, sub_objective_ids)
+      |> Enum.reduce(%{}, fn section_resource, acc ->
+        Map.put(
+          acc,
+          section_resource.resource_id,
+          length(section_resource.related_activities || [])
+        )
+      end)
 
     # Transform the data to match the table model structure
     sub_objectives_raw_data
@@ -142,7 +149,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
         title: title,
         student_proficiency: student_proficiency,
         proficiency_distribution: distribution,
-        activities_count: Map.get(activity_counts, sub_obj_id, 0)
+        activities_count: Map.get(activities_count, sub_obj_id, 0)
       }
     end)
   end

@@ -11,7 +11,6 @@ defmodule Oli.Delivery.Metrics do
   alias Oli.Resources.Revision
 
   alias Oli.Delivery.Sections
-  alias Oli.Publishing.DeliveryResolver
 
   alias Oli.Delivery.Sections.{
     ContainedPage,
@@ -1631,99 +1630,6 @@ defmodule Oli.Delivery.Metrics do
         proficiency_distribution:
           Map.get(proficiency_dist_for_objectives, section_resource.resource_id, %{})
       }
-    end)
-  end
-
-  @doc """
-  Calculates the number of related activities for a specific sub-objective within a section.
-
-  Returns the count of distinct activities that have the given sub-objective ID
-  referenced in their objectives field.
-
-  ## Parameters
-  - section_slug: The section slug to filter activities by
-  - sub_objective_id: The sub-objective resource ID to search for
-
-  ## Returns
-  Integer representing the count of related activities
-  """
-  @spec related_activities_count_for_subobjective(
-          section_slug :: String.t(),
-          sub_objective_id :: integer
-        ) ::
-          integer
-  def related_activities_count_for_subobjective(section_slug, sub_objective_id) do
-    activity_type_id = Oli.Resources.ResourceType.id_for_activity()
-    sub_objective_id_str = Integer.to_string(sub_objective_id)
-
-    query =
-      from(
-        [s: s, sr: sr, spp: spp, pr: pr, rev: rev] in DeliveryResolver.section_resource_revisions(
-          section_slug
-        ),
-        where: rev.resource_type_id == ^activity_type_id,
-        where: fragment("? != '{}'", rev.objectives),
-        where: fragment("?::text LIKE ?", rev.objectives, ^"%#{sub_objective_id_str}%"),
-        select: count(fragment("DISTINCT ?", rev.resource_id))
-      )
-
-    Repo.one(query) || 0
-  end
-
-  @doc """
-  Gets related activities count for multiple sub-objectives in a single query.
-
-  ## Parameters
-  - section_slug: String identifier for the section
-  - sub_objective_ids: List of sub-objective resource IDs to search for
-
-  ## Returns
-  Map with sub_objective_id as key and count as value
-  """
-  @spec related_activities_count_for_subobjectives(
-          section_slug :: String.t(),
-          sub_objective_ids :: list(integer)
-        ) ::
-          map()
-  def related_activities_count_for_subobjectives(_section_slug, sub_objective_ids)
-      when sub_objective_ids == [],
-      do: %{}
-
-  def related_activities_count_for_subobjectives(section_slug, sub_objective_ids) do
-    activity_type_id = Oli.Resources.ResourceType.id_for_activity()
-
-    # Single query to get all activities that have any of the target sub-objectives
-    query =
-      from(
-        [s: s, sr: sr, spp: spp, pr: pr, rev: rev] in DeliveryResolver.section_resource_revisions(
-          section_slug
-        ),
-        where: rev.resource_type_id == ^activity_type_id,
-        where: fragment("? != '{}'", rev.objectives),
-        select: %{
-          resource_id: rev.resource_id,
-          objectives: rev.objectives
-        }
-      )
-
-    activities = Repo.all(query)
-
-    # Count activities per sub-objective using the same LIKE logic that worked before
-    sub_objective_ids
-    |> Enum.reduce(%{}, fn sub_obj_id, acc ->
-      sub_obj_id_str = Integer.to_string(sub_obj_id)
-
-      count =
-        activities
-        |> Enum.filter(fn activity ->
-          # Use the same logic as the LIKE: check if the string representation contains the ID
-          objectives_text = Jason.encode!(activity.objectives)
-          String.contains?(objectives_text, sub_obj_id_str)
-        end)
-        |> Enum.uniq_by(& &1.resource_id)
-        |> length()
-
-      Map.put(acc, sub_obj_id, count)
     end)
   end
 
