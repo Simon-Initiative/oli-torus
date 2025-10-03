@@ -1329,9 +1329,10 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       |> render_click()
 
       # After filter: only Page 2 is shown
-      pages = [page1] = table_as_list_of_maps(view)
-      assert Enum.count(pages) == 1
-      assert page1.title == "Module 1: IntroductionPage 2"
+      pages = [page1, page2] = table_as_list_of_maps(view)
+      assert Enum.count(pages) == 2
+      assert page1.title == "Module 1: IntroductionPage 1"
+      assert page2.title == "Module 1: IntroductionPage 2"
     end
 
     test "Clear all filters works correctly", %{
@@ -1497,7 +1498,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       project: project,
       publication: publication
     } do
-      Enum.each(1..3, fn _ ->
+      Enum.each(1..6, fn _ ->
         set_activity_attempt(
           page_1,
           mcq_activity_1,
@@ -1539,10 +1540,12 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       |> render_click()
 
       # After filter: Page 1 and Page 2 are shown
-      pages = [page1, page2] = table_as_list_of_maps(view)
-      assert Enum.count(pages) == 2
-      assert page1.title == "Module 1: IntroductionPage 1"
+      pages = [page2, page3, page4, orphaned_page] = table_as_list_of_maps(view)
+      assert Enum.count(pages) == 4
       assert page2.title == "Module 1: IntroductionPage 2"
+      assert page3.title == "Module 2: BasicsPage 3"
+      assert page4.title == "Module 2: BasicsPage 4"
+      assert orphaned_page.title == "Curriculum 1: Root ContainerOrphaned Page"
     end
   end
 
