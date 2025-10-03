@@ -183,38 +183,23 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
     // Determine resize grid based on responsive mode
     const resizeGrid: [number, number] = isResponsive ? [0, 1] : [1, 1]; // Only vertical resize in responsive mode
 
-    const handleDragStop = isResponsive
-      ? (e: any, d: any) => {
-          // In responsive mode, we don't update position
-          // handlePartDrag({ partId: part.id, dragData: d });
-        }
-      : (e: any, d: any) => {
-          handlePartDrag({ partId: part.id, dragData: d });
-        };
+    const handleDragStop = (e: any, d: any) => {
+      handlePartDrag({ partId: part.id, dragData: d });
+    };
 
-    const handleResizeStop = isResponsive
-      ? (e: any, direction: any, ref: any, delta: any, position: any) => {
-          handlePartResize({
-            partId: part.id,
-            resizeData: {
-              width: getWidth(part.custom.width) || 100, // Keep original width in responsive mode
-              height: parseInt(ref.style.height, 10), // Allow height resizing
-              x: part.custom.x || 0, // Preserve original x position in data
-              y: part.custom.y || 0, // Preserve original y position in data
-            },
-          });
-        }
-      : (e: any, direction: any, ref: any, delta: any, position: any) => {
-          handlePartResize({
-            partId: part.id,
-            resizeData: {
-              width: parseInt(ref.style.width, 10),
-              height: parseInt(ref.style.height, 10),
-              x: Math.round(position.x),
-              y: Math.round(position.y),
-            },
-          });
-        };
+    const handleResizeStop = (e: any, direction: any, ref: any, delta: any, position: any) => {
+      handlePartResize({
+        partId: part.id,
+        resizeData: {
+          width: isResponsive
+            ? getWidth(part.custom.width) || 100 // Keep original width in responsive mode
+            : parseInt(ref.style.width, 10), // Use actual width in non-responsive mode
+          height: parseInt(ref.style.height, 10),
+          x: Math.round(position.x), // Always update x position in data
+          y: Math.round(position.y), // Always update y position in data
+        },
+      });
+    };
 
     return (
       <ResizeContainer
