@@ -12,20 +12,56 @@ export const VegaLiteRenderer: React.FC<Props> = ({ spec }) => {
 
   // Theme updates
   useEffect(() => {
-    const view = viewRef.current;
-    if (!view) return;
-    view.signal('isDarkMode', darkMode);
-    view.background(darkMode ? '#262626' : 'white');
-    view.run();
+    if (viewRef.current) {
+      try {
+        const view = viewRef.current;
+        if (!view) return;
+        view.signal('isDarkMode', darkMode);
+        view.background(darkMode ? '#262626' : 'white');
+        view.run();
+      } catch (error) {
+        console.warn('VegaLite theme update failed:', error);
+      }
+    }
   }, [darkMode]);
 
-  // Observe container size → trigger Vega's re-measure
+  // Observe dark mode changes
   useEffect(() => {
-    if (!containerRef.current || !viewRef.current) return;
-    const ro = new ResizeObserver(() => viewRef.current?.resize().run());
-    ro.observe(containerRef.current);
-    return () => ro.disconnect();
-  }, [spec]); // reattach if spec changes
+    let timeoutId: ReturnType<typeof setTimeout>;
+
+    const observer = new MutationObserver(() => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        const isDark = document.documentElement.classList.contains('dark');
+        setDarkMode(isDark);
+      }, 50);
+    });
+
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class'],
+    });
+
+    return () => {
+      observer.disconnect();
+      clearTimeout(timeoutId);
+    };
+  }, []);
+
+  // Reintroduce ResizeObserver for responsive charts
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const resizeObserver = new ResizeObserver(() => {
+      if (viewRef.current) {
+        viewRef.current.resize().run();
+      }
+    });
+
+    resizeObserver.observe(containerRef.current);
+
+    return () => resizeObserver.disconnect();
+  }, [spec]);
 
   // Also handle window resize & Bootstrap tab activation
   useEffect(() => {
@@ -38,15 +74,6 @@ export const VegaLiteRenderer: React.FC<Props> = ({ spec }) => {
       window.removeEventListener('orientationchange', trigger);
       document.removeEventListener('shown.bs.tab', trigger as any);
     };
-  }, []);
-
-  // Track dark mode via <html class="dark">
-  useEffect(() => {
-    const obs = new MutationObserver(() =>
-      setDarkMode(document.documentElement.classList.contains('dark')),
-    );
-    obs.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-    return () => obs.disconnect();
   }, []);
 
   const darkTooltipTheme = {
@@ -67,10 +94,13 @@ export const VegaLiteRenderer: React.FC<Props> = ({ spec }) => {
         className="w-100"
         onNewView={(view) => {
           viewRef.current = view;
-          view.signal('isDarkMode', darkMode);
-          view.background(darkMode ? '#262626' : 'white');
-          // Make sure the very first paint happens after layout
-          requestAnimationFrame(() => view.resize().run());
+          try {
+            view.signal('isDarkMode', darkMode);
+            view.background(darkMode ? '#262626' : 'white');
+            view.resize().run();
+          } catch (error) {
+            console.warn('VegaLite initialization failed:', error);
+          }
         }}
       />
     </div>

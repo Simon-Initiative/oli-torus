@@ -23,6 +23,11 @@ defmodule OliWeb.Common.StripedPagedTable do
   attr :no_records_message, :string, default: "None exist"
   attr :overflow_class, :string, default: "inline"
 
+  attr :details_render_fn, :any,
+    default: nil,
+    doc:
+      "Optional function to render custom expandable row content. Function receives (assigns, row) and returns rendered content."
+
   def render(assigns) do
     ~H"""
     <div class={if @scrollable, do: "overflow-x-auto #{@overflow_class}"}>
@@ -41,7 +46,8 @@ defmodule OliWeb.Common.StripedPagedTable do
             sort: @sort,
             selection_change: @selection_change,
             additional_table_class: @additional_table_class,
-            additional_row_class: @additional_row_class
+            additional_row_class: @additional_row_class,
+            details_render_fn: @details_render_fn
           })}
         </div>
         <Paging.render
@@ -74,6 +80,7 @@ defmodule OliWeb.Common.StripedPagedTable do
         select={@selection_change}
         additional_table_class={@additional_table_class}
         additional_row_class={@additional_row_class}
+        details_render_fn={@details_render_fn}
       />
       """
     else
@@ -83,6 +90,7 @@ defmodule OliWeb.Common.StripedPagedTable do
         sort={@sort}
         additional_table_class={@additional_table_class}
         additional_row_class={@additional_row_class}
+        details_render_fn={@details_render_fn}
       />
       """
     end
