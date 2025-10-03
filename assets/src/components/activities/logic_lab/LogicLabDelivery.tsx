@@ -36,7 +36,6 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
     onSubmitEvaluations,
     onSaveActivity,
     onResetActivity,
-    onResetPart,
     model,
     mode,
   } = useDeliveryElementContext<LogicLabModelSchema>();
@@ -62,23 +61,13 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
           // only lab messages from this activity for eventual support of multiple problems on a page.
           if (isLabMessage(msg) && msg.attemptGuid === activityState.attemptGuid) {
             const attemptGuid = activityState.attemptGuid;
+            const partGuid = activityState.parts[0]?.attemptGuid;
             switch (msg.messageType) {
               // respond to lab score request.
               case 'score':
                 if (mode === 'delivery') {
-                  // only when in delivery
                   try {
-                    // .dateEvaluated seems to not work as a check to see if part is evaluatable
-                    // Always resetting and saving seems to fix the issue with a second attempt
-                    // not registering grading.
-                    // if (activityState.parts[0].dateEvaluated) {
-                    // if the part has already been evaluated, then
-                    // it is necessary to reset the part to get a new
-                    // partGuid as there can only ever be one evaluation
-                    // per partGuid.
-                    const partResponse = await onResetPart(attemptGuid, partGuid);
-                    partGuid = partResponse.attemptState.attemptGuid;
-                    // import state to new part, luckily the current state
+                    // Save state. luckily the current state
                     // is already included in the score message so no need
                     // to maintain it in state.
                     await onSaveActivity(attemptGuid, [
@@ -87,7 +76,7 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
                         response: { input: msg.score.input },
                       },
                     ]);
-                    onSubmitEvaluations(attemptGuid, [
+                    await onSubmitEvaluations(attemptGuid, [
                       {
                         score: msg.score.score,
                         outOf: msg.score.outOf,
@@ -96,6 +85,9 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
                         attemptGuid: partGuid,
                       },
                     ]);
+                    // always generate a new activity attempt after scoring to work
+                    // with Best scoring strategy with ScoreAsYouGo
+                    onResetActivity(attemptGuid);
                   } catch (err) {
                     console.error(err);
                   }
@@ -126,7 +118,6 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
                   const saved = activityState?.parts[0].response?.input;
                   if (saved && e.source) {
                     // post saved state back to lab.
-
                     e.source.postMessage(saved, { targetOrigin: lab.origin });
                   }
                 } // TODO if in preview, load appropriate content
