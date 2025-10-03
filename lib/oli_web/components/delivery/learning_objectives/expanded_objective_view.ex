@@ -44,7 +44,11 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
     student_proficiency =
       section_id
       |> Metrics.student_proficiency_for_objective(objective.resource_id)
-      |> add_missing_students_to_proficiency_data(all_student_ids)
+      |> add_missing_students_to_proficiency_data(
+        all_student_ids,
+        section_id,
+        objective.resource_id
+      )
 
     socket =
       socket
@@ -256,7 +260,12 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
 
   # Add missing students to proficiency data to ensure consistency with proficiency_distribution
   # This takes real proficiency data and adds students who don't have any proficiency data
-  defp add_missing_students_to_proficiency_data(real_student_proficiency, all_student_ids) do
+  defp add_missing_students_to_proficiency_data(
+         real_student_proficiency,
+         all_student_ids,
+         section_id,
+         objective_id
+       ) do
     # Filter proficiency data to only include enrolled students (exclude instructors)
     filtered_student_proficiency =
       real_student_proficiency
@@ -272,20 +281,55 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
     missing_students_with_names =
       get_missing_students_with_names(all_student_ids, existing_student_ids)
 
+    # Get related_activity_ids for calculating student attempts
+    related_activity_ids =
+      case SectionResourceDepot.get_section_resource(section_id, objective_id) do
+        nil -> []
+        section_resource -> section_resource.related_activities || []
+      end
+
+    # Get related_activities and calculate total count for this objective
+    total_related_activities = length(related_activity_ids)
+
+    # Calculate activities attempted per student
+    student_activities_attempted =
+      Metrics.student_activities_attempted_count(
+        section_id,
+        all_student_ids,
+        related_activity_ids
+      )
+
+    # Add activity attempt data to existing students
+    student_proficiency =
+      filtered_student_proficiency
+      |> Enum.map(fn student ->
+        student_id_int = String.to_integer(student.student_id)
+        activities_attempted = Map.get(student_activities_attempted, student_id_int, 0)
+
+        Map.merge(student, %{
+          activities_attempted_count: activities_attempted,
+          total_related_activities: total_related_activities
+        })
+      end)
+
     # Find students that are missing from proficiency data
     missing_students =
       missing_students_with_names
       |> Enum.map(fn {student_id, student_name} ->
+        activities_attempted = Map.get(student_activities_attempted, student_id, 0)
+
         %{
           student_id: Integer.to_string(student_id),
           student_name: student_name,
           proficiency: 0.0,
-          proficiency_range: "Not enough data"
+          proficiency_range: "Not enough data",
+          activities_attempted_count: activities_attempted,
+          total_related_activities: total_related_activities
         }
       end)
 
-    # Combine filtered proficiency data with missing students
-    filtered_student_proficiency ++ missing_students
+    # Combine final proficiency data with missing students
+    student_proficiency ++ missing_students
   end
 
   defp get_missing_students_with_names(all_student_ids, existing_student_ids) do

@@ -48,7 +48,9 @@ defmodule OliWeb.Delivery.LearningObjectives.StudentProficiencyTableModel do
     student.student_name
   end
 
-  def custom_render(_assigns, _student, %ColumnSpec{name: :activities_attempted}) do
-    "3 out of 9"
+  def custom_render(_assigns, student, %ColumnSpec{name: :activities_attempted}) do
+    activities_attempted = Map.get(student, :activities_attempted_count, 0)
+    total_activities = Map.get(student, :total_related_activities, 0)
+    "#{activities_attempted} out of #{total_activities}"
   end
 end

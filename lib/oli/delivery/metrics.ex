@@ -1702,4 +1702,43 @@ defmodule Oli.Delivery.Metrics do
       {family, given} -> "#{family}, #{given}"
     end
   end
+
+  @doc """
+  Calculates how many activities a student has attempted out of the total related activities.
+
+  Returns a map with student_id as key and attempt count as value.
+
+  ## Parameters
+  - section_id: The section ID
+  - student_ids: List of student IDs to calculate for
+  - related_activity_ids: List of activity resource IDs related to the objective
+
+  ## Returns
+  %{student_id => attempted_activities_count}
+  """
+  @spec student_activities_attempted_count(
+          section_id :: integer,
+          student_ids :: list(integer),
+          related_activity_ids :: list(integer)
+        ) :: map()
+  def student_activities_attempted_count(_section_id, _student_ids, related_activity_ids)
+      when related_activity_ids == [],
+      do: %{}
+
+  def student_activities_attempted_count(section_id, student_ids, related_activity_ids) do
+    from(aa in ActivityAttempt,
+      join: ra in ResourceAttempt,
+      on: aa.resource_attempt_id == ra.id,
+      join: access in ResourceAccess,
+      on: ra.resource_access_id == access.id,
+      join: activity_revision in assoc(aa, :revision),
+      where: access.section_id == ^section_id,
+      where: access.user_id in ^student_ids,
+      where: activity_revision.resource_id in ^related_activity_ids,
+      group_by: access.user_id,
+      select: {access.user_id, fragment("COUNT(DISTINCT ?)", activity_revision.resource_id)}
+    )
+    |> Repo.all()
+    |> Map.new()
+  end
 end
