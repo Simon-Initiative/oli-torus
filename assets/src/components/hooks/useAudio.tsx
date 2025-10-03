@@ -6,9 +6,10 @@ import { useCallback, useRef } from 'react';
   Usage:
     const { audioPlayer, playAudio } = useAudio(pronunciation.src);
 
-  playAudio - callback to actually play the audio
+  playAudio   - callback to actually play (or toggle) the audio
+  pauseAudio  - explicit pause helper for consumers that need to stop playback (e.g. when closing popovers)
   audioPlayer - an <audio> component that you must make sure gets rendered into the tree
-  isPlaying - boolean to let you know if the audio is playing
+  isPlaying   - boolean to let you know if the audio is playing
 
  */
 
@@ -16,25 +17,35 @@ export const useAudio = (src?: string) => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
 
-  const playAudio = useCallback((event?: any) => {
-    event?.preventDefault && event?.preventDefault(); // Fixes https://eliterate.atlassian.net/browse/MER-1503
-
+  const pauseAudio = useCallback(() => {
     const audio = audioRef.current;
     if (audio) {
-      if (audio.paused) {
-        audio.currentTime = 0;
-        audio.play().then(() => setIsPlaying(true));
-        audio.onabort = () => setIsPlaying(false);
-        audio.onerror = () => setIsPlaying(false);
-        audio.onended = () => setIsPlaying(false);
-      } else {
-        setIsPlaying(false);
-        audio.pause();
-      }
+      audio.pause();
+      setIsPlaying(false);
     }
   }, []);
 
+  const playAudio = useCallback(
+    (event?: any) => {
+      event?.preventDefault && event?.preventDefault(); // Fixes https://eliterate.atlassian.net/browse/MER-1503
+
+      const audio = audioRef.current;
+      if (audio) {
+        if (audio.paused) {
+          audio.currentTime = 0;
+          audio.play().then(() => setIsPlaying(true));
+          audio.onabort = () => setIsPlaying(false);
+          audio.onerror = () => setIsPlaying(false);
+          audio.onended = () => setIsPlaying(false);
+        } else {
+          pauseAudio();
+        }
+      }
+    },
+    [pauseAudio],
+  );
+
   const audioPlayer = src ? <audio ref={audioRef} src={src} preload="auto"></audio> : null;
 
-  return { audioPlayer, playAudio, isPlaying };
+  return { audioPlayer, playAudio, pauseAudio, isPlaying };
 };
