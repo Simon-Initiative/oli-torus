@@ -1,7 +1,6 @@
 defmodule OliWeb.Components.Delivery.Students.EmailButtonTest do
   use OliWeb.ConnCase, async: true
   import LiveComponentTests
-  import Phoenix.LiveViewTest
 
   alias OliWeb.Components.Delivery.Students.EmailButton
 
