@@ -18,14 +18,19 @@ import { configureStore } from 'state/store';
 import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
 import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
 import { Manifest } from '../types';
-import { LogicLabModelSchema, LogicLabSaveState, getLabServer, isLabMessage } from './LogicLabModelSchema';
+import {
+  LogicLabModelSchema,
+  LogicLabSaveState,
+  getLabServer,
+  isLabMessage,
+} from './LogicLabModelSchema';
 
 type LogicLabDeliveryProps = DeliveryElementProps<LogicLabModelSchema>;
-  type LocalActivityState = {
-    attemptGuid: string;
-    partGuid: string;
-    response: LogicLabSaveState | undefined;
-  };
+type LocalActivityState = {
+  attemptGuid: string;
+  partGuid: string;
+  input: string;
+};
 
 /**
  * LogicLab delivery component shell.
@@ -57,14 +62,14 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
   const [localActivityState, setLocalActivityState] = useState<LocalActivityState>({
     attemptGuid: activityState.attemptGuid,
     partGuid: activityState.parts[0].attemptGuid,
-    response: activityState.parts[0].response,
+    // NB torus input representation is a string, must JSON.stringify to store an Object
+    input: activityState.parts[0].response.input,
   });
   const attemptGuid = localActivityState.attemptGuid;
   const partGuid = localActivityState.partGuid;
-  const response = localActivityState.response;
+  const input = localActivityState.input;
   console.log(
-    `LogicLabDelivery[${instanceId}] render attemptGuid=${attemptGuid} partGuid=${partGuid} response=${JSON.stringify(
-      response,
+    `LogicLabDelivery[${instanceId}] render attemptGuid=${attemptGuid} partGuid=${partGuid} input=${input}
     )}`,
   );
 
@@ -79,8 +84,6 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
 
   const onMessage = useCallback(
     async (e: MessageEvent) => {
-      // utility for console messages
-      const abbr = (s: any) => (s ? JSON.stringify(s).slice(0, 32) + '...' : s);
       try {
         const lab = new URL(getLabServer(context));
         const origin = new URL(e.origin);
@@ -96,17 +99,16 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
               case 'score':
                 if (mode === 'delivery') {
                   try {
+                    const input = JSON.stringify(msg.score.input);
                     console.log(
-                      `Submitting evaluation  attemptGuid=${attemptGuid} partGuid=${partGuid} ${
-                        msg.score.score
-                      }/${msg.score.outOf} response=${JSON.stringify(msg.score.input)}}`,
+                      `Submitting evaluation attemptGuid=${attemptGuid} partGuid=${partGuid} ${msg.score.score}/${msg.score.outOf} input=${input}}`,
                     );
                     await onSubmitEvaluations(attemptGuid, [
                       {
                         score: msg.score.score,
                         outOf: msg.score.outOf,
                         feedback: model.feedback[Number(msg.score.complete)],
-                        response: { input: msg.score.input },
+                        response: { input },
                         attemptGuid: partGuid,
                       },
                     ]);
@@ -127,9 +129,7 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
                     await onSaveActivity(newAttemptGuid, [
                       {
                         attemptGuid: newPartGuid,
-                        response: {
-                          input: msg.score.input,
-                        },
+                        response: { input },
                       },
                     ]);
                     // msg handler now a stale closure holding old attemptGuid/partGuid
@@ -137,7 +137,7 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
                     setLocalActivityState({
                       attemptGuid: newAttemptGuid,
                       partGuid: newPartGuid,
-                      response: msg.score.input,
+                      input,
                     });
                   } catch (err) {
                     console.error(err);
@@ -147,22 +147,19 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
               // respond to lab request to save state.
               case 'save':
                 if (mode === 'delivery') {
+                  const input = JSON.stringify(msg.state);
                   console.log(
-                    `saving attemptGuid=${attemptGuid} partGuid=${partGuid} response=${JSON.stringify(
-                      msg.state,
-                    )}`,
+                    `saving attemptGuid=${attemptGuid} partGuid=${partGuid} input=${input}`,
                   );
                   try {
                     await onSaveActivity(attemptGuid, [
                       {
                         attemptGuid: partGuid,
-                        response: {
-                          input: msg.state,
-                        },
+                        response: { input },
                       },
                     ]);
                     // update stored response in our state
-                    setLocalActivityState({...localActivityState, response: msg.state});
+                    setLocalActivityState({ ...localActivityState, input });
                   } catch (err) {
                     console.error(err);
                   }
@@ -171,11 +168,12 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
               // lab is requesting activity state
               case 'load':
                 if (mode !== 'preview') {
-                  console.log(`found saved response= ${JSON.stringify(response)}`);
-                  if (response && e.source) {
+                  console.log(`found saved response= ${JSON.stringify(input)}`);
+                  if (input && e.source) {
                     // post saved state back to lab.
                     console.log('posting saved state back to lab');
-                    e.source.postMessage(response, { targetOrigin: lab.origin });
+                    const labState: LogicLabSaveState = JSON.parse(input);
+                    e.source.postMessage(labState, { targetOrigin: lab.origin });
                   }
                 } // TODO if in preview, load appropriate content
                 // Preview feature in lab servlet is not complete.
