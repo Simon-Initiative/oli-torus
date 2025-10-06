@@ -18,9 +18,14 @@ import { configureStore } from 'state/store';
 import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
 import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
 import { Manifest } from '../types';
-import { LogicLabModelSchema, getLabServer, isLabMessage } from './LogicLabModelSchema';
+import { LogicLabModelSchema, LogicLabSaveState, getLabServer, isLabMessage } from './LogicLabModelSchema';
 
 type LogicLabDeliveryProps = DeliveryElementProps<LogicLabModelSchema>;
+  type LocalActivityState = {
+    attemptGuid: string;
+    partGuid: string;
+    response: LogicLabSaveState | undefined;
+  };
 
 /**
  * LogicLab delivery component shell.
@@ -49,11 +54,6 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
   // machinery, and incoming activity state from context is apparently only valid
   // on activity startup, not automatically updated on results when called this way.
   // So we track the changing activity state here in local state variables.
-  type LocalActivityState = {
-    attemptGuid: string;
-    partGuid: string;
-    response: string;
-  };
   const [localActivityState, setLocalActivityState] = useState<LocalActivityState>({
     attemptGuid: activityState.attemptGuid,
     partGuid: activityState.parts[0].attemptGuid,
@@ -137,7 +137,7 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
                     setLocalActivityState({
                       attemptGuid: newAttemptGuid,
                       partGuid: newPartGuid,
-                      response: msg.score.input as string,
+                      response: msg.score.input,
                     });
                   } catch (err) {
                     console.error(err);
@@ -162,7 +162,7 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
                       },
                     ]);
                     // update stored response in our state
-                    setLocalActivityState({ ...localActivityState, response: msg.state as string });
+                    setLocalActivityState({...localActivityState, response: msg.state});
                   } catch (err) {
                     console.error(err);
                   }
