@@ -10,11 +10,9 @@ import { Provider, useDispatch } from 'react-redux';
 import { ScoreAsYouGoHeaderBase } from 'components/activities/common/ScoreAsYouGoHeader';
 import {
   activityDeliverySlice,
-  initializeState,
   listenForParentSurveyReset,
   listenForParentSurveySubmit,
   listenForReviewAttemptChange,
-  resetAction,
 } from 'data/activities/DeliveryState';
 import { configureStore } from 'state/store';
 import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
@@ -124,7 +122,7 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
                     console.log(
                       `After resetActivity => new attemptGuid=${newAttemptGuid} partGuid=${newPartGuid}`,
                     );
-                    // save immediately so state to carry state over into new attempt
+                    // save immediately to carry student input over into new attempt
                     console.log('saving input into new attempt ');
                     await onSaveActivity(newAttemptGuid, [
                       {
@@ -164,8 +162,7 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
                       },
                     ]);
                     // update stored response in our state
-                    localActivityState.response = msg.state as string;
-                    setLocalActivityState(localActivityState);
+                    setLocalActivityState({ ...localActivityState, response: msg.state as string });
                   } catch (err) {
                     console.error(err);
                   }
