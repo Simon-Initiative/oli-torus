@@ -16,7 +16,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
   alias OliWeb.Common.SearchInput
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Components.Delivery.CardHighlights
-  alias OliWeb.Delivery.Content.{MultiSelect, Progress}
+  alias OliWeb.Delivery.Content.{MultiSelect, PercentageSelector}
   alias OliWeb.Delivery.ActivityHelpers
   alias OliWeb.Delivery.ScoredActivities.ActivitiesTableModel
   alias OliWeb.Delivery.ScoredActivities.AssessmentsTableModel
@@ -34,9 +34,9 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
     text_search: nil,
     selected_card_value: nil,
     selected_activity_card_value: nil,
-    progress_percentage: 100,
+    progress_percentage: nil,
     progress_selector: nil,
-    avg_score_percentage: 100,
+    avg_score_percentage: nil,
     avg_score_selector: nil,
     selected_attempts_ids: Jason.encode!([]),
     card_props: [],
@@ -345,11 +345,10 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
               </.form>
 
               <%= if is_nil(@current_assessment) do %>
-                <Progress.render
+                <PercentageSelector.render
                   target={@myself}
-                  progress_percentage={@params.progress_percentage}
-                  progress_selector={@params.progress_selector}
-                  params_from_url={@params}
+                  percentage={@params.progress_percentage}
+                  selector={@params.progress_selector}
                 />
               <% end %>
 
@@ -365,13 +364,12 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
                 submit_event="apply_attempts_filter"
               />
 
-              <Progress.render
+              <PercentageSelector.render
                 id="score"
                 label="Score"
                 target={@myself}
-                progress_percentage={@params.avg_score_percentage}
-                progress_selector={@params.avg_score_selector}
-                params_from_url={@params}
+                percentage={@params.avg_score_percentage}
+                selector={@params.avg_score_selector}
                 submit_event="apply_avg_score_filter"
                 input_name="avg_score_percentage"
               />

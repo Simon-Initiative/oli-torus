@@ -5,7 +5,7 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Components.Delivery.CardHighlights
   alias OliWeb.Delivery.ActivityHelpers
-  alias OliWeb.Delivery.Content.{MultiSelect, Progress}
+  alias OliWeb.Delivery.Content.{MultiSelect, PercentageSelector}
   alias OliWeb.Delivery.PracticeActivities.PracticeAssessmentsTableModel
   alias OliWeb.Icons
   alias OliWeb.Router.Helpers, as: Routes
@@ -18,9 +18,9 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
     sort_by: :order,
     text_search: nil,
     selected_card_value: nil,
-    progress_percentage: 100,
+    progress_percentage: nil,
     progress_selector: nil,
-    avg_score_percentage: 100,
+    avg_score_percentage: nil,
     avg_score_selector: nil,
     selected_attempts_ids: Jason.encode!([])
   }
@@ -160,11 +160,10 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
               />
             </.form>
 
-            <Progress.render
+            <PercentageSelector.render
               target={@myself}
-              progress_percentage={@params.progress_percentage}
-              progress_selector={@params.progress_selector}
-              params_from_url={@params_from_url}
+              percentage={@params.progress_percentage}
+              selector={@params.progress_selector}
             />
 
             <MultiSelect.render
@@ -179,13 +178,12 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
               submit_event="apply_attempts_filter"
             />
 
-            <Progress.render
+            <PercentageSelector.render
               id="score"
               label="Score"
               target={@myself}
-              progress_percentage={@params.avg_score_percentage}
-              progress_selector={@params.avg_score_selector}
-              params_from_url={@params_from_url}
+              percentage={@params.avg_score_percentage}
+              selector={@params.avg_score_selector}
               submit_event="apply_avg_score_filter"
               input_name="avg_score_percentage"
             />

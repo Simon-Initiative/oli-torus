@@ -8,7 +8,7 @@ defmodule OliWeb.Components.Delivery.Content do
   alias OliWeb.Components.Delivery.{CardHighlights, ContentTableModel}
   alias OliWeb.Common.{StripedPagedTable, Params}
   alias OliWeb.Router.Helpers, as: Routes
-  alias OliWeb.Delivery.Content.{MultiSelect, Progress}
+  alias OliWeb.Delivery.Content.{MultiSelect, PercentageSelector}
 
   alias Phoenix.LiveView.JS
   alias OliWeb.Icons
@@ -22,7 +22,7 @@ defmodule OliWeb.Components.Delivery.Content do
     text_search: nil,
     container_filter_by: :units,
     selected_card_value: nil,
-    progress_percentage: 100,
+    progress_percentage: nil,
     progress_selector: nil,
     selected_proficiency_ids: Jason.encode!([])
   }
@@ -202,11 +202,10 @@ defmodule OliWeb.Components.Delivery.Content do
               />
             </.form>
 
-            <Progress.render
+            <PercentageSelector.render
               target={@myself}
-              progress_percentage={@params.progress_percentage}
-              progress_selector={@params.progress_selector}
-              params_from_url={@params_from_url}
+              percentage={@params.progress_percentage}
+              selector={@params.progress_selector}
             />
 
             <MultiSelect.render
