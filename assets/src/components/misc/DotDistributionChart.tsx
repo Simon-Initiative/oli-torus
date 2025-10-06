@@ -309,128 +309,127 @@ export const DotDistributionChart: React.FC<DotDistributionChartProps> = ({
     <div className="w-full">
       {/* Main chart container */}
       <div ref={containerRef} className="relative py-4">
-        {/* Container with margin for axis labels on the right */}
-        <div style={{ width: 'calc(95% - 4rem)', position: 'relative' }}>
-          {/* Chart content area */}
-          <div className="relative" style={{ width: '100%', minWidth: '300px' }}>
-            {/* Dots area - above the bar with extended rectangles */}
-            <div className="relative mb-1" style={{ width: '100%', zIndex: 1 }}>
-              {dotData.length > 0 &&
-                renderDots(
-                  dotData,
-                  barData,
-                  hoveredSection,
-                  selectedSection,
-                  setHoveredSection,
-                  setSelectedSection,
-                  darkMode,
-                  unique_id,
-                  pushEventTo,
-                )}
+        {dotData.length > 0 ? (
+          <>
+            {/* Container with margin for axis labels on the right */}
+            <div style={{ width: 'calc(95% - 4rem)', position: 'relative' }}>
+              {/* Chart content area */}
+              <div className="relative" style={{ width: '100%', minWidth: '300px' }}>
+                {/* Dots area - above the bar with extended rectangles */}
+                <div className="relative mb-1" style={{ width: '100%', zIndex: 1 }}>
+                  {renderDots(
+                    dotData,
+                    barData,
+                    hoveredSection,
+                    selectedSection,
+                    setHoveredSection,
+                    setSelectedSection,
+                    darkMode,
+                    unique_id,
+                    pushEventTo,
+                  )}
+                </div>
+
+                {/* VegaLite bar chart */}
+                <div
+                  className="relative w-full"
+                  style={{ width: '100%', marginTop: '-25px', zIndex: 0 }}
+                >
+                  <VegaLite
+                    spec={vegaSpec}
+                    actions={false}
+                    tooltip={darkMode ? darkTooltipTheme : lightTooltipTheme}
+                    onNewView={(view) => {
+                      viewRef.current = view;
+                      view.background(darkMode ? '#262626' : 'white');
+                      view.run();
+                    }}
+                  />
+                </div>
+              </div>
+
+              <style>
+                {`
+                .vega-embed {
+                  width: 100%;
+                  height: auto;
+                  padding: 0;
+                  margin: 0;
+                }
+                .vega-embed details {
+                  display: none;
+                }
+                .vega-embed .vega-actions {
+                  display: none;
+                }
+                .vega-embed canvas, .vega-embed svg {
+                  width: 100% !important;
+                  height: auto !important;
+                }`}
+              </style>
+
+              {/* Proficiency labels below the bar */}
+              <div className="relative mt-2">
+                <div className="flex w-full">
+                  {barData.map((item) => {
+                    const totalStudents = barData.reduce((sum, d) => sum + d.count, 0);
+                    const widthPercent = totalStudents > 0 ? (item.count / totalStudents) * 100 : 25;
+
+                    if (item.count === 0) return null;
+
+                    return (
+                      <div
+                        key={item.proficiency}
+                        className="flex justify-center items-center text-xs text-gray-600 dark:text-gray-400"
+                        style={{ width: `${widthPercent}%` }}
+                      >
+                        {item.proficiency}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
 
-            {/* VegaLite bar chart */}
+            {/* Y-axis label positioned vertically above Proficiency label - Responsive positioning */}
             <div
-              className="relative w-full"
-              style={{ width: '100%', marginTop: '-25px', zIndex: 0 }}
+              className="absolute right-1 sm:right-[-28px] md:right-[-21px] lg:right-[-23px] xl:right-1 2xl:right-1"
+              style={{ top: 'calc(50% + 20px)' }}
             >
-              <VegaLite
-                spec={vegaSpec}
-                actions={false}
-                tooltip={darkMode ? darkTooltipTheme : lightTooltipTheme}
-                onNewView={(view) => {
-                  viewRef.current = view;
-                  view.background(darkMode ? '#262626' : 'white');
-                  view.run();
-                }}
-              />
+              <span className="text-xs font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap block transform -rotate-90 origin-bottom-left">
+                # of Students
+              </span>
             </div>
-          </div>
 
-          <style>
-            {`
-            .vega-embed {
-              width: 100%;
-              height: auto;
-              padding: 0;
-              margin: 0;
-            }
-            .vega-embed details {
-              display: none;
-            }
-            .vega-embed .vega-actions {
-              display: none;
-            }
-            .vega-embed canvas, .vega-embed svg {
-              width: 100% !important;
-              height: auto !important;
-            }`}
-          </style>
-
-          {/* Proficiency labels below the bar */}
-          <div className="relative mt-2">
-            <div className="flex w-full">
-              {barData.map((item) => {
-                const totalStudents = barData.reduce((sum, d) => sum + d.count, 0);
-                const widthPercent = totalStudents > 0 ? (item.count / totalStudents) * 100 : 25;
-
-                if (item.count === 0) return null;
-
-                return (
-                  <div
-                    key={item.proficiency}
-                    className="flex justify-center items-center text-xs text-gray-600 dark:text-gray-400"
-                    style={{ width: `${widthPercent}%` }}
-                  >
-                    {item.proficiency}
-                  </div>
-                );
-              })}
+            {/* X-axis label positioned to the right of bar chart - Responsive positioning */}
+            <div
+              className="absolute right-8 sm:right-[1px] md:right-[7px] lg:right-[7px] xl:right-9 2xl:right-8"
+              style={{ top: 'calc(50% + 52px)' }}
+            >
+              <span className="text-xs font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                Proficiency
+              </span>
             </div>
-          </div>
-        </div>
 
-        {/* Y-axis label positioned vertically above Proficiency label - Responsive positioning */}
-        <div
-          className="absolute right-1 sm:right-[-28px] md:right-[-21px] lg:right-[-23px] xl:right-1 2xl:right-1"
-          style={{ top: 'calc(50% + 20px)' }}
-        >
-          <span className="text-xs font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap block transform -rotate-90 origin-bottom-left">
-            # of Students
-          </span>
-        </div>
-
-        {/* X-axis label positioned to the right of bar chart - Responsive positioning */}
-        <div
-          className="absolute right-8 sm:right-[1px] md:right-[7px] lg:right-[7px] xl:right-9 2xl:right-8"
-          style={{ top: 'calc(50% + 52px)' }}
-        >
-          <span className="text-xs font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap">
-            Proficiency
-          </span>
-        </div>
-
-        {/* Accessible summary for screen readers */}
-        <div className="sr-only">
-          <h3>Student Proficiency Distribution Summary</h3>
-          <ul>
-            {barData.map((item) => (
-              <li key={item.proficiency}>
-                {item.proficiency}: {item.count} students (
-                {Math.round((item.count / barData.reduce((sum, d) => sum + d.count, 0)) * 100)}%)
-              </li>
-            ))}
-          </ul>
-          {dotData.length > 0 && (
-            <p>
-              Individual student dots are positioned within each proficiency level based on their
-              specific proficiency scores.
-            </p>
-          )}
-        </div>
-
-        {/* Message when no proficiency data available */}
-        {dotData.length === 0 && (
+            {/* Accessible summary for screen readers */}
+            <div className="sr-only">
+              <h3>Student Proficiency Distribution Summary</h3>
+              <ul>
+                {barData.map((item) => (
+                  <li key={item.proficiency}>
+                    {item.proficiency}: {item.count} students (
+                    {Math.round((item.count / barData.reduce((sum, d) => sum + d.count, 0)) * 100)}%)
+                  </li>
+                ))}
+              </ul>
+              <p>
+                Individual student dots are positioned within each proficiency level based on their
+                specific proficiency scores.
+              </p>
+            </div>
+          </>
+        ) : (
+          /* Message when no proficiency data available */
           <div className="mt-4 text-center">
             <p className="text-xs text-gray-500 dark:text-gray-400">
               No individual student proficiency data available for detailed visualization

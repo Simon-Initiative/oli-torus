@@ -2,6 +2,7 @@ defmodule OliWeb.Delivery.LearningObjectives.StudentProficiencyTableModel do
   use Phoenix.Component
 
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
+  alias OliWeb.Delivery.InstructorDashboard.HTMLComponents
 
   def new(student_data, opts \\ []) do
     sort_by_spec = Keyword.get(opts, :sort_by_spec)
@@ -13,13 +14,19 @@ defmodule OliWeb.Delivery.LearningObjectives.StudentProficiencyTableModel do
         label: "Student Name",
         render_fn: &custom_render/3,
         sortable: true,
-        th_class: "w-1/2"
+        th_class: "w-1/2 !border-b-0"
       },
       %ColumnSpec{
         name: :activities_attempted,
-        label: "Activities Attempted",
+        label:
+          HTMLComponents.render_label(%{
+            title: "Activities Attempted",
+            info_tooltip:
+              "The number of activities linked to this learning objective that the student has tried at least once, compared to the total tied to this learning objective."
+          }),
         render_fn: &custom_render/3,
-        sortable: false
+        th_class: "flex items-center gap-x-2 !border-b-0",
+        sortable: true
       }
     ]
 

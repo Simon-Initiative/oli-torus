@@ -83,8 +83,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyList d
           Enum.sort_by(students, &(&1.student_name || ""))
 
         "activities_attempted" ->
-          # For now, all students have the same placeholder value, so no actual sorting needed
-          students
+          Enum.sort_by(students, &(&1.activities_attempted_count || 0))
 
         _ ->
           students
