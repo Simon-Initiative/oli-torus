@@ -68,7 +68,6 @@ defmodule OliWeb.Delivery.PracticeActivities.PracticeAssessmentsTableModel do
     assigns =
       Map.merge(assigns, %{
         title: assessment.title,
-        slug: assessment.slug,
         container_label: assessment.container_label,
         resource_id: assessment.resource_id,
         has_lti_activity: assessment.has_lti_activity,
@@ -88,16 +87,16 @@ defmodule OliWeb.Delivery.PracticeActivities.PracticeAssessmentsTableModel do
         <.question_text
           container_label={@container_label}
           title={@title}
-          slug={@slug}
           section_slug={@section_slug}
+          resource_id={@resource_id}
         />
       </div>
     <% else %>
       <.question_text
         container_label={@container_label}
         title={@title}
-        slug={@slug}
         section_slug={@section_slug}
+        resource_id={@resource_id}
       />
     <% end %>
     """
@@ -111,7 +110,9 @@ defmodule OliWeb.Delivery.PracticeActivities.PracticeAssessmentsTableModel do
       <% end %>
       <span>
         <a
-          href={~p"/sections/#{@section_slug}/preview/page/#{@slug}"}
+          href={
+            ~p"/sections/#{@section_slug}/instructor_dashboard/insights/practice_activities/#{@resource_id}"
+          }
           class="text-Text-text-link text-base font-medium leading-normal"
         >
           {@title}
