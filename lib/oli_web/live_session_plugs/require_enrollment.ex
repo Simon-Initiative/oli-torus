@@ -4,7 +4,9 @@ defmodule OliWeb.LiveSessionPlugs.RequireEnrollment do
   import Phoenix.Component, only: [assign: 2]
   import Phoenix.LiveView, only: [redirect: 2, put_flash: 3]
 
+  alias Oli.Accounts.User
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.Section
   alias Lti_1p3.Roles.ContextRoles
 
   def on_mount(
@@ -13,14 +15,22 @@ defmodule OliWeb.LiveSessionPlugs.RequireEnrollment do
         _session,
         %{
           assigns: %{
-            current_user: user,
-            section: %Sections.Section{requires_enrollment: false} = section
+            current_user: %User{} = user,
+            section: %Section{requires_enrollment: false} = section
           }
         } = socket
-      )
-      when not is_nil(user) do
-    if user, do: Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-    {:cont, assign(socket, is_enrolled: true)}
+      ) do
+    with :ok <- Sections.ensure_direct_delivery_enrollment_allowed(user, section) do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      {:cont, assign(socket, is_enrolled: true)}
+    else
+      _ ->
+        {:halt,
+         socket
+         |> put_flash(:error, "You are not enrolled in this course")
+         |> redirect(to: ~p"/workspaces/student")}
+    end
   end
 
   def on_mount(:default, %{"section_slug" => section_slug}, _session, socket) do

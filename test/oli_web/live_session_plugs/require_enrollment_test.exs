@@ -20,9 +20,10 @@ defmodule OliWeb.LiveSessionPlugs.RequireEnrollmentTest do
   end
 
   describe "on_mount: :default with section that doesn't require enrollment" do
-    test "auto-enrolls user and sets is_enrolled when section requires_enrollment is false", %{
-      user: user
-    } do
+    test "auto-enrolls user and sets is_enrolled when section requires_enrollment is false and user is independent",
+         %{
+           user: user
+         } do
       section = insert(:section, requires_enrollment: false)
 
       socket = %LiveView.Socket{
@@ -37,7 +38,7 @@ defmodule OliWeb.LiveSessionPlugs.RequireEnrollmentTest do
     end
 
     test "falls through to default clause when current_user is nil" do
-      section = %Sections.Section{requires_enrollment: false}
+      section = insert(:section, requires_enrollment: false)
 
       socket = %LiveView.Socket{
         endpoint: OliWeb.Endpoint,
@@ -45,6 +46,22 @@ defmodule OliWeb.LiveSessionPlugs.RequireEnrollmentTest do
       }
 
       assert {:cont, ^socket} = RequireEnrollment.on_mount(:default, %{}, %{}, socket)
+    end
+
+    test "redirects to student workspace when user enrollment is not allowed" do
+      section = insert(:section, open_and_free: true, requires_enrollment: false)
+
+      user = insert(:user, independent_learner: false)
+
+      socket = %LiveView.Socket{
+        endpoint: OliWeb.Endpoint,
+        assigns: %{__changed__: %{}, current_user: user, section: section, flash: %{}}
+      }
+
+      assert {:halt, redirected_socket} =
+               RequireEnrollment.on_mount(:default, %{}, %{}, socket)
+
+      assert redirected_socket.redirected
     end
   end
 
