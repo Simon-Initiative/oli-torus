@@ -68,11 +68,18 @@ defmodule OliWeb.Common.SortableTable.Table do
   end
 
   defp render_row(assigns, row) do
+    click_row_event =
+      cond do
+        assigns.allow_selection and assigns.selection_change != "" -> assigns.selection_change
+        assigns.select != nil and assigns.select != "" -> assigns.select
+        true -> nil
+      end
+
     row_class =
       if id_field(row, assigns.model) == assigns.model.selected do
         "border-b table-active"
       else
-        if assigns.select != nil and assigns.select != "" do
+        if click_row_event != nil do
           "border-b selectable"
         else
           "border-b"
@@ -81,14 +88,15 @@ defmodule OliWeb.Common.SortableTable.Table do
 
     row_class = row_class <> " #{assigns[:additional_row_class]}"
 
-    assigns = Map.merge(assigns, %{row: row, row_class: row_class})
+    assigns =
+      Map.merge(assigns, %{row: row, row_class: row_class, click_row_event: click_row_event})
 
     ~H"""
     <tr
       id={id_field(@row, @model)}
       class={@row_class <> if Map.get(@row, :selected) || id_field(@row, @model) == @model.selected, do: " bg-delivery-primary-100 shadow-inner dark:bg-gray-700 dark:text-black", else: ""}
       aria-selected={if Map.get(@row, :selected), do: "true", else: "false"}
-      phx-click={if @select != nil and @select != "", do: @select, else: nil}
+      phx-click={@click_row_event}
       phx-value-id={id_field(@row, @model)}
     >
       <%= for column_spec <- @model.column_specs do %>
@@ -123,6 +131,8 @@ defmodule OliWeb.Common.SortableTable.Table do
   attr :select, :string, default: ""
   attr :additional_table_class, :string, default: "table-sm"
   attr :additional_row_class, :string, default: ""
+  attr :allow_selection, :boolean, default: false
+  attr :selection_change, :string, default: ""
 
   def render(assigns) do
     ~H"""
@@ -136,7 +146,9 @@ defmodule OliWeb.Common.SortableTable.Table do
                   model: @model,
                   sort: @sort,
                   select: @select,
-                  additional_table_class: @additional_table_class
+                  additional_table_class: @additional_table_class,
+                  allow_selection: @allow_selection,
+                  selection_change: @selection_change
                 },
                 @model.data
               ),
@@ -154,7 +166,9 @@ defmodule OliWeb.Common.SortableTable.Table do
                 sort: @sort,
                 select: @select,
                 additional_table_class: @additional_table_class,
-                additional_row_class: @additional_row_class
+                additional_row_class: @additional_row_class,
+                allow_selection: @allow_selection,
+                selection_change: @selection_change
               },
               @model.data
             ),

@@ -8,15 +8,23 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyList d
         student.proficiency_range == assigns.selected_proficiency_level
       end)
 
+    # Get selected students from socket or initialize empty list
+    selected_students = socket.assigns[:selected_students] || []
+
     # Create the student proficiency table model
     {:ok, student_table_model} =
-      OliWeb.Delivery.LearningObjectives.StudentProficiencyTableModel.new(filtered_student_data)
+      OliWeb.Delivery.LearningObjectives.StudentProficiencyTableModel.new(
+        filtered_student_data,
+        selected_students: selected_students,
+        target: socket.assigns.myself
+      )
 
     socket =
       socket
       |> assign(assigns)
       |> assign(:student_table_model, student_table_model)
       |> assign(:filtered_student_data, filtered_student_data)
+      |> assign(:selected_students, selected_students)
 
     {:ok, socket}
   end
@@ -36,6 +44,8 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyList d
         model={@student_table_model}
         sort={JS.push("student_proficiency_sort", target: @myself)}
         additional_row_class="bg-Table-table-row-1"
+        allow_selection={true}
+        selection_change={JS.push("paged_table_selection_change", target: @myself)}
       />
     </div>
     """
@@ -67,13 +77,71 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyList d
       OliWeb.Delivery.LearningObjectives.StudentProficiencyTableModel.new(
         sorted_rows,
         sort_by_spec: sort_by_spec,
-        sort_order: sort_order
+        sort_order: sort_order,
+        selected_students: socket.assigns.selected_students,
+        target: socket.assigns.myself
       )
 
     {:noreply,
      socket
      |> assign(:student_table_model, updated_table_model)
      |> assign(:filtered_student_data, sorted_rows)}
+  end
+
+  def handle_event("select_all_students", _params, socket) do
+    all_student_ids = Enum.map(socket.assigns.filtered_student_data, & &1.student_id)
+    current_selected = MapSet.new(socket.assigns.selected_students)
+
+    # If all students are already selected, deselect all; otherwise select all
+    selected_students =
+      if MapSet.size(current_selected) > 0 and
+           MapSet.equal?(current_selected, MapSet.new(all_student_ids)) do
+        []
+      else
+        all_student_ids
+      end
+
+    # Recreate the table model with updated selected_students
+    {:ok, updated_table_model} =
+      OliWeb.Delivery.LearningObjectives.StudentProficiencyTableModel.new(
+        socket.assigns.filtered_student_data,
+        sort_by_spec: socket.assigns.student_table_model.sort_by_spec,
+        sort_order: socket.assigns.student_table_model.sort_order,
+        selected_students: selected_students,
+        target: socket.assigns.myself
+      )
+
+    {:noreply,
+     socket
+     |> assign(:selected_students, selected_students)
+     |> assign(:student_table_model, updated_table_model)}
+  end
+
+  def handle_event("paged_table_selection_change", %{"id" => selected_student_id}, socket) do
+    # Toggle selection - if already selected, remove it, otherwise add it
+    selected_students = socket.assigns.selected_students
+
+    selected_students =
+      if selected_student_id in selected_students do
+        List.delete(selected_students, selected_student_id)
+      else
+        [selected_student_id | selected_students]
+      end
+
+    # Recreate the table model with updated selected_students
+    {:ok, updated_table_model} =
+      OliWeb.Delivery.LearningObjectives.StudentProficiencyTableModel.new(
+        socket.assigns.filtered_student_data,
+        sort_by_spec: socket.assigns.student_table_model.sort_by_spec,
+        sort_order: socket.assigns.student_table_model.sort_order,
+        selected_students: selected_students,
+        target: socket.assigns.myself
+      )
+
+    {:noreply,
+     socket
+     |> assign(:selected_students, selected_students)
+     |> assign(:student_table_model, updated_table_model)}
   end
 
   defp sort_students(students, sort_by, sort_order) do

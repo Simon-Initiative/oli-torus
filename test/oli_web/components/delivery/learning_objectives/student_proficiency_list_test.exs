@@ -216,24 +216,25 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyListTe
           selected_proficiency_level: "High"
         })
 
-      # Check initial order before sorting (should be: Smith, Johnson)
-      assert view |> element("tbody tr:first-child td:first-child") |> render() =~
-               "Johnson, Alice"
-
-      assert view |> element("tbody tr:nth-child(2) td:first-child") |> render() =~
+      # Check initial order before sorting (appears to be sorted by insertion order)
+      # Note: td:nth-child(2) because first column is now the checkbox
+      assert view |> element("tbody tr:first-child td:nth-child(2)") |> render() =~
                "Smith, John"
 
-      # Trigger sort by student_name column
+      assert view |> element("tbody tr:nth-child(2) td:nth-child(2)") |> render() =~
+               "Johnson, Alice"
+
+      # Trigger sort by student_name column - first click sorts ascending
       view
       |> element("th[phx-click][phx-value-sort_by='student_name']")
       |> render_click()
 
-      # Check order after sorting (should be alphabetical: Johnson, Smith)
-      assert view |> element("tbody tr:first-child td:first-child") |> render() =~
-               "Smith, John"
-
-      assert view |> element("tbody tr:nth-child(2) td:first-child") |> render() =~
+      # Check order after sorting ascending (Johnson should come before Smith alphabetically)
+      assert view |> element("tbody tr:first-child td:nth-child(2)") |> render() =~
                "Johnson, Alice"
+
+      assert view |> element("tbody tr:nth-child(2) td:nth-child(2)") |> render() =~
+               "Smith, John"
     end
 
     test "sorts students by name descending on second click", %{
@@ -253,11 +254,12 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyListTe
       |> render_click()
 
       # Verify ascending order (Johnson first alphabetically)
-      assert view |> element("tbody tr:first-child td:first-child") |> render() =~
-               "Smith, John"
-
-      assert view |> element("tbody tr:nth-child(2) td:first-child") |> render() =~
+      # Note: td:nth-child(2) because first column is now the checkbox
+      assert view |> element("tbody tr:first-child td:nth-child(2)") |> render() =~
                "Johnson, Alice"
+
+      assert view |> element("tbody tr:nth-child(2) td:nth-child(2)") |> render() =~
+               "Smith, John"
 
       # Second click - sort descending
       view
@@ -265,11 +267,11 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyListTe
       |> render_click()
 
       # Verify descending order (Smith first in reverse alphabetical order)
-      assert view |> element("tbody tr:first-child td:first-child") |> render() =~
-               "Johnson, Alice"
-
-      assert view |> element("tbody tr:nth-child(2) td:first-child") |> render() =~
+      assert view |> element("tbody tr:first-child td:nth-child(2)") |> render() =~
                "Smith, John"
+
+      assert view |> element("tbody tr:nth-child(2) td:nth-child(2)") |> render() =~
+               "Johnson, Alice"
     end
 
     test "handles sorting with single student", %{conn: conn} do
