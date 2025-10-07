@@ -63,6 +63,22 @@ defmodule OliWeb.LiveSessionPlugs.RequireEnrollmentTest do
 
       assert redirected_socket.redirected
     end
+
+    test "skipss auto-enrollment when user is already enrolled" do
+      section = insert(:section, requires_enrollment: false)
+
+      user = insert(:user)
+      insert(:enrollment, user: user, section: section)
+
+      socket = %LiveView.Socket{
+        endpoint: OliWeb.Endpoint,
+        assigns: %{__changed__: %{}, current_user: user, current_author: nil, section: section}
+      }
+
+      assert {:cont, updated_socket} = RequireEnrollment.on_mount(:default, %{}, %{}, socket)
+      assert updated_socket.assigns.is_enrolled == true
+      assert Sections.is_enrolled?(user.id, section.slug)
+    end
   end
 
   describe "on_mount: :default with section_slug" do
