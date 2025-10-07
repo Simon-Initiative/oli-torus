@@ -73,6 +73,7 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
   const partId = castPartId(activityState.parts[0].partId);
   const [activity, setActivity] = useState<string>(model.activity);
   const [instanceId] = useState<string>(crypto.randomUUID().slice(0, 8));
+  const [isResetting, setIsResetting] = useState(false);
 
   useEffect(() => {
     listenForParentSurveySubmit(context.surveyId, dispatch, onSubmitActivity);
@@ -109,7 +110,10 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
   const partAttemptGuid = currentPart?.attemptGuid ?? activityState.parts[0].attemptGuid;
   if (attemptState && currentPart) {
     console.log(
-      `LogicLabDelivery[${instanceId}] render attemptGuid=${attemptGuid} partGuid=${partAttemptGuid} input(${typeof storedInput})=${storedInput})`,
+      `LogicLabDelivery[${instanceId}] render attemptGuid=${attemptGuid} partGuid=${partAttemptGuid} input(${typeof storedInput})=${storedInput.slice(
+        0,
+        32,
+      )})`,
     );
   }
 
@@ -138,7 +142,12 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
                   try {
                     const serializedInput = JSON.stringify(msg.score.input);
                     console.log(
-                      `Submitting evaluation attemptGuid=${attempt.attemptGuid} partGuid=${part.attemptGuid} ${msg.score.score}/${msg.score.outOf} input=${serializedInput}}`,
+                      `Submitting evaluation attemptGuid=${attempt.attemptGuid} partGuid=${
+                        part.attemptGuid
+                      } ${msg.score.score}/${msg.score.outOf} input=${serializedInput.slice(
+                        0,
+                        32,
+                      )}}`,
                     );
                     // We don't have a concept of "selection", but setSelection action works to
                     // update the student input in the store and save to server
@@ -160,9 +169,11 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
                     // needed to make Best scoring strategy work as desired on ScoreAsYouGo pages,
                     // since that strategy is applied over finalized activity attempts
                     console.log('resetting activity');
+                    setIsResetting(true);
                     await dispatch(
                       resetAction(onResetActivity, { [currentPartId]: [serializedInput] }),
                     );
+                    setIsResetting(false);
 
                     const updatedAttempt = store.getState().attemptState;
                     const updatedPart =
@@ -189,13 +200,19 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
               // respond to lab request to save state.
               case 'save':
                 if (mode === 'delivery') {
-                  if (part.dateEvaluated) {
-                    console.log('Skipping save: attempt already evaluated');
+                  if (isResetting || part.dateEvaluated) {
+                    console.log(
+                      'Skipping save: ' + isResetting
+                        ? 'reset in process'
+                        : 'attempt already evaluated',
+                    );
                     break;
                   }
                   const serializedInput = JSON.stringify(msg.state);
                   console.log(
-                    `saving attemptGuid=${attempt.attemptGuid} partGuid=${part.attemptGuid} input=${serializedInput}`,
+                    `saving attemptGuid=${attempt.attemptGuid} partGuid=${
+                      part.attemptGuid
+                    } input=${serializedInput.slice(0, 32)}`,
                   );
                   try {
                     await dispatch(
