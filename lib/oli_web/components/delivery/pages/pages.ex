@@ -552,16 +552,6 @@ defmodule OliWeb.Components.Delivery.Pages do
      )}
   end
 
-  def handle_event("search_page", %{"page_name" => page_name}, socket) do
-    updated_params =
-      update_params(socket.assigns.params, %{
-        text_search: page_name,
-        offset: 0
-      })
-
-    {:noreply, push_patch(socket, to: route_to(socket, updated_params))}
-  end
-
   def handle_event("paged_table_selection_change", %{"id" => activity_resource_id}, socket)
       when not is_nil(socket.assigns.current_page) do
     {:noreply,
