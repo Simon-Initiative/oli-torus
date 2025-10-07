@@ -20,16 +20,20 @@ defmodule OliWeb.LiveSessionPlugs.RequireEnrollment do
           }
         } = socket
       ) do
-    with :ok <- Sections.ensure_direct_delivery_enrollment_allowed(user, section) do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+    if !Sections.has_enrollment?(user.id, section.slug) do
+      with :ok <- Sections.ensure_direct_delivery_enrollment_allowed(user, section) do
+        Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
 
-      {:cont, assign(socket, is_enrolled: true)}
+        {:cont, assign(socket, is_enrolled: true)}
+      else
+        _ ->
+          {:halt,
+           socket
+           |> put_flash(:error, "You are not enrolled in this course")
+           |> redirect(to: ~p"/workspaces/student")}
+      end
     else
-      _ ->
-        {:halt,
-         socket
-         |> put_flash(:error, "You are not enrolled in this course")
-         |> redirect(to: ~p"/workspaces/student")}
+      {:cont, assign(socket, is_enrolled: true)}
     end
   end
 
