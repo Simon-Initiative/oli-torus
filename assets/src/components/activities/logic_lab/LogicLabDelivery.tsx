@@ -7,7 +7,6 @@ communication between the LogicLab and Torus.
 import React, { useCallback, useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { Provider, useDispatch } from 'react-redux';
-import { ScoreAsYouGoHeaderBase } from 'components/activities/common/ScoreAsYouGoHeader';
 import {
   activityDeliverySlice,
   listenForParentSurveyReset,
@@ -17,6 +16,7 @@ import {
 import { configureStore } from 'state/store';
 import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
 import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
+import { ScoreAsYouGoHeaderBase } from '../common/ScoreAsYouGoHeader';
 import { Manifest } from '../types';
 import {
   LogicLabModelSchema,
@@ -29,8 +29,12 @@ type LogicLabDeliveryProps = DeliveryElementProps<LogicLabModelSchema>;
 type LocalActivityState = {
   attemptGuid: string;
   partGuid: string;
-  input: string;
+  // NB torus saved input representation is a string, must JSON.stringify to store an Object
+  input: string | undefined;
 };
+
+// Nicety: allow for older saved input before we reliably stringified objects:
+const ensureStr = (input: any) => (typeof input === 'string' ? input : JSON.stringify(input));
 
 /**
  * LogicLab delivery component shell.
@@ -53,23 +57,23 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
   const [activity, setActivity] = useState<string>(model.activity);
   // unique instance id used to distinguish lab messages from different problems on page
   const [instanceId] = useState<string>(crypto.randomUUID().slice(0, 8));
+
   // Most torus components use Redux-store-based state management using an
   // ActivityDeliveryState object, updating via actions that trigger server
-  // API calls and update store with results. We do direct API calls without that
-  // machinery, and incoming activity state from context is apparently only valid
-  // on activity startup, not automatically updated on results when called this way.
-  // So we track the changing activity state here in local state variables.
+  // API calls and automatically update store with results. We do direct API calls without
+  // that machinery. Incoming activity state from context is only valid on activity startup,
+  // not automatically updated on results when called this way.
+  // So we track the changing activity state here in local React state variables.
   const [localActivityState, setLocalActivityState] = useState<LocalActivityState>({
     attemptGuid: activityState.attemptGuid,
     partGuid: activityState.parts[0].attemptGuid,
-    // NB torus input representation is a string, must JSON.stringify to store an Object
-    input: activityState.parts[0].response.input,
+    input: ensureStr(activityState.parts[0]?.response?.input),
   });
   const attemptGuid = localActivityState.attemptGuid;
   const partGuid = localActivityState.partGuid;
   const input = localActivityState.input;
   console.log(
-    `LogicLabDelivery[${instanceId}] render attemptGuid=${attemptGuid} partGuid=${partGuid} input=${input}
+    `LogicLabDelivery[${instanceId}] render attemptGuid=${attemptGuid} partGuid=${partGuid} input(${typeof input})=${input}
     )}`,
   );
 
@@ -92,7 +96,7 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
           const msg = e.data;
           console.log(`got lab msg[${msg.attemptGuid}]: ${msg.messageType}`);
           // only lab messages from this activity for handling multiple problems on a page.
-          // NB parameter is named "attemptGuid" but it is now just a unique instance id.
+          // Parameter is named "attemptGuid" but it is just a unique instance id.
           if (isLabMessage(msg) && msg.attemptGuid === instanceId) {
             switch (msg.messageType) {
               // respond to lab score request.
@@ -132,7 +136,7 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
                         response: { input },
                       },
                     ]);
-                    // msg handler now a stale closure holding old attemptGuid/partGuid
+                    // msg handler now a stale closure holding old attemptGuid/partGuid/input
                     // state change forces re-render to re-run effect hook to update
                     setLocalActivityState({
                       attemptGuid: newAttemptGuid,
@@ -168,11 +172,13 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
               // lab is requesting activity state
               case 'load':
                 if (mode !== 'preview') {
-                  console.log(`found saved response= ${JSON.stringify(input)}`);
+                  console.log(`found saved response= ${input}`);
                   if (input && e.source) {
                     // post saved state back to lab.
                     console.log('posting saved state back to lab');
-                    const labState: LogicLabSaveState = JSON.parse(input);
+                    const labState: LogicLabSaveState =
+                      // Allow for old data before we consistently stringified
+                      typeof input === 'string' ? JSON.parse(input) : input;
                     e.source.postMessage(labState, { targetOrigin: lab.origin });
                   }
                 } // TODO if in preview, load appropriate content
@@ -248,7 +254,9 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
       {loading === 'loaded' && (
         <div>
           <ScoreAsYouGoHeaderBase
-            batchScoring={context.batchScoring}
+            // set batchScoring in all cases to suppress attempt number because it is meaningless
+            // to students in LogicLab intended use with ScoreAsYouGo. Will show question ordinal.
+            batchScoring={true}
             graded={context.graded}
             ordinal={context.ordinal}
             maxAttempts={context.maxAttempts}
