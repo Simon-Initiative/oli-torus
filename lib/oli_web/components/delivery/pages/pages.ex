@@ -522,7 +522,7 @@ defmodule OliWeb.Components.Delivery.Pages do
   end
 
   def handle_event("back", _params, socket) do
-    %{params: params, section: section, active_tab: active_tab} = socket.assigns
+    %{params: params} = socket.assigns
 
     {:noreply,
      socket
@@ -530,7 +530,7 @@ defmodule OliWeb.Components.Delivery.Pages do
        params: Map.put(params, :resource_id, nil),
        current_page: nil
      )
-     |> push_patch(to: ~p"/sections/#{section.slug}/instructor_dashboard/insights/#{active_tab}")}
+     |> push_patch(to: back_to_pages_path(socket))}
   end
 
   def handle_event(
@@ -567,7 +567,24 @@ defmodule OliWeb.Components.Delivery.Pages do
   end
 
   def handle_event("paged_table_selection_change", %{"id" => selected_resource_id}, socket) do
-    page_table_params = socket.assigns.params
+    # Extract current filter params to preserve them for the back button
+    back_params =
+      socket.assigns.params
+      |> Map.take([
+        :text_search,
+        :selected_card_value,
+        :progress_percentage,
+        :progress_selector,
+        :avg_score_percentage,
+        :avg_score_selector,
+        :selected_attempts_ids,
+        :offset,
+        :limit,
+        :sort_by,
+        :sort_order
+      ])
+      |> Enum.reject(fn {_k, v} -> is_nil(v) or v == "" or v == "[]" end)
+      |> Enum.into(%{})
 
     socket =
       assign(socket,
@@ -581,7 +598,7 @@ defmodule OliWeb.Components.Delivery.Pages do
 
     {:noreply,
      push_patch(socket,
-       to: route_to(socket, %{page_table_params: page_table_params})
+       to: route_to(socket, %{back_params: Jason.encode!(back_params)})
      )}
   end
 
@@ -916,7 +933,8 @@ defmodule OliWeb.Components.Delivery.Pages do
         Params.get_param(params, "selected_attempts_ids", @default_params.selected_attempts_ids),
       card_props: Params.get_param(params, "card_props", @default_params.card_props),
       card_activity_props:
-        Params.get_param(params, "card_activity_props", @default_params.card_activity_props)
+        Params.get_param(params, "card_activity_props", @default_params.card_activity_props),
+      back_params: extract_back_url_params(params)
     }
   end
 
@@ -1133,5 +1151,40 @@ defmodule OliWeb.Components.Delivery.Pages do
 
   defp attempts_count(students_with_attempts_count, _total_attempts_count, :practice_pages) do
     ~s{#{students_with_attempts_count} #{Gettext.ngettext(OliWeb.Gettext, "student has responded", "students have responded", students_with_attempts_count)}}
+  end
+
+  defp extract_back_url_params(params) do
+    # Extract and decode the back_params parameter
+    case Map.get(params, "back_params") do
+      nil ->
+        %{}
+
+      params when is_map(params) ->
+        params
+
+      encoded_params ->
+        try do
+          encoded_params
+          |> URI.decode()
+          |> Jason.decode!()
+        rescue
+          _ -> %{}
+        end
+    end
+  end
+
+  defp back_to_pages_path(socket) do
+    section_slug = socket.assigns.section.slug
+    active_tab = socket.assigns.active_tab
+    back_params = socket.assigns.params.back_params
+
+    base_path = ~p"/sections/#{section_slug}/instructor_dashboard/insights/#{active_tab}"
+
+    if map_size(back_params) > 0 do
+      query_string = URI.encode_query(back_params)
+      "#{base_path}?#{query_string}"
+    else
+      base_path
+    end
   end
 end
