@@ -189,6 +189,10 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
               // respond to lab request to save state.
               case 'save':
                 if (mode === 'delivery') {
+                  if (part.dateEvaluated) {
+                    console.log('Skipping save: attempt already evaluated');
+                    break;
+                  }
                   const serializedInput = JSON.stringify(msg.state);
                   console.log(
                     `saving attemptGuid=${attempt.attemptGuid} partGuid=${part.attemptGuid} input=${serializedInput}`,
