@@ -192,13 +192,12 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
     <div class="group relative flex">
       {render_proficiency_data_chart(@objective_id, @proficiency_distribution)}
       <dialog
-        class="absolute top-[calc(100%+12px)] left-1/2 -translate-x-1/2 m-0 w-72 rounded-md border border-Border-border-default bg-Surface-surface-background px-4 py-3 text-left text-sm font-normal leading-normal text-Text-text-high shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] group-hover:flex flex-col gap-2 before:absolute before:content-[''] before:-top-4 before:left-0 before:right-0 before:h-4"
+        class="absolute top-[150%] left-1/2 -translate-x-1/2 p-0 m-0 w-60 min-h-[100px] rounded-md border border-Border-border-default bg-Surface-surface-background px-4 py-2 text-left text-sm font-normal leading-normal text-Text-text-high shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] hidden flex-col gap-1 group-hover:flex before:absolute before:content-[''] before:-top-4 before:left-0 before:right-0 before:h-4"
       >
         <%= for {label, value} <- calc_percentages(@proficiency_distribution) do %>
-          <p class="flex w-full items-center justify-between gap-4">
-            <span class="font-medium">{label}</span>
-            <span>{value}%</span>
-          </p>
+          <div class="w-full text-left">
+            <span class="font-medium">{label}</span>: {value}%
+          </div>
         <% end %>
       </dialog>
     </div>
