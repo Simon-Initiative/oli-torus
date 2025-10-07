@@ -26,14 +26,6 @@ defmodule OliWeb.Components.Delivery.Pages do
 
   alias Phoenix.LiveView.JS
 
-  ## TODO lunes:
-  ## - terminar de validar si todo funciona ok..
-  ## - borrar los archivos de scored_activities y practice_activities, con sus respectivas tablas
-  ## - no borrar aún los archivos de tests, sino usarlos de base para escribir los tests de los archivos de pages.ex y pages_table_model.ex
-  ## - sería bueno que los filtros persistan entre navegar a una página y volver para atrás
-  ## - revisar código para oportunidades de refactor.
-  ## - abrir PR y pedirle a Santi que lo revise.
-
   @default_params %{
     offset: 0,
     limit: 20,
@@ -398,12 +390,8 @@ defmodule OliWeb.Components.Delivery.Pages do
             id="student_attempts_summary"
             class="flex flex-row mx-4"
           >
-            <span class="text-xs">
-              <%= if @students_with_attempts_count == 0 do %>
-                No student has completed any attempts.
-              <% else %>
-                {~s{#{@students_with_attempts_count} #{Gettext.ngettext(OliWeb.Gettext, "student has", "students have", @students_with_attempts_count)} completed #{@total_attempts_count} #{Gettext.ngettext(OliWeb.Gettext, "attempt", "attempts", @total_attempts_count)}.}}
-              <% end %>
+            <span class="text-xs" role="student attempts summary">
+              {attempts_count(@students_with_attempts_count, @total_attempts_count, @active_tab)}
             </span>
             <div :if={@students_with_attempts_count < Enum.count(@students)} class="flex flex-col">
               <span class="text-xs ml-2">
@@ -1145,4 +1133,15 @@ defmodule OliWeb.Components.Delivery.Pages do
 
   defp page_type(:practice_pages), do: "Practice"
   defp page_type(:scored_pages), do: "Scored"
+
+  defp attempts_count(0 = _students_with_attempts_count, _total_attempts_count, :scored_pages),
+    do: "No student has completed any attempts."
+
+  defp attempts_count(students_with_attempts_count, total_attempts_count, :scored_pages) do
+    ~s{#{students_with_attempts_count} #{Gettext.ngettext(OliWeb.Gettext, "student has", "students have", students_with_attempts_count)} completed #{total_attempts_count} #{Gettext.ngettext(OliWeb.Gettext, "attempt", "attempts", total_attempts_count)}.}
+  end
+
+  defp attempts_count(students_with_attempts_count, _total_attempts_count, :practice_pages) do
+    ~s{#{students_with_attempts_count} #{Gettext.ngettext(OliWeb.Gettext, "student has responded", "students have responded", students_with_attempts_count)}}
+  end
 end
