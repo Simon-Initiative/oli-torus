@@ -22,6 +22,18 @@ import { PlayButton } from './VideoPlayButton';
 
 const startEndCueRegex = /startcuepoint=([0-9.]+);endcuepoint=([0-9.]+)/;
 const startCueRegex = /startcuepoint=([0-9.]+)/;
+const NON_TEXT_INPUT_TYPES = new Set([
+  'button',
+  'checkbox',
+  'color',
+  'file',
+  'hidden',
+  'image',
+  'radio',
+  'range',
+  'reset',
+  'submit',
+]);
 
 export const parseVideoPlayCommand = (command: string) => {
   if (startEndCueRegex.test(command)) {
@@ -81,6 +93,49 @@ export const VideoPlayer: React.FC<{
   useEffect(() => {
     seekFromRef.current = seekFrom;
   }, [seekFrom]);
+
+  useEffect(() => {
+    const stopSpacebarPropagation = (event: KeyboardEvent) => {
+      const isSpace =
+        event.code === 'Space' || event.key === ' ' || event.key === 'Spacebar' || event.keyCode === 32;
+
+      if (!isSpace) {
+        return;
+      }
+
+      const target = event.target as HTMLElement | null;
+
+      if (!target) {
+        return;
+      }
+
+      const tagName = target.tagName?.toLowerCase();
+      const role = target.getAttribute('role');
+
+      let isTextInput = false;
+
+      if (tagName === 'textarea') {
+        isTextInput = true;
+      } else if (tagName === 'input') {
+        const element = target as HTMLInputElement;
+        const inputType = element.type?.toLowerCase?.() || 'text';
+
+        isTextInput = !NON_TEXT_INPUT_TYPES.has(inputType);
+      }
+
+      const isEditable = target.isContentEditable || role === 'textbox';
+
+      if (isTextInput || isEditable) {
+        event.stopPropagation();
+      }
+    };
+
+    document.addEventListener('keydown', stopSpacebarPropagation, true);
+
+    return () => {
+      document.removeEventListener('keydown', stopSpacebarPropagation, true);
+    };
+  }, []);
 
   const onPlayer = useCallback((player) => {
     playerRef.current = player;
