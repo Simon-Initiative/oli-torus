@@ -19,7 +19,7 @@ defmodule OliWeb.Components.Delivery.Pages do
   alias OliWeb.Delivery.Content.{MultiSelect, PercentageSelector}
   alias OliWeb.Delivery.ActivityHelpers
   alias OliWeb.Components.Delivery.Pages.PagesTableModel
-  alias OliWeb.Delivery.ScoredActivities.ActivitiesTableModel
+  alias OliWeb.Delivery.Pages.ActivitiesTableModel
 
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Icons
