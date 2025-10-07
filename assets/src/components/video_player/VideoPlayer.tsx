@@ -8,6 +8,7 @@ import {
   Player,
   PlayerState,
   ProgressControl,
+  Shortcut,
   TimeDivider,
 } from 'video-react';
 import { PointMarkerContext, maybePointMarkerAttr } from 'data/content/utils';
@@ -22,18 +23,6 @@ import { PlayButton } from './VideoPlayButton';
 
 const startEndCueRegex = /startcuepoint=([0-9.]+);endcuepoint=([0-9.]+)/;
 const startCueRegex = /startcuepoint=([0-9.]+)/;
-const NON_TEXT_INPUT_TYPES = new Set([
-  'button',
-  'checkbox',
-  'color',
-  'file',
-  'hidden',
-  'image',
-  'radio',
-  'range',
-  'reset',
-  'submit',
-]);
 
 export const parseVideoPlayCommand = (command: string) => {
   if (startEndCueRegex.test(command)) {
@@ -94,49 +83,6 @@ export const VideoPlayer: React.FC<{
     seekFromRef.current = seekFrom;
   }, [seekFrom]);
 
-  useEffect(() => {
-    const stopSpacebarPropagation = (event: KeyboardEvent) => {
-      const isSpace =
-        event.code === 'Space' || event.key === ' ' || event.key === 'Spacebar' || event.keyCode === 32;
-
-      if (!isSpace) {
-        return;
-      }
-
-      const target = event.target as HTMLElement | null;
-
-      if (!target) {
-        return;
-      }
-
-      const tagName = target.tagName?.toLowerCase();
-      const role = target.getAttribute('role');
-
-      let isTextInput = false;
-
-      if (tagName === 'textarea') {
-        isTextInput = true;
-      } else if (tagName === 'input') {
-        const element = target as HTMLInputElement;
-        const inputType = element.type?.toLowerCase?.() || 'text';
-
-        isTextInput = !NON_TEXT_INPUT_TYPES.has(inputType);
-      }
-
-      const isEditable = target.isContentEditable || role === 'textbox';
-
-      if (isTextInput || isEditable) {
-        event.stopPropagation();
-      }
-    };
-
-    document.addEventListener('keydown', stopSpacebarPropagation, true);
-
-    return () => {
-      document.removeEventListener('keydown', stopSpacebarPropagation, true);
-    };
-  }, []);
-
   const onPlayer = useCallback((player) => {
     playerRef.current = player;
 
@@ -144,7 +90,20 @@ export const VideoPlayer: React.FC<{
       return;
     }
     // This handles stopping at the correct point if a cue-point command previously came in with an end-timestamp set.
+
+    // For suppressing keyboard shortcuts while letting keyboard events through: AI-generated solution stops
+    // player from ever being "active" to the Shortcut component so latter doesn't consume keyboard evts
+    const actions = player.manager?.getActions?.();
+    actions?.activate(false);
+    actions?.userActivate(false);
+
     player.subscribeToStateChange((state: PlayerState, prev: PlayerState) => {
+      // to suppress shortcuts: immediately undo any change of player state to "active"
+      if (state.isActive) {
+        actions?.activate(false);
+        actions?.userActivate(false);
+      }
+
       if (
         pauseAtPosition.current > 0 &&
         state.hasStarted &&
@@ -301,6 +260,9 @@ export const VideoPlayer: React.FC<{
       {...maybePointMarkerAttr(video, pointMarkerContext)}
     >
       <Player poster={video.poster} {...sizeAttributes} ref={onPlayer} crossOrigin="anonymous">
+        {/* To suppress keyboard shortcuts: use custom Shortcut component to override builtin default */}
+        {/* Still need to suppress player ever activating to prevent keystrokes from being consumed */}
+        <Shortcut clickable={false} dblclickable={false} shortcuts={[]} />
         {/* Hide the video-react big play button so we can render our own that fits with our icon styles */}
         <BigPlayButton className="big-play-button-hide" />
         <InitialPlayButton />
