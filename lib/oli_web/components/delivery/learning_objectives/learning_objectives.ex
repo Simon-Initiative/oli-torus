@@ -77,7 +77,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
         subtitle: "learning objectives"
       },
       %{
-        title: "Low Proficiency Skills",
+        title: "Low Proficiency Sub-objectives",
         count: Map.get(objectives_count, :low_proficiency_skills),
         is_selected: selected_card_value == "low_proficiency_skills",
         value: :low_proficiency_skills,
