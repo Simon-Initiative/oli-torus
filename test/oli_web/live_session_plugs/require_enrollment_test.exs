@@ -64,7 +64,7 @@ defmodule OliWeb.LiveSessionPlugs.RequireEnrollmentTest do
       assert redirected_socket.redirected
     end
 
-    test "skipss auto-enrollment when user is already enrolled" do
+    test "skips auto-enrollment when user is already enrolled" do
       section = insert(:section, requires_enrollment: false)
 
       user = insert(:user)
