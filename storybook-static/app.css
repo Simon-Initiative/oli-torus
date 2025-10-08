@@ -3126,6 +3126,10 @@ select {
   accent-color: #201D21;
 }
 
+.bg-Table-table-hover {
+  background-color: #F2F9FF;
+}
+
 .dark .bg-Table-table-hover {
   background-color: #0A203A;
 }
@@ -10546,6 +10550,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .border-collapse {
   border-collapse: collapse;
+}
+
+.origin-bottom-left {
+  transform-origin: bottom left;
 }
 
 .origin-top-left {
