@@ -4,7 +4,6 @@ defmodule OliWeb.Admin.RestoreUserProgress do
 
   import Ecto.Query
   alias Oli.Repo
-  alias Oli.Accounts.User
   alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias Oli.Delivery.Sections.Enrollment
   alias Oli.Resources.Revision
@@ -13,12 +12,73 @@ defmodule OliWeb.Admin.RestoreUserProgress do
     {:ok,
      assign(socket,
        title: "Restore User Progress",
-       email: nil,
+       target_enrollment_id: nil,
+       source_enrollment_id: nil,
        result: "",
        true_user: nil,
        all_users: [],
-       changes: []
+       changes: [],
+       user_enrollments: %{},
+       commit_done: false
      )}
+  end
+
+  defp parse_enrollment_id(value) when is_binary(value) do
+    case String.trim(value) do
+      "" ->
+        nil
+
+      trimmed ->
+        case Integer.parse(trimmed) do
+          {id, ""} -> id
+          _ -> nil
+        end
+    end
+  end
+
+  defp parse_enrollment_id(_), do: nil
+
+  defp build_preview(nil, _), do: {:error, "Set a target enrollment ID."}
+  defp build_preview(_, nil), do: {:error, "Set a source enrollment ID."}
+
+  defp build_preview(target_enrollment_id, source_enrollment_id) do
+    with {:ok, target_enrollment} <- fetch_enrollment_with_user(target_enrollment_id),
+         {:ok, source_enrollment} <- fetch_enrollment_with_user(source_enrollment_id),
+         :ok <- ensure_same_section(target_enrollment, source_enrollment) do
+      {all_users, true_user, changes} = preview(target_enrollment, source_enrollment)
+
+      {:ok,
+       %{
+         all_users: all_users,
+         true_user: true_user,
+         changes: changes,
+         user_enrollments: build_user_enrollment_map([target_enrollment, source_enrollment])
+       }}
+    else
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp ensure_same_section(%Enrollment{section_id: section_id}, %Enrollment{
+         section_id: section_id
+       }),
+       do: :ok
+
+  defp ensure_same_section(_, _),
+    do: {:error, "Target and source enrollments must belong to the same section."}
+
+  defp fetch_enrollment_with_user(enrollment_id) do
+    case Repo.get(Enrollment, enrollment_id) |> Repo.preload(:user) do
+      nil -> {:error, "Enrollment #{enrollment_id} not found."}
+      %Enrollment{user: nil} -> {:error, "Enrollment #{enrollment_id} is missing a user."}
+      enrollment -> {:ok, enrollment}
+    end
+  end
+
+  defp build_user_enrollment_map(enrollments) do
+    Enum.reduce(enrollments, %{}, fn %Enrollment{id: id, user_id: user_id}, acc ->
+      Map.put(acc, user_id, id)
+    end)
   end
 
   def render(assigns) do
@@ -28,14 +88,37 @@ defmodule OliWeb.Admin.RestoreUserProgress do
       This is a developer tool and should only be used by developers.  This can result in data loss.
     </div>
 
+    <div class="alert alert-info" role="alert">
+      This tool allows you to merge user progress across multiple enrollments into a single, target enrollment.
+      This is useful in scenarios where a user is incorrectly enrolled multiple times in a section from different user accounts, and you want to consolidate their progress.
+    </div>
+
     <div>
-      <input
-        type="text"
-        id="email"
-        phx-hook="TextInputListener"
-        phx-value-change="email"
-        class="w-full p-2 border border-gray-300 rounded"
-      />
+      <div class="flex flex-col gap-4 md:flex-row">
+        <div class="flex-1">
+          <label class="block font-semibold" for="target_enrollment_id">Target Enrollment ID</label>
+          <input
+            type="text"
+            id="target_enrollment_id"
+            value={@target_enrollment_id || ""}
+            phx-hook="TextInputListener"
+            phx-value-change="target_enrollment"
+            class="w-full p-2 border border-gray-300 rounded"
+          />
+        </div>
+
+        <div class="flex-1">
+          <label class="block font-semibold" for="source_enrollment_id">Source Enrollment ID</label>
+          <input
+            type="text"
+            id="source_enrollment_id"
+            value={@source_enrollment_id || ""}
+            phx-hook="TextInputListener"
+            phx-value-change="source_enrollment"
+            class="w-full p-2 border border-gray-300 rounded"
+          />
+        </div>
+      </div>
 
       <button
         phx-click="preview"
@@ -46,9 +129,14 @@ defmodule OliWeb.Admin.RestoreUserProgress do
 
       <button
         phx-click="commit"
-        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
+        disabled={@commit_done}
       >
-        Commit Changes
+        <%= if @commit_done do %>
+          Done!
+        <% else %>
+          Commit Changes
+        <% end %>
       </button>
 
       <div><%= @result %></div>
@@ -58,27 +146,29 @@ defmodule OliWeb.Admin.RestoreUserProgress do
       <table>
         <thead>
           <tr>
-            <th></th>
+            <th>TARGET</th>
+            <th>ENROLLMENT ID</th>
             <th>ID</th>
-            <th>SUB</th>
-            <th>INSTITUTION</th>
-            <th>INSERTED</th>
+            <th>GIVEN NAME</th>
+            <th>FAMILY NAME</th>
+            <th>EMAIL</th>
           </tr>
         </thead>
         <tbody>
           <%= for user <- @all_users do %>
             <tr>
               <td>
-                <%= if user.id == @true_user.id do
-                  "TRUE"
+                <%= if @true_user && user.id == @true_user.id do
+                  "TARGET"
                 else
                   ""
                 end %>
               </td>
+              <td><%= Map.get(@user_enrollments, user.id, "") %></td>
               <td><%= user.id %></td>
-              <td><%= user.sub %></td>
-              <td><%= user.lti_institution_id %></td>
-              <td><%= user.inserted_at %></td>
+              <td><%= user.given_name %></td>
+              <td><%= user.family_name %></td>
+              <td><%= user.email %></td>
             </tr>
           <% end %>
         </tbody>
@@ -93,45 +183,92 @@ defmodule OliWeb.Admin.RestoreUserProgress do
     """
   end
 
-  def handle_event("email", %{"value" => email}, socket) do
-    {:noreply, assign(socket, email: email)}
+  def handle_event("target_enrollment", %{"value" => value}, socket) do
+    {:noreply, assign(socket, target_enrollment_id: parse_enrollment_id(value))}
+  end
+
+  def handle_event("source_enrollment", %{"value" => value}, socket) do
+    {:noreply, assign(socket, source_enrollment_id: parse_enrollment_id(value))}
   end
 
   def handle_event("preview", _, socket) do
-    {all_users, true_user, changes} = preview(socket.assigns.email)
-    {:noreply, assign(socket, all_users: all_users, true_user: true_user, changes: changes)}
+    case build_preview(socket.assigns.target_enrollment_id, socket.assigns.source_enrollment_id) do
+      {:ok,
+       %{
+         all_users: all_users,
+         true_user: true_user,
+         changes: changes,
+         user_enrollments: user_enrollments
+       }} ->
+        {:noreply,
+         assign(socket,
+           all_users: all_users,
+           true_user: true_user,
+           changes: changes,
+           user_enrollments: user_enrollments,
+           result: ""
+         )}
+
+      {:error, reason} ->
+        {:noreply,
+         assign(socket,
+           result: reason,
+           changes: [],
+           all_users: [],
+           true_user: nil,
+           user_enrollments: %{}
+         )}
+    end
   end
 
   def handle_event("commit", _, socket) do
-    result =
+    if is_nil(socket.assigns.true_user) do
+      {:noreply, assign(socket, result: "Preview changes before committing.")}
+    else
       case Repo.transaction(fn -> process(socket.assigns.true_user, socket.assigns.changes) end) do
-        {:ok, _} -> "success"
-        {_, reason} -> "failed: #{inspect(reason)}"
-      end
+        {:ok, _} ->
+          {:noreply,
+           assign(socket,
+             changes: [],
+             result: "success",
+             commit_done: true
+           )}
 
-    {:noreply, assign(socket, changes: [], result: result)}
+        {_, reason} ->
+          {:noreply,
+           assign(socket,
+             changes: [],
+             result: "failed: #{inspect(reason)}",
+             commit_done: false
+           )}
+      end
+    end
   end
 
-  defp preview(email) do
-    # Get all of the LMS users for this email, sorting so the most recently
-    # created user is first. This represents the true user, the user record
-    # created at last launch.
-    [true_user | rest] = fetch_users(email)
-    all_users = [true_user | rest]
+  defp preview(
+         %Enrollment{user: true_user} = target_enrollment,
+         %Enrollment{user: source_user} = source_enrollment
+       ) do
+    # The true user is derived from the target enrollment. Additional enrollments
+    # represent alternate accounts whose progress we want to merge in.
+    all_users =
+      [true_user, source_user]
+      |> Enum.reject(&is_nil/1)
+      |> Enum.uniq_by(& &1.id)
 
-    enrollments = Enum.map(all_users, & &1.id) |> fetch_enrollments()
+    enrollments = Enum.reject([target_enrollment, source_enrollment], &is_nil/1)
 
     # We process the progress restoration on a per section basis, being careful
     # to only consider the users that are actually enrolled in the section.
     changes =
       Enum.group_by(enrollments, & &1.section_id)
-      |> Enum.map(fn {section_id, enrollments} ->
+      |> Enum.map(fn {section_id, enrollments_for_section} ->
         # If the true user is not enrolled in the section OR if there is only a single enrollment
         # then there is nothing to restore, as this is likely a previous semester section.
-        case Enum.any?(enrollments, fn e -> e.user_id == true_user.id end) and
-               Enum.count(enrollments) > 1 do
+        case Enum.any?(enrollments_for_section, fn e -> e.user_id == true_user.id end) and
+               Enum.count(enrollments_for_section) > 1 do
           true ->
-            enrolled_user_ids = Enum.map(enrollments, & &1.user_id) |> MapSet.new()
+            enrolled_user_ids = Enum.map(enrollments_for_section, & &1.user_id) |> MapSet.new()
 
             enrolled_users =
               Enum.reduce(all_users, [], fn user, acc ->
@@ -261,23 +398,6 @@ defmodule OliWeb.Admin.RestoreUserProgress do
 
   defp access_for(resource_accesses, user) do
     Enum.find(resource_accesses, fn ra -> ra.user_id == user.id end)
-  end
-
-  defp fetch_users(email) do
-    query =
-      from u in User,
-        where: u.email == ^email and u.independent_learner == false,
-        order_by: [desc: :inserted_at]
-
-    Repo.all(query)
-  end
-
-  defp fetch_enrollments(user_ids) do
-    query =
-      from e in Enrollment,
-        where: e.user_id in ^user_ids
-
-    Repo.all(query)
   end
 
   defp fetch_resource_accesses(section_id, user_ids) do
