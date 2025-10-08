@@ -61,6 +61,25 @@ config :oli, :help, dispatcher: Oli.Help.Providers.EmailHelp
 # Configure Email
 config :oli, Oli.Mailer, adapter: Swoosh.Adapters.Test
 
+config :oli, :clickhouse_inventory,
+  manifest_bucket: "test-inventory-bucket",
+  manifest_prefix: "inventory/test-prefix",
+  manifest_suffix: "manifest.json",
+  directory_time_suffix: "T01-00Z",
+  batch_chunk_size: 5,
+  max_simultaneous_batches: 1,
+  max_batch_retries: 1
+
+config :oli, :clickhouse,
+  host: "localhost",
+  http_port: 8123,
+  native_port: 9000,
+  user: "default",
+  password: "",
+  database: "default"
+
+config :oli, :clickhouse_analytics_module, Oli.Test.ClickhouseStub
+
 # speed up tests by lowering the hash iterations
 config :bcrypt_elixir, log_rounds: 4
 

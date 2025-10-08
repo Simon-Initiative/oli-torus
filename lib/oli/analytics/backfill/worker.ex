@@ -85,8 +85,8 @@ defmodule Oli.Analytics.Backfill.Worker do
       run.metadata
       |> merge_metadata(%{
         "dry_run" => true,
-        "dry_run_execution_time_ms" => response[:execution_time_ms],
-        "dry_run_raw_response" => response[:body]
+        "dry_run_execution_time_ms" => Map.get(response, :execution_time_ms),
+        "dry_run_raw_response" => Map.get(response, :body)
       })
 
     Backfill.transition_to(run, :completed, Map.merge(metrics, %{metadata: metadata}))
@@ -128,7 +128,7 @@ defmodule Oli.Analytics.Backfill.Worker do
 
         attrs = %{
           metadata: metadata,
-          duration_ms: response[:execution_time_ms]
+          duration_ms: Map.get(response, :execution_time_ms)
         }
 
         Backfill.transition_to(run, :completed, attrs)
@@ -187,7 +187,7 @@ defmodule Oli.Analytics.Backfill.Worker do
       rows_written: Map.get(info, :rows_written),
       bytes_read: Map.get(info, :bytes_read),
       bytes_written: Map.get(info, :bytes_written),
-      duration_ms: Map.get(info, :query_duration_ms) || response[:execution_time_ms]
+      duration_ms: Map.get(info, :query_duration_ms) || Map.get(response, :execution_time_ms)
     }
   end
 

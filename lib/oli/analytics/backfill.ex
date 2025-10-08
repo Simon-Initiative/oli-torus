@@ -104,7 +104,8 @@ defmodule Oli.Analytics.Backfill do
   @doc """
   Update a backfill run using the base changeset.
   """
-  @spec update_run(BackfillRun.t(), map()) :: {:ok, BackfillRun.t()} | {:error, Ecto.Changeset.t()}
+  @spec update_run(BackfillRun.t(), map()) ::
+          {:ok, BackfillRun.t()} | {:error, Ecto.Changeset.t()}
   def update_run(%BackfillRun{} = run, attrs) do
     run
     |> BackfillRun.changeset(attrs)
@@ -162,7 +163,8 @@ defmodule Oli.Analytics.Backfill do
   Retrieve AWS credentials for the S3 table function.
   """
   @spec aws_credentials() ::
-          {:ok, %{access_key_id: String.t(), secret_access_key: String.t()}} | {:error, String.t()}
+          {:ok, %{access_key_id: String.t(), secret_access_key: String.t()}}
+          | {:error, String.t()}
   def aws_credentials do
     with {:ok, config} <- fetch_ex_aws_config() do
       case {config[:access_key_id], config[:secret_access_key]} do
@@ -192,8 +194,7 @@ defmodule Oli.Analytics.Backfill do
 
     case {access_key, secret_key} do
       {nil, _} ->
-        {:error,
-         "Missing AWS access key. Configure AWS_S3_ACCESS_KEY_ID or AWS_ACCESS_KEY_ID."}
+        {:error, "Missing AWS access key. Configure AWS_S3_ACCESS_KEY_ID or AWS_ACCESS_KEY_ID."}
 
       {_, nil} ->
         {:error,
@@ -255,7 +256,15 @@ defmodule Oli.Analytics.Backfill do
         metrics_from_progress(progress_info)
         |> Map.put(:metadata, metadata)
 
-      update_run(run, attrs)
+      case update_run(run, attrs) do
+        {:ok, _} ->
+          :ok
+
+        {:error, changeset} ->
+          Logger.warning(
+            "unable to update backfill run #{run.id} with progress: #{inspect(changeset.errors)}"
+          )
+      end
     end
 
     case module.query_status(run.query_id) do
@@ -323,6 +332,18 @@ defmodule Oli.Analytics.Backfill do
   end
 
   defp maybe_put_metric(acc, _key, nil), do: acc
+
+  defp maybe_put_metric(acc, :duration_ms, value) when is_float(value) do
+    Map.put(acc, :duration_ms, trunc(value))
+  end
+
+  defp maybe_put_metric(acc, :duration_ms, value) when is_binary(value) do
+    case Integer.parse(value) do
+      {int, _} -> Map.put(acc, :duration_ms, int)
+      :error -> acc
+    end
+  end
+
   defp maybe_put_metric(acc, key, value), do: Map.put(acc, key, value)
 
   defp stringify_keys(info) when is_map(info) do

@@ -83,6 +83,84 @@ config :oli, :certificates,
   generate_pdf_lambda: System.get_env("CERTIFICATES_GENERATE_PDF_LAMBDA", "generate-certificate"),
   s3_pdf_bucket: System.get_env("CERTIFICATES_S3_PDF_URL", "torus-pdf-certificates")
 
+inventory_manifest_bucket = System.get_env("CLICKHOUSE_INVENTORY_MANIFEST_BUCKET")
+inventory_manifest_prefix = System.get_env("CLICKHOUSE_INVENTORY_MANIFEST_PREFIX")
+
+inventory_chunk_size =
+  case System.get_env("CLICKHOUSE_INVENTORY_BATCH_CHUNK_SIZE") do
+    nil ->
+      25
+
+    value ->
+      case Integer.parse(value) do
+        {int, _} when int > 0 -> int
+        _ -> 25
+      end
+  end
+
+inventory_max_simultaneous =
+  case System.get_env("CLICKHOUSE_INVENTORY_MAX_SIMULTANEOUS_BATCHES") do
+    nil ->
+      nil
+
+    value ->
+      case Integer.parse(value) do
+        {int, _} when int > 0 -> int
+        _ -> nil
+      end
+  end
+
+inventory_max_retries =
+  case System.get_env("CLICKHOUSE_INVENTORY_MAX_BATCH_RETRIES") do
+    nil ->
+      nil
+
+    value ->
+      case Integer.parse(value) do
+        {int, _} when int > 0 -> int
+        _ -> nil
+      end
+  end
+
+inventory_overrides =
+  [
+    {:manifest_bucket, inventory_manifest_bucket},
+    {:manifest_prefix, inventory_manifest_prefix},
+    {:manifest_suffix, System.get_env("CLICKHOUSE_INVENTORY_MANIFEST_SUFFIX")},
+    {:directory_time_suffix, System.get_env("CLICKHOUSE_INVENTORY_DIRECTORY_SUFFIX")},
+    {:manifest_base_url, System.get_env("CLICKHOUSE_INVENTORY_MANIFEST_BASE_URL")},
+    {:batch_chunk_size, inventory_chunk_size},
+    {:max_simultaneous_batches, inventory_max_simultaneous},
+    {:max_batch_retries, inventory_max_retries}
+  ]
+  |> Enum.reject(fn
+    {_key, nil} -> true
+    _ -> false
+  end)
+
+existing_inventory_config = Application.get_env(:oli, :clickhouse_inventory, [])
+
+config :oli,
+       :clickhouse_inventory,
+       Keyword.merge(existing_inventory_config, inventory_overrides)
+
+# ClickHouse configuration for XAPI analytics
+config :oli, :clickhouse,
+  host: System.get_env("CLICKHOUSE_HOST", "localhost"),
+  http_port: String.to_integer(System.get_env("CLICKHOUSE_HTTP_PORT", "8123")),
+  native_port: String.to_integer(System.get_env("CLICKHOUSE_NATIVE_PORT", "9000")),
+  user: System.get_env("CLICKHOUSE_USER", "default"),
+  password: System.get_env("CLICKHOUSE_PASSWORD", "clickhouse"),
+  database: System.get_env("CLICKHOUSE_DATABASE", "default")
+
+config :ex_aws, :s3,
+  region: [{:system, "AWS_S3_REGION"}, {:system, "AWS_REGION"}, "us-east-1"],
+  access_key_id: [{:system, "AWS_S3_ACCESS_KEY_ID"}, {:system, "AWS_ACCESS_KEY_ID"}],
+  secret_access_key: [{:system, "AWS_S3_SECRET_ACCESS_KEY"}, {:system, "AWS_SECRET_ACCESS_KEY"}],
+  scheme: System.get_env("AWS_S3_SCHEME", "https") <> "://",
+  port: System.get_env("AWS_S3_PORT", "443") |> String.to_integer(),
+  host: System.get_env("AWS_S3_HOST", "s3.amazonaws.com")
+
 ####################### Production-only configurations ########################
 ## Note: These configurations are only applied in production
 ###############################################################################
@@ -112,14 +190,6 @@ if config_env() == :prod do
     queue_interval: String.to_integer(System.get_env("DB_QUEUE_INTERVAL") || "1000"),
     ownership_timeout: 600_000,
     socket_options: maybe_ipv6
-
-  config :ex_aws, :s3,
-    region: System.get_env("AWS_REGION", "us-east-1"),
-    access_key_id: [{:system, "AWS_S3_ACCESS_KEY_ID"}, {:system, "AWS_ACCESS_KEY_ID"}],
-    secret_access_key: [{:system, "AWS_S3_SECRET_ACCESS_KEY"}, {:system, "AWS_SECRET_ACCESS_KEY"}],
-    scheme: System.get_env("AWS_S3_SCHEME", "https") <> "://",
-    port: System.get_env("AWS_S3_PORT", "443") |> String.to_integer(),
-    host: System.get_env("AWS_S3_HOST", "s3.amazonaws.com")
 
   secret_key_base =
     System.get_env("SECRET_KEY_BASE") ||
@@ -443,15 +513,6 @@ if config_env() == :prod do
   config :oli, :student_sign_in,
     background_color: System.get_env("STUDENT_SIGNIN_BACKGROUND_COLOR", "#FF82E4")
 
-  # ClickHouse configuration for XAPI analytics
-  config :oli, :clickhouse,
-    host: System.get_env("CLICKHOUSE_HOST", "localhost"),
-    http_port: String.to_integer(System.get_env("CLICKHOUSE_HTTP_PORT", "8123")),
-    native_port: String.to_integer(System.get_env("CLICKHOUSE_NATIVE_PORT", "9000")),
-    user: System.get_env("CLICKHOUSE_USER", "default"),
-    password: System.get_env("CLICKHOUSE_PASSWORD", "clickhouse"),
-    database: System.get_env("CLICKHOUSE_DATABASE", "default")
-
   # Lambda ETL configuration for XAPI analytics
   config :oli, :xapi_lambda_etl,
     function_name: System.get_env("XAPI_LAMBDA_FUNCTION_NAME", "xapi-etl-processor"),
@@ -492,7 +553,12 @@ if config_env() == :prod do
       grades: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_GRADES", "30")),
       auto_submit: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_AUTOSUBMIT", "3")),
       analytics_export: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_ANALYTICS", "1")),
-      clickhouse_backfill: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_CLICKHOUSE_BACKFILL", "1")),
+      clickhouse_backfill:
+        String.to_integer(System.get_env("OBAN_QUEUE_SIZE_CLICKHOUSE_BACKFILL", "1")),
+      clickhouse_inventory:
+        String.to_integer(System.get_env("OBAN_QUEUE_SIZE_CLICKHOUSE_INVENTORY", "1")),
+      clickhouse_inventory_batches:
+        String.to_integer(System.get_env("OBAN_QUEUE_SIZE_CLICKHOUSE_INVENTORY_BATCHES", "2")),
       datashop_export: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_DATASHOP", "1")),
       project_export: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_PROJECT_EXPORT", "3")),
       objectives: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_OBJECTIVES", "3")),

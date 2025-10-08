@@ -6,7 +6,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
   import Oli.Factory
 
   alias Oli.Repo
-  alias Oli.Analytics.Backfill.BackfillRun
+  alias Oli.Analytics.Backfill.{BackfillRun, Inventory, InventoryBatch, InventoryRun}
   alias OliWeb.Admin.ClickhouseBackfillLive
 
   @route Routes.live_path(OliWeb.Endpoint, ClickhouseBackfillLive)
@@ -26,12 +26,135 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
   describe "system admin" do
     setup [:admin_conn]
 
-    test "renders backfill form and recent runs table", %{conn: conn} do
+    test "shows batch orchestration tab by default", %{conn: conn} do
       {:ok, _view, html} = live(conn, @route)
 
       assert html =~ "ClickHouse Bulk Backfill"
+      assert html =~ "Schedule Batch Orchestration"
+      assert html =~ "Inventory Runs"
+    end
+
+    test "can switch to manual backfill tab", %{conn: conn} do
+      {:ok, view, html} = live(conn, @route)
+
+      assert html =~ "Batch Orchestration"
+
+      view
+      |> element("button[phx-value-tab=\"manual\"]")
+      |> render_click()
+
+      assert_patch(view, ~p"/admin/clickhouse/backfill?active_tab=manual")
+
+      rendered = render(view)
+      assert rendered =~ "Schedule Backfill"
+      assert rendered =~ "Recent Runs"
+    end
+
+    test "respects active_tab param", %{conn: conn} do
+      {:ok, _view, html} = live(conn, @route <> "?active_tab=manual")
+
       assert html =~ "Schedule Backfill"
       assert html =~ "Recent Runs"
+    end
+
+    test "treats batch param as inventory tab", %{conn: conn} do
+      {:ok, _view, html} = live(conn, @route <> "?active_tab=batch")
+
+      assert html =~ "Schedule Batch Orchestration"
+      assert html =~ "Inventory Runs"
+    end
+
+    test "inventory form defaults to previous day", %{conn: conn} do
+      {:ok, _view, html} = live(conn, @route)
+
+      yesterday =
+        Date.utc_today()
+        |> Date.add(-1)
+        |> Date.to_iso8601()
+
+      assert html =~ "value=\"#{yesterday}\""
+    end
+
+    test "shows batch progress", %{conn: conn} do
+      run =
+        %InventoryRun{
+          inventory_date: ~D[2024-07-01],
+          inventory_prefix: "prefix",
+          manifest_url: "https://example.com/manifest.json",
+          manifest_bucket: "bucket",
+          target_table: "analytics.raw_events",
+          format: "JSONAsString",
+          status: :running,
+          total_batches: 1
+        }
+        |> Repo.insert!()
+
+      %InventoryBatch{
+        run_id: run.id,
+        sequence: 1,
+        parquet_key: "key",
+        processed_objects: 5,
+        object_count: 10,
+        status: :running
+      }
+      |> Repo.insert!()
+
+      {:ok, _view, html} = live(conn, @route)
+
+      assert html =~ "50.0% complete"
+    end
+
+    test "schedules inventory dry run", %{conn: conn} do
+      Repo.delete_all(InventoryRun)
+      Oban.Testing.reset()
+
+      {:ok, view, _html} = live(conn, @route)
+
+      params = %{
+        "inventory_date" => "2024-07-01",
+        "target_table" => "analytics.raw_events",
+        "dry_run" => "true"
+      }
+
+      view
+      |> form("form[phx-submit=\"inventory_schedule\"]", %{"inventory" => params})
+      |> render_submit()
+
+      assert [%InventoryRun{} = run] = Repo.all(InventoryRun)
+      assert run.dry_run
+      assert run.metadata["dry_run"]
+      assert run.metadata["max_simultaneous_batches"] == 1
+      assert run.metadata["max_batch_retries"] == 1
+
+      rendered = render(view)
+      assert rendered =~ "Dry run: Yes"
+      assert rendered =~ "Inventory batch run has been enqueued"
+    end
+
+    test "schedules inventory run with custom concurrency settings", %{conn: conn} do
+      Repo.delete_all(InventoryRun)
+      Oban.Testing.reset()
+
+      {:ok, view, _html} = live(conn, @route)
+
+      params = %{
+        "inventory_date" => "2024-07-02",
+        "target_table" => "analytics.custom_events",
+        "max_simultaneous_batches" => "3",
+        "max_batch_retries" => "4"
+      }
+
+      view
+      |> form("form[phx-submit=\"inventory_schedule\"]", %{"inventory" => params})
+      |> render_submit()
+
+      assert [%InventoryRun{} = run] = Repo.all(InventoryRun)
+      assert run.metadata["max_simultaneous_batches"] == 3
+      assert run.metadata["max_batch_retries"] == 4
+      refute run.dry_run
+
+      rendered = render(view)
+      assert rendered =~ "Inventory batch run has been enqueued"
     end
 
     test "shows validation error for invalid JSON settings", %{conn: conn} do
@@ -62,7 +185,10 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
         "dry_run" => "true"
       }
 
-      html = render_submit(view, %{"backfill" => params})
+      html =
+        view
+        |> form("form[phx-submit=\"schedule\"]", %{"backfill" => params})
+        |> render_submit()
 
       assert html =~ "Backfill job has been enqueued"
 
@@ -84,7 +210,9 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
         "format" => "JSONAsString"
       }
 
-      render_submit(view, %{"backfill" => params})
+      view
+      |> form("form[phx-submit=\"schedule\"]", %{"backfill" => params})
+      |> render_submit()
 
       assert [%BackfillRun{} = run] = Repo.all(BackfillRun)
       assert run.s3_pattern == "s3://torus-xapi-dev/section/test/**/*.jsonl"
@@ -101,7 +229,9 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
         "format" => "JSONAsString"
       }
 
-      render_submit(view, %{"backfill" => params})
+      view
+      |> form("form[phx-submit=\"schedule\"]", %{"backfill" => params})
+      |> render_submit()
 
       assert [%BackfillRun{} = run] = Repo.all(BackfillRun)
       assert run.s3_pattern == "s3://torus-xapi-dev/section/test/**/*.jsonl"
@@ -130,6 +260,175 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
 
       assert html =~ "width: 42.5%"
       assert html =~ "Rows: 425 / 1000 (42.5%)"
+    end
+
+    test "retry inventory batch enqueues job", %{conn: conn} do
+      Oban.Testing.reset()
+
+      run =
+        %InventoryRun{
+          inventory_date: ~D[2024-07-01],
+          inventory_prefix: "torus/inventory/2024-07-01",
+          manifest_url: "https://example.com/manifest.json",
+          manifest_bucket: "test-inventory-bucket",
+          target_table: "analytics.raw_events",
+          format: "JSONAsString",
+          status: :failed,
+          dry_run: false,
+          total_batches: 1,
+          failed_batches: 1,
+          completed_batches: 0,
+          running_batches: 0,
+          pending_batches: 0
+        }
+        |> Repo.insert!()
+
+      batch =
+        %InventoryBatch{
+          run_id: run.id,
+          sequence: 1,
+          parquet_key: "torus/path/file.parquet",
+          status: :failed,
+          object_count: 10,
+          processed_objects: 4,
+          attempts: 1,
+          metadata: %{}
+        }
+        |> Repo.insert!()
+
+      {:ok, view, _html} = live(conn, @route)
+
+      view
+      |> element("button[phx-value-tab=\"inventory\"]")
+      |> render_click()
+
+      view
+      |> element("button[phx-click=\"retry_inventory_batch\"][phx-value-id=\"#{batch.id}\"]")
+      |> render_click()
+
+      assert_enqueued(
+        worker: Oli.Analytics.Backfill.Inventory.BatchWorker,
+        args: %{"batch_id" => batch.id}
+      )
+
+      assert [%{max_attempts: 1}] =
+               all_enqueued(worker: Oli.Analytics.Backfill.Inventory.BatchWorker)
+
+      assert render(view) =~ "retry queued"
+    end
+
+    test "cancel inventory run transitions status to cancelled", %{conn: conn} do
+      run =
+        %InventoryRun{
+          inventory_date: ~D[2024-07-01],
+          inventory_prefix: "torus/inventory/2024-07-01",
+          manifest_url: "https://example.com/manifest.json",
+          manifest_bucket: "test-inventory-bucket",
+          target_table: "analytics.raw_events",
+          format: "JSONAsString",
+          status: :running,
+          dry_run: false,
+          total_batches: 2,
+          running_batches: 1,
+          pending_batches: 1
+        }
+        |> Repo.insert!()
+
+      running_batch =
+        %InventoryBatch{
+          run_id: run.id,
+          sequence: 1,
+          parquet_key: "torus/path/running.parquet",
+          status: :running,
+          object_count: 10,
+          processed_objects: 4
+        }
+        |> Repo.insert!()
+
+      failed_batch =
+        %InventoryBatch{
+          run_id: run.id,
+          sequence: 2,
+          parquet_key: "torus/path/failed.parquet",
+          status: :failed,
+          object_count: 8,
+          processed_objects: 8
+        }
+        |> Repo.insert!()
+
+      _ = Inventory.recompute_run_aggregates(run)
+
+      {:ok, view, _html} = live(conn, @route)
+
+      view
+      |> element("button[phx-value-tab=\"inventory\"]")
+      |> render_click()
+
+      view
+      |> element("button[phx-click=\"cancel_inventory_run\"][phx-value-id=\"#{run.id}\"]")
+      |> render_click()
+
+      run = Repo.get!(InventoryRun, run.id)
+      running_batch = Repo.get!(InventoryBatch, running_batch.id)
+      failed_batch = Repo.get!(InventoryBatch, failed_batch.id)
+
+      assert run.status == :cancelled
+      refute is_nil(run.finished_at)
+      assert running_batch.status == :cancelled
+      assert failed_batch.status == :failed
+
+      rendered = render(view)
+      assert rendered =~ "Run #{run.id} cancellation requested"
+      assert rendered =~ "Cancelled"
+    end
+
+    test "cancel inventory batch transitions status to cancelled", %{conn: conn} do
+      run =
+        %InventoryRun{
+          inventory_date: ~D[2024-07-01],
+          inventory_prefix: "torus/inventory/2024-07-01",
+          manifest_url: "https://example.com/manifest.json",
+          manifest_bucket: "test-inventory-bucket",
+          target_table: "analytics.raw_events",
+          format: "JSONAsString",
+          status: :running,
+          dry_run: false,
+          total_batches: 1,
+          running_batches: 1
+        }
+        |> Repo.insert!()
+
+      batch =
+        %InventoryBatch{
+          run_id: run.id,
+          sequence: 1,
+          parquet_key: "torus/path/running.parquet",
+          status: :running,
+          object_count: 12,
+          processed_objects: 6
+        }
+        |> Repo.insert!()
+
+      _ = Inventory.recompute_run_aggregates(run)
+
+      {:ok, view, _html} = live(conn, @route)
+
+      view
+      |> element("button[phx-value-tab=\"inventory\"]")
+      |> render_click()
+
+      view
+      |> element("button[phx-click=\"cancel_inventory_batch\"][phx-value-id=\"#{batch.id}\"]")
+      |> render_click()
+
+      batch = Repo.get!(InventoryBatch, batch.id)
+      run = Repo.get!(InventoryRun, run.id)
+
+      assert batch.status == :cancelled
+      assert run.running_batches in [0, nil]
+
+      rendered = render(view)
+      assert rendered =~ "Batch #{batch.id} cancellation requested"
     end
   end
 end

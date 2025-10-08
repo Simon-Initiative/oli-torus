@@ -10,6 +10,9 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
   alias Jason
   alias Oli.Analytics.Backfill
   alias Oli.Analytics.Backfill.BackfillRun
+  alias Oli.Analytics.Backfill.Inventory
+  alias Oli.Analytics.Backfill.InventoryBatch
+  alias Oli.Analytics.Backfill.InventoryRun
   alias OliWeb.Common.Breadcrumb
 
   on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
@@ -17,9 +20,10 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
 
   @runs_limit 25
   @auto_refresh_interval 5_000
+  @inventory_runs_limit 25
 
   @impl true
-  def mount(_params, _session, socket) do
+  def mount(params, _session, socket) do
     default_inputs = default_form_inputs()
 
     changeset =
@@ -29,18 +33,36 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
         format: "JSONAsString"
       })
 
+    inventory_defaults = inventory_default_inputs()
+    inventory_changeset = inventory_form_changeset(inventory_defaults)
+    inventory_form = to_form(inventory_changeset, as: :inventory)
+    inventory_form_inputs = inventory_form_values(inventory_defaults)
+    inventory_config = Application.get_env(:oli, :clickhouse_inventory, []) |> Enum.into(%{})
+
+    active_tab = resolve_active_tab(params)
+
     socket =
       assign(socket,
         title: "ClickHouse Bulk Backfill",
         breadcrumb: breadcrumb(),
         runs: Backfill.list_runs(limit: @runs_limit),
+        inventory_runs: Inventory.list_runs(limit: @inventory_runs_limit),
         changeset: changeset,
         form_inputs: default_inputs,
-        form: to_form(changeset, as: :backfill)
+        form: to_form(changeset, as: :backfill),
+        inventory_form: inventory_form,
+        inventory_form_inputs: inventory_form_inputs,
+        inventory_config: inventory_config,
+        active_tab: active_tab
       )
       |> maybe_schedule_refresh()
 
     {:ok, socket}
+  end
+
+  @impl true
+  def handle_params(params, _uri, socket) do
+    {:noreply, assign(socket, active_tab: resolve_active_tab(params))}
   end
 
   @impl true
@@ -134,11 +156,182 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
   end
 
   @impl true
+  def handle_event("switch_tab", %{"tab" => tab}, socket) do
+    target = resolve_active_tab(%{"active_tab" => tab})
+
+    {:noreply, push_patch(socket, to: active_tab_path(socket, target))}
+  end
+
+  def handle_event("inventory_validate", %{"inventory" => params}, socket) do
+    changeset =
+      params
+      |> inventory_form_changeset()
+      |> Map.put(:action, :validate)
+
+    form_inputs =
+      if changeset.valid? do
+        changeset
+        |> Ecto.Changeset.apply_changes()
+        |> inventory_form_values()
+      else
+        inventory_inputs_from_params(params)
+      end
+
+    {:noreply,
+     assign(socket,
+       inventory_form: to_form(changeset, as: :inventory),
+       inventory_form_inputs: form_inputs
+     )}
+  end
+
+  def handle_event("inventory_validate", _params, socket), do: {:noreply, socket}
+
+  def handle_event("inventory_schedule", %{"inventory" => params}, socket) do
+    changeset = inventory_form_changeset(params)
+
+    if changeset.valid? do
+      attrs =
+        changeset
+        |> Ecto.Changeset.apply_changes()
+        |> Map.put(:format, "JSONAsString")
+        |> Map.update(:dry_run, false, &truthy?/1)
+
+      case Inventory.schedule_run(attrs, socket.assigns[:current_author]) do
+        {:ok, _run} ->
+          defaults = inventory_default_inputs()
+
+          socket =
+            socket
+            |> refresh_runs()
+            |> assign(
+              inventory_form: to_form(inventory_form_changeset(defaults), as: :inventory),
+              inventory_form_inputs: inventory_form_values(defaults),
+              active_tab: :inventory
+            )
+            |> put_flash(:info, "Inventory batch run has been enqueued.")
+            |> maybe_schedule_refresh()
+
+          {:noreply, socket}
+
+        {:error, %Ecto.Changeset{} = error_changeset} ->
+          error_changeset = Map.put(error_changeset, :action, :insert)
+
+          {:noreply,
+           assign(socket,
+             inventory_form: to_form(error_changeset, as: :inventory),
+             inventory_form_inputs: inventory_inputs_from_params(params)
+           )}
+
+        {:error, reason} ->
+          {:noreply,
+           socket
+           |> put_flash(:error, format_error(reason))
+           |> assign(
+             inventory_form: to_form(Map.put(changeset, :action, :insert), as: :inventory),
+             inventory_form_inputs: inventory_inputs_from_params(params)
+           )}
+      end
+    else
+      changeset = Map.put(changeset, :action, :validate)
+
+      {:noreply,
+       assign(socket,
+         inventory_form: to_form(changeset, as: :inventory),
+         inventory_form_inputs: inventory_inputs_from_params(params)
+       )}
+    end
+  end
+
+  def handle_event("cancel_inventory_run", %{"id" => id}, socket) do
+    with {run_id, _} <- Integer.parse(to_string(id)),
+         run <- Inventory.get_run!(run_id),
+         {:ok, _run} <- Inventory.cancel_run(run) do
+      socket =
+        socket
+        |> put_flash(:info, "Run #{run_id} cancellation requested.")
+        |> refresh_runs()
+        |> maybe_schedule_refresh()
+
+      {:noreply, socket}
+    else
+      :error ->
+        {:noreply, put_flash(socket, :error, "Invalid run identifier")}
+
+      {:error, :not_cancellable} ->
+        {:noreply, put_flash(socket, :info, "Run #{id} is already finished.")}
+
+      {:error, reason} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, format_error(reason))
+         |> refresh_runs()}
+    end
+  rescue
+    Ecto.NoResultsError ->
+      {:noreply, put_flash(socket, :error, "Run not found")}
+  end
+
+  def handle_event("retry_inventory_batch", %{"id" => id}, socket) do
+    with {batch_id, _} <- Integer.parse(to_string(id)),
+         batch <- Inventory.get_batch!(batch_id),
+         {:ok, _batch} <- Inventory.retry_batch(batch) do
+      socket =
+        socket
+        |> put_flash(:info, "Batch #{batch_id} retry queued.")
+        |> refresh_runs()
+        |> maybe_schedule_refresh()
+
+      {:noreply, socket}
+    else
+      :error ->
+        {:noreply, put_flash(socket, :error, "Invalid batch identifier")}
+
+      {:error, reason} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, format_error(reason))
+         |> refresh_runs()}
+    end
+  rescue
+    Ecto.NoResultsError ->
+      {:noreply, put_flash(socket, :error, "Batch not found")}
+  end
+
+  def handle_event("cancel_inventory_batch", %{"id" => id}, socket) do
+    with {batch_id, _} <- Integer.parse(to_string(id)),
+         batch <- Inventory.get_batch!(batch_id),
+         {:ok, _batch} <- Inventory.cancel_batch(batch) do
+      socket =
+        socket
+        |> put_flash(:info, "Batch #{batch_id} cancellation requested.")
+        |> refresh_runs()
+        |> maybe_schedule_refresh()
+
+      {:noreply, socket}
+    else
+      :error ->
+        {:noreply, put_flash(socket, :error, "Invalid batch identifier")}
+
+      {:error, :not_cancellable} ->
+        {:noreply, put_flash(socket, :info, "Batch #{id} is already finished.")}
+
+      {:error, reason} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, format_error(reason))
+         |> refresh_runs()}
+    end
+  rescue
+    Ecto.NoResultsError ->
+      {:noreply, put_flash(socket, :error, "Batch not found")}
+  end
+
+  @impl true
   def handle_info(:refresh_runs, socket) do
     socket = refresh_runs(socket)
 
     socket =
-      if running_job?(socket.assigns.runs) do
+      if any_running?(socket) do
         schedule_refresh(socket)
       else
         assign(socket, refresh_timer?: false)
@@ -168,7 +361,28 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
         </div>
       </div>
 
-      <div class="space-y-6">
+      <div class="bg-white dark:bg-gray-900 shadow rounded-lg p-2">
+        <nav class="flex space-x-1" role="tablist">
+          <button
+            type="button"
+            class={tab_button_classes(@active_tab == :manual)}
+            phx-click="switch_tab"
+            phx-value-tab="manual"
+          >
+            Manual Backfill
+          </button>
+          <button
+            type="button"
+            class={tab_button_classes(@active_tab == :inventory)}
+            phx-click="switch_tab"
+            phx-value-tab="batch"
+          >
+            Batch Orchestration
+          </button>
+        </nav>
+      </div>
+
+      <div :if={@active_tab == :manual} class="space-y-6">
         <div class="bg-white dark:bg-gray-900 shadow rounded-lg p-5 space-y-4">
           <div>
             <h2 class="text-xl font-semibold">Schedule Backfill</h2>
@@ -226,7 +440,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
                 class="w-full mt-1 rounded-md border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-sm font-mono p-2"
                 placeholder='{"max_download_threads": 8}'
               >{@form_inputs.clickhouse_settings}</textarea>
-              <%= for {msg, _opts} <- Keyword.get(@changeset.errors, :clickhouse_settings, []) do %>
+              <%= for {msg, _opts} <- Keyword.get_values(@changeset.errors, :clickhouse_settings) do %>
                 <p class="mt-1 text-sm text-red-600">{msg}</p>
               <% end %>
             </div>
@@ -241,7 +455,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
                 class="w-full mt-1 rounded-md border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-sm font-mono p-2"
                 placeholder='{"max_threads": 4}'
               >{@form_inputs.options}</textarea>
-              <%= for {msg, _opts} <- Keyword.get(@changeset.errors, :options, []) do %>
+              <%= for {msg, _opts} <- Keyword.get_values(@changeset.errors, :options) do %>
                 <p class="mt-1 text-sm text-red-600">{msg}</p>
               <% end %>
             </div>
@@ -368,6 +582,329 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
             <%= if Enum.empty?(@runs) do %>
               <div class="py-8 text-center text-sm text-gray-500">No backfill jobs recorded yet.</div>
             <% end %>
+          </div>
+        </div>
+      </div>
+
+      <div :if={@active_tab == :inventory} class="space-y-6">
+        <div class="bg-white dark:bg-gray-900 shadow rounded-lg p-5 space-y-4">
+          <div class="space-y-1">
+            <h2 class="text-xl font-semibold">Schedule Batch Orchestration</h2>
+            <p class="text-sm text-gray-600 dark:text-gray-300">
+              Select an inventory date to orchestrate ingest of all JSONL exports recorded in the S3 inventory manifest for that day.
+            </p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+              Current batch size: {Map.get(@inventory_config, :batch_chunk_size, 25)} files per ClickHouse insert.
+            </p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+              Simultaneous batch jobs: {Map.get(@inventory_config, :max_simultaneous_batches, 1)}
+            </p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+              Max retries per batch: {Map.get(@inventory_config, :max_batch_retries, 1)}
+            </p>
+          </div>
+
+          <.form
+            for={@inventory_form}
+            phx-change="inventory_validate"
+            phx-submit="inventory_schedule"
+            class="grid gap-4 md:grid-cols-[220px_minmax(0,1fr)_160px_160px_auto] md:items-end"
+          >
+            <.input
+              field={@inventory_form[:inventory_date]}
+              type="date"
+              label="Inventory Date"
+              value={@inventory_form_inputs.inventory_date}
+              required
+            />
+
+            <.input
+              field={@inventory_form[:target_table]}
+              label="Target Table"
+              value={@inventory_form_inputs.target_table}
+            />
+
+            <.input
+              field={@inventory_form[:max_simultaneous_batches]}
+              type="number"
+              label="Simultaneous Batch Jobs"
+              value={@inventory_form_inputs.max_simultaneous_batches}
+              min="1"
+              step="1"
+            />
+
+            <.input
+              field={@inventory_form[:max_batch_retries]}
+              type="number"
+              label="Max Retries per Batch"
+              value={@inventory_form_inputs.max_batch_retries}
+              min="1"
+              step="1"
+            />
+
+            <label class="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 md:col-span-4">
+              <input
+                type="checkbox"
+                name="inventory[dry_run]"
+                value="true"
+                checked={truthy?(@inventory_form_inputs.dry_run)}
+                class="h-4 w-4 rounded border-gray-300 text-delivery-primary focus:ring-delivery-primary"
+              />
+              <span>Dry run (skip ClickHouse inserts)</span>
+            </label>
+
+            <div class="flex items-center justify-end gap-3 md:justify-start">
+              <.button type="button" phx-click="refresh_runs" class="btn-secondary">
+                Refresh Runs
+              </.button>
+              <.button type="submit" class="btn-primary">
+                Schedule Batch Run
+              </.button>
+            </div>
+          </.form>
+        </div>
+
+        <div class="bg-white dark:bg-gray-900 shadow rounded-lg p-5 space-y-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-xl font-semibold">Inventory Runs</h2>
+              <p class="text-sm text-gray-600 dark:text-gray-300">
+                Tracks orchestrated ClickHouse ingestions driven by S3 inventory manifests.
+              </p>
+            </div>
+            <.button phx-click="refresh_runs" class="btn-secondary btn-sm">
+              Refresh
+            </.button>
+          </div>
+
+          <div :if={Enum.empty?(@inventory_runs)} class="py-8 text-center text-sm text-gray-500">
+            No inventory batch runs recorded yet.
+          </div>
+
+          <div
+            :for={run <- @inventory_runs}
+            class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 space-y-4"
+          >
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+              <div class="space-y-1">
+                <div class="text-lg font-semibold">Run #{run.id}</div>
+                <div class="text-sm text-gray-600 dark:text-gray-300">
+                  Inventory Date: {format_inventory_date(run.inventory_date)} · Target Table: {run.target_table}
+                </div>
+                <div class="text-xs text-gray-500 dark:text-gray-400">
+                  Initiator: {format_initiator(run.initiated_by)}
+                </div>
+                <div class="text-xs text-gray-500 dark:text-gray-400">
+                  Dry run: {if run.dry_run, do: "Yes", else: "No"}
+                </div>
+              </div>
+
+              <div class="md:w-1/2 space-y-2">
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class={status_badge_classes(run.status)}>
+                    {Phoenix.Naming.humanize(run.status)}
+                  </span>
+                  <span class="text-xs text-gray-500 dark:text-gray-400">
+                    {inventory_progress_label(run)}
+                  </span>
+                  <.button
+                    :if={cancellable_run?(run)}
+                    phx-click="cancel_inventory_run"
+                    phx-value-id={run.id}
+                    class="btn-secondary btn-xs"
+                  >
+                    Cancel Run
+                  </.button>
+                </div>
+                <% percent = inventory_percent(run) %>
+                <div
+                  :if={percent > 0}
+                  class="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden"
+                >
+                  <div
+                    class="h-2 bg-blue-500 transition-all"
+                    style={"width: #{Float.round(percent, 1)}%"}
+                  >
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid gap-4 md:grid-cols-4 text-xs text-gray-600 dark:text-gray-300">
+              <div class="space-y-1">
+                <div class="font-semibold text-gray-700 dark:text-gray-200">Batches</div>
+                <div>Total: {format_int(run.total_batches)}</div>
+                <div>Completed: {format_int(run.completed_batches)}</div>
+                <div>Failed: {format_int(run.failed_batches)}</div>
+                <div>Running: {format_int(run.running_batches)}</div>
+              </div>
+              <div class="space-y-1">
+                <div class="font-semibold text-gray-700 dark:text-gray-200">Metrics</div>
+                <div>Rows written: {format_int(run.rows_ingested)}</div>
+                <div>Bytes written: {format_int(run.bytes_ingested)}</div>
+              </div>
+              <div class="space-y-1">
+                <div class="font-semibold text-gray-700 dark:text-gray-200">Timeline</div>
+                <div>Inserted: {format_timestamp(run.inserted_at)}</div>
+                <div>Started: {format_timestamp(run.started_at)}</div>
+                <div>Finished: {format_timestamp(run.finished_at)}</div>
+              </div>
+              <div class="space-y-1">
+                <div class="font-semibold text-gray-700 dark:text-gray-200">Manifest</div>
+                <div class="break-all text-gray-500 dark:text-gray-400">
+                  <a
+                    :if={run.manifest_url}
+                    class="underline"
+                    href={run.manifest_url}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {run.manifest_url}
+                  </a>
+                  <span :if={!run.manifest_url}>—</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-xs">
+                <thead class="bg-gray-50 dark:bg-gray-800">
+                  <tr>
+                    <th class="px-3 py-2 text-left font-medium text-gray-600 dark:text-gray-300">
+                      Batch
+                    </th>
+                    <th class="px-3 py-2 text-left font-medium text-gray-600 dark:text-gray-300">
+                      Status
+                    </th>
+                    <th class="px-3 py-2 text-left font-medium text-gray-600 dark:text-gray-300">
+                      Objects
+                    </th>
+                    <th class="px-3 py-2 text-left font-medium text-gray-600 dark:text-gray-300">
+                      Attempts
+                    </th>
+                    <th class="px-3 py-2 text-left font-medium text-gray-600 dark:text-gray-300">
+                      Timeline
+                    </th>
+                    <th class="px-3 py-2 text-left font-medium text-gray-600 dark:text-gray-300">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                  <%= for batch <- run.batches do %>
+                    <tr class="align-top">
+                      <td class="px-3 py-3 space-y-1">
+                        <div class="font-semibold text-gray-700 dark:text-gray-200">
+                          {batch.sequence}
+                        </div>
+                        <div class="text-gray-500 dark:text-gray-400 break-all">
+                          {batch.parquet_key}
+                        </div>
+                      </td>
+                      <td class="px-3 py-3 space-y-1">
+                        <span class={status_badge_classes(batch.status)}>
+                          {Phoenix.Naming.humanize(batch.status)}
+                        </span>
+                        <%= if batch.error do %>
+                          <div class="text-red-600 break-words">{batch.error}</div>
+                        <% end %>
+                      </td>
+                      <td class="px-3 py-3 space-y-1">
+                        <% progress = batch_progress(batch) %>
+                        <div>Processed: {format_int(progress.processed)}</div>
+                        <div>Total: {format_int(progress.total)}</div>
+                        <div :if={progress.total > 0} class="space-y-1">
+                          <div class="h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                            <div
+                              class="h-1.5 bg-delivery-primary transition-all"
+                              style={"width: #{Float.round(progress.percent, 1)}%"}
+                            >
+                            </div>
+                          </div>
+                          <div class="text-gray-500 dark:text-gray-400">
+                            {Float.round(progress.percent, 1)}% complete
+                          </div>
+                        </div>
+                      </td>
+                      <td class="px-3 py-3 space-y-1">
+                        <div>Attempts: {format_int(batch.attempts)}</div>
+                        <div>Last attempt: {format_timestamp(batch.last_attempt_at)}</div>
+                      </td>
+                      <td class="px-3 py-3 space-y-1">
+                        <div>Started: {format_timestamp(batch.started_at)}</div>
+                        <div>Finished: {format_timestamp(batch.finished_at)}</div>
+                      </td>
+                      <td class="px-3 py-3">
+                        <div class="flex flex-col gap-2">
+                          <.button
+                            :if={cancellable_batch?(batch)}
+                            phx-click="cancel_inventory_batch"
+                            phx-value-id={batch.id}
+                            class="btn-secondary btn-xs"
+                          >
+                            Cancel Batch
+                          </.button>
+                          <.button
+                            :if={batch.status == :failed}
+                            phx-click="retry_inventory_batch"
+                            phx-value-id={batch.id}
+                            class="btn-secondary btn-xs"
+                          >
+                            Retry Batch
+                          </.button>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr :if={
+                      chunk_logs = batch_chunk_logs(batch)
+                      not Enum.empty?(chunk_logs)
+                    }>
+                      <td colspan="6" class="px-3 pb-3">
+                        <details class="text-gray-600 dark:text-gray-300">
+                          <summary class="cursor-pointer text-delivery-primary">Chunk Logs</summary>
+                          <div class="mt-2 space-y-2">
+                            <div
+                              :for={{log, idx} <- Enum.with_index(chunk_logs, 1)}
+                              class="border border-gray-200 dark:border-gray-700 rounded p-2"
+                            >
+                              <div class="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                                Chunk {idx}
+                              </div>
+                              <div class="text-xs break-all">
+                                Query ID: {log["query_id"] || log[:query_id] || "—"}
+                              </div>
+                              <div class="text-xs">
+                                Rows: {format_int(
+                                  log["rows_written"] || log[:rows_written] || log["rows_read"] ||
+                                    log[:rows_read]
+                                )}
+                              </div>
+                              <div class="text-xs">
+                                Bytes: {format_int(
+                                  log["bytes_written"] || log[:bytes_written] || log["bytes_read"] ||
+                                    log[:bytes_read]
+                                )}
+                              </div>
+                              <div class="text-xs">
+                                Execution (ms): {format_int(
+                                  log["execution_time_ms"] || log[:execution_time_ms]
+                                )}
+                              </div>
+                              <div class="text-xs break-all">
+                                Entries: {Enum.join(
+                                  List.wrap(log["entries"] || log[:entries] || []),
+                                  ", "
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </details>
+                      </td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
@@ -588,18 +1125,31 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
 
   defp refresh_runs(socket) do
     Backfill.refresh_running_runs()
-    assign(socket, runs: Backfill.list_runs(limit: @runs_limit))
+
+    assign(socket,
+      runs: Backfill.list_runs(limit: @runs_limit),
+      inventory_runs: Inventory.list_runs(limit: @inventory_runs_limit)
+    )
   end
 
   defp running_job?(runs) do
-    Enum.any?(runs, &(&1.status in [:pending, :running]))
+    Enum.any?(runs, &(&1.status in [:pending, :running, :preparing]))
+  end
+
+  defp inventory_running?(runs) do
+    Enum.any?(runs, &(&1.status in [:pending, :running, :preparing]))
+  end
+
+  defp any_running?(socket) do
+    running_job?(socket.assigns.runs) or
+      inventory_running?(socket.assigns[:inventory_runs] || [])
   end
 
   defp maybe_schedule_refresh(socket) do
-    if running_job?(socket.assigns.runs) do
+    if any_running?(socket) do
       schedule_refresh(socket)
     else
-      socket
+      assign(socket, refresh_timer?: false)
     end
   end
 
@@ -645,6 +1195,226 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
     }
   end
 
+  defp inventory_default_inputs do
+    config = Application.get_env(:oli, :clickhouse_inventory, []) |> Enum.into(%{})
+
+    default_date =
+      Date.utc_today()
+      |> Date.add(-1)
+
+    %{
+      inventory_date: default_date,
+      target_table: Backfill.default_target_table(),
+      dry_run: false,
+      max_simultaneous_batches: Map.get(config, :max_simultaneous_batches, 1),
+      max_batch_retries: Map.get(config, :max_batch_retries, 1)
+    }
+  end
+
+  defp inventory_form_changeset(attrs) do
+    data = inventory_default_inputs()
+    types = %{
+      inventory_date: :date,
+      target_table: :string,
+      dry_run: :boolean,
+      max_simultaneous_batches: :integer,
+      max_batch_retries: :integer
+    }
+
+    {data, types}
+    |> Ecto.Changeset.cast(attrs, Map.keys(types))
+    |> Ecto.Changeset.validate_required([
+      :inventory_date,
+      :max_simultaneous_batches,
+      :max_batch_retries
+    ])
+    |> Ecto.Changeset.update_change(:target_table, &normalize_target_table/1)
+    |> Ecto.Changeset.validate_length(:target_table, max: 255)
+    |> Ecto.Changeset.validate_format(:target_table, ~r/^[a-zA-Z0-9_\.]+$/)
+    |> Ecto.Changeset.validate_number(:max_simultaneous_batches, greater_than: 0)
+    |> Ecto.Changeset.validate_number(:max_batch_retries, greater_than: 0)
+  end
+
+  defp inventory_form_values(inputs) do
+    %{
+      inventory_date:
+        inputs
+        |> Map.get(:inventory_date)
+        |> Kernel.||(Map.get(inputs, "inventory_date"))
+        |> format_date_input(),
+      target_table:
+        inputs
+        |> Map.get(:target_table)
+        |> Kernel.||(Map.get(inputs, "target_table"))
+        |> ensure_target_table(),
+      dry_run:
+        inputs
+        |> Map.get(:dry_run)
+        |> Kernel.||(Map.get(inputs, "dry_run"))
+        |> truthy?(),
+      max_simultaneous_batches:
+        inputs
+        |> Map.get(:max_simultaneous_batches)
+        |> Kernel.||(Map.get(inputs, "max_simultaneous_batches"))
+        |> normalize_count_input(1),
+      max_batch_retries:
+        inputs
+        |> Map.get(:max_batch_retries)
+        |> Kernel.||(Map.get(inputs, "max_batch_retries"))
+        |> normalize_count_input(1)
+    }
+  end
+
+  defp inventory_inputs_from_params(params) do
+    params = Map.new(params || %{})
+
+    date = params |> Map.get("inventory_date", "") |> String.trim()
+    target = params |> Map.get("target_table", "") |> String.trim()
+    dry_run = truthy?(Map.get(params, "dry_run"))
+    max_simultaneous = params |> Map.get("max_simultaneous_batches", "") |> String.trim()
+    max_retries = params |> Map.get("max_batch_retries", "") |> String.trim()
+
+    %{
+      inventory_date: date,
+      target_table: if(target == "", do: Backfill.default_target_table(), else: target),
+      dry_run: dry_run,
+      max_simultaneous_batches: max_simultaneous,
+      max_batch_retries: max_retries
+    }
+  end
+
+  defp inventory_percent(%InventoryRun{} = run) do
+    total = run.total_batches || 0
+    completed = run.completed_batches || 0
+
+    cond do
+      total > 0 -> completed / total * 100.0
+      true -> 0.0
+    end
+  end
+
+  defp inventory_progress_label(%InventoryRun{} = run) do
+    total = run.total_batches || 0
+    completed = run.completed_batches || 0
+    failed = run.failed_batches || 0
+    running = run.running_batches || 0
+    pending = run.pending_batches || 0
+
+    cond do
+      total == 0 and run.status == :completed -> "No batches required"
+      total == 0 and run.status in [:failed, :cancelled] -> "No batches prepared"
+      total == 0 -> "Preparing batches"
+      failed > 0 -> "#{completed} of #{total} completed · #{failed} failed"
+      running > 0 -> "#{completed} of #{total} completed · #{running} running"
+      pending > 0 -> "#{completed} of #{total} completed · #{pending} pending"
+      true -> "#{completed} of #{total} completed"
+    end
+  end
+
+  defp cancellable_run?(%InventoryRun{status: status})
+       when status in [:pending, :preparing, :running],
+       do: true
+
+  defp cancellable_run?(_), do: false
+
+  defp cancellable_batch?(%InventoryBatch{status: status})
+       when status in [:pending, :queued, :running],
+       do: true
+
+  defp cancellable_batch?(_), do: false
+
+  defp batch_chunk_logs(%InventoryBatch{metadata: metadata}) do
+    metadata
+    |> ensure_map()
+    |> Map.get("chunks", [])
+    |> case do
+      logs when is_list(logs) -> logs
+      _ -> []
+    end
+  end
+
+  defp batch_chunk_logs(_), do: []
+
+  defp ensure_target_table(value) do
+    value
+    |> normalize_target_table()
+  end
+
+  defp normalize_target_table(value) when value in [nil, ""], do: Backfill.default_target_table()
+  defp normalize_target_table(value) when is_binary(value), do: String.trim(value)
+  defp normalize_target_table(value), do: value |> to_string() |> String.trim()
+
+  defp format_inventory_date(nil), do: "—"
+  defp format_inventory_date(%Date{} = date), do: Date.to_iso8601(date)
+  defp format_inventory_date(value), do: to_string(value)
+
+  defp format_date_input(%Date{} = date), do: Date.to_iso8601(date)
+  defp format_date_input(value) when is_binary(value), do: value
+  defp format_date_input(_), do: ""
+
+  defp normalize_count_input(value, default) when is_integer(value) and value > 0,
+    do: Integer.to_string(value)
+
+  defp normalize_count_input(value, _default) when is_binary(value),
+    do: String.trim(value)
+
+  defp normalize_count_input(_value, default),
+    do: Integer.to_string(default)
+
+  defp resolve_active_tab(params) do
+    params
+    |> fetch_active_tab_param()
+    |> case do
+      value when value in ["batch", "inventory", :batch, :inventory] -> :inventory
+      "manual" -> :manual
+      :manual -> :manual
+      _ -> :inventory
+    end
+  end
+
+  defp fetch_active_tab_param(params) when is_map(params) do
+    Map.get(params, "active_tab") || Map.get(params, :active_tab)
+  end
+
+  defp fetch_active_tab_param(_), do: nil
+
+  defp active_tab_path(_socket, tab) do
+    ~p"/admin/clickhouse/backfill?#{[active_tab: active_tab_param(tab)]}"
+  end
+
+  defp active_tab_param(:inventory), do: "batch"
+  defp active_tab_param(:manual), do: "manual"
+
+  defp batch_progress(%InventoryBatch{} = batch) do
+    total = batch.object_count || 0
+    processed = batch.processed_objects || 0
+
+    percent =
+      cond do
+        total <= 0 -> 0.0
+        true ->
+          processed
+          |> Kernel./(total)
+          |> Kernel.*(100.0)
+          |> min(100.0)
+          |> max(0.0)
+      end
+
+    %{percent: percent, processed: processed, total: total}
+  end
+
+  defp ensure_map(nil), do: %{}
+  defp ensure_map(map) when is_map(map), do: map
+  defp ensure_map(_), do: %{}
+
+  defp tab_button_classes(true) do
+    "px-4 py-2 text-sm font-medium border-b-2 border-delivery-primary text-delivery-primary"
+  end
+
+  defp tab_button_classes(false) do
+    "px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+  end
+
   defp format_error(%Ecto.Changeset{} = changeset), do: inspect(changeset)
   defp format_error({:error, reason}), do: format_error(reason)
   defp format_error(reason) when is_binary(reason), do: reason
@@ -654,7 +1424,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
     do:
       "inline-flex items-center px-2 py-1 rounded text-xs font-semibold bg-green-100 text-green-800"
 
-  defp status_badge_classes(:running),
+  defp status_badge_classes(status) when status in [:running, :preparing],
     do:
       "inline-flex items-center px-2 py-1 rounded text-xs font-semibold bg-blue-100 text-blue-800"
 
