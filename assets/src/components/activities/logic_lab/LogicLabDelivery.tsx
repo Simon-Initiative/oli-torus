@@ -76,12 +76,13 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
   const [isResetting, setIsResetting] = useState(false);
 
   useEffect(() => {
+    // Standard one-time listener setup for all torus activities
     listenForParentSurveySubmit(context.surveyId, dispatch, onSubmitActivity);
     listenForParentSurveyReset(context.surveyId, dispatch, onResetActivity, { [partId]: [''] });
     listenForReviewAttemptChange(model, activityState.activityId as number, dispatch, context);
 
-    // when using uiState: ActivityDeliveryState in the Redux store, the first render
-    // must initialize the saved PartInputs from the incoming activityState,
+    // when using uiState: ActivityDeliveryState from the Redux store, the first render
+    // is used to initialize the saved PartInputs from the incoming activityState,
     // allowing for them to be undefined as happens for a never saved activity.
     const initialInputs = safelySelectStringInputs(activityState).caseOf({
       just: (inputs) => normalizePartInputs(inputs),
@@ -99,23 +100,11 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
     }
   }, [uiState.model]);
 
-  // Code must guard against undefined partStates during first render.
+  // Code must be safe against undefined partStates during first render.
   const attemptState = uiState.attemptState;
   const currentPart = attemptState?.parts?.[0];
-  const currentPartId = currentPart ? castPartId(currentPart.partId) : partId;
-  const storedInput =
-    uiState.partState?.[currentPartId]?.studentInput?.[0] ??
-    ensureStr(activityState.parts[0]?.response?.input);
   const attemptGuid = attemptState?.attemptGuid ?? activityState.attemptGuid;
   const partAttemptGuid = currentPart?.attemptGuid ?? activityState.parts[0].attemptGuid;
-  if (attemptState && currentPart) {
-    console.log(
-      `LogicLabDelivery[${instanceId}] render attemptGuid=${attemptGuid} partGuid=${partAttemptGuid} input(${typeof storedInput})=${storedInput.slice(
-        0,
-        32,
-      )})`,
-    );
-  }
 
   const onMessage = useCallback(
     async (e: MessageEvent) => {
@@ -125,30 +114,23 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
         // filter so we do not process torus events.
         if (origin.host === lab.host) {
           const msg = e.data;
-          console.log(`got lab msg[${msg.attemptGuid}]: ${msg.messageType}`);
           // only lab messages from this activity for handling multiple problems on a page.
           // Parameter is named "attemptGuid" but it is just a unique instance id.
           if (isLabMessage(msg) && msg.attemptGuid === instanceId) {
-            // Lab will not send messages until initialized by next hook, so we
-            // can be sure uiState is initialized
+            // Lab will not send messages until initialized by next hook, so we can be sure
+            // attempt state in Redux store has been initialized. Fetching state as needed
+            // from store here avoids having to worry about closure over uiState going stale
             const state = store.getState();
             const attempt = state.attemptState;
             const part = attempt.parts[0];
             const currentPartId = castPartId(part.partId);
+
             switch (msg.messageType) {
               // respond to lab score request.
               case 'score':
                 if (mode === 'delivery') {
                   try {
                     const serializedInput = JSON.stringify(msg.score.input);
-                    console.log(
-                      `Submitting evaluation attemptGuid=${attempt.attemptGuid} partGuid=${
-                        part.attemptGuid
-                      } ${msg.score.score}/${msg.score.outOf} input=${serializedInput.slice(
-                        0,
-                        32,
-                      )}}`,
-                    );
                     // We don't have a concept of "selection", but setSelection action works to
                     // update the student input in the store and save to server
                     await dispatch(
@@ -168,7 +150,6 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
                     // intermediate score on an incomplete problem, but a series of attempts is
                     // needed to make Best scoring strategy work as desired on ScoreAsYouGo pages,
                     // since that strategy is applied over finalized activity attempts
-                    console.log('resetting activity');
                     setIsResetting(true);
                     await dispatch(
                       resetAction(onResetActivity, { [currentPartId]: [serializedInput] }),
@@ -179,11 +160,8 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
                     const updatedPart =
                       updatedAttempt.parts.find((p) => castPartId(p.partId) === currentPartId) ||
                       updatedAttempt.parts[0];
-                    console.log(
-                      `After resetActivity => new attemptGuid=${updatedAttempt.attemptGuid} partGuid=${updatedPart.attemptGuid}`,
-                    );
+
                     // Save immediately to carry forward input into new attempt
-                    console.log('saving input into new attempt ');
                     await dispatch(
                       setSelection(
                         castPartId(updatedPart.partId),
@@ -200,20 +178,10 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
               // respond to lab request to save state.
               case 'save':
                 if (mode === 'delivery') {
-                  if (isResetting || part.dateEvaluated) {
-                    console.log(
-                      'Skipping save: ' + isResetting
-                        ? 'reset in process'
-                        : 'attempt already evaluated',
-                    );
-                    break;
-                  }
+                  // don't save while reset in process, or if already evaluated.
+                  if (isResetting || part.dateEvaluated) break;
+
                   const serializedInput = JSON.stringify(msg.state);
-                  console.log(
-                    `saving attemptGuid=${attempt.attemptGuid} partGuid=${
-                      part.attemptGuid
-                    } input=${serializedInput.slice(0, 32)}`,
-                  );
                   try {
                     await dispatch(
                       setSelection(currentPartId, serializedInput, onSaveActivity, 'single'),
@@ -226,13 +194,9 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
               // lab is requesting activity state
               case 'load':
                 if (mode !== 'preview') {
-                  const savedInput =
-                    state.partState?.[currentPartId]?.studentInput?.[0] ??
-                    ensureStr(part.response?.input);
-                  console.log(`found saved response= ${savedInput}`);
+                  const savedInput = state.partState?.[currentPartId]?.studentInput?.[0];
                   if (savedInput && e.source) {
                     // post saved state back to lab.
-                    console.log('posting saved state back to lab');
                     try {
                       const labState: LogicLabSaveState =
                         typeof savedInput === 'string' ? JSON.parse(savedInput) : savedInput;
@@ -257,22 +221,10 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
         console.error(err);
       }
     },
-    [
-      activityState,
-      context,
-      dispatch,
-      instanceId,
-      mode,
-      model.feedback,
-      onResetActivity,
-      onSaveActivity,
-      onSubmitEvaluations,
-      store,
-    ],
+    [activityState, mode],
   );
 
   useEffect(() => {
-    console.log(`updating msg handler with attemptGuid=${attemptGuid} partGuid=${partAttemptGuid}`);
     window.addEventListener('message', onMessage);
 
     return () => window.removeEventListener('message', onMessage);
@@ -289,8 +241,6 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
       url.searchParams.append('activity', activity);
       url.searchParams.append('mode', mode);
       url.searchParams.append('attemptGuid', instanceId);
-      // only update in delivery mode.
-      console.log(`[${instanceId}] initializing lab with problem ${activity} mode ${mode}`);
       // Using promise because react's useEffect does not handle async.
       // toString because tsc does not accept the valid URL.
       fetch(url.toString(), { signal, method: 'HEAD' })
