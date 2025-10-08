@@ -11,32 +11,32 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyListTe
       # Create test data with student proficiency data similar to real component structure
       student_proficiency_data = [
         %{
-          student_id: "1",
-          student_name: "Smith, John",
+          id: 1,
+          full_name: "Smith, John",
           proficiency: 0.85,
           proficiency_range: "High"
         },
         %{
-          student_id: "2",
-          student_name: "Johnson, Alice",
+          id: 2,
+          full_name: "Johnson, Alice",
           proficiency: 0.65,
           proficiency_range: "High"
         },
         %{
-          student_id: "3",
-          student_name: "Brown, Charlie",
+          id: 3,
+          full_name: "Brown, Charlie",
           proficiency: 0.45,
           proficiency_range: "Medium"
         },
         %{
-          student_id: "4",
-          student_name: "Davis, Emma",
+          id: 4,
+          full_name: "Davis, Emma",
           proficiency: 0.25,
           proficiency_range: "Low"
         },
         %{
-          student_id: "5",
-          student_name: "Wilson, Oliver",
+          id: 5,
+          full_name: "Wilson, Oliver",
           proficiency: 0.0,
           proficiency_range: "Not enough data"
         }
@@ -179,8 +179,8 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyListTe
     test "handles empty filtered student data", %{conn: conn} do
       student_data = [
         %{
-          student_id: "1",
-          student_name: "Smith, John",
+          id: 1,
+          full_name: "Smith, John",
           proficiency: 0.85,
           proficiency_range: "High"
         }
@@ -301,8 +301,8 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyListTe
     test "handles sorting with single student", %{conn: conn} do
       single_student_data = [
         %{
-          student_id: "1",
-          student_name: "Only, Student",
+          id: 1,
+          full_name: "Only, Student",
           proficiency: 0.85,
           proficiency_range: "High"
         }

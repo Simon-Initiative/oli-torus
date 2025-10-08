@@ -179,7 +179,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyList d
     sorted =
       case sort_by do
         "student_name" ->
-          Enum.sort_by(students, &(&1.student_name || ""))
+          Enum.sort_by(students, &(&1.full_name || ""))
 
         "activities_attempted" ->
           Enum.sort_by(students, &(&1.activities_attempted_count || 0))
