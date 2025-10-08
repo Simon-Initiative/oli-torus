@@ -1,22 +1,21 @@
-defmodule OliWeb.Delivery.Content.Progress do
+defmodule OliWeb.Delivery.Content.PercentageSelector do
   use OliWeb, :html
 
   import OliWeb.Components.Delivery.Buttons, only: [toggle_chevron: 1]
 
   attr(:id, :string, default: "progress")
-  attr(:progress_percentage, :string)
-  attr(:params_from_url, :map, default: %{})
+  attr(:percentage, :string)
   attr(:target, :any)
   attr(:label, :string, default: "Progress")
   attr(:submit_event, :string, default: "apply_progress_filter")
   attr(:input_name, :string, default: "progress_percentage")
 
-  attr(:progress_selector, :atom,
+  attr(:selector, :atom,
     values: [:is_equal_to, :is_less_than_or_equal, :is_greather_than_or_equal]
   )
 
   def render(assigns) do
-    assigns = assign(assigns, :progress_selector, assigns.progress_selector)
+    assigns = assign(assigns, :selector, assigns.selector || :is_equal_to)
 
     ~H"""
     <div class="relative !z-50">
@@ -32,7 +31,7 @@ defmodule OliWeb.Delivery.Content.Progress do
           class={[
             "h-full flex-shrink-0 rounded z-10 inline-flex items-center py-2.5 px-2 text-[#353740] text-base font-semibold leading-none",
             "outline outline-1",
-            if @progress_selector not in ["", nil] do
+            if @percentage not in ["", nil] do
               "outline-[#006CD9] text-[#006CD9] dark:outline-[#4CA6FF] dark:text-[#4CA6FF]"
             else
               "outline-[#ced1d9] dark:text-[#EEEBF5] dark:outline-[#3B3740]"
@@ -40,10 +39,12 @@ defmodule OliWeb.Delivery.Content.Progress do
           ]}
           type="button"
         >
-          {@label}
-          {progress_filter_text(@params_from_url, @progress_selector, @progress_percentage)}
+          {@label} {progress_filter_text(@selector, @percentage)}
           <div class="ml-2">
-            <.toggle_chevron id={@id} map_values={@progress_selector} />
+            <.toggle_chevron
+              id={@id}
+              map_values={if @percentage not in ["", nil], do: @selector, else: %{}}
+            />
           </div>
         </button>
       </div>
@@ -62,21 +63,21 @@ defmodule OliWeb.Delivery.Content.Progress do
         <div class="progress-options mt-2">
           {radio_button(:progress, :option, "is_equal_to",
             field: "is_equal_to",
-            checked: @progress_selector == :is_equal_to,
+            checked: @selector == :is_equal_to,
             id: "#{@id}_is_equal_to"
           )}
           <label for={"#{@id}_is_equal_to"}>is =</label>
 
           {radio_button(:progress, :option, "is_less_than_or_equal",
             field: "is_less_than_or_equal",
-            checked: @progress_selector == :is_less_than_or_equal,
+            checked: @selector == :is_less_than_or_equal,
             id: "#{@id}_is_less_than_or_equal"
           )}
           <label for={"#{@id}_is_less_than_or_equal"}>&le;</label>
 
           {radio_button(:progress, :option, "is_greather_than_or_equal",
             field: "is_greather_than_or_equal",
-            checked: @progress_selector == :is_greather_than_or_equal,
+            checked: @selector == :is_greather_than_or_equal,
             id: "#{@id}_is_greather_than_or_equal"
           )}
           <label for={"#{@id}_is_greather_than_or_equal"}>&ge;</label>
@@ -87,7 +88,7 @@ defmodule OliWeb.Delivery.Content.Progress do
             min="0"
             max="100"
             name={@input_name}
-            value={@progress_percentage}
+            value={@percentage || 100}
             class="w-[75px] h-[27px] border border-slate-300 text-xs"
           />
           <span class="text-xs">&percnt;</span>
@@ -123,19 +124,19 @@ defmodule OliWeb.Delivery.Content.Progress do
     """
   end
 
-  defp progress_filter_text(_params, nil, _progress_percentage), do: nil
+  defp progress_filter_text(nil, _progress_percentage), do: nil
 
-  defp progress_filter_text(%{"progress_percentage" => _}, progress_selector, progress_percentage) do
-    progress_selector_text =
-      case progress_selector do
+  defp progress_filter_text(_selector, nil), do: nil
+
+  defp progress_filter_text(selector, percentage) do
+    selector_text =
+      case selector do
         :is_equal_to -> " is ="
         :is_less_than_or_equal -> " is <="
         :is_greather_than_or_equal -> " is >="
         nil -> ""
       end
 
-    progress_selector_text <> " #{progress_percentage}"
+    selector_text <> " #{percentage}"
   end
-
-  defp progress_filter_text(_params_from_url, _progress_selector, _progress_percentage), do: ""
 end

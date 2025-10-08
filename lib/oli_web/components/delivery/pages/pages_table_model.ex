@@ -1,4 +1,4 @@
-defmodule OliWeb.Delivery.ScoredActivities.AssessmentsTableModel do
+defmodule OliWeb.Components.Delivery.Pages.PagesTableModel do
   use Phoenix.Component
 
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
@@ -7,62 +7,70 @@ defmodule OliWeb.Delivery.ScoredActivities.AssessmentsTableModel do
   alias OliWeb.Icons
   alias Phoenix.LiveView.JS
 
-  def new(assessments, ctx, target) do
-    column_specs = [
-      %ColumnSpec{
-        name: :order,
-        label: "#",
-        th_class: "w-2"
-      },
-      %ColumnSpec{
-        name: :title,
-        label: "Page Title",
-        render_fn: &render_assessment_column/3,
-        th_class: "pl-2"
-      },
-      %ColumnSpec{
-        name: :due_date,
-        label: "Due Date",
-        render_fn: &render_due_date_column/3
-      },
-      %ColumnSpec{
-        name: :avg_score,
-        label:
-          HTMLComponents.render_label(%{
-            title: "Avg Score",
-            info_tooltip: "Average score across all student attempts on this page."
-          }),
-        render_fn: &render_avg_score_column/3,
-        td_class: "!pl-10"
-      },
-      %ColumnSpec{
-        name: :total_attempts,
-        label:
-          HTMLComponents.render_label(%{
-            title: "Total Attempts",
-            info_tooltip:
-              "Total number of attempts made by all students. Some students may have multiple attempts based on your course settings."
-          }),
-        render_fn: &render_attempts_column/3,
-        td_class: "!pl-10"
-      },
-      %ColumnSpec{
-        name: :students_completion,
-        label:
-          HTMLComponents.render_label(%{
-            title: "Student Progress",
-            info_tooltip: "Average progress on this page across all students."
-          }),
-        render_fn: &render_students_completion_column/3,
-        td_class: "!pl-10"
-      }
-    ]
+  def new(pages, ctx, active_tab, target) do
+    column_specs =
+      [
+        %ColumnSpec{
+          name: :order,
+          label: "#",
+          th_class: "w-2"
+        },
+        %ColumnSpec{
+          name: :title,
+          label: "Page Title",
+          render_fn: &render_assessment_column/3,
+          th_class: "pl-2"
+        }
+      ] ++
+        if(active_tab == :scored_pages,
+          do: [
+            %ColumnSpec{
+              name: :due_date,
+              label: "Due Date",
+              render_fn: &render_due_date_column/3
+            }
+          ],
+          else: []
+        ) ++
+        [
+          %ColumnSpec{
+            name: :avg_score,
+            label:
+              HTMLComponents.render_label(%{
+                title: "Avg Score",
+                info_tooltip: "Average score across all student attempts on this page."
+              }),
+            render_fn: &render_avg_score_column/3,
+            td_class: "!pl-10"
+          },
+          %ColumnSpec{
+            name: :total_attempts,
+            label:
+              HTMLComponents.render_label(%{
+                title: "Total Attempts",
+                info_tooltip:
+                  "Total number of attempts made by all students. Some students may have multiple attempts based on your course settings."
+              }),
+            render_fn: &render_attempts_column/3,
+            td_class: "!pl-10"
+          },
+          %ColumnSpec{
+            name: :students_completion,
+            label:
+              HTMLComponents.render_label(%{
+                title: "Student Progress",
+                info_tooltip: "Average progress on this page across all students."
+              }),
+            render_fn: &render_students_completion_column/3,
+            td_class: "!pl-10"
+          }
+        ]
 
     SortableTableModel.new(
-      rows: assessments,
+      rows: pages,
       column_specs: column_specs,
       event_suffix: "",
-      id_field: [:id],
+      id_field: [:resource_id],
       data: %{
         ctx: ctx,
         target: target

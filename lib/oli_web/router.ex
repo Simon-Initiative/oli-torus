@@ -1154,7 +1154,7 @@ defmodule OliWeb.Router do
       live("/:view/:active_tab", Delivery.InstructorDashboard.InstructorDashboardLive)
 
       live(
-        "/:view/:active_tab/:assessment_id",
+        "/:view/:active_tab/:resource_id",
         Delivery.InstructorDashboard.InstructorDashboardLive
       )
 
