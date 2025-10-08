@@ -206,7 +206,7 @@ jobs:
           echo "Codex binary: $(command -v codex || echo 'not found')"
           codex --version || true
 
-          codex login --api-key "${OPENAI_API_KEY}"
+          printenv OPENAI_API_KEY | codex login --with-api-key
 
           codex exec --full-auto --skip-git-repo-check < ai/prompt.${ROLE}.txt > ai/${ROLE}.raw.txt || true
 
