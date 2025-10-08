@@ -185,6 +185,7 @@ const Adaptive = (
           backgroundColor={props.model.content?.custom?.palette.backgroundColor || '#fff'}
           selected={selectedPartId}
           parts={parts}
+          responsiveLayout={props.responsiveLayout}
           onChange={handleLayoutChange}
           onCopyPart={handleCopyComponent}
           onConfigurePart={handleConfigurePart}

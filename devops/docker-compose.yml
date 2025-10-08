@@ -1,6 +1,7 @@
 services:
   app:
     image: ghcr.io/simon-initiative/oli-torus:${APP_IMAGE_TAG}
+    restart: unless-stopped
     hostname: ${HOST}
     depends_on:
       postgres:
@@ -66,6 +67,7 @@ services:
 
   postgres:
     image: ankane/pgvector
+    restart: unless-stopped
     logging:
       driver: "json-file"
       options:
@@ -86,6 +88,7 @@ services:
 
   minio:
     image: minio/minio
+    restart: unless-stopped
     environment:
       MINIO_ROOT_USER: minio-user
       MINIO_ROOT_PASSWORD: minio-password

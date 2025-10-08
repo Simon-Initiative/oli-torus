@@ -64,7 +64,17 @@ defmodule Oli.Application do
         # Starts Cachex to store page content info
         Oli.Delivery.DistributedDepotCoordinator,
         Oli.Delivery.DepotWarmer,
-        {Cachex, name: :page_content_cache},
+        Supervisor.child_spec({Cachex, name: :page_content_cache}, id: :page_content_cache),
+
+        # Cache assistant replies for AI page triggers (per-node, capped)
+        Supervisor.child_spec(
+          {
+            Cachex,
+            # Keep at most 10k entries, evict oldest first
+            name: :ai_page_trigger_reply_cache, limit: 10_000, policy: Cachex.Policy.LRW
+          },
+          id: :ai_page_trigger_reply_cache
+        ),
 
         # Starts Cachex to store vr user agents
         Oli.VrLookupCache,

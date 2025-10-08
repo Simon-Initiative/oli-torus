@@ -45,18 +45,45 @@ defmodule OliWeb.UserSessionController do
   defp maybe_add_flash_message(conn, nil), do: conn
   defp maybe_add_flash_message(conn, message), do: conn |> put_flash(:info, message)
 
-  def delete(conn, _params) do
+  def delete(conn, params) do
     user = Map.get(conn.assigns, :current_user)
 
     redirect_to =
-      if !is_nil(user) && Sections.is_independent_instructor?(user) do
-        ~p"/instructors/log_in"
-      else
-        ~p"/"
+      case build_redirect_path(params["request_path"]) do
+        nil ->
+          if !is_nil(user) && Sections.is_independent_instructor?(user) do
+            ~p"/instructors/log_in"
+          else
+            ~p"/"
+          end
+
+        request_path ->
+          request_path
       end
 
     conn
     |> put_flash(:info, "Logged out successfully.")
     |> UserAuth.log_out_user(%{"redirect_to" => redirect_to})
   end
+
+  defp build_redirect_path(request_path) when is_binary(request_path) do
+    request_path
+    |> String.trim()
+    |> case do
+      "" ->
+        nil
+
+      "/" <> _ = value ->
+        if String.starts_with?(value, "//") do
+          nil
+        else
+          value
+        end
+
+      _ ->
+        nil
+    end
+  end
+
+  defp build_redirect_path(_), do: nil
 end

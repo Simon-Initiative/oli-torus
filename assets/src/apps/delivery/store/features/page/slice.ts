@@ -28,6 +28,7 @@ export interface PageState {
   screenIdleTimeOutInSeconds: number;
   screenIdleExpireTime?: number;
   reviewMode?: boolean;
+  responsiveLayout?: boolean;
 }
 
 const initialState: PageState = {
@@ -54,6 +55,7 @@ const initialState: PageState = {
   blobStorageProvider: 'deprecated',
   screenIdleTimeOutInSeconds: 1800,
   reviewMode: false,
+  responsiveLayout: false,
 };
 
 const pageSlice = createSlice({
@@ -72,6 +74,7 @@ const pageSlice = createSlice({
         action.payload?.content?.custom?.allowNavigation ||
         action.payload?.content?.custom?.enableHistory ||
         false;
+      state.responsiveLayout = action.payload?.content?.custom?.responsiveLayout || false;
       state.resourceAttemptGuid = action.payload.resourceAttemptGuid;
       state.resourceAttemptState = action.payload.resourceAttemptState;
       state.activityGuidMapping = action.payload.activityGuidMapping;
@@ -130,6 +133,10 @@ export const selectPreviewMode = createSelector(selectState, (state) => state.pr
 export const selectReviewMode = createSelector(selectState, (state) => state.reviewMode);
 export const selectIsInstructor = createSelector(selectState, (state) => state.isInstructor);
 export const selectEnableHistory = createSelector(selectState, (state) => state.enableHistory);
+export const selectResponsiveLayout = createSelector(
+  selectState,
+  (state) => state.responsiveLayout,
+);
 
 export const selectShowHistory = createSelector(selectState, (state) => state.showHistory);
 export const selectScreenIdleTimeOutInSeconds = createSelector(

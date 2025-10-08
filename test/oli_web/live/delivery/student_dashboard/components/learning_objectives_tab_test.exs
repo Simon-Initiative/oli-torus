@@ -80,6 +80,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.LearningObjectivesTabTest 
       {:ok, publication} = Oli.Publishing.publish_project(project, "some changes", author.id)
       Sections.update_section_project_publication(section, project.id, publication.id)
       Sections.rebuild_section_resources(section: section, publication: publication)
+      Sections.PostProcessing.apply(section, :all)
 
       {:ok, view, _html} =
         live(

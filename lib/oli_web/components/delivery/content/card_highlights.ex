@@ -44,6 +44,7 @@ defmodule OliWeb.Components.Delivery.CardHighlights do
         :modules -> "Module"
         :students -> "Student"
         :pages -> "Page"
+        :questions -> "Question"
         _ -> to_string(type || "")
       end
 

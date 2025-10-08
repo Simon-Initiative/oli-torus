@@ -139,6 +139,11 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
   attr :additional_table_class, :string, default: "table-sm"
   attr :additional_row_class, :string, default: ""
 
+  attr :details_render_fn, :any,
+    default: nil,
+    doc:
+      "Optional function to render custom expandable row content. Function receives (assigns, row) and returns rendered content."
+
   def render(assigns) do
     ~H"""
     <table class={"min-w-full border table-fixed " <> @additional_table_class}>
@@ -189,7 +194,8 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
                   sort: @sort,
                   select: @select,
                   additional_table_class: @additional_table_class,
-                  index: index
+                  index: index,
+                  details_render_fn: @details_render_fn
                 },
                 @model.data
               ),
@@ -210,14 +216,14 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
     col_span = length(assigns.model.column_specs)
     unique_id = "row_#{row.resource_id}_#{assigns.index}"
 
-    assigns = Map.merge(assigns, %{col_span: col_span, unique_id: unique_id})
+    assigns = Map.merge(assigns, %{col_span: col_span, unique_id: unique_id, row: row})
 
     ~H"""
     <tr id={"details-#{@unique_id}"} class="hidden">
-      <td colspan={@col_span} class="bg-gray-50 dark:bg-gray-900 p-4">
-        <div class="text-sm text-gray-700 dark:text-gray-200">
-          Information will go here.
-        </div>
+      <td colspan={@col_span} class="bg-Table-table-hover p-4">
+        <%= if @details_render_fn do %>
+          {@details_render_fn.(assigns, @row)}
+        <% end %>
       </td>
     </tr>
     """

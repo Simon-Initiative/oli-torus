@@ -45,6 +45,58 @@ const partSchema: JSONSchema7 = {
   required: ['id'],
 };
 
+export const responsivePartSchema: JSONSchema7 = {
+  type: 'object',
+  properties: {
+    id: { type: 'string', title: 'Id' },
+    type: { type: 'string', title: 'Type' },
+    Position: {
+      type: 'object',
+      title: 'Dimensions',
+      properties: {
+        x: { type: 'number' },
+        y: { type: 'number' },
+        z: { type: 'number' },
+      },
+    },
+    Size: {
+      type: 'object',
+      title: 'Dimensions',
+      properties: {
+        width: {
+          type: 'number',
+          title: 'Width',
+          default: 960,
+          anyOf: [
+            { const: 960, title: '100%' },
+            { const: 470, title: '50% align left' },
+            { const: 471, title: '50% align right' },
+          ],
+        },
+        height: { type: 'number', title: 'Height' },
+      },
+    },
+    Scoring: {
+      type: 'object',
+      title: 'Scoring',
+      properties: {
+        requiresManualGrading: {
+          title: 'Requires Manual Grading',
+          type: 'boolean',
+          format: 'checkbox',
+          default: false,
+        },
+        maxScore: {
+          title: 'Max Score',
+          type: 'number',
+        },
+      },
+    },
+    custom: { type: 'object', properties: { addtionalProperties: { type: 'string' } } },
+  },
+  required: ['id'],
+};
+
 export const simplifiedPartSchema: JSONSchema7 = {
   type: 'object',
   properties: {},

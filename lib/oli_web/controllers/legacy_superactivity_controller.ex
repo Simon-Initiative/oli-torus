@@ -452,10 +452,11 @@ defmodule OliWeb.LegacySuperactivityController do
         client_evaluations =
           Enum.reduce(part_attempts, [], fn p, acc ->
             case p.date_evaluated do
-              nil -> acc ++ [create_evaluation(context, 0, 100, p)]
-              _ -> acc
+              nil -> [create_evaluation(context, 0, 100, p) | acc]
+              _ -> [create_evaluation(context, p.score, p.out_of, p) | acc]
             end
           end)
+          |> Enum.reverse()
 
         Repo.transaction(fn ->
           if length(client_evaluations) > 0 do
@@ -496,6 +497,8 @@ defmodule OliWeb.LegacySuperactivityController do
   end
 
   defp eval_numeric_score(%LegacySuperactivityContext{} = context, score, out_of, part_attempt) do
+    Attempts.update_part_attempt(part_attempt, %{score: score, out_of: out_of})
+
     client_evaluations = [
       create_evaluation(context, score, out_of, part_attempt)
     ]

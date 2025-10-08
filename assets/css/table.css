@@ -1,9 +1,21 @@
 .instructor_dashboard_table {
-  @apply border-r-0 border-l-0 font-sans not-italic text-sm bg-white dark:bg-gray-800;
+  @apply border-r-0 border-l-0 font-sans not-italic text-sm  border-t border-Table-table-border;
+}
+
+.instructor_dashboard_table thead tr {
+  @apply text-Text-text-high bg-Table-table-top-row border border-b border-t border-l-0 border-r-0 border-Table-table-border;
+}
+
+.instructor_dashboard_table thead tr th {
+  @apply bg-transparent !border-r-0 !border-l-0;
+}
+
+.instructor_dashboard_table thead tr th:first-child {
+  @apply bg-Table-table-top-row;
 }
 
 .instructor_dashboard_table th {
-  @apply h-[50px] border-r-0 border-l-0 bg-Background-bg-secondary text-Text-text-high border-b border-Border-border-default text-left font-normal text-xs sm:text-sm relative;
+  @apply h-[50px] text-left font-normal text-xs sm:text-sm relative;
 }
 
 .instructor_dashboard_table th[data-sort-column='true'] {
@@ -15,7 +27,7 @@
 }
 
 .instructor_dashboard_table tr {
-  @apply h-[50px] text-Text-text-high font-semibold text-xs sm:text-sm border-t border-Border-border-default;
+  @apply h-[50px] text-Text-text-high font-semibold text-xs sm:text-sm border-t border-r-0 border-l-0 border-Border-border-default;
 }
 
 .instructor_dashboard_table td {

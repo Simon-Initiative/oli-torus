@@ -95,6 +95,12 @@ defmodule Oli.Delivery.Sections.SectionResource do
     field :objectives, :map, default: %{}
     field :relates_to, {:array, :id}, default: []
     field :allow_hints, :boolean, default: false
+
+    # Pre-calculated array of related activity resource IDs for performance optimization.
+    # This field is only meaningful for section resources of type objective (or subobjective).
+    # It stores the resource IDs of activities that reference this objective in their objectives map.
+    field :related_activities, {:array, :id}, default: []
+
     belongs_to :resource_type, Oli.Resources.ResourceType
     belongs_to :revision, Oli.Resources.Revision
     belongs_to :activity_type, Oli.Activities.ActivityRegistration
@@ -147,6 +153,7 @@ defmodule Oli.Delivery.Sections.SectionResource do
       :objectives,
       :relates_to,
       :allow_hints,
+      :related_activities,
       :resource_type_id,
       :revision_id,
       :activity_type_id
