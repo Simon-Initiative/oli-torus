@@ -58,8 +58,8 @@ export type LogicLabSaveState = {
     best: LabScore;
     activityType: string;
     objectives: Objective<string, unknown>[];
-  }
-}
+  };
+};
 
 export interface Score {
   score: number;
