@@ -8,6 +8,7 @@ import { ActivityModelSchema, MediaItemRequest, PostUndoable } from './types';
 export interface AuthoringElementState<T> {
   projectSlug: string;
   editMode: boolean;
+  responsiveLayout?: boolean;
   mode?: 'authoring' | 'instructor_preview';
   authoringContext: any;
   onEdit: (model: T) => void;
@@ -30,6 +31,7 @@ export function useAuthoringElementContext<T>() {
 export const AuthoringElementProvider: React.FC<AuthoringElementProps<ActivityModelSchema>> = ({
   projectSlug,
   editMode,
+  responsiveLayout,
   mode,
   children,
   model,
@@ -61,6 +63,7 @@ export const AuthoringElementProvider: React.FC<AuthoringElementProps<ActivityMo
       value={{
         projectSlug,
         editMode,
+        responsiveLayout,
         mode,
         onEdit,
         dispatch,

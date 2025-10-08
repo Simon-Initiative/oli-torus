@@ -10,7 +10,7 @@ export interface JanusAbsolutePositioned extends CustomProperties {
   x?: number;
   y?: number;
   z?: number;
-  width?: number;
+  width?: number | string;
   height?: number;
 }
 

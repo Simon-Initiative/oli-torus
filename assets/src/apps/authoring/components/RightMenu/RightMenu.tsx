@@ -196,6 +196,19 @@ const RightMenu: React.FC<any> = () => {
     (properties: object) => {
       const modelChanges = transformLessonSchema(properties);
 
+      // Handle responsive layout toggle - adjust default screen width
+      if (modelChanges.custom?.responsiveLayout !== undefined) {
+        const isResponsiveLayout = modelChanges.custom.responsiveLayout;
+        const currentWidth = currentLesson.custom?.defaultScreenWidth || 1000;
+
+        // Set default width based on responsive layout setting
+        if (isResponsiveLayout && currentWidth < 1200) {
+          modelChanges.custom.defaultScreenWidth = 1200;
+        } else if (!isResponsiveLayout && currentWidth >= 1200) {
+          modelChanges.custom.defaultScreenWidth = 1000;
+        }
+      }
+
       // special consideration for legacy stylesheets
       if (modelChanges.additionalStylesheets[0] === null) {
         modelChanges.additionalStylesheets[0] = (currentLesson.additionalStylesheets || [])[0];
