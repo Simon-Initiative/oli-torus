@@ -706,16 +706,15 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
             {parts.map((part: AnyPartComponent, idx: number) => {
               // Determine width class and alignment for responsive layout
               const widthClass =
-                part.custom.width === 960 || part.custom.width === '100%' ||
+                part.custom.width === 960 ||
+                part.custom.width === '100%' ||
                 typeof part.custom.width !== 'number' ||
                 part.custom.width === undefined ||
                 part.custom.width === null
                   ? 'full-width'
                   : 'half-width';
               const alignmentClass =
-                part.custom.width === 471
-                  ? 'responsive-align-right'
-                  : 'responsive-align-left';
+                part.custom.width === 471 ? 'responsive-align-right' : 'responsive-align-left';
 
               return (
                 <div

@@ -21,7 +21,6 @@
       width: 100%;
       margin-bottom: 20px;
       clear: both;
-      background-color: rgba(0, 255, 0, 0.1); // Green background for full width
     }
 
     &.half-width {
@@ -40,7 +39,6 @@
   .responsive-align-left {
     float: left;
     margin-right: 20px;
-    background-color: rgba(0, 0, 255, 0.2); // Blue background for left alignment
     clear: left; // Only clear left floats, allow natural flow
 
     & + .responsive-align-left {
@@ -50,7 +48,6 @@
 
   .responsive-align-right {
     float: right;
-    background-color: rgba(255, 0, 0, 0.2); // Red background for right alignment
     clear: right; // Ensure each right part starts below the previous one
 
     & + .responsive-align-right {
