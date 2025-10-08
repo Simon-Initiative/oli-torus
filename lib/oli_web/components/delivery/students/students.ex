@@ -6,7 +6,7 @@ defmodule OliWeb.Components.Delivery.Students do
   alias Oli.Delivery.Metrics
   alias OliWeb.Common.{SearchInput, Params, StripedPagedTable, Utils}
   alias OliWeb.Components.Delivery.CardHighlights
-  alias OliWeb.Delivery.Content.{Progress, MultiSelect, SelectDropdown}
+  alias OliWeb.Delivery.Content.{PercentageSelector, MultiSelect, SelectDropdown}
   alias OliWeb.Delivery.InstructorDashboard.Helpers
   alias OliWeb.Delivery.InstructorDashboard.HTMLComponents
   alias OliWeb.Delivery.Sections.EnrollmentsTableModel
@@ -28,7 +28,7 @@ defmodule OliWeb.Components.Delivery.Students do
     selected_card_value: nil,
     container_filter_by: :students,
     navigation_data: Jason.encode!(%{}),
-    progress_percentage: 100,
+    progress_percentage: nil,
     progress_selector: nil,
     selected_proficiency_ids: Jason.encode!([])
   }
@@ -593,10 +593,10 @@ defmodule OliWeb.Components.Delivery.Students do
               />
             </form>
 
-            <Progress.render
+            <PercentageSelector.render
               target={@myself}
-              progress_percentage={@params.progress_percentage}
-              progress_selector={@params.progress_selector}
+              percentage={@params.progress_percentage}
+              selector={@params.progress_selector}
             />
 
             <MultiSelect.render

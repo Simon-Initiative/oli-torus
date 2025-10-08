@@ -61,6 +61,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
         data:
           Map.merge(objectives_table_model.data, %{
             section_slug: section_slug,
+            section_id: assigns[:section_id],
             current_params: params
           })
       })
@@ -228,6 +229,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
               show_bottom_paging={false}
               allow_selection={true}
               additional_row_class="!h-20"
+              details_render_fn={&ObjectivesTableModel.render_objective_details/2}
             />
           </div>
         <% else %>

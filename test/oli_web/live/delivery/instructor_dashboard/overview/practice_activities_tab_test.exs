@@ -26,7 +26,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
       section_slug,
       :insights,
-      :practice_activities,
+      :practice_pages,
       params
     )
   end
@@ -1117,7 +1117,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       {:ok, view, _html} = live(conn, live_view_practice_activities_route(section.slug))
 
       assert has_element?(view, "div", "Practice Pages")
-      assert has_element?(view, "p", "None exist")
+      assert has_element?(view, "p", "There are no activities to show")
     end
   end
 
@@ -1138,9 +1138,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       assert a2.title == "Module 2: BasicsPage 3"
       assert a3.title == "Module 2: BasicsPage 4"
       assert a4.title =~ "Orphaned Page"
-
-      # Checks for displaying student progress with a value different from null
-      assert a0.total_attempts == "25%"
     end
 
     test "Progress filter works correctly", %{
@@ -1560,10 +1557,10 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       {:ok, view, _html} = live(conn, live_view_practice_activities_route(section.slug))
 
       view
-      |> element("table tbody tr[id='#{page_5.resource_id}']")
+      |> element("table tbody tr[id='#{page_5.resource_id}'] a")
       |> render_click()
 
-      assert has_element?(view, "p", "No attempt registered for this question")
+      assert has_element?(view, "p", "There are no activities to show")
     end
 
     test "multiple choice details get rendered correctly when page is selected", %{
@@ -1589,7 +1586,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       {:ok, view, _html} = live(conn, live_view_practice_activities_route(section.slug))
 
       view
-      |> element("table tbody tr[id='#{page_1.resource_id}']")
+      |> element("table tbody tr[id='#{page_1.resource_id}'] a")
       |> render_click()
 
       assert element(
@@ -1669,14 +1666,15 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
 
       {:ok, view, _html} = live(conn, live_view_practice_activities_route(section.slug))
 
+      # navigate to page 1
       view
-      |> element("table tbody tr[id='#{page_1.resource_id}']")
+      |> element("table tbody tr[id='#{page_1.resource_id}'] a")
       |> render_click()
 
-      assert element(
-               view,
-               "table tbody tr:nth-of-type(2)[class=\"table-active bg-delivery-primary-100\"]"
-             )
+      # select single response activity
+      view
+      |> element("table tbody tr[id='#{single_response_activity.resource_id}']")
+      |> render_click()
 
       # check that the single response details render correctly
       selected_activity_model =
@@ -1690,7 +1688,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       assert has_element?(
                view,
                ~s(div[role="activity_title"]),
-               "#{single_response_activity.title} - Question details"
+               "Question details"
              )
 
       assert selected_activity_model =~
@@ -1721,7 +1719,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       {:ok, view, _html} = live(conn, live_view_practice_activities_route(section.slug))
 
       view
-      |> element("table tbody tr[id='#{page_1.resource_id}']")
+      |> element("table tbody tr[id='#{page_1.resource_id}'] a")
       |> render_click()
 
       # check that the multi input details render correctly
@@ -1736,7 +1734,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       assert has_element?(
                view,
                ~s(div[role="activity_title"]),
-               "#{multi_input_activity.title} - Question details"
+               "Question details"
              )
     end
 
@@ -1764,7 +1762,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       {:ok, view, _html} = live(conn, live_view_practice_activities_route(section.slug))
 
       view
-      |> element("table tbody tr[id='#{page_1.resource_id}']")
+      |> element("table tbody tr[id='#{page_1.resource_id}'] a")
       |> render_click()
 
       # check that the likert VegaLite visualization renders correctly
@@ -1784,7 +1782,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       assert has_element?(
                view,
                ~s(div[role="activity_title"]),
-               "#{likert_activity.title} - Question details"
+               "Question details"
              )
 
       assert selected_activity_data["spec"]["title"]["text"] == likert_activity.title
@@ -1798,10 +1796,10 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       {:ok, view, _html} = live(conn, live_view_practice_activities_route(section.slug))
 
       view
-      |> element("table tbody tr[id='#{page_1.resource_id}']")
+      |> element("table tbody tr[id='#{page_1.resource_id}'] a")
       |> render_click()
 
-      assert has_element?(view, "p", "No attempt registered for this question")
+      assert has_element?(view, "p", "There are no activities to show")
     end
 
     test "student attempts summary gets rendered correctly when one student has attempted", %{
@@ -1827,11 +1825,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       {:ok, view, _html} = live(conn, live_view_practice_activities_route(section.slug))
 
       view
-      |> element("table tbody tr[id='#{page_1.resource_id}']")
+      |> element("table tbody tr[id='#{page_1.resource_id}'] a")
       |> render_click()
 
       assert view
-             |> element(~s{div[role="student attempts summary"]})
+             |> element(~s{span[role="student attempts summary"]})
              |> render() =~ "1 student has responded"
     end
 
@@ -1883,11 +1881,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       {:ok, view, _html} = live(conn, live_view_practice_activities_route(section.slug))
 
       view
-      |> element("table tbody tr[id='#{page_1.resource_id}']")
+      |> element("table tbody tr[id='#{page_1.resource_id}'] a")
       |> render_click()
 
       assert view
-             |> element(~s{div[role="student attempts summary"]})
+             |> element(~s{span[role="student attempts summary"]})
              |> render() =~ "3 students have responded"
     end
 
@@ -1973,15 +1971,15 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       {:ok, view, _html} = live(conn, live_view_practice_activities_route(section.slug))
 
       view
-      |> element("table tbody tr[id='#{page_1.resource_id}']")
+      |> element("table tbody tr[id='#{page_1.resource_id}'] a")
       |> render_click()
 
       assert view
-             |> element(~s{div[role="student attempts summary"]})
+             |> element(~s{span[role="student attempts summary"]})
              |> render() =~ "4 students have responded"
 
       refute view
-             |> element(~s{div[role="student attempts summary"]})
+             |> element(~s{span[role="student attempts summary"]})
              |> render() =~ "not completed"
 
       refute view

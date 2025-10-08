@@ -59,6 +59,7 @@ interface ActivityRendererProps {
   adaptivityDomain?: string; // currently 'stage' or 'app'
   isEverApp?: boolean;
   blobStorageProvider: 'deprecated' | 'new';
+  responsiveLayout?: boolean;
 }
 
 const defaultHandler = async () => {
@@ -92,6 +93,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
   adaptivityDomain = 'stage',
   isEverApp = false,
   blobStorageProvider,
+  responsiveLayout = false,
 }) => {
   const isPreviewMode = useSelector(selectPreviewMode);
   const isReviewMode = useSelector(selectReviewMode);
@@ -680,6 +682,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       surveyId: null,
       bibParams: null,
       pageAttemptGuid: '', // TODO: don't think we use this currently, but might be good to have
+      responsiveLayout,
     }),
     mode: isPreviewMode ? 'preview' : 'delivery', // TODO: review
     model,

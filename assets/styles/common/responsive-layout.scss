@@ -1,0 +1,75 @@
+.advance-authoring-responsive-layout {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 20px;
+  box-sizing: border-box;
+
+  &::after {
+    content: '';
+    display: table;
+    clear: both;
+  }
+
+  // Responsive Items
+  .responsive-item {
+    position: relative;
+    border: none;
+    display: block;
+
+    &.full-width {
+      width: 100%;
+      margin-bottom: 20px;
+      clear: both;
+    }
+
+    &.half-width {
+      width: calc(50% - 10px);
+      margin-bottom: 20px;
+    }
+  }
+
+  // Alignment Styles
+  .responsive-align-left,
+  .responsive-align-right {
+    margin-bottom: 20px;
+    width: calc(50% - 10px);
+  }
+
+  .responsive-align-left {
+    float: left;
+    margin-right: 20px;
+    clear: left; // Only clear left floats, allow natural flow
+
+    & + .responsive-align-left {
+      margin-top: 0;
+    }
+  }
+
+  .responsive-align-right {
+    float: right;
+    clear: right; // Ensure each right part starts below the previous one
+
+    & + .responsive-align-right {
+      margin-top: 0;
+      clear: right;
+    }
+
+    // Allow left parts to flow naturally after right parts
+    & + .responsive-align-left {
+      clear: none;
+    }
+  }
+
+  // Draggable Overrides
+  .react-draggable {
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    width: 100% !important;
+
+    .react-resizable-handle {
+      display: none;
+    }
+  }
+}

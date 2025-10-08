@@ -46,6 +46,12 @@ const lessonSchema: JSONSchema7 = {
               type: 'string',
               title: 'Custom CSS URL',
             },
+            responsiveLayout: {
+              type: 'boolean',
+              title: 'Responsive Layout',
+              description: 'Use responsive layout for parts instead of fixed positioning',
+              default: false,
+            },
             backgroundImageURL: {
               type: 'string',
               title: 'Background Image URL',
@@ -265,6 +271,10 @@ export const lessonUiSchema: UiSchema = {
       backgroundImageURL: {
         'ui:widget': 'TorusImageBrowser',
       },
+      responsiveLayout: {
+        'ui:title': 'Enable Responsive Layout',
+        classNames: 'col-span-12',
+      },
     },
     FinishPanel: {
       'ui:ObjectFieldTemplate': CustomFieldTemplate,
@@ -311,6 +321,7 @@ export const transformModelToSchema = (model: any) => {
         backgroundImageScaleContent: model.custom.backgroundImageScaleContent,
         displayApplicationChrome: model.displayApplicationChrome,
         darkModeSetting: model.custom.darkModeSetting || false,
+        responsiveLayout: model.custom.responsiveLayout || false,
       },
       FinishPanel: {
         logoutMessage: model.custom.logoutMessage,
@@ -362,6 +373,7 @@ export const transformSchemaToModel = (schema: any) => {
       backgroundImageURL: schema.Properties.Appearance.backgroundImageURL,
       backgroundImageScaleContent: schema.Properties.Appearance.backgroundImageScaleContent,
       darkModeSetting: schema.Properties.Appearance.darkModeSetting,
+      responsiveLayout: schema.Properties.Appearance.responsiveLayout,
       grid: schema.Properties.InterfaceSettings.grid,
       centerpoint: schema.Properties.InterfaceSettings.centerpoint,
       columnGuides: schema.Properties.InterfaceSettings.columnGuides,

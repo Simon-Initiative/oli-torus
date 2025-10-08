@@ -1,4 +1,4 @@
-defmodule OliWeb.Delivery.ScoredActivities.ActivitiesTableModel do
+defmodule OliWeb.Delivery.Pages.ActivitiesTableModel do
   use Phoenix.Component
 
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
