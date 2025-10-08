@@ -5,7 +5,6 @@ defmodule OliWeb.LiveSessionPlugs.RequireEnrollmentTest do
 
   alias Phoenix.LiveView
   alias OliWeb.LiveSessionPlugs.RequireEnrollment
-  alias Oli.Delivery.Sections
 
   setup %{conn: conn} do
     conn =
@@ -19,25 +18,31 @@ defmodule OliWeb.LiveSessionPlugs.RequireEnrollmentTest do
     %{user: user, author: author, conn: conn}
   end
 
-  describe "on_mount: :default with section that doesn't require enrollment" do
-    test "auto-enrolls user and sets is_enrolled when section requires_enrollment is false and user is independent",
+  describe "on_mount: :default with section_slug" do
+    test "redirects learner to enroll page when user is not enrolled",
          %{
            user: user
          } do
-      section = insert(:section, requires_enrollment: false)
+      section = insert(:section)
 
       socket = %LiveView.Socket{
         endpoint: OliWeb.Endpoint,
         assigns: %{__changed__: %{}, current_user: user, current_author: nil, section: section}
       }
 
-      assert {:cont, updated_socket} = RequireEnrollment.on_mount(:default, %{}, %{}, socket)
-      assert updated_socket.assigns.is_enrolled == true
+      assert {:halt, redirected_socket} =
+               RequireEnrollment.on_mount(
+                 :default,
+                 %{"section_slug" => section.slug},
+                 %{},
+                 socket
+               )
 
-      assert Sections.is_enrolled?(user.id, section.slug)
+      assert {:redirect, %{to: redirected_to}} = redirected_socket.redirected
+      assert redirected_to == "/sections/#{section.slug}/enroll"
     end
 
-    test "falls through to default clause when current_user is nil" do
+    test "redirects to login when current_user is nil" do
       section = insert(:section, requires_enrollment: false)
 
       socket = %LiveView.Socket{
@@ -45,13 +50,22 @@ defmodule OliWeb.LiveSessionPlugs.RequireEnrollmentTest do
         assigns: %{__changed__: %{}, current_user: nil, section: section}
       }
 
-      assert {:cont, ^socket} = RequireEnrollment.on_mount(:default, %{}, %{}, socket)
+      assert {:halt, redirected_socket} =
+               RequireEnrollment.on_mount(
+                 :default,
+                 %{"section_slug" => section.slug},
+                 %{},
+                 socket
+               )
+
+      assert {:redirect, %{to: redirected_to}} = redirected_socket.redirected
+      assert redirected_to == "/users/log_in?request_path=%2Fsections%2F#{section.slug}"
     end
 
     test "redirects to student workspace when user enrollment is not allowed" do
-      section = insert(:section, open_and_free: true, requires_enrollment: false)
+      section = insert(:section, open_and_free: true, registration_open: false)
 
-      user = insert(:user, independent_learner: false)
+      user = insert(:user)
 
       socket = %LiveView.Socket{
         endpoint: OliWeb.Endpoint,
@@ -59,29 +73,18 @@ defmodule OliWeb.LiveSessionPlugs.RequireEnrollmentTest do
       }
 
       assert {:halt, redirected_socket} =
-               RequireEnrollment.on_mount(:default, %{}, %{}, socket)
+               RequireEnrollment.on_mount(
+                 :default,
+                 %{"section_slug" => section.slug},
+                 %{},
+                 socket
+               )
 
-      assert redirected_socket.redirected
+      assert {:redirect, %{to: "/workspaces/student"}} = redirected_socket.redirected
+
+      assert redirected_socket.assigns.flash["error"] == "You are not enrolled in this course"
     end
 
-    test "skips auto-enrollment when user is already enrolled" do
-      section = insert(:section, requires_enrollment: false)
-
-      user = insert(:user)
-      insert(:enrollment, user: user, section: section)
-
-      socket = %LiveView.Socket{
-        endpoint: OliWeb.Endpoint,
-        assigns: %{__changed__: %{}, current_user: user, current_author: nil, section: section}
-      }
-
-      assert {:cont, updated_socket} = RequireEnrollment.on_mount(:default, %{}, %{}, socket)
-      assert updated_socket.assigns.is_enrolled == true
-      assert Sections.is_enrolled?(user.id, section.slug)
-    end
-  end
-
-  describe "on_mount: :default with section_slug" do
     test "allows access for admin author", %{author: author} do
       author = %{author | system_role_id: 2}
 
@@ -99,40 +102,6 @@ defmodule OliWeb.LiveSessionPlugs.RequireEnrollmentTest do
                )
 
       assert updated_socket.assigns.is_enrolled == true
-    end
-
-    test "redirects to login when no user is present" do
-      socket = %LiveView.Socket{
-        endpoint: OliWeb.Endpoint,
-        assigns: %{__changed__: %{}, current_user: nil, flash: %{}}
-      }
-
-      assert {:halt, redirected_socket} =
-               RequireEnrollment.on_mount(
-                 :default,
-                 %{"section_slug" => "test_section"},
-                 %{},
-                 socket
-               )
-
-      assert redirected_socket.redirected
-    end
-
-    test "redirects to student workspace when user is not enrolled", %{user: user} do
-      socket = %LiveView.Socket{
-        endpoint: OliWeb.Endpoint,
-        assigns: %{__changed__: %{}, current_user: user, current_author: nil, flash: %{}}
-      }
-
-      assert {:halt, redirected_socket} =
-               RequireEnrollment.on_mount(
-                 :default,
-                 %{"section_slug" => "nonexistent_section"},
-                 %{},
-                 socket
-               )
-
-      assert redirected_socket.redirected
     end
 
     test "allows access when user is enrolled", %{user: user} do
