@@ -104,6 +104,9 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
             id={"student-proficiency-list-#{@unique_id}"}
             selected_proficiency_level={@selected_proficiency_level}
             student_proficiency={@student_proficiency}
+            section_slug={@section_slug}
+            section_title={@section_title}
+            instructor_email={@current_user.email}
           />
         </div>
       <% end %>
@@ -265,7 +268,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
     students_by_id =
       student_proficiency
       |> Enum.map(&String.to_integer(&1.student_id))
-      |> Accounts.list_users_by_ids()
+      |> Accounts.get_users_by_ids()
       |> Enum.reduce(%{}, &Map.put(&2, &1.id, &1))
 
     student_proficiency
@@ -295,12 +298,12 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
     # Filter proficiency data to only include enrolled students (exclude instructors)
     filtered_student_proficiency =
       real_student_proficiency
-      |> Enum.filter(fn student -> String.to_integer(student.student_id) in all_student_ids end)
+      |> Enum.filter(fn student -> student.id in all_student_ids end)
 
     # Create a set of student IDs that already have proficiency data
     existing_student_ids =
       MapSet.new(filtered_student_proficiency, fn student ->
-        String.to_integer(student.student_id)
+        student.id
       end)
 
     # Get missing student information including names
@@ -328,8 +331,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
     student_proficiency =
       filtered_student_proficiency
       |> Enum.map(fn student ->
-        student_id_int = String.to_integer(student.student_id)
-        activities_attempted = Map.get(student_activities_attempted, student_id_int, 0)
+        activities_attempted = Map.get(student_activities_attempted, student.id, 0)
 
         Map.merge(student, %{
           activities_attempted_count: activities_attempted,
@@ -364,7 +366,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
       []
     else
       missing_student_ids
-      |> Accounts.list_users_by_ids()
+      |> Accounts.get_users_by_ids()
       |> Enum.map(fn user ->
         student_full_name = Utils.name(user.name, user.given_name, user.family_name)
 

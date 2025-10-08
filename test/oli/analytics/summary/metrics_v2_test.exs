@@ -663,9 +663,9 @@ defmodule Oli.Analytics.Summary.MetricsV2Test do
       assert length(result) == 3
 
       # Find each user's result
-      user1_result = Enum.find(result, &(&1.student_id == Integer.to_string(user1.id)))
-      user2_result = Enum.find(result, &(&1.student_id == Integer.to_string(user2.id)))
-      user3_result = Enum.find(result, &(&1.student_id == Integer.to_string(user3.id)))
+      user1_result = Enum.find(result, &(&1.id == user1.id))
+      user2_result = Enum.find(result, &(&1.id == user2.id))
+      user3_result = Enum.find(result, &(&1.id == user3.id))
 
       # Verify user 1 (High proficiency)
       assert_in_delta user1_result.proficiency, 0.9, 0.05
@@ -737,7 +737,7 @@ defmodule Oli.Analytics.Summary.MetricsV2Test do
 
       result = Metrics.student_proficiency_for_objective(section.id, objective_resource.id)
 
-      zero_result = Enum.find(result, &(&1.student_id == Integer.to_string(user.id)))
+      zero_result = Enum.find(result, &(&1.id == user.id))
 
       assert zero_result.proficiency == 0.2
       assert zero_result.proficiency_range == "Low"
@@ -795,7 +795,7 @@ defmodule Oli.Analytics.Summary.MetricsV2Test do
 
       result = Metrics.student_proficiency_for_objective(section.id, objective_resource.id)
 
-      perfect_result = Enum.find(result, &(&1.student_id == Integer.to_string(user.id)))
+      perfect_result = Enum.find(result, &(&1.id == user.id))
 
       assert perfect_result.proficiency == 1.0
       assert perfect_result.proficiency_range == "High"
@@ -852,7 +852,7 @@ defmodule Oli.Analytics.Summary.MetricsV2Test do
 
       # Test new function
       new_result = Metrics.student_proficiency_for_objective(section.id, objective_resource.id)
-      user_new_result = Enum.find(new_result, &(&1.student_id == Integer.to_string(user.id)))
+      user_new_result = Enum.find(new_result, &(&1.id == user.id))
 
       # Test existing function
       existing_result =

@@ -56,7 +56,10 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyListTe
         live_component_isolated(conn, StudentProficiencyList, %{
           id: "student-proficiency-list-test",
           student_proficiency: student_proficiency_data,
-          selected_proficiency_level: "High"
+          selected_proficiency_level: "High",
+          section_slug: "test-section",
+          section_title: "Test Section",
+          instructor_email: "instructor@test.com"
         })
 
       # Check that the component renders
@@ -88,7 +91,10 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyListTe
         live_component_isolated(conn, StudentProficiencyList, %{
           id: "student-proficiency-list-test",
           student_proficiency: student_proficiency_data,
-          selected_proficiency_level: "Medium"
+          selected_proficiency_level: "Medium",
+          section_slug: "test-section",
+          section_title: "Test Section",
+          instructor_email: "instructor@test.com"
         })
 
       # Check header
@@ -116,7 +122,10 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyListTe
         live_component_isolated(conn, StudentProficiencyList, %{
           id: "student-proficiency-list-test",
           student_proficiency: student_proficiency_data,
-          selected_proficiency_level: "Low"
+          selected_proficiency_level: "Low",
+          section_slug: "test-section",
+          section_title: "Test Section",
+          instructor_email: "instructor@test.com"
         })
 
       # Check header
@@ -144,7 +153,10 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyListTe
         live_component_isolated(conn, StudentProficiencyList, %{
           id: "student-proficiency-list-test",
           student_proficiency: student_proficiency_data,
-          selected_proficiency_level: "Not enough data"
+          selected_proficiency_level: "Not enough data",
+          section_slug: "test-section",
+          section_title: "Test Section",
+          instructor_email: "instructor@test.com"
         })
 
       # Check header (should capitalize properly)
@@ -179,7 +191,10 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyListTe
           id: "student-proficiency-list-test",
           student_proficiency: student_data,
           # No students have Medium proficiency
-          selected_proficiency_level: "Medium"
+          selected_proficiency_level: "Medium",
+          section_slug: "test-section",
+          section_title: "Test Section",
+          instructor_email: "instructor@test.com"
         })
 
       # Should still render table structure
@@ -195,7 +210,10 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyListTe
         live_component_isolated(conn, StudentProficiencyList, %{
           id: "student-proficiency-list-test",
           student_proficiency: [],
-          selected_proficiency_level: "High"
+          selected_proficiency_level: "High",
+          section_slug: "test-section",
+          section_title: "Test Section",
+          instructor_email: "instructor@test.com"
         })
 
       # Should still render table structure but with no data rows
@@ -213,7 +231,10 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyListTe
           id: "student-proficiency-list-test",
           student_proficiency: student_proficiency_data,
           # Will show Smith, John and Johnson, Alice
-          selected_proficiency_level: "High"
+          selected_proficiency_level: "High",
+          section_slug: "test-section",
+          section_title: "Test Section",
+          instructor_email: "instructor@test.com"
         })
 
       # Check initial order before sorting (appears to be sorted by insertion order)
@@ -245,7 +266,10 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyListTe
         live_component_isolated(conn, StudentProficiencyList, %{
           id: "student-proficiency-list-test",
           student_proficiency: student_proficiency_data,
-          selected_proficiency_level: "High"
+          selected_proficiency_level: "High",
+          section_slug: "test-section",
+          section_title: "Test Section",
+          instructor_email: "instructor@test.com"
         })
 
       # First click - sort ascending
@@ -288,7 +312,10 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyListTe
         live_component_isolated(conn, StudentProficiencyList, %{
           id: "student-proficiency-list-test",
           student_proficiency: single_student_data,
-          selected_proficiency_level: "High"
+          selected_proficiency_level: "High",
+          section_slug: "test-section",
+          section_title: "Test Section",
+          instructor_email: "instructor@test.com"
         })
 
       # Should render the single student

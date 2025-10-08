@@ -613,60 +613,69 @@ defmodule Oli.AccountsTest do
       assert Accounts.can_manage_linked_account?(user)
     end
 
-    test "list_users_by_ids/1 returns user tuples for existing user IDs" do
+    test "get_users_by_ids/1 returns user tuples for existing user IDs" do
       user1 = insert(:user, %{family_name: "Smith", given_name: "John"})
       user2 = insert(:user, %{family_name: "Doe", given_name: "Jane"})
       user3 = insert(:user, %{family_name: "Brown", given_name: "Bob"})
 
       # Test with valid user IDs
-      result =
-        Accounts.list_users_by_ids([user1.id, user2.id, user3.id])
-        |> Enum.map(&{&1.id, &1.family_name, &1.given_name})
+
+      result = Accounts.get_users_by_ids([user1.id, user2.id, user3.id])
 
       assert length(result) == 3
 
-      assert {user1.id, "Smith", "John"} in result
-      assert {user2.id, "Doe", "Jane"} in result
-      assert {user3.id, "Brown", "Bob"} in result
+      for user <- [user1, user2, user3] do
+        assert Enum.find(
+                 result,
+                 &(&1.id == user.id and &1.family_name == user.family_name and
+                     &1.given_name == user.given_name)
+               )
+      end
     end
 
-    test "list_users_by_ids/1 returns partial results for mixed valid/invalid IDs" do
+    test "get_users_by_ids/1 returns partial results for mixed valid/invalid IDs" do
       user1 = insert(:user, %{family_name: "Smith", given_name: "John"})
       user2 = insert(:user, %{family_name: "Doe", given_name: "Jane"})
       invalid_id = 999_999
 
       # Test with mix of valid and invalid user IDs
       result =
-        Accounts.list_users_by_ids([user1.id, invalid_id, user2.id])
+        Accounts.get_users_by_ids([user1.id, invalid_id, user2.id])
         |> Enum.map(&{&1.id, &1.family_name, &1.given_name})
 
       assert length(result) == 2
-      assert {user1.id, "Smith", "John"} in result
-      assert {user2.id, "Doe", "Jane"} in result
-      refute Enum.any?(result, fn {id, _, _} -> id == invalid_id end)
+
+      for user <- [user1, user2] do
+        assert Enum.find(
+                 result,
+                 &(&1.id == user.id and &1.family_name == user.family_name and
+                     &1.given_name == user.given_name)
+               )
+      end
+
+      refute Enum.any?(result, &(&1.id == invalid_id))
     end
 
-    test "list_users_by_ids/1 returns empty list for non-existent user IDs" do
-      result = Accounts.list_users_by_ids([999_999, 888_888])
+    test "get_users_by_ids/1 returns empty list for non-existent user IDs" do
+      result = Accounts.get_users_by_ids([999_999, 888_888])
       assert result == []
     end
 
-    test "list_users_by_ids/1 returns empty list for empty input" do
-      result = Accounts.list_users_by_ids([])
+    test "get_users_by_ids/1 returns empty list for empty input" do
+      result = Accounts.get_users_by_ids([])
       assert result == []
     end
 
-    test "list_users_by_ids/1 handles duplicate user IDs correctly" do
+    test "get_users_by_ids/1 handles duplicate user IDs correctly" do
       user = insert(:user, %{family_name: "Smith", given_name: "John"})
 
       # Test with duplicate user IDs
-      result =
-        Accounts.list_users_by_ids([user.id, user.id, user.id])
-        |> Enum.map(&{&1.id, &1.family_name, &1.given_name})
 
       # Should only return one result despite duplicates
-      assert length(result) == 1
-      assert {user.id, "Smith", "John"} in result
+      [returned_user] = Accounts.get_users_by_ids([user.id, user.id, user.id])
+
+      assert returned_user.id == user.id and returned_user.family_name == user.family_name and
+               returned_user.given_name == user.given_name
     end
   end
 

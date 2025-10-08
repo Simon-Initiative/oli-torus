@@ -50,7 +50,7 @@ defmodule OliWeb.Delivery.LearningObjectives.StudentProficiencyTableModel do
         rows: student_data,
         column_specs: column_specs,
         event_suffix: "",
-        id_field: [:student_id],
+        id_field: [:id],
         sort_by_spec: sort_by_spec,
         sort_order: sort_order,
         data: data
@@ -60,14 +60,14 @@ defmodule OliWeb.Delivery.LearningObjectives.StudentProficiencyTableModel do
         rows: student_data,
         column_specs: column_specs,
         event_suffix: "",
-        id_field: [:student_id],
+        id_field: [:id],
         data: data
       )
     end
   end
 
   def custom_render(_assigns, student, %ColumnSpec{name: :student_name}) do
-    student.student_name
+    student.full_name
   end
 
   def custom_render(_assigns, student, %ColumnSpec{name: :activities_attempted}) do
@@ -77,7 +77,7 @@ defmodule OliWeb.Delivery.LearningObjectives.StudentProficiencyTableModel do
   end
 
   def render_select_all_header(students, selected_students, target) do
-    all_student_ids = Enum.map(students, & &1.student_id)
+    all_student_ids = Enum.map(students, & &1.id)
 
     all_selected =
       length(selected_students) > 0 && Enum.all?(all_student_ids, &(&1 in selected_students))
@@ -104,9 +104,10 @@ defmodule OliWeb.Delivery.LearningObjectives.StudentProficiencyTableModel do
 
   def render_selection_column(assigns, student, _) do
     selected_students = Map.get(assigns, :selected_students, [])
-    is_selected = student.student_id in selected_students
+    is_selected = student.id in selected_students
 
-    assigns = Map.merge(assigns, %{is_selected: is_selected, student_id: student.student_id})
+    assigns =
+      Map.merge(assigns, %{is_selected: is_selected, student_id: Integer.to_string(student.id)})
 
     ~H"""
     <div class="flex items-center justify-center">

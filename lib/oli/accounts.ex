@@ -184,13 +184,13 @@ defmodule Oli.Accounts do
   end
 
   @doc """
-  Returns the list of users by their IDs.
+  Returns a list of full User structs for the given user IDs.
   ## Examples
-      iex> list_users_by_ids([1, 2, 3])
+      iex> get_users_by_ids([1, 2, 3])
       [%User{id: 1}, %User{id: 2}, %User{id: 3}]
   """
-  @spec list_users_by_ids(list(integer())) :: list(User.t())
-  def list_users_by_ids(user_ids) when is_list(user_ids) do
+  @spec get_users_by_ids(list(integer())) :: list(User.t())
+  def get_users_by_ids(user_ids) when is_list(user_ids) do
     from(u in User,
       where: u.id in ^user_ids,
       select: struct(u, [:id, :name, :given_name, :family_name])

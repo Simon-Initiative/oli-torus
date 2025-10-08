@@ -1,6 +1,11 @@
 defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyList do
   use OliWeb, :live_component
 
+  def update(%{show_email_modal: show_email_modal} = _assigns, socket) do
+    # Handle partial updates for show_email_modal
+    {:ok, assign(socket, show_email_modal: show_email_modal)}
+  end
+
   def update(assigns, socket) do
     filtered_student_data =
       assigns.student_proficiency
@@ -25,6 +30,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyList d
       |> assign(:student_table_model, student_table_model)
       |> assign(:filtered_student_data, filtered_student_data)
       |> assign(:selected_students, selected_students)
+      |> assign(:show_email_modal, socket.assigns[:show_email_modal] || false)
 
     {:ok, socket}
   end
@@ -32,11 +38,20 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyList d
   def render(assigns) do
     ~H"""
     <div class="w-full">
-      <!-- Header with proficiency level -->
-      <div class="mb-4">
+      <!-- Header with proficiency level and Email button -->
+      <div class="mb-4 flex flex-row items-center justify-between">
         <h4 class="text-base font-medium text-gray-900 dark:text-gray-100">
           Students with {capitalize_proficiency_level(@selected_proficiency_level)} Estimated Proficiency
         </h4>
+
+        <.live_component
+          id="email_button_proficiency_component"
+          module={OliWeb.Components.Delivery.Students.EmailButton}
+          selected_students={@selected_students}
+          instructor_email={@instructor_email}
+          section_slug={@section_slug}
+          email_handler_id={@id}
+        />
       </div>
       
     <!-- Students table -->
@@ -46,6 +61,20 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyList d
         additional_row_class="bg-Table-table-row-1"
         allow_selection={true}
         selection_change={JS.push("paged_table_selection_change", target: @myself)}
+      />
+      
+    <!-- Email Modal -->
+      <.live_component
+        :if={@show_email_modal}
+        id="email_modal_proficiency"
+        module={OliWeb.Components.Delivery.Students.EmailModal}
+        selected_students={@selected_students}
+        students={@filtered_student_data}
+        section_title={@section_title}
+        instructor_email={@instructor_email}
+        section_slug={@section_slug}
+        show_modal={@show_email_modal}
+        email_handler_id={@id}
       />
     </div>
     """
@@ -89,7 +118,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyList d
   end
 
   def handle_event("select_all_students", _params, socket) do
-    all_student_ids = Enum.map(socket.assigns.filtered_student_data, & &1.student_id)
+    all_student_ids = Enum.map(socket.assigns.filtered_student_data, & &1.id)
     current_selected = MapSet.new(socket.assigns.selected_students)
 
     # If all students are already selected, deselect all; otherwise select all
@@ -114,12 +143,14 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyList d
     {:noreply,
      socket
      |> assign(:selected_students, selected_students)
-     |> assign(:student_table_model, updated_table_model)}
+     |> assign(:student_table_model, updated_table_model)
+     |> assign(:show_email_modal, false)}
   end
 
   def handle_event("paged_table_selection_change", %{"id" => selected_student_id}, socket) do
     # Toggle selection - if already selected, remove it, otherwise add it
     selected_students = socket.assigns.selected_students
+    selected_student_id = String.to_integer(selected_student_id)
 
     selected_students =
       if selected_student_id in selected_students do
