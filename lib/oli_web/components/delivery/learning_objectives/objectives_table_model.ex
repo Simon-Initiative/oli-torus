@@ -187,14 +187,15 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
     assigns =
       Map.merge(assigns, %{
         objective_id: objective_id,
-        proficiency_distribution: proficiency_distribution
+        proficiency_distribution: proficiency_distribution,
+        proficiency_labels: @proficiency_labels
       })
 
     ~H"""
     <div class="group flex relative">
       {render_proficiency_data_chart(@objective_id, @proficiency_distribution)}
       <div class="-translate-y-[calc(100%-90px)] absolute left-1/2 -translate-x-1/2 bg-black text-white text-sm px-4 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity shadow-lg whitespace-nowrap inline-block z-50">
-        <%= for {label, value} <- calc_percentages(@proficiency_distribution) do %>
+        <%= for label <- @proficiency_labels, value = Map.get(calc_percentages(@proficiency_distribution), label, 0) do %>
           <p>{label}: {value}%</p>
         <% end %>
       </div>
@@ -263,19 +264,44 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
 
   # RENDER PROFICIENCY DATA CHART
   defp render_proficiency_data_chart(objective_id, data) do
-    data =
-      @proficiency_labels
-      |> Enum.map(fn label ->
-        %{proficiency: label, count: Map.get(data, label, 0)}
-      end)
+    # Order labels correctly and calculate positions manually
+    counts = Enum.map(@proficiency_labels, fn label -> Map.get(data, label, 0) end)
+    total = Enum.sum(counts)
+
+    data_with_positions =
+      if total == 0 do
+        []
+      else
+        {result, _} =
+          Enum.reduce(@proficiency_labels, {[], 0}, fn label, {acc, cumulative_start} ->
+            count = Map.get(data, label, 0)
+
+            if count > 0 do
+              item = %{
+                proficiency: label,
+                count: count,
+                start: cumulative_start,
+                end: cumulative_start + count
+              }
+
+              {[item | acc], cumulative_start + count}
+            else
+              {acc, cumulative_start}
+            end
+          end)
+
+        Enum.reverse(result)
+      end
 
     spec = %{
       mark: "bar",
-      data: %{values: data},
+      data: %{values: data_with_positions},
       encoding: %{
-        x: %{aggregate: "sum", field: "count"},
+        x: %{field: "start", type: "quantitative", scale: %{nice: false}},
+        x2: %{field: "end"},
         color: %{
           field: "proficiency",
+          type: "nominal",
           scale: %{
             domain: ["Not enough data", "Low", "Medium", "High"],
             range: ["#C2C2C2", "#E6D4FA", "#B37CEA", "#7B19C1"]
@@ -313,5 +339,49 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
     @proficiency_labels
     |> Enum.map(fn label -> {label, perc.(label)} end)
     |> Map.new()
+  end
+
+  # RENDER EXPANDED DETAILS FOR STRIPED TABLE
+  def render_objective_details(assigns, objective) do
+    %{
+      resource_id: objective_id,
+      unique_id: unique_id,
+      student_proficiency_obj_dist: student_proficiency_obj_dist
+    } = objective
+
+    section_slug = assigns[:section_slug] || assigns.model.data[:section_slug]
+    section_id = assigns[:section_id] || assigns.model.data[:section_id]
+
+    proficiency_distribution =
+      case Map.get(objective, :student_proficiency_subobj_dist) do
+        nil -> student_proficiency_obj_dist
+        student_proficiency_subobj_dist -> student_proficiency_subobj_dist
+      end
+
+    current_user = assigns[:current_user] || assigns.model.data[:current_user]
+
+    assigns =
+      assigns
+      |> Map.put(:objective, objective)
+      |> Map.put(:objective_id, objective_id)
+      |> Map.put(:unique_id, unique_id)
+      |> Map.put(:section_slug, section_slug)
+      |> Map.put(:section_id, section_id)
+      |> Map.put(:proficiency_distribution, proficiency_distribution)
+      |> Map.put(:current_user, current_user)
+
+    ~H"""
+    <div class="p-6">
+      <.live_component
+        module={OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView}
+        id={"expanded-objective-#{@unique_id}"}
+        objective={@objective}
+        section_id={@section_id}
+        section_slug={@section_slug}
+        proficiency_distribution={@proficiency_distribution}
+        current_user={@current_user}
+      />
+    </div>
+    """
   end
 end
