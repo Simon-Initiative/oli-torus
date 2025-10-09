@@ -260,7 +260,7 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
          %InventoryRun{dry_run: true} = run,
          _batch,
          _bucket,
-         entries,
+         _entries,
          chunk_index,
          _creds
        ) do

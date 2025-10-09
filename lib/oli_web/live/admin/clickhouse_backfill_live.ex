@@ -13,13 +13,13 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
   alias Oli.Analytics.Backfill.Inventory
   alias Oli.Analytics.Backfill.InventoryBatch
   alias Oli.Analytics.Backfill.InventoryRun
+  alias Oli.Analytics.Backfill.Notifier
   alias OliWeb.Common.Breadcrumb
 
   on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
   on_mount OliWeb.LiveSessionPlugs.SetCtx
 
   @runs_limit 25
-  @auto_refresh_interval 5_000
   @inventory_runs_limit 25
 
   @impl true
@@ -55,7 +55,10 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
         inventory_config: inventory_config,
         active_tab: active_tab
       )
-      |> maybe_schedule_refresh()
+
+    if connected?(socket) do
+      Notifier.subscribe()
+    end
 
     {:ok, socket}
   end
@@ -111,8 +114,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
                changeset: reset_changeset(),
                form_inputs: default_form_inputs(),
                form: to_form(reset_changeset(), as: :backfill)
-             )
-             |> maybe_schedule_refresh()}
+             )}
 
           {:error, %Ecto.Changeset{} = changeset} ->
             {:noreply,
@@ -130,8 +132,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
                changeset: reset_changeset(),
                form_inputs: refill_inputs(params),
                form: to_form(reset_changeset(), as: :backfill)
-             )
-             |> maybe_schedule_refresh()}
+             )}
         end
 
       {:error, field, message, attrs, raw_inputs} ->
@@ -157,8 +158,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
       {:noreply,
        socket
        |> put_flash(:info, "Run #{run_id} deleted.")
-       |> refresh_runs()
-       |> maybe_schedule_refresh()}
+       |> refresh_runs()}
     else
       :error ->
         {:noreply, put_flash(socket, :error, "Invalid run identifier")}
@@ -166,8 +166,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
       {:error, :not_deletable} ->
         {:noreply,
          socket
-         |> put_flash(:error, "Run #{id} is still processing.")
-         |> maybe_schedule_refresh()}
+         |> put_flash(:error, "Run #{id} is still processing.")}
 
       {:error, reason} ->
         {:noreply, put_flash(socket, :error, format_error(reason))}
@@ -175,11 +174,6 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
   rescue
     Ecto.NoResultsError ->
       {:noreply, put_flash(socket, :error, "Run not found")}
-  end
-
-  @impl true
-  def handle_event("refresh_runs", _params, socket) do
-    {:noreply, socket |> refresh_runs() |> maybe_schedule_refresh()}
   end
 
   @impl true
@@ -236,7 +230,6 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
               active_tab: :inventory
             )
             |> put_flash(:info, "Inventory batch run has been enqueued.")
-            |> maybe_schedule_refresh()
 
           {:noreply, socket}
 
@@ -277,7 +270,6 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
         socket
         |> put_flash(:info, "Run #{run_id} cancellation requested.")
         |> refresh_runs()
-        |> maybe_schedule_refresh()
 
       {:noreply, socket}
     else
@@ -305,8 +297,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
       {:noreply,
        socket
        |> put_flash(:info, "Inventory run #{run_id} deleted.")
-       |> refresh_runs()
-       |> maybe_schedule_refresh()}
+       |> refresh_runs()}
     else
       :error ->
         {:noreply, put_flash(socket, :error, "Invalid run identifier")}
@@ -314,8 +305,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
       {:error, :not_deletable} ->
         {:noreply,
          socket
-         |> put_flash(:error, "Run #{id} is still processing.")
-         |> maybe_schedule_refresh()}
+         |> put_flash(:error, "Run #{id} is still processing.")}
 
       {:error, reason} ->
         {:noreply,
@@ -336,7 +326,6 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
         socket
         |> put_flash(:info, "Batch #{batch_id} retry queued.")
         |> refresh_runs()
-        |> maybe_schedule_refresh()
 
       {:noreply, socket}
     else
@@ -362,7 +351,6 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
         socket
         |> put_flash(:info, "Batch #{batch_id} cancellation requested.")
         |> refresh_runs()
-        |> maybe_schedule_refresh()
 
       {:noreply, socket}
     else
@@ -384,17 +372,8 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
   end
 
   @impl true
-  def handle_info(:refresh_runs, socket) do
-    socket = refresh_runs(socket)
-
-    socket =
-      if any_running?(socket) do
-        schedule_refresh(socket)
-      else
-        assign(socket, refresh_timer?: false)
-      end
-
-    {:noreply, socket}
+  def handle_info({:clickhouse_backfill_updated, _payload}, socket) do
+    {:noreply, refresh_runs(socket)}
   end
 
   @impl true
@@ -518,9 +497,6 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
             </div>
 
             <div class="flex items-center justify-end gap-3 pt-2">
-              <.button type="button" phx-click="refresh_runs" class="btn-secondary">
-                Refresh Jobs
-              </.button>
               <.button type="submit" class="btn-primary">
                 Enqueue Backfill
               </.button>
@@ -536,9 +512,6 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
                 Showing the {length(@runs)} most recent jobs.
               </p>
             </div>
-            <.button phx-click="refresh_runs" class="btn-secondary btn-sm">
-              Refresh
-            </.button>
           </div>
 
           <div class="overflow-x-auto">
@@ -713,9 +686,6 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
             </div>
 
             <div class="flex items-center justify-end gap-3">
-              <.button type="button" phx-click="refresh_runs" class="btn-secondary">
-                Refresh Runs
-              </.button>
               <.button type="submit" class="btn-primary">
                 Schedule Batch Run
               </.button>
@@ -731,9 +701,6 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
                 Tracks orchestrated ClickHouse ingestions driven by S3 inventory manifests.
               </p>
             </div>
-            <.button phx-click="refresh_runs" class="btn-secondary btn-sm">
-              Refresh
-            </.button>
           </div>
 
           <div :if={Enum.empty?(@inventory_runs)} class="py-8 text-center text-sm text-gray-500">
@@ -1194,35 +1161,6 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
       runs: Backfill.list_runs(limit: @runs_limit),
       inventory_runs: Inventory.list_runs(limit: @inventory_runs_limit)
     )
-  end
-
-  defp running_job?(runs) do
-    Enum.any?(runs, &(&1.status in [:pending, :running, :preparing]))
-  end
-
-  defp inventory_running?(runs) do
-    Enum.any?(runs, &(&1.status in [:pending, :running, :preparing]))
-  end
-
-  defp any_running?(socket) do
-    running_job?(socket.assigns.runs) or
-      inventory_running?(socket.assigns[:inventory_runs] || [])
-  end
-
-  defp maybe_schedule_refresh(socket) do
-    if any_running?(socket) do
-      schedule_refresh(socket)
-    else
-      assign(socket, refresh_timer?: false)
-    end
-  end
-
-  defp schedule_refresh(socket) do
-    unless socket.assigns[:refresh_timer?] do
-      Process.send_after(self(), :refresh_runs, @auto_refresh_interval)
-    end
-
-    assign(socket, refresh_timer?: true)
   end
 
   defp reset_changeset do

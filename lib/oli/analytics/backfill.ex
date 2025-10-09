@@ -11,6 +11,7 @@ defmodule Oli.Analytics.Backfill do
 
   alias Ecto.Multi
   alias Oli.Analytics.Backfill.BackfillRun
+  alias Oli.Analytics.Backfill.Notifier
   alias Oli.Analytics.Backfill.Worker
   alias Oli.Accounts.Author
   alias Oli.Repo
@@ -87,6 +88,7 @@ defmodule Oli.Analytics.Backfill do
 
     case Repo.transaction(multi) do
       {:ok, %{run: run}} ->
+        _ = Notifier.broadcast(:manual_backfill)
         {:ok, Repo.preload(run, :initiated_by)}
 
       {:error, :run, changeset, _} ->
@@ -110,6 +112,10 @@ defmodule Oli.Analytics.Backfill do
     run
     |> BackfillRun.changeset(attrs)
     |> Repo.update()
+    |> tap(fn
+      {:ok, _run} -> Notifier.broadcast(:manual_backfill)
+      _ -> :ok
+    end)
   end
 
   def refresh_running_runs do
@@ -160,6 +166,10 @@ defmodule Oli.Analytics.Backfill do
   def delete_run(%BackfillRun{} = run) do
     if run.status in @terminal_statuses do
       Repo.delete(run)
+      |> tap(fn
+        {:ok, _run} -> Notifier.broadcast(:manual_backfill)
+        _ -> :ok
+      end)
     else
       {:error, :not_deletable}
     end

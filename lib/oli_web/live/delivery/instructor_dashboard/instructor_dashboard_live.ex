@@ -886,16 +886,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     {:noreply, assign(socket, practice_activities: results)}
   end
 
-  def handle_event(event, params, socket) do
-    # Catch-all for UI-only events from functional components
-    # that don't need handling (like dropdown toggles)
-    Logger.warning(
-      "Unhandled event in InstructorDashboardLive: #{inspect(event)}, #{inspect(params)}"
-    )
-
-    {:noreply, socket}
-  end
-
   @impl Phoenix.LiveView
   def handle_info({:pages, :practice, results}, socket) do
     {:noreply, assign(socket, practice_pages: results)}
@@ -1077,6 +1067,16 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   @impl Phoenix.LiveView
   def handle_info(_any, socket) do
+    {:noreply, socket}
+  end
+
+  @impl Phoenix.LiveView
+  def handle_event(event, params, socket) do
+    # Catch-all for UI-only events from functional components that don't require handling
+    Logger.warning(
+      "Unhandled event in InstructorDashboardLive: #{inspect(event)}, #{inspect(params)}"
+    )
+
     {:noreply, socket}
   end
 end

@@ -9,16 +9,11 @@ defmodule Oli.Analytics.Backfill.Inventory do
   alias Oli.Analytics.Backfill
   alias Oli.Analytics.Backfill.InventoryRun
   alias Oli.Analytics.Backfill.InventoryBatch
+  alias Oli.Analytics.Backfill.Notifier
   alias Oli.Accounts.Author
   alias Oli.Repo
   require Logger
   alias Oban
-
-  @default_manifest_suffix "manifest.json"
-  @default_directory_suffix "T01-00Z"
-  @default_batch_chunk_size 25
-  @default_max_simultaneous_batches 1
-  @default_max_batch_retries 1
 
   @type config :: %{
           optional(:manifest_bucket) => String.t(),
@@ -51,6 +46,31 @@ defmodule Oli.Analytics.Backfill.Inventory do
 
   defp inventory_config do
     Application.get_env(:oli, :clickhouse_inventory, %{}) |> Enum.into(%{})
+  end
+
+  defp inventory_config_value(key, default \\ nil) do
+    inventory_config()
+    |> Map.get(key, default)
+  end
+
+  defp default_manifest_suffix do
+    inventory_config_value(:manifest_suffix, "manifest.json")
+  end
+
+  defp default_directory_suffix do
+    inventory_config_value(:directory_time_suffix, "T01-00Z")
+  end
+
+  defp default_batch_chunk_size do
+    inventory_config_value(:batch_chunk_size, 25)
+  end
+
+  defp default_max_simultaneous_batches do
+    inventory_config_value(:max_simultaneous_batches, 1)
+  end
+
+  defp default_max_batch_retries do
+    inventory_config_value(:max_batch_retries, 1)
   end
 
   @doc """
@@ -142,6 +162,7 @@ defmodule Oli.Analytics.Backfill.Inventory do
     run
     |> InventoryRun.changeset(attrs)
     |> Repo.update()
+    |> notify(:inventory_run)
   end
 
   @doc """
@@ -158,6 +179,7 @@ defmodule Oli.Analytics.Backfill.Inventory do
     run
     |> InventoryRun.changeset(attrs)
     |> Repo.update()
+    |> notify(:inventory_run)
   end
 
   @doc """
@@ -168,6 +190,7 @@ defmodule Oli.Analytics.Backfill.Inventory do
     run
     |> InventoryRun.changeset(attrs)
     |> Repo.update()
+    |> notify(:inventory_run)
   end
 
   @doc """
@@ -185,6 +208,7 @@ defmodule Oli.Analytics.Backfill.Inventory do
     batch
     |> InventoryBatch.changeset(attrs)
     |> Repo.update()
+    |> notify(:inventory_batch)
   end
 
   @doc """
@@ -195,6 +219,7 @@ defmodule Oli.Analytics.Backfill.Inventory do
     batch
     |> InventoryBatch.changeset(attrs)
     |> Repo.update()
+    |> notify(:inventory_batch)
   end
 
   @doc """
@@ -247,6 +272,7 @@ defmodule Oli.Analytics.Backfill.Inventory do
           end)
 
         {:ok, batches}
+        |> notify(:inventory_batch, %{action: :prepared})
 
       {:error, {:batch, _index}, reason, _changes} ->
         {:error, reason}
@@ -294,12 +320,12 @@ defmodule Oli.Analytics.Backfill.Inventory do
 
   defp fetch_run_retry_limit(%InventoryBatch{run_id: run_id}) when is_integer(run_id) do
     case Repo.get(InventoryRun, run_id) do
-      nil -> @default_max_batch_retries
+      nil -> default_max_batch_retries()
       run -> max_batch_retry_limit(run)
     end
   end
 
-  defp fetch_run_retry_limit(_), do: @default_max_batch_retries
+  defp fetch_run_retry_limit(_), do: default_max_batch_retries()
 
   @doc """
   Reset and requeue a failed batch for another attempt.
@@ -332,6 +358,7 @@ defmodule Oli.Analytics.Backfill.Inventory do
         |> Repo.preload(:run)
 
       {:ok, reloaded_batch}
+      |> notify(:inventory_batch, %{action: :retried})
     end
   end
 
@@ -356,6 +383,7 @@ defmodule Oli.Analytics.Backfill.Inventory do
       with {:ok, updated_batch} <- transition_batch(batch, :cancelled, attrs),
            :ok <- maybe_recompute_run(batch.run, recompute?) do
         {:ok, %{updated_batch | run: batch.run}}
+        |> notify(:inventory_batch, %{action: :cancelled})
       end
     else
       {:error, :not_cancellable}
@@ -398,8 +426,12 @@ defmodule Oli.Analytics.Backfill.Inventory do
         end
       end)
       |> case do
-        {:ok, run} -> {:ok, run}
-        {:error, reason} -> {:error, reason}
+        {:ok, run} ->
+          {:ok, run}
+          |> notify(:inventory_run, %{action: :cancelled})
+
+        {:error, reason} ->
+          {:error, reason}
       end
     end
   end
@@ -411,6 +443,7 @@ defmodule Oli.Analytics.Backfill.Inventory do
   def delete_run(%InventoryRun{} = run) do
     if terminal_run_status?(run.status) do
       Repo.delete(run)
+      |> notify(:inventory_run, %{action: :deleted})
     else
       {:error, :not_deletable}
     end
@@ -436,7 +469,7 @@ defmodule Oli.Analytics.Backfill.Inventory do
   defp maybe_recompute_run(%InventoryRun{} = run, true), do: maybe_recompute_run(run)
   defp maybe_recompute_run(%InventoryRun{} = _run, false), do: :ok
 
-  defp parse_positive_integer(value, default)
+  defp parse_positive_integer(value, _default)
        when is_integer(value) and value > 0,
        do: value
 
@@ -459,8 +492,8 @@ defmodule Oli.Analytics.Backfill.Inventory do
   def max_simultaneous_batches(%InventoryRun{} = run) do
     default =
       inventory_config()
-      |> Map.get(:max_simultaneous_batches, @default_max_simultaneous_batches)
-      |> parse_positive_integer(@default_max_simultaneous_batches)
+      |> Map.get(:max_simultaneous_batches, default_max_simultaneous_batches())
+      |> parse_positive_integer(default_max_simultaneous_batches())
 
     run.metadata
     |> ensure_map()
@@ -475,8 +508,8 @@ defmodule Oli.Analytics.Backfill.Inventory do
   def max_batch_retry_limit(%InventoryRun{} = run) do
     default =
       inventory_config()
-      |> Map.get(:max_batch_retries, @default_max_batch_retries)
-      |> parse_positive_integer(@default_max_batch_retries)
+      |> Map.get(:max_batch_retries, default_max_batch_retries())
+      |> parse_positive_integer(default_max_batch_retries())
 
     run.metadata
     |> ensure_map()
@@ -494,7 +527,7 @@ defmodule Oli.Analytics.Backfill.Inventory do
     limit =
       case limit do
         int when is_integer(int) and int > 0 -> int
-        _ -> @default_max_simultaneous_batches
+        _ -> default_max_simultaneous_batches()
       end
 
     active_query =
@@ -639,6 +672,7 @@ defmodule Oli.Analytics.Backfill.Inventory do
     case Repo.transaction(multi) do
       {:ok, %{annotated_run: run}} ->
         {:ok, Repo.preload(run, :initiated_by)}
+        |> notify(:inventory_run)
 
       {:error, :run, changeset, _} ->
         {:error, changeset}
@@ -656,32 +690,41 @@ defmodule Oli.Analytics.Backfill.Inventory do
     end
   end
 
+  defp notify(result, source, metadata \\ %{})
+
+  defp notify({:ok, _value} = result, source, metadata) do
+    _ = Notifier.broadcast(source, metadata)
+    result
+  end
+
+  defp notify(result, _source, _metadata), do: result
+
   defp build_run_attrs(attrs, initiated_by) do
     with {:ok, date} <- fetch_date(attrs),
          {:ok, config} <- resolved_config(attrs),
          {:ok, prefix} <- inventory_prefix(date, attrs, config),
-         manifest_suffix <- config[:manifest_suffix] || @default_manifest_suffix,
+         manifest_suffix <- config[:manifest_suffix] || default_manifest_suffix(),
          {:ok, manifest_url} <- manifest_url(config, prefix, manifest_suffix) do
       manifest_key = cleaned_join([prefix, manifest_suffix])
       dry_run = truthy?(fetch_value(attrs, :dry_run, false))
 
       max_simultaneous_default =
         config[:max_simultaneous_batches]
-        |> parse_positive_integer(@default_max_simultaneous_batches)
+        |> parse_positive_integer(default_max_simultaneous_batches())
 
       max_retries_default =
         config[:max_batch_retries]
-        |> parse_positive_integer(@default_max_batch_retries)
+        |> parse_positive_integer(default_max_batch_retries())
 
       max_simultaneous =
         attrs
         |> fetch_value(:max_simultaneous_batches, max_simultaneous_default)
-        |> parse_positive_integer(@default_max_simultaneous_batches)
+        |> parse_positive_integer(default_max_simultaneous_batches())
 
       max_batch_retries =
         attrs
         |> fetch_value(:max_batch_retries, max_retries_default)
-        |> parse_positive_integer(@default_max_batch_retries)
+        |> parse_positive_integer(default_max_batch_retries())
 
       metadata =
         attrs
@@ -744,7 +787,7 @@ defmodule Oli.Analytics.Backfill.Inventory do
   defp inventory_prefix(date, attrs, config) do
     case Map.get(attrs, :inventory_prefix) || Map.get(attrs, "inventory_prefix") do
       nil ->
-        suffix = config[:directory_time_suffix] || @default_directory_suffix
+        suffix = config[:directory_time_suffix] || default_directory_suffix()
         prefix = cleaned_join([config[:manifest_prefix], Date.to_iso8601(date) <> suffix])
         {:ok, prefix}
 
@@ -845,17 +888,17 @@ defmodule Oli.Analytics.Backfill.Inventory do
 
   defp default_config do
     %{
-      manifest_bucket: nil,
-      manifest_prefix: nil,
-      manifest_suffix: @default_manifest_suffix,
-      directory_time_suffix: @default_directory_suffix,
-      target_table: Backfill.default_target_table(),
-      format: "JSONAsString",
-      clickhouse_settings: %{},
-      options: %{},
-      batch_chunk_size: @default_batch_chunk_size,
-      max_simultaneous_batches: @default_max_simultaneous_batches,
-      max_batch_retries: @default_max_batch_retries
+      manifest_bucket: inventory_config_value(:manifest_bucket),
+      manifest_prefix: inventory_config_value(:manifest_prefix),
+      manifest_suffix: default_manifest_suffix(),
+      directory_time_suffix: default_directory_suffix(),
+      target_table: inventory_config_value(:target_table, Backfill.default_target_table()),
+      format: inventory_config_value(:format, "JSONAsString"),
+      clickhouse_settings: inventory_config_value(:clickhouse_settings, %{}),
+      options: inventory_config_value(:options, %{}),
+      batch_chunk_size: default_batch_chunk_size(),
+      max_simultaneous_batches: default_max_simultaneous_batches(),
+      max_batch_retries: default_max_batch_retries()
     }
   end
 
