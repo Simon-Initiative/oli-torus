@@ -419,6 +419,7 @@ defmodule OliWeb.Components.Delivery.Students do
     ~H"""
     <div id={@id} class="flex flex-col gap-2 mx-10 mb-10">
       <.live_component
+        :if={@tab_name == :students}
         module={OliWeb.Components.LiveModal}
         id="students_table_add_enrollments_modal"
         title="Add enrollments"
@@ -539,7 +540,7 @@ defmodule OliWeb.Components.Delivery.Students do
           </h4>
           <div class="flex flex-row items-center gap-x-4">
             <button
-              :if={@section_open_and_free}
+              :if={@section_open_and_free and @tab_name == :students}
               phx-click="open"
               phx-target="#students_table_add_enrollments_modal"
               class="btn btn-sm rounded-md bg-Fill-Buttons-fill-primary text-Text-text-white text-sm font-semibold leading-none px-4 py-2"
