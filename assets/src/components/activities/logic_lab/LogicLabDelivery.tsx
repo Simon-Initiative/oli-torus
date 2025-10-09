@@ -106,6 +106,12 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
   const attemptGuid = attemptState?.attemptGuid ?? activityState.attemptGuid;
   const partAttemptGuid = currentPart?.attemptGuid ?? activityState.parts[0].attemptGuid;
 
+  const getStoredInput = useCallback(
+    (state: ActivityDeliveryState, partId: string, part: typeof currentPart) =>
+      state.partState?.[partId]?.studentInput?.[0] ?? ensureStr(part?.response?.input),
+    [],
+  );
+
   const onMessage = useCallback(
     async (e: MessageEvent) => {
       try {
@@ -131,11 +137,15 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
                 if (mode === 'delivery') {
                   try {
                     const serializedInput = JSON.stringify(msg.score.input);
+                    const existingInput = getStoredInput(state, currentPartId, part);
+                    const payloadChanged = serializedInput !== existingInput;
                     // We don't have a concept of "selection", but setSelection action works to
                     // update the student input in the store and save to server
-                    await dispatch(
-                      setSelection(currentPartId, serializedInput, onSaveActivity, 'single'),
-                    );
+                    if (payloadChanged) {
+                      await dispatch(
+                        setSelection(currentPartId, serializedInput, onSaveActivity, 'single'),
+                      );
+                    }
                     await onSubmitEvaluations(attempt.attemptGuid, [
                       {
                         score: msg.score.score,
@@ -182,6 +192,8 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
                   if (isResetting || part.dateEvaluated) break;
 
                   const serializedInput = JSON.stringify(msg.state);
+                  const existingInput = getStoredInput(state, currentPartId, part);
+                  if (serializedInput === existingInput) break;
                   try {
                     await dispatch(
                       setSelection(currentPartId, serializedInput, onSaveActivity, 'single'),
