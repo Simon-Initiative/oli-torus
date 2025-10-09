@@ -137,6 +137,8 @@ defmodule Oli.Analytics.Backfill do
     update_run(run, attrs)
   end
 
+  @terminal_statuses [:completed, :failed, :cancelled]
+
   @doc """
   Ensure the run has an associated ClickHouse query identifier, generating and
   persisting one if necessary.
@@ -149,6 +151,18 @@ defmodule Oli.Analytics.Backfill do
   def ensure_query_id(%BackfillRun{} = run) do
     query_id = generate_query_id(run)
     transition_to(run, run.status, %{query_id: query_id})
+  end
+
+  @doc """
+  Permanently delete a backfill run that has finished.
+  """
+  @spec delete_run(BackfillRun.t()) :: {:ok, BackfillRun.t()} | {:error, term()}
+  def delete_run(%BackfillRun{} = run) do
+    if run.status in @terminal_statuses do
+      Repo.delete(run)
+    else
+      {:error, :not_deletable}
+    end
   end
 
   @doc """

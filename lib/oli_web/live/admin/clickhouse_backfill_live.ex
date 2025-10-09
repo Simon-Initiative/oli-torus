@@ -150,6 +150,33 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
     end
   end
 
+  def handle_event("delete_backfill_run", %{"id" => id}, socket) do
+    with {run_id, _} <- Integer.parse(to_string(id)),
+         run <- Backfill.get_run!(run_id),
+         {:ok, _} <- Backfill.delete_run(run) do
+      {:noreply,
+       socket
+       |> put_flash(:info, "Run #{run_id} deleted.")
+       |> refresh_runs()
+       |> maybe_schedule_refresh()}
+    else
+      :error ->
+        {:noreply, put_flash(socket, :error, "Invalid run identifier")}
+
+      {:error, :not_deletable} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Run #{id} is still processing.")
+         |> maybe_schedule_refresh()}
+
+      {:error, reason} ->
+        {:noreply, put_flash(socket, :error, format_error(reason))}
+    end
+  rescue
+    Ecto.NoResultsError ->
+      {:noreply, put_flash(socket, :error, "Run not found")}
+  end
+
   @impl true
   def handle_event("refresh_runs", _params, socket) do
     {:noreply, socket |> refresh_runs() |> maybe_schedule_refresh()}
@@ -259,6 +286,36 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
 
       {:error, :not_cancellable} ->
         {:noreply, put_flash(socket, :info, "Run #{id} is already finished.")}
+
+      {:error, reason} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, format_error(reason))
+         |> refresh_runs()}
+    end
+  rescue
+    Ecto.NoResultsError ->
+      {:noreply, put_flash(socket, :error, "Run not found")}
+  end
+
+  def handle_event("delete_inventory_run", %{"id" => id}, socket) do
+    with {run_id, _} <- Integer.parse(to_string(id)),
+         run <- Inventory.get_run!(run_id),
+         {:ok, _} <- Inventory.delete_run(run) do
+      {:noreply,
+       socket
+       |> put_flash(:info, "Inventory run #{run_id} deleted.")
+       |> refresh_runs()
+       |> maybe_schedule_refresh()}
+    else
+      :error ->
+        {:noreply, put_flash(socket, :error, "Invalid run identifier")}
+
+      {:error, :not_deletable} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Run #{id} is still processing.")
+         |> maybe_schedule_refresh()}
 
       {:error, reason} ->
         {:noreply,
@@ -506,6 +563,9 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
                   <th class="px-3 py-2 text-left font-medium text-gray-600 dark:text-gray-300">
                     Details
                   </th>
+                  <th class="px-3 py-2 text-left font-medium text-gray-600 dark:text-gray-300">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
@@ -550,6 +610,14 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
                       <%= if run.error do %>
                         <div class="mt-2 text-xs text-red-600 break-words">{run.error}</div>
                       <% end %>
+                      <.button
+                        :if={deletable_inventory_run?(run)}
+                        phx-click="delete_inventory_run"
+                        phx-value-id={run.id}
+                        class="btn-danger btn-xs mt-2"
+                      >
+                        Delete Run
+                      </.button>
                     </td>
                     <td class="px-3 py-3 max-w-xs">
                       <div class="text-xs text-gray-700 dark:text-gray-300 break-all">
@@ -574,6 +642,16 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
                         <pre class="mt-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded p-2 max-h-48 overflow-y-auto">{encode_metadata(run.metadata)}</pre>
                       </details>
                     </td>
+                    <td class="px-3 py-3 text-xs text-gray-600 dark:text-gray-300">
+                      <.button
+                        :if={deletable_backfill_run?(run)}
+                        phx-click="delete_backfill_run"
+                        phx-value-id={run.id}
+                        class="btn-danger btn-xs"
+                      >
+                        Delete Run
+                      </.button>
+                    </td>
                   </tr>
                 <% end %>
               </tbody>
@@ -596,64 +674,45 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
             <p class="text-xs text-gray-500 dark:text-gray-400">
               Current batch size: {Map.get(@inventory_config, :batch_chunk_size, 25)} files per ClickHouse insert.
             </p>
-            <p class="text-xs text-gray-500 dark:text-gray-400">
-              Simultaneous batch jobs: {Map.get(@inventory_config, :max_simultaneous_batches, 1)}
-            </p>
-            <p class="text-xs text-gray-500 dark:text-gray-400">
-              Max retries per batch: {Map.get(@inventory_config, :max_batch_retries, 1)}
-            </p>
           </div>
 
           <.form
             for={@inventory_form}
             phx-change="inventory_validate"
             phx-submit="inventory_schedule"
-            class="grid gap-4 md:grid-cols-[220px_minmax(0,1fr)_160px_160px_auto] md:items-end"
+            class="flex flex-col gap-4 w-full"
           >
-            <.input
-              field={@inventory_form[:inventory_date]}
-              type="date"
-              label="Inventory Date"
-              value={@inventory_form_inputs.inventory_date}
-              required
-            />
-
-            <.input
-              field={@inventory_form[:target_table]}
-              label="Target Table"
-              value={@inventory_form_inputs.target_table}
-            />
-
-            <.input
-              field={@inventory_form[:max_simultaneous_batches]}
-              type="number"
-              label="Simultaneous Batch Jobs"
-              value={@inventory_form_inputs.max_simultaneous_batches}
-              min="1"
-              step="1"
-            />
-
-            <.input
-              field={@inventory_form[:max_batch_retries]}
-              type="number"
-              label="Max Retries per Batch"
-              value={@inventory_form_inputs.max_batch_retries}
-              min="1"
-              step="1"
-            />
-
-            <label class="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 md:col-span-4">
-              <input
-                type="checkbox"
-                name="inventory[dry_run]"
-                value="true"
-                checked={truthy?(@inventory_form_inputs.dry_run)}
-                class="h-4 w-4 rounded border-gray-300 text-delivery-primary focus:ring-delivery-primary"
+            <div class="flex flex-row w-full gap-4 flex-wrap">
+              <.input
+                field={@inventory_form[:inventory_date]}
+                type="date"
+                label="Inventory Date"
+                value={@inventory_form_inputs.inventory_date}
+                required
               />
-              <span>Dry run (skip ClickHouse inserts)</span>
-            </label>
 
-            <div class="flex items-center justify-end gap-3 md:justify-start">
+              <.input
+                field={@inventory_form[:target_table]}
+                label="Target Table"
+                value={@inventory_form_inputs.target_table}
+                class="flex-1"
+              />
+            </div>
+
+            <div>
+              <label class="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 md:col-span-4">
+                <input
+                  type="checkbox"
+                  name="inventory[dry_run]"
+                  value="true"
+                  checked={truthy?(@inventory_form_inputs.dry_run)}
+                  class="h-4 w-4 rounded border-gray-300 text-delivery-primary focus:ring-delivery-primary"
+                />
+                <span>Dry run (skip ClickHouse inserts)</span>
+              </label>
+            </div>
+
+            <div class="flex items-center justify-end gap-3">
               <.button type="button" phx-click="refresh_runs" class="btn-secondary">
                 Refresh Runs
               </.button>
@@ -714,6 +773,14 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
                     class="btn-secondary btn-xs"
                   >
                     Cancel Run
+                  </.button>
+                  <.button
+                    :if={deletable_inventory_run?(run)}
+                    phx-click="delete_inventory_run"
+                    phx-value-id={run.id}
+                    class="btn-danger btn-xs"
+                  >
+                    Delete Run
                   </.button>
                 </div>
                 <% percent = inventory_percent(run) %>
@@ -891,10 +958,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
                                 )}
                               </div>
                               <div class="text-xs break-all">
-                                Entries: {Enum.join(
-                                  List.wrap(log["entries"] || log[:entries] || []),
-                                  ", "
-                                )}
+                                Source: <code>{log["source_url"] || log[:source_url] || "—"}</code>
                               </div>
                             </div>
                           </div>
@@ -1196,8 +1260,6 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
   end
 
   defp inventory_default_inputs do
-    config = Application.get_env(:oli, :clickhouse_inventory, []) |> Enum.into(%{})
-
     default_date =
       Date.utc_today()
       |> Date.add(-1)
@@ -1205,34 +1267,27 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
     %{
       inventory_date: default_date,
       target_table: Backfill.default_target_table(),
-      dry_run: false,
-      max_simultaneous_batches: Map.get(config, :max_simultaneous_batches, 1),
-      max_batch_retries: Map.get(config, :max_batch_retries, 1)
+      dry_run: false
     }
   end
 
   defp inventory_form_changeset(attrs) do
     data = inventory_default_inputs()
+
     types = %{
       inventory_date: :date,
       target_table: :string,
-      dry_run: :boolean,
-      max_simultaneous_batches: :integer,
-      max_batch_retries: :integer
+      dry_run: :boolean
     }
 
     {data, types}
     |> Ecto.Changeset.cast(attrs, Map.keys(types))
     |> Ecto.Changeset.validate_required([
-      :inventory_date,
-      :max_simultaneous_batches,
-      :max_batch_retries
+      :inventory_date
     ])
     |> Ecto.Changeset.update_change(:target_table, &normalize_target_table/1)
     |> Ecto.Changeset.validate_length(:target_table, max: 255)
     |> Ecto.Changeset.validate_format(:target_table, ~r/^[a-zA-Z0-9_\.]+$/)
-    |> Ecto.Changeset.validate_number(:max_simultaneous_batches, greater_than: 0)
-    |> Ecto.Changeset.validate_number(:max_batch_retries, greater_than: 0)
   end
 
   defp inventory_form_values(inputs) do
@@ -1251,17 +1306,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
         inputs
         |> Map.get(:dry_run)
         |> Kernel.||(Map.get(inputs, "dry_run"))
-        |> truthy?(),
-      max_simultaneous_batches:
-        inputs
-        |> Map.get(:max_simultaneous_batches)
-        |> Kernel.||(Map.get(inputs, "max_simultaneous_batches"))
-        |> normalize_count_input(1),
-      max_batch_retries:
-        inputs
-        |> Map.get(:max_batch_retries)
-        |> Kernel.||(Map.get(inputs, "max_batch_retries"))
-        |> normalize_count_input(1)
+        |> truthy?()
     }
   end
 
@@ -1271,15 +1316,11 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
     date = params |> Map.get("inventory_date", "") |> String.trim()
     target = params |> Map.get("target_table", "") |> String.trim()
     dry_run = truthy?(Map.get(params, "dry_run"))
-    max_simultaneous = params |> Map.get("max_simultaneous_batches", "") |> String.trim()
-    max_retries = params |> Map.get("max_batch_retries", "") |> String.trim()
 
     %{
       inventory_date: date,
       target_table: if(target == "", do: Backfill.default_target_table(), else: target),
-      dry_run: dry_run,
-      max_simultaneous_batches: max_simultaneous,
-      max_batch_retries: max_retries
+      dry_run: dry_run
     }
   end
 
@@ -1352,15 +1393,6 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
   defp format_date_input(value) when is_binary(value), do: value
   defp format_date_input(_), do: ""
 
-  defp normalize_count_input(value, default) when is_integer(value) and value > 0,
-    do: Integer.to_string(value)
-
-  defp normalize_count_input(value, _default) when is_binary(value),
-    do: String.trim(value)
-
-  defp normalize_count_input(_value, default),
-    do: Integer.to_string(default)
-
   defp resolve_active_tab(params) do
     params
     |> fetch_active_tab_param()
@@ -1391,7 +1423,9 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
 
     percent =
       cond do
-        total <= 0 -> 0.0
+        total <= 0 ->
+          0.0
+
         true ->
           processed
           |> Kernel./(total)
@@ -1402,6 +1436,18 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
 
     %{percent: percent, processed: processed, total: total}
   end
+
+  defp deletable_backfill_run?(%BackfillRun{status: status})
+       when status in [:completed, :failed, :cancelled],
+       do: true
+
+  defp deletable_backfill_run?(_), do: false
+
+  defp deletable_inventory_run?(%InventoryRun{status: status})
+       when status in [:completed, :failed, :cancelled],
+       do: true
+
+  defp deletable_inventory_run?(_), do: false
 
   defp ensure_map(nil), do: %{}
   defp ensure_map(map) when is_map(map), do: map

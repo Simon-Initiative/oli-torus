@@ -131,7 +131,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
       assert rendered =~ "Inventory batch run has been enqueued"
     end
 
-    test "schedules inventory run with custom concurrency settings", %{conn: conn} do
+    test "inventory scheduling uses config-driven defaults", %{conn: conn} do
       Repo.delete_all(InventoryRun)
       Oban.Testing.reset()
 
@@ -139,9 +139,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
 
       params = %{
         "inventory_date" => "2024-07-02",
-        "target_table" => "analytics.custom_events",
-        "max_simultaneous_batches" => "3",
-        "max_batch_retries" => "4"
+        "target_table" => "analytics.custom_events"
       }
 
       view
@@ -149,12 +147,59 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
       |> render_submit()
 
       assert [%InventoryRun{} = run] = Repo.all(InventoryRun)
-      assert run.metadata["max_simultaneous_batches"] == 3
-      assert run.metadata["max_batch_retries"] == 4
+      assert run.metadata["max_simultaneous_batches"] == 1
+      assert run.metadata["max_batch_retries"] == 1
       refute run.dry_run
 
       rendered = render(view)
       assert rendered =~ "Inventory batch run has been enqueued"
+    end
+
+    test "allows deleting completed backfill run", %{conn: conn} do
+      Repo.delete_all(BackfillRun)
+
+      run =
+        %BackfillRun{
+          target_table: "analytics.raw_events",
+          s3_pattern: "s3://bucket/path/**/*.jsonl",
+          format: "JSONAsString",
+          status: :completed
+        }
+        |> Repo.insert!()
+
+      {:ok, view, _html} = live(conn, @route)
+
+      view
+      |> element("button[phx-click=\"delete_backfill_run\"][phx-value-id=\"#{run.id}\"]")
+      |> render_click()
+
+      refute Repo.get(BackfillRun, run.id)
+      assert render(view) =~ "Run #{run.id} deleted"
+    end
+
+    test "allows deleting completed inventory run", %{conn: conn} do
+      Repo.delete_all(InventoryRun)
+
+      run =
+        %InventoryRun{
+          inventory_date: ~D[2024-08-01],
+          inventory_prefix: "inventory/prefix",
+          manifest_url: "https://example.com/manifest.json",
+          manifest_bucket: "test-inventory-bucket",
+          target_table: "analytics.raw_events",
+          format: "JSONAsString",
+          status: :completed
+        }
+        |> Repo.insert!()
+
+      {:ok, view, _html} = live(conn, @route)
+
+      view
+      |> element("button[phx-click=\"delete_inventory_run\"][phx-value-id=\"#{run.id}\"]")
+      |> render_click()
+
+      refute Repo.get(InventoryRun, run.id)
+      assert render(view) =~ "Inventory run #{run.id} deleted"
     end
 
     test "shows validation error for invalid JSON settings", %{conn: conn} do

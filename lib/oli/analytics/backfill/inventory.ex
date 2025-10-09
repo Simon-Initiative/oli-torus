@@ -404,6 +404,18 @@ defmodule Oli.Analytics.Backfill.Inventory do
     end
   end
 
+  @doc """
+  Delete an inventory run that has already completed or been stopped.
+  """
+  @spec delete_run(InventoryRun.t()) :: {:ok, InventoryRun.t()} | {:error, term()}
+  def delete_run(%InventoryRun{} = run) do
+    if terminal_run_status?(run.status) do
+      Repo.delete(run)
+    else
+      {:error, :not_deletable}
+    end
+  end
+
   defp sum_field(batches, fun) do
     Enum.reduce(batches, 0, fn batch, acc ->
       case fun.(batch) do

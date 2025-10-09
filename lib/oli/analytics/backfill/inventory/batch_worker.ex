@@ -217,7 +217,7 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
     rows_written = metrics[:rows_written] || metrics[:rows_read] || 0
     bytes_written = metrics[:bytes_written] || metrics[:bytes_read] || 0
 
-    chunk_record = chunk_log(chunk_entries, metrics)
+    chunk_record = chunk_log(metrics)
 
     metadata =
       summary.metadata
@@ -230,7 +230,9 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
     |> Map.put(:metadata, metadata)
   end
 
-  defp chunk_log(entries, metrics) do
+  defp chunk_log(metrics) do
+    source_url = extract_source_url(metrics[:query])
+
     %{
       "query_id" => metrics[:query_id],
       "rows_read" => metrics[:rows_read],
@@ -238,10 +240,21 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
       "bytes_read" => metrics[:bytes_read],
       "bytes_written" => metrics[:bytes_written],
       "execution_time_ms" => metrics[:execution_time_ms],
-      "entries" => Enum.map(entries, & &1.key),
+      "source_url" => source_url,
       "dry_run" => metrics[:dry_run] || false
     }
   end
+
+  defp extract_source_url(nil), do: nil
+
+  defp extract_source_url(query) when is_binary(query) do
+    case Regex.run(~r/FROM\s+s3\('([^']+)'/, query, capture: :all_but_first) do
+      [url | _] -> url
+      _ -> nil
+    end
+  end
+
+  defp extract_source_url(_), do: nil
 
   defp ingest_chunk(
          %InventoryRun{dry_run: true} = run,
@@ -260,7 +273,7 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
        bytes_written: 0,
        execution_time_ms: 0,
        dry_run: true,
-       entry_count: length(entries)
+       query: nil
      }}
   end
 
@@ -307,9 +320,10 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
                  query_id: query_id,
                  rows_read: status[:rows_read],
                  rows_written: status[:rows_written],
-                 bytes_read: status[:bytes_read],
-                 bytes_written: status[:bytes_written],
-                 execution_time_ms: Map.get(response, :execution_time_ms)
+                bytes_read: status[:bytes_read],
+                bytes_written: status[:bytes_written],
+                execution_time_ms: Map.get(response, :execution_time_ms),
+                query: query
               }}
           end
         end
@@ -457,9 +471,6 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
 
       {:error, reason} ->
         {:error, reason}
-
-      other ->
-        other
     end
   end
 

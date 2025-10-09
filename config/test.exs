@@ -34,9 +34,16 @@ config :oli, :xapi_upload_pipeline,
   xapi_local_output_dir: System.get_env("XAPI_LOCAL_TEST_OUTPUT_DIR", "./xapi_test_output")
 
 # Configure your database
+test_db_password =
+  case System.get_env("DB_PASSWORD") do
+    nil -> nil
+    "" -> nil
+    value -> value
+  end
+
 config :oli, Oli.Repo,
   username: System.get_env("DB_USER", "postgres"),
-  password: System.get_env("DB_PASSWORD", "postgres"),
+  password: test_db_password,
   hostname: System.get_env("DB_HOST", "localhost"),
   database: "oli_test",
   pool: Ecto.Adapters.SQL.Sandbox,

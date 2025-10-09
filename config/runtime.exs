@@ -86,15 +86,17 @@ config :oli, :certificates,
 inventory_manifest_bucket = System.get_env("CLICKHOUSE_INVENTORY_MANIFEST_BUCKET")
 inventory_manifest_prefix = System.get_env("CLICKHOUSE_INVENTORY_MANIFEST_PREFIX")
 
+@default_inventory_chunk_size 1000
+
 inventory_chunk_size =
   case System.get_env("CLICKHOUSE_INVENTORY_BATCH_CHUNK_SIZE") do
     nil ->
-      25
+      @default_inventory_chunk_size
 
     value ->
       case Integer.parse(value) do
         {int, _} when int > 0 -> int
-        _ -> 25
+        _ -> @default_inventory_chunk_size
       end
   end
 
