@@ -184,7 +184,9 @@ defmodule OliWeb.InviteController do
     context_role = ContextRoles.get_role(context_identifier)
     user_ids = Enum.map(users, & &1.id)
 
-    Sections.enroll(user_ids, section.id, [context_role], :pending_confirmation)
+    with :ok <- Sections.ensure_direct_delivery_batch_enrollment_allowed(user_ids, section) do
+      Sections.enroll(user_ids, section.id, [context_role], :pending_confirmation)
+    end
   end
 
   defp bulk_create_invitation_tokens(users, section_slug) do

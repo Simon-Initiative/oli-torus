@@ -138,7 +138,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
         view
         |> render()
         |> Floki.parse_fragment!()
-        |> Floki.find(~s{.instructor_dashboard_table tbody tr td:nth-child(2)})
+        |> Floki.find(~s{.instructor_dashboard_table tbody tr td:nth-child(3)})
         |> Enum.map(fn td -> Floki.text(td) end)
 
       assert String.trim(student_1_email) == student_1.email
@@ -182,14 +182,14 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
         view
         |> render()
         |> Floki.parse_fragment!()
-        |> Floki.find(~s{.instructor_dashboard_table tbody tr:nth-child(1) td:nth-child(3)})
+        |> Floki.find(~s{.instructor_dashboard_table tbody tr:nth-child(1) td:nth-child(4)})
         |> Enum.map(fn td -> Floki.text(td) end)
 
       [student_2_last_interaction] =
         view
         |> render()
         |> Floki.parse_fragment!()
-        |> Floki.find(~s{.instructor_dashboard_table tbody tr:nth-child(2) td:nth-child(3)})
+        |> Floki.find(~s{.instructor_dashboard_table tbody tr:nth-child(2) td:nth-child(4)})
         |> Enum.map(fn td -> Floki.text(td) end)
 
       assert student_1_last_interaction =~
@@ -945,7 +945,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
         sort_order: :asc,
         container_filter_by: :units,
         selected_card_value: :zero_student_progress,
-        progress_percentage: 100,
         selected_proficiency_ids: Jason.encode!([])
       }
 

@@ -15,6 +15,7 @@ defmodule OliWeb.Products.ProductsView do
   alias OliWeb.Router.Helpers, as: Routes
 
   @limit 20
+  @min_search_length 3
   @text_search_tooltip """
     Search by section title, amount or base project title.
   """
@@ -72,11 +73,14 @@ defmodule OliWeb.Products.ProductsView do
   defp mount_as(params, author, is_admin_view, project, breadcrumbs, title, socket) do
     {project_id, project_slug} = {project && project.id, (project && project.slug) || ""}
 
+    raw_text_search = params |> Params.get_param("text_search", "") |> String.trim()
+    applied_search = sanitize_search_term(raw_text_search)
+
     products =
       Blueprint.browse(
         %Paging{offset: 0, limit: @limit},
         %Sorting{direction: :desc, field: :inserted_at},
-        text_search: Params.get_param(params, "text_search", ""),
+        text_search: applied_search,
         include_archived: Params.get_boolean_param(params, "include_archived", false),
         project_id: project_id
       )
@@ -88,7 +92,8 @@ defmodule OliWeb.Products.ProductsView do
     {:ok, table_model} =
       ProductsTableModel.new(products, ctx, project_slug,
         sort_by_spec: :inserted_at,
-        sort_order: :desc
+        sort_order: :desc,
+        search_term: applied_search
       )
 
     published? =
@@ -112,7 +117,7 @@ defmodule OliWeb.Products.ProductsView do
        offset: 0,
        limit: @limit,
        query: "",
-       text_search: "",
+       text_search: raw_text_search,
        text_search_tooltip: @text_search_tooltip,
        creation_title: ""
      )}
@@ -177,7 +182,8 @@ defmodule OliWeb.Products.ProductsView do
   def handle_params(params, _, socket) do
     table_model = SortableTableModel.update_from_params(socket.assigns.table_model, params)
     offset = Params.get_int_param(params, "offset", 0)
-    text_search = Params.get_param(params, "text_search", "")
+    raw_text_search = params |> Params.get_param("text_search", "") |> String.trim()
+    applied_search = sanitize_search_term(raw_text_search)
     include_archived = Params.get_boolean_param(params, "include_archived", false)
     limit = Params.get_int_param(params, "limit", @limit)
 
@@ -188,12 +194,15 @@ defmodule OliWeb.Products.ProductsView do
           direction: table_model.sort_order,
           field: table_model.sort_by_spec.name
         },
-        text_search: text_search,
+        text_search: applied_search,
         include_archived: include_archived,
         project_id: socket.assigns.project && socket.assigns.project.id
       )
 
-    table_model = %SortableTableModel{table_model | rows: products}
+    table_model =
+      table_model
+      |> Map.put(:rows, products)
+      |> Map.update!(:data, &Map.put(&1, :search_term, applied_search))
 
     total_count = determine_total(products)
 
@@ -202,7 +211,7 @@ defmodule OliWeb.Products.ProductsView do
        offset: offset,
        table_model: table_model,
        total_count: total_count,
-       text_search: text_search,
+       text_search: raw_text_search,
        include_archived: include_archived,
        limit: limit
      )}
@@ -245,7 +254,7 @@ defmodule OliWeb.Products.ProductsView do
   end
 
   def handle_event("text_search_change", %{"product_name" => product_name}, socket) do
-    patch_with(socket, %{text_search: product_name})
+    patch_with(socket, %{text_search: String.trim(product_name)})
   end
 
   def handle_event("paged_table_sort", %{"sort_by" => sort_by_str}, socket) do
@@ -320,6 +329,18 @@ defmodule OliWeb.Products.ProductsView do
     case products do
       [] -> 0
       [hd | _] -> hd.total_count
+    end
+  end
+
+  defp sanitize_search_term(nil), do: ""
+
+  defp sanitize_search_term(search) when is_binary(search) do
+    trimmed = String.trim(search)
+
+    cond do
+      trimmed == "" -> ""
+      String.length(trimmed) < @min_search_length -> ""
+      true -> trimmed
     end
   end
 end

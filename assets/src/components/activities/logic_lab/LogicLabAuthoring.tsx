@@ -5,92 +5,262 @@ As a full authoring interface is not yet available, this simple interface
 allows authors to select an activity from the list of the available activities.
 Some basic filtering on the list has been implemented.
 */
-import React, { FC, useEffect, useState } from 'react';
+import React, { FC, useEffect, useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { Provider } from 'react-redux';
+import { ErrorBoundary } from 'components/common/ErrorBoundary';
+import { LoadingSpinner } from 'components/common/LoadingSpinner';
+import { safelyTypesetPromise } from 'components/common/MathJaxFormula';
 import { configureStore } from 'state/store';
+import { clone } from 'utils/common';
+import { Operations } from 'utils/pathOperations';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
-import { Manifest } from '../types';
-import { LabActivity, LogicLabModelSchema, getLabServer } from './LogicLabModelSchema';
+import { Manifest, PostUndoable, makeUndoable } from '../types';
+import {
+  AllActivityTypes,
+  LabActivity,
+  LogicLabModelSchema,
+  isLabActivity,
+  maxPoints,
+  translateActivityType,
+  useLabServer,
+} from './LogicLabModelSchema';
 
 const STORE = configureStore();
-
-/**
- * A simple Bootstrap loading spinner component.
- * @returns A loading spinner component
- */
-const Loading: FC = () => (
-  <div className="spinner-border text-primary" role="status">
-    <span className="visually-hidden sr-only">Loading...</span>
-  </div>
-);
-
-/**
- * Checks if MathJax's typeset function is available and runs it.
- */
-const typeset = () => {
-  // Workaround limited MathJaxMinimal implementation.
-  const math = window.MathJax as any;
-  if (typeof math.typeset === 'function') {
-    math.typeset();
-  }
-};
 
 type DetailsProps = { activity?: LabActivity };
 
 /**
- * Compontent for displaying activity summary details.
+ * Component for displaying activity summary details.
  * Useful in helping identify the selected activity.
  * Shows id, title, type, any keywords, any comments, dates, and any preview.
  * @component
  */
-const Details: FC<DetailsProps> = ({ activity }: DetailsProps) => {
-  if (!activity) {
+const Details: FC<DetailsProps> = ({ activity }) => {
+  const previewDiv = useRef<HTMLDivElement | null>(null);
+
+  // Typeset math in previews.
+  useEffect(() => {
+    if (activity && previewDiv.current) safelyTypesetPromise([previewDiv.current]);
+  }, [activity]);
+
+  if (!isLabActivity(activity)) {
     // if no activity then show warning.
     return <p className="alert alert-warning">No activity.</p>;
   }
   return (
     <div>
-      <table className="table">
+      <table className="table table-striped table-bordered table-sm">
         <tbody>
           <tr>
-            <th>Id:</th>
+            <th scope="row" className="text-start">
+              Id:
+            </th>
             <td>{activity.id}</td>
           </tr>
           <tr>
-            <th>Type:</th>
-            <td>{activity.spec.type}</td>
+            <th scope="row" className="text-start">
+              Type:
+            </th>
+            <td>
+              {translateActivityType(activity.spec.type)}
+              {activity.spec.type === 'derivation' ? (
+                <span className="badge bg-info mx-2">
+                  {activity.spec.tutor ? 'Tutored' : 'Untutored'}
+                </span>
+              ) : null}
+            </td>
           </tr>
           <tr>
-            <th>Title:</th>
+            <th scope="row" className="text-start">
+              Title:
+            </th>
             <td>{activity.title}</td>
           </tr>
-          {activity.keywords.length && (
+          {activity.keywords.length ? (
             <tr>
-              <th>Keywords:</th>
+              <th scope="row" className="text-start">
+                Keywords:
+              </th>
               <td>{activity.keywords.join('/')}</td>
             </tr>
-          )}
-          {activity.comment && (
+          ) : null}
+          {activity.comment ? (
             <tr>
-              <th>Comment:</th>
+              <th scope="row" className="text-start">
+                Comment:
+              </th>
               <td>{activity.comment}</td>
             </tr>
-          )}
+          ) : null}
           <tr>
-            <th>Created:</th>
-            <td>{new Date(activity.created).toLocaleString()}</td>
+            <th scope="row" className="text-start">
+              Created:
+            </th>
+            <td>{activity.created && new Date(activity.created).toLocaleString()}</td>
           </tr>
           <tr>
-            <th>Last Modified:</th>
-            <td>{new Date(activity.modified).toLocaleString()}</td>
+            <th scope="row" className="text-start">
+              Last Modified:
+            </th>
+            <td>{activity.modified && new Date(activity.modified).toLocaleString()}</td>
           </tr>
         </tbody>
       </table>
       {activity.spec.preview && (
-        <div className="card" dangerouslySetInnerHTML={{ __html: activity.spec.preview }}></div>
+        <div
+          className="card"
+          ref={previewDiv}
+          dangerouslySetInnerHTML={{ __html: activity.spec.preview }}
+        ></div>
       )}
+    </div>
+  );
+};
+
+// To be used to update the activity in the model as part of a dispatch.
+const updateActivity =
+  (activity: LabActivity, source?: string) => (model: LogicLabModelSchema, post: PostUndoable) => {
+    post(
+      makeUndoable('Set LogicLab activity', [
+        Operations.replace('$.activity', clone(model.activity)),
+        Operations.setKey('$.authoring', 'source', model.authoring.source),
+        Operations.setKey('$.authoring.parts[0]', 'outOf', maxPoints(model.activity)),
+      ]),
+    );
+    Operations.apply(model, Operations.replace('$.activity', activity));
+    Operations.apply(model, Operations.setKey('$.authoring', 'source', source));
+    Operations.apply(
+      model,
+      Operations.setKey('$.authoring.parts[0]', 'outOf', maxPoints(activity)),
+    );
+  };
+
+// Check fetch response for bad responses statuses and throws if needed.
+const checkResponse = async (response: Response) => {
+  if (!response.ok) {
+    if (response.status === 403) {
+      throw new Error('You do not have permission to access the LogicLab server.');
+    }
+    if (response.status === 404) {
+      throw new Error(
+        'LogicLab server is not configured for this Torus instance. Please contact support.',
+      );
+    }
+    if (response.status === 500) {
+      throw new Error('Internal LogicLab server error. Please contact technical support.');
+    }
+    if (response.status === 400) {
+      // TODO process the error json message from the server.
+      if (response.headers.get('Content-Type')?.includes('application/json')) {
+        const error = await response.json();
+        throw new Error(error.detail.message ?? 'Invalid activity file.');
+      }
+      throw new Error('Invalid activity file.');
+    }
+    throw new Error(response.statusText || 'LogicLab server returned an error.');
+  }
+};
+
+/**
+ * Custom hook to fetch the list of LogicLab activities available on the server.
+ * @param authoringContext - the authoring context containing the LogicLab server URL.
+ * @returns
+ */
+const useLogicLabActivityList = (server?: string) => {
+  const [activities, setActivities] = useState<LabActivity[]>([]);
+  const [loading, setLoading] = useState<'loading' | 'loaded' | 'error'>('loading');
+  const [servletError, setError] = useState<string>(''); // last error from servlet call
+  const controller = useRef<AbortController | null>(null);
+  const handleError = (err: unknown) => {
+    if (err instanceof Error && err.name === 'AbortError') {
+      // ignore abort errors
+      return;
+    }
+    console.error(err);
+    setLoading('error');
+    if (err instanceof ReferenceError) {
+      setError(
+        'LogicLab server is not configured for this Torus instance.  Please contact support.',
+      );
+    } else if (err instanceof Error && err.message) {
+      setError(err.message);
+    } else if (typeof err === 'string') {
+      setError(err);
+    } else {
+      setError('Unknown error type.');
+    }
+  };
+  useEffect(() => {
+    if (server) {
+      // fix for uninitialized server parameter.
+      controller.current = new AbortController();
+      const signal = controller.current.signal;
+      const getActivities = async () => {
+        setLoading('loading');
+        try {
+          const url = new URL('api/v1/activities', server);
+          const response = await fetch(
+            url.toString(), // tsc does not allow URL as parameter, contrary to MDM spec.
+            {
+              signal,
+              headers: { Accept: 'application/json' },
+            },
+          );
+          if (signal.aborted) {
+            return;
+          }
+          await checkResponse(response);
+          const problems = (await response.json()) as LabActivity[];
+          problems.sort((a, b) =>
+            [...a.keywords, a.id].join('/').localeCompare([...b.keywords, b.id].join('/')),
+          );
+          setActivities(problems);
+          setLoading('loaded');
+          controller.current = null;
+        } catch (err) {
+          handleError(err);
+        }
+      };
+      getActivities().catch(handleError);
+    }
+    // abort load if component rendering interrupted.
+    return () => controller.current?.abort('Component unmounted or server changed.');
+  }, [server]);
+  return { activities, loading, servletError };
+};
+
+/** Generate a unique id, shim for react^18's useId. */
+const useId = (): string => {
+  const [id] = useState<string>(
+    crypto?.randomUUID?.() ?? `uid_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+  );
+  return id;
+};
+
+type FilterCheckboxProps = {
+  name: string;
+  disabled?: boolean;
+  checked?: boolean;
+  onChange: (target: string, checked: boolean) => void;
+};
+const FilterCheckbox: FC<FilterCheckboxProps> = ({ name, disabled, checked, onChange }) => {
+  const id = useId();
+  return (
+    <div className="flex items-center">
+      <input
+        type="checkbox"
+        id={id}
+        name={name}
+        disabled={disabled}
+        checked={checked}
+        onChange={(e) => onChange(name, e.target.checked)}
+        className="rounded-sm"
+      />
+      <label className="mx-2 ms-2 text-sm font-medium text-nowrap" htmlFor={id}>
+        {translateActivityType(name)}
+      </label>
     </div>
   );
 };
@@ -104,90 +274,54 @@ type LogicLabAuthoringProps = AuthoringElementProps<LogicLabModelSchema>;
 const Authoring: FC<LogicLabAuthoringProps> = (props: LogicLabAuthoringProps) => {
   const { dispatch, model, editMode, authoringContext } =
     useAuthoringElementContext<LogicLabModelSchema>();
-  const [activityId, setActivityId] = useState<string>(props.model.activity);
+
+  const [activityId, setActivityId] = useState<string | LabActivity>(props.model.activity);
   useEffect(() => {
     setActivityId(model.activity);
-  }, [model]);
+  }, [model.activity]);
 
-  // Current loading state.
-  const [loading, setLoading] = useState<'loading' | 'loaded' | 'error'>('loading');
-  const [servletError, setServletError] = useState(''); // last error from servlet call
-  //const guid = useId(); // Needs react ^18
-  const [id] = useState<string>(crypto.randomUUID()); // alternative to useId()
+  const id = useId();
 
   // Set of flags bound to activity type filter checkboxes.
-  const [includeArgument, setIncludeArgument] = useState(true);
-  const [includeParse, setIncludeParse] = useState(true);
-  const [includeDerivation, setIncludeDerivation] = useState(true);
-  const [includeChase, setIncludeChase] = useState(true);
-  const [includeTable, setIncludeTable] = useState(true);
-  const [includeTree, setIncludeTree] = useState(true);
-  const [includeSet, setIncludeSet] = useState(false);
   const allowSets = false; // sets not supported in lab officially, yet
-
-  const [activities, setActivities] = useState<LabActivity[]>([]); // List of available activities
-  const [activity, setActivity] = useState<LabActivity | undefined>(); // Currently selected activity
-
-  // On mount, load the list of activities.
-  useEffect(() => {
-    const controller = new AbortController();
-    const signal = controller.signal;
-    const getActivities = async () => {
-      setLoading('loading');
-      const server = getLabServer(authoringContext);
-      const url = new URL('api/v1/activities', server);
-      const response = await fetch(
-        url.toString(), // tsc does not allow URL as parameter, contrary to MDM spec.
-        {
-          signal,
-          headers: { Accept: 'application/json' },
-        },
-      );
-      if (signal.aborted) {
-        return;
-      }
-      if (!response.ok) {
-        throw new Error(response.statusText);
-      }
-      const problems = (await response.json()) as LabActivity[];
-      problems.sort((a, b) =>
-        [...a.keywords, a.id].join('/').localeCompare([...b.keywords, b.id].join('/')),
-      );
-      setActivities(problems);
-      setLoading('loaded');
-    };
-    getActivities().catch((err) => {
-      console.error(err);
-      setLoading('error');
-      if (err instanceof ReferenceError) {
-        setServletError('LogicLab server is not configured for this Torus instance.');
-      } else if (err instanceof Error) {
-        setServletError(err.message);
-      } else if (typeof err === 'string') {
-        setServletError(err);
+  const [filters, setFilters] = useState<string[]>(AllActivityTypes); // current set of filters
+  const setFilter = (type: string, checked: boolean) => {
+    setFilters((prev) => {
+      if (checked) {
+        if (prev.includes(type)) return prev;
+        return [...prev, type];
       } else {
-        setServletError('Unknown error type.');
+        return prev.filter((t) => t !== type);
       }
     });
+  };
+  const [search, setSearch] = useState<string>(''); // current text filter
 
-    // abort load if component rendering interupted.
-    return () => controller.abort();
-  }, [authoringContext]);
+  const [activity, setActivity] = useState<LabActivity | undefined>(); // Currently selected activity
+  const server = useLabServer(authoringContext);
+  const { activities, loading, servletError } = useLogicLabActivityList(server);
 
-  // Set activity data when there are activities an an id.
+  const [invalid, setInvalid] = useState<string>(''); // invalid file message
+
+  // Set activity data when there are activities and an id.
   useEffect(() => {
+    if (isLabActivity(activityId)) {
+      setActivity(activityId);
+      return;
+    }
     setActivity(activities?.find((a) => a.id === activityId));
   }, [activityId, activities]);
 
-  // Typeset math in previews.
+  const [sort, setSort] = useState<string>('id-asc'); // current sort order
+  const isTutored = (activity: LabActivity | string | undefined): boolean =>
+    isLabActivity(activity) && activity?.spec.type === 'derivation' && !!activity?.spec.tutor;
+  const [tutor, setTutor] = useState<boolean>(isTutored(props.model.activity)); // tutoring mode for derivation activities
   useEffect(() => {
-    if (activity) typeset();
+    setTutor(isTutored(activity));
   }, [activity]);
 
   return (
-    <div className="card">
-      <div className="card-title">AProS LogicLab Activity</div>
-      {loading === 'loading' && <Loading />}
+    <>
       {loading === 'error' && (
         <div className="alert alert-danger">
           <details>
@@ -196,165 +330,298 @@ const Authoring: FC<LogicLabAuthoringProps> = (props: LogicLabAuthoringProps) =>
           </details>
         </div>
       )}
-      {loading === 'loaded' && (
-        <>
-          {editMode && (
-            <form>
+      {editMode && (
+        <div className="w-full p-2 border border-secondary rounded-lg shadow-sm">
+          <form>
+            <p>Either select an existing activity or upload a new one.</p>
+            <fieldset className="mx-3 ml-5 ms-5 mb-2 border border-secondary rounded-lg p-1 py-3 mt-3">
+              <legend className="text-sm font-medium mx-4">
+                Activity Types included in selection:
+              </legend>
               <div className="flex items-baseline gap-2 flex-wrap">
-                <span>Activity&nbsp;Types:</span>
-                <div className="flex items-center">
-                  <input
-                    id={`$id_filter_argument`}
-                    type="checkbox"
-                    checked={includeArgument}
-                    onChange={(e) => setIncludeArgument(e.target.checked)}
+                <FilterCheckbox
+                  name="argument_diagram"
+                  checked={filters.includes('argument_diagram')}
+                  onChange={setFilter}
+                  disabled={!activities || activities.length === 0}
+                />
+                <FilterCheckbox
+                  name="chase_truth"
+                  checked={filters.includes('chase_truth')}
+                  onChange={setFilter}
+                  disabled={!activities || activities.length === 0}
+                />
+                <FilterCheckbox
+                  name="derivation"
+                  checked={filters.includes('derivation')}
+                  onChange={setFilter}
+                  disabled={!activities || activities.length === 0}
+                />
+                <FilterCheckbox
+                  name="parse_tree"
+                  checked={filters.includes('parse_tree')}
+                  onChange={setFilter}
+                  disabled={!activities || activities.length === 0}
+                />
+                <FilterCheckbox
+                  name="truth_table"
+                  checked={filters.includes('truth_table')}
+                  onChange={setFilter}
+                  disabled={!activities || activities.length === 0}
+                />
+                <FilterCheckbox
+                  name="truth_tree"
+                  checked={filters.includes('truth_tree')}
+                  onChange={setFilter}
+                  disabled={!activities || activities.length === 0}
+                />
+                {allowSets ? (
+                  <FilterCheckbox
+                    name="activities"
+                    checked={filters.includes('activities')}
+                    onChange={setFilter}
+                    disabled={!activities || activities.length === 0}
                   />
-                  <label htmlFor={`$id_filter_argument`} className="ms-2 text-sm text-nowrap">
-                    Argument&nbsp;Diagrams
-                  </label>
-                </div>
-                <div className="flex items-center">
-                  <input
-                    id={`$id_filter_chase`}
-                    type="checkbox"
-                    checked={includeChase}
-                    onChange={(e) => setIncludeChase(e.target.checked)}
-                  />
-                  <label htmlFor={`$id_filter_chase`} className="ms-2 text-sm text-nowrap">
-                    Chasing&nbsp;Truth
-                  </label>
-                </div>
-                <div className="flex items-center">
-                  <input
-                    id={`$id_filter_derivation`}
-                    type="checkbox"
-                    checked={includeDerivation}
-                    onChange={(e) => setIncludeDerivation(e.target.checked)}
-                  />
-                  <label htmlFor={`$id_filter_derivation`} className="ms-2 text-sm text-nowrap">
-                    Derivations
-                  </label>
-                </div>
-                <div className="flex items-center">
-                  <input
-                    id={`$id_filter_parse`}
-                    type="checkbox"
-                    checked={includeParse}
-                    onChange={(e) => setIncludeParse(e.target.checked)}
-                  />
-                  <label htmlFor={`$id_filter_parse`} className="ms-2 text-sm text-nowrap">
-                    Parse Trees
-                  </label>
-                </div>
-                <div className="flex items-center">
-                  <input
-                    id={`$id_filter_table`}
-                    type="checkbox"
-                    checked={includeTable}
-                    onChange={(e) => setIncludeTable(e.target.checked)}
-                  />
-                  <label htmlFor={`$id_filter_table`} className="ms-2 text-sm text-nowrap">
-                    Truth&nbsp;Tables
-                  </label>
-                </div>
-                <div className="flex items-center">
-                  <input
-                    id={`$id_filter_tree`}
-                    type="checkbox"
-                    checked={includeTree}
-                    onChange={(e) => setIncludeTree(e.target.checked)}
-                  />
-                  <label htmlFor={`$id_filter_tree`} className="ms-2 text-sm text-nowrap">
-                    Truth&nbsp;Trees
-                  </label>
-                </div>
-                {allowSets && (
-                  <div className="flex items-center">
+                ) : null}
+              </div>
+            </fieldset>
+            <fieldset className="mx-3 ml-5 ms-5 mb-2 flex flex-wrap border border-secondary rounded-lg">
+              <legend className="mx-4 text-sm font-medium">Sort Activities in selection:</legend>
+              <ul className="items-center inline w-fit text-sm font-medium border border-secondary rounded-lg flex mx-3 mb-2">
+                <li className="border-b border-secondary sm:border-b-0 sm:border-r">
+                  <label className="mx-2 my-1">
                     <input
-                      id={`$id_filter_set`}
-                      type="checkbox"
-                      checked={includeSet}
-                      onChange={(e) => setIncludeSet(e.target.checked)}
+                      type="radio"
+                      name="sort"
+                      value="id-asc"
+                      className="mx-1"
+                      checked={sort === 'id-asc'}
+                      onChange={() => setSort('id-asc')}
                     />
-                    <label htmlFor={`$id_filter_set`} className="ms-2 text-sm text-nowrap">
-                      Activity&nbsp;Set
-                    </label>
-                  </div>
-                )}
+                    Id <i aria-hidden="true" className="fa-solid fa-sort-alpha-down"></i>
+                    <span className="sr-only">Sort by id ascending</span>
+                  </label>
+                </li>
+                <li className="border-b border-secondary sm:border-b-0 sm:border-r">
+                  <label className="mx-2 my-1">
+                    <input
+                      type="radio"
+                      name="sort"
+                      value="id-dec"
+                      className="mx-1"
+                      checked={sort === 'id-dec'}
+                      onChange={() => setSort('id-dec')}
+                    />
+                    Id <i aria-hidden="true" className="fa-solid fa-sort-alpha-up"></i>
+                    <span className="sr-only">Sort by id descending</span>
+                  </label>
+                </li>
+                <li className="border-b border-secondary sm:border-b-0 sm:border-r">
+                  <label className="mx-2 my-1">
+                    <input
+                      type="radio"
+                      name="sort"
+                      value="title"
+                      className="mx-1"
+                      checked={sort === 'title-asc'}
+                      onChange={() => setSort('title-asc')}
+                    />
+                    Title <i aria-hidden="true" className="fa-solid fa-sort-alpha-down"></i>
+                    <span className="sr-only">Sort by title ascending</span>
+                  </label>
+                </li>
+                <li className="">
+                  <label className="mx-2 my-1">
+                    <input
+                      type="radio"
+                      name="sort"
+                      value="title-dec"
+                      className="mx-1"
+                      checked={sort === 'title-dec'}
+                      onChange={() => setSort('title-dec')}
+                    />
+                    Title <i aria-hidden="true" className="fa-solid fa-sort-alpha-up"></i>
+                    <span className="sr-only">Sort by title descending</span>
+                  </label>
+                </li>
+              </ul>
+            </fieldset>
+            <div className="m-3 ms-5 ml-5 flex flex-row gap-2 items-center">
+              <label htmlFor={`${id}-search`} className="flex-none text-sm font-medium">
+                Text Filter:
+              </label>
+              <div className="flex grow">
+                <input
+                  id={`${id}-search`}
+                  type="text"
+                  placeholder="Filter on id, title, keywords, and comment"
+                  className="border rounded-none rounded-s-lg rounded-l-lg w-full"
+                  value={search}
+                  onChange={(e) => {
+                    setSearch(e.target.value.trim());
+                  }}
+                />
+                <button
+                  type="button"
+                  className="btn btn-secondary rounded-none rounded-e-lg rounded-r-lg"
+                  onClick={() => setSearch('')}
+                  aria-label="Clear text filter"
+                  title="Clear text filter"
+                >
+                  <i className="fa-solid fa-broom">
+                    <span className="sr-only">Clear text filter</span>
+                  </i>
+                </button>
               </div>
-              <label htmlFor={id}>Select activity</label>
-              <select
-                className="form-select"
-                id={id}
-                value={activityId}
-                onChange={(e) => {
-                  setActivityId(e.target.value);
-                  dispatch((draft, _post) => {
-                    draft.activity = e.target.value;
-                  });
-                }}
-              >
-                <option>---</option>
-                {activities
-                  .filter((p) => {
-                    switch (p.spec.type) {
-                      case 'parse_tree':
-                        return includeParse;
-                      case 'derivation':
-                        return includeDerivation;
-                      case 'chase_truth':
-                        return includeChase;
-                      case 'truth_table':
-                        return includeTable;
-                      case 'truth_tree':
-                        return includeTree;
-                      case 'argument_diagram':
-                        return includeArgument;
-                      case 'activities':
-                        return includeSet;
-                      default:
-                        return true;
-                    }
-                  })
-                  .map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.title}({p.spec.type}){/* [{p.keywords.join('/')}/{p.id}] */}
-                    </option>
-                  ))}
-              </select>
-            </form>
-          )}
-
-          <h5>Details:</h5>
-          {activity ? (
-            <>
-              <div className="grid grid-cols-2">
-                <h6>Id:</h6>
-                <div>{activity.id}</div>
-                <h6>Type:</h6>
-                <div>{activity.spec.type}</div>
-                <h6>Title:</h6>
-                <div>{activity.title}</div>
-                <h6>Keywords:</h6>
-                <div>{activity.keywords.join('/')}</div>
-                <h6>Created:</h6>
-                <div>{new Date(activity.created).toLocaleString()}</div>
-                <h6>Last Modified:</h6>
-                <div>{new Date(activity.modified).toLocaleString()}</div>
-              </div>
-              {activity.spec.preview && (
-                <div
-                  className="card"
-                  dangerouslySetInnerHTML={{ __html: activity.spec.preview }}
-                ></div>
+            </div>
+            <div className="m-3">
+              <label htmlFor={id} className="font-medium text-primary">
+                Select activity
+              </label>
+              {loading === 'loading' ? (
+                <div className="border rounded-lg w-full p-2.5 animate-pulse h-">
+                  <span className="invisible">Loading activities</span>
+                </div>
+              ) : (
+                <select
+                  className="border rounded-lg focus:ring-primary focus:border-primary block w-full p-2.5 overflow-hidden"
+                  id={id}
+                  value={isLabActivity(activityId) ? activityId.id : activityId}
+                  disabled={!activities || activities.length === 0}
+                  onChange={(e) => {
+                    const id = e.target.value;
+                    const activity = activities.find((a) => a.id === id);
+                    if (!activity) return;
+                    dispatch(updateActivity(activity));
+                  }}
+                >
+                  <option>---</option>
+                  {[...activities] // copy to avoid mutating original, use .toSorted with lib target es2023+
+                    .filter(
+                      (p) =>
+                        filters.includes(p.spec.type) ||
+                        (isLabActivity(activityId) ? activityId.id : activityId) === p.id,
+                    ) // include if type is selected
+                    .filter((p) => {
+                      if (!search) return true;
+                      const needle = search.toLowerCase();
+                      if (p.id.toLowerCase().includes(needle)) return true;
+                      if (p.title.toLowerCase().includes(needle)) return true;
+                      if (p.keywords.some((k) => k.toLowerCase().includes(needle))) return true;
+                      if (p.comment && p.comment.toLowerCase().includes(needle)) return true;
+                      return false;
+                    })
+                    .sort(
+                      (a, b) =>
+                        (sort.endsWith('-asc') ? 1 : -1) *
+                        (sort.includes('title')
+                          ? a.title.localeCompare(b.title)
+                          : a.id.localeCompare(b.id)),
+                    )
+                    .map((p) => (
+                      <option
+                        key={p.id}
+                        value={p.id}
+                        title={`${p.title} (${translateActivityType(p.spec.type)})`}
+                        className="text-ellipsis"
+                      >
+                        {p.title} ({translateActivityType(p.spec.type)})
+                      </option>
+                    ))}
+                </select>
               )}
-            </>
-          ) : (
-            <p>No selected activity.</p>
-          )}
-        </>
+            </div>
+            <hr className="mt-2 w-3/4 mx-auto" />
+            <div className="m-3">
+              <label htmlFor={`${id}_formFile`} className="block mb-1 font-medium text-primary">
+                Upload activity XML file
+              </label>
+              <input
+                disabled={!server}
+                className={`block w-full text-sm border rounded cursor-pointer focus:outline-none ${
+                  invalid
+                    ? 'border-danger text-danger placeholder-danger focus:ring-danger focus:border-danger'
+                    : 'border-secondary focus:ring-secondary focus:border-secondary'
+                }`}
+                type="file"
+                id={`${id}_formFile`}
+                accept="text/xml,application/xml"
+                onChange={async (e) => {
+                  setInvalid(
+                    server
+                      ? ''
+                      : 'LogicLab server is not configured for this Torus instance.  Please contact support.',
+                  );
+                  if (server && e.target.files?.length) {
+                    try {
+                      const endpoint = new URL('api/v1/activities', server);
+                      const response = await fetch(endpoint.toString(), {
+                        method: 'POST',
+                        body: e.target.files[0],
+                      });
+                      await checkResponse(response);
+                      const spec = await response.json();
+                      if (!isLabActivity(spec)) {
+                        throw new TypeError(
+                          'Uploaded file does not contain a valid LogicLab activity.',
+                        );
+                      }
+                      setActivityId('');
+                      setActivity(spec);
+                      dispatch(updateActivity(spec, await e.target.files[0].text()));
+                    } catch (err) {
+                      if (err instanceof TypeError) {
+                        setInvalid(err.message);
+                      } else if (err instanceof Error && err.message) {
+                        setInvalid(err.message);
+                      } else if (typeof err === 'string') {
+                        setInvalid(err);
+                      } else {
+                        setInvalid('Unknown error type.');
+                      }
+                      console.error(err);
+                    }
+                  }
+                }}
+              />
+              {invalid ? <div className="text-danger">{invalid}</div> : null}
+            </div>
+          </form>
+        </div>
       )}
-    </div>
+      {activity?.spec.type === 'derivation' ? (
+        <div className="m-3">
+          <label className="inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              value="tutor"
+              checked={tutor}
+              className="sr-only peer"
+              onChange={(e) => {
+                setActivity((prev) => {
+                  // tutor is updated via effect.
+                  if (isLabActivity(prev) && prev.spec.type === 'derivation') {
+                    const next = clone(prev);
+                    next.spec.tutor = e.target.checked;
+                    dispatch(updateActivity(next));
+                    return next;
+                  }
+                  return prev;
+                });
+              }}
+            />
+            <div className="relative w-11 h-6 bg-secondary peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+            <span className="ms-2 ml-2 text-sm font-medium">Tutor</span>
+          </label>
+        </div>
+      ) : null}
+      <h5>Details:</h5>
+      {activity ? (
+        <Details activity={activity} />
+      ) : (
+        <p className="alert alert-warning">Please select an activity.</p>
+      )}
+    </>
   );
 };
 
@@ -371,54 +638,72 @@ const Preview: FC<LogicLabAuthoringProps> = ({
   // Current activity
   const [activity, setActivity] = useState<LabActivity | undefined>();
   // Loading state
-  const [loading, setLoading] = useState<'loading' | 'loaded' | 'error'>('loading');
+  const [loading, setLoading] = useState<'loading' | 'loaded'>('loading');
+  const [error, setError] = useState<Error | null>(null);
+  const server = useLabServer(authoringContext);
 
+  const controller = useRef<AbortController | null>(null);
   // When props change, load the activity details.
   useEffect(() => {
-    const controller = new AbortController();
-    const signal = controller.signal;
     const getActivity = async () => {
-      setLoading('loading');
-      const server = getLabServer(authoringContext);
-      const url = new URL(`api/v1/activities/${model.activity}`, server);
-      const response = await fetch(url.toString(), {
-        signal,
-        headers: { Accept: 'application/json' },
-      });
-      if (signal.aborted) {
+      setError(null);
+      if (isLabActivity(model.activity)) {
+        setActivity(model.activity);
+        setLoading('loaded');
         return;
       }
-      if (!response.ok) {
-        throw new Error(response.statusText);
+      if (model.activity) {
+        controller.current = new AbortController();
+        const signal = controller.current.signal;
+        setLoading('loading');
+        const url = new URL(`api/v1/activities/${model.activity}`, server);
+        const response = await fetch(url.toString(), {
+          signal,
+          headers: { Accept: 'application/json' },
+        });
+        if (signal.aborted) {
+          return;
+        }
+        if (!response.ok) {
+          throw new Error(`Failed to load activity details: ${response.statusText}`);
+        }
+        await checkResponse(response);
+        const spec = await response.json();
+        if (!isLabActivity(spec)) {
+          throw new TypeError('Configured activity is not valid.');
+        }
+        setActivity(spec);
+        setLoading('loaded');
+        controller.current = null;
+        return;
       }
-      const spec = (await response.json()) as LabActivity;
-      setActivity(spec);
-      setLoading('loaded');
+      throw new TypeError(
+        'LogicLab activity is not set.  Please have the content author configure this activity.',
+      );
     };
 
     getActivity().catch((err) => {
+      if (err instanceof Error && err.name === 'AbortError') {
+        // ignore abort errors
+        return;
+      }
+      setError(err instanceof Error ? err : new Error('Unknown error'));
       console.error(err);
-      setLoading('error');
     });
 
-    return () => controller.abort();
-  }, [model, authoringContext]);
+    return () => controller.current?.abort('Component unmounted or model changed.');
+  }, [model, server]);
 
-  // on setting activity, typeset the math.
-  useEffect(() => {
-    if (activity) {
-      typeset();
-    }
-  }, [activity]);
-
-  return (
+  return error ? (
+    <div className="alert alert-danger">
+      <details>
+        <summary>Error loading activity details.</summary>
+        {error.message}
+      </details>
+    </div>
+  ) : (
     <>
-      {loading === 'error' && (
-        <div className="alert alert-warning">
-          LogicLab server is unavailable. Please contact technical support.
-        </div>
-      )}
-      {loading === 'loading' && <Loading />}
+      {loading === 'loading' && <LoadingSpinner />}
       {loading === 'loaded' && <Details activity={activity} />}
     </>
   );
@@ -433,7 +718,14 @@ export class LogicLabAuthoring extends AuthoringElement<LogicLabModelSchema> {
     ReactDOM.render(
       <Provider store={STORE}>
         <AuthoringElementProvider {...props}>
-          {props.editMode ? <Authoring {...props} /> : <Preview {...props} />}
+          <div className="card">
+            <h4 className="card-title">AProS LogicLab Activity</h4>
+            <div className="card-content">
+              <ErrorBoundary errorMessage>
+                {props.editMode ? <Authoring {...props} /> : <Preview {...props} />}
+              </ErrorBoundary>
+            </div>
+          </div>
         </AuthoringElementProvider>
       </Provider>,
       mountPoint,

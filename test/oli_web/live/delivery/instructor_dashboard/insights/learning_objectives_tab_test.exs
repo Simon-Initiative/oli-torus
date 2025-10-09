@@ -483,4 +483,26 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
       refute has_element?(view, "span", "#{revisions.obj_revision_f.title}")
     end
   end
+
+  describe "related activities column" do
+    setup [:instructor_conn, :create_project_with_objectives]
+
+    test "related activities column is present for instructors", %{
+      conn: conn,
+      instructor: instructor,
+      section: section
+    } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.rebuild_contained_objectives(section)
+
+      {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug))
+
+      # Check that the "Related Activities" column header is present
+      assert has_element?(
+               view,
+               "table thead th span[title*='Number of activities']",
+               "Related Activities"
+             )
+    end
+  end
 end

@@ -57,7 +57,13 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
         sort_by_spec:
           Enum.find(objectives_table_model.column_specs, fn col_spec ->
             col_spec.name == params.sort_by
-          end)
+          end),
+        data:
+          Map.merge(objectives_table_model.data, %{
+            section_slug: section_slug,
+            section_id: assigns[:section_id],
+            current_params: params
+          })
       })
 
     selected_card_value = Map.get(assigns.params, "selected_card_value", nil)
@@ -223,6 +229,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
               show_bottom_paging={false}
               allow_selection={true}
               additional_row_class="!h-20"
+              details_render_fn={&ObjectivesTableModel.render_objective_details/2}
             />
           </div>
         <% else %>
@@ -427,7 +434,8 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
             :objective_instructor_dashboard,
             :subobjective,
             :student_proficiency_obj,
-            :student_proficiency_subobj
+            :student_proficiency_subobj,
+            :related_activities_count
           ],
           @default_params.sort_by
         ),
@@ -543,6 +551,10 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
           sort_order
         )
     end
+  end
+
+  defp sort_by(objectives, :related_activities_count, sort_order) do
+    Enum.sort_by(objectives, &Map.get(&1, :related_activities_count, 0), sort_order)
   end
 
   defp sort_by(objectives, sort_by, sort_order) do

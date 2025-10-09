@@ -20,7 +20,7 @@ const DropdownAuthor: React.FC<AuthorPartComponentProps<DropdownModel>> = (props
   if (showLabel && label && width) {
     //is this the best way to handle?
     //if lable is visible then need to set the maxWidth otherwise it gets out of the container
-    dropDownStyle.maxWidth = `${Number(width * 0.63)}px`;
+    dropDownStyle.maxWidth = `${Number(width) * 0.63}px`;
   }
   useEffect(() => {
     // all activities *must* emit onReady

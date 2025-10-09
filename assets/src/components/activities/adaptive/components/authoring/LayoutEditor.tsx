@@ -26,6 +26,7 @@ interface LayoutEditorProps {
   selected: string;
   hostRef?: HTMLElement;
   configurePortalId?: string;
+  responsiveLayout?: boolean;
   onChange: (parts: AnyPartComponent[], selectedPartId?: string, isDeleted?: boolean) => void;
   onSelect: (partId: string) => void;
   onCopyPart?: (part: any) => Promise<any>;
@@ -108,13 +109,164 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
     }
   }, [parts]);
 
-  const toolbarPosition = { x: 0, y: 0 };
-  if (selectedPartAndCapabilities) {
-    const x = selectedPartAndCapabilities?.custom.x || 0;
-    const y = (selectedPartAndCapabilities?.custom.y || 0) + toolBarTopOffset;
-    toolbarPosition.x = x;
-    toolbarPosition.y = y;
-  }
+  const isResponsive = props.responsiveLayout || false;
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Calculate toolbar position
+  const getToolbarPosition = () => {
+    if (!selectedPartAndCapabilities) return { x: 0, y: 0 };
+
+    if (isResponsive) {
+      // In responsive mode, position toolbar at the top of the selected part
+      const selectedPartElement = document.querySelector(
+        `[data-part-id="${selectedPartAndCapabilities.id}"]`,
+      );
+      if (selectedPartElement && containerRef.current) {
+        const rect = selectedPartElement.getBoundingClientRect();
+        const containerRect = containerRef.current.getBoundingClientRect();
+        return {
+          x: rect.left - containerRect.left,
+          y: rect.top - containerRect.top + toolBarTopOffset,
+        };
+      } else {
+        // Fallback: use a default position if element not found
+        console.warn('Selected part element not found, using fallback position');
+        return { x: 100, y: 100 };
+      }
+    } else {
+      // In non-responsive mode, use the part's x,y coordinates
+      const x = selectedPartAndCapabilities?.custom.x || 0;
+      const y = (selectedPartAndCapabilities?.custom.y || 0) + toolBarTopOffset;
+      return { x, y };
+    }
+  };
+
+  const [toolbarPosition, setToolbarPosition] = useState({ x: 0, y: 0 });
+
+  // Helper function to render individual parts
+  const renderPart = (part: AnyPartComponent, idx: number) => {
+    const partProps = {
+      id: part.id,
+      type: part.type,
+      model: {
+        ...decorateModelWithDragWidthHeight(part.id, part.custom),
+        // In responsive mode, set width to 100% for the part
+        width: isResponsive ? '100%' : part.custom.width,
+        // Preserve original x & y positions in the model (they will be ignored in rendering)
+        x: part.custom.x || 0,
+        y: part.custom.y || 0,
+      },
+      state: {},
+      configureMode: part.id === configurePartId,
+      editMode: true,
+      portal: portalId,
+      onInit: handlePartInit,
+      onReady: defaultHandler,
+      onSave: defaultHandler,
+      onSubmit: defaultHandler,
+      onResize: defaultHandler,
+    };
+
+    const disableDrag =
+      selectedPartAndCapabilities && !selectedPartAndCapabilities.capabilities.move;
+
+    // Determine position and size based on responsive mode
+    const position = isResponsive
+      ? { x: 0, y: 0 } // Ignore x,y positions in responsive mode (but preserve in model)
+      : { x: part.custom.x || 0, y: part.custom.y || 0 };
+
+    const size = {
+      width: part.custom.width || 100,
+      height: part.custom.height || 100,
+    };
+
+    // Determine resize grid based on responsive mode
+    const resizeGrid: [number, number] = isResponsive ? [0, 1] : [1, 1]; // Only vertical resize in responsive mode
+
+    const handleDragStop = (e: any, d: any) => {
+      handlePartDrag({ partId: part.id, dragData: d });
+    };
+
+    const handleResizeStop = (e: any, direction: any, ref: any, delta: any, position: any) => {
+      handlePartResize({
+        partId: part.id,
+        resizeData: {
+          width: isResponsive
+            ? getWidth(part.custom.width) || 100 // Keep original width in responsive mode
+            : parseInt(ref.style.width, 10), // Use actual width in non-responsive mode
+          height: parseInt(ref.style.height, 10),
+          x: Math.round(position.x), // Always update x position in data
+          y: Math.round(position.y), // Always update y position in data
+        },
+      });
+    };
+
+    return (
+      <ResizeContainer
+        key={part.id}
+        dragGrid={[5, 5]}
+        resizeGrid={resizeGrid}
+        selected={part.id === selectedPartId}
+        size={size}
+        position={position}
+        disabled={!!disableDrag}
+        style={{ zIndex: part?.custom?.z || 0 }}
+        onResizeStart={() => {
+          props.onSelect(part.id);
+          setDragSize({
+            width: getWidth(part.custom.width) || 0,
+            height: part.custom.height || 0,
+          });
+          setIsDragging(true);
+        }}
+        onDragStart={() => {
+          props.onSelect(part.id);
+          setDragSize({
+            width: getWidth(part.custom.width) || 0,
+            height: part.custom.height || 0,
+          });
+          setIsDragging(true);
+        }}
+        onDragStop={handleDragStop}
+        onResize={(e, direction, ref) => {
+          setDragSize({
+            width: parseInt(ref.style.width, 10),
+            height: parseInt(ref.style.height, 10),
+          });
+        }}
+        onResizeStop={handleResizeStop}
+      >
+        <PartComponent
+          {...partProps}
+          className={selectedPartId === part.id ? 'selected' : ''}
+          onClick={(event) => handlePartClick(event, { id: part.id })}
+          onConfigure={({ configure, context }) => handlePartConfigure(part.id, configure, context)}
+          onSaveConfigure={handlePartSaveConfigure}
+          onCancelConfigure={handlePartCancelConfigure}
+        />
+      </ResizeContainer>
+    );
+  };
+
+  // Update toolbar position when selection changes
+  useEffect(() => {
+    if (selectedPartAndCapabilities) {
+      const updatePosition = () => {
+        const newPosition = getToolbarPosition();
+        setToolbarPosition(newPosition);
+      };
+
+      // Update immediately
+      updatePosition();
+
+      // Update after a short delay to ensure DOM is ready
+      const timeoutId = setTimeout(updatePosition, 10);
+
+      return () => clearTimeout(timeoutId);
+    } else {
+      setToolbarPosition({ x: 0, y: 0 });
+    }
+  }, [selectedPartAndCapabilities, isResponsive]);
 
   // this effect is to cover the case when the user is clicking "off" of a part to deselect it
   useEffect(() => {
@@ -389,10 +541,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
     };
   }, [configurePartId, handlePartCancelConfigure, selectedPartAndCapabilities, pusher]);
 
-  const containerRef = useRef<HTMLDivElement>(null);
-
   const handlePartInit = async ({ id, responses }: { id: string; responses: any[] }) => {
-    console.log('LE:PartInit', { id, responses });
     return {
       snapshot: {},
       context: {
@@ -402,6 +551,15 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
     };
   };
 
+  const getWidth = (width: any) => {
+    if (typeof width === 'number') {
+      return width;
+    }
+    if (width === '100%') {
+      return 960;
+    }
+    return 470;
+  };
   // Given a part ID and a model for that part, will return the model with the width & height
   // filled in if it's being actively dragged. This is so we can display the part-component properly
   // sized during the drag before the new width/height is committed .
@@ -416,67 +574,73 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
     },
     [dragSize, isDragging, selectedPartId],
   );
-
   return parts && parts.length ? (
     <NotificationContext.Provider value={pusher}>
-      <div ref={containerRef} className="activity-content">
+      <div
+        ref={containerRef}
+        className={`activity-content ${isResponsive ? 'responsive-layout-active' : ''}`}
+      >
         <style>
           {`
-          .activity-content {
-            position: absolute;
-            border: 1px solid #ccc;
-            background-color: ${props.backgroundColor || '#fff'};
-            width: ${props.width || 1000}px;
-            height: ${props.height || 500}px;
-          }
-          .react-draggable {
-            position: absolute;
-            cursor: pointer;
-          }
-          .react-draggable.selected {
-            cursor: move;
-          }
-          .react-draggable:hover::before{
-            content: "";
-            width: calc(100% + 10px);
-            height: calc(100% + 10px);
-            position: absolute;
-            top: -5px;
-            left: -5px;
-            border: 1px #ccc solid;
-            z-index: -1;
-          }
-          .react-draggable.selected::before{
-            content: "";
-            width: calc(100% + 10px);
-            height: calc(100% + 10px);
-            position: absolute;
-            top: -5px;
-            left: -5px;
-            border: 2px #00ff00 dashed;
-            z-index: -1;
-          }
-          .active-selection-toolbar {
-            position: absolute;
-            background-color: #fafafa;
-            z-index: 999;
-            min-width: 110px;
-          }
-          .part-config-container {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            z-index: 9999;
-          }
-          .part-config-container-inner > :first-child {
-            position: absolute;
-            top: 15px;
-            left: 25%;
-            background-color: #fff;
-          }
+
+            .activity-content {
+              position: absolute;
+              border: 1px solid #ccc;
+              background-color: ${props.backgroundColor || '#fff'};
+              width: ${props.width || 1000}px;
+              height: ${props.height || 500}px;
+            }
+            .responsive-layout-active{
+              width: 1200px;
+            }
+            .react-draggable {
+              position: absolute;
+              cursor: pointer;
+            }
+            .react-draggable.selected {
+              cursor: move;
+            }
+            .react-draggable:hover::before{
+              content: "";
+              width: calc(100% + 10px);
+              height: calc(100% + 10px);
+              position: absolute;
+              top: -5px;
+              left: -5px;
+              border: 1px #ccc solid;
+              z-index: -1;
+            }
+            .react-draggable.selected::before{
+              content: "";
+              width: calc(100% + 10px);
+              height: calc(100% + 10px);
+              position: absolute;
+              top: -5px;
+              left: -5px;
+              border: 2px #00ff00 dashed;
+              z-index: -1;
+            }
+            .active-selection-toolbar {
+              position: absolute;
+              background-color: #fafafa;
+              z-index: 999;
+              min-width: 110px;
+            }
+            .part-config-container {
+              position: absolute;
+              top: 0;
+              left: 0;
+              width: 100%;
+              height: 100%;
+              background-color: rgba(0, 0, 0, 0.5);
+              z-index: 9999;
+            }
+            .part-config-container-inner > :first-child {
+              position: absolute;
+              top: 15px;
+              left: 25%;
+              background-color: #fff;
+            }
         `}
         </style>
         <div
@@ -490,7 +654,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
           id={`active-selection-toolbar-${props.id}`}
           className={`active-selection-toolbar ${selectedPartAndCapabilities?.type}`}
           style={{
-            display: selectedPartAndCapabilities && !isDragging ? 'block' : 'none',
+            display: selectedPartAndCapabilities ? 'block' : 'none',
             top: toolbarPosition.y,
             left: toolbarPosition.x,
           }}
@@ -537,82 +701,35 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
             }}
           />
         </div>
-        {parts.map((part) => {
-          const partProps = {
-            id: part.id,
-            type: part.type,
-            model: decorateModelWithDragWidthHeight(part.id, part.custom),
-            state: {},
-            configureMode: part.id === configurePartId,
-            editMode: true,
-            portal: portalId,
-            onInit: handlePartInit,
-            onReady: defaultHandler,
-            onSave: defaultHandler,
-            onSubmit: defaultHandler,
-            onResize: defaultHandler,
-          };
+        {isResponsive ? (
+          <div className="advance-authoring-responsive-layout">
+            {parts.map((part: AnyPartComponent, idx: number) => {
+              // Determine width class and alignment for responsive layout
+              const widthClass =
+                part.custom.width === 960 ||
+                part.custom.width === '100%' ||
+                typeof part.custom.width !== 'number' ||
+                part.custom.width === undefined ||
+                part.custom.width === null
+                  ? 'full-width'
+                  : 'half-width';
+              const alignmentClass =
+                part.custom.width === 471 ? 'responsive-align-right' : 'responsive-align-left';
 
-          const disableDrag =
-            selectedPartAndCapabilities && !selectedPartAndCapabilities.capabilities.move;
-
-          return (
-            <ResizeContainer
-              key={part.id}
-              dragGrid={[5, 5]}
-              resizeGrid={[1, 1]}
-              selected={part.id === selectedPartId}
-              size={{ width: part.custom.width || 100, height: part.custom.height || 100 }}
-              position={{
-                x: part.custom.x || 0,
-                y: part.custom.y || 0,
-              }}
-              disabled={!!disableDrag}
-              style={{ zIndex: part?.custom?.z || 0 }}
-              onResizeStart={() => {
-                props.onSelect(part.id);
-                setDragSize({ width: part.custom.width || 0, height: part.custom.height || 0 });
-                setIsDragging(true);
-              }}
-              onDragStart={() => {
-                props.onSelect(part.id);
-                setDragSize({ width: part.custom.width || 0, height: part.custom.height || 0 });
-                setIsDragging(true);
-              }}
-              onDragStop={(e, d) => {
-                handlePartDrag({ partId: part.id, dragData: d });
-              }}
-              onResize={(e, direction, ref) => {
-                setDragSize({
-                  width: parseInt(ref.style.width, 10),
-                  height: parseInt(ref.style.height, 10),
-                });
-              }}
-              onResizeStop={(e, direction, ref, delta, position) => {
-                handlePartResize({
-                  partId: part.id,
-                  resizeData: {
-                    width: parseInt(ref.style.width, 10),
-                    height: parseInt(ref.style.height, 10),
-                    x: Math.round(position.x),
-                    y: Math.round(position.y),
-                  },
-                });
-              }}
-            >
-              <PartComponent
-                {...partProps}
-                className={selectedPartId === part.id ? 'selected' : ''}
-                onClick={(event) => handlePartClick(event, { id: part.id })}
-                onConfigure={({ configure, context }) =>
-                  handlePartConfigure(part.id, configure, context)
-                }
-                onSaveConfigure={handlePartSaveConfigure}
-                onCancelConfigure={handlePartCancelConfigure}
-              />
-            </ResizeContainer>
-          );
-        })}
+              return (
+                <div
+                  key={part.id}
+                  data-part-id={part.id}
+                  className={`responsive-item ${widthClass} ${alignmentClass}`}
+                >
+                  {renderPart(part, idx)}
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          parts.map((part, idx) => renderPart(part, idx))
+        )}
       </div>
     </NotificationContext.Provider>
   ) : (

@@ -9,6 +9,7 @@ interface AuthoringActivityRendererProps {
   activityModel: ActivityModelSchema;
   editMode: boolean;
   configEditorId: string;
+  responsiveLayout?: boolean;
   onSelectPart?: (partId: string) => Promise<any>;
   onCopyPart?: (part: any) => Promise<any>;
   onConfigurePart?: (part: any, context: any) => Promise<any>;
@@ -24,6 +25,7 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
   activityModel,
   editMode,
   configEditorId,
+  responsiveLayout,
   onSelectPart,
   onCopyPart,
   onConfigurePart,
@@ -44,6 +46,7 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
     ref,
     model: JSON.stringify(activityModel),
     editMode,
+    responsiveLayout,
     style: {
       position: 'absolute',
       top: '65px',

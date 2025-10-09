@@ -13,6 +13,13 @@ defmodule Oli.Email do
     |> html_text_body()
   end
 
+  def create_text_email(recipient_email, subject, body) do
+    base_email()
+    |> to(recipient_email)
+    |> subject(subject)
+    |> text_body(body)
+  end
+
   @doc """
   Creates a generic email with an html and text body.
   Returns a Swoosh.Email struct ready for delivery.

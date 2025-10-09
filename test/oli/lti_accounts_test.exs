@@ -3,6 +3,9 @@ defmodule Oli.LtiAccountsTest do
 
   alias Oli.Accounts
   alias Oli.Accounts.User
+  alias Oli.Delivery.Sections.Section
+  alias Oli.Repo
+  alias Oli.Seeder
   alias Lti_1p3.Roles.ContextRoles
 
   def make_user(institution_id) do
@@ -16,6 +19,7 @@ defmodule Oli.LtiAccountsTest do
       password_confirmation: "password",
       email: "user@example.edu",
       email_verified: true,
+      independent_learner: false,
       lti_institution_id: institution_id
     }
   end
@@ -70,6 +74,30 @@ defmodule Oli.LtiAccountsTest do
       {:ok, user1} = Accounts.insert_or_update_lms_user(make_user(institution_id), institution_id)
 
       assert user1.id == user.id
+    end
+
+    test "lms users are not matched via open and free section enrollments", %{section: section} do
+      open_section =
+        Seeder.base_project_with_resource2()
+        |> Seeder.create_section()
+        |> then(fn %{section: section} ->
+          {:ok, section} = Repo.update(Section.changeset(section, %{open_and_free: true}))
+          section
+        end)
+
+      {:ok, user} = Repo.insert(User.noauth_changeset(%User{}, make_user(nil)))
+
+      Oli.Delivery.Sections.enroll(user.id, open_section.id, [
+        ContextRoles.get_role(:context_learner)
+      ])
+
+      {:ok, new_user} =
+        Accounts.insert_or_update_lms_user(
+          make_user(section.institution_id),
+          section.institution_id
+        )
+
+      refute new_user.id == user.id
     end
   end
 end

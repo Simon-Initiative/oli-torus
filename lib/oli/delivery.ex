@@ -199,11 +199,17 @@ defmodule Oli.Delivery do
     end)
   end
 
-  defp maybe_enroll_user_as_instructor(%User{id: user_id}, section) do
-    # Enroll the user in the section with instructor role
-    case Sections.enroll(user_id, section.id, [ContextRoles.get_role(:context_instructor)]) do
-      {:ok, _enrollment} -> {:ok, section}
-      {:error, changeset} -> {:error, changeset}
+  defp maybe_enroll_user_as_instructor(%User{id: user_id} = user, section) do
+    with :ok <-
+           Sections.ensure_direct_delivery_enrollment_allowed(
+             user,
+             section
+           ) do
+      # Enroll the user in the section with instructor role
+      case Sections.enroll(user_id, section.id, [ContextRoles.get_role(:context_instructor)]) do
+        {:ok, _enrollment} -> {:ok, section}
+        {:error, changeset} -> {:error, changeset}
+      end
     end
   end
 
