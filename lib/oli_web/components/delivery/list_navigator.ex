@@ -38,12 +38,6 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
           {previous_item, current_item, next_item}
       end
 
-    # Filter out the current item from the initial filtered items
-    available_items =
-      Enum.reject(assigns.items, fn item ->
-        item.resource_id == assigns.current_item_resource_id
-      end)
-
     socket =
       assign(socket, %{
         current_item: current_item,
@@ -51,7 +45,7 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
         previous_item: previous_item,
         next_item: next_item,
         all_items: assigns.items,
-        filtered_items: available_items,
+        filtered_items: assigns.items,
         path_builder_fn: assigns.path_builder_fn,
         search_query: ""
       })
@@ -239,9 +233,14 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
             data-icon="No"
             data-keyboard-shortcut="No"
             data-menu-cell-type="Option"
-            data-selected="No"
             phx-click={JS.navigate(@path_builder_fn.(item))}
-            class="w-full cursor-pointer self-stretch px-2 py-1.5 bg-Background-bg-secondary hover:bg-Background-bg-primary inline-flex justify-between items-center"
+            class={[
+              "w-full cursor-pointer self-stretch px-2 py-1.5 inline-flex justify-between items-center",
+              if(item.resource_id == @current_item_resource_id,
+                do: "bg-Fill-Buttons-fill-primary text-white",
+                else: "bg-Background-bg-secondary hover:bg-Background-bg-primary"
+              )
+            ]}
           >
             <div class="flex justify-start items-center gap-1 flex-1 min-w-0">
               <div class="p-1 opacity-0 flex justify-center items-center gap-2.5">
@@ -256,7 +255,13 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
                   class="flex justify-start items-center gap-2.5 overflow-hidden flex-1 min-w-0"
                 >
                   <div
-                    class="justify-center text-Text-text-high text-sm font-medium font-['Open_Sans'] leading-none truncate min-w-0"
+                    class={[
+                      "justify-center text-sm font-medium font-['Open_Sans'] leading-none truncate min-w-0",
+                      if(item.resource_id == @current_item_resource_id,
+                        do: "text-Buttons-fill-primary",
+                        else: "text-Text-text-high"
+                      )
+                    ]}
                     title={item.title}
                   >
                     {item_prefix(@current_item_label, item)}
