@@ -92,8 +92,10 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
               exclude_sub_objectives: false,
               include_related_activities_count: true
             ),
-          filter_options:
-            Sections.get_units_and_modules_from_a_section(socket.assigns.section.slug)
+          navigator_items:
+            Oli.Delivery.Sections.SectionResourceDepot.containers(socket.assigns.section.id,
+              numbering_level: 2
+            )
         }
       end)
 
@@ -558,6 +560,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         %{view: :insights, active_tab: :content, params: %{container_id: _container_id}} = assigns
       ) do
     ~H"""
+    <InstructorDashboard.tabs tabs={insights_tabs(@section_slug, @preview_mode, @active_tab)} />
+
     <div class="container mx-auto">
       <.live_component
         id="container_details_table"

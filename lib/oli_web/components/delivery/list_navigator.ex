@@ -286,8 +286,11 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
   end
 
   defp item_prefix("Page", _item), do: ""
+  defp item_prefix(_label, %{numbering_index: -1} = _item), do: ""
   defp item_prefix(label, item), do: "#{label} #{item.numbering_index}: "
 
+  # We use -1 to detect the default dropdown item ("All Modules" for example)
+  defp item_title(_label, %{numbering_index: -1} = item), do: item.title
   defp item_title("Page", item), do: item.title
 
   defp item_title(label, item) do

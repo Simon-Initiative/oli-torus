@@ -411,7 +411,7 @@ defmodule OliWeb.Components.Delivery.Students do
 
   def render(assigns) do
     ~H"""
-    <div id={@id} class="flex flex-col gap-2 mx-10 mb-10">
+    <div id={@id} class="flex flex-col gap-2 mb-10">
       <.live_component
         :if={@tab_name == :students}
         module={OliWeb.Components.LiveModal}
@@ -460,7 +460,7 @@ defmodule OliWeb.Components.Delivery.Students do
         />
       </.live_component>
 
-      <div :if={@params[:container_id]} class="flex flex-col mb-8">
+      <div :if={@params[:container_id]} class="flex flex-col mb-4">
         <div class="flex mt-4 mb-2">
           <.link navigate={@navigation_data["request_path"]} role="back button">
             <div class="flex gap-2 items-center">

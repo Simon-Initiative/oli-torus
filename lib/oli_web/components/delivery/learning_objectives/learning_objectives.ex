@@ -106,7 +106,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
        student_id: assigns[:student_id],
        patch_url_type: assigns.patch_url_type,
        section_slug: section_slug,
-       units_modules: objectives_tab.filter_options,
+       navigator_items: build_navigator_items(objectives_tab.navigator_items),
        filter_disabled?: filter_by_module_disabled?(v25_migration),
        view: assigns[:view],
        proficiency_options: proficiency_options,
@@ -119,7 +119,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
   attr(:params, :any)
   attr(:table_model, :any)
   attr(:total_count, :integer)
-  attr(:units_modules, :map)
+  attr(:navigator_items, :map)
   attr(:student_id, :integer)
   attr(:patch_url_type, :atom, required: true)
   attr(:filter_disabled?, :boolean)
@@ -130,38 +130,31 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
   def render(assigns) do
     ~H"""
     <div class="flex flex-col gap-2 mb-10">
+      <div class="flex justify-center mb-4">
+        <.live_component
+          id="modules_navigator"
+          module={OliWeb.Components.Delivery.ListNavigator}
+          items={@navigator_items}
+          current_item_resource_id={@params.filter_by}
+          path_builder_fn={
+            if assigns[:patch_url_type] == :instructor_dashboard do
+              fn item ->
+                ~p"/sections/#{@section_slug}/instructor_dashboard/insights/learning_objectives?#{%{filter_by: item.resource_id}}"
+              end
+            else
+              fn item ->
+                ~p"/sections/#{@section_slug}/student_dashboard/#{@student_id}/learning_objectives?#{%{filter_by: item.resource_id}}"
+              end
+            end
+          }
+        />
+      </div>
       <div class="bg-white shadow-sm dark:bg-gray-800">
         <div class="flex justify-between items-center px-4 pt-8 pb-4 instructor_dashboard_table">
           <h4 class="justify-center text-Text-text-high text-lg font-bold leading-normal">
             Learning Objectives
           </h4>
 
-          <div class="flex flex-col-reverse sm:flex-row gap-2 items-end overflow-hidden">
-            <.form for={%{}} class="w-full" phx-change="filter_by" phx-target={@myself}>
-              <label class="cursor-pointer inline-flex flex-col gap-1 w-full">
-                <small class="torus-small uppercase">
-                  Filter by module
-                  <i
-                    :if={@filter_disabled?}
-                    id="filter-disabled-tooltip"
-                    class="fas fa-info-circle"
-                    title="This filter will be available soon"
-                    phx-hook="TooltipInit"
-                  />
-                </small>
-                <select class="torus-select" name="filter" disabled={@filter_disabled?}>
-                  <option selected={@params.filter_by == "root"} value="root">Root</option>
-                  <option
-                    :for={module <- @units_modules}
-                    selected={@params.filter_by == module.container_id}
-                    value={module.container_id}
-                  >
-                    {module.title}
-                  </option>
-                </select>
-              </label>
-            </.form>
-          </div>
           <a
             href={Routes.delivery_path(OliWeb.Endpoint, :download_learning_objectives, @section_slug)}
             class="flex items-center justify-center gap-x-2 text-Text-text-button font-bold"
@@ -655,4 +648,16 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
   defp filter_by_module_disabled?(v25_migration)
   defp filter_by_module_disabled?(:done), do: false
   defp filter_by_module_disabled?(_), do: true
+
+  defp build_navigator_items(navigator_items) do
+    [
+      %{
+        resource_id: "root",
+        title: "All Modules",
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        numbering_level: 2,
+        numbering_index: -1
+      }
+    ] ++ navigator_items
+  end
 end

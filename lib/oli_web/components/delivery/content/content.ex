@@ -130,7 +130,7 @@ defmodule OliWeb.Components.Delivery.Content do
   def render(assigns) do
     ~H"""
     <div class="flex flex-col mb-10">
-      <div class="w-full h-10 relative my-7">
+      <div class="w-full h-10 relative mb-7">
         <button
           id="filter_units_button"
           class={"w-24 h-10 left-0 top-0 absolute rounded-tl-lg rounded-bl-lg border border-Border-border-default #{set_button_background(@params.container_filter_by, :units)} text-xs #{set_button_text(@params.container_filter_by, :units)}"}

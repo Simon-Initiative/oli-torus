@@ -1113,6 +1113,7 @@ defmodule OliWeb.Components.Delivery.Pages do
 
     activities =
       DeliveryResolver.from_resource_id(section.slug, activity_ids_from_responses)
+      |> Enum.reject(fn rev -> is_nil(rev) end)
       |> Enum.map(fn rev ->
         {total_attempts, avg_score} = Map.get(details_by_activity, rev.resource_id, {0, 0.0})
 
