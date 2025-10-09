@@ -40,10 +40,31 @@ export interface ContextInfo {
   title: string;
 }
 
+type LabScore = {
+  score: number;
+  outOf: number;
+};
+type Objective<Category extends string, State> = {
+  name: Category;
+  complete: boolean;
+  state: State;
+};
+export type LogicLabSaveState = {
+  problemId: string;
+  timestamp: string; // ISO string
+  data: {
+    status: string;
+    points: LabScore;
+    best: LabScore;
+    activityType: string;
+    objectives: Objective<string, unknown>[];
+  };
+};
+
 export interface Score {
   score: number;
   outOf: number;
-  input: unknown;
+  input: LogicLabSaveState;
   complete: boolean;
 }
 export interface LabMessageBase {
@@ -65,7 +86,7 @@ export interface ScoreMessage extends LabMessageBase {
 // For state saving messages.
 export interface SaveMessage extends LabMessageBase {
   messageType: 'save';
-  state: unknown;
+  state: LogicLabSaveState;
 }
 
 // For state retrieving request messages.
