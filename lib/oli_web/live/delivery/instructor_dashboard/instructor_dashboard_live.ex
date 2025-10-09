@@ -46,7 +46,14 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
         async_calculate_proficiency(socket.assigns.section)
 
-        assign(socket, :selected_container, selected_container)
+        socket
+        |> assign(:selected_container, selected_container)
+        |> assign(
+          :navigator_items,
+          Oli.Delivery.Sections.SectionResourceDepot.containers(socket.assigns.section.id,
+            numbering_level: selected_container.numbering_level
+          )
+        )
       else
         socket
       end
@@ -565,6 +572,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         active_tab={@active_tab}
         students={@users}
         dropdown_options={@dropdown_options}
+        navigator_items={@navigator_items}
       />
     </div>
     """

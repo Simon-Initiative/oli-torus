@@ -275,7 +275,7 @@ defmodule OliWeb.Components.Delivery.Pages do
               do: @navigation_data.practice_pages.items,
               else: @navigation_data.scored_pages.items
           }
-          current_item_id={@current_page.id}
+          current_item_resource_id={@current_page.resource_id}
           path_builder_fn={fn item -> list_navigator_path(@section, @active_tab, @params, item) end}
         />
       </div>

@@ -2,6 +2,8 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
   @moduledoc """
   A component that allows the user to navigate through a list of items.
   Renders the current item with previous/next controls, and a searchable dropdown for direct selection.
+
+  Items can be of type page, unit, module, or section.
   """
 
   use OliWeb, :live_component
@@ -17,7 +19,7 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
       assigns.items
       |> Enum.with_index()
       |> Enum.find_value(fn {item, index} ->
-        if item.id == assigns.current_item_id, do: index
+        if item.resource_id == assigns.current_item_resource_id, do: index
       end)
 
     # Get the previous, current, and next items based on the index
@@ -38,17 +40,18 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
 
     # Filter out the current item from the initial filtered items
     available_items =
-      assigns.items
-      |> Enum.reject(fn item -> item.id == assigns.current_item_id end)
+      Enum.reject(assigns.items, fn item ->
+        item.resource_id == assigns.current_item_resource_id
+      end)
 
     socket =
       assign(socket, %{
         current_item: current_item,
+        current_item_label: resource_label(current_item),
         previous_item: previous_item,
         next_item: next_item,
         all_items: assigns.items,
         filtered_items: available_items,
-        current_item_id: assigns.current_item_id,
         path_builder_fn: assigns.path_builder_fn,
         search_query: ""
       })
@@ -60,7 +63,7 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
     # Filter out the current item from all items first
     available_items =
       socket.assigns.all_items
-      |> Enum.reject(fn item -> item.id == socket.assigns.current_item_id end)
+      |> Enum.reject(fn item -> item.resource_id == socket.assigns.current_item.resource_id end)
 
     filtered_items =
       if String.trim(query) == "" do
@@ -101,7 +104,7 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
   end
 
   attr(:items, :list, required: true)
-  attr(:current_item_id, :integer, required: true)
+  attr(:current_item_resource_id, :integer, required: true)
   attr(:path_builder_fn, :fun, required: true)
 
   def render(assigns) do
@@ -115,7 +118,7 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
           <div class="pr-2 flex justify-end items-center gap-2 text-Text-text-button opacity-90">
             <Icons.chevron_left width="24" height="24" />
             <div class="text-right justify-center text-xs font-semibold font-['Open_Sans'] leading-none whitespace-nowrap">
-              Previous Page
+              Previous {@current_item_label}
             </div>
           </div>
         </.link>
@@ -124,7 +127,7 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
           <div class="pr-2 flex justify-end items-center gap-2 text-gray-400 opacity-50">
             <Icons.chevron_left width="24" height="24" />
             <div class="text-right justify-center text-xs font-semibold font-['Open_Sans'] leading-none whitespace-nowrap">
-              Previous Page
+              Previous {@current_item_label}
             </div>
           </div>
         </div>
@@ -150,7 +153,7 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
             class="w-full text-center justify-center items-center text-Text-text-high text-2xl font-bold truncate"
             title={@current_item.title}
           >
-            {@current_item.title}
+            {item_title(@current_item_label, @current_item)}
           </div>
           <div class="self-end">
             <Icons.chevron_down width="24" height="24" />
@@ -158,7 +161,8 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
         </button>
         <.searchable_dropdown
           filtered_items={@filtered_items}
-          current_item_id={@current_item_id}
+          current_item_resource_id={@current_item.resource_id}
+          current_item_label={@current_item_label}
           path_builder_fn={@path_builder_fn}
           search_query={@search_query}
           target={@myself}
@@ -171,7 +175,7 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
         >
           <div class="pl-2 flex justify-center items-center gap-2 text-Text-text-button opacity-90">
             <div class="text-right justify-center text-xs font-semibold font-['Open_Sans'] leading-none whitespace-nowrap">
-              Next Page
+              Next {@current_item_label}
             </div>
             <Icons.chevron_right width="24" height="24" />
           </div>
@@ -180,7 +184,7 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
         <div class="px-4 py-2 rounded-md flex justify-center items-center gap-2 cursor-not-allowed">
           <div class="pl-2 flex justify-center items-center gap-2 text-gray-400 opacity-50">
             <div class="text-right justify-center text-xs font-semibold font-['Open_Sans'] leading-none whitespace-nowrap">
-              Next Page
+              Next {@current_item_label}
             </div>
             <Icons.chevron_right width="24" height="24" />
           </div>
@@ -255,6 +259,7 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
                     class="justify-center text-Text-text-high text-sm font-medium font-['Open_Sans'] leading-none truncate min-w-0"
                     title={item.title}
                   >
+                    {item_prefix(@current_item_label, item)}
                     {Phoenix.HTML.raw(highlight_search_term(item.title, @search_query))}
                   </div>
                 </div>
@@ -266,5 +271,26 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
       </div>
     </div>
     """
+  end
+
+  defp resource_label(resource) do
+    page_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
+    container_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
+
+    case {resource.resource_type_id, resource.numbering_level} do
+      {type, _} when type == page_type_id -> "Page"
+      {type, 1} when type == container_type_id -> "Unit"
+      {type, 2} when type == container_type_id -> "Module"
+      {type, 3} when type == container_type_id -> "Section"
+    end
+  end
+
+  defp item_prefix("Page", _item), do: ""
+  defp item_prefix(label, item), do: "#{label} #{item.numbering_index}: "
+
+  defp item_title("Page", item), do: item.title
+
+  defp item_title(label, item) do
+    "#{item_prefix(label, item)}#{item.title}"
   end
 end
