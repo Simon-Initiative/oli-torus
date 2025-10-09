@@ -47,7 +47,7 @@ defmodule OliWeb.Grades.GradesLive do
 
         {:ok,
          assign(socket,
-           title: "LMS Grades",
+           title: "LMS Scores",
            breadcrumbs: set_breadcrumbs(type, section),
            graded_pages: graded_pages,
            selected_page: selected_page,
@@ -91,12 +91,12 @@ defmodule OliWeb.Grades.GradesLive do
 
     ~H"""
     <div class="container mx-auto">
-      <h2>{dgettext("grades", "Manage Grades")}</h2>
+      <h2>{dgettext("grades", "Manage Scores")}</h2>
 
       <p>
         {dgettext(
           "grades",
-          "Grades for this section can be viewed by students and instructors using the LMS gradebook."
+          "Scores for this section can be viewed by students and instructors using the LMS gradebook."
         )}
       </p>
 
