@@ -10,6 +10,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
   alias Phoenix.LiveView.JS
 
   @proficiency_labels ["Not enough data", "Low", "Medium", "High"]
+  @student_proficiency_tooltip_text "Proficiency is based on the percentage of correct answers on first attempts for activities linked to this learning objective or its sub-objectives."
 
   def render(assigns) do
     ~H"""
@@ -36,8 +37,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
         label:
           HTMLComponents.render_label(%{
             title: "Student Proficiency",
-            info_tooltip:
-              "For all students, or one specific student, proficiency for a learning objective will be calculated off the percentage of correct answers for first part attempts within first activity attempts - for those parts that have that learning objective or any of its sub-objectives attached to it."
+            info_tooltip: @student_proficiency_tooltip_text
           }),
         render_fn: &custom_render/3
       },
@@ -80,14 +80,12 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
       %ColumnSpec{
         name: :student_proficiency_obj,
         label: "STUDENT PROFICIENCY OBJ.",
-        tooltip:
-          "For all students, or one specific student, proficiency for a learning objective will be calculated off the percentage of correct answers for first part attempts within first activity attempts - for those parts that have that learning objective or any of its sub-objectives attached to it."
+        tooltip: @student_proficiency_tooltip_text
       },
       %ColumnSpec{
         name: :student_proficiency_subobj,
         label: "STUDENT PROFICIENCY (SUB OBJ.)",
-        tooltip:
-          "For all students, or one specific student, proficiency for a learning objective will be calculated off the percentage of correct answers for first part attempts within first activity attempts - for those parts that have that learning objective or any of its sub-objectives attached to it."
+        tooltip: @student_proficiency_tooltip_text
       }
     ]
 
@@ -192,11 +190,13 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
       })
 
     ~H"""
-    <div class="group flex relative">
+    <div class="group relative flex">
       {render_proficiency_data_chart(@objective_id, @proficiency_distribution)}
-      <div class="-translate-y-[calc(100%-90px)] absolute left-1/2 -translate-x-1/2 bg-black text-white text-sm px-4 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity shadow-lg whitespace-nowrap inline-block z-50">
+      <div class="absolute top-[calc(100%+5px)] left-1/2 -translate-x-1/2 p-0 m-0 w-60 min-h-[100px] rounded-md border border-Border-border-default bg-white dark:bg-gray-900 px-4 py-2 text-left text-sm font-normal leading-normal text-Text-text-high shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] hidden flex-col gap-1 group-hover:flex z-50">
         <%= for label <- @proficiency_labels, value = Map.get(calc_percentages(@proficiency_distribution), label, 0) do %>
-          <p>{label}: {value}%</p>
+          <div class="w-full text-left">
+            <span class="font-medium">{label}</span>: {value}%
+          </div>
         <% end %>
       </div>
     </div>
