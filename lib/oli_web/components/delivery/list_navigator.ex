@@ -112,7 +112,7 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
           <div class="pr-2 flex justify-end items-center gap-2 text-Text-text-button opacity-90">
             <Icons.chevron_left width="24" height="24" />
             <div class="text-right justify-center text-xs font-semibold font-['Open_Sans'] leading-none whitespace-nowrap">
-              Previous {@current_item_label}
+              Previous {resource_label(@previous_item)}
             </div>
           </div>
         </.link>
@@ -169,7 +169,7 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
         >
           <div class="pl-2 flex justify-center items-center gap-2 text-Text-text-button opacity-90">
             <div class="text-right justify-center text-xs font-semibold font-['Open_Sans'] leading-none whitespace-nowrap">
-              Next {@current_item_label}
+              Next {resource_label(@next_item)}
             </div>
             <Icons.chevron_right width="24" height="24" />
           </div>
@@ -264,7 +264,7 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
                     ]}
                     title={item.title}
                   >
-                    {item_prefix(@current_item_label, item)}
+                    {item_prefix(resource_label(item), item)}
                     {Phoenix.HTML.raw(highlight_search_term(item.title, @search_query))}
                   </div>
                 </div>
@@ -284,6 +284,7 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
 
     case {resource.resource_type_id, resource.numbering_level} do
       {type, _} when type == page_type_id -> "Page"
+      {type, 0} when type == container_type_id -> ""
       {type, 1} when type == container_type_id -> "Unit"
       {type, 2} when type == container_type_id -> "Module"
       {type, 3} when type == container_type_id -> "Section"

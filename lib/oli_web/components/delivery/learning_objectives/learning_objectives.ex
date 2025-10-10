@@ -653,9 +653,9 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
     [
       %{
         resource_id: "root",
-        title: "All Modules",
+        title: "All",
         resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
-        numbering_level: 2,
+        numbering_level: 0,
         numbering_index: -1
       }
     ] ++ navigator_items

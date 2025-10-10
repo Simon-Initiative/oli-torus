@@ -60,7 +60,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
             ),
           navigator_items:
             Oli.Delivery.Sections.SectionResourceDepot.containers(socket.assigns.section.id,
-              numbering_level: 2
+              numbering_level: {:in, [1, 2]}
             )
         }
       end)
