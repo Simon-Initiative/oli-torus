@@ -8634,6 +8634,10 @@ table.table-striped tbody tr:nth-child(even) {
   top: calc(100% + 1px);
 }
 
+.top-\[calc\(100\%\+5px\)\] {
+  top: calc(100% + 5px);
+}
+
 .top-full {
   top: 100%;
 }
@@ -10032,6 +10036,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .w-6 {
   width: 1.5rem;
+}
+
+.w-60 {
+  width: 15rem;
 }
 
 .w-64 {
