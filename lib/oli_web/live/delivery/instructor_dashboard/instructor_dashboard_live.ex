@@ -50,12 +50,20 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         |> assign(:selected_container, selected_container)
         |> assign(
           :navigator_items,
-          Oli.Delivery.Sections.SectionResourceDepot.containers(socket.assigns.section.id,
-            numbering_level: selected_container.numbering_level
+          if(selected_container,
+            do:
+              Oli.Delivery.Sections.SectionResourceDepot.containers(socket.assigns.section.id,
+                numbering_level: selected_container.numbering_level
+              ),
+            else: Oli.Delivery.Sections.SectionResourceDepot.containers(socket.assigns.section.id)
           )
         )
       else
         socket
+        |> assign(
+          :navigator_items,
+          Oli.Delivery.Sections.SectionResourceDepot.containers(socket.assigns.section.id)
+        )
       end
 
     {:noreply, socket}
@@ -496,6 +504,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         certificate={@certificate}
         certificate_pending_email_notification_count={@certificate_pending_email_notification_count}
         dropdown_options={@dropdown_options}
+        navigator_items={@navigator_items}
       />
     </div>
     """

@@ -1590,6 +1590,8 @@ defmodule OliWeb.Components.Delivery.Students do
     )
   end
 
+  defp get_container_label(nil), do: ""
+
   defp get_container_label(container) do
     case container.numbering_level do
       1 -> "Unit"

@@ -130,9 +130,9 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
   def render(assigns) do
     ~H"""
     <div class="flex flex-col gap-2 mb-10">
-      <div class="flex justify-center mb-4">
+      <div :if={!@filter_disabled?} class="flex justify-center mb-4">
         <.live_component
-          id="modules_navigator"
+          id="objectives_containers_navigator"
           module={OliWeb.Components.Delivery.ListNavigator}
           items={@navigator_items}
           current_item_resource_id={@params.filter_by}

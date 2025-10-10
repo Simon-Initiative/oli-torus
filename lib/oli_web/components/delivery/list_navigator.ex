@@ -41,7 +41,7 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
     socket =
       assign(socket, %{
         current_item: current_item,
-        current_item_label: resource_label(current_item),
+        current_item_label: if(current_item, do: resource_label(current_item), else: ""),
         previous_item: previous_item,
         next_item: next_item,
         all_items: assigns.items,
@@ -57,7 +57,9 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
     # Filter out the current item from all items first
     available_items =
       socket.assigns.all_items
-      |> Enum.reject(fn item -> item.resource_id == socket.assigns.current_item.resource_id end)
+      |> Enum.reject(fn item ->
+        socket.assigns.current_item && item.resource_id == socket.assigns.current_item.resource_id
+      end)
 
     filtered_items =
       if String.trim(query) == "" do
@@ -106,6 +108,7 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
     <div class="inline-flex justify-start items-center">
       <%= if @previous_item do %>
         <.link
+          role="previous item link"
           navigate={@path_builder_fn.(@previous_item)}
           class="px-4 py-2 rounded-md flex justify-center items-center gap-2"
         >
@@ -117,7 +120,10 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
           </div>
         </.link>
       <% else %>
-        <div class="px-4 py-2 rounded-md flex justify-center items-center gap-2 cursor-not-allowed">
+        <div
+          role="previous item link disabled"
+          class="px-4 py-2 rounded-md flex justify-center items-center gap-2 cursor-not-allowed"
+        >
           <div class="pr-2 flex justify-end items-center gap-2 text-gray-400 opacity-50">
             <Icons.chevron_left width="24" height="24" />
             <div class="text-right justify-center text-xs font-semibold font-['Open_Sans'] leading-none whitespace-nowrap">
@@ -128,10 +134,6 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
       <% end %>
       <div class="max-w-96 border-b-2 border-Fill-Buttons-fill-primary flex flex-col relative">
         <button
-          data-direction="Vertical"
-          data-is-link="False"
-          data-number="1"
-          data-state="Default"
           phx-click={
             JS.toggle(
               to: "#searchable_dropdown",
@@ -145,9 +147,11 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
         >
           <div
             class="w-full text-center justify-center items-center text-Text-text-high text-2xl font-bold truncate"
-            title={@current_item.title}
+            title={if @current_item, do: @current_item.title, else: ""}
           >
-            {item_title(@current_item_label, @current_item)}
+            {if @current_item,
+              do: item_title(@current_item_label, @current_item),
+              else: "No item selected"}
           </div>
           <div class="self-end">
             <Icons.chevron_down width="24" height="24" />
@@ -155,7 +159,7 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
         </button>
         <.searchable_dropdown
           filtered_items={@filtered_items}
-          current_item_resource_id={@current_item.resource_id}
+          current_item_resource_id={if @current_item, do: @current_item.resource_id, else: nil}
           current_item_label={@current_item_label}
           path_builder_fn={@path_builder_fn}
           search_query={@search_query}
@@ -165,6 +169,7 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
       <%= if @next_item do %>
         <.link
           navigate={@path_builder_fn.(@next_item)}
+          role="next item link"
           class="px-4 py-2 rounded-md flex justify-center items-center gap-2"
         >
           <div class="pl-2 flex justify-center items-center gap-2 text-Text-text-button opacity-90">
@@ -175,7 +180,10 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
           </div>
         </.link>
       <% else %>
-        <div class="px-4 py-2 rounded-md flex justify-center items-center gap-2 cursor-not-allowed">
+        <div
+          role="next item link disabled"
+          class="px-4 py-2 rounded-md flex justify-center items-center gap-2 cursor-not-allowed"
+        >
           <div class="pl-2 flex justify-center items-center gap-2 text-gray-400 opacity-50">
             <div class="text-right justify-center text-xs font-semibold font-['Open_Sans'] leading-none whitespace-nowrap">
               Next {@current_item_label}
@@ -195,15 +203,7 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
       phx-click-away={JS.hide(transition: {"ease-out duration-200", "opacity-100", "opacity-0"})}
       class="hidden absolute top-full left-1/2 transform -translate-x-1/2 z-20 w-[465px] pb-1.5 bg-Background-bg-secondary rounded shadow-[0px_0px_8px_0px_rgba(0,0,0,0.15)] flex-col justify-center items-start overflow-hidden"
     >
-      <div
-        data-chevron="No"
-        data-hover="No"
-        data-icon="Yes"
-        data-keyboard-shortcut="No"
-        data-menu-cell-type="Search"
-        data-selected="No"
-        class="border-b-0.5 border-Border-border-primary/80 self-stretch pl-9 pr-4 py-1.5 mb-3 bg-Background-bg-secondary shadow-[0px_1px_0px_0px_rgba(245,245,245,1.00)] inline-flex justify-start items-center"
-      >
+      <div class="border-b-0.5 border-Border-border-primary/80 self-stretch pl-9 pr-4 py-1.5 mb-3 bg-Background-bg-secondary shadow-[0px_1px_0px_0px_rgba(245,245,245,1.00)] inline-flex justify-start items-center">
         <div class="w-5 h-5 relative">
           <i class="fa-solid fa-search text-Icon-icon-default pointer-events-none text-lg"></i>
         </div>
@@ -228,11 +228,6 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
         <% else %>
           <button
             :for={item <- @filtered_items}
-            data-chevron="No"
-            data-hover="No"
-            data-icon="No"
-            data-keyboard-shortcut="No"
-            data-menu-cell-type="Option"
             phx-click={JS.navigate(@path_builder_fn.(item))}
             class={[
               "w-full cursor-pointer self-stretch px-2 py-1.5 inline-flex justify-between items-center",
@@ -250,10 +245,7 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
                 </div>
               </div>
               <div class="flex justify-start items-center gap-1 flex-1 min-w-0">
-                <div
-                  data-property-1="Default"
-                  class="flex justify-start items-center gap-2.5 overflow-hidden flex-1 min-w-0"
-                >
+                <div class="flex justify-start items-center gap-2.5 overflow-hidden flex-1 min-w-0">
                   <div
                     class={[
                       "justify-center text-sm font-medium font-['Open_Sans'] leading-none truncate min-w-0",
