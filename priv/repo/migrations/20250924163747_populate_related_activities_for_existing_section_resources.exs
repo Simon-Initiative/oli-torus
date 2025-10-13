@@ -53,6 +53,8 @@ defmodule Oli.Repo.Migrations.PopulateRelatedActivitiesForExistingSectionResourc
   end
 
   defp populate_related_activities_for_section(section, objective_type_id, activity_type_id) do
+    IO.puts("Processing section #{section.slug} (ID: #{section.id})...")
+
     # Get all objectives in this section
     objectives =
       from(rev in section_resource_revisions(section.slug),
