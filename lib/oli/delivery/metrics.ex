@@ -1636,9 +1636,8 @@ defmodule Oli.Delivery.Metrics do
   @doc """
   Gets individual student proficiency data for a specific learning objective within a section.
 
-  This function returns detailed proficiency data for each student, which will be used
-  to create the dot distribution visualization showing how students are distributed
-  across proficiency levels. Uses the same tested logic as proficiency_per_student_for_objective/3.
+  This function returns detailed proficiency data for each student, which shows how students are distributed
+  across proficiency levels.
 
   ## Parameters
   - section_id: The section ID to filter students by
@@ -1655,17 +1654,15 @@ defmodule Oli.Delivery.Metrics do
 
     query =
       from(summary in Oli.Analytics.Summary.ResourceSummary,
-        join: u in User,
-        on: summary.user_id == u.id,
         where:
           summary.section_id == ^section_id and
             summary.project_id == -1 and
             summary.resource_type_id == ^objective_type_id and
             summary.resource_id == ^objective_id and
             summary.user_id != -1,
-        group_by: [summary.user_id, u.family_name, u.given_name],
+        group_by: [summary.user_id],
         select:
-          {summary.user_id, u.family_name, u.given_name,
+          {summary.user_id,
            fragment(
              """
              (
@@ -1682,25 +1679,13 @@ defmodule Oli.Delivery.Metrics do
       )
 
     Repo.all(query)
-    |> Enum.map(fn {student_id, family_name, given_name, proficiency, num_first_attempts} ->
-      student_name = format_student_name(family_name, given_name)
-
+    |> Enum.map(fn {student_id, proficiency, num_first_attempts} ->
       %{
         student_id: Integer.to_string(student_id),
-        student_name: student_name,
         proficiency: proficiency || 0.0,
         proficiency_range: proficiency_range(proficiency, num_first_attempts)
       }
     end)
-  end
-
-  defp format_student_name(family_name, given_name) do
-    case {family_name, given_name} do
-      {nil, nil} -> "Unknown Student"
-      {family, nil} -> family
-      {nil, given} -> given
-      {family, given} -> "#{family}, #{given}"
-    end
   end
 
   @doc """

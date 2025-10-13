@@ -4,6 +4,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
   alias Oli.Delivery.Metrics
   alias Oli.Delivery.Sections.SectionResourceDepot
   alias Oli.Accounts
+  alias OliWeb.Common.Utils
 
   attr :objective, :map, required: true
   attr :section_id, :integer, required: true
@@ -44,6 +45,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
     student_proficiency =
       section_id
       |> Metrics.student_proficiency_for_objective(objective.resource_id)
+      |> retrieve_students_data()
       |> add_missing_students_to_proficiency_data(
         all_student_ids,
         section_id,
@@ -258,6 +260,25 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
     |> Enum.frequencies_by(fn {_student_id, proficiency_level} -> proficiency_level end)
   end
 
+  # Retrieve and merge students data.
+  defp retrieve_students_data(student_proficiency) do
+    students_by_id =
+      student_proficiency
+      |> Enum.map(& &1.student_id)
+      |> Accounts.list_users_by_ids()
+      |> Enum.reduce(%{}, &Map.put(&2, &1.id, &1))
+
+    student_proficiency
+    |> Enum.reduce([], fn student_data, acc ->
+      student_id = String.to_integer(student_data.student_id)
+      student = students_by_id[student_id]
+
+      student_full_name = Utils.name(student.name, student.given_name, student.family_name)
+
+      [Map.put(student_data, :student_name, student_full_name) | acc]
+    end)
+  end
+
   # Add missing students to proficiency data to ensure consistency with proficiency_distribution
   # This takes real proficiency data and adds students who don't have any proficiency data
   defp add_missing_students_to_proficiency_data(
@@ -288,7 +309,6 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
         section_resource -> section_resource.related_activities || []
       end
 
-    # Get related_activities and calculate total count for this objective
     total_related_activities = length(related_activity_ids)
 
     # Calculate activities attempted per student
@@ -340,19 +360,11 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
     else
       missing_student_ids
       |> Accounts.list_users_by_ids()
-      |> Enum.map(fn {student_id, family_name, given_name} ->
-        student_name = format_student_name(family_name, given_name)
-        {student_id, student_name}
-      end)
-    end
-  end
+      |> Enum.map(fn user ->
+        student_full_name = Utils.name(user.name, user.given_name, user.family_name)
 
-  defp format_student_name(family_name, given_name) do
-    case {family_name, given_name} do
-      {nil, nil} -> "Unknown Student"
-      {family, nil} -> family
-      {nil, given} -> given
-      {family, given} -> "#{family}, #{given}"
+        {user.id, student_full_name}
+      end)
     end
   end
 end
