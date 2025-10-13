@@ -66,10 +66,19 @@
               view={assigns[:view]}
             />
           </div>
-          <div class="sm:block items-center px-4 py-2 md:hidden bg-Surface-surface-secondary h-10">
+          <div class="flex flex-row justify-between items-center px-4 py-2 md:hidden bg-Surface-surface-secondary h-10">
             <.link navigate={back_url} class="text-Text-text-high flex items-center gap-2">
               <OliWeb.Icons.back_arrow /><span>Back</span>
             </.link>
+            <button phx-click="toggle_notes_sidebar" class="flex flex-row items-center">
+              <OliWeb.Delivery.Student.Lesson.Annotations.annotations_icon />
+              <span>Notes</span>
+            </button>
+
+            <button phx-click="toggle_outline_sidebar" class="flex flex-row items-center">
+              <OliWeb.Delivery.Student.Lesson.Components.OutlineComponent.outline_icon />
+              <span>Course Content</span>
+            </button>
           </div>
         </div>
         <div
