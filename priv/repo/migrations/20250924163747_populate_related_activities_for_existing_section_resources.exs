@@ -3,20 +3,25 @@ defmodule Oli.Repo.Migrations.PopulateRelatedActivitiesForExistingSectionResourc
   import Ecto.Query
 
   def up do
-    objective_type_id = 4
-    activity_type_id = 3
+    if System.get_env("SKIP_POPULATE_RELATED_ACTIVITIES_MIGRATION", false) do
+      IO.puts("Skipping PopulateRelatedActivitiesForExistingSectionResources migration")
+      :ok
+    else
+      objective_type_id = 4
+      activity_type_id = 3
 
-    # Process sections in batches to avoid memory issues
-    batch_size = 100
+      # Process sections in batches to avoid memory issues
+      batch_size = 100
 
-    # Get total count for progress tracking
-    total_sections = repo().aggregate(from(s in "sections"), :count, :id)
-    IO.puts("Populating related_activities for #{total_sections} sections...")
+      # Get total count for progress tracking
+      total_sections = repo().aggregate(from(s in "sections"), :count, :id)
+      IO.puts("Populating related_activities for #{total_sections} sections...")
 
-    # Process sections in batches
-    process_sections_in_batches(0, batch_size, objective_type_id, activity_type_id)
+      # Process sections in batches
+      process_sections_in_batches(0, batch_size, objective_type_id, activity_type_id)
 
-    IO.puts("Completed populating related_activities field")
+      IO.puts("Completed populating related_activities field")
+    end
   end
 
   def down do
