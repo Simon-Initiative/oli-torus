@@ -2,8 +2,18 @@ defmodule Oli.Repo.Migrations.PopulateRelatedActivitiesForExistingSectionResourc
   use Ecto.Migration
   import Ecto.Query
 
+  get_env_as_boolean = fn key, default ->
+    System.get_env(key, default)
+    |> String.downcase()
+    |> String.trim()
+    |> case do
+      "true" -> true
+      _ -> false
+    end
+  end
+
   def up do
-    if System.get_env("SKIP_POPULATE_RELATED_ACTIVITIES_MIGRATION", false) do
+    if get_env_as_boolean.("SKIP_POPULATE_RELATED_ACTIVITIES_MIGRATION", false) do
       IO.puts("Skipping PopulateRelatedActivitiesForExistingSectionResources migration")
       :ok
     else
