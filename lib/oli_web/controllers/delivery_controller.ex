@@ -568,4 +568,12 @@ defmodule OliWeb.DeliveryController do
     Logger.error("Progress exceeds 1.0 threshold: #{inspect(user_data)}")
     nil
   end
+
+  @doc """
+  Redirects to the instructor dashboard insights view by default.
+  This is the entry point for the instructor dashboard route.
+  """
+  def instructor_dashboard(conn, %{"section_slug" => section_slug}) do
+    redirect(conn, to: ~p"/sections/#{section_slug}/instructor_dashboard/insights/content")
+  end
 end
