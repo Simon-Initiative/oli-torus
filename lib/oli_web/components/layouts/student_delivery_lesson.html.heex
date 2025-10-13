@@ -54,17 +54,23 @@
             </div>
           <% end %>
         </div>
-        <div class="sticky top-14 z-50">
-          <.back_arrow
-            to={
-              if assigns[:request_path] in [nil, ""] and @current_page != nil,
-                do:
-                  ~p"/sections/#{@section.slug}/learn?target_resource_id=#{@current_page["id"]}",
-                else: assigns[:request_path]
-            }
-            show_sidebar={assigns[:show_sidebar]}
-            view={assigns[:view]}
-          />
+        <div class="sticky top-[55px] z-50">
+          <% back_url =
+            if assigns[:request_path] in [nil, ""] and @current_page != nil,
+              do: ~p"/sections/#{@section.slug}/learn?target_resource_id=#{@current_page["id"]}",
+              else: assigns[:request_path] %>
+          <div class="hidden md:block">
+            <.back_arrow
+              to={back_url}
+              show_sidebar={assigns[:show_sidebar]}
+              view={assigns[:view]}
+            />
+          </div>
+          <div class="sm:block items-center px-4 py-2 md:hidden bg-Surface-surface-secondary h-10">
+            <.link navigate={back_url} class="text-Text-text-high flex items-center gap-2">
+              <OliWeb.Icons.back_arrow /><span>Back</span>
+            </.link>
+          </div>
         </div>
         <div
           :if={@section}
