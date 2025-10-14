@@ -62,6 +62,7 @@ PASS_AUTHOR=your_author_password
 EMAIL_STUDENT=your_student_email@example.com
 PASS_STUDENT=your_student_password
 NAME_STUDENT=Your Student Name
+LASTNAME_STUDENT=Your Student last name
 EMAIL_INSTRUCTOR=your_instructor_email@example.com
 PASS_INSTRUCTOR=your_instructor_password
 EMAIL_ADMIN=your_admin_email@example.com
