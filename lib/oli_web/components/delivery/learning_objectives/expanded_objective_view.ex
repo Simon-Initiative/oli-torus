@@ -267,22 +267,27 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
   defp retrieve_students_data(student_proficiency) do
     students_by_id =
       student_proficiency
-      |> Enum.map(&String.to_integer(&1.student_id))
+      |> Enum.map(& &1.id)
       |> Accounts.get_users_by_ids()
       |> Enum.reduce(%{}, &Map.put(&2, &1.id, &1))
 
     student_proficiency
     |> Enum.reduce([], fn student_data, acc ->
-      student_id = String.to_integer(student_data.student_id)
-
-      case students_by_id[student_id] do
+      case students_by_id[student_data.id] do
         nil ->
           acc
 
         student ->
-          student_full_name = Utils.name(student.name, student.given_name, student.family_name)
+          student_data =
+            Map.merge(student_data, %{
+              email: student.email,
+              full_name: student_full_name,
+              name: student.name,
+              given_name: student.given_name,
+              family_name: student.family_name
+            })
 
-          [Map.put(student_data, :student_name, student_full_name) | acc]
+          [student_data | acc]
       end
     end)
   end
@@ -296,19 +301,18 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
          objective_id
        ) do
     # Filter proficiency data to only include enrolled students (exclude instructors)
+    student_set = MapSet.new(all_student_ids)
+
     filtered_student_proficiency =
-      real_student_proficiency
-      |> Enum.filter(fn student -> student.id in all_student_ids end)
+      Enum.filter(real_student_proficiency, fn student ->
+        MapSet.member?(student_set, student.id)
+      end)
 
     # Create a set of student IDs that already have proficiency data
     existing_student_ids =
       MapSet.new(filtered_student_proficiency, fn student ->
         student.id
       end)
-
-    # Get missing student information including names
-    missing_students_with_names =
-      get_missing_students_with_names(all_student_ids, existing_student_ids)
 
     # Get related_activity_ids for calculating student attempts
     related_activity_ids =
@@ -341,13 +345,19 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
 
     # Find students that are missing from proficiency data
     missing_students =
-      missing_students_with_names
-      |> Enum.map(fn {student_id, student_name} ->
-        activities_attempted = Map.get(student_activities_attempted, student_id, 0)
+      all_student_ids
+      |> get_missing_students(existing_student_ids)
+      |> Enum.map(fn student ->
+        activities_attempted = Map.get(student_activities_attempted, student.id, 0)
+        student_full_name = Utils.name(student.name, student.given_name, student.family_name)
 
         %{
-          student_id: Integer.to_string(student_id),
-          student_name: student_name,
+          id: student.id,
+          email: student.email,
+          full_name: student_full_name,
+          name: student.name,
+          given_name: student.given_name,
+          family_name: student.family_name,
           proficiency: 0.0,
           proficiency_range: "Not enough data",
           activities_attempted_count: activities_attempted,
@@ -359,19 +369,9 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
     student_proficiency ++ missing_students
   end
 
-  defp get_missing_students_with_names(all_student_ids, existing_student_ids) do
+  defp get_missing_students(all_student_ids, existing_student_ids) do
     missing_student_ids = Enum.reject(all_student_ids, &MapSet.member?(existing_student_ids, &1))
 
-    if Enum.empty?(missing_student_ids) do
-      []
-    else
-      missing_student_ids
-      |> Accounts.get_users_by_ids()
-      |> Enum.map(fn user ->
-        student_full_name = Utils.name(user.name, user.given_name, user.family_name)
-
-        {user.id, student_full_name}
-      end)
-    end
+    Accounts.get_users_by_ids(missing_student_ids)
   end
 end

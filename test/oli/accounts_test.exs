@@ -641,7 +641,6 @@ defmodule Oli.AccountsTest do
       # Test with mix of valid and invalid user IDs
       result =
         Accounts.get_users_by_ids([user1.id, invalid_id, user2.id])
-        |> Enum.map(&{&1.id, &1.family_name, &1.given_name})
 
       assert length(result) == 2
 

@@ -193,7 +193,7 @@ defmodule Oli.Accounts do
   def get_users_by_ids(user_ids) when is_list(user_ids) do
     from(u in User,
       where: u.id in ^user_ids,
-      select: struct(u, [:id, :name, :given_name, :family_name])
+      select: struct(u, [:id, :name, :given_name, :family_name, :email])
     )
     |> Repo.all()
   end

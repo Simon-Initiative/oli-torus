@@ -150,7 +150,6 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyList d
   def handle_event("paged_table_selection_change", %{"id" => selected_student_id}, socket) do
     # Toggle selection - if already selected, remove it, otherwise add it
     selected_students = socket.assigns.selected_students
-    selected_student_id = String.to_integer(selected_student_id)
 
     selected_students =
       if selected_student_id in selected_students do

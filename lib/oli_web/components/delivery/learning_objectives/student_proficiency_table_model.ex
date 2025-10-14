@@ -107,7 +107,7 @@ defmodule OliWeb.Delivery.LearningObjectives.StudentProficiencyTableModel do
     is_selected = student.id in selected_students
 
     assigns =
-      Map.merge(assigns, %{is_selected: is_selected, student_id: Integer.to_string(student.id)})
+      Map.merge(assigns, %{is_selected: is_selected, student_id: student.id})
 
     ~H"""
     <div class="flex items-center justify-center">
