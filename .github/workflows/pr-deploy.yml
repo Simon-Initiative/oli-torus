@@ -157,7 +157,7 @@ jobs:
       - name: 🚀 Deploy PR stack
         if: steps.preflight.outputs.memory_insufficient != 'true'
         run: |
-          export PROJECT=$(echo ${{ github.event.inputs.branch && format('branch-{0}', github.event.inputs.branch) || format('pr{0}', github.event.number) }} | cut -c1-32 | sed 's/^[^a-zA-Z]*//; s/[^a-zA-Z]*$//')
+          export PROJECT=$(echo ${{ github.event.inputs.branch && format('branch-{0}', github.event.inputs.branch) || format('pr{0}', github.event.number) }} | tr '/#?' '-' | cut -c1-32)
           export APP_IMAGE_TAG=sha-${{ github.sha }}
           export HOST=pr${{ github.event.number }}.plasma.oli.cmu.edu
 
