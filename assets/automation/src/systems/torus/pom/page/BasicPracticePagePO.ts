@@ -1,7 +1,7 @@
-import { Locator, Page, expect } from '@playwright/test';
 import { Utils } from '@core/Utils';
-import { ToolbarCO } from '@pom/component/toolbar/ToolbarCO';
+import { Locator, Page, expect } from '@playwright/test';
 import { SelectMultimediaCO } from '@pom/component/SelectMultimediaCO';
+import { ToolbarCO } from '@pom/component/toolbar/ToolbarCO';
 import { ACTIVITY_TYPE, ActivityType } from '@pom/types/activity-types';
 import { ToolbarTypes } from '@pom/types/toolbar-types';
 import { PagePreviewPO } from './PagePreviewPO';
@@ -49,13 +49,6 @@ export class BasicPracticePagePO {
     await this.captionAudio.fill(text);
   }
 
-  async waitForChangesSaved() {
-    await this.changesSaved.waitFor({ state: 'visible', timeout: 10000 });
-    await this.utils.paintElement(this.changesSaved);
-  }
-
-  async clickParagraph(index: number = 0) {
-    await this.utils.sleep(15);
   async visibleTitlePage(titlePage: string = 'New Page') {
     const titleSpan = this.page.locator('span.entry-title', { hasText: titlePage });
     await expect(titleSpan).toBeVisible();
