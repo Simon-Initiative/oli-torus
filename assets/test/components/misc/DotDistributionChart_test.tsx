@@ -1,6 +1,6 @@
 import React from 'react';
 import '@testing-library/jest-dom';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import {
   DotDistributionChart,
   ProficiencyDistribution,
@@ -473,7 +473,7 @@ describe('DotDistributionChart', () => {
           expect(mockPushEventTo).toHaveBeenCalledWith(
             '#expanded-objective-123',
             'show_students_list',
-            { proficiency_level: 'High' }
+            { proficiency_level: 'High' },
           );
         });
 
@@ -509,7 +509,7 @@ describe('DotDistributionChart', () => {
             {...defaultProps}
             pushEventTo={mockPushEventTo}
             unique_id="custom-id-456"
-          />
+          />,
         );
 
         const interactiveArea = screen.getByTestId('interactive-area-High');
@@ -519,7 +519,7 @@ describe('DotDistributionChart', () => {
           expect(mockPushEventTo).toHaveBeenCalledWith(
             '#expanded-objective-custom-id-456',
             'show_students_list',
-            { proficiency_level: 'High' }
+            { proficiency_level: 'High' },
           );
         });
       });
@@ -571,7 +571,7 @@ describe('DotDistributionChart', () => {
           expect(mockPushEventTo).toHaveBeenCalledWith(
             '#expanded-objective-123',
             'hide_students_list',
-            {}
+            {},
           );
         });
 
@@ -604,8 +604,18 @@ describe('DotDistributionChart', () => {
         // Should only have the initial selection call and the hide call,
         // not an additional selection call due to event bubbling
         expect(mockPushEventTo).toHaveBeenCalledTimes(2);
-        expect(mockPushEventTo).toHaveBeenNthCalledWith(1, expect.any(String), 'show_students_list', expect.any(Object));
-        expect(mockPushEventTo).toHaveBeenNthCalledWith(2, expect.any(String), 'hide_students_list', {});
+        expect(mockPushEventTo).toHaveBeenNthCalledWith(
+          1,
+          expect.any(String),
+          'show_students_list',
+          expect.any(Object),
+        );
+        expect(mockPushEventTo).toHaveBeenNthCalledWith(
+          2,
+          expect.any(String),
+          'hide_students_list',
+          {},
+        );
 
         consoleSpy.mockRestore();
       });
@@ -656,7 +666,7 @@ describe('DotDistributionChart', () => {
         expect(mockPushEventTo).toHaveBeenCalledWith(
           '#expanded-objective-123',
           'show_students_list',
-          { proficiency_level: 'High' }
+          { proficiency_level: 'High' },
         );
 
         // Then select Medium
@@ -666,7 +676,7 @@ describe('DotDistributionChart', () => {
         expect(mockPushEventTo).toHaveBeenCalledWith(
           '#expanded-objective-123',
           'show_students_list',
-          { proficiency_level: 'Medium' }
+          { proficiency_level: 'Medium' },
         );
 
         // Only Medium should be selected now

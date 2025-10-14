@@ -373,7 +373,8 @@ export const DotDistributionChart: React.FC<DotDistributionChartProps> = ({
                 <div className="flex w-full">
                   {barData.map((item) => {
                     const totalStudents = barData.reduce((sum, d) => sum + d.count, 0);
-                    const widthPercent = totalStudents > 0 ? (item.count / totalStudents) * 100 : 25;
+                    const widthPercent =
+                      totalStudents > 0 ? (item.count / totalStudents) * 100 : 25;
 
                     if (item.count === 0) return null;
 
@@ -418,7 +419,8 @@ export const DotDistributionChart: React.FC<DotDistributionChartProps> = ({
                 {barData.map((item) => (
                   <li key={item.proficiency}>
                     {item.proficiency}: {item.count} students (
-                    {Math.round((item.count / barData.reduce((sum, d) => sum + d.count, 0)) * 100)}%)
+                    {Math.round((item.count / barData.reduce((sum, d) => sum + d.count, 0)) * 100)}
+                    %)
                   </li>
                 ))}
               </ul>
