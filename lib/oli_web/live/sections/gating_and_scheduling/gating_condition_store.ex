@@ -456,7 +456,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
     container_type_id = Oli.Resources.ResourceType.id_for_container()
 
     case {resource_type_id, gating_condition.type} do
-      {^container_type_id, type} when type in [:finished, :started] ->
+      {^container_type_id, type} when type in [:finished, :started, :progress] ->
         {:noreply,
          put_flash(
            socket,

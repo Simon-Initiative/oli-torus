@@ -4,15 +4,15 @@ defmodule OliWeb.Grades.Export do
   attr(:section_slug, :string)
 
   def render(assigns) do
-    assigns = assign(assigns, :link_text, dgettext("grades", "Download Gradebook"))
+    assigns = assign(assigns, :link_text, dgettext("grades", "Download Scorebook"))
 
     ~H"""
     <div class="card">
       <div class="card-body">
-        <h5 class="card-title">Export Grades</h5>
+        <h5 class="card-title">Export Scores</h5>
 
         <p class="card-text">
-          The current grades for all students and all graded pages can be exported as a
+          The current scores for all students and all scored pages can be exported as a
           <code>.csv</code>
           file.
         </p>

@@ -43,7 +43,7 @@ export const TriggerEditorCore = ({
       </button>
       {promptsExpanded && (
         <ul className="list-disc list-inside py-2 ml-10">
-          <li>&quot;Highlight the most imporant concepts present on this page&quot;</li>
+          <li>&quot;Highlight the most important concepts present on this page&quot;</li>
           <li>&quot;Ask the student to summarize the previous paragraphs&quot;</li>
           <li>&quot;Introduce the following video&quot;</li>
         </ul>

@@ -10,6 +10,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
   alias Phoenix.LiveView.JS
 
   @proficiency_labels ["Not enough data", "Low", "Medium", "High"]
+  @student_proficiency_tooltip_text "Proficiency is based on the percentage of correct answers on first attempts for activities linked to this learning objective or its sub-objectives."
 
   def render(assigns) do
     ~H"""
@@ -33,16 +34,24 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
       },
       %ColumnSpec{
         name: :student_proficiency_obj,
-        label: HTMLComponents.render_proficiency_label(%{title: "Student Proficiency"}),
-        render_fn: &custom_render/3,
-        tooltip:
-          "For all students, or one specific student, proficiency for a learning objective will be calculated off the percentage of correct answers for first part attempts within first activity attempts - for those parts that have that learning objective or any of its sub-objectives attached to it."
+        label:
+          HTMLComponents.render_label(%{
+            title: "Student Proficiency",
+            info_tooltip: @student_proficiency_tooltip_text
+          }),
+        render_fn: &custom_render/3
       },
       %ColumnSpec{
         name: :student_proficiency_distribution,
         label: "Proficiency Distribution",
         sortable: false,
         render_fn: &custom_render/3
+      },
+      %ColumnSpec{
+        name: :related_activities_count,
+        label: "Related Activities",
+        render_fn: &custom_render/3,
+        tooltip: "Number of activities that have this learning objective attached"
       }
     ]
 
@@ -71,14 +80,12 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
       %ColumnSpec{
         name: :student_proficiency_obj,
         label: "STUDENT PROFICIENCY OBJ.",
-        tooltip:
-          "For all students, or one specific student, proficiency for a learning objective will be calculated off the percentage of correct answers for first part attempts within first activity attempts - for those parts that have that learning objective or any of its sub-objectives attached to it."
+        tooltip: @student_proficiency_tooltip_text
       },
       %ColumnSpec{
         name: :student_proficiency_subobj,
         label: "STUDENT PROFICIENCY (SUB OBJ.)",
-        tooltip:
-          "For all students, or one specific student, proficiency for a learning objective will be calculated off the percentage of correct answers for first part attempts within first activity attempts - for those parts that have that learning objective or any of its sub-objectives attached to it."
+        tooltip: @student_proficiency_tooltip_text
       }
     ]
 
@@ -178,17 +185,60 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
     assigns =
       Map.merge(assigns, %{
         objective_id: objective_id,
-        proficiency_distribution: proficiency_distribution
+        proficiency_distribution: proficiency_distribution,
+        proficiency_labels: @proficiency_labels
       })
 
     ~H"""
-    <div class="group flex relative">
+    <div class="group relative flex">
       {render_proficiency_data_chart(@objective_id, @proficiency_distribution)}
-      <div class="-translate-y-[calc(100%-90px)] absolute left-1/2 -translate-x-1/2 bg-black text-white text-sm px-4 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity shadow-lg whitespace-nowrap inline-block z-50">
-        <%= for {label, value} <- calc_percentages(@proficiency_distribution) do %>
-          <p>{label}: {value}%</p>
+      <div class="absolute top-[calc(100%+5px)] left-1/2 -translate-x-1/2 p-0 m-0 w-60 min-h-[100px] rounded-md border border-Border-border-default bg-white dark:bg-gray-900 px-4 py-2 text-left text-sm font-normal leading-normal text-Text-text-high shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] hidden flex-col gap-1 group-hover:flex z-50">
+        <%= for label <- @proficiency_labels, value = Map.get(calc_percentages(@proficiency_distribution), label, 0) do %>
+          <div class="w-full text-left">
+            <span class="font-medium">{label}</span>: {value}%
+          </div>
         <% end %>
       </div>
+    </div>
+    """
+  end
+
+  # RELATED ACTIVITIES COUNT
+  defp custom_render(assigns, objective, %ColumnSpec{name: :related_activities_count}) do
+    count = Map.get(objective, :related_activities_count, 0)
+    section_slug = Map.get(assigns, :section_slug)
+
+    # Build URL with current page parameters as "back_params"
+    base_url =
+      "/sections/#{section_slug}/instructor_dashboard/insights/learning_objectives/related_activities/#{objective.resource_id}"
+
+    # Get current page parameters from assigns (passed by parent LiveView)
+    current_params = Map.get(assigns, :current_params, %{})
+
+    full_url =
+      if map_size(current_params) > 0 do
+        # Encode the entire params map as a single "back_params" parameter
+        encoded_params = current_params |> Jason.encode!() |> URI.encode()
+        "#{base_url}?back_params=#{encoded_params}"
+      else
+        base_url
+      end
+
+    assigns =
+      Map.merge(assigns, %{
+        count: count,
+        navigate_url: full_url
+      })
+
+    ~H"""
+    <div class="text-center">
+      <.link
+        navigate={@navigate_url}
+        class="text-Text-text-link"
+        aria-label={~s(View #{@count} related activities)}
+      >
+        {@count}
+      </.link>
     </div>
     """
   end
@@ -214,19 +264,44 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
 
   # RENDER PROFICIENCY DATA CHART
   defp render_proficiency_data_chart(objective_id, data) do
-    data =
-      @proficiency_labels
-      |> Enum.map(fn label ->
-        %{proficiency: label, count: Map.get(data, label, 0)}
-      end)
+    # Order labels correctly and calculate positions manually
+    counts = Enum.map(@proficiency_labels, fn label -> Map.get(data, label, 0) end)
+    total = Enum.sum(counts)
+
+    data_with_positions =
+      if total == 0 do
+        []
+      else
+        {result, _} =
+          Enum.reduce(@proficiency_labels, {[], 0}, fn label, {acc, cumulative_start} ->
+            count = Map.get(data, label, 0)
+
+            if count > 0 do
+              item = %{
+                proficiency: label,
+                count: count,
+                start: cumulative_start,
+                end: cumulative_start + count
+              }
+
+              {[item | acc], cumulative_start + count}
+            else
+              {acc, cumulative_start}
+            end
+          end)
+
+        Enum.reverse(result)
+      end
 
     spec = %{
       mark: "bar",
-      data: %{values: data},
+      data: %{values: data_with_positions},
       encoding: %{
-        x: %{aggregate: "sum", field: "count"},
+        x: %{field: "start", type: "quantitative", scale: %{nice: false}},
+        x2: %{field: "end"},
         color: %{
           field: "proficiency",
+          type: "nominal",
           scale: %{
             domain: ["Not enough data", "Low", "Medium", "High"],
             range: ["#C2C2C2", "#E6D4FA", "#B37CEA", "#7B19C1"]
@@ -264,5 +339,49 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
     @proficiency_labels
     |> Enum.map(fn label -> {label, perc.(label)} end)
     |> Map.new()
+  end
+
+  # RENDER EXPANDED DETAILS FOR STRIPED TABLE
+  def render_objective_details(assigns, objective) do
+    %{
+      resource_id: objective_id,
+      unique_id: unique_id,
+      student_proficiency_obj_dist: student_proficiency_obj_dist
+    } = objective
+
+    section_slug = assigns[:section_slug] || assigns.model.data[:section_slug]
+    section_id = assigns[:section_id] || assigns.model.data[:section_id]
+
+    proficiency_distribution =
+      case Map.get(objective, :student_proficiency_subobj_dist) do
+        nil -> student_proficiency_obj_dist
+        student_proficiency_subobj_dist -> student_proficiency_subobj_dist
+      end
+
+    current_user = assigns[:current_user] || assigns.model.data[:current_user]
+
+    assigns =
+      assigns
+      |> Map.put(:objective, objective)
+      |> Map.put(:objective_id, objective_id)
+      |> Map.put(:unique_id, unique_id)
+      |> Map.put(:section_slug, section_slug)
+      |> Map.put(:section_id, section_id)
+      |> Map.put(:proficiency_distribution, proficiency_distribution)
+      |> Map.put(:current_user, current_user)
+
+    ~H"""
+    <div class="p-6">
+      <.live_component
+        module={OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView}
+        id={"expanded-objective-#{@unique_id}"}
+        objective={@objective}
+        section_id={@section_id}
+        section_slug={@section_slug}
+        proficiency_distribution={@proficiency_distribution}
+        current_user={@current_user}
+      />
+    </div>
+    """
   end
 end

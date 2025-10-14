@@ -18,6 +18,7 @@ export interface PageState {
   customCss?: string;
   customScript?: string;
   custom?: any;
+  responsiveLayout?: boolean;
 }
 
 const initialState: PageState = {
@@ -34,6 +35,7 @@ const initialState: PageState = {
   customCss: '',
   customScript: '',
   custom: {},
+  responsiveLayout: false,
 };
 
 const slice: Slice<PageState> = createSlice({
@@ -47,7 +49,8 @@ const slice: Slice<PageState> = createSlice({
       state.objectives = action.payload.objectives || initialState.objectives;
       state.resourceId = action.payload.resourceId || initialState.resourceId;
       state.revisionSlug = action.payload.revisionSlug || initialState.revisionSlug;
-
+      state.responsiveLayout =
+        action.payload.custom?.responsiveLayout || initialState.responsiveLayout;
       // for now don't need to set advancedAuthoring or advancedDelivery
       state.displayApplicationChrome =
         action.payload.displayApplicationChrome || initialState.displayApplicationChrome;
@@ -110,6 +113,10 @@ export const { loadPage, setIsGraded, setTitle, setObjectives, setRevisionSlug, 
 export const selectState = (state: AuthoringRootState): PageState => state[PageSlice] as PageState;
 export const selectIsGraded = createSelector(selectState, (state: PageState) => state.graded);
 export const selectTitle = createSelector(selectState, (state: PageState) => state.title);
+export const selectResponsiveLayout = createSelector(
+  selectState,
+  (state: PageState) => state.responsiveLayout,
+);
 export const selectCustom = createSelector(selectState, (state: PageState) => state.custom);
 export const selectObjectives = createSelector(selectState, (state: PageState) => state.objectives);
 export const selectResourceId = createSelector(selectState, (state: PageState) => state.resourceId);

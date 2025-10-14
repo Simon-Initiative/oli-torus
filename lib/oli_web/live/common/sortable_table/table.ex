@@ -72,7 +72,7 @@ defmodule OliWeb.Common.SortableTable.Table do
       if id_field(row, assigns.model) == assigns.model.selected do
         "border-b table-active"
       else
-        if assigns.select != nil do
+        if assigns.select != nil and assigns.select != "" do
           "border-b selectable"
         else
           "border-b"
@@ -88,7 +88,7 @@ defmodule OliWeb.Common.SortableTable.Table do
       id={id_field(@row, @model)}
       class={@row_class <> if Map.get(@row, :selected) || id_field(@row, @model) == @model.selected, do: " bg-delivery-primary-100 shadow-inner dark:bg-gray-700 dark:text-black", else: ""}
       aria-selected={if Map.get(@row, :selected), do: "true", else: "false"}
-      phx-click={@select}
+      phx-click={if @select != nil and @select != "", do: @select, else: nil}
       phx-value-id={id_field(@row, @model)}
     >
       <%= for column_spec <- @model.column_specs do %>

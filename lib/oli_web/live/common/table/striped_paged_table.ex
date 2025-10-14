@@ -23,6 +23,11 @@ defmodule OliWeb.Common.StripedPagedTable do
   attr :no_records_message, :string, default: "None exist"
   attr :overflow_class, :string, default: "inline"
 
+  attr :details_render_fn, :any,
+    default: nil,
+    doc:
+      "Optional function to render custom expandable row content. Function receives (assigns, row) and returns rendered content."
+
   def render(assigns) do
     ~H"""
     <div class={if @scrollable, do: "overflow-x-auto #{@overflow_class}"}>
@@ -34,14 +39,15 @@ defmodule OliWeb.Common.StripedPagedTable do
         <div :if={@total_count <= @limit and @render_top_info} class="px-5 py-2">
           Showing all results ({@total_count} total)
         </div>
-        <div class="relative max-h-[650px] overflow-y-auto overflow-x-auto mx-4">
+        <div class="relative mx-4 overflow-y-auto max-h-[calc(100vh-400px)]">
           {render_table(%{
             allow_selection: @allow_selection,
             table_model: @table_model,
             sort: @sort,
             selection_change: @selection_change,
             additional_table_class: @additional_table_class,
-            additional_row_class: @additional_row_class
+            additional_row_class: @additional_row_class,
+            details_render_fn: @details_render_fn
           })}
         </div>
         <Paging.render
@@ -57,7 +63,7 @@ defmodule OliWeb.Common.StripedPagedTable do
           is_page_size_right={true}
         />
       <% else %>
-        <div class="bg-white dark:bg-gray-800 dark:text-white px-10 my-5">
+        <div class="bg-white dark:bg-gray-800 dark:text-white px-10 py-5">
           <p>{@no_records_message}</p>
         </div>
       <% end %>
@@ -74,6 +80,7 @@ defmodule OliWeb.Common.StripedPagedTable do
         select={@selection_change}
         additional_table_class={@additional_table_class}
         additional_row_class={@additional_row_class}
+        details_render_fn={@details_render_fn}
       />
       """
     else
@@ -83,6 +90,7 @@ defmodule OliWeb.Common.StripedPagedTable do
         sort={@sort}
         additional_table_class={@additional_table_class}
         additional_row_class={@additional_row_class}
+        details_render_fn={@details_render_fn}
       />
       """
     end

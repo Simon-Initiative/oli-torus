@@ -18,7 +18,7 @@ export const PageTriggerEditor: React.FC<{
       </button>
       {promptsExpanded && (
         <ul className="list-disc list-inside py-2 ml-10">
-          <li>&quot;Highlight the most imporant concepts present on this page&quot;</li>
+          <li>&quot;Highlight the most important concepts present on this page&quot;</li>
           <li>
             &quot;Welcome the student to this page and let them know that you are here to help&quot;
           </li>

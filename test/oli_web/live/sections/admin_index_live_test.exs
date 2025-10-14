@@ -199,6 +199,56 @@ defmodule OliWeb.Sections.AdminIndexLiveTest do
       refute has_element?(view, "td", s2.title)
     end
 
+    test "search highlights matches and enforces minimum length", %{conn: conn} do
+      project = insert(:project, title: "Alpha Project", authors: [])
+      blueprint = insert(:section, title: "Alpha Blueprint")
+      institution = insert(:institution, name: "Alpha Institution")
+
+      highlighted_section =
+        insert(:section,
+          type: :enrollable,
+          base_project: project,
+          blueprint: blueprint,
+          institution: institution,
+          title: "Alpha Section",
+          slug: "alpha-section"
+        )
+
+      other_section = insert(:section, type: :enrollable, title: "Beta Section")
+
+      instructor = insert(:user, name: "Professor Alpha")
+
+      Sections.enroll(instructor.id, highlighted_section.id, [
+        ContextRoles.get_role(:context_instructor)
+      ])
+
+      {:ok, view, _html} = live(conn, @live_view_index_route)
+
+      view
+      |> element("form[phx-change=\"text_search_change\"]")
+      |> render_change(%{"section_name" => "al"})
+
+      assert has_element?(view, "td", highlighted_section.title)
+      assert has_element?(view, "td", other_section.title)
+      refute has_element?(view, "span.search-highlight")
+
+      view
+      |> element("form[phx-change=\"text_search_change\"]")
+      |> render_change(%{"section_name" => "alpha"})
+
+      assert has_element?(view, "td", highlighted_section.title)
+      refute has_element?(view, "td", other_section.title)
+      assert has_element?(view, "span.search-highlight", "Alpha")
+
+      view
+      |> element("form[phx-change=\"text_search_change\"]")
+      |> render_change(%{"section_name" => ""})
+
+      assert has_element?(view, "td", highlighted_section.title)
+      assert has_element?(view, "td", other_section.title)
+      refute has_element?(view, "span.search-highlight")
+    end
+
     test "applies sorting", %{conn: conn} do
       project = insert(:project, title: "Project", authors: [])
 

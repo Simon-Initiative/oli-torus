@@ -130,7 +130,7 @@ defmodule OliWeb.GradesLiveTest do
 
       {:ok, view, _html} = live(conn, live_view_grades_route(section.slug))
 
-      assert has_element?(view, "h2", "Manage Grades")
+      assert has_element?(view, "h2", "Manage Scores")
     end
   end
 
@@ -234,11 +234,11 @@ defmodule OliWeb.GradesLiveTest do
       view
       |> element(
         "a[phx-click='send_grades']",
-        "Synchronize Grades"
+        "Synchronize Scores"
       )
       |> render_click()
 
-      assert has_element?(view, "p", "Pending grade updates: 0")
+      assert has_element?(view, "p", "Pending score updates: 0")
       assert has_element?(view, "p", "Succeeded: 0")
       assert has_element?(view, "p", "Failed: 0")
     end
@@ -267,17 +267,17 @@ defmodule OliWeb.GradesLiveTest do
       view
       |> element(
         "a[phx-click='send_grades']",
-        "Synchronize Grades"
+        "Synchronize Scores"
       )
       |> render_click()
 
-      assert has_element?(view, "p", "Pending grade updates: 1")
+      assert has_element?(view, "p", "Pending score updates: 1")
 
       # Button disabled until it is finished
       assert view
              |> has_element?(
                "a[phx-click='send_grades'][disabled]",
-               "Synchronize Grades"
+               "Synchronize Scores"
              )
 
       payload = %Oli.Delivery.Attempts.PageLifecycle.GradeUpdatePayload{
@@ -294,7 +294,7 @@ defmodule OliWeb.GradesLiveTest do
       refute view
              |> has_element?(
                "a[phx-click='send_grades'][disabled]",
-               "Synchronize Grades"
+               "Synchronize Scores"
              )
     end
 
@@ -336,10 +336,10 @@ defmodule OliWeb.GradesLiveTest do
 
       # Synchronize for first page
       view
-      |> element("a[phx-click='send_grades']", "Synchronize Grades")
+      |> element("a[phx-click='send_grades']", "Synchronize Scores")
       |> render_click()
 
-      assert has_element?(view, "p", "Pending grade updates: 2")
+      assert has_element?(view, "p", "Pending score updates: 2")
 
       # Change page
       view
@@ -348,10 +348,10 @@ defmodule OliWeb.GradesLiveTest do
 
       # Synchronize for second page
       view
-      |> element("a[phx-click='send_grades']", "Synchronize Grades")
+      |> element("a[phx-click='send_grades']", "Synchronize Scores")
       |> render_click()
 
-      assert has_element?(view, "p", "Pending grade updates: 1")
+      assert has_element?(view, "p", "Pending score updates: 1")
     end
 
     test "download gradebook - download file with grades succesfully", %{
@@ -387,7 +387,7 @@ defmodule OliWeb.GradesLiveTest do
       view
       |> element(
         "a[href=\"#{Routes.page_delivery_path(OliWeb.Endpoint, :export_gradebook, section.slug)}\"]",
-        "Download Gradebook"
+        "Download Scorebook"
       )
       |> render_click()
 
@@ -427,7 +427,7 @@ defmodule OliWeb.GradesLiveTest do
       view
       |> element(
         "a[href=\"#{Routes.page_delivery_path(OliWeb.Endpoint, :export_gradebook, section.slug)}\"]",
-        "Download Gradebook"
+        "Download Scorebook"
       )
       |> render_click()
 
