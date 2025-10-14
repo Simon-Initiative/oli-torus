@@ -612,6 +612,22 @@ function renderDots(
   ) => {
     const position = breakpoint.positionCalculator(bounds);
 
+    const handleClose = (e: React.KeyboardEvent | React.MouseEvent) => {
+      e.stopPropagation();
+      setSelectedSection(null);
+      if (pushEventTo) {
+        pushEventTo(`#expanded-objective-${unique_id}`, 'hide_students_list', {});
+      }
+      setHoveredSection(level);
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        handleClose(e);
+      }
+    };
+
     return (
       <g key={breakpoint.name} className={breakpoint.className}>
         <rect
@@ -622,14 +638,11 @@ function renderDots(
           height="24"
           fill="transparent"
           style={{ cursor: 'pointer' }}
-          onClick={(e) => {
-            e.stopPropagation();
-            setSelectedSection(null);
-            if (pushEventTo) {
-              pushEventTo(`#expanded-objective-${unique_id}`, 'hide_students_list', {});
-            }
-            setHoveredSection(level);
-          }}
+          onClick={handleClose}
+          onKeyDown={handleKeyDown}
+          tabIndex={0}
+          role="button"
+          aria-label={`Close ${level} proficiency student list`}
         />
         <svg
           x={`${position}%`}
@@ -690,9 +703,9 @@ function renderDots(
         // Handle "Not enough data" level differently from others
         if (level === 'Not enough data') {
           // For "Not enough data", create multiple symmetric subtowers in the center
-          const allStudents = proficiencyValues.reduce(
+          const allStudents = proficiencyValues.reduce<DotDatum[]>(
             (acc, value) => acc.concat(levelGroups[value]),
-            [] as any[],
+            [],
           );
           const totalStudents = allStudents.length;
 
@@ -793,6 +806,25 @@ function renderDots(
         const isSelected = selectedSection === level;
         const showRectangle = isHovered || isSelected;
 
+        const handleSectionClick = () => {
+          if (selectedSection !== level) {
+            setSelectedSection(level);
+            // Send event to LiveView when a section is selected
+            if (pushEventTo) {
+              pushEventTo(`#expanded-objective-${unique_id}`, 'show_students_list', {
+                proficiency_level: level,
+              });
+            }
+          }
+        };
+
+        const handleSectionKeyDown = (e: React.KeyboardEvent) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleSectionClick();
+          }
+        };
+
         return (
           <g key={`section-${level}`}>
             {/* Interactive area (invisible) */}
@@ -805,23 +837,24 @@ function renderDots(
               fill="transparent"
               stroke="none"
               style={{ cursor: selectedSection === level ? 'default' : 'pointer' }}
+              tabIndex={selectedSection === level ? -1 : 0}
+              role="button"
+              aria-label={`Show students with ${level} proficiency`}
+              aria-pressed={isSelected}
               onMouseEnter={() => {
                 setHoveredSection(level);
               }}
               onMouseLeave={() => {
                 setHoveredSection(null);
               }}
-              onClick={() => {
-                if (selectedSection !== level) {
-                  setSelectedSection(level);
-                  // Send event to LiveView when a section is selected
-                  if (pushEventTo) {
-                    pushEventTo(`#expanded-objective-${unique_id}`, 'show_students_list', {
-                      proficiency_level: level,
-                    });
-                  }
-                }
+              onFocus={() => {
+                setHoveredSection(level);
               }}
+              onBlur={() => {
+                setHoveredSection(null);
+              }}
+              onClick={handleSectionClick}
+              onKeyDown={handleSectionKeyDown}
             />
 
             {/* Visual rectangle */}

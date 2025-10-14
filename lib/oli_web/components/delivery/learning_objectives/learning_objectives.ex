@@ -165,6 +165,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
           <a
             href={Routes.delivery_path(OliWeb.Endpoint, :download_learning_objectives, @section_slug)}
             target="_blank"
+            rel="noopener noreferrer"
             class="flex items-center justify-center gap-x-2 text-Text-text-button font-bold"
           >
             Download CSV <Icons.download />

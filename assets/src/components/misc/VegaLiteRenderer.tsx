@@ -20,11 +20,8 @@ export const VegaLiteRenderer: React.FC<Props> = ({ spec, dark_mode_colors }) =>
   const dynamicSpec: VisualizationSpec = React.useMemo(() => {
     if (!dark_mode_colors) return spec;
 
-    const updatedSpec = { ...spec };
-
-    // Update color range if it exists in the spec
     // Type guard to check if the spec has encoding property
-    const specWithEncoding = updatedSpec as any;
+    const specWithEncoding = spec as any;
     if (
       specWithEncoding.encoding &&
       typeof specWithEncoding.encoding === 'object' &&
@@ -35,11 +32,23 @@ export const VegaLiteRenderer: React.FC<Props> = ({ spec, dark_mode_colors }) =>
       specWithEncoding.encoding.color.scale &&
       typeof specWithEncoding.encoding.color.scale === 'object'
     ) {
-      const colorScale = specWithEncoding.encoding.color.scale as any;
-      colorScale.range = darkMode ? dark_mode_colors.dark : dark_mode_colors.light;
+      // Deep clone the nested structure to avoid mutating the original spec
+      return {
+        ...spec,
+        encoding: {
+          ...specWithEncoding.encoding,
+          color: {
+            ...specWithEncoding.encoding.color,
+            scale: {
+              ...specWithEncoding.encoding.color.scale,
+              range: darkMode ? dark_mode_colors.dark : dark_mode_colors.light,
+            },
+          },
+        },
+      };
     }
 
-    return updatedSpec;
+    return spec;
   }, [spec, dark_mode_colors, darkMode]);
 
   // Theme updates

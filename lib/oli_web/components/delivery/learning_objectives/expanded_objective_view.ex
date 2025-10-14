@@ -264,7 +264,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
   defp retrieve_students_data(student_proficiency) do
     students_by_id =
       student_proficiency
-      |> Enum.map(& &1.student_id)
+      |> Enum.map(&String.to_integer(&1.student_id))
       |> Accounts.list_users_by_ids()
       |> Enum.reduce(%{}, &Map.put(&2, &1.id, &1))
 
