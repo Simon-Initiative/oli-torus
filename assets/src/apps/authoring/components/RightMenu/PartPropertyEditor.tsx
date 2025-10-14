@@ -133,7 +133,11 @@ const getExpertComponentSchema = (instance: any, responsiveLayout: boolean): JSO
   return partSchema; // default schema for components that don't specify.
 };
 
-const getComponentUISchema = (instance: any, partEditMode: PartAuthoringMode, responsiveLayout: boolean) => {
+const getComponentUISchema = (
+  instance: any,
+  partEditMode: PartAuthoringMode,
+  responsiveLayout: boolean,
+) => {
   return partEditMode === 'simple'
     ? getSimplifiedComponentUISchema(instance)
     : getExpertComponentUISchema(instance, responsiveLayout);

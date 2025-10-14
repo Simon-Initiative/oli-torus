@@ -205,7 +205,8 @@ export const simplifiedPartUiSchema = {
 
 export const transformModelToSchema = (model: any) => {
   const { id, type } = model;
-  const { x, y, z, width, height, responsiveLayoutWidth, requiresManualGrading, maxScore } = model.custom;
+  const { x, y, z, width, height, responsiveLayoutWidth, requiresManualGrading, maxScore } =
+    model.custom;
   const result: any = {
     id,
     type,
@@ -217,7 +218,7 @@ export const transformModelToSchema = (model: any) => {
     Size: {
       width,
       height,
-      responsiveLayoutWidth
+      responsiveLayoutWidth,
     },
     responsiveLayoutWidth: responsiveLayoutWidth || 960, // Default to 100% if not set
     Scoring: {
@@ -233,7 +234,7 @@ export const transformModelToSchema = (model: any) => {
 };
 
 export const transformSchemaToModel = (schema: any) => {
-  const { id, type, Position, Size, responsiveLayoutWidth, palette, Scoring } = schema;
+  const { id, type, Position, Size, palette, Scoring } = schema;
   const result = {
     id,
     type,
