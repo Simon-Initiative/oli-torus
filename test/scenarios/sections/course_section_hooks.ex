@@ -8,7 +8,8 @@ defmodule Oli.Scenarios.Sections.CourseSectionHooks do
   import Ecto.Query, only: [from: 2]
   import ExUnit.Assertions
 
-  alias Oli.Publishing.AuthoringResolver
+  alias Oli.Publishing.{AuthoringResolver, DeliveryResolver}
+  alias Oli.Delivery.Sections.{Section, SectionResource}
   alias Oli.Repo
   alias Oli.Resources.{PageContent, Resource, Revision}
   alias Oli.Scenarios.DirectiveTypes.ExecutionState
@@ -19,6 +20,7 @@ defmodule Oli.Scenarios.Sections.CourseSectionHooks do
   @practice_page_a "Practice Page A"
   @practice_page_b "Practice Page B"
   @unit_title "Unit 1"
+  @product_nil_child "nil_child_product"
 
   @doc """
   Replaces the first activity reference on Practice Page A with a bogus resource id.
@@ -107,6 +109,21 @@ defmodule Oli.Scenarios.Sections.CourseSectionHooks do
   end
 
   @doc """
+  Inserts a `nil` entry into the product's root section resource children array.
+  """
+  def insert_nil_child_in_product_root(%ExecutionState{} = state) do
+    mutate_product_root_children(
+      state,
+      @product_nil_child,
+      "insert nil child entry into product root",
+      fn
+        [] -> {:error, :no_children}
+        [_ | _] = current_children -> {:ok, current_children ++ [nil]}
+      end
+    )
+  end
+
+  @doc """
   Validates that Practice Page A contains an activity reference pointing to a missing resource.
   """
   def assert_missing_activity_reference(%ExecutionState{} = state) do
@@ -183,6 +200,24 @@ defmodule Oli.Scenarios.Sections.CourseSectionHooks do
     end
   end
 
+  @doc """
+  Ensures the product root contains a nil child entry while keeping Unit 1 accessible.
+  """
+  def assert_product_nil_child_structure(%ExecutionState{} = state) do
+    with {:ok, _product_name, product} <- select_product(state, @product_nil_child),
+         {:ok, root_section_resource} <- fetch_root_section_resource(product) do
+      statuses = section_child_statuses(product.slug, root_section_resource.children)
+
+      assert Enum.any?(statuses, &match?({nil, _}, &1)),
+             "Expected product root to include a nil child entry"
+
+      state
+    else
+      {:error, reason} ->
+        flunk("assert_product_nil_child_structure failed: #{inspect(reason)}")
+    end
+  end
+
   defp mutate_page_content(%ExecutionState{} = state, page_title, action, transform_fn) do
     with {:ok, project_name, built_project} <- select_project(state),
          {:ok, page_revision} <- fetch_revision_by_title(built_project, page_title),
@@ -229,6 +264,30 @@ defmodule Oli.Scenarios.Sections.CourseSectionHooks do
       error ->
         Logger.warning(
           "Scenario hook #{inspect(__MODULE__)} failed to #{action}: #{inspect(error)}"
+        )
+
+        state
+    end
+  end
+
+  defp mutate_product_root_children(%ExecutionState{} = state, product_name, action, transform_fn) do
+    with {:ok, product_name, product} <- select_product(state, product_name),
+         {:ok, root_section_resource} <- fetch_root_section_resource(product),
+         {:ok, mutated_children} <- transform_fn.(root_section_resource.children || []),
+         {:ok, _updated_root} <-
+           persist_section_resource(root_section_resource, %{children: mutated_children}),
+         {:ok, refreshed_product} <- refresh_product_section(product) do
+      Logger.info("Scenario hook #{inspect(__MODULE__)}: #{action} for product #{product_name}")
+
+      Engine.put_product(state, product_name, refreshed_product)
+    else
+      {:error, reason} ->
+        flunk("mutate_product_root_children failed for #{product_name}: #{inspect(reason)}")
+        state
+
+      error ->
+        Logger.warning(
+          "Scenario hook #{inspect(__MODULE__)} failed to #{action} for product #{product_name}: #{inspect(error)}"
         )
 
         state
@@ -295,9 +354,29 @@ defmodule Oli.Scenarios.Sections.CourseSectionHooks do
     end
   end
 
+  defp persist_section_resource(%SectionResource{} = section_resource, attrs)
+       when is_map(attrs) do
+    Repo.transaction(fn ->
+      section_resource
+      |> Changeset.change(attrs)
+      |> Repo.update!()
+    end)
+    |> case do
+      {:ok, updated_section_resource} -> {:ok, updated_section_resource}
+      {:error, error} -> {:error, error}
+    end
+  end
+
   defp refresh_project_resource(built_project, %Revision{} = revision) do
     title = revision.title
     refresh_project(built_project, title, revision)
+  end
+
+  defp refresh_product_section(%Section{} = product) do
+    case Repo.get(Section, product.id) do
+      nil -> {:error, {:section_not_found, product.id}}
+      refreshed -> {:ok, refreshed}
+    end
   end
 
   defp select_project(%ExecutionState{projects: projects}) when map_size(projects) >= 1 do
@@ -309,6 +388,24 @@ defmodule Oli.Scenarios.Sections.CourseSectionHooks do
   end
 
   defp select_project(_state), do: {:error, :no_projects}
+
+  defp select_product(%ExecutionState{products: products}, product_name)
+       when is_binary(product_name) do
+    case Map.get(products, product_name) do
+      nil -> {:error, {:unknown_product, product_name}}
+      product -> {:ok, product_name, product}
+    end
+  end
+
+  defp select_product(%ExecutionState{products: products}, nil) when map_size(products) >= 1 do
+    Enum.at(products, 0)
+    |> case do
+      {name, product} -> {:ok, name, product}
+      _ -> {:error, :unexpected_product_structure}
+    end
+  end
+
+  defp select_product(_state, _product_name), do: {:error, :no_products}
 
   defp fetch_revision_by_title(built_project, title) do
     cond do
@@ -325,6 +422,19 @@ defmodule Oli.Scenarios.Sections.CourseSectionHooks do
 
   defp fetch_root_revision(built_project) do
     fresh_revision(project_slug(built_project), built_project.root.revision.resource_id)
+  end
+
+  defp fetch_root_section_resource(%Section{} = product) do
+    case product.root_section_resource_id do
+      nil ->
+        {:error, :no_root_section_resource}
+
+      section_resource_id ->
+        case Repo.get(SectionResource, section_resource_id) do
+          nil -> {:error, {:section_resource_not_found, section_resource_id}}
+          section_resource -> {:ok, section_resource}
+        end
+    end
   end
 
   defp fresh_revision(project_slug, resource_id) when is_integer(resource_id) do
@@ -442,6 +552,19 @@ defmodule Oli.Scenarios.Sections.CourseSectionHooks do
 
       resource_id ->
         case AuthoringResolver.from_resource_id(project_slug, resource_id) do
+          nil -> {:missing, resource_id}
+          revision -> {:ok, revision.title}
+        end
+    end)
+  end
+
+  defp section_child_statuses(section_slug, children) do
+    Enum.map(children || [], fn
+      nil ->
+        {nil, nil}
+
+      resource_id ->
+        case DeliveryResolver.from_resource_id(section_slug, resource_id) do
           nil -> {:missing, resource_id}
           revision -> {:ok, revision.title}
         end
