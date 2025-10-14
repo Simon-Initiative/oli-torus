@@ -886,31 +886,37 @@ defmodule Oli.Analytics.Summary.MetricsV2Test do
 
       # Create activities
       activity1_resource = insert(:resource)
-      activity1_revision = insert(:revision,
-        resource: activity1_resource,
-        author: author,
-        title: "Activity 1",
-        resource_type_id: Oli.Resources.ResourceType.id_for_activity(),
-        content: %{}
-      )
+
+      activity1_revision =
+        insert(:revision,
+          resource: activity1_resource,
+          author: author,
+          title: "Activity 1",
+          resource_type_id: Oli.Resources.ResourceType.id_for_activity(),
+          content: %{}
+        )
 
       activity2_resource = insert(:resource)
-      activity2_revision = insert(:revision,
-        resource: activity2_resource,
-        author: author,
-        title: "Activity 2",
-        resource_type_id: Oli.Resources.ResourceType.id_for_activity(),
-        content: %{}
-      )
+
+      activity2_revision =
+        insert(:revision,
+          resource: activity2_resource,
+          author: author,
+          title: "Activity 2",
+          resource_type_id: Oli.Resources.ResourceType.id_for_activity(),
+          content: %{}
+        )
 
       activity3_resource = insert(:resource)
-      activity3_revision = insert(:revision,
-        resource: activity3_resource,
-        author: author,
-        title: "Activity 3",
-        resource_type_id: Oli.Resources.ResourceType.id_for_activity(),
-        content: %{}
-      )
+
+      activity3_revision =
+        insert(:revision,
+          resource: activity3_resource,
+          author: author,
+          title: "Activity 3",
+          resource_type_id: Oli.Resources.ResourceType.id_for_activity(),
+          content: %{}
+        )
 
       # Publish activities
       insert(:published_resource,
@@ -918,11 +924,13 @@ defmodule Oli.Analytics.Summary.MetricsV2Test do
         resource: activity1_resource,
         revision: activity1_revision
       )
+
       insert(:published_resource,
         publication: publication,
         resource: activity2_resource,
         revision: activity2_revision
       )
+
       insert(:published_resource,
         publication: publication,
         resource: activity3_resource,
@@ -948,11 +956,12 @@ defmodule Oli.Analytics.Summary.MetricsV2Test do
       user1: user1,
       user2: user2
     } do
-      result = Metrics.student_activities_attempted_count(
-        section.id,
-        [user1.id, user2.id],
-        []
-      )
+      result =
+        Metrics.student_activities_attempted_count(
+          section.id,
+          [user1.id, user2.id],
+          []
+        )
 
       assert result == %{}
     end
@@ -964,11 +973,12 @@ defmodule Oli.Analytics.Summary.MetricsV2Test do
       activity1_resource: activity1_resource,
       activity2_resource: activity2_resource
     } do
-      result = Metrics.student_activities_attempted_count(
-        section.id,
-        [user1.id, user2.id],
-        [activity1_resource.id, activity2_resource.id]
-      )
+      result =
+        Metrics.student_activities_attempted_count(
+          section.id,
+          [user1.id, user2.id],
+          [activity1_resource.id, activity2_resource.id]
+        )
 
       assert result == %{}
     end
@@ -979,170 +989,182 @@ defmodule Oli.Analytics.Summary.MetricsV2Test do
       user2: user2,
       user3: user3,
       activity1_resource: activity1_resource,
-      activity1_revision: activity1_revision,
       activity2_resource: activity2_resource,
-      activity2_revision: activity2_revision,
-      activity3_resource: activity3_resource,
-      activity3_revision: activity3_revision
+      activity3_resource: activity3_resource
     } do
-      # Create page resources for accesses
-      page1_resource = insert(:resource)
-      page2_resource = insert(:resource)
-      page3_resource = insert(:resource)
+      activity_type_id = Oli.Resources.ResourceType.id_for_activity()
 
-      # Create resource accesses for users
-      access1 = insert(:resource_access,
-        section: section,
-        user: user1,
-        resource: page1_resource
-      )
-      access2 = insert(:resource_access,
-        section: section,
-        user: user2,
-        resource: page2_resource
-      )
-      access3 = insert(:resource_access,
-        section: section,
-        user: user3,
-        resource: page3_resource
-      )
-
-      # Create resource attempts
-      attempt1 = insert(:resource_attempt,
-        resource_access: access1,
-        revision: activity1_revision
-      )
-      attempt2 = insert(:resource_attempt,
-        resource_access: access2,
-        revision: activity1_revision
-      )
-      attempt3 = insert(:resource_attempt,
-        resource_access: access2,
-        revision: activity2_revision
-      )
-      attempt4 = insert(:resource_attempt,
-        resource_access: access3,
-        revision: activity1_revision
-      )
-      attempt5 = insert(:resource_attempt,
-        resource_access: access3,
-        revision: activity2_revision
-      )
-      attempt6 = insert(:resource_attempt,
-        resource_access: access3,
-        revision: activity3_revision
-      )
-
-      # Create activity attempts
-      # User1 attempts activity1 multiple times (should count as 1)
-      insert(:activity_attempt,
-        resource_attempt: attempt1,
-        revision: activity1_revision,
-        attempt_number: 1
-      )
-      insert(:activity_attempt,
-        resource_attempt: attempt1,
-        revision: activity1_revision,
-        attempt_number: 2
-      )
-
-      # User2 attempts activity1 and activity2 (should count as 2)
-      insert(:activity_attempt,
-        resource_attempt: attempt2,
-        revision: activity1_revision,
-        attempt_number: 1
-      )
-      insert(:activity_attempt,
-        resource_attempt: attempt3,
-        revision: activity2_revision,
-        attempt_number: 1
-      )
-
-      # User3 attempts all three activities (should count as 3)
-      insert(:activity_attempt,
-        resource_attempt: attempt4,
-        revision: activity1_revision,
-        attempt_number: 1
-      )
-      insert(:activity_attempt,
-        resource_attempt: attempt5,
-        revision: activity2_revision,
-        attempt_number: 1
-      )
-      insert(:activity_attempt,
-        resource_attempt: attempt6,
-        revision: activity3_revision,
-        attempt_number: 1
-      )
-
-      result = Metrics.student_activities_attempted_count(
+      # Create ResourceSummary records for each user and activity
+      # User1 attempts activity1 with 2 attempts (should count as 1 activity)
+      add_resource_summary([
+        -1,
+        -1,
         section.id,
-        [user1.id, user2.id, user3.id],
-        [activity1_resource.id, activity2_resource.id, activity3_resource.id]
-      )
+        user1.id,
+        activity1_resource.id,
+        nil,
+        activity_type_id,
+        1,
+        2,
+        0,
+        2,
+        1
+      ])
 
-      assert result[user1.id] == 1  # attempted activity1 only
-      assert result[user2.id] == 2  # attempted activity1 and activity2
-      assert result[user3.id] == 3  # attempted all three activities
+      # User2 attempts activity1 and activity2 (should count as 2 activities)
+      add_resource_summary([
+        -1,
+        -1,
+        section.id,
+        user2.id,
+        activity1_resource.id,
+        nil,
+        activity_type_id,
+        1,
+        1,
+        0,
+        1,
+        1
+      ])
+
+      add_resource_summary([
+        -1,
+        -1,
+        section.id,
+        user2.id,
+        activity2_resource.id,
+        nil,
+        activity_type_id,
+        1,
+        1,
+        0,
+        1,
+        1
+      ])
+
+      # User3 attempts all three activities (should count as 3 activities)
+      add_resource_summary([
+        -1,
+        -1,
+        section.id,
+        user3.id,
+        activity1_resource.id,
+        nil,
+        activity_type_id,
+        1,
+        1,
+        0,
+        1,
+        1
+      ])
+
+      add_resource_summary([
+        -1,
+        -1,
+        section.id,
+        user3.id,
+        activity2_resource.id,
+        nil,
+        activity_type_id,
+        1,
+        1,
+        0,
+        1,
+        1
+      ])
+
+      add_resource_summary([
+        -1,
+        -1,
+        section.id,
+        user3.id,
+        activity3_resource.id,
+        nil,
+        activity_type_id,
+        1,
+        1,
+        0,
+        1,
+        1
+      ])
+
+      result =
+        Metrics.student_activities_attempted_count(
+          section.id,
+          [user1.id, user2.id, user3.id],
+          [activity1_resource.id, activity2_resource.id, activity3_resource.id]
+        )
+
+      # attempted activity1 only
+      assert result[user1.id] == 1
+      # attempted activity1 and activity2
+      assert result[user2.id] == 2
+      # attempted all three activities
+      assert result[user3.id] == 3
     end
 
     test "only counts activities in the provided related_activity_ids list", %{
       section: section,
       user1: user1,
       activity1_resource: activity1_resource,
-      activity1_revision: activity1_revision,
       activity2_resource: activity2_resource,
-      activity2_revision: activity2_revision,
-      activity3_resource: _activity3_resource,
-      activity3_revision: activity3_revision
+      activity3_resource: activity3_resource
     } do
-      # Create page resource for access
-      page_resource = insert(:resource)
+      activity_type_id = Oli.Resources.ResourceType.id_for_activity()
 
-      # Create resource access
-      access = insert(:resource_access,
-        section: section,
-        user: user1,
-        resource: page_resource
-      )
+      # Create ResourceSummary records for all three activities
+      add_resource_summary([
+        -1,
+        -1,
+        section.id,
+        user1.id,
+        activity1_resource.id,
+        nil,
+        activity_type_id,
+        1,
+        1,
+        0,
+        1,
+        1
+      ])
 
-      # Create resource attempts for all activities
-      attempt1 = insert(:resource_attempt,
-        resource_access: access,
-        revision: activity1_revision
-      )
-      attempt2 = insert(:resource_attempt,
-        resource_access: access,
-        revision: activity2_revision
-      )
-      attempt3 = insert(:resource_attempt,
-        resource_access: access,
-        revision: activity3_revision
-      )
+      add_resource_summary([
+        -1,
+        -1,
+        section.id,
+        user1.id,
+        activity2_resource.id,
+        nil,
+        activity_type_id,
+        1,
+        1,
+        0,
+        1,
+        1
+      ])
 
-      # Create activity attempts for all three activities
-      insert(:activity_attempt,
-        resource_attempt: attempt1,
-        revision: activity1_revision,
-        attempt_number: 1
-      )
-      insert(:activity_attempt,
-        resource_attempt: attempt2,
-        revision: activity2_revision,
-        attempt_number: 1
-      )
-      insert(:activity_attempt,
-        resource_attempt: attempt3,
-        revision: activity3_revision,
-        attempt_number: 1
-      )
+      add_resource_summary([
+        -1,
+        -1,
+        section.id,
+        user1.id,
+        activity3_resource.id,
+        nil,
+        activity_type_id,
+        1,
+        1,
+        0,
+        1,
+        1
+      ])
 
       # Only include activity1 and activity2 in the filter
-      result = Metrics.student_activities_attempted_count(
-        section.id,
-        [user1.id],
-        [activity1_resource.id, activity2_resource.id]
-      )
+      result =
+        Metrics.student_activities_attempted_count(
+          section.id,
+          [user1.id],
+          [activity1_resource.id, activity2_resource.id]
+        )
 
       # Should only count 2 activities, not 3
       assert result[user1.id] == 2
@@ -1153,68 +1175,63 @@ defmodule Oli.Analytics.Summary.MetricsV2Test do
       user1: user1,
       user2: user2,
       user3: user3,
-      activity1_resource: activity1_resource,
-      activity1_revision: activity1_revision
+      activity1_resource: activity1_resource
     } do
-      # Create page resources for accesses
-      page1_resource = insert(:resource)
-      page2_resource = insert(:resource)
-      page3_resource = insert(:resource)
+      activity_type_id = Oli.Resources.ResourceType.id_for_activity()
 
-      # Create resource accesses for all users
-      access1 = insert(:resource_access,
-        section: section,
-        user: user1,
-        resource: page1_resource
-      )
-      access2 = insert(:resource_access,
-        section: section,
-        user: user2,
-        resource: page2_resource
-      )
-      access3 = insert(:resource_access,
-        section: section,
-        user: user3,
-        resource: page3_resource
-      )
+      # Create ResourceSummary records for all three users
+      add_resource_summary([
+        -1,
+        -1,
+        section.id,
+        user1.id,
+        activity1_resource.id,
+        nil,
+        activity_type_id,
+        1,
+        1,
+        0,
+        1,
+        1
+      ])
 
-      # Create resource attempts for all users
-      attempt1 = insert(:resource_attempt,
-        resource_access: access1,
-        revision: activity1_revision
-      )
-      attempt2 = insert(:resource_attempt,
-        resource_access: access2,
-        revision: activity1_revision
-      )
-      attempt3 = insert(:resource_attempt,
-        resource_access: access3,
-        revision: activity1_revision
-      )
+      add_resource_summary([
+        -1,
+        -1,
+        section.id,
+        user2.id,
+        activity1_resource.id,
+        nil,
+        activity_type_id,
+        1,
+        1,
+        0,
+        1,
+        1
+      ])
 
-      # Create activity attempts for all users
-      insert(:activity_attempt,
-        resource_attempt: attempt1,
-        revision: activity1_revision,
-        attempt_number: 1
-      )
-      insert(:activity_attempt,
-        resource_attempt: attempt2,
-        revision: activity1_revision,
-        attempt_number: 1
-      )
-      insert(:activity_attempt,
-        resource_attempt: attempt3,
-        revision: activity1_revision,
-        attempt_number: 1
-      )
+      add_resource_summary([
+        -1,
+        -1,
+        section.id,
+        user3.id,
+        activity1_resource.id,
+        nil,
+        activity_type_id,
+        1,
+        1,
+        0,
+        1,
+        1
+      ])
 
       # Only include user1 and user2 in the query
-      result = Metrics.student_activities_attempted_count(
-        section.id,
-        [user1.id, user2.id],
-        [activity1_resource.id]
-      )
+      result =
+        Metrics.student_activities_attempted_count(
+          section.id,
+          [user1.id, user2.id],
+          [activity1_resource.id]
+        )
 
       # Should only include user1 and user2, not user3
       assert Map.has_key?(result, user1.id)
@@ -1227,55 +1244,50 @@ defmodule Oli.Analytics.Summary.MetricsV2Test do
     test "only includes attempts from the specified section", %{
       section: section,
       user1: user1,
-      activity1_resource: activity1_resource,
-      activity1_revision: activity1_revision
+      activity1_resource: activity1_resource
     } do
+      activity_type_id = Oli.Resources.ResourceType.id_for_activity()
+
       # Create another section
       other_section = insert(:section)
 
-      # Create page resources for accesses
-      page1_resource = insert(:resource)
-      page2_resource = insert(:resource)
-
-      # Create resource accesses in both sections
-      access_correct_section = insert(:resource_access,
-        section: section,
-        user: user1,
-        resource: page1_resource
-      )
-      access_other_section = insert(:resource_access,
-        section: other_section,
-        user: user1,
-        resource: page2_resource
-      )
-
-      # Create resource attempts in both sections
-      attempt_correct_section = insert(:resource_attempt,
-        resource_access: access_correct_section,
-        revision: activity1_revision
-      )
-      attempt_other_section = insert(:resource_attempt,
-        resource_access: access_other_section,
-        revision: activity1_revision
-      )
-
-      # Create activity attempts in both sections
-      insert(:activity_attempt,
-        resource_attempt: attempt_correct_section,
-        revision: activity1_revision,
-        attempt_number: 1
-      )
-      insert(:activity_attempt,
-        resource_attempt: attempt_other_section,
-        revision: activity1_revision,
-        attempt_number: 1
-      )
-
-      result = Metrics.student_activities_attempted_count(
+      # Create ResourceSummary records in both sections
+      add_resource_summary([
+        -1,
+        -1,
         section.id,
-        [user1.id],
-        [activity1_resource.id]
-      )
+        user1.id,
+        activity1_resource.id,
+        nil,
+        activity_type_id,
+        1,
+        1,
+        0,
+        1,
+        1
+      ])
+
+      add_resource_summary([
+        -1,
+        -1,
+        other_section.id,
+        user1.id,
+        activity1_resource.id,
+        nil,
+        activity_type_id,
+        1,
+        1,
+        0,
+        1,
+        1
+      ])
+
+      result =
+        Metrics.student_activities_attempted_count(
+          section.id,
+          [user1.id],
+          [activity1_resource.id]
+        )
 
       # Should only count the attempt from the correct section
       assert result[user1.id] == 1
@@ -1285,13 +1297,116 @@ defmodule Oli.Analytics.Summary.MetricsV2Test do
       section: section,
       activity1_resource: activity1_resource
     } do
-      result = Metrics.student_activities_attempted_count(
-        section.id,
-        [],
-        [activity1_resource.id]
-      )
+      result =
+        Metrics.student_activities_attempted_count(
+          section.id,
+          [],
+          [activity1_resource.id]
+        )
 
       assert result == %{}
+    end
+
+    test "counts activities with multiple parts correctly", %{
+      section: section,
+      user1: user1,
+      user2: user2,
+      activity1_resource: activity1_resource,
+      activity2_resource: activity2_resource
+    } do
+      activity_type_id = Oli.Resources.ResourceType.id_for_activity()
+
+      # Activity1 has 3 parts, user1 attempted 2 of them (should still count as 1 activity)
+      add_resource_summary([
+        -1,
+        -1,
+        section.id,
+        user1.id,
+        activity1_resource.id,
+        "part1",
+        activity_type_id,
+        1,
+        2,
+        0,
+        2,
+        1
+      ])
+
+      add_resource_summary([
+        -1,
+        -1,
+        section.id,
+        user1.id,
+        activity1_resource.id,
+        # No attempts on this part
+        "part2",
+        activity_type_id,
+        0,
+        0,
+        0,
+        0,
+        0
+      ])
+
+      add_resource_summary([
+        -1,
+        -1,
+        section.id,
+        user1.id,
+        activity1_resource.id,
+        "part3",
+        activity_type_id,
+        1,
+        1,
+        0,
+        1,
+        1
+      ])
+
+      # Activity2 has 2 parts, user2 attempted only 1 of them (should still count as 1 activity)
+      add_resource_summary([
+        -1,
+        -1,
+        section.id,
+        user2.id,
+        activity2_resource.id,
+        "part1",
+        activity_type_id,
+        1,
+        1,
+        0,
+        1,
+        1
+      ])
+
+      add_resource_summary([
+        -1,
+        -1,
+        section.id,
+        user2.id,
+        activity2_resource.id,
+        # No attempts on this part
+        "part2",
+        activity_type_id,
+        0,
+        0,
+        0,
+        0,
+        0
+      ])
+
+      result =
+        Metrics.student_activities_attempted_count(
+          section.id,
+          [user1.id, user2.id],
+          [activity1_resource.id, activity2_resource.id]
+        )
+
+      # Each user attempted 1 activity (even though activities have multiple parts)
+      # attempted activity1 (at least one part)
+      assert result[user1.id] == 1
+      # attempted activity2 (at least one part)
+      assert result[user2.id] == 1
     end
   end
 end

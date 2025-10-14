@@ -1711,17 +1711,21 @@ defmodule Oli.Delivery.Metrics do
       do: %{}
 
   def student_activities_attempted_count(section_id, student_ids, related_activity_ids) do
-    from(aa in ActivityAttempt,
-      join: ra in ResourceAttempt,
-      on: aa.resource_attempt_id == ra.id,
-      join: access in ResourceAccess,
-      on: ra.resource_access_id == access.id,
-      join: activity_revision in assoc(aa, :revision),
-      where: access.section_id == ^section_id,
-      where: access.user_id in ^student_ids,
-      where: activity_revision.resource_id in ^related_activity_ids,
-      group_by: access.user_id,
-      select: {access.user_id, fragment("COUNT(DISTINCT ?)", activity_revision.resource_id)}
+    activity_type_id = Oli.Resources.ResourceType.id_for_activity()
+
+    # Count distinct activities where the student has at least one attempt in any part
+    # Note: ResourceSummary has multiple rows per activity (one per part_id),
+    # so we filter by num_attempts > 0 and then count distinct resource_ids
+    from(rs in ResourceSummary,
+      where:
+        rs.section_id == ^section_id and
+          rs.user_id in ^student_ids and
+          rs.resource_id in ^related_activity_ids and
+          rs.project_id == -1 and
+          rs.resource_type_id == ^activity_type_id and
+          rs.num_attempts > 0,
+      group_by: rs.user_id,
+      select: {rs.user_id, fragment("COUNT(DISTINCT ?)", rs.resource_id)}
     )
     |> Repo.all()
     |> Map.new()
