@@ -129,7 +129,7 @@ defmodule Oli.ClickHouse.Tasks do
 
             Please ensure:
             1. ClickHouse is running: docker-compose up -d clickhouse
-            2. ClickHouse is accessible at #{config.host}:#{config.port}
+            2. ClickHouse is accessible at #{config.host}:#{config.native_port}
             3. User '#{config.user}' has proper permissions
             """
         end
@@ -189,7 +189,7 @@ defmodule Oli.ClickHouse.Tasks do
 
         Please ensure:
         1. ClickHouse is running: docker-compose up -d clickhouse
-        2. ClickHouse is accessible at #{config.host}:#{config.port}
+        2. ClickHouse is accessible at #{config.host}:#{config.http_port}
         3. User '#{config.user}' has proper permissions
         """
     end
@@ -223,7 +223,7 @@ defmodule Oli.ClickHouse.Tasks do
 
         Please ensure:
         1. ClickHouse is running: docker-compose up -d clickhouse
-        2. ClickHouse is accessible at #{config.host}:#{config.port}
+        2. ClickHouse is accessible at #{config.host}:#{config.http_port}
         3. User '#{config.user}' has proper permissions
         """
     end
@@ -257,7 +257,7 @@ defmodule Oli.ClickHouse.Tasks do
 
         Please ensure:
         1. ClickHouse is running: docker-compose up -d clickhouse
-        2. ClickHouse is accessible at #{config.host}:#{config.port}
+        2. ClickHouse is accessible at #{config.host}:#{config.http_port}
         3. User '#{config.user}' has proper permissions
         """
     end
@@ -304,7 +304,7 @@ defmodule Oli.ClickHouse.Tasks do
 
         Please ensure:
         1. ClickHouse is running: docker-compose up -d clickhouse
-        2. ClickHouse is accessible at #{config.host}:#{config.port}
+        2. ClickHouse is accessible at #{config.host}:#{config.http_port}
         3. User '#{config.user}' has proper permissions
         """
     end
@@ -448,5 +448,6 @@ defmodule Oli.ClickHouse.Tasks do
   @spec load_app() :: :ok | {:error, term()}
   defp load_app do
     Application.load(@app)
+    Application.ensure_all_started(:httpoison)
   end
 end
