@@ -142,17 +142,6 @@
               selected_view={assigns[:selected_view]}
             />
           </div>
-
-          <OliWeb.Components.Common.tech_support_button
-            id="tech-support"
-            class="z-[999] fixed hidden lg:block lg:bottom-2 lg:left-[70px]"
-          />
-          <OliWeb.Components.Common.tech_support_button
-            :if={assigns[:active_sidebar_panel] not in [:notes, :outline]}
-            id="tech-support-2"
-            class="z-[999] fixed bottom-20 left-4 lg:hidden"
-            show_text={false}
-          />
         </div>
 
         <div
