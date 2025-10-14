@@ -21,47 +21,57 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
 
   def panel(assigns) do
     ~H"""
-    <div
-      id="annotations_panel"
-      class="flex sm:w-[485px] h-full max-h-[calc(100vh-96px)] px-4 py-2 sm:px-2 sm:py-4 bg-white dark:bg-black text-[#353740] dark:text-[#eeebf5] mx-3 sm:mx-2 rounded-t-2xl sm:rounded-2xl"
-    >
-      <div class="flex flex-col flex-1 bg-white dark:bg-black pb-5 rounded-bl-lg">
+    <div>
+      <div
+        id="annotations_panel"
+        class="flex sm:w-[485px] h-full min-h-[400px] max-h-[400px] sm:max-h-[50vh] lg:max-h-[80vh] px-4 py-2 sm:px-2 sm:py-4 bg-Surface-surface-background text-[#353740] dark:text-[#eeebf5] mx-3 sm:mx-2 rounded-t-2xl sm:rounded-2xl"
+      >
+        <div class="flex flex-col flex-1 bg-Surface-surface-background pb-5 rounded-bl-lg">
+          <button
+            phx-click="toggle_notes_sidebar"
+            class="hidden sm:inline-flex self-stretch px-2 pb-2 justify-end items-center gap-2.5 hover:cursor-pointer"
+          >
+            <i class="fa-solid fa-xmark hover:scale-110"></i>
+          </button>
+          <div class="flex flex-col flex-1 overflow-hidden sm:px-5">
+            <.tab_group class="py-3">
+              <.tab :if={not @is_instructor} name={:my_notes} selected={@active_tab == :my_notes}>
+                <.user_icon class="mr-2" /> My Notes
+              </.tab>
+              <.tab name={:class_notes} selected={@active_tab == :class_notes || @is_instructor}>
+                <.users_icon class="mr-2" /> Class Notes
+              </.tab>
+            </.tab_group>
+            <Utils.search_box class="mt-2" search_term={@search_term} />
+            <hr class="m-6 border-b border-b-gray-200" />
+            <%= case @search_results do %>
+              <% nil -> %>
+                <.annotations
+                  active_tab={@active_tab}
+                  annotations={@annotations}
+                  current_user={@current_user}
+                  create_new_annotation={@create_new_annotation}
+                  selected_point={@selected_point}
+                  collab_space_config={@collab_space_config}
+                />
+              <% _ -> %>
+                <.search_results
+                  section_slug={@section_slug}
+                  search_results={@search_results}
+                  current_user={@current_user}
+                  on_reveal_post="reveal_post"
+                />
+            <% end %>
+          </div>
+        </div>
+      </div>
+      <div class="flex items-center justify-center sm:hidden bg-Surface-surface-background h-16 mx-3 p-4 border-t border-Border-border-default">
         <button
           phx-click="toggle_notes_sidebar"
-          class="hidden sm:inline-flex self-stretch px-2 pb-2 justify-end items-center gap-2.5 hover:cursor-pointer"
+          class="text-Specially-Tokens-Text-text-button-secondary font-semibold text-sm leading-4 px-8 py-3 border border-Border-border-bold h-10 rounded-lg w-full"
         >
-          <i class="fa-solid fa-xmark hover:scale-110"></i>
+          Close
         </button>
-        <div class="flex flex-col flex-1 overflow-hidden sm:px-5">
-          <.tab_group class="py-3">
-            <.tab :if={not @is_instructor} name={:my_notes} selected={@active_tab == :my_notes}>
-              <.user_icon class="mr-2" /> My Notes
-            </.tab>
-            <.tab name={:class_notes} selected={@active_tab == :class_notes || @is_instructor}>
-              <.users_icon class="mr-2" /> Class Notes
-            </.tab>
-          </.tab_group>
-          <Utils.search_box class="mt-2" search_term={@search_term} />
-          <hr class="m-6 border-b border-b-gray-200" />
-          <%= case @search_results do %>
-            <% nil -> %>
-              <.annotations
-                active_tab={@active_tab}
-                annotations={@annotations}
-                current_user={@current_user}
-                create_new_annotation={@create_new_annotation}
-                selected_point={@selected_point}
-                collab_space_config={@collab_space_config}
-              />
-            <% _ -> %>
-              <.search_results
-                section_slug={@section_slug}
-                search_results={@search_results}
-                current_user={@current_user}
-                on_reveal_post="reveal_post"
-              />
-          <% end %>
-        </div>
       </div>
     </div>
     """
@@ -210,7 +220,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
     ~H"""
     <button
       class={[
-        "flex flex-col items-center rounded-lg bg-white dark:bg-black hover:bg-[#deecff] dark:hover:bg-white/10 text-[#0d70ff] text-xl group",
+        "flex flex-col items-center rounded-lg bg-Surface-surface-background hover:bg-[#deecff] dark:hover:bg-white/10 text-[#0d70ff] text-xl group",
         if(@is_active,
           do:
             "!text-white bg-[#0080ff] dark:bg-[#0062f2] hover:bg-[#0080ff]/75 hover:dark:bg-[#0062f2]/75"

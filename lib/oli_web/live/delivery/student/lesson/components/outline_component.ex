@@ -63,41 +63,51 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
 
   def render(assigns) do
     ~H"""
-    <div
-      id="outline_panel"
-      class="flex flex-col max-h-[calc(100vh-112px)] sm:w-[360px] sm:max-h-[calc(100vh-96px)] px-2 py-4 bg-white dark:bg-black text-[#353740] dark:text-[#eeebf5] mx-3 sm:mx-2 rounded-t-2xl sm:rounded-2xl gap-6"
-    >
-      <button
-        phx-click="toggle_outline_sidebar"
-        class="hidden sm:inline-flex self-stretch px-2 justify-end items-center gap-2.5 hover:cursor-pointer"
+    <div>
+      <div
+        id="outline_panel"
+        class="flex flex-col max-h-[calc(100vh-176px)] sm:w-[360px] sm:max-h-[75vh] lg:max-h-[80vh] px-2 py-4 bg-Surface-surface-background text-[#353740] dark:text-[#eeebf5] mx-3 sm:mx-2 rounded-t-2xl sm:rounded-2xl gap-6"
       >
-        <i class="fa-solid fa-xmark hover:scale-110"></i>
-      </button>
-      <div class="self-stretch h-12 px-2 flex-col justify-start items-start gap-4 flex">
-        <div class="self-stretch py-2 justify-start items-center inline-flex">
-          <div class="text-base font-bold leading-none">
-            Course Content
+        <button
+          phx-click="toggle_outline_sidebar"
+          class="hidden sm:inline-flex self-stretch px-2 justify-end items-center gap-2.5 hover:cursor-pointer"
+        >
+          <i class="fa-solid fa-xmark hover:scale-110"></i>
+        </button>
+        <div class="self-stretch h-12 px-2 flex-col justify-start items-start gap-4 flex">
+          <div class="self-stretch py-2 justify-start items-center inline-flex">
+            <div class="text-base font-bold leading-none">
+              Course Content
+            </div>
+          </div>
+          <div class="self-stretch h-0 flex-col justify-center items-center flex border-b border-[#D9D9D9]/75">
           </div>
         </div>
-        <div class="self-stretch h-0 flex-col justify-center items-center flex border-b border-[#D9D9D9]/75">
+        <div class="flex flex-1 flex-col overflow-hidden pl-2 justify-start items-start gap-2 inline-flex">
+          <div class="flex flex-1 flex-col scrollbar overflow-y-scroll px-2 justify-start items-center gap-4 inline-flex w-full">
+            <.outline_item
+              :for={node <- @hierarchy["children"]}
+              item={node}
+              is_container?={node["resource_type_id"] == ResourceType.id_for_container()}
+              expanded_items={@expanded_items}
+              target={@myself}
+              section_slug={@section_slug}
+              selected_view={@selected_view}
+              progress={
+                if @item_with_progress.resource_id == node["resource_id"],
+                  do: @item_with_progress.progress
+              }
+            />
+          </div>
         </div>
       </div>
-      <div class="flex flex-1 flex-col overflow-hidden pl-2 justify-start items-start gap-2 inline-flex">
-        <div class="flex flex-1 flex-col scrollbar overflow-y-scroll px-2 justify-start items-center gap-4 inline-flex">
-          <.outline_item
-            :for={node <- @hierarchy["children"]}
-            item={node}
-            is_container?={node["resource_type_id"] == ResourceType.id_for_container()}
-            expanded_items={@expanded_items}
-            target={@myself}
-            section_slug={@section_slug}
-            selected_view={@selected_view}
-            progress={
-              if @item_with_progress.resource_id == node["resource_id"],
-                do: @item_with_progress.progress
-            }
-          />
-        </div>
+      <div class="flex items-center justify-center sm:hidden bg-Surface-surface-background h-16 mx-3 p-4 border-t border-Border-border-default">
+        <button
+          phx-click="toggle_outline_sidebar"
+          class="text-Specially-Tokens-Text-text-button-secondary font-semibold text-sm leading-4 px-8 py-3 border border-Border-border-bold h-10 rounded-lg w-full"
+        >
+          Close
+        </button>
       </div>
     </div>
     """
