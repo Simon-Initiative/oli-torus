@@ -1,0 +1,86 @@
+# Scenario: Course section creation tolerates activity revisions marked deleted
+# Practice Page B will reference an activity whose revision is marked deleted by a hook.
+- project:
+    name: "deleted_activity_section_project"
+    title: "Deleted Activity Revision Section Project"
+    root:
+      children:
+        - container: "Unit 1"
+          children:
+            - page: "Practice Page A"
+            - page: "Practice Page B"
+
+- edit_page:
+    project: "deleted_activity_section_project"
+    page: "Practice Page A"
+    content: |
+      title: "Practice Page A"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "## Practice Question A"
+        - type: activity
+          virtual_id: "practice_a_activity"
+          activity:
+            type: oli_multiple_choice
+            stem_md: "Which planet is known as the Red Planet?"
+            choices:
+              - id: "a"
+                body_md: "Earth"
+                score: 0
+              - id: "b"
+                body_md: "Mars"
+                score: 1
+              - id: "c"
+                body_md: "Venus"
+                score: 0
+
+- edit_page:
+    project: "deleted_activity_section_project"
+    page: "Practice Page B"
+    content: |
+      title: "Practice Page B"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "## Practice Question B"
+        - type: activity
+          virtual_id: "practice_b_activity"
+          activity:
+            type: oli_multiple_choice
+            stem_md: "What is the chemical symbol for water?"
+            choices:
+              - id: "a"
+                body_md: "CO2"
+                score: 0
+              - id: "b"
+                body_md: "H2O"
+                score: 1
+              - id: "c"
+                body_md: "O2"
+                score: 0
+
+- publish:
+    to: "deleted_activity_section_project"
+    description: "Publish project before marking activity revision deleted"
+
+- hook:
+    function: "Oli.Scenarios.Sections.CourseSectionHooks.mark_activity_revision_deleted/1"
+
+- section:
+    name: "deleted_activity_section"
+    title: "Deleted Activity Section"
+    from: "deleted_activity_section_project"
+
+- assert:
+    structure:
+      to: "deleted_activity_section"
+      root:
+        children:
+          - container: "Unit 1"
+            children:
+              - page: "Practice Page A"
+              - page: "Practice Page B"
+
+- hook:
+    function: "Oli.Scenarios.Sections.CourseSectionHooks.assert_deleted_activity_reference/1"

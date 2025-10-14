@@ -1,0 +1,60 @@
+# Scenario: Course section creation tolerates nil child entries in unit hierarchy
+
+- project:
+    name: "nil_child_section_project"
+    title: "Nil Child Section Project"
+    root:
+      children:
+        - container: "Unit 1"
+          children:
+            - page: "Practice Page A"
+            - page: "Practice Page B"
+
+- edit_page:
+    project: "nil_child_section_project"
+    page: "Practice Page A"
+    content: |
+      title: "Practice Page A"
+      graded: false
+      model:
+        - type: "content"
+          children:
+            - type: "p"
+              children:
+                - text: "Practice content A"
+
+- edit_page:
+    project: "nil_child_section_project"
+    page: "Practice Page B"
+    content: |
+      title: "Practice Page B"
+      graded: false
+      model:
+        - type: "content"
+          children:
+            - type: "p"
+              children:
+                - text: "Practice content B"
+
+- publish:
+    to: "nil_child_section_project"
+    description: "Publish project; corruption will be applied before section creation"
+
+- hook:
+    # Inject nil into the project unit after publication to simulate persisted data corruption
+    function: "Oli.Scenarios.Sections.CourseSectionHooks.insert_nil_child/1"
+
+- section:
+    name: "nil_child_section"
+    title: "Nil Child Section"
+    from: "nil_child_section_project"
+
+- assert:
+    structure:
+      to: "nil_child_section"
+      root:
+        children:
+          - container: "Unit 1"
+            children:
+              - page: "Practice Page A"
+              - page: "Practice Page B"

@@ -1495,8 +1495,13 @@ defmodule Oli.Delivery.Sections do
          revision,
          definition
        ) do
+    # we filter the children to only those that are published in this publication. This is
+    # an important robustness measure to be able to handle cases where there is bad data in the project
     child_revisions =
-      Enum.map(revision.children, fn id -> published_resources_by_resource_id[id].revision end)
+      Enum.filter(revision.children, fn id ->
+        Map.has_key?(published_resources_by_resource_id, id)
+      end)
+      |> Enum.map(fn id -> published_resources_by_resource_id[id].revision end)
 
     Enum.reduce(
       child_revisions,
@@ -4365,8 +4370,8 @@ defmodule Oli.Delivery.Sections do
 
         # Single query to update all objectives at once
         sql = """
-        UPDATE section_resources 
-        SET 
+        UPDATE section_resources
+        SET
           children = updates.new_children,
           updated_at = $1
         FROM (VALUES #{values_clauses}) AS updates(sr_id, new_children)

@@ -25,7 +25,9 @@ defmodule Oli.Scenarios.Features.CurriculumHooks do
   def replace_child_with_nil(%ExecutionState{} = state) do
     mutate_first_container_child(state, "replace child resource id with nil", fn children ->
       case children do
-        [] -> {:error, :no_children}
+        [] ->
+          {:error, :no_children}
+
         [_ | _] = current_children ->
           {:ok, List.replace_at(current_children, 0, nil)}
       end
@@ -37,13 +39,19 @@ defmodule Oli.Scenarios.Features.CurriculumHooks do
   any existing resource.
   """
   def replace_child_with_nonexistent_id(%ExecutionState{} = state) do
-    mutate_first_container_child(state, "replace child with nonexistent resource id", fn children ->
-      case children do
-        [] -> {:error, :no_children}
-        [_ | _] = current_children ->
-          {:ok, List.replace_at(current_children, 0, generate_missing_resource_id())}
+    mutate_first_container_child(
+      state,
+      "replace child with nonexistent resource id",
+      fn children ->
+        case children do
+          [] ->
+            {:error, :no_children}
+
+          [_ | _] = current_children ->
+            {:ok, List.replace_at(current_children, 0, generate_missing_resource_id())}
+        end
       end
-    end)
+    )
   end
 
   @doc """
@@ -60,7 +68,7 @@ defmodule Oli.Scenarios.Features.CurriculumHooks do
       statuses = child_statuses(built_project.project.slug, unit_revision.children)
       root_statuses = child_statuses(built_project.project.slug, root_revision.children)
 
-      assert Enum.any?(statuses, &match?({:nil, _}, &1)),
+      assert Enum.any?(statuses, &match?({nil, _}, &1)),
              "Expected Unit 1 children to retain a nil entry"
 
       assert titles_from_statuses(statuses) == ["Page B", "Resilient Page"],
@@ -109,8 +117,10 @@ defmodule Oli.Scenarios.Features.CurriculumHooks do
     with {:ok, project_name, built_project} <- select_project(state),
          {:ok, container_title, container_revision} <- select_primary_container(built_project),
          {:ok, mutated_children} <- transformer.(container_revision.children || []),
-         {:ok, refreshed_revision} <- persist_children(built_project.project.slug, container_revision, mutated_children),
-         {:ok, updated_project} <- refresh_project(built_project, container_title, refreshed_revision) do
+         {:ok, refreshed_revision} <-
+           persist_children(built_project.project.slug, container_revision, mutated_children),
+         {:ok, updated_project} <-
+           refresh_project(built_project, container_title, refreshed_revision) do
       Logger.info("Scenario hook #{inspect(__MODULE__)}: #{action} in #{container_title}")
 
       Engine.put_project(state, project_name, updated_project)
@@ -218,7 +228,9 @@ defmodule Oli.Scenarios.Features.CurriculumHooks do
 
   defp child_statuses(project_slug, children) do
     Enum.map(children || [], fn
-      nil -> {:nil, nil}
+      nil ->
+        {nil, nil}
+
       resource_id ->
         case AuthoringResolver.from_resource_id(project_slug, resource_id) do
           nil -> {:missing, resource_id}
