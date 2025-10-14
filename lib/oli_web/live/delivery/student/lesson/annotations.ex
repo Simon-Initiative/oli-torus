@@ -23,16 +23,16 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
     ~H"""
     <div
       id="annotations_panel"
-      class="flex w-[485px] h-full max-h-[calc(100vh-96px)] px-2 py-4 bg-white dark:bg-black text-[#353740] dark:text-[#eeebf5] mx-2 rounded-2xl"
+      class="flex sm:w-[485px] h-full max-h-[calc(100vh-96px)] px-4 py-2 sm:px-2 sm:py-4 bg-white dark:bg-black text-[#353740] dark:text-[#eeebf5] mx-3 sm:mx-2 rounded-t-2xl sm:rounded-2xl"
     >
       <div class="flex flex-col flex-1 bg-white dark:bg-black pb-5 rounded-bl-lg">
         <button
           phx-click="toggle_notes_sidebar"
-          class="self-stretch px-2 pb-2 justify-end items-center gap-2.5 inline-flex hover:cursor-pointer"
+          class="hidden sm:inline-flex self-stretch px-2 pb-2 justify-end items-center gap-2.5 hover:cursor-pointer"
         >
           <i class="fa-solid fa-xmark hover:scale-110"></i>
         </button>
-        <div class="flex flex-col flex-1 overflow-hidden px-5">
+        <div class="flex flex-col flex-1 overflow-hidden sm:px-5">
           <.tab_group class="py-3">
             <.tab :if={not @is_instructor} name={:my_notes} selected={@active_tab == :my_notes}>
               <.user_icon class="mr-2" /> My Notes
@@ -299,7 +299,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
       phx-click="select_tab"
       phx-value-tab={@name}
       class={[
-        "flex-1 inline-flex justify-center border-l border-t border-b first:rounded-l-lg last:rounded-r-lg last:border-r px-4 py-3 inline-flex items-center",
+        "flex-1 inline-flex items-center justify-center border-l border-t border-b first:rounded-l-lg last:rounded-r-lg last:border-r px-4 py-3 whitespace-nowrap",
         if(@selected,
           do: "bg-primary border-primary text-white stroke-white font-semibold",
           else:

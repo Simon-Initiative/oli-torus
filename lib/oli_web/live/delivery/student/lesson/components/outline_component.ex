@@ -65,11 +65,11 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
     ~H"""
     <div
       id="outline_panel"
-      class="flex flex-col w-[360px] h-full max-h-[calc(100vh-96px)] px-2 py-4 bg-white dark:bg-black text-[#353740] dark:text-[#eeebf5] mx-2 rounded-2xl gap-6"
+      class="flex flex-col max-h-[calc(100vh-112px)] sm:w-[360px] sm:max-h-[calc(100vh-96px)] px-2 py-4 bg-white dark:bg-black text-[#353740] dark:text-[#eeebf5] mx-3 sm:mx-2 rounded-t-2xl sm:rounded-2xl gap-6"
     >
       <button
         phx-click="toggle_outline_sidebar"
-        class="self-stretch px-2 justify-end items-center gap-2.5 inline-flex hover:cursor-pointer"
+        class="hidden sm:inline-flex self-stretch px-2 justify-end items-center gap-2.5 hover:cursor-pointer"
       >
         <i class="fa-solid fa-xmark hover:scale-110"></i>
       </button>
