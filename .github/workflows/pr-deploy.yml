@@ -154,13 +154,13 @@ jobs:
         run: |
           docker pull ghcr.io/simon-initiative/oli-torus:sha-${{ github.sha }}
 
-      - name: 🚀 Deploy PR deployment
+      - name: 🚀 Deploy PR
         if: steps.preflight.outputs.memory_insufficient != 'true'
         run: |
-          export PROJECT=$(echo ${{ github.event.inputs.branch && format('branch-{0}', github.event.inputs.branch) || format('pr{0}', github.event.number) }} | cut -c1-32 | sed 's/^[^a-zA-Z]*//; s/[^a-zA-Z]*$//')
+          export DEPLOYMENT=$(echo ${{ github.event.inputs.branch && format('branch-{0}', github.event.inputs.branch) || format('pr{0}', github.event.number) }} | cut -c1-32 | sed 's/^[^a-zA-Z]*//; s/[^a-zA-Z]*$//')
           export APP_IMAGE_TAG=sha-${{ github.sha }}
-          export HOST=$PROJECT.plasma.oli.cmu.edu
-          CONFIG_URL="https://plasma.oli.cmu.edu/api/deployments/$PROJECT/env"
+          export HOST=$DEPLOYMENT.plasma.oli.cmu.edu
+          CONFIG_URL="https://plasma.oli.cmu.edu/api/deployments/$DEPLOYMENT/env"
           ENV_FILE="devops/.env"
 
           # Always clean up the generated env file at exit
@@ -181,23 +181,23 @@ jobs:
           fi
 
           # Setup database
-          docker-compose -p $PROJECT -f devops/docker-compose.yml run --rm app /app/bin/oli eval "Oli.Release.setup"
+          docker-compose -p $DEPLOYMENT -f devops/docker-compose.yml run --rm app /app/bin/oli eval "Oli.Release.setup"
 
           # Run minio first and wait for it to be ready
-          docker-compose -p $PROJECT -f devops/docker-compose.yml up -d minio && sleep 5
+          docker-compose -p $DEPLOYMENT -f devops/docker-compose.yml up -d minio && sleep 5
 
           # Create minio buckets and set policies
-          docker-compose -p $PROJECT -f devops/docker-compose.yml exec minio /bin/sh -c "mc alias set localminio http://localhost:9000 minio-user minio-password && mc mb --ignore-existing localminio/torus-media"
-          docker-compose -p $PROJECT -f devops/docker-compose.yml exec minio /bin/sh -c "mc alias set localminio http://localhost:9000 minio-user minio-password && mc mb --ignore-existing localminio/torus-xapi"
-          docker-compose -p $PROJECT -f devops/docker-compose.yml exec minio /bin/sh -c "mc alias set localminio http://localhost:9000 minio-user minio-password && mc mb --ignore-existing localminio/torus-blob-dev"
+          docker-compose -p $DEPLOYMENT -f devops/docker-compose.yml exec minio /bin/sh -c "mc alias set localminio http://localhost:9000 minio-user minio-password && mc mb --ignore-existing localminio/torus-media"
+          docker-compose -p $DEPLOYMENT -f devops/docker-compose.yml exec minio /bin/sh -c "mc alias set localminio http://localhost:9000 minio-user minio-password && mc mb --ignore-existing localminio/torus-xapi"
+          docker-compose -p $DEPLOYMENT -f devops/docker-compose.yml exec minio /bin/sh -c "mc alias set localminio http://localhost:9000 minio-user minio-password && mc mb --ignore-existing localminio/torus-blob-dev"
 
           # Set minio bucket policies
-          docker-compose -p $PROJECT -f devops/docker-compose.yml exec minio /bin/sh -c "mc alias set localminio http://localhost:9000 minio-user minio-password && mc anonymous set public localminio/torus-media"
-          docker-compose -p $PROJECT -f devops/docker-compose.yml exec minio /bin/sh -c "mc alias set localminio http://localhost:9000 minio-user minio-password && mc anonymous set public localminio/torus-xapi"
-          docker-compose -p $PROJECT -f devops/docker-compose.yml exec minio /bin/sh -c "mc alias set localminio http://localhost:9000 minio-user minio-password && mc anonymous set public localminio/torus-blob-dev"
+          docker-compose -p $DEPLOYMENT -f devops/docker-compose.yml exec minio /bin/sh -c "mc alias set localminio http://localhost:9000 minio-user minio-password && mc anonymous set public localminio/torus-media"
+          docker-compose -p $DEPLOYMENT -f devops/docker-compose.yml exec minio /bin/sh -c "mc alias set localminio http://localhost:9000 minio-user minio-password && mc anonymous set public localminio/torus-xapi"
+          docker-compose -p $DEPLOYMENT -f devops/docker-compose.yml exec minio /bin/sh -c "mc alias set localminio http://localhost:9000 minio-user minio-password && mc anonymous set public localminio/torus-blob-dev"
 
           # Run deployment
-          docker-compose -p $PROJECT -f devops/docker-compose.yml up -d
+          docker-compose -p $DEPLOYMENT -f devops/docker-compose.yml up -d
 
       - name: ⏳ Wait for PR Preview to be available
         if: steps.preflight.outputs.memory_insufficient != 'true'
