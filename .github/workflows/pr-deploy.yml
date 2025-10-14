@@ -154,14 +154,31 @@ jobs:
         run: |
           docker pull ghcr.io/simon-initiative/oli-torus:sha-${{ github.sha }}
 
-      - name: 🚀 Deploy PR stack
+      - name: 🚀 Deploy PR deployment
         if: steps.preflight.outputs.memory_insufficient != 'true'
         run: |
           export PROJECT=$(echo ${{ github.event.inputs.branch && format('branch-{0}', github.event.inputs.branch) || format('pr{0}', github.event.number) }} | cut -c1-32 | sed 's/^[^a-zA-Z]*//; s/[^a-zA-Z]*$//')
           export APP_IMAGE_TAG=sha-${{ github.sha }}
-          export HOST=pr${{ github.event.number }}.plasma.oli.cmu.edu
+          export HOST=$PROJECT.plasma.oli.cmu.edu
+          CONFIG_URL="https://plasma.oli.cmu.edu/api/deployments/$PROJECT/env"
+          ENV_FILE="devops/.env"
 
-          touch devops/.env
+          # Always clean up the generated env file at exit
+          trap 'rm -f "$ENV_FILE"' EXIT
+
+          # Fetch environment config or render fallback from devops/default.env
+          if curl -fsSL --max-time 10 "$CONFIG_URL" -o "$ENV_FILE"; then
+            echo "Downloaded environment config from $CONFIG_URL"
+          else
+            echo "Failed to download environment config; building fallback from devops/default.env"
+            if [ -f devops/default.env ]; then
+              envsubst < devops/default.env > "$ENV_FILE"
+              echo "Generated fallback env file from devops/default.env"
+            else
+              echo "devops/default.env not found; using empty file"
+              : > "$ENV_FILE"
+            fi
+          fi
 
           # Setup database
           docker-compose -p $PROJECT -f devops/docker-compose.yml run --rm app /app/bin/oli eval "Oli.Release.setup"
@@ -179,7 +196,7 @@ jobs:
           docker-compose -p $PROJECT -f devops/docker-compose.yml exec minio /bin/sh -c "mc alias set localminio http://localhost:9000 minio-user minio-password && mc anonymous set public localminio/torus-xapi"
           docker-compose -p $PROJECT -f devops/docker-compose.yml exec minio /bin/sh -c "mc alias set localminio http://localhost:9000 minio-user minio-password && mc anonymous set public localminio/torus-blob-dev"
 
-          # Run stack
+          # Run deployment
           docker-compose -p $PROJECT -f devops/docker-compose.yml up -d
 
       - name: ⏳ Wait for PR Preview to be available
