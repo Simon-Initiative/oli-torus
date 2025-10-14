@@ -13,7 +13,7 @@ defmodule Oli.Repo.Migrations.PopulateRelatedActivitiesForExistingSectionResourc
   end
 
   def up do
-    if get_env_as_boolean("SKIP_POPULATE_RELATED_ACTIVITIES_MIGRATION", false) do
+    if get_env_as_boolean("SKIP_POPULATE_RELATED_ACTIVITIES_MIGRATION", "false") do
       IO.puts("Skipping PopulateRelatedActivitiesForExistingSectionResources migration")
       :ok
     else
