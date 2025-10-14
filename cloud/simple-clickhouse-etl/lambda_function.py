@@ -126,7 +126,6 @@ DEFAULT_CLICKHOUSE_INSERT_COLUMNS: List[str] = [
     "page_id",
     "content_element_id",
     "video_url",
-    "video_title",
     "video_time",
     "video_length",
     "video_progress",
@@ -558,7 +557,6 @@ def _get_clickhouse_type_map() -> Dict[str, "pa.DataType"]:
             "page_id": pa.uint64(),
             "content_element_id": pa.string(),
             "video_url": pa.string(),
-            "video_title": pa.string(),
             "video_time": pa.float64(),
             "video_length": pa.float64(),
             "video_progress": pa.float64(),
@@ -658,10 +656,6 @@ def transform_xapi_statement(
     if video_url is not None and not isinstance(video_url, str):
         video_url = str(video_url)
 
-    video_title = _get_nested(object_definition, ["name", "en-US"])
-    if video_title is not None and not isinstance(video_title, str):
-        video_title = str(video_title)
-
     video_played_segments = result_extensions.get(
         "https://w3id.org/xapi/video/extensions/played-segments"
     )
@@ -722,7 +716,6 @@ def transform_xapi_statement(
         "page_id": _safe_int(extensions.get("http://oli.cmu.edu/extensions/page_id")),
         "content_element_id": content_element_id,
         "video_url": video_url,
-        "video_title": video_title,
         "video_time": _safe_float(result_extensions.get("https://w3id.org/xapi/video/extensions/time")),
         "video_length": _safe_float(
             result_extensions.get("https://w3id.org/xapi/video/extensions/length")

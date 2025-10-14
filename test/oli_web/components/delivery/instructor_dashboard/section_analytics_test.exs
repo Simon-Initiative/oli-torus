@@ -47,17 +47,17 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalyticsTest do
 
     test "filters out separator lines with dashes and pipes" do
       tsv_data = """
-      content_element_id\tvideo_title\tplays\tcompletions\tcompletion_rate\tavg_progress\tunique_viewers
+      content_element_id\tvideo_url\tplays\tcompletions\tcompletion_rate\tavg_progress\tunique_viewers
       -------------------|--------------------------------------------------------------------------------------------------|-------|-------------|--------------------|----------------------|---------------
-      1\tIntroduction Video\t25\t20\t80.0\t0.85\t15
-      2\tTutorial Part 1\t18\t12\t66.7\t0.72\t12
+      1\thttps://example.com/video-1\t25\t20\t80.0\t0.85\t15
+      2\thttps://example.com/video-2\t18\t12\t66.7\t0.72\t12
       """
 
       result = parse_tsv_data_test(tsv_data)
 
       assert result == [
-        ["1", "Introduction Video", "25", "20", "80.0", "0.85", "15"],
-        ["2", "Tutorial Part 1", "18", "12", "66.7", "0.72", "12"]
+        ["1", "https://example.com/video-1", "25", "20", "80.0", "0.85", "15"],
+        ["2", "https://example.com/video-2", "18", "12", "66.7", "0.72", "12"]
       ]
     end
 

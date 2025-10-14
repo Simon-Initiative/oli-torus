@@ -21,7 +21,7 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
         event_hash, event_version, source_file, source_etag, source_line, inserted_at,
         event_id, user_id, host_name, section_id, project_id, publication_id,
         timestamp, event_type, page_id,
-        content_element_id, video_url, video_title, video_time, video_length,
+        content_element_id, video_url, video_time, video_length,
         video_progress, video_played_segments, video_play_time, video_seek_from,
         video_seek_to, activity_attempt_guid, activity_attempt_number,
         page_attempt_guid, page_attempt_number, part_attempt_guid,
@@ -99,7 +99,6 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
           JSON_VALUE(json, '$.object.id'),
           NULL
         ) AS video_url,
-        JSON_VALUE(json, '$.object.definition.name."en-US"') AS video_title,
         toFloat64OrNull(JSON_VALUE(json, '$.result.extensions."https://w3id.org/xapi/video/extensions/time"')) AS video_time,
         coalesce(
           toFloat64OrNull(JSON_VALUE(json, '$.result.extensions."https://w3id.org/xapi/video/extensions/length"')),

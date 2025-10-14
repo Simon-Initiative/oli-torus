@@ -1231,15 +1231,15 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
     query = """
       SELECT
         content_element_id,
-        video_title,
+        video_url,
         countIf(video_time IS NOT NULL) as plays,
         countIf(video_progress >= 0.8) as completions,
         if(plays > 0, completions / plays * 100, 0) as completion_rate,
         avg(video_progress) as avg_progress,
         uniq(user_id) as unique_viewers
       FROM #{Oli.Analytics.ClickhouseAnalytics.raw_events_table()}
-      WHERE section_id = #{section_id} AND event_type = 'video' AND video_title IS NOT NULL
-      GROUP BY content_element_id, video_title
+      WHERE section_id = #{section_id} AND event_type = 'video' AND video_url IS NOT NULL
+      GROUP BY content_element_id, video_url
       HAVING plays >= 1
       ORDER BY plays DESC
       LIMIT 20
@@ -1650,13 +1650,13 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
       |> Enum.with_index()
       |> Enum.map(fn {row, idx} ->
         # Handle both JSON (map) and TSV (list) data formats
-        {_id, title, plays, _completions, completion_rate, _avg_progress, _viewers} =
+        {_id, url, plays, _completions, completion_rate, _avg_progress, _viewers} =
           case row do
             %{} = json_row ->
               # JSON format from JSONEachRow
               {
                 Map.get(json_row, "content_element_id"),
-                Map.get(json_row, "video_title"),
+                Map.get(json_row, "video_url"),
                 Map.get(json_row, "plays"),
                 Map.get(json_row, "completions"),
                 Map.get(json_row, "completion_rate"),
@@ -1677,7 +1677,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
 
         %{
           "video" => "Video #{idx + 1}",
-          "title" => String.slice(title || "Unknown", 0, 20),
+          "title" => String.slice(url || "Unknown", 0, 64),
           "completion_rate" =>
             case completion_rate do
               rate when is_binary(rate) ->

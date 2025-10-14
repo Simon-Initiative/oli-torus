@@ -70,13 +70,13 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
         query: """
           SELECT
             content_element_id,
-            video_title,
+            video_url,
             countIf(video_time IS NOT NULL) as plays,
             countIf(video_progress IS NOT NULL AND video_played_segments IS NOT NULL) as completions,
             if(plays > 0, completions / plays * 100, 0) as completion_rate_percent
           FROM #{raw_events_table}
           WHERE content_element_id IS NOT NULL AND event_type = 'video'
-          GROUP BY content_element_id, video_title
+          GROUP BY content_element_id, video_url
           HAVING plays > 5
           ORDER BY completion_rate_percent DESC
         """

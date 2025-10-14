@@ -18,7 +18,6 @@ CREATE TABLE IF NOT EXISTS raw_events (
     -- Video-specific fields (nullable)
     content_element_id Nullable(String),
     video_url Nullable(String),
-    video_title Nullable(String),
     video_time Nullable(Float64),
     video_length Nullable(Float64),
     video_progress Nullable(Float64),
