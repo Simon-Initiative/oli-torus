@@ -145,13 +145,19 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
 
   // Helper function to render individual parts
   const renderPart = (part: AnyPartComponent, idx: number) => {
+    // Special handling for janus-image parts with lockAspectRatio in responsive mode
+    const isJanusImageWithLockAspectRatio =
+      isResponsive &&
+      part.type === 'janus-image' &&
+      (part.custom.lockAspectRatio === true || part.custom.scaleContent === false);
+
     const partProps = {
       id: part.id,
       type: part.type,
       model: {
         ...decorateModelWithDragWidthHeight(part.id, part.custom),
-        // In responsive mode, set width to 100% for the part
-        width: isResponsive ? '100%' : part.custom.width,
+        // In responsive mode, set width to 100% for the part, except for janus-image with lockAspectRatio
+        width: isResponsive && !isJanusImageWithLockAspectRatio ? '100%' : part.custom.width,
         // Preserve original x & y positions in the model (they will be ignored in rendering)
         x: part.custom.x || 0,
         y: part.custom.y || 0,
@@ -704,17 +710,18 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
         {isResponsive ? (
           <div className="advance-authoring-responsive-layout">
             {parts.map((part: AnyPartComponent, idx: number) => {
-              // Determine width class and alignment for responsive layout
+              // Determine width class and alignment for responsive layout using responsiveLayoutWidth
+              const responsiveWidth = part.custom.responsiveLayoutWidth || 960; // Default to 100% if not set
               const widthClass =
-                part.custom.width === 960 ||
-                part.custom.width === '100%' ||
-                typeof part.custom.width !== 'number' ||
-                part.custom.width === undefined ||
-                part.custom.width === null
+                responsiveWidth === 960 ||
+                responsiveWidth === '100%' ||
+                typeof responsiveWidth !== 'number' ||
+                responsiveWidth === undefined ||
+                responsiveWidth === null
                   ? 'full-width'
                   : 'half-width';
               const alignmentClass =
-                part.custom.width === 471 ? 'responsive-align-right' : 'responsive-align-left';
+                responsiveWidth === 471 ? 'responsive-align-right' : 'responsive-align-left';
 
               return (
                 <div

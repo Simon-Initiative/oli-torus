@@ -100,6 +100,7 @@ const AddComponentToolbar: React.FC<{
             z: 0,
             width: defaultNewPartWidth,
             height: defaultNewPartHeight,
+            ...(responsiveLayout && { responsiveLayoutWidth: 960 }), // Set default responsive layout width
           },
         };
         const creationContext = { transform: { ...newPartData.custom } };
