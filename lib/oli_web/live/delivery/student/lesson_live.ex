@@ -838,7 +838,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         ]}>
           <div class="inline-flex h-32 rounded-tl-xl rounded-bl-xl justify-start items-center">
             <div class={[
-              "px-2 py-6 bg-white dark:bg-black shadow flex-col justify-center gap-4 inline-flex",
+              "px-2 py-6 bg-Surface-surface-background shadow flex-col justify-center gap-4 inline-flex",
               if(@active_sidebar_panel,
                 do: "rounded-t-xl rounded-b-xl",
                 else: "rounded-tl-xl rounded-bl-xl"
@@ -945,7 +945,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         ]}>
           <div class="h-32 rounded-tl-xl rounded-bl-xl justify-start items-center inline-flex">
             <div class={[
-              "px-2 py-6 bg-white dark:bg-black shadow flex-col justify-center gap-4 inline-flex",
+              "px-2 py-6 bg-Surface-surface-background shadow flex-col justify-center gap-4 inline-flex",
               if(@active_sidebar_panel,
                 do: "rounded-t-xl rounded-b-xl",
                 else: "rounded-tl-xl rounded-bl-xl"
