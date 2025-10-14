@@ -24,6 +24,7 @@ import CompJsonEditor from '../PropertyEditor/custom/CompJsonEditor';
 import partSchema, {
   partUiSchema,
   responsivePartSchema,
+  responsivePartUiSchema,
   simplifiedPartSchema,
   simplifiedPartUiSchema,
   transformModelToSchema as transformPartModelToSchema,
@@ -132,10 +133,10 @@ const getExpertComponentSchema = (instance: any, responsiveLayout: boolean): JSO
   return partSchema; // default schema for components that don't specify.
 };
 
-const getComponentUISchema = (instance: any, partEditMode: PartAuthoringMode) => {
+const getComponentUISchema = (instance: any, partEditMode: PartAuthoringMode, responsiveLayout: boolean) => {
   return partEditMode === 'simple'
     ? getSimplifiedComponentUISchema(instance)
-    : getExpertComponentUISchema(instance);
+    : getExpertComponentUISchema(instance, responsiveLayout);
 };
 
 const simplifiedLabels: Record<string, string> = {
@@ -179,12 +180,13 @@ const getSimplifiedComponentUISchema = (instance: any) => {
   return simplifiedPartUiSchema; // default ui schema for components that don't specify.
 };
 
-const getExpertComponentUISchema = (instance: any) => {
+const getExpertComponentUISchema = (instance: any, responsiveLayout: boolean) => {
   // ui schema
+  const componentUiSchema = responsiveLayout ? responsivePartUiSchema : partUiSchema;
   if (instance && instance.getUiSchema) {
     const customPartUiSchema = instance.getUiSchema('expert');
     const newUiSchema = {
-      ...partUiSchema,
+      ...componentUiSchema,
       custom: {
         'ui:ObjectFieldTemplate': AccordionTemplate,
         'ui:title': 'Custom',
@@ -193,7 +195,7 @@ const getExpertComponentUISchema = (instance: any) => {
     };
     return newUiSchema;
   }
-  return partUiSchema; // default ui schema  for components that don't specify.
+  return componentUiSchema; // default ui schema  for components that don't specify.
 };
 
 export const PartPropertyEditor: React.FC<Props> = ({
@@ -233,8 +235,8 @@ export const PartPropertyEditor: React.FC<Props> = ({
   );
 
   const componentUiSchema = useMemo(
-    () => getComponentUISchema(currentPartInstance, partEditMode),
-    [currentPartInstance, partEditMode],
+    () => getComponentUISchema(currentPartInstance, partEditMode, responsiveLayout),
+    [currentPartInstance, partEditMode, responsiveLayout],
   );
 
   const handleDeleteComponent = useCallback(() => {
