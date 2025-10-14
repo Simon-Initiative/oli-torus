@@ -9806,16 +9806,16 @@ table.table-striped tbody tr:nth-child(even) {
   max-height: 40px;
 }
 
-.max-h-\[650px\] {
-  max-height: 650px;
-}
-
 .max-h-\[65vh\] {
   max-height: 65vh;
 }
 
 .max-h-\[80vh\] {
   max-height: 80vh;
+}
+
+.max-h-\[calc\(100vh-400px\)\] {
+  max-height: calc(100vh - 400px);
 }
 
 .max-h-\[calc\(100vh-96px\)\] {
