@@ -53,7 +53,7 @@ With this plugin we can:
 
 ## Required environment variables
 
-Before running the tests, make sure you configure the following environment variables in a .env file. These are required for authenticating the users and accessing the platform.
+Before running the tests, make sure you configure the following environment variables in a .env file, which must be located at tests/resources/login.env These are required for authenticating the users and accessing the platform.
 
 ```env
 BASE_URL=https://your-url.com
