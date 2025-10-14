@@ -27,7 +27,6 @@ export class MenuDropdownCO {
     this.emailLink = this.workspaceMenu.locator('a>div[role="linked authoring account email"]');
     this.signOutLink = this.workspaceMenu.getByRole('link', { name: 'Sign out' });
     this.userMenuButton = page.locator('#user-account-menu');
-    this.signOutLink = page.locator('a[href="/users/log_out"]');
   }
 
   async open(isAdminScreen = false) {
