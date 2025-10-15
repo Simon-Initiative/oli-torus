@@ -13,13 +13,34 @@ defmodule Oli.Interop.Ingest.Processing.RewiringTest do
       assert result["activity_id"] == new_id
     end
 
-    test "always returns a map, even if mapping is missing" do
+    test "drops activity references that cannot be rewritten" do
       unmapped_id = 999
       content = %{"type" => "activity-reference", "activity_id" => unmapped_id}
       map = %{}
       result = Rewiring.rewire_activity_references(content, map)
-      assert is_map(result)
-      assert result["activity_id"] == unmapped_id
+      assert is_nil(result)
+    end
+
+    test "removes unmapped activity references from nested content" do
+      content = %{
+        "model" => [
+          %{
+            "type" => "content",
+            "children" => [
+              %{"type" => "activity-reference", "activity_id" => 1},
+              %{"type" => "activity-reference", "activity_id" => 2}
+            ]
+          }
+        ]
+      }
+
+      map = %{1 => 101}
+      result = Rewiring.rewire_activity_references(content, map)
+
+      [content_block] = result["model"]
+      assert Enum.count(content_block["children"]) == 1
+      [child] = content_block["children"]
+      assert child["activity_id"] == 101
     end
   end
 
