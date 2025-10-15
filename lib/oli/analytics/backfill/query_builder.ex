@@ -9,12 +9,11 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
   Construct the INSERT ... SELECT statement used to ingest events from S3 into
   ClickHouse.
   """
-  @spec insert_sql(BackfillRun.t(), %{access_key_id: String.t(), secret_access_key: String.t()}) ::
-          String.t()
+  @spec insert_sql(BackfillRun.t(), map()) :: String.t()
   def insert_sql(%BackfillRun{} = run, aws_creds) do
     target_table = sanitize_target_table(run.target_table)
     s3_source = s3_source_clause(run, aws_creds)
-    settings_clause = settings_clause(run.clickhouse_settings)
+    settings_clause = settings_clause(run.clickhouse_settings, aws_creds)
 
     """
     INSERT INTO #{target_table} (
@@ -147,8 +146,7 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
   Construct a dry-run statement that inspects the S3 source without inserting
   any data.
   """
-  @spec dry_run_sql(BackfillRun.t(), %{access_key_id: String.t(), secret_access_key: String.t()}) ::
-          String.t()
+  @spec dry_run_sql(BackfillRun.t(), map()) :: String.t()
   def dry_run_sql(%BackfillRun{} = run, aws_creds) do
     s3_source = s3_source_clause(run, aws_creds)
 
@@ -166,10 +164,9 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
     """
   end
 
-  defp s3_source_clause(%BackfillRun{format: format, s3_pattern: pattern}, %{
-         access_key_id: key,
-         secret_access_key: secret
-       }) do
+  defp s3_source_clause(%BackfillRun{format: format, s3_pattern: pattern}, %{} = creds) do
+    key = Map.get(creds, :access_key_id) || Map.get(creds, "access_key_id")
+    secret = Map.get(creds, :secret_access_key) || Map.get(creds, "secret_access_key")
     escaped_pattern = escape(pattern)
     escaped_key = escape(key)
     escaped_secret = escape(secret)
@@ -186,20 +183,71 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
     end
   end
 
-  defp settings_clause(settings) when settings in [nil, %{}], do: ""
+  defp settings_clause(settings, aws_creds) do
+    base_map =
+      case settings do
+        nil -> %{}
+        %{} = map -> map
+        _ -> %{}
+      end
 
-  defp settings_clause(settings) when is_map(settings) do
-    formatted =
-      settings
-      |> Enum.reject(fn {_k, v} -> is_nil(v) end)
-      |> Enum.map(&format_setting/1)
-      |> Enum.join(", ")
+    settings_map =
+      base_map
+      |> Map.new()
+      |> maybe_put_session_setting(aws_creds)
 
-    case formatted do
-      "" -> ""
-      _ -> "SETTINGS " <> formatted
+    if map_size(settings_map) == 0 do
+      ""
+    else
+      formatted =
+        settings_map
+        |> Enum.reject(fn {_k, v} -> is_nil(v) end)
+        |> Enum.map(&format_setting/1)
+        |> Enum.join(", ")
+
+      case formatted do
+        "" -> ""
+        _ -> "SETTINGS " <> formatted
+      end
     end
   end
+
+  defp maybe_put_session_setting(settings, aws_creds) do
+    raw_session =
+      Map.get(aws_creds, :session_token) ||
+        Map.get(aws_creds, "session_token")
+
+    session = normalize_session_token(raw_session)
+
+    case session do
+      nil -> settings
+      value -> Map.put(settings, :s3_session_token, value)
+    end
+  end
+
+  defp normalize_session_token(nil), do: nil
+
+  defp normalize_session_token(value) when is_binary(value) do
+    value
+    |> String.trim()
+    |> case do
+      "" ->
+        nil
+
+      trimmed ->
+        case String.downcase(trimmed) do
+          "nil" -> nil
+          "null" -> nil
+          "none" -> nil
+          _ -> trimmed
+        end
+    end
+  end
+
+  defp normalize_session_token(value) when is_atom(value),
+    do: normalize_session_token(Atom.to_string(value))
+
+  defp normalize_session_token(_), do: nil
 
   defp format_setting({key, value}) do
     formatted_key =

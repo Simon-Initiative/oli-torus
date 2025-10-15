@@ -45,7 +45,7 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
 
   defp execute(%InventoryRun{} = run, %InventoryBatch{} = batch) do
     with {:ok, batch} <- Inventory.transition_batch(batch, :running, %{error: nil}),
-         {:ok, creds} <- Backfill.aws_credentials(),
+         {:ok, creds} <- inventory_credentials(run),
          {:ok, entries} <- fetch_parquet_entries(run, batch, creds),
          {:ok, batch} <- annotate_batch(batch, entries),
          {:ok, summary, batch} <- ingest_entries(run, batch, entries, creds),
@@ -320,11 +320,11 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
                  query_id: query_id,
                  rows_read: status[:rows_read],
                  rows_written: status[:rows_written],
-                bytes_read: status[:bytes_read],
-                bytes_written: status[:bytes_written],
-                execution_time_ms: Map.get(response, :execution_time_ms),
-                query: query
-              }}
+                 bytes_read: status[:bytes_read],
+                 bytes_written: status[:bytes_written],
+                 execution_time_ms: Map.get(response, :execution_time_ms),
+                 query: query
+               }}
           end
         end
 
@@ -504,19 +504,80 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
   defp percent(_completed, 0), do: 0.0
   defp percent(completed, total), do: completed / total * 100.0
 
-  defp parquet_select_sql(%InventoryRun{} = run, %InventoryBatch{} = batch, %{
-         access_key_id: access_key,
-         secret_access_key: secret_key
-       }) do
+  defp parquet_select_sql(%InventoryRun{} = run, %InventoryBatch{} = batch, %{} = creds) do
     key = batch.parquet_key |> to_string() |> String.trim_leading("/")
-    url = "https://#{run.manifest_bucket}.s3.amazonaws.com/#{key}" |> escape_single_quotes()
+    url = parquet_manifest_url(run, key) |> escape_single_quotes()
+
+    access_key =
+      Map.get(creds, :access_key_id) ||
+        Map.get(creds, "access_key_id") ||
+        ""
+
+    secret_key =
+      Map.get(creds, :secret_access_key) ||
+        Map.get(creds, "secret_access_key") ||
+        ""
+
     escaped_access_key = escape_single_quotes(access_key)
     escaped_secret_key = escape_single_quotes(secret_key)
+    session_clause = parquet_settings_clause(creds)
 
     """
     SELECT bucket, key
     FROM s3('#{url}', '#{escaped_access_key}', '#{escaped_secret_key}', 'Parquet')
+    #{session_clause}
     """
+  end
+
+  defp parquet_manifest_url(%InventoryRun{} = run, key) do
+    manifest_meta =
+      run.metadata
+      |> ensure_map()
+      |> Map.get("manifest", %{})
+
+    scheme =
+      manifest_meta
+      |> Map.get("scheme") ||
+        Map.get(manifest_meta, :scheme)
+        |> normalize_scheme()
+        |> Kernel.||("https")
+
+    host =
+      manifest_meta
+      |> Map.get("host") ||
+        Map.get(manifest_meta, :host)
+        |> normalize_host()
+
+    port =
+      manifest_meta
+      |> Map.get("port") ||
+        Map.get(manifest_meta, :port)
+        |> normalize_port()
+
+    default_host = "#{run.manifest_bucket}.s3.amazonaws.com"
+    port_part = format_port(port)
+
+    cond do
+      is_nil(host) ->
+        "#{scheme}://#{default_host}/#{key}"
+
+      String.contains?(host, run.manifest_bucket) ->
+        "#{scheme}://#{host}#{port_part}/#{key}"
+
+      true ->
+        "#{scheme}://#{host}#{port_part}/#{run.manifest_bucket}/#{key}"
+    end
+  end
+
+  defp format_port(nil), do: ""
+  defp format_port(port) when is_integer(port) and port > 0, do: ":#{port}"
+  defp format_port(_), do: ""
+
+  defp parquet_settings_clause(%{} = creds) do
+    case normalize_credential(Map.get(creds, :session_token) || Map.get(creds, "session_token")) do
+      nil -> ""
+      token -> "SETTINGS s3_session_token='#{escape_single_quotes(token)}'"
+    end
   end
 
   defp escape_single_quotes(value) do
@@ -542,6 +603,118 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
   defp ensure_map(nil), do: %{}
   defp ensure_map(map) when is_map(map), do: map
   defp ensure_map(_), do: %{}
+
+  defp inventory_credentials(%InventoryRun{} = run) do
+    manifest_meta =
+      run.metadata
+      |> ensure_map()
+      |> Map.get("manifest", %{})
+
+    access = fetch_manifest_value(manifest_meta, ["access_key_id", :access_key_id])
+    secret = fetch_manifest_value(manifest_meta, ["secret_access_key", :secret_access_key])
+    session = fetch_manifest_value(manifest_meta, ["session_token", :session_token])
+
+    access = normalize_credential(access)
+    secret = normalize_credential(secret)
+    session = normalize_credential(session)
+
+    case {access, secret} do
+      {nil, _} ->
+        fallback_inventory_credentials()
+
+      {_, nil} ->
+        fallback_inventory_credentials()
+
+      {access_key, secret_key} ->
+        creds =
+          %{access_key_id: access_key, secret_access_key: secret_key}
+          |> maybe_put_session_token(session)
+
+        {:ok, creds}
+    end
+  end
+
+  defp fallback_inventory_credentials do
+    case Backfill.aws_credentials() do
+      {:ok, creds} ->
+        session =
+          normalize_credential(Map.get(creds, :session_token) || Map.get(creds, "session_token"))
+
+        {:ok, maybe_put_session_token(creds, session)}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp maybe_put_session_token(creds, nil), do: Map.drop(creds, [:session_token])
+  defp maybe_put_session_token(creds, token), do: Map.put(creds, :session_token, token)
+
+  defp fetch_manifest_value(map, keys) do
+    Enum.find_value(keys, fn key ->
+      case map do
+        %{} -> Map.get(map, key)
+        _ -> nil
+      end
+    end)
+  end
+
+  defp normalize_host(value) when is_binary(value) do
+    value
+    |> String.trim()
+    |> case do
+      "" -> nil
+      trimmed -> trimmed
+    end
+  end
+
+  defp normalize_host(value) when is_atom(value), do: normalize_host(Atom.to_string(value))
+  defp normalize_host(_), do: nil
+
+  defp normalize_scheme(value) when is_binary(value) do
+    value
+    |> String.trim()
+    |> case do
+      "" -> nil
+      trimmed -> String.replace_trailing(trimmed, "://", "")
+    end
+  end
+
+  defp normalize_scheme(value) when is_atom(value), do: normalize_scheme(Atom.to_string(value))
+  defp normalize_scheme(_), do: nil
+
+  defp normalize_port(value) when is_integer(value) and value > 0, do: value
+
+  defp normalize_port(value) when is_binary(value) do
+    case Integer.parse(String.trim(value)) do
+      {int, _} when int > 0 -> int
+      _ -> nil
+    end
+  end
+
+  defp normalize_port(_), do: nil
+
+  defp normalize_credential(value) when is_binary(value) do
+    value
+    |> String.trim()
+    |> case do
+      "" ->
+        nil
+
+      trimmed ->
+        case String.downcase(trimmed) do
+          "nil" -> nil
+          "null" -> nil
+          "none" -> nil
+          _ -> trimmed
+        end
+    end
+  end
+
+  defp normalize_credential(value) when is_atom(value),
+    do: normalize_credential(Atom.to_string(value))
+
+  defp normalize_credential(_), do: nil
 
   defp handle_failure(run, batch, reason) do
     message = format_error(reason)

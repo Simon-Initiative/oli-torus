@@ -186,15 +186,22 @@ defmodule Oli.Analytics.Backfill do
   @doc """
   Retrieve AWS credentials for the S3 table function.
   """
-  @spec aws_credentials() ::
-          {:ok, %{access_key_id: String.t(), secret_access_key: String.t()}}
-          | {:error, String.t()}
+  @spec aws_credentials() :: {:ok, map()} | {:error, String.t()}
   def aws_credentials do
     with {:ok, config} <- fetch_ex_aws_config() do
       case {config[:access_key_id], config[:secret_access_key]} do
-        {nil, _} -> fallback_env_credentials()
-        {_, nil} -> fallback_env_credentials()
-        {access, secret} -> {:ok, %{access_key_id: access, secret_access_key: secret}}
+        {nil, _} ->
+          fallback_env_credentials()
+
+        {_, nil} ->
+          fallback_env_credentials()
+
+        {access, secret} ->
+          session = config[:security_token] || config[:session_token]
+
+          {:ok,
+           %{access_key_id: access, secret_access_key: secret}
+           |> maybe_put_session_token(session)}
       end
     else
       {:error, _reason} -> fallback_env_credentials()
@@ -216,6 +223,10 @@ defmodule Oli.Analytics.Backfill do
       System.get_env("AWS_S3_SECRET_ACCESS_KEY") ||
         System.get_env("AWS_SECRET_ACCESS_KEY")
 
+    session_token =
+      System.get_env("AWS_S3_SESSION_TOKEN") ||
+        System.get_env("AWS_SESSION_TOKEN")
+
     case {access_key, secret_key} do
       {nil, _} ->
         {:error, "Missing AWS access key. Configure AWS_S3_ACCESS_KEY_ID or AWS_ACCESS_KEY_ID."}
@@ -225,7 +236,35 @@ defmodule Oli.Analytics.Backfill do
          "Missing AWS secret key. Configure AWS_S3_SECRET_ACCESS_KEY or AWS_SECRET_ACCESS_KEY."}
 
       {access, secret} ->
-        {:ok, %{access_key_id: access, secret_access_key: secret}}
+        {:ok,
+         %{access_key_id: access, secret_access_key: secret}
+         |> maybe_put_session_token(session_token)}
+    end
+  end
+
+  defp maybe_put_session_token(creds, nil), do: Map.drop(creds, [:session_token])
+
+  defp maybe_put_session_token(creds, token) do
+    token =
+      token
+      |> to_string()
+      |> String.trim()
+      |> case do
+        "" ->
+          nil
+
+        trimmed ->
+          case String.downcase(trimmed) do
+            "nil" -> nil
+            "null" -> nil
+            "none" -> nil
+            _ -> trimmed
+          end
+      end
+
+    case token do
+      nil -> Map.drop(creds, [:session_token])
+      value -> Map.put(creds, :session_token, value)
     end
   end
 
