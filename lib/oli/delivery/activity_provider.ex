@@ -131,8 +131,14 @@ defmodule Oli.Delivery.ActivityProvider do
       |> Enum.with_index(1)
       |> Enum.map(fn {revision, ordinal} -> BibUtils.serialize_revision(revision, ordinal) end)
 
-    # See if at least one of the realized prototypes came from an activity selection
-    has_selection = Enum.any?(prototypes_with_revisions, fn p -> !is_nil(p.selection_id) end)
+    # Check if the content contains at least one selection block so we know to transform it
+    has_selection =
+      content
+      |> PageContent.flat_filter(fn
+        %{"type" => "selection"} -> true
+        _ -> false
+      end)
+      |> Enum.any?()
 
     %ProviderResult{
       errors: errors,
@@ -472,8 +478,12 @@ defmodule Oli.Delivery.ActivityProvider do
          %{"type" => "selection", "id" => id} = selection,
          prototypes_by_selection
        ) do
-    Map.get(prototypes_by_selection, id)
-    |> Enum.map(fn prototype -> replace_with_reference(selection, prototype.revision) end)
+    prototypes =
+      Map.get(prototypes_by_selection, id, [])
+
+    Enum.map(prototypes, fn prototype ->
+      replace_with_reference(selection, prototype.revision)
+    end)
   end
 
   defp transform_content_helper(
