@@ -757,8 +757,20 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyListTe
   describe "Email Modal Integration" do
     setup %{conn: conn} do
       student_proficiency_data = [
-        %{id: 1, full_name: "Smith, John", proficiency: 0.85, proficiency_range: "High", email: "john@test.com"},
-        %{id: 2, full_name: "Johnson, Alice", proficiency: 0.65, proficiency_range: "High", email: "alice@test.com"}
+        %{
+          id: 1,
+          full_name: "Smith, John",
+          proficiency: 0.85,
+          proficiency_range: "High",
+          email: "john@test.com"
+        },
+        %{
+          id: 2,
+          full_name: "Johnson, Alice",
+          proficiency: 0.65,
+          proficiency_range: "High",
+          email: "alice@test.com"
+        }
       ]
 
       %{

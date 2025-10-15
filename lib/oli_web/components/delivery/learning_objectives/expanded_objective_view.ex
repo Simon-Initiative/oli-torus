@@ -278,6 +278,8 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
           acc
 
         student ->
+          student_full_name = Utils.name(student.name, student.given_name, student.family_name)
+
           student_data =
             Map.merge(student_data, %{
               email: student.email,

@@ -380,7 +380,6 @@ defmodule OliWeb.Components.Delivery.Students.EmailModalTest do
     end
   end
 
-
   describe "EmailModal component - Edge Cases" do
     test "handles empty selected_students list", %{conn: conn} do
       students = [%{id: 1, full_name: "Smith, John", email: "john@test.com"}]
