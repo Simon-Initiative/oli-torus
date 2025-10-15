@@ -59,8 +59,6 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyList d
         model={@student_table_model}
         sort={JS.push("student_proficiency_sort", target: @myself)}
         additional_row_class="bg-Table-table-row-1"
-        allow_selection={true}
-        selection_change={JS.push("paged_table_selection_change", target: @myself)}
       />
       
     <!-- Email Modal -->
