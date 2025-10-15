@@ -271,11 +271,16 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
     student_proficiency
     |> Enum.reduce([], fn student_data, acc ->
       student_id = String.to_integer(student_data.student_id)
-      student = students_by_id[student_id]
 
-      student_full_name = Utils.name(student.name, student.given_name, student.family_name)
+      case students_by_id[student_id] do
+        nil ->
+          acc
 
-      [Map.put(student_data, :student_name, student_full_name) | acc]
+        student ->
+          student_full_name = Utils.name(student.name, student.given_name, student.family_name)
+
+          [Map.put(student_data, :student_name, student_full_name) | acc]
+      end
     end)
   end
 
