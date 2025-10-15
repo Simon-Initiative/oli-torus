@@ -26,6 +26,7 @@ defmodule Oli.Analytics.Backfill.Inventory do
           optional(:clickhouse_settings) => map(),
           optional(:options) => map(),
           optional(:batch_chunk_size) => pos_integer(),
+          optional(:manifest_page_size) => pos_integer(),
           optional(:max_simultaneous_batches) => pos_integer(),
           optional(:max_batch_retries) => pos_integer()
         }
@@ -63,6 +64,10 @@ defmodule Oli.Analytics.Backfill.Inventory do
 
   defp default_batch_chunk_size do
     inventory_config_value(:batch_chunk_size, 25)
+  end
+
+  defp default_manifest_page_size do
+    inventory_config_value(:manifest_page_size, 1_000)
   end
 
   defp default_max_simultaneous_batches do
@@ -731,6 +736,7 @@ defmodule Oli.Analytics.Backfill.Inventory do
         |> fetch_value(:metadata, %{})
         |> ensure_map()
         |> Map.put_new("batch_chunk_size", config[:batch_chunk_size])
+        |> Map.put_new("manifest_page_size", config[:manifest_page_size])
         |> Map.put("max_simultaneous_batches", max_simultaneous)
         |> Map.put("max_batch_retries", max_batch_retries)
         |> Map.put(
@@ -883,6 +889,7 @@ defmodule Oli.Analytics.Backfill.Inventory do
               :clickhouse_settings,
               :options,
               :batch_chunk_size,
+              :manifest_page_size,
               :max_simultaneous_batches,
               :max_batch_retries
             ] do
@@ -933,6 +940,7 @@ defmodule Oli.Analytics.Backfill.Inventory do
       clickhouse_settings: inventory_config_value(:clickhouse_settings, %{}),
       options: inventory_config_value(:options, %{}),
       batch_chunk_size: default_batch_chunk_size(),
+      manifest_page_size: default_manifest_page_size(),
       max_simultaneous_batches: default_max_simultaneous_batches(),
       max_batch_retries: default_max_batch_retries()
     }

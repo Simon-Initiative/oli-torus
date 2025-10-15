@@ -46,9 +46,9 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
   defp execute(%InventoryRun{} = run, %InventoryBatch{} = batch) do
     with {:ok, batch} <- Inventory.transition_batch(batch, :running, %{error: nil}),
          {:ok, creds} <- inventory_credentials(run),
-         {:ok, entries} <- fetch_parquet_entries(run, batch, creds),
-         {:ok, batch} <- annotate_batch(batch, entries),
-         {:ok, summary, batch} <- ingest_entries(run, batch, entries, creds),
+         {:ok, total_objects} <- manifest_entry_count(run, batch, creds),
+         {:ok, batch} <- annotate_batch(batch, total_objects),
+         {:ok, summary, batch} <- ingest_entries(run, batch, creds),
          {:ok, batch} <- Inventory.transition_batch(batch, :completed, summary),
          {:ok, run} <- Inventory.recompute_run_aggregates(run),
          :ok <- update_run_progress(run),
@@ -71,10 +71,26 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
     |> Repo.preload(:run)
   end
 
-  defp fetch_parquet_entries(%InventoryRun{} = run, %InventoryBatch{} = batch, creds) do
-    query = parquet_select_sql(run, batch, creds)
+  defp fetch_manifest_page(
+         %InventoryRun{} = run,
+         %InventoryBatch{} = batch,
+         creds,
+         limit,
+         offset
+       ) do
+    sanitized_limit = sanitize_positive_integer(limit)
+    sanitized_offset = sanitize_non_negative_integer(offset)
 
-    case ClickhouseAnalytics.execute_query(query, "inventory parquet #{batch.id}") do
+    query =
+      parquet_select_sql(run, batch, creds,
+        limit: sanitized_limit,
+        offset: sanitized_offset
+      )
+
+    case ClickhouseAnalytics.execute_query(
+           query,
+           "inventory manifest batch #{batch.id} page offset #{sanitized_offset || 0}"
+         ) do
       {:ok, %{parsed_body: %{"data" => data}}} when is_list(data) ->
         {:ok, Enum.map(data, &normalize_manifest_row/1)}
 
@@ -98,8 +114,8 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
 
   defp normalize_manifest_row(_), do: %{bucket: nil, key: nil}
 
-  defp annotate_batch(%InventoryBatch{} = batch, entries) do
-    total = Enum.count(entries)
+  defp annotate_batch(%InventoryBatch{} = batch, total) do
+    total = parse_positive_integer(total, 0)
 
     metadata =
       batch.metadata
@@ -110,27 +126,9 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
     Inventory.update_batch(batch, %{object_count: total, processed_objects: 0, metadata: metadata})
   end
 
-  defp ingest_entries(%InventoryRun{} = run, %InventoryBatch{} = batch, [], _creds) do
-    summary = %{
-      processed_objects: 0,
-      rows_ingested: 0,
-      bytes_ingested: 0,
-      metadata:
-        batch.metadata
-        |> ensure_map()
-        |> Map.put("dry_run", run.dry_run)
-    }
-
-    {:ok, summary, batch}
-  end
-
-  defp ingest_entries(%InventoryRun{} = run, %InventoryBatch{} = batch, entries, creds) do
+  defp ingest_entries(%InventoryRun{} = run, %InventoryBatch{} = batch, creds) do
     chunk_size = determine_chunk_size(run)
-
-    grouped_entries =
-      entries
-      |> Enum.filter(&valid_entry?/1)
-      |> Enum.group_by(& &1.bucket)
+    page_size = determine_manifest_page_size(run, chunk_size)
 
     initial_summary = %{
       processed_objects: 0,
@@ -143,11 +141,83 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
         |> Map.put("dry_run", run.dry_run)
     }
 
-    Enum.reduce_while(grouped_entries, {:ok, initial_summary, batch}, fn {bucket, bucket_entries},
-                                                                         {:ok, summary,
-                                                                          batch_state} ->
-      process_bucket(run, batch_state, bucket, bucket_entries, chunk_size, creds, summary)
+    paginate_manifest_entries(run, batch, creds, chunk_size, page_size, 0, initial_summary)
+  end
+
+  defp paginate_manifest_entries(
+         %InventoryRun{} = run,
+         %InventoryBatch{} = batch,
+         creds,
+         chunk_size,
+         page_size,
+         offset,
+         summary
+       ) do
+    case fetch_manifest_page(run, batch, creds, page_size, offset) do
+      {:ok, []} ->
+        {:ok, summary, batch}
+
+      {:ok, entries} ->
+        case process_manifest_entries(run, batch, entries, chunk_size, creds, summary) do
+          {:ok, updated_summary, updated_batch} ->
+            paginate_manifest_entries(
+              run,
+              updated_batch,
+              creds,
+              chunk_size,
+              page_size,
+              offset + length(entries),
+              updated_summary
+            )
+
+          {:error, reason} ->
+            {:error, reason}
+        end
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp process_manifest_entries(
+         %InventoryRun{} = run,
+         %InventoryBatch{} = batch,
+         entries,
+         chunk_size,
+         creds,
+         summary
+       ) do
+    grouped_entries =
+      entries
+      |> Enum.filter(&valid_entry?/1)
+      |> Enum.group_by(& &1.bucket)
+
+    Enum.reduce_while(grouped_entries, {:ok, summary, batch}, fn {bucket, bucket_entries},
+                                                                 {:ok, acc_summary, acc_batch} ->
+      process_bucket(run, acc_batch, bucket, bucket_entries, chunk_size, creds, acc_summary)
     end)
+  end
+
+  defp manifest_entry_count(%InventoryRun{} = run, %InventoryBatch{} = batch, creds) do
+    query = parquet_count_sql(run, batch, creds)
+
+    case ClickhouseAnalytics.execute_query(
+           query,
+           "inventory manifest count #{batch.id}"
+         ) do
+      {:ok, %{parsed_body: %{"data" => [row | _]}}} when is_map(row) ->
+        count =
+          fetch_value(row, ["object_count", :object_count, "count", :count])
+          |> parse_positive_integer(0)
+
+        {:ok, count}
+
+      {:ok, _} ->
+        {:ok, 0}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
   defp process_bucket(run, batch, bucket, entries, chunk_size, creds, summary) do
@@ -416,6 +486,30 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
       |> parse_positive_integer(25)
   end
 
+  defp determine_manifest_page_size(%InventoryRun{} = run, chunk_size) do
+    metadata = ensure_map(run.metadata)
+    manifest_meta = Map.get(metadata, "manifest", %{})
+
+    configured =
+      metadata["manifest_page_size"] ||
+        metadata[:manifest_page_size] ||
+        fetch_manifest_value(manifest_meta, [
+          "manifest_page_size",
+          :manifest_page_size,
+          "page_size",
+          :page_size
+        ])
+
+    default_size = default_manifest_page_size(chunk_size)
+    parse_positive_integer(configured, default_size)
+  end
+
+  defp default_manifest_page_size(chunk_size) when is_integer(chunk_size) and chunk_size > 0 do
+    max(chunk_size * 20, 1_000)
+  end
+
+  defp default_manifest_page_size(_), do: 1_000
+
   defp parse_positive_integer(value, _default) when is_integer(value) and value > 0, do: value
 
   defp parse_positive_integer(value, default) when is_binary(value) do
@@ -504,7 +598,44 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
   defp percent(_completed, 0), do: 0.0
   defp percent(completed, total), do: completed / total * 100.0
 
-  defp parquet_select_sql(%InventoryRun{} = run, %InventoryBatch{} = batch, %{} = creds) do
+  defp parquet_select_sql(
+         %InventoryRun{} = run,
+         %InventoryBatch{} = batch,
+         %{} = creds,
+         opts
+       ) do
+    {url, escaped_access_key, escaped_secret_key, session_clause} =
+      parquet_s3_components(run, batch, creds)
+
+    clauses =
+      [
+        "SELECT bucket, key",
+        "FROM s3('#{url}', '#{escaped_access_key}', '#{escaped_secret_key}', 'Parquet')",
+        session_clause,
+        "ORDER BY bucket, key",
+        build_limit_clause(opts)
+      ]
+      |> Enum.reject(&(&1 == ""))
+
+    Enum.join(clauses, "\n")
+  end
+
+  defp parquet_count_sql(%InventoryRun{} = run, %InventoryBatch{} = batch, %{} = creds) do
+    {url, escaped_access_key, escaped_secret_key, session_clause} =
+      parquet_s3_components(run, batch, creds)
+
+    clauses =
+      [
+        "SELECT count() AS object_count",
+        "FROM s3('#{url}', '#{escaped_access_key}', '#{escaped_secret_key}', 'Parquet')",
+        session_clause
+      ]
+      |> Enum.reject(&(&1 == ""))
+
+    Enum.join(clauses, "\n")
+  end
+
+  defp parquet_s3_components(%InventoryRun{} = run, %InventoryBatch{} = batch, %{} = creds) do
     key = batch.parquet_key |> to_string() |> String.trim_leading("/")
     url = parquet_manifest_url(run, key) |> escape_single_quotes()
 
@@ -522,11 +653,7 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
     escaped_secret_key = escape_single_quotes(secret_key)
     session_clause = parquet_settings_clause(creds)
 
-    """
-    SELECT bucket, key
-    FROM s3('#{url}', '#{escaped_access_key}', '#{escaped_secret_key}', 'Parquet')
-    #{session_clause}
-    """
+    {url, escaped_access_key, escaped_secret_key, session_clause}
   end
 
   defp parquet_manifest_url(%InventoryRun{} = run, key) do
@@ -579,6 +706,40 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
       token -> "SETTINGS s3_session_token='#{escape_single_quotes(token)}'"
     end
   end
+
+  defp build_limit_clause(opts) do
+    limit = sanitize_positive_integer(Keyword.get(opts, :limit))
+    offset = sanitize_non_negative_integer(Keyword.get(opts, :offset))
+
+    cond do
+      is_nil(limit) ->
+        ""
+
+      offset in [nil, 0] ->
+        "LIMIT #{limit}"
+
+      true ->
+        "LIMIT #{limit} OFFSET #{offset}"
+    end
+  end
+
+  defp sanitize_positive_integer(value) do
+    case parse_positive_integer(value, nil) do
+      int when is_integer(int) and int > 0 -> int
+      _ -> nil
+    end
+  end
+
+  defp sanitize_non_negative_integer(value) when is_integer(value) and value >= 0, do: value
+
+  defp sanitize_non_negative_integer(value) when is_binary(value) do
+    case Integer.parse(String.trim(value)) do
+      {int, _} when int >= 0 -> int
+      _ -> nil
+    end
+  end
+
+  defp sanitize_non_negative_integer(_), do: nil
 
   defp escape_single_quotes(value) do
     value

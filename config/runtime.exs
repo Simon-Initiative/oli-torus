@@ -164,6 +164,18 @@ inventory_manifest_port =
       end
   end
 
+inventory_manifest_page_size =
+  case System.get_env("CLICKHOUSE_INVENTORY_MANIFEST_PAGE_SIZE") do
+    nil ->
+      nil
+
+    value ->
+      case Integer.parse(value) do
+        {int, _} when int > 0 -> int
+        _ -> nil
+      end
+  end
+
 inventory_manifest_access_key_id =
   case System.get_env("CLICKHOUSE_INVENTORY_MANIFEST_ACCESS_KEY_ID") do
     nil ->
@@ -215,6 +227,7 @@ inventory_overrides =
     {:manifest_host, inventory_manifest_host},
     {:manifest_scheme, inventory_manifest_scheme},
     {:manifest_port, inventory_manifest_port},
+    {:manifest_page_size, inventory_manifest_page_size},
     {:manifest_access_key_id, inventory_manifest_access_key_id},
     {:manifest_secret_access_key, inventory_manifest_secret_access_key},
     {:manifest_session_token, inventory_manifest_session_token},
