@@ -989,7 +989,7 @@ defmodule Oli.Analytics.Backfill.Inventory do
         normalized -> normalized
       end
 
-    case trimmed do
+    case cleaned_credential(trimmed) do
       nil -> manifest_map
       normalized -> Map.put(manifest_map, key, normalized)
     end
@@ -1000,6 +1000,17 @@ defmodule Oli.Analytics.Backfill.Inventory do
   end
 
   defp maybe_put_manifest_credential(manifest_map, _key, _value), do: manifest_map
+
+  defp cleaned_credential(nil), do: nil
+
+  defp cleaned_credential(value) do
+    lowered = String.downcase(value)
+
+    cond do
+      lowered in ["nil", "null", "none"] -> nil
+      true -> value
+    end
+  end
 
   defp normalize_attrs(attrs) when is_list(attrs), do: Enum.into(attrs, %{})
   defp normalize_attrs(%{} = attrs), do: attrs

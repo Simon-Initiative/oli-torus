@@ -244,8 +244,16 @@ defmodule Oli.Analytics.Backfill.Inventory.OrchestratorWorker do
     value
     |> String.trim()
     |> case do
-      "" -> nil
-      trimmed -> trimmed
+      "" ->
+        nil
+
+      trimmed ->
+        case String.downcase(trimmed) do
+          "nil" -> nil
+          "null" -> nil
+          "none" -> nil
+          _ -> trimmed
+        end
     end
   end
 
