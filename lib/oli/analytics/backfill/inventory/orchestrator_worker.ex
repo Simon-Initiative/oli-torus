@@ -177,11 +177,23 @@ defmodule Oli.Analytics.Backfill.Inventory.OrchestratorWorker do
     host = manifest_meta["host"] || manifest_meta[:host]
     scheme = manifest_meta["scheme"] || manifest_meta[:scheme]
     port = manifest_meta["port"] || manifest_meta[:port]
+    access_key_id = manifest_meta["access_key_id"] || manifest_meta[:access_key_id]
+
+    secret_access_key =
+      manifest_meta["secret_access_key"] || manifest_meta[:secret_access_key]
+
+    session_token = manifest_meta["session_token"] || manifest_meta[:session_token]
 
     []
     |> maybe_put_request_override(:host, normalize_host(host))
     |> maybe_put_request_override(:scheme, normalize_scheme(scheme))
     |> maybe_put_request_override(:port, normalize_port(port))
+    |> maybe_put_request_override(:access_key_id, normalize_credential(access_key_id))
+    |> maybe_put_request_override(
+      :secret_access_key,
+      normalize_credential(secret_access_key)
+    )
+    |> maybe_put_request_override(:security_token, normalize_credential(session_token))
   end
 
   defp maybe_put_request_override(overrides, _key, nil), do: overrides
@@ -227,6 +239,20 @@ defmodule Oli.Analytics.Backfill.Inventory.OrchestratorWorker do
   end
 
   defp normalize_port(_), do: nil
+
+  defp normalize_credential(value) when is_binary(value) do
+    value
+    |> String.trim()
+    |> case do
+      "" -> nil
+      trimmed -> trimmed
+    end
+  end
+
+  defp normalize_credential(value) when is_atom(value),
+    do: normalize_credential(Atom.to_string(value))
+
+  defp normalize_credential(_), do: nil
 
   defp cleaned_join(parts) do
     parts

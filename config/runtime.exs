@@ -164,6 +164,48 @@ inventory_manifest_port =
       end
   end
 
+inventory_manifest_access_key_id =
+  case System.get_env("CLICKHOUSE_INVENTORY_MANIFEST_ACCESS_KEY_ID") do
+    nil ->
+      nil
+
+    value ->
+      value
+      |> String.trim()
+      |> case do
+        "" -> nil
+        trimmed -> trimmed
+      end
+  end
+
+inventory_manifest_secret_access_key =
+  case System.get_env("CLICKHOUSE_INVENTORY_MANIFEST_SECRET_ACCESS_KEY") do
+    nil ->
+      nil
+
+    value ->
+      value
+      |> String.trim()
+      |> case do
+        "" -> nil
+        trimmed -> trimmed
+      end
+  end
+
+inventory_manifest_session_token =
+  case System.get_env("CLICKHOUSE_INVENTORY_MANIFEST_SESSION_TOKEN") do
+    nil ->
+      nil
+
+    value ->
+      value
+      |> String.trim()
+      |> case do
+        "" -> nil
+        trimmed -> trimmed
+      end
+  end
+
 inventory_overrides =
   [
     {:manifest_bucket, inventory_manifest_bucket},
@@ -173,6 +215,9 @@ inventory_overrides =
     {:manifest_host, inventory_manifest_host},
     {:manifest_scheme, inventory_manifest_scheme},
     {:manifest_port, inventory_manifest_port},
+    {:manifest_access_key_id, inventory_manifest_access_key_id},
+    {:manifest_secret_access_key, inventory_manifest_secret_access_key},
+    {:manifest_session_token, inventory_manifest_session_token},
     {:manifest_base_url, System.get_env("CLICKHOUSE_INVENTORY_MANIFEST_BASE_URL")},
     {:batch_chunk_size, inventory_chunk_size},
     {:max_simultaneous_batches, inventory_max_simultaneous},
