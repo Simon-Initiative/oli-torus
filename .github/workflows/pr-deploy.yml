@@ -160,7 +160,9 @@ jobs:
           export DEPLOYMENT=$(echo ${{ github.event.inputs.branch && format('branch-{0}', github.event.inputs.branch) || format('pr{0}', github.event.number) }} | cut -c1-32 | sed 's/^[^a-zA-Z]*//; s/[^a-zA-Z]*$//')
           export APP_IMAGE_TAG=sha-${{ github.sha }}
           export HOST=$DEPLOYMENT.plasma.oli.cmu.edu
-          CONFIG_URL="https://plasma.oli.cmu.edu/api/deployments/$DEPLOYMENT/env"
+
+          ENVIRONMENT=oli-torus
+          CONFIG_URL="https://plasma.oli.cmu.edu/api/environments/$ENVIRONMENT/deployments/$DEPLOYMENT/env"
           ENV_FILE="devops/.env"
 
           # Always clean up the generated env file at exit
