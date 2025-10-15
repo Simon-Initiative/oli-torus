@@ -127,40 +127,53 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
         effective_settings,
         activity_provider
       ) do
-    Repo.transaction(fn ->
-      # If this should somehow fail, it should not affect the overall transaction
-      # and block the ability to view the page
-      update_latest_visited_page(section_slug, user.id, page_revision.resource_id)
+    result =
+      Repo.transaction(fn ->
+        # If this should somehow fail, it should not affect the overall transaction
+        # and block the ability to view the page
+        update_latest_visited_page(section_slug, user.id, page_revision.resource_id)
 
-      {graded, latest_resource_attempt} =
-        Appsignal.instrument("PageLifeCycle: get_latest_resource_attempt", fn ->
-          get_latest_resource_attempt(page_revision.resource_id, section_slug, user.id)
-          |> handle_type_transitions(page_revision)
-        end)
+        {graded, latest_resource_attempt} =
+          Appsignal.instrument("PageLifeCycle: get_latest_resource_attempt", fn ->
+            get_latest_resource_attempt(page_revision.resource_id, section_slug, user.id)
+            |> handle_type_transitions(page_revision)
+          end)
 
-      publication_id =
-        Publishing.get_publication_id_for_resource(section_slug, page_revision.resource_id)
+        publication_id =
+          Publishing.get_publication_id_for_resource(section_slug, page_revision.resource_id)
 
-      context = %VisitContext{
-        publication_id: publication_id,
-        blacklisted_activity_ids: [],
-        latest_resource_attempt: latest_resource_attempt,
-        page_revision: page_revision,
-        section_slug: section_slug,
-        user: user,
-        audience_role: Oli.Delivery.Audience.audience_role(user, section_slug),
-        datashop_session_id: datashop_session_id,
-        activity_provider: activity_provider,
-        effective_settings: effective_settings
-      }
+        context = %VisitContext{
+          publication_id: publication_id,
+          blacklisted_activity_ids: [],
+          latest_resource_attempt: latest_resource_attempt,
+          page_revision: page_revision,
+          section_slug: section_slug,
+          user: user,
+          audience_role: Oli.Delivery.Audience.audience_role(user, section_slug),
+          datashop_session_id: datashop_session_id,
+          activity_provider: activity_provider,
+          effective_settings: effective_settings
+        }
 
-      impl = determine_page_impl(graded)
+        impl = determine_page_impl(graded)
 
-      case impl.visit(context) do
-        {:ok, results} -> results
-        {:error, error} -> Repo.rollback(error)
-      end
-    end)
+        case impl.visit(context) do
+          {:ok, results} -> {:ok, results}
+          {:finalized, reason} -> {:finalized, reason}
+          {:error, error} -> Repo.rollback(error)
+        end
+      end)
+
+    case result do
+      {:ok, {:ok, results}} ->
+        {:ok, results}
+
+      {:ok, {:finalized, reason}} ->
+        {:error, reason}
+
+      {:error, error} ->
+        {:error, error}
+    end
   end
 
   @decorate transaction_event("PageLifeCycle: update_latest_visited_page")

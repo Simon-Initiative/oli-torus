@@ -281,5 +281,71 @@ defmodule Oli.Delivery.Attempts.WasLateTest do
                  )
       end
     end
+
+    @tag isolation: "serializable"
+    test "visiting after deadline auto finalizes active attempt", %{
+      section: section,
+      graded_page1: page,
+      user1: user
+    } do
+      Oli.Delivery.Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      datashop_session_id_user1 = UUID.uuid4()
+
+      future_due_date = DateTime.utc_now() |> DateTime.add(5, :minute)
+
+      sr = Oli.Delivery.Sections.get_section_resource(section.id, page.resource.id)
+
+      Oli.Delivery.Sections.update_section_resource(sr, %{
+        end_date: future_due_date,
+        late_submit: :disallow,
+        late_start: :disallow,
+        scheduling_type: :due_by,
+        grace_period: 0
+      })
+
+      effective_settings =
+        Oli.Delivery.Settings.get_combined_settings(page.revision, section.id, user.id)
+
+      Oli.Delivery.Attempts.Core.track_access(page.resource.id, section.id, user.id)
+
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/6
+
+      {:ok, %AttemptState{resource_attempt: ra}} =
+        PageLifecycle.start(
+          page.revision.slug,
+          section.slug,
+          datashop_session_id_user1,
+          user,
+          effective_settings,
+          activity_provider
+        )
+
+      assert ra.lifecycle_state == :active
+
+      past_due_date = DateTime.utc_now() |> DateTime.add(-5, :minute)
+
+      {:ok, _} =
+        Oli.Delivery.Sections.update_section_resource(sr, %{
+          end_date: past_due_date
+        })
+
+      overdue_settings =
+        Oli.Delivery.Settings.get_combined_settings(page.revision, section.id, user.id)
+
+      assert {:error, {:end_date_passed}} ==
+               PageLifecycle.visit(
+                 page.revision,
+                 section.slug,
+                 datashop_session_id_user1,
+                 user,
+                 overdue_settings,
+                 activity_provider
+               )
+
+      reloaded_attempt = Core.get_resource_attempt_by(attempt_guid: ra.attempt_guid)
+
+      assert reloaded_attempt.lifecycle_state in [:submitted, :evaluated]
+      assert reloaded_attempt.auto_submit_job_id == nil
+    end
   end
 end
