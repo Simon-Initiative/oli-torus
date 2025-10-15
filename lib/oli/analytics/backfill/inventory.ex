@@ -741,6 +741,18 @@ defmodule Oli.Analytics.Backfill.Inventory do
             "url" => manifest_url,
             "key" => manifest_key
           }
+          |> maybe_put_manifest_detail(
+            "host",
+            fetch_value(attrs, :manifest_host, config[:manifest_host])
+          )
+          |> maybe_put_manifest_detail(
+            "scheme",
+            fetch_value(attrs, :manifest_scheme, config[:manifest_scheme])
+          )
+          |> maybe_put_manifest_detail(
+            "port",
+            fetch_value(attrs, :manifest_port, config[:manifest_port])
+          )
         )
         |> Map.put("dry_run", dry_run)
 
@@ -847,6 +859,9 @@ defmodule Oli.Analytics.Backfill.Inventory do
               :manifest_prefix,
               :manifest_suffix,
               :directory_time_suffix,
+              :manifest_host,
+              :manifest_scheme,
+              :manifest_port,
               :manifest_base_url,
               :target_table,
               :format,
@@ -890,6 +905,9 @@ defmodule Oli.Analytics.Backfill.Inventory do
     %{
       manifest_bucket: inventory_config_value(:manifest_bucket),
       manifest_prefix: inventory_config_value(:manifest_prefix),
+      manifest_host: inventory_config_value(:manifest_host),
+      manifest_scheme: inventory_config_value(:manifest_scheme),
+      manifest_port: inventory_config_value(:manifest_port),
       manifest_suffix: default_manifest_suffix(),
       directory_time_suffix: default_directory_suffix(),
       target_table: inventory_config_value(:target_table, Backfill.default_target_table()),
@@ -901,6 +919,46 @@ defmodule Oli.Analytics.Backfill.Inventory do
       max_batch_retries: default_max_batch_retries()
     }
   end
+
+  defp maybe_put_manifest_detail(manifest_map, _key, nil), do: manifest_map
+
+  defp maybe_put_manifest_detail(manifest_map, key, value)
+       when key in ["host", "scheme"] and is_binary(value) do
+    trimmed =
+      value
+      |> String.trim()
+      |> case do
+        "" -> nil
+        normalized -> normalized
+      end
+
+    case trimmed do
+      nil -> manifest_map
+      normalized -> Map.put(manifest_map, key, normalized)
+    end
+  end
+
+  defp maybe_put_manifest_detail(manifest_map, "host", value) when is_atom(value) do
+    maybe_put_manifest_detail(manifest_map, "host", Atom.to_string(value))
+  end
+
+  defp maybe_put_manifest_detail(manifest_map, "scheme", value) when is_atom(value) do
+    maybe_put_manifest_detail(manifest_map, "scheme", Atom.to_string(value))
+  end
+
+  defp maybe_put_manifest_detail(manifest_map, "port", value)
+       when is_integer(value) and value > 0 do
+    Map.put(manifest_map, "port", value)
+  end
+
+  defp maybe_put_manifest_detail(manifest_map, "port", value) when is_binary(value) do
+    case Integer.parse(String.trim(value)) do
+      {int, _} when int > 0 -> Map.put(manifest_map, "port", int)
+      _ -> manifest_map
+    end
+  end
+
+  defp maybe_put_manifest_detail(manifest_map, _key, _value), do: manifest_map
 
   defp normalize_attrs(attrs) when is_list(attrs), do: Enum.into(attrs, %{})
   defp normalize_attrs(%{} = attrs), do: attrs

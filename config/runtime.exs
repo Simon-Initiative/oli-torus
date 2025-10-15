@@ -124,12 +124,55 @@ inventory_max_retries =
       end
   end
 
+inventory_manifest_host =
+  case System.get_env("CLICKHOUSE_INVENTORY_MANIFEST_HOST") do
+    nil ->
+      nil
+
+    value ->
+      value
+      |> String.trim()
+      |> case do
+        "" -> nil
+        trimmed -> trimmed
+      end
+  end
+
+inventory_manifest_scheme =
+  case System.get_env("CLICKHOUSE_INVENTORY_MANIFEST_SCHEME") do
+    nil ->
+      nil
+
+    value ->
+      value
+      |> String.trim()
+      |> case do
+        "" -> nil
+        trimmed -> trimmed
+      end
+  end
+
+inventory_manifest_port =
+  case System.get_env("CLICKHOUSE_INVENTORY_MANIFEST_PORT") do
+    nil ->
+      nil
+
+    value ->
+      case Integer.parse(value) do
+        {int, _} when int > 0 -> int
+        _ -> nil
+      end
+  end
+
 inventory_overrides =
   [
     {:manifest_bucket, inventory_manifest_bucket},
     {:manifest_prefix, inventory_manifest_prefix},
     {:manifest_suffix, System.get_env("CLICKHOUSE_INVENTORY_MANIFEST_SUFFIX")},
     {:directory_time_suffix, System.get_env("CLICKHOUSE_INVENTORY_DIRECTORY_SUFFIX")},
+    {:manifest_host, inventory_manifest_host},
+    {:manifest_scheme, inventory_manifest_scheme},
+    {:manifest_port, inventory_manifest_port},
     {:manifest_base_url, System.get_env("CLICKHOUSE_INVENTORY_MANIFEST_BASE_URL")},
     {:batch_chunk_size, inventory_chunk_size},
     {:max_simultaneous_batches, inventory_max_simultaneous},

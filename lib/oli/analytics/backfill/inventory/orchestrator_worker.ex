@@ -78,7 +78,7 @@ defmodule Oli.Analytics.Backfill.Inventory.OrchestratorWorker do
     bucket = run.manifest_bucket
 
     with {:ok, key} <- manifest_key(run),
-         {:ok, %{body: body}} <- ExAws.S3.get_object(bucket, key) |> ExAws.request(),
+         {:ok, %{body: body}} <- request_manifest_object(bucket, key, run),
          {:ok, decoded} <- Jason.decode(body) do
       {:ok, decoded}
     else
@@ -87,6 +87,16 @@ defmodule Oli.Analytics.Backfill.Inventory.OrchestratorWorker do
 
       {:error, reason} ->
         {:error, reason}
+    end
+  end
+
+  defp request_manifest_object(bucket, key, %InventoryRun{} = run) do
+    overrides = manifest_request_overrides(run)
+    request = ExAws.S3.get_object(bucket, key)
+
+    case overrides do
+      [] -> ExAws.request(request)
+      _ -> ExAws.request(request, overrides)
     end
   end
 
@@ -157,6 +167,66 @@ defmodule Oli.Analytics.Backfill.Inventory.OrchestratorWorker do
   defp ensure_map(nil), do: %{}
   defp ensure_map(map) when is_map(map), do: map
   defp ensure_map(_), do: %{}
+
+  defp manifest_request_overrides(%InventoryRun{} = run) do
+    manifest_meta =
+      run.metadata
+      |> ensure_map()
+      |> Map.get("manifest", %{})
+
+    host = manifest_meta["host"] || manifest_meta[:host]
+    scheme = manifest_meta["scheme"] || manifest_meta[:scheme]
+    port = manifest_meta["port"] || manifest_meta[:port]
+
+    []
+    |> maybe_put_request_override(:host, normalize_host(host))
+    |> maybe_put_request_override(:scheme, normalize_scheme(scheme))
+    |> maybe_put_request_override(:port, normalize_port(port))
+  end
+
+  defp maybe_put_request_override(overrides, _key, nil), do: overrides
+  defp maybe_put_request_override(overrides, key, value), do: Keyword.put(overrides, key, value)
+
+  defp normalize_host(value) when is_binary(value) do
+    value
+    |> String.trim()
+    |> case do
+      "" -> nil
+      trimmed -> trimmed
+    end
+  end
+
+  defp normalize_host(value) when is_atom(value), do: normalize_host(Atom.to_string(value))
+  defp normalize_host(_), do: nil
+
+  defp normalize_scheme(value) when is_binary(value) do
+    trimmed = String.trim(value)
+
+    cond do
+      trimmed == "" ->
+        nil
+
+      String.ends_with?(trimmed, "://") ->
+        trimmed
+
+      true ->
+        trimmed <> "://"
+    end
+  end
+
+  defp normalize_scheme(value) when is_atom(value), do: normalize_scheme(Atom.to_string(value))
+  defp normalize_scheme(_), do: nil
+
+  defp normalize_port(value) when is_integer(value) and value > 0, do: value
+
+  defp normalize_port(value) when is_binary(value) do
+    case Integer.parse(String.trim(value)) do
+      {int, _} when int > 0 -> int
+      _ -> nil
+    end
+  end
+
+  defp normalize_port(_), do: nil
 
   defp cleaned_join(parts) do
     parts
