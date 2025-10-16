@@ -192,10 +192,18 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
       |> Enum.filter(&valid_entry?/1)
       |> Enum.group_by(& &1.bucket)
 
-    Enum.reduce_while(grouped_entries, {:ok, summary, batch}, fn {bucket, bucket_entries},
-                                                                 {:ok, acc_summary, acc_batch} ->
-      process_bucket(run, acc_batch, bucket, bucket_entries, chunk_size, creds, acc_summary)
+    grouped_entries
+    |> Enum.reduce_while({:ok, summary, batch}, fn {bucket, bucket_entries},
+                                                   {:ok, acc_summary, acc_batch} ->
+      case process_bucket(run, acc_batch, bucket, bucket_entries, chunk_size, creds, acc_summary) do
+        {:ok, updated_summary, updated_batch} -> {:cont, {:ok, updated_summary, updated_batch}}
+        {:error, reason} -> {:halt, {:error, reason}}
+      end
     end)
+    |> case do
+      {:ok, summary, batch} -> {:ok, summary, batch}
+      {:error, reason} -> {:error, reason}
+    end
   end
 
   defp manifest_entry_count(%InventoryRun{} = run, %InventoryBatch{} = batch, creds) do
