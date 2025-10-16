@@ -78,6 +78,7 @@
               class="flex flex-row items-center h-full"
             >
               <button
+                :if={assigns[:annotations]}
                 phx-click="toggle_notes_sidebar"
                 class={[
                   "flex flex-row items-center h-full px-3",
