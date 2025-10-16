@@ -157,7 +157,7 @@ jobs:
       - name: 🚀 Deploy PR
         if: steps.preflight.outputs.memory_insufficient != 'true'
         run: |
-          export DEPLOYMENT=$(echo ${{ github.event.inputs.branch && format('branch-{0}', github.event.inputs.branch) || format('pr{0}', github.event.number) }} | cut -c1-32 | sed 's/^[^a-zA-Z]*//; s/[^a-zA-Z]*$//')
+          export DEPLOYMENT=$(echo ${{ github.event.inputs.branch && format('branch-{0}', github.event.inputs.branch) || format('pr-{0}', github.event.number) }} | cut -c1-32 | sed 's/^[^a-zA-Z]*//; s/[^a-zA-Z]*$//')
           export APP_IMAGE_TAG=sha-${{ github.sha }}
           export HOST=$DEPLOYMENT.plasma.oli.cmu.edu
 
@@ -166,10 +166,10 @@ jobs:
           ENV_FILE="devops/.env"
 
           # Always clean up the generated env file at exit
-          trap 'rm -f "$ENV_FILE"' EXIT
+          trap 'rm -f "$ENV_FILE" && touch .env' EXIT
 
           # Fetch environment config or render fallback from devops/default.env
-          if curl -fsSL --max-time 10 "$CONFIG_URL" -o "$ENV_FILE"; then
+          if curl -fsSL --max-time 10 -H "Authorization: Bearer ${{ secrets.PLASMA_CORE_SERVICE_TOKEN }}" "$CONFIG_URL" -o "$ENV_FILE"; then
             echo "Downloaded environment config from $CONFIG_URL"
           else
             echo "Failed to download environment config; building fallback from devops/default.env"
