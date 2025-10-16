@@ -27,14 +27,14 @@ defmodule OliWeb.Delivery.Student.Utils do
 
   def page_header(assigns) do
     ~H"""
-    <div id="page_header" class="flex-col justify-start items-start gap-9 flex w-full">
+    <div id="page_header" class="flex-col justify-start items-start gap-3 sm:gap-9 flex w-full">
       <div class="flex-col justify-start items-start gap-3 flex w-full">
-        <div class="self-stretch flex-col justify-start items-start flex">
+        <div class="self-stretch flex-col justify-start items-start flex gap-3">
           <div class="self-stretch justify-between items-center inline-flex">
             <div class="grow shrink basis-0 self-stretch justify-start items-center gap-3 flex">
               <div
                 role="container label"
-                class="opacity-50 dark:text-white text-sm font-bold uppercase tracking-wider"
+                class="text-Text-text-low text-sm font-bold uppercase tracking-wider"
               >
                 {@container_label}
               </div>
@@ -50,44 +50,50 @@ defmodule OliWeb.Delivery.Student.Utils do
                 role="scored page marker"
               >
                 <Icons.flag />
-                <div class="opacity-50 dark:text-white text-sm font-bold uppercase tracking-wider">
+                <div class="text-Text-text-high text-sm font-bold uppercase tracking-wider">
                   Scored Page
                 </div>
               </div>
             </div>
             <div
               :if={@page_context.page.graded}
-              class="px-2 py-1 bg-gray-300 bg-opacity-10 dark:bg-white dark:bg-opacity-10 rounded-xl shadow justify-start items-center gap-1 flex"
+              class="px-2 py-1 bg-Specially-Tokens-Fill-fill-detail-pill rounded-xl shadow justify-start items-center gap-1 flex"
               role="assignment marker"
             >
-              <div class="dark:text-white text-[10px] font-normal">
+              <div class="text-Text-text-high text-[10px] font-normal">
                 Assignment requirement
               </div>
             </div>
           </div>
           <div role="page label" class="self-stretch justify-start items-start gap-2.5 inline-flex">
-            <div role="page numbering index" class="opacity-50 dark:text-white text-[38px] font-bold">
+            <div
+              role="page numbering index"
+              class="text-Text-text-low text-[32px] sm:text-[40px] font-bold"
+            >
               {@index}.
             </div>
-            <div role="page title" class="grow shrink basis-0 dark:text-white text-[38px] font-bold">
+            <div
+              role="page title"
+              class="grow shrink basis-0 text-Text-text-high text-[32px] sm:text-[40px] leading-[44px] font-bold"
+            >
               {@page_context.page.title}
             </div>
           </div>
         </div>
-        <div class="justify-start items-center gap-3 flex-col">
+        <div class="justify-start items-center gap-3 flex">
           <div
             :if={@page_context.page.duration_minutes}
-            class="opacity-50 justify-start items-center gap-1.5 flex"
+            class="ml-10 sm:ml-0 justify-start items-center gap-1.5 flex"
           >
             <div role="page read time" class="justify-end items-center gap-1 flex">
-              <div class="w-[18px] h-[18px] relative opacity-80">
+              <div class="w-[18px] h-[18px] relative text-Text-text-low">
                 <Icons.time />
               </div>
               <div class="justify-end items-end gap-0.5 flex">
-                <div class="text-right dark:text-white text-xs font-bold uppercase tracking-wide">
+                <div class="text-right text-Text-text-low text-xs font-semibold tracking-wide">
                   {@page_context.page.duration_minutes}
                 </div>
-                <div class="dark:text-white text-[9px] font-bold uppercase tracking-wide">
+                <div class="text-Text-text-low text-[9px] self-center font-semibold tracking-wide">
                   min
                 </div>
               </div>
@@ -98,10 +104,10 @@ defmodule OliWeb.Delivery.Student.Utils do
             role="page start schedule"
             class="justify-start items-start gap-1 flex"
           >
-            <div class="opacity-50 dark:text-white text-xs font-normal">
+            <div class="text-Text-text-low text-xs font-semibold">
               Available by:
             </div>
-            <div class="dark:text-white text-xs font-normal">
+            <div class="text-Text-text-low text-xs font-semibold">
               {FormatDateTime.to_formatted_datetime(
                 @page_context.effective_settings.start_date,
                 @ctx,
@@ -114,10 +120,10 @@ defmodule OliWeb.Delivery.Student.Utils do
             role="page schedule"
             class="justify-start items-start gap-1 flex"
           >
-            <div class="opacity-50 dark:text-white text-xs font-normal">
+            <div class="text-Text-text-low text-xs font-semibold">
               {label_for_scheduling_type(@page_context.effective_settings.scheduling_type)}
             </div>
-            <div class="dark:text-white text-xs font-normal">
+            <div class="text-Text-text-low text-xs font-semibold">
               {FormatDateTime.to_formatted_datetime(
                 @page_context.effective_settings.end_date,
                 @ctx,
@@ -129,39 +135,34 @@ defmodule OliWeb.Delivery.Student.Utils do
       </div>
       <div
         :if={@objectives != []}
-        class="flex-col justify-start items-start gap-3 flex w-full mt-4"
+        class="flex-col justify-start items-start gap-3 flex w-full mt-4 mb-4"
         role="page objectives"
       >
-        <div class="self-stretch justify-start items-start gap-6 inline-flex mb-6">
-          <div>
-            <span class="text-neutral-700 dark:text-neutral-300 text-base font-bold font-['Inter'] leading-normal">
-              LEARNING OBJECTIVES &
-            </span>
-            <span
-              phx-click={Modal.show_modal("proficiency_explanation_modal")}
-              class="text-blue-600 text-base font-bold font-['Inter'] leading-normal hover:underline hover:underline-offset-2 cursor-pointer"
-            >
-              PROFICIENCY
-            </span>
-            <div class="h-0">
-              <.proficiency_explanation_modal />
-            </div>
+        <div class="self-stretch justify-start items-center gap-2.5 inline-flex mb-2">
+          <span class="text-Text-text-high text-sm sm:text-base font-bold font-['Inter'] leading-normal">
+            LEARNING OBJECTIVES & PROFICIENCY
+          </span>
+          <button phx-click={Modal.show_modal("proficiency_explanation_modal")}>
+            <Icons.help />
+          </button>
+          <div class="h-0">
+            <.proficiency_explanation_modal />
           </div>
         </div>
         <div
           :for={{objective, index} <- Enum.with_index(@objectives, 1)}
-          class="self-stretch flex-col justify-start items-start ml-6 w-full"
+          class="self-stretch flex-col justify-start items-start sm:ml-6 w-full"
           role={"objective #{objective.resource_id}"}
         >
           <div class="relative justify-start items-center gap-[19px] inline-flex w-full">
             <.proficiency_icon_with_tooltip objective={objective} />
             <div class="justify-start items-start flex w-full">
-              <div class="text-neutral-800 dark:text-neutral-500 text-sm font-bold font-['Inter'] leading-[21px] min-w-[2rem]">
+              <div class="text-Text-text-low-alpha text-[12px] font-bold font-['Inter'] leading-[21px] min-w-[2rem]">
                 L{index}
               </div>
               <div
                 role={"objective #{objective.resource_id} title"}
-                class="text-stone-700 dark:text-stone-300 text-sm font-normal font-['Open Sans'] leading-[21px]"
+                class="text-Text-text-high text-sm font-normal font-['Open Sans'] leading-[21px]"
               >
                 {objective.title}
               </div>
@@ -169,6 +170,7 @@ defmodule OliWeb.Delivery.Student.Utils do
           </div>
         </div>
       </div>
+      <span class="mb-6 border-b border-Border-border-default w-full"></span>
     </div>
     """
   end

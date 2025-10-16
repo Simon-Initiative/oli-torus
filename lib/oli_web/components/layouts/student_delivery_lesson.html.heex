@@ -103,7 +103,7 @@
           :if={@section}
           id="page-content"
           phx-hook="PageContentHooks"
-          class="flex flex-col justify-center items-start relative bg-Specially-Tokens-Background-lesson-page"
+          class="flex flex-col justify-center items-start relative bg-Specially-Tokens-Background-lesson-page min-h-[100vh]"
         >
           <div
             :if={@view in [:graded_page, :practice_page] and @page_progress_state == :in_progress}
