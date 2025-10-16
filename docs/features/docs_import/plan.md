@@ -23,25 +23,24 @@ Scope and guardrails reference the approved PRD (`docs/features/docs_import/prd.
 ## Phase 2: HTTP Client & Concurrency Guardrails *(can run in parallel with Phase 3 after Phase 1 DoD)*
 - **Goal:** Provide network layer with validation, retries, size enforcement, and FILE_ID guard.
 - **Tasks**
-  - [ ] Implement `Oli.GoogleDocs.Client.fetch_markdown/2` with host allowlist, regex validation, retry-once policy, and 10 MB cap.
-  - [ ] Tests: `mix test test/oli/google_docs/client_test.exs` covering valid/invalid IDs, timeout retry, oversized responses.
+  - [x] Implement `Oli.GoogleDocs.Client.fetch_markdown/2` with host allowlist, regex validation, retry-once policy, and 10 MB cap.
+  - [x] Tests: `mix test test/oli/google_docs/client_test.exs` covering valid/invalid IDs, timeout retry, oversized responses.
 - **Definition of Done:** All new tests and full suite pass; Gate unlocks Phases 5–6.
 
 ## Phase 3: Markdown Parsing & Content Normalisation *(parallel to Phase 2 once Phase 1 complete)*
 - **Goal:** Convert Markdown AST into Torus-friendly block structures and identify CustomElements.
 - **Tasks**
-  - [ ] Implement `Oli.GoogleDocs.MarkdownParser` producing intermediate blocks, CustomElement specs, and embedded media payloads.
-  - [ ] Map headings, paragraphs, inline marks, lists, blockquotes, and tables to Torus equivalents.
-  - [ ] Detect `CustomElement` tables and forward metadata for specialised handling; warn on unsupported constructs.
-  - [ ] Tests: `mix test test/oli/google_docs/markdown_parser_test.exs` validating fixtures, warning counts, and CustomElement detection.
+  - [x] Implement `Oli.GoogleDocs.MarkdownParser` producing intermediate blocks, CustomElement specs, and embedded media payloads.
+  - [x] Map headings, paragraphs, inline marks, lists, blockquotes, and tables to Torus equivalents.
+  - [x] Detect `CustomElement` tables and forward metadata for specialised handling; warn on unsupported constructs.
+  - [x] Tests: `mix test test/oli/google_docs/markdown_parser_test.exs` validating fixtures, warning counts, and CustomElement detection.
 - **Definition of Done:** Parser tests pass; warning catalogue entries referenced and documented. Gate unlocks Phases 4–5.
 
 ## Phase 4: Media Ingestion Pipeline *(depends on Phase 3 for payload shape)*
 - **Goal:** Decode base64 images, dedupe, upload, and produce Torus asset URLs with robust failure handling.
 - **Tasks**
-  - [ ] Implement `Oli.GoogleDocs.MediaIngestor` with SHA256 hashing, existing media lookup, upload, and fallback logic.
-  - [ ] Strip EXIF metadata before upload; enforce per-image (≤ 5 MB) and aggregate size budgets.
-  - [ ] Tests: `mix test test/oli/google_docs/media_ingestor_test.exs` covering success, dedupe reuse, oversized rejection, upload failure fallback, EXIF stripping.
+  - [x] Implement `Oli.GoogleDocs.MediaIngestor` defers to using existing media library module to upload and track new media library entries for the project
+  - [x] Tests: `mix test test/oli/google_docs/media_ingestor_test.exs` covering success and failure scenarios (happy path, duplicate reuse, oversized images, upload error fallback)
 - **Definition of Done:** Media tests green; configuration knobs (e.g., media budget) documented. Gate unlocks Phase 5.
 
 ## Phase 5: MCQ Activity Builder & CustomElement Conversion *(depends on Phases 3–4)*
