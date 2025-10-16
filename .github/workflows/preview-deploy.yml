@@ -148,7 +148,7 @@ jobs:
       - name: 🚀 Deploy
         if: steps.preflight.outputs.memory_insufficient != 'true'
         run: |
-          export DEPLOYMENT=$(echo ${{ github.event_name == 'workflow_dispatch' && format('{0}', github.ref_name) || format('pr-{0}', github.event.number) }} | cut -c1-32 | sed 's/^[^a-zA-Z]*//; s/[^a-zA-Z]*$//')
+          export DEPLOYMENT=$(echo ${{ github.event_name == 'workflow_dispatch' && format('{0}', github.ref_name) || format('pr-{0}', github.event.number) }} | tr '/#?' '-' | cut -c1-32)
           export APP_IMAGE_TAG=sha-${{ github.sha }}
           export HOST=$DEPLOYMENT.plasma.oli.cmu.edu
 
