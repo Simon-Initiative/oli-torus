@@ -536,7 +536,9 @@ defmodule OliWeb.Components.Delivery.Pages do
       socket.assigns.params.selected_activities
       |> Enum.map(&String.to_integer("#{&1}"))
       |> then(fn ids ->
-        if activity_id in ids, do: Enum.reject(ids, &(&1 == activity_id)), else: [activity_id | ids]
+        if activity_id in ids,
+          do: Enum.reject(ids, &(&1 == activity_id)),
+          else: [activity_id | ids]
       end)
 
     {:noreply,
@@ -749,7 +751,8 @@ defmodule OliWeb.Components.Delivery.Pages do
     |> assign(
       table_model: table_model,
       selected_activities: selected_activities
-    ) |> case do
+    )
+    |> case do
       %{assigns: %{scripts_loaded: true}} = socket ->
         socket
 

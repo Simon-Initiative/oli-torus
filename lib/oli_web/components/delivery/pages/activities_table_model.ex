@@ -96,7 +96,10 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModel do
       id={"button_#{@id}"}
       class="flex !p-0"
       phx-click={
-        JS.push("paged_table_selection_change", value: %{id: @assessment.resource_id}, target: @target)
+        JS.push("paged_table_selection_change",
+          value: %{id: @assessment.resource_id},
+          target: @target
+        )
         |> JS.toggle(to: "#details-row_#{@id}")
         |> JS.toggle_class("rotate-180", to: "#button_#{@id} svg")
         |> JS.toggle_class("bg-Table-table-select", to: ~s(tr[data-row-id="row_#{@id}"]))
