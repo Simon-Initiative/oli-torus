@@ -77,6 +77,8 @@ defmodule Oli.Rendering.Content.Html do
       context,
       attrs,
       [
+        ~s|<div class="text-sm md:hidden flex justify-center">
+        <div class="inline-block w-full text-right"#{maybe_img_width(attrs)} >Pinch to Zoom</div></div>|,
         ~s|<img class="figure-img img-fluid"#{maybe_alt(attrs)}#{maybe_width(attrs)} src="#{escape_xml!(src)}"|,
         maybe_point_marker_attr(context, attrs),
         ~s| />\n|
@@ -1012,6 +1014,13 @@ defmodule Oli.Rendering.Content.Html do
   defp maybe_alt(attrs) do
     case attrs do
       %{"alt" => alt} -> " alt=\"#{escape_xml!(alt)}\""
+      _ -> ""
+    end
+  end
+
+  defp maybe_img_width(attrs) do
+    case attrs do
+      %{"width" => width} -> "style=\"width: #{escape_xml!(width)}px\""
       _ -> ""
     end
   end
