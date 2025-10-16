@@ -9,6 +9,7 @@ defmodule Oli.Analytics.Backfill.Inventory do
   alias Oli.Analytics.Backfill
   alias Oli.Analytics.Backfill.InventoryRun
   alias Oli.Analytics.Backfill.InventoryBatch
+  alias Oli.Analytics.Backfill.InventoryChunkLog
   alias Oli.Analytics.Backfill.Notifier
   alias Oli.Accounts.Author
   alias Oli.Repo
@@ -251,6 +252,8 @@ defmodule Oli.Analytics.Backfill.Inventory do
             fetch_manifest_value(file, ["MD5checksum", :MD5checksum])
           )
           |> Map.put("dry_run", run.dry_run)
+          |> Map.put_new("chunk_count", 0)
+          |> Map.put_new("chunk_sequence", 0)
           |> Map.put_new("max_batch_retries", max_batch_retries)
 
         attrs = %{
@@ -310,6 +313,121 @@ defmodule Oli.Analytics.Backfill.Inventory do
     end
   end
 
+  @doc """
+  Fetch chunk logs for the given batch using offset-based pagination.
+  When `:include_total` is true the total count of logs for the batch is returned.
+  Optional `:direction` values:
+    * `:latest` — returns the last `limit` entries adjusting the offset automatically.
+    * `:previous` / `:refresh` / `:next` — uses the provided offset.
+  """
+  @spec fetch_chunk_logs(pos_integer(), keyword()) :: %{
+          entries: [InventoryChunkLog.t()],
+          total: non_neg_integer | nil,
+          offset: non_neg_integer
+        }
+  def fetch_chunk_logs(batch_id, opts \\ []) when is_integer(batch_id) do
+    limit =
+      opts
+      |> Keyword.get(:limit, 100)
+      |> clamp_limit()
+
+    offset_param =
+      opts
+      |> Keyword.get(:offset, 0)
+      |> max(0)
+
+    include_total = Keyword.get(opts, :include_total, false)
+
+    direction =
+      opts
+      |> Keyword.get(:direction, :forward)
+      |> normalize_chunk_log_direction()
+
+    base_query =
+      from log in InventoryChunkLog,
+        where: log.batch_id == ^batch_id
+
+    total =
+      cond do
+        include_total -> Repo.aggregate(base_query, :count)
+        direction == :latest -> Repo.aggregate(base_query, :count)
+        true -> nil
+      end
+
+    offset =
+      case {direction, total} do
+        {:latest, count} when is_integer(count) ->
+          max(count - limit, 0)
+
+        _ ->
+          offset_param
+      end
+
+    query =
+      from log in base_query,
+        order_by: [asc: log.inserted_at, asc: log.id],
+        limit: ^limit,
+        offset: ^offset
+
+    entries = Repo.all(query)
+
+    total =
+      cond do
+        is_integer(total) -> total
+        include_total -> Repo.aggregate(base_query, :count)
+        true -> nil
+      end
+
+    %{entries: entries, total: total, offset: offset}
+  end
+
+  @doc """
+  Upsert (insert or replace) a chunk log entry for the specified batch.
+  """
+  @spec upsert_chunk_log(InventoryBatch.t() | pos_integer(), String.t(), map()) ::
+          {:ok, InventoryChunkLog.t()} | {:error, term()}
+  def upsert_chunk_log(%InventoryBatch{id: batch_id}, chunk_index, metrics),
+    do: upsert_chunk_log(batch_id, chunk_index, metrics)
+
+  def upsert_chunk_log(batch_id, chunk_index, metrics) when is_integer(batch_id) do
+    timestamp = DateTime.utc_now()
+
+    %InventoryChunkLog{}
+    |> InventoryChunkLog.changeset(%{
+      batch_id: batch_id,
+      chunk_index: chunk_index,
+      metrics: metrics
+    })
+    |> Repo.insert(
+      on_conflict: [set: [metrics: metrics, updated_at: timestamp]],
+      conflict_target: [:batch_id, :chunk_index]
+    )
+  end
+
+  @doc """
+  Delete all chunk logs associated with the provided batch.
+  """
+  @spec delete_chunk_logs_for_batch(InventoryBatch.t() | pos_integer()) :: :ok
+  def delete_chunk_logs_for_batch(%InventoryBatch{id: batch_id}),
+    do: delete_chunk_logs_for_batch(batch_id)
+
+  def delete_chunk_logs_for_batch(batch_id) when is_integer(batch_id) do
+    from(log in InventoryChunkLog, where: log.batch_id == ^batch_id)
+    |> Repo.delete_all()
+
+    :ok
+  end
+
+  defp normalize_chunk_log_direction(:latest), do: :latest
+  defp normalize_chunk_log_direction("latest"), do: :latest
+  defp normalize_chunk_log_direction(:previous), do: :previous
+  defp normalize_chunk_log_direction("previous"), do: :previous
+  defp normalize_chunk_log_direction(:prev), do: :previous
+  defp normalize_chunk_log_direction("prev"), do: :previous
+  defp normalize_chunk_log_direction(:refresh), do: :refresh
+  defp normalize_chunk_log_direction("refresh"), do: :refresh
+  defp normalize_chunk_log_direction(_), do: :forward
+
   defp batch_max_attempts(%InventoryBatch{} = batch) do
     default = fetch_run_retry_limit(batch)
 
@@ -340,7 +458,8 @@ defmodule Oli.Analytics.Backfill.Inventory do
     reset_metadata =
       batch.metadata
       |> ensure_map()
-      |> Map.put("chunks", [])
+      |> Map.put("chunk_count", 0)
+      |> Map.put("chunk_sequence", 0)
 
     reset_attrs = %{
       error: nil,
@@ -352,14 +471,16 @@ defmodule Oli.Analytics.Backfill.Inventory do
       metadata: reset_metadata
     }
 
+    _ = delete_chunk_logs_for_batch(batch.id)
+
     with {:ok, batch} <- transition_batch(batch, :pending, reset_attrs),
          batch <- Repo.preload(batch, :run),
          :ok <- maybe_enqueue_pending_batches(batch.run) do
       _ = maybe_recompute_run(batch.run)
 
       reloaded_batch =
-        batch.id
-        |> Repo.get!(InventoryBatch)
+        InventoryBatch
+        |> Repo.get!(batch.id)
         |> Repo.preload(:run)
 
       {:ok, reloaded_batch}
@@ -1042,6 +1163,12 @@ defmodule Oli.Analytics.Backfill.Inventory do
       :error -> Map.fetch(map, to_string(key))
     end
   end
+
+  defp clamp_limit(limit) when is_integer(limit) and limit > 0 do
+    min(limit, 500)
+  end
+
+  defp clamp_limit(_), do: 100
 
   defp ensure_map(nil), do: %{}
   defp ensure_map(map) when is_map(map), do: map

@@ -12,6 +12,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
   alias Oli.Analytics.Backfill.BackfillRun
   alias Oli.Analytics.Backfill.Inventory
   alias Oli.Analytics.Backfill.InventoryBatch
+  alias Oli.Analytics.Backfill.InventoryChunkLog
   alias Oli.Analytics.Backfill.InventoryRun
   alias Oli.Analytics.Backfill.Notifier
   alias OliWeb.Common.Breadcrumb
@@ -369,6 +370,47 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
   rescue
     Ecto.NoResultsError ->
       {:noreply, put_flash(socket, :error, "Batch not found")}
+  end
+
+  def handle_event("chunk_logs_load", %{"batch_id" => batch_param} = params, socket) do
+    offset_param = Map.get(params, "offset", 0)
+
+    with {:ok, batch_id} <- parse_int_param(batch_param, min: 1),
+         {:ok, limit} <- parse_int_param(Map.get(params, "limit", 10), min: 1),
+         offset_result <- parse_int_param(offset_param, min: 0) do
+      direction = normalize_chunk_direction(Map.get(params, "direction"))
+
+      offset =
+        case offset_result do
+          {:ok, value} -> value
+          _ -> 0
+        end
+
+      %{entries: entries, total: total, offset: effective_offset} =
+        Inventory.fetch_chunk_logs(batch_id,
+          offset: offset,
+          limit: limit,
+          include_total: true,
+          direction: chunk_direction_atom(direction)
+        )
+
+      logs = serialize_chunk_logs(entries, effective_offset)
+      has_more = if total, do: effective_offset + length(entries) < total, else: false
+
+      payload = %{
+        batch_id: batch_id,
+        offset: effective_offset,
+        limit: limit,
+        total: total,
+        direction: direction,
+        logs: logs,
+        has_more: has_more
+      }
+
+      {:noreply, push_event(socket, "chunk_logs_update", payload)}
+    else
+      _ -> {:noreply, socket}
+    end
   end
 
   @impl true
@@ -889,43 +931,46 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
                         </div>
                       </td>
                     </tr>
-                    <tr :if={
-                      chunk_logs = batch_chunk_logs(batch)
-                      not Enum.empty?(chunk_logs)
-                    }>
+                    <tr :if={batch_has_chunk_logs?(batch)}>
                       <td colspan="6" class="px-3 pb-3">
-                        <details class="text-gray-600 dark:text-gray-300">
+                        <% default_live? = batch.status == :running %>
+                        <details
+                          id={"chunk-logs-details-#{batch.id}"}
+                          class="text-gray-600 dark:text-gray-300"
+                          phx-hook="ChunkLogsDetails"
+                          data-batch-id={batch.id}
+                          data-default-live={if(default_live?, do: 1, else: 0)}
+                        >
                           <summary class="cursor-pointer text-delivery-primary">Chunk Logs</summary>
-                          <div class="mt-2 space-y-2">
+                          <div class="mt-2">
                             <div
-                              :for={{log, idx} <- Enum.with_index(chunk_logs, 1)}
-                              class="border border-gray-200 dark:border-gray-700 rounded p-2"
+                              id={"chunk-logs-#{batch.id}"}
+                              class="chunk-logs-viewer border border-gray-200 dark:border-gray-700 rounded"
+                              data-batch-id={batch.id}
+                              data-limit="10"
+                              data-window="200"
+                              data-initial-count={batch_chunk_log_count(batch)}
+                              data-default-live={if(default_live?, do: 1, else: 0)}
+                              phx-hook="ChunkLogsViewer"
+                              phx-update="ignore"
                             >
-                              <div class="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                                Chunk {idx}
+                              <div class="flex items-center justify-end text-xs text-gray-600 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700 px-2 py-1">
+                                <label class="inline-flex items-center gap-2 select-none">
+                                  <input
+                                    type="checkbox"
+                                    class="chunk-logs-live-toggle h-3.5 w-3.5 rounded border-gray-300 text-delivery-primary focus:ring-delivery-primary"
+                                    data-default-live={if(default_live?, do: 1, else: 0)}
+                                    checked={default_live?}
+                                  />
+                                  <span>Live update</span>
+                                </label>
                               </div>
-                              <div class="text-xs break-all">
-                                Query ID: {log["query_id"] || log[:query_id] || "—"}
+                              <div class="chunk-logs-scroll max-h-80 overflow-y-auto text-xs">
+                                <div class="chunk-logs-top-sentinel h-4"></div>
+                                <div class="chunk-logs-body space-y-2 px-2 py-2"></div>
+                                <div class="chunk-logs-bottom-sentinel h-4"></div>
                               </div>
-                              <div class="text-xs">
-                                Rows: {format_int(
-                                  log["rows_written"] || log[:rows_written] || log["rows_read"] ||
-                                    log[:rows_read]
-                                )}
-                              </div>
-                              <div class="text-xs">
-                                Bytes: {format_int(
-                                  log["bytes_written"] || log[:bytes_written] || log["bytes_read"] ||
-                                    log[:bytes_read]
-                                )}
-                              </div>
-                              <div class="text-xs">
-                                Execution (ms): {format_int(
-                                  log["execution_time_ms"] || log[:execution_time_ms]
-                                )}
-                              </div>
-                              <div class="text-xs break-all">
-                                Source: <code>{log["source_url"] || log[:source_url] || "—"}</code>
+                              <div class="chunk-logs-status text-xs text-gray-500 dark:text-gray-400 px-2 py-1 hidden">
                               </div>
                             </div>
                           </div>
@@ -1302,18 +1347,6 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
 
   defp cancellable_batch?(_), do: false
 
-  defp batch_chunk_logs(%InventoryBatch{metadata: metadata}) do
-    metadata
-    |> ensure_map()
-    |> Map.get("chunks", [])
-    |> case do
-      logs when is_list(logs) -> logs
-      _ -> []
-    end
-  end
-
-  defp batch_chunk_logs(_), do: []
-
   defp ensure_target_table(value) do
     value
     |> normalize_target_table()
@@ -1355,6 +1388,52 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
   defp active_tab_param(:inventory), do: "batch"
   defp active_tab_param(:manual), do: "manual"
 
+  defp batch_chunk_log_count(%InventoryBatch{metadata: metadata}) do
+    metadata
+    |> ensure_map()
+    |> Map.get("chunk_count", 0)
+    |> parse_non_negative_integer(0)
+  end
+
+  defp batch_chunk_log_count(_), do: 0
+
+  defp batch_has_chunk_logs?(batch), do: batch_chunk_log_count(batch) > 0
+
+  defp serialize_chunk_logs(entries, offset) do
+    entries
+    |> Enum.with_index(offset + 1)
+    |> Enum.map(fn {%InventoryChunkLog{} = entry, ordinal} ->
+      metrics = ensure_map(entry.metrics)
+
+      rows_written = fetch_numeric_metric(metrics, ["rows_written", :rows_written])
+      rows_read = fetch_numeric_metric(metrics, ["rows_read", :rows_read])
+      bytes_written = fetch_numeric_metric(metrics, ["bytes_written", :bytes_written])
+      bytes_read = fetch_numeric_metric(metrics, ["bytes_read", :bytes_read])
+
+      %{
+        id: entry.id,
+        ordinal: ordinal,
+        chunk_index: entry.chunk_index || Integer.to_string(ordinal),
+        query_id: fetch_metric(metrics, ["query_id", :query_id]),
+        rows_written: rows_written,
+        rows_read: rows_read,
+        rows: rows_written || rows_read,
+        bytes_written: bytes_written,
+        bytes_read: bytes_read,
+        bytes: bytes_written || bytes_read,
+        execution_time_ms:
+          fetch_numeric_metric(metrics, ["execution_time_ms", :execution_time_ms]),
+        source_url: fetch_metric(metrics, ["source_url", :source_url]),
+        dry_run: truthy?(fetch_metric(metrics, ["dry_run", :dry_run])),
+        inserted_at:
+          case entry.inserted_at do
+            %DateTime{} = dt -> DateTime.to_iso8601(dt)
+            _ -> nil
+          end
+      }
+    end)
+  end
+
   defp batch_progress(%InventoryBatch{} = batch) do
     total = batch.object_count || 0
     processed = batch.processed_objects || 0
@@ -1390,6 +1469,94 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
   defp ensure_map(nil), do: %{}
   defp ensure_map(map) when is_map(map), do: map
   defp ensure_map(_), do: %{}
+
+  defp parse_non_negative_integer(value, _default) when is_integer(value) and value >= 0,
+    do: value
+
+  defp parse_non_negative_integer(value, default) when is_binary(value) do
+    case Integer.parse(value) do
+      {int, _} when int >= 0 -> int
+      _ -> default
+    end
+  end
+
+  defp parse_non_negative_integer(_, default), do: default
+
+  defp fetch_metric(map, keys, default \\ nil) when is_list(keys) do
+    keys
+    |> Enum.reduce_while(nil, fn key, _acc ->
+      case Map.get(map, key) do
+        nil -> {:cont, nil}
+        value -> {:halt, value}
+      end
+    end)
+    |> case do
+      nil -> default
+      value -> value
+    end
+  end
+
+  defp fetch_numeric_metric(map, keys) when is_list(keys) do
+    map
+    |> fetch_metric(keys)
+    |> parse_optional_number()
+  end
+
+  defp parse_optional_number(value) when is_integer(value), do: value
+  defp parse_optional_number(value) when is_float(value), do: trunc(value)
+
+  defp parse_optional_number(value) when is_binary(value) do
+    trimmed = String.trim(value)
+
+    case Integer.parse(trimmed) do
+      {int, _rest} ->
+        int
+
+      :error ->
+        case Float.parse(trimmed) do
+          {float, _} -> trunc(float)
+          :error -> nil
+        end
+    end
+  end
+
+  defp parse_optional_number(_), do: nil
+
+  defp parse_int_param(value, opts) do
+    min = Keyword.get(opts, :min, 0)
+    max = Keyword.get(opts, :max, :infinity)
+
+    cond do
+      is_integer(value) ->
+        validate_int_range(value, min, max)
+
+      is_binary(value) ->
+        case Integer.parse(String.trim(value)) do
+          {int, rest} when rest == "" -> validate_int_range(int, min, max)
+          {int, nil} -> validate_int_range(int, min, max)
+          _ -> :error
+        end
+
+      true ->
+        :error
+    end
+  end
+
+  defp validate_int_range(int, min, :infinity) when int >= min, do: {:ok, int}
+  defp validate_int_range(int, min, max) when int >= min and int <= max, do: {:ok, int}
+  defp validate_int_range(_int, _min, _max), do: :error
+
+  defp normalize_chunk_direction(value) when value in ["prev", "previous", :prev, :previous],
+    do: "previous"
+
+  defp normalize_chunk_direction(value) when value in ["latest", :latest], do: "latest"
+  defp normalize_chunk_direction(value) when value in ["refresh", :refresh], do: "refresh"
+  defp normalize_chunk_direction(_), do: "next"
+
+  defp chunk_direction_atom("previous"), do: :previous
+  defp chunk_direction_atom("refresh"), do: :refresh
+  defp chunk_direction_atom("latest"), do: :latest
+  defp chunk_direction_atom(_), do: :forward
 
   defp tab_button_classes(true) do
     "px-4 py-2 text-sm font-medium border-b-2 border-delivery-primary text-delivery-primary"

@@ -10,6 +10,7 @@ import { CopyToClipboard } from './copy_to_clipboard';
 import { Countdown } from './countdown';
 import { CountdownTimer } from './countdown_timer';
 import { CustomFocusWrap } from './custom_focus_wrap';
+import { ChunkLogsViewer, ChunkLogsDetails } from './chunk_logs_viewer';
 import { DateTimeLocalInputListener } from './datetimelocal_input_listener';
 import { DebouncedTextInputListener } from './debounced_text_input_listener';
 import { DelayedSubmit } from './delayed_submit';
@@ -96,6 +97,8 @@ export const Hooks = {
   LiveModal,
   EmailList,
   ClickOutside,
+  ChunkLogsDetails,
+  ChunkLogsViewer,
   Scroller,
   ResizeListener,
   KeepScrollAtBottom,

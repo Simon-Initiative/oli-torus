@@ -121,7 +121,7 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
       batch.metadata
       |> ensure_map()
       |> Map.put("object_count", total)
-      |> Map.put_new("chunks", [])
+      |> Map.put_new("chunk_count", 0)
 
     Inventory.update_batch(batch, %{object_count: total, processed_objects: 0, metadata: metadata})
   end
@@ -130,15 +130,21 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
     chunk_size = determine_chunk_size(run)
     page_size = determine_manifest_page_size(run, chunk_size)
 
+    metadata =
+      batch.metadata
+      |> ensure_map()
+      |> Map.put("dry_run", run.dry_run)
+
+    initial_chunk_count =
+      metadata
+      |> Map.get("chunk_count", 0)
+      |> parse_positive_integer(0)
+
     initial_summary = %{
       processed_objects: 0,
       rows_ingested: 0,
       bytes_ingested: 0,
-      metadata:
-        batch.metadata
-        |> ensure_map()
-        |> Map.put_new("chunks", [])
-        |> Map.put("dry_run", run.dry_run)
+      metadata: Map.put(metadata, "chunk_count", initial_chunk_count)
     }
 
     paginate_manifest_entries(run, batch, creds, chunk_size, page_size, 0, initial_summary)
@@ -244,7 +250,8 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
   defp process_chunk(run, batch, bucket, chunk, chunk_index, creds, summary) do
     case ingest_chunk(run, batch, bucket, chunk, chunk_index, creds) do
       {:ok, metrics} ->
-        apply_chunk_success(batch, chunk, metrics, summary)
+        metrics_with_index = Map.put(metrics, :chunk_index, chunk_index)
+        apply_chunk_success(batch, chunk, metrics_with_index, summary)
 
       {:error, :no_common_prefix} ->
         process_chunk_as_single_entries(run, batch, bucket, chunk, chunk_index, creds, summary)
@@ -261,7 +268,9 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
                                                    {:ok, acc_summary, acc_batch} ->
       case ingest_chunk(run, acc_batch, bucket, [entry], "#{chunk_index}-#{offset}", creds) do
         {:ok, metrics} ->
-          case apply_chunk_success(acc_batch, [entry], metrics, acc_summary) do
+          metrics_with_index = Map.put(metrics, :chunk_index, "#{chunk_index}-#{offset}")
+
+          case apply_chunk_success(acc_batch, [entry], metrics_with_index, acc_summary) do
             {:ok, updated_summary, updated_batch} ->
               {:cont, {:ok, updated_summary, updated_batch}}
 
@@ -276,16 +285,30 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
   end
 
   defp apply_chunk_success(batch, chunk_entries, metrics, summary) do
-    updated_summary = accumulate_summary(summary, chunk_entries, metrics)
+    sequence =
+      summary.metadata
+      |> Map.get("chunk_sequence", summary.metadata |> Map.get("chunk_count", 0))
+      |> parse_positive_integer(0)
 
-    update_attrs = %{
-      processed_objects: updated_summary.processed_objects,
-      metadata: updated_summary.metadata
-    }
+    chunk_index = Integer.to_string(sequence + 1)
+    metrics_with_sequence = Map.put(metrics, :chunk_index, chunk_index)
+    chunk_record = chunk_log(metrics_with_sequence)
 
-    case Inventory.update_batch(batch, update_attrs) do
-      {:ok, updated_batch} -> {:ok, updated_summary, updated_batch}
-      {:error, reason} -> {:error, reason}
+    with {:ok, _entry} <- Inventory.upsert_chunk_log(batch, chunk_index, chunk_record) do
+      updated_summary =
+        summary
+        |> accumulate_summary(chunk_entries, metrics_with_sequence)
+        |> update_summary_metadata(sequence + 1)
+
+      update_attrs = %{
+        processed_objects: updated_summary.processed_objects,
+        metadata: updated_summary.metadata
+      }
+
+      case Inventory.update_batch(batch, update_attrs) do
+        {:ok, updated_batch} -> {:ok, updated_summary, updated_batch}
+        {:error, reason} -> {:error, reason}
+      end
     end
   end
 
@@ -295,23 +318,17 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
     rows_written = metrics[:rows_written] || metrics[:rows_read] || 0
     bytes_written = metrics[:bytes_written] || metrics[:bytes_read] || 0
 
-    chunk_record = chunk_log(metrics)
-
-    metadata =
-      summary.metadata
-      |> Map.update("chunks", [chunk_record], &(&1 ++ [chunk_record]))
-
     summary
     |> Map.put(:processed_objects, processed)
     |> Map.update(:rows_ingested, rows_written, &(&1 + rows_written))
     |> Map.update(:bytes_ingested, bytes_written, &(&1 + bytes_written))
-    |> Map.put(:metadata, metadata)
   end
 
   defp chunk_log(metrics) do
     source_url = extract_source_url(metrics[:query])
 
     %{
+      "chunk_index" => metrics |> Map.get(:chunk_index) |> to_chunk_index(),
       "query_id" => metrics[:query_id],
       "rows_read" => metrics[:rows_read],
       "rows_written" => metrics[:rows_written],
@@ -321,6 +338,21 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
       "source_url" => source_url,
       "dry_run" => metrics[:dry_run] || false
     }
+  end
+
+  defp to_chunk_index(value) when is_binary(value) and value != "", do: value
+  defp to_chunk_index(value) when is_integer(value), do: Integer.to_string(value)
+  defp to_chunk_index(value) when is_float(value), do: Float.to_string(value)
+  defp to_chunk_index(_), do: UUID.uuid4()
+
+  defp update_summary_metadata(summary, new_sequence) do
+    metadata =
+      summary.metadata
+      |> ensure_map()
+      |> Map.put("chunk_sequence", new_sequence)
+      |> Map.put("chunk_count", new_sequence)
+
+    Map.put(summary, :metadata, metadata)
   end
 
   defp extract_source_url(nil), do: nil
