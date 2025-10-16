@@ -112,7 +112,10 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModel do
     selected_activities = assigns.model.data.selected_activities
 
     # Find the specific activity data for this assessment
-    current_activity = Enum.find(selected_activities, &(&1.resource_id == assessment.resource_id))
+    current_activity =
+      selected_activities
+      |> Enum.reject(&is_nil/1)
+      |> Enum.find(&(&1.resource_id == assessment.resource_id))
 
     # Only show details if this specific activity is selected/expanded
     should_show_details = current_activity != nil

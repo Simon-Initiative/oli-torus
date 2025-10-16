@@ -709,18 +709,29 @@ defmodule OliWeb.Components.Delivery.Pages do
       scripts: scripts
     } = socket.assigns
 
+    # Extract resource_ids for batch query
+    resource_ids = Enum.map(selected_activities, & &1.resource_id)
+
+    # Single query for all selected activities
+    activity_summaries =
+      case ActivityHelpers.summarize_activity_performance(
+             section,
+             page_revision,
+             activity_types_map,
+             students,
+             resource_ids
+           ) do
+        summaries when is_list(summaries) -> summaries
+        _ -> []
+      end
+
+    # Create a lookup map for O(1) access
+    summary_map = Map.new(activity_summaries, &{&1.resource_id, &1})
+
+    # Map back to selected activities with their summaries
     selected_activities =
       Enum.map(selected_activities, fn a ->
-        case ActivityHelpers.summarize_activity_performance(
-               section,
-               page_revision,
-               activity_types_map,
-               students,
-               [a.resource_id]
-             ) do
-          [current_activity | _rest] -> current_activity
-          _ -> nil
-        end
+        Map.get(summary_map, a.resource_id, a)
       end)
 
     table_model =
