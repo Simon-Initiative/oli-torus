@@ -45,7 +45,7 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModel do
       column_specs: column_specs,
       event_suffix: "",
       id_field: [:resource_id],
-      data: %{expandable_rows: true, view_type: :activities_instructor_dashboard},
+      data: %{expandable_rows: true, view_type: :activities_instructor_dashboard}
     )
   end
 
@@ -87,7 +87,8 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModel do
     assigns =
       Map.merge(assigns, %{
         id: "#{assessment.resource_id}_#{index}",
-        target: assigns.model.data.target
+        target: assigns.model.data.target,
+        assessment: assessment
       })
 
     ~H"""
@@ -95,7 +96,7 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModel do
       id={"button_#{@id}"}
       class="flex !p-0"
       phx-click={
-        JS.push("paged_table_selection_change", value: %{id: assessment.resource_id}, target: @target)
+        JS.push("paged_table_selection_change", value: %{id: @assessment.resource_id}, target: @target)
         |> JS.toggle(to: "#details-row_#{@id}")
         |> JS.toggle_class("rotate-180", to: "#button_#{@id} svg")
         |> JS.toggle_class("bg-Table-table-select", to: ~s(tr[data-row-id="row_#{@id}"]))

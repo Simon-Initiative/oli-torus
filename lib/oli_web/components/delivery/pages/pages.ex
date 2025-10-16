@@ -236,7 +236,7 @@ defmodule OliWeb.Components.Delivery.Pages do
                selected_attempts_options: selected_attempts_options,
                selected_attempts_ids: selected_attempts_ids,
                avg_score_percentage: percentage_score,
-               selected_activities: selected_activities,
+               selected_activities: selected_activities
                # this dynamic id is used to force the liveview to reload the activity details.
                # Without it the activity details will not be rendered correctly when the applied card filters change
              )
