@@ -1,13 +1,13 @@
-name: PR Preview Deploy
+name: Preview Deploy
 
 on:
   pull_request:
     types: [opened, synchronize, reopened]
   workflow_dispatch:
 
-# Limit concurrent PR deployments to prevent resource exhaustion
+# Limit concurrent deployments to prevent resource exhaustion
 concurrency:
-  group: pr-preview-${{ github.repository }}
+  group: preview-deployment-${{ github.repository }}
   cancel-in-progress: false # Don't cancel running deployments
 
 jobs:
@@ -77,8 +77,8 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
-  pr-preview-deploy:
-    name: PR Preview Deploy
+  deploy:
+    name: Preview Deploy
     runs-on: plasma
     needs: build-container
     steps:
@@ -98,40 +98,36 @@ jobs:
           # Get available memory in MB
           AVAILABLE_MEMORY=$(free -m | awk 'NR==2{printf "%.0f", $7}')
           REQUIRED_MEMORY=1024  # Require at least 1GB available
-          CURRENT_PR_COUNT=$(docker ps --filter "name=pr" -q | wc -l)
 
           echo "📊 Current system status:"
           echo "  Available memory: ${AVAILABLE_MEMORY}MB"
           echo "  Required memory: ${REQUIRED_MEMORY}MB"
-          echo "  Current PR environments: ${CURRENT_PR_COUNT}"
 
           if [ $AVAILABLE_MEMORY -lt $REQUIRED_MEMORY ]; then
             echo "❌ Insufficient memory available. Need at least ${REQUIRED_MEMORY}MB, but only ${AVAILABLE_MEMORY}MB available."
             echo "memory_insufficient=true" >> $GITHUB_OUTPUT
             echo "available_memory=${AVAILABLE_MEMORY}" >> $GITHUB_OUTPUT
-            echo "current_pr_count=${CURRENT_PR_COUNT}" >> $GITHUB_OUTPUT
           else
             echo "✅ Sufficient memory available for deployment"
             echo "memory_insufficient=false" >> $GITHUB_OUTPUT
           fi
 
       - name: 💬 Post memory error comment
-        if: steps.preflight.outputs.memory_insufficient == 'true'
+        if: steps.preflight.outputs.memory_insufficient == 'true' && github.event_name == 'pull_request'
         uses: peter-evans/create-or-update-comment@v4
         with:
           token: ${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}
           issue-number: ${{ github.event.number }}
           body: |
-            ⚠️ **PR Preview deployment skipped due to insufficient memory**
+            ⚠️ **Deployment skipped due to insufficient memory**
 
             **Current system status:**
             - Available memory: ${{ steps.preflight.outputs.available_memory }}MB
             - Required memory: 1024MB
-            - Active PR environments: ${{ steps.preflight.outputs.current_pr_count }}
 
             **What you can do:**
-            - Wait for other PR previews to be cleaned up automatically
-            - Ask maintainers to manually clean up old PR environments
+            - Wait for other deployments to be cleaned up automatically
+            - Ask maintainers to manually clean up old deployments
             - Try again later when system resources are available
 
             The deployment will automatically retry when you push new commits to this PR.
@@ -149,7 +145,7 @@ jobs:
         run: |
           docker pull ghcr.io/simon-initiative/oli-torus:sha-${{ github.sha }}
 
-      - name: 🚀 Deploy PR
+      - name: 🚀 Deploy
         if: steps.preflight.outputs.memory_insufficient != 'true'
         run: |
           export DEPLOYMENT=$(echo ${{ github.event_name == 'workflow_dispatch' && format('{0}', github.ref_name) || format('pr-{0}', github.event.number) }} | cut -c1-32 | sed 's/^[^a-zA-Z]*//; s/[^a-zA-Z]*$//')
@@ -196,23 +192,23 @@ jobs:
           # Run deployment
           docker-compose -p $DEPLOYMENT -f devops/docker-compose.yml up -d
 
-      - name: ⏳ Wait for PR Preview to be available
+      - name: ⏳ Wait for deployment to become available
         if: steps.preflight.outputs.memory_insufficient != 'true'
         run: |
           export HOST=pr${{ github.event.number }}.plasma.oli.cmu.edu
           for i in {1..30}; do
             if curl -k -fsSL --max-time 5 https://$HOST/healthz; then
-              echo "Preview is up!"
+              echo "Deployment is up!"
               exit 0
             fi
-            echo "Waiting for preview to be available... ($i)"
+            echo "Waiting for deployment to be available... ($i)"
             sleep 10
           done
-          echo "Preview did not become available in time." >&2
+          echo "Deployment did not become available in time." >&2
           exit 1
 
       - name: 🔍 Find existing PR preview comment
-        if: steps.preflight.outputs.memory_insufficient != 'true'
+        if: steps.preflight.outputs.memory_insufficient != 'true' && github.event_name == 'pull_request'
         uses: peter-evans/find-comment@v3
         id: fc
         with:
@@ -222,7 +218,7 @@ jobs:
           body-includes: "PR preview deployed at:"
 
       - name: 💬 Post/Update PR Preview URL Comment
-        if: steps.preflight.outputs.memory_insufficient != 'true'
+        if: steps.preflight.outputs.memory_insufficient != 'true' && github.event_name == 'pull_request'
         uses: peter-evans/create-or-update-comment@v4
         with:
           token: ${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}

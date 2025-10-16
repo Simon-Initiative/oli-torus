@@ -1,4 +1,4 @@
-name: PR Preview Cleanup
+name: Preview Cleanup
 
 on:
   pull_request:
@@ -6,15 +6,15 @@ on:
   workflow_dispatch:
 
 jobs:
-  cleanup-preview:
-    name: Cleanup PR Preview
+  cleanup:
+    name: Cleanup Preview
     runs-on: plasma
     steps:
-      - name: 🧹 Cleanup PR Preview Environment
+      - name: 🧹 Cleanup Preview Deployment
         run: |
           export DEPLOYMENT=$(echo ${{ github.event_name == 'workflow_dispatch' && format('{0}', github.ref_name) || format('pr-{0}', github.event.number) }} | cut -c1-32 | sed 's/^[^a-zA-Z]*//; s/[^a-zA-Z]*$//')
 
-          echo "Cleaning up PR preview environment: $DEPLOYMENT"
+          echo "Cleaning up preview deployment: $DEPLOYMENT"
 
           # Primary cleanup - this should handle most cases
           if docker-compose -p $DEPLOYMENT -f devops/docker-compose.yml down -v; then
@@ -31,8 +31,9 @@ jobs:
           echo "Cleanup completed for $DEPLOYMENT"
 
       - name: 💬 Post cleanup notification
+        if: github.event_name == 'pull_request'
         uses: peter-evans/create-or-update-comment@v3
         with:
           token: ${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}
           issue-number: ${{ github.event.number }}
-          body: "🧹 PR preview environment has been cleaned up."
+          body: "🧹 Preview deployment has been cleaned up."
