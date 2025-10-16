@@ -1,6 +1,6 @@
 import React from 'react';
 import '@testing-library/jest-dom';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import {
   DotDistributionChart,
   ProficiencyDistribution,
@@ -83,6 +83,7 @@ describe('DotDistributionChart', () => {
     proficiency_distribution: mockProficiencyDistribution,
     student_proficiency: mockStudentProficiency,
     objective_id: 123,
+    unique_id: '123',
   };
 
   beforeEach(() => {
@@ -282,6 +283,7 @@ describe('DotDistributionChart', () => {
       const props = {
         proficiency_distribution: mockProficiencyDistribution,
         objective_id: 123,
+        unique_id: '123',
         // student_proficiency is undefined
       };
 
@@ -391,6 +393,323 @@ describe('DotDistributionChart', () => {
         // Should maintain consistent order
         expect(domain).toEqual(['Not enough data', 'Low', 'Medium', 'High']);
       }
+    });
+  });
+
+  describe('Interactive Rectangles', () => {
+    let mockPushEventTo: jest.Mock;
+
+    beforeEach(() => {
+      mockPushEventTo = jest.fn();
+      // Mock the pushEventTo function that would be passed from LiveView
+      (global as any).pushEventTo = mockPushEventTo;
+    });
+
+    afterEach(() => {
+      delete (global as any).pushEventTo;
+    });
+
+    describe('Hover Behavior', () => {
+      it('shows rectangle on hover over proficiency section', async () => {
+        render(<DotDistributionChart {...defaultProps} pushEventTo={mockPushEventTo} />);
+
+        // Find the interactive area for "High" proficiency level
+        const interactiveArea = screen.getByTestId('interactive-area-High');
+        expect(interactiveArea).toBeInTheDocument();
+
+        // Initially, no visual rectangle should be visible
+        expect(screen.queryByTestId('visual-rectangle-High')).not.toBeInTheDocument();
+
+        // Hover over the interactive area
+        fireEvent.mouseEnter(interactiveArea);
+
+        // Visual rectangle should now be visible
+        await waitFor(() => {
+          expect(screen.getByTestId('visual-rectangle-High')).toBeInTheDocument();
+        });
+
+        // Rectangle should have hover styling (blue stroke)
+        const visualRect = screen.getByTestId('visual-rectangle-High');
+        expect(visualRect).toHaveAttribute('stroke', '#8AB8E5');
+      });
+
+      it('hides rectangle on mouse leave', async () => {
+        render(<DotDistributionChart {...defaultProps} pushEventTo={mockPushEventTo} />);
+
+        const interactiveArea = screen.getByTestId('interactive-area-High');
+
+        // Hover to show rectangle
+        fireEvent.mouseEnter(interactiveArea);
+        await waitFor(() => {
+          expect(screen.getByTestId('visual-rectangle-High')).toBeInTheDocument();
+        });
+
+        // Mouse leave to hide rectangle
+        fireEvent.mouseLeave(interactiveArea);
+        await waitFor(() => {
+          expect(screen.queryByTestId('visual-rectangle-High')).not.toBeInTheDocument();
+        });
+      });
+
+      it('shows correct cursor style when not selected', () => {
+        render(<DotDistributionChart {...defaultProps} pushEventTo={mockPushEventTo} />);
+
+        const interactiveArea = screen.getByTestId('interactive-area-High');
+        expect(interactiveArea).toHaveStyle('cursor: pointer');
+      });
+    });
+
+    describe('Selection Behavior', () => {
+      it('selects section on click and triggers LiveView event', async () => {
+        render(<DotDistributionChart {...defaultProps} pushEventTo={mockPushEventTo} />);
+
+        const interactiveArea = screen.getByTestId('interactive-area-High');
+
+        // Click to select
+        fireEvent.click(interactiveArea);
+
+        // Should trigger LiveView event
+        await waitFor(() => {
+          expect(mockPushEventTo).toHaveBeenCalledWith(
+            '#expanded-objective-123',
+            'show_students_list',
+            { proficiency_level: 'High' },
+          );
+        });
+
+        // Visual rectangle should be visible with selected styling
+        await waitFor(() => {
+          const visualRect = screen.getByTestId('visual-rectangle-High');
+          expect(visualRect).toBeInTheDocument();
+          // Selected sections have different stroke color based on dark mode
+          expect(visualRect).toHaveAttribute('stroke', '#353740'); // Light mode selected color
+        });
+
+        // Cursor should change to default when selected
+        expect(interactiveArea).toHaveStyle('cursor: default');
+      });
+
+      it('does not trigger event when clicking already selected section', async () => {
+        render(<DotDistributionChart {...defaultProps} pushEventTo={mockPushEventTo} />);
+
+        const interactiveArea = screen.getByTestId('interactive-area-High');
+
+        // First click to select
+        fireEvent.click(interactiveArea);
+        expect(mockPushEventTo).toHaveBeenCalledTimes(1);
+
+        // Second click on same section should not trigger another event
+        fireEvent.click(interactiveArea);
+        expect(mockPushEventTo).toHaveBeenCalledTimes(1); // Still only 1 call
+      });
+
+      it('handles selection with different unique_id prop', async () => {
+        render(
+          <DotDistributionChart
+            {...defaultProps}
+            pushEventTo={mockPushEventTo}
+            unique_id="custom-id-456"
+          />,
+        );
+
+        const interactiveArea = screen.getByTestId('interactive-area-High');
+        fireEvent.click(interactiveArea);
+
+        await waitFor(() => {
+          expect(mockPushEventTo).toHaveBeenCalledWith(
+            '#expanded-objective-custom-id-456',
+            'show_students_list',
+            { proficiency_level: 'High' },
+          );
+        });
+      });
+
+      it('shows selected styling in dark mode', () => {
+        // Set dark mode
+        document.documentElement.classList.add('dark');
+
+        render(<DotDistributionChart {...defaultProps} pushEventTo={mockPushEventTo} />);
+
+        const interactiveArea = screen.getByTestId('interactive-area-High');
+        fireEvent.click(interactiveArea);
+
+        const visualRect = screen.getByTestId('visual-rectangle-High');
+        // Dark mode selected color should be white
+        expect(visualRect).toHaveAttribute('stroke', '#FFFFFF');
+      });
+    });
+
+    describe('Close Button Behavior', () => {
+      it('shows close button when section is selected', async () => {
+        render(<DotDistributionChart {...defaultProps} pushEventTo={mockPushEventTo} />);
+
+        const interactiveArea = screen.getByTestId('interactive-area-High');
+
+        // Select the section
+        fireEvent.click(interactiveArea);
+
+        // Close button should be visible (check for multiple breakpoints)
+        await waitFor(() => {
+          expect(screen.getByTestId('close-button-High-mobile')).toBeInTheDocument();
+        });
+      });
+
+      it('closes selection on close button click and triggers hide event', async () => {
+        render(<DotDistributionChart {...defaultProps} pushEventTo={mockPushEventTo} />);
+
+        const interactiveArea = screen.getByTestId('interactive-area-High');
+
+        // Select the section first
+        fireEvent.click(interactiveArea);
+
+        // Find and click the close button
+        const closeButton = screen.getByTestId('close-button-High-mobile');
+        fireEvent.click(closeButton);
+
+        // Should trigger hide event
+        await waitFor(() => {
+          expect(mockPushEventTo).toHaveBeenCalledWith(
+            '#expanded-objective-123',
+            'hide_students_list',
+            {},
+          );
+        });
+
+        // Visual rectangle should still be visible (in hover state) after closing
+        await waitFor(() => {
+          const visualRect = screen.getByTestId('visual-rectangle-High');
+          expect(visualRect).toBeInTheDocument();
+          expect(visualRect).toHaveAttribute('stroke', '#8AB8E5'); // Should be in hover state
+        });
+
+        // Close button should be hidden
+        expect(screen.queryByTestId('close-button-High-mobile')).not.toBeInTheDocument();
+      });
+
+      it('prevents event propagation when clicking close button', async () => {
+        const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+
+        render(<DotDistributionChart {...defaultProps} pushEventTo={mockPushEventTo} />);
+
+        const interactiveArea = screen.getByTestId('interactive-area-High');
+
+        // Select the section
+        fireEvent.click(interactiveArea);
+        expect(mockPushEventTo).toHaveBeenCalledTimes(1);
+
+        // Click the close button
+        const closeButton = screen.getByTestId('close-button-High-mobile');
+        fireEvent.click(closeButton);
+
+        // Should only have the initial selection call and the hide call,
+        // not an additional selection call due to event bubbling
+        expect(mockPushEventTo).toHaveBeenCalledTimes(2);
+        expect(mockPushEventTo).toHaveBeenNthCalledWith(
+          1,
+          expect.any(String),
+          'show_students_list',
+          expect.any(Object),
+        );
+        expect(mockPushEventTo).toHaveBeenNthCalledWith(
+          2,
+          expect.any(String),
+          'hide_students_list',
+          {},
+        );
+
+        consoleSpy.mockRestore();
+      });
+
+      it('returns to hover state after closing selection', async () => {
+        render(<DotDistributionChart {...defaultProps} pushEventTo={mockPushEventTo} />);
+
+        const interactiveArea = screen.getByTestId('interactive-area-High');
+
+        // Select, then close
+        fireEvent.click(interactiveArea);
+        const closeButton = screen.getByTestId('close-button-High-mobile');
+        fireEvent.click(closeButton);
+
+        // Should return to hover state (rectangle visible with hover styling)
+        await waitFor(() => {
+          const visualRect = screen.getByTestId('visual-rectangle-High');
+          expect(visualRect).toBeInTheDocument();
+          expect(visualRect).toHaveAttribute('stroke', '#8AB8E5'); // Hover color
+        });
+      });
+
+      it('renders close button for responsive breakpoints', async () => {
+        render(<DotDistributionChart {...defaultProps} pushEventTo={mockPushEventTo} />);
+
+        const interactiveArea = screen.getByTestId('interactive-area-High');
+        fireEvent.click(interactiveArea);
+
+        // Should render at least the mobile close button (others may be hidden by responsive classes)
+        await waitFor(() => {
+          expect(screen.getByTestId('close-button-High-mobile')).toBeInTheDocument();
+        });
+
+        // The close button should be clickable
+        const closeButton = screen.getByTestId('close-button-High-mobile');
+        expect(closeButton).toHaveStyle('cursor: pointer');
+      });
+    });
+
+    describe('Multiple Sections Interaction', () => {
+      it('can switch between different proficiency sections', async () => {
+        render(<DotDistributionChart {...defaultProps} pushEventTo={mockPushEventTo} />);
+
+        // Select High first
+        const highArea = screen.getByTestId('interactive-area-High');
+        fireEvent.click(highArea);
+
+        expect(mockPushEventTo).toHaveBeenCalledWith(
+          '#expanded-objective-123',
+          'show_students_list',
+          { proficiency_level: 'High' },
+        );
+
+        // Then select Medium
+        const mediumArea = screen.getByTestId('interactive-area-Medium');
+        fireEvent.click(mediumArea);
+
+        expect(mockPushEventTo).toHaveBeenCalledWith(
+          '#expanded-objective-123',
+          'show_students_list',
+          { proficiency_level: 'Medium' },
+        );
+
+        // Only Medium should be selected now
+        await waitFor(() => {
+          expect(screen.getByTestId('visual-rectangle-Medium')).toBeInTheDocument();
+          expect(screen.queryByTestId('visual-rectangle-High')).not.toBeInTheDocument();
+        });
+      });
+
+      it('handles hover on different sections when one is selected', async () => {
+        render(<DotDistributionChart {...defaultProps} pushEventTo={mockPushEventTo} />);
+
+        // Select High
+        const highArea = screen.getByTestId('interactive-area-High');
+        fireEvent.click(highArea);
+
+        // Hover over Medium (different section)
+        const mediumArea = screen.getByTestId('interactive-area-Medium');
+        fireEvent.mouseEnter(mediumArea);
+
+        // Both should be visible
+        await waitFor(() => {
+          expect(screen.getByTestId('visual-rectangle-High')).toBeInTheDocument(); // Selected
+          expect(screen.getByTestId('visual-rectangle-Medium')).toBeInTheDocument(); // Hovered
+        });
+
+        // Different styling for selected vs hovered
+        const highRect = screen.getByTestId('visual-rectangle-High');
+        const mediumRect = screen.getByTestId('visual-rectangle-Medium');
+
+        expect(highRect).toHaveAttribute('stroke', '#353740'); // Selected color
+        expect(mediumRect).toHaveAttribute('stroke', '#8AB8E5'); // Hover color
+      });
     });
   });
 });

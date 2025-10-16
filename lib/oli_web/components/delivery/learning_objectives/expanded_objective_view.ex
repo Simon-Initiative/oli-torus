@@ -1,7 +1,10 @@
 defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
   use OliWeb, :live_component
+
   alias Oli.Delivery.Metrics
   alias Oli.Delivery.Sections.SectionResourceDepot
+  alias Oli.Accounts
+  alias OliWeb.Common.Utils
 
   attr :objective, :map, required: true
   attr :section_id, :integer, required: true
@@ -42,7 +45,12 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
     student_proficiency =
       section_id
       |> Metrics.student_proficiency_for_objective(objective.resource_id)
-      |> add_missing_students_to_proficiency_data(all_student_ids)
+      |> retrieve_students_data()
+      |> add_missing_students_to_proficiency_data(
+        all_student_ids,
+        section_id,
+        objective.resource_id
+      )
 
     socket =
       socket
@@ -54,15 +62,24 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
         sub_objectives_data: sub_objectives_data,
         student_proficiency: student_proficiency,
         proficiency_distribution: proficiency_distribution,
-        unique_id: assigns[:unique_id] || "#{objective.resource_id}"
+        unique_id: assigns[:unique_id] || "#{objective.resource_id}",
+        selected_proficiency_level: nil
       )
 
     {:ok, socket}
   end
 
+  def handle_event("show_students_list", %{"proficiency_level" => proficiency_level}, socket) do
+    {:noreply, assign(socket, selected_proficiency_level: proficiency_level)}
+  end
+
+  def handle_event("hide_students_list", _params, socket) do
+    {:noreply, assign(socket, selected_proficiency_level: nil)}
+  end
+
   def render(assigns) do
     ~H"""
-    <div class="expanded-objective-view w-full">
+    <div id={"expanded-objective-#{@unique_id}"} class="expanded-objective-view w-full">
       <!-- Estimated Learning Header -->
       <div class="mb-4">
         <h3 class="text-lg font-medium text-Text-text-high">
@@ -79,21 +96,28 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
         {render_dots_chart(assigns)}
       </div>
       
-    <!-- Sub-objectives Table -->
-      <div class="mt-4">
+    <!-- Student Proficiency List (when a level is selected) -->
+      <%= if @selected_proficiency_level do %>
+        <div class="mb-6">
+          <.live_component
+            module={OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyList}
+            id={"student-proficiency-list-#{@unique_id}"}
+            selected_proficiency_level={@selected_proficiency_level}
+            student_proficiency={@student_proficiency}
+          />
+        </div>
+      <% end %>
+      
+    <!-- Sub-objectives Table (always shown) -->
+      <div id={"sub-objectives-list-container-#{@unique_id}"} class="mt-4">
         <%= if @sub_objectives_data == [] do %>
           No sub-objectives found
         <% else %>
           <.live_component
             module={OliWeb.Components.Delivery.LearningObjectives.SubObjectivesList}
             id={"sub-objectives-list-#{@unique_id}"}
-            objective_id={@objective_id}
-            section_slug={@section_slug}
             sub_objectives_data={@sub_objectives_data}
-            main_objective_title={@objective_title}
-            show_back_button={false}
-            expandable_charts={false}
-            use_table_model={true}
+            parent_unique_id={@unique_id}
           />
         <% end %>
       </div>
@@ -109,9 +133,9 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
       %{
         proficiency_distribution: assigns.proficiency_distribution,
         student_proficiency: assigns.student_proficiency,
-        objective_id: assigns.objective_id
+        unique_id: assigns.unique_id
       },
-      id: "dot-distribution-chart-#{assigns.objective_id}"
+      id: "dot-distribution-chart-#{assigns.unique_id}"
     )
   end
 
@@ -175,15 +199,29 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
     end
   end
 
-  # Calculate overall proficiency based on distribution
+  # Calculate overall proficiency based on distribution using the same logic as objectives
   defp calculate_overall_proficiency(proficiency_distribution) do
     total = get_total_students(proficiency_distribution)
 
-    cond do
-      total == 0 -> "Not enough data"
-      Map.get(proficiency_distribution, "High", 0) / total >= 0.6 -> "High"
-      Map.get(proficiency_distribution, "Medium", 0) / total >= 0.4 -> "Medium"
-      true -> "Low"
+    if total == 0 do
+      "Not enough data"
+    else
+      # Find the most frequent proficiency level (mode)
+      proficiency_distribution
+      |> Enum.map(fn {key, value} ->
+        ordinal =
+          case String.downcase(key) do
+            "low" -> 0
+            "medium" -> 1
+            "high" -> 2
+            _ -> 3
+          end
+
+        {key, value, ordinal}
+      end)
+      |> Enum.sort_by(fn {_key, _value, ordinal} -> ordinal end)
+      |> Enum.max_by(fn {_key, value, _ordinal} -> value end)
+      |> elem(0)
     end
   end
 
@@ -222,9 +260,38 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
     |> Enum.frequencies_by(fn {_student_id, proficiency_level} -> proficiency_level end)
   end
 
+  # Retrieve and merge students data.
+  defp retrieve_students_data(student_proficiency) do
+    students_by_id =
+      student_proficiency
+      |> Enum.map(&String.to_integer(&1.student_id))
+      |> Accounts.list_users_by_ids()
+      |> Enum.reduce(%{}, &Map.put(&2, &1.id, &1))
+
+    student_proficiency
+    |> Enum.reduce([], fn student_data, acc ->
+      student_id = String.to_integer(student_data.student_id)
+
+      case students_by_id[student_id] do
+        nil ->
+          acc
+
+        student ->
+          student_full_name = Utils.name(student.name, student.given_name, student.family_name)
+
+          [Map.put(student_data, :student_name, student_full_name) | acc]
+      end
+    end)
+  end
+
   # Add missing students to proficiency data to ensure consistency with proficiency_distribution
   # This takes real proficiency data and adds students who don't have any proficiency data
-  defp add_missing_students_to_proficiency_data(real_student_proficiency, all_student_ids) do
+  defp add_missing_students_to_proficiency_data(
+         real_student_proficiency,
+         all_student_ids,
+         section_id,
+         objective_id
+       ) do
     # Filter proficiency data to only include enrolled students (exclude instructors)
     filtered_student_proficiency =
       real_student_proficiency
@@ -236,19 +303,73 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
         String.to_integer(student.student_id)
       end)
 
+    # Get missing student information including names
+    missing_students_with_names =
+      get_missing_students_with_names(all_student_ids, existing_student_ids)
+
+    # Get related_activity_ids for calculating student attempts
+    related_activity_ids =
+      case SectionResourceDepot.get_section_resource(section_id, objective_id) do
+        nil -> []
+        section_resource -> section_resource.related_activities || []
+      end
+
+    total_related_activities = length(related_activity_ids)
+
+    # Calculate activities attempted per student
+    student_activities_attempted =
+      Metrics.student_activities_attempted_count(
+        section_id,
+        all_student_ids,
+        related_activity_ids
+      )
+
+    # Add activity attempt data to existing students
+    student_proficiency =
+      filtered_student_proficiency
+      |> Enum.map(fn student ->
+        student_id_int = String.to_integer(student.student_id)
+        activities_attempted = Map.get(student_activities_attempted, student_id_int, 0)
+
+        Map.merge(student, %{
+          activities_attempted_count: activities_attempted,
+          total_related_activities: total_related_activities
+        })
+      end)
+
     # Find students that are missing from proficiency data
     missing_students =
-      all_student_ids
-      |> Enum.reject(&MapSet.member?(existing_student_ids, &1))
-      |> Enum.map(fn student_id ->
+      missing_students_with_names
+      |> Enum.map(fn {student_id, student_name} ->
+        activities_attempted = Map.get(student_activities_attempted, student_id, 0)
+
         %{
           student_id: Integer.to_string(student_id),
+          student_name: student_name,
           proficiency: 0.0,
-          proficiency_range: "Not enough data"
+          proficiency_range: "Not enough data",
+          activities_attempted_count: activities_attempted,
+          total_related_activities: total_related_activities
         }
       end)
 
-    # Combine filtered proficiency data with missing students
-    filtered_student_proficiency ++ missing_students
+    # Combine final proficiency data with missing students
+    student_proficiency ++ missing_students
+  end
+
+  defp get_missing_students_with_names(all_student_ids, existing_student_ids) do
+    missing_student_ids = Enum.reject(all_student_ids, &MapSet.member?(existing_student_ids, &1))
+
+    if Enum.empty?(missing_student_ids) do
+      []
+    else
+      missing_student_ids
+      |> Accounts.list_users_by_ids()
+      |> Enum.map(fn user ->
+        student_full_name = Utils.name(user.name, user.given_name, user.family_name)
+
+        {user.id, student_full_name}
+      end)
+    end
   end
 end

@@ -2,13 +2,54 @@ import React, { useEffect, useRef, useState } from 'react';
 import { VegaLite, VisualizationSpec } from 'react-vega';
 import type { View as VegaView } from 'vega';
 
-type Props = { spec: VisualizationSpec };
+type Props = {
+  spec: VisualizationSpec;
+  dark_mode_colors?: {
+    light: string[];
+    dark: string[];
+  };
+};
 
-export const VegaLiteRenderer: React.FC<Props> = ({ spec }) => {
+export const VegaLiteRenderer: React.FC<Props> = ({ spec, dark_mode_colors }) => {
   const [darkMode, setDarkMode] = useState(document.documentElement.classList.contains('dark'));
 
   const viewRef = useRef<VegaView | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
+
+  // Create dynamic spec with appropriate colors
+  const dynamicSpec: VisualizationSpec = React.useMemo(() => {
+    if (!dark_mode_colors) return spec;
+
+    // Type guard to check if the spec has encoding property
+    const specWithEncoding = spec as any;
+    if (
+      specWithEncoding.encoding &&
+      typeof specWithEncoding.encoding === 'object' &&
+      'color' in specWithEncoding.encoding &&
+      specWithEncoding.encoding.color &&
+      typeof specWithEncoding.encoding.color === 'object' &&
+      'scale' in specWithEncoding.encoding.color &&
+      specWithEncoding.encoding.color.scale &&
+      typeof specWithEncoding.encoding.color.scale === 'object'
+    ) {
+      // Deep clone the nested structure to avoid mutating the original spec
+      return {
+        ...spec,
+        encoding: {
+          ...specWithEncoding.encoding,
+          color: {
+            ...specWithEncoding.encoding.color,
+            scale: {
+              ...specWithEncoding.encoding.color.scale,
+              range: darkMode ? dark_mode_colors.dark : dark_mode_colors.light,
+            },
+          },
+        },
+      };
+    }
+
+    return spec;
+  }, [spec, dark_mode_colors, darkMode]);
 
   // Theme updates
   useEffect(() => {
@@ -61,7 +102,7 @@ export const VegaLiteRenderer: React.FC<Props> = ({ spec }) => {
     resizeObserver.observe(containerRef.current);
 
     return () => resizeObserver.disconnect();
-  }, [spec]);
+  }, [dynamicSpec]);
 
   // Also handle window resize & Bootstrap tab activation
   useEffect(() => {
@@ -88,7 +129,7 @@ export const VegaLiteRenderer: React.FC<Props> = ({ spec }) => {
   return (
     <div ref={containerRef} style={{ width: '100%', minWidth: 0 }}>
       <VegaLite
-        spec={spec} // ensure: width: 'container', autosize: {type:'fit-x', contains:'padding', resize:true}
+        spec={dynamicSpec}
         actions={false}
         tooltip={darkMode ? darkTooltipTheme : lightTooltipTheme}
         className="w-100"

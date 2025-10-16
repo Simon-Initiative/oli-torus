@@ -1,0 +1,63 @@
+defmodule OliWeb.Delivery.LearningObjectives.StudentProficiencyTableModel do
+  use Phoenix.Component
+
+  alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
+  alias OliWeb.Delivery.InstructorDashboard.HTMLComponents
+
+  def new(student_data, opts \\ []) do
+    sort_by_spec = Keyword.get(opts, :sort_by_spec)
+    sort_order = Keyword.get(opts, :sort_order)
+
+    column_specs = [
+      %ColumnSpec{
+        name: :student_name,
+        label: "Student Name",
+        render_fn: &custom_render/3,
+        sortable: true,
+        th_class: "w-1/2 !border-b-0"
+      },
+      %ColumnSpec{
+        name: :activities_attempted,
+        label:
+          HTMLComponents.render_label(%{
+            title: "Activities Attempted",
+            info_tooltip:
+              "The number of activities linked to this learning objective that the student has tried at least once, compared to the total tied to this learning objective."
+          }),
+        render_fn: &custom_render/3,
+        th_class: "flex items-center gap-x-2 !border-b-0",
+        sortable: true
+      }
+    ]
+
+    if sort_by_spec && sort_order do
+      SortableTableModel.new(
+        rows: student_data,
+        column_specs: column_specs,
+        event_suffix: "",
+        id_field: [:student_id],
+        sort_by_spec: sort_by_spec,
+        sort_order: sort_order,
+        data: %{}
+      )
+    else
+      SortableTableModel.new(
+        rows: student_data,
+        column_specs: column_specs,
+        event_suffix: "",
+        id_field: [:student_id],
+        data: %{}
+      )
+    end
+  end
+
+  def custom_render(_assigns, student, %ColumnSpec{name: :student_name}) do
+    student.student_name
+  end
+
+  def custom_render(_assigns, student, %ColumnSpec{name: :activities_attempted}) do
+    activities_attempted = Map.get(student, :activities_attempted_count, 0)
+    total_activities = Map.get(student, :total_related_activities, 0)
+    "#{activities_attempted} out of #{total_activities}"
+  end
+end
