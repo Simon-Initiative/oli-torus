@@ -23113,6 +23113,14 @@ Not supports in Firefox and IE */
 }
 
 @media (min-width: 640px) {
+  .sm\:right-\[-28px\] {
+    right: -28px;
+  }
+
+  .sm\:right-\[1px\] {
+    right: 1px;
+  }
+
   .sm\:col-span-1 {
     grid-column: span 1 / span 1;
   }
@@ -23366,6 +23374,14 @@ Not supports in Firefox and IE */
     top: -10rem;
   }
 
+  .md\:right-\[-21px\] {
+    right: -21px;
+  }
+
+  .md\:right-\[7px\] {
+    right: 7px;
+  }
+
   .md\:col-span-12 {
     grid-column: span 12 / span 12;
   }
@@ -23430,6 +23446,10 @@ Not supports in Firefox and IE */
 
   .md\:mt-auto {
     margin-top: auto;
+  }
+
+  .md\:block {
+    display: block;
   }
 
   .md\:inline {
@@ -23848,6 +23868,14 @@ Not supports in Firefox and IE */
     right: 2.5rem;
   }
 
+  .lg\:right-\[-23px\] {
+    right: -23px;
+  }
+
+  .lg\:right-\[7px\] {
+    right: 7px;
+  }
+
   .lg\:top-0 {
     top: 0px;
   }
@@ -24236,6 +24264,14 @@ Not supports in Firefox and IE */
 }
 
 @media (min-width: 1280px) {
+  .xl\:right-1 {
+    right: 0.25rem;
+  }
+
+  .xl\:right-9 {
+    right: 2.25rem;
+  }
+
   .xl\:mr-\[360px\] {
     margin-right: 360px;
   }
@@ -24246,6 +24282,14 @@ Not supports in Firefox and IE */
 
   .xl\:mr-\[80px\] {
     margin-right: 80px;
+  }
+
+  .xl\:block {
+    display: block;
+  }
+
+  .xl\:hidden {
+    display: none;
   }
 
   .xl\:\!w-2\/3 {
@@ -24297,8 +24341,24 @@ Not supports in Firefox and IE */
     left: 2rem;
   }
 
+  .\32xl\:right-1 {
+    right: 0.25rem;
+  }
+
+  .\32xl\:right-8 {
+    right: 2rem;
+  }
+
   .\32xl\:top-12 {
     top: 3rem;
+  }
+
+  .\32xl\:block {
+    display: block;
+  }
+
+  .\32xl\:hidden {
+    display: none;
   }
 }
 
