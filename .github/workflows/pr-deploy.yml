@@ -4,11 +4,6 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
   workflow_dispatch:
-    inputs:
-      branch:
-        description: "Branch to deploy"
-        required: true
-        default: "master"
 
 # Limit concurrent PR deployments to prevent resource exhaustion
 concurrency:
@@ -42,7 +37,7 @@ jobs:
       - name: 🛎️ Checkout
         uses: actions/checkout@v3
         with:
-          ref: ${{ github.event.inputs.branch || github.head_ref || github.ref_name }}
+          ref: ${{ github.head_ref || github.ref_name }}
 
       - name: 🔧 Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
@@ -90,7 +85,7 @@ jobs:
       - name: 🛎️ Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.branch || github.head_ref || github.ref_name }}
+          ref: ${{ github.head_ref || github.ref_name }}
 
       - name: 🧾 Build info
         id: info
@@ -157,7 +152,7 @@ jobs:
       - name: 🚀 Deploy PR
         if: steps.preflight.outputs.memory_insufficient != 'true'
         run: |
-          export DEPLOYMENT=$(echo ${{ github.event.inputs.branch && format('branch-{0}', github.event.inputs.branch) || format('pr-{0}', github.event.number) }} | cut -c1-32 | sed 's/^[^a-zA-Z]*//; s/[^a-zA-Z]*$//')
+          export DEPLOYMENT=$(echo ${{ github.event_name == 'workflow_dispatch' && format('{0}', github.ref_name) || format('pr-{0}', github.event.number) }} | cut -c1-32 | sed 's/^[^a-zA-Z]*//; s/[^a-zA-Z]*$//')
           export APP_IMAGE_TAG=sha-${{ github.sha }}
           export HOST=$DEPLOYMENT.plasma.oli.cmu.edu
 
