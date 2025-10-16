@@ -70,7 +70,13 @@
             <.link navigate={back_url} class="text-Text-text-high flex items-center gap-2">
               <OliWeb.Icons.back_arrow /><span>Back</span>
             </.link>
-            <div class="flex flex-row items-center h-full">
+            <div
+              :if={
+                @view in [:graded_page, :practice_page] and
+                  assigns[:page_progress_state] == :in_progress
+              }
+              class="flex flex-row items-center h-full"
+            >
               <button
                 phx-click="toggle_notes_sidebar"
                 class={[
