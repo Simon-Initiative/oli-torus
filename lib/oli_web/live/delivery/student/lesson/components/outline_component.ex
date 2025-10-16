@@ -80,7 +80,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
               Course Content
             </div>
           </div>
-          <div class="self-stretch h-0 flex-col justify-center items-center flex border-b border-[#D9D9D9]/75">
+          <div class="self-stretch h-0 flex-col justify-center items-center flex border-b border-Border-border-subtle">
           </div>
         </div>
         <div class="flex flex-1 flex-col overflow-hidden pl-2 justify-start items-start gap-2 inline-flex">

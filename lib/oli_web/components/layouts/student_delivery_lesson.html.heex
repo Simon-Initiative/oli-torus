@@ -66,44 +66,50 @@
               view={assigns[:view]}
             />
           </div>
-          <div class="flex flex-row justify-between items-center px-4 md:hidden bg-Surface-surface-secondary h-10">
-            <.link navigate={back_url} class="text-Text-text-high flex items-center gap-2">
+          <div
+            role="mobile navigation"
+            class="flex flex-row justify-between items-center px-4 sm:hidden bg-Surface-surface-secondary h-10"
+          >
+            <.link
+              navigate={back_url}
+              class="w-24 text-Text-text-high flex items-center gap-2"
+            >
               <OliWeb.Icons.back_arrow /><span>Back</span>
             </.link>
-            <div
+
+            <button
+              :if={
+                @view in [:graded_page, :practice_page] and
+                  assigns[:page_progress_state] == :in_progress and assigns[:annotations]
+              }
+              phx-click="toggle_notes_sidebar"
+              class={[
+                "flex flex-row items-center h-full px-3",
+                if(assigns[:active_sidebar_panel] == :notes,
+                  do: "border-b-2 border-Fill-Buttons-fill-primary"
+                )
+              ]}
+            >
+              <OliWeb.Delivery.Student.Lesson.Annotations.annotations_icon />
+              <span>Notes</span>
+            </button>
+
+            <button
               :if={
                 @view in [:graded_page, :practice_page] and
                   assigns[:page_progress_state] == :in_progress
               }
-              class="flex flex-row items-center h-full"
+              phx-click="toggle_outline_sidebar"
+              class={[
+                "flex flex-row items-center h-full px-3",
+                if(assigns[:active_sidebar_panel] == :outline,
+                  do: "border-b-2 border-Fill-Buttons-fill-primary"
+                )
+              ]}
             >
-              <button
-                :if={assigns[:annotations]}
-                phx-click="toggle_notes_sidebar"
-                class={[
-                  "flex flex-row items-center h-full px-3",
-                  if(assigns[:active_sidebar_panel] == :notes,
-                    do: "border-b-2 border-Fill-Buttons-fill-primary"
-                  )
-                ]}
-              >
-                <OliWeb.Delivery.Student.Lesson.Annotations.annotations_icon />
-                <span>Notes</span>
-              </button>
-
-              <button
-                phx-click="toggle_outline_sidebar"
-                class={[
-                  "flex flex-row items-center h-full px-3",
-                  if(assigns[:active_sidebar_panel] == :outline,
-                    do: "border-b-2 border-Fill-Buttons-fill-primary"
-                  )
-                ]}
-              >
-                <OliWeb.Delivery.Student.Lesson.Components.OutlineComponent.outline_icon />
-                <span>Course Content</span>
-              </button>
-            </div>
+              <OliWeb.Delivery.Student.Lesson.Components.OutlineComponent.outline_icon />
+              <span class="whitespace-nowrap">Course Content</span>
+            </button>
           </div>
         </div>
         <div
@@ -194,5 +200,8 @@
         </div>
       </div>
     </div>
+  </div>
+  <div class="h-0 z-[9999]">
+    <OliWeb.Delivery.Student.Utils.proficiency_explanation_modal />
   </div>
 </main>

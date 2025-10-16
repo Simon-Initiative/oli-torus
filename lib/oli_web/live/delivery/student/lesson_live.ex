@@ -827,7 +827,6 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     # For practice page the activity scripts and activity_bridge script are needed as soon as the page loads.
     ~H"""
     <div id="fire_page_trigger" phx-hook="FirePageTrigger"></div>
-    <Annotations.delete_post_modal />
     <div id="sticky_panel" class="absolute w-full sm:w-auto sm:top-4 sm:right-0 z-50 sm:h-full">
       <div class="fixed z-50 bottom-0 w-full sm:sticky sm:ml-auto sm:top-20 sm:right-0">
         <div class={[
@@ -930,6 +929,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         />
       </:point_markers>
     </.page_content_with_sidebar_layout>
+    <Annotations.delete_post_modal />
     """
   end
 

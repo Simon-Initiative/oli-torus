@@ -42,8 +42,8 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
                 <.users_icon class="mr-2" /> Class Notes
               </.tab>
             </.tab_group>
-            <Utils.search_box class="mt-2" search_term={@search_term} />
-            <hr class="m-6 border-b border-b-gray-200" />
+            <Utils.search_box class="sm:mt-2" search_term={@search_term} />
+            <hr class="my-3 sm:m-6 border-b border-Border-border-subtle" />
             <%= case @search_results do %>
               <% nil -> %>
                 <.annotations
@@ -315,9 +315,10 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
       class={[
         "flex-1 inline-flex items-center justify-center border-l border-t border-b first:rounded-l-lg last:rounded-r-lg last:border-r px-4 py-3 whitespace-nowrap",
         if(@selected,
-          do: "bg-primary border-primary text-white stroke-white font-semibold",
+          do:
+            "bg-Fill-Buttons-fill-primary border-Fill-Buttons-fill-primary text-Text-text-white stroke-Text-text-white font-semibold",
           else:
-            "stroke-[#383A44] border-gray-400 hover:bg-gray-100 dark:border-gray-700 dark:hover:bg-gray-800"
+            "bg-Specially-Tokens-Border-border-input border-Specially-Tokens-Border-border-input text-Text-text-low stroke-Text-text-low font-semibold"
         )
       ]}
     >
@@ -413,18 +414,18 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   defp add_new_annotation_input(%{active: true} = assigns) do
     ~H"""
     <div class={[
-      "flex flex-row p-2 border-2 border-gray-300 dark:border-gray-700 rounded-lg",
+      "flex flex-row p-2 border bg-Surface-surface-primary border-Border-border-subtle rounded-xl",
       @rest[:class]
     ]}>
       <form class="w-full" phx-submit="create_annotation">
-        <div class="flex-1 flex flex-col relative border-gray-400 dark:border-gray-700 rounded-lg p-3">
+        <div class="flex-1 flex flex-col relative bg-Surface-surface-primary border-Border-border-subtle rounded-lg p-1 sm:p-3">
           <div class="flex-1">
             <textarea
               id="annotation_input"
               name="content"
               phx-hook="AutoSelect"
               rows="4"
-              class="w-full border border-gray-400 dark:border-gray-700 dark:bg-black rounded-lg p-3"
+              class="w-full border bg-Specially-Tokens-Fill-fill-input border-Specially-Tokens-Border-border-input rounded-lg p-3"
               placeholder={@placeholder}
             />
           </div>
@@ -453,7 +454,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
       <div class="flex-1 relative">
         <input
           type="text"
-          class="w-full border border-gray-400 dark:border-gray-700 rounded-lg p-3"
+          class="w-full h-9 sm:h-auto border bg-Specially-Tokens-Fill-fill-input border-Specially-Tokens-Border-border-input rounded-xl p-3"
           placeholder={@placeholder}
           phx-focus="begin_create_annotation"
         />
@@ -474,7 +475,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
     <div
       id={"post-#{@post.id}"}
       class={[
-        "post flex flex-col p-4 border-2 border-gray-200 dark:border-gray-800 rounded",
+        "post flex flex-col p-4 border bg-Surface-surface-primary border-Border-border-subtle rounded-xl",
         @rest[:class]
       ]}
     >
@@ -756,7 +757,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
 
   def delete_post_modal(assigns) do
     ~H"""
-    <Modal.modal id="delete_post_modal" class="w-1/2 z-50">
+    <Modal.modal id="delete_post_modal" class="w-5/6 sm:w-3/4 max-w-lg z-50">
       <:title>Delete Note</:title>
       <.form
         phx-submit={JS.push("delete_post") |> Modal.hide_modal("delete_post_modal")}

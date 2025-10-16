@@ -145,9 +145,6 @@ defmodule OliWeb.Delivery.Student.Utils do
           <button phx-click={Modal.show_modal("proficiency_explanation_modal")}>
             <Icons.help />
           </button>
-          <div class="h-0">
-            <.proficiency_explanation_modal />
-          </div>
         </div>
         <div
           :for={{objective, index} <- Enum.with_index(@objectives, 1)}
@@ -423,7 +420,7 @@ defmodule OliWeb.Delivery.Student.Utils do
       <:subtitle>
         This course contains several learning objectives. As you continue the course, you will receive an estimate of your understanding of each objective. This estimate takes into account the activities you complete on each page.
       </:subtitle>
-      <div class="mb-11 text-zinc-700 dark:text-white text-base font-bold font-['Inter'] leading-normal">
+      <div class="mb-6 sm:mb-11 text-zinc-700 dark:text-white text-base font-bold font-['Inter'] leading-normal">
         LEARNING PROFICIENCY SCALE
       </div>
       <div class="flex-col justify-start items-center gap-[50px] flex">
