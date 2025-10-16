@@ -236,6 +236,9 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   end
 
   def annotations_icon(assigns) do
+    # Generate a unique ID for this SVG instance to avoid duplicate IDs
+    assigns = assign(assigns, :unique_id, "filter0_d_#{:erlang.unique_integer([:positive])}")
+
     ~H"""
     <svg
       width="32"
@@ -244,7 +247,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
       fill="currentColor"
       xmlns="http://www.w3.org/2000/svg"
     >
-      <g filter="url(#filter0_d_2057_37664)">
+      <g filter={"url(##{@unique_id})"}>
         <path
           fill-rule="evenodd"
           clip-rule="evenodd"
@@ -253,7 +256,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
       </g>
       <defs>
         <filter
-          id="filter0_d_2057_37664"
+          id={@unique_id}
           x="0.5"
           y="0.349609"
           width="31"
@@ -275,11 +278,11 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
             type="matrix"
             values="0 0 0 0 0 0 0 0 0 0.203922 0 0 0 0 0.388235 0 0 0 0.15 0"
           />
-          <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_2057_37664" />
+          <feBlend mode="normal" in2="BackgroundImageFix" result={"effect1_dropShadow_#{@unique_id}"} />
           <feBlend
             mode="normal"
             in="SourceGraphic"
-            in2="effect1_dropShadow_2057_37664"
+            in2={"effect1_dropShadow_#{@unique_id}"}
             result="shape"
           />
         </filter>
@@ -353,6 +356,9 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   attr :rest, :global, include: ~w(class)
 
   defp users_icon(assigns) do
+    # Generate a unique ID for this SVG instance to avoid duplicate IDs
+    assigns = assign(assigns, :unique_id, "clip0_#{:erlang.unique_integer([:positive])}")
+
     ~H"""
     <svg
       class={@rest[:class]}
@@ -362,7 +368,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
-      <g clip-path="url(#clip0_270_13479)">
+      <g clip-path={"url(##{@unique_id})"}>
         <path
           d="M14.1666 17.5V15.8333C14.1666 14.9493 13.8154 14.1014 13.1903 13.4763C12.5652 12.8512 11.7173 12.5 10.8333 12.5H4.16659C3.28253 12.5 2.43468 12.8512 1.80956 13.4763C1.18444 14.1014 0.833252 14.9493 0.833252 15.8333V17.5"
           stroke-width="2"
@@ -389,7 +395,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
         />
       </g>
       <defs>
-        <clipPath id="clip0_270_13479">
+        <clipPath id={@unique_id}>
           <rect width="20" height="20" fill="white" />
         </clipPath>
       </defs>

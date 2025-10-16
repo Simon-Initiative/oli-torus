@@ -266,6 +266,9 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
   end
 
   def outline_icon(assigns) do
+    # Generate a unique ID for this SVG instance to avoid duplicate IDs
+    assigns = assign(assigns, :unique_id, "clip0_#{:erlang.unique_integer([:positive])}")
+
     ~H"""
     <svg
       width="32"
@@ -274,7 +277,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
       fill="currentColor"
       xmlns="http://www.w3.org/2000/svg"
     >
-      <g clip-path="url(#clip0_2001_36964)">
+      <g clip-path={"url(##{@unique_id})"}>
         <path
           d="M13.0833 11H22.25M13.0833 15.9958H22.25M13.0833 20.9917H22.25M9.75 11V11.0083M9.75 15.9958V16.0042M9.75 20.9917V21"
           stroke="currentColor"
@@ -284,7 +287,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
         />
       </g>
       <defs>
-        <clipPath id="clip0_2001_36964">
+        <clipPath id={@unique_id}>
           <rect width="20" height="20" fill="white" transform="translate(6 6)" />
         </clipPath>
       </defs>
