@@ -219,6 +219,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   def toggle_notes_button(assigns) do
     ~H"""
     <button
+      role="desktop toggle notes button"
       class={[
         "flex flex-col items-center rounded-lg bg-Surface-surface-background hover:bg-[#deecff] dark:hover:bg-white/10 text-[#0d70ff] text-xl group",
         if(@is_active,

@@ -249,6 +249,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
   def toggle_outline_button(assigns) do
     ~H"""
     <button
+      role="desktop toggle outline button"
       class={[
         "flex flex-col items-center rounded-lg bg-Surface-surface-background hover:bg-[#deecff] dark:hover:bg-white/10 text-[#0d70ff] text-xl group",
         if(@is_active,
