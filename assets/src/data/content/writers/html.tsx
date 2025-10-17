@@ -86,6 +86,14 @@ import { ContentWriter, Next, WriterImpl } from './writer';
 export class HtmlParser implements WriterImpl {
   private escapeXml = (text: string) => decodeURI(encodeURI(text));
 
+  private getWidthWithUnit = (width: string) => {
+    // Only append px if the width is numeric (digits and optional decimal point)
+    if (/^\d+(\.\d+)?$/.test(width)) {
+      return `${this.escapeXml(width)}px`;
+    }
+    return this.escapeXml(width);
+  };
+
   private wrapWithMarks(text: string, textEntity: Text): React.ReactElement {
     const supportedMarkTags: { [key: string]: (e: React.ReactElement) => React.ReactElement } = {
       em: (e) => <em>{e}</em>,
@@ -323,7 +331,7 @@ export class HtmlParser implements WriterImpl {
         <div className="text-sm md:hidden flex justify-center">
           <div
             className="inline-block w-full text-right"
-            style={attrs.width ? { width: `${this.escapeXml(String(attrs.width))}px` } : {}}
+            style={attrs.width ? { width: this.getWidthWithUnit(String(attrs.width)) } : {}}
           >
             Pinch to Zoom
           </div>

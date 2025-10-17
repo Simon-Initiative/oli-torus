@@ -1020,8 +1020,17 @@ defmodule Oli.Rendering.Content.Html do
 
   defp maybe_img_width(attrs) do
     case attrs do
-      %{"width" => width} -> " style=\"width: #{escape_xml!(width)}px\""
-      _ -> ""
+      %{"width" => width} ->
+        width_str = to_string(width)
+        # Only append px if the width is numeric (digits and optional decimal point)
+        if String.match?(width_str, ~r/^\d+(\.\d+)?$/) do
+          " style=\"width: #{escape_xml!(width_str)}px\""
+        else
+          " style=\"width: #{escape_xml!(width_str)}\""
+        end
+
+      _ ->
+        ""
     end
   end
 
