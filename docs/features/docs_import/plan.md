@@ -46,28 +46,28 @@ Scope and guardrails reference the approved PRD (`docs/features/docs_import/prd.
 ## Phase 5: MCQ Activity Builder & CustomElement Conversion *(depends on Phases 3–4)*
 - **Goal:** Transform CustomElement specs into Torus components and activities.
 - **Tasks**
-  - [ ] Implement `Oli.GoogleDocs.CustomElements` dispatcher returning typed structs for recognised elements.
-  - [ ] Build `Oli.GoogleDocs.McqBuilder` for MCQ activity creation, including validation for `correct`, `choiceN`, `feedbackN`.
-  - [ ] Ensure graceful fallback to table rendering with warnings when validation fails.
-  - [ ] Tests: `mix test test/oli/google_docs/custom_elements_test.exs` (YouTube + MCQ success/failure cases) and `mix test test/oli/google_docs/mcq_builder_test.exs` (activity creation with mocked ActivityEditor).
+  - [x] Implement `Oli.GoogleDocs.CustomElements` dispatcher returning typed structs for recognised elements.
+  - [x] Build `Oli.GoogleDocs.McqBuilder` for MCQ activity creation, including validation for `correct`, `choiceN`, `feedbackN`.
+  - [x] Ensure graceful fallback to table rendering with warnings when validation fails.
+  - [x] Tests: `mix test test/oli/google_docs/custom_elements_test.exs` (YouTube + MCQ success/failure cases) and `mix test test/oli/google_docs/mcq_builder_test.exs` (activity creation with mocked ActivityEditor).
 - **Definition of Done:** CustomElement + MCQ tests pass; warnings integrated with catalogue. Gate unlocks Phase 6.
 
 ## Phase 6: Import Orchestrator & Persistence Transaction *(depends on Phases 2–5)*
 - **Goal:** Compose download, parsing, media ingestion, activity creation, and page persistence.
 - **Tasks**
-  - [ ] Implement `Oli.GoogleDocs.Import.import/4`, orchestrating pipeline, aggregating warnings, and returning revision.
-  - [ ] Integrate ETS in-flight guard, audit logging, and telemetry span start/stop hooks.
-  - [ ] Repo transaction ensures atomic creation; add fallback to external URLs when media upload warnings present.
-  - [ ] Tests: `mix test test/oli/google_docs/import_test.exs` exercising success, invalid FILE_ID, media failure, MCQ fallback, audit capture.
+  - [x] Implement `Oli.GoogleDocs.Import.import/4`, orchestrating pipeline, aggregating warnings, and returning revision.
+  - [x] Integrate ETS in-flight guard, audit logging, and telemetry span start/stop hooks.
+  - [x] Repo transaction ensures atomic creation; add fallback to external URLs when media upload warnings present.
+  - [x] Tests: `mix test test/oli/google_docs/import_test.exs` exercising success, invalid FILE_ID, media failure, MCQ fallback, audit capture.
 - **Definition of Done:** Import tests pass; full `mix test` suite green. Gate unlocks Phase 7.
 
 ## Phase 7: LiveView Integration & UX Polish *(can begin once Phase 6 API stabilises)*
 - **Goal:** Wire the importer into CurriculumLive with accessible UX.
 - **Tasks**
-  - [ ] Add admin-only button, modal, and validation messaging in `CurriculumLive`.
-  - [ ] Invoke importer via `Task.Supervisor.async_nolink`; handle success/error/warnings, reload hierarchy, and navigate to new page.
-  - [ ] Implement aria-live announcements, focus trapping, and keyboard-only workflow per PRD §5.
-  - [ ] Tests: `mix test test/oli_web/live/workspaces/course_author/curriculum_live_import_test.exs` covering visibility, validation errors, success/warning flows, accessibility expectations.
+  - [x] Add admin-only button, modal, and validation messaging in `CurriculumLive`.
+  - [x] Invoke importer via `Task.Supervisor.async_nolink`; handle success/error/warnings, reload hierarchy, and navigate to new page.
+  - [x] Implement aria-live announcements, focus trapping, and keyboard-only workflow per PRD §5.
+  - [x] Tests: `mix test test/oli_web/live/workspaces/course_author/curriculum_live_import_test.exs` covering visibility, validation errors, success/warning flows, accessibility expectations.
 - **Definition of Done:** LiveView tests and overall suite pass; manual accessibility smoke test documented. Gate unlocks Phase 8.
 
 ## Parallelisation Notes

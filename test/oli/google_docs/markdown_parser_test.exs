@@ -105,4 +105,16 @@ defmodule Oli.GoogleDocs.MarkdownParserTest do
       assert Enum.any?(result.warnings, &(&1.code == :custom_element_invalid_shape))
     end
   end
+
+  describe "parse/2 block math" do
+    test "converts $$ delimiters into formula blocks" do
+      markdown = """
+      $$ \\\frac{2}{3} $$
+      """
+
+      assert {:ok, result} = MarkdownParser.parse(markdown)
+
+      [%{type: :formula}] = result.blocks
+    end
+  end
 end

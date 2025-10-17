@@ -17,10 +17,12 @@ defmodule Oli.GoogleDocs.Warnings do
           | :mcq_missing_correct
           | :mcq_choice_missing
           | :mcq_feedback_missing
+          | :mcq_activity_creation_failed
           | :media_upload_failed
           | :media_oversized
           | :media_decode_failed
           | :media_dedupe_warning
+          | :download_redirect
 
   @catalogue %{
     download_failed: %{
@@ -62,6 +64,10 @@ defmodule Oli.GoogleDocs.Warnings do
       severity: :warn,
       template: "MCQ CustomElement feedback `%{feedback_key}` missing; default feedback applied."
     },
+    mcq_activity_creation_failed: %{
+      severity: :error,
+      template: "Failed to create MCQ activity: %{reason}."
+    },
     media_upload_failed: %{
       severity: :warn,
       template: "Image upload failed (`%{reason}`); retained external data URL instead."
@@ -78,6 +84,11 @@ defmodule Oli.GoogleDocs.Warnings do
     media_dedupe_warning: %{
       severity: :info,
       template: "Duplicate image detected (hash %{hash_prefix}); reusing existing asset."
+    },
+    download_redirect: %{
+      severity: :error,
+      template:
+        "Google Docs redirected the request (HTTP %{status}) to `%{location}`. Verify the document is shared publicly and try again."
     }
   }
 
