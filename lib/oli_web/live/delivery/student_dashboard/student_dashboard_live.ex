@@ -58,8 +58,10 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
               socket.assigns.section,
               student_id: socket.assigns.student.id
             ),
-          filter_options:
-            Sections.get_units_and_modules_from_a_section(socket.assigns.section.slug)
+          navigator_items:
+            Oli.Delivery.Sections.SectionResourceDepot.containers(socket.assigns.section.id,
+              numbering_level: {:in, [1, 2]}
+            )
         }
       end)
 
@@ -172,14 +174,16 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
 
   defp render_tab(%{active_tab: :learning_objectives} = assigns) do
     ~H"""
-    <.live_component
-      id="learning_objectives_tab"
-      module={OliWeb.Delivery.StudentDashboard.Components.LearningObjectivesTab}
-      params={@params}
-      section={@section}
-      objectives_tab={@objectives_tab}
-      student_id={@student.id}
-    />
+    <div class="container mx-auto">
+      <.live_component
+        id="learning_objectives_tab"
+        module={OliWeb.Delivery.StudentDashboard.Components.LearningObjectivesTab}
+        params={@params}
+        section={@section}
+        objectives_tab={@objectives_tab}
+        student_id={@student.id}
+      />
+    </div>
     """
   end
 
@@ -199,28 +203,32 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
 
   defp render_tab(%{active_tab: :progress} = assigns) do
     ~H"""
-    <.live_component
-      id="progress_tab"
-      module={OliWeb.Delivery.StudentDashboard.Components.ProgressTab}
-      params={@params}
-      section_slug={@section.slug}
-      student_id={@student.id}
-      ctx={@ctx}
-      pages={@pages}
-    />
+    <div class="container mx-auto">
+      <.live_component
+        id="progress_tab"
+        module={OliWeb.Delivery.StudentDashboard.Components.ProgressTab}
+        params={@params}
+        section_slug={@section.slug}
+        student_id={@student.id}
+        ctx={@ctx}
+        pages={@pages}
+      />
+    </div>
     """
   end
 
   defp render_tab(%{active_tab: :actions} = assigns) do
     ~H"""
-    <.live_component
-      id="actions_table"
-      module={OliWeb.Components.Delivery.Actions}
-      user={@student}
-      section={@section}
-      enrollment_info={@enrollment_info}
-      is_admin={@is_admin}
-    />
+    <div class="container mx-auto">
+      <.live_component
+        id="actions_table"
+        module={OliWeb.Components.Delivery.Actions}
+        user={@student}
+        section={@section}
+        enrollment_info={@enrollment_info}
+        is_admin={@is_admin}
+      />
+    </div>
     """
   end
 

@@ -43,18 +43,11 @@ defmodule OliWeb.Components.Delivery.Content do
 
     {total_count, column_name, rows} = apply_filters(containers, params)
 
-    containers_list = create_containers_list(containers, rows)
-
     request_path =
       ~p"/sections/#{assigns.section_slug}/instructor_dashboard/insights/content?#{params_without_nil_values(params)}"
 
     navigation_data = %{
-      request_path: request_path,
-      containers: containers_list,
-      filter_criteria_card: params.selected_card_value,
-      container_filter_by: params.container_filter_by,
-      filtered_count: total_count,
-      navigation_criteria: :by_filtered
+      request_path: request_path
     }
 
     {:ok, table_model} =
@@ -137,7 +130,7 @@ defmodule OliWeb.Components.Delivery.Content do
   def render(assigns) do
     ~H"""
     <div class="flex flex-col mb-10">
-      <div class="w-full h-10 relative my-7">
+      <div class="w-full h-10 relative mb-7">
         <button
           id="filter_units_button"
           class={"w-24 h-10 left-0 top-0 absolute rounded-tl-lg rounded-bl-lg border border-Border-border-default #{set_button_background(@params.container_filter_by, :units)} text-xs #{set_button_text(@params.container_filter_by, :units)}"}
@@ -679,17 +672,6 @@ defmodule OliWeb.Components.Delivery.Content do
   defp params_without_nil_values(params) do
     Enum.reject(params, fn {_k, v} -> is_nil(v) end)
     |> Enum.into(%{})
-  end
-
-  defp create_containers_list(containers, rows) do
-    rows_ids = rows |> Enum.map(& &1.id) |> MapSet.new()
-
-    containers
-    |> Enum.map(fn container ->
-      container
-      |> Map.put(:was_filtered, MapSet.member?(rows_ids, container.id))
-      |> Map.drop([:progress, :student_proficiency, :numbering_index, :numbering_level])
-    end)
   end
 
   defp update_proficiency_options(selected_proficiency_ids, proficiency_options) do

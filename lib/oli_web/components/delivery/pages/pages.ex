@@ -72,6 +72,16 @@ defmodule OliWeb.Components.Delivery.Pages do
         card_activity_props: [],
         attempts_options: @attempts_options
       )
+      |> assign_new(:navigation_data, fn ->
+        %{
+          scored_pages: %{
+            items: Oli.Delivery.Sections.SectionResourceDepot.graded_pages(assigns.section.id)
+          },
+          practice_pages: %{
+            items: Oli.Delivery.Sections.SectionResourceDepot.practice_pages(assigns.section.id)
+          }
+        }
+      end)
 
     case params.resource_id do
       nil ->
@@ -239,22 +249,39 @@ defmodule OliWeb.Components.Delivery.Pages do
   def render(assigns) do
     ~H"""
     <div>
-      <button
-        :if={!is_nil(@current_page)}
-        class="whitespace-nowrap"
-        phx-click="back"
-        phx-target={@myself}
-      >
-        <div class="w-36 h-9 justify-start items-start gap-3.5 inline-flex">
-          <div class="px-1.5 py-2 border-zinc-700 justify-start items-center gap-1 flex">
-            <Icons.chevron_down class="fill-blue-400 rotate-90" />
-            <div class="justify-center text-[#373a44] dark:text-white text-sm font-semibold tracking-tight">
-              Back to {page_type(@active_tab)} Pages
+      <div class="flex flex-col items-center mb-6">
+        <button
+          :if={!is_nil(@current_page)}
+          class="whitespace-nowrap self-start"
+          phx-click="back"
+          phx-target={@myself}
+        >
+          <div class="w-36 h-9 justify-start items-start gap-3.5 inline-flex">
+            <div class="px-1.5 py-2 border-zinc-700 justify-start items-center gap-1 flex">
+              <Icons.chevron_down class="fill-blue-400 rotate-90" />
+              <div class="justify-center text-[#373a44] dark:text-white text-sm font-semibold tracking-tight">
+                Back to {page_type(@active_tab)} Pages
+              </div>
             </div>
           </div>
-        </div>
-      </button>
+        </button>
+
+        <.live_component
+          :if={!is_nil(@current_page)}
+          id="pages_navigator"
+          module={OliWeb.Components.Delivery.ListNavigator}
+          items={
+            if @active_tab == :practice_pages,
+              do: @navigation_data.practice_pages.items,
+              else: @navigation_data.scored_pages.items
+          }
+          current_item_resource_id={@current_page.resource_id}
+          path_builder_fn={fn item -> list_navigator_path(@section, @active_tab, @params, item) end}
+        />
+      </div>
+
       <.loader :if={!@table_model} />
+
       <div :if={@table_model} class="bg-white shadow-sm dark:bg-gray-800 dark:text-white">
         <div class="flex flex-col space-y-4 lg:space-y-0 lg:flex-row lg:justify-between px-4 pt-8 pb-4 lg:items-center instructor_dashboard_table dark:bg-[#262626]">
           <%= if @current_page != nil do %>
@@ -1086,6 +1113,7 @@ defmodule OliWeb.Components.Delivery.Pages do
 
     activities =
       DeliveryResolver.from_resource_id(section.slug, activity_ids_from_responses)
+      |> Enum.reject(fn rev -> is_nil(rev) end)
       |> Enum.map(fn rev ->
         {total_attempts, avg_score} = Map.get(details_by_activity, rev.resource_id, {0, 0.0})
 
@@ -1179,12 +1207,47 @@ defmodule OliWeb.Components.Delivery.Pages do
     back_params = socket.assigns.params.back_params
 
     base_path = ~p"/sections/#{section_slug}/instructor_dashboard/insights/#{active_tab}"
+    build_url_with_params(base_path, back_params)
+  end
 
-    if map_size(back_params) > 0 do
-      query_string = URI.encode_query(back_params)
+  defp list_navigator_path(section, active_tab, params, item) do
+    section_slug = section.slug
+
+    base_path =
+      ~p"/sections/#{section_slug}/instructor_dashboard/insights/#{active_tab}/#{item.id}"
+
+    # Use current params but exclude resource_id since it changes with each item
+    current_params =
+      params
+      |> Map.delete(:resource_id)
+
+    build_url_with_params(base_path, current_params)
+  end
+
+  defp build_url_with_params(base_path, params) do
+    # Filter out empty values and convert both keys and values to strings
+    filtered_params =
+      params
+      |> Enum.reject(fn {_key, value} -> is_nil(value) or value == "" end)
+      |> Enum.map(fn {key, value} ->
+        {to_string(key), convert_value_to_string(value)}
+      end)
+      |> Map.new()
+
+    if map_size(filtered_params) > 0 do
+      query_string = URI.encode_query(filtered_params)
       "#{base_path}?#{query_string}"
     else
       base_path
     end
   end
+
+  defp convert_value_to_string(value) when is_binary(value), do: value
+  defp convert_value_to_string(value) when is_atom(value), do: to_string(value)
+  defp convert_value_to_string(value) when is_integer(value), do: to_string(value)
+  defp convert_value_to_string(value) when is_float(value), do: to_string(value)
+  defp convert_value_to_string(value) when is_boolean(value), do: to_string(value)
+  defp convert_value_to_string(value) when is_list(value), do: Jason.encode!(value)
+  defp convert_value_to_string(value) when is_map(value), do: Jason.encode!(value)
+  defp convert_value_to_string(value), do: to_string(value)
 end

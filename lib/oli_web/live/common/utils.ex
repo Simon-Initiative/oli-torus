@@ -325,12 +325,21 @@ defmodule OliWeb.Common.Utils do
   def extract_text_from_content(_), do: "No text available"
 
   @doc """
-  Helper to highlight search term in text. Returns HTML-safe string with matches wrapped in <em> tags.
+  Helper to highlight search term in text. Returns HTML-safe string with matches wrapped in a tag.
+
+  ## Parameters
+    - text: The text to search in
+    - search_term: The term to highlight (case insensitive)
+    - opts: Optional keyword list with:
+      - :class - CSS classes for the highlight wrapper (default: none, uses <em> tag)
 
   ## Examples
 
       iex> highlight_search_term("Hello World", "world")
       "Hello <em>World</em>"
+
+      iex> highlight_search_term("Hello World", "world", class: "highlight")
+      "Hello <span class=\\"highlight\\">World</span>"
 
       iex> highlight_search_term("Hello World", nil)
       "Hello World"
@@ -338,17 +347,24 @@ defmodule OliWeb.Common.Utils do
       iex> highlight_search_term("Hello World", "")
       "Hello World"
   """
-  def highlight_search_term(text, nil), do: escape_html(text)
-  def highlight_search_term(text, ""), do: escape_html(text)
+  def highlight_search_term(text, search_term, opts \\ [])
+  def highlight_search_term(text, nil, _opts), do: escape_html(text)
+  def highlight_search_term(text, "", _opts), do: escape_html(text)
 
-  def highlight_search_term(text, search_term) do
+  def highlight_search_term(text, search_term, opts) do
     pattern = Regex.escape(search_term)
     # case insensitive match
     regex = ~r/#{pattern}/i
 
+    wrapper =
+      case Keyword.get(opts, :class) do
+        nil -> {"<em>", "</em>"}
+        class -> {"<span class=\"#{class}\">", "</span>"}
+      end
+
     text
     |> escape_html()
-    |> String.replace(regex, "<em>\\0</em>")
+    |> String.replace(regex, fn match -> elem(wrapper, 0) <> match <> elem(wrapper, 1) end)
   end
 
   def multi_highlight_search_term(text, term, tagstart \\ "em", tagend \\ "em")

@@ -46,9 +46,24 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
         async_calculate_proficiency(socket.assigns.section)
 
-        assign(socket, :selected_container, selected_container)
+        socket
+        |> assign(:selected_container, selected_container)
+        |> assign(
+          :navigator_items,
+          if(selected_container,
+            do:
+              Oli.Delivery.Sections.SectionResourceDepot.containers(socket.assigns.section.id,
+                numbering_level: selected_container.numbering_level
+              ),
+            else: Oli.Delivery.Sections.SectionResourceDepot.containers(socket.assigns.section.id)
+          )
+        )
       else
         socket
+        |> assign(
+          :navigator_items,
+          Oli.Delivery.Sections.SectionResourceDepot.containers(socket.assigns.section.id)
+        )
       end
 
     {:noreply, socket}
@@ -85,8 +100,10 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
               exclude_sub_objectives: false,
               include_related_activities_count: true
             ),
-          filter_options:
-            Sections.get_units_and_modules_from_a_section(socket.assigns.section.slug)
+          navigator_items:
+            Oli.Delivery.Sections.SectionResourceDepot.containers(socket.assigns.section.id,
+              numbering_level: {:in, [1, 2]}
+            )
         }
       end)
 
@@ -487,6 +504,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         certificate={@certificate}
         certificate_pending_email_notification_count={@certificate_pending_email_notification_count}
         dropdown_options={@dropdown_options}
+        navigator_items={@navigator_items}
       />
     </div>
     """
@@ -551,6 +569,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         %{view: :insights, active_tab: :content, params: %{container_id: _container_id}} = assigns
       ) do
     ~H"""
+    <InstructorDashboard.tabs tabs={insights_tabs(@section_slug, @preview_mode, @active_tab)} />
+
     <div class="container mx-auto">
       <.live_component
         id="container_details_table"
@@ -565,6 +585,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         active_tab={@active_tab}
         students={@users}
         dropdown_options={@dropdown_options}
+        navigator_items={@navigator_items}
       />
     </div>
     """
