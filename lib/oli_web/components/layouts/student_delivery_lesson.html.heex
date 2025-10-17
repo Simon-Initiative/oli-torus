@@ -84,6 +84,7 @@
                   assigns[:page_progress_state] == :in_progress and assigns[:annotations]
               }
               phx-click="toggle_notes_sidebar"
+              aria-pressed={to_string(assigns[:active_sidebar_panel] == :notes)}
               class={[
                 "flex flex-row items-center h-full px-3",
                 if(assigns[:active_sidebar_panel] == :notes,
@@ -101,6 +102,7 @@
                   assigns[:page_progress_state] == :in_progress
               }
               phx-click="toggle_outline_sidebar"
+              aria-pressed={to_string(assigns[:active_sidebar_panel] == :outline)}
               class={[
                 "flex flex-row items-center h-full px-3",
                 if(assigns[:active_sidebar_panel] == :outline,

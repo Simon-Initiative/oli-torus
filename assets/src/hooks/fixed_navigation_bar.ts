@@ -3,7 +3,7 @@ export const FixedNavigationBar = {
     const bottomBar = document.getElementById('bottom-bar');
     if (!bottomBar) return;
 
-    let lastScrollTop = 0;
+    let lastScrollTop = document.documentElement.scrollTop || window.scrollY;
     let isScrollingDown = false;
 
     const isMobile = () => window.innerWidth < 640; // sm breakpoint is 640px
