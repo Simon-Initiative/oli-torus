@@ -6,7 +6,11 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
   use Oban.Worker,
     queue: :clickhouse_inventory_batches,
     max_attempts: 5,
-    unique: [fields: [:args, :worker], keys: [:batch_id], period: 300]
+    unique: [
+      fields: [:args, :worker],
+      keys: [:batch_id],
+      states: [:available, :scheduled, :retryable, :executing]
+    ]
 
   require Logger
 

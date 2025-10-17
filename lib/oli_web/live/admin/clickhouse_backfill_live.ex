@@ -805,6 +805,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
                     :if={pausable_run?(run)}
                     phx-click="pause_inventory_run"
                     phx-value-id={run.id}
+                    phx-disable-with="Pausing..."
                     class="btn-warning btn-xs"
                   >
                     Pause

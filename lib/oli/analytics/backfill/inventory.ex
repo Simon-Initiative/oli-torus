@@ -302,14 +302,26 @@ defmodule Oli.Analytics.Backfill.Inventory do
     args = %{"batch_id" => batch.id}
     max_attempts = batch_max_attempts(batch)
 
-    case Oban.insert(module.new(args, max_attempts: max_attempts)) do
+    job_changeset =
+      module.new(args,
+        max_attempts: max_attempts,
+        replace: [:scheduled_at, :queue, :worker]
+      )
+
+    case Oban.insert(job_changeset) do
       {:ok, job} ->
         metadata =
           batch.metadata
           |> ensure_map()
           |> Map.put("last_job_id", job.id)
 
-        transition_batch(batch, :queued, %{metadata: metadata})
+        status =
+          case job.state do
+            :executing -> :running
+            _ -> :queued
+          end
+
+        transition_batch(batch, status, %{metadata: metadata})
 
       {:error, reason} ->
         {:error, reason}
