@@ -17,9 +17,9 @@ defmodule Oli.GoogleDocs.Import do
   alias Oli.GoogleDocs.MarkdownParser.CustomElement
   alias Oli.GoogleDocs.MarkdownParser.MediaReference
   alias Oli.GoogleDocs.McqBuilder
-  alias Oli.GoogleDocs.{MediaIngestor, Warnings}
+  alias Oli.GoogleDocs.{MediaIngestor, Warnings, CheckAllThatApplyBuilder, ShortAnswerBuilder}
   alias Oli.GoogleDocs.Client
-  alias Oli.GoogleDocs.CustomElements.{Mcq, YouTube}
+  alias Oli.GoogleDocs.CustomElements.YouTube
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Resources.{ResourceType, ScoringStrategy}
 
@@ -211,13 +211,7 @@ defmodule Oli.GoogleDocs.Import do
   end
 
   defp resolve_custom_elements(custom_elements, resolution, project_slug, author, config) do
-    mcq_builder = Keyword.get(config, :mcq_builder, McqBuilder)
-
-    mcq_opts =
-      Keyword.get(config, :mcq_builder_opts, [])
-      |> Keyword.put(:project_slug, project_slug)
-      |> Keyword.put(:author, author)
-
+    builder_specs = activity_builder_specs(config, project_slug, author)
     element_map = map_by_id(custom_elements)
 
     {replacements, warnings} =
@@ -226,18 +220,45 @@ defmodule Oli.GoogleDocs.Import do
           %YouTube{} = youtube ->
             {Map.put(acc, id, {:youtube, youtube}), warn_acc}
 
-          %Mcq{} = mcq ->
-            case mcq_builder.build(mcq, mcq_opts) do
-              {:ok, result} ->
-                {Map.put(acc, id, {:mcq, {:ok, result, mcq}}), warn_acc ++ result.warnings}
+          _ ->
+            case find_activity_builder(element, builder_specs) do
+              {builder, builder_opts} ->
+                case builder.build(element, builder_opts) do
+                  {:ok, result} ->
+                    builder_warnings = Map.get(result, :warnings, [])
 
-              {:error, reason, mcq_warnings} ->
-                Logger.warning(
-                  "mcq builder failed id=#{id} reason=#{inspect(reason)} warnings=#{inspect(mcq_warnings)}"
-                )
+                    entry =
+                      {:activity,
+                       %{
+                         builder: builder,
+                         status: :ok,
+                         result: result,
+                         element: element
+                       }}
 
-                original = Map.fetch!(element_map, id)
-                {Map.put(acc, id, {:mcq, {:error, reason, original}}), warn_acc ++ mcq_warnings}
+                    {Map.put(acc, id, entry), warn_acc ++ builder_warnings}
+
+                  {:error, reason, builder_warnings} ->
+                    Logger.warning(
+                      "activity builder #{inspect(builder)} failed id=#{id} reason=#{inspect(reason)} warnings=#{inspect(builder_warnings)}"
+                    )
+
+                    original = Map.fetch!(element_map, id)
+
+                    entry =
+                      {:activity,
+                       %{
+                         builder: builder,
+                         status: :error,
+                         reason: reason,
+                         element: original
+                       }}
+
+                    {Map.put(acc, id, entry), warn_acc ++ (builder_warnings || [])}
+                end
+
+              nil ->
+                {acc, warn_acc}
             end
         end
       end)
@@ -251,6 +272,41 @@ defmodule Oli.GoogleDocs.Import do
       end)
 
     {:ok, %{replacements: replacements_with_fallbacks, warnings: warnings}}
+  end
+
+  defp activity_builder_specs(config, project_slug, author) do
+    common_opts = [project_slug: project_slug, author: author]
+
+    builders =
+      case Keyword.get(config, :activity_builders) do
+        nil ->
+          [
+            {Keyword.get(config, :mcq_builder, McqBuilder),
+             Keyword.get(config, :mcq_builder_opts, [])},
+            {CheckAllThatApplyBuilder, Keyword.get(config, :cata_builder_opts, [])},
+            {ShortAnswerBuilder, Keyword.get(config, :short_answer_builder_opts, [])}
+          ]
+
+        list when is_list(list) ->
+          list
+      end
+
+    Enum.map(builders, fn
+      {module, opts} -> {module, Keyword.merge(common_opts, opts)}
+      module -> {module, common_opts}
+    end)
+  end
+
+  defp find_activity_builder(element, specs) do
+    Enum.find_value(specs, fn {module, opts} ->
+      Code.ensure_loaded?(module)
+
+      if function_exported?(module, :supported?, 1) do
+        if module.supported?(element) do
+          {module, opts}
+        end
+      end
+    end)
   end
 
   defp build_page_content(blocks, context) do
@@ -386,10 +442,10 @@ defmodule Oli.GoogleDocs.Import do
       {:youtube, youtube} ->
         [build_youtube_node(youtube)]
 
-      {:mcq, {:ok, result, _mcq}} ->
+      {:activity, %{status: :ok, result: result}} ->
         [build_activity_reference_node(result)]
 
-      {:mcq, {:error, _reason, element}} ->
+      {:activity, %{status: :error, element: element}} ->
         [build_custom_element_table(element)]
 
       {:fallback, element} ->
@@ -400,7 +456,8 @@ defmodule Oli.GoogleDocs.Import do
           %CustomElement{} = element ->
             [build_custom_element_table(element)]
 
-          _ -> []
+          _ ->
+            []
         end
     end
   end
@@ -452,6 +509,7 @@ defmodule Oli.GoogleDocs.Import do
   end
 
   defp parse_dimension(nil), do: nil
+
   defp parse_dimension(value) when is_binary(value) do
     trimmed = String.trim(value)
 
@@ -461,7 +519,9 @@ defmodule Oli.GoogleDocs.Import do
 
       _ ->
         case Float.parse(trimmed) do
-          {num, ""} -> num
+          {num, ""} ->
+            num
+
           _ ->
             case Integer.parse(trimmed) do
               {int, ""} -> int
@@ -476,14 +536,19 @@ defmodule Oli.GoogleDocs.Import do
 
   defp parse_numeric(nil), do: nil
   defp parse_numeric(value) when is_number(value), do: value
+
   defp parse_numeric(value) when is_binary(value) do
     trimmed = String.trim(value)
 
     case trimmed do
-      "" -> nil
+      "" ->
+        nil
+
       _ ->
         case Integer.parse(trimmed) do
-          {int, ""} -> int
+          {int, ""} ->
+            int
+
           _ ->
             case Float.parse(trimmed) do
               {float, ""} -> float
@@ -495,7 +560,7 @@ defmodule Oli.GoogleDocs.Import do
 
   defp parse_numeric(_), do: nil
 
-  defp build_activity_reference_node(%McqBuilder.Result{revision: revision}) do
+  defp build_activity_reference_node(%{revision: revision}) do
     %{
       "type" => "activity-reference",
       "id" => unique_id(),
@@ -605,7 +670,9 @@ defmodule Oli.GoogleDocs.Import do
 
   defp convert_inline(%{type: :inline_formula, src: src}) do
     case string_or_nil(src) do
-      nil -> []
+      nil ->
+        []
+
       content ->
         normalized =
           content

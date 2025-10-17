@@ -24,6 +24,53 @@ defmodule Oli.GoogleDocs.CustomElements do
               order: []
   end
 
+  defmodule CheckAllThatApply do
+    @moduledoc """
+    Normalised representation of a Check All That Apply custom element.
+    """
+
+    defmodule Choice do
+      @moduledoc false
+      @enforce_keys [:id, :index, :text]
+      defstruct [:id, :index, :text]
+    end
+
+    @enforce_keys [:id, :block_index, :stem, :choices, :correct_keys, :raw]
+    defstruct [
+      :id,
+      :block_index,
+      :stem,
+      :choices,
+      :correct_keys,
+      :correct_feedback,
+      :incorrect_feedback,
+      :raw
+    ]
+  end
+
+  defmodule ShortAnswer do
+    @moduledoc """
+    Normalised representation of a Short Answer custom element.
+    """
+
+    defmodule Answer do
+      @moduledoc false
+      @enforce_keys [:value, :feedback, :correct?, :index]
+      defstruct [:value, :feedback, :correct?, :index]
+    end
+
+    @enforce_keys [:id, :block_index, :stem, :answers, :input_type, :raw]
+    defstruct [
+      :id,
+      :block_index,
+      :stem,
+      :answers,
+      :input_type,
+      :incorrect_feedback,
+      :raw
+    ]
+  end
+
   defmodule YouTube do
     @moduledoc """
     Normalised representation of a YouTube custom element.
@@ -121,6 +168,11 @@ defmodule Oli.GoogleDocs.CustomElements do
     case String.downcase(type) do
       "youtube" -> dispatch_youtube(element)
       "mcq" -> dispatch_mcq(element)
+      "cata" -> dispatch_cata(element)
+      "check_all_that_apply" -> dispatch_cata(element)
+      "checkallthatapply" -> dispatch_cata(element)
+      "short_answer" -> dispatch_short_answer(element)
+      "shortanswer" -> dispatch_short_answer(element)
       other -> dispatch_unknown(element, other, opts)
     end
   end
@@ -220,6 +272,77 @@ defmodule Oli.GoogleDocs.CustomElements do
     {:ok, mcq, []}
   end
 
+  defp dispatch_cata(%CustomElement{} = element) do
+    data = normalise_keys(element.data)
+    stem = Map.get(data, "stem", "")
+
+    {choices, warnings} = extract_cata_choices(element.raw_rows)
+
+    if choices == [] do
+      warning =
+        Warnings.build(:custom_element_invalid_shape, %{element_type: element.element_type})
+
+      {:fallback, :invalid, [warning]}
+    else
+      {correct_keys, warnings} =
+        data
+        |> Map.get("correct", "")
+        |> parse_correct_keys()
+        |> validate_correct_keys(choices, warnings)
+
+      if correct_keys == [] do
+        warning =
+          Warnings.build(:cata_missing_correct, %{
+            element_type: element.element_type
+          })
+
+        {:fallback, :invalid, warnings ++ [warning]}
+      else
+        cata = %CheckAllThatApply{
+          id: element.id,
+          block_index: element.block_index,
+          stem: stem,
+          choices: choices,
+          correct_keys: correct_keys,
+          correct_feedback: string_or_nil(Map.get(data, "correct_feedback")),
+          incorrect_feedback: string_or_nil(Map.get(data, "incorrect_feedback")),
+          raw: element.raw_rows
+        }
+
+        {:ok, cata, Enum.reverse(warnings)}
+      end
+    end
+  end
+
+  defp dispatch_short_answer(%CustomElement{} = element) do
+    data = normalise_keys(element.data)
+    stem = Map.get(data, "stem", "")
+    input_type = data |> Map.get("type", "text") |> to_string() |> String.downcase()
+
+    {answers, warnings} = extract_short_answer_responses(element.raw_rows)
+
+    if answers == [] do
+      warning =
+        Warnings.build(:short_answer_invalid_shape, %{
+          element_type: element.element_type
+        })
+
+      {:fallback, :invalid, [warning]}
+    else
+      sa = %ShortAnswer{
+        id: element.id,
+        block_index: element.block_index,
+        stem: stem,
+        answers: answers,
+        input_type: input_type,
+        incorrect_feedback: string_or_nil(Map.get(data, "incorrect_feedback")),
+        raw: element.raw_rows
+      }
+
+      {:ok, sa, Enum.reverse(warnings)}
+    end
+  end
+
   defp derive_youtube_urls(source) do
     case extract_video_id(source) do
       {:ok, id} ->
@@ -312,6 +435,122 @@ defmodule Oli.GoogleDocs.CustomElements do
       Map.put(acc, String.downcase(key), value)
     end)
   end
+
+  defp extract_cata_choices(rows) do
+    Enum.reduce(rows, {[], []}, fn {key, value}, {choices, warnings} ->
+      case parse_indexed_key(key, "choice") do
+        {:ok, index} ->
+          text = value |> to_string() |> String.trim()
+
+          if text == "" do
+            warning = Warnings.build(:cata_choice_missing, %{choice_key: key})
+            {choices, [warning | warnings]}
+          else
+            choice = %CheckAllThatApply.Choice{id: String.downcase(key), index: index, text: text}
+            {[choice | choices], warnings}
+          end
+
+        :error ->
+          {choices, warnings}
+      end
+    end)
+    |> then(fn {choices, warnings} ->
+      {Enum.sort_by(choices, & &1.index), warnings}
+    end)
+  end
+
+  defp parse_correct_keys(value) do
+    value
+    |> to_string()
+    |> String.split([",", ";"], trim: true)
+    |> Enum.map(&String.trim/1)
+    |> Enum.filter(&(&1 != ""))
+    |> Enum.map(&String.downcase/1)
+  end
+
+  defp validate_correct_keys(correct_keys, choices, warnings) do
+    choice_lookup =
+      choices
+      |> Enum.reduce(%{}, fn %CheckAllThatApply.Choice{id: id} = choice, acc ->
+        Map.put(acc, id, choice)
+      end)
+
+    Enum.reduce(correct_keys, {[], warnings}, fn key, {acc, warn_acc} ->
+      case Map.fetch(choice_lookup, key) do
+        {:ok, _choice} ->
+          {[key | acc], warn_acc}
+
+        :error ->
+          warning = Warnings.build(:cata_missing_correct, %{correct_key: key})
+          {acc, [warning | warn_acc]}
+      end
+    end)
+    |> then(fn {keys, warn_acc} ->
+      {Enum.reverse(keys), warn_acc}
+    end)
+  end
+
+  defp extract_short_answer_responses(rows) do
+    reserved_prefixes = ["hint"]
+
+    reserved_keys =
+      MapSet.new(["stem", "type", "incorrect_feedback", "correct_feedback", "submit_and_compare"])
+
+    Enum.reduce(rows, {[], [], 0}, fn {key, value}, {answers, warnings, order} ->
+      downcased = String.downcase(key)
+
+      cond do
+        Enum.any?(reserved_prefixes, &String.starts_with?(downcased, &1)) ->
+          {answers, warnings, order}
+
+        MapSet.member?(reserved_keys, downcased) ->
+          {answers, warnings, order}
+
+        true ->
+          text = value |> to_string() |> String.trim()
+          ans_key = key |> to_string() |> String.trim()
+
+          if ans_key == "" do
+            warning = Warnings.build(:short_answer_invalid_shape, %{answer_key: key})
+            {answers, [warning | warnings], order}
+          else
+            answer = %ShortAnswer.Answer{
+              value: ans_key,
+              feedback: text,
+              correct?: false,
+              index: order
+            }
+
+            {[answer | answers], warnings, order + 1}
+          end
+      end
+    end)
+    |> then(fn {answers, warnings, _order} ->
+      answers =
+        answers
+        |> Enum.sort_by(& &1.index)
+        |> mark_first_answer_correct()
+
+      {answers, warnings}
+    end)
+  end
+
+  defp mark_first_answer_correct([]), do: []
+
+  defp mark_first_answer_correct([first | rest]) do
+    [%{first | correct?: true} | Enum.map(rest, &%{&1 | correct?: false})]
+  end
+
+  defp string_or_nil(nil), do: nil
+
+  defp string_or_nil(value) when is_binary(value) do
+    case String.trim(value) do
+      "" -> nil
+      trimmed -> trimmed
+    end
+  end
+
+  defp string_or_nil(value), do: value
 
   defp parse_indexed_key(key, prefix) when is_binary(key) do
     downcased = String.downcase(key)

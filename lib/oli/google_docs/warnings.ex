@@ -18,6 +18,11 @@ defmodule Oli.GoogleDocs.Warnings do
           | :mcq_choice_missing
           | :mcq_feedback_missing
           | :mcq_activity_creation_failed
+          | :cata_missing_correct
+          | :cata_choice_missing
+          | :cata_activity_creation_failed
+          | :short_answer_invalid_shape
+          | :short_answer_activity_creation_failed
           | :media_upload_failed
           | :media_oversized
           | :media_decode_failed
@@ -67,6 +72,27 @@ defmodule Oli.GoogleDocs.Warnings do
     mcq_activity_creation_failed: %{
       severity: :error,
       template: "Failed to create MCQ activity: %{reason}."
+    },
+    cata_missing_correct: %{
+      severity: :warn,
+      template:
+        "CheckAllThatApply CustomElement missing valid `correct` entries; rendered as table."
+    },
+    cata_choice_missing: %{
+      severity: :warn,
+      template: "CheckAllThatApply choice `%{choice_key}` has no value; omitted from activity."
+    },
+    cata_activity_creation_failed: %{
+      severity: :error,
+      template: "Failed to create CheckAllThatApply activity: %{reason}."
+    },
+    short_answer_invalid_shape: %{
+      severity: :warn,
+      template: "ShortAnswer CustomElement is missing required data."
+    },
+    short_answer_activity_creation_failed: %{
+      severity: :error,
+      template: "Failed to create Short Answer activity: %{reason}."
     },
     media_upload_failed: %{
       severity: :warn,

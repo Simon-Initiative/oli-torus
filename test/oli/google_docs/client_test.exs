@@ -73,7 +73,9 @@ defmodule RedirectHTTPStub do
 
   def stop do
     case Process.whereis(__MODULE__) do
-      nil -> :ok
+      nil ->
+        :ok
+
       pid ->
         try do
           Agent.stop(pid)

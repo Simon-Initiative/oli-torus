@@ -4,12 +4,13 @@ defmodule Oli.GoogleDocs.McqBuilder do
   elements. The builder validates required fields, applies sensible defaults,
   and delegates persistence to the authoring activity editor.
   """
+  @behaviour Oli.GoogleDocs.ActivityBuilder
 
   alias Oli.Authoring.Editing.ActivityEditor
+  alias Oli.GoogleDocs.ActivityBuilder.Utils
   alias Oli.GoogleDocs.CustomElements.Mcq
   alias Oli.GoogleDocs.CustomElements.Mcq.Choice
   alias Oli.GoogleDocs.Warnings
-  alias Oli.TorusDoc.Markdown.MarkdownParser
 
   @type build_option ::
           {:project_slug, String.t()}
@@ -26,6 +27,10 @@ defmodule Oli.GoogleDocs.McqBuilder do
     defstruct [:mcq, :model, :revision, :activity_content, :warnings]
   end
 
+  @impl true
+  def supported?(%Mcq{}), do: true
+  def supported?(_), do: false
+
   @doc """
   Validates the MCQ payload and creates an `oli_multiple_choice` activity within
   the project.
@@ -35,6 +40,7 @@ defmodule Oli.GoogleDocs.McqBuilder do
   """
   @spec build(Mcq.t(), [build_option()]) ::
           {:ok, Result.t()} | {:error, atom(), list(map())}
+  @impl true
   def build(%Mcq{} = mcq, opts) do
     project_slug = Keyword.fetch!(opts, :project_slug)
     author = Keyword.fetch!(opts, :author)
@@ -57,7 +63,7 @@ defmodule Oli.GoogleDocs.McqBuilder do
              [],
              "embedded",
              title
-          ) do
+           ) do
       result = %Result{
         mcq: mcq,
         model: model,
@@ -158,14 +164,15 @@ defmodule Oli.GoogleDocs.McqBuilder do
   defp build_model(mcq, choices, correct_id, warnings) do
     {choice_models, response_models, warnings, targeted} =
       Enum.reduce(choices, {[], [], warnings, []}, fn %Choice{} = choice,
-                                                     {choice_acc, response_acc, warn_acc, targeted_acc} ->
+                                                      {choice_acc, response_acc, warn_acc,
+                                                       targeted_acc} ->
         choice_model =
-          make_content_map(choice.text)
+          Utils.make_content_map(choice.text)
           |> Map.put("id", choice.id)
 
         {feedback, new_warnings} = build_feedback(choice)
 
-        response_id = unique_id()
+        response_id = Utils.unique_id()
 
         response_model = %{
           "id" => response_id,
@@ -188,14 +195,14 @@ defmodule Oli.GoogleDocs.McqBuilder do
     responses = Enum.reverse(response_models) ++ [build_catch_all_response()]
 
     part = %{
-      "id" => unique_id(),
+      "id" => Utils.unique_id(),
       "responses" => responses,
       "scoringStrategy" => "best",
       "hints" => build_hints(mcq)
     }
 
     model = %{
-      "stem" => make_content_map(mcq.stem || ""),
+      "stem" => Utils.make_content_map(mcq.stem || ""),
       "choices" => Enum.reverse(choice_models),
       "authoring" => %{
         "version" => 2,
@@ -212,15 +219,15 @@ defmodule Oli.GoogleDocs.McqBuilder do
   defp build_feedback(%Choice{} = choice) do
     case choice.feedback do
       nil ->
-        {default_feedback(), [missing_feedback_warning(choice)]}
+        {Utils.empty_feedback(), [missing_feedback_warning(choice)]}
 
       feedback_text ->
         trimmed = feedback_text |> to_string() |> String.trim()
 
         if trimmed == "" do
-          {default_feedback(), [missing_feedback_warning(choice)]}
+          {Utils.empty_feedback(), [missing_feedback_warning(choice)]}
         else
-          {make_content_map(trimmed), []}
+          {Utils.make_content_map(trimmed), []}
         end
     end
   end
@@ -228,59 +235,10 @@ defmodule Oli.GoogleDocs.McqBuilder do
   defp score_for(choice_id, correct_id) when choice_id == correct_id, do: 1.0
   defp score_for(_, _), do: 0.0
 
-  defp make_content_map(text) do
-    %{
-      "id" => unique_id(),
-      "content" => rich_text(text || ""),
-      "editor" => "slate",
-      "textDirection" => "ltr"
-    }
-  end
-
-  defp rich_text(text) do
-    case MarkdownParser.parse(text) do
-      {:ok, content} -> content
-      {:error, _reason} ->
-        [
-          %{
-            "type" => "p",
-            "children" => [
-              %{"text" => text || ""}
-            ]
-          }
-        ]
-    end
-  end
-
-  defp default_feedback do
-    make_content_map("")
-  end
-
   @default_hint_count 3
 
   defp build_hints(%Mcq{raw: raw}) do
-    hints =
-      raw
-      |> Enum.reduce([], fn {key, value}, acc ->
-        case parse_indexed_key(key, "hint") do
-          {:ok, index} ->
-            text = value |> to_string() |> String.trim()
-
-            if text == "" do
-              acc
-            else
-              [{index, make_content_map(text)} | acc]
-            end
-
-          :error ->
-            acc
-        end
-      end)
-      |> Enum.sort_by(fn {index, _} -> index end)
-      |> Enum.map(fn {_index, hint} -> hint end)
-
-    needed = max(@default_hint_count - length(hints), 0)
-    hints ++ Enum.map(1..needed, fn _ -> make_content_map("") end)
+    Utils.parse_hints(raw, default_count: @default_hint_count)
   end
 
   defp missing_feedback_warning(%Choice{feedback_key: key, id: choice_id}) do
@@ -289,41 +247,18 @@ defmodule Oli.GoogleDocs.McqBuilder do
     })
   end
 
-  defp unique_id do
-    :erlang.unique_integer([:monotonic, :positive])
-    |> Integer.to_string()
-  end
-
   defp default_feedback_key(nil), do: "feedback"
 
   defp default_feedback_key(choice_id) do
     "feedback_for_#{choice_id}"
   end
 
-  defp parse_indexed_key(key, prefix) when is_binary(key) do
-    downcased = String.downcase(key)
-
-    if String.starts_with?(downcased, prefix) do
-      suffix = String.replace_prefix(downcased, prefix, "")
-
-      if suffix != "" and Regex.match?(~r/^\d+$/, suffix) do
-        {:ok, String.to_integer(suffix)}
-      else
-        :error
-      end
-    else
-      :error
-    end
-  end
-
-  defp parse_indexed_key(_, _), do: :error
-
   defp build_catch_all_response do
     %{
-      "id" => unique_id(),
+      "id" => Utils.unique_id(),
       "rule" => "input like {.*}",
       "score" => 0.0,
-      "feedback" => make_content_map("Incorrect")
+      "feedback" => Utils.make_content_map("Incorrect")
     }
   end
 end

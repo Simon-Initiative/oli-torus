@@ -729,6 +729,7 @@ defmodule Oli.GoogleDocs.MarkdownParser do
           {close_rel, end_len} ->
             encoded = binary_part(remaining, 0, close_rel)
             after_close = close_rel + end_len
+
             trailing =
               binary_part(remaining, after_close, byte_size(remaining) - after_close)
 

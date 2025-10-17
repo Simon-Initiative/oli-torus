@@ -11,6 +11,7 @@ defmodule Oli.GoogleDocs.ImportTest do
   alias Oli.Auditing.LogEvent
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Authoring.Course
+  alias Oli.Activities
 
   alias __MODULE__.StubClient
   alias __MODULE__.InlineMarkupClient
@@ -19,6 +20,7 @@ defmodule Oli.GoogleDocs.ImportTest do
   alias __MODULE__.FailingMcqBuilder
   alias __MODULE__.FailingMediaLibrary
   alias __MODULE__.RedirectClient
+  alias __MODULE__.ActivitiesClient
 
   describe "import/4" do
     setup do
@@ -87,6 +89,47 @@ defmodule Oli.GoogleDocs.ImportTest do
         |> Base.encode16(case: :lower)
 
       assert log_event.details["file_id_hash"] == file_hash
+    end
+
+    test "imports check all that apply and short answer custom elements" do
+      author = insert(:author)
+
+      {:ok, project_info} = Course.create_project("Activities Import", author)
+      project = project_info.project
+      container = AuthoringResolver.root_container(project.slug)
+
+      Application.put_env(:oli, :google_docs_import, client: ActivitiesClient)
+
+      {:ok, revision, warnings} =
+        Import.import(project.slug, container.slug, "1ActivityDoc", author)
+
+      assert warnings == []
+
+      persisted = Repo.get!(Revision, revision.id)
+
+      model = persisted.content["model"] |> List.wrap()
+      all_nodes = collect_nodes(model)
+
+      activity_refs = Enum.filter(all_nodes, &(&1["type"] == "activity-reference"))
+      assert length(activity_refs) == 2
+
+      activity_types =
+        Enum.map(activity_refs, fn ref ->
+          activity_revision =
+            Revision
+            |> where(resource_id: ^ref["activity_id"])
+            |> order_by(desc: :id)
+            |> limit(1)
+            |> Repo.one!()
+
+          activity_revision.activity_type_id
+        end)
+
+      cata_registration = Activities.get_registration_by_slug("oli_check_all_that_apply")
+      sa_registration = Activities.get_registration_by_slug("oli_short_answer")
+
+      assert MapSet.new(activity_types) ==
+               MapSet.new([cata_registration.id, sa_registration.id])
     end
 
     test "returns error when file guard is already in progress" do
@@ -294,6 +337,24 @@ defmodule Oli.GoogleDocs.ImportTest do
     end
   end
 
+  defmodule ActivitiesClient do
+    alias Oli.GoogleDocsImport.TestHelpers
+
+    def fetch_markdown(file_id, _opts) do
+      fixture = TestHelpers.load_fixture(:activities)
+
+      {:ok,
+       %{
+         body: fixture.body,
+         bytes: byte_size(fixture.body),
+         content_type: "text/markdown",
+         headers: [{"content-type", "text/markdown"}],
+         url: TestHelpers.markdown_export_url(file_id),
+         file_id: file_id
+       }}
+    end
+  end
+
   defmodule InlineMarkupClient do
     alias Oli.GoogleDocsImport.TestHelpers
 
@@ -377,6 +438,9 @@ defmodule Oli.GoogleDocs.ImportTest do
     @moduledoc false
     alias Oli.GoogleDocs.CustomElements.Mcq
     alias Oli.GoogleDocs.Warnings
+
+    def supported?(%Mcq{}), do: true
+    def supported?(_), do: false
 
     def build(%Mcq{}, _opts) do
       {:error, :activity_creation_failed,

@@ -107,12 +107,14 @@ defmodule Oli.GoogleDocs.McqBuilderTest do
 
     targeted = result.model["authoring"]["targeted"]
     assert length(targeted) == 2
+
     targeted_map =
       targeted
       |> Enum.map(fn [choice_ids, response_id] -> {List.first(choice_ids), response_id} end)
       |> Enum.into(%{})
 
     incorrect_responses = Enum.filter(responses, &(&1["score"] == 0.0))
+
     Enum.each(incorrect_responses, fn response ->
       expected_choice =
         case response["rule"] do
