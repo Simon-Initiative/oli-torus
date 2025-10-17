@@ -319,13 +319,23 @@ export class HtmlParser implements WriterImpl {
     return this.captioned_content(
       context,
       attrs,
-      <img
-        className="figure-img img-fluid"
-        alt={attrs.alt ? this.escapeXml(attrs.alt) : ''}
-        width={attrs.width ? this.escapeXml(String(attrs.width)) : undefined}
-        src={this.escapeXml(attrs.src)}
-        {...maybePointMarkerAttr(attrs, pointMarkerContextFrom(context, attrs))}
-      />,
+      <>
+        <div className="text-sm md:hidden flex justify-center">
+          <div
+            className="inline-block w-full text-right"
+            style={attrs.width ? { width: `${this.escapeXml(String(attrs.width))}px` } : {}}
+          >
+            Pinch to Zoom
+          </div>
+        </div>
+        <img
+          className="figure-img img-fluid"
+          alt={attrs.alt ? this.escapeXml(attrs.alt) : ''}
+          width={attrs.width ? this.escapeXml(String(attrs.width)) : undefined}
+          src={this.escapeXml(attrs.src)}
+          {...maybePointMarkerAttr(attrs, pointMarkerContextFrom(context, attrs))}
+        />
+      </>,
     );
   }
   img_inline(context: WriterContext, next: Next, attrs: ImageInline) {
