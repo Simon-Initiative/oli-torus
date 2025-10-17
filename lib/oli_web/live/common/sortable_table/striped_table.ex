@@ -88,9 +88,12 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
     row_class = row_class <> " #{assigns[:additional_row_class]}"
 
     row_id =
-      if assigns.model.data[:view_type] == :objectives_instructor_dashboard,
-        do: "row_#{row.resource_id}_#{assigns.index}",
-        else: id_field(row, assigns.model)
+      if assigns.model.data[:view_type] in [
+           :objectives_instructor_dashboard,
+           :activities_instructor_dashboard
+         ],
+         do: "row_#{row.resource_id}_#{assigns.index}",
+         else: id_field(row, assigns.model)
 
     assigns = Map.merge(assigns, %{row: row, row_class: row_class, row_id: row_id})
 
