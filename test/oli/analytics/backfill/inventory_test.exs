@@ -173,6 +173,35 @@ defmodule Oli.Analytics.Backfill.InventoryTest do
       assert Enum.map(entries, & &1.chunk_index) == ["2", "3"]
     end
 
+    test "format_chunk_logs turns entries into transport maps", %{batch: batch} do
+      metrics = %{
+        "chunk_index" => "1",
+        "rows_written" => 5,
+        "bytes_written" => 100,
+        "source_url" => "s3://bucket/key"
+      }
+
+      {:ok, entry} = Inventory.upsert_chunk_log(batch, "1", metrics)
+
+      formatted = Inventory.format_chunk_logs([entry], 0)
+
+      assert [%{chunk_index: "1", rows_written: 5, bytes: 100, source_url: "s3://bucket/key"}] =
+               formatted
+    end
+
+    test "broadcast_chunk_log_update publishes payload", %{batch: batch} do
+      metrics = %{"chunk_index" => "1", "rows_written" => 5}
+      {:ok, entry} = Inventory.upsert_chunk_log(batch, "1", metrics)
+
+      Phoenix.PubSub.subscribe(Oli.PubSub, Inventory.chunk_logs_topic(batch.id))
+
+      payload = Inventory.broadcast_chunk_log_update(entry, 1, %{"chunk_count" => 1})
+
+      assert_receive {:chunk_log_appended, ^payload}
+      assert payload.total == 1
+      assert payload.log.chunk_index == "1"
+    end
+
     test "deletes chunk logs for batch", %{batch: batch} do
       metrics = %{"chunk_index" => "1", "rows_written" => 5}
       {:ok, _} = Inventory.upsert_chunk_log(batch, "1", metrics)
@@ -209,6 +238,159 @@ defmodule Oli.Analytics.Backfill.InventoryTest do
 
       assert [%Oban.Job{args: %{"batch_id" => ^batch_id}}] =
                all_enqueued(worker: Oli.Analytics.Backfill.Inventory.BatchWorker)
+    end
+  end
+
+  describe "pause and resume batch" do
+    setup do
+      run =
+        %InventoryRun{
+          inventory_date: ~D[2024-07-05],
+          inventory_prefix: "inventory/prefix/2024-07-05",
+          manifest_url: "https://example.com/manifest.json",
+          manifest_bucket: "test-bucket",
+          target_table: "analytics.raw_events",
+          format: "JSONAsString",
+          status: :running,
+          metadata: %{
+            "max_simultaneous_batches" => 1,
+            "max_batch_retries" => 1
+          }
+        }
+        |> Repo.insert!()
+
+      %{run: run}
+    end
+
+    test "pause_batch moves pending batch to paused", %{run: run} do
+      batch =
+        %InventoryBatch{
+          run_id: run.id,
+          sequence: 1,
+          parquet_key: "inventory/1.parquet",
+          status: :pending,
+          metadata: %{}
+        }
+        |> Repo.insert!()
+
+      assert {:ok, %InventoryBatch{} = paused_batch} = Inventory.pause_batch(batch)
+      assert paused_batch.status == :paused
+      assert Map.get(paused_batch.metadata, "pause_requested") == false
+    end
+
+    test "pause_batch on running batch sets pause flag", %{run: run} do
+      batch =
+        %InventoryBatch{
+          run_id: run.id,
+          sequence: 1,
+          parquet_key: "inventory/1.parquet",
+          status: :running,
+          metadata: %{}
+        }
+        |> Repo.insert!()
+
+      assert {:ok, %InventoryBatch{} = paused} = Inventory.pause_batch(batch)
+      assert paused.status == :running
+      assert Map.get(paused.metadata, "pause_requested")
+      assert Map.get(paused.metadata, "pause_requested_at")
+    end
+
+    test "resume_batch returns paused batch to pending", %{run: run} do
+      batch =
+        %InventoryBatch{
+          run_id: run.id,
+          sequence: 1,
+          parquet_key: "inventory/1.parquet",
+          status: :paused,
+          metadata: %{"pause_requested" => false}
+        }
+        |> Repo.insert!()
+
+      assert {:ok, %InventoryBatch{} = resumed} = Inventory.resume_batch(batch)
+      assert resumed.status in [:pending, :queued]
+      refute Map.has_key?(resumed.metadata, "pause_requested")
+    end
+  end
+
+  describe "pause and resume run" do
+    setup do
+      run =
+        %InventoryRun{
+          inventory_date: ~D[2024-07-06],
+          inventory_prefix: "inventory/prefix/2024-07-06",
+          manifest_url: "https://example.com/manifest.json",
+          manifest_bucket: "test-bucket",
+          target_table: "analytics.raw_events",
+          format: "JSONAsString",
+          status: :running,
+          metadata: %{}
+        }
+        |> Repo.insert!()
+
+      pending_batch =
+        %InventoryBatch{
+          run_id: run.id,
+          sequence: 1,
+          parquet_key: "inventory/pending.parquet",
+          status: :pending
+        }
+        |> Repo.insert!()
+
+      running_batch =
+        %InventoryBatch{
+          run_id: run.id,
+          sequence: 2,
+          parquet_key: "inventory/running.parquet",
+          status: :running,
+          processed_objects: 5
+        }
+        |> Repo.insert!()
+
+      {:ok,
+       run: Repo.preload(run, :batches),
+       pending_batch: pending_batch,
+       running_batch: running_batch}
+    end
+
+    test "pause_run marks run and batches", %{
+      run: run,
+      pending_batch: pending_batch,
+      running_batch: running_batch
+    } do
+      assert {:ok, paused_run} = Inventory.pause_run(run)
+      assert paused_run.status == :paused
+      assert paused_run.metadata["pause_requested"]
+
+      paused_pending = Repo.get!(InventoryBatch, pending_batch.id)
+      assert paused_pending.status == :paused
+
+      paused_running = Repo.get!(InventoryBatch, running_batch.id)
+      assert paused_running.status == :running
+      assert paused_running.metadata["pause_requested"]
+    end
+
+    test "resume_run clears pause flags and resumes batches", %{run: run} do
+      {:ok, paused_run} = Inventory.pause_run(run)
+
+      {:ok, resumed_run} = Inventory.resume_run(paused_run)
+      assert resumed_run.status in [:running, :pending]
+      refute resumed_run.metadata["pause_requested"]
+
+      resumed_batches =
+        InventoryBatch
+        |> where([b], b.run_id == ^resumed_run.id)
+        |> Repo.all()
+
+      assert Enum.any?(resumed_batches, &(&1.status in [:pending, :queued, :running]))
+
+      assert Enum.all?(resumed_batches, fn batch ->
+               metadata = batch.metadata || %{}
+               is_nil(metadata["pause_requested"])
+             end)
+    end
+
+    test "resume_run errors when run is not paused", %{run: run} do
+      assert {:error, :not_paused} = Inventory.resume_run(run)
     end
   end
 end

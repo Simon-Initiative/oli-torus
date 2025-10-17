@@ -12,9 +12,10 @@ defmodule Oli.Analytics.Backfill.InventoryRun do
 
   @type t :: %__MODULE__{}
 
-  @status_values [:pending, :preparing, :running, :completed, :failed, :cancelled]
+  @status_values [:pending, :preparing, :running, :paused, :completed, :failed, :cancelled]
 
-  @type status :: :pending | :preparing | :running | :completed | :failed | :cancelled
+  @type status ::
+          :pending | :preparing | :running | :paused | :completed | :failed | :cancelled
 
   schema "clickhouse_inventory_runs" do
     field :inventory_date, :date

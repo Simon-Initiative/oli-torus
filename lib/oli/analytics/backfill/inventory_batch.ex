@@ -11,9 +11,10 @@ defmodule Oli.Analytics.Backfill.InventoryBatch do
 
   @type t :: %__MODULE__{}
 
-  @status_values [:pending, :queued, :running, :completed, :failed, :cancelled]
+  @status_values [:pending, :queued, :running, :paused, :completed, :failed, :cancelled]
 
-  @type status :: :pending | :queued | :running | :completed | :failed | :cancelled
+  @type status ::
+          :pending | :queued | :running | :paused | :completed | :failed | :cancelled
 
   schema "clickhouse_inventory_batches" do
     field :sequence, :integer

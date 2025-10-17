@@ -344,7 +344,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
       {:ok, view, _html} = live(conn, @route)
 
       view
-      |> element("button[phx-value-tab=\"inventory\"]")
+      |> element("button[phx-value-tab=\"batch\"]")
       |> render_click()
 
       view
@@ -406,7 +406,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
       {:ok, view, _html} = live(conn, @route)
 
       view
-      |> element("button[phx-value-tab=\"inventory\"]")
+      |> element("button[phx-value-tab=\"batch\"]")
       |> render_click()
 
       view
@@ -427,7 +427,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
       assert rendered =~ "Cancelled"
     end
 
-    test "cancel inventory batch transitions status to cancelled", %{conn: conn} do
+    test "pause inventory run transitions status to paused", %{conn: conn} do
       run =
         %InventoryRun{
           inventory_date: ~D[2024-07-01],
@@ -448,7 +448,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
           run_id: run.id,
           sequence: 1,
           parquet_key: "torus/path/running.parquet",
-          status: :running,
+          status: :pending,
           object_count: 12,
           processed_objects: 6
         }
@@ -459,21 +459,72 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
       {:ok, view, _html} = live(conn, @route)
 
       view
-      |> element("button[phx-value-tab=\"inventory\"]")
+      |> element("button[phx-value-tab=\"batch\"]")
       |> render_click()
 
       view
-      |> element("button[phx-click=\"cancel_inventory_batch\"][phx-value-id=\"#{batch.id}\"]")
+      |> element("button[phx-click=\"pause_inventory_run\"][phx-value-id=\"#{run.id}\"]")
       |> render_click()
 
       batch = Repo.get!(InventoryBatch, batch.id)
       run = Repo.get!(InventoryRun, run.id)
 
-      assert batch.status == :cancelled
-      assert run.running_batches in [0, nil]
+      assert batch.status == :paused
+      assert run.status == :paused
 
       rendered = render(view)
-      assert rendered =~ "Batch #{batch.id} cancellation requested"
+      assert rendered =~ "Run #{run.id} paused"
+    end
+
+    test "resume inventory run transitions status to pending", %{conn: conn} do
+      run =
+        %InventoryRun{
+          inventory_date: ~D[2024-07-01],
+          inventory_prefix: "torus/inventory/2024-07-01",
+          manifest_url: "https://example.com/manifest.json",
+          manifest_bucket: "test-inventory-bucket",
+          target_table: "analytics.raw_events",
+          format: "JSONAsString",
+          status: :paused,
+          dry_run: false,
+          total_batches: 1,
+          running_batches: 0,
+          pending_batches: 1,
+          metadata: %{"pause_requested" => true}
+        }
+        |> Repo.insert!()
+
+      batch =
+        %InventoryBatch{
+          run_id: run.id,
+          sequence: 1,
+          parquet_key: "torus/path/paused.parquet",
+          status: :paused,
+          object_count: 20,
+          processed_objects: 10,
+          metadata: %{"pause_requested" => false}
+        }
+        |> Repo.insert!()
+
+      {:ok, view, _html} = live(conn, @route)
+
+      view
+      |> element("button[phx-value-tab=\"batch\"]")
+      |> render_click()
+
+      view
+      |> element("button[phx-click=\"resume_inventory_run\"][phx-value-id=\"#{run.id}\"]")
+      |> render_click()
+
+      batch = Repo.get!(InventoryBatch, batch.id)
+      run = Repo.get!(InventoryRun, run.id)
+
+      assert batch.status in [:pending, :queued]
+      assert run.status in [:running, :pending]
+      refute run.metadata["pause_requested"]
+
+      rendered = render(view)
+      assert rendered =~ "Run #{run.id} resumed"
     end
   end
 end

@@ -12,7 +12,6 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
   alias Oli.Analytics.Backfill.BackfillRun
   alias Oli.Analytics.Backfill.Inventory
   alias Oli.Analytics.Backfill.InventoryBatch
-  alias Oli.Analytics.Backfill.InventoryChunkLog
   alias Oli.Analytics.Backfill.InventoryRun
   alias Oli.Analytics.Backfill.Notifier
   alias OliWeb.Common.Breadcrumb
@@ -42,6 +41,15 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
 
     active_tab = resolve_active_tab(params)
 
+    user_token =
+      case Map.get(socket.assigns, :current_author) do
+        %{id: author_id} ->
+          Phoenix.Token.sign(OliWeb.Endpoint, "user socket", author_id)
+
+        _ ->
+          nil
+      end
+
     socket =
       assign(socket,
         title: "ClickHouse Bulk Backfill",
@@ -54,7 +62,8 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
         inventory_form: inventory_form,
         inventory_form_inputs: inventory_form_inputs,
         inventory_config: inventory_config,
-        active_tab: active_tab
+        active_tab: active_tab,
+        user_token: user_token
       )
 
     if connected?(socket) do
@@ -171,6 +180,62 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
 
       {:error, reason} ->
         {:noreply, put_flash(socket, :error, format_error(reason))}
+    end
+  rescue
+    Ecto.NoResultsError ->
+      {:noreply, put_flash(socket, :error, "Run not found")}
+  end
+
+  def handle_event("pause_inventory_run", %{"id" => id}, socket) do
+    with {run_id, _} <- Integer.parse(to_string(id)),
+         run <- Inventory.get_run!(run_id),
+         {:ok, _run} <- Inventory.pause_run(run) do
+      socket =
+        socket
+        |> put_flash(:info, "Run #{run_id} paused.")
+        |> refresh_runs()
+
+      {:noreply, socket}
+    else
+      :error ->
+        {:noreply, put_flash(socket, :error, "Invalid run identifier")}
+
+      {:error, :not_pausable} ->
+        {:noreply, put_flash(socket, :info, "Run #{id} cannot be paused.")}
+
+      {:error, reason} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, format_error(reason))
+         |> refresh_runs()}
+    end
+  rescue
+    Ecto.NoResultsError ->
+      {:noreply, put_flash(socket, :error, "Run not found")}
+  end
+
+  def handle_event("resume_inventory_run", %{"id" => id}, socket) do
+    with {run_id, _} <- Integer.parse(to_string(id)),
+         run <- Inventory.get_run!(run_id),
+         {:ok, _run} <- Inventory.resume_run(run) do
+      socket =
+        socket
+        |> put_flash(:info, "Run #{run_id} resumed.")
+        |> refresh_runs()
+
+      {:noreply, socket}
+    else
+      :error ->
+        {:noreply, put_flash(socket, :error, "Invalid run identifier")}
+
+      {:error, :not_paused} ->
+        {:noreply, put_flash(socket, :info, "Run #{id} is not paused.")}
+
+      {:error, reason} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, format_error(reason))
+         |> refresh_runs()}
     end
   rescue
     Ecto.NoResultsError ->
@@ -344,78 +409,39 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
       {:noreply, put_flash(socket, :error, "Batch not found")}
   end
 
-  def handle_event("cancel_inventory_batch", %{"id" => id}, socket) do
-    with {batch_id, _} <- Integer.parse(to_string(id)),
-         batch <- Inventory.get_batch!(batch_id),
-         {:ok, _batch} <- Inventory.cancel_batch(batch) do
-      socket =
-        socket
-        |> put_flash(:info, "Batch #{batch_id} cancellation requested.")
-        |> refresh_runs()
-
-      {:noreply, socket}
-    else
-      :error ->
-        {:noreply, put_flash(socket, :error, "Invalid batch identifier")}
-
-      {:error, :not_cancellable} ->
-        {:noreply, put_flash(socket, :info, "Batch #{id} is already finished.")}
-
-      {:error, reason} ->
-        {:noreply,
-         socket
-         |> put_flash(:error, format_error(reason))
-         |> refresh_runs()}
-    end
-  rescue
-    Ecto.NoResultsError ->
-      {:noreply, put_flash(socket, :error, "Batch not found")}
-  end
-
-  def handle_event("chunk_logs_load", %{"batch_id" => batch_param} = params, socket) do
-    offset_param = Map.get(params, "offset", 0)
-
-    with {:ok, batch_id} <- parse_int_param(batch_param, min: 1),
-         {:ok, limit} <- parse_int_param(Map.get(params, "limit", 10), min: 1),
-         offset_result <- parse_int_param(offset_param, min: 0) do
-      direction = normalize_chunk_direction(Map.get(params, "direction"))
-
-      offset =
-        case offset_result do
-          {:ok, value} -> value
-          _ -> 0
-        end
-
-      %{entries: entries, total: total, offset: effective_offset} =
-        Inventory.fetch_chunk_logs(batch_id,
-          offset: offset,
-          limit: limit,
-          include_total: true,
-          direction: chunk_direction_atom(direction)
-        )
-
-      logs = serialize_chunk_logs(entries, effective_offset)
-      has_more = if total, do: effective_offset + length(entries) < total, else: false
-
-      payload = %{
-        batch_id: batch_id,
-        offset: effective_offset,
-        limit: limit,
-        total: total,
-        direction: direction,
-        logs: logs,
-        has_more: has_more
-      }
-
-      {:noreply, push_event(socket, "chunk_logs_update", payload)}
-    else
-      _ -> {:noreply, socket}
-    end
-  end
-
   @impl true
+  def handle_info(
+        {:clickhouse_backfill_updated, %{source: :inventory_batch, metadata: metadata}},
+        socket
+      ) do
+    run_id = metadata_id(metadata, :run_id)
+
+    socket =
+      case run_id do
+        nil -> refresh_runs(socket)
+        id -> update_inventory_run_assign(socket, id)
+      end
+
+    {:noreply, socket}
+  end
+
+  def handle_info(
+        {:clickhouse_backfill_updated, %{source: :inventory_run, metadata: metadata}},
+        socket
+      ) do
+    run_id = metadata_id(metadata, :run_id)
+
+    socket =
+      case run_id do
+        nil -> refresh_runs(socket)
+        id -> update_inventory_run_assign(socket, id)
+      end
+
+    {:noreply, socket}
+  end
+
   def handle_info({:clickhouse_backfill_updated, _payload}, socket) do
-    {:noreply, refresh_runs(socket)}
+    {:noreply, socket}
   end
 
   @impl true
@@ -772,16 +798,32 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
                   <span class={status_badge_classes(run.status)}>
                     {Phoenix.Naming.humanize(run.status)}
                   </span>
-                  <span class="text-xs text-gray-500 dark:text-gray-400">
+                  <span class="flex-1 text-xs text-gray-500 dark:text-gray-400">
                     {inventory_progress_label(run)}
                   </span>
+                  <.button
+                    :if={pausable_run?(run)}
+                    phx-click="pause_inventory_run"
+                    phx-value-id={run.id}
+                    class="btn-warning btn-xs"
+                  >
+                    Pause
+                  </.button>
+                  <.button
+                    :if={resumable_run?(run)}
+                    phx-click="resume_inventory_run"
+                    phx-value-id={run.id}
+                    class="btn-success btn-xs"
+                  >
+                    Resume
+                  </.button>
                   <.button
                     :if={cancellable_run?(run)}
                     phx-click="cancel_inventory_run"
                     phx-value-id={run.id}
                     class="btn-secondary btn-xs"
                   >
-                    Cancel Run
+                    Cancel
                   </.button>
                   <.button
                     :if={deletable_inventory_run?(run)}
@@ -861,9 +903,6 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
                     <th class="px-3 py-2 text-left font-medium text-gray-600 dark:text-gray-300">
                       Timeline
                     </th>
-                    <th class="px-3 py-2 text-left font-medium text-gray-600 dark:text-gray-300">
-                      Actions
-                    </th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
@@ -884,6 +923,14 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
                         <%= if batch.error do %>
                           <div class="text-red-600 break-words">{batch.error}</div>
                         <% end %>
+                        <.button
+                          :if={batch.status == :failed}
+                          phx-click="retry_inventory_batch"
+                          phx-value-id={batch.id}
+                          class="btn-secondary btn-xs"
+                        >
+                          Retry Batch
+                        </.button>
                       </td>
                       <td class="px-3 py-3 space-y-1">
                         <% progress = batch_progress(batch) %>
@@ -910,26 +957,6 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
                         <div>Started: {format_timestamp(batch.started_at)}</div>
                         <div>Finished: {format_timestamp(batch.finished_at)}</div>
                       </td>
-                      <td class="px-3 py-3">
-                        <div class="flex flex-col gap-2">
-                          <.button
-                            :if={cancellable_batch?(batch)}
-                            phx-click="cancel_inventory_batch"
-                            phx-value-id={batch.id}
-                            class="btn-secondary btn-xs"
-                          >
-                            Cancel Batch
-                          </.button>
-                          <.button
-                            :if={batch.status == :failed}
-                            phx-click="retry_inventory_batch"
-                            phx-value-id={batch.id}
-                            class="btn-secondary btn-xs"
-                          >
-                            Retry Batch
-                          </.button>
-                        </div>
-                      </td>
                     </tr>
                     <tr :if={batch_has_chunk_logs?(batch)}>
                       <td colspan="6" class="px-3 pb-3">
@@ -951,6 +978,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
                               data-window="200"
                               data-initial-count={batch_chunk_log_count(batch)}
                               data-default-live={if(default_live?, do: 1, else: 0)}
+                              data-user-token={@user_token || ""}
                               phx-hook="ChunkLogsViewer"
                               phx-update="ignore"
                             >
@@ -1323,29 +1351,93 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
     failed = run.failed_batches || 0
     running = run.running_batches || 0
     pending = run.pending_batches || 0
+    batches = run.batches || []
+    paused = Enum.count(batches, &(&1.status == :paused))
 
-    cond do
-      total == 0 and run.status == :completed -> "No batches required"
-      total == 0 and run.status in [:failed, :cancelled] -> "No batches prepared"
-      total == 0 -> "Preparing batches"
-      failed > 0 -> "#{completed} of #{total} completed · #{failed} failed"
-      running > 0 -> "#{completed} of #{total} completed · #{running} running"
-      pending > 0 -> "#{completed} of #{total} completed · #{pending} pending"
-      true -> "#{completed} of #{total} completed"
+    segments =
+      []
+      |> append_segment(failed > 0, "#{failed} failed")
+      |> append_segment(running > 0, "#{running} running")
+      |> append_segment(paused > 0, "#{paused} paused")
+      |> append_segment(pending > 0, "#{pending} pending")
+
+    base =
+      cond do
+        total == 0 and run.status == :completed -> "No batches required"
+        total == 0 and run.status in [:failed, :cancelled] -> "No batches prepared"
+        total == 0 -> "Preparing batches"
+        true -> "#{completed} of #{total} completed"
+      end
+
+    if total == 0 or Enum.empty?(segments) do
+      base
+    else
+      base <> " · " <> Enum.join(segments, " · ")
     end
   end
 
   defp cancellable_run?(%InventoryRun{status: status})
-       when status in [:pending, :preparing, :running],
+       when status in [:pending, :preparing, :running, :paused],
        do: true
 
   defp cancellable_run?(_), do: false
 
-  defp cancellable_batch?(%InventoryBatch{status: status})
-       when status in [:pending, :queued, :running],
-       do: true
+  defp pausable_run?(%InventoryRun{} = run) do
+    metadata = ensure_map(run.metadata)
 
-  defp cancellable_batch?(_), do: false
+    run.status in [:running, :preparing, :pending] and
+      not truthy?(Map.get(metadata, "pause_requested"))
+  end
+
+  defp pausable_run?(_), do: false
+
+  defp resumable_run?(%InventoryRun{} = run) do
+    metadata = ensure_map(run.metadata)
+    run.status == :paused or truthy?(Map.get(metadata, "pause_requested"))
+  end
+
+  defp resumable_run?(_), do: false
+
+  defp append_segment(segments, false, _value), do: segments
+  defp append_segment(segments, true, value), do: segments ++ [value]
+
+  defp metadata_id(metadata, key) do
+    metadata = Map.new(metadata || %{})
+    Map.get(metadata, key) || Map.get(metadata, Atom.to_string(key))
+  end
+
+  defp update_inventory_run_assign(socket, run_id) do
+    try do
+      run = Inventory.get_run!(run_id)
+      runs = upsert_inventory_run(socket.assigns.inventory_runs, run)
+      assign(socket, :inventory_runs, runs)
+    rescue
+      Ecto.NoResultsError ->
+        pruned =
+          socket.assigns.inventory_runs
+          |> Enum.reject(&(&1.id == run_id))
+
+        replenished =
+          if length(pruned) < @inventory_runs_limit do
+            Inventory.list_runs(limit: @inventory_runs_limit)
+          else
+            pruned
+          end
+
+        assign(socket, :inventory_runs, replenished)
+    end
+  end
+
+  defp upsert_inventory_run(runs, run) do
+    runs
+    |> Enum.reject(&(&1.id == run.id))
+    |> List.insert_at(0, run)
+    |> Enum.sort_by(&run_sort_key/1, {:desc, DateTime})
+    |> Enum.take(@inventory_runs_limit)
+  end
+
+  defp run_sort_key(%{inserted_at: %DateTime{} = dt}), do: dt
+  defp run_sort_key(_), do: ~U[1970-01-01 00:00:00Z]
 
   defp ensure_target_table(value) do
     value
@@ -1399,41 +1491,6 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
 
   defp batch_has_chunk_logs?(batch), do: batch_chunk_log_count(batch) > 0
 
-  defp serialize_chunk_logs(entries, offset) do
-    entries
-    |> Enum.with_index(offset + 1)
-    |> Enum.map(fn {%InventoryChunkLog{} = entry, ordinal} ->
-      metrics = ensure_map(entry.metrics)
-
-      rows_written = fetch_numeric_metric(metrics, ["rows_written", :rows_written])
-      rows_read = fetch_numeric_metric(metrics, ["rows_read", :rows_read])
-      bytes_written = fetch_numeric_metric(metrics, ["bytes_written", :bytes_written])
-      bytes_read = fetch_numeric_metric(metrics, ["bytes_read", :bytes_read])
-
-      %{
-        id: entry.id,
-        ordinal: ordinal,
-        chunk_index: entry.chunk_index || Integer.to_string(ordinal),
-        query_id: fetch_metric(metrics, ["query_id", :query_id]),
-        rows_written: rows_written,
-        rows_read: rows_read,
-        rows: rows_written || rows_read,
-        bytes_written: bytes_written,
-        bytes_read: bytes_read,
-        bytes: bytes_written || bytes_read,
-        execution_time_ms:
-          fetch_numeric_metric(metrics, ["execution_time_ms", :execution_time_ms]),
-        source_url: fetch_metric(metrics, ["source_url", :source_url]),
-        dry_run: truthy?(fetch_metric(metrics, ["dry_run", :dry_run])),
-        inserted_at:
-          case entry.inserted_at do
-            %DateTime{} = dt -> DateTime.to_iso8601(dt)
-            _ -> nil
-          end
-      }
-    end)
-  end
-
   defp batch_progress(%InventoryBatch{} = batch) do
     total = batch.object_count || 0
     processed = batch.processed_objects || 0
@@ -1481,82 +1538,6 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
   end
 
   defp parse_non_negative_integer(_, default), do: default
-
-  defp fetch_metric(map, keys, default \\ nil) when is_list(keys) do
-    keys
-    |> Enum.reduce_while(nil, fn key, _acc ->
-      case Map.get(map, key) do
-        nil -> {:cont, nil}
-        value -> {:halt, value}
-      end
-    end)
-    |> case do
-      nil -> default
-      value -> value
-    end
-  end
-
-  defp fetch_numeric_metric(map, keys) when is_list(keys) do
-    map
-    |> fetch_metric(keys)
-    |> parse_optional_number()
-  end
-
-  defp parse_optional_number(value) when is_integer(value), do: value
-  defp parse_optional_number(value) when is_float(value), do: trunc(value)
-
-  defp parse_optional_number(value) when is_binary(value) do
-    trimmed = String.trim(value)
-
-    case Integer.parse(trimmed) do
-      {int, _rest} ->
-        int
-
-      :error ->
-        case Float.parse(trimmed) do
-          {float, _} -> trunc(float)
-          :error -> nil
-        end
-    end
-  end
-
-  defp parse_optional_number(_), do: nil
-
-  defp parse_int_param(value, opts) do
-    min = Keyword.get(opts, :min, 0)
-    max = Keyword.get(opts, :max, :infinity)
-
-    cond do
-      is_integer(value) ->
-        validate_int_range(value, min, max)
-
-      is_binary(value) ->
-        case Integer.parse(String.trim(value)) do
-          {int, rest} when rest == "" -> validate_int_range(int, min, max)
-          {int, nil} -> validate_int_range(int, min, max)
-          _ -> :error
-        end
-
-      true ->
-        :error
-    end
-  end
-
-  defp validate_int_range(int, min, :infinity) when int >= min, do: {:ok, int}
-  defp validate_int_range(int, min, max) when int >= min and int <= max, do: {:ok, int}
-  defp validate_int_range(_int, _min, _max), do: :error
-
-  defp normalize_chunk_direction(value) when value in ["prev", "previous", :prev, :previous],
-    do: "previous"
-
-  defp normalize_chunk_direction(value) when value in ["latest", :latest], do: "latest"
-  defp normalize_chunk_direction(value) when value in ["refresh", :refresh], do: "refresh"
-  defp normalize_chunk_direction(_), do: "next"
-
-  defp chunk_direction_atom("previous"), do: :previous
-  defp chunk_direction_atom("refresh"), do: :refresh
-  defp chunk_direction_atom("latest"), do: :latest
-  defp chunk_direction_atom(_), do: :forward
 
   defp tab_button_classes(true) do
     "px-4 py-2 text-sm font-medium border-b-2 border-delivery-primary text-delivery-primary"

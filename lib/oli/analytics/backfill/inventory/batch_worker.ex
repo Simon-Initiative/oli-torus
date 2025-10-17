@@ -47,9 +47,28 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
     with {:ok, batch} <- Inventory.transition_batch(batch, :running, %{error: nil}),
          {:ok, creds} <- inventory_credentials(run),
          {:ok, total_objects} <- manifest_entry_count(run, batch, creds),
-         {:ok, batch} <- annotate_batch(batch, total_objects),
-         {:ok, summary, batch} <- ingest_entries(run, batch, creds),
-         {:ok, batch} <- Inventory.transition_batch(batch, :completed, summary),
+         {:ok, batch} <- annotate_batch(batch, total_objects) do
+      case ingest_entries(run, batch, creds) do
+        {:ok, summary, batch} ->
+          finalize_completed(run, batch, summary)
+
+        {:paused, summary, batch} ->
+          finalize_paused(run, batch, summary)
+
+        {:cancelled, _summary, batch} ->
+          finalize_cancelled(run, batch)
+
+        {:error, reason} ->
+          handle_failure(run, batch, reason)
+      end
+    else
+      {:error, reason} ->
+        handle_failure(run, batch, reason)
+    end
+  end
+
+  defp finalize_completed(run, batch, summary) do
+    with {:ok, batch} <- Inventory.transition_batch(batch, :completed, summary),
          {:ok, run} <- Inventory.recompute_run_aggregates(run),
          :ok <- update_run_progress(run),
          :ok <- Inventory.maybe_enqueue_pending_batches(run) do
@@ -57,6 +76,36 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
     else
       {:error, reason} -> handle_failure(run, batch, reason)
     end
+  end
+
+  defp finalize_paused(run, batch, summary) do
+    metadata =
+      summary.metadata
+      |> ensure_map()
+      |> Map.delete("pause_requested")
+      |> Map.delete("pause_requested_at")
+      |> Map.put("paused_at", DateTime.utc_now())
+
+    attrs = %{
+      processed_objects: summary.processed_objects,
+      rows_ingested: summary.rows_ingested,
+      bytes_ingested: summary.bytes_ingested,
+      metadata: metadata
+    }
+
+    with {:ok, batch} <- Inventory.transition_batch(batch, :paused, attrs),
+         {:ok, run} <- Inventory.recompute_run_aggregates(run),
+         :ok <- update_run_progress(run),
+         :ok <- Inventory.maybe_enqueue_pending_batches(run) do
+      {:ok, batch}
+    else
+      {:error, reason} -> handle_failure(run, batch, reason)
+    end
+  end
+
+  defp finalize_cancelled(run, batch) do
+    :ok = Inventory.maybe_enqueue_pending_batches(run)
+    {:ok, batch}
   end
 
   defp ensure_batch_runnable(%InventoryBatch{status: status})
@@ -140,14 +189,26 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
       |> Map.get("chunk_count", 0)
       |> parse_positive_integer(0)
 
+    initial_processed =
+      batch.processed_objects
+      |> parse_positive_integer(0)
+
     initial_summary = %{
-      processed_objects: 0,
+      processed_objects: initial_processed,
       rows_ingested: 0,
       bytes_ingested: 0,
       metadata: Map.put(metadata, "chunk_count", initial_chunk_count)
     }
 
-    paginate_manifest_entries(run, batch, creds, chunk_size, page_size, 0, initial_summary)
+    paginate_manifest_entries(
+      run,
+      batch,
+      creds,
+      chunk_size,
+      page_size,
+      initial_processed,
+      initial_summary
+    )
   end
 
   defp paginate_manifest_entries(
@@ -176,6 +237,12 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
               updated_summary
             )
 
+          {:paused, updated_summary, updated_batch} ->
+            {:paused, updated_summary, updated_batch}
+
+          {:cancelled, updated_summary, updated_batch} ->
+            {:cancelled, updated_summary, updated_batch}
+
           {:error, reason} ->
             {:error, reason}
         end
@@ -201,14 +268,52 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
     grouped_entries
     |> Enum.reduce_while({:ok, summary, batch}, fn {bucket, bucket_entries},
                                                    {:ok, acc_summary, acc_batch} ->
-      case process_bucket(run, acc_batch, bucket, bucket_entries, chunk_size, creds, acc_summary) do
-        {:ok, updated_summary, updated_batch} -> {:cont, {:ok, updated_summary, updated_batch}}
-        {:error, reason} -> {:halt, {:error, reason}}
+      case check_for_interruption(acc_batch) do
+        {:ok, refreshed_batch} ->
+          case process_bucket(
+                 run,
+                 refreshed_batch,
+                 bucket,
+                 bucket_entries,
+                 chunk_size,
+                 creds,
+                 acc_summary
+               ) do
+            {:ok, updated_summary, updated_batch} ->
+              {:cont, {:ok, updated_summary, updated_batch}}
+
+            {:paused, updated_summary, updated_batch} ->
+              {:halt, {:paused, updated_summary, updated_batch}}
+
+            {:cancelled, updated_summary, updated_batch} ->
+              {:halt, {:cancelled, updated_summary, updated_batch}}
+
+            {:error, reason} ->
+              {:halt, {:error, reason}}
+          end
+
+        {:paused, refreshed_batch} ->
+          {:halt, {:paused, acc_summary, refreshed_batch}}
+
+        {:cancelled, refreshed_batch} ->
+          {:halt, {:cancelled, acc_summary, refreshed_batch}}
+
+        {:error, reason} ->
+          {:halt, {:error, reason}}
       end
     end)
     |> case do
-      {:ok, summary, batch} -> {:ok, summary, batch}
-      {:error, reason} -> {:error, reason}
+      {:ok, summary, batch} ->
+        {:ok, summary, batch}
+
+      {:paused, summary, batch} ->
+        {:paused, summary, batch}
+
+      {:cancelled, summary, batch} ->
+        {:cancelled, summary, batch}
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 
@@ -240,21 +345,70 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
     |> Enum.with_index(1)
     |> Enum.reduce_while({:ok, summary, batch}, fn {chunk, index},
                                                    {:ok, acc_summary, acc_batch} ->
-      case process_chunk(run, acc_batch, bucket, chunk, index, creds, acc_summary) do
-        {:ok, updated_summary, updated_batch} -> {:cont, {:ok, updated_summary, updated_batch}}
-        {:error, reason} -> {:halt, {:error, reason}}
+      case check_for_interruption(acc_batch) do
+        {:ok, refreshed_batch} ->
+          case process_chunk(
+                 run,
+                 refreshed_batch,
+                 bucket,
+                 chunk,
+                 index,
+                 creds,
+                 acc_summary
+               ) do
+            {:ok, updated_summary, updated_batch} ->
+              {:cont, {:ok, updated_summary, updated_batch}}
+
+            {:paused, updated_summary, updated_batch} ->
+              {:halt, {:paused, updated_summary, updated_batch}}
+
+            {:cancelled, updated_summary, updated_batch} ->
+              {:halt, {:cancelled, updated_summary, updated_batch}}
+
+            {:error, reason} ->
+              {:halt, {:error, reason}}
+          end
+
+        {:paused, refreshed_batch} ->
+          {:halt, {:paused, acc_summary, refreshed_batch}}
+
+        {:cancelled, refreshed_batch} ->
+          {:halt, {:cancelled, acc_summary, refreshed_batch}}
+
+        {:error, reason} ->
+          {:halt, {:error, reason}}
       end
     end)
   end
 
   defp process_chunk(run, batch, bucket, chunk, chunk_index, creds, summary) do
-    case ingest_chunk(run, batch, bucket, chunk, chunk_index, creds) do
-      {:ok, metrics} ->
-        metrics_with_index = Map.put(metrics, :chunk_index, chunk_index)
-        apply_chunk_success(batch, chunk, metrics_with_index, summary)
+    case check_for_interruption(batch) do
+      {:ok, refreshed_batch} ->
+        case ingest_chunk(run, refreshed_batch, bucket, chunk, chunk_index, creds) do
+          {:ok, metrics} ->
+            metrics_with_index = Map.put(metrics, :chunk_index, chunk_index)
+            apply_chunk_success(refreshed_batch, chunk, metrics_with_index, summary)
 
-      {:error, :no_common_prefix} ->
-        process_chunk_as_single_entries(run, batch, bucket, chunk, chunk_index, creds, summary)
+          {:error, :no_common_prefix} ->
+            process_chunk_as_single_entries(
+              run,
+              refreshed_batch,
+              bucket,
+              chunk,
+              chunk_index,
+              creds,
+              summary
+            )
+
+          {:error, reason} ->
+            {:error, reason}
+        end
+
+      {:paused, refreshed_batch} ->
+        {:paused, summary, refreshed_batch}
+
+      {:cancelled, refreshed_batch} ->
+        {:cancelled, summary, refreshed_batch}
 
       {:error, reason} ->
         {:error, reason}
@@ -266,17 +420,42 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
     |> Enum.with_index(1)
     |> Enum.reduce_while({:ok, summary, batch}, fn {entry, offset},
                                                    {:ok, acc_summary, acc_batch} ->
-      case ingest_chunk(run, acc_batch, bucket, [entry], "#{chunk_index}-#{offset}", creds) do
-        {:ok, metrics} ->
-          metrics_with_index = Map.put(metrics, :chunk_index, "#{chunk_index}-#{offset}")
+      case check_for_interruption(acc_batch) do
+        {:ok, refreshed_batch} ->
+          case ingest_chunk(
+                 run,
+                 refreshed_batch,
+                 bucket,
+                 [entry],
+                 "#{chunk_index}-#{offset}",
+                 creds
+               ) do
+            {:ok, metrics} ->
+              metrics_with_index =
+                Map.put(metrics, :chunk_index, "#{chunk_index}-#{offset}")
 
-          case apply_chunk_success(acc_batch, [entry], metrics_with_index, acc_summary) do
-            {:ok, updated_summary, updated_batch} ->
-              {:cont, {:ok, updated_summary, updated_batch}}
+              case apply_chunk_success(
+                     refreshed_batch,
+                     [entry],
+                     metrics_with_index,
+                     acc_summary
+                   ) do
+                {:ok, updated_summary, updated_batch} ->
+                  {:cont, {:ok, updated_summary, updated_batch}}
+
+                {:error, reason} ->
+                  {:halt, {:error, reason}}
+              end
 
             {:error, reason} ->
               {:halt, {:error, reason}}
           end
+
+        {:paused, refreshed_batch} ->
+          {:halt, {:paused, acc_summary, refreshed_batch}}
+
+        {:cancelled, refreshed_batch} ->
+          {:halt, {:cancelled, acc_summary, refreshed_batch}}
 
         {:error, reason} ->
           {:halt, {:error, reason}}
@@ -294,20 +473,39 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
     metrics_with_sequence = Map.put(metrics, :chunk_index, chunk_index)
     chunk_record = chunk_log(metrics_with_sequence)
 
-    with {:ok, _entry} <- Inventory.upsert_chunk_log(batch, chunk_index, chunk_record) do
+    with {:ok, entry} <- Inventory.upsert_chunk_log(batch, chunk_index, chunk_record) do
       updated_summary =
         summary
         |> accumulate_summary(chunk_entries, metrics_with_sequence)
         |> update_summary_metadata(sequence + 1)
 
+      reloaded_batch =
+        InventoryBatch
+        |> Repo.get!(batch.id)
+
+      existing_metadata =
+        reloaded_batch.metadata
+        |> ensure_map()
+
+      merged_metadata =
+        existing_metadata
+        |> Map.merge(updated_summary.metadata)
+
+      merged_summary = Map.put(updated_summary, :metadata, merged_metadata)
+
       update_attrs = %{
-        processed_objects: updated_summary.processed_objects,
-        metadata: updated_summary.metadata
+        processed_objects: merged_summary.processed_objects,
+        metadata: merged_metadata
       }
 
-      case Inventory.update_batch(batch, update_attrs) do
-        {:ok, updated_batch} -> {:ok, updated_summary, updated_batch}
-        {:error, reason} -> {:error, reason}
+      case Inventory.update_batch(reloaded_batch, update_attrs) do
+        {:ok, updated_batch} ->
+          _ = Inventory.broadcast_chunk_log_update(entry, sequence + 1, merged_metadata)
+
+          {:ok, merged_summary, updated_batch}
+
+        {:error, reason} ->
+          {:error, reason}
       end
     end
   end
@@ -800,6 +998,33 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
       end
     end)
   end
+
+  defp check_for_interruption(%InventoryBatch{id: batch_id}) do
+    case Repo.get(InventoryBatch, batch_id) do
+      nil ->
+        {:error, :missing_batch}
+
+      %InventoryBatch{} = refreshed ->
+        metadata = ensure_map(refreshed.metadata)
+
+        cond do
+          refreshed.status == :cancelled ->
+            {:cancelled, refreshed}
+
+          refreshed.status == :paused ->
+            {:paused, refreshed}
+
+          truthy?(Map.get(metadata, "pause_requested")) ->
+            {:paused, refreshed}
+
+          true ->
+            {:ok, refreshed}
+        end
+    end
+  end
+
+  defp truthy?(value) when value in [true, "true", "1", 1, "on", "yes", "YES"], do: true
+  defp truthy?(_), do: false
 
   defp ensure_map(nil), do: %{}
   defp ensure_map(map) when is_map(map), do: map

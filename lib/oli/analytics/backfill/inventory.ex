@@ -12,9 +12,11 @@ defmodule Oli.Analytics.Backfill.Inventory do
   alias Oli.Analytics.Backfill.InventoryChunkLog
   alias Oli.Analytics.Backfill.Notifier
   alias Oli.Accounts.Author
+  alias Phoenix.PubSub
   alias Oli.Repo
   require Logger
   alias Oban
+  @chunk_logs_topic "clickhouse_chunk_logs"
 
   @type config :: %{
           optional(:manifest_bucket) => String.t(),
@@ -137,6 +139,7 @@ defmodule Oli.Analytics.Backfill.Inventory do
           :running -> {comp, fail, runn + 1, pend}
           :queued -> {comp, fail, runn, pend + 1}
           :pending -> {comp, fail, runn, pend + 1}
+          :paused -> {comp, fail, runn, pend + 1}
           :cancelled -> {comp, fail, runn, pend}
         end
       end)
@@ -418,6 +421,85 @@ defmodule Oli.Analytics.Backfill.Inventory do
     :ok
   end
 
+  @doc """
+  Format chunk log entries into transport-friendly maps.
+  """
+  @spec format_chunk_logs([InventoryChunkLog.t()], non_neg_integer()) :: [map()]
+  def format_chunk_logs(entries, offset \\ 0) when is_list(entries) and offset >= 0 do
+    entries
+    |> Enum.with_index(offset + 1)
+    |> Enum.map(&format_chunk_log_entry/1)
+  end
+
+  @doc """
+  Compute the PubSub topic used by chunk log channels for a given batch.
+  """
+  @spec chunk_logs_topic(pos_integer()) :: String.t()
+  def chunk_logs_topic(batch_id) when is_integer(batch_id) do
+    "#{@chunk_logs_topic}:#{batch_id}"
+  end
+
+  @doc """
+  Broadcast a chunk log update to subscribers.
+  """
+  @spec broadcast_chunk_log_update(InventoryChunkLog.t(), pos_integer(), map()) :: map()
+  def broadcast_chunk_log_update(%InventoryChunkLog{} = entry, ordinal, metadata \\ %{})
+      when is_integer(ordinal) and ordinal >= 1 do
+    logs = format_chunk_logs([entry], max(ordinal - 1, 0))
+
+    total =
+      metadata
+      |> ensure_map()
+      |> fetch_first(["chunk_count", :chunk_count])
+      |> parse_optional_number()
+      |> case do
+        nil -> ordinal
+        value when is_integer(value) and value >= ordinal -> value
+        value when is_integer(value) -> ordinal
+        _ -> ordinal
+      end
+
+    payload = %{
+      batch_id: entry.batch_id,
+      log: hd(logs),
+      ordinal: ordinal,
+      total: total
+    }
+
+    PubSub.broadcast(Oli.PubSub, chunk_logs_topic(entry.batch_id), {:chunk_log_appended, payload})
+    payload
+  end
+
+  defp format_chunk_log_entry({%InventoryChunkLog{} = entry, ordinal}) do
+    metrics = ensure_map(entry.metrics)
+
+    rows_written = fetch_numeric_metric(metrics, ["rows_written", :rows_written])
+    rows_read = fetch_numeric_metric(metrics, ["rows_read", :rows_read])
+    bytes_written = fetch_numeric_metric(metrics, ["bytes_written", :bytes_written])
+    bytes_read = fetch_numeric_metric(metrics, ["bytes_read", :bytes_read])
+
+    %{
+      id: entry.id,
+      ordinal: ordinal,
+      chunk_index: entry.chunk_index || Integer.to_string(ordinal),
+      query_id: fetch_metric(metrics, ["query_id", :query_id]),
+      rows_written: rows_written,
+      rows_read: rows_read,
+      rows: rows_written || rows_read,
+      bytes_written: bytes_written,
+      bytes_read: bytes_read,
+      bytes: bytes_written || bytes_read,
+      execution_time_ms: fetch_numeric_metric(metrics, ["execution_time_ms", :execution_time_ms]),
+      source_url: fetch_metric(metrics, ["source_url", :source_url]),
+      dry_run: truthy?(fetch_metric(metrics, ["dry_run", :dry_run])),
+      inserted_at:
+        case entry.inserted_at do
+          %DateTime{} = dt -> DateTime.to_iso8601(dt)
+          _ -> nil
+        end
+    }
+  end
+
   defp normalize_chunk_log_direction(:latest), do: :latest
   defp normalize_chunk_log_direction("latest"), do: :latest
   defp normalize_chunk_log_direction(:previous), do: :previous
@@ -485,6 +567,144 @@ defmodule Oli.Analytics.Backfill.Inventory do
 
       {:ok, reloaded_batch}
       |> notify(:inventory_batch, %{action: :retried})
+    end
+  end
+
+  @doc """
+  Pause an active run and request all outstanding batches to pause.
+  """
+  @spec pause_run(InventoryRun.t()) :: {:ok, InventoryRun.t()} | {:error, term()}
+  def pause_run(%InventoryRun{} = run) do
+    run = Repo.preload(run, :batches)
+
+    cond do
+      run.status in [:completed, :failed, :cancelled] ->
+        {:error, :not_pausable}
+
+      run.status == :paused ->
+        {:ok, run}
+
+      true ->
+        metadata =
+          run.metadata
+          |> ensure_map()
+          |> Map.put("pause_requested", true)
+          |> Map.put("pause_requested_at", DateTime.utc_now())
+
+        attrs = %{metadata: metadata}
+
+        with {:ok, paused_run} <- transition_run(run, :paused, attrs),
+             :ok <- pause_run_batches(paused_run.batches),
+             {:ok, final_run} <- maybe_recompute_run(paused_run) do
+          {:ok, Repo.preload(final_run, :batches)}
+        end
+    end
+  end
+
+  @doc """
+  Resume a paused run and requeue eligible batches.
+  """
+  @spec resume_run(InventoryRun.t()) :: {:ok, InventoryRun.t()} | {:error, term()}
+  def resume_run(%InventoryRun{} = run) do
+    run = Repo.preload(run, :batches)
+    metadata = ensure_map(run.metadata)
+
+    cond do
+      run.status != :paused and not truthy?(Map.get(metadata, "pause_requested")) ->
+        {:error, :not_paused}
+
+      true ->
+        updated_metadata =
+          metadata
+          |> Map.delete("pause_requested")
+          |> Map.delete("pause_requested_at")
+          |> Map.put("resumed_at", DateTime.utc_now())
+
+        attrs = %{metadata: updated_metadata}
+
+        with {:ok, resumed_run} <- transition_run(run, :running, attrs),
+             :ok <- resume_run_batches(resumed_run.batches),
+             {:ok, rebalanced_run} <- maybe_recompute_run(resumed_run),
+             :ok <- maybe_enqueue_pending_batches(rebalanced_run) do
+          {:ok, Repo.preload(rebalanced_run, :batches)}
+        end
+    end
+  end
+
+  @doc """
+  Request that a batch pause processing. Running batches mark themselves for pause,
+  while queued or pending batches transition immediately to `:paused`.
+  """
+  @spec pause_batch(InventoryBatch.t()) :: {:ok, InventoryBatch.t()} | {:error, term()}
+  def pause_batch(%InventoryBatch{} = batch) do
+    batch = Repo.preload(batch, :run)
+    run = batch.run
+
+    cond do
+      batch.status in [:completed, :failed, :cancelled] ->
+        {:error, :not_pausable}
+
+      batch.status == :paused ->
+        {:ok, batch}
+
+      batch.status in [:pending, :queued] ->
+        metadata = ensure_map(batch.metadata)
+        metadata = Map.put(metadata, "pause_requested", false)
+
+        _ =
+          if batch.status == :queued do
+            cancel_batch_job(batch)
+          end
+
+        with {:ok, updated_batch} <- transition_batch(batch, :paused, %{metadata: metadata}),
+             :ok <- maybe_recompute_run(run) do
+          {:ok, %{updated_batch | run: run}}
+          |> notify(:inventory_batch, %{action: :paused})
+        end
+
+      true ->
+        metadata =
+          batch.metadata
+          |> ensure_map()
+          |> Map.put("pause_requested", true)
+          |> Map.put("pause_requested_at", DateTime.utc_now())
+
+        with {:ok, updated_batch} <- update_batch(batch, %{metadata: metadata}) do
+          {:ok, %{updated_batch | run: run}}
+          |> notify(:inventory_batch, %{action: :pause_requested})
+        end
+    end
+  end
+
+  @doc """
+  Resume a paused batch by returning it to the pending queue.
+  """
+  @spec resume_batch(InventoryBatch.t()) :: {:ok, InventoryBatch.t()} | {:error, term()}
+  def resume_batch(%InventoryBatch{} = batch) do
+    batch = Repo.preload(batch, :run)
+    run = batch.run
+
+    if batch.status != :paused do
+      {:error, :not_paused}
+    else
+      metadata =
+        batch.metadata
+        |> ensure_map()
+        |> Map.delete("pause_requested")
+        |> Map.delete("pause_requested_at")
+        |> Map.put("resumed_at", DateTime.utc_now())
+
+      with {:ok, updated_batch} <- transition_batch(batch, :pending, %{metadata: metadata}),
+           :ok <- maybe_enqueue_pending_batches(run),
+           :ok <- maybe_recompute_run(run) do
+        reloaded =
+          InventoryBatch
+          |> Repo.get!(updated_batch.id)
+          |> Repo.preload(:run)
+
+        {:ok, reloaded}
+        |> notify(:inventory_batch, %{action: :resumed})
+      end
     end
   end
 
@@ -648,48 +868,83 @@ defmodule Oli.Analytics.Backfill.Inventory do
   """
   @spec maybe_enqueue_pending_batches(InventoryRun.t()) :: :ok | {:error, term()}
   def maybe_enqueue_pending_batches(%InventoryRun{} = run) do
-    limit = max_simultaneous_batches(run)
+    metadata = ensure_map(run.metadata)
 
-    limit =
-      case limit do
-        int when is_integer(int) and int > 0 -> int
-        _ -> default_max_simultaneous_batches()
-      end
+    cond do
+      run.status == :paused ->
+        :ok
 
-    active_query =
-      from b in InventoryBatch,
-        where: b.run_id == ^run.id and b.status in [:queued, :running]
+      truthy?(Map.get(metadata, "pause_requested")) ->
+        :ok
 
-    active = Repo.aggregate(active_query, :count, :id)
+      true ->
+        limit = max_simultaneous_batches(run)
 
-    needed = limit - active
+        limit =
+          case limit do
+            int when is_integer(int) and int > 0 -> int
+            _ -> default_max_simultaneous_batches()
+          end
 
-    if needed <= 0 do
-      :ok
-    else
-      pending_query =
-        from b in InventoryBatch,
-          where: b.run_id == ^run.id and b.status == :pending,
-          order_by: [asc: b.sequence],
-          limit: ^needed
+        active_query =
+          from b in InventoryBatch,
+            where: b.run_id == ^run.id and b.status in [:queued, :running]
 
-      pending_query
-      |> Repo.all()
-      |> Enum.reduce_while(:ok, fn batch, :ok ->
-        case enqueue_batch(batch) do
-          {:ok, _} -> {:cont, :ok}
-          {:error, reason} -> {:halt, {:error, reason}}
+        active = Repo.aggregate(active_query, :count, :id)
+
+        needed = limit - active
+
+        if needed <= 0 do
+          :ok
+        else
+          pending_query =
+            from b in InventoryBatch,
+              where: b.run_id == ^run.id and b.status == :pending,
+              order_by: [asc: b.sequence],
+              limit: ^needed
+
+          pending_query
+          |> Repo.all()
+          |> Enum.reduce_while(:ok, fn batch, :ok ->
+            case enqueue_batch(batch) do
+              {:ok, _} -> {:cont, :ok}
+              {:error, reason} -> {:halt, {:error, reason}}
+            end
+          end)
+          |> case do
+            :ok -> :ok
+            {:error, reason} -> {:error, reason}
+          end
         end
-      end)
-      |> case do
-        :ok -> :ok
-        {:error, reason} -> {:error, reason}
-      end
     end
   end
 
-  defp cancellable_batch_status?(status), do: status in [:pending, :queued, :running]
+  defp cancellable_batch_status?(status), do: status in [:pending, :queued, :running, :paused]
   defp terminal_run_status?(status), do: status in [:completed, :failed, :cancelled]
+
+  defp pause_run_batches(batches) do
+    batches
+    |> Enum.filter(&(&1.status in [:pending, :queued, :running]))
+    |> Enum.reduce_while(:ok, fn batch, :ok ->
+      case pause_batch(batch) do
+        {:ok, _} -> {:cont, :ok}
+        {:error, :not_pausable} -> {:cont, :ok}
+        {:error, reason} -> {:halt, {:error, reason}}
+      end
+    end)
+  end
+
+  defp resume_run_batches(batches) do
+    batches
+    |> Enum.filter(&(&1.status == :paused))
+    |> Enum.reduce_while(:ok, fn batch, :ok ->
+      case resume_batch(batch) do
+        {:ok, _} -> {:cont, :ok}
+        {:error, :not_paused} -> {:cont, :ok}
+        {:error, reason} -> {:halt, {:error, reason}}
+      end
+    end)
+  end
 
   defp cancel_orchestrator_job(%InventoryRun{} = run) do
     run.metadata
@@ -765,6 +1020,7 @@ defmodule Oli.Analytics.Backfill.Inventory do
   defp derive_run_status(current, total, completed, failed, running, pending) do
     cond do
       current == :cancelled -> :cancelled
+      current == :paused -> :paused
       failed > 0 -> :failed
       completed == total and total > 0 -> :completed
       running > 0 -> :running
@@ -817,6 +1073,30 @@ defmodule Oli.Analytics.Backfill.Inventory do
   end
 
   defp notify(result, source, metadata \\ %{})
+
+  defp notify({:ok, %InventoryRun{} = run} = result, :inventory_run, metadata) do
+    meta =
+      metadata
+      |> Map.new()
+      |> Map.put_new(:run_id, run.id)
+      |> Map.put_new("run_id", run.id)
+
+    _ = Notifier.broadcast(:inventory_run, meta)
+    result
+  end
+
+  defp notify({:ok, %InventoryBatch{} = batch} = result, :inventory_batch, metadata) do
+    meta =
+      metadata
+      |> Map.new()
+      |> Map.put_new(:batch_id, batch.id)
+      |> Map.put_new("batch_id", batch.id)
+      |> Map.put_new(:run_id, batch.run_id)
+      |> Map.put_new("run_id", batch.run_id)
+
+    _ = Notifier.broadcast(:inventory_batch, meta)
+    result
+  end
 
   defp notify({:ok, _value} = result, source, metadata) do
     _ = Notifier.broadcast(source, metadata)
@@ -1173,6 +1453,50 @@ defmodule Oli.Analytics.Backfill.Inventory do
   defp ensure_map(nil), do: %{}
   defp ensure_map(map) when is_map(map), do: map
   defp ensure_map(_), do: %{}
+
+  defp fetch_metric(map, keys, default \\ nil) when is_list(keys) do
+    keys
+    |> Enum.reduce_while(nil, fn key, _acc ->
+      case map do
+        %{} -> Map.get(map, key)
+        _ -> nil
+      end
+      |> case do
+        nil -> {:cont, nil}
+        value -> {:halt, value}
+      end
+    end)
+    |> case do
+      nil -> default
+      value -> value
+    end
+  end
+
+  defp fetch_numeric_metric(map, keys) when is_list(keys) do
+    map
+    |> fetch_metric(keys)
+    |> parse_optional_number()
+  end
+
+  defp parse_optional_number(value) when is_integer(value), do: value
+  defp parse_optional_number(value) when is_float(value), do: trunc(value)
+
+  defp parse_optional_number(value) when is_binary(value) do
+    trimmed = String.trim(value)
+
+    case Integer.parse(trimmed) do
+      {int, _} ->
+        int
+
+      :error ->
+        case Float.parse(trimmed) do
+          {float, _} -> trunc(float)
+          :error -> nil
+        end
+    end
+  end
+
+  defp parse_optional_number(_), do: nil
 
   defp truthy?(value) when value in [true, "true", "1", 1, "on", "yes", "TRUE", "Yes"],
     do: true

@@ -1,3 +1,5 @@
+import { Socket } from 'phoenix';
+
 const BOTTOM_THRESHOLD_PX = 16;
 
 type ChunkLog = {
@@ -20,22 +22,13 @@ type ChunkLog = {
 type ChunkLogsPayload = {
   batch_id: number;
   offset: number;
-  limit: number;
-  total: number;
+  total: number | null;
   direction: 'next' | 'previous' | 'refresh' | 'latest';
   has_more: boolean;
   logs: ChunkLog[];
 };
 
 type PendingDirection = 'next' | 'previous';
-
-function parseNumber(value: string | undefined, fallback: number) {
-  if (!value) return fallback;
-  const parsed = Number.parseInt(value, 10);
-  return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
-}
-
-const formatNumber = new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 });
 
 type PersistedState = {
   open?: boolean;
@@ -51,16 +44,43 @@ const persistedState =
   globalStateContainer[globalStateKey] ??
   (globalStateContainer[globalStateKey] = Object.create(null));
 
+let sharedSocket: Socket | null = null;
+let sharedSocketToken: string | null | undefined;
+
+function getSocket(token?: string | null) {
+  if (sharedSocket && sharedSocketToken === token) {
+    return sharedSocket;
+  }
+
+  if (sharedSocket) {
+    sharedSocket.disconnect();
+  }
+
+  const socket = new Socket('/v1/api/state', { params: { token } });
+  socket.connect();
+  sharedSocket = socket;
+  sharedSocketToken = token;
+  return socket;
+}
+
+function parseNumber(value: string | undefined, fallback: number) {
+  if (!value) return fallback;
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
+}
+
+const formatNumber = new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 });
+
 export const ChunkLogsViewer = {
   mounted() {
     this.batchId = parseNumber(this.el.dataset.batchId, 0);
     this.limit = parseNumber(this.el.dataset.limit, 10);
     this.maxWindow = parseNumber(this.el.dataset.window, 200);
     this.defaultLive = this.el.dataset.defaultLive === '1';
+    this.userToken = this.el.dataset.userToken || (window as any).userToken || null;
 
     this.state = {
       initialized: false,
-      initialLoadComplete: false,
       offset: 0,
       count: 0,
       total: parseNumber(this.el.dataset.initialCount, 0),
@@ -73,6 +93,7 @@ export const ChunkLogsViewer = {
       autoDisabledByScroll: false,
       autoLiveAllowed: true,
       suppressScroll: false,
+      channelReady: false,
     };
 
     this.scrollEl = this.el.querySelector<HTMLElement>('.chunk-logs-scroll');
@@ -83,12 +104,11 @@ export const ChunkLogsViewer = {
     this.liveToggleEl = this.el.querySelector<HTMLInputElement>('.chunk-logs-live-toggle');
 
     this.handleServerUpdate = this.handleServerUpdate.bind(this);
+    this.handleNewLogs = this.handleNewLogs.bind(this);
     this.handleToggle = this.handleToggle.bind(this);
     this.handleBottomIntersect = this.handleBottomIntersect.bind(this);
     this.handleTopIntersect = this.handleTopIntersect.bind(this);
     this.handleScroll = this.handleScroll.bind(this);
-
-    this.handleEvent('chunk_logs_update', this.handleServerUpdate);
 
     if (this.scrollEl) {
       this.scrollEl.addEventListener('scroll', this.handleScroll);
@@ -126,7 +146,11 @@ export const ChunkLogsViewer = {
       this.topObserver.disconnect();
     }
 
-    this.disableLiveTimer();
+    if (this.channel) {
+      this.channel.off('new_logs', this.handleNewLogs);
+      this.channel.leave();
+      this.channel = undefined;
+    }
 
     if (this.liveToggleEl && this.handleLiveToggleChange) {
       this.liveToggleEl.removeEventListener('change', this.handleLiveToggleChange);
@@ -144,17 +168,19 @@ export const ChunkLogsViewer = {
       }
 
       if (this.state.liveEnabled) {
-        this.enableLiveTimer();
         this.loadLatest();
       }
     } else {
-      this.disableLiveTimer();
       this.state.autoDisabledByScroll = false;
     }
   },
 
   initialize() {
-    if (this.state.initialized || !this.scrollEl || !this.bodyEl) return;
+    if (this.state.initialized || !this.scrollEl || !this.bodyEl || this.batchId <= 0) return;
+    if (!this.userToken) {
+      this.showStatus('Authentication required to load chunk logs.');
+      return;
+    }
     this.state.initialized = true;
 
     this.bottomObserver = new IntersectionObserver(this.handleBottomIntersect, {
@@ -170,10 +196,29 @@ export const ChunkLogsViewer = {
     if (this.bottomSentinel) this.bottomObserver.observe(this.bottomSentinel);
     if (this.topSentinel) this.topObserver.observe(this.topSentinel);
 
-    this.loadLatest();
+    this.joinChannel();
+  },
+
+  joinChannel() {
+    const socket = getSocket(this.userToken);
+    this.channel = socket.channel(`clickhouse_chunk_logs:${this.batchId}`, {
+      limit: this.limit,
+    });
+
+    this.channel
+      .join()
+      .receive('ok', (payload: ChunkLogsPayload & { has_more: boolean }) => {
+        this.state.channelReady = true;
+        this.handleServerUpdate({ ...payload, direction: 'latest' });
+      })
+      .receive('error', () => {
+        this.showStatus('Unable to load chunk logs.');
+      });
+
+    this.channel.on('new_logs', this.handleNewLogs);
 
     if (this.state.liveEnabled) {
-      this.enableLiveTimer();
+      this.loadLatest();
     }
   },
 
@@ -194,7 +239,8 @@ export const ChunkLogsViewer = {
   },
 
   loadMore(direction: PendingDirection) {
-    if (this.batchId <= 0 || !this.state.initialized) return;
+    if (this.batchId <= 0 || !this.state.initialized || !this.channel) return;
+
     if (direction === 'next') {
       if (this.state.loadingNext || !this.state.hasMoreForward) return;
       this.state.loadingNext = true;
@@ -210,33 +256,52 @@ export const ChunkLogsViewer = {
 
     this.showStatus('Loading…');
 
-    this.pushEvent('chunk_logs_load', {
-      batch_id: this.batchId,
-      offset,
-      limit: this.limit,
-      direction,
-    });
+    this.channel
+      .push('load', {
+        batch_id: this.batchId,
+        offset,
+        limit: this.limit,
+        direction,
+      })
+      .receive('ok', (payload: ChunkLogsPayload) => {
+        this.handleServerUpdate(payload);
+      })
+      .receive('error', () => {
+        this.hideStatus();
+        this.state.loadingNext = false;
+        this.state.loadingPrev = false;
+      });
   },
 
   loadLatest() {
-    if (!this.state.initialized || this.batchId <= 0) return;
+    if (!this.state.initialized || this.batchId <= 0 || !this.channel) return;
     if (this.state.loadingLatest) return;
 
     this.state.loadingLatest = true;
     this.showStatus('Loading…');
 
-    this.pushEvent('chunk_logs_load', {
-      batch_id: this.batchId,
-      offset: 0,
-      limit: this.limit,
-      direction: 'latest',
-    });
+    this.channel
+      .push('load', {
+        batch_id: this.batchId,
+        offset: 0,
+        limit: this.limit,
+        direction: 'latest',
+      })
+      .receive('ok', (payload: ChunkLogsPayload) => {
+        this.handleServerUpdate({ ...payload, direction: 'latest' });
+        this.state.loadingLatest = false;
+      })
+      .receive('error', () => {
+        this.state.loadingLatest = false;
+        this.hideStatus();
+      });
   },
 
   handleServerUpdate(payload: ChunkLogsPayload) {
-    if (!payload || payload.batch_id !== this.batchId) return;
+    if (!payload || payload.batch_id !== this.batchId) {
+      return;
+    }
 
-    this.state.loadingLatest = false;
     this.hideStatus();
 
     if (typeof payload.total === 'number') {
@@ -244,16 +309,11 @@ export const ChunkLogsViewer = {
     }
 
     if (!payload.logs || payload.logs.length === 0) {
-      if (payload.direction === 'latest' || payload.direction === 'refresh') {
-        this.resetWindow(payload.offset ?? 0);
-      } else if (payload.direction === 'previous' && typeof payload.offset === 'number') {
-        this.state.offset = payload.offset;
-      }
-
-      this.state.hasMoreForward = Boolean(payload.has_more);
+      this.state.hasMoreForward = payload.has_more;
       this.state.hasMoreBackward = this.state.offset > 0;
       this.state.loadingNext = false;
       this.state.loadingPrev = false;
+      this.state.loadingLatest = false;
 
       if (this.state.count === 0) {
         this.showStatus('No chunk logs available.');
@@ -271,10 +331,11 @@ export const ChunkLogsViewer = {
     }
 
     this.state.count = this.bodyEl?.querySelectorAll('.chunk-log-entry').length ?? 0;
-    this.state.hasMoreForward = Boolean(payload.has_more);
+    this.state.hasMoreForward = payload.has_more;
     this.state.hasMoreBackward = this.state.offset > 0;
     this.state.loadingNext = false;
     this.state.loadingPrev = false;
+    this.state.loadingLatest = false;
   },
 
   applyLatestPage(payload: ChunkLogsPayload) {
@@ -289,7 +350,7 @@ export const ChunkLogsViewer = {
 
     this.state.count = this.bodyEl.querySelectorAll('.chunk-log-entry').length;
     this.trimFromTopIfNeeded();
-    this.state.initialLoadComplete = true;
+    this.state.offset = effectiveOffset;
     this.state.autoDisabledByScroll = false;
     this.scrollToBottom();
   },
@@ -305,6 +366,7 @@ export const ChunkLogsViewer = {
       this.insertLogAtEnd(log);
     });
 
+    this.state.offset = payload.offset;
     this.state.count = this.bodyEl.querySelectorAll('.chunk-log-entry').length;
     this.trimFromTopIfNeeded();
   },
@@ -337,6 +399,29 @@ export const ChunkLogsViewer = {
       this.suppressScrollWhile(() => {
         this.scrollEl!.scrollTop = previousScrollTop + delta;
       });
+    }
+  },
+
+  handleNewLogs(payload: { batch_id: number; log: ChunkLog; total: number | null }) {
+    if (!payload || payload.batch_id !== this.batchId || !payload.log) return;
+    if (!this.bodyEl) return;
+
+    if (typeof payload.total === 'number') {
+      this.state.total = payload.total;
+    }
+
+    const nearBottom = this.isNearBottom();
+    this.insertLogAtEnd(payload.log);
+    this.state.count = this.bodyEl.querySelectorAll('.chunk-log-entry').length;
+    this.trimFromTopIfNeeded();
+
+    if (this.state.liveEnabled && nearBottom) {
+      this.scrollToBottom();
+      this.hideStatus();
+    } else if (!this.state.liveEnabled) {
+      this.showStatus('Live update paused. Scroll to bottom or re-enable Live update.');
+    } else if (!nearBottom) {
+      this.showStatus('New logs available. Scroll to bottom to view.');
     }
   },
 
@@ -375,7 +460,7 @@ export const ChunkLogsViewer = {
 
     const header = document.createElement('div');
     header.className = 'text-xs text-gray-500 dark:text-gray-400 mb-1';
-    header.textContent = `Chunk ${log.ordinal}`;
+    header.textContent = `Chunk ${log.chunk_index ?? log.ordinal}`;
     wrapper.append(header);
 
     const queryId = document.createElement('div');
@@ -485,16 +570,22 @@ export const ChunkLogsViewer = {
     return formatNumber.format(value);
   },
 
+  isNearBottom() {
+    if (!this.scrollEl) return false;
+    const { scrollTop, clientHeight, scrollHeight } = this.scrollEl;
+    return scrollHeight - (scrollTop + clientHeight) <= BOTTOM_THRESHOLD_PX;
+  },
+
   handleScroll() {
     if (!this.scrollEl || this.state.suppressScroll) return;
 
-    const { scrollTop, clientHeight, scrollHeight } = this.scrollEl;
-    const nearBottom = scrollHeight - (scrollTop + clientHeight) <= BOTTOM_THRESHOLD_PX;
+    const nearBottom = this.isNearBottom();
 
     if (!nearBottom) {
       if (this.state.liveEnabled) {
         this.state.autoDisabledByScroll = true;
         this.setLiveUpdate(false, { persist: false });
+        this.showStatus('Live update paused while viewing earlier logs.');
       }
     } else if (
       !this.state.liveEnabled &&
@@ -503,7 +594,7 @@ export const ChunkLogsViewer = {
     ) {
       this.state.autoDisabledByScroll = false;
       this.setLiveUpdate(true, { persist: false });
-      this.scrollToBottom();
+      this.hideStatus();
     }
   },
 
@@ -517,7 +608,7 @@ export const ChunkLogsViewer = {
     this.state.autoLiveAllowed = initialLive;
 
     const applyInitial = () => {
-      this.setLiveUpdate(initialLive, { persist: false, skipLoad: true, force: true });
+      this.setLiveUpdate(initialLive, { persist: false, force: true });
       if (this.liveToggleEl) {
         this.liveToggleEl.checked = initialLive;
       }
@@ -540,9 +631,9 @@ export const ChunkLogsViewer = {
 
   setLiveUpdate(
     enabled: boolean,
-    opts: { persist?: boolean; skipLoad?: boolean; force?: boolean } = {},
+    opts: { persist?: boolean; force?: boolean } = {},
   ) {
-    const { persist = true, skipLoad = false, force = false } = opts;
+    const { persist = true, force = false } = opts;
 
     if (!force && this.state.liveEnabled === enabled) {
       return;
@@ -550,13 +641,8 @@ export const ChunkLogsViewer = {
 
     this.state.liveEnabled = enabled;
 
-    if (enabled) {
-      if (this.state.initialized && !skipLoad) {
-        this.loadLatest();
-      }
-      this.enableLiveTimer();
-    } else {
-      this.disableLiveTimer();
+    if (enabled && this.state.initialized && this.state.channelReady) {
+      this.loadLatest();
     }
 
     if (persist && this.batchId) {
@@ -566,23 +652,6 @@ export const ChunkLogsViewer = {
 
     if (this.liveToggleEl && this.liveToggleEl.checked !== enabled) {
       this.liveToggleEl.checked = enabled;
-    }
-  },
-
-  enableLiveTimer() {
-    if (this.liveTimer || !this.state.liveEnabled) return;
-    if (!this.detailsEl?.open) return;
-    this.liveTimer = window.setInterval(() => {
-      if (this.detailsEl?.open) {
-        this.loadLatest();
-      }
-    }, 3000);
-  },
-
-  disableLiveTimer() {
-    if (this.liveTimer) {
-      window.clearInterval(this.liveTimer);
-      this.liveTimer = undefined;
     }
   },
 };
