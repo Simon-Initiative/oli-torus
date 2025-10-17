@@ -1,0 +1,43 @@
+# Scenario: Curriculum operations tolerate orphan child ids in container children arrays
+
+- project:
+    name: "bad_curriculum_missing"
+    title: "Bad Curriculum Missing Child"
+    root:
+      children:
+        - container: "Unit 1"
+          children:
+            - page: "Page A"
+            - page: "Page B"
+        - container: "Unit 2"
+          children:
+            - page: "Page C"
+
+- assert:
+    structure:
+      to: "bad_curriculum_missing"
+      root:
+        children:
+          - container: "Unit 1"
+            children:
+              - page: "Page A"
+              - page: "Page B"
+          - container: "Unit 2"
+            children:
+              - page: "Page C"
+
+- hook:
+    function: "Oli.Scenarios.Features.CurriculumHooks.replace_child_with_nonexistent_id/1"
+
+- manipulate:
+    to: "bad_curriculum_missing"
+    ops:
+      - add_page:
+          title: "Recovered Page"
+          to: "Unit 1"
+      - reorder:
+          from: "Recovered Page"
+          before: "Page B"
+
+- hook:
+    function: "Oli.Scenarios.Features.CurriculumHooks.assert_missing_child_outcome/1"

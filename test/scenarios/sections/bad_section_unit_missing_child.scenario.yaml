@@ -1,0 +1,63 @@
+# Scenario: Course section creation tolerates container children referencing missing resource ids
+
+- project:
+    name: "missing_child_section_project"
+    title: "Missing Child Section Project"
+    root:
+      children:
+        - container: "Unit 1"
+          children:
+            - page: "Practice Page A"
+            - page: "Practice Page B"
+
+- edit_page:
+    project: "missing_child_section_project"
+    page: "Practice Page A"
+    content: |
+      title: "Practice Page A"
+      graded: false
+      model:
+        - type: "content"
+          children:
+            - type: "p"
+              children:
+                - text: "Practice content A"
+
+- edit_page:
+    project: "missing_child_section_project"
+    page: "Practice Page B"
+    content: |
+      title: "Practice Page B"
+      graded: false
+      model:
+        - type: "content"
+          children:
+            - type: "p"
+              children:
+                - text: "Practice content B"
+
+- publish:
+    to: "missing_child_section_project"
+    description: "Publish project; corruption will be applied before section creation"
+
+- hook:
+    # Inject a bogus child id after publication to simulate data corruption in the project
+    function: "Oli.Scenarios.Sections.CourseSectionHooks.insert_missing_child/1"
+
+- section:
+    name: "missing_child_section"
+    title: "Missing Child Section"
+    from: "missing_child_section_project"
+
+- assert:
+    structure:
+      to: "missing_child_section"
+      root:
+        children:
+          - container: "Unit 1"
+            children:
+              - page: "Practice Page A"
+              - page: "Practice Page B"
+
+- hook:
+    function: "Oli.Scenarios.Sections.CourseSectionHooks.assert_missing_child_structure/1"
