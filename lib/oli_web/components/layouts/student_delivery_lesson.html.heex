@@ -54,23 +54,72 @@
             </div>
           <% end %>
         </div>
-        <div class="sticky top-14 z-50">
-          <.back_arrow
-            to={
-              if assigns[:request_path] in [nil, ""] and @current_page != nil,
-                do:
-                  ~p"/sections/#{@section.slug}/learn?target_resource_id=#{@current_page["id"]}",
-                else: assigns[:request_path]
-            }
-            show_sidebar={assigns[:show_sidebar]}
-            view={assigns[:view]}
-          />
+        <div class="sticky top-[55px] z-50">
+          <% back_url =
+            if assigns[:request_path] in [nil, ""] and @current_page != nil,
+              do: ~p"/sections/#{@section.slug}/learn?target_resource_id=#{@current_page["id"]}",
+              else: assigns[:request_path] %>
+          <div class="hidden md:block">
+            <.back_arrow
+              to={back_url}
+              show_sidebar={assigns[:show_sidebar]}
+              view={assigns[:view]}
+            />
+          </div>
+          <div
+            role="navigation"
+            aria-label="Lesson actions"
+            class="flex flex-row justify-between items-center px-4 sm:hidden bg-Surface-surface-secondary h-10"
+          >
+            <.link
+              navigate={back_url}
+              class="w-24 text-Text-text-high flex items-center gap-2"
+            >
+              <OliWeb.Icons.back_arrow /><span>Back</span>
+            </.link>
+
+            <button
+              :if={
+                @view in [:graded_page, :practice_page] and
+                  assigns[:page_progress_state] == :in_progress and assigns[:annotations]
+              }
+              phx-click="toggle_notes_sidebar"
+              aria-pressed={to_string(assigns[:active_sidebar_panel] == :notes)}
+              class={[
+                "flex flex-row items-center h-full px-3",
+                if(assigns[:active_sidebar_panel] == :notes,
+                  do: "border-b-2 border-Fill-Buttons-fill-primary"
+                )
+              ]}
+            >
+              <OliWeb.Delivery.Student.Lesson.Annotations.annotations_icon />
+              <span>Notes</span>
+            </button>
+
+            <button
+              :if={
+                @view in [:graded_page, :practice_page] and
+                  assigns[:page_progress_state] == :in_progress
+              }
+              phx-click="toggle_outline_sidebar"
+              aria-pressed={to_string(assigns[:active_sidebar_panel] == :outline)}
+              class={[
+                "flex flex-row items-center h-full px-3",
+                if(assigns[:active_sidebar_panel] == :outline,
+                  do: "border-b-2 border-Fill-Buttons-fill-primary"
+                )
+              ]}
+            >
+              <OliWeb.Delivery.Student.Lesson.Components.OutlineComponent.outline_icon />
+              <span class="whitespace-nowrap">Course Content</span>
+            </button>
+          </div>
         </div>
         <div
           :if={@section}
           id="page-content"
           phx-hook="PageContentHooks"
-          class="flex flex-col justify-center items-start relative"
+          class="flex flex-col justify-center items-start relative bg-Specially-Tokens-Background-lesson-page min-h-[100vh]"
         >
           <div
             :if={@view in [:graded_page, :practice_page] and @page_progress_state == :in_progress}
@@ -104,9 +153,20 @@
             </div>
           </div>
 
-          <div class="z-[999]">
+          <div
+            :if={assigns[:page_context]}
+            class={
+              [
+                "z-[999]",
+                # Desktop: always visible, Mobile: only visible when "Notes" or "Course Content" are not open
+                if(assigns[:active_sidebar_panel] in [:notes, :outline],
+                  do: "hidden sm:block",
+                  else: "block sm:block"
+                )
+              ]
+            }
+          >
             <Components.Delivery.Layouts.previous_next_nav
-              :if={assigns[:page_context]}
               current_page={@current_page}
               previous_page={@previous_page}
               next_page={@next_page}
@@ -116,22 +176,21 @@
               selected_view={assigns[:selected_view]}
             />
           </div>
-          <OliWeb.Components.Common.tech_support_button
-            id="tech-support"
-            class="z-[999] fixed hidden lg:block lg:bottom-2 lg:left-[70px]"
-          />
-          <%!--
-          this is the mobile version of the tech support button,
-          to avoid showing the "Support" text that overlaps with the page text content
-          --%>
-          <OliWeb.Components.Common.tech_support_button
-            id="tech-support-2"
-            class="z-[999] fixed bottom-20 left-4 lg:hidden"
-            show_text={false}
-          />
         </div>
 
-        <%= if @section && !@page_context.page.graded do %>
+        <div
+          :if={@section && !@page_context.page.graded}
+          class={
+            [
+              "z-[999]",
+              # Desktop: always visible, Mobile: only visible when "Notes" or "Course Content" are not open
+              if(assigns[:active_sidebar_panel] in [:notes, :outline],
+                do: "hidden sm:block",
+                else: "block sm:block"
+              )
+            ]
+          }
+        >
           {live_render(@socket, OliWeb.Dialogue.WindowLive,
             session: %{
               "section_slug" => @section.slug,
@@ -141,8 +200,11 @@
             },
             id: "dialogue-window"
           )}
-        <% end %>
+        </div>
       </div>
     </div>
+  </div>
+  <div class="h-0 z-[9999]">
+    <OliWeb.Delivery.Student.Utils.proficiency_explanation_modal />
   </div>
 </main>

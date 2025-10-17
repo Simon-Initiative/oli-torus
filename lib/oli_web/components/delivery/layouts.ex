@@ -903,7 +903,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
               <.left_arrow />
             </.link>
           </div>
-          <div class="flex flex-row gap-x-1 justify-start items-center grow shrink basis-0 dark:text-white text-xs font-normal overflow-hidden text-ellipsis">
+          <div class="hidden sm:flex flex-row gap-x-1 justify-start items-center grow shrink basis-0 dark:text-white text-xs font-normal overflow-hidden text-ellipsis">
             {maybe_add_icon(@previous_page, @pages_progress)}
             <span class="overflow-hidden text-ellipsis" title={@previous_page["title"]}>
               {@previous_page["title"]}
@@ -916,7 +916,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
           class="grow shrink basis-0 h-10 justify-end items-center flex z-10 overflow-hidden whitespace-nowrap"
           role="next_page"
         >
-          <div class="flex flex-row gap-x-1 justify-end items-center grow shrink basis-0 text-right dark:text-white text-xs font-normal overflow-hidden text-ellipsis">
+          <div class="hidden sm:flex flex-row gap-x-1 justify-end items-center grow shrink basis-0 text-right dark:text-white text-xs font-normal overflow-hidden text-ellipsis">
             {maybe_add_icon(@next_page, @pages_progress)}
             <span class="overflow-hidden text-ellipsis" title={@next_page["title"]}>
               {@next_page["title"]}

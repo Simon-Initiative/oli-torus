@@ -179,20 +179,20 @@ defmodule OliWeb.Components.Delivery.Utils do
     ~H"""
     <form class={["flex flex-row", @rest[:class]]} phx-submit={@on_search} phx-change={@on_change}>
       <div class="flex-1 relative">
-        <i class="fa-solid fa-search absolute left-4 top-4 text-gray-400 pointer-events-none text-lg">
+        <i class="fa-solid fa-search absolute left-2.5 sm:left-4 top-2.5 sm:top-4 text-gray-400 pointer-events-none text-lg">
         </i>
         <input
           type="text"
           name="search_term"
           value={@search_term}
           placeholder={@rest[:placeholder]}
-          class="w-full border border-gray-400 dark:border-gray-700 rounded-lg px-12 py-3"
+          class="h-9 sm:h-auto w-full border bg-Specially-Tokens-Fill-fill-input border-Specially-Tokens-Border-border-input rounded-lg px-12 py-3"
           phx-debounce="500"
         />
         <button
           :if={@search_term not in ["", nil]}
           type="button"
-          class="absolute right-0 top-0 bottom-0 py-3 px-4"
+          class="absolute right-0 top-0 bottom-0 sm:py-3 sm:px-4 py-2 px-2.5"
           phx-click={@on_clear_search}
         >
           <i class="fa-solid fa-xmark text-lg"></i>

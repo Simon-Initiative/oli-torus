@@ -1054,7 +1054,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       assert has_element?(view, "div[role='page content'] p", "Here's some practice page content")
 
       # Support link is visible
-      assert has_element?(view, "#tech-support", "Support")
+      assert has_element?(view, "#tech_support_user_menu", "Support")
     end
 
     @tag isolation: "serializable"
@@ -1130,7 +1130,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
              )
 
       # Support link is visible
-      assert has_element?(view, "#tech-support", "Support")
+      assert has_element?(view, "#tech_support_user_menu", "Support")
     end
 
     test "does not see prologue but graded page when an attempt is in progress", %{
@@ -1943,7 +1943,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       assert not has_element?(
                view,
-               "button[phx-click='toggle_notes_sidebar']"
+               "button[role='toggle notes button'][data-view='desktop']"
              )
     end
 
@@ -1962,7 +1962,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       assert has_element?(
                view,
-               "button[phx-click='toggle_notes_sidebar']"
+               "button[role='toggle notes button'][data-view='desktop']"
              )
     end
 
@@ -1997,7 +1997,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       ensure_content_is_visible(view)
 
       view
-      |> element(~s{button[phx-click='toggle_notes_sidebar']})
+      |> element(~s{button[role='toggle notes button'][data-view='desktop']})
       |> render_click
 
       assert has_element?(
@@ -2019,7 +2019,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       ensure_content_is_visible(view)
 
       view
-      |> element(~s{button[phx-click='toggle_notes_sidebar']})
+      |> element(~s{button[role='toggle notes button'][data-view='desktop']})
       |> render_click
 
       wait_while(fn -> has_element?(view, "svg.loading") end)
@@ -2048,7 +2048,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       ensure_content_is_visible(view)
 
       view
-      |> element(~s{button[phx-click='toggle_notes_sidebar']})
+      |> element(~s{button[role='toggle notes button'][data-view='desktop']})
       |> render_click
 
       view
@@ -2095,7 +2095,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       ensure_content_is_visible(view)
 
       view
-      |> element(~s{button[phx-click='toggle_notes_sidebar']})
+      |> element(~s{button[role='toggle notes button'][data-view='desktop']})
       |> render_click
 
       view
@@ -2130,7 +2130,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       ensure_content_is_visible(view)
 
       view
-      |> element("button[phx-click='toggle_notes_sidebar']")
+      |> element("button[role='toggle notes button'][data-view='desktop']")
       |> render_click()
 
       # change the selected tab to class notes -> search should be retriggered
@@ -2179,7 +2179,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       ensure_content_is_visible(view)
 
       view
-      |> element("button[phx-click='toggle_notes_sidebar']")
+      |> element("button[role='toggle notes button'][data-view='desktop']")
       |> render_click()
 
       # change the selected tab to class notes -> search should be retriggered
@@ -2230,7 +2230,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       ensure_content_is_visible(view)
 
       view
-      |> element(~s{button[phx-click='toggle_notes_sidebar']})
+      |> element(~s{button[role='toggle notes button'][data-view='desktop']})
       |> render_click
 
       assert_push_event(view, "request_point_markers", %{})
@@ -2315,7 +2315,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       ensure_content_is_visible(view)
 
       view
-      |> element(~s{button[phx-click='toggle_notes_sidebar']})
+      |> element(~s{button[role='toggle notes button'][data-view='desktop']})
       |> render_click
 
       wait_while(fn -> has_element?(view, "svg.loading") end)
@@ -2379,7 +2379,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       refute has_element?(
                view,
-               ~s{button[phx-click='toggle_outline_sidebar']}
+               ~s{button[role='toggle notes button'][data-view='desktop']}
              )
     end
 
@@ -2399,7 +2399,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       refute Oli.Accounts.get_user_preference(user.id, :page_outline_panel_active?)
 
       view
-      |> element(~s{button[phx-click='toggle_outline_sidebar']})
+      |> element(~s{button[role='toggle outline button'][data-view='desktop']})
       |> render_click
 
       assert has_element?(
@@ -2652,7 +2652,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       # Test that the page loads correctly with annotations sidebar
       view
-      |> element("button[phx-click='toggle_notes_sidebar']")
+      |> element("button[role='toggle notes button'][data-view='desktop']")
       |> render_click()
 
       # Verify the annotations panel is visible
@@ -2676,7 +2676,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       # Test that the page loads correctly with annotations sidebar
       view
-      |> element("button[phx-click='toggle_notes_sidebar']")
+      |> element("button[role='toggle notes button'][data-view='desktop']")
       |> render_click()
 
       # Verify the annotations panel is visible
@@ -2697,7 +2697,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       # Test that the page loads correctly with annotations sidebar
       view
-      |> element("button[phx-click='toggle_notes_sidebar']")
+      |> element("button[role='toggle notes button'][data-view='desktop']")
       |> render_click()
 
       # Verify the annotations panel is visible
@@ -2718,7 +2718,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       # Test that the page loads correctly with annotations sidebar
       view
-      |> element("button[phx-click='toggle_notes_sidebar']")
+      |> element("button[role='toggle notes button'][data-view='desktop']")
       |> render_click()
 
       # Verify the annotations panel is visible
@@ -2746,7 +2746,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       # Open annotations panel
       view
-      |> element("button[phx-click='toggle_notes_sidebar']")
+      |> element("button[role='toggle notes button'][data-view='desktop']")
       |> render_click()
 
       wait_while(fn -> has_element?(view, "svg.loading") end)
@@ -2771,7 +2771,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       # Test that the page loads correctly with annotations sidebar
       view
-      |> element("button[phx-click='toggle_notes_sidebar']")
+      |> element("button[role='toggle notes button'][data-view='desktop']")
       |> render_click()
 
       # Verify the annotations panel is visible
@@ -2801,7 +2801,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       # Test that the page loads correctly with annotations sidebar
       view
-      |> element("button[phx-click='toggle_notes_sidebar']")
+      |> element("button[role='toggle notes button'][data-view='desktop']")
       |> render_click()
 
       # Verify the annotations panel is visible
@@ -2825,7 +2825,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       # Open annotations panel
       view
-      |> element("button[phx-click='toggle_notes_sidebar']")
+      |> element("button[role='toggle notes button'][data-view='desktop']")
       |> render_click()
 
       wait_while(fn -> has_element?(view, "svg.loading") end)
@@ -2851,7 +2851,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       # Open annotations panel
       view
-      |> element("button[phx-click='toggle_notes_sidebar']")
+      |> element("button[role='toggle notes button'][data-view='desktop']")
       |> render_click()
 
       wait_while(fn -> has_element?(view, "svg.loading") end)
@@ -2877,7 +2877,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       # Open annotations panel
       view
-      |> element("button[phx-click='toggle_notes_sidebar']")
+      |> element("button[role='toggle notes button'][data-view='desktop']")
       |> render_click()
 
       wait_while(fn -> has_element?(view, "svg.loading") end)
@@ -2902,7 +2902,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       # Test that the page loads correctly with annotations sidebar
       view
-      |> element("button[phx-click='toggle_notes_sidebar']")
+      |> element("button[role='toggle notes button'][data-view='desktop']")
       |> render_click()
 
       # Verify the annotations panel is visible
@@ -2931,7 +2931,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       # Test that the page loads correctly with annotations sidebar
       view
-      |> element("button[phx-click='toggle_notes_sidebar']")
+      |> element("button[role='toggle notes button'][data-view='desktop']")
       |> render_click()
 
       # Verify the annotations panel is visible
@@ -2955,7 +2955,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       # Test that the page loads correctly with annotations sidebar
       view
-      |> element("button[phx-click='toggle_notes_sidebar']")
+      |> element("button[role='toggle notes button'][data-view='desktop']")
       |> render_click()
 
       # Verify the annotations panel is visible
@@ -2978,7 +2978,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       # Test that the page loads correctly with annotations sidebar
       view
-      |> element("button[phx-click='toggle_notes_sidebar']")
+      |> element("button[role='toggle notes button'][data-view='desktop']")
       |> render_click()
 
       # Verify the annotations panel is visible
