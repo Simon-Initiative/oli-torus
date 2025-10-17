@@ -1022,11 +1022,16 @@ defmodule Oli.Rendering.Content.Html do
     case attrs do
       %{"width" => width} ->
         width_str = to_string(width)
-        # Only append px if the width is numeric (digits and optional decimal point)
-        if String.match?(width_str, ~r/^\d+(\.\d+)?$/) do
-          " style=\"width: #{escape_xml!(width_str)}px\""
+        # Only allow safe width values: numeric (with optional decimal) or specific units
+        if String.match?(width_str, ~r/^\d+(\.\d+)?(px|%|em|rem|vw|vh)?$/) do
+          if String.match?(width_str, ~r/^\d+(\.\d+)?$/) do
+            " style=\"width: #{escape_xml!(width_str)}px\""
+          else
+            " style=\"width: #{escape_xml!(width_str)}\""
+          end
         else
-          " style=\"width: #{escape_xml!(width_str)}\""
+          # Invalid width value - don't include style attribute for security
+          ""
         end
 
       _ ->

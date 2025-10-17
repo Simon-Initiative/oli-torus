@@ -87,11 +87,15 @@ export class HtmlParser implements WriterImpl {
   private escapeXml = (text: string) => decodeURI(encodeURI(text));
 
   private getWidthWithUnit = (width: string) => {
-    // Only append px if the width is numeric (digits and optional decimal point)
-    if (/^\d+(\.\d+)?$/.test(width)) {
-      return `${this.escapeXml(width)}px`;
+    // Only allow safe width values: numeric (with optional decimal) or specific units
+    if (/^\d+(\.\d+)?(px|%|em|rem|vw|vh)?$/.test(width)) {
+      if (/^\d+(\.\d+)?$/.test(width)) {
+        return `${this.escapeXml(width)}px`;
+      }
+      return this.escapeXml(width);
     }
-    return this.escapeXml(width);
+    // Invalid width value - return empty string for security
+    return '';
   };
 
   private wrapWithMarks(text: string, textEntity: Text): React.ReactElement {
