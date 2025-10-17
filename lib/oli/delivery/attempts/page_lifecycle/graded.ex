@@ -62,46 +62,55 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
           resource_attempts: graded_attempts
         }}}
     else
-      # In the case that we are in score as you go mode, and the page revision has changed since the start of this
-      # current attempt, we need to start a new attempt to pick up the new page revision.
-      if page_revision.id !== latest_resource_attempt.revision_id and
-           !effective_settings.batch_scoring do
-        # We have to mark the current attempt as :evaluated so that we can start a new one
-        now = DateTime.utc_now()
+      case maybe_finalize_overdue_attempt(visit_context) do
+        :ok ->
+          # In the case that we are in score as you go mode, and the page revision has changed since the start of this
+          # current attempt, we need to start a new attempt to pick up the new page revision.
+          if page_revision.id !== latest_resource_attempt.revision_id and
+               !effective_settings.batch_scoring do
+            # We have to mark the current attempt as :evaluated so that we can start a new one
+            now = DateTime.utc_now()
 
-        Core.update_resource_attempt(latest_resource_attempt, %{
-          lifecycle_state: :evaluated,
-          date_submitted: now,
-          date_evaluated: now
-        })
+            Core.update_resource_attempt(latest_resource_attempt, %{
+              lifecycle_state: :evaluated,
+              date_submitted: now,
+              date_evaluated: now
+            })
 
-        case start(visit_context) do
-          {:ok, %AttemptState{} = %{resource_attempt: new_attempt} = attempt_state} ->
-            # Now after the new attempt has been created, we update it to pull forward the score
-            # from the previous attempt.  We keep the new out_of value as this allows the
-            # system to properly handle the case where the out_of value changes across revisions (e.g.
-            # if activities are )
-            {:ok, resource_attempt} =
-              Core.update_resource_attempt(new_attempt, %{
-                score: latest_resource_attempt.score
-              })
+            case start(visit_context) do
+              {:ok, %AttemptState{} = %{resource_attempt: new_attempt} = attempt_state} ->
+                # Now after the new attempt has been created, we update it to pull forward the score
+                # from the previous attempt.  We keep the new out_of value as this allows the
+                # system to properly handle the case where the out_of value changes across revisions (e.g.
+                # if activities are )
+                {:ok, resource_attempt} =
+                  Core.update_resource_attempt(new_attempt, %{
+                    score: latest_resource_attempt.score
+                  })
 
-            attempt_state = %{attempt_state | resource_attempt: resource_attempt}
+                attempt_state = %{attempt_state | resource_attempt: resource_attempt}
 
-            {:ok, {:in_progress, attempt_state}}
+                {:ok, {:in_progress, attempt_state}}
 
-          error ->
-            error
-        end
-      else
-        {:ok, attempt_state} =
-          AttemptState.fetch_attempt_state(latest_resource_attempt, page_revision)
+              error ->
+                error
+            end
+          else
+            {:ok, attempt_state} =
+              AttemptState.fetch_attempt_state(latest_resource_attempt, page_revision)
 
-        if page_revision.id !== latest_resource_attempt.revision_id do
-          {:ok, {:revised, attempt_state}}
-        else
-          {:ok, {:in_progress, attempt_state}}
-        end
+            if page_revision.id !== latest_resource_attempt.revision_id do
+              {:ok, {:revised, attempt_state}}
+            else
+              {:ok, {:in_progress, attempt_state}}
+            end
+          end
+
+        {:finalized, reason} ->
+          {:finalized, reason}
+
+        {:error, reason} ->
+          {:error, reason}
       end
     end
   end
@@ -235,6 +244,52 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
   end
 
   def finalize(_), do: {:error, {:already_submitted}}
+
+  defp maybe_finalize_overdue_attempt(%VisitContext{
+         latest_resource_attempt: %ResourceAttempt{} = resource_attempt,
+         effective_settings: %Combined{} = effective_settings,
+         section_slug: section_slug,
+         datashop_session_id: datashop_session_id
+       }) do
+    if should_force_auto_submit?(resource_attempt, effective_settings) do
+      finalization_context = %FinalizationContext{
+        resource_attempt: resource_attempt,
+        section_slug: section_slug,
+        datashop_session_id: datashop_session_id,
+        effective_settings: effective_settings
+      }
+
+      case finalize(finalization_context) do
+        {:ok, _summary} ->
+          {:finalized, {:end_date_passed}}
+
+        {:error, :already_submitted} ->
+          {:finalized, {:end_date_passed}}
+
+        {:error, reason} ->
+          {:error, reason}
+      end
+    else
+      :ok
+    end
+  end
+
+  defp maybe_finalize_overdue_attempt(%VisitContext{}), do: :ok
+
+  defp should_force_auto_submit?(
+         %ResourceAttempt{} = resource_attempt,
+         %Combined{late_submit: :disallow} = effective_settings
+       ) do
+    case Settings.determine_effective_deadline(resource_attempt, effective_settings) do
+      nil ->
+        false
+
+      deadline ->
+        DateTime.compare(deadline, DateTime.utc_now()) == :lt
+    end
+  end
+
+  defp should_force_auto_submit?(_, _), do: false
 
   @decorate transaction_event("Graded.finalize_activity_and_part_attempts")
   defp finalize_activity_and_part_attempts(
