@@ -8470,6 +8470,10 @@ table.table-striped tbody tr:nth-child(even) {
   left: 1250px;
 }
 
+.left-\[2\.27px\] {
+  left: 2.27px;
+}
+
 .left-\[52px\] {
   left: 52px;
 }
@@ -8612,6 +8616,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .top-\[16px\] {
   top: 16px;
+}
+
+.top-\[3\.73px\] {
+  top: 3.73px;
 }
 
 .top-\[40px\] {
@@ -8901,11 +8909,6 @@ table.table-striped tbody tr:nth-child(even) {
   margin-bottom: 1.5rem;
 }
 
-.my-7 {
-  margin-top: 1.75rem;
-  margin-bottom: 1.75rem;
-}
-
 .my-8 {
   margin-top: 2rem;
   margin-bottom: 2rem;
@@ -9019,6 +9022,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .mb-6 {
   margin-bottom: 1.5rem;
+}
+
+.mb-7 {
+  margin-bottom: 1.75rem;
 }
 
 .mb-8 {
@@ -10228,6 +10235,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .w-\[461px\] {
   width: 461px;
+}
+
+.w-\[465px\] {
+  width: 465px;
 }
 
 .w-\[485px\] {
@@ -12551,6 +12562,11 @@ table.table-striped tbody tr:nth-child(even) {
   background-color: rgb(245 245 245 / var(--tw-bg-opacity));
 }
 
+.bg-neutral-700 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(64 64 64 / var(--tw-bg-opacity));
+}
+
 .bg-orange-100 {
   --tw-bg-opacity: 1;
   background-color: rgb(255 237 213 / var(--tw-bg-opacity));
@@ -12684,6 +12700,11 @@ table.table-striped tbody tr:nth-child(even) {
 .bg-yellow-100 {
   --tw-bg-opacity: 1;
   background-color: rgb(253 236 207 / var(--tw-bg-opacity));
+}
+
+.bg-yellow-200 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(252 221 168 / var(--tw-bg-opacity));
 }
 
 .bg-yellow-300 {
@@ -12958,6 +12979,10 @@ table.table-striped tbody tr:nth-child(even) {
   fill: #262626;
 }
 
+.fill-none {
+  fill: none;
+}
+
 .fill-primary {
   fill: #3B76D3;
 }
@@ -13036,6 +13061,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .stroke-gray-300 {
   stroke: #d4d4d4;
+}
+
+.stroke-gray-400\/50 {
+  stroke: rgb(163 163 163 / 0.5);
 }
 
 .stroke-gray-500 {
@@ -13778,6 +13807,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .font-\[\'Inter\'\] {
   font-family: 'Inter';
+}
+
+.font-\[\'Open_Sans\'\] {
+  font-family: 'Open Sans';
 }
 
 .font-\[\'Roboto\'\] {
@@ -14901,6 +14934,18 @@ table.table-striped tbody tr:nth-child(even) {
   box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
 }
 
+.shadow-\[0px_0px_8px_0px_rgba\(0\2c 0\2c 0\2c 0\.15\)\] {
+  --tw-shadow: 0px 0px 8px 0px rgba(0,0,0,0.15);
+  --tw-shadow-colored: 0px 0px 8px 0px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+
+.shadow-\[0px_1px_0px_0px_rgba\(245\2c 245\2c 245\2c 1\.00\)\] {
+  --tw-shadow: 0px 1px 0px 0px rgba(245,245,245,1.00);
+  --tw-shadow-colored: 0px 1px 0px 0px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+
 .shadow-\[0px_2px_10px_0px_rgba\(0\2c 50\2c 99\2c 0\.10\)\] {
   --tw-shadow: 0px 2px 10px 0px rgba(0,50,99,0.10);
   --tw-shadow-colored: 0px 2px 10px 0px var(--tw-shadow-color);
@@ -15553,6 +15598,14 @@ table.table-striped tbody tr:nth-child(even) {
 
 .dark .placeholder-Text-text-high::placeholder {
   color: #EEEBF5;
+}
+
+.placeholder-Text-text-low::-moz-placeholder {
+  color: #45464C;
+}
+
+.placeholder-Text-text-low::placeholder {
+  color: #45464C;
 }
 
 .dark .placeholder-Text-text-low::-moz-placeholder {
@@ -19671,6 +19724,14 @@ Not supports in Firefox and IE */
   background-color: #201D21;
 }
 
+.hover\:bg-Background-bg-primary:hover {
+  background-color: #F3F4F8;
+}
+
+.dark .hover\:bg-Background-bg-primary:hover {
+  background-color: #0D0C0F;
+}
+
 .hover\:bg-Surface-surface-secondary-hover:hover {
   background-color: #F2F9FF;
 }
@@ -20763,6 +20824,10 @@ Not supports in Firefox and IE */
   border-width: 1px;
 }
 
+.focus\:border-none:focus {
+  border-style: none;
+}
+
 .focus\:border-blue-500:focus {
   --tw-border-opacity: 1;
   border-color: rgb(59 118 211 / var(--tw-border-opacity));
@@ -20978,6 +21043,10 @@ Not supports in Firefox and IE */
 
 .focus\:ring-opacity-50:focus {
   --tw-ring-opacity: 0.5;
+}
+
+.focus\:ring-offset-0:focus {
+  --tw-ring-offset-width: 0px;
 }
 
 .focus\:ring-offset-2:focus {
@@ -21991,6 +22060,11 @@ Not supports in Firefox and IE */
 .dark .dark\:bg-yellow-600 {
   --tw-bg-opacity: 1;
   background-color: rgb(232 149 9 / var(--tw-bg-opacity));
+}
+
+.dark .dark\:bg-yellow-700 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(178 115 7 / var(--tw-bg-opacity));
 }
 
 .dark .dark\:bg-zinc-800 {
