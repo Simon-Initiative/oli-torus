@@ -335,7 +335,14 @@ export class HtmlParser implements WriterImpl {
         <div className="text-sm md:hidden flex justify-center">
           <div
             className="inline-block w-full text-right"
-            style={attrs.width ? { width: this.getWidthWithUnit(String(attrs.width)) } : {}}
+            style={
+              attrs.width
+                ? {
+                    width: '100%',
+                    maxWidth: this.getWidthWithUnit(String(attrs.width)),
+                  }
+                : {}
+            }
           >
             Pinch to Zoom
           </div>

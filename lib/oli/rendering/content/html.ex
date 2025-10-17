@@ -78,7 +78,7 @@ defmodule Oli.Rendering.Content.Html do
       attrs,
       [
         ~s|<div class="text-sm md:hidden flex justify-center">
-        <div class="inline-block w-full text-right"#{maybe_img_width(attrs)} >Pinch to Zoom</div></div>|,
+        <div class="inline-block w-full text-right"#{maybe_img_responsive_width(attrs)} >Pinch to Zoom</div></div>|,
         ~s|<img class="figure-img img-fluid"#{maybe_alt(attrs)}#{maybe_width(attrs)} src="#{escape_xml!(src)}"|,
         maybe_point_marker_attr(context, attrs),
         ~s| />\n|
@@ -1018,16 +1018,16 @@ defmodule Oli.Rendering.Content.Html do
     end
   end
 
-  defp maybe_img_width(attrs) do
+  defp maybe_img_responsive_width(attrs) do
     case attrs do
       %{"width" => width} ->
         width_str = to_string(width)
         # Only allow safe width values: numeric (with optional decimal) or specific units
         if String.match?(width_str, ~r/^\d+(\.\d+)?(px|%|em|rem|vw|vh)?$/) do
           if String.match?(width_str, ~r/^\d+(\.\d+)?$/) do
-            " style=\"width: #{escape_xml!(width_str)}px\""
+            " style=\"width: 100%; max-width: #{escape_xml!(width_str)}px\""
           else
-            " style=\"width: #{escape_xml!(width_str)}\""
+            " style=\"width: 100%; max-width: #{escape_xml!(width_str)}\""
           end
         else
           # Invalid width value - don't include style attribute for security
