@@ -8,6 +8,7 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
 
   use OliWeb, :live_component
   alias OliWeb.Icons
+  alias OliWeb.Common.Utils
 
   def mount(_params, _session, socket) do
     {:ok, socket}
@@ -79,26 +80,6 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
     {:noreply, socket}
   end
 
-  defp highlight_search_term(text, search_term) when search_term == "", do: text
-
-  defp highlight_search_term(text, search_term) do
-    # Use case-insensitive regex to find all matches
-    regex = ~r/#{Regex.escape(search_term)}/i
-    parts = String.split(text, regex, include_captures: true)
-
-    parts
-    |> Enum.with_index()
-    |> Enum.map(fn
-      {part, index} when rem(index, 2) == 0 ->
-        part
-
-      {part, _} ->
-        [~s(<span class="bg-yellow-200 dark:bg-yellow-700 font-semibold">), part, ~s(</span>)]
-    end)
-    |> List.flatten()
-    |> :erlang.iolist_to_binary()
-  end
-
   attr(:items, :list, required: true)
   attr(:current_item_resource_id, :integer, required: true)
   attr(:path_builder_fn, :fun, required: true)
@@ -113,7 +94,7 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
           class="px-4 py-2 rounded-md flex justify-center items-center gap-2"
         >
           <div class="pr-2 flex justify-end items-center gap-2 text-Text-text-button opacity-90">
-            <Icons.chevron_left width="24" height="24" />
+            <Icons.left_chevron class="w-4 h-4 stroke-Text-text-button fill-none" />
             <div class="text-right justify-center text-xs font-semibold font-['Open_Sans'] leading-none whitespace-nowrap">
               Previous {resource_label(@previous_item)}
             </div>
@@ -125,7 +106,7 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
           class="px-4 py-2 rounded-md flex justify-center items-center gap-2 cursor-not-allowed"
         >
           <div class="pr-2 flex justify-end items-center gap-2 text-gray-400 opacity-50">
-            <Icons.chevron_left width="24" height="24" />
+            <Icons.left_chevron class="w-4 h-4 stroke-gray-400/50 fill-none" />
             <div class="text-right justify-center text-xs font-semibold font-['Open_Sans'] leading-none whitespace-nowrap">
               Previous {@current_item_label}
             </div>
@@ -257,7 +238,11 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
                     title={item.title}
                   >
                     {item_prefix(resource_label(item), item)}
-                    {Phoenix.HTML.raw(highlight_search_term(item.title, @search_query))}
+                    {Phoenix.HTML.raw(
+                      Utils.highlight_search_term(item.title, @search_query,
+                        class: "bg-yellow-200 dark:bg-yellow-700 font-semibold"
+                      )
+                    )}
                   </div>
                 </div>
               </div>
@@ -275,11 +260,11 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
     container_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
 
     case {resource.resource_type_id, resource.numbering_level} do
-      {type, _} when type == page_type_id -> "Page"
-      {type, 0} when type == container_type_id -> ""
-      {type, 1} when type == container_type_id -> "Unit"
-      {type, 2} when type == container_type_id -> "Module"
-      {type, 3} when type == container_type_id -> "Section"
+      {^page_type_id, _} -> "Page"
+      {^container_type_id, 0} -> ""
+      {^container_type_id, 1} -> "Unit"
+      {^container_type_id, 2} -> "Module"
+      {^container_type_id, 3} -> "Section"
     end
   end
 
