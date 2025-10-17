@@ -1020,7 +1020,7 @@ defmodule Oli.Rendering.Content.Html do
 
   defp maybe_img_width(attrs) do
     case attrs do
-      %{"width" => width} -> "style=\"width: #{escape_xml!(width)}px\""
+      %{"width" => width} -> " style=\"width: #{escape_xml!(width)}px\""
       _ -> ""
     end
   end
