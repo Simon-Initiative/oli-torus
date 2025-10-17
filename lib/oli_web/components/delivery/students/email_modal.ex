@@ -209,7 +209,7 @@ defmodule OliWeb.Components.Delivery.Students.EmailModal do
 
       # Send flash message to parent LiveView
       send(self(), {:flash_message, {:info, "Emails sent successfully"}})
-      send(self(), {:hide_email_modal})
+      send(self(), {:hide_email_modal, socket.assigns[:email_handler_id]})
 
       {:noreply, socket}
     else
@@ -218,7 +218,7 @@ defmodule OliWeb.Components.Delivery.Students.EmailModal do
   end
 
   def handle_event("close_email_modal", _params, socket) do
-    send(self(), {:hide_email_modal})
+    send(self(), {:hide_email_modal, socket.assigns[:email_handler_id]})
     {:noreply, socket}
   end
 
@@ -237,10 +237,10 @@ defmodule OliWeb.Components.Delivery.Students.EmailModal do
   defp this_email_will_send_message([selected_student_id], students) do
     student = Enum.find(students, fn s -> s.id == selected_student_id end)
 
-    student_name =
-      Utils.name(student.name, student.given_name, student.family_name)
+    student_full_name =
+      student[:full_name] || Utils.name(student.name, student.given_name, student.family_name)
 
-    assigns = %{student_name: student_name, student_email: student.email}
+    assigns = %{student_name: student_full_name, student_email: student.email}
 
     if student.email do
       ~H"""

@@ -62,6 +62,8 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
           Map.merge(objectives_table_model.data, %{
             section_slug: section_slug,
             section_id: assigns[:section_id],
+            section_title: assigns[:section_title],
+            current_user: assigns[:current_user],
             current_params: params
           })
       })

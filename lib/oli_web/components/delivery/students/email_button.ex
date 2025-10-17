@@ -66,7 +66,9 @@ defmodule OliWeb.Components.Delivery.Students.EmailButton do
   end
 
   def handle_event("copy_email_addresses", _params, socket) do
-    {:noreply, put_flash(socket, :info, "Email addresses copied to clipboard")}
+    send(self(), {:flash_message, {:info, "Email addresses copied to clipboard"}})
+
+    {:noreply, socket}
   end
 
   def handle_event("show_email_modal", _params, socket) do
