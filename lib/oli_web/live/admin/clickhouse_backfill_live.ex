@@ -712,9 +712,40 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
             <p class="text-sm text-gray-600 dark:text-gray-300">
               Select an inventory date to orchestrate ingest of all JSONL exports recorded in the S3 inventory manifest for that day.
             </p>
-            <p class="text-xs text-gray-500 dark:text-gray-400">
-              Current batch size: {Map.get(@inventory_config, :batch_chunk_size, 25)} files per ClickHouse insert.
-            </p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 text-xs text-gray-600 dark:text-gray-300">
+              <div class="rounded bg-gray-100 dark:bg-gray-800 px-3 py-2">
+                <div class="uppercase tracking-wide text-[10px] text-gray-500 dark:text-gray-400">
+                  Chunk Size
+                </div>
+                <div class="font-medium text-sm text-gray-700 dark:text-gray-100">
+                  {inventory_chunk_size(@inventory_config)} files / insert
+                </div>
+              </div>
+              <div class="rounded bg-gray-100 dark:bg-gray-800 px-3 py-2">
+                <div class="uppercase tracking-wide text-[10px] text-gray-500 dark:text-gray-400">
+                  Manifest Page Size
+                </div>
+                <div class="font-medium text-sm text-gray-700 dark:text-gray-100">
+                  {inventory_manifest_page_size(@inventory_config)} records
+                </div>
+              </div>
+              <div class="rounded bg-gray-100 dark:bg-gray-800 px-3 py-2">
+                <div class="uppercase tracking-wide text-[10px] text-gray-500 dark:text-gray-400">
+                  Max Simultaneous Batches
+                </div>
+                <div class="font-medium text-sm text-gray-700 dark:text-gray-100">
+                  {inventory_max_simultaneous_batches(@inventory_config)}
+                </div>
+              </div>
+              <div class="rounded bg-gray-100 dark:bg-gray-800 px-3 py-2">
+                <div class="uppercase tracking-wide text-[10px] text-gray-500 dark:text-gray-400">
+                  Max Batch Retries
+                </div>
+                <div class="font-medium text-sm text-gray-700 dark:text-gray-100">
+                  {inventory_max_batch_retries(@inventory_config)}
+                </div>
+              </div>
+            </div>
           </div>
 
           <.form
@@ -1301,6 +1332,71 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
     |> Ecto.Changeset.validate_length(:target_table, max: 255)
     |> Ecto.Changeset.validate_format(:target_table, ~r/^[a-zA-Z0-9_\.]+$/)
   end
+
+  defp inventory_chunk_size(config) do
+    config
+    |> inventory_config_value(:batch_chunk_size, 25)
+    |> parse_positive_integer(25)
+  end
+
+  defp inventory_manifest_page_size(config) do
+    chunk_size = inventory_chunk_size(config)
+
+    config
+    |> inventory_config_value(:manifest_page_size, nil)
+    |> parse_positive_integer(nil)
+    |> case do
+      nil -> max(chunk_size * 20, 1_000)
+      value -> value
+    end
+  end
+
+  defp inventory_max_simultaneous_batches(config) do
+    config
+    |> inventory_config_value(:max_simultaneous_batches, 1)
+    |> parse_positive_integer(1)
+  end
+
+  defp inventory_max_batch_retries(config) do
+    config
+    |> inventory_config_value(:max_batch_retries, 1)
+    |> parse_positive_integer(1)
+  end
+
+  defp inventory_config_value(config, key, default) do
+    value =
+      cond do
+        is_map(config) and Map.has_key?(config, key) ->
+          Map.get(config, key)
+
+        is_map(config) and Map.has_key?(config, Atom.to_string(key)) ->
+          Map.get(config, Atom.to_string(key))
+
+        true ->
+          nil
+      end
+
+    case value do
+      nil -> default
+      "" -> default
+      _ -> value
+    end
+  end
+
+  defp parse_positive_integer(value, _default) when is_integer(value) and value > 0, do: value
+  defp parse_positive_integer(value, default) when is_integer(value), do: default
+
+  defp parse_positive_integer(value, default) when is_binary(value) do
+    value
+    |> String.trim()
+    |> Integer.parse()
+    |> case do
+      {int, _} when int > 0 -> int
+      _ -> default
+    end
+  end
+
+  defp parse_positive_integer(_value, default), do: default
 
   defp inventory_form_values(inputs) do
     %{
