@@ -5,7 +5,6 @@ export const FixedNavigationBar = {
 
     let lastScrollTop = 0;
     let isScrollingDown = false;
-    const scrollTimeout: { current: number | null } = { current: null };
 
     const isMobile = () => window.innerWidth < 640; // sm breakpoint is 640px
 
@@ -51,11 +50,6 @@ export const FixedNavigationBar = {
         isScrollingDown = scrollTop > lastScrollTop;
         lastScrollTop = scrollTop;
 
-        // Clear any existing timeout
-        if (scrollTimeout.current) {
-          clearTimeout(scrollTimeout.current);
-        }
-
         if (isScrollingDown && scrollTop > 100) {
           // Scrolling down and past 100px - show the bar
           bottomBar.classList.add('translate-y-0', 'opacity-100');
@@ -94,8 +88,8 @@ export const FixedNavigationBar = {
       updateBarVisibility();
       // Also update dialogue position on resize
       if (isMobile()) {
-        const { scrollTop } = document.documentElement;
-        const isBarVisible = scrollTop > 100;
+        // Derive visibility from actual bar state, not scroll position
+        const isBarVisible = bottomBar.classList.contains('translate-y-0');
         updateDialoguePosition(isBarVisible);
       } else {
         updateDialoguePosition(false); // Reset to CSS classes on desktop
@@ -117,9 +111,6 @@ export const FixedNavigationBar = {
     this.cleanup = () => {
       window.removeEventListener('scroll', handleScroll);
       window.removeEventListener('resize', resizeHandler);
-      if (scrollTimeout.current) {
-        clearTimeout(scrollTimeout.current);
-      }
     };
   },
 

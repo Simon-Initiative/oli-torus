@@ -142,7 +142,10 @@ defmodule OliWeb.Delivery.Student.Utils do
           <span class="text-Text-text-high text-sm sm:text-base font-bold font-['Inter'] leading-normal">
             LEARNING OBJECTIVES & PROFICIENCY
           </span>
-          <button phx-click={Modal.show_modal("proficiency_explanation_modal")}>
+          <button
+            phx-click={Modal.show_modal("proficiency_explanation_modal")}
+            aria-label="Explain proficiency"
+          >
             <Icons.help />
           </button>
         </div>
