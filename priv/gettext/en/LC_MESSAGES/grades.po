@@ -64,7 +64,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/oli_web/live/grades/grade_sync.ex:23
-msgid "This operation will overwrite any grades in the LMS gradebook that\n      were manually adjusted or overridden by the instructor."
+msgid "This operation will overwrite any scores in the LMS gradebook that\n      were manually adjusted or overridden by the instructor."
 msgstr ""
 
 #, elixir-format
