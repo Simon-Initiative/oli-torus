@@ -357,7 +357,7 @@ export class HtmlParser implements WriterImpl {
       </>,
     );
   }
-  
+
   img_inline(context: WriterContext, next: Next, attrs: ImageInline) {
     if (!attrs.src) return <></>;
 
