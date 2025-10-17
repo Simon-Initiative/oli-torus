@@ -170,9 +170,18 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
       batch.metadata
       |> ensure_map()
       |> Map.put("object_count", total)
-      |> Map.put_new("chunk_count", 0)
+      |> Map.put("chunk_count", fetch_chunk_progress(batch))
+      |> Map.put("chunk_sequence", fetch_chunk_sequence(batch))
 
-    Inventory.update_batch(batch, %{object_count: total, processed_objects: 0, metadata: metadata})
+    processed =
+      batch.processed_objects
+      |> parse_positive_integer(0)
+
+    Inventory.update_batch(batch, %{
+      object_count: total,
+      processed_objects: processed,
+      metadata: metadata
+    })
   end
 
   defp ingest_entries(%InventoryRun{} = run, %InventoryBatch{} = batch, creds) do
@@ -189,15 +198,33 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
       |> Map.get("chunk_count", 0)
       |> parse_positive_integer(0)
 
+    initial_chunk_sequence =
+      metadata
+      |> Map.get("chunk_sequence", initial_chunk_count)
+      |> parse_positive_integer(initial_chunk_count)
+
+    metadata =
+      metadata
+      |> Map.put("chunk_count", initial_chunk_count)
+      |> Map.put("chunk_sequence", initial_chunk_sequence)
+
     initial_processed =
       batch.processed_objects
       |> parse_positive_integer(0)
 
+    initial_rows =
+      batch.rows_ingested
+      |> parse_positive_integer(0)
+
+    initial_bytes =
+      batch.bytes_ingested
+      |> parse_positive_integer(0)
+
     initial_summary = %{
       processed_objects: initial_processed,
-      rows_ingested: 0,
-      bytes_ingested: 0,
-      metadata: Map.put(metadata, "chunk_count", initial_chunk_count)
+      rows_ingested: initial_rows,
+      bytes_ingested: initial_bytes,
+      metadata: metadata
     }
 
     paginate_manifest_entries(
@@ -978,6 +1005,27 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
   end
 
   defp sanitize_non_negative_integer(_), do: nil
+
+  defp fetch_chunk_progress(%InventoryBatch{} = batch) do
+    metadata = ensure_map(batch.metadata)
+
+    metadata
+    |> Map.get("chunk_count", 0)
+    |> parse_positive_integer(0)
+  end
+
+  defp fetch_chunk_sequence(%InventoryBatch{} = batch) do
+    metadata = ensure_map(batch.metadata)
+
+    progress =
+      metadata
+      |> Map.get("chunk_count", 0)
+      |> parse_positive_integer(0)
+
+    metadata
+    |> Map.get("chunk_sequence", progress)
+    |> parse_positive_integer(progress)
+  end
 
   defp escape_single_quotes(value) do
     value

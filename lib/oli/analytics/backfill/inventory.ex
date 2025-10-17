@@ -657,7 +657,7 @@ defmodule Oli.Analytics.Backfill.Inventory do
           end
 
         with {:ok, updated_batch} <- transition_batch(batch, :paused, %{metadata: metadata}),
-             :ok <- maybe_recompute_run(run) do
+             {:ok, _} <- maybe_recompute_run(run) do
           {:ok, %{updated_batch | run: run}}
           |> notify(:inventory_batch, %{action: :paused})
         end
@@ -696,7 +696,7 @@ defmodule Oli.Analytics.Backfill.Inventory do
 
       with {:ok, updated_batch} <- transition_batch(batch, :pending, %{metadata: metadata}),
            :ok <- maybe_enqueue_pending_batches(run),
-           :ok <- maybe_recompute_run(run) do
+           {:ok, _} <- maybe_recompute_run(run) do
         reloaded =
           InventoryBatch
           |> Repo.get!(updated_batch.id)
@@ -727,7 +727,7 @@ defmodule Oli.Analytics.Backfill.Inventory do
       }
 
       with {:ok, updated_batch} <- transition_batch(batch, :cancelled, attrs),
-           :ok <- maybe_recompute_run(batch.run, recompute?) do
+           {:ok, _} <- maybe_recompute_run(batch.run, recompute?) do
         {:ok, %{updated_batch | run: batch.run}}
         |> notify(:inventory_batch, %{action: :cancelled})
       end
@@ -806,14 +806,17 @@ defmodule Oli.Analytics.Backfill.Inventory do
   end
 
   defp maybe_recompute_run(%InventoryRun{} = run) do
-    _ = recompute_run_aggregates(run)
-    :ok
+    case recompute_run_aggregates(run) do
+      {:ok, _} = result -> result
+      {:error, _} = error -> error
+    end
   end
 
-  defp maybe_recompute_run(_), do: :ok
+  defp maybe_recompute_run(_), do: {:ok, nil}
 
   defp maybe_recompute_run(%InventoryRun{} = run, true), do: maybe_recompute_run(run)
-  defp maybe_recompute_run(%InventoryRun{} = _run, false), do: :ok
+  defp maybe_recompute_run(%InventoryRun{} = run, false), do: {:ok, run}
+  defp maybe_recompute_run(_, _), do: {:ok, nil}
 
   defp parse_positive_integer(value, _default)
        when is_integer(value) and value > 0,
