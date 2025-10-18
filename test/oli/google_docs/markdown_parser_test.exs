@@ -32,8 +32,8 @@ defmodule Oli.GoogleDocs.MarkdownParserTest do
       paragraph_with_marks =
         Enum.find(result.blocks, fn
           %{type: :paragraph, inlines: inlines} ->
-            Enum.any?(inlines, &(:bold in &1.marks)) &&
-              Enum.any?(inlines, &(:italic in &1.marks))
+            has_mark?(inlines, [:bold, :strong]) &&
+              has_mark?(inlines, [:italic, :em])
 
           _ ->
             false
@@ -116,5 +116,13 @@ defmodule Oli.GoogleDocs.MarkdownParserTest do
 
       [%{type: :formula}] = result.blocks
     end
+  end
+
+  defp has_mark?(inlines, allowed_marks) do
+    Enum.any?(inlines, fn inline ->
+      inline.marks
+      |> List.wrap()
+      |> Enum.any?(&(&1 in allowed_marks))
+    end)
   end
 end

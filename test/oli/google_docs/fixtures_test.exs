@@ -12,6 +12,7 @@ defmodule Oli.GoogleDocs.FixturesTest do
 
   test "available fixtures are enumerated and sorted" do
     assert TestHelpers.available_fixtures() == [
+             "activities.md",
              "baseline.md",
              "custom_elements.md",
              "media.md"
