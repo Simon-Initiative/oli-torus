@@ -16,7 +16,8 @@ defmodule Oli.Auditing.LogEvent do
     :section_created,
     :feature_flag_enabled,
     :feature_flag_disabled,
-    :feature_flag_removed
+    :feature_flag_removed,
+    :google_doc_imported
   ]
 
   schema "audit_log_events" do
@@ -130,6 +131,10 @@ defmodule Oli.Auditing.LogEvent do
         feature_name = get_in(event.details, ["feature_name"]) || "unknown"
         resource_type = get_in(event.details, ["resource_type"]) || "resource"
         "Removed feature flag '#{feature_name}' from #{resource_type}"
+
+      :google_doc_imported ->
+        page_title = get_in(event.details, ["page_title"]) || ""
+        "Imported Google Doc into page #{page_title}"
 
       _ ->
         "#{event.event_type}"

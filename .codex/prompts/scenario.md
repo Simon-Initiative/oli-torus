@@ -67,6 +67,6 @@ Think hardest and author a new `Oli.Scenarios` based unit test for the following
 
 The workflow is:
 
-@$ARGUMENTS
+$ARGUMENTS
 
 

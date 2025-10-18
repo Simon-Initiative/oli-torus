@@ -45,7 +45,7 @@ develop implements the plan and builds the feature; updates specs and checklists
 
 
 ## Inputs
-- Ask user for the docs/feature subdirecotry for where to find the prd.md file.  Read in that prd.md file.
+- $1 is the path to a docs/feature sub-directory that contains a prd.md file.  Read in that prd.md file to understand the feature description and requirements.
 
 ## Task
 
