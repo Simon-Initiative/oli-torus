@@ -19,6 +19,7 @@ defmodule Oli.Interop.Ingest.Processing.Rewiring do
 
   @spec rewire_activity_references(map() | nil, any) :: map() | nil
   def rewire_activity_references(content, activity_map) do
+
     {mapped, _} =
       PageContent.map_reduce(content, {:ok, []}, fn e, {status, invalid_refs}, _tr_context ->
         case e do

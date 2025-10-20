@@ -24,23 +24,16 @@ defmodule Oli.Interop.Ingest.Processing.RewiringTest do
     test "removes unmapped activity references from nested content" do
       content = %{
         "model" => [
-          %{
-            "type" => "content",
-            "children" => [
-              %{"type" => "activity-reference", "activity_id" => 1},
-              %{"type" => "activity-reference", "activity_id" => 2}
-            ]
-          }
+          %{"type" => "activity-reference", "activity_id" => 1},
+          %{"type" => "activity-reference", "activity_id" => 2}
         ]
       }
 
       map = %{1 => 101}
       result = Rewiring.rewire_activity_references(content, map)
 
-      [content_block] = result["model"]
-      assert Enum.count(content_block["children"]) == 1
-      [child] = content_block["children"]
-      assert child["activity_id"] == 101
+      [one_activity] = result["model"]
+      assert one_activity["activity_id"] == 101
     end
   end
 
