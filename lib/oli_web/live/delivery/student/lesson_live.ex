@@ -245,6 +245,38 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     end
   end
 
+  def mount(
+        _params,
+        _session,
+        %{assigns: %{view: :adaptive_with_chrome}} = socket
+      ) do
+    if connected?(socket) do
+      send(self(), :gc)
+
+      socket =
+        socket
+        |> emit_page_viewed_event()
+        |> assign_scripts()
+        |> slim_assigns()
+
+      authoring_scripts =
+        Enum.map(socket.assigns.activity_types, fn at -> at.authoring_script end)
+
+      script_sources =
+        Enum.map(
+          socket.assigns.scripts ++
+            socket.assigns.part_scripts ++ ["delivery.js"] ++ authoring_scripts,
+          fn script ->
+            "/js/#{script}"
+          end
+        )
+
+      {:ok, push_event(socket, "load_survey_scripts", %{script_sources: script_sources})}
+    else
+      {:ok, socket}
+    end
+  end
+
   def mount(_params, _session, socket) do
     {:ok, socket}
   end
@@ -1103,6 +1135,35 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
       {OliWeb.LayoutView.additional_stylesheets(%{additional_stylesheets: @additional_stylesheets})}
     </div>
+    """
+  end
+
+  def render(%{view: :adaptive_with_chrome} = assigns) do
+    iframe_url =
+      Routes.page_delivery_path(
+        OliWeb.Endpoint,
+        :page_fullscreen,
+        assigns.section.slug,
+        assigns.page_context.page.slug
+      )
+
+    assigns = assign(assigns, iframe_url: iframe_url)
+
+    ~H"""
+    <div class="flex justify-center w-full min-h-screen">
+      <iframe
+        id="adaptive_content_iframe"
+        src={@iframe_url}
+        class="bg-white"
+        style="width: 80%; height: 90vh; min-height: 600px; border: none;"
+        allow="autoplay; fullscreen"
+      >
+      </iframe>
+    </div>
+
+    {OliWeb.LayoutView.additional_stylesheets(%{
+      additional_stylesheets: @additional_stylesheets
+    })}
     """
   end
 
