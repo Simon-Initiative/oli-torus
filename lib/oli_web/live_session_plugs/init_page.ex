@@ -156,7 +156,7 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
        ) do
     view =
       if Map.get(content, "displayApplicationChrome", false) do
-        :graded_page
+        :adaptive_with_chrome
       else
         :adaptive_chromeless
       end
