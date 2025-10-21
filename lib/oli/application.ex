@@ -35,16 +35,6 @@ defmodule Oli.Application do
         # Start the Oban background job processor
         {Oban, oban_config()},
 
-        %{
-          id: :clickhouse_inventory_recovery,
-          start:
-            {Task, :start_link,
-             [fn ->
-                Process.sleep(1_000)
-                safe_inventory_recovery()
-              end]}
-        },
-
         # Starts the presence tracker
         OliWeb.Presence,
 
@@ -122,9 +112,19 @@ defmodule Oli.Application do
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: Oli.Supervisor]
-    result = Supervisor.start_link(children, opts)
 
-    result
+    case Supervisor.start_link(children, opts) do
+      {:ok, pid} ->
+        Task.Supervisor.start_child(Oli.TaskSupervisor, fn ->
+          Process.sleep(1_000)
+          safe_inventory_recovery()
+        end)
+
+        {:ok, pid}
+
+      other ->
+        other
+    end
   end
 
   # Tell Phoenix to update the endpoint configuration
