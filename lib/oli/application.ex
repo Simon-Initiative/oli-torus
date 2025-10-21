@@ -4,6 +4,7 @@ defmodule Oli.Application do
   @moduledoc false
 
   use Application
+  require Logger
 
   def start(_type, _args) do
     # Install the logger truncator
@@ -33,6 +34,16 @@ defmodule Oli.Application do
 
         # Start the Oban background job processor
         {Oban, oban_config()},
+
+        %{
+          id: :clickhouse_inventory_recovery,
+          start:
+            {Task, :start_link,
+             [fn ->
+                Process.sleep(1_000)
+                safe_inventory_recovery()
+              end]}
+        },
 
         # Starts the presence tracker
         OliWeb.Presence,
@@ -157,6 +168,19 @@ defmodule Oli.Application do
       ]
     else
       []
+    end
+  end
+
+  defp safe_inventory_recovery do
+    try do
+      Oli.Analytics.Backfill.Inventory.recover_inflight_batches(boot?: true)
+    rescue
+      exception ->
+        Logger.error(
+          "Inventory recovery failed: #{Exception.format(:error, exception, __STACKTRACE__)}"
+        )
+
+        :ok
     end
   end
 

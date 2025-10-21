@@ -16,6 +16,7 @@ defmodule Oli.Analytics.Backfill.Inventory do
   alias Oli.Repo
   require Logger
   alias Oban
+  alias Oban.Job, as: ObanJob
   @chunk_logs_topic "clickhouse_chunk_logs"
 
   @type config :: %{
@@ -326,6 +327,24 @@ defmodule Oli.Analytics.Backfill.Inventory do
       {:error, reason} ->
         {:error, reason}
     end
+  end
+
+  @doc """
+  Re-enqueue any running or queued batches whose underlying job is no longer active,
+  typically after a node restart or crash.
+  """
+  @spec recover_inflight_batches(keyword()) :: :ok
+  def recover_inflight_batches(opts \\ []) do
+    boot? = Keyword.get(opts, :boot?, false)
+
+    from(b in InventoryBatch,
+      where: b.status in [:running, :queued],
+      preload: [:run]
+    )
+    |> Repo.all()
+    |> Enum.each(&maybe_recover_batch_job(&1, boot?))
+
+    :ok
   end
 
   @doc """
@@ -960,6 +979,89 @@ defmodule Oli.Analytics.Backfill.Inventory do
       end
     end)
   end
+
+  defp maybe_recover_batch_job(%InventoryBatch{} = batch, boot?) do
+    batch = ensure_batch_run_preloaded(batch)
+    run = batch.run
+    metadata = ensure_map(batch.metadata)
+    run_metadata = ensure_map(run && run.metadata)
+
+    cond do
+      is_nil(run) ->
+        :ok
+
+      run.status in [:paused, :cancelled, :failed, :completed] ->
+        :ok
+
+      truthy?(Map.get(run_metadata, "pause_requested")) ->
+        :ok
+
+      truthy?(Map.get(metadata, "pause_requested")) ->
+        :ok
+
+      active_job?(metadata, boot?) ->
+        :ok
+
+      true ->
+        Logger.info(
+          "Re-enqueuing orphaned inventory batch #{batch.id} for run #{run.id} (status #{batch.status})"
+        )
+
+        case enqueue_batch(batch) do
+          {:ok, _} -> :ok
+          {:error, reason} ->
+            Logger.error(
+              "Failed to re-enqueue inventory batch #{batch.id} during recovery: #{inspect(reason)}"
+            )
+
+            :ok
+        end
+    end
+  end
+
+  defp ensure_batch_run_preloaded(%InventoryBatch{run: %InventoryRun{}} = batch), do: batch
+
+  defp ensure_batch_run_preloaded(%InventoryBatch{} = batch) do
+    Repo.preload(batch, :run)
+  end
+
+  defp active_job?(metadata, boot?) do
+    metadata
+    |> fetch_first(["last_job_id", :last_job_id])
+    |> parse_job_id()
+    |> case do
+      nil -> false
+      job_id -> job_active?(job_id, boot?)
+    end
+  end
+
+  defp job_active?(job_id, boot?) do
+    case Repo.get(ObanJob, job_id) do
+      %ObanJob{state: state} when state in [:available, :scheduled, :retryable] ->
+        true
+
+      %ObanJob{state: :executing} ->
+        not boot?
+
+      %ObanJob{} ->
+        false
+
+      _ ->
+        false
+    end
+  end
+
+  defp parse_job_id(nil), do: nil
+  defp parse_job_id(job_id) when is_integer(job_id), do: job_id
+
+  defp parse_job_id(job_id) when is_binary(job_id) do
+    case Integer.parse(job_id) do
+      {int, _} -> int
+      :error -> nil
+    end
+  end
+
+  defp parse_job_id(_), do: nil
 
   defp cancel_orchestrator_job(%InventoryRun{} = run) do
     run.metadata

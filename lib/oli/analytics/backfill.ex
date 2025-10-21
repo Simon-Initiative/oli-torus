@@ -11,6 +11,7 @@ defmodule Oli.Analytics.Backfill do
 
   alias Ecto.Multi
   alias Oli.Analytics.Backfill.BackfillRun
+  alias Oli.Analytics.Backfill.Inventory
   alias Oli.Analytics.Backfill.Notifier
   alias Oli.Analytics.Backfill.Worker
   alias Oli.Accounts.Author
@@ -119,6 +120,8 @@ defmodule Oli.Analytics.Backfill do
   end
 
   def refresh_running_runs do
+    :ok = Inventory.recover_inflight_batches()
+
     from(run in BackfillRun, where: run.status in [:running, :pending])
     |> Repo.all()
     |> Enum.each(&refresh_run_status/1)
