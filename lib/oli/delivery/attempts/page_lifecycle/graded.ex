@@ -21,6 +21,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
   alias Oli.Delivery.Attempts.PageLifecycle.Common
   alias Oli.Delivery.Attempts.Core.{ResourceAttempt, ResourceAccess}
   alias Oli.Delivery.Attempts.Core
+  alias Oli.Delivery.Snapshots
 
   import Oli.Delivery.Attempts.Core
   import Ecto.Query, warn: false
@@ -260,7 +261,15 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
       }
 
       case finalize(finalization_context) do
-        {:ok, _summary} ->
+        {:ok,
+         %FinalizationSummary{
+           graded: graded,
+           part_attempt_guids: part_attempt_guids
+         }} ->
+          if graded and not is_nil(part_attempt_guids) do
+            Snapshots.queue_or_create_snapshot(part_attempt_guids, section_slug)
+          end
+
           {:finalized, {:end_date_passed}}
 
         {:error, :already_submitted} ->
