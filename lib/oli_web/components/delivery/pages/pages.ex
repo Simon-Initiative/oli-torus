@@ -39,6 +39,7 @@ defmodule OliWeb.Components.Delivery.Pages do
     avg_score_percentage: nil,
     avg_score_selector: nil,
     selected_attempts_ids: Jason.encode!([]),
+    selected_activities: Jason.encode!([]),
     card_props: [],
     card_activity_props: []
   }
@@ -67,7 +68,6 @@ defmodule OliWeb.Components.Delivery.Pages do
         students: assigns.students,
         scripts: assigns.scripts,
         activity_types_map: assigns.activity_types_map,
-        selected_activity: nil,
         card_props: [],
         card_activity_props: [],
         attempts_options: @attempts_options
@@ -205,17 +205,26 @@ defmodule OliWeb.Components.Delivery.Pages do
 
             {total_count, rows} = apply_filters(activities, params)
 
-            {:ok, table_model} = ActivitiesTableModel.new(rows)
+            activities_with_index =
+              Enum.with_index(rows)
+              |> Enum.map(fn {activity, index} ->
+                Map.put(activity, :row_index, index)
+              end)
+
+            selected_activities =
+              if params[:selected_activities] == [],
+                do: [],
+                else: Enum.map(params[:selected_activities], &String.to_integer(&1))
+
+            {:ok, table_model} = ActivitiesTableModel.new(activities_with_index)
 
             table_model =
               table_model
-              |> Map.merge(%{rows: rows, sort_order: params.sort_order})
+              |> Map.merge(%{
+                rows: activities_with_index,
+                sort_order: params.sort_order
+              })
               |> SortableTableModel.update_sort_params(params.sort_by)
-
-            selected_activity =
-              if params[:selected_activity] in ["", nil],
-                do: nil,
-                else: String.to_integer(params[:selected_activity])
 
             {:ok,
              assign(socket,
@@ -237,11 +246,11 @@ defmodule OliWeb.Components.Delivery.Pages do
                selected_attempts_options: selected_attempts_options,
                selected_attempts_ids: selected_attempts_ids,
                avg_score_percentage: percentage_score,
+               selected_activities: selected_activities
                # this dynamic id is used to force the liveview to reload the activity details.
                # Without it the activity details will not be rendered correctly when the applied card filters change
-               dynamic_id: UUID.uuid4()
              )
-             |> assign_selected_activity(selected_activity)}
+             |> assign_selected_activities(selected_activities)}
         end
     end
   end
@@ -466,41 +475,8 @@ defmodule OliWeb.Components.Delivery.Pages do
           show_bottom_paging={false}
           show_limit_change={true}
           no_records_message="There are no activities to show"
+          details_render_fn={&ActivitiesTableModel.render_assessment_details/2}
         />
-      </div>
-      <div :if={@current_page != nil and @activities != []} class="mt-9">
-        <div
-          role="activity_title"
-          class="bg-white dark:bg-gray-800 dark:text-white w-min whitespace-nowrap rounded-t-md block font-medium text-sm leading-tight uppercase border-x-1 border-t-1 border-b-0 border-gray-300 px-6 py-4"
-        >
-          Question details
-        </div>
-        <div
-          class="bg-white dark:bg-gray-800 dark:text-white shadow-sm px-6 -mt-5"
-          id={"activity_detail_#{@dynamic_id}"}
-          phx-hook="LoadSurveyScripts"
-        >
-          <%= if Map.get(@selected_activity, :preview_rendered) != nil do %>
-            <ActivityHelpers.rendered_activity
-              activity={@selected_activity}
-              activity_types_map={@activity_types_map}
-            />
-          <% else %>
-            <p class="pt-9 pb-5">No attempt registered for this question</p>
-          <% end %>
-        </div>
-        <div class="flex mt-2 mb-10 bg-white gap-x-20 dark:bg-gray-800 dark:text-white shadow-sm px-6 py-4">
-          <ActivityHelpers.percentage_bar
-            id={Integer.to_string(@selected_activity.id) <> "_first_try_correct"}
-            value={@selected_activity.first_attempt_pct}
-            label="First Try Correct"
-          />
-          <ActivityHelpers.percentage_bar
-            id={Integer.to_string(@selected_activity.id) <> "_eventually_correct"}
-            value={@selected_activity.all_attempt_pct}
-            label="Eventually Correct"
-          />
-        </div>
       </div>
     </div>
     """
@@ -581,13 +557,24 @@ defmodule OliWeb.Components.Delivery.Pages do
 
   def handle_event("paged_table_selection_change", %{"id" => activity_resource_id}, socket)
       when not is_nil(socket.assigns.current_page) do
+    activity_id = String.to_integer("#{activity_resource_id}")
+
+    selected_activities =
+      socket.assigns.params.selected_activities
+      |> Enum.map(&String.to_integer("#{&1}"))
+      |> then(fn ids ->
+        if activity_id in ids,
+          do: Enum.reject(ids, &(&1 == activity_id)),
+          else: [activity_id | ids]
+      end)
+
     {:noreply,
      push_patch(socket,
        to:
          route_to(
            socket,
            update_params(socket.assigns.params, %{
-             selected_activity: activity_resource_id
+             selected_activities: selected_activities
            })
          )
      )}
@@ -728,45 +715,70 @@ defmodule OliWeb.Components.Delivery.Pages do
     {:noreply, push_patch(socket, to: route_to(socket, updated_params))}
   end
 
-  defp assign_selected_activity(socket, selected_activity_id)
-       when selected_activity_id in ["", nil] do
+  defp assign_selected_activities(socket, selected_activities)
+       when selected_activities == [] do
     case socket.assigns.table_model.rows do
       [] ->
         socket
 
       rows ->
-        assign_selected_activity(socket, hd(rows).resource_id)
+        assign_selected_activities(socket, [hd(rows).resource_id])
     end
   end
 
-  defp assign_selected_activity(socket, selected_activity_id) do
-    selected_activity =
-      Enum.find(socket.assigns.activities, fn a -> a.resource_id == selected_activity_id end)
-
-    table_model =
-      Map.merge(socket.assigns.table_model, %{selected: "#{selected_activity_id}"})
+  defp assign_selected_activities(socket, selected_activities) do
+    selected_activities =
+      Enum.filter(socket.assigns.activities, fn a -> a.resource_id in selected_activities end)
 
     %{
       section: section,
       page_revision: page_revision,
       students: students,
-      activity_types_map: activity_types_map
+      activity_types_map: activity_types_map,
+      scripts: scripts
     } = socket.assigns
 
-    selected_activity =
+    # Extract resource_ids for batch query
+    resource_ids = Enum.map(selected_activities, & &1.resource_id)
+
+    # Single query for all selected activities
+    activity_summaries =
       case ActivityHelpers.summarize_activity_performance(
              section,
              page_revision,
              activity_types_map,
              students,
-             [selected_activity.resource_id]
+             resource_ids
            ) do
-        [current_activity | _rest] -> current_activity
-        _ -> nil
+        summaries when is_list(summaries) -> summaries
+        _ -> []
       end
 
+    # Create a lookup map for O(1) access
+    summary_map = Map.new(activity_summaries, &{&1.resource_id, &1})
+
+    # Map back to selected activities with their summaries
+    selected_activities =
+      Enum.map(selected_activities, fn a ->
+        Map.get(summary_map, a.resource_id, a)
+      end)
+
+    table_model =
+      socket.assigns.table_model
+      |> Map.update!(:data, fn data ->
+        Map.merge(data, %{
+          selected_activities: selected_activities,
+          scripts: scripts,
+          activity_types_map: activity_types_map,
+          target: socket.assigns.myself
+        })
+      end)
+
     socket
-    |> assign(table_model: table_model, selected_activity: selected_activity)
+    |> assign(
+      table_model: table_model,
+      selected_activities: selected_activities
+    )
     |> case do
       %{assigns: %{scripts_loaded: true}} = socket ->
         socket
@@ -923,7 +935,7 @@ defmodule OliWeb.Components.Delivery.Pages do
       text_search: Params.get_param(params, "text_search", @default_params.text_search),
       resource_id: Params.get_int_param(params, "resource_id", nil),
       page_table_params: params["page_table_params"],
-      selected_activity: Params.get_param(params, "selected_activity", nil),
+      selected_activities: Params.get_param(params, "selected_activities", []),
       selected_card_value:
         Params.get_atom_param(
           params,
