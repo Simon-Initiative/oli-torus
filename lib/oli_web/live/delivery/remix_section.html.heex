@@ -61,6 +61,7 @@
             selected={@selected == node.uuid}
             node={node}
             is_product={assigns[:is_product]}
+            source_page_resource_ids={@source_page_resource_ids}
           />
         <% end %>
         <DropTarget.droptarget id="last" index={length(@active.children)} />
