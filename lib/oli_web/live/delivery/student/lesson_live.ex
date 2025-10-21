@@ -1150,13 +1150,58 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     assigns = assign(assigns, iframe_url: iframe_url)
 
     ~H"""
-    <div class="flex justify-center w-full min-h-screen">
+    <style>
+      #adaptive_with_chrome_container {
+        overflow: auto;
+      }
+
+      #adaptive_content_iframe {
+        display: block;
+        width: 80%;
+        height: 90vh;
+        min-height: 600px;
+        border: none;
+        overflow-y: auto;
+        overflow-x: hidden;
+        background: white;
+      }
+
+      .fullscreen-container {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        z-index: 9999 !important;
+      }
+
+      .fullscreen-iframe {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: none !important;
+        z-index: 10000 !important;
+      }
+    </style>
+
+    <div
+      class="flex justify-center items-start self-start w-full min-h-screen"
+      id="adaptive_with_chrome_container"
+    >
       <iframe
         id="adaptive_content_iframe"
         src={@iframe_url}
-        class="bg-white"
-        style="width: 80%; height: 90vh; min-height: 600px; border: none;"
         allow="autoplay; fullscreen"
+        frameborder="0"
+        marginheight="0"
+        marginwidth="0"
+        scrolling="auto"
       >
       </iframe>
     </div>
