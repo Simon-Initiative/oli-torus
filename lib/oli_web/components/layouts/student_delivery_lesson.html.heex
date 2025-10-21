@@ -184,9 +184,10 @@
             />
           </div>
         </div>
-
+        <% adaptive_view? =
+          assigns[:view] == :adaptive_chromeless or assigns[:view] == :adaptive_with_chrome %>
         <div
-          :if={@section && !@page_context.page.graded}
+          :if={@section && (!@page_context.page.graded or adaptive_view?)}
           class={
             [
               "z-[999]",
