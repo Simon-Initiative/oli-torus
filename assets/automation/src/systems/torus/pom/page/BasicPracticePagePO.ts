@@ -1,26 +1,25 @@
-import { Locator, Page, expect } from '@playwright/test';
+import { Locator, Page } from '@playwright/test';
 import { Utils } from '@core/Utils';
-import { ToolbarCO } from '@pom/component/toolbar/ToolbarCO';
-import { SelectMultimediaCO } from '@pom/component/SelectMultimediaCO';
-import { ACTIVITY_TYPE, ActivityType } from '@pom/types/activity-types';
-import { ToolbarTypes } from '@pom/types/toolbar-types';
+import { SelectMultimediaCO } from '@pom/page/SelectMultimediaCO';
+import { TYPE_ACTIVITY, TypeActivity } from '@pom/types/type-activity';
+import { TypeToolbar } from '@pom/types/type-toolbar';
 import { PagePreviewPO } from './PagePreviewPO';
+import { Verifier } from '@core/verify/Verifier';
 
 export class BasicPracticePagePO {
-  private insertButtonIcon: Locator;
-  private changesSaved: Locator;
-  private paragraph: Locator;
-  private chooseImageButton: Locator;
-  private deleteButton: Locator;
-  private resourceChoicesActivities: Locator;
-  private titleLocator: Locator;
-  private previewButton: Locator;
-  private theoremLocator: Locator;
-  private captionAudio: Locator;
-  private utils: Utils;
-  private readonly toolbarCO: ToolbarCO;
+  private readonly pageTitle: Locator;
+  private readonly insertButtonIcon: Locator;
+  private readonly changesSaved: Locator;
+  private readonly paragraph: Locator;
+  private readonly chooseImageButton: Locator;
+  private readonly deleteButton: Locator;
+  private readonly resourceChoicesActivities: Locator;
+  private readonly previewButton: Locator;
+  private readonly captionAudio: Locator;
+  private readonly utils: Utils;
 
-  constructor(private page: Page) {
+  constructor(private readonly page: Page) {
+    this.pageTitle = this.page.locator('#page_editor-container div.TitleBar span');
     this.insertButtonIcon = page.locator('span[data-bs-original-title="Insert Content"]').first();
     this.changesSaved = page.getByText('All changes saved');
     this.paragraph = page.locator('[id^="resource-editor-"]').getByRole('paragraph');
@@ -31,52 +30,53 @@ export class BasicPracticePagePO {
       .locator('[id^="resource-editor-"]')
       .getByRole('button', { name: 'delete' });
     this.resourceChoicesActivities = page.locator('.resource-choices.activities');
-    this.titleLocator = page.locator('span.entry-title');
     this.previewButton = page.locator('div.TitleBar button:has-text("Preview")');
-    this.theoremLocator = page.locator('h4');
     this.captionAudio = page.getByRole('paragraph').filter({ hasText: 'Caption (optional)' });
-    this.utils = new Utils(this.page);
-    this.toolbarCO = new ToolbarCO(page);
+    this.utils = new Utils(page);
+  }
+
+  async verifyTitlePage(titlePage = 'New Page') {
+    Verifier.expectHasText(this.pageTitle, titlePage);
   }
 
   async fillCaptionAudio(text: string) {
     await this.captionAudio.fill(text);
   }
 
-  async visibleTitlePage(titlePage: string = 'New Page') {
-    const titleSpan = this.page.locator('span.entry-title', { hasText: titlePage });
-    await expect(titleSpan).toBeVisible();
-  }
-
   async waitForChangesSaved() {
+    await Verifier.expectIsVisible(
+      this.changesSaved,
+      'The "All changes saved" notification message does not appear.',
+    );
     await this.utils.paintElement(this.changesSaved);
-    await this.changesSaved.waitFor();
   }
 
-  async clickParagraph(index: number = 0) {
-    await this.utils.sleep();
+  async clickParagraph(index = 0) {
+    const e = this.page.getByText('Type here or use + to begin...');
+    await Verifier.expectIsVisible(e);
     await this.paragraph.nth(index).click();
   }
 
   async clickInsertButtonIcon() {
-    await expect(this.insertButtonIcon).toBeVisible();
     await this.utils.forceClick(this.insertButtonIcon, this.resourceChoicesActivities);
   }
 
-  async selectActivity(activityName: ActivityType) {
-    const label = ACTIVITY_TYPE[activityName].type;
+  async selectActivity(activityName: TypeActivity) {
+    const label = TYPE_ACTIVITY[activityName].type;
     const button = this.page.getByRole('button', { name: label }).first();
     const confirmation = this.page.getByText(label, { exact: true });
     await this.utils.forceClick(button, confirmation);
   }
 
-  async fillParagraph(text: string, index: number = 0) {
+  async fillParagraph(text: string, index = 0) {
     await this.clickParagraph(index);
     await this.paragraph.nth(index).fill(text);
   }
 
-  async selectElementToolbar(nameElement: ToolbarTypes) {
-    await this.toolbarCO.selectElement(nameElement);
+  async selectElementToolbar(nameElement: TypeToolbar) {
+    const l = this.page.getByRole('button', { name: nameElement });
+    await Verifier.expectIsVisible(l);
+    await l.click();
   }
 
   async clickPreview() {
@@ -101,29 +101,15 @@ export class BasicPracticePagePO {
     }
   }
 
-  async expectImage(name: string) {
-    await expect(this.page.locator(`img[src$="${name}"]`)).toBeVisible();
-  }
-
-  async expectText(expectedText: string, index: number = 0) {
-    await expect(this.paragraph.nth(index)).toContainText(expectedText);
-  }
-
-  async expectActivityVisible(displayName: ActivityType) {
-    const locator = this.page.getByText(ACTIVITY_TYPE[displayName].label, { exact: true });
-    await expect(locator).toBeVisible();
-  }
-
-  async setTheoremTitle(title: string) {
-    await expect(this.theoremLocator).toBeVisible();
-    const theoremTitleLocator = this.theoremLocator.locator('h4');
-    await theoremTitleLocator.fill(title);
+  async expectActivityVisible(displayName: TypeActivity) {
+    const locator = this.page.getByText(TYPE_ACTIVITY[displayName].label, { exact: true });
+    await Verifier.expectIsVisible(locator);
   }
 
   async fillFigureTitle(text: string) {
     const figure = this.page.getByRole('figure', { name: 'Figure Title' });
     const textbox = figure.getByRole('textbox');
-    await expect(textbox).toBeVisible();
+    await Verifier.expectIsVisible(textbox);
     await textbox.fill(text);
   }
 }

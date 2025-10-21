@@ -3,8 +3,11 @@
     "baseUrl": "./",
     "paths": {
       "@core/*": ["src/core/*"],
+      "@fixture/*": ["src/core/fixture/*"],
       "@pom/*": ["src/systems/torus/pom/*"],
-      "@facade/*": ["src/systems/torus/facade/*"]
-    }
+      "@tasks/*": ["src/systems/torus/tasks/*"]
+    },
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true
   }
 }
