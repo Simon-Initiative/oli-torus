@@ -272,7 +272,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
 
           {:finalized, {:end_date_passed}}
 
-        {:error, :already_submitted} ->
+        {:error, {:already_submitted}} ->
           {:finalized, {:end_date_passed}}
 
         {:error, reason} ->
