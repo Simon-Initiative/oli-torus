@@ -203,25 +203,30 @@ defmodule OliWeb.Components.Delivery.Pages do
                   else: acc
               end)
 
-            {total_count, rows} = apply_filters(activities, params)
-
             activities_with_index =
-              Enum.with_index(rows)
+              Enum.with_index(activities)
               |> Enum.map(fn {activity, index} ->
-                Map.put(activity, :row_index, index)
+                Map.merge(activity, %{row_index: index, order: index + 1})
               end)
+
+            {total_count, rows} = apply_filters(activities_with_index, params)
+
+            # Update row_index after sorting to reflect the new order
+            rows =
+              Enum.with_index(rows)
+              |> Enum.map(fn {row, index} -> Map.put(row, :row_index, index) end)
 
             selected_activities =
               if params[:selected_activities] == [],
                 do: [],
                 else: Enum.map(params[:selected_activities], &String.to_integer(&1))
 
-            {:ok, table_model} = ActivitiesTableModel.new(activities_with_index)
+            {:ok, table_model} = ActivitiesTableModel.new(rows)
 
             table_model =
               table_model
               |> Map.merge(%{
-                rows: activities_with_index,
+                rows: rows,
                 sort_order: params.sort_order
               })
               |> SortableTableModel.update_sort_params(params.sort_by)

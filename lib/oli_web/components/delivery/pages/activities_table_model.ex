@@ -16,27 +16,31 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModel do
         th_class: "w-4"
       },
       %ColumnSpec{
+        name: :order,
+        label: "#",
+        th_class: "w-8"
+      },
+      %ColumnSpec{
         name: :title,
-        label: "QUESTION",
-        render_fn: &__MODULE__.render_question_column/3,
+        label: "Question Stem",
+        render_fn: &render_question_column/3,
         th_class: "pl-10",
         td_class: "pl-10"
       },
       %ColumnSpec{
         name: :learning_objectives,
-        label: "LEARNING OBJECTIVES",
-        render_fn: &__MODULE__.render_learning_objectives_column/3,
-        sortable: false
-      },
-      %ColumnSpec{
-        name: :avg_score,
-        label: "% CORRECT",
-        render_fn: &__MODULE__.render_avg_score_column/3
+        label: "Learning Objectives",
+        render_fn: &render_learning_objectives_column/3
       },
       %ColumnSpec{
         name: :total_attempts,
-        label: "ATTEMPTS",
-        render_fn: &__MODULE__.render_attempts_column/3
+        label: "Attempts",
+        render_fn: &render_attempts_column/3
+      },
+      %ColumnSpec{
+        name: :avg_score,
+        label: "% Correct",
+        render_fn: &render_avg_score_column/3
       }
     ]
 
