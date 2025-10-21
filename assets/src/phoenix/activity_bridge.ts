@@ -45,8 +45,6 @@ export const initActivityBridge = (elementId: string) => {
 
   div.__oliActivityBridgeInitialized = true;
 
-  console.info('INIT ACTIVITY BRIDGE');
-
   div.addEventListener(
     'saveActivity',
     (e: any) => {
@@ -101,7 +99,6 @@ export const initActivityBridge = (elementId: string) => {
   div.addEventListener(
     'resetActivity',
     (e: any) => {
-      console.info('RESET ACTIVITY');
       e.preventDefault();
       e.stopPropagation();
       makeRequest(
