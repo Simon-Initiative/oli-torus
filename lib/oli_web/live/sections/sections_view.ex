@@ -54,6 +54,8 @@ defmodule OliWeb.Sections.SectionsView do
 
   def mount(_, _session, socket) do
     ctx = socket.assigns.ctx
+    author = socket.assigns.current_author
+    is_admin = Oli.Accounts.has_admin_role?(author, :content_admin)
 
     sections =
       Browse.browse_sections(
@@ -69,7 +71,8 @@ defmodule OliWeb.Sections.SectionsView do
         render_date: :full,
         sort_by_spec: :start_date,
         sort_order: :desc,
-        search_term: ""
+        search_term: "",
+        is_admin: is_admin
       )
 
     {:ok,
