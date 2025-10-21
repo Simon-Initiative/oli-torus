@@ -15,7 +15,7 @@ export const TableEditor = (props: Props) => {
 
   return (
     <div {...props.attributes} className="table-editor">
-      <ContentTable model={props.model}>
+      <ContentTable model={props.model} isEditing={true}>
         <tbody>{props.children}</tbody>
       </ContentTable>
       <CaptionEditor
