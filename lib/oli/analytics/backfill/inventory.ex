@@ -157,6 +157,15 @@ defmodule Oli.Analytics.Backfill.Inventory do
       bytes_ingested: sum_field(run.batches, & &1.bytes_ingested)
     }
 
+    skipped_total = skipped_objects(run)
+
+    metadata =
+      run.metadata
+      |> ensure_map()
+      |> Map.put("skipped_objects", skipped_total)
+
+    attrs = Map.put(attrs, :metadata, metadata)
+
     status = derive_run_status(run.status, total, completed, failed, running, pending)
     attrs = maybe_put_status(attrs, status)
 
@@ -1008,7 +1017,9 @@ defmodule Oli.Analytics.Backfill.Inventory do
         )
 
         case enqueue_batch(batch) do
-          {:ok, _} -> :ok
+          {:ok, _} ->
+            :ok
+
           {:error, reason} ->
             Logger.error(
               "Failed to re-enqueue inventory batch #{batch.id} during recovery: #{inspect(reason)}"
@@ -1226,6 +1237,9 @@ defmodule Oli.Analytics.Backfill.Inventory do
     with {:ok, date} <- fetch_date(attrs),
          {:ok, config} <- resolved_config(attrs),
          {:ok, prefix} <- inventory_prefix(date, attrs, config),
+         {:ok, date_range_start} <- fetch_optional_datetime(attrs, :date_range_start),
+         {:ok, date_range_end} <- fetch_optional_datetime(attrs, :date_range_end),
+         :ok <- validate_date_range(date_range_start, date_range_end),
          manifest_suffix <- config[:manifest_suffix] || default_manifest_suffix(),
          {:ok, manifest_url} <- manifest_url(config, prefix, manifest_suffix) do
       manifest_key = cleaned_join([prefix, manifest_suffix])
@@ -1291,6 +1305,7 @@ defmodule Oli.Analytics.Backfill.Inventory do
           )
         )
         |> Map.put("dry_run", dry_run)
+        |> maybe_put_date_range_metadata(date_range_start, date_range_end)
 
       run_attrs =
         attrs
@@ -1527,6 +1542,26 @@ defmodule Oli.Analytics.Backfill.Inventory do
 
   defp maybe_put_manifest_credential(manifest_map, _key, _value), do: manifest_map
 
+  defp maybe_put_date_range_metadata(metadata, nil, nil), do: metadata
+
+  defp maybe_put_date_range_metadata(metadata, start_datetime, end_datetime) do
+    filters =
+      metadata
+      |> ensure_map()
+      |> Map.get("filters", %{})
+      |> Map.put("date_range", build_date_range_metadata(start_datetime, end_datetime))
+
+    metadata
+    |> ensure_map()
+    |> Map.put("filters", filters)
+  end
+
+  defp build_date_range_metadata(start_datetime, end_datetime) do
+    %{}
+    |> maybe_put_metadata("start", datetime_to_iso8601(start_datetime))
+    |> maybe_put_metadata("end", datetime_to_iso8601(end_datetime))
+  end
+
   defp cleaned_credential(nil), do: nil
 
   defp cleaned_credential(value) do
@@ -1554,6 +1589,259 @@ defmodule Oli.Analytics.Backfill.Inventory do
     end
   end
 
+  defp fetch_optional_datetime(map, key) do
+    case fetch_raw(map, key) do
+      {:ok, value} -> normalize_datetime_value(value)
+      :error -> {:ok, nil}
+    end
+  end
+
+  defp normalize_datetime_value(value) when value in [nil, ""], do: {:ok, nil}
+  defp normalize_datetime_value(%DateTime{} = value), do: {:ok, value}
+
+  defp normalize_datetime_value(%NaiveDateTime{} = value) do
+    {:ok, DateTime.from_naive!(value, "Etc/UTC")}
+  rescue
+    ArgumentError -> {:error, "invalid datetime"}
+  end
+
+  defp normalize_datetime_value(value) when is_binary(value) do
+    trimmed = String.trim(value)
+
+    cond do
+      trimmed == "" ->
+        {:ok, nil}
+
+      true ->
+        with {:ok, datetime, _} <- DateTime.from_iso8601(trimmed) do
+          {:ok, datetime}
+        else
+          _ ->
+            trimmed
+            |> append_seconds_if_missing()
+            |> NaiveDateTime.from_iso8601()
+            |> case do
+              {:ok, naive} ->
+                {:ok, DateTime.from_naive!(naive, "Etc/UTC")}
+
+              {:error, _} ->
+                {:error, "invalid datetime"}
+            end
+        end
+    end
+  end
+
+  defp normalize_datetime_value(_), do: {:error, "invalid datetime"}
+
+  defp datetime_to_iso8601(nil), do: nil
+
+  defp datetime_to_iso8601(%DateTime{} = datetime) do
+    DateTime.to_iso8601(datetime)
+  end
+
+  defp datetime_to_iso8601(%NaiveDateTime{} = datetime) do
+    datetime
+    |> DateTime.from_naive!("Etc/UTC")
+    |> DateTime.to_iso8601()
+  rescue
+    ArgumentError -> nil
+  end
+
+  defp datetime_to_iso8601(value) when is_binary(value) do
+    with {:ok, datetime} <- normalize_datetime_value(value),
+         %DateTime{} = dt <- datetime do
+      DateTime.to_iso8601(dt)
+    else
+      _ -> nil
+    end
+  end
+
+  defp datetime_to_iso8601(_), do: nil
+
+  @doc """
+  Extracts the optional date range filter configured for an inventory run.
+  """
+  @spec extract_date_range(map()) ::
+          {:ok, %{start: DateTime.t() | nil, end: DateTime.t() | nil}} | {:error, term()}
+  def extract_date_range(metadata) do
+    filters =
+      metadata
+      |> ensure_map()
+      |> fetch_metric(["filters", :filters], %{})
+      |> ensure_map()
+
+    range =
+      filters
+      |> fetch_metric(["date_range", :date_range], %{})
+      |> ensure_map()
+
+    with {:ok, start_datetime} <-
+           normalize_datetime_value(fetch_metric(range, ["start", :start])),
+         {:ok, end_datetime} <-
+           normalize_datetime_value(fetch_metric(range, ["end", :end])) do
+      {:ok, %{start: start_datetime, end: end_datetime}}
+    else
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  @doc false
+  @spec entry_in_date_range?(map(), %{start: DateTime.t() | nil, end: DateTime.t() | nil} | nil) ::
+          boolean()
+  def entry_in_date_range?(_entry, nil), do: true
+
+  def entry_in_date_range?(entry, %{start: start_datetime, end: end_datetime}) do
+    case manifest_entry_timestamp(entry) do
+      {:ok, datetime} ->
+        datetime_in_range?(datetime, start_datetime, end_datetime)
+
+      :error ->
+        true
+    end
+  end
+
+  @manifest_timestamp_regex ~r/^(?<date>\d{4}-\d{2}-\d{2})T(?<hour>\d{2})[-:](?<minute>\d{2})(?:[-:](?<second>\d{2})(?<fraction>\.\d+)?)?(?<zone>Z|[+-]\d{2}(?:[:\-]?\d{2})?)?$/
+
+  @doc false
+  @spec manifest_entry_timestamp(map()) :: {:ok, DateTime.t()} | :error
+  def manifest_entry_timestamp(%{key: key}) when is_binary(key) do
+    fragment =
+      key
+      |> Path.basename()
+      |> Path.rootname()
+      |> String.split("_", parts: 2)
+      |> List.first()
+
+    case parse_manifest_fragment(fragment) do
+      {:ok, iso_timestamp} ->
+        parse_iso_timestamp(iso_timestamp)
+
+      :error ->
+        :error
+    end
+  end
+
+  def manifest_entry_timestamp(_), do: :error
+
+  defp parse_manifest_fragment(nil), do: :error
+
+  defp parse_manifest_fragment(fragment) when is_binary(fragment) do
+    case Regex.named_captures(@manifest_timestamp_regex, fragment) do
+      %{"date" => date, "hour" => hour, "minute" => minute} = captures ->
+        second = captures |> Map.get("second") |> blank_to_nil() |> Kernel.||("00")
+        fraction = captures |> Map.get("fraction") |> blank_to_nil() |> Kernel.||("")
+        zone = captures |> Map.get("zone") |> blank_to_nil() |> normalize_manifest_zone()
+
+        iso =
+          "#{date}T#{hour}:#{minute}:#{second}#{fraction}#{zone}"
+          |> append_seconds_if_missing()
+
+        {:ok, iso}
+
+      _ ->
+        :error
+    end
+  end
+
+  defp parse_manifest_fragment(_), do: :error
+
+  defp normalize_manifest_zone(nil), do: "Z"
+  defp normalize_manifest_zone(""), do: "Z"
+  defp normalize_manifest_zone("Z"), do: "Z"
+
+  defp normalize_manifest_zone(zone) when is_binary(zone) do
+    zone = String.trim(zone)
+
+    case String.first(zone) do
+      sign when sign in ["+", "-"] ->
+        digits =
+          zone
+          |> String.slice(1..-1//1)
+          |> String.replace(":", "")
+          |> String.replace("-", "")
+
+        cond do
+          digits == "" ->
+            "Z"
+
+          byte_size(digits) == 2 ->
+            sign <> digits <> ":00"
+
+          byte_size(digits) >= 4 ->
+            hours = String.slice(digits, 0, 2)
+            minutes = String.slice(digits, 2, 2)
+            sign <> hours <> ":" <> minutes
+
+          true ->
+            sign <> String.pad_trailing(digits, 2, "0") <> ":00"
+        end
+
+      _ ->
+        "Z"
+    end
+  end
+
+  defp parse_iso_timestamp(iso) do
+    case DateTime.from_iso8601(iso) do
+      {:ok, datetime, _offset} ->
+        {:ok, datetime}
+
+      {:error, _} ->
+        naive_iso = String.trim_trailing(iso, "Z")
+
+        case NaiveDateTime.from_iso8601(naive_iso) do
+          {:ok, naive} -> {:ok, DateTime.from_naive!(naive, "Etc/UTC")}
+          {:error, _} -> :error
+        end
+    end
+  rescue
+    ArgumentError -> :error
+  end
+
+  defp append_seconds_if_missing(value) do
+    cond do
+      Regex.match?(~r/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}$/, value) ->
+        value <> ":00"
+
+      true ->
+        value
+    end
+  end
+
+  defp blank_to_nil(nil), do: nil
+  defp blank_to_nil(""), do: nil
+  defp blank_to_nil(value), do: value
+
+  defp datetime_in_range?(_datetime, nil, nil), do: true
+
+  defp datetime_in_range?(datetime, %DateTime{} = start_datetime, nil) do
+    DateTime.compare(datetime, start_datetime) in [:gt, :eq]
+  end
+
+  defp datetime_in_range?(datetime, nil, %DateTime{} = end_datetime) do
+    DateTime.compare(datetime, end_datetime) in [:lt, :eq]
+  end
+
+  defp datetime_in_range?(datetime, %DateTime{} = start_datetime, %DateTime{} = end_datetime) do
+    DateTime.compare(datetime, start_datetime) in [:gt, :eq] and
+      DateTime.compare(datetime, end_datetime) in [:lt, :eq]
+  end
+
+  defp datetime_in_range?(_datetime, _start, _end), do: true
+
+  defp validate_date_range(nil, nil), do: :ok
+  defp validate_date_range(nil, _), do: :ok
+  defp validate_date_range(_, nil), do: :ok
+
+  defp validate_date_range(%DateTime{} = start_datetime, %DateTime{} = end_datetime) do
+    case DateTime.compare(start_datetime, end_datetime) do
+      :gt -> {:error, "date_range_end must be after start"}
+      _ -> :ok
+    end
+  end
+
+  defp validate_date_range(_, _), do: {:error, "invalid datetime"}
+
   defp fetch_raw(map, key) do
     case Map.fetch(map, key) do
       {:ok, _} = result -> result
@@ -1570,6 +1858,39 @@ defmodule Oli.Analytics.Backfill.Inventory do
   defp ensure_map(nil), do: %{}
   defp ensure_map(map) when is_map(map), do: map
   defp ensure_map(_), do: %{}
+
+  @doc """
+  Computes the total number of skipped manifest objects for the given run.
+  """
+  @spec skipped_objects(InventoryRun.t()) :: non_neg_integer()
+  def skipped_objects(%InventoryRun{} = run) do
+    batches = Map.get(run, :batches, [])
+
+    batch_total =
+      batches
+      |> Enum.reduce(0, fn
+        %InventoryBatch{} = batch, acc ->
+          metadata = ensure_map(batch.metadata)
+
+          skipped =
+            metadata
+            |> fetch_metric(["skipped_objects", :skipped_objects], 0)
+            |> parse_positive_integer(0)
+
+          acc + skipped
+
+        _other, acc ->
+          acc
+      end)
+
+    metadata_total =
+      run.metadata
+      |> ensure_map()
+      |> fetch_metric(["skipped_objects", :skipped_objects], batch_total)
+      |> parse_positive_integer(batch_total)
+
+    max(batch_total, metadata_total)
+  end
 
   defp fetch_metric(map, keys, default \\ nil) when is_list(keys) do
     keys

@@ -291,62 +291,135 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
          creds,
          summary
        ) do
-    grouped_entries =
-      entries
-      |> Enum.filter(&valid_entry?/1)
-      |> Enum.group_by(& &1.bucket)
+    date_range =
+      case Inventory.extract_date_range(run.metadata) do
+        {:ok, %{start: nil, end: nil}} ->
+          nil
 
-    grouped_entries
-    |> Enum.reduce_while({:ok, summary, batch}, fn {bucket, bucket_entries},
-                                                   {:ok, acc_summary, acc_batch} ->
-      case check_for_interruption(acc_batch) do
-        {:ok, refreshed_batch} ->
-          case process_bucket(
-                 run,
-                 refreshed_batch,
-                 bucket,
-                 bucket_entries,
-                 chunk_size,
-                 creds,
-                 acc_summary
-               ) do
-            {:ok, updated_summary, updated_batch} ->
-              {:cont, {:ok, updated_summary, updated_batch}}
-
-            {:paused, updated_summary, updated_batch} ->
-              {:halt, {:paused, updated_summary, updated_batch}}
-
-            {:cancelled, updated_summary, updated_batch} ->
-              {:halt, {:cancelled, updated_summary, updated_batch}}
-
-            {:error, reason} ->
-              {:halt, {:error, reason}}
-          end
-
-        {:paused, refreshed_batch} ->
-          {:halt, {:paused, acc_summary, refreshed_batch}}
-
-        {:cancelled, refreshed_batch} ->
-          {:halt, {:cancelled, acc_summary, refreshed_batch}}
+        {:ok, range} ->
+          range
 
         {:error, reason} ->
-          {:halt, {:error, reason}}
+          Logger.warning(
+            "Inventory run #{run.id} has invalid date range filter: #{inspect(reason)}"
+          )
+
+          nil
       end
-    end)
-    |> case do
-      {:ok, summary, batch} ->
-        {:ok, summary, batch}
 
-      {:paused, summary, batch} ->
-        {:paused, summary, batch}
+    {filtered_entries, skipped_count} =
+      entries
+      |> Enum.filter(&valid_entry?/1)
+      |> filter_entries_by_date_range(date_range, run)
 
-      {:cancelled, summary, batch} ->
-        {:cancelled, summary, batch}
+    with {:ok, summary, batch} <- apply_skipped_entries(summary, batch, skipped_count) do
+      grouped_entries =
+        filtered_entries
+        |> Enum.group_by(& &1.bucket)
+
+      grouped_entries
+      |> Enum.reduce_while({:ok, summary, batch}, fn {bucket, bucket_entries},
+                                                     {:ok, acc_summary, acc_batch} ->
+        case check_for_interruption(acc_batch) do
+          {:ok, refreshed_batch} ->
+            case process_bucket(
+                   run,
+                   refreshed_batch,
+                   bucket,
+                   bucket_entries,
+                   chunk_size,
+                   creds,
+                   acc_summary
+                 ) do
+              {:ok, updated_summary, updated_batch} ->
+                {:cont, {:ok, updated_summary, updated_batch}}
+
+              {:paused, updated_summary, updated_batch} ->
+                {:halt, {:paused, updated_summary, updated_batch}}
+
+              {:cancelled, updated_summary, updated_batch} ->
+                {:halt, {:cancelled, updated_summary, updated_batch}}
+
+              {:error, reason} ->
+                {:halt, {:error, reason}}
+            end
+
+          {:paused, refreshed_batch} ->
+            {:halt, {:paused, acc_summary, refreshed_batch}}
+
+          {:cancelled, refreshed_batch} ->
+            {:halt, {:cancelled, acc_summary, refreshed_batch}}
+
+          {:error, reason} ->
+            {:halt, {:error, reason}}
+        end
+      end)
+      |> case do
+        {:ok, summary, batch} ->
+          {:ok, summary, batch}
+
+        {:paused, summary, batch} ->
+          {:paused, summary, batch}
+
+        {:cancelled, summary, batch} ->
+          {:cancelled, summary, batch}
+
+        {:error, reason} ->
+          {:error, reason}
+      end
+    else
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp apply_skipped_entries(summary, batch, 0), do: {:ok, summary, batch}
+
+  defp apply_skipped_entries(summary, %InventoryBatch{} = batch, skipped_count) do
+    summary_metadata =
+      summary
+      |> Map.get(:metadata)
+      |> ensure_map()
+      |> Map.update("skipped_objects", skipped_count, &(&1 + skipped_count))
+
+    updated_summary =
+      summary
+      |> Map.put(:processed_objects, Map.get(summary, :processed_objects, 0) + skipped_count)
+      |> Map.put(:metadata, summary_metadata)
+
+    processed_total =
+      batch
+      |> Map.get(:processed_objects)
+      |> parse_positive_integer(0)
+      |> Kernel.+(skipped_count)
+
+    batch_metadata =
+      batch.metadata
+      |> ensure_map()
+      |> Map.update("skipped_objects", skipped_count, &(&1 + skipped_count))
+
+    case Inventory.update_batch(batch, %{
+           processed_objects: processed_total,
+           metadata: batch_metadata
+         }) do
+      {:ok, updated_batch} ->
+        log_skipped_entries(batch, skipped_count)
+        {:ok, updated_summary, updated_batch}
 
       {:error, reason} ->
         {:error, reason}
     end
   end
+
+  defp apply_skipped_entries(summary, batch, _count), do: {:ok, summary, batch}
+
+  defp log_skipped_entries(%InventoryBatch{} = batch, skipped_count) do
+    Logger.debug(
+      "Inventory batch #{batch.id} skipped #{skipped_count} manifest entries outside configured range"
+    )
+  end
+
+  defp log_skipped_entries(_batch, _count), do: :ok
 
   defp manifest_entry_count(%InventoryRun{} = run, %InventoryBatch{} = batch, creds) do
     query = parquet_count_sql(run, batch, creds)
@@ -1035,6 +1108,25 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
     value
     |> to_string()
     |> String.replace("'", "\\'")
+  end
+
+  defp filter_entries_by_date_range(entries, nil, _run), do: {entries, 0}
+
+  defp filter_entries_by_date_range(entries, range, %InventoryRun{} = run) do
+    {kept, dropped} =
+      Enum.split_with(entries, fn entry ->
+        Inventory.entry_in_date_range?(entry, range)
+      end)
+
+    dropped_count = length(dropped)
+
+    if dropped_count > 0 do
+      Logger.debug(
+        "Filtered #{dropped_count} manifest entries outside configured date range for run #{run.id}"
+      )
+    end
+
+    {kept, dropped_count}
   end
 
   defp valid_entry?(%{bucket: bucket, key: key}) when is_binary(bucket) and is_binary(key),

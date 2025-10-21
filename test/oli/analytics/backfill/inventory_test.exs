@@ -241,6 +241,103 @@ defmodule Oli.Analytics.Backfill.InventoryTest do
     end
   end
 
+  describe "date range filters" do
+    test "extract_date_range parses metadata into utc datetimes" do
+      metadata = %{
+        "filters" => %{
+          "date_range" => %{
+            "start" => "2024-07-05T00:00:00Z",
+            "end" => "2024-07-06T01:30:00Z"
+          }
+        }
+      }
+
+      assert {:ok, %{start: start_dt, end: end_dt}} = Inventory.extract_date_range(metadata)
+      assert %DateTime{} = start_dt
+      assert %DateTime{} = end_dt
+      assert DateTime.to_iso8601(start_dt) == "2024-07-05T00:00:00Z"
+      assert DateTime.to_iso8601(end_dt) == "2024-07-06T01:30:00Z"
+    end
+
+    test "entry_in_date_range? returns true only for entries inside the window" do
+      {:ok, start_dt, _} = DateTime.from_iso8601("2024-07-05T00:00:00Z")
+      {:ok, end_dt, _} = DateTime.from_iso8601("2024-07-06T00:00:00Z")
+      range = %{start: start_dt, end: end_dt}
+
+      inside_entry = %{
+        bucket: "bucket",
+        key: "section/1/xapi/2024-07-05T12-00-00Z_bundle.jsonl"
+      }
+
+      before_entry = %{
+        bucket: "bucket",
+        key: "section/1/xapi/2024-07-04T23-59-59Z_bundle.jsonl"
+      }
+
+      after_entry = %{
+        bucket: "bucket",
+        key: "section/1/xapi/2024-07-06T00-00-01Z_bundle.jsonl"
+      }
+
+      assert Inventory.entry_in_date_range?(inside_entry, range)
+      refute Inventory.entry_in_date_range?(before_entry, range)
+      refute Inventory.entry_in_date_range?(after_entry, range)
+    end
+
+    test "entry_in_date_range? ignores entries with unparsable keys" do
+      range = %{start: nil, end: nil}
+      entry = %{bucket: "bucket", key: "section/1/xapi/not_a_timestamp.jsonl"}
+
+      assert Inventory.entry_in_date_range?(entry, range)
+    end
+
+    test "manifest_entry_timestamp parses hyphenated filenames" do
+      entry = %{
+        bucket: "bucket",
+        key: "section/3501/attempt_evaluated/2025-04-04T17-24-38.860042Z_file.jsonl"
+      }
+
+      assert {:ok, datetime} = Inventory.manifest_entry_timestamp(entry)
+      assert DateTime.to_iso8601(datetime) == "2025-04-04T17:24:38.860042Z"
+    end
+
+    test "skipped_objects aggregates batch metadata" do
+      run =
+        %InventoryRun{
+          inventory_date: ~D[2024-07-07],
+          inventory_prefix: "inventory/prefix/2024-07-07",
+          manifest_url: "https://example.com/manifest.json",
+          manifest_bucket: "test-bucket",
+          target_table: "analytics.raw_events",
+          format: "JSONAsString",
+          status: :running
+        }
+        |> Repo.insert!()
+
+      %InventoryBatch{
+        run_id: run.id,
+        sequence: 1,
+        parquet_key: "inventory/1.parquet",
+        status: :completed,
+        metadata: %{"skipped_objects" => 3}
+      }
+      |> Repo.insert!()
+
+      %InventoryBatch{
+        run_id: run.id,
+        sequence: 2,
+        parquet_key: "inventory/2.parquet",
+        status: :completed,
+        metadata: %{"skipped_objects" => 4}
+      }
+      |> Repo.insert!()
+
+      run = Repo.get!(InventoryRun, run.id) |> Repo.preload(:batches)
+
+      assert Inventory.skipped_objects(run) == 7
+    end
+  end
+
   describe "pause and resume batch" do
     setup do
       run =

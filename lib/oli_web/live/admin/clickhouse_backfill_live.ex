@@ -771,6 +771,39 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
               />
             </div>
 
+            <details
+              open={advanced_filters_open?(@inventory_form_inputs, @inventory_form)}
+              class="rounded border border-gray-200 dark:border-gray-700 px-4 py-3"
+            >
+              <summary class="text-sm font-medium text-gray-700 dark:text-gray-200 cursor-pointer">
+                Filters
+              </summary>
+              <div class="mt-4 space-y-3 text-sm text-gray-600 dark:text-gray-400">
+                <div class="space-y-2">
+                  <div class="font-medium text-gray-700 dark:text-gray-200 text-sm">
+                    Date Range (UTC)
+                  </div>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">
+                    Only JSONL objects whose filenames resolve to a timestamp inside this range are ingested.
+                  </p>
+                  <div class="grid gap-3 md:grid-cols-2">
+                    <.input
+                      field={@inventory_form[:date_range_start]}
+                      type="datetime-local"
+                      label="Start"
+                      value={@inventory_form_inputs.date_range_start}
+                    />
+                    <.input
+                      field={@inventory_form[:date_range_end]}
+                      type="datetime-local"
+                      label="End"
+                      value={@inventory_form_inputs.date_range_end}
+                    />
+                  </div>
+                </div>
+              </div>
+            </details>
+
             <div>
               <label class="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 md:col-span-4">
                 <input
@@ -821,6 +854,12 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
                 </div>
                 <div class="text-xs text-gray-500 dark:text-gray-400">
                   Dry run: {if run.dry_run, do: "Yes", else: "No"}
+                </div>
+                <div
+                  :if={inventory_skipped_objects(run) > 0}
+                  class="text-xs text-gray-500 dark:text-gray-400"
+                >
+                  Skipped objects: {inventory_skipped_objects(run)}
                 </div>
               </div>
 
@@ -1310,7 +1349,9 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
     %{
       inventory_date: default_date,
       target_table: Backfill.default_target_table(),
-      dry_run: false
+      dry_run: false,
+      date_range_start: nil,
+      date_range_end: nil
     }
   end
 
@@ -1320,7 +1361,9 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
     types = %{
       inventory_date: :date,
       target_table: :string,
-      dry_run: :boolean
+      dry_run: :boolean,
+      date_range_start: :string,
+      date_range_end: :string
     }
 
     {data, types}
@@ -1331,6 +1374,9 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
     |> Ecto.Changeset.update_change(:target_table, &normalize_target_table/1)
     |> Ecto.Changeset.validate_length(:target_table, max: 255)
     |> Ecto.Changeset.validate_format(:target_table, ~r/^[a-zA-Z0-9_\.]+$/)
+    |> parse_datetime_change(:date_range_start)
+    |> parse_datetime_change(:date_range_end)
+    |> validate_inventory_date_range()
   end
 
   defp inventory_chunk_size(config) do
@@ -1414,7 +1460,17 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
         inputs
         |> Map.get(:dry_run)
         |> Kernel.||(Map.get(inputs, "dry_run"))
-        |> truthy?()
+        |> truthy?(),
+      date_range_start:
+        inputs
+        |> Map.get(:date_range_start)
+        |> Kernel.||(Map.get(inputs, "date_range_start"))
+        |> format_datetime_input(),
+      date_range_end:
+        inputs
+        |> Map.get(:date_range_end)
+        |> Kernel.||(Map.get(inputs, "date_range_end"))
+        |> format_datetime_input()
     }
   end
 
@@ -1424,11 +1480,15 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
     date = params |> Map.get("inventory_date", "") |> String.trim()
     target = params |> Map.get("target_table", "") |> String.trim()
     dry_run = truthy?(Map.get(params, "dry_run"))
+    range_start = params |> Map.get("date_range_start", "") |> String.trim()
+    range_end = params |> Map.get("date_range_end", "") |> String.trim()
 
     %{
       inventory_date: date,
       target_table: if(target == "", do: Backfill.default_target_table(), else: target),
-      dry_run: dry_run
+      dry_run: dry_run,
+      date_range_start: range_start,
+      date_range_end: range_end
     }
   end
 
@@ -1450,6 +1510,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
     pending = run.pending_batches || 0
     batches = run.batches || []
     paused = Enum.count(batches, &(&1.status == :paused))
+    skipped = inventory_skipped_objects(run)
 
     segments =
       []
@@ -1457,6 +1518,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
       |> append_segment(running > 0, "#{running} running")
       |> append_segment(paused > 0, "#{paused} paused")
       |> append_segment(pending > 0, "#{pending} pending")
+      |> append_segment(skipped > 0, "#{skipped} skipped")
 
     base =
       cond do
@@ -1552,6 +1614,137 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
   defp format_date_input(%Date{} = date), do: Date.to_iso8601(date)
   defp format_date_input(value) when is_binary(value), do: value
   defp format_date_input(_), do: ""
+
+  defp format_datetime_input(%DateTime{} = datetime) do
+    datetime
+    |> DateTime.truncate(:second)
+    |> Calendar.strftime("%Y-%m-%dT%H:%M:%S")
+  end
+
+  defp format_datetime_input(%NaiveDateTime{} = datetime) do
+    datetime
+    |> NaiveDateTime.truncate(:second)
+    |> Calendar.strftime("%Y-%m-%dT%H:%M:%S")
+  end
+
+  defp format_datetime_input(value) when is_binary(value), do: value
+  defp format_datetime_input(_), do: ""
+
+  defp parse_datetime_change(changeset, field) do
+    case Ecto.Changeset.fetch_change(changeset, field) do
+      {:ok, value} ->
+        case parse_datetime_value(value) do
+          {:ok, parsed} ->
+            Ecto.Changeset.put_change(changeset, field, parsed)
+
+          {:error, message} ->
+            Ecto.Changeset.add_error(changeset, field, message)
+        end
+
+      :error ->
+        changeset
+    end
+  end
+
+  defp parse_datetime_value(value) when value in [nil, ""], do: {:ok, nil}
+  defp parse_datetime_value(%DateTime{} = value), do: {:ok, value}
+
+  defp parse_datetime_value(%NaiveDateTime{} = value) do
+    {:ok, DateTime.from_naive!(value, "Etc/UTC")}
+  rescue
+    ArgumentError -> {:error, "invalid datetime"}
+  end
+
+  defp parse_datetime_value(value) when is_binary(value) do
+    trimmed = String.trim(value)
+
+    cond do
+      trimmed == "" ->
+        {:ok, nil}
+
+      true ->
+        with {:ok, datetime, _offset} <- DateTime.from_iso8601(trimmed) do
+          {:ok, datetime}
+        else
+          _ ->
+            trimmed
+            |> ensure_seconds_component()
+            |> NaiveDateTime.from_iso8601()
+            |> case do
+              {:ok, naive} ->
+                {:ok, DateTime.from_naive!(naive, "Etc/UTC")}
+
+              {:error, _} ->
+                {:error, "invalid datetime"}
+            end
+        end
+    end
+  end
+
+  defp parse_datetime_value(_), do: {:error, "invalid datetime"}
+
+  defp ensure_seconds_component(value) do
+    cond do
+      Regex.match?(~r/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}$/, value) ->
+        value <> ":00"
+
+      true ->
+        value
+    end
+  end
+
+  defp validate_inventory_date_range(changeset) do
+    start_datetime = Ecto.Changeset.get_field(changeset, :date_range_start)
+    end_datetime = Ecto.Changeset.get_field(changeset, :date_range_end)
+
+    cond do
+      is_nil(start_datetime) or is_nil(end_datetime) ->
+        changeset
+
+      DateTime.compare(start_datetime, end_datetime) in [:lt, :eq] ->
+        changeset
+
+      true ->
+        Ecto.Changeset.add_error(changeset, :date_range_end, "must be after start")
+    end
+  end
+
+  defp advanced_filters_open?(inputs, form) do
+    start_input =
+      inputs
+      |> Map.get(:date_range_start)
+      |> Kernel.||(Map.get(inputs, "date_range_start"))
+
+    end_input =
+      inputs
+      |> Map.get(:date_range_end)
+      |> Kernel.||(Map.get(inputs, "date_range_end"))
+
+    has_value? = present?(start_input) or present?(end_input)
+
+    has_error? =
+      Enum.any?(
+        [
+          form[:date_range_start].errors,
+          form[:date_range_end].errors
+        ],
+        fn errors ->
+          match?([{_, _} | _], errors)
+        end
+      )
+
+    has_value? or has_error?
+  end
+
+  defp present?(value) when value in [nil, ""], do: false
+  defp present?(value) when is_binary(value), do: String.trim(value) != ""
+  defp present?(_), do: true
+
+  defp inventory_skipped_objects(%InventoryRun{} = run) do
+    Inventory.skipped_objects(run)
+  end
+
+  defp inventory_skipped_objects(_), do: 0
 
   defp resolve_active_tab(params) do
     params

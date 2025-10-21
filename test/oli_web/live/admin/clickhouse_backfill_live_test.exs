@@ -155,6 +155,50 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
       assert rendered =~ "Inventory batch run has been enqueued"
     end
 
+    test "inventory scheduling records date range filters", %{conn: conn} do
+      Repo.delete_all(InventoryRun)
+      Oban.Testing.reset()
+
+      {:ok, view, _html} = live(conn, @route)
+
+      params = %{
+        "inventory_date" => "2024-07-03",
+        "target_table" => "analytics.raw_events",
+        "date_range_start" => "2024-07-03T00:00",
+        "date_range_end" => "2024-07-03T23:59"
+      }
+
+      view
+      |> form("form[phx-submit=\"inventory_schedule\"]", %{"inventory" => params})
+      |> render_submit()
+
+      assert [%InventoryRun{} = run] = Repo.all(InventoryRun)
+
+      assert %{"filters" => %{"date_range" => range}} = run.metadata
+      assert range["start"] == "2024-07-03T00:00:00Z"
+      assert range["end"] == "2024-07-03T23:59:00Z"
+    end
+
+    test "shows skipped object counts", %{conn: conn} do
+      Repo.delete_all(InventoryRun)
+
+      %InventoryRun{
+        inventory_date: ~D[2024-09-01],
+        inventory_prefix: "inventory/prefix",
+        manifest_url: "https://example.com/manifest.json",
+        manifest_bucket: "bucket",
+        target_table: "analytics.raw_events",
+        format: "JSONAsString",
+        status: :running,
+        metadata: %{"skipped_objects" => 7}
+      }
+      |> Repo.insert!()
+
+      {:ok, _view, html} = live(conn, @route)
+
+      assert html =~ "Skipped objects: 7"
+    end
+
     test "allows deleting completed backfill run", %{conn: conn} do
       Repo.delete_all(BackfillRun)
 
