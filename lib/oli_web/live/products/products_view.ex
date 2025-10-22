@@ -93,7 +93,8 @@ defmodule OliWeb.Products.ProductsView do
       ProductsTableModel.new(products, ctx, project_slug,
         sort_by_spec: :inserted_at,
         sort_order: :desc,
-        search_term: applied_search
+        search_term: applied_search,
+        is_admin: is_admin_view
       )
 
     published? =

@@ -54,7 +54,8 @@ defmodule OliWeb.Projects.ProjectsLive do
       TableModel.new(ctx, projects,
         sort_by_spec: :inserted_at,
         sort_order: :desc,
-        search_term: applied_search
+        search_term: applied_search,
+        is_admin: is_content_admin
       )
 
     total_count = determine_total(projects)

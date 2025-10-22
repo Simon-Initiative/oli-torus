@@ -624,6 +624,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         objectives_tab={@objectives_tab}
         section_slug={@section_slug}
         section_id={@section.id}
+        section_title={@section.title}
         v25_migration={@section.v25_migration}
         patch_url_type={:instructor_dashboard}
         current_user={@current_user}
@@ -904,7 +905,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     {:noreply, put_flash(socket, type, message)}
   end
 
-  def handle_info({:show_email_modal, _assigns}, socket) do
+  def handle_info({:show_email_modal, caller_assigns}, socket) do
     # Only send update if the Students component is currently rendered
     case {socket.assigns.view, socket.assigns.active_tab} do
       {:overview, :students} ->
@@ -916,6 +917,12 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       {:insights, :content} ->
         send_update(OliWeb.Components.Delivery.Students,
           id: "container_details_table",
+          show_email_modal: true
+        )
+
+      {:insights, :learning_objectives} ->
+        send_update(OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyList,
+          id: caller_assigns.email_handler_id,
           show_email_modal: true
         )
 
@@ -926,18 +933,24 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     {:noreply, socket}
   end
 
-  def handle_info({:hide_email_modal}, socket) do
+  def handle_info({:hide_email_modal, email_handler_id}, socket) do
     # Only send update if the Students component is currently rendered
     case {socket.assigns.view, socket.assigns.active_tab} do
       {:overview, :students} ->
         send_update(OliWeb.Components.Delivery.Students,
-          id: "students_table",
+          id: email_handler_id || "students_table",
           show_email_modal: false
         )
 
       {:insights, :content} ->
         send_update(OliWeb.Components.Delivery.Students,
-          id: "container_details_table",
+          id: email_handler_id || "container_details_table",
+          show_email_modal: false
+        )
+
+      {:insights, :learning_objectives} ->
+        send_update(OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyList,
+          id: email_handler_id,
           show_email_modal: false
         )
 

@@ -1681,7 +1681,7 @@ defmodule Oli.Delivery.Metrics do
     Repo.all(query)
     |> Enum.map(fn {student_id, proficiency, num_first_attempts} ->
       %{
-        student_id: Integer.to_string(student_id),
+        id: student_id,
         proficiency: proficiency || 0.0,
         proficiency_range: proficiency_range(proficiency, num_first_attempts)
       }

@@ -21,47 +21,57 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
 
   def panel(assigns) do
     ~H"""
-    <div
-      id="annotations_panel"
-      class="flex w-[485px] h-full max-h-[calc(100vh-96px)] px-2 py-4 bg-white dark:bg-black text-[#353740] dark:text-[#eeebf5] mx-2 rounded-2xl"
-    >
-      <div class="flex flex-col flex-1 bg-white dark:bg-black pb-5 rounded-bl-lg">
+    <div>
+      <div
+        id="annotations_panel"
+        class="flex sm:w-[485px] h-full min-h-[400px] max-h-[400px] sm:max-h-[50vh] lg:max-h-[80vh] px-4 py-2 sm:px-2 sm:py-4 bg-Surface-surface-background text-[#353740] dark:text-[#eeebf5] mx-3 sm:mx-2 rounded-t-2xl sm:rounded-2xl"
+      >
+        <div class="flex flex-col flex-1 bg-Surface-surface-background pb-5 rounded-bl-lg">
+          <button
+            phx-click="toggle_notes_sidebar"
+            class="hidden sm:inline-flex self-stretch px-2 pb-2 justify-end items-center gap-2.5 hover:cursor-pointer"
+          >
+            <i class="fa-solid fa-xmark hover:scale-110"></i>
+          </button>
+          <div class="flex flex-col flex-1 overflow-hidden sm:px-5">
+            <.tab_group class="py-3">
+              <.tab :if={not @is_instructor} name={:my_notes} selected={@active_tab == :my_notes}>
+                <.user_icon class="mr-2" /> My Notes
+              </.tab>
+              <.tab name={:class_notes} selected={@active_tab == :class_notes || @is_instructor}>
+                <.users_icon class="mr-2" /> Class Notes
+              </.tab>
+            </.tab_group>
+            <Utils.search_box class="sm:mt-2" search_term={@search_term} />
+            <hr class="my-3 sm:m-6 border-b border-Border-border-subtle" />
+            <%= case @search_results do %>
+              <% nil -> %>
+                <.annotations
+                  active_tab={@active_tab}
+                  annotations={@annotations}
+                  current_user={@current_user}
+                  create_new_annotation={@create_new_annotation}
+                  selected_point={@selected_point}
+                  collab_space_config={@collab_space_config}
+                />
+              <% _ -> %>
+                <.search_results
+                  section_slug={@section_slug}
+                  search_results={@search_results}
+                  current_user={@current_user}
+                  on_reveal_post="reveal_post"
+                />
+            <% end %>
+          </div>
+        </div>
+      </div>
+      <div class="flex items-center justify-center sm:hidden bg-Surface-surface-background h-16 mx-3 p-4 border-t border-Border-border-default">
         <button
           phx-click="toggle_notes_sidebar"
-          class="self-stretch px-2 pb-2 justify-end items-center gap-2.5 inline-flex hover:cursor-pointer"
+          class="text-Specially-Tokens-Text-text-button-secondary font-semibold text-sm leading-4 px-8 py-3 border border-Border-border-bold h-10 rounded-lg w-full"
         >
-          <i class="fa-solid fa-xmark hover:scale-110"></i>
+          Close
         </button>
-        <div class="flex flex-col flex-1 overflow-hidden px-5">
-          <.tab_group class="py-3">
-            <.tab :if={not @is_instructor} name={:my_notes} selected={@active_tab == :my_notes}>
-              <.user_icon class="mr-2" /> My Notes
-            </.tab>
-            <.tab name={:class_notes} selected={@active_tab == :class_notes || @is_instructor}>
-              <.users_icon class="mr-2" /> Class Notes
-            </.tab>
-          </.tab_group>
-          <Utils.search_box class="mt-2" search_term={@search_term} />
-          <hr class="m-6 border-b border-b-gray-200" />
-          <%= case @search_results do %>
-            <% nil -> %>
-              <.annotations
-                active_tab={@active_tab}
-                annotations={@annotations}
-                current_user={@current_user}
-                create_new_annotation={@create_new_annotation}
-                selected_point={@selected_point}
-                collab_space_config={@collab_space_config}
-              />
-            <% _ -> %>
-              <.search_results
-                section_slug={@section_slug}
-                search_results={@search_results}
-                current_user={@current_user}
-                on_reveal_post="reveal_post"
-              />
-          <% end %>
-        </div>
       </div>
     </div>
     """
@@ -209,8 +219,10 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   def toggle_notes_button(assigns) do
     ~H"""
     <button
+      role="toggle notes button"
+      data-view="desktop"
       class={[
-        "flex flex-col items-center rounded-lg bg-white dark:bg-black hover:bg-[#deecff] dark:hover:bg-white/10 text-[#0d70ff] text-xl group",
+        "flex flex-col items-center rounded-lg bg-Surface-surface-background hover:bg-[#deecff] dark:hover:bg-white/10 text-[#0d70ff] text-xl group",
         if(@is_active,
           do:
             "!text-white bg-[#0080ff] dark:bg-[#0062f2] hover:bg-[#0080ff]/75 hover:dark:bg-[#0062f2]/75"
@@ -226,6 +238,9 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   end
 
   def annotations_icon(assigns) do
+    # Generate a unique ID for this SVG instance to avoid duplicate IDs
+    assigns = assign(assigns, :unique_id, "filter0_d_#{:erlang.unique_integer([:positive])}")
+
     ~H"""
     <svg
       width="32"
@@ -234,7 +249,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
       fill="currentColor"
       xmlns="http://www.w3.org/2000/svg"
     >
-      <g filter="url(#filter0_d_2057_37664)">
+      <g filter={"url(##{@unique_id})"}>
         <path
           fill-rule="evenodd"
           clip-rule="evenodd"
@@ -243,7 +258,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
       </g>
       <defs>
         <filter
-          id="filter0_d_2057_37664"
+          id={@unique_id}
           x="0.5"
           y="0.349609"
           width="31"
@@ -265,11 +280,11 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
             type="matrix"
             values="0 0 0 0 0 0 0 0 0 0.203922 0 0 0 0 0.388235 0 0 0 0.15 0"
           />
-          <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_2057_37664" />
+          <feBlend mode="normal" in2="BackgroundImageFix" result={"effect1_dropShadow_#{@unique_id}"} />
           <feBlend
             mode="normal"
             in="SourceGraphic"
-            in2="effect1_dropShadow_2057_37664"
+            in2={"effect1_dropShadow_#{@unique_id}"}
             result="shape"
           />
         </filter>
@@ -299,11 +314,12 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
       phx-click="select_tab"
       phx-value-tab={@name}
       class={[
-        "flex-1 inline-flex justify-center border-l border-t border-b first:rounded-l-lg last:rounded-r-lg last:border-r px-4 py-3 inline-flex items-center",
+        "flex-1 inline-flex items-center justify-center border-l border-t border-b first:rounded-l-lg last:rounded-r-lg last:border-r px-4 py-3 whitespace-nowrap",
         if(@selected,
-          do: "bg-primary border-primary text-white stroke-white font-semibold",
+          do:
+            "bg-Fill-Buttons-fill-primary border-Fill-Buttons-fill-primary text-Text-text-white stroke-Text-text-white font-semibold",
           else:
-            "stroke-[#383A44] border-gray-400 hover:bg-gray-100 dark:border-gray-700 dark:hover:bg-gray-800"
+            "bg-Specially-Tokens-Border-border-input border-Specially-Tokens-Border-border-input text-Text-text-low stroke-Text-text-low font-semibold"
         )
       ]}
     >
@@ -343,6 +359,9 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   attr :rest, :global, include: ~w(class)
 
   defp users_icon(assigns) do
+    # Generate a unique ID for this SVG instance to avoid duplicate IDs
+    assigns = assign(assigns, :unique_id, "clip0_#{:erlang.unique_integer([:positive])}")
+
     ~H"""
     <svg
       class={@rest[:class]}
@@ -352,7 +371,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
-      <g clip-path="url(#clip0_270_13479)">
+      <g clip-path={"url(##{@unique_id})"}>
         <path
           d="M14.1666 17.5V15.8333C14.1666 14.9493 13.8154 14.1014 13.1903 13.4763C12.5652 12.8512 11.7173 12.5 10.8333 12.5H4.16659C3.28253 12.5 2.43468 12.8512 1.80956 13.4763C1.18444 14.1014 0.833252 14.9493 0.833252 15.8333V17.5"
           stroke-width="2"
@@ -379,7 +398,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
         />
       </g>
       <defs>
-        <clipPath id="clip0_270_13479">
+        <clipPath id={@unique_id}>
           <rect width="20" height="20" fill="white" />
         </clipPath>
       </defs>
@@ -396,18 +415,18 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   defp add_new_annotation_input(%{active: true} = assigns) do
     ~H"""
     <div class={[
-      "flex flex-row p-2 border-2 border-gray-300 dark:border-gray-700 rounded-lg",
+      "flex flex-row p-2 border bg-Surface-surface-primary border-Border-border-subtle rounded-xl",
       @rest[:class]
     ]}>
       <form class="w-full" phx-submit="create_annotation">
-        <div class="flex-1 flex flex-col relative border-gray-400 dark:border-gray-700 rounded-lg p-3">
+        <div class="flex-1 flex flex-col relative bg-Surface-surface-primary border-Border-border-subtle rounded-lg p-1 sm:p-3">
           <div class="flex-1">
             <textarea
               id="annotation_input"
               name="content"
               phx-hook="AutoSelect"
               rows="4"
-              class="w-full border border-gray-400 dark:border-gray-700 dark:bg-black rounded-lg p-3"
+              class="w-full border bg-Specially-Tokens-Fill-fill-input border-Specially-Tokens-Border-border-input rounded-lg p-3"
               placeholder={@placeholder}
             />
           </div>
@@ -436,7 +455,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
       <div class="flex-1 relative">
         <input
           type="text"
-          class="w-full border border-gray-400 dark:border-gray-700 rounded-lg p-3"
+          class="w-full h-9 sm:h-auto border bg-Specially-Tokens-Fill-fill-input border-Specially-Tokens-Border-border-input rounded-xl p-3"
           placeholder={@placeholder}
           phx-focus="begin_create_annotation"
         />
@@ -457,7 +476,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
     <div
       id={"post-#{@post.id}"}
       class={[
-        "post flex flex-col p-4 border-2 border-gray-200 dark:border-gray-800 rounded",
+        "post flex flex-col p-4 border bg-Surface-surface-primary border-Border-border-subtle rounded-xl",
         @rest[:class]
       ]}
     >
@@ -739,7 +758,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
 
   def delete_post_modal(assigns) do
     ~H"""
-    <Modal.modal id="delete_post_modal" class="w-1/2 z-50">
+    <Modal.modal id="delete_post_modal" class="w-5/6 sm:w-3/4 max-w-lg z-50">
       <:title>Delete Note</:title>
       <.form
         phx-submit={JS.push("delete_post") |> Modal.hide_modal("delete_post_modal")}

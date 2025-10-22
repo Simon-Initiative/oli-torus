@@ -17,7 +17,7 @@ defmodule Oli.Interop.Ingest.Processing.Rewiring do
     end
   end
 
-  @spec rewire_activity_references(map(), any) :: map()
+  @spec rewire_activity_references(map() | nil, any) :: map() | nil
   def rewire_activity_references(content, activity_map) do
     {mapped, _} =
       PageContent.map_reduce(content, {:ok, []}, fn e, {status, invalid_refs}, _tr_context ->
@@ -25,7 +25,7 @@ defmodule Oli.Interop.Ingest.Processing.Rewiring do
           %{"type" => "activity-reference", "activity_id" => original} = ref ->
             case retrieve(activity_map, original) do
               nil ->
-                {ref, {:error, [original | invalid_refs]}}
+                {nil, {:error, [original | invalid_refs]}}
 
               retrieved ->
                 {Map.put(ref, "activity_id", retrieved), {status, invalid_refs}}
@@ -36,7 +36,7 @@ defmodule Oli.Interop.Ingest.Processing.Rewiring do
         end
       end)
 
-    mapped
+    prune_nil_nodes(mapped)
   end
 
   @spec rewire_report_activity_references(map(), any) :: map()
@@ -188,4 +188,35 @@ defmodule Oli.Interop.Ingest.Processing.Rewiring do
 
     mapped
   end
+
+  defp prune_nil_nodes(nil), do: nil
+
+  defp prune_nil_nodes(%_{} = struct), do: struct
+
+  defp prune_nil_nodes(%{} = map) do
+    Enum.reduce(map, %{}, fn {key, value}, acc ->
+      cleaned = prune_nil_nodes(value)
+
+      cond do
+        is_nil(cleaned) ->
+          acc
+
+        true ->
+          Map.put(acc, key, cleaned)
+      end
+    end)
+  end
+
+  defp prune_nil_nodes(value) when is_list(value) do
+    value
+    |> Enum.reduce([], fn item, acc ->
+      case prune_nil_nodes(item) do
+        nil -> acc
+        cleaned -> [cleaned | acc]
+      end
+    end)
+    |> Enum.reverse()
+  end
+
+  defp prune_nil_nodes(value), do: value
 end

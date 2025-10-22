@@ -13,6 +13,7 @@ import { Stem } from 'components/activities/common/stem/authoring/StemAuthoringC
 import { StemDelivery } from 'components/activities/common/stem/delivery/StemDelivery';
 import { mcV1toV2 } from 'components/activities/multiple_choice/transformations/v2';
 import { getCorrectChoice } from 'components/activities/multiple_choice/utils';
+import { modeIsDark } from 'components/misc/DarkModeSelector';
 import { VegaLiteRenderer } from 'components/misc/VegaLiteRenderer';
 import { Radio } from 'components/misc/icons/radio/Radio';
 import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
@@ -193,6 +194,8 @@ function viz(values: any) {
   const maxCount = Math.max(...values.map((v: any) => v.count), 0);
   const domain = [0, maxCount];
 
+  const isDarkMode = modeIsDark();
+
   const viz = {
     ...studentResponsesSpec,
     data: {
@@ -200,6 +203,13 @@ function viz(values: any) {
     },
   } as any;
 
+  // Ensure a single top-level param so VegaLiteRenderer can set the signal
+  const existingParams = Array.isArray(viz.params)
+    ? viz.params.filter((p: any) => p?.name !== 'isDarkMode')
+    : [];
+  viz.params = [...existingParams, { name: 'isDarkMode', value: isDarkMode }];
+
+  // x scale domain/ticks derived from data
   viz.layer[0].encoding.x.scale.domain = domain;
   viz.layer[0].encoding.x.axis.values = domain;
 

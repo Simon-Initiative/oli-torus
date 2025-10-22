@@ -136,9 +136,10 @@ defmodule OliWeb.Dialogue.WindowLive do
     ~H"""
     <div
       :if={@enabled}
+      data-dialogue-window
       class={[
         "fixed z-[10000] lg:bottom-0 right-0 ml-auto",
-        if(@is_page, do: "bottom-20", else: "bottom-0")
+        if(@is_page, do: "bottom-0 sm:bottom-20", else: "bottom-0")
       ]}
     >
       <.conversation
@@ -208,12 +209,12 @@ defmodule OliWeb.Dialogue.WindowLive do
         id="conversation_container"
         phx-hook="ResizeListener"
         style={"height: #{@height}px; width: #{@width}px;"}
-        class="pb-6 shadow-lg bg-white dark:bg-[#0A0A17] rounded-3xl flex flex-col justify-between"
+        class="w-full sm:w-auto pb-6 shadow-lg bg-white dark:bg-[#0A0A17] rounded-3xl flex flex-col justify-between"
       >
         <div class="h-7 shrink-0 py-6 px-3 rounded-t-3xl flex items-center">
           <button
             id="resize_handle"
-            class="flex items-center justify-center cursor-nw-resize rotate-90 opacity-60 dark:opacity-80 dark:hover:opacity-50 hover:opacity-100 hover:scale-105"
+            class="hidden sm:flex items-center justify-center cursor-nw-resize rotate-90 opacity-60 dark:opacity-80 dark:hover:opacity-50 hover:opacity-100 hover:scale-105"
           >
             <.resize_icon />
           </button>
