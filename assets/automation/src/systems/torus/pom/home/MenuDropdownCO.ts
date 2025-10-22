@@ -24,7 +24,7 @@ export class MenuDropdownCO {
     this.timezoneSelect = this.workspaceMenu.locator('select[name="timezone[timezone]"]');
     this.researchConsentLink = this.workspaceMenu.getByRole('link', { name: 'Research Consent' });
     this.emailLink = this.workspaceMenu.locator('a>div[role="linked authoring account email"]');
-    this.signOutLink = page.getByRole('link', { name: 'Sign out' });
+    this.signOutLink = this.workspaceMenu.getByRole('link', { name: 'Sign out' });
   }
 
   async open(isAdminScreen = false) {
