@@ -115,3 +115,6 @@ MnesiaCore.nonode@nohost_1698_943806_800396
 .codex/config.toml
 .codex/history.jsonl
 .codex/version.json
+
+# Python cache files
+./**/*.pyc
