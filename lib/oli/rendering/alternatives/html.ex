@@ -57,19 +57,24 @@ defmodule Oli.Rendering.Alternatives.Html do
       end
 
     {:safe, preference_selector} =
-      OliWeb.Common.React.component(context, "Components.AlternativesPreferenceSelector", %{
-        sectionSlug: section_slug,
-        alternativesId: alternatives_id,
-        options: options,
-        selected:
-          user_section_preference(
-            mode,
-            user,
-            section_slug,
-            alternatives_id,
-            extrinsic_read_section_fn
-          )
-      })
+      OliWeb.Common.React.component(
+        context,
+        "Components.AlternativesPreferenceSelector",
+        %{
+          sectionSlug: section_slug,
+          alternativesId: alternatives_id,
+          options: options,
+          selected:
+            user_section_preference(
+              mode,
+              user,
+              section_slug,
+              alternatives_id,
+              extrinsic_read_section_fn
+            )
+        },
+        id: "alternatives-selector-#{UUID.uuid4()}"
+      )
 
     preference_selector
   end

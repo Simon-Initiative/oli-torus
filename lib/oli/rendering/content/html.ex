@@ -22,12 +22,20 @@ defmodule Oli.Rendering.Content.Html do
   @behaviour Oli.Rendering.Content
 
   def trigger(%Context{} = context, _, attrs) do
+    # Generate a unique ID for the LiveReact hook
+    trigger_id = attrs["id"] || "trigger-#{UUID.uuid4()}"
+
     {:safe, trigger} =
-      OliWeb.Common.React.component(context, "Components.TriggerButton", %{
-        "trigger" => attrs,
-        "resourceId" => context.page_id,
-        "sectionSlug" => context.section_slug
-      })
+      OliWeb.Common.React.component(
+        context,
+        "Components.TriggerButton",
+        %{
+          "trigger" => attrs,
+          "resourceId" => context.page_id,
+          "sectionSlug" => context.section_slug
+        },
+        id: trigger_id
+      )
 
     trigger
   end
