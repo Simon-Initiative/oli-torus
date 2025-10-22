@@ -212,10 +212,7 @@ defmodule OliWeb.Components.Delivery.Pages do
 
             {total_count, rows} = apply_filters(activities_with_order, params)
 
-            selected_activities =
-              if params[:selected_activities] == [],
-                do: [],
-                else: Enum.map(params[:selected_activities], &String.to_integer(&1))
+            selected_activities = params[:selected_activities]
 
             {:ok, table_model} = ActivitiesTableModel.new(rows)
 
@@ -562,7 +559,6 @@ defmodule OliWeb.Components.Delivery.Pages do
 
     selected_activities =
       socket.assigns.params.selected_activities
-      |> Enum.map(&String.to_integer("#{&1}"))
       |> then(fn ids ->
         if activity_id in ids,
           do: Enum.reject(ids, &(&1 == activity_id)),
@@ -936,7 +932,8 @@ defmodule OliWeb.Components.Delivery.Pages do
       text_search: Params.get_param(params, "text_search", @default_params.text_search),
       resource_id: Params.get_int_param(params, "resource_id", nil),
       page_table_params: params["page_table_params"],
-      selected_activities: Params.get_param(params, "selected_activities", []),
+      selected_activities:
+        decode_selected_activities(Params.get_param(params, "selected_activities", [])),
       selected_card_value:
         Params.get_atom_param(
           params,
@@ -1192,6 +1189,26 @@ defmodule OliWeb.Components.Delivery.Pages do
 
   defp attempts_count(students_with_attempts_count, _total_attempts_count, :practice_pages) do
     ~s{#{students_with_attempts_count} #{Gettext.ngettext(OliWeb.Gettext, "student has responded", "students have responded", students_with_attempts_count)}}
+  end
+
+  defp decode_selected_activities(nil), do: []
+  defp decode_selected_activities([]), do: []
+  defp decode_selected_activities(list) when is_list(list), do: normalize_list_items(list)
+
+  defp decode_selected_activities(encoded_list) when is_binary(encoded_list) do
+    case Jason.decode!(encoded_list) do
+      [] -> []
+      decoded_list when is_list(decoded_list) -> normalize_list_items(decoded_list)
+    end
+  end
+
+  defp decode_selected_activities(_), do: []
+
+  defp normalize_list_items(list) do
+    Enum.map(list, fn
+      item when is_integer(item) -> item
+      item when is_binary(item) -> String.to_integer(item)
+    end)
   end
 
   defp extract_back_url_params(params) do

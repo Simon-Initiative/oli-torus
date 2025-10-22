@@ -182,7 +182,7 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
     <div
       id="searchable_dropdown"
       phx-click-away={JS.hide(transition: {"ease-out duration-200", "opacity-100", "opacity-0"})}
-      class="hidden absolute top-full left-1/2 transform -translate-x-1/2 z-20 w-[465px] pb-1.5 bg-Background-bg-secondary rounded shadow-[0px_0px_8px_0px_rgba(0,0,0,0.15)] flex-col justify-center items-start overflow-hidden"
+      class="hidden absolute top-full left-1/2 transform -translate-x-1/2 z-[9999] w-[465px] pb-1.5 bg-Background-bg-secondary rounded shadow-[0px_0px_8px_0px_rgba(0,0,0,0.15)] flex-col justify-center items-start overflow-hidden"
     >
       <div class="border-b-0.5 border-Border-border-primary/80 self-stretch pl-9 pr-4 py-1.5 mb-3 bg-Background-bg-secondary shadow-[0px_1px_0px_0px_rgba(245,245,245,1.00)] inline-flex justify-start items-center">
         <div class="w-5 h-5 relative">
