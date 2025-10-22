@@ -102,15 +102,23 @@ defmodule Oli.Rendering.Content.Html do
         attempt -> attempt.attempt_guid
       end
 
+    # Generate a unique ID for the LiveReact hook
+    video_id = attrs["id"] || "video-#{UUID.uuid4()}"
+
     {:safe, video_player} =
-      OliWeb.Common.React.component(context, "Components.VideoPlayer", %{
-        "video" => attrs,
-        "pageAttemptGuid" => attempt_guid,
-        "pointMarkerContext" => %{
-          renderPointMarkers: context.render_opts.render_point_markers,
-          isAnnotationLevel: context.is_annotation_level
-        }
-      })
+      OliWeb.Common.React.component(
+        context,
+        "Components.VideoPlayer",
+        %{
+          "video" => attrs,
+          "pageAttemptGuid" => attempt_guid,
+          "pointMarkerContext" => %{
+            renderPointMarkers: context.render_opts.render_point_markers,
+            isAnnotationLevel: context.is_annotation_level
+          }
+        },
+        id: video_id
+      )
 
     video_player
   end
@@ -148,15 +156,23 @@ defmodule Oli.Rendering.Content.Html do
         attempt -> attempt.attempt_guid
       end
 
+    # Generate a unique ID for the LiveReact hook
+    video_id = attrs["id"] || "youtube-#{UUID.uuid4()}"
+
     {:safe, video_player} =
-      OliWeb.Common.React.component(context, "Components.YoutubePlayer", %{
-        "video" => attrs,
-        "pageAttemptGuid" => attempt_guid,
-        "pointMarkerContext" => %{
-          renderPointMarkers: context.render_opts.render_point_markers,
-          isAnnotationLevel: context.is_annotation_level
-        }
-      })
+      OliWeb.Common.React.component(
+        context,
+        "Components.YoutubePlayer",
+        %{
+          "video" => attrs,
+          "pageAttemptGuid" => attempt_guid,
+          "pointMarkerContext" => %{
+            renderPointMarkers: context.render_opts.render_point_markers,
+            isAnnotationLevel: context.is_annotation_level
+          }
+        },
+        id: video_id
+      )
 
     video_player
   end
