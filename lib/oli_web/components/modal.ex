@@ -198,44 +198,48 @@ defmodule OliWeb.Components.Modal do
               phx-window-keydown={hide_modal(@on_cancel, @id)}
               phx-key="escape"
               phx-click-away={hide_modal(@on_cancel, @id)}
-              class="hidden p-8 sm:p-16 lg:p-20 xl:p-28 relative bg-white dark:bg-black shadow-lg shadow-zinc-700/10 ring-1 ring-zinc-700/10 transition"
+              class="max-h-[85vh] overflow-y-scroll hidden pt-0 p-8 sm:p-14 lg:p-16 xl:p-20 relative bg-white dark:bg-black shadow-lg shadow-zinc-700/10 ring-1 ring-zinc-700/10 transition"
             >
-              <button
-                type="button"
-                class="absolute top-5 right-5 lg:top-10 lg:right-10 dark:text-gray-400 dark:hover:text-white text-gray-900 hover:text-gray-400 text-sm w-8 h-8  flex items-center justify-center"
-                phx-click={hide_modal(@on_cancel, @id)}
-                aria-label={gettext("close")}
-              >
-                <svg
-                  class="w-3 h-3"
-                  aria-hidden="true"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 14 14"
-                >
-                  <path
-                    stroke="currentColor"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"
-                  />
-                </svg>
-                <span class="sr-only">Close modal</span>
-              </button>
-              <!-- Modal header -->
+              
+    <!-- Modal header -->
               <div class="flex items-start justify-between">
-                <div :if={@title != []} class="mb-11">
-                  <h1
-                    id={"#{@id}-title"}
-                    class="text-zinc-700 dark:text-neutral-300 text-[40px] font-bold font-['Inter'] leading-[60px]"
-                  >
-                    {render_slot(@title)}
-                  </h1>
+                <div :if={@title != []} class="mb-6 lg:mb-11">
+                  <div class="flex items-start justify-between sticky top-0 z-10 pt-8 sm:pt-14 lg:pt-16 xl:pt-20 bg-white dark:bg-black w-full pb-2">
+                    <h1
+                      id={"#{@id}-title"}
+                      class="text-zinc-700 dark:text-neutral-300 text-2xl sm:text-3xl lg:text-[40px] font-bold font-['Inter'] leading-normal sm:leading-[60px]"
+                    >
+                      {render_slot(@title)}
+                    </h1>
+                    <button
+                      type="button"
+                      class="dark:text-gray-400 dark:hover:text-white text-gray-900 hover:text-gray-400 text-sm w-8 h-8  flex items-center justify-center"
+                      phx-click={hide_modal(@on_cancel, @id)}
+                      aria-label={gettext("close")}
+                    >
+                      <svg
+                        class="w-3 h-3"
+                        aria-hidden="true"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 14 14"
+                      >
+                        <path
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"
+                        />
+                      </svg>
+                      <span class="sr-only">Close modal</span>
+                    </button>
+                  </div>
+
                   <p
                     :if={@subtitle != []}
                     id={"#{@id}-description"}
-                    class="mt-11 text-zinc-700 dark:text-white text-base font-normal font-['Inter'] leading-normal"
+                    class="mt-6 lg:mt-11 text-zinc-700 dark:text-white text-base font-normal font-['Inter'] leading-normal"
                   >
                     {render_slot(@subtitle)}
                   </p>
