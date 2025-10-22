@@ -383,11 +383,16 @@ defmodule Oli.Delivery.Sections.Blueprint do
       # section resource
       section_resources =
         Enum.reduce(results || [], [], fn sr, section_resources ->
+          # filter out any nil (from nil or unknown ids) that may have been introduced due to data corruption
+          updated =
+            Enum.map(sr.children || [], fn id -> Map.get(resource_map, id, nil) end)
+            |> Enum.filter(fn id -> !is_nil(id) end)
+
           sr =
             Map.put(
               sr,
               :children,
-              Enum.map(sr.children || [], fn id -> Map.get(resource_map, id) end)
+              updated
             )
 
           [sr | section_resources]

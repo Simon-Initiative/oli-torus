@@ -294,6 +294,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
       end
 
     spec = %{
+      height: 12,
       mark: "bar",
       data: %{values: data_with_positions},
       encoding: %{
@@ -323,7 +324,13 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
     OliWeb.Common.React.component(
       %{is_liveview: true},
       "Components.VegaLiteRenderer",
-      %{spec: spec},
+      %{
+        spec: spec,
+        dark_mode_colors: %{
+          light: ["#C2C2C2", "#E6D4FA", "#B37CEA", "#7B19C1"],
+          dark: ["#C2C2C2", "#F6EEFF", "#C6A0EB", "#AC57E9"]
+        }
+      },
       id: "proficiency-data-bar-chart-for-objective-#{objective_id}"
     )
   end
@@ -351,6 +358,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
 
     section_slug = assigns[:section_slug] || assigns.model.data[:section_slug]
     section_id = assigns[:section_id] || assigns.model.data[:section_id]
+    section_title = assigns[:section_title] || assigns.model.data[:section_title]
 
     proficiency_distribution =
       case Map.get(objective, :student_proficiency_subobj_dist) do
@@ -367,6 +375,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
       |> Map.put(:unique_id, unique_id)
       |> Map.put(:section_slug, section_slug)
       |> Map.put(:section_id, section_id)
+      |> Map.put(:section_title, section_title)
       |> Map.put(:proficiency_distribution, proficiency_distribution)
       |> Map.put(:current_user, current_user)
 
@@ -378,6 +387,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
         objective={@objective}
         section_id={@section_id}
         section_slug={@section_slug}
+        section_title={@section_title}
         proficiency_distribution={@proficiency_distribution}
         current_user={@current_user}
       />

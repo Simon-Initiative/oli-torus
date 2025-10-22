@@ -76,11 +76,17 @@ defmodule Oli.Interop.Ingest.Processor.Pages do
     content = Map.get(resource, "content")
 
     content =
-      Rewiring.rewire_activity_references(content, state.legacy_to_resource_id_map)
-      |> Rewiring.rewire_report_activity_references(state.legacy_to_resource_id_map)
-      |> Rewiring.rewire_bank_selections(state.legacy_to_resource_id_map)
-      |> Rewiring.rewire_citation_references(state.legacy_to_resource_id_map)
-      |> Rewiring.rewire_alternatives_groups(state.legacy_to_resource_id_map)
+      case Rewiring.rewire_activity_references(content, state.legacy_to_resource_id_map) do
+        nil ->
+          nil
+
+        content ->
+          content
+          |> Rewiring.rewire_report_activity_references(state.legacy_to_resource_id_map)
+          |> Rewiring.rewire_bank_selections(state.legacy_to_resource_id_map)
+          |> Rewiring.rewire_citation_references(state.legacy_to_resource_id_map)
+          |> Rewiring.rewire_alternatives_groups(state.legacy_to_resource_id_map)
+      end
 
     %{
       slug: Oli.Utils.Slug.slug_with_prefix(state.slug_prefix, title),

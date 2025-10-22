@@ -430,7 +430,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       ### filtering by container
       params = %{container_id: mod1_resource.id}
 
-      {:ok, view, _html} = live(conn, live_view_students_route(section.slug, params))
+      {:ok, view, _html} =
+        live(conn, ~p"/sections/#{section.slug}/instructor_dashboard/insights/content?#{params}")
 
       progress =
         view
@@ -439,7 +440,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
         |> Floki.find(~s{.instructor_dashboard_table tr [data-progress-check]})
         |> Enum.map(fn div_tag -> Floki.text(div_tag) |> String.trim() end)
 
-      assert progress == ["3%", "2%", "0%", "2%"]
+      assert progress == ["10%", "7%", "0%", "7%"]
 
       ### filtering by no container
       ### (we want to get the progress across all course section)
@@ -468,7 +469,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
         |> Floki.find(~s{.instructor_dashboard_table tr [data-progress-check]})
         |> Enum.map(fn div_tag -> Floki.text(div_tag) |> String.trim() end)
 
-      assert progress == ["3%", "2%", "0%", "2%"]
+      assert progress == ["0%", "0%", "0%", "0%"]
 
       ### filtering by page
       params = %{page_id: page_1.published_resource.resource_id}
@@ -684,8 +685,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
         section: section,
         mod1_pages: mod1_pages,
         mod2_pages: mod2_pages,
-        mod3_pages: mod3_pages,
-        mod1_resource: mod1_resource
+        mod3_pages: mod3_pages
       } =
         Oli.Seeder.base_project_with_larger_hierarchy()
 
@@ -716,10 +716,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       set_progress(section.id, page_8.published_resource.resource_id, user_1.id, 1)
       set_progress(section.id, page_9.published_resource.resource_id, user_1.id, 1)
 
-      params = %{container_id: mod1_resource.id}
-
-      {:ok, view, _html} =
-        live(conn, live_view_students_route(section.slug, params))
+      {:ok, view, _html} = live(conn, live_view_students_route(section.slug))
 
       # Low Progress card it should have 3 students
       assert element(view, "div[phx-value-selected='low_progress']") |> render() =~
@@ -775,8 +772,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
         section: section,
         mod1_pages: mod1_pages,
         mod2_pages: mod2_pages,
-        mod3_pages: mod3_pages,
-        mod1_resource: mod1_resource
+        mod3_pages: mod3_pages
       } =
         Oli.Seeder.base_project_with_larger_hierarchy()
 
@@ -807,10 +803,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       set_progress(section.id, page_8.published_resource.resource_id, user_1.id, 1)
       set_progress(section.id, page_9.published_resource.resource_id, user_1.id, 1)
 
-      params = %{container_id: mod1_resource.id}
-
-      {:ok, view, _html} =
-        live(conn, live_view_students_route(section.slug, params))
+      {:ok, view, _html} = live(conn, live_view_students_route(section.slug))
 
       # Low Progress card it should have 3 students
       assert element(view, "div[phx-value-selected='low_progress']") |> render() =~
@@ -868,31 +861,20 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
 
       ## Check that Unit 2 container title is displayed
       assert has_element?(view, "div", unit2_container.revision.title)
-      assert has_element?(view, "div", "Navigate within 2 filtered units")
-      assert has_element?(view, "div", "Navigate within ALL units")
 
       ## Click to navigate to Unit 1 container
-      element(
-        view,
-        "button[phx-click='change_navigation'][value=\"#{unit1_container.resource.id}\"]"
-      )
-      |> render_click()
+      {:error,
+       {:live_redirect,
+        %{
+          kind: :push,
+          to: redirect_url
+        }}} =
+        element(view, "a[role='previous item link']")
+        |> render_click()
 
-      ## Check that Unit 1 container title is displayed
-      assert has_element?(view, "div", unit1_container.revision.title)
-
-      ## Click to navigate to ALL units
-      element(
-        view,
-        "form[phx-change='select_option']"
-      )
-      |> render_change(%{
-        "_target" => ["container", "option"],
-        "container" => %{"option" => "by_all"}
-      })
-
-      ## Check again that Unit 1 container title is displayed
-      assert has_element?(view, "div", unit1_container.revision.title)
+      ### Check that we navigate to Unit 1 container
+      assert redirect_url =~
+               "/sections/#{section.slug}/instructor_dashboard/insights/content?container_id=#{unit1_container.resource.id}"
     end
 
     test "button to back to units/modules works correctly", %{conn: conn, instructor: instructor} do

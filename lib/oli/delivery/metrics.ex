@@ -1636,9 +1636,8 @@ defmodule Oli.Delivery.Metrics do
   @doc """
   Gets individual student proficiency data for a specific learning objective within a section.
 
-  This function returns detailed proficiency data for each student, which will be used
-  to create the dot distribution visualization showing how students are distributed
-  across proficiency levels. Uses the same tested logic as proficiency_per_student_for_objective/3.
+  This function returns detailed proficiency data for each student, which shows how students are distributed
+  across proficiency levels.
 
   ## Parameters
   - section_id: The section ID to filter students by
@@ -1682,10 +1681,53 @@ defmodule Oli.Delivery.Metrics do
     Repo.all(query)
     |> Enum.map(fn {student_id, proficiency, num_first_attempts} ->
       %{
-        student_id: Integer.to_string(student_id),
+        id: student_id,
         proficiency: proficiency || 0.0,
         proficiency_range: proficiency_range(proficiency, num_first_attempts)
       }
     end)
+  end
+
+  @doc """
+  Calculates how many activities a student has attempted out of the total related activities.
+
+  Returns a map with student_id as key and attempt count as value.
+
+  ## Parameters
+  - section_id: The section ID
+  - student_ids: List of student IDs to calculate for
+  - related_activity_ids: List of activity resource IDs related to the objective
+
+  ## Returns
+  %{student_id => attempted_activities_count}
+  """
+  @spec student_activities_attempted_count(
+          section_id :: integer,
+          student_ids :: list(integer),
+          related_activity_ids :: list(integer)
+        ) :: map()
+  def student_activities_attempted_count(_section_id, _student_ids, related_activity_ids)
+      when related_activity_ids == [],
+      do: %{}
+
+  def student_activities_attempted_count(section_id, student_ids, related_activity_ids) do
+    activity_type_id = Oli.Resources.ResourceType.id_for_activity()
+
+    # Count distinct activities where the student has at least one attempt in any part
+    # Note: ResourceSummary has multiple rows per activity (one per part_id),
+    # so we filter by num_attempts > 0 and then count distinct resource_ids
+    from(rs in ResourceSummary,
+      where:
+        rs.section_id == ^section_id and
+          rs.user_id in ^student_ids and
+          rs.resource_id in ^related_activity_ids and
+          rs.project_id == -1 and
+          rs.resource_type_id == ^activity_type_id and
+          rs.num_attempts > 0,
+      group_by: rs.user_id,
+      select: {rs.user_id, fragment("COUNT(DISTINCT ?)", rs.resource_id)}
+    )
+    |> Repo.all()
+    |> Map.new()
   end
 end

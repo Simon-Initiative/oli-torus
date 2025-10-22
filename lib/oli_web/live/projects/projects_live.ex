@@ -54,7 +54,8 @@ defmodule OliWeb.Projects.ProjectsLive do
       TableModel.new(ctx, projects,
         sort_by_spec: :inserted_at,
         sort_order: :desc,
-        search_term: applied_search
+        search_term: applied_search,
+        is_admin: is_content_admin
       )
 
     total_count = determine_total(projects)
@@ -161,7 +162,7 @@ defmodule OliWeb.Projects.ProjectsLive do
     ~H"""
     {render_modal(assigns)}
 
-    <div>
+    <div class="h-full">
       <div class="flex justify-between items-center px-4">
         <span class="text-[#353740] dark:text-[#EEEBF5] text-2xl font-bold leading-loose">
           Browse Projects

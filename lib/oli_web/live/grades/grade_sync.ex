@@ -40,7 +40,7 @@ defmodule OliWeb.Grades.GradeSync do
         <div class="alert alert-danger" role="alert">
           <strong>{dgettext("grades", "Warning!")}</strong>
 
-          {dgettext("grades", "This operation will overwrite any grades in the LMS gradebook that
+          {dgettext("grades", "This operation will overwrite any scores in the LMS gradebook that
           were manually adjusted or overridden by the instructor.")}
         </div>
 

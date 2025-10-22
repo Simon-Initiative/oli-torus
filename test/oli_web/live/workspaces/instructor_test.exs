@@ -25,7 +25,7 @@ defmodule OliWeb.Workspaces.InstructorTest do
       refute has_element?(view, "div[role='account label']")
     end
 
-    test "can see product title, image and description in sections index with a link to manage it on instructor workspace",
+    test "can see product title, image and description in sections index with a link to it on instructor workspace",
          %{
            conn: conn,
            user: user
@@ -50,7 +50,7 @@ defmodule OliWeb.Workspaces.InstructorTest do
 
       assert has_element?(
                view,
-               ~s{a[href="/sections/#{section.slug}/manage?sidebar_expanded=true"]}
+               ~s{a[href="/sections/#{section.slug}/instructor_dashboard/insights/content"]}
              )
     end
 
