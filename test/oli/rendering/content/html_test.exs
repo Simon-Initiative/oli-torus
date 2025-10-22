@@ -157,5 +157,39 @@ defmodule Oli.Content.Content.HtmlTest do
       assert rendered_html_string =~
                "<p data-point-marker=\"c6929630baf84852849b804665882f90\">Among the following questions, which is a well-designed survey open-ended question?</p>"
     end
+
+    test "renders YouTube video with unique ID", %{author: author} do
+      youtube_content = %{
+        "type" => "youtube",
+        "src" => "fhdCslFcKFU",
+        "children" => [%{"text" => ""}]
+      }
+
+      context = %Context{user: author, section_slug: "test_section", is_liveview: true}
+
+      rendered_html = Content.render(context, youtube_content, Content.Html)
+      rendered_html_string = Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
+
+      # Should generate a unique ID
+      assert rendered_html_string =~ ~r/data-live-react-class="Components\.YoutubePlayer"/
+      assert rendered_html_string =~ ~r/id="youtube-[a-f0-9-]{36}"/
+    end
+
+    test "renders uploaded video with unique ID", %{author: author} do
+      video_content = %{
+        "type" => "video",
+        "src" => "https://example.com/video.mp4",
+        "children" => [%{"text" => ""}]
+      }
+
+      context = %Context{user: author, section_slug: "test_section", is_liveview: true}
+
+      rendered_html = Content.render(context, video_content, Content.Html)
+      rendered_html_string = Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
+
+      # Should generate a unique ID
+      assert rendered_html_string =~ ~r/data-live-react-class="Components\.VideoPlayer"/
+      assert rendered_html_string =~ ~r/id="video-[a-f0-9-]{36}"/
+    end
   end
 end

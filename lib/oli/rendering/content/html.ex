@@ -22,9 +22,6 @@ defmodule Oli.Rendering.Content.Html do
   @behaviour Oli.Rendering.Content
 
   def trigger(%Context{} = context, _, attrs) do
-    # Generate a unique ID for the LiveReact hook
-    trigger_id = attrs["id"] || "trigger-#{UUID.uuid4()}"
-
     {:safe, trigger} =
       OliWeb.Common.React.component(
         context,
@@ -34,7 +31,8 @@ defmodule Oli.Rendering.Content.Html do
           "resourceId" => context.page_id,
           "sectionSlug" => context.section_slug
         },
-        id: trigger_id
+        # Generate a unique ID for the LiveReact hook
+        id: "trigger-#{UUID.uuid4()}"
       )
 
     trigger
@@ -110,9 +108,6 @@ defmodule Oli.Rendering.Content.Html do
         attempt -> attempt.attempt_guid
       end
 
-    # Generate a unique ID for the LiveReact hook
-    video_id = attrs["id"] || "video-#{UUID.uuid4()}"
-
     {:safe, video_player} =
       OliWeb.Common.React.component(
         context,
@@ -125,7 +120,8 @@ defmodule Oli.Rendering.Content.Html do
             isAnnotationLevel: context.is_annotation_level
           }
         },
-        id: video_id
+        # Generate a unique ID for the LiveReact hook
+        id: "video-#{UUID.uuid4()}"
       )
 
     video_player
@@ -164,9 +160,6 @@ defmodule Oli.Rendering.Content.Html do
         attempt -> attempt.attempt_guid
       end
 
-    # Generate a unique ID for the LiveReact hook
-    video_id = attrs["id"] || "youtube-#{UUID.uuid4()}"
-
     {:safe, video_player} =
       OliWeb.Common.React.component(
         context,
@@ -179,7 +172,8 @@ defmodule Oli.Rendering.Content.Html do
             isAnnotationLevel: context.is_annotation_level
           }
         },
-        id: video_id
+        # Generate a unique ID for the LiveReact hook
+        id: "youtube-#{UUID.uuid4()}"
       )
 
     video_player
