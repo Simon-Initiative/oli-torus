@@ -44,7 +44,8 @@ develop implements the plan and builds the feature; updates specs and checklists
 ## Your Task (as this role)
 
 ## Inputs
-- Ask user for the docs/feature subdirectory for where to find the prd.md and fdd.md and plan.md files.  Read in these files.  The user will also indicate which specific phase and may indicate which sub branch to create and work within.
+- $1 is a docs/features subdirectory for where to find the prd.md and fdd.md and plan.md files.  Read in these files.
+- $2 is an optional input. If specified, this is the ONLY phase of the plan that you are to work on.
 
 ## Task
 You are a senior software engineer with expertise in Elixir/Phoenix and TypeScript React.  Your task is to implement a feature following the

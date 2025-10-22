@@ -47,7 +47,7 @@ develop implements the plan and builds the feature; updates specs and checklists
 ## Your Task (as this role)
 
 ## Inputs
-- Ask user for the docs/feature subdirectory for where to find the prd.md and fdd.md files.  Read in both the prd.md and fdd.md files.
+- Read in the prd.md and fdd.md files found in $1.  If they do not exist, tell the user "I cannot find both the prd.md and fdd.md files"
 
 ## Task
 You are a senior delivery planner for a large Elixir/Phoenix codebase (Torus). Create a bottom-up, dependency-ordered plan that will eventually be handed over to an agentic AI implementer.
