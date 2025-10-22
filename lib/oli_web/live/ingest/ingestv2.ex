@@ -109,7 +109,8 @@ defmodule OliWeb.Admin.IngestV2 do
         <Group.render label="Process" description="">
           <%= if @total_count > 0 do %>
             <div class="alert alert-warning" role="alert">
-              <i class="fas fa-exclamation-triangle fa-fw mr-2" aria-hidden="true" focusable="false"></i>
+              <i class="fas fa-exclamation-triangle fa-fw mr-2" aria-hidden="true" focusable="false">
+              </i>
               There are errors detected during preprocessing. Proceeding with ingestion
               will cause loss of data related to these errors (e.g., missing activities will not be
               ingested and references to them will be removed from pages).

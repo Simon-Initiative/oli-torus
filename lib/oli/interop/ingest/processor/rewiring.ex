@@ -200,6 +200,7 @@ defmodule Oli.Interop.Ingest.Processing.Rewiring do
       cond do
         is_nil(cleaned) ->
           acc
+
         true ->
           Map.put(acc, key, cleaned)
       end
