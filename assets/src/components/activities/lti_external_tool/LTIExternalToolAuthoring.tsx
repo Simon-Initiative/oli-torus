@@ -49,6 +49,7 @@ const LTIExternalTool: React.FC = () => {
               mode="authoring"
               name={ltiToolDetails.name}
               launchParams={ltiToolDetails.launch_params}
+              status={ltiToolDetails.status}
               resourceId={activityIdStr}
               openInNewTab={model.openInNewTab}
               height={model.height}

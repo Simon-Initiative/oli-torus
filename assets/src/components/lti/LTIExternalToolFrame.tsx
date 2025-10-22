@@ -7,6 +7,7 @@ type LTIExternalToolFrameProps = {
   name: string;
   launchParams: Record<string, string>;
   resourceId: string;
+  status: string;
   openInNewTab?: boolean;
   height?: number;
   onEditHeight?: (height: number | undefined) => void;
@@ -26,6 +27,7 @@ export const LTIExternalToolFrame = ({
   name,
   launchParams,
   resourceId,
+  status,
   openInNewTab,
   height,
   onEditHeight,
@@ -89,6 +91,9 @@ export const LTIExternalToolFrame = ({
 
   const { editingFrameHeight, setEditingFrameHeight } = useHeightAdjuster(frameRef, onEditHeight);
 
+  console.log(launchParams, 'launchParams.status');
+  console.log(status, 'status');
+
   return (
     <div className="w-full h-full">
       <form
@@ -147,7 +152,7 @@ export const LTIExternalToolFrame = ({
           />
         </>
       )}
-      {['disabled', 'deleted'].includes(launchParams.status) && (
+      {['disabled', 'deleted'].includes(status) && (
         <div className="w-[769px] p-6 my-4 rounded-2xl shadow-[0px_2px_10px_0px_rgba(0,50,99,0.10)] inline-flex gap-3 items-end">
           <div className="flex-1 flex flex-col gap-3">
             <div className="flex items-center gap-2">
