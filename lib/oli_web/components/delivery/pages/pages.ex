@@ -211,10 +211,7 @@ defmodule OliWeb.Components.Delivery.Pages do
                 Map.put(activity, :row_index, index)
               end)
 
-            selected_activities =
-              if params[:selected_activities] == [],
-                do: [],
-                else: Enum.map(params[:selected_activities], &String.to_integer(&1))
+            selected_activities = decode_selected_activities(params[:selected_activities])
 
             {:ok, table_model} = ActivitiesTableModel.new(activities_with_index)
 
@@ -560,8 +557,7 @@ defmodule OliWeb.Components.Delivery.Pages do
     activity_id = String.to_integer("#{activity_resource_id}")
 
     selected_activities =
-      socket.assigns.params.selected_activities
-      |> Enum.map(&String.to_integer("#{&1}"))
+      decode_selected_activities(socket.assigns.params.selected_activities)
       |> then(fn ids ->
         if activity_id in ids,
           do: Enum.reject(ids, &(&1 == activity_id)),
@@ -1192,6 +1188,14 @@ defmodule OliWeb.Components.Delivery.Pages do
   defp attempts_count(students_with_attempts_count, _total_attempts_count, :practice_pages) do
     ~s{#{students_with_attempts_count} #{Gettext.ngettext(OliWeb.Gettext, "student has responded", "students have responded", students_with_attempts_count)}}
   end
+
+  defp decode_selected_activities(nil), do: []
+
+  defp decode_selected_activities(list) when is_list(list),
+    do: list |> IO.inspect(label: "list!") |> Enum.map(&String.to_integer(&1))
+
+  defp decode_selected_activities(encoded_list) when is_binary(encoded_list),
+    do: Jason.decode!(encoded_list) |> Enum.map(&String.to_integer(&1))
 
   defp extract_back_url_params(params) do
     # Extract and decode the back_params parameter
