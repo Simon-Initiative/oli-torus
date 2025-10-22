@@ -91,9 +91,6 @@ export const LTIExternalToolFrame = ({
 
   const { editingFrameHeight, setEditingFrameHeight } = useHeightAdjuster(frameRef, onEditHeight);
 
-  console.log(launchParams, 'launchParams.status');
-  console.log(status, 'status');
-
   return (
     <div className="w-full h-full">
       <form
