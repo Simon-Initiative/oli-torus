@@ -86,11 +86,9 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModel do
   end
 
   defp render_expanded(assigns, assessment, _) do
-    index = Map.get(assessment, :row_index, 0)
-
     assigns =
       Map.merge(assigns, %{
-        id: "#{assessment.resource_id}_#{index}",
+        id: "#{assessment.resource_id}",
         target: assigns.model.data.target,
         assessment: assessment
       })

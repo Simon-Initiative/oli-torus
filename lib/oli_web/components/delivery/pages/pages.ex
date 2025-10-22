@@ -203,18 +203,14 @@ defmodule OliWeb.Components.Delivery.Pages do
                   else: acc
               end)
 
-            activities_with_index =
+            # Add order field to activities (1-based indexing for display)
+            activities_with_order =
               Enum.with_index(activities)
               |> Enum.map(fn {activity, index} ->
-                Map.merge(activity, %{row_index: index, order: index + 1})
+                Map.put(activity, :order, index + 1)
               end)
 
-            {total_count, rows} = apply_filters(activities_with_index, params)
-
-            # Update row_index after sorting to reflect the new order
-            rows =
-              Enum.with_index(rows)
-              |> Enum.map(fn {row, index} -> Map.put(row, :row_index, index) end)
+            {total_count, rows} = apply_filters(activities_with_order, params)
 
             selected_activities =
               if params[:selected_activities] == [],
