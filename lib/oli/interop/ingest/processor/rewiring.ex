@@ -200,10 +200,6 @@ defmodule Oli.Interop.Ingest.Processing.Rewiring do
       cond do
         is_nil(cleaned) ->
           acc
-
-        is_list(cleaned) ->
-          Map.put(acc, key, Enum.reject(cleaned, &is_nil/1))
-
         true ->
           Map.put(acc, key, cleaned)
       end
