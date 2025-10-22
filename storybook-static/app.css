@@ -930,6 +930,10 @@ select {
   accent-color: #1B191F80;
 }
 
+.bg-Surface-surface-secondary {
+  background-color: #FFFFFF;
+}
+
 .dark .bg-Surface-surface-secondary {
   background-color: #2B282E;
 }
@@ -2394,6 +2398,10 @@ select {
   fill: #FFFFFF;
 }
 
+.stroke-Text-text-white {
+  stroke: #FFFFFF;
+}
+
 .dark .stroke-Text-text-white {
   stroke: #FFFFFF;
 }
@@ -2480,6 +2488,10 @@ select {
 
 .dark .fill-Text-text-low {
   fill: #BAB8BF;
+}
+
+.stroke-Text-text-low {
+  stroke: #45464C;
 }
 
 .dark .stroke-Text-text-low {
@@ -3462,6 +3474,10 @@ select {
   --tw-ring-color: #FFFFFF;
 }
 
+.fill-Icon-icon-active {
+  fill: #353740;
+}
+
 .dark .fill-Icon-icon-active {
   fill: #FFFFFF;
 }
@@ -3806,6 +3822,10 @@ select {
   accent-color: #FF9040;
 }
 
+.bg-Specially-Tokens-Background-lesson-page {
+  background-color: #E6E9F2;
+}
+
 .dark .bg-Specially-Tokens-Background-lesson-page {
   background-color: #1B191F;
 }
@@ -4024,6 +4044,10 @@ select {
 
 .dark .accent-Specially-Tokens-Fill-fill-progress-bg {
   accent-color: #FFFFFF33;
+}
+
+.bg-Specially-Tokens-Fill-fill-detail-pill {
+  background-color: #FFFFFF;
 }
 
 .dark .bg-Specially-Tokens-Fill-fill-detail-pill {
@@ -4282,12 +4306,20 @@ select {
   accent-color: #EEEBF5;
 }
 
+.bg-Specially-Tokens-Border-border-input {
+  background-color: #CED1D9;
+}
+
 .dark .bg-Specially-Tokens-Border-border-input {
   background-color: #2B282E;
 }
 
 .dark .text-Specially-Tokens-Border-border-input {
   color: #2B282E;
+}
+
+.border-Specially-Tokens-Border-border-input {
+  border-color: #CED1D9;
 }
 
 .dark .border-Specially-Tokens-Border-border-input {
@@ -4536,6 +4568,10 @@ select {
 
 .dark .bg-Specially-Tokens-Text-text-button-secondary {
   background-color: #FFFFFF;
+}
+
+.text-Specially-Tokens-Text-text-button-secondary {
+  color: #006CD9;
 }
 
 .dark .text-Specially-Tokens-Text-text-button-secondary {
@@ -8446,6 +8482,10 @@ table.table-striped tbody tr:nth-child(even) {
   left: 0.5rem;
 }
 
+.left-2\.5 {
+  left: 0.625rem;
+}
+
 .left-20 {
   left: 5rem;
 }
@@ -8510,10 +8550,6 @@ table.table-striped tbody tr:nth-child(even) {
   right: 0.75rem;
 }
 
-.right-5 {
-  right: 1.25rem;
-}
-
 .right-6 {
   right: 1.5rem;
 }
@@ -8532,14 +8568,6 @@ table.table-striped tbody tr:nth-child(even) {
 
 .right-\[1px\] {
   right: 1px;
-}
-
-.right-\[380px\] {
-  right: 380px;
-}
-
-.right-\[505px\] {
-  right: 505px;
 }
 
 .top-0 {
@@ -8582,6 +8610,10 @@ table.table-striped tbody tr:nth-child(even) {
   top: 0.5rem;
 }
 
+.top-2\.5 {
+  top: 0.625rem;
+}
+
 .top-20 {
   top: 5rem;
 }
@@ -8600,10 +8632,6 @@ table.table-striped tbody tr:nth-child(even) {
 
 .top-4 {
   top: 1rem;
-}
-
-.top-5 {
-  top: 1.25rem;
 }
 
 .top-6 {
@@ -9212,6 +9240,10 @@ table.table-striped tbody tr:nth-child(even) {
   margin-right: 1.5rem;
 }
 
+.mr-8 {
+  margin-right: 2rem;
+}
+
 .mr-9 {
   margin-right: 2.25rem;
 }
@@ -9248,10 +9280,6 @@ table.table-striped tbody tr:nth-child(even) {
   margin-top: 2.5rem;
 }
 
-.mt-11 {
-  margin-top: 2.75rem;
-}
-
 .mt-12 {
   margin-top: 3rem;
 }
@@ -9266,10 +9294,6 @@ table.table-striped tbody tr:nth-child(even) {
 
 .mt-2 {
   margin-top: 0.5rem;
-}
-
-.mt-20 {
-  margin-top: 5rem;
 }
 
 .mt-3 {
@@ -9813,6 +9837,10 @@ table.table-striped tbody tr:nth-child(even) {
   max-height: 24rem;
 }
 
+.max-h-\[400px\] {
+  max-height: 400px;
+}
+
 .max-h-\[40px\] {
   max-height: 40px;
 }
@@ -9825,12 +9853,16 @@ table.table-striped tbody tr:nth-child(even) {
   max-height: 80vh;
 }
 
-.max-h-\[calc\(100vh-400px\)\] {
-  max-height: calc(100vh - 400px);
+.max-h-\[85vh\] {
+  max-height: 85vh;
 }
 
-.max-h-\[calc\(100vh-96px\)\] {
-  max-height: calc(100vh - 96px);
+.max-h-\[calc\(100vh-176px\)\] {
+  max-height: calc(100vh - 176px);
+}
+
+.max-h-\[calc\(100vh-400px\)\] {
+  max-height: calc(100vh - 400px);
 }
 
 .max-h-screen {
@@ -9845,6 +9877,10 @@ table.table-striped tbody tr:nth-child(even) {
   min-height: 100px;
 }
 
+.min-h-\[100vh\] {
+  min-height: 100vh;
+}
+
 .min-h-\[150px\] {
   min-height: 150px;
 }
@@ -9855,6 +9891,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .min-h-\[34px\] {
   min-height: 34px;
+}
+
+.min-h-\[400px\] {
+  min-height: 400px;
 }
 
 .min-h-\[40px\] {
@@ -10217,10 +10257,6 @@ table.table-striped tbody tr:nth-child(even) {
   width: 341px;
 }
 
-.w-\[360px\] {
-  width: 360px;
-}
-
 .w-\[36px\] {
   width: 36px;
 }
@@ -10243,10 +10279,6 @@ table.table-striped tbody tr:nth-child(even) {
 
 .w-\[465px\] {
   width: 465px;
-}
-
-.w-\[485px\] {
-  width: 485px;
 }
 
 .w-\[48px\] {
@@ -11541,6 +11573,11 @@ table.table-striped tbody tr:nth-child(even) {
   border-bottom-right-radius: 0.125rem;
 }
 
+.rounded-t-2xl {
+  border-top-left-radius: 1rem;
+  border-top-right-radius: 1rem;
+}
+
 .rounded-t-3xl {
   border-top-left-radius: 1.5rem;
   border-top-right-radius: 1.5rem;
@@ -11803,10 +11840,6 @@ table.table-striped tbody tr:nth-child(even) {
 .border-\[\#D4D4D4\] {
   --tw-border-opacity: 1;
   border-color: rgb(212 212 212 / var(--tw-border-opacity));
-}
-
-.border-\[\#D9D9D9\]\/75 {
-  border-color: rgb(217 217 217 / 0.75);
 }
 
 .border-\[\#E8E8E8\] {
@@ -13019,10 +13052,6 @@ table.table-striped tbody tr:nth-child(even) {
   stroke: #353740;
 }
 
-.stroke-\[\#383A44\] {
-  stroke: #383A44;
-}
-
 .stroke-\[\#3B76D3\] {
   stroke: #3B76D3;
 }
@@ -13898,14 +13927,6 @@ table.table-striped tbody tr:nth-child(even) {
   font-size: 32px;
 }
 
-.text-\[38px\] {
-  font-size: 38px;
-}
-
-.text-\[40px\] {
-  font-size: 40px;
-}
-
 .text-\[64px\] {
   font-size: 64px;
 }
@@ -14081,10 +14102,6 @@ table.table-striped tbody tr:nth-child(even) {
 
 .leading-\[44px\] {
   line-height: 44px;
-}
-
-.leading-\[60px\] {
-  line-height: 60px;
 }
 
 .leading-\[76px\] {
@@ -14631,16 +14648,6 @@ table.table-striped tbody tr:nth-child(even) {
   color: rgb(115 115 115 / var(--tw-text-opacity));
 }
 
-.text-neutral-700 {
-  --tw-text-opacity: 1;
-  color: rgb(64 64 64 / var(--tw-text-opacity));
-}
-
-.text-neutral-800 {
-  --tw-text-opacity: 1;
-  color: rgb(38 38 38 / var(--tw-text-opacity));
-}
-
 .text-orange-800 {
   --tw-text-opacity: 1;
   color: rgb(154 52 18 / var(--tw-text-opacity));
@@ -14724,11 +14731,6 @@ table.table-striped tbody tr:nth-child(even) {
 .text-slate-300 {
   --tw-text-opacity: 1;
   color: rgb(203 213 225 / var(--tw-text-opacity));
-}
-
-.text-stone-700 {
-  --tw-text-opacity: 1;
-  color: rgb(68 64 60 / var(--tw-text-opacity));
 }
 
 .text-stone-900 {
@@ -20754,10 +20756,6 @@ Not supports in Firefox and IE */
   text-decoration-line: none;
 }
 
-.hover\:underline-offset-2:hover {
-  text-underline-offset: 2px;
-}
-
 .hover\:underline-offset-8:hover {
   text-underline-offset: 8px;
 }
@@ -22080,10 +22078,6 @@ Not supports in Firefox and IE */
   background-color: rgb(39 39 42 / var(--tw-bg-opacity));
 }
 
-.dark .dark\:bg-opacity-10 {
-  --tw-bg-opacity: 0.1;
-}
-
 .dark .dark\:bg-opacity-100 {
   --tw-bg-opacity: 1;
 }
@@ -22517,11 +22511,6 @@ Not supports in Firefox and IE */
 .dark .dark\:text-red-800 {
   --tw-text-opacity: 1;
   color: rgb(153 27 27 / var(--tw-text-opacity));
-}
-
-.dark .dark\:text-stone-300 {
-  --tw-text-opacity: 1;
-  color: rgb(214 211 209 / var(--tw-text-opacity));
 }
 
 .dark .dark\:text-violet-100 {
@@ -23195,12 +23184,44 @@ Not supports in Firefox and IE */
 }
 
 @media (min-width: 640px) {
+  .sm\:sticky {
+    position: sticky;
+  }
+
+  .sm\:bottom-20 {
+    bottom: 5rem;
+  }
+
+  .sm\:left-4 {
+    left: 1rem;
+  }
+
+  .sm\:right-0 {
+    right: 0px;
+  }
+
   .sm\:right-\[-28px\] {
     right: -28px;
   }
 
   .sm\:right-\[1px\] {
     right: 1px;
+  }
+
+  .sm\:right-\[380px\] {
+    right: 380px;
+  }
+
+  .sm\:right-\[505px\] {
+    right: 505px;
+  }
+
+  .sm\:top-20 {
+    top: 5rem;
+  }
+
+  .sm\:top-4 {
+    top: 1rem;
   }
 
   .sm\:col-span-1 {
@@ -23231,6 +23252,15 @@ Not supports in Firefox and IE */
     grid-column: span 6 / span 6;
   }
 
+  .sm\:m-6 {
+    margin: 1.5rem;
+  }
+
+  .sm\:mx-2 {
+    margin-left: 0.5rem;
+    margin-right: 0.5rem;
+  }
+
   .sm\:my-8 {
     margin-top: 2rem;
     margin-bottom: 2rem;
@@ -23240,12 +23270,32 @@ Not supports in Firefox and IE */
     margin-bottom: 0px;
   }
 
+  .sm\:mb-11 {
+    margin-bottom: 2.75rem;
+  }
+
+  .sm\:ml-0 {
+    margin-left: 0px;
+  }
+
   .sm\:ml-3 {
     margin-left: 0.75rem;
   }
 
   .sm\:ml-4 {
     margin-left: 1rem;
+  }
+
+  .sm\:ml-6 {
+    margin-left: 1.5rem;
+  }
+
+  .sm\:ml-auto {
+    margin-left: auto;
+  }
+
+  .sm\:mr-0 {
+    margin-right: 0px;
   }
 
   .sm\:mr-2 {
@@ -23262,6 +23312,10 @@ Not supports in Firefox and IE */
 
   .sm\:mt-0 {
     margin-top: 0px;
+  }
+
+  .sm\:mt-2 {
+    margin-top: 0.5rem;
   }
 
   .sm\:mt-20 {
@@ -23284,6 +23338,10 @@ Not supports in Firefox and IE */
     display: flex;
   }
 
+  .sm\:inline-flex {
+    display: inline-flex;
+  }
+
   .sm\:hidden {
     display: none;
   }
@@ -23292,8 +23350,36 @@ Not supports in Firefox and IE */
     height: 60px;
   }
 
+  .sm\:h-auto {
+    height: auto;
+  }
+
+  .sm\:h-full {
+    height: 100%;
+  }
+
   .sm\:h-screen {
     height: 100vh;
+  }
+
+  .sm\:max-h-\[50vh\] {
+    max-height: 50vh;
+  }
+
+  .sm\:max-h-\[75vh\] {
+    max-height: 75vh;
+  }
+
+  .sm\:w-3\/4 {
+    width: 75%;
+  }
+
+  .sm\:w-\[360px\] {
+    width: 360px;
+  }
+
+  .sm\:w-\[485px\] {
+    width: 485px;
   }
 
   .sm\:w-\[60px\] {
@@ -23357,6 +23443,14 @@ Not supports in Firefox and IE */
     align-items: center;
   }
 
+  .sm\:gap-9 {
+    gap: 2.25rem;
+  }
+
+  .sm\:rounded-2xl {
+    border-radius: 1rem;
+  }
+
   .sm\:rounded-lg {
     border-radius: 0.5rem;
   }
@@ -23377,8 +23471,12 @@ Not supports in Firefox and IE */
     padding: 0px;
   }
 
-  .sm\:p-16 {
-    padding: 4rem;
+  .sm\:p-14 {
+    padding: 3.5rem;
+  }
+
+  .sm\:p-3 {
+    padding: 0.75rem;
   }
 
   .sm\:p-6 {
@@ -23395,6 +23493,21 @@ Not supports in Firefox and IE */
     padding-right: 4rem;
   }
 
+  .sm\:px-2 {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+
+  .sm\:px-4 {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .sm\:px-5 {
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+  }
+
   .sm\:px-6 {
     padding-left: 1.5rem;
     padding-right: 1.5rem;
@@ -23403,6 +23516,21 @@ Not supports in Firefox and IE */
   .sm\:px-9 {
     padding-left: 2.25rem;
     padding-right: 2.25rem;
+  }
+
+  .sm\:px-\[80px\] {
+    padding-left: 80px;
+    padding-right: 80px;
+  }
+
+  .sm\:py-3 {
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+  }
+
+  .sm\:py-4 {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
   }
 
   .sm\:py-8 {
@@ -23416,6 +23544,14 @@ Not supports in Firefox and IE */
 
   .sm\:pb-4 {
     padding-bottom: 1rem;
+  }
+
+  .sm\:pt-14 {
+    padding-top: 3.5rem;
+  }
+
+  .sm\:pt-20 {
+    padding-top: 5rem;
   }
 
   .sm\:text-left {
@@ -23434,6 +23570,20 @@ Not supports in Firefox and IE */
     vertical-align: middle;
   }
 
+  .sm\:text-3xl {
+    font-size: 1.875rem;
+    line-height: 2.25rem;
+  }
+
+  .sm\:text-\[40px\] {
+    font-size: 40px;
+  }
+
+  .sm\:text-base {
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+
   .sm\:text-sm {
     font-size: 0.875rem;
     line-height: 1.25rem;
@@ -23442,6 +23592,10 @@ Not supports in Firefox and IE */
   .sm\:text-xl {
     font-size: 1.25rem;
     line-height: 1.75rem;
+  }
+
+  .sm\:leading-\[60px\] {
+    line-height: 60px;
   }
 
   .sm\:shadow-lg {
@@ -23934,20 +24088,8 @@ Not supports in Firefox and IE */
     bottom: 0px;
   }
 
-  .lg\:bottom-2 {
-    bottom: 0.5rem;
-  }
-
   .lg\:left-0 {
     left: 0px;
-  }
-
-  .lg\:left-\[70px\] {
-    left: 70px;
-  }
-
-  .lg\:right-10 {
-    right: 2.5rem;
   }
 
   .lg\:right-\[-23px\] {
@@ -23960,10 +24102,6 @@ Not supports in Firefox and IE */
 
   .lg\:top-0 {
     top: 0px;
-  }
-
-  .lg\:top-10 {
-    top: 2.5rem;
   }
 
   .lg\:col-span-2 {
@@ -23988,6 +24126,10 @@ Not supports in Firefox and IE */
     margin-right: auto;
   }
 
+  .lg\:mb-11 {
+    margin-bottom: 2.75rem;
+  }
+
   .lg\:mb-14 {
     margin-bottom: 3.5rem;
   }
@@ -24006,6 +24148,10 @@ Not supports in Firefox and IE */
 
   .lg\:mt-10 {
     margin-top: 2.5rem;
+  }
+
+  .lg\:mt-11 {
+    margin-top: 2.75rem;
   }
 
   .lg\:mt-2 {
@@ -24066,6 +24212,10 @@ Not supports in Firefox and IE */
 
   .lg\:h-screen {
     height: 100vh;
+  }
+
+  .lg\:max-h-\[80vh\] {
+    max-height: 80vh;
   }
 
   .lg\:\!w-3\/4 {
@@ -24234,12 +24384,12 @@ Not supports in Firefox and IE */
     padding: 2.5rem;
   }
 
-  .lg\:p-2 {
-    padding: 0.5rem;
+  .lg\:p-16 {
+    padding: 4rem;
   }
 
-  .lg\:p-20 {
-    padding: 5rem;
+  .lg\:p-2 {
+    padding: 0.5rem;
   }
 
   .lg\:px-10 {
@@ -24302,6 +24452,10 @@ Not supports in Firefox and IE */
     padding-top: 2.5rem;
   }
 
+  .lg\:pt-16 {
+    padding-top: 4rem;
+  }
+
   .lg\:pt-6 {
     padding-top: 1.5rem;
   }
@@ -24322,6 +24476,10 @@ Not supports in Firefox and IE */
   .lg\:text-4xl {
     font-size: 2.25rem;
     line-height: 2.5rem;
+  }
+
+  .lg\:text-\[40px\] {
+    font-size: 40px;
   }
 
   .lg\:text-lg {
@@ -24398,13 +24556,17 @@ Not supports in Firefox and IE */
     gap: 8rem;
   }
 
-  .xl\:p-28 {
-    padding: 7rem;
+  .xl\:p-20 {
+    padding: 5rem;
   }
 
   .xl\:px-32 {
     padding-left: 8rem;
     padding-right: 8rem;
+  }
+
+  .xl\:pt-20 {
+    padding-top: 5rem;
   }
 
   .xl\:text-4xl {
