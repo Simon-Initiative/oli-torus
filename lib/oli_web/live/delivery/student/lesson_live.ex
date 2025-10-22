@@ -259,17 +259,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         |> assign_scripts()
         |> slim_assigns()
 
-      authoring_scripts =
-        Enum.map(socket.assigns.activity_types, fn at -> at.authoring_script end)
-
       script_sources =
-        Enum.map(
-          socket.assigns.scripts ++
-            socket.assigns.part_scripts ++ ["delivery.js"] ++ authoring_scripts,
-          fn script ->
-            "/js/#{script}"
-          end
-        )
+        Enum.map(socket.assigns.scripts, fn script -> "/js/#{script}" end)
 
       {:ok, push_event(socket, "load_survey_scripts", %{script_sources: script_sources})}
     else
@@ -1205,10 +1196,6 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       >
       </iframe>
     </div>
-
-    {OliWeb.LayoutView.additional_stylesheets(%{
-      additional_stylesheets: @additional_stylesheets
-    })}
     """
   end
 
