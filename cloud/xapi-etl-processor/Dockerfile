@@ -15,8 +15,8 @@ COPY lambda_function.py /opt/package/
 
 RUN yum install -y zip \
  && cd /opt/package \
- && zip -r9 /tmp/simple-clickhouse-etl.zip .
+ && zip -r9 /tmp/xapi-etl-processor.zip .
 
 FROM scratch AS export
 
-COPY --from=build /tmp/simple-clickhouse-etl.zip /
+COPY --from=build /tmp/xapi-etl-processor.zip /

@@ -16,8 +16,8 @@ RUN pip install --upgrade pip \
 RUN yum install -y zip
 
 RUN cd /opt \
-    && zip -r9 /tmp/simple-clickhouse-layer.zip python
+    && zip -r9 /tmp/xapi-etl-processor-layer.zip python
 
 FROM scratch AS export
 
-COPY --from=build /tmp/simple-clickhouse-layer.zip /
+COPY --from=build /tmp/xapi-etl-processor-layer.zip /

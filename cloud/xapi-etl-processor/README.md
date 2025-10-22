@@ -1,4 +1,4 @@
-# Simple ClickHouse ETL Pipeline (S3 → SQS → Lambda)
+# XAPI ETL Processor (S3 → SQS → Lambda)
 
 This package contains a standalone AWS Lambda implementation that ingests JSONL
 objects written to S3, batches them into Parquet format, and streams the Parquet
@@ -23,7 +23,7 @@ required.
 ## Layout
 
 ```
-cloud/simple-clickhouse-etl/
+cloud/xapi-etl-processor/
 ├── lambda_function.py   # Lambda handler & helpers
 ├── requirements.txt     # Python dependencies
 └── README.md            # This guide
@@ -62,7 +62,7 @@ Layer that contains the heavy dependencies (`pyarrow`, `numpy`, `requests`).
 
 ### 1. Build the Lambda Layer
 
-From `cloud/simple-clickhouse-etl/` run:
+From `cloud/xapi-etl-processor/` run:
 
 ```bash
 ARCH_FLAG=linux/amd64   # or linux/arm64 for Graviton Lambdas
@@ -70,22 +70,22 @@ docker build --platform "$ARCH_FLAG" \
   --output dist \
   -f layer/Dockerfile .
 ls dist/
-# simple-clickhouse-layer.zip
+# xapi-etl-processor-layer.zip
 ```
 
 Publish the layer and note the returned ARN:
 
 ```bash
-LAYER_NAME=simple-clickhouse-deps
+LAYER_NAME=xapi-etl-processor-deps
 aws lambda publish-layer-version \
   --layer-name "$LAYER_NAME" \
   --compatible-runtimes python3.11 \
-  --zip-file fileb://dist/simple-clickhouse-layer.zip
+  --zip-file fileb://dist/xapi-etl-processor-layer.zip
 
 # If the layer archive exceeds the direct upload limit (~70 MB), stage it in S3:
 S3_BUCKET=my-layer-artifacts
-S3_DEPS_LAYER_KEY=lambda/simple-clickhouse-layer.zip
-aws s3 cp dist/simple-clickhouse-layer.zip s3://$S3_BUCKET/$S3_DEPS_LAYER_KEY
+S3_DEPS_LAYER_KEY=lambda/xapi-etl-processor-layer.zip
+aws s3 cp dist/xapi-etl-processor-layer.zip s3://$S3_BUCKET/$S3_DEPS_LAYER_KEY
 aws lambda publish-layer-version \
   --layer-name "$LAYER_NAME" \
   --compatible-runtimes python3.11 \
@@ -114,8 +114,8 @@ With dependencies moved into the layer, the handler bundle only contains
 `lambda_function.py`:
 
 ```bash
-cd cloud/simple-clickhouse-etl
-zip -j dist/simple-clickhouse-handler.zip lambda_function.py
+cd cloud/xapi-etl-processor
+zip -j dist/xapi-etl-processor-handler.zip lambda_function.py
 ```
 
 Deploy the handler ZIP (small enough for direct upload):
@@ -123,7 +123,7 @@ Deploy the handler ZIP (small enough for direct upload):
 ```bash
 aws lambda update-function-code \
   --function-name "$LAMBDA_NAME" \
-  --zip-file fileb://dist/simple-clickhouse-handler.zip
+  --zip-file fileb://dist/xapi-etl-processor-handler.zip
 ```
 
 If you prefer staging in S3, replace the last command with the
@@ -160,8 +160,8 @@ environment.
 
 ### 2. Provision the SQS queues
 
-1. Create a **standard** SQS queue, e.g. `clickhouse-etl-events`.
-2. Create a second queue, e.g. `clickhouse-etl-dlq`, to serve as the DLQ.
+1. Create a **standard** SQS queue, e.g. `xapi-etl-processor-events`.
+2. Create a second queue, e.g. `xapi-etl-processor-dlq`, to serve as the DLQ.
 3. Configure the main queue with a redrive policy that points to the DLQ (choose
    a `maxReceiveCount` suitable for your retry tolerance, e.g. `5`).
 4. Set the main queue visibility timeout to at least **2×** the Lambda timeout.
@@ -263,7 +263,7 @@ Install dev dependencies and run the unit tests (Python 3.11 recommended so
 `pyarrow` wheels are available):
 
 ```bash
-cd cloud/simple-clickhouse-etl
+cd cloud/xapi-etl-processor
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt pytest
