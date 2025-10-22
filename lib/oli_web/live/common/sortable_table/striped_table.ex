@@ -150,7 +150,7 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
   def render(assigns) do
     ~H"""
     <table
-      id="sortable-table"
+      id={"sortable-table-#{@model.data[:view_type]}-#{Ecto.UUID.generate()}"}
       class={"min-w-full border table-fixed " <> @additional_table_class}
       phx-hook="SyncChevronState"
     >
