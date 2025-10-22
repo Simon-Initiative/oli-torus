@@ -11877,6 +11877,11 @@ table.table-striped tbody tr:nth-child(even) {
   border-color: rgb(231 231 231 / var(--tw-border-opacity));
 }
 
+.border-amber-200 {
+  --tw-border-opacity: 1;
+  border-color: rgb(253 230 138 / var(--tw-border-opacity));
+}
+
 .border-black {
   --tw-border-opacity: 1;
   border-color: rgb(0 0 0 / var(--tw-border-opacity));
@@ -12339,6 +12344,16 @@ table.table-striped tbody tr:nth-child(even) {
 
 .bg-\[rgba\(0\2c 0\2c 0\2c 0\.01\)\] {
   background-color: rgba(0,0,0,0.01);
+}
+
+.bg-amber-100 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(254 243 199 / var(--tw-bg-opacity));
+}
+
+.bg-amber-50 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(255 251 235 / var(--tw-bg-opacity));
 }
 
 .bg-black {
@@ -14444,6 +14459,11 @@ table.table-striped tbody tr:nth-child(even) {
 .text-amber-400 {
   --tw-text-opacity: 1;
   color: rgb(251 191 36 / var(--tw-text-opacity));
+}
+
+.text-amber-900 {
+  --tw-text-opacity: 1;
+  color: rgb(120 53 15 / var(--tw-text-opacity));
 }
 
 .text-black {
@@ -23441,6 +23461,10 @@ Not supports in Firefox and IE */
 
   .sm\:items-center {
     align-items: center;
+  }
+
+  .sm\:justify-between {
+    justify-content: space-between;
   }
 
   .sm\:gap-9 {
