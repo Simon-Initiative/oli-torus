@@ -2,85 +2,92 @@
 
 This platform contains the automated e2e tests.
 
-## Execute tests
+## 🔑 Required environment variables
 
-Runs the end-to-end tests.
+### 📄 login.env
 
-```bash
-npm run test
+Before running the tests, make sure you configure the following environment variables in a .env file, which must be located at `tests/resources/login.env` These are required for authenticating the users and accessing the platform.
+
+```env
+BASE_URL=https://your-url.com
+
+EMAIL_AUTHOR=your_author_email@example.com
+PASS_AUTHOR=your_author_password
+
+EMAIL_STUDENT=your_student_email@example.com
+PASS_STUDENT=your_student_password
+NAME_STUDENT=Your Student Name
+LASTNAME_STUDENT=Your Student last name
+
+EMAIL_INSTRUCTOR=your_instructor_email@example.com
+PASS_INSTRUCTOR=your_instructor_password
+
+EMAIL_ADMIN=your_admin_email@example.com
+PASS_ADMIN=your_admin_password
 ```
 
-Starts the interactive UI mode.
+### config.env
+
+This file is located in `tests/resources/login.env`
+
+| Name                 | Accepted values | Description                                                                                                     |
+| -------------------- | --------------- | --------------------------------------------------------------------------------------------------------------- |
+| `AUTO_CLOSE_BROWSER` | `true`, `false` | Closes the browser automatically after the run. Set to `false` to keep it open for debugging between test runs. |
+
+## 🧪 Configuration Tests & Report
+
+Install dependencies
 
 ```bash
-npm run test-ui
+npm i
 ```
 
-Runs the tests only on Desktop Chromium.
+Run the configuration for testing
 
 ```bash
-npm run test-chromium
+npm run test-config
 ```
 
-Runs the tests in debug mode.
+Run it in headed mode (visible browser)
 
 ```bash
-npm run test-debug
+npm run test-config:headed
 ```
 
-Auto generate tests with Codegen.
-
-```bash
-npm run codegen
-```
-
-Show the tests report
+Open the latest Playwright HTML report
 
 ```bash
 npm run show-report
 ```
 
-## Visual Studio Code tools
+## 🤖 Automated Configurations
 
-[Playwright Test for VSCode](https://marketplace.visualstudio.com/items?itemName=ms-playwright.playwright)
+These configurations are executed **before running the tests** and are already automated.  
+The following processes are included.
 
-With this plugin we can:
+### 📁 Project Creation
 
-- pick a locator
-- record a new test
-- select the browser to execute the tests
-- select the settings to apply in to the tests
+The following projects are automatically created with these names:
 
-## Required environment variables
+- `TQA-10-automation`
+- `TQA-11-automation`
+- `TQA-12-automation`
+- `TQA-13-automation`
+- `TQA-14-automation`
+- `TQA-15-automation`
+- `TQA-17-automation`
 
-Before running the tests, make sure you configure the following environment variables in a .env file. These are required for authenticating the users and accessing the platform.
+### 🎨 Multimedia File Configuration
 
-```env
-BASE_URL=https://your-url.com
-EMAIL_AUTHOR=your_author_email@example.com
-PASS_AUTHOR=your_author_password
-EMAIL_STUDENT=your_student_email@example.com
-PASS_STUDENT=your_student_password
-NAME_STUDENT=Your Student Name
-EMAIL_INSTRUCTOR=your_instructor_email@example.com
-PASS_INSTRUCTOR=your_instructor_password
-EMAIL_ADMIN=your_admin_email@example.com
-PASS_ADMIN=your_admin_password
+The upload of multimedia resources is automated for the following projects:
 
-```
-### 🧪 Test data setup
+| 📂 Project Name   | 📄 File Name            | 🏷️ Type |
+| :---------------- | :---------------------- | :------ |
+| TQA-12-automation | img-mock-05-16-2025.jpg | image   |
+| TQA-13-automation | img-mock-05-16-2025.jpg | image   |
+| TQA-13-automation | audio-test-01.mp3       | audio   |
+| TQA-13-automation | video-test-01.mp4       | video   |
 
-Before running this suite, verify that:
+## 🧩 Platform Features
 
-- The **author** user has access to projects with the following IDs:
-  - `tqa10automation`
-  - `tqa11automation`
-  - `tqa12automation` must have `img-mock-05-16-2025.jpg`
-  - `tqa13automation` must have `img-mock-05-16-2025.jpg` `audio-test-01.mp3` `video-test-01.mp4`
-  - `tqa14automation`
-  - `tqa15automation`
-- The above projects should exist on the platform. Some tests depend on navigating directly to those project URLs.
-- The **media files** used in tests must be uploaded and available in the media library. These include:
-  - `img-mock-05-16-2025.jpg`
-  - `audio-test-01.mp3`
-  - `video-test-01.mp4`
+[View the features](PLATFORM_FEATURES.md)
