@@ -164,11 +164,11 @@ defmodule OliWeb.Admin.RestoreUserProgress do
                   ""
                 end}
               </td>
-              <td><%= Map.get(@user_enrollments, user.id, "") %></td>
-              <td><%= user.id %></td>
-              <td><%= user.given_name %></td>
-              <td><%= user.family_name %></td>
-              <td><%= user.email %></td>
+              <td>{Map.get(@user_enrollments, user.id, "")}</td>
+              <td>{user.id}</td>
+              <td>{user.given_name}</td>
+              <td>{user.family_name}</td>
+              <td>{user.email}</td>
             </tr>
           <% end %>
         </tbody>
