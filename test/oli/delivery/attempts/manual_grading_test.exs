@@ -334,7 +334,7 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
     end
 
     test "applies manual scoring and updates states", %{
-section: section,
+      section: section,
       attempt_1a: attempt_1a
     } do
       results =

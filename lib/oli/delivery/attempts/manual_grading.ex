@@ -329,7 +329,9 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
 
     # Use the existing save_student_input function to update the response attribute
     case Oli.Delivery.Attempts.ActivityLifecycle.save_student_input(part_inputs) do
-      {:ok, _} -> :ok
+      {:ok, _} ->
+        :ok
+
       {:error, error} ->
         Oli.Utils.log_error("Failed to restore original responses", error)
         :error
