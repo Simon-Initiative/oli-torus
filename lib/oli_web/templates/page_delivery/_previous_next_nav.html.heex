@@ -4,10 +4,10 @@
 >
   <%= cond do %>
     <% @previous_page != nil -> %>
-      <%= OliWeb.PageDeliveryView.prev_link(%{
+      {OliWeb.PageDeliveryView.prev_link(%{
         to: previous_url(@conn, @previous_page, @preview_mode, @section_slug),
         title: previous_title(@previous_page)
-      }) %>
+      })}
     <% true -> %>
       <div class="page-nav-link-placeholder"></div>
   <% end %>
@@ -31,16 +31,16 @@
 
   <%= cond do %>
     <% @next_page != nil -> %>
-      <%= OliWeb.PageDeliveryView.next_link(%{
+      {OliWeb.PageDeliveryView.next_link(%{
         to: next_url(@conn, @next_page, @preview_mode, @section_slug),
         title: next_title(@next_page)
-      }) %>
+      })}
     <% true -> %>
       <%= link to: ~p"/sections/#{@section_slug}", class: "page-nav-link btn" do %>
         <div class="flex items-center justify-between">
           <div class="flex flex-col text-left">
             <div class="nav-label">Complete</div>
-            <div class="nav-title"><%= @section.title %></div>
+            <div class="nav-title">{@section.title}</div>
           </div>
           <div>
             <i class="fas fa-check nav-icon"></i>

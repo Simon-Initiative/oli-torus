@@ -225,7 +225,7 @@ defmodule OliWeb.Common.Table.SortableTableModel do
 
     ~H"""
     <.link href={@route_path} class={@class}>
-      <%= @label %>
+      {@label}
     </.link>
     """
   end
@@ -234,7 +234,7 @@ defmodule OliWeb.Common.Table.SortableTableModel do
     assigns = Map.merge(assigns, %{text: text, class: class})
 
     ~H"""
-    <span class={@class}><%= @text %></span>
+    <span class={@class}>{@text}</span>
     """
   end
 

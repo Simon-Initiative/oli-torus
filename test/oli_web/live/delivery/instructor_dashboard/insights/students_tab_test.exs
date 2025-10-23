@@ -80,8 +80,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       # Renders correct column title
       assert has_element?(
                view,
-               "th[phx-value-sort_by=\"student_completion\"]",
-               "STUDENT PROGRESS"
+               "th[phx-value-sort_by='student_completion']",
+               "Class Progress"
              )
 
       # Link that triggers the opening of the modal
@@ -111,7 +111,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
              )
 
       # Students table gets rendered
-      assert has_element?(view, "h4", "Students")
+      assert element(view, "h4") |> render() =~ "Student"
 
       assert render(view) =~
                OliWeb.Common.Utils.name(user.name, user.given_name, user.family_name)
@@ -138,11 +138,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
         view
         |> render()
         |> Floki.parse_fragment!()
-        |> Floki.find(~s{.instructor_dashboard_table tbody tr td:nth-child(2)})
+        |> Floki.find(~s{.instructor_dashboard_table tbody tr td:nth-child(3)})
         |> Enum.map(fn td -> Floki.text(td) end)
 
-      assert student_1_email == student_1.email
-      assert student_2_email == student_2.email
+      assert String.trim(student_1_email) == student_1.email
+      assert String.trim(student_2_email) == student_2.email
     end
 
     test "students last interaction gets rendered (for a student with interaction and yet with no interaction)",
@@ -182,14 +182,14 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
         view
         |> render()
         |> Floki.parse_fragment!()
-        |> Floki.find(~s{.instructor_dashboard_table tbody tr:nth-child(1) td:nth-child(3)})
+        |> Floki.find(~s{.instructor_dashboard_table tbody tr:nth-child(1) td:nth-child(4)})
         |> Enum.map(fn td -> Floki.text(td) end)
 
       [student_2_last_interaction] =
         view
         |> render()
         |> Floki.parse_fragment!()
-        |> Floki.find(~s{.instructor_dashboard_table tbody tr:nth-child(2) td:nth-child(3)})
+        |> Floki.find(~s{.instructor_dashboard_table tbody tr:nth-child(2) td:nth-child(4)})
         |> Enum.map(fn td -> Floki.text(td) end)
 
       assert student_1_last_interaction =~
@@ -421,7 +421,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       assert student_for_tr_2 =~ "Di Maria, Angelito"
 
       assert element(view, "#footer_paging > div:first-child") |> render() =~
-               "3 - 4 of 4 results"
+               "3 - 4 of 4 total"
 
       assert element(view, "li.page-item.active a", "2")
       refute render(view) =~ "Suarez, Luis"
@@ -430,7 +430,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       ### filtering by container
       params = %{container_id: mod1_resource.id}
 
-      {:ok, view, _html} = live(conn, live_view_students_route(section.slug, params))
+      {:ok, view, _html} =
+        live(conn, ~p"/sections/#{section.slug}/instructor_dashboard/insights/content?#{params}")
 
       progress =
         view
@@ -439,7 +440,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
         |> Floki.find(~s{.instructor_dashboard_table tr [data-progress-check]})
         |> Enum.map(fn div_tag -> Floki.text(div_tag) |> String.trim() end)
 
-      assert progress == ["3%", "2%", "0%", "2%"]
+      assert progress == ["10%", "7%", "0%", "7%"]
 
       ### filtering by no container
       ### (we want to get the progress across all course section)
@@ -468,7 +469,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
         |> Floki.find(~s{.instructor_dashboard_table tr [data-progress-check]})
         |> Enum.map(fn div_tag -> Floki.text(div_tag) |> String.trim() end)
 
-      assert progress == ["3%", "2%", "0%", "2%"]
+      assert progress == ["0%", "0%", "0%", "0%"]
 
       ### filtering by page
       params = %{page_id: page_1.published_resource.resource_id}
@@ -498,7 +499,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       {:ok, section_with_payment} =
         Sections.update_section(section, %{
           requires_payment: true,
-          amount: %{amount: "1000", currency: "USD"},
+          amount: Money.new(1000, "USD"),
           has_grace_period: false
         })
 
@@ -550,7 +551,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
           start_date: yesterday(),
           end_date: tomorrow(),
           requires_payment: true,
-          amount: %{amount: "1000", currency: "USD"},
+          amount: Money.new(1000, "USD"),
           has_grace_period: true,
           grace_period_days: 10
         })
@@ -590,7 +591,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       {:ok, section} =
         Sections.update_section(section, %{
           requires_payment: true,
-          amount: Money.new(:USD, 100),
+          amount: Money.new(100, "USD"),
           grace_period_days: 1
         })
 
@@ -642,7 +643,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
 
       # sorting by payment status in asc order
       view
-      |> element(".instructor_dashboard_table th[phx-value-sort_by=\"payment_status\"]")
+      |> element(".instructor_dashboard_table th[phx-value-sort_by='payment_status']")
       |> render_click()
 
       [payment_status_1, payment_status_2, payment_status_3, payment_status_4, payment_status_5] =
@@ -661,7 +662,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
 
       # sorting by payment status in desc order
       view
-      |> element(".instructor_dashboard_table th[phx-value-sort_by=\"payment_status\"]")
+      |> element(".instructor_dashboard_table th[phx-value-sort_by='payment_status']")
       |> render_click()
 
       # asserts the order of the payment status is descending
@@ -684,8 +685,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
         section: section,
         mod1_pages: mod1_pages,
         mod2_pages: mod2_pages,
-        mod3_pages: mod3_pages,
-        mod1_resource: mod1_resource
+        mod3_pages: mod3_pages
       } =
         Oli.Seeder.base_project_with_larger_hierarchy()
 
@@ -716,39 +716,36 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       set_progress(section.id, page_8.published_resource.resource_id, user_1.id, 1)
       set_progress(section.id, page_9.published_resource.resource_id, user_1.id, 1)
 
-      params = %{container_id: mod1_resource.id}
-
-      {:ok, view, _html} =
-        live(conn, live_view_students_route(section.slug, params))
+      {:ok, view, _html} = live(conn, live_view_students_route(section.slug))
 
       # Low Progress card it should have 3 students
-      assert element(view, "div[phx-value-selected=\"low_progress\"]") |> render() =~
+      assert element(view, "div[phx-value-selected='low_progress']") |> render() =~
                "Low Progress"
 
-      assert element(view, "div[phx-value-selected=\"low_progress\"]") |> render() =~ "3"
-      assert element(view, "div[phx-value-selected=\"low_progress\"]") |> render() =~ "Students"
+      assert element(view, "div[phx-value-selected='low_progress']") |> render() =~ "3"
+      assert element(view, "div[phx-value-selected='low_progress']") |> render() =~ "Students"
 
       # Low Proficiency card it should have 0 students
-      assert element(view, "div[phx-value-selected=\"low_proficiency\"]") |> render() =~
+      assert element(view, "div[phx-value-selected='low_proficiency']") |> render() =~
                "Low Proficiency"
 
-      assert element(view, "div[phx-value-selected=\"low_proficiency\"]") |> render() =~ "0"
+      assert element(view, "div[phx-value-selected='low_proficiency']") |> render() =~ "0"
 
-      assert element(view, "div[phx-value-selected=\"low_proficiency\"]") |> render() =~
+      assert element(view, "div[phx-value-selected='low_proficiency']") |> render() =~
                "Students"
 
       # Zero Interaction in a week card it should have 2 students
-      assert element(view, "div[phx-value-selected=\"zero_interaction_in_a_week\"]") |> render() =~
+      assert element(view, "div[phx-value-selected='zero_interaction_in_a_week']") |> render() =~
                "Zero interaction in a week"
 
-      assert element(view, "div[phx-value-selected=\"zero_interaction_in_a_week\"]") |> render() =~
+      assert element(view, "div[phx-value-selected='zero_interaction_in_a_week']") |> render() =~
                "0"
 
-      assert element(view, "div[phx-value-selected=\"zero_interaction_in_a_week\"]") |> render() =~
+      assert element(view, "div[phx-value-selected='zero_interaction_in_a_week']") |> render() =~
                "Students"
 
       ## Filtering by Low Progress
-      element(view, "div[phx-value-selected=\"low_progress\"]") |> render_click()
+      element(view, "div[phx-value-selected='low_progress']") |> render_click()
 
       assert has_element?(view, "table tr td div a", user_2.family_name)
       assert has_element?(view, "table tr td div a", user_3.family_name)
@@ -756,13 +753,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       refute has_element?(view, "table tr td div a", user_1.family_name)
 
       ## Filtering by Low Proficiency
-      element(view, "div[phx-value-selected=\"low_proficiency\"]") |> render_click()
+      element(view, "div[phx-value-selected='low_proficiency']") |> render_click()
 
       assert has_element?(view, "p", "None exist")
 
       ## Filtering by Zero Interaction in a week
 
-      element(view, "div[phx-value-selected=\"zero_interaction_in_a_week\"]") |> render_click()
+      element(view, "div[phx-value-selected='zero_interaction_in_a_week']") |> render_click()
 
       refute has_element?(view, "table tr td div a", user_1.family_name)
       refute has_element?(view, "table tr td div a", user_2.family_name)
@@ -775,8 +772,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
         section: section,
         mod1_pages: mod1_pages,
         mod2_pages: mod2_pages,
-        mod3_pages: mod3_pages,
-        mod1_resource: mod1_resource
+        mod3_pages: mod3_pages
       } =
         Oli.Seeder.base_project_with_larger_hierarchy()
 
@@ -807,20 +803,17 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       set_progress(section.id, page_8.published_resource.resource_id, user_1.id, 1)
       set_progress(section.id, page_9.published_resource.resource_id, user_1.id, 1)
 
-      params = %{container_id: mod1_resource.id}
-
-      {:ok, view, _html} =
-        live(conn, live_view_students_route(section.slug, params))
+      {:ok, view, _html} = live(conn, live_view_students_route(section.slug))
 
       # Low Progress card it should have 3 students
-      assert element(view, "div[phx-value-selected=\"low_progress\"]") |> render() =~
+      assert element(view, "div[phx-value-selected='low_progress']") |> render() =~
                "Low Progress"
 
-      assert element(view, "div[phx-value-selected=\"low_progress\"]") |> render() =~ "3"
-      assert element(view, "div[phx-value-selected=\"low_progress\"]") |> render() =~ "Students"
+      assert element(view, "div[phx-value-selected='low_progress']") |> render() =~ "3"
+      assert element(view, "div[phx-value-selected='low_progress']") |> render() =~ "Students"
 
       ## Select Low Progress card
-      element(view, "div[phx-value-selected=\"low_progress\"]") |> render_click()
+      element(view, "div[phx-value-selected='low_progress']") |> render_click()
 
       ## Check that only 3 students are displayed
       assert has_element?(view, "table tr td div a", user_2.family_name)
@@ -829,7 +822,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       refute has_element?(view, "table tr td div a", user_1.family_name)
 
       ## Click again to deselect Low Progress card
-      element(view, "div[phx-value-selected=\"low_progress\"]") |> render_click()
+      element(view, "div[phx-value-selected='low_progress']") |> render_click()
 
       ## Check that all students are displayed
       assert has_element?(view, "table tr td div a", user_2.family_name)
@@ -868,31 +861,20 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
 
       ## Check that Unit 2 container title is displayed
       assert has_element?(view, "div", unit2_container.revision.title)
-      assert has_element?(view, "div", "Navigate within 2 filtered units")
-      assert has_element?(view, "div", "Navigate within ALL units")
 
       ## Click to navigate to Unit 1 container
-      element(
-        view,
-        "button[phx-click=\"change_navigation\"][value=\"#{unit1_container.resource.id}\"]"
-      )
-      |> render_click()
+      {:error,
+       {:live_redirect,
+        %{
+          kind: :push,
+          to: redirect_url
+        }}} =
+        element(view, "a[role='previous item link']")
+        |> render_click()
 
-      ## Check that Unit 1 container title is displayed
-      assert has_element?(view, "div", unit1_container.revision.title)
-
-      ## Click to navigate to ALL units
-      element(
-        view,
-        "form[phx-change=\"select_option\"]"
-      )
-      |> render_change(%{
-        "_target" => ["container", "option"],
-        "container" => %{"option" => "by_all"}
-      })
-
-      ## Check again that Unit 1 container title is displayed
-      assert has_element?(view, "div", unit1_container.revision.title)
+      ### Check that we navigate to Unit 1 container
+      assert redirect_url =~
+               "/sections/#{section.slug}/instructor_dashboard/insights/content?container_id=#{unit1_container.resource.id}"
     end
 
     test "button to back to units/modules works correctly", %{conn: conn, instructor: instructor} do
@@ -922,7 +904,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
         )
 
       ## Filtering by zero student progress card
-      element(view, "div[phx-value-selected=\"zero_student_progress\"]") |> render_click()
+      element(view, "div[phx-value-selected='zero_student_progress']") |> render_click()
 
       ## Click on Unit 2 container
       element(
@@ -945,8 +927,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
         sort_order: :asc,
         container_filter_by: :units,
         selected_card_value: :zero_student_progress,
-        progress_percentage: 100,
-        progress_selector: :is_less_than_or_equal,
         selected_proficiency_ids: Jason.encode!([])
       }
 
@@ -1209,13 +1189,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       assert has_element?(view, "p", "Please select the one to use as an inviter:")
 
       # when logged in under two accounts, "author" selected by default
-      assert view |> element("fieldset input#author") |> render() =~ "checked=\"checked\""
-      refute view |> element("fieldset input#user") |> render() =~ "checked=\"checked\""
+      assert view |> element("fieldset input#author") |> render() =~ "checked=\"\""
+      refute view |> element("fieldset input#user") |> render() =~ "checked=\"\""
 
       # can change to "user" account
       view |> element("fieldset input#user") |> render_click()
-      refute view |> element("fieldset input#author") |> render() =~ "checked=\"checked\""
-      assert view |> element("fieldset input#user") |> render() =~ "checked=\"checked\""
+      refute view |> element("fieldset input#author") |> render() =~ "checked=\"\""
+      assert view |> element("fieldset input#user") |> render() =~ "checked=\"\""
 
       stub_real_current_time()
       # Send the invitations (this mocks the POST request made by the form)
@@ -1464,14 +1444,14 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
          %{conn: conn, section_without_certificate: section} do
       {:ok, view, _html} = live(conn, live_view_students_route(section.slug))
 
-      refute has_element?(view, "th", "CERTIFICATE STATUS")
+      refute has_element?(view, "th", "Certificate Status")
     end
 
     test "Certificate status column is shown if the section has a certificate enabled AND there is a certificate",
          %{conn: conn, section: section} do
       {:ok, view, _html} = live(conn, live_view_students_route(section.slug))
 
-      assert has_element?(view, "th", "CERTIFICATE STATUS")
+      assert has_element?(view, "th", "Certificate Status")
     end
 
     test "instructor can approve/deny a granted certificate with a pending status", %{
@@ -1498,7 +1478,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
 
       ## Approve the certificate for student 1
       view
-      |> element(~s{tr[id=#{student_1.id}] button[phx-value-required_state="earned"]})
+      |> element(~s{tr[id='#{student_1.id}'] button[phx-value-required_state='earned']})
       |> render_click()
 
       # the pending count should decrease in 1
@@ -1516,7 +1496,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
 
       ## Deny the certificate for student 2
       view
-      |> element(~s{tr[id=#{student_2.id}] button[phx-value-required_state="denied"]})
+      |> element(~s{tr[id='#{student_2.id}'] button[phx-value-required_state='denied']})
       |> render_click()
 
       # the pending count should decrease in 1, so the bagde should not be visible anymore
@@ -1553,7 +1533,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
 
       ## Approve the certificate for student 1
       view
-      |> element(~s{tr[id=#{student_1.id}] button[phx-value-required_state="earned"]})
+      |> element(~s{tr[id='#{student_1.id}'] button[phx-value-required_state='earned']})
       |> render_click()
 
       # Confirm "Send Email"
@@ -1582,7 +1562,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
 
       ## Deny the certificate for student 2
       view
-      |> element(~s{tr[id=#{student_2.id}] button[phx-value-required_state="denied"]})
+      |> element(~s{tr[id='#{student_2.id}'] button[phx-value-required_state='denied']})
       |> render_click()
 
       # Confirm "Send Email"
@@ -1843,7 +1823,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
         sub: UUID.uuid4(),
         name: "#{v}",
         given_name: "#{v}",
-        family_name: "#{v}",
+        family_name: "name_#{v}",
         middle_name: "",
         picture: "https://platform.example.edu/jane.jpg",
         email: "test#{v}@example.edu",
@@ -1871,7 +1851,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
             type: :direct,
             generation_date: DateTime.utc_now(),
             application_date: DateTime.utc_now(),
-            amount: "$100.00",
+            amount: Money.new(100, "USD"),
             provider_type: :stripe,
             provider_id: "1",
             provider_payload: %{},

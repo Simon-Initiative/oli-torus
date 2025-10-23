@@ -25,7 +25,7 @@ defmodule OliWeb.Workspaces.InstructorTest do
       refute has_element?(view, "div[role='account label']")
     end
 
-    test "can see product title, image and description in sections index with a link to manage it on instructor workspace",
+    test "can see product title, image and description in sections index with a link to it on instructor workspace",
          %{
            conn: conn,
            user: user
@@ -50,7 +50,7 @@ defmodule OliWeb.Workspaces.InstructorTest do
 
       assert has_element?(
                view,
-               ~s{a[href="/sections/#{section.slug}/manage?sidebar_expanded=true"]}
+               ~s{a[href="/sections/#{section.slug}/instructor_dashboard/insights/content"]}
              )
     end
 
@@ -338,7 +338,7 @@ defmodule OliWeb.Workspaces.InstructorTest do
                "contact support."
              )
 
-      assert has_element?(view, "a[href='/sections/independent/create']", "Create New Section")
+      assert has_element?(view, "a[href='/sections/new']", "Create New Section")
     end
 
     test "sees the instructor label on user menu", %{conn: conn} do
@@ -357,6 +357,40 @@ defmodule OliWeb.Workspaces.InstructorTest do
                view,
                "div[id='workspace-user-menu-dropdown'] div[role='linked authoring account email']",
                author.email
+             )
+    end
+
+    test "can see title, description, start date, end date and instructors in instructor workspace",
+         %{
+           conn: conn,
+           instructor: instructor
+         } do
+      section =
+        insert(:section, %{
+          open_and_free: true,
+          title: "The best course ever!",
+          description: "This is a description",
+          start_date: ~U[2025-01-01 00:00:00Z],
+          end_date: ~U[2026-01-01 00:00:00Z]
+        })
+
+      instructor_1 = insert(:user, %{name: "Lionel Messi"})
+      instructor_2 = insert(:user, %{name: "Angel Di Maria"})
+
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.enroll(instructor_1.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.enroll(instructor_2.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, view, _html} = live(conn, ~p"/workspaces/instructor")
+
+      assert has_element?(view, "h5", "The best course ever!")
+      assert has_element?(view, "p", "This is a description")
+      assert has_element?(view, "div[role='start_end_date']", "Jan 2025 - Jan 2026")
+
+      assert has_element?(
+               view,
+               "div[role='instructors']",
+               ~r/Instructors:\s*#{instructor.name},\s*Lionel Messi,\s*Angel Di Maria/
              )
     end
   end

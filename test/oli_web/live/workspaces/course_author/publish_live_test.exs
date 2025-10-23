@@ -303,7 +303,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLiveTest do
              |> render() =~ "revision B"
 
       view
-      |> element(".publish_changes_table th[phx-value-sort_by=\"title\"]", "Title")
+      |> element(".publish_changes_table th[phx-value-sort_by='title']", "Title")
       |> render_click(%{sort_by: "title"})
 
       assert view
@@ -413,10 +413,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLiveTest do
                "End Date"
              ] ==
                html
+               |> Floki.parse_document!()
                |> Floki.find("#active-course-sections-table thead tr > th")
                |> Enum.map(&text/1)
 
-      [row_1, row_2] = Floki.find(html, "#active-course-sections-table tbody > tr ")
+      [row_1, row_2] =
+        html
+        |> Floki.parse_document!()
+        |> Floki.find("#active-course-sections-table tbody > tr ")
+
       [_, _, row_1_creator, row_1_instructors | _rest] = Floki.find(row_1, "td > div")
 
       # Checking creator and instructors for section 1
@@ -552,7 +557,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLiveTest do
       {:ok, view, _html} = live(conn, live_view_publish_route(project.slug))
 
       view
-      |> element("button[phx-click=\"display_lti_connect_modal\"]")
+      |> element("button[phx-click='display_lti_connect_modal']")
       |> render_click()
 
       assert has_element?(view, "h4", "Deliver this course through your institution's LMS")
@@ -571,7 +576,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLiveTest do
              |> render() =~ section1.title
 
       view
-      |> element("th[phx-click=\"sort\"][phx-value-sort_by=\"title\"]")
+      |> element("th[phx-click='sort'][phx-value-sort_by='title']")
       |> render_click(%{sort_by: "title"})
 
       assert view
@@ -612,7 +617,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLiveTest do
              |> render() =~ last_section.title
 
       view
-      |> element("button[phx-click=\"page_change\"]", "2")
+      |> element("button[phx-click='page_change']", "2")
       |> render_click()
 
       assert view
@@ -632,7 +637,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLiveTest do
       {:ok, view, _html} = live(conn, live_view_publish_route(project.slug))
 
       view
-      |> element("form[phx-submit=\"publish_active\"")
+      |> element("form[phx-submit='publish_active']")
       |> render_submit(%{description: "New description"})
 
       view
@@ -658,7 +663,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLiveTest do
       {:ok, view, _html} = live(conn, live_view_publish_route(project.slug))
 
       view
-      |> element("form[phx-submit=\"publish_active\"")
+      |> element("form[phx-submit='publish_active']")
       |> render_submit(%{description: "New description"})
 
       view
@@ -696,7 +701,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLiveTest do
       {:ok, view, _html} = live(conn, live_view_publish_route(project.slug))
 
       view
-      |> element("form[phx-submit=\"publish_active\"")
+      |> element("form[phx-submit='publish_active']")
       |> render_submit(%{description: "New description"})
 
       view

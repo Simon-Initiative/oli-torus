@@ -39,9 +39,9 @@ defmodule OliWeb.Sections.GatingAndScheduling.New do
 
   def render(assigns) do
     ~H"""
-    <%= render_modal(assigns) %>
+    {render_modal(assigns)}
     <div class="container">
-      <h3><%= @title %></h3>
+      <h3>{@title}</h3>
 
       <Form.render
         section={@section}

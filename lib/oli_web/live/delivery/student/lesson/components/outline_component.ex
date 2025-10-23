@@ -63,41 +63,51 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
 
   def render(assigns) do
     ~H"""
-    <div
-      id="outline_panel"
-      class="flex flex-col w-[360px] h-full max-h-[calc(100vh-96px)] px-2 py-4 bg-white dark:bg-black text-[#353740] dark:text-[#eeebf5] mx-2 rounded-2xl gap-6"
-    >
-      <button
-        phx-click="toggle_outline_sidebar"
-        class="self-stretch px-2 justify-end items-center gap-2.5 inline-flex hover:cursor-pointer"
+    <div>
+      <div
+        id="outline_panel"
+        class="flex flex-col max-h-[calc(100vh-176px)] sm:w-[360px] sm:max-h-[75vh] lg:max-h-[80vh] px-2 py-4 bg-Surface-surface-background text-[#353740] dark:text-[#eeebf5] mx-3 sm:mx-2 rounded-t-2xl sm:rounded-2xl gap-6"
       >
-        <i class="fa-solid fa-xmark hover:scale-110"></i>
-      </button>
-      <div class="self-stretch h-12 px-2 flex-col justify-start items-start gap-4 flex">
-        <div class="self-stretch py-2 justify-start items-center inline-flex">
-          <div class="text-base font-bold leading-none">
-            Course Content
+        <button
+          phx-click="toggle_outline_sidebar"
+          class="hidden sm:inline-flex self-stretch px-2 justify-end items-center gap-2.5 hover:cursor-pointer"
+        >
+          <i class="fa-solid fa-xmark hover:scale-110"></i>
+        </button>
+        <div class="self-stretch h-12 px-2 flex-col justify-start items-start gap-4 flex">
+          <div class="self-stretch py-2 justify-start items-center inline-flex">
+            <div class="text-base font-bold leading-none">
+              Course Content
+            </div>
+          </div>
+          <div class="self-stretch h-0 flex-col justify-center items-center flex border-b border-Border-border-subtle">
           </div>
         </div>
-        <div class="self-stretch h-0 flex-col justify-center items-center flex border-b border-[#D9D9D9]/75">
+        <div class="flex flex-1 flex-col overflow-hidden pl-2 justify-start items-start gap-2 inline-flex">
+          <div class="flex flex-1 flex-col scrollbar overflow-y-scroll px-2 justify-start items-center gap-4 inline-flex w-full">
+            <.outline_item
+              :for={node <- @hierarchy["children"]}
+              item={node}
+              is_container?={node["resource_type_id"] == ResourceType.id_for_container()}
+              expanded_items={@expanded_items}
+              target={@myself}
+              section_slug={@section_slug}
+              selected_view={@selected_view}
+              progress={
+                if @item_with_progress.resource_id == node["resource_id"],
+                  do: @item_with_progress.progress
+              }
+            />
+          </div>
         </div>
       </div>
-      <div class="flex flex-1 flex-col overflow-hidden pl-2 justify-start items-start gap-2 inline-flex">
-        <div class="flex flex-1 flex-col scrollbar overflow-y-scroll px-2 justify-start items-center gap-4 inline-flex">
-          <.outline_item
-            :for={node <- @hierarchy["children"]}
-            item={node}
-            is_container?={node["resource_type_id"] == ResourceType.id_for_container()}
-            expanded_items={@expanded_items}
-            target={@myself}
-            section_slug={@section_slug}
-            selected_view={@selected_view}
-            progress={
-              if @item_with_progress.resource_id == node["resource_id"],
-                do: @item_with_progress.progress
-            }
-          />
-        </div>
+      <div class="flex items-center justify-center sm:hidden bg-Surface-surface-background h-16 mx-3 p-4 border-t border-Border-border-default">
+        <button
+          phx-click="toggle_outline_sidebar"
+          class="text-Specially-Tokens-Text-text-button-secondary font-semibold text-sm leading-4 px-8 py-3 border border-Border-border-bold h-10 rounded-lg w-full"
+        >
+          Close
+        </button>
       </div>
     </div>
     """
@@ -132,7 +142,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
       <div class={[
         "justify-start items-start flex py-1 rounded-lg hover:bg-[#f2f8ff] dark:hover:bg-[#2e2b33]",
         left_indentation(@item["numbering"]["level"]),
-        if(@progress, do: "bg-[#f3f4f8] dark:bg-[#1b191f]")
+        if(@progress, do: "bg-Specially-Tokens-Fill-fill-nav-hover")
       ]}>
         <div class="grow p-2 justify-start items-start gap-5 flex">
           <div class="py-0.5 justify-start items-center gap-5 flex">
@@ -143,7 +153,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
             </div>
             <div class="justify-start items-center flex" role="index">
               <div class="grow shrink basis-0 text-right text-sm leading-none">
-                <%= @item["numbering"]["index"] %>
+                {@item["numbering"]["index"]}
               </div>
             </div>
           </div>
@@ -154,7 +164,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
                   "grow text-base leading-normal",
                   if(@item["graded"], do: "font-semibold")
                 ]}>
-                  <%= @item["title"] %>
+                  {@item["title"]}
                 </div>
               </div>
             </div>
@@ -189,7 +199,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
         phx-target={@target}
         class={[
           "w-full grow shrink basis-0 p-2 flex-col justify-start items-start gap-1 inline-flex rounded-lg hover:bg-[#f2f8ff] dark:hover:bg-[#2e2b33] hover:cursor-pointer",
-          if(@progress, do: "bg-[#f3f4f8] dark:bg-[#1b191f]")
+          if(@progress, do: "bg-Specially-Tokens-Fill-fill-nav-hover")
         ]}
       >
         <div class="text-[#353740] dark:text-[#eeebf5] self-stretch justify-start items-start gap-1 inline-flex">
@@ -202,8 +212,8 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
           </div>
 
           <div class="grow shrink basis-0 text-base font-bold leading-normal" role="title">
-            <%= resource_label(@item) %>
-            <%= @item["title"] %>
+            {resource_label(@item)}
+            {@item["title"]}
           </div>
         </div>
         <Common.progress_bar
@@ -239,8 +249,10 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
   def toggle_outline_button(assigns) do
     ~H"""
     <button
+      role="toggle outline button"
+      data-view="desktop"
       class={[
-        "flex flex-col items-center rounded-lg bg-white dark:bg-black hover:bg-[#deecff] dark:hover:bg-white/10 text-[#0d70ff] text-xl group",
+        "flex flex-col items-center rounded-lg bg-Surface-surface-background hover:bg-[#deecff] dark:hover:bg-white/10 text-[#0d70ff] text-xl group",
         if(@is_active,
           do:
             "!text-white bg-[#0080ff] dark:bg-[#0062f2] hover:bg-[#0080ff]/75 hover:dark:bg-[#0062f2]/75"
@@ -249,13 +261,16 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
       phx-click="toggle_outline_sidebar"
     >
       <div class="p-1.5 rounded justify-start items-center gap-2.5 inline-flex">
-        <%= render_slot(@inner_block) %>
+        {render_slot(@inner_block)}
       </div>
     </button>
     """
   end
 
   def outline_icon(assigns) do
+    # Generate a unique ID for this SVG instance to avoid duplicate IDs
+    assigns = assign(assigns, :unique_id, "clip0_#{:erlang.unique_integer([:positive])}")
+
     ~H"""
     <svg
       width="32"
@@ -264,7 +279,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
       fill="currentColor"
       xmlns="http://www.w3.org/2000/svg"
     >
-      <g clip-path="url(#clip0_2001_36964)">
+      <g clip-path={"url(##{@unique_id})"}>
         <path
           d="M13.0833 11H22.25M13.0833 15.9958H22.25M13.0833 20.9917H22.25M9.75 11V11.0083M9.75 15.9958V16.0042M9.75 20.9917V21"
           stroke="currentColor"
@@ -274,7 +289,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
         />
       </g>
       <defs>
-        <clipPath id="clip0_2001_36964">
+        <clipPath id={@unique_id}>
           <rect width="20" height="20" fill="white" transform="translate(6 6)" />
         </clipPath>
       </defs>

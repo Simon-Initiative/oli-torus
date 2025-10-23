@@ -15,6 +15,7 @@ import {
   setCopiedPartActivityId,
   setRightPanelActiveTab,
 } from '../../store/app/slice';
+import { selectState as selectPageState } from '../../store/page/slice';
 import { setCurrentPartPropertyFocus, setCurrentSelection } from '../../store/parts/slice';
 import ConfirmDelete from '../Modal/DeleteConfirmationModal';
 import PropertyEditor from '../PropertyEditor/PropertyEditor';
@@ -22,6 +23,8 @@ import AccordionTemplate from '../PropertyEditor/custom/AccordionTemplate';
 import CompJsonEditor from '../PropertyEditor/custom/CompJsonEditor';
 import partSchema, {
   partUiSchema,
+  responsivePartSchema,
+  responsivePartUiSchema,
   simplifiedPartSchema,
   simplifiedPartUiSchema,
   transformModelToSchema as transformPartModelToSchema,
@@ -71,10 +74,14 @@ const getComponentData = (instance: any, partDef: any) => {
   return transformPartModelToSchema(data);
 };
 
-const getComponentSchema = (instance: any, partEditMode: PartAuthoringMode): JSONSchema7 => {
+const getComponentSchema = (
+  instance: any,
+  partEditMode: PartAuthoringMode,
+  responsiveLayout: boolean,
+): JSONSchema7 => {
   return partEditMode === 'simple'
     ? getSimplifiedComponentSchema(instance)
-    : getExpertComponentSchema(instance);
+    : getExpertComponentSchema(instance, responsiveLayout);
 };
 
 // The "simple" ui with only the common properties sorted in a logical order
@@ -105,13 +112,14 @@ const getSimplifiedComponentSchema = (instance: any): JSONSchema7 => {
   return simplifiedPartSchema; // default schema for components that don't specify.
 };
 
-const getExpertComponentSchema = (instance: any): JSONSchema7 => {
+const getExpertComponentSchema = (instance: any, responsiveLayout: boolean): JSONSchema7 => {
+  console.log('getExpertComponentSchema', { instance });
   if (instance && instance.getSchema) {
     const customPartSchema = instance.getSchema('expert');
     const newSchema: any = {
-      ...partSchema,
+      ...(responsiveLayout ? responsivePartSchema : partSchema),
       properties: {
-        ...partSchema.properties,
+        ...(responsiveLayout ? responsivePartSchema.properties : partSchema.properties),
         custom: { type: 'object', properties: { ...customPartSchema } },
       },
     };
@@ -125,10 +133,14 @@ const getExpertComponentSchema = (instance: any): JSONSchema7 => {
   return partSchema; // default schema for components that don't specify.
 };
 
-const getComponentUISchema = (instance: any, partEditMode: PartAuthoringMode) => {
+const getComponentUISchema = (
+  instance: any,
+  partEditMode: PartAuthoringMode,
+  responsiveLayout: boolean,
+) => {
   return partEditMode === 'simple'
     ? getSimplifiedComponentUISchema(instance)
-    : getExpertComponentUISchema(instance);
+    : getExpertComponentUISchema(instance, responsiveLayout);
 };
 
 const simplifiedLabels: Record<string, string> = {
@@ -172,12 +184,13 @@ const getSimplifiedComponentUISchema = (instance: any) => {
   return simplifiedPartUiSchema; // default ui schema for components that don't specify.
 };
 
-const getExpertComponentUISchema = (instance: any) => {
+const getExpertComponentUISchema = (instance: any, responsiveLayout: boolean) => {
   // ui schema
+  const componentUiSchema = responsiveLayout ? responsivePartUiSchema : partUiSchema;
   if (instance && instance.getUiSchema) {
     const customPartUiSchema = instance.getUiSchema('expert');
     const newUiSchema = {
-      ...partUiSchema,
+      ...componentUiSchema,
       custom: {
         'ui:ObjectFieldTemplate': AccordionTemplate,
         'ui:title': 'Custom',
@@ -186,7 +199,7 @@ const getExpertComponentUISchema = (instance: any) => {
     };
     return newUiSchema;
   }
-  return partUiSchema; // default ui schema  for components that don't specify.
+  return componentUiSchema; // default ui schema  for components that don't specify.
 };
 
 export const PartPropertyEditor: React.FC<Props> = ({
@@ -196,7 +209,8 @@ export const PartPropertyEditor: React.FC<Props> = ({
   existingIds,
 }) => {
   const dispatch = useDispatch();
-
+  const currentLesson = useSelector(selectPageState);
+  const responsiveLayout = currentLesson?.custom?.responsiveLayout || false;
   const appMode = useSelector(selectAppMode);
   const partEditMode: PartAuthoringMode = appMode === 'expert' ? 'expert' : 'simple';
 
@@ -220,13 +234,13 @@ export const PartPropertyEditor: React.FC<Props> = ({
   );
 
   const componentSchema = useMemo(
-    () => getComponentSchema(currentPartInstance, partEditMode),
-    [currentPartInstance, partEditMode],
+    () => getComponentSchema(currentPartInstance, partEditMode, responsiveLayout),
+    [currentPartInstance, partEditMode, responsiveLayout],
   );
 
   const componentUiSchema = useMemo(
-    () => getComponentUISchema(currentPartInstance, partEditMode),
-    [currentPartInstance, partEditMode],
+    () => getComponentUISchema(currentPartInstance, partEditMode, responsiveLayout),
+    [currentPartInstance, partEditMode, responsiveLayout],
   );
 
   const handleDeleteComponent = useCallback(() => {
@@ -397,6 +411,7 @@ export const PartPropertyEditor: React.FC<Props> = ({
         onChangeHandler={componentPropertyChangeHandler}
         triggerOnChange={true}
         onfocusHandler={componentPropertyFocusHandler}
+        isExpertMode={appMode === 'expert'}
       />
     </div>
   );

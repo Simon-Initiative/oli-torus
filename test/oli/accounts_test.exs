@@ -349,19 +349,19 @@ defmodule Oli.AccountsTest do
       fields = %{
         "sub" => "sub",
         "cognito:username" => "ea06d74d-a1f6-4fdc-a8b3-b4550f9625f1",
-        "email" => "email",
+        "email" => "email@example.com",
         "name" => "username"
       }
 
       {:ok, author} = Accounts.setup_sso_author(fields, community.id)
 
       assert author.name == "username"
-      assert author.email == "email"
+      assert author.email == "email@example.com"
 
-      user = Accounts.get_user_by(%{email: "email"})
+      user = Accounts.get_user_by(%{email: "email@example.com"})
       assert user.sub == "sub"
       assert user.preferred_username == "ea06d74d-a1f6-4fdc-a8b3-b4550f9625f1"
-      assert user.email == "email"
+      assert user.email == "email@example.com"
       assert user.can_create_sections
 
       assert %CommunityAccount{} =
@@ -612,6 +612,70 @@ defmodule Oli.AccountsTest do
 
       assert Accounts.can_manage_linked_account?(user)
     end
+
+    test "get_users_by_ids/1 returns user tuples for existing user IDs" do
+      user1 = insert(:user, %{family_name: "Smith", given_name: "John"})
+      user2 = insert(:user, %{family_name: "Doe", given_name: "Jane"})
+      user3 = insert(:user, %{family_name: "Brown", given_name: "Bob"})
+
+      # Test with valid user IDs
+
+      result = Accounts.get_users_by_ids([user1.id, user2.id, user3.id])
+
+      assert length(result) == 3
+
+      for user <- [user1, user2, user3] do
+        assert Enum.find(
+                 result,
+                 &(&1.id == user.id and &1.family_name == user.family_name and
+                     &1.given_name == user.given_name)
+               )
+      end
+    end
+
+    test "get_users_by_ids/1 returns partial results for mixed valid/invalid IDs" do
+      user1 = insert(:user, %{family_name: "Smith", given_name: "John"})
+      user2 = insert(:user, %{family_name: "Doe", given_name: "Jane"})
+      invalid_id = 999_999
+
+      # Test with mix of valid and invalid user IDs
+      result =
+        Accounts.get_users_by_ids([user1.id, invalid_id, user2.id])
+
+      assert length(result) == 2
+
+      for user <- [user1, user2] do
+        assert Enum.find(
+                 result,
+                 &(&1.id == user.id and &1.family_name == user.family_name and
+                     &1.given_name == user.given_name)
+               )
+      end
+
+      refute Enum.any?(result, &(&1.id == invalid_id))
+    end
+
+    test "get_users_by_ids/1 returns empty list for non-existent user IDs" do
+      result = Accounts.get_users_by_ids([999_999, 888_888])
+      assert result == []
+    end
+
+    test "get_users_by_ids/1 returns empty list for empty input" do
+      result = Accounts.get_users_by_ids([])
+      assert result == []
+    end
+
+    test "get_users_by_ids/1 handles duplicate user IDs correctly" do
+      user = insert(:user, %{family_name: "Smith", given_name: "John"})
+
+      # Test with duplicate user IDs
+
+      # Should only return one result despite duplicates
+      [returned_user] = Accounts.get_users_by_ids([user.id, user.id, user.id])
+
+      assert returned_user.id == user.id and returned_user.family_name == user.family_name and
+               returned_user.given_name == user.given_name
+    end
   end
 
   describe "communities accounts" do
@@ -765,7 +829,7 @@ defmodule Oli.AccountsTest do
         Accounts.register_independent_user(%{email: "not valid", password: "not valid"})
 
       assert %{
-               email: ["must have the @ sign and no spaces"],
+               email: ["must be a valid email address"],
                password: ["should be at least 12 character(s)"]
              } = errors_on(changeset)
     end
@@ -776,7 +840,7 @@ defmodule Oli.AccountsTest do
       {:error, changeset} =
         Accounts.register_independent_user(%{email: too_long, password: too_long})
 
-      assert "should be at most 160 character(s)" in errors_on(changeset).email
+      assert "must be a valid email address" in errors_on(changeset).email
       assert "should be at most 72 character(s)" in errors_on(changeset).password
     end
 
@@ -859,7 +923,7 @@ defmodule Oli.AccountsTest do
       {:error, changeset} =
         Accounts.apply_user_email(user, valid_user_password(), %{email: "not valid"})
 
-      assert %{email: ["must have the @ sign and no spaces"]} = errors_on(changeset)
+      assert %{email: ["must be a valid email address"]} = errors_on(changeset)
     end
 
     test "validates maximum value for email for security", %{user: user} do
@@ -868,7 +932,7 @@ defmodule Oli.AccountsTest do
       {:error, changeset} =
         Accounts.apply_user_email(user, valid_user_password(), %{email: too_long})
 
-      assert "should be at most 160 character(s)" in errors_on(changeset).email
+      assert "must be a valid email address" in errors_on(changeset).email
     end
 
     test "validates email uniqueness", %{user: user} do
@@ -959,13 +1023,15 @@ defmodule Oli.AccountsTest do
   describe "change_user_password/2" do
     test "returns a user changeset" do
       assert %Ecto.Changeset{} = changeset = Accounts.change_user_password(%User{})
-      assert changeset.required == [:password]
+      assert changeset.required == [:password, :current_password, :password_confirmation]
     end
 
     test "allows fields to be set" do
       changeset =
         Accounts.change_user_password(%User{}, %{
-          "password" => "new valid password"
+          "current_password" => valid_user_password(),
+          "password" => "new valid password",
+          "password_confirmation" => "new valid password"
         })
 
       assert changeset.valid?
@@ -1002,8 +1068,14 @@ defmodule Oli.AccountsTest do
     end
 
     test "validates current password", %{user: user} do
+      invalid_current_password = "invalid"
+
       {:error, changeset} =
-        Accounts.update_user_password(user, "invalid", %{password: valid_user_password()})
+        Accounts.update_user_password(user, invalid_current_password, %{
+          current_password: invalid_current_password,
+          password: "new_valid_password",
+          password_confirmation: "new_valid_password"
+        })
 
       assert %{current_password: ["is not valid"]} = errors_on(changeset)
     end
@@ -1011,7 +1083,9 @@ defmodule Oli.AccountsTest do
     test "updates the password", %{user: user} do
       {:ok, user} =
         Accounts.update_user_password(user, valid_user_password(), %{
-          password: "new valid password"
+          current_password: valid_user_password(),
+          password: "new valid password",
+          password_confirmation: "new valid password"
         })
 
       assert is_nil(user.password)
@@ -1023,7 +1097,9 @@ defmodule Oli.AccountsTest do
 
       {:ok, _} =
         Accounts.update_user_password(user, valid_user_password(), %{
-          password: "new valid password"
+          current_password: valid_user_password(),
+          password: "new valid password",
+          password_confirmation: "new valid password"
         })
 
       refute Repo.get_by(UserToken, user_id: user.id)

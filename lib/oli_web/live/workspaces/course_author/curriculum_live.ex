@@ -2,11 +2,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
   use OliWeb, :live_view
   use OliWeb.Common.Modal
 
+  require Logger
+
   import Oli.Utils, only: [value_or: 2]
   import Oli.Authoring.Editing.Utils
   import OliWeb.Curriculum.Utils
-
+  alias Ecto.Changeset
   alias Oli.Authoring.Editing.ContainerEditor
+  alias Oli.GoogleDocs.{Import, Warnings}
+  alias Phoenix.Component
 
   alias OliWeb.Curriculum.{
     Rollup,
@@ -19,6 +23,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
   }
 
   alias OliWeb.Workspaces.CourseAuthor.Curriculum.Entry
+  alias OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive
 
   alias OliWeb.Common.Hierarchy.MoveModal
   alias Oli.Publishing.ChangeTracker
@@ -33,10 +38,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
   alias OliWeb.Common.Breadcrumb
   alias Oli.Delivery.Hierarchy
   alias Oli.Resources.Revision
-  alias Oli.Resources
   alias Oli.Delivery.Hierarchy.HierarchyNode
   alias OliWeb.Components.Modal
   alias OliWeb.Curriculum.Container.ContainerLiveHelpers
+
+  @import_form_key :import_google_doc
+  @file_id_pattern ~r/^[A-Za-z0-9_-]{10,}$/
 
   @impl Phoenix.LiveView
   def mount(params, _session, socket) do
@@ -111,7 +118,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
              ),
            dragging: nil,
            page_title: "Curriculum | " <> project.title,
-           options_modal_assigns: nil
+           options_modal_assigns: nil,
+           import_state: new_import_state()
          )
          |> attach_hook(:has_show_links_uri_hash, :handle_params, fn _params, uri, socket ->
            {:cont,
@@ -139,6 +147,129 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
   end
 
   @impl Phoenix.LiveView
+  def handle_event("show_import_modal", _, socket) do
+    cond do
+      not can_import?(socket.assigns.author) ->
+        {:noreply, socket}
+
+      socket.assigns.import_state.busy? ->
+        {:noreply, socket}
+
+      true ->
+        socket =
+          socket
+          |> assign(import_state: %{new_import_state() | show?: true})
+          |> push_event("js-exec", %{
+            to: "#google-docs-import-modal-show",
+            attr: "data-show_modal"
+          })
+
+        {:noreply, socket}
+    end
+  end
+
+  def handle_event("cancel_import_modal", _, socket) do
+    if socket.assigns.import_state.busy? do
+      {:noreply, socket}
+    else
+      {:noreply, hide_import_modal(socket)}
+    end
+  end
+
+  def handle_event("reset_import_modal", _, socket) do
+    socket =
+      socket
+      |> assign(import_state: %{new_import_state() | show?: true})
+      |> push_event("js-exec", %{
+        to: "#google-docs-import-modal-show",
+        attr: "data-show_modal"
+      })
+
+    {:noreply, socket}
+  end
+
+  def handle_event("validate_import", params, socket) do
+    form_params = Map.get(params, Atom.to_string(@import_form_key), %{})
+
+    changeset =
+      form_params
+      |> import_changeset()
+      |> Map.put(:action, :validate)
+
+    {:noreply,
+     socket
+     |> put_import_state(%{changeset: changeset, error_message: nil, status: :idle})}
+  end
+
+  def handle_event("submit_import", params, socket) do
+    if socket.assigns.import_state.busy? do
+      {:noreply, socket}
+    else
+      form_params = Map.get(params, Atom.to_string(@import_form_key), %{})
+
+      changeset =
+        form_params
+        |> import_changeset()
+        |> Map.put(:action, :validate)
+
+      case Changeset.apply_action(changeset, :validate) do
+        {:ok, %{file_id: file_id}} ->
+          {importer, opts} = resolve_importer()
+          project_slug = socket.assigns.project.slug
+          container_slug = socket.assigns.container.slug
+          author = socket.assigns.author
+
+          task =
+            Task.Supervisor.async_nolink(Oli.TaskSupervisor, fn ->
+              importer.import(project_slug, container_slug, file_id, author, opts)
+            end)
+
+          {:noreply,
+           socket
+           |> put_import_state(%{
+             changeset: changeset,
+             busy?: true,
+             status: :running,
+             task: task,
+             task_ref: task.ref,
+             warnings: [],
+             error_message: nil,
+             result_revision: nil,
+             file_id: file_id,
+             show?: true
+           })
+           |> push_announcement(
+             gettext("Import started for FILE_ID %{file_id}.", file_id: file_id)
+           )}
+
+        {:error, invalid_changeset} ->
+          {:noreply, put_import_state(socket, %{changeset: invalid_changeset, status: :idle})}
+      end
+    end
+  end
+
+  def handle_event("open_imported_page", _, socket) do
+    case socket.assigns.import_state do
+      %{result_revision: %Revision{} = revision} ->
+        case revision_slug(revision) do
+          nil ->
+            {:noreply, hide_import_modal(socket)}
+
+          slug ->
+            {:noreply,
+             socket
+             |> hide_import_modal()
+             |> push_navigate(
+               to: Routes.live_path(socket, EditorLive, socket.assigns.project.slug, slug)
+             )
+             |> assign(import_state: new_import_state())}
+        end
+
+      _ ->
+        {:noreply, socket}
+    end
+  end
+
   def handle_event("show_options_modal", %{"slug" => slug}, socket) do
     %{container: container, project: project, children: children} =
       socket.assigns
@@ -161,38 +292,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
   end
 
   def handle_event("validate-options", %{"revision" => revision_params}, socket) do
-    %{options_modal_assigns: %{revision: revision} = modal_assigns} = socket.assigns
-
-    revision_params = ContainerLiveHelpers.decode_revision_params(revision_params)
-
-    changeset =
-      revision
-      |> Resources.change_revision(revision_params)
-      |> Map.put(:action, :validate)
-      |> to_form()
-
-    {:noreply, assign(socket, options_modal_assigns: %{modal_assigns | form: changeset})}
+    ContainerLiveHelpers.handle_validate_options(socket, revision_params)
   end
 
   def handle_event("save-options", %{"revision" => revision_params}, socket) do
-    %{options_modal_assigns: %{redirect_url: redirect_url, revision: revision}, project: project} =
-      socket.assigns
-
-    revision_params = ContainerLiveHelpers.decode_revision_params(revision_params)
-
-    case ContainerEditor.edit_page(project, revision.slug, revision_params) do
-      {:ok, _} ->
-        {:noreply,
-         socket
-         |> put_flash(
-           :info,
-           "#{resource_type_label(revision) |> String.capitalize()} options saved"
-         )
-         |> push_navigate(to: redirect_url)}
-
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, assign(socket, :changeset, changeset)}
-    end
+    ContainerLiveHelpers.handle_save_options(socket, revision_params)
   end
 
   def handle_event("show_move_modal", %{"slug" => slug}, socket) do
@@ -495,6 +599,57 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
      )}
   end
 
+  @impl Phoenix.LiveView
+  def handle_event(event, params, socket) do
+    # Catch-all for UI-only events from functional components
+    # that don't need handling (like dropdown toggles)
+    Logger.warning("Unhandled event in CurriculumLive: #{inspect(event)}, #{inspect(params)}")
+    {:noreply, socket}
+  end
+
+  def handle_info({ref, result}, socket) when socket.assigns.import_state.task_ref == ref do
+    case result do
+      {:ok, revision, warnings} ->
+        handle_import_success(socket, revision, warnings)
+
+      {:error, reason, warnings} ->
+        handle_import_error(socket, reason, warnings)
+
+      other ->
+        handle_import_failure(socket, other)
+    end
+  end
+
+  @impl Phoenix.LiveView
+  def handle_info({:DOWN, ref, :process, _pid, reason}, socket)
+      when socket.assigns.import_state.task_ref == ref do
+    Process.demonitor(ref, [:flush])
+
+    case reason do
+      {:shutdown, {:ok, revision, warnings}} ->
+        handle_import_success(socket, revision, warnings)
+
+      {:ok, revision, warnings} ->
+        handle_import_success(socket, revision, warnings)
+
+      {:shutdown, {:error, error_reason, warnings}} ->
+        handle_import_error(socket, error_reason, warnings)
+
+      {:error, error_reason, warnings} ->
+        handle_import_error(socket, error_reason, warnings)
+
+      {:shutdown, error_reason} ->
+        handle_import_failure(socket, error_reason)
+
+      other ->
+        handle_import_failure(socket, other)
+    end
+  end
+
+  def handle_info({:DOWN, _ref, :process, _pid, _reason}, socket) do
+    {:noreply, socket}
+  end
+
   # Here we respond to notifications for edits made
   # to the container or to its child children, contained activities and attached objectives
   @impl Phoenix.LiveView
@@ -572,6 +727,355 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
       {:noreply, socket}
     end
   end
+
+  defp new_import_state do
+    changeset = import_changeset(%{})
+
+    %{
+      show?: false,
+      changeset: changeset,
+      form: Component.to_form(changeset, as: @import_form_key),
+      busy?: false,
+      status: :idle,
+      task: nil,
+      task_ref: nil,
+      warnings: [],
+      error_message: nil,
+      result_revision: nil,
+      file_id: nil,
+      announcements: []
+    }
+  end
+
+  defp import_changeset(attrs) do
+    {%{file_id: nil}, %{file_id: :string}}
+    |> Changeset.cast(attrs, [:file_id])
+    |> Changeset.update_change(:file_id, &normalize_file_id/1)
+    |> Changeset.validate_required(:file_id,
+      message: gettext("Enter the FILE_ID from the Google Docs URL.")
+    )
+    |> validate_file_id_format()
+  end
+
+  defp normalize_file_id(nil), do: nil
+  defp normalize_file_id(value) when is_binary(value), do: String.trim(value)
+  defp normalize_file_id(value), do: value
+
+  defp validate_file_id_format(%Changeset{} = changeset) do
+    file_id = Changeset.get_field(changeset, :file_id)
+
+    if is_nil(file_id) or file_id == "" do
+      changeset
+    else
+      Changeset.validate_change(changeset, :file_id, fn :file_id, value ->
+        cond do
+          not is_binary(value) ->
+            [file_id: gettext("FILE_ID must be text.")]
+
+          value == "" ->
+            []
+
+          String.starts_with?(value, "http://") or String.starts_with?(value, "https://") ->
+            [
+              file_id: gettext("Provide only the FILE_ID portion, not the full Google Docs URL.")
+            ]
+
+          Regex.match?(@file_id_pattern, value) ->
+            []
+
+          true ->
+            [
+              file_id:
+                gettext(
+                  "FILE_ID must be at least 10 characters and may include letters, numbers, hyphen, or underscore."
+                )
+            ]
+        end
+      end)
+    end
+  end
+
+  defp put_import_state(socket, updates) when is_map(updates) do
+    state =
+      socket.assigns.import_state
+      |> Map.merge(updates)
+      |> maybe_put_form(updates)
+
+    assign(socket, import_state: state)
+  end
+
+  defp hide_import_modal(socket) do
+    socket
+    |> assign(import_state: new_import_state())
+    |> push_event("js-exec", %{
+      to: "#google-docs-import-modal-hide",
+      attr: "data-hide_modal"
+    })
+  end
+
+  defp maybe_put_form(state, updates) do
+    if Map.has_key?(updates, :changeset) do
+      Map.put(state, :form, Component.to_form(state.changeset, as: @import_form_key))
+    else
+      state
+    end
+  end
+
+  defp push_announcement(socket, message) when message in [nil, ""], do: socket
+
+  defp push_announcement(socket, message) do
+    trimmed = String.trim(message || "")
+
+    if trimmed == "" do
+      socket
+    else
+      assign(socket,
+        import_state: %{
+          socket.assigns.import_state
+          | announcements: add_announcement(socket.assigns.import_state.announcements, trimmed)
+        }
+      )
+    end
+  end
+
+  defp add_announcement(announcements, message) do
+    (announcements ++ [message])
+    |> Enum.take(-3)
+  end
+
+  defp resolve_importer do
+    config = importer_config()
+    {Keyword.get(config, :importer, Import), Keyword.delete(config, :importer)}
+  end
+
+  defp importer_config do
+    Application.get_env(:oli, :google_docs_import, [])
+  end
+
+  defp can_import?(author) do
+    Accounts.is_admin?(author) || Accounts.has_admin_role?(author, :content_admin)
+  end
+
+  defp revision_slug(%Revision{slug: slug}) when is_binary(slug) and slug != "", do: slug
+  defp revision_slug(%{slug: slug}) when is_binary(slug) and slug != "", do: slug
+  defp revision_slug(_), do: nil
+
+  defp present_title(title) when is_binary(title) and title != "", do: title
+  defp present_title(_), do: gettext("Untitled page")
+
+  defp success_flash_message(%Revision{} = revision, warnings) do
+    title = present_title(revision.title)
+
+    case length(warnings) do
+      0 ->
+        gettext("Imported \"%{title}\" from Google Docs.", title: title)
+
+      count ->
+        gettext(
+          "Imported \"%{title}\" with %{count} warning(s). Review details in the dialog.",
+          title: title,
+          count: count
+        )
+    end
+  end
+
+  defp translate_import_error({:invalid_file_id, :blank}) do
+    gettext("FILE_ID cannot be blank.")
+  end
+
+  defp translate_import_error({:invalid_file_id, :format}) do
+    gettext("FILE_ID looks invalid. Use the value between `/d/` and `/` in the Google Docs URL.")
+  end
+
+  defp translate_import_error({:invalid_file_id, :not_binary}) do
+    gettext("FILE_ID must be text.")
+  end
+
+  defp translate_import_error({:http_status, status, _}) do
+    gettext(
+      "Google Docs returned HTTP %{status}. Check sharing permissions and try again.",
+      status: status
+    )
+  end
+
+  defp translate_import_error({:http_redirect, status, location}) do
+    gettext(
+      "Google Docs redirected the request (HTTP %{status}) to %{location}. Update the document sharing settings and use the FILE_ID (not the share link).",
+      status: status,
+      location: location || gettext("an unknown URL")
+    )
+  end
+
+  defp translate_import_error({:http_error, reason}) do
+    gettext("Google Docs request failed: %{reason}.", reason: inspect(reason))
+  end
+
+  defp translate_import_error({:body_too_large, %{limit: limit}}) do
+    mb = limit_mb(limit)
+
+    gettext("The exported Markdown exceeded the %{limit} MB limit.", limit: mb)
+  end
+
+  defp translate_import_error({:body_too_large, %{bytes: bytes}}) do
+    gettext("The exported Markdown is %{bytes} bytes and exceeds the allowed size.", bytes: bytes)
+  end
+
+  defp translate_import_error(:import_in_progress) do
+    gettext("An import for this document is already running. Please wait for it to finish.")
+  end
+
+  defp translate_import_error({:not_found, _}) do
+    gettext("Project could not be found.")
+  end
+
+  defp translate_import_error({:not_authorized}) do
+    gettext("You do not have permission to import into this project.")
+  end
+
+  defp translate_import_error(:document_too_complex) do
+    gettext("The document could not be imported because it is too complex.")
+  end
+
+  defp translate_import_error({:document_too_complex, _}) do
+    gettext("The document could not be imported because it is too complex.")
+  end
+
+  defp translate_import_error(other) do
+    gettext("Import failed: %{reason}.", reason: inspect(other))
+  end
+
+  defp limit_mb(nil), do: nil
+
+  defp limit_mb(limit) when is_integer(limit) do
+    (limit / 1_048_576)
+    |> Float.round(1)
+    |> :erlang.float_to_binary(decimals: 1)
+  end
+
+  defp limit_mb(limit), do: limit
+
+  defp normalize_warnings(nil), do: []
+  defp normalize_warnings([]), do: []
+
+  defp normalize_warnings(warnings) when is_list(warnings) do
+    Enum.map(warnings, &normalize_warning/1)
+  end
+
+  defp normalize_warnings(_), do: []
+
+  defp normalize_warning(%{message: message} = warning) do
+    %{
+      code: Map.get(warning, :code),
+      message: message,
+      severity: Map.get(warning, :severity, :warn),
+      metadata: Map.get(warning, :metadata, %{})
+    }
+  end
+
+  defp normalize_warning(%{code: code, metadata: metadata}) do
+    Warnings.build(code, metadata || %{})
+  end
+
+  defp normalize_warning(other) when is_map(other) do
+    message = Map.get(other, :message) || inspect(other)
+    severity = Map.get(other, :severity, :warn)
+
+    %{
+      code: Map.get(other, :code),
+      message: message,
+      severity: severity,
+      metadata: Map.get(other, :metadata, %{})
+    }
+  end
+
+  defp normalize_warning(other) do
+    %{
+      code: nil,
+      message: inspect(other),
+      severity: :warn,
+      metadata: %{}
+    }
+  end
+
+  defp handle_import_success(socket, revision, warnings) do
+    normalized_warnings = normalize_warnings(warnings)
+    title = present_title(revision.title)
+
+    socket =
+      socket
+      |> put_import_state(%{
+        busy?: false,
+        status: :success,
+        task: nil,
+        task_ref: nil,
+        warnings: normalized_warnings,
+        error_message: nil,
+        result_revision: revision,
+        show?: true
+      })
+      |> put_flash(:info, success_flash_message(revision, normalized_warnings))
+      |> push_announcement(gettext("Imported \"%{title}\" successfully.", title: title))
+
+    {:noreply, socket}
+  end
+
+  defp handle_import_error(socket, reason, warnings) do
+    normalized_warnings = normalize_warnings(warnings)
+    message = translate_import_error(reason)
+
+    socket =
+      socket
+      |> put_import_state(%{
+        busy?: false,
+        status: :error,
+        task: nil,
+        task_ref: nil,
+        warnings: normalized_warnings,
+        error_message: message,
+        result_revision: nil,
+        show?: true
+      })
+      |> put_flash(:error, message)
+      |> push_announcement(message)
+
+    {:noreply, socket}
+  end
+
+  defp handle_import_failure(socket, reason) do
+    message = translate_import_error(reason)
+
+    socket =
+      socket
+      |> put_import_state(%{
+        busy?: false,
+        status: :error,
+        task: nil,
+        task_ref: nil,
+        warnings: [],
+        error_message: message,
+        result_revision: nil,
+        show?: true
+      })
+      |> put_flash(:error, message)
+      |> push_announcement(message)
+
+    {:noreply, socket}
+  end
+
+  defp warning_label(:error), do: gettext("Error")
+  defp warning_label(:warn), do: gettext("Warning")
+  defp warning_label(:info), do: gettext("Info")
+  defp warning_label(_), do: gettext("Info")
+
+  defp warning_badge_class(:error), do: "bg-red-100 text-red-800"
+  defp warning_badge_class(:warn), do: "bg-amber-100 text-amber-900"
+  defp warning_badge_class(:info), do: "bg-blue-100 text-blue-800"
+  defp warning_badge_class(_), do: "bg-gray-100 text-gray-800"
+
+  defp warning_container_class(:error), do: "border-red-200 bg-red-50"
+  defp warning_container_class(:warn), do: "border-amber-200 bg-amber-50"
+  defp warning_container_class(:info), do: "border-blue-200 bg-blue-50"
+  defp warning_container_class(_), do: "border-gray-200 bg-gray-50"
 
   # Load either a specific container, or if the slug is nil the root. After loaded,
   # scrub the container's children to ensure that there a no duplicate ids that may

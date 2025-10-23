@@ -5,6 +5,7 @@ defmodule Oli.Delivery.Sections.Browse do
   alias Lti_1p3.Roles.ContextRoles
   alias Oli.Accounts.User
   alias Oli.Delivery.Sections.{Section, Enrollment, BrowseOptions}
+  alias Oli.Delivery.Sections
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
 
@@ -34,11 +35,14 @@ defmodule Oli.Delivery.Sections.Browse do
         dynamic(
           [s, _, i, proj, prod, u],
           fragment(
-            "to_tsvector('simple', ? || ' ' || coalesce(?, ' ') || ' ' || ? || ' ' || coalesce(?, ' ') || ' ' || coalesce(?, ' ')) @@ to_tsquery('simple', ?)",
+            "to_tsvector('simple', concat_ws(' ', ?, coalesce(?, ''), coalesce(?, ''), coalesce(?, ''), coalesce(?, ''), coalesce(?, ''), coalesce(?, ''), coalesce(?, ''))) @@ to_tsquery('simple', ?)",
             s.title,
             i.name,
             proj.title,
             prod.title,
+            s.slug,
+            proj.slug,
+            prod.slug,
             u.name,
             ^search_term
           )
@@ -83,18 +87,21 @@ defmodule Oli.Delivery.Sections.Browse do
         do: true,
         else: dynamic([s, _], s.base_project_id == ^options.project_id)
 
-    instructor_role_id = ContextRoles.get_role(:context_instructor).id
-
     instructor =
       from u in User,
         join: e in Enrollment,
         on: e.user_id == u.id,
         join: ecr in "enrollments_context_roles",
         on:
-          ecr.enrollment_id == e.id and ecr.context_role_id == ^instructor_role_id and
+          ecr.enrollment_id == e.id and ecr.context_role_id in ^Sections.get_instructor_role_ids() and
             e.status == :enrolled,
         select: %{
-          name: fragment("array_to_string((array_agg(?)), ', ')", u.name),
+          name:
+            fragment(
+              "array_to_string(array_agg(DISTINCT ?) FILTER (WHERE ? IS NOT NULL), ', ')",
+              u.name,
+              u.name
+            ),
           section_id: e.section_id
         },
         group_by: [e.section_id]
@@ -132,7 +139,16 @@ defmodule Oli.Delivery.Sections.Browse do
       |> limit(^limit)
       |> offset(^offset)
       |> preload([:institution, :base_project, :blueprint])
-      |> group_by([s, _, i, proj, prod, u], [s.id, i.name, proj.title, prod.title, u.name])
+      |> group_by([s, _, i, proj, prod, u], [
+        s.id,
+        i.name,
+        proj.title,
+        prod.title,
+        u.name,
+        s.slug,
+        proj.slug,
+        prod.slug
+      ])
       |> select_merge([_, e, i, _, _, u], %{
         enrollments_count: count(e.id),
         total_count: fragment("count(*) OVER()"),
@@ -163,8 +179,7 @@ defmodule Oli.Delivery.Sections.Browse do
 
         :base ->
           order_by(query, [_, _, _, proj, prod], [
-            {^direction, prod.title},
-            {^direction, proj.title}
+            {^direction, fragment("coalesce(?, ?)", prod.title, proj.title)}
           ])
 
         _ ->

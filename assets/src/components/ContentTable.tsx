@@ -7,13 +7,15 @@ export const ContentTable: React.FC<{
   model: ContentTypes.Table;
   children: React.ReactNode;
   pointMarkerContext?: PointMarkerContext;
-}> = ({ model, children, pointMarkerContext }) => {
+  isEditing?: boolean;
+}> = ({ model, children, pointMarkerContext, isEditing = false }) => {
   return (
     <table
       className={classNames(
         'min-w-full',
         model.border === 'hidden' ? 'table-borderless' : 'table-bordered',
         model.rowstyle === 'alternating' && 'table-striped',
+        isEditing && '!overflow-visible',
       )}
       {...maybePointMarkerAttr(model, pointMarkerContext)}
     >

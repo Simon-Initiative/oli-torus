@@ -214,6 +214,7 @@ const EditingCanvas: React.FC = () => {
                 activityModel={activity as any}
                 editMode={activity.id === currentActivityId}
                 configEditorId={configEditorId}
+                responsiveLayout={_currentLessonCustom?.responsiveLayout || false}
                 onSelectPart={handlePartSelect}
                 onCopyPart={handlePartCopy}
                 onConfigurePart={handlePartConfigure}

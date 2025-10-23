@@ -41,7 +41,10 @@ export const defaultEmbeddedModel: () => OliEmbeddedModelSchema = () => {
   };
 };
 
-export function lastPart(path: string): string {
+export function lastPart(resourceBase: string, path: string): string {
+  if (resourceBase.includes('bundles/')) {
+    return path.substring(path.lastIndexOf('webcontent'));
+  }
   if (path.includes('media/')) {
     return path.substring(path.lastIndexOf('media/') + 6);
   }

@@ -1,0 +1,422 @@
+name: ai-review
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+
+jobs:
+  changes:
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+    name: detect/changes
+    runs-on: ubuntu-latest
+    outputs:
+      elixir: ${{ steps.filter.outputs.elixir }}
+      typescript: ${{ steps.filter.outputs.typescript }}
+      ui: ${{ steps.filter.outputs.ui }}
+      requirements: ${{ steps.filter.outputs.requirements }}
+      security: ${{ steps.filter.outputs.security }}
+      performance: ${{ steps.filter.outputs.performance }}
+      roles: ${{ steps.build_matrix.outputs.roles }}
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: Debug changed files
+        run: |
+          echo "Base ref: ${{ github.base_ref }} | Head ref: ${{ github.head_ref }}"
+          git fetch origin ${{ github.base_ref }} --depth=1 || true
+          echo "Changed files (GitHub API reports): ${{ github.event.pull_request.changed_files }}"
+          echo "Changed files (git diff --name-only):"
+          git diff --name-only origin/${{ github.base_ref }}...HEAD || true
+      - id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            elixir:
+              - 'lib/**/*.ex'
+              - 'lib/**/*.exs'
+              - 'test/**/*.exs'
+            typescript:
+              - 'assets/src/**/*.ts'
+              - 'assets/src/**/*.tsx'
+            ui:
+              - 'assets/src/**/*'
+              - 'lib/**/*.heex'
+              - 'lib/**/*.leex'
+              - 'lib/**/live/**/*.ex'
+            requirements:
+              - 'docs/features/**/prd.md'
+            security:
+              - 'lib/**'
+              - 'assets/src/**'
+              - 'config/**'
+            performance:
+              - 'lib/**'
+
+      - id: build_matrix
+        name: Build matrix roles
+        shell: bash
+        run: |
+          roles=()
+          [[ "${{ steps.filter.outputs.elixir }}" == 'true' ]] && roles+=("elixir")
+          [[ "${{ steps.filter.outputs.typescript }}" == 'true' ]] && roles+=("typescript")
+          [[ "${{ steps.filter.outputs.ui }}" == 'true' ]] && roles+=("ui")
+          [[ "${{ steps.filter.outputs.security }}" == 'true' ]] && roles+=("security")
+          [[ "${{ steps.filter.outputs.performance }}" == 'true' ]] && roles+=("performance")
+          [[ "${{ steps.filter.outputs.requirements }}" == 'true' ]] && roles+=("requirements")
+          json=$(printf '%s\n' "${roles[@]}" | jq -R . | jq -c -s .)
+          echo "roles=${json}" >> "$GITHUB_OUTPUT"
+
+  specialist:
+    name: ai/${{ matrix.role }}
+    runs-on: ubuntu-latest
+    needs: [changes]
+    strategy:
+      matrix:
+        role: ${{ fromJSON(needs.changes.outputs.roles) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # ensure history for robust diffs/merge-base
+      - name: Echo role being run
+        run: |
+          echo "Running reviewer role: ${{ matrix.role }}"
+          echo "Filter outputs: elixir=${{ needs.changes.outputs.elixir }}, ts=${{ needs.changes.outputs.typescript }}, ui=${{ needs.changes.outputs.ui }}, perf=${{ needs.changes.outputs.performance }}, sec=${{ needs.changes.outputs.security }}, req=${{ needs.changes.outputs.requirements }}"
+
+      - name: Generate PR diff (exactly what GitHub shows)
+        if: ${{ github.event_name == 'pull_request' }}
+        run: |
+          curl -sSL "${{ github.event.pull_request.patch_url }}" -o diff.patch
+
+      - name: Generate PR diff (merge-base fallback)
+        if: ${{ github.event_name != 'pull_request' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --prune origin +refs/heads/*:refs/remotes/origin/*
+          MB=$(git merge-base HEAD~1 HEAD)
+          git diff --unified=0 "${MB}" HEAD > diff.patch
+          [ -f diff.patch ] || touch diff.patch
+
+      - name: Narrow diff to this role's files
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROLE="${{ matrix.role }}"
+          if [[ "$ROLE" == "requirements" ]]; then
+            # Requirements reviewers need the full diff (PRD plus all other files)
+            [ -f diff.patch ] || touch diff.patch
+            exit 0
+          fi
+          case "$ROLE" in
+            elixir)      GLOBS=(":(glob)lib/**/*.ex" ":(glob)lib/**/*.exs" ":(glob)test/**/*.exs");;
+            typescript)  GLOBS=(":(glob)assets/src/**/*.ts" ":(glob)assets/src/**/*.tsx");;
+            ui)          GLOBS=(":(glob)assets/src/**/*" ":(glob)lib/**/*.heex" ":(glob)lib/**/*.leex" ":(glob)lib/**/live/**/*.ex");;
+            security)    GLOBS=(":(glob)lib/**" ":(glob)assets/src/**" ":(glob)config/**");;
+            performance) GLOBS=(":(glob)lib/**");;
+            *)           GLOBS=(":(glob)**/*");;
+          esac
+
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            BASE="${{ github.event.pull_request.base.sha }}"
+            HEADSHA="${{ github.event.pull_request.head.sha }}"
+            git fetch --no-tags --prune origin +refs/heads/*:refs/remotes/origin/*
+            MB=$(git merge-base "$BASE" "$HEADSHA")
+            git diff --unified=0 "$MB" "$HEADSHA" -- "${GLOBS[@]}" > diff.role.patch
+          else
+            git fetch --no-tags --prune origin +refs/heads/*:refs/remotes/origin/* || true
+            MB=$(git merge-base HEAD~1 HEAD)
+            git diff --unified=0 "$MB" HEAD -- "${GLOBS[@]}" > diff.role.patch
+          fi
+
+          if [[ -s diff.role.patch ]]; then
+            mv diff.role.patch diff.patch
+          fi
+          [ -f diff.patch ] || touch diff.patch
+
+      - name: Install Codex CLI
+        run: npm i -g @openai/codex
+
+      - name: Run Codex reviewer (strictly diff-only)
+        id: run
+        shell: bash
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          IS_FORK: ${{ github.event.pull_request.head.repo.fork }}
+        run: |
+          set -euo pipefail
+          mkdir -p ai
+          ROLE="${{ matrix.role }}"
+          export ROLE
+
+          {
+            echo "You are a specialist reviewer for ${ROLE}.";
+            echo "PRIMARY SOURCE: the DIFF below.";
+            echo "HARD CONSTRAINTS:";
+            echo "1) REVIEW ONLY lines changed in the DIFF; ignore any other code.";
+            echo "2) You may read some other files outside the DIFF ONLY for CONTEXT.";
+            echo "3) IMPORTANT: NEVER comment about findings in files or lines not included in the DIFF.";
+            echo "4) If you notice issues outside the DIFF, list them only under an 'Out-of-scope notes' section at the end.";
+            echo "5) Do NOT attempt to recalculate or expand the diff; rely strictly on the DIFF provided.";
+            echo "";
+            echo "IMPORTANT: Return ONLY the summary of findings, wrapped between these markers:";
+            echo "<!-- FINDINGS_START -->";
+            echo "";
+            echo "<!-- FINDINGS_END -->";
+            echo "Do NOT include the prompt, your reasoning, or any other text outside those markers.";
+            echo "Within the markers, use this exact format for each finding:";
+            echo "### <short title>";
+            echo "file: <path>";
+            echo "line: <single line number from the DIFF>";
+            echo "Description: <what/why this is a problem in this codebase>";
+            echo "Suggestion: <specific, actionable code change>";
+            echo "If you have notes about issues outside the DIFF, add them in an 'Out-of-scope notes' section after the findings.";
+            echo "";
+            echo "Coding Review Guidelines and Checklist:";
+            echo "---CHECKLIST START---";
+            [ -f ".review/${ROLE}.md" ] && cat ".review/${ROLE}.md" || echo "(no checklist for ${ROLE})";
+            echo "---CHECKLIST END---";
+            echo "";
+            echo "DIFF (unified format, 0 lines of context):";
+            echo "---DIFF START---";
+            head -c 150000 diff.patch;
+            echo "---DIFF END---";
+          } > ai/prompt.${ROLE}.txt
+
+          # Debug output suppressed for cleaner logs
+
+          # Run Codex reviewer (non-streaming output). Some versions don't support --no-stream;
+          # relying on default behavior with --stdin and --format json.
+          # Feed prompt via STDIN (portable across Codex CLI versions)
+          # If diff is empty, short-circuit with a PASS
+          if [[ ! -s diff.patch ]]; then
+            exit 0
+          fi
+
+          # Fork/secret guard: on forks or missing key, emit WARN and skip Codex
+          if [ "${IS_FORK:-false}" = "true" ] || [ -z "${OPENAI_API_KEY:-}" ]; then
+            exit 0
+          fi
+
+          # Ensure Codex config dir under HOME is writable and exists
+          mkdir -p ~/.codex
+          chmod -R u+rw ~/.codex || true
+
+          KEY="${OPENAI_API_KEY}"
+          export OPENAI_API_KEY="$KEY"
+          echo "Codex binary: $(command -v codex || echo 'not found')"
+          codex --version || true
+
+          printenv OPENAI_API_KEY | codex login --with-api-key
+
+          codex exec --full-auto --skip-git-repo-check < ai/prompt.${ROLE}.txt > ai/${ROLE}.raw.txt || true
+
+          # Debug output suppressed for cleaner logs
+
+      - name: Post per-role review comment (filtered to PR lines)
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            const role = `"${{ matrix.role }}"`.replace(/"/g,'');
+            const headerMarker = `<!-- ai-review:${role} -->`;
+            const headerTitle = `### AI Review — ${role}`;
+            const header = `${headerMarker}\n${headerTitle}`;
+            const MAX_BODY = 65000;
+
+            // Remove a single outer ``` code fence if present
+            function stripOuterCodeFence(s) {
+              const m = s.match(/^```[\w-]*\n([\s\S]*?)\n```$/);
+              return m ? m[1].trim() : (s ?? '').trim();
+            }
+
+            // Accept variations: FINDINGS_START / findings start / findings-start / findings_start
+            function extractBetweenSentinels(s) {
+              const startRe = /<!--\s*findings(?:\s*|[_-]+)start\s*-->/ig;
+              const endRe   = /<!--\s*findings(?:\s*|[_-]+)end\s*-->/ig;
+
+              const starts = [...s.matchAll(startRe)];
+              const ends   = [...s.matchAll(endRe)];
+              if (!starts.length || !ends.length) return '';
+
+              const chunks = [];
+              let endIdx = 0;
+              for (const st of starts) {
+                while (endIdx < ends.length && ends[endIdx].index < st.index) endIdx++;
+                if (endIdx >= ends.length) break;
+                const startPos = st.index + st[0].length;
+                const endPos   = ends[endIdx].index;
+                chunks.push(s.slice(startPos, endPos));
+                endIdx++;
+              }
+              return chunks.map(c => stripOuterCodeFence(c)).filter(Boolean).join('\n\n').trim();
+            }
+
+            // Heuristic fallback: take the first "### " AFTER the DIFF END marker
+            function heuristicExtractAfterDiff(s) {
+              const diffEndRe = /---\s*DIFF\s*END\s*---/i;
+              const m = diffEndRe.exec(s);
+              const from = m ? (m.index + m[0].length) : 0;
+
+              const tail = s.slice(from);
+              const startIdxRel = tail.search(/(^|\n)###\s+/);
+              if (startIdxRel < 0) return '';
+
+              const body = tail.slice(startIdxRel);
+              // Stop at obvious boundaries
+              const boundaryRel = body.search(/(^|\n)(---\s*DIFF\s*START\s*---|---\s*CHECKLIST\s*START\s*---|<!--\s*findings|^```)/mi);
+              const slice = boundaryRel > 0 ? body.slice(0, boundaryRel) : body;
+              return stripOuterCodeFence(slice);
+            }
+
+            function truncateForGithub(body) {
+              if (body.length <= MAX_BODY) return body;
+              const head = body.slice(0, MAX_BODY - 80);
+              return `${head}\n\n… _truncated to fit GitHub comment size limit_`;
+            }
+
+            // --- main ---
+            let bodyText = '';
+            try {
+              bodyText = fs.readFileSync(`ai/${role}.raw.txt`, 'utf8');
+            } catch { /* ignore */ }
+
+            // --- Build allowlist of changed files and line numbers from diff.patch ---
+            function normalizePath(p) {
+              return p.trim()
+                .replace(/^['"]|['"]$/g, '')
+                .replace(/^\.\//, '')
+                .replace(/^b\//, '');
+            }
+
+            function parseDiffAddedLines(diffText) {
+              const fileAdds = new Map(); // file -> Set(lineNumbers)
+              let currentFile = null;
+              let lnNew = 0;
+              const lines = diffText.split(/\r?\n/);
+              for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                // File header
+                if (line.startsWith('diff --git ')) {
+                  currentFile = null;
+                  lnNew = 0;
+                  continue;
+                }
+                // Target filename
+                if (line.startsWith('+++ ')) {
+                  // format: +++ b/path or +++ /dev/null
+                  const m = /^\+\+\+\s+(.*)$/.exec(line);
+                  if (!m) continue;
+                  const raw = m[1].trim();
+                  if (raw === '/dev/null') { currentFile = null; continue; }
+                  const filePath = normalizePath(raw);
+                  currentFile = filePath;
+                  if (!fileAdds.has(currentFile)) fileAdds.set(currentFile, new Set());
+                  continue;
+                }
+                // Hunk header: @@ -a,b +c,d @@
+                const hunk = /^@@\s+-\d+(?:,\d+)?\s+\+(\d+)(?:,(\d+))?\s+@@/.exec(line);
+                if (hunk) {
+                  lnNew = parseInt(hunk[1], 10);
+                  continue;
+                }
+                if (!currentFile) continue;
+                // Added lines start with '+' (but skip '+++' file header handled above)
+                if (line.startsWith('+')) {
+                  fileAdds.get(currentFile).add(lnNew);
+                  lnNew++;
+                  continue;
+                }
+                // Context lines (start with space) advance the new-side counter
+                if (line.startsWith(' ')) {
+                  lnNew++;
+                  continue;
+                }
+                // Removed lines ('-') advance old side only
+                if (line.startsWith('-')) {
+                  continue;
+                }
+              }
+              return fileAdds;
+            }
+
+            function loadDiffAdds() {
+              try {
+                const diff = fs.readFileSync('diff.patch', 'utf8');
+                return parseDiffAddedLines(diff);
+              } catch {
+                return new Map();
+              }
+            }
+
+            const addedLinesByFile = loadDiffAdds();
+
+            function isOnChangedLine(filePath, lineNumber) {
+              const normalized = normalizePath(filePath);
+              const adds = addedLinesByFile.get(normalized);
+              if (!adds) return false;
+              return adds.has(Number(lineNumber));
+            }
+
+            let findings = '';
+            if (bodyText && bodyText.trim()) {
+              const raw = stripOuterCodeFence(bodyText);
+
+              // Prefer explicit sentinels
+              findings = extractBetweenSentinels(raw);
+
+              // Fallback: first "###" AFTER DIFF END
+              if (!findings) {
+                findings = heuristicExtractAfterDiff(raw);
+              }
+            }
+
+            if (!findings) findings = 'No issues found';
+
+            // --- Enforce: keep only findings that target changed lines ---
+            function filterFindingsToChangedLines(text) {
+              const blocks = text.split(/\n(?=###\s+)/).filter(Boolean);
+              const kept = [];
+              for (const block of blocks) {
+                const fileMatch = /\bfile:\s*([^\n]+)/i.exec(block);
+                const lineMatch = /\bline:\s*(\d+)/i.exec(block);
+                if (!fileMatch || !lineMatch) continue;
+                const filePath = fileMatch[1].trim();
+                const lineNum = Number(lineMatch[1]);
+                if (!Number.isInteger(lineNum)) continue;
+                if (!addedLinesByFile.has(normalizePath(filePath))) continue;
+                if (isOnChangedLine(filePath, lineNum)) {
+                  kept.push(block.trim());
+                }
+              }
+              return kept.join('\n\n');
+            }
+
+            const filtered = filterFindingsToChangedLines(findings);
+            const finalFindings = filtered || 'No issues found';
+
+            const composed = truncateForGithub(`${header}\n\n${finalFindings}`);
+
+            // Upsert: update if an existing role-specific comment is present
+            const { data: comments } = await github.rest.issues.listComments({
+              ...context.repo,
+              issue_number: context.issue.number,
+              per_page: 100,
+            });
+
+            const existing = comments.find(c => typeof c.body === 'string' && c.body.includes(headerMarker));
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                ...context.repo,
+                comment_id: existing.id,
+                body: composed,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                ...context.repo,
+                issue_number: context.issue.number,
+                body: composed,
+              });
+            }

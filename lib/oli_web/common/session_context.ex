@@ -39,7 +39,8 @@ defmodule OliWeb.Common.SessionContext do
     :local_tz,
     :author,
     :user,
-    :is_liveview
+    :is_liveview,
+    :section
   ]
 
   @type t() :: %__MODULE__{
@@ -47,7 +48,8 @@ defmodule OliWeb.Common.SessionContext do
           local_tz: String.t(),
           author: Author.t(),
           user: User.t(),
-          is_liveview: boolean()
+          is_liveview: boolean(),
+          section: any()
         }
 
   def init() do
@@ -56,7 +58,8 @@ defmodule OliWeb.Common.SessionContext do
       local_tz: nil,
       author: nil,
       user: nil,
-      is_liveview: false
+      is_liveview: false,
+      section: nil
     }
   end
 
@@ -69,13 +72,15 @@ defmodule OliWeb.Common.SessionContext do
 
     author = Map.get(assigns, :current_author)
     user = Map.get(assigns, :current_user)
+    section = Map.get(assigns, :section)
 
     %__MODULE__{
       browser_timezone: browser_timezone,
-      local_tz: FormatDateTime.tz_preference_or_default(author, user, browser_timezone),
+      local_tz: FormatDateTime.tz_preference_or_default(author, user, section, browser_timezone),
       author: author,
       user: user,
-      is_liveview: false
+      is_liveview: false,
+      section: section
     }
   end
 
@@ -89,13 +94,15 @@ defmodule OliWeb.Common.SessionContext do
 
     author = Map.get(assigns, :current_author)
     user = Map.get(assigns, :current_user)
+    section = Map.get(assigns, :section)
 
     %__MODULE__{
       browser_timezone: browser_timezone,
-      local_tz: FormatDateTime.tz_preference_or_default(author, user, browser_timezone),
+      local_tz: FormatDateTime.tz_preference_or_default(author, user, section, browser_timezone),
       author: author,
       user: user,
-      is_liveview: true
+      is_liveview: true,
+      section: section
     }
   end
 

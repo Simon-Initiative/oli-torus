@@ -1,7 +1,11 @@
 defmodule Oli.Lti.PlatformInstancesTest do
   use Oli.DataCase
 
+  import Oli.Factory
+
   alias Oli.Lti.PlatformInstances
+  alias Oli.Lti.PlatformExternalTools
+  alias Oli.Lti.PlatformExternalTools.LtiExternalToolActivityDeployment
   alias Lti_1p3.DataProviders.EctoProvider.PlatformInstance
 
   describe "lti_1p3_platform_instances" do
@@ -142,6 +146,116 @@ defmodule Oli.Lti.PlatformInstancesTest do
     test "change_platform_instance/1 returns a platform_instance changeset" do
       platform_instance = platform_instance_fixture()
       assert %Ecto.Changeset{} = PlatformInstances.change_platform_instance(platform_instance)
+    end
+
+    test "partial unique index on client_id allows multiple deleted instances with same client_id" do
+      # Create first platform instance with active status
+      active_instance =
+        platform_instance_fixture(%{client_id: "same_client_id", status: :active})
+
+      # Create other platform instances with deleted status and same client_id - should succeed
+      deleted_instance1 =
+        platform_instance_fixture(%{client_id: "same_client_id", status: :deleted})
+
+      deleted_instance2 =
+        platform_instance_fixture(%{client_id: "same_client_id", status: :deleted})
+
+      # Verify multiple instances exist
+      assert active_instance.id != deleted_instance1.id
+      assert active_instance.id != deleted_instance2.id
+      assert deleted_instance1.id != deleted_instance2.id
+      assert active_instance.client_id == deleted_instance1.client_id
+      assert active_instance.client_id == deleted_instance2.client_id
+      assert active_instance.status == :active
+      assert deleted_instance1.status == :deleted
+      assert deleted_instance2.status == :deleted
+    end
+
+    test "partial unique index on client_id prevents multiple active instances with same client_id" do
+      # Create first platform instance with active status
+      platform_instance_fixture(%{client_id: "unique_client_id", status: :active})
+
+      # Try to create second platform instance with active status and same client_id - should fail
+      assert_raise Ecto.ConstraintError, fn ->
+        platform_instance_fixture(%{client_id: "unique_client_id", status: :active})
+      end
+    end
+
+    test "can create and soft-delete LTI platform instance" do
+      # Create a new LTI platform instance
+      platform_instance =
+        platform_instance_fixture(%{
+          client_id: "test_client_id",
+          name: "Test Platform",
+          status: :active
+        })
+
+      # Verify it was created successfully
+      assert platform_instance.status == :active
+      assert platform_instance.client_id == "test_client_id"
+      assert platform_instance.name == "Test Platform"
+
+      # Soft-delete the platform instance (set status to deleted)
+      assert {:ok, deleted_instance} =
+               PlatformInstances.update_platform_instance(
+                 platform_instance,
+                 %{status: :deleted}
+               )
+
+      assert deleted_instance.status == :deleted
+
+      # Verify the deleted instance still exists but is marked as deleted
+      retrieved_instance = PlatformInstances.get_platform_instance!(deleted_instance.id)
+      assert retrieved_instance.status == :deleted
+      assert retrieved_instance.client_id == "test_client_id"
+    end
+
+    test "soft_delete_activity_deployment_and_platform_instance deletes both deployment and platform instance" do
+      # Create a platform instance
+      platform_instance =
+        platform_instance_fixture(%{
+          client_id: "test_delete_client_id",
+          name: "Test Delete Platform",
+          status: :active
+        })
+
+      # Create an activity registration
+      activity_registration = insert(:activity_registration)
+
+      # Create an LTI external tool activity deployment
+      deployment =
+        insert(:lti_external_tool_activity_deployment, %{
+          platform_instance: platform_instance,
+          activity_registration: activity_registration,
+          status: :enabled
+        })
+
+      # Verify both are active initially
+      assert platform_instance.status == :active
+      assert deployment.status == :enabled
+
+      # Soft delete both the deployment and platform instance
+      assert {:ok,
+              %{
+                soft_delete_activity_deployment: updated_deployment,
+                soft_delete_platform_instance: updated_platform_instance
+              }} =
+               PlatformExternalTools.soft_delete_activity_deployment_and_platform_instance(
+                 deployment
+               )
+
+      # Verify the deployment was soft deleted
+      assert updated_deployment.status == :deleted
+
+      # Verify the platform instance was soft deleted
+      assert updated_platform_instance.status == :deleted
+
+      # Verify both still exist in the database but are marked as deleted
+      retrieved_deployment = Repo.get(LtiExternalToolActivityDeployment, deployment.deployment_id)
+      assert retrieved_deployment.status == :deleted
+
+      retrieved_platform_instance = PlatformInstances.get_platform_instance!(platform_instance.id)
+      assert retrieved_platform_instance.status == :deleted
     end
   end
 end

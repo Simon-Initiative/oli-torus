@@ -616,7 +616,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
       phx-click="select_tab"
       phx-value-tab={@value}
     >
-      <%= @label %>
+      {@label}
     </div>
     """
   end

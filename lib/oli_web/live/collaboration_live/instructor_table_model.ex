@@ -95,18 +95,18 @@ defmodule OliWeb.CollaborationLive.InstructorTableModel do
     <div class="flex flex-col px-10 py-5">
       <div class="flex justify-between mb-3">
         <div class="flex gap-2">
-          <span class="torus-span"><%= @title %></span>
+          <span class="torus-span">{@title}</span>
           <span class={"font-normal text-white text-xs uppercase badge
                                 badge-#{case @status do
             "enabled" -> "success"
             "disabled" -> "secondary"
             _ -> "info"
           end}"}>
-            <%= @status %>
+            {@status}
           </span>
         </div>
         <span :if={@most_recent_post} class="torus-span">
-          <%= "Most recent post: #{FormatDateTime.date(@most_recent_post, @ctx)}" %>
+          {"Most recent post: #{FormatDateTime.date(@most_recent_post, @ctx)}"}
         </span>
       </div>
       <div class="flex justify-between">
@@ -114,9 +114,9 @@ defmodule OliWeb.CollaborationLive.InstructorTableModel do
           <%= if @number_of_posts == 0 do %>
             No posts yet
           <% else %>
-            Number of posts: <b><%= @number_of_posts %></b>
+            Number of posts: <b>{@number_of_posts}</b>
             <%= if @number_of_posts_pending_approval > 0 do %>
-              <%= "(#{@number_of_posts_pending_approval} pending approval)" %>
+              {"(#{@number_of_posts_pending_approval} pending approval)"}
             <% end %>
           <% end %>
         </p>

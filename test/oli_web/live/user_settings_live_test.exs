@@ -37,6 +37,123 @@ defmodule OliWeb.UserSettingsLiveTest do
     end
   end
 
+  describe "update name form" do
+    test "shows error message when First Name is empty", %{conn: conn} do
+      user = user_fixture()
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_user(user)
+        |> live(~p"/users/settings")
+
+      result =
+        lv
+        |> element("#user_form")
+        |> render_change(%{
+          "user" => %{
+            "given_name" => "",
+            "family_name" => "Doe"
+          }
+        })
+
+      assert result =~ "Please enter a First Name."
+    end
+
+    test "shows error message when Last Name is less than two characters", %{conn: conn} do
+      user = user_fixture()
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_user(user)
+        |> live(~p"/users/settings")
+
+      result =
+        lv
+        |> element("#user_form")
+        |> render_change(%{
+          "user" => %{
+            "given_name" => "John",
+            "family_name" => "D"
+          }
+        })
+
+      assert result =~ "Please enter a Last Name that is at least two characters long."
+    end
+
+    test "shows both error messages when First Name is empty and Last Name has less than 2 characters on form submit",
+         %{conn: conn} do
+      user = user_fixture(%{given_name: "John", family_name: "Doe"})
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_user(user)
+        |> live(~p"/users/settings")
+
+      invalid_params = %{
+        "given_name" => "",
+        "family_name" => "A"
+      }
+
+      result =
+        lv
+        |> form("#user_form", %{"user" => invalid_params})
+        |> render_submit()
+
+      assert result =~ "Please enter a First Name."
+      assert result =~ "Please enter a Last Name that is at least two characters long."
+    end
+
+    test "shows correct full name when first name or last name change", %{conn: conn} do
+      user = user_fixture(%{given_name: "John", family_name: "Doe"})
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_user(user)
+        |> live(~p"/users/settings")
+
+      # Simulate user changing first name
+      result =
+        lv
+        |> element("#user_form")
+        |> render_change(%{"user" => %{"given_name" => "Jane", "family_name" => "Doe"}})
+
+      assert result =~ "Full name"
+      assert result =~ "Jane Doe"
+
+      # Simulate user changing last name
+      result =
+        lv
+        |> element("#user_form")
+        |> render_change(%{"user" => %{"given_name" => "Jane", "family_name" => "Smith"}})
+
+      assert result =~ "Full name"
+      assert result =~ "Jane Smith"
+    end
+
+    test "shows flash message when first name or last name are successfully updated", %{
+      conn: conn
+    } do
+      user = user_fixture(%{given_name: "John", family_name: "Doe"})
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_user(user)
+        |> live(~p"/users/settings")
+
+      updated_params = %{
+        "given_name" => "Jane",
+        "family_name" => "Smith"
+      }
+
+      result =
+        lv
+        |> form("#user_form", %{"user" => updated_params})
+        |> render_submit()
+
+      assert result =~ "Account details successfully updated."
+    end
+  end
+
   describe "update email form" do
     setup %{conn: conn} do
       password = valid_user_password()
@@ -52,8 +169,7 @@ defmodule OliWeb.UserSettingsLiveTest do
       result =
         lv
         |> form("#email_form", %{
-          "current_password" => password,
-          "user" => %{"email" => new_email}
+          "user" => %{"current_password" => password, "email" => new_email}
         })
         |> render_submit()
 
@@ -69,12 +185,11 @@ defmodule OliWeb.UserSettingsLiveTest do
         |> element("#email_form")
         |> render_change(%{
           "action" => "update_email",
-          "current_password" => "invalid",
-          "user" => %{"email" => "with spaces"}
+          "user" => %{"current_password" => "invalid", "email" => "with spaces"}
         })
 
       assert result =~ "Change Email"
-      assert result =~ "must have the @ sign and no spaces"
+      assert result =~ "must be a valid email address"
     end
 
     test "renders errors with invalid data (phx-submit)", %{conn: conn, user: user} do
@@ -83,8 +198,7 @@ defmodule OliWeb.UserSettingsLiveTest do
       result =
         lv
         |> form("#email_form", %{
-          "current_password" => "invalid",
-          "user" => %{"email" => user.email}
+          "user" => %{"current_password" => "invalid", "email" => user.email}
         })
         |> render_submit()
 
@@ -108,8 +222,8 @@ defmodule OliWeb.UserSettingsLiveTest do
 
       form =
         form(lv, "#password_form", %{
-          "current_password" => password,
           "user" => %{
+            "current_password" => password,
             "email" => user.email,
             "password" => new_password,
             "password_confirmation" => new_password
@@ -137,8 +251,8 @@ defmodule OliWeb.UserSettingsLiveTest do
         lv
         |> element("#password_form")
         |> render_change(%{
-          "current_password" => "invalid",
           "user" => %{
+            "current_password" => "invalid",
             "password" => "too short",
             "password_confirmation" => "does not match"
           }
@@ -155,8 +269,8 @@ defmodule OliWeb.UserSettingsLiveTest do
       result =
         lv
         |> form("#password_form", %{
-          "current_password" => "invalid",
           "user" => %{
+            "current_password" => "invalid",
             "password" => "too short",
             "password_confirmation" => "does not match"
           }

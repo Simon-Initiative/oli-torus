@@ -63,7 +63,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Publish.ActiveSectionsTableModel do
     assigns = Map.merge(assigns, %{edition: edition, major: major, minor: minor})
 
     ~H"""
-    <span class="badge badge-primary"><%= Utils.render_version(@edition, @major, @minor) %></span>
+    <span class="badge badge-primary">{Utils.render_version(@edition, @major, @minor)}</span>
     """
   end
 

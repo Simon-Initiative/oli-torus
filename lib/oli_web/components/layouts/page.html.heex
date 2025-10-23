@@ -21,7 +21,7 @@
         <.flash_group flash={@flash} />
       </div>
 
-      <%= render(OliWeb.LayoutView, "_pay_early.html", assigns) %>
+      {render(OliWeb.LayoutView, "_pay_early.html", assigns)}
 
       <%= for script <- @scripts do %>
         <script type="text/javascript" src={Routes.static_path(@conn, "/js/" <> script)}>
@@ -49,12 +49,12 @@
               <div id="wrapper d-block mb-4">
                 <!-- Page Content -->
                 <div id="page-content">
-                  <%= @inner_content %>
+                  {@inner_content}
 
-                  <%= render(OliWeb.BibliographyView, "_references.html",
+                  {render(OliWeb.BibliographyView, "_references.html",
                     conn: @conn,
                     bib_app_params: @bib_app_params
-                  ) %>
+                  )}
                 </div>
               </div>
             </div>
@@ -62,7 +62,7 @@
 
           <%= if Map.get(assigns, :collab_space_config) && show_collab_space?(@collab_space_config) do %>
             <div class="xl:w-1/3 w-full">
-              <%= live_render(@conn, OliWeb.CollaborationLive.CollabSpaceView,
+              {live_render(@conn, OliWeb.CollaborationLive.CollabSpaceView,
                 session: %{
                   "collab_space_config" => @collab_space_config,
                   "section_slug" => @section_slug,
@@ -77,12 +77,12 @@
                       nil
                     end
                 }
-              ) %>
+              )}
             </div>
           <% end %>
         </div>
 
-        <%= render(OliWeb.PageDeliveryView, "_previous_next_nav.html",
+        {render(OliWeb.PageDeliveryView, "_previous_next_nav.html",
           conn: @conn,
           section_slug: @section_slug,
           previous_page: @previous_page,
@@ -94,7 +94,7 @@
           revision: @revision,
           resource_slug: @resource_slug,
           numbered_revisions: assigns[:numbered_revisions]
-        ) %>
+        )}
         <OliWeb.Components.Footer.delivery_footer
           license={Map.get(assigns, :has_license) && assigns[:license]}
           is_page={true}

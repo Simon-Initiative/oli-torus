@@ -2,6 +2,7 @@ defmodule OliWeb.Common.Utils do
   import OliWeb.Common.FormatDateTime
 
   alias Oli.Accounts.{User, Author}
+  alias Oli.Rendering.{Context, Content}
   alias OliWeb.Common.SessionContext
 
   require Logger
@@ -279,12 +280,66 @@ defmodule OliWeb.Common.Utils do
   end
 
   @doc """
-  Helper to highlight search term in text. Returns HTML-safe string with matches wrapped in <em> tags.
+  Extracts plain text from content structure using the existing content rendering system.
+
+  This function leverages the robust `Oli.Rendering.Content` system to handle all content types
+  including text, formulas, images, links, videos, math expressions, etc. It provides a unified
+  way to extract readable text from complex content structures used throughout the application.
+
+  Returns "No text available" if no meaningful text is found.
+
+  ## Examples
+
+      # Simple text elements
+      iex> extract_text_from_content([%{"text" => "Direct text"}])
+      "Direct text"
+
+      # Structured content with paragraphs
+      iex> extract_text_from_content([%{"type" => "p", "children" => [%{"text" => "Hello World"}]}])
+      "Hello World"
+
+      # Complex content with formulas (renders as descriptive text)
+      iex> extract_text_from_content([
+      ...>   %{"type" => "p", "children" => [%{"text" => "What is "}]},
+      ...>   %{"type" => "formula", "src" => "2+2"},
+      ...>   %{"type" => "p", "children" => [%{"text" => "?"}]}
+      ...> ])
+      "What is  [Formula]: 2+2 ?"
+
+  """
+  def extract_text_from_content(content) when is_list(content) do
+    # Create minimal context for rendering
+    context = %Context{}
+
+    rendered =
+      Content.render(context, content, Content.Plaintext)
+      |> IO.iodata_to_binary()
+      |> String.trim()
+
+    case rendered do
+      "" -> "No text available"
+      text -> text
+    end
+  end
+
+  def extract_text_from_content(_), do: "No text available"
+
+  @doc """
+  Helper to highlight search term in text. Returns HTML-safe string with matches wrapped in a tag.
+
+  ## Parameters
+    - text: The text to search in
+    - search_term: The term to highlight (case insensitive)
+    - opts: Optional keyword list with:
+      - :class - CSS classes for the highlight wrapper (default: none, uses <em> tag)
 
   ## Examples
 
       iex> highlight_search_term("Hello World", "world")
       "Hello <em>World</em>"
+
+      iex> highlight_search_term("Hello World", "world", class: "highlight")
+      "Hello <span class=\\"highlight\\">World</span>"
 
       iex> highlight_search_term("Hello World", nil)
       "Hello World"
@@ -292,17 +347,46 @@ defmodule OliWeb.Common.Utils do
       iex> highlight_search_term("Hello World", "")
       "Hello World"
   """
-  def highlight_search_term(text, nil), do: escape_html(text)
-  def highlight_search_term(text, ""), do: escape_html(text)
+  def highlight_search_term(text, search_term, opts \\ [])
+  def highlight_search_term(text, nil, _opts), do: escape_html(text)
+  def highlight_search_term(text, "", _opts), do: escape_html(text)
 
-  def highlight_search_term(text, search_term) do
+  def highlight_search_term(text, search_term, opts) do
     pattern = Regex.escape(search_term)
     # case insensitive match
     regex = ~r/#{pattern}/i
 
+    wrapper =
+      case Keyword.get(opts, :class) do
+        nil -> {"<em>", "</em>"}
+        class -> {"<span class=\"#{class}\">", "</span>"}
+      end
+
     text
     |> escape_html()
-    |> String.replace(regex, "<em>\\0</em>")
+    |> String.replace(regex, fn match -> elem(wrapper, 0) <> match <> elem(wrapper, 1) end)
+  end
+
+  def multi_highlight_search_term(text, term, tagstart \\ "em", tagend \\ "em")
+  def multi_highlight_search_term(text, nil, _, _), do: escape_html(text)
+  def multi_highlight_search_term(text, "", _, _), do: escape_html(text)
+
+  def multi_highlight_search_term(text, search_term, tagstart, tagend) do
+    text = escape_html(text)
+
+    search_term
+    |> String.split()
+    |> Stream.map(&escape_html/1)
+    |> Stream.map(&Regex.escape/1)
+    |> Enum.join("|")
+    |> Regex.compile("i")
+    |> case do
+      {:ok, regex} ->
+        String.replace(text, regex, fn match -> "<#{tagstart}>#{match}</#{tagend}>" end)
+
+      _ ->
+        text
+    end
   end
 
   defp escape_html(text) do

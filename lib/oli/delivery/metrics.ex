@@ -1556,4 +1556,178 @@ defmodule Oli.Delivery.Metrics do
       end
     end)
   end
+
+  @doc """
+  Get proficiency data for a list of learning objectives (including sub-objectives) within a section.
+
+  This function takes a list of SectionResource records and returns proficiency distribution
+  data for each of them.
+
+  ## Parameters
+  - section_id: The section ID to get proficiency data from
+  - section_slug: The section slug for filtering students
+  - objective_section_resources: List of SectionResource structs for the objectives
+
+  ## Returns
+  List of objective data:
+  [%{sub_objective_id: 123, title: "Sub-objective title", proficiency_distribution: %{...}}]
+  """
+  @spec objectives_proficiency(
+          section_id :: integer,
+          section_slug :: String.t(),
+          objective_section_resources :: list(map())
+        ) :: list(map())
+  def objectives_proficiency(section_id, section_slug, objective_section_resources) do
+    # Extract resource IDs from the SectionResource structs
+    objective_ids = Enum.map(objective_section_resources, & &1.resource_id)
+
+    # Get proficiency data for all objectives at once
+    objectives_proficiency =
+      proficiency_per_student_for_objective(section_id, objective_ids)
+
+    student_ids =
+      Sections.enrolled_student_ids(section_slug)
+
+    # Process ALL objectives, not just those with proficiency data
+    proficiency_dist_for_objectives =
+      objective_ids
+      |> Enum.reduce(%{}, fn obj_id, acc ->
+        # Get proficiency data for this specific objective
+        student_proficiency = Map.get(objectives_proficiency, obj_id, %{})
+
+        # Filter proficiency data to only include enrolled students (exclude instructors)
+        student_set = MapSet.new(student_ids)
+
+        filtered_student_proficiency =
+          student_proficiency
+          |> Enum.filter(fn {user_id, _proficiency_level} ->
+            MapSet.member?(student_set, user_id)
+          end)
+          |> Map.new()
+
+        # Add "Not enough data" for students who don't have proficiency data
+        complete_student_proficiency =
+          student_ids
+          |> Enum.reject(&Map.has_key?(filtered_student_proficiency, &1))
+          |> Enum.reduce(filtered_student_proficiency, fn user_id, acc ->
+            Map.put(acc, user_id, "Not enough data")
+          end)
+
+        proficiency_dist =
+          Enum.frequencies_by(complete_student_proficiency, fn {_student_id, proficiency} ->
+            proficiency
+          end)
+
+        Map.put(acc, obj_id, proficiency_dist)
+      end)
+
+    # Build result list using the SectionResource titles
+    objective_section_resources
+    |> Enum.map(fn section_resource ->
+      %{
+        sub_objective_id: section_resource.resource_id,
+        title: section_resource.title,
+        proficiency_distribution:
+          Map.get(proficiency_dist_for_objectives, section_resource.resource_id, %{})
+      }
+    end)
+  end
+
+  @doc """
+  Gets individual student proficiency data for a specific learning objective within a section.
+
+  This function returns detailed proficiency data for each student, which shows how students are distributed
+  across proficiency levels.
+
+  ## Parameters
+  - section_id: The section ID to filter students by
+  - objective_id: The learning objective resource ID to get proficiency for
+
+  ## Returns
+  List of student proficiency data:
+  [%{student_id: "123", proficiency: 0.85, proficiency_range: "High"}]
+  """
+  @spec student_proficiency_for_objective(section_id :: integer, objective_id :: integer) ::
+          list(map())
+  def student_proficiency_for_objective(section_id, objective_id) do
+    objective_type_id = Oli.Resources.ResourceType.id_for_objective()
+
+    query =
+      from(summary in Oli.Analytics.Summary.ResourceSummary,
+        where:
+          summary.section_id == ^section_id and
+            summary.project_id == -1 and
+            summary.resource_type_id == ^objective_type_id and
+            summary.resource_id == ^objective_id and
+            summary.user_id != -1,
+        group_by: [summary.user_id],
+        select:
+          {summary.user_id,
+           fragment(
+             """
+             (
+               (1 * CAST(SUM(?) as float)) +
+               (0.2 * (CAST(SUM(?) as float) - CAST(SUM(?) as float)))
+             ) /
+             NULLIF(CAST(SUM(?) as float), 0.0)
+             """,
+             summary.num_first_attempts_correct,
+             summary.num_first_attempts,
+             summary.num_first_attempts_correct,
+             summary.num_first_attempts
+           ), sum(summary.num_first_attempts)}
+      )
+
+    Repo.all(query)
+    |> Enum.map(fn {student_id, proficiency, num_first_attempts} ->
+      %{
+        id: student_id,
+        proficiency: proficiency || 0.0,
+        proficiency_range: proficiency_range(proficiency, num_first_attempts)
+      }
+    end)
+  end
+
+  @doc """
+  Calculates how many activities a student has attempted out of the total related activities.
+
+  Returns a map with student_id as key and attempt count as value.
+
+  ## Parameters
+  - section_id: The section ID
+  - student_ids: List of student IDs to calculate for
+  - related_activity_ids: List of activity resource IDs related to the objective
+
+  ## Returns
+  %{student_id => attempted_activities_count}
+  """
+  @spec student_activities_attempted_count(
+          section_id :: integer,
+          student_ids :: list(integer),
+          related_activity_ids :: list(integer)
+        ) :: map()
+  def student_activities_attempted_count(_section_id, _student_ids, related_activity_ids)
+      when related_activity_ids == [],
+      do: %{}
+
+  def student_activities_attempted_count(section_id, student_ids, related_activity_ids) do
+    activity_type_id = Oli.Resources.ResourceType.id_for_activity()
+
+    # Count distinct activities where the student has at least one attempt in any part
+    # Note: ResourceSummary has multiple rows per activity (one per part_id),
+    # so we filter by num_attempts > 0 and then count distinct resource_ids
+    from(rs in ResourceSummary,
+      where:
+        rs.section_id == ^section_id and
+          rs.user_id in ^student_ids and
+          rs.resource_id in ^related_activity_ids and
+          rs.project_id == -1 and
+          rs.resource_type_id == ^activity_type_id and
+          rs.num_attempts > 0,
+      group_by: rs.user_id,
+      select: {rs.user_id, fragment("COUNT(DISTINCT ?)", rs.resource_id)}
+    )
+    |> Repo.all()
+    |> Map.new()
+  end
 end

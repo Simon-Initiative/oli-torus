@@ -170,7 +170,7 @@ defmodule OliWeb.Certificates.Components.ThresholdsTabTest do
 
       ## select all graded pages
       lcd
-      |> element("button[phx-click=\"select_all_pages\"]")
+      |> element("button[phx-click='select_all_pages']")
       |> render_click()
 
       # all checkboxes are checked
@@ -179,7 +179,7 @@ defmodule OliWeb.Certificates.Components.ThresholdsTabTest do
 
       ## deselect all graded pages
       lcd
-      |> element("button[phx-click=\"deselect_all_pages\"]")
+      |> element("button[phx-click='deselect_all_pages']")
       |> render_click()
 
       # all checkboxes are unchecked
@@ -220,7 +220,7 @@ defmodule OliWeb.Certificates.Components.ThresholdsTabTest do
       assert has_element?(lcd, "svg[role=\"lock icon\"]")
 
       # There is a disabled fieldset
-      assert has_element?(lcd, "fieldset[disabled")
+      assert has_element?(lcd, "fieldset[disabled]")
 
       # The cross icon button on the multiselect dropdown is disabled
       assert has_element?(lcd, "button[aria-label=\"Remove\"].cursor-not-allowed")

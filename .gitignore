@@ -1,7 +1,12 @@
+./output
+./output/*
+
 temp_init_file
 .vscode
 lib/oli/analytics/test.xml
 Mnesia.*
+
+/output/
 
 # IDEA
 *.iml
@@ -74,13 +79,17 @@ postgres.env
 .elixir_ls
 .DS_Store
 /amisc/
+/dataset/
+/xapi_output/
+/xapi_test_output/
+/datashop_output/
 /docker-compose-dev.yml
 assets/yarn.lock
 lib/oli/analytics/test.xml
 .devcontainer/data
 registrations.json
 seeds.json
-docker-compose.override.yml
+/docker-compose.override.yml
 supervisord.log
 supervisord.pid
 stacks.out
@@ -100,3 +109,14 @@ MnesiaCore.nonode@nohost_1698_943806_800396
 .cursor/mcp.json
 .cursor/rules/user-custom-rules.mdc
 .cursor/rules/oli.mdc
+.codex/log/
+.codex/sessions/
+.codex/auth.json
+.codex/config.toml
+.codex/history.jsonl
+.codex/version.json
+.codex/internal_storage.json
+
+# Python cache files
+./**/*.pyc
+

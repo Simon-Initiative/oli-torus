@@ -1,0 +1,46 @@
+# Scenario: Curriculum operations tolerate nil child ids in container children arrays
+
+- project:
+    name: "bad_curriculum_nil"
+    title: "Bad Curriculum Nil Child"
+    root:
+      children:
+        - container: "Unit 1"
+          children:
+            - page: "Page A"
+            - page: "Page B"
+        - container: "Unit 2"
+          children:
+            - page: "Page C"
+
+- assert:
+    structure:
+      to: "bad_curriculum_nil"
+      root:
+        children:
+          - container: "Unit 1"
+            children:
+              - page: "Page A"
+              - page: "Page B"
+          - container: "Unit 2"
+            children:
+              - page: "Page C"
+
+- hook:
+    function: "Oli.Scenarios.Features.CurriculumHooks.replace_child_with_nil/1"
+
+- manipulate:
+    to: "bad_curriculum_nil"
+    ops:
+      - add_page:
+          title: "Resilient Page"
+          to: "Unit 1"
+      - add_container:
+          title: "Unit 3"
+          to: "root"
+      - add_page:
+          title: "Unit 3 Lesson"
+          to: "Unit 3"
+
+- hook:
+    function: "Oli.Scenarios.Features.CurriculumHooks.assert_nil_child_outcome/1"

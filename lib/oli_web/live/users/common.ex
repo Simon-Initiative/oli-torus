@@ -85,9 +85,9 @@ defmodule OliWeb.Users.Common do
 
     ~H"""
     <div class="d-flex flex-row">
-      <%= @email %>
+      {@email}
       <div class="flex-grow-1"></div>
-      <%= @checkmark %>
+      {@checkmark}
     </div>
     <div>
       <%= if !is_nil(@locked_at) do %>

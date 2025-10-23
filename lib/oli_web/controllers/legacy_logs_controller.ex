@@ -1,7 +1,7 @@
 defmodule OliWeb.LegacyLogsController do
   use OliWeb, :controller
 
-  import SweetXml
+  alias Oli.Delivery.CustomLogs.LegacyLogs
 
   def process(conn, _params) do
     doc =
@@ -14,15 +14,22 @@ defmodule OliWeb.LegacyLogsController do
           raw_body
       end
 
-    activity_attempt_guid = to_string(xpath(doc, ~x"//*/@external_object_id"))
-    action = to_string(xpath(doc, ~x"//*/@action_id"))
+    case LegacyLogs.create(doc, host_name()) do
+      :ok ->
+        conn
+        |> put_resp_content_type("text/xml")
+        |> send_resp(200, "status=success")
 
-    # Processing via oban task not neccessary here given that this http request
-    # is only involved with this one single task
-    Oli.Delivery.CustomLogs.Worker.perform_now(activity_attempt_guid, action, to_string(doc))
+      _ ->
+        conn
+        |> put_resp_content_type("text/xml")
+        |> send_resp(500, "status=error")
+    end
+  end
 
-    conn
-    |> put_resp_content_type("text/xml")
-    |> send_resp(200, "status=success")
+  defp host_name() do
+    Application.get_env(:oli, OliWeb.Endpoint)
+    |> Keyword.get(:url)
+    |> Keyword.get(:host)
   end
 end

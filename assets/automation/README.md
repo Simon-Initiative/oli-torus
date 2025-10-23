@@ -2,62 +2,92 @@
 
 This platform contains the automated e2e tests.
 
-## Execute tests
+## 🔑 Required environment variables
 
-Runs the end-to-end tests.
+### 📄 login.env
 
-```bash
-npm run test
+Before running the tests, make sure you configure the following environment variables in a .env file, which must be located at `tests/resources/login.env` These are required for authenticating the users and accessing the platform.
+
+```env
+BASE_URL=https://your-url.com
+
+EMAIL_AUTHOR=your_author_email@example.com
+PASS_AUTHOR=your_author_password
+
+EMAIL_STUDENT=your_student_email@example.com
+PASS_STUDENT=your_student_password
+NAME_STUDENT=Your Student Name
+LASTNAME_STUDENT=Your Student last name
+
+EMAIL_INSTRUCTOR=your_instructor_email@example.com
+PASS_INSTRUCTOR=your_instructor_password
+
+EMAIL_ADMIN=your_admin_email@example.com
+PASS_ADMIN=your_admin_password
 ```
 
-Starts the interactive UI mode.
+### config.env
+
+This file is located in `tests/resources/login.env`
+
+| Name                 | Accepted values | Description                                                                                                     |
+| -------------------- | --------------- | --------------------------------------------------------------------------------------------------------------- |
+| `AUTO_CLOSE_BROWSER` | `true`, `false` | Closes the browser automatically after the run. Set to `false` to keep it open for debugging between test runs. |
+
+## 🧪 Configuration Tests & Report
+
+Install dependencies
 
 ```bash
-npm run test-ui
+npm i
 ```
 
-Runs the tests only on Desktop Chromium.
+Run the configuration for testing
 
 ```bash
-npm run test-chromium
+npm run test-config
 ```
 
-Runs the tests in debug mode.
+Run it in headed mode (visible browser)
 
 ```bash
-npm run test-debug
+npm run test-config:headed
 ```
 
-Auto generate tests with Codegen.
-
-```bash
-npm run codegen
-```
-
-Show the tests report
+Open the latest Playwright HTML report
 
 ```bash
 npm run show-report
 ```
 
-## Visual Studio Code tools
+## 🤖 Automated Configurations
 
-[Playwright Test for VSCode](https://marketplace.visualstudio.com/items?itemName=ms-playwright.playwright)
+These configurations are executed **before running the tests** and are already automated.  
+The following processes are included.
 
-Withd this plugin we can:
+### 📁 Project Creation
 
-- pick a locator
-- record a new test
-- select the browser to execute the tests
-- select the settings to apply in to the tests
+The following projects are automatically created with these names:
 
-## Project structure
+- `TQA-10-automation`
+- `TQA-11-automation`
+- `TQA-12-automation`
+- `TQA-13-automation`
+- `TQA-14-automation`
+- `TQA-15-automation`
+- `TQA-17-automation`
 
-```code
---src
-  |--> core
-  |--> systems
---test
-  |--> resources
-  |--> torus
-```
+### 🎨 Multimedia File Configuration
+
+The upload of multimedia resources is automated for the following projects:
+
+| 📂 Project Name   | 📄 File Name            | 🏷️ Type |
+| :---------------- | :---------------------- | :------ |
+| TQA-12-automation | img-mock-05-16-2025.jpg | image   |
+| TQA-13-automation | img-mock-05-16-2025.jpg | image   |
+| TQA-13-automation | audio-test-01.mp3       | audio   |
+| TQA-13-automation | video-test-01.mp4       | video   |
+
+## 🧩 Platform Features
+
+[View the features](PLATFORM_FEATURES.md)

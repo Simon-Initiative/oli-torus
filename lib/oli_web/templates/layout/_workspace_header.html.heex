@@ -1,9 +1,9 @@
 <div class="workspace-header-container flex-1 flex flex-column shadow overflow-x-clip">
   <div class={"workspace-header flex-grow-1 flex flex-row flex-nowrap px-6 #{if Map.has_key?(@conn.assigns, :breadcrumbs) and length(@breadcrumbs) > 0, do: "with-breadcrumbs", else: ""}"}>
     <h3 class="truncate">
-      <%= if Map.has_key?(@conn.assigns, :breadcrumbs) and length(@breadcrumbs) > 0,
+      {if Map.has_key?(@conn.assigns, :breadcrumbs) and length(@breadcrumbs) > 0,
         do: hd(Enum.reverse(@breadcrumbs)).short_title,
-        else: assigns[:title] %>
+        else: assigns[:title]}
     </h3>
     <div class="flex-1"></div>
     <.tech_support_link
@@ -25,24 +25,24 @@
     <% %{breadcrumbs: breadcrumbs, project: project}  when not is_nil(project) -> %>
       <%= if length(breadcrumbs) > 0 do %>
         <nav class="breadcrumb-bar flex flex-row align-items-center px-3 border-t border-l border-gray-300 dark:border-neutral-800">
-          <%= live_render(@conn, BreadcrumbTrailLive,
+          {live_render(@conn, BreadcrumbTrailLive,
             session: %{
               "container_slug" => container_slug(@conn.assigns),
               "project_slug" => project.slug,
               "breadcrumbs" => breadcrumbs
             }
-          ) %>
+          )}
         </nav>
       <% end %>
     <% %{breadcrumbs: breadcrumbs}  when not is_nil(breadcrumbs) -> %>
       <%= if length(breadcrumbs) > 0 do %>
         <nav class="breadcrumb-bar flex flex-row align-items-center px-3 border-t border-l border-gray-300 dark:border-neutral-800">
-          <%= live_render(@conn, BreadcrumbTrailLive,
+          {live_render(@conn, BreadcrumbTrailLive,
             session: %{
               "container_slug" => container_slug(@conn.assigns),
               "breadcrumbs" => breadcrumbs
             }
-          ) %>
+          )}
         </nav>
       <% end %>
     <% _ -> %>

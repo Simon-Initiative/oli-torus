@@ -1,0 +1,5 @@
+# Another file in the same subdirectory
+- user:
+    name: neighbor_user
+    type: instructor
+    email: neighbor@test.edu

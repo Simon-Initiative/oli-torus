@@ -18,7 +18,7 @@ defmodule OliWeb.Curriculum.NotEmptyModal do
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title">
-              Delete <%= resource_type_label(@revision) |> String.capitalize() %>
+              Delete {resource_type_label(@revision) |> String.capitalize()}
             </h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
             </button>

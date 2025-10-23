@@ -21,6 +21,7 @@ defmodule OliWeb.Plugs.EnsureDatashopIdTest do
     test "create a new datashop_session_id if present in session but a timestamp is not", %{
       conn: conn
     } do
+      # session id
       existing_session_id = "existing-session-id"
 
       conn =

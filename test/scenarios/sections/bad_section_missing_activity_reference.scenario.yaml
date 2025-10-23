@@ -1,0 +1,89 @@
+# Scenario: Course section creation tolerates missing activity references
+# This scenario creates a minimal project with a unit and two practice pages,
+# corrupts Practice Page A to reference a nonexistent activity, and ensures
+# section creation still succeeds with the expected structure.
+
+- project:
+    name: "missing_activity_section_project"
+    title: "Missing Activity Reference Section Project"
+    root:
+      children:
+        - container: "Unit 1"
+          children:
+            - page: "Practice Page A"
+            - page: "Practice Page B"
+
+- edit_page:
+    project: "missing_activity_section_project"
+    page: "Practice Page A"
+    content: |
+      title: "Practice Page A"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "## Practice Question A"
+        - type: activity
+          virtual_id: "practice_a_activity"
+          activity:
+            type: oli_multiple_choice
+            stem_md: "What color is the sky on a clear day?"
+            choices:
+              - id: "a"
+                body_md: "Green"
+                score: 0
+              - id: "b"
+                body_md: "Blue"
+                score: 1
+              - id: "c"
+                body_md: "Red"
+                score: 0
+
+- edit_page:
+    project: "missing_activity_section_project"
+    page: "Practice Page B"
+    content: |
+      title: "Practice Page B"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "## Practice Question B"
+        - type: activity
+          virtual_id: "practice_b_activity"
+          activity:
+            type: oli_multiple_choice
+            stem_md: "How many continents are there?"
+            choices:
+              - id: "a"
+                body_md: "5"
+                score: 0
+              - id: "b"
+                body_md: "7"
+                score: 1
+              - id: "c"
+                body_md: "10"
+                score: 0
+
+- publish:
+    to: "missing_activity_section_project"
+    description: "Publish project prior to corrupting activity reference"
+
+- hook:
+    function: "Oli.Scenarios.Sections.CourseSectionHooks.inject_missing_activity_reference/1"
+
+- section:
+    name: "missing_activity_section"
+    title: "Missing Activity Section"
+    from: "missing_activity_section_project"
+
+- assert:
+    structure:
+      to: "missing_activity_section"
+      root:
+        children:
+          - container: "Unit 1"
+            children:
+              - page: "Practice Page A"
+              - page: "Practice Page B"
+
+- hook:
+    function: "Oli.Scenarios.Sections.CourseSectionHooks.assert_missing_activity_reference/1"

@@ -136,26 +136,31 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
       {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug))
 
       assert view
-             |> element("table.instructor_dashboard_table > tbody > tr:first-child")
+             |> element(
+               "#objectives-table table.instructor_dashboard_table > tbody > tr[data-row-id='row_#{obj_revision_1.resource_id}_0'] > td:nth-child(2)"
+             )
              |> render() =~ obj_revision_1.title
 
       assert view
-             |> element("table.instructor_dashboard_table > tbody > tr:nth-child(2)")
+             |> element(
+               "#objectives-table table.instructor_dashboard_table > tbody > tr[data-row-id='row_#{obj_revision_2.resource_id}_1'] > td:nth-child(2)"
+             )
              |> render() =~ obj_revision_2.title
 
       ## sorting by objective
-      params = %{
-        sort_order: :desc
-      }
-
+      params = %{sort_order: :desc}
       {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug, params))
 
       assert view
-             |> element("table.instructor_dashboard_table > tbody > tr:first-child")
+             |> element(
+               "#objectives-table table.instructor_dashboard_table > tbody > tr[data-row-id='row_#{obj_revision_2.resource_id}_0'] > td:nth-child(2)"
+             )
              |> render() =~ obj_revision_2.title
 
       assert view
-             |> element("table.instructor_dashboard_table > tbody > tr:nth-child(2)")
+             |> element(
+               "#objectives-table table.instructor_dashboard_table > tbody > tr[data-row-id='row_#{obj_revision_1.resource_id}_1'] > td:nth-child(2)"
+             )
              |> render() =~ obj_revision_1.title
     end
 
@@ -318,10 +323,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
       assert has_element?(view, "span", "#{revisions.obj_revision_e.title}")
       assert has_element?(view, "span", "#{revisions.obj_revision_f.title}")
 
-      # Has info tooltip
-      assert has_element?(view, "#filter-disabled-tooltip")
-      # Select is disabled
-      assert has_element?(view, ".torus-select[disabled]")
+      ## List navigator is not displayed
+      refute has_element?(view, "#objectives_containers_navigator")
     end
 
     test "filter by proficiency works correctly", %{
@@ -349,7 +352,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
       assert has_element?(view, "h6", "There are no objectives to show")
 
       ## Click on Clear All Filters button
-      element(view, "button[phx-click=\"clear_all_filters\"]") |> render_click()
+      element(view, "button[phx-click='clear_all_filters']") |> render_click()
 
       ## Checks that all objectives are displayed again
       assert has_element?(view, "span", "#{revisions.obj_revision_a.title}")
@@ -476,6 +479,28 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
       # Page 2
       refute has_element?(view, "span", "#{revisions.obj_revision_e.title}")
       refute has_element?(view, "span", "#{revisions.obj_revision_f.title}")
+    end
+  end
+
+  describe "related activities column" do
+    setup [:instructor_conn, :create_project_with_objectives]
+
+    test "related activities column is present for instructors", %{
+      conn: conn,
+      instructor: instructor,
+      section: section
+    } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.rebuild_contained_objectives(section)
+
+      {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug))
+
+      # Check that the "Related Activities" column header is present
+      assert has_element?(
+               view,
+               "table thead th span[title*='Number of activities']",
+               "Related Activities"
+             )
     end
   end
 end

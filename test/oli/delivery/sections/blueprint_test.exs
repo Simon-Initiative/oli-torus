@@ -228,8 +228,8 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
     end
 
     test "browse/3 lists products and applies sorting by amount" do
-      product_id_1 = insert(:section, requires_payment: true, amount: Money.new(:USD, 10)).id
-      product_id_2 = insert(:section, requires_payment: true, amount: Money.new(:USD, 20)).id
+      product_id_1 = insert(:section, requires_payment: true, amount: Money.new(10, "USD")).id
+      product_id_2 = insert(:section, requires_payment: true, amount: Money.new(20, "USD")).id
 
       assert [%Sections.Section{id: ^product_id_1}, %Sections.Section{id: ^product_id_2}] =
                Blueprint.browse(%Paging{offset: 0, limit: 2}, %Sorting{
@@ -266,8 +266,8 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
 
     @tag :flaky
     test "browse/3 lists products and applies searching by amount" do
-      product_id_1 = insert(:section, requires_payment: true, amount: Money.new(:USD, 500)).id
-      _product_id_2 = insert(:section, requires_payment: true, amount: Money.new(:USD, 100)).id
+      product_id_1 = insert(:section, requires_payment: true, amount: Money.new(500, "USD")).id
+      _product_id_2 = insert(:section, requires_payment: true, amount: Money.new(100, "USD")).id
 
       assert [%Sections.Section{id: ^product_id_1}] =
                Blueprint.browse(
@@ -342,7 +342,7 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
       attrs = %{
         "requires_payment" => true,
         "payment_options" => "direct",
-        "amount" => %{"currency" => "USD", "amount" => "50.00"}
+        "amount" => %{"currency" => "USD", "amount" => 50}
       }
 
       {:ok, blueprint} =
@@ -361,7 +361,7 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
       assert blueprint.base_project_id == project.id
       assert blueprint.requires_payment == true
       assert blueprint.payment_options == :direct
-      assert blueprint.amount == Money.new(:USD, "50.00")
+      assert blueprint.amount == Money.new(50, "USD")
       assert blueprint.customizations.unit == "Module"
       refute blueprint.open_and_free
 
@@ -410,7 +410,7 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
       assert blueprint.pay_by_institution == false
       assert blueprint.registration_open == false
       assert blueprint.grace_period_days == 1
-      assert blueprint.amount == Money.new(:USD, "25.00")
+      assert blueprint.amount == Money.new(25, "USD")
       assert blueprint.certificate_enabled == false
     end
 

@@ -48,10 +48,10 @@ defmodule OliWeb.Components.Delivery.RecommendedActions do
           <:icon><i class="fa-solid fa-circle-question" /></:icon>
           <:title>Score questions</:title>
           <:description>
-            You have <%= @scoring_pending_activities_count %> <%= if @scoring_pending_activities_count >
-                                                                       1,
-                                                                     do: "questions that are",
-                                                                     else: "question that is" %> awaiting your manual scoring
+            You have {@scoring_pending_activities_count} {if @scoring_pending_activities_count >
+                                                               1,
+                                                             do: "questions that are",
+                                                             else: "question that is"} awaiting your manual scoring
           </:description>
         </.action_card>
       <% end %>
@@ -60,10 +60,10 @@ defmodule OliWeb.Components.Delivery.RecommendedActions do
           <:icon><i class="fa-solid fa-circle-check" /></:icon>
           <:title>Approve Pending Posts</:title>
           <:description>
-            You have <%= @approval_pending_posts_count %> discussion <%= if @approval_pending_posts_count >
-                                                                              1,
-                                                                            do: "posts that are",
-                                                                            else: "post that is" %> pending your approval
+            You have {@approval_pending_posts_count} discussion {if @approval_pending_posts_count >
+                                                                      1,
+                                                                    do: "posts that are",
+                                                                    else: "post that is"} pending your approval
           </:description>
         </.action_card>
       <% end %>
@@ -109,11 +109,11 @@ defmodule OliWeb.Components.Delivery.RecommendedActions do
       class="group border border-gray-200 dark:border-gray-600 rounded p-3 pl-8 flex flex-col justify-center cursor-pointer hover:bg-delivery-primary-50 active:bg-delivery-primary active:text-white hover:no-underline"
     >
       <div class="flex items-center gap-2">
-        <%= render_slot(@icon) %>
-        <h4><%= render_slot(@title) %></h4>
+        {render_slot(@icon)}
+        <h4>{render_slot(@title)}</h4>
       </div>
       <span class="torus-span group-hover:text-gray-500 group-active:text-white">
-        <%= render_slot(@description) %>
+        {render_slot(@description)}
       </span>
     </.link>
     """

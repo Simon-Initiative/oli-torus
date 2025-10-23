@@ -4,9 +4,10 @@ defmodule Oli.CourseBrowseTest do
   alias Oli.Course
   alias Oli.Accounts.Author
   alias Oli.Accounts.SystemRole
-  alias Oli.Authoring.Course
+  alias Oli.Authoring.{Collaborators, Course}
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
+  import Oli.Factory
 
   def make_projects(prefix, n, author) do
     65..(65 + (n - 1))
@@ -81,6 +82,107 @@ defmodule Oli.CourseBrowseTest do
       projects = browse(admin, 0, 10, :title, :asc, true, "")
       assert length(projects) == 10
       assert hd(projects).total_count == 22
+    end
+
+    test "search includes owner and collaborator metadata", %{admin: admin} do
+      collaborator = insert(:author, name: "Collaborator Search", email: "collab@oli.org")
+
+      {:ok, %{project: project}} =
+        Course.create_project("Search Meta Project", admin, %{slug: "search-meta-project"})
+
+      {:ok, _} = Collaborators.add_collaborator(collaborator, project)
+
+      result_titles =
+        browse(admin, 0, 50, :title, :asc, false, "collaborator")
+        |> Enum.map(& &1.title)
+
+      assert "Search Meta Project" in result_titles
+
+      result_titles =
+        browse(admin, 0, 50, :title, :asc, false, admin.email)
+        |> Enum.map(& &1.title)
+
+      assert "Search Meta Project" in result_titles
+    end
+
+    test "browse_projects_for_export returns all projects without pagination", %{
+      author: author,
+      admin: admin
+    } do
+      # Test admin can see all projects
+      projects =
+        Course.browse_projects_for_export(
+          admin,
+          %Sorting{field: :title, direction: :asc},
+          include_deleted: false,
+          admin_show_all: true,
+          text_search: ""
+        )
+
+      # 10 admin + 11 author projects
+      assert length(projects) == 21
+
+      # Test author can only see their own projects
+      projects =
+        Course.browse_projects_for_export(
+          author,
+          %Sorting{field: :title, direction: :asc},
+          include_deleted: false,
+          admin_show_all: false,
+          text_search: ""
+        )
+
+      # Only author's projects
+      assert length(projects) == 11
+
+      # Test text search filtering
+      projects =
+        Course.browse_projects_for_export(
+          admin,
+          %Sorting{field: :title, direction: :asc},
+          include_deleted: false,
+          admin_show_all: true,
+          text_search: "admin-"
+        )
+
+      # Only admin projects
+      assert length(projects) == 10
+
+      # Test including deleted projects
+      projects =
+        Course.browse_projects_for_export(
+          admin,
+          %Sorting{field: :title, direction: :asc},
+          include_deleted: true,
+          admin_show_all: true,
+          text_search: ""
+        )
+
+      # All projects including deleted
+      assert length(projects) == 22
+
+      # Test sorting
+      projects_asc =
+        Course.browse_projects_for_export(
+          admin,
+          %Sorting{field: :title, direction: :asc},
+          include_deleted: false,
+          admin_show_all: true,
+          text_search: "admin-"
+        )
+
+      assert hd(projects_asc).title == "admin-A"
+
+      projects_desc =
+        Course.browse_projects_for_export(
+          admin,
+          %Sorting{field: :title, direction: :desc},
+          include_deleted: false,
+          admin_show_all: true,
+          text_search: "admin-"
+        )
+
+      assert hd(projects_desc).title == "admin-J"
     end
   end
 end

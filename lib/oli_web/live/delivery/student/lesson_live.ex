@@ -15,6 +15,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   alias Oli.Accounts.User
   alias Oli.Delivery.Attempts.PageLifecycle
   alias Oli.Delivery.Attempts.PageLifecycle.FinalizationSummary
+  alias Oli.Delivery.Attempts.Core
   alias Oli.Publishing.DeliveryResolver, as: Resolver
   alias Oli.Resources.Collaboration
   alias Oli.Resources.Collaboration.CollabSpaceConfig
@@ -131,7 +132,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         %{assigns: %{view: :graded_page}} =
           socket
       ) do
-    %{page_context: page_context} = socket.assigns
+    %{page_context: page_context, section: section} = socket.assigns
 
     if connected?(socket) do
       send(self(), :gc)
@@ -158,6 +159,17 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
       Oli.Delivery.ScoreAsYouGoNotifications.subscribe(resource_attempt.id)
 
+      # Get the latest ResourceAccess for this resource to get the current out_of value
+      resource_access =
+        Core.get_resource_access(
+          page_context.page.resource_id,
+          section.slug,
+          page_context.user.id
+        )
+
+      current_out_of =
+        if resource_access, do: resource_access.out_of, else: resource_attempt.out_of
+
       socket =
         socket
         |> emit_page_viewed_event()
@@ -175,7 +187,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           attempt_start_time: resource_attempt.inserted_at |> to_epoch,
           review_mode: page_context.review_mode,
           current_score: resource_attempt.score,
-          current_out_of: resource_attempt.out_of,
+          current_out_of: current_out_of,
           effective_settings: page_context.effective_settings
         )
         |> slim_assigns()
@@ -794,7 +806,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   def render(%{show_blocking_gates?: true} = assigns) do
     ~H"""
     <div class="flex pb-20 flex-col w-full items-center gap-15 flex-1 overflow-auto">
-      <div class="flex-1 w-full max-w-[1040px] px-[80px] pt-20 pb-10 flex-col justify-start items-center inline-flex">
+      <div class="flex-1 w-full max-w-[1040px] px-4 sm:px-[80px] pt-4 sm:pt-20 pb-10 flex-col justify-start items-center inline-flex">
         <.page_header
           page_context={@page_context}
           ctx={@ctx}
@@ -815,18 +827,17 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     # For practice page the activity scripts and activity_bridge script are needed as soon as the page loads.
     ~H"""
     <div id="fire_page_trigger" phx-hook="FirePageTrigger"></div>
-    <Annotations.delete_post_modal />
-    <div id="sticky_panel" class="absolute top-4 right-0 z-40 h-full">
-      <div class="sticky top-20 right-0">
+    <div id="sticky_panel" class="absolute w-full sm:w-auto sm:top-4 sm:right-0 z-50 sm:h-full">
+      <div class="fixed z-50 bottom-0 w-full sm:sticky sm:ml-auto sm:top-20 sm:right-0">
         <div class={[
-          "absolute top-24",
-          if(@active_sidebar_panel == :outline, do: "right-[380px]"),
-          if(@active_sidebar_panel == :notes, do: "right-[505px]"),
-          if(@active_sidebar_panel == nil, do: "right-0")
+          "hidden sm:inline-flex absolute top-24",
+          if(@active_sidebar_panel == :outline, do: "sm:right-[380px]"),
+          if(@active_sidebar_panel == :notes, do: "sm:right-[505px]"),
+          if(@active_sidebar_panel == nil, do: "sm:right-0")
         ]}>
-          <div class="h-32 rounded-tl-xl rounded-bl-xl justify-start items-center inline-flex">
+          <div class="inline-flex h-32 rounded-tl-xl rounded-bl-xl justify-start items-center">
             <div class={[
-              "px-2 py-6 bg-white dark:bg-black shadow flex-col justify-center gap-4 inline-flex",
+              "px-2 py-6 bg-Surface-surface-background shadow flex-col justify-center gap-4 inline-flex",
               if(@active_sidebar_panel,
                 do: "rounded-t-xl rounded-b-xl",
                 else: "rounded-tl-xl rounded-bl-xl"
@@ -892,7 +903,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         role="page content"
         phx-hook="PointMarkers"
       >
-        <%= raw(@html) %>
+        {raw(@html)}
         <div class="flex w-full justify-center">
           <.reset_attempts_button
             activity_count={@activity_count}
@@ -918,6 +929,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         />
       </:point_markers>
     </.page_content_with_sidebar_layout>
+    <Annotations.delete_post_modal />
     """
   end
 
@@ -925,15 +937,15 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     # For practice page the activity scripts and activity_bridge script are needed as soon as the page loads.
     ~H"""
     <div id="fire_page_trigger" phx-hook="FirePageTrigger"></div>
-    <div id="sticky_panel" class="absolute top-4 right-0 z-50 h-full">
-      <div class="sticky ml-auto top-20 right-0">
+    <div id="sticky_panel" class="absolute w-full sm:w-auto sm:top-4 sm:right-0 z-50 sm:h-full">
+      <div class="fixed z-50 bottom-0 w-full sm:sticky sm:ml-auto sm:top-20 sm:right-0">
         <div class={[
-          "absolute top-24",
-          if(@active_sidebar_panel == :outline, do: "right-[380px]", else: "right-0")
+          "hidden sm:inline-flex absolute top-24",
+          if(@active_sidebar_panel == :outline, do: "sm:right-[380px]", else: "right-0")
         ]}>
           <div class="h-32 rounded-tl-xl rounded-bl-xl justify-start items-center inline-flex">
             <div class={[
-              "px-2 py-6 bg-white dark:bg-black shadow flex-col justify-center gap-4 inline-flex",
+              "px-2 py-6 bg-Surface-surface-background shadow flex-col justify-center gap-4 inline-flex",
               if(@active_sidebar_panel,
                 do: "rounded-t-xl rounded-b-xl",
                 else: "rounded-tl-xl rounded-bl-xl"
@@ -971,7 +983,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       </:header>
 
       <div id="page_content" class="content" phx-update="ignore" role="page content">
-        <%= raw(@html) %>
+        {raw(@html)}
         <div class="flex w-full justify-center">
           <.reset_attempts_button
             activity_count={@activity_count}
@@ -997,7 +1009,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     <div class="flex pb-20 flex-col w-full items-center gap-15 flex-1">
       <div class="flex flex-col items-center w-full">
         <.scored_page_banner {assigns} />
-        <div class="flex-1 w-full max-w-[1040px] px-[80px] pt-20 pb-10 flex-col justify-start items-center gap-10 inline-flex">
+        <div class="flex-1 w-full max-w-[1040px] px-4 sm:px-[80px] sm:pt-20 pb-10 flex-col justify-start items-center gap-10 inline-flex">
           <.page_header
             page_context={@page_context}
             ctx={@ctx}
@@ -1048,7 +1060,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     <div class="flex pb-20 flex-col w-full items-center gap-15 flex-1">
       <div class="flex flex-col items-center w-full">
         <.scored_page_banner {assigns} />
-        <div class="flex-1 w-full max-w-[1040px] px-[80px] pt-20 pb-10 flex-col justify-start items-center gap-10 inline-flex">
+        <div class="flex-1 w-full max-w-[1040px] px-4 sm:px-[80px] pt-4 sm:pt-20 pb-10 flex-col justify-start items-center gap-10 inline-flex">
           <.page_header
             page_context={@page_context}
             ctx={@ctx}
@@ -1064,7 +1076,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           />
 
           <div id="page_content" class="content w-full" phx-update="ignore" role="page content">
-            <%= raw(@html) %>
+            {raw(@html)}
             <.submit_button batch_scoring={@page_context.effective_settings.batch_scoring} />
             <.references ctx={@ctx} bib_app_params={@bib_app_params} />
           </div>
@@ -1081,15 +1093,15 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         <script>
           window.userToken = "<%= @user_token %>";
         </script>
-        <%= OliWeb.Common.React.component(
+        {OliWeb.Common.React.component(
           %{is_liveview: true},
           "Components.Delivery",
           @app_params,
           id: "adaptive_content"
-        ) %>
+        )}
       </div>
 
-      <%= OliWeb.LayoutView.additional_stylesheets(%{additional_stylesheets: @additional_stylesheets}) %>
+      {OliWeb.LayoutView.additional_stylesheets(%{additional_stylesheets: @additional_stylesheets})}
     </div>
     """
   end
@@ -1128,7 +1140,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     ~H"""
     Overall Page Score: <Icons.score_as_you_go color="text-black dark:text-white" />
     <strong class="text-black dark:text-white">
-      <%= format_score(@score) %> / <%= format_score(@out_of) %>
+      {format_score(@score)} / {format_score(@out_of)}
     </strong>
     """
   end
@@ -1136,7 +1148,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   def score(assigns) do
     ~H"""
     Overall Page Score: <Icons.score_as_you_go color="text-[#0FB863]" />
-    <strong class="text-[#0FB863]"><%= format_score(@score) %> / <%= format_score(@out_of) %></strong>
+    <strong class="text-[#0FB863]">{format_score(@score)} / {format_score(@out_of)}</strong>
     """
   end
 
@@ -1218,7 +1230,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   attr :active_sidebar_panel, :atom, default: nil
   slot :header, required: true
   slot :inner_block, required: true
-  slot :point_markers, default: nil
+  slot :point_markers
 
   defp page_content_with_sidebar_layout(assigns) do
     ~H"""
@@ -1229,16 +1241,18 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         if(@active_sidebar_panel == :outline, do: "xl:mr-[360px]")
       ]}>
         <div class={[
-          "flex-1 mt-20 px-[80px] relative",
-          if(@active_sidebar_panel == :notes, do: "border-r border-gray-300 xl:mr-[80px]")
+          "flex-1 mt-4 sm:mt-20 px-4 sm:px-[80px] relative",
+          if(@active_sidebar_panel == :notes,
+            do: "border-r border-gray-300 pr-6 mr-8 sm:mr-0 xl:mr-[80px]"
+          )
         ]}>
           <div class="container mx-auto max-w-[880px] pb-20">
-            <%= render_slot(@header) %>
+            {render_slot(@header)}
 
-            <%= render_slot(@inner_block) %>
+            {render_slot(@inner_block)}
           </div>
 
-          <%= render_slot(@point_markers) %>
+          {render_slot(@point_markers)}
         </div>
       </div>
     </div>

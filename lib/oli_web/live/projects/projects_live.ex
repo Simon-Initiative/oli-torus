@@ -13,11 +13,14 @@ defmodule OliWeb.Projects.ProjectsLive do
   alias Oli.Authoring.Course
   alias Oli.Authoring.Course.Project
   alias Oli.Repo.{Paging, Sorting}
-  alias OliWeb.Common.{Breadcrumb, PagedTable, TextSearch}
+  alias OliWeb.Common.{PagingParams, Params, SearchInput, StripedPagedTable}
+  alias OliWeb.Common.Table.SortableTableModel
+  alias OliWeb.Icons
   alias OliWeb.Projects.{CreateProjectModal, TableModel}
   alias OliWeb.Router.Helpers, as: Routes
 
-  @limit 25
+  @limit 20
+  @min_search_length 3
 
   on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
   on_mount OliWeb.LiveSessionPlugs.SetCtx
@@ -34,18 +37,30 @@ defmodule OliWeb.Projects.ProjectsLive do
 
     show_deleted = Accounts.get_author_preference(author, :admin_show_deleted_projects, false)
 
+    initial_search = ""
+    applied_search = sanitize_search_term(initial_search)
+
     projects =
       Course.browse_projects(
         author,
         %Paging{offset: 0, limit: @limit},
-        %Sorting{direction: :asc, field: :title},
+        %Sorting{direction: :desc, field: :inserted_at},
         include_deleted: show_deleted,
-        admin_show_all: show_all
+        admin_show_all: show_all,
+        text_search: applied_search
       )
 
-    {:ok, table_model} = TableModel.new(ctx, projects)
+    {:ok, table_model} =
+      TableModel.new(ctx, projects,
+        sort_by_spec: :inserted_at,
+        sort_order: :desc,
+        search_term: applied_search,
+        is_admin: is_content_admin
+      )
 
     total_count = determine_total(projects)
+
+    export_filename = "projects-" <> Date.to_iso8601(Date.utc_today()) <> ".csv"
 
     {:ok,
      assign(
@@ -57,7 +72,11 @@ defmodule OliWeb.Projects.ProjectsLive do
        is_content_admin: is_content_admin,
        show_all: show_all,
        show_deleted: show_deleted,
-       title: "Projects"
+       title: "Projects",
+       limit: @limit,
+       export_filename: export_filename,
+       text_search: initial_search,
+       offset: 0
      )}
   end
 
@@ -74,17 +93,14 @@ defmodule OliWeb.Projects.ProjectsLive do
       show_all: show_all,
       show_deleted: show_deleted,
       author: author
-    } =
-      socket.assigns
+    } = socket.assigns
 
-    table_model =
-      OliWeb.Common.Table.SortableTableModel.update_from_params(
-        socket.assigns.table_model,
-        params
-      )
+    table_model = SortableTableModel.update_from_params(socket.assigns.table_model, params)
 
     offset = get_int_param(params, "offset", 0)
-    text_search = get_param(params, "text_search", "")
+    text_search = params |> get_param("text_search", "") |> String.trim()
+    applied_search = sanitize_search_term(text_search)
+    limit = get_int_param(params, "limit", @limit)
 
     # if author is an admin, get the show_all value and update if its changed
     {show_all, author} =
@@ -114,14 +130,17 @@ defmodule OliWeb.Projects.ProjectsLive do
     projects =
       Course.browse_projects(
         socket.assigns.author,
-        %Paging{offset: offset, limit: @limit},
+        %Paging{offset: offset, limit: limit},
         %Sorting{direction: table_model.sort_order, field: table_model.sort_by_spec.name},
         include_deleted: show_deleted,
         admin_show_all: show_all,
-        text_search: text_search
+        text_search: applied_search
       )
 
-    table_model = Map.put(table_model, :rows, projects)
+    table_model =
+      table_model
+      |> Map.put(:rows, projects)
+      |> Map.update!(:data, &Map.put(&1, :search_term, applied_search))
 
     total_count = determine_total(projects)
 
@@ -134,35 +153,36 @@ defmodule OliWeb.Projects.ProjectsLive do
        total_count: total_count,
        show_deleted: show_deleted,
        show_all: show_all,
-       text_search: text_search
+       text_search: text_search,
+       limit: limit
      )}
   end
 
-  attr(:breadcrumbs, :any, default: [Breadcrumb.new(%{full_title: "Projects"})])
-  attr(:title, :string, default: "Projects")
-  attr(:payments, :list, default: [])
-
-  attr(:tabel_model, :map)
-  attr(:total_count, :integer, default: 0)
-  attr(:offset, :integer, default: 0)
-  attr(:limit, :integer, default: @limit)
-  attr(:show_all, :boolean, default: true)
-  attr(:show_deleted, :boolean, default: false)
-  attr(:text_search, :string, default: "")
-
-  attr(:author, :any)
-  attr(:is_content_admin, :boolean, default: false)
-
   def render(assigns) do
     ~H"""
-    <%= render_modal(assigns) %>
+    {render_modal(assigns)}
 
-    <div class="container mx-auto">
-      <div class="projects-title-row mb-4">
-        <div class="d-flex justify-content-between align-items-baseline">
+    <div class="h-full">
+      <div class="flex justify-between items-center px-4">
+        <span class="text-[#353740] dark:text-[#EEEBF5] text-2xl font-bold leading-loose">
+          Browse Projects
+        </span>
+
+        <div class="flex gap-3">
+          <button
+            id="button-new-project"
+            class="btn btn-sm rounded-md bg-[#0080FF] text-[#FFFFFF] font-semibold shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] px-4 py-2"
+            phx-click="show_create_project_modal"
+          >
+            <i class="fa fa-plus pr-2"></i> New Project
+          </button>
+        </div>
+      </div>
+      <div class="projects-title-row px-4 mt-2">
+        <div class="flex justify-between items-baseline">
           <div>
             <%= if @is_content_admin do %>
-              <div class="form-check" style="display: inline;">
+              <div class="form-check inline-flex items-center gap-x-1.5">
                 <input
                   type="checkbox"
                   class="form-check-input"
@@ -173,10 +193,7 @@ defmodule OliWeb.Projects.ProjectsLive do
                 <label class="form-check-label" for="allCheck">Show all projects</label>
               </div>
             <% end %>
-            <div
-              class={"form-check #{if @is_content_admin, do: "ml-4", else: ""}"}
-              style="display: inline;"
-            >
+            <div class={"form-check inline-flex items-center gap-x-1.5 #{if @is_content_admin, do: "ml-4", else: ""}"}>
               <input
                 type="checkbox"
                 class="form-check-input"
@@ -189,70 +206,55 @@ defmodule OliWeb.Projects.ProjectsLive do
           </div>
 
           <div class="flex-grow-1"></div>
-
-          <button
-            id="button-new-project"
-            class="btn btn-sm btn-primary ml-2"
-            phx-click="show_create_project_modal"
-          >
-            <i class="fa fa-plus"></i> New Project
-          </button>
         </div>
       </div>
 
-      <div class="container mb-4">
-        <div class="grid grid-cols-12">
-          <div class="col-span-12">
-            <TextSearch.render
-              event_target={:live_view}
-              id="text-search"
-              reset="text_search_reset"
-              change="text_search_change"
-              text={@text_search}
-            />
-          </div>
+      <div class="flex justify-between">
+        <div class="flex w-fit gap-4 p-2 pr-8 mx-4 mt-3 mb-2 shadow-[0px_2px_6.099999904632568px_0px_rgba(0,0,0,0.10)] border border-[#ced1d9] dark:border-[#3B3740] dark:bg-[#000000]">
+          <.form for={%{}} phx-change="text_search_change" class="w-56">
+            <SearchInput.render id="text-search" name="project_name" text={@text_search} />
+          </.form>
+
+          <button class="ml-2 text-center text-[#353740] dark:text-[#EEEBF5] text-sm font-normal leading-none flex items-center gap-x-1 opacity-50 hover:cursor-not-allowed">
+            <Icons.filter class="stroke-[#353740] dark:stroke-[#EEEBF5]" /> Filter
+          </button>
+
+          <button
+            class="ml-2 mr-4 text-center text-[#353740] dark:text-[#EEEBF5] text-sm font-normal leading-none flex items-center gap-x-1 hover:text-[#006CD9] dark:hover:text-[#4CA6FF]"
+            phx-click="clear_all_filters"
+          >
+            <Icons.trash /> Clear All Filters
+          </button>
         </div>
+        <a
+          role="button"
+          class="group mr-4 inline-flex items-center gap-1 text-sm text-Text-text-button font-bold leading-none hover:text-Text-text-button-hover"
+          href={~p"/authoring/projects/export?#{current_params(assigns)}"}
+          download={@export_filename}
+        >
+          Download CSV
+          <Icons.download stroke_class="group-hover:stroke-Text-text-button-hover stroke-Text-text-button" />
+        </a>
       </div>
 
       <div class="grid grid-cols-12">
         <div id="projects-table" class="col-span-12">
-          <PagedTable.render
-            page_change="paged_table_page_change"
-            sort="paged_table_sort"
-            total_count={@total_count}
-            filter={@text_search}
-            allow_selection={false}
-            limit={@limit}
-            offset={@offset}
+          <StripedPagedTable.render
             table_model={@table_model}
-            show_bottom_paging={true}
+            total_count={@total_count}
+            offset={@offset}
+            limit={@limit}
+            render_top_info={false}
+            additional_table_class="instructor_dashboard_table"
+            sort="paged_table_sort"
+            page_change="paged_table_page_change"
+            limit_change="paged_table_limit_change"
+            show_limit_change={true}
           />
         </div>
       </div>
     </div>
     """
-  end
-
-  def patch_with(socket, changes) do
-    {:noreply,
-     push_patch(socket,
-       to:
-         Routes.live_path(
-           socket,
-           OliWeb.Projects.ProjectsLive,
-           Map.merge(
-             %{
-               sort_by: socket.assigns.table_model.sort_by_spec.name,
-               sort_order: socket.assigns.table_model.sort_order,
-               offset: socket.assigns.offset,
-               show_deleted: socket.assigns.show_deleted,
-               text_search: socket.assigns.text_search
-             },
-             changes
-           )
-         ),
-       replace: true
-     )}
   end
 
   def handle_event("toggle_show_all", _, socket) do
@@ -283,11 +285,85 @@ defmodule OliWeb.Projects.ProjectsLive do
     {:noreply, socket}
   end
 
+  def handle_event("text_search_change", %{"project_name" => project_name}, socket) do
+    patch_with(socket, %{text_search: String.trim(project_name)})
+  end
+
+  def handle_event("paged_table_sort", %{"sort_by" => sort_by_str}, socket) do
+    current_sort_by = socket.assigns.table_model.sort_by_spec.name
+    current_sort_order = socket.assigns.table_model.sort_order
+    new_sort_by = String.to_existing_atom(sort_by_str)
+
+    sort_order =
+      if new_sort_by == current_sort_by, do: toggle_sort_order(current_sort_order), else: :asc
+
+    patch_with(socket, %{sort_by: new_sort_by, sort_order: sort_order})
+  end
+
+  def handle_event("paged_table_page_change", %{"limit" => limit, "offset" => offset}, socket) do
+    patch_with(socket, %{limit: limit, offset: offset})
+  end
+
+  def handle_event(
+        "paged_table_limit_change",
+        params,
+        socket
+      ) do
+    new_limit = Params.get_int_param(params, "limit", 20)
+
+    new_offset =
+      PagingParams.calculate_new_offset(
+        socket.assigns.offset,
+        new_limit,
+        socket.assigns.total_count
+      )
+
+    patch_with(socket, %{limit: new_limit, offset: new_offset})
+  end
+
+  def handle_event("clear_all_filters", _params, socket) do
+    {:noreply, push_patch(socket, to: ~p"/authoring/projects")}
+  end
+
   def handle_event(event, params, socket) do
     {event, params, socket, &__MODULE__.patch_with/2}
-    |> delegate_to([
-      &TextSearch.handle_delegated/4,
-      &PagedTable.handle_delegated/4
-    ])
+    |> delegate_to([&StripedPagedTable.handle_delegated/4])
+  end
+
+  def patch_with(socket, changes) do
+    {:noreply,
+     push_patch(socket,
+       to: Routes.live_path(socket, __MODULE__, Map.merge(current_params(socket), changes)),
+       replace: true
+     )}
+  end
+
+  defp current_params(%Phoenix.LiveView.Socket{} = socket), do: current_params(socket.assigns)
+
+  defp current_params(assigns) do
+    %{
+      sort_by: assigns.table_model.sort_by_spec.name,
+      sort_order: assigns.table_model.sort_order,
+      offset: assigns.offset,
+      limit: assigns.limit,
+      show_deleted: assigns.show_deleted,
+      text_search: assigns.text_search,
+      show_all: assigns.show_all
+    }
+  end
+
+  defp toggle_sort_order(:asc), do: :desc
+  defp toggle_sort_order(_), do: :asc
+
+  defp sanitize_search_term(nil), do: ""
+
+  defp sanitize_search_term(search) when is_binary(search) do
+    trimmed = String.trim(search)
+
+    cond do
+      trimmed == "" -> ""
+      String.length(trimmed) < @min_search_length -> ""
+      true -> trimmed
+    end
   end
 end

@@ -36,17 +36,17 @@ defmodule OliWeb.LmsUserInstructionsLive do
           <h2 class="mt-4 mb-4">Account Type Mismatch</h2>
           <div class="my-10">
             <p>
-              The account <strong><%= "#{@current_user.email}" %></strong>
+              The account <strong>{"#{@current_user.email}"}</strong>
               you use to access these courses
               <i>
-                <%= if @lms_course_titles != [],
-                  do: "- #{Enum.join(@lms_course_titles, ", ")} -" %>
+                {if @lms_course_titles != [],
+                  do: "- #{Enum.join(@lms_course_titles, ", ")} -"}
               </i>
               only works with single sign-on through your school’s LMS.
             </p>
             <p>
-              <strong><%= "#{@section_title}" %></strong>
-              requires you to use a login account. Please log out of your current account with the button below, visit the enrollment URL again, and create a new <%= VendorProperties.product_short_name() %> account using either email and password, or Sign In With Google.
+              <strong>{"#{@section_title}"}</strong>
+              requires you to use a login account. Please log out of your current account with the button below, visit the enrollment URL again, and create a new {VendorProperties.product_short_name()} account using either email and password, or Sign In With Google.
             </p>
           </div>
           <%= link to: @logout_path, method: :delete, class: "btn btn-primary" do %>

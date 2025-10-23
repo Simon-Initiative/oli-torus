@@ -58,7 +58,7 @@ defmodule OliWeb.Sections.ScheduleView do
 
     <div id="schedule-container" phx-update="ignore">
       <div id="schedule-app">
-        <%= ReactPhoenix.ClientSide.react_component("Components.ScheduleEditor", @appConfig) %>
+        {ReactPhoenix.ClientSide.react_component("Components.ScheduleEditor", @appConfig)}
       </div>
     </div>
     """

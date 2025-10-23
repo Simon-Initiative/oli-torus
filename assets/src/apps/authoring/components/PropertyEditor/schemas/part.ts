@@ -45,6 +45,59 @@ const partSchema: JSONSchema7 = {
   required: ['id'],
 };
 
+export const responsivePartSchema: JSONSchema7 = {
+  type: 'object',
+  properties: {
+    id: { type: 'string', title: 'Id' },
+    type: { type: 'string', title: 'Type' },
+    Position: {
+      type: 'object',
+      title: 'Dimensions',
+      properties: {
+        x: { type: 'number' },
+        y: { type: 'number' },
+        z: { type: 'number' },
+      },
+    },
+    Size: {
+      type: 'object',
+      title: 'Dimensions',
+      properties: {
+        width: { type: 'number', title: 'Width' },
+        responsiveLayoutWidth: {
+          type: 'number',
+          title: 'Width',
+          default: 960,
+          anyOf: [
+            { const: 960, title: '100%' },
+            { const: 470, title: '50% align left' },
+            { const: 471, title: '50% align right' },
+          ],
+        },
+        height: { type: 'number', title: 'Height' },
+      },
+    },
+    Scoring: {
+      type: 'object',
+      title: 'Scoring',
+      properties: {
+        requiresManualGrading: {
+          title: 'Requires Manual Grading',
+          type: 'boolean',
+          format: 'checkbox',
+          default: false,
+        },
+        maxScore: {
+          title: 'Max Score',
+          type: 'number',
+        },
+      },
+    },
+    custom: { type: 'object', properties: { addtionalProperties: { type: 'string' } } },
+  },
+  required: ['id'],
+};
+
 export const simplifiedPartSchema: JSONSchema7 = {
   type: 'object',
   properties: {},
@@ -79,6 +132,55 @@ export const partUiSchema = {
       classNames: 'col-span-6',
     },
   },
+  responsiveLayoutWidth: {
+    classNames: 'col-span-12',
+  },
+  Scoring: {
+    'ui:ObjectFieldTemplate': CustomFieldTemplate,
+    'ui:title': 'Scoring',
+    requiresManualGrading: {
+      classNames: 'col-span-6',
+    },
+    maxScore: {
+      classNames: 'col-span-6',
+    },
+  },
+};
+
+export const responsivePartUiSchema = {
+  type: {
+    'ui:title': 'Part Type',
+    'ui:readonly': true,
+  },
+  Position: {
+    'ui:ObjectFieldTemplate': CustomFieldTemplate,
+    'ui:title': 'Position',
+    x: {
+      classNames: 'col-span-4',
+    },
+    y: {
+      classNames: 'col-span-4',
+    },
+    z: {
+      classNames: 'col-span-4',
+    },
+  },
+  Size: {
+    'ui:ObjectFieldTemplate': CustomFieldTemplate,
+    'ui:title': 'Dimensions',
+    width: {
+      'ui:widget': 'hidden', // Hide width field in responsive mode
+    },
+    responsiveLayoutWidth: {
+      classNames: 'col-span-6',
+    },
+    height: {
+      classNames: 'col-span-6',
+    },
+  },
+  responsiveLayoutWidth: {
+    'ui:widget': 'hidden', // Hide width field in responsive mode
+  },
   Scoring: {
     'ui:ObjectFieldTemplate': CustomFieldTemplate,
     'ui:title': 'Scoring',
@@ -103,7 +205,8 @@ export const simplifiedPartUiSchema = {
 
 export const transformModelToSchema = (model: any) => {
   const { id, type } = model;
-  const { x, y, z, width, height, requiresManualGrading, maxScore } = model.custom;
+  const { x, y, z, width, height, responsiveLayoutWidth, requiresManualGrading, maxScore } =
+    model.custom;
   const result: any = {
     id,
     type,
@@ -115,7 +218,9 @@ export const transformModelToSchema = (model: any) => {
     Size: {
       width,
       height,
+      responsiveLayoutWidth,
     },
+    responsiveLayoutWidth: responsiveLayoutWidth || 960, // Default to 100% if not set
     Scoring: {
       requiresManualGrading: !!requiresManualGrading,
       maxScore: parseNumString(maxScore) || 1,
@@ -140,6 +245,7 @@ export const transformSchemaToModel = (schema: any) => {
       z: Position.z,
       width: Size.width,
       height: Size.height,
+      responsiveLayoutWidth: Size.responsiveLayoutWidth || 960, // Default to 100% if not set
       requiresManualGrading: Scoring.requiresManualGrading,
       maxScore: Scoring.maxScore,
     },

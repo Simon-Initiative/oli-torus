@@ -410,5 +410,38 @@ defmodule Oli.Delivery.GatingTest do
       refute Gating.blocked_by(section, user_a, page2.id) == []
       assert Gating.blocked_by(section, user_b, page2.id) == []
     end
+
+    test "source_page_resource_map/1 returns MapSet of resource IDs used as source pages",
+         %{page1: page1, page2: page2, section_1: section} do
+      # Create gating conditions where page1 is used as source for page2
+      gating_condition_fixture(%{
+        section_id: section.id,
+        resource_id: page2.id,
+        type: :started,
+        data: %{resource_id: page1.id}
+      })
+
+      # Create another gating condition where page2 is used as source for page1
+      gating_condition_fixture(%{
+        section_id: section.id,
+        resource_id: page1.id,
+        type: :finished,
+        data: %{resource_id: page2.id}
+      })
+
+      source_page_resource_ids = Gating.source_page_resource_map(section.id)
+
+      # Both page1 and page2 should be in the MapSet
+      assert MapSet.member?(source_page_resource_ids, page1.id)
+      assert MapSet.member?(source_page_resource_ids, page2.id)
+    end
+
+    test "source_page_resource_map/1 returns empty MapSet when no gating conditions exist",
+         %{section_1: section} do
+      source_page_resource_ids = Gating.source_page_resource_map(section.id)
+
+      # Should be empty when no gating conditions exist
+      assert MapSet.size(source_page_resource_ids) == 0
+    end
   end
 end

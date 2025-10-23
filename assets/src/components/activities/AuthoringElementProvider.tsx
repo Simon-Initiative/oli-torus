@@ -8,12 +8,15 @@ import { ActivityModelSchema, MediaItemRequest, PostUndoable } from './types';
 export interface AuthoringElementState<T> {
   projectSlug: string;
   editMode: boolean;
+  responsiveLayout?: boolean;
+  mode?: 'authoring' | 'instructor_preview';
   authoringContext: any;
   onEdit: (model: T) => void;
   onRequestMedia: (request: MediaItemRequest) => Promise<string | boolean>;
   dispatch: (action: (model: T, post: PostUndoable) => any) => T;
   model: T;
   activityId?: number;
+  student_responses?: any;
 }
 const AuthoringElementContext = React.createContext<AuthoringElementState<any> | undefined>(
   undefined,
@@ -28,10 +31,13 @@ export function useAuthoringElementContext<T>() {
 export const AuthoringElementProvider: React.FC<AuthoringElementProps<ActivityModelSchema>> = ({
   projectSlug,
   editMode,
+  responsiveLayout,
+  mode,
   children,
   model,
   authoringContext,
   activityId,
+  student_responses,
   onPostUndoable,
   onRequestMedia,
   onEdit,
@@ -57,12 +63,15 @@ export const AuthoringElementProvider: React.FC<AuthoringElementProps<ActivityMo
       value={{
         projectSlug,
         editMode,
+        responsiveLayout,
+        mode,
         onEdit,
         dispatch,
         model,
         onRequestMedia,
         authoringContext,
         activityId,
+        student_responses,
       }}
     >
       <ErrorBoundary>{children}</ErrorBoundary>

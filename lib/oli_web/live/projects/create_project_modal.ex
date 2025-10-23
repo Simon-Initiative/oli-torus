@@ -37,19 +37,19 @@ defmodule OliWeb.Projects.CreateProjectModal do
             </div>
             <div class="modal-body relative p-4">
               <div class="form-label-group">
-                <%= text_input(f, :title,
+                {text_input(f, :title,
                   required: true,
                   class: "block min-w-full placeholder-[#9ca3af] dark:placeholder-[#eeebf5]/70",
                   placeholder: "e.g. Introduction to Psychology"
-                ) %>
+                )}
                 <%= label f, :title, class: "block text-sm text-gray-500 dark:text-[#eeebf5]" do %>
                   This can be changed later
                 <% end %>
-                <%= error_tag(f, :title) %>
+                {error_tag(f, :title)}
               </div>
             </div>
             <div class="modal-footer flex flex-shrink-0 flex-wrap items-center justify-end p-4 border-t border-gray-200 rounded-b-md">
-              <%= submit("Create", class: "btn btn-primary", phx_disable_with: "Creating Project...") %>
+              {submit("Create", class: "btn btn-primary", phx_disable_with: "Creating Project...")}
             </div>
           </.form>
         </div>

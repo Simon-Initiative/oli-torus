@@ -30,6 +30,7 @@ import {
 import {
   selectBlobStorageProvider,
   selectPageSlug,
+  selectResponsiveLayout,
   selectReviewMode,
   selectSectionSlug,
   selectUserId,
@@ -59,6 +60,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
   const currentLesson = useSelector(selectPageSlug);
   const sectionSlug = useSelector(selectSectionSlug);
   const currentUserId = useSelector(selectUserId);
+  const responsiveLayout = useSelector(selectResponsiveLayout);
   const blobStorageProvider = useSelector(selectBlobStorageProvider);
   const currentUserName = useSelector(selectUserName);
   const historyModeNavigation = useSelector(selectHistoryNavigationActivity);
@@ -93,6 +95,42 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     }
 
     return className;
+  }, [currentActivityTree]);
+
+  const extractCustomCssClassFactsFromTree = useCallback(async () => {
+    const extractedFacts: any[] = [];
+
+    if (!currentActivityTree) return extractedFacts;
+
+    currentActivityTree.forEach((activity) => {
+      const customFacts = activity?.content?.custom?.facts?.map((fact: any) => {
+        const isCustomCssClass = fact?.target?.includes('customCssClass');
+        const isStageScoped = fact?.target?.startsWith('stage.');
+
+        if (!isCustomCssClass) return;
+
+        if (!isStageScoped) {
+          return { ...fact, value: fact?.value };
+        }
+
+        // this logic is same as we have in deck.ts --> initializeActivity()
+        const [, partId] = fact.target.split('.');
+        const parentActivity = currentActivityTree.find((a) =>
+          a.content?.partsLayout?.some((p: any) => p.id === partId),
+        );
+
+        if (!parentActivity) return { ...fact };
+
+        return {
+          ...fact,
+          target: `${parentActivity.id}|${fact.target}`,
+        };
+      });
+
+      extractedFacts.push(...(customFacts?.filter(Boolean) || []));
+    });
+
+    return extractedFacts;
   }, [currentActivityTree]);
 
   useEffect(() => {
@@ -304,6 +342,16 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       if (currentActivityTree?.every((activity) => sharedActivityInit.get(activity.id) === true)) {
         if (!historyModeNavigation || reviewMode) {
           await initCurrentActivity();
+        }
+        if (historyModeNavigation) {
+          // We need to apply the initial state for `customCssClass` because it may contain logic
+          // that dynamically applies styles like `display-none` to components.
+          // In history mode, the initial state isn't applied to the snapshot by default,
+          // so we must manually extract and apply any `customCssClass`-related state.
+          const initState = await extractCustomCssClassFactsFromTree();
+          if (initState?.length) {
+            await bulkApplyState(initState, defaultGlobalEnv);
+          }
         }
         const currentActivityIds = (currentActivityTree || []).map((a) => a.id);
         const snapshot = getLocalizedStateSnapshot(currentActivityIds);
@@ -559,7 +607,9 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     const actualCurrentActivity = localActivityTree[localActivityTree.length - 1];
     const config = actualCurrentActivity.content.custom;
     const styles: CSSProperties = {
-      width: config?.width || lessonStyles.width,
+      width: responsiveLayout
+        ? lessonStyles.width || config?.width // swap if responsiveLayout is true
+        : config?.width || lessonStyles.width, // original order if false
     };
     if (config?.palette) {
       if (config.palette.useHtmlProps) {
@@ -627,6 +677,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
           onActivityReady={handleActivityReady}
           onRequestLatestState={handleActivityRequestLatestState}
           blobStorageProvider={blobStorageProvider}
+          responsiveLayout={responsiveLayout || false}
         />
       );
     });

@@ -88,13 +88,15 @@ defmodule Oli.Search.EmbeddingWorker do
 
         case Oli.OpenAIClient.embeddings(
                [model: "text-embedding-ada-002", input: inputs],
-               Oli.Conversation.Dialogue.config(:sync)
+               Oli.Search.Embeddings.config()
              ) do
           {:ok, %{data: data}} ->
             # apply the returned embeddings and combine with the already calculated embeddings
             all =
               Enum.zip(have_nots, data)
-              |> Enum.map(fn {re, %{"embedding" => embedding}} -> %{re | embedding: embedding} end)
+              |> Enum.map(fn {re, %{"embedding" => embedding}} ->
+                %{re | embedding: embedding}
+              end)
               |> Enum.concat(haves)
 
             {:ok, all}

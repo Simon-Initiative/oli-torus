@@ -641,6 +641,76 @@ defmodule Oli.SectionsTest do
       assert Enum.find(section_resources, &(&1.resource_id == parent4.id)) == nil
     end
 
+    test "create_section_resources/1 populates children field for objectives with parent-child relationships",
+         %{
+           section_1: section,
+           child1: %{resource: child1},
+           child2: %{resource: child2},
+           child3: %{resource: child3},
+           child4: %{resource: child4},
+           parent1: %{resource: parent1},
+           parent2: %{resource: parent2}
+         } do
+      section_resources =
+        from(sr in SectionResource,
+          as: :sr,
+          join: s in Section,
+          as: :s,
+          on: s.id == sr.section_id,
+          where: s.slug == ^section.slug,
+          select: sr
+        )
+        |> Repo.all()
+
+      # Find the parent objectives in section resources
+      parent1_sr = Enum.find(section_resources, &(&1.resource_id == parent1.id))
+      parent2_sr = Enum.find(section_resources, &(&1.resource_id == parent2.id))
+
+      # Find the child objectives in section resources
+      child1_sr = Enum.find(section_resources, &(&1.resource_id == child1.id))
+      child2_sr = Enum.find(section_resources, &(&1.resource_id == child2.id))
+      child3_sr = Enum.find(section_resources, &(&1.resource_id == child3.id))
+      child4_sr = Enum.find(section_resources, &(&1.resource_id == child4.id))
+
+      # Verify parent objectives have their children section resource IDs populated
+      # parent1 should have child1, child2, child3 as children
+      assert length(parent1_sr.children) == 3
+      assert child1_sr.id in parent1_sr.children
+      assert child2_sr.id in parent1_sr.children
+      assert child3_sr.id in parent1_sr.children
+
+      # parent2 should have child4 as a child
+      assert [child4_sr.id] == parent2_sr.children
+
+      # Child objectives should have empty children arrays
+      assert child1_sr.children == []
+      assert child2_sr.children == []
+      assert child3_sr.children == []
+      assert child4_sr.children == []
+    end
+
+    test "create_section_resources/1 handles objectives without children correctly", %{
+      section_1: section,
+      child1: %{resource: child1}
+    } do
+      section_resources =
+        from(sr in SectionResource,
+          as: :sr,
+          join: s in Section,
+          as: :s,
+          on: s.id == sr.section_id,
+          where: s.slug == ^section.slug,
+          select: sr
+        )
+        |> Repo.all()
+
+      # Find a child objective (which has no children)
+      child1_sr = Enum.find(section_resources, &(&1.resource_id == child1.id))
+
+      # Verify it has an empty children array (not nil)
+      assert child1_sr.children == []
+    end
+
     test "get_existing_slugs/1 returns an empty list when passing no slugs" do
       assert Sections.get_existing_slugs([]) == []
     end
@@ -996,12 +1066,20 @@ defmodule Oli.SectionsTest do
         |> then(fn {:ok, section} -> section end)
         |> Sections.create_section_resources(initial_pub)
 
+      # ensure the migration for the section resources is excecuted
+      Oli.Delivery.Sections.SectionResourceMigration.migrate(section.id)
+
       # verify the curriculum precondition
       hierarchy = DeliveryResolver.full_hierarchy(section.slug)
 
       assert hierarchy.children |> Enum.count() == 2
       assert hierarchy.children |> Enum.at(0) |> Map.get(:resource_id) == page1.id
       assert hierarchy.children |> Enum.at(1) |> Map.get(:resource_id) == page2.id
+
+      # verifiy the page 1 section resource initial values
+      page1_sr = Oli.Delivery.Sections.get_section_resource(section.id, page1.id)
+      refute page1_sr.graded
+      assert page1_sr.title == "Page one"
 
       # make some changes to project and publish
       working_pub = Publishing.project_working_publication(project.slug)
@@ -1064,7 +1142,9 @@ defmodule Oli.SectionsTest do
             }
           ]
         },
-        "objectives" => %{"attached" => [Map.get(map, :o1).resource.id]}
+        "objectives" => %{"attached" => [Map.get(map, :o1).resource.id]},
+        "graded" => true,
+        "title" => "New Title"
       }
 
       Seeder.revise_page(page1_changes, page1, revision1, working_pub)
@@ -1107,6 +1187,13 @@ defmodule Oli.SectionsTest do
 
       assert section_resources
              |> Enum.find(fn sr -> sr.resource_id == Map.get(map, :o1).resource.id end)
+
+      # verify that the revision fields where migrated to the section resouces
+      page_1_section_resource =
+        Enum.find(section_resources, fn sr -> sr.resource_id == page1.id end)
+
+      assert page_1_section_resource.graded
+      assert page_1_section_resource.title == "New Title"
     end
 
     @tag capture_log: true
@@ -1127,6 +1214,9 @@ defmodule Oli.SectionsTest do
         |> Oli.Utils.Seeder.Section.create_section_from_product(ref(:product), nil, nil, %{},
           section_tag: :section
         )
+
+      # ensure the migration for the section resources is excecuted
+      Oli.Delivery.Sections.SectionResourceMigration.migrate(section.id)
 
       # one week ago
       one_week_ago = DateTime.utc_now() |> DateTime.add(-7, :day) |> DateTime.truncate(:second)
@@ -1167,7 +1257,8 @@ defmodule Oli.SectionsTest do
           grace_period: 100,
           review_submission: :disallow,
           feedback_mode: :scheduled,
-          feedback_scheduled_date: a_day_later
+          feedback_scheduled_date: a_day_later,
+          graded: false
         })
 
       # verify the curriculum precondition
@@ -1189,7 +1280,9 @@ defmodule Oli.SectionsTest do
               "children" => [%{"type" => "p", "children" => [%{"text" => "SECOND"}]}]
             }
           ]
-        }
+        },
+        "graded" => true,
+        "title" => "New Title"
       }
 
       Seeder.revise_page(page1_changes, page1, revision1, working_pub)
@@ -1348,6 +1441,11 @@ defmodule Oli.SectionsTest do
         |> Repo.all()
 
       assert section_resources |> Enum.count() == 7
+
+      # verify the section resource values where migrated correctly
+      page1_sr = Enum.find(section_resources, fn sr -> sr.resource_id == page1.id end)
+      assert page1_sr.graded
+      assert page1_sr.title == "New Title"
     end
 
     @tag capture_log: true
@@ -1754,7 +1852,7 @@ defmodule Oli.SectionsTest do
     end
   end
 
-  describe "get_student_roles?/2" do
+  describe "get_user_roles?/2" do
     setup do
       user = insert(:user)
       section = insert(:section)
@@ -1769,7 +1867,6 @@ defmodule Oli.SectionsTest do
       other_roles =
         [
           :context_administrator,
-          :context_content_developer,
           :context_mentor,
           :context_manager,
           :context_member,
@@ -1813,6 +1910,16 @@ defmodule Oli.SectionsTest do
       ])
 
       assert %{is_student?: true, is_instructor?: true} ==
+               Sections.get_user_roles(user, section.slug)
+    end
+
+    test "returns true for is_instructor? when user is enrolled as content developer", %{
+      section: section,
+      user: user
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_content_developer)])
+
+      assert %{is_student?: false, is_instructor?: true} ==
                Sections.get_user_roles(user, section.slug)
     end
   end
@@ -2187,6 +2294,65 @@ defmodule Oli.SectionsTest do
       enroll_user_to_section(student, section, :context_learner)
 
       refute Sections.get_latest_visited_page(section.slug, student.id)
+    end
+  end
+
+  describe "has_instructor_role?/2" do
+    setup do
+      user = insert(:user)
+      section = insert(:section)
+      {:ok, %{section: section, user: user}}
+    end
+
+    test "returns true when user is enrolled as content developer", %{
+      section: section,
+      user: user
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_content_developer)])
+
+      assert Sections.has_instructor_role?(user, section.slug)
+    end
+  end
+
+  describe "instructors_per_section/1" do
+    test "returns user name for section if user is enrolled as content developer" do
+      section = insert(:section)
+      user = insert(:user, name: "Content Dev")
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_content_developer)])
+
+      result = Sections.instructors_per_section([section.id])
+      assert Map.has_key?(result, section.id)
+      assert Enum.any?(result[section.id], &(&1 == "Content Dev"))
+    end
+  end
+
+  describe "contains_instructor_role?/1" do
+    test "returns true if roles include context_instructor" do
+      roles = [ContextRoles.get_role(:context_instructor)]
+      assert Oli.Delivery.Sections.contains_instructor_role?(roles)
+    end
+
+    test "returns true if roles include context_content_developer" do
+      roles = [ContextRoles.get_role(:context_content_developer)]
+      assert Oli.Delivery.Sections.contains_instructor_role?(roles)
+    end
+
+    test "returns true if roles include both instructor and content developer" do
+      roles = [
+        ContextRoles.get_role(:context_instructor),
+        ContextRoles.get_role(:context_content_developer)
+      ]
+
+      assert Oli.Delivery.Sections.contains_instructor_role?(roles)
+    end
+
+    test "returns false if roles do not include any instructor role" do
+      roles = [ContextRoles.get_role(:context_learner)]
+      refute Oli.Delivery.Sections.contains_instructor_role?(roles)
+    end
+
+    test "returns false if roles list is empty" do
+      assert Oli.Delivery.Sections.contains_instructor_role?([]) == false
     end
   end
 end

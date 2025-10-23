@@ -31,6 +31,11 @@ defmodule Oli.Accounts do
   alias Oli.Delivery.Sections.{Section, Enrollment}
   alias Lti_1p3.DataProviders.EctoProvider
 
+  @spec browse_users(
+          Oli.Repo.Paging.t(),
+          Oli.Repo.Sorting.t(),
+          Oli.Accounts.UserBrowseOptions.t()
+        ) :: any()
   def browse_users(
         %Paging{limit: limit, offset: offset},
         %Sorting{field: field, direction: direction},
@@ -174,6 +179,21 @@ defmodule Oli.Accounts do
       on: a.id == u.author_id,
       where: u.guest == false,
       preload: [author: a]
+    )
+    |> Repo.all()
+  end
+
+  @doc """
+  Returns a list of full User structs for the given user IDs.
+  ## Examples
+      iex> get_users_by_ids([1, 2, 3])
+      [%User{id: 1}, %User{id: 2}, %User{id: 3}]
+  """
+  @spec get_users_by_ids(list(integer())) :: list(User.t())
+  def get_users_by_ids(user_ids) when is_list(user_ids) do
+    from(u in User,
+      where: u.id in ^user_ids,
+      select: struct(u, [:id, :name, :given_name, :family_name, :email])
     )
     |> Repo.all()
   end
@@ -408,13 +428,6 @@ defmodule Oli.Accounts do
       error ->
         error
     end
-  end
-
-  @doc """
-  Preloads the user's linked author.
-  """
-  def preload_author(%User{} = user) do
-    Repo.preload(user, :author)
   end
 
   @doc """
@@ -1252,7 +1265,7 @@ defmodule Oli.Accounts do
 
   """
   def change_user_password(user, attrs \\ %{}) do
-    User.password_changeset(user, attrs, hash_password: false)
+    User.password_changeset(user, attrs, hash_password: false, require_current_password: true)
   end
 
   @doc """
@@ -1270,7 +1283,7 @@ defmodule Oli.Accounts do
   def update_user_password(user, password, attrs) do
     changeset =
       user
-      |> User.password_changeset(attrs)
+      |> User.password_changeset(attrs, require_current_password: true)
       |> User.validate_current_password(password)
 
     Ecto.Multi.new()
@@ -1680,7 +1693,7 @@ defmodule Oli.Accounts do
   """
   def apply_author_email(author, password, attrs) do
     author
-    |> Author.email_changeset(attrs)
+    |> Author.email_changeset(attrs, require_current_password: true)
     |> Author.validate_current_password(password)
     |> Ecto.Changeset.apply_action(:update)
   end
@@ -1764,7 +1777,7 @@ defmodule Oli.Accounts do
   def update_author_password(author, password, attrs) do
     changeset =
       author
-      |> Author.password_changeset(attrs)
+      |> Author.password_changeset(attrs, require_current_password: true)
       |> Author.validate_current_password(password)
 
     Ecto.Multi.new()
@@ -2053,4 +2066,15 @@ defmodule Oli.Accounts do
   def author_confirmation_pending?(%{email_confirmed_at: nil}), do: true
 
   def author_confirmation_pending?(_user), do: false
+
+  def validate_email(:email, email) do
+    if Oli.Utils.validate_email(email) do
+      []
+    else
+      [email: "must be a valid email address"]
+    end
+  end
+
+  def get_user_emails_by_ids(user_ids),
+    do: from(u in User, where: u.id in ^user_ids, select: u.email) |> Repo.all()
 end

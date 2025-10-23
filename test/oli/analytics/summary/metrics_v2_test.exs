@@ -1,8 +1,12 @@
 defmodule Oli.Analytics.Summary.MetricsV2Test do
   use Oli.DataCase
 
+  import Oli.Factory
+
   alias Oli.Delivery.Sections.ContainedPage
+  alias Oli.Delivery.Sections.SectionResourceDepot
   alias Oli.Delivery.Metrics
+  alias Lti_1p3.Roles.ContextRoles
 
   describe "v2 metrics calculations" do
     setup do
@@ -249,6 +253,1160 @@ defmodule Oli.Analytics.Summary.MetricsV2Test do
       assert Map.get(proficiencies_objective2, user2.id) == "Medium"
       assert Map.get(proficiencies_objective3, user1.id) == "High"
       refute Map.get(proficiencies_objective3, user2.id)
+    end
+  end
+
+  describe "learning objectives expanded visualization tests" do
+    test "objectives_proficiency/3 returns sub-objectives with proficiency distribution" do
+      objective_type_id = Oli.Resources.ResourceType.id_for_objective()
+
+      # Create author and project
+      author = insert(:author)
+      project = insert(:project, authors: [author])
+      section = insert(:section)
+      publication = insert(:publication, project: project)
+
+      insert(:section_project_publication,
+        section: section,
+        project: project,
+        publication: publication
+      )
+
+      # Create users
+      user1 = insert(:user)
+      user2 = insert(:user)
+      user3 = insert(:user)
+
+      # Create enrollments with proper context roles
+      student_role = ContextRoles.get_role(:context_learner)
+
+      enrollment1 = insert(:enrollment, section: section, user: user1)
+      enrollment2 = insert(:enrollment, section: section, user: user2)
+      enrollment3 = insert(:enrollment, section: section, user: user3)
+
+      # Manually add context_roles associations
+      Oli.Repo.insert_all("enrollments_context_roles", [
+        %{enrollment_id: enrollment1.id, context_role_id: student_role.id},
+        %{enrollment_id: enrollment2.id, context_role_id: student_role.id},
+        %{enrollment_id: enrollment3.id, context_role_id: student_role.id}
+      ])
+
+      # Create parent and sub-objectives
+      parent_resource = insert(:resource)
+
+      parent_revision =
+        insert(:revision,
+          resource: parent_resource,
+          author: author,
+          title: "Parent Objective",
+          resource_type_id: objective_type_id,
+          content: %{}
+        )
+
+      sub_obj1_resource = insert(:resource)
+
+      sub_obj1_revision =
+        insert(:revision,
+          resource: sub_obj1_resource,
+          author: author,
+          title: "Sub Objective 1",
+          resource_type_id: objective_type_id,
+          content: %{}
+        )
+
+      sub_obj2_resource = insert(:resource)
+
+      sub_obj2_revision =
+        insert(:revision,
+          resource: sub_obj2_resource,
+          author: author,
+          title: "Sub Objective 2",
+          resource_type_id: objective_type_id,
+          content: %{}
+        )
+
+      sub_obj3_resource = insert(:resource)
+
+      sub_obj3_revision =
+        insert(:revision,
+          resource: sub_obj3_resource,
+          author: author,
+          title: "Sub Objective 3",
+          resource_type_id: objective_type_id,
+          content: %{}
+        )
+
+      # Publish resources
+      insert(:published_resource,
+        publication: publication,
+        resource: parent_resource,
+        revision: parent_revision
+      )
+
+      insert(:published_resource,
+        publication: publication,
+        resource: sub_obj1_resource,
+        revision: sub_obj1_revision
+      )
+
+      insert(:published_resource,
+        publication: publication,
+        resource: sub_obj2_resource,
+        revision: sub_obj2_revision
+      )
+
+      insert(:published_resource,
+        publication: publication,
+        resource: sub_obj3_resource,
+        revision: sub_obj3_revision
+      )
+
+      # Update parent objective to have children
+      {:ok, _} =
+        Oli.Resources.Revision.changeset(parent_revision, %{
+          children: [sub_obj1_resource.id, sub_obj2_resource.id, sub_obj3_resource.id]
+        })
+        |> Oli.Repo.update()
+
+      # Create SectionResource records needed for the depot
+      insert(:section_resource,
+        section: section,
+        resource_id: parent_resource.id,
+        title: "Parent Objective",
+        children: [sub_obj1_resource.id, sub_obj2_resource.id, sub_obj3_resource.id]
+      )
+
+      insert(:section_resource,
+        section: section,
+        resource_id: sub_obj1_resource.id,
+        title: "Sub Objective 1"
+      )
+
+      insert(:section_resource,
+        section: section,
+        resource_id: sub_obj2_resource.id,
+        title: "Sub Objective 2"
+      )
+
+      insert(:section_resource,
+        section: section,
+        resource_id: sub_obj3_resource.id,
+        title: "Sub Objective 3"
+      )
+
+      # Create ResourceSummary records for different proficiency levels
+      [
+        # Sub objective 1 - High proficiency users
+        [
+          -1,
+          publication.id,
+          section.id,
+          user1.id,
+          sub_obj1_resource.id,
+          nil,
+          objective_type_id,
+          8,
+          10,
+          1,
+          10,
+          8
+        ],
+        [
+          -1,
+          publication.id,
+          section.id,
+          user2.id,
+          sub_obj1_resource.id,
+          nil,
+          objective_type_id,
+          9,
+          10,
+          1,
+          10,
+          9
+        ],
+        # Sub objective 2 - Medium proficiency user
+        [
+          -1,
+          publication.id,
+          section.id,
+          user1.id,
+          sub_obj2_resource.id,
+          nil,
+          objective_type_id,
+          6,
+          10,
+          1,
+          10,
+          6
+        ],
+        # Sub objective 3 - Low proficiency user
+        [
+          -1,
+          publication.id,
+          section.id,
+          user1.id,
+          sub_obj3_resource.id,
+          nil,
+          objective_type_id,
+          2,
+          10,
+          1,
+          10,
+          2
+        ],
+        # User 3 - Not enough data (less than 3 attempts)
+        [
+          -1,
+          publication.id,
+          section.id,
+          user3.id,
+          sub_obj1_resource.id,
+          nil,
+          objective_type_id,
+          1,
+          2,
+          1,
+          2,
+          1
+        ]
+      ]
+      |> Enum.each(fn v -> add_resource_summary(v) end)
+
+      sub_objective_section_resources = [
+        SectionResourceDepot.get_section_resource(section.id, sub_obj1_resource.id),
+        SectionResourceDepot.get_section_resource(section.id, sub_obj2_resource.id),
+        SectionResourceDepot.get_section_resource(section.id, sub_obj3_resource.id)
+      ]
+
+      # Test the function
+      result =
+        Metrics.objectives_proficiency(section.id, section.slug, sub_objective_section_resources)
+
+      assert length(result) == 3
+
+      # Find each sub-objective result
+      sub_obj1_result = Enum.find(result, &(&1.sub_objective_id == sub_obj1_resource.id))
+      sub_obj2_result = Enum.find(result, &(&1.sub_objective_id == sub_obj2_resource.id))
+      sub_obj3_result = Enum.find(result, &(&1.sub_objective_id == sub_obj3_resource.id))
+
+      # Verify structure
+      assert sub_obj1_result.title == "Sub Objective 1"
+      assert sub_obj2_result.title == "Sub Objective 2"
+      assert sub_obj3_result.title == "Sub Objective 3"
+
+      # Verify proficiency distributions
+      assert sub_obj1_result.proficiency_distribution["High"] == 2
+      assert sub_obj1_result.proficiency_distribution["Not enough data"] == 1
+
+      assert sub_obj2_result.proficiency_distribution["Medium"] == 1
+
+      assert sub_obj3_result.proficiency_distribution["Low"] == 1
+    end
+
+    test "objectives_proficiency/3 returns empty list when given empty list" do
+      objective_type_id = Oli.Resources.ResourceType.id_for_objective()
+
+      author = insert(:author)
+      project = insert(:project, authors: [author])
+      section = insert(:section)
+      publication = insert(:publication, project: project)
+
+      insert(:section_project_publication,
+        section: section,
+        project: project,
+        publication: publication
+      )
+
+      # Create objective with no children
+      objective_resource = insert(:resource)
+
+      objective_revision =
+        insert(:revision,
+          resource: objective_resource,
+          author: author,
+          title: "Solo Objective",
+          resource_type_id: objective_type_id,
+          content: %{}
+        )
+
+      insert(:published_resource,
+        publication: publication,
+        resource: objective_resource,
+        revision: objective_revision
+      )
+
+      # Create SectionResource record needed for the depot
+      insert(:section_resource,
+        section: section,
+        resource_id: objective_resource.id,
+        title: "Solo Objective",
+        children: []
+      )
+
+      # Test with empty list of section resources
+      result = Metrics.objectives_proficiency(section.id, section.slug, [])
+      assert result == []
+    end
+
+    test "objectives_proficiency/3 handles non-existent section resources gracefully" do
+      section = insert(:section)
+      # Create a mock section resource that doesn't exist in depot
+      non_existent_section_resource = %{
+        resource_id: 99999,
+        title: "Non-existent"
+      }
+
+      result =
+        Metrics.objectives_proficiency(section.id, section.slug, [non_existent_section_resource])
+
+      # Should return one result with empty proficiency distribution
+      assert length(result) == 1
+      assert hd(result).sub_objective_id == 99999
+      assert hd(result).title == "Non-existent"
+      assert hd(result).proficiency_distribution == %{}
+    end
+
+    test "student_proficiency_for_objective/2 returns student proficiency data in correct format" do
+      objective_type_id = Oli.Resources.ResourceType.id_for_objective()
+
+      author = insert(:author)
+      project = insert(:project, authors: [author])
+      section = insert(:section)
+      publication = insert(:publication, project: project)
+
+      insert(:section_project_publication,
+        section: section,
+        project: project,
+        publication: publication
+      )
+
+      # Create users
+      user1 = insert(:user)
+      user2 = insert(:user)
+      user3 = insert(:user)
+
+      insert(:enrollment, section: section, user: user1)
+      insert(:enrollment, section: section, user: user2)
+      insert(:enrollment, section: section, user: user3)
+
+      # Create objective
+      objective_resource = insert(:resource)
+
+      objective_revision =
+        insert(:revision,
+          resource: objective_resource,
+          author: author,
+          title: "Test Objective",
+          resource_type_id: objective_type_id,
+          content: %{}
+        )
+
+      insert(:published_resource,
+        publication: publication,
+        resource: objective_resource,
+        revision: objective_revision
+      )
+
+      # Create ResourceSummary records with different proficiency levels
+      [
+        # User 1 - High proficiency (90%)
+        [
+          -1,
+          publication.id,
+          section.id,
+          user1.id,
+          objective_resource.id,
+          nil,
+          objective_type_id,
+          9,
+          10,
+          1,
+          10,
+          9
+        ],
+        # User 2 - Medium proficiency (60%)
+        [
+          -1,
+          publication.id,
+          section.id,
+          user2.id,
+          objective_resource.id,
+          nil,
+          objective_type_id,
+          6,
+          10,
+          1,
+          10,
+          6
+        ],
+        # User 3 - Not enough data (only 2 attempts)
+        [
+          -1,
+          publication.id,
+          section.id,
+          user3.id,
+          objective_resource.id,
+          nil,
+          objective_type_id,
+          1,
+          2,
+          1,
+          2,
+          1
+        ]
+      ]
+      |> Enum.each(fn v -> add_resource_summary(v) end)
+
+      result = Metrics.student_proficiency_for_objective(section.id, objective_resource.id)
+
+      assert length(result) == 3
+
+      # Find each user's result
+      user1_result = Enum.find(result, &(&1.id == user1.id))
+      user2_result = Enum.find(result, &(&1.id == user2.id))
+      user3_result = Enum.find(result, &(&1.id == user3.id))
+
+      # Verify user 1 (High proficiency)
+      assert_in_delta user1_result.proficiency, 0.9, 0.05
+      assert user1_result.proficiency_range == "High"
+
+      # Verify user 2 (Medium proficiency)
+      assert_in_delta user2_result.proficiency, 0.6, 0.1
+      assert user2_result.proficiency_range == "Medium"
+
+      # Verify user 3 (Not enough data)
+      assert user3_result.proficiency_range == "Not enough data"
+    end
+
+    test "student_proficiency_for_objective/2 returns empty list for objective with no student data" do
+      section = insert(:section)
+      result = Metrics.student_proficiency_for_objective(section.id, 99999)
+      assert result == []
+    end
+
+    test "student_proficiency_for_objective/2 handles students with zero proficiency" do
+      objective_type_id = Oli.Resources.ResourceType.id_for_objective()
+
+      author = insert(:author)
+      project = insert(:project, authors: [author])
+      section = insert(:section)
+      publication = insert(:publication, project: project)
+
+      insert(:section_project_publication,
+        section: section,
+        project: project,
+        publication: publication
+      )
+
+      user = insert(:user)
+      insert(:enrollment, section: section, user: user)
+
+      objective_resource = insert(:resource)
+
+      objective_revision =
+        insert(:revision,
+          resource: objective_resource,
+          author: author,
+          title: "Test Objective",
+          resource_type_id: objective_type_id,
+          content: %{}
+        )
+
+      insert(:published_resource,
+        publication: publication,
+        resource: objective_resource,
+        revision: objective_revision
+      )
+
+      # User with zero proficiency
+      add_resource_summary([
+        -1,
+        publication.id,
+        section.id,
+        user.id,
+        objective_resource.id,
+        nil,
+        objective_type_id,
+        0,
+        10,
+        1,
+        10,
+        0
+      ])
+
+      result = Metrics.student_proficiency_for_objective(section.id, objective_resource.id)
+
+      zero_result = Enum.find(result, &(&1.id == user.id))
+
+      assert zero_result.proficiency == 0.2
+      assert zero_result.proficiency_range == "Low"
+    end
+
+    test "student_proficiency_for_objective/2 handles students with perfect proficiency" do
+      objective_type_id = Oli.Resources.ResourceType.id_for_objective()
+
+      author = insert(:author)
+      project = insert(:project, authors: [author])
+      section = insert(:section)
+      publication = insert(:publication, project: project)
+
+      insert(:section_project_publication,
+        section: section,
+        project: project,
+        publication: publication
+      )
+
+      user = insert(:user)
+      insert(:enrollment, section: section, user: user)
+
+      objective_resource = insert(:resource)
+
+      objective_revision =
+        insert(:revision,
+          resource: objective_resource,
+          author: author,
+          title: "Test Objective",
+          resource_type_id: objective_type_id,
+          content: %{}
+        )
+
+      insert(:published_resource,
+        publication: publication,
+        resource: objective_resource,
+        revision: objective_revision
+      )
+
+      # User with perfect proficiency
+      add_resource_summary([
+        -1,
+        publication.id,
+        section.id,
+        user.id,
+        objective_resource.id,
+        nil,
+        objective_type_id,
+        10,
+        10,
+        1,
+        10,
+        10
+      ])
+
+      result = Metrics.student_proficiency_for_objective(section.id, objective_resource.id)
+
+      perfect_result = Enum.find(result, &(&1.id == user.id))
+
+      assert perfect_result.proficiency == 1.0
+      assert perfect_result.proficiency_range == "High"
+    end
+
+    test "student_proficiency_for_objective/2 consistency with existing function" do
+      objective_type_id = Oli.Resources.ResourceType.id_for_objective()
+
+      author = insert(:author)
+      project = insert(:project, authors: [author])
+      section = insert(:section)
+      publication = insert(:publication, project: project)
+
+      insert(:section_project_publication,
+        section: section,
+        project: project,
+        publication: publication
+      )
+
+      user = insert(:user)
+      insert(:enrollment, section: section, user: user)
+
+      objective_resource = insert(:resource)
+
+      objective_revision =
+        insert(:revision,
+          resource: objective_resource,
+          author: author,
+          title: "Test Objective",
+          resource_type_id: objective_type_id,
+          content: %{}
+        )
+
+      insert(:published_resource,
+        publication: publication,
+        resource: objective_resource,
+        revision: objective_revision
+      )
+
+      add_resource_summary([
+        -1,
+        publication.id,
+        section.id,
+        user.id,
+        objective_resource.id,
+        nil,
+        objective_type_id,
+        8,
+        10,
+        1,
+        10,
+        8
+      ])
+
+      # Test new function
+      new_result = Metrics.student_proficiency_for_objective(section.id, objective_resource.id)
+      user_new_result = Enum.find(new_result, &(&1.id == user.id))
+
+      # Test existing function
+      existing_result =
+        Metrics.proficiency_per_student_for_objective(section.id, [objective_resource.id])
+
+      user_existing_result = existing_result[objective_resource.id][user.id]
+
+      # Results should be consistent
+      assert user_new_result.proficiency_range == user_existing_result
+    end
+  end
+
+  describe "student_activities_attempted_count/3" do
+    setup do
+      # Create test data
+      author = insert(:author)
+      project = insert(:project, authors: [author])
+      section = insert(:section)
+      publication = insert(:publication, project: project)
+
+      insert(:section_project_publication,
+        section: section,
+        project: project,
+        publication: publication
+      )
+
+      # Create users
+      user1 = insert(:user)
+      user2 = insert(:user)
+      user3 = insert(:user)
+
+      # Create activities
+      activity1_resource = insert(:resource)
+
+      activity1_revision =
+        insert(:revision,
+          resource: activity1_resource,
+          author: author,
+          title: "Activity 1",
+          resource_type_id: Oli.Resources.ResourceType.id_for_activity(),
+          content: %{}
+        )
+
+      activity2_resource = insert(:resource)
+
+      activity2_revision =
+        insert(:revision,
+          resource: activity2_resource,
+          author: author,
+          title: "Activity 2",
+          resource_type_id: Oli.Resources.ResourceType.id_for_activity(),
+          content: %{}
+        )
+
+      activity3_resource = insert(:resource)
+
+      activity3_revision =
+        insert(:revision,
+          resource: activity3_resource,
+          author: author,
+          title: "Activity 3",
+          resource_type_id: Oli.Resources.ResourceType.id_for_activity(),
+          content: %{}
+        )
+
+      # Publish activities
+      insert(:published_resource,
+        publication: publication,
+        resource: activity1_resource,
+        revision: activity1_revision
+      )
+
+      insert(:published_resource,
+        publication: publication,
+        resource: activity2_resource,
+        revision: activity2_revision
+      )
+
+      insert(:published_resource,
+        publication: publication,
+        resource: activity3_resource,
+        revision: activity3_revision
+      )
+
+      %{
+        section: section,
+        user1: user1,
+        user2: user2,
+        user3: user3,
+        activity1_resource: activity1_resource,
+        activity1_revision: activity1_revision,
+        activity2_resource: activity2_resource,
+        activity2_revision: activity2_revision,
+        activity3_resource: activity3_resource,
+        activity3_revision: activity3_revision
+      }
+    end
+
+    test "returns empty map when given empty related_activity_ids", %{
+      section: section,
+      user1: user1,
+      user2: user2
+    } do
+      result =
+        Metrics.student_activities_attempted_count(
+          section.id,
+          [user1.id, user2.id],
+          []
+        )
+
+      assert result == %{}
+    end
+
+    test "returns empty map when no students have attempted any activities", %{
+      section: section,
+      user1: user1,
+      user2: user2,
+      activity1_resource: activity1_resource,
+      activity2_resource: activity2_resource
+    } do
+      result =
+        Metrics.student_activities_attempted_count(
+          section.id,
+          [user1.id, user2.id],
+          [activity1_resource.id, activity2_resource.id]
+        )
+
+      assert result == %{}
+    end
+
+    test "counts distinct activities attempted by each student", %{
+      section: section,
+      user1: user1,
+      user2: user2,
+      user3: user3,
+      activity1_resource: activity1_resource,
+      activity2_resource: activity2_resource,
+      activity3_resource: activity3_resource
+    } do
+      activity_type_id = Oli.Resources.ResourceType.id_for_activity()
+
+      # Create ResourceSummary records for each user and activity
+      # User1 attempts activity1 with 2 attempts (should count as 1 activity)
+      add_resource_summary([
+        -1,
+        -1,
+        section.id,
+        user1.id,
+        activity1_resource.id,
+        nil,
+        activity_type_id,
+        1,
+        2,
+        0,
+        2,
+        1
+      ])
+
+      # User2 attempts activity1 and activity2 (should count as 2 activities)
+      add_resource_summary([
+        -1,
+        -1,
+        section.id,
+        user2.id,
+        activity1_resource.id,
+        nil,
+        activity_type_id,
+        1,
+        1,
+        0,
+        1,
+        1
+      ])
+
+      add_resource_summary([
+        -1,
+        -1,
+        section.id,
+        user2.id,
+        activity2_resource.id,
+        nil,
+        activity_type_id,
+        1,
+        1,
+        0,
+        1,
+        1
+      ])
+
+      # User3 attempts all three activities (should count as 3 activities)
+      add_resource_summary([
+        -1,
+        -1,
+        section.id,
+        user3.id,
+        activity1_resource.id,
+        nil,
+        activity_type_id,
+        1,
+        1,
+        0,
+        1,
+        1
+      ])
+
+      add_resource_summary([
+        -1,
+        -1,
+        section.id,
+        user3.id,
+        activity2_resource.id,
+        nil,
+        activity_type_id,
+        1,
+        1,
+        0,
+        1,
+        1
+      ])
+
+      add_resource_summary([
+        -1,
+        -1,
+        section.id,
+        user3.id,
+        activity3_resource.id,
+        nil,
+        activity_type_id,
+        1,
+        1,
+        0,
+        1,
+        1
+      ])
+
+      result =
+        Metrics.student_activities_attempted_count(
+          section.id,
+          [user1.id, user2.id, user3.id],
+          [activity1_resource.id, activity2_resource.id, activity3_resource.id]
+        )
+
+      # attempted activity1 only
+      assert result[user1.id] == 1
+      # attempted activity1 and activity2
+      assert result[user2.id] == 2
+      # attempted all three activities
+      assert result[user3.id] == 3
+    end
+
+    test "only counts activities in the provided related_activity_ids list", %{
+      section: section,
+      user1: user1,
+      activity1_resource: activity1_resource,
+      activity2_resource: activity2_resource,
+      activity3_resource: activity3_resource
+    } do
+      activity_type_id = Oli.Resources.ResourceType.id_for_activity()
+
+      # Create ResourceSummary records for all three activities
+      add_resource_summary([
+        -1,
+        -1,
+        section.id,
+        user1.id,
+        activity1_resource.id,
+        nil,
+        activity_type_id,
+        1,
+        1,
+        0,
+        1,
+        1
+      ])
+
+      add_resource_summary([
+        -1,
+        -1,
+        section.id,
+        user1.id,
+        activity2_resource.id,
+        nil,
+        activity_type_id,
+        1,
+        1,
+        0,
+        1,
+        1
+      ])
+
+      add_resource_summary([
+        -1,
+        -1,
+        section.id,
+        user1.id,
+        activity3_resource.id,
+        nil,
+        activity_type_id,
+        1,
+        1,
+        0,
+        1,
+        1
+      ])
+
+      # Only include activity1 and activity2 in the filter
+      result =
+        Metrics.student_activities_attempted_count(
+          section.id,
+          [user1.id],
+          [activity1_resource.id, activity2_resource.id]
+        )
+
+      # Should only count 2 activities, not 3
+      assert result[user1.id] == 2
+    end
+
+    test "only includes students from the provided student_ids list", %{
+      section: section,
+      user1: user1,
+      user2: user2,
+      user3: user3,
+      activity1_resource: activity1_resource
+    } do
+      activity_type_id = Oli.Resources.ResourceType.id_for_activity()
+
+      # Create ResourceSummary records for all three users
+      add_resource_summary([
+        -1,
+        -1,
+        section.id,
+        user1.id,
+        activity1_resource.id,
+        nil,
+        activity_type_id,
+        1,
+        1,
+        0,
+        1,
+        1
+      ])
+
+      add_resource_summary([
+        -1,
+        -1,
+        section.id,
+        user2.id,
+        activity1_resource.id,
+        nil,
+        activity_type_id,
+        1,
+        1,
+        0,
+        1,
+        1
+      ])
+
+      add_resource_summary([
+        -1,
+        -1,
+        section.id,
+        user3.id,
+        activity1_resource.id,
+        nil,
+        activity_type_id,
+        1,
+        1,
+        0,
+        1,
+        1
+      ])
+
+      # Only include user1 and user2 in the query
+      result =
+        Metrics.student_activities_attempted_count(
+          section.id,
+          [user1.id, user2.id],
+          [activity1_resource.id]
+        )
+
+      # Should only include user1 and user2, not user3
+      assert Map.has_key?(result, user1.id)
+      assert Map.has_key?(result, user2.id)
+      refute Map.has_key?(result, user3.id)
+      assert result[user1.id] == 1
+      assert result[user2.id] == 1
+    end
+
+    test "only includes attempts from the specified section", %{
+      section: section,
+      user1: user1,
+      activity1_resource: activity1_resource
+    } do
+      activity_type_id = Oli.Resources.ResourceType.id_for_activity()
+
+      # Create another section
+      other_section = insert(:section)
+
+      # Create ResourceSummary records in both sections
+      add_resource_summary([
+        -1,
+        -1,
+        section.id,
+        user1.id,
+        activity1_resource.id,
+        nil,
+        activity_type_id,
+        1,
+        1,
+        0,
+        1,
+        1
+      ])
+
+      add_resource_summary([
+        -1,
+        -1,
+        other_section.id,
+        user1.id,
+        activity1_resource.id,
+        nil,
+        activity_type_id,
+        1,
+        1,
+        0,
+        1,
+        1
+      ])
+
+      result =
+        Metrics.student_activities_attempted_count(
+          section.id,
+          [user1.id],
+          [activity1_resource.id]
+        )
+
+      # Should only count the attempt from the correct section
+      assert result[user1.id] == 1
+    end
+
+    test "handles empty student_ids list", %{
+      section: section,
+      activity1_resource: activity1_resource
+    } do
+      result =
+        Metrics.student_activities_attempted_count(
+          section.id,
+          [],
+          [activity1_resource.id]
+        )
+
+      assert result == %{}
+    end
+
+    test "counts activities with multiple parts correctly", %{
+      section: section,
+      user1: user1,
+      user2: user2,
+      activity1_resource: activity1_resource,
+      activity2_resource: activity2_resource
+    } do
+      activity_type_id = Oli.Resources.ResourceType.id_for_activity()
+
+      # Activity1 has 3 parts, user1 attempted 2 of them (should still count as 1 activity)
+      add_resource_summary([
+        -1,
+        -1,
+        section.id,
+        user1.id,
+        activity1_resource.id,
+        "part1",
+        activity_type_id,
+        1,
+        2,
+        0,
+        2,
+        1
+      ])
+
+      add_resource_summary([
+        -1,
+        -1,
+        section.id,
+        user1.id,
+        activity1_resource.id,
+        # No attempts on this part
+        "part2",
+        activity_type_id,
+        0,
+        0,
+        0,
+        0,
+        0
+      ])
+
+      add_resource_summary([
+        -1,
+        -1,
+        section.id,
+        user1.id,
+        activity1_resource.id,
+        "part3",
+        activity_type_id,
+        1,
+        1,
+        0,
+        1,
+        1
+      ])
+
+      # Activity2 has 2 parts, user2 attempted only 1 of them (should still count as 1 activity)
+      add_resource_summary([
+        -1,
+        -1,
+        section.id,
+        user2.id,
+        activity2_resource.id,
+        "part1",
+        activity_type_id,
+        1,
+        1,
+        0,
+        1,
+        1
+      ])
+
+      add_resource_summary([
+        -1,
+        -1,
+        section.id,
+        user2.id,
+        activity2_resource.id,
+        # No attempts on this part
+        "part2",
+        activity_type_id,
+        0,
+        0,
+        0,
+        0,
+        0
+      ])
+
+      result =
+        Metrics.student_activities_attempted_count(
+          section.id,
+          [user1.id, user2.id],
+          [activity1_resource.id, activity2_resource.id]
+        )
+
+      # Each user attempted 1 activity (even though activities have multiple parts)
+      # attempted activity1 (at least one part)
+      assert result[user1.id] == 1
+      # attempted activity2 (at least one part)
+      assert result[user2.id] == 1
     end
   end
 end

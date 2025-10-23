@@ -107,7 +107,7 @@ defmodule OliWeb.Authors.Invitations.InviteView do
       >
         <p role="account warning" class="text-white">
           You are currently logged in as <strong><%= @current_author.email %></strong>.<br />
-          You will be automatically logged in as <strong><%= @author.email %></strong>
+          You will be automatically logged in as <strong>{@author.email}</strong>
           after you sign in.
         </p>
       </div>
@@ -124,7 +124,7 @@ defmodule OliWeb.Authors.Invitations.InviteView do
         <.author_invitation />
       </div>
       <div class="flex flex-col justify-center items-center gap-y-10 w-full relative z-50 overflow-y-scroll lg:overflow-y-auto h-[calc(100vh-270px)] md:h-[calc(100vh-220px)] lg:h-auto py-4 sm:py-8 lg:py-0">
-        <%= render_slot(@inner_block) %>
+        {render_slot(@inner_block)}
       </div>
     </div>
     """

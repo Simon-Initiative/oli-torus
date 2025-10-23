@@ -21,7 +21,10 @@ defmodule OliWeb do
 
   def controller do
     quote do
-      use Phoenix.Controller, layouts: [html: {OliWeb.LayoutView, :app}], namespace: OliWeb
+      use Phoenix.Controller,
+        layouts: [html: {OliWeb.LayoutView, :app}],
+        formats: [html: "View", json: "View"]
+
       use Gettext, backend: OliWeb.Gettext
 
       import Plug.Conn
@@ -140,11 +143,6 @@ defmodule OliWeb do
 
       import OliWeb.ViewHelpers
       import OliWeb.Common.FormatDateTime
-
-      import OliWeb.Components.Delivery.Utils,
-        only: [
-          user_is_guest?: 1
-        ]
 
       import Oli.Utils
       import Oli.Branding

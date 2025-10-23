@@ -69,7 +69,7 @@ defmodule Oli.Delivery.Paywall.Discount do
   defp validate_amount_if(changeset, field, condition, min) do
     with true <- condition.(changeset),
          amount = %Money{} <- get_field(changeset, field),
-         :lt <- Money.compare(amount, Money.new(:USD, min)) do
+         :lt <- Money.compare(amount, Money.new(min, "USD")) do
       add_error(changeset, field, "must be greater than or equal to #{min}")
     else
       _ -> changeset

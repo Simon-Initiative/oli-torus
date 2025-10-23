@@ -69,7 +69,7 @@ defmodule OliWeb.Users.AuthorsTableModel do
 
     ~H"""
     <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Users.AuthorsDetailView, @id)}>
-      <%= name(@name, @given_name, @family_name) %>
+      {name(@name, @given_name, @family_name)}
     </a>
     """
   end

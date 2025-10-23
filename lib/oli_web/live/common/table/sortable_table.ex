@@ -19,10 +19,10 @@ defmodule OliWeb.Common.Table.SortableTable do
     >
       <%= if @column_spec.tooltip do %>
         <span data-bs-toggle="tooltip" title={@column_spec.tooltip}>
-          <%= @column_spec.label %>
+          {@column_spec.label}
         </span>
       <% else %>
-        <%= @column_spec.label %>
+        {@column_spec.label}
       <% end %>
       <%= if @sort_by_spec == @column_spec do %>
         <i class={"fas fa-sort-#{if @sort_order == :asc do "up" else "down" end}"}></i>
@@ -58,13 +58,13 @@ defmodule OliWeb.Common.Table.SortableTable do
       <thead>
         <tr>
           <%= for column_spec <- @model.column_specs do %>
-            <%= th(
+            {th(
               with_data(assigns, @model.data),
               column_spec,
               @model.sort_by_spec,
               @model.sort_order,
               @model.event_suffix
-            ) %>
+            )}
           <% end %>
         </tr>
       </thead>
@@ -94,10 +94,10 @@ defmodule OliWeb.Common.Table.SortableTable do
     <tr id={@id} class={@class}>
       <%= for column_spec <- @model.column_specs do %>
         <td>
-          <%= case column_spec.render_fn do
+          {case column_spec.render_fn do
             nil -> ColumnSpec.default_render_fn(column_spec, @row)
             func -> func.(with_data(assigns, @model.data), @row, column_spec)
-          end %>
+          end}
         </td>
       <% end %>
     </tr>

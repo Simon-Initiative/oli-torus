@@ -1,5 +1,11 @@
 <h2 id="header_id" class="pb-2">Curriculum</h2>
-<%= render_modal(assigns) %>
+{render_modal(assigns)}
+
+<div class="sr-only" aria-live="polite" role="status">
+  <%= for {message, idx} <- Enum.with_index(@import_state.announcements) do %>
+    <span id={"google-docs-import-announcement-#{idx}"}>{message}</span>
+  <% end %>
+</div>
 
 <Modal.modal
   id="options_modal"
@@ -8,7 +14,7 @@
   on_cancel={JS.push("restart_options_modal")}
 >
   <:title>
-    <%= @options_modal_assigns[:title] %>
+    {@options_modal_assigns[:title]}
   </:title>
 
   <%= if @options_modal_assigns do %>
@@ -30,6 +36,169 @@
   </div>
 </Modal.modal>
 
+<div class="hidden">
+  <div
+    id="google-docs-import-modal-show"
+    data-show_modal={Modal.show_modal("google_docs_import_modal")}
+  >
+  </div>
+  <div
+    id="google-docs-import-modal-hide"
+    data-hide_modal={Modal.hide_modal("google_docs_import_modal")}
+  >
+  </div>
+</div>
+
+<Modal.modal
+  id="google_docs_import_modal"
+  show={@import_state.show?}
+  on_cancel={JS.push("cancel_import_modal")}
+  body_class="p-6 space-y-5"
+>
+  <:title>
+    {gettext("Import from Google Docs")}
+  </:title>
+
+  <p class="text-sm text-gray-600">
+    {gettext(
+      "Paste the FILE_ID from the Google Docs URL (the value between \"/d/\" and the next slash)."
+    )}
+  </p>
+
+  <.form
+    id="google-docs-import-form"
+    for={@import_state.form}
+    phx-change="validate_import"
+    phx-submit="submit_import"
+  >
+    <.input
+      field={@import_state.form[:file_id]}
+      type="text"
+      label={gettext("Google Docs FILE_ID")}
+      placeholder="1AbCdEfGhIj"
+      disabled={@import_state.busy?}
+      autocomplete="off"
+      required
+      id="google-docs-file-id"
+      aria-describedby="google-docs-file-id-hint"
+    />
+    <p id="google-docs-file-id-hint" class="mt-1 text-xs text-gray-500">
+      {raw(
+        gettext("Example URL: https://docs.google.com/document/d/<strong>FILE_ID</strong>/edit")
+      )}
+    </p>
+
+    <div class="mt-4 flex items-center gap-3">
+      <.button
+        type="submit"
+        variant={:primary}
+        size={:sm}
+        disabled={@import_state.busy?}
+        phx-disable-with={gettext("Importing...")}
+        aria-label={gettext("Start import")}
+      >
+        {gettext("Import")}
+      </.button>
+      <.button
+        type="button"
+        variant={:secondary}
+        size={:sm}
+        disabled={@import_state.busy?}
+        phx-click="reset_import_modal"
+      >
+        {gettext("Clear")}
+      </.button>
+    </div>
+  </.form>
+
+  <div
+    :if={@import_state.busy?}
+    class="flex items-center gap-2 text-sm text-gray-600"
+    role="status"
+    aria-live="polite"
+  >
+    <.icon name="hero-arrow-path" class="h-4 w-4 animate-spin" />
+    <span>{gettext("Import in progress...")}</span>
+  </div>
+
+  <div
+    :if={@import_state.status == :success and @import_state.result_revision}
+    class="rounded border border-green-200 bg-green-50 p-3 text-sm text-green-800"
+    role="status"
+    aria-live="polite"
+  >
+    <p>
+      {gettext(
+        "Imported \"%{title}\" successfully.",
+        title: present_title(@import_state.result_revision.title)
+      )}
+    </p>
+  </div>
+
+  <div
+    :if={@import_state.error_message}
+    class="rounded border border-red-200 bg-red-50 p-3 text-sm text-red-800"
+    role="alert"
+  >
+    {@import_state.error_message}
+  </div>
+
+  <div :if={Enum.any?(@import_state.warnings)} class="space-y-2">
+    <h3 class="text-sm font-semibold text-gray-800">
+      {gettext("Import warnings")}
+    </h3>
+    <ul class="space-y-2" role="status" aria-live="polite">
+      <%= for {warning, idx} <- Enum.with_index(@import_state.warnings) do %>
+        <li
+          class={[
+            "rounded border p-3 text-sm",
+            warning_container_class(warning.severity)
+          ]}
+          data-warning-index={idx}
+        >
+          <span class={[
+            "mb-1 inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold",
+            warning_badge_class(warning.severity)
+          ]}>
+            {warning_label(warning.severity)}
+          </span>
+          <span class="block text-gray-800">{warning.message}</span>
+        </li>
+      <% end %>
+    </ul>
+  </div>
+
+  <:custom_footer>
+    <div class="flex flex-col gap-3 px-6 pb-6 pt-2 sm:flex-row sm:items-center sm:justify-between">
+      <p class="text-xs text-gray-500">
+        {gettext("Imports may take up to 12 seconds for large documents.")}
+      </p>
+      <div class="flex items-center gap-3">
+        <.button
+          :if={
+            @import_state.status == :success and
+              match?(%Revision{}, @import_state.result_revision)
+          }
+          variant={:primary}
+          size={:sm}
+          phx-click="open_imported_page"
+          phx-disable-with={gettext("Opening...")}
+        >
+          {gettext("Open imported page")}
+        </.button>
+        <.button
+          variant={:secondary}
+          size={:sm}
+          phx-click="reset_import_modal"
+          disabled={@import_state.busy?}
+        >
+          {gettext("Done")}
+        </.button>
+      </div>
+    </div>
+  </:custom_footer>
+</Modal.modal>
+
 <div id="curriculum-container" class="curriculum-editor">
   <div class="flex justify-between items-center mb-3">
     <p>
@@ -47,6 +216,16 @@
       >
         <i class="fas fa-history"></i> View revision history
       </.link>
+      <.button
+        :if={can_import?(@author)}
+        variant={:primary}
+        size={:sm}
+        phx-click="show_import_modal"
+        disabled={@import_state.busy?}
+        aria-label={gettext("Import from Google Docs (admins only)")}
+      >
+        {gettext("Import from Google Docs")}
+      </.button>
     </div>
   </div>
   <div class="grid grid-cols-12">
@@ -195,7 +374,7 @@
           class="btn btn-xs btn-outline-primary mr-0.5"
           type="button"
         >
-          Create a <%= new_container_name(@numberings, @container) %>
+          Create a {new_container_name(@numberings, @container)}
         </button>
       </div>
     </div>

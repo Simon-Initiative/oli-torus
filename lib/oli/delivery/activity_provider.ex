@@ -115,7 +115,10 @@ defmodule Oli.Delivery.ActivityProvider do
 
     prototypes_with_revisions =
       resolve_activity_ids(source.section_slug, prototypes, resolver)
-      |> Enum.map(fn p -> set_out_of(p) end)
+      |> Enum.reduce([], fn
+        %{revision: nil} = _p, acc -> acc
+        p, acc -> [set_out_of(p) | acc]
+      end)
 
     bib_revisions =
       BibUtils.assemble_bib_entries(
@@ -128,8 +131,14 @@ defmodule Oli.Delivery.ActivityProvider do
       |> Enum.with_index(1)
       |> Enum.map(fn {revision, ordinal} -> BibUtils.serialize_revision(revision, ordinal) end)
 
-    # See if at least one of the realized prototypes came from an activity selection
-    has_selection = Enum.any?(prototypes_with_revisions, fn p -> !is_nil(p.selection_id) end)
+    # Check if the content contains at least one selection block so we know to transform it
+    has_selection =
+      content
+      |> PageContent.flat_filter(fn
+        %{"type" => "selection"} -> true
+        _ -> false
+      end)
+      |> Enum.any?()
 
     %ProviderResult{
       errors: errors,
@@ -259,7 +268,6 @@ defmodule Oli.Delivery.ActivityProvider do
 
             {:partial, %Result{} = result} ->
               missing = selection.count - result.rowCount
-
               error = "Selection failed to fulfill completely with #{missing} missing activities"
 
               new_prototypes =
@@ -426,7 +434,10 @@ defmodule Oli.Delivery.ActivityProvider do
 
     map =
       resolver.from_resource_id(section_slug, activity_ids)
-      |> Enum.reduce(%{}, fn rev, m -> Map.put(m, rev.resource_id, rev) end)
+      |> Enum.reduce(%{}, fn
+        nil, m -> m
+        rev, m -> Map.put(m, rev.resource_id, rev)
+      end)
 
     Enum.map(prototypes, fn p ->
       case p.revision do
@@ -467,8 +478,12 @@ defmodule Oli.Delivery.ActivityProvider do
          %{"type" => "selection", "id" => id} = selection,
          prototypes_by_selection
        ) do
-    Map.get(prototypes_by_selection, id)
-    |> Enum.map(fn prototype -> replace_with_reference(selection, prototype.revision) end)
+    prototypes =
+      Map.get(prototypes_by_selection, id, [])
+
+    Enum.map(prototypes, fn prototype ->
+      replace_with_reference(selection, prototype.revision)
+    end)
   end
 
   defp transform_content_helper(

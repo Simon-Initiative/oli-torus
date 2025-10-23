@@ -137,27 +137,27 @@ defmodule OliWeb.LinkAccountLive do
     <.form :let={f} id="link_account_form" for={@form} action={~p"/authors/log_in"}>
       <div class="mx-auto flex flex-col gap-2 py-8">
         <div>
-          <%= email_input(f, :email,
+          {email_input(f, :email,
             class:
               "w-full dark:placeholder:text-zinc-300 pl-6 dark:bg-stone-900 rounded-md border dark:border-zinc-300 dark:text-zinc-300 leading-snug",
             placeholder: "Email",
             required: true,
             autofocus: focusHelper(f, :email, default: true)
-          ) %>
-          <%= error_tag(f, :email) %>
+          )}
+          {error_tag(f, :email)}
         </div>
         <div>
-          <%= password_input(f, :password,
+          {password_input(f, :password,
             class:
               "w-full dark:placeholder:text-zinc-300 pl-6 dark:bg-stone-900 rounded-md border dark:border-zinc-300 dark:text-zinc-300 leading-snug",
             placeholder: "Password",
             required: true,
             autofocus: focusHelper(f, :password, default: true)
-          ) %>
-          <%= error_tag(f, :password) %>
+          )}
+          {error_tag(f, :password)}
         </div>
 
-        <%= hidden_input(f, :link_account_user_id, value: @current_user.id) %>
+        {hidden_input(f, :link_account_user_id, value: @current_user.id)}
 
         <.button
           type="submit"

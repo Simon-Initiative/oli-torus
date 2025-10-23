@@ -154,25 +154,45 @@ defmodule Oli.Activities do
   end
 
   @doc """
-  Returns the list of activities visible for author to use in particular project.
+  Returns a map of activity registrations (activities, advanced activities and LTI tools) for a project.
+  The enabledForProject key indicates if the activity is available for that project.
+  For LTI tools, it only considers the ones that are enabled in the platform (by an admin).
 
   ## Examples
 
-      iex> create_registered_activity_map(philosophy)
-      [%ActivityMapEntry{}, ...]
+      iex> create_registered_activity_map("philosophy")
+      %{
+        "oli_check_all_that_apply" => %Oli.Activities.ActivityMapEntry{
+          enabledForProject: true,
+          ...
+        },
+        "oli_image_coding" => %Oli.Activities.ActivityMapEntry{
+          enabledForProject: true,
+          ...
+        },
+        "oli_likert" => %Oli.Activities.ActivityMapEntry{
+          enabledForProject: false,
+          ...
+        },
+        ...
+      }
 
   """
-  @spec create_registered_activity_map(String.t()) :: %ActivityMapEntry{} | {:error, any}
+  @spec create_registered_activity_map(String.t()) ::
+          %{String.t() => ActivityMapEntry.t()} | {:error, String.t()}
   def create_registered_activity_map(project_slug) do
     with {:ok, project} <-
            Course.get_project_by_slug(project_slug)
            |> trap_nil("The project was not found.") do
-      project = project |> Repo.preload([:activity_registrations])
-
-      project_activities =
-        Enum.reduce(project.activity_registrations, MapSet.new(), fn a, m ->
-          MapSet.put(m, a.slug)
-        end)
+      enabled_project_activities =
+        from(arp in ActivityRegistrationProject,
+          where: arp.project_id == ^project.id and arp.status == :enabled,
+          join: ar in ActivityRegistration,
+          on: ar.id == arp.activity_registration_id,
+          select: ar.slug
+        )
+        |> Repo.all()
+        |> MapSet.new()
 
       list_activity_registrations()
       |> Enum.filter(fn a ->
@@ -181,7 +201,7 @@ defmodule Oli.Activities do
       |> Enum.map(&ActivityMapEntry.from_registration/1)
       |> Enum.reduce(%{}, fn e, m ->
         e =
-          if e.globallyAvailable === true or MapSet.member?(project_activities, e.slug) do
+          if e.globallyAvailable === true or MapSet.member?(enabled_project_activities, e.slug) do
             Map.merge(e, %{enabledForProject: true})
           else
             e
@@ -194,92 +214,53 @@ defmodule Oli.Activities do
     end
   end
 
-  def enable_activity_in_project(project_slug, activity_slug) do
-    with {:ok, activity_registration} <-
-           get_registration_by_slug(activity_slug)
-           |> trap_nil("An activity with that slug was not found."),
-         {:ok, project} <-
-           Course.get_project_by_slug(project_slug)
-           |> trap_nil("The project was not found.") do
-      case Repo.get_by(
-             ActivityRegistrationProject,
-             %{
-               activity_registration_id: activity_registration.id,
-               project_id: project.id
-             }
-           ) do
-        nil ->
-          %ActivityRegistrationProject{}
-          |> ActivityRegistrationProject.changeset(%{
-            activity_registration_id: activity_registration.id,
-            project_id: project.id
-          })
-          |> Repo.insert()
-
-        _ ->
-          {:error, "The activity is already enabled in the project."}
-      end
-    else
-      {:error, {message}} -> {:error, message}
-    end
-  end
-
-  def disable_activity_in_project(project_slug, activity_slug) do
-    with {:ok, activity_registration} <-
-           get_registration_by_slug(activity_slug)
-           |> trap_nil("An activity with that slug was not found."),
-         {:ok, project} <-
-           Course.get_project_by_slug(project_slug)
-           |> trap_nil("The project was not found."),
-         {:ok, activity_project} <-
-           Repo.get_by(
-             ActivityRegistrationProject,
-             %{
-               activity_registration_id: activity_registration.id,
-               project_id: project.id
-             }
-           )
-           |> trap_nil("The activity is not enabled on the project.") do
-      Repo.delete(activity_project)
-    else
-      {:error, {message}} -> {:error, message}
-    end
-  end
-
+  @doc """
+  Returns a list of maps of activities/LTI-tools for the project.
+  - The `enabled` key indicates if the activity/LTI-tool is available for the project.
+      By available, we mean that it is either globally visible or enabled for the project.
+      If the user is an admin, even non-globally visible ones will have the `enabled` key set to true.
+  - For LTI tools, it only considers the ones that are enabled in the platform (by an admin).
+  """
+  @spec activities_for_project(Oli.Authoring.Course.Project.t(), boolean()) :: [map()]
   def activities_for_project(project, is_admin? \\ true) do
-    project = project |> Repo.preload([:activity_registrations])
+    enabled_project_activity_ids =
+      from(arp in ActivityRegistrationProject,
+        where: arp.project_id == ^project.id and arp.status == :enabled,
+        join: ar in ActivityRegistration,
+        on: ar.id == arp.activity_registration_id,
+        select: ar.id
+      )
+      |> Repo.all()
+      |> MapSet.new()
 
-    project_activities =
-      Enum.reduce(project.activity_registrations, MapSet.new(), fn a, m -> MapSet.put(m, a.id) end)
+    list_activity_registrations()
+    |> Enum.filter(fn a ->
+      ## for non-admin users, only return activities that are globally visible
+      ## for LTI tools, only return activities that are enabled in the platform
+      (a.globally_visible || is_admin?) and (is_nil(a.status) or a.status == :enabled)
+    end)
+    |> Enum.reduce([], fn a, m ->
+      enabled_for_project =
+        a.globally_available === true or MapSet.member?(enabled_project_activity_ids, a.id)
 
-    activities_enabled =
-      list_activity_registrations()
-      |> Enum.filter(fn a ->
-        (a.globally_visible || is_admin?) and (is_nil(a.status) or a.status == :enabled)
-      end)
-      |> Enum.reduce([], fn a, m ->
-        enabled_for_project =
-          a.globally_available === true or MapSet.member?(project_activities, a.id)
-
-        m ++
-          [
-            %{
-              id: a.id,
-              authoring_element: a.authoring_element,
-              delivery_element: a.delivery_element,
-              authoring_script: a.authoring_script,
-              delivery_script: a.delivery_script,
-              slug: a.slug,
-              title: a.title,
-              global: a.globally_available,
-              petite_label: a.petite_label,
-              enabled: enabled_for_project,
-              deployment_id: a.deployment_id
-            }
-          ]
-      end)
-
-    Enum.sort_by(activities_enabled, & &1.global, :desc)
+      m ++
+        [
+          %{
+            id: a.id,
+            authoring_element: a.authoring_element,
+            delivery_element: a.delivery_element,
+            authoring_script: a.authoring_script,
+            delivery_script: a.delivery_script,
+            slug: a.slug,
+            title: a.title,
+            global: a.globally_available,
+            petite_label: a.petite_label,
+            enabled: enabled_for_project,
+            deployment_id: a.deployment_id
+          }
+        ]
+    end)
+    |> Enum.sort_by(& &1.global, :desc)
   end
 
   def advanced_activities(project, is_admin? \\ true) do
@@ -473,5 +454,140 @@ defmodule Oli.Activities do
   """
   def change_registration(%ActivityRegistration{} = registration) do
     ActivityRegistration.changeset(registration, %{})
+  end
+
+  @doc """
+  Returns all advanced activities and LTI tools that can be selected for a given project.
+  - For LTI tools, it only returns the ones that are enabled in the platform (by an admin).
+  - Each result includes the ActivityRegistration record with its project-specific status (enabled/disabled when already selected, or nil if not yet selected)
+  and the deployment_id for LTI tools (for advanced activities this value is nil).
+  - If the is_admin? argument is true, then the list will also include not globally visible activities/tools.
+  """
+  @spec selectable_activities_for_project(integer(), boolean()) :: [
+          %{activity: ActivityRegistration.t(), project_status: atom() | nil}
+        ]
+  def selectable_activities_for_project(project_id, is_admin? \\ false) do
+    from(ar in ActivityRegistration,
+      left_join: arp in ActivityRegistrationProject,
+      on: arp.activity_registration_id == ar.id and arp.project_id == ^project_id,
+      left_join: d in LtiExternalToolActivityDeployment,
+      on: d.activity_registration_id == ar.id,
+      where:
+        (ar.globally_visible or ^is_admin?) and (is_nil(d.status) or d.status == :enabled) and
+          not ar.globally_available,
+      order_by: [desc: d.deployment_id, asc: ar.title],
+      select: ar,
+      select_merge: %{project_status: arp.status, deployment_id: d.deployment_id}
+    )
+    |> Repo.all()
+  end
+
+  @doc """
+  Returns all ActivityRegistration records of advanced activities and LTI tools that are already selected for a given project.
+  Note that being selected for a project does not mean that the activity is enabled for that project (it can be selected but disabled).
+  - For LTI tools, it will only return the ones that are enabled in the platform (by an admin).
+  - The returned record also includes the project-specific status (enabled or disabled) and deployment_id for LTI tools (for advanced activities this value is nil).
+  - If the is_admin? argument is true, then the list will also include not globally visible advanced-activities/LTI-tools.
+  """
+  @spec selected_activities_for_project(integer(), boolean()) :: [
+          %{activity: ActivityRegistration.t(), project_status: atom() | nil}
+        ]
+  def selected_activities_for_project(project_id, is_admin? \\ false) do
+    from(arp in ActivityRegistrationProject,
+      where: arp.project_id == ^project_id,
+      join: ar in ActivityRegistration,
+      on: ar.id == arp.activity_registration_id,
+      left_join: d in LtiExternalToolActivityDeployment,
+      on: d.activity_registration_id == ar.id,
+      where:
+        (ar.globally_visible or ^is_admin?) and (is_nil(d.status) or d.status == :enabled) and
+          not ar.globally_available,
+      order_by: [desc: d.deployment_id, asc: ar.title],
+      select: ar,
+      select_merge: %{project_status: arp.status, deployment_id: d.deployment_id}
+    )
+    |> Repo.all()
+  end
+
+  @doc """
+  Bulk update project activities - adds new activities and removes deselected ones
+  """
+  @spec bulk_update_project_activities(integer(), [integer()], [integer()]) ::
+          :ok | {:error, String.t()}
+  def bulk_update_project_activities(project_id, activity_ids_to_add, activity_ids_to_remove) do
+    Repo.transaction(fn ->
+      # Add new activities
+      if Enum.any?(activity_ids_to_add) do
+        now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+        values =
+          Enum.map(activity_ids_to_add, fn activity_id ->
+            %{
+              activity_registration_id: activity_id,
+              project_id: project_id,
+              status: :enabled,
+              inserted_at: now,
+              updated_at: now
+            }
+          end)
+
+        Repo.insert_all(ActivityRegistrationProject, values,
+          on_conflict: [set: [status: :enabled, updated_at: now]],
+          conflict_target: [:activity_registration_id, :project_id]
+        )
+      end
+
+      # Remove deselected activities
+      if Enum.any?(activity_ids_to_remove) do
+        from(arp in ActivityRegistrationProject,
+          where:
+            arp.project_id == ^project_id and
+              arp.activity_registration_id in ^activity_ids_to_remove
+        )
+        |> Repo.delete_all()
+      end
+    end)
+    |> case do
+      {:ok, _} -> :ok
+      {:error, error} -> {:error, "Failed to update project activities: #{inspect(error)}"}
+    end
+  end
+
+  @doc """
+  Enables an existing ActivityRegistrationProject (sets status to :enabled) for the given project and activity.
+  Returns :ok if updated, {:error, ...} if not found.
+  """
+  @spec enable_activity_in_project(integer(), integer()) :: :ok | {:error, String.t()}
+  def enable_activity_in_project(project_id, activity_id) do
+    {count, _} =
+      from(arp in ActivityRegistrationProject,
+        where: arp.project_id == ^project_id and arp.activity_registration_id == ^activity_id
+      )
+      |> Repo.update_all(set: [status: :enabled, updated_at: NaiveDateTime.utc_now()])
+
+    if count == 0 do
+      {:error, "No ActivityRegistrationProject found"}
+    else
+      :ok
+    end
+  end
+
+  @doc """
+  Disables an existing ActivityRegistrationProject (sets status to :disabled) for the given project and activity.
+  Returns :ok if updated, {:error, ...} if not found.
+  """
+  @spec disable_activity_in_project(integer(), integer()) :: :ok | {:error, String.t()}
+  def disable_activity_in_project(project_id, activity_id) do
+    {count, _} =
+      from(arp in ActivityRegistrationProject,
+        where: arp.project_id == ^project_id and arp.activity_registration_id == ^activity_id
+      )
+      |> Repo.update_all(set: [status: :disabled, updated_at: NaiveDateTime.utc_now()])
+
+    if count == 0 do
+      {:error, "No ActivityRegistrationProject found"}
+    else
+      :ok
+    end
   end
 end

@@ -130,7 +130,7 @@ defmodule OliWeb.PaymentControllerTest do
     } do
       load_stripe_config()
 
-      product = insert(:section, %{amount: Money.new(:USD, "50.00")})
+      product = insert(:section, %{amount: Money.new(50, "USD")})
       user = insert(:user)
 
       enrollable =
@@ -138,7 +138,7 @@ defmodule OliWeb.PaymentControllerTest do
           type: :enrollable,
           requires_payment: true,
           blueprint: product,
-          amount: Money.new(:USD, "100.00"),
+          amount: Money.new(100, "USD"),
           has_grace_period: true,
           grace_period_days: 2,
           grace_period_strategy: :relative_to_student
@@ -222,9 +222,9 @@ defmodule OliWeb.PaymentControllerTest do
 
     map =
       Seeder.base_project_with_resource2()
-      |> Seeder.create_product(%{title: "My 1st product", amount: Money.new(:USD, 100)}, :prod1)
+      |> Seeder.create_product(%{title: "My 1st product", amount: Money.new(100, "USD")}, :prod1)
       |> Seeder.create_product(
-        %{title: "My 2nd product", amount: Money.new(:USD, "24.99")},
+        %{title: "My 2nd product", amount: Money.from_float("USD", 24.99)},
         :prod2
       )
 

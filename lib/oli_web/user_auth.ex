@@ -147,7 +147,12 @@ defmodule OliWeb.UserAuth do
   """
   def fetch_current_user(conn, _opts) do
     {user_token, conn} = ensure_user_token(conn)
-    user = user_token && Accounts.get_user_by_session_token(user_token)
+
+    user =
+      case user_token do
+        nil -> nil
+        token -> Accounts.get_user_by_session_token(token)
+      end
 
     # TODO: PERFORMANCE this is making an extra query to the database to preload the user's roles.
     # Ideally, we should preload the user's roles in the same query that fetches the user.
@@ -157,17 +162,32 @@ defmodule OliWeb.UserAuth do
 
   defp ensure_user_token(conn) do
     if token = get_session(conn, :user_token) do
-      {token, conn}
+      # Add basic token format validation
+      if valid_token_format?(token) do
+        {token, conn}
+      else
+        {nil, delete_session(conn, :user_token)}
+      end
     else
       conn = fetch_cookies(conn, signed: [@remember_me_cookie])
 
       if token = conn.cookies[@remember_me_cookie] do
-        {token, put_token_in_session(conn, token)}
+        if valid_token_format?(token) do
+          {token, put_token_in_session(conn, token)}
+        else
+          {nil, delete_resp_cookie(conn, @remember_me_cookie)}
+        end
       else
         {nil, conn}
       end
     end
   end
+
+  defp valid_token_format?(token) when is_binary(token) do
+    byte_size(token) >= 32 and byte_size(token) <= 255
+  end
+
+  defp valid_token_format?(_), do: false
 
   @doc """
   Handles mounting and authenticating the current_user in LiveViews.
@@ -252,7 +272,11 @@ defmodule OliWeb.UserAuth do
     # in conn during disconnected state.
     Phoenix.Component.assign_new(socket, :current_user, fn ->
       if user_token = session["user_token"] do
-        Accounts.get_user_by_session_token(user_token)
+        if valid_token_format?(user_token) do
+          Accounts.get_user_by_session_token(user_token)
+        else
+          nil
+        end
       end
     end)
     |> preload_platform_roles()

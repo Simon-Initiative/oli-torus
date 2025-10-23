@@ -36,7 +36,7 @@ defmodule OliWeb.Sections.AdminIndexLiveTest do
     test "loads correctly when there are no sections", %{conn: conn} do
       {:ok, view, _html} = live(conn, @live_view_index_route)
 
-      assert has_element?(view, "#header_id", "Browse Course Sections")
+      assert has_element?(view, "span", "Browse Course Sections")
       assert has_element?(view, "p", "None exist")
     end
 
@@ -61,7 +61,7 @@ defmodule OliWeb.Sections.AdminIndexLiveTest do
       assert has_element?(view, "td", section.title)
       assert has_element?(view, "td", project.title)
       assert has_element?(view, "td", institution.name)
-      assert has_element?(view, "td", "#{u1.name}, #{u2.name}")
+      assert has_element?(view, "td", "#{u1.name} , #{u2.name}")
     end
 
     test "applies filtering", %{conn: conn} do
@@ -82,7 +82,7 @@ defmodule OliWeb.Sections.AdminIndexLiveTest do
 
       # by active date
       view
-      |> element("input[phx-click=\"active_today\"]")
+      |> element("input[phx-click='active_today']")
       |> render_click()
 
       assert has_element?(view, "td", s1.title)
@@ -90,19 +90,19 @@ defmodule OliWeb.Sections.AdminIndexLiveTest do
 
       # reset filter active date
       view
-      |> element("input[phx-click=\"active_today\"]")
+      |> element("input[phx-click='active_today']")
       |> render_click()
 
       # by type
       view
-      |> element("form[phx-change=\"change_type\"]")
+      |> element("form[phx-change='change_type']")
       |> render_change(%{"type" => "open"})
 
       assert has_element?(view, "td", s1.title)
       refute has_element?(view, "td", s2.title)
 
       view
-      |> element("form[phx-change=\"change_type\"]")
+      |> element("form[phx-change='change_type']")
       |> render_change(%{"type" => "lms"})
 
       refute has_element?(view, "td", s1.title)
@@ -110,26 +110,26 @@ defmodule OliWeb.Sections.AdminIndexLiveTest do
 
       # reset filter type
       view
-      |> element("form[phx-change=\"change_type\"]")
+      |> element("form[phx-change='change_type']")
       |> render_change(%{"type" => ""})
 
       # by status
       view
-      |> element("form[phx-change=\"change_status\"]")
+      |> element("form[phx-change='change_status']")
       |> render_change(%{"status" => "active"})
 
       assert has_element?(view, "td", s1.title)
       refute has_element?(view, "td", s2.title)
 
       view
-      |> element("form[phx-change=\"change_status\"]")
+      |> element("form[phx-change='change_status']")
       |> render_change(%{"status" => "deleted"})
 
       refute has_element?(view, "td", s1.title)
       assert has_element?(view, "td", s2.title)
 
       view
-      |> element("form[phx-change=\"change_status\"]")
+      |> element("form[phx-change='change_status']")
       |> render_change(%{"status" => "archived"})
 
       refute has_element?(view, "td", s1.title)
@@ -156,25 +156,33 @@ defmodule OliWeb.Sections.AdminIndexLiveTest do
       {:ok, view, _html} = live(conn, @live_view_index_route)
 
       # by title
-      render_hook(view, "text_search_change", %{value: "testing"})
+      view
+      |> element("form[phx-change=\"text_search_change\"]")
+      |> render_change(%{"section_name" => "testing"})
 
       assert has_element?(view, "td", s1.title)
       refute has_element?(view, "td", s2.title)
 
       # by institution
-      render_hook(view, "text_search_change", %{value: "otherins"})
+      view
+      |> element("form[phx-change=\"text_search_change\"]")
+      |> render_change(%{"section_name" => "otherins"})
 
       refute has_element?(view, "td", s1.title)
       assert has_element?(view, "td", s2.title)
 
       # by product
-      render_hook(view, "text_search_change", %{value: "testsection"})
+      view
+      |> element("form[phx-change=\"text_search_change\"]")
+      |> render_change(%{"section_name" => "testsection"})
 
       assert has_element?(view, "td", s1.title)
       refute has_element?(view, "td", s2.title)
 
       # by project
-      render_hook(view, "text_search_change", %{value: "project"})
+      view
+      |> element("form[phx-change=\"text_search_change\"]")
+      |> render_change(%{"section_name" => "project"})
 
       refute has_element?(view, "td", s1.title)
       assert has_element?(view, "td", s2.title)
@@ -183,21 +191,88 @@ defmodule OliWeb.Sections.AdminIndexLiveTest do
       user = insert(:user, name: "Instructor")
       Sections.enroll(user.id, s1.id, [ContextRoles.get_role(:context_instructor)])
 
-      render_hook(view, "text_search_change", %{value: "instructor"})
+      view
+      |> element("form[phx-change=\"text_search_change\"]")
+      |> render_change(%{"section_name" => "instructor"})
 
       assert has_element?(view, "td", s1.title)
       refute has_element?(view, "td", s2.title)
+    end
+
+    test "search highlights matches and enforces minimum length", %{conn: conn} do
+      project = insert(:project, title: "Alpha Project", authors: [])
+      blueprint = insert(:section, title: "Alpha Blueprint")
+      institution = insert(:institution, name: "Alpha Institution")
+
+      highlighted_section =
+        insert(:section,
+          type: :enrollable,
+          base_project: project,
+          blueprint: blueprint,
+          institution: institution,
+          title: "Alpha Section",
+          slug: "alpha-section"
+        )
+
+      other_section = insert(:section, type: :enrollable, title: "Beta Section")
+
+      instructor = insert(:user, name: "Professor Alpha")
+
+      Sections.enroll(instructor.id, highlighted_section.id, [
+        ContextRoles.get_role(:context_instructor)
+      ])
+
+      {:ok, view, _html} = live(conn, @live_view_index_route)
+
+      view
+      |> element("form[phx-change=\"text_search_change\"]")
+      |> render_change(%{"section_name" => "al"})
+
+      assert has_element?(view, "td", highlighted_section.title)
+      assert has_element?(view, "td", other_section.title)
+      refute has_element?(view, "span.search-highlight")
+
+      view
+      |> element("form[phx-change=\"text_search_change\"]")
+      |> render_change(%{"section_name" => "alpha"})
+
+      assert has_element?(view, "td", highlighted_section.title)
+      refute has_element?(view, "td", other_section.title)
+      assert has_element?(view, "span.search-highlight", "Alpha")
+
+      view
+      |> element("form[phx-change=\"text_search_change\"]")
+      |> render_change(%{"section_name" => ""})
+
+      assert has_element?(view, "td", highlighted_section.title)
+      assert has_element?(view, "td", other_section.title)
+      refute has_element?(view, "span.search-highlight")
     end
 
     test "applies sorting", %{conn: conn} do
       project = insert(:project, title: "Project", authors: [])
 
       s1 =
-        insert(:section, type: :enrollable, amount: Money.new(:USD, 100_000), title: "Section A")
+        insert(:section,
+          type: :enrollable,
+          requires_payment: true,
+          amount: Money.new(100_000, "USD"),
+          title: "Section A"
+        )
 
-      s2 = insert(:section, type: :enrollable, base_project: project, title: "Section B")
+      s2 =
+        insert(:section,
+          type: :enrollable,
+          requires_payment: false,
+          base_project: project,
+          title: "Section B"
+        )
 
       {:ok, view, _html} = live(conn, @live_view_index_route)
+
+      view
+      |> element("th[phx-click='paged_table_sort']", "Title")
+      |> render_click(%{sort_by: "title"})
 
       # by title
       assert view
@@ -205,7 +280,7 @@ defmodule OliWeb.Sections.AdminIndexLiveTest do
              |> render() =~ s1.title
 
       view
-      |> element("th[phx-click=\"paged_table_sort\"]", "Title")
+      |> element("th[phx-click='paged_table_sort']", "Title")
       |> render_click(%{sort_by: "title"})
 
       assert view
@@ -214,7 +289,7 @@ defmodule OliWeb.Sections.AdminIndexLiveTest do
 
       # by cost
       view
-      |> element("th[phx-click=\"paged_table_sort\"]", "Cost")
+      |> element("th[phx-click='paged_table_sort']", "Cost")
       |> render_click(%{sort_by: "requires_payment"})
 
       assert view
@@ -222,7 +297,7 @@ defmodule OliWeb.Sections.AdminIndexLiveTest do
              |> render() =~ s2.title
 
       view
-      |> element("th[phx-click=\"paged_table_sort\"]", "Cost")
+      |> element("th[phx-click='paged_table_sort']", "Cost")
       |> render_click(%{sort_by: "requires_payment"})
 
       assert view
@@ -234,7 +309,7 @@ defmodule OliWeb.Sections.AdminIndexLiveTest do
       Sections.enroll(user.id, s1.id, [ContextRoles.get_role(:context_instructor)])
 
       view
-      |> element("th[phx-click=\"paged_table_sort\"]", "Instructor")
+      |> element("th[phx-click='paged_table_sort']", "Instructor")
       |> render_click(%{sort_by: "instructor"})
 
       assert view
@@ -242,7 +317,7 @@ defmodule OliWeb.Sections.AdminIndexLiveTest do
              |> render() =~ s2.title
 
       view
-      |> element("th[phx-click=\"paged_table_sort\"]", "Instructor")
+      |> element("th[phx-click='paged_table_sort']", "Instructor")
       |> render_click(%{sort_by: "instructor"})
 
       assert view
@@ -251,20 +326,25 @@ defmodule OliWeb.Sections.AdminIndexLiveTest do
     end
 
     test "applies paging", %{conn: conn} do
-      [first_s | tail] = insert_list(26, :section, type: :enrollable) |> Enum.sort_by(& &1.title)
-      last_s = List.last(tail)
+      first_section =
+        insert(:section, type: :enrollable, title: "First Section", start_date: yesterday())
+
+      last_section =
+        insert(:section, type: :enrollable, title: "Last Section", start_date: tomorrow())
+
+      insert_list(26, :section, type: :enrollable, start_date: DateTime.now!("Etc/UTC"))
 
       {:ok, view, _html} = live(conn, @live_view_index_route)
 
-      assert has_element?(view, "td", first_s.title)
-      refute has_element?(view, "td", last_s.title)
+      assert has_element?(view, "td", last_section.title)
+      refute has_element?(view, "td", first_section.title)
 
       view
-      |> element("#header_paging button[phx-click=\"paged_table_page_change\"]", "2")
+      |> element("#footer_paging button[phx-click='paged_table_page_change']", "2")
       |> render_click()
 
-      refute has_element?(view, "td", first_s.title)
-      assert has_element?(view, "td", last_s.title)
+      refute has_element?(view, "td", last_section.title)
+      assert has_element?(view, "td", first_section.title)
     end
 
     test "section title is a link to the manage tab of the instructor dashboard", %{conn: conn} do

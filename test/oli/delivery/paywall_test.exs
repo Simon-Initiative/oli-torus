@@ -32,7 +32,7 @@ defmodule Oli.Delivery.PaywallTest do
         Sections.create_section(%{
           type: :blueprint,
           requires_payment: true,
-          amount: Money.new(:USD, 100),
+          amount: Money.new(100, "USD"),
           grace_period_days: 1,
           title: "1",
           registration_open: true,
@@ -48,7 +48,7 @@ defmodule Oli.Delivery.PaywallTest do
         Sections.create_section(%{
           type: :enrollable,
           requires_payment: true,
-          amount: Money.new(:USD, 100),
+          amount: Money.new(100, "USD"),
           grace_period_days: 1,
           title: "1",
           registration_open: true,
@@ -191,7 +191,7 @@ defmodule Oli.Delivery.PaywallTest do
         Sections.create_section(%{
           type: :blueprint,
           requires_payment: true,
-          amount: Money.new(:USD, 100),
+          amount: Money.new(100, "USD"),
           grace_period_days: 1,
           title: "1",
           registration_open: true,
@@ -205,7 +205,7 @@ defmodule Oli.Delivery.PaywallTest do
         Sections.create_section(%{
           type: :blueprint,
           requires_payment: true,
-          amount: Money.new(:USD, 100),
+          amount: Money.new(100, "USD"),
           grace_period_days: 1,
           title: "1",
           registration_open: true,
@@ -223,7 +223,7 @@ defmodule Oli.Delivery.PaywallTest do
         Sections.create_section(%{
           type: :enrollable,
           requires_payment: true,
-          amount: Money.new(:USD, 100),
+          amount: Money.new(100, "USD"),
           grace_period_days: 1,
           title: "1",
           registration_open: true,
@@ -239,7 +239,7 @@ defmodule Oli.Delivery.PaywallTest do
         Sections.create_section(%{
           type: :enrollable,
           requires_payment: true,
-          amount: Money.new(:USD, 100),
+          amount: Money.new(100, "USD"),
           grace_period_days: 1,
           title: "1",
           registration_open: true,
@@ -351,7 +351,7 @@ defmodule Oli.Delivery.PaywallTest do
         Sections.create_section(%{
           type: :blueprint,
           requires_payment: true,
-          amount: Money.new(:USD, 100),
+          amount: Money.new(100, "USD"),
           grace_period_days: 1,
           title: "1",
           registration_open: true,
@@ -365,7 +365,7 @@ defmodule Oli.Delivery.PaywallTest do
         Sections.create_section(%{
           type: :blueprint,
           requires_payment: false,
-          amount: Money.new(:USD, 100),
+          amount: Money.new(100, "USD"),
           grace_period_days: 1,
           title: "1",
           registration_open: true,
@@ -379,7 +379,7 @@ defmodule Oli.Delivery.PaywallTest do
         Sections.create_section(%{
           type: :enrollable,
           requires_payment: true,
-          amount: Money.new(:USD, 100),
+          amount: Money.new(100, "USD"),
           grace_period_days: 1,
           title: "1",
           registration_open: true,
@@ -399,8 +399,8 @@ defmodule Oli.Delivery.PaywallTest do
       paid: paid,
       institution: institution
     } do
-      assert {:ok, Money.new(:USD, 0)} == Paywall.section_cost_from_product(free, institution)
-      assert {:ok, Money.new(:USD, 100)} == Paywall.section_cost_from_product(paid, institution)
+      assert {:ok, Money.new(0, "USD")} == Paywall.section_cost_from_product(free, institution)
+      assert {:ok, Money.new(100, "USD")} == Paywall.section_cost_from_product(paid, institution)
     end
 
     test "section_cost_from_product/2 correctly applies fixed amount discounts",
@@ -414,20 +414,20 @@ defmodule Oli.Delivery.PaywallTest do
           section_id: nil,
           type: :fixed_amount,
           percentage: 0,
-          amount: Money.new(:USD, 90)
+          amount: Money.new(90, "USD")
         })
 
-      assert {:ok, Money.new(:USD, 90)} == Paywall.section_cost_from_product(paid, institution)
+      assert {:ok, Money.new(90, "USD")} == Paywall.section_cost_from_product(paid, institution)
 
       Paywall.create_discount(%{
         institution_id: institution.id,
         section_id: paid.id,
         type: :fixed_amount,
         percentage: 0,
-        amount: Money.new(:USD, 80)
+        amount: Money.new(80, "USD")
       })
 
-      assert {:ok, Money.new(:USD, 80)} == Paywall.section_cost_from_product(paid, institution)
+      assert {:ok, Money.new(80, "USD")} == Paywall.section_cost_from_product(paid, institution)
     end
 
     test "section_cost_from_product/2 returns nil amount when paywall is bypassed",
@@ -472,10 +472,10 @@ defmodule Oli.Delivery.PaywallTest do
             section_id: nil,
             type: :percentage,
             percentage: @discount,
-            amount: Money.new(:USD, @expected_amount)
+            amount: Money.new(@expected_amount, "USD")
           })
 
-        assert {:ok, Money.new(:USD, @expected_amount)} ==
+        assert {:ok, Money.new(@expected_amount, "USD")} ==
                  Paywall.section_cost_from_product(paid, institution)
       end
     end
@@ -490,27 +490,29 @@ defmodule Oli.Delivery.PaywallTest do
         section_id: nil,
         type: :fixed_amount,
         percentage: 0,
-        amount: Money.new(:USD, 90)
+        amount: Money.new(90, "USD")
       })
 
-      assert {:ok, Money.new(:USD, 90)} == Paywall.section_cost_from_product(paid, institution_a)
+      assert {:ok, Money.new(90, "USD")} == Paywall.section_cost_from_product(paid, institution_a)
 
       institution_b = insert(:institution)
-      assert {:ok, Money.new(:USD, 100)} == Paywall.section_cost_from_product(paid, institution_b)
+
+      assert {:ok, Money.new(100, "USD")} ==
+               Paywall.section_cost_from_product(paid, institution_b)
     end
 
     test "section_cost_from_product/2 correctly works when no institution present", %{
       free: free,
       paid: paid
     } do
-      assert {:ok, Money.new(:USD, 0)} == Paywall.section_cost_from_product(free, nil)
-      assert {:ok, Money.new(:USD, 100)} == Paywall.section_cost_from_product(paid, nil)
+      assert {:ok, Money.new(0, "USD")} == Paywall.section_cost_from_product(free, nil)
+      assert {:ok, Money.new(100, "USD")} == Paywall.section_cost_from_product(paid, nil)
     end
 
     test "section_cost_from_product/2 correctly works when given an enrollable section", %{
       section: section
     } do
-      assert {:ok, Money.new(:USD, 100)} == Paywall.section_cost_from_product(section, nil)
+      assert {:ok, Money.new(100, "USD")} == Paywall.section_cost_from_product(section, nil)
     end
   end
 
@@ -555,7 +557,7 @@ defmodule Oli.Delivery.PaywallTest do
         institution_id: institution.id,
         section_id: product.id,
         type: :percentage,
-        amount: Money.new(:USD, 10),
+        amount: Money.new(10, "USD"),
         percentage: 10.0
       }
 
@@ -688,14 +690,14 @@ defmodule Oli.Delivery.PaywallTest do
         institution_id: discount.institution_id,
         section_id: discount.section_id,
         type: :fixed_amount,
-        amount: Money.new(:USD, 25),
+        amount: Money.new(25, "USD"),
         percentage: nil
       }
 
       assert {:ok, %Discount{} = updated_discount} = Paywall.create_or_update_discount(params)
       assert updated_discount.id == discount.id
       assert updated_discount.type == :fixed_amount
-      assert updated_discount.amount == Money.new(:USD, 25)
+      assert updated_discount.amount == Money.new(25, "USD")
       refute updated_discount.percentage
     end
 
@@ -706,14 +708,14 @@ defmodule Oli.Delivery.PaywallTest do
         institution_id: discount.institution_id,
         section_id: nil,
         type: :fixed_amount,
-        amount: Money.new(:USD, 25),
+        amount: Money.new(25, "USD"),
         percentage: nil
       }
 
       assert {:ok, %Discount{} = updated_discount} = Paywall.create_or_update_discount(params)
       assert updated_discount.id == discount.id
       assert updated_discount.type == :fixed_amount
-      assert updated_discount.amount == Money.new(:USD, 25)
+      assert updated_discount.amount == Money.new(25, "USD")
       refute updated_discount.percentage
     end
 
@@ -722,7 +724,7 @@ defmodule Oli.Delivery.PaywallTest do
         institution_id: nil,
         section_id: nil,
         type: :fixed_amount,
-        amount: Money.new(:USD, 25),
+        amount: Money.new(25, "USD"),
         percentage: nil
       }
 
@@ -797,7 +799,7 @@ defmodule Oli.Delivery.PaywallTest do
         insert(:section, %{
           type: :blueprint,
           requires_payment: true,
-          amount: Money.new(:USD, 100),
+          amount: Money.new(100, "USD"),
           base_project: product.base_project,
           base_project_id: product.base_project_id
         })

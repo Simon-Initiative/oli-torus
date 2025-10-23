@@ -16,7 +16,7 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.PendingApprovalCompon
       id="students_pending_certificates_count"
       class="bg-[#0165da] text-white text-xs font-semibold rounded-full px-2"
     >
-      <%= @pending_approvals %>
+      {@pending_approvals}
     </span>
     """
   end

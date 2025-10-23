@@ -6,7 +6,7 @@
   <%= if Phoenix.Flash.get(@flash, :info) do %>
     <div class="alert alert-info flex flex-row" role="alert">
       <div class="flex-1">
-        <%= Phoenix.Flash.get(@flash, :info) %>
+        {Phoenix.Flash.get(@flash, :info)}
       </div>
 
       <button
@@ -25,7 +25,7 @@
   <%= if Phoenix.Flash.get(@flash, :error) do %>
     <div class="alert alert-danger flex flex-row" role="alert">
       <div class="flex-1">
-        <%= Phoenix.Flash.get(@flash, :error) %>
+        {Phoenix.Flash.get(@flash, :error)}
       </div>
 
       <button
@@ -42,4 +42,4 @@
   <% end %>
 </div>
 
-<%= @inner_content %>
+{@inner_content}

@@ -131,7 +131,7 @@ defmodule OliWeb.Progress.StudentView do
   def render(assigns) do
     ~H"""
     <div class="container mx-auto mb-5">
-      <h3>Progress Details for <%= name(@user) %></h3>
+      <h3>Progress Details for {name(@user)}</h3>
       <TextSearch.render id="text_search" text={@text_search} />
       <div class="mt-4" />
       <Table.render model={@table_model} sort="do_sort" />

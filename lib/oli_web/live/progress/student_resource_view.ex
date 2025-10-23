@@ -153,7 +153,7 @@ defmodule OliWeb.Progress.StudentResourceView do
                   :for={error <- Keyword.get_values(@changeset.errors || [], :score)}
                   for="resource_access[score]"
                 >
-                  <%= translate_error(error) %>
+                  {translate_error(error)}
                 </.error>
               </div>
               <.input
@@ -176,7 +176,7 @@ defmodule OliWeb.Progress.StudentResourceView do
                   :for={error <- Keyword.get_values(@changeset.errors || [], :out_of)}
                   for="resource_access[out_of]"
                 >
-                  <%= translate_error(error) %>
+                  {translate_error(error)}
                 </.error>
               </div>
               <.input

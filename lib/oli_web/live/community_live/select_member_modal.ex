@@ -36,8 +36,8 @@ defmodule OliWeb.CommunityLive.SelectMemberModal do
                 class="d-flex justify-content-between align-items-center mb-3"
               >
                 <div class="d-flex flex-column">
-                  <div><%= member.email %> - <%= member.name %></div>
-                  <div class="small text-muted">Sub: <%= member.sub %></div>
+                  <div>{member.email} - {member.name}</div>
+                  <div class="small text-muted">Sub: {member.sub}</div>
                 </div>
 
                 <button class="btn btn-link" phx-click={@select} phx-value-collaborator-id={member.id}>

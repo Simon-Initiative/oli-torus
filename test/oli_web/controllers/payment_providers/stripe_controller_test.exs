@@ -19,7 +19,7 @@ defmodule OliWeb.PaymentProviders.StripeControllerTest do
         open_and_free: true,
         requires_enrollment: true,
         requires_payment: true,
-        amount: Money.new(:USD, 25)
+        amount: Money.new(25, "USD")
       })
 
     [section: section]
@@ -208,7 +208,7 @@ defmodule OliWeb.PaymentProviders.StripeControllerTest do
           open_and_free: true,
           requires_enrollment: true,
           requires_payment: true,
-          amount: Money.new(:USD, 25),
+          amount: Money.new(25, "USD"),
           blueprint: product
         })
 
@@ -322,7 +322,7 @@ defmodule OliWeb.PaymentProviders.StripeControllerTest do
           open_and_free: true,
           requires_enrollment: true,
           requires_payment: true,
-          amount: Money.new(:USD, 25),
+          amount: Money.new(25, "USD"),
           blueprint: product
         })
 

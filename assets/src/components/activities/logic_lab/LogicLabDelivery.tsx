@@ -7,6 +7,8 @@ communication between the LogicLab and Torus.
 import React, { useCallback, useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { Provider, useDispatch, useSelector, useStore } from 'react-redux';
+import { ScoreAsYouGoHeaderBase } from 'components/activities/common/ScoreAsYouGoHeader';
+import { ErrorBoundary } from 'components/common/ErrorBoundary';
 import {
   ActivityDeliveryState,
   PartInputs,
@@ -22,14 +24,15 @@ import { safelySelectStringInputs } from 'data/activities/utils';
 import { configureStore } from 'state/store';
 import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
 import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
-import { ScoreAsYouGoHeaderBase } from '../common/ScoreAsYouGoHeader';
 import { castPartId } from '../common/utils';
 import { Manifest } from '../types';
 import {
+  LabActivity,
   LogicLabModelSchema,
   LogicLabSaveState,
-  getLabServer,
+  isLabActivity,
   isLabMessage,
+  useLabServer,
 } from './LogicLabModelSchema';
 
 type LogicLabDeliveryProps = DeliveryElementProps<LogicLabModelSchema>;
@@ -71,9 +74,12 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
   const store = useStore<ActivityDeliveryState>();
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   const partId = castPartId(activityState.parts[0].partId);
-  const [activity, setActivity] = useState<string>(model.activity);
+  const [activity, setActivity] = useState<string | LabActivity>(model.activity);
   const [instanceId] = useState<string>(crypto.randomUUID().slice(0, 8));
   const [isResetting, setIsResetting] = useState(false);
+  const [loading, setLoading] = useState<'loading' | 'loaded' | 'error'>('loading');
+  const [baseUrl, setBaseUrl] = useState<string>('');
+  const labServer = useLabServer(context);
 
   useEffect(() => {
     // Standard one-time listener setup for all torus activities
@@ -103,8 +109,6 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
   // Code must be safe against undefined partStates during first render.
   const attemptState = uiState.attemptState;
   const currentPart = attemptState?.parts?.[0];
-  const attemptGuid = attemptState?.attemptGuid ?? activityState.attemptGuid;
-  const partAttemptGuid = currentPart?.attemptGuid ?? activityState.parts[0].attemptGuid;
 
   const getStoredInput = useCallback(
     (state: ActivityDeliveryState, partId: string, part: typeof currentPart) =>
@@ -114,8 +118,11 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
 
   const onMessage = useCallback(
     async (e: MessageEvent) => {
+      if (!labServer) {
+        return;
+      }
       try {
-        const lab = new URL(getLabServer(context));
+        const lab = new URL(labServer);
         const origin = new URL(e.origin);
         // filter so we do not process torus events.
         if (origin.host === lab.host) {
@@ -205,20 +212,38 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
                 break;
               // lab is requesting activity state
               case 'load':
-                if (mode !== 'preview') {
-                  const savedInput = state.partState?.[currentPartId]?.studentInput?.[0];
-                  if (savedInput && e.source) {
-                    // post saved state back to lab.
+                if (e.source) {
+                  const payload: Record<string, unknown> = {};
+
+                  if (activity) {
+                    payload.activity = activity;
+                  }
+
+                  const savedInput =
+                    mode !== 'preview'
+                      ? state.partState?.[currentPartId]?.studentInput?.[0]
+                      : undefined;
+
+                  const fallbackInput =
+                    ['delivery', 'review'].includes(mode) && !savedInput
+                      ? activityState?.parts[0]?.response?.input
+                      : undefined;
+
+                  const rawInput = savedInput ?? fallbackInput;
+                  if (rawInput) {
+                    payload.save = rawInput;
                     try {
                       const labState: LogicLabSaveState =
-                        typeof savedInput === 'string' ? JSON.parse(savedInput) : savedInput;
-                      e.source.postMessage(labState, { targetOrigin: lab.origin });
+                        typeof rawInput === 'string' ? JSON.parse(rawInput) : rawInput;
+                      payload.state = labState;
                     } catch (parseErr) {
                       console.error('Failed to parse saved LogicLab state', parseErr);
                     }
                   }
-                } // TODO if in preview, load appropriate content
-                // Preview feature in lab servlet is not complete.
+
+                  payload.attemptGuid = instanceId;
+                  e.source.postMessage(payload, { targetOrigin: lab.origin });
+                }
                 break;
               case 'log':
                 // Currently logging to console, TODO link into torus/oli logging
@@ -233,43 +258,58 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
         console.error(err);
       }
     },
-    [activityState, mode],
+    [
+      activity,
+      activityState,
+      dispatch,
+      getStoredInput,
+      instanceId,
+      isResetting,
+      labServer,
+      mode,
+      model.feedback,
+      onResetActivity,
+      onSaveActivity,
+      onSubmitEvaluations,
+      store,
+    ],
   );
 
   useEffect(() => {
     window.addEventListener('message', onMessage);
 
     return () => window.removeEventListener('message', onMessage);
-  }, [attemptGuid, onMessage, partAttemptGuid]);
+  }, [onMessage]);
 
-  const [loading, setLoading] = useState<'loading' | 'loaded' | 'error'>('loading');
-  const [baseUrl, setBaseUrl] = useState<string>('');
   useEffect(() => {
-    const controller = new AbortController();
-    const signal = controller.signal;
+    setLoading('loading');
+
+    if (!labServer) {
+      setBaseUrl('');
+      return;
+    }
+
     try {
-      const server = getLabServer(context);
-      const url = new URL(`api/v1/activities/lab/${activity}`, server);
-      url.searchParams.append('activity', activity);
-      url.searchParams.append('mode', mode);
-      url.searchParams.append('attemptGuid', instanceId);
-      // Using promise because react's useEffect does not handle async.
-      // toString because tsc does not accept the valid URL.
-      fetch(url.toString(), { signal, method: 'HEAD' })
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error(response.statusText);
-          }
-          setLoading('loaded');
-          setBaseUrl(url.toString());
-        })
-        .catch(() => setLoading('error'));
+      if (!activity) {
+        throw new Error('LogicLab activity is not configured. Please contact the course author.');
+      }
+
+      const url = new URL(labServer);
+      url.searchParams.set('mode', mode);
+      url.searchParams.set('attemptGuid', instanceId);
+
+      if (!isLabActivity(activity)) {
+        url.searchParams.set('activity', activity);
+      }
+
+      setBaseUrl(url.toString());
+      setLoading('loaded');
     } catch (err) {
       console.error(err);
+      setBaseUrl('');
       setLoading('error');
     }
-    return () => controller.abort();
-  }, [activity, mode]);
+  }, [activity, instanceId, labServer, mode]);
 
   // first render is just to initialize state
   if (!uiState.partState || !attemptState || !currentPart) {
@@ -279,17 +319,17 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
   return (
     <>
       {loading === 'loading' && (
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden sr-only">Loading...</span>
+        <div className="alert alert-warning" role="alert">
+          Configuring LogicLab... If this message persists, please contact the system administrator.
         </div>
       )}
       {loading === 'error' && (
-        <div className="alert alert-danger">
+        <div className="alert alert-danger" role="alert">
           The LogicLab server is unreachable or not properly configured. Please contact support if
           this issue persists.
         </div>
       )}
-      {loading === 'loaded' && (
+      {loading === 'loaded' && baseUrl && (
         <div>
           <ScoreAsYouGoHeaderBase
             // set batchScoring in all cases to suppress attempt number because it is meaningless
@@ -302,11 +342,11 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
           />
           <iframe
             title={`LogicLab Activity ${model.context?.title}`}
+            className="mb-3 rounded inset-shadow-sm min-w-[1024px] min-h-[756px] w-full"
             src={baseUrl}
             allow="fullscreen"
-            height="800"
-            width="100%"
-            data-activity-mode={mode}
+            data-oli-activity-mode={mode}
+            data-oli-attempt-guid={instanceId}
           ></iframe>
         </div>
       )}
@@ -326,7 +366,9 @@ export class LogicLabDelivery extends DeliveryElement<LogicLabModelSchema> {
     ReactDOM.render(
       <Provider store={store}>
         <DeliveryElementProvider {...props}>
-          <LogicLab {...props} />
+          <ErrorBoundary>
+            <LogicLab {...props} />
+          </ErrorBoundary>
         </DeliveryElementProvider>
       </Provider>,
       mountPoint,

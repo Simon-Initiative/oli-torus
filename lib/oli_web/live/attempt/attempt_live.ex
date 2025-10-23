@@ -76,11 +76,11 @@ defmodule OliWeb.Attempt.AttemptLive do
           </tr>
           <%= for p <- @selected.part_attempts do %>
             <tr>
-              <td><%= p.part_id %></td>
-              <td><%= p.attempt_number %></td>
-              <td><%= p.lifecycle_state %></td>
-              <td><%= p.score %></td>
-              <td><%= p.out_of %></td>
+              <td>{p.part_id}</td>
+              <td>{p.attempt_number}</td>
+              <td>{p.lifecycle_state}</td>
+              <td>{p.score}</td>
+              <td>{p.out_of}</td>
             </tr>
           <% end %>
         </table>

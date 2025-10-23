@@ -26,7 +26,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
       section_slug,
       :insights,
-      :practice_activities,
+      :practice_pages,
       params
     )
   end
@@ -1116,8 +1116,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
     } do
       {:ok, view, _html} = live(conn, live_view_practice_activities_route(section.slug))
 
-      assert has_element?(view, "h4", "Practice Activities")
-      assert has_element?(view, "p", "None exist")
+      assert has_element?(view, "div", "Practice Pages")
+      assert has_element?(view, "p", "There are no activities to show")
     end
   end
 
@@ -1132,64 +1132,417 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
 
       [a0, a1, a2, a3, a4] = table_as_list_of_maps(view)
 
-      assert has_element?(view, "h4", "Practice Activities")
+      assert has_element?(view, "div", "Practice Pages")
+      assert a0.title == "Module 1: IntroductionPage 1"
+      assert a1.title == "Module 1: IntroductionPage 2"
+      assert a2.title == "Module 2: BasicsPage 3"
+      assert a3.title == "Module 2: BasicsPage 4"
+      assert a4.title =~ "Orphaned Page"
+    end
+
+    test "Progress filter works correctly", %{
+      conn: conn,
+      section: section,
+      page_1: page_1,
+      page_2: page_2,
+      student_1: student_1,
+      mcq_activity_1: mcq_activity_1,
+      mcq_activity_2: mcq_activity_2,
+      project: project,
+      publication: publication
+    } do
+      Enum.each(1..5, fn _ ->
+        set_activity_attempt(
+          page_1,
+          mcq_activity_1,
+          student_1,
+          section,
+          project.id,
+          publication.id,
+          "id_for_option_a",
+          true
+        )
+      end)
+
+      set_activity_attempt(
+        page_2,
+        mcq_activity_2,
+        student_1,
+        section,
+        project.id,
+        publication.id,
+        "id_for_option_a",
+        true
+      )
+
+      {:ok, view, _html} = live(conn, live_view_practice_activities_route(section.slug))
+
+      [a0, a1, a2, a3, a4] = table_as_list_of_maps(view)
+
+      # All pages are shown before applying any filters
       assert a0.title == "Module 1: IntroductionPage 1"
       assert a1.title == "Module 1: IntroductionPage 2"
       assert a2.title == "Module 2: BasicsPage 3"
       assert a3.title == "Module 2: BasicsPage 4"
       assert a4.title =~ "Orphaned Page"
 
-      # Checks for displaying student progress with a value different from null
-      assert a0.total_attempts == "25%"
+      # Apply progress filter: show pages with progress exactly 25%
+      view
+      |> element("form[phx-submit=\"apply_progress_filter\"]")
+      |> render_submit(%{
+        "progress_percentage" => "25",
+        "progress" => %{"option" => "is_equal_to"}
+      })
+
+      assert has_element?(view, "button", "Progress is = 25")
+
+      # After filter: only Page 1 matches the 25% progress
+      pages = [page1] = table_as_list_of_maps(view)
+      assert Enum.count(pages) == 1
+      assert page1.title == "Module 1: IntroductionPage 1"
     end
 
-    test "gets results correctly when changing the container selection", %{
+    test "Score filter works correctly", %{
       conn: conn,
       section: section,
       page_1: page_1,
       page_2: page_2,
-      unit_1: unit_1,
-      module_1: module_1
+      student_1: student_1,
+      mcq_activity_1: mcq_activity_1,
+      mcq_activity_2: mcq_activity_2,
+      project: project,
+      publication: publication
     } do
+      Enum.each(1..5, fn _ ->
+        set_activity_attempt(
+          page_1,
+          mcq_activity_1,
+          student_1,
+          section,
+          project.id,
+          publication.id,
+          "id_for_option_a",
+          true
+        )
+      end)
+
+      set_activity_attempt(
+        page_2,
+        mcq_activity_2,
+        student_1,
+        section,
+        project.id,
+        publication.id,
+        "id_for_option_a",
+        true
+      )
+
       {:ok, view, _html} = live(conn, live_view_practice_activities_route(section.slug))
 
+      [a0, a1, a2, a3, a4] = table_as_list_of_maps(view)
+
+      # All pages are shown before applying any filters
+      assert a0.title == "Module 1: IntroductionPage 1"
+      assert a1.title == "Module 1: IntroductionPage 2"
+      assert a2.title == "Module 2: BasicsPage 3"
+      assert a3.title == "Module 2: BasicsPage 4"
+      assert a4.title =~ "Orphaned Page"
+
+      # Apply score filter: show pages with score exactly 100%
       view
-      |> element("form[phx-change=\"change_container\"")
-      |> render_change(%{container_id: module_1.resource_id})
+      |> element("form[phx-submit=\"apply_avg_score_filter\"]")
+      |> render_submit(%{
+        "avg_score_percentage" => "100",
+        "progress" => %{"option" => "is_equal_to"}
+      })
 
-      [page0, page1] = table_as_list_of_maps(view)
+      assert has_element?(view, "button", "Score is = 100")
 
-      assert element(
-               view,
-               "table tbody tr[id=#{page_1.resource_id}]",
-               page0.title
-             )
+      # After filter: only Page 1 and Page 2 match the 100% score
+      pages = [page1, page2] = table_as_list_of_maps(view)
+      assert Enum.count(pages) == 2
+      assert page1.title == "Module 1: IntroductionPage 1"
+      assert page2.title == "Module 1: IntroductionPage 2"
+    end
 
-      assert element(
-               view,
-               "table tbody tr td div[phx-value-id=\"#{page_2.id}\"]",
-               page1.title
-             )
+    test "Attemps filter works correctly", %{
+      conn: conn,
+      section: section,
+      page_1: page_1,
+      page_2: page_2,
+      student_1: student_1,
+      mcq_activity_1: mcq_activity_1,
+      mcq_activity_2: mcq_activity_2,
+      project: project,
+      publication: publication
+    } do
+      Enum.each(1..5, fn _ ->
+        set_activity_attempt(
+          page_1,
+          mcq_activity_1,
+          student_1,
+          section,
+          project.id,
+          publication.id,
+          "id_for_option_a",
+          true
+        )
+      end)
 
-      assert has_element?(
-               view,
-               "table tbody tr td div span",
-               module_1.title
-             )
+      set_activity_attempt(
+        page_2,
+        mcq_activity_2,
+        student_1,
+        section,
+        project.id,
+        publication.id,
+        "id_for_option_a",
+        true
+      )
 
-      # unit 1 does not have any direct practice page attached
-      # (the filter only shows direct children pages of the selected container)
+      {:ok, view, _html} = live(conn, live_view_practice_activities_route(section.slug))
+
+      [a0, a1, a2, a3, a4] = table_as_list_of_maps(view)
+
+      # All pages are shown before applying any filters
+      assert a0.title == "Module 1: IntroductionPage 1"
+      assert a1.title == "Module 1: IntroductionPage 2"
+      assert a2.title == "Module 2: BasicsPage 3"
+      assert a3.title == "Module 2: BasicsPage 4"
+      assert a4.title =~ "Orphaned Page"
+
+      # Simulate toggle of option "2"
       view
-      |> element("form[phx-change=\"change_container\"")
-      |> render_change(%{container_id: unit_1.resource_id})
+      |> element("form[phx-change=\"toggle_selected\"]")
+      |> render_change(%{
+        "_target" => ["2"]
+      })
 
-      refute has_element?(
-               view,
-               "table tbody tr td div span",
-               unit_1.title
-             )
+      assert has_element?(view, "span", "Attempts is Less than 5")
 
-      assert view |> element("p", "None exist")
+      # Trigger attempts filter via 'Apply' button
+      view
+      |> element("button[data-event='apply_attempts_filter']")
+      |> render_click()
+
+      # After filter: only Page 2 is shown
+      pages = [page1, page2] = table_as_list_of_maps(view)
+      assert Enum.count(pages) == 2
+      assert page1.title == "Module 1: IntroductionPage 1"
+      assert page2.title == "Module 1: IntroductionPage 2"
+    end
+
+    test "Clear all filters works correctly", %{
+      conn: conn,
+      section: section,
+      page_1: page_1,
+      page_2: page_2,
+      student_1: student_1,
+      mcq_activity_1: mcq_activity_1,
+      mcq_activity_2: mcq_activity_2,
+      project: project,
+      publication: publication
+    } do
+      Enum.each(1..5, fn _ ->
+        set_activity_attempt(
+          page_1,
+          mcq_activity_1,
+          student_1,
+          section,
+          project.id,
+          publication.id,
+          "id_for_option_a",
+          true
+        )
+      end)
+
+      set_activity_attempt(
+        page_2,
+        mcq_activity_2,
+        student_1,
+        section,
+        project.id,
+        publication.id,
+        "id_for_option_a",
+        true
+      )
+
+      {:ok, view, _html} = live(conn, live_view_practice_activities_route(section.slug))
+
+      # Filter by progress
+      view
+      |> element("form[phx-submit=\"apply_progress_filter\"]")
+      |> render_submit(%{
+        "progress_percentage" => "25",
+        "progress" => %{"option" => "is_equal_to"}
+      })
+
+      # Filter by progress was applied
+      pages = [page1] = table_as_list_of_maps(view)
+      assert Enum.count(pages) == 1
+      assert page1.title == "Module 1: IntroductionPage 1"
+
+      # Clear all filters and check that all pages are shown
+      view
+      |> element("button[phx-click='clear_all_filters']")
+      |> render_click()
+
+      # After filter: all pages are shown
+      pages = [page1, page2, page3, page4, page5] = table_as_list_of_maps(view)
+      assert Enum.count(pages) == 5
+      assert page1.title == "Module 1: IntroductionPage 1"
+      assert page2.title == "Module 1: IntroductionPage 2"
+      assert page3.title == "Module 2: BasicsPage 3"
+      assert page4.title == "Module 2: BasicsPage 4"
+      assert page5.title =~ "Orphaned Page"
+    end
+
+    test "Low Scores filter works correctly", %{
+      conn: conn,
+      section: section,
+      page_2: page_2,
+      student_1: student_1,
+      mcq_activity_2: mcq_activity_2,
+      project: project,
+      publication: publication
+    } do
+      set_activity_attempt(
+        page_2,
+        mcq_activity_2,
+        student_1,
+        section,
+        project.id,
+        publication.id,
+        "id_for_option_a",
+        false
+      )
+
+      {:ok, view, _html} = live(conn, live_view_practice_activities_route(section.slug))
+
+      pages = [page1, page2, page3, page4, page5] = table_as_list_of_maps(view)
+      assert Enum.count(pages) == 5
+
+      # All pages are shown before applying any filters
+      assert page1.title == "Module 1: IntroductionPage 1"
+      assert page2.title == "Module 1: IntroductionPage 2"
+      assert page3.title == "Module 2: BasicsPage 3"
+      assert page4.title == "Module 2: BasicsPage 4"
+      assert page5.title =~ "Orphaned Page"
+
+      # Filter by low scores clicking on the card
+      view
+      |> element("div[phx-value-selected=\"low_scores\"]")
+      |> render_click()
+
+      # After filter: only Page 2 is shown
+      pages = [page2] = table_as_list_of_maps(view)
+      assert Enum.count(pages) == 1
+      assert page2.title == "Module 1: IntroductionPage 2"
+    end
+
+    test "Low Progress filter works correctly", %{
+      conn: conn,
+      section: section,
+      page_2: page_2,
+      student_1: student_1,
+      mcq_activity_2: mcq_activity_2,
+      project: project,
+      publication: publication
+    } do
+      set_activity_attempt(
+        page_2,
+        mcq_activity_2,
+        student_1,
+        section,
+        project.id,
+        publication.id,
+        "id_for_option_a",
+        false
+      )
+
+      {:ok, view, _html} = live(conn, live_view_practice_activities_route(section.slug))
+
+      pages = [page1, page2, page3, page4, page5] = table_as_list_of_maps(view)
+      assert Enum.count(pages) == 5
+
+      # All pages are shown before applying any filters
+      assert page1.title == "Module 1: IntroductionPage 1"
+      assert page2.title == "Module 1: IntroductionPage 2"
+      assert page3.title == "Module 2: BasicsPage 3"
+      assert page4.title == "Module 2: BasicsPage 4"
+      assert page5.title =~ "Orphaned Page"
+
+      # Filter by low progress clicking on the card
+      view
+      |> element("div[phx-value-selected=\"low_progress\"]")
+      |> render_click()
+
+      # After filter: Page 1 and Page 2 are shown
+      pages = [page1, page2] = table_as_list_of_maps(view)
+      assert Enum.count(pages) == 2
+      assert page1.title == "Module 1: IntroductionPage 1"
+      assert page2.title == "Module 1: IntroductionPage 2"
+    end
+
+    test "Low or No Attempts filter works correctly", %{
+      conn: conn,
+      section: section,
+      page_1: page_1,
+      page_2: page_2,
+      student_1: student_1,
+      mcq_activity_1: mcq_activity_1,
+      mcq_activity_2: mcq_activity_2,
+      project: project,
+      publication: publication
+    } do
+      Enum.each(1..6, fn _ ->
+        set_activity_attempt(
+          page_1,
+          mcq_activity_1,
+          student_1,
+          section,
+          project.id,
+          publication.id,
+          "id_for_option_a",
+          true
+        )
+      end)
+
+      set_activity_attempt(
+        page_2,
+        mcq_activity_2,
+        student_1,
+        section,
+        project.id,
+        publication.id,
+        "id_for_option_a",
+        false
+      )
+
+      {:ok, view, _html} = live(conn, live_view_practice_activities_route(section.slug))
+
+      pages = [page1, page2, page3, page4, page5] = table_as_list_of_maps(view)
+      assert Enum.count(pages) == 5
+
+      # All pages are shown before applying any filters
+      assert page1.title == "Module 1: IntroductionPage 1"
+      assert page2.title == "Module 1: IntroductionPage 2"
+      assert page3.title == "Module 2: BasicsPage 3"
+      assert page4.title == "Module 2: BasicsPage 4"
+      assert page5.title =~ "Orphaned Page"
+
+      # Filter by low or no attempts clicking on the card
+      view
+      |> element("div[phx-value-selected=\"low_or_no_attempts\"]")
+      |> render_click()
+
+      # After filter: Page 1 and Page 2 are shown
+      pages = [page2, page3, page4, orphaned_page] = table_as_list_of_maps(view)
+      assert Enum.count(pages) == 4
+      assert page2.title == "Module 1: IntroductionPage 2"
+      assert page3.title == "Module 2: BasicsPage 3"
+      assert page4.title == "Module 2: BasicsPage 4"
+      assert orphaned_page.title == "Curriculum 1: Root ContainerOrphaned Page"
     end
   end
 
@@ -1204,10 +1557,10 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       {:ok, view, _html} = live(conn, live_view_practice_activities_route(section.slug))
 
       view
-      |> element("table tbody tr[id=#{page_5.resource_id}]")
+      |> element("table tbody tr[id='#{page_5.resource_id}'] a")
       |> render_click()
 
-      assert has_element?(view, "p", "No attempt registered for this question")
+      assert has_element?(view, "p", "There are no activities to show")
     end
 
     test "multiple choice details get rendered correctly when page is selected", %{
@@ -1233,7 +1586,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       {:ok, view, _html} = live(conn, live_view_practice_activities_route(section.slug))
 
       view
-      |> element("table tbody tr[id=#{page_1.resource_id}]")
+      |> element("table tbody tr[id='#{page_1.resource_id}'] a")
       |> render_click()
 
       assert element(
@@ -1313,14 +1666,17 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
 
       {:ok, view, _html} = live(conn, live_view_practice_activities_route(section.slug))
 
+      # navigate to page 1
       view
-      |> element("table tbody tr[id=#{page_1.resource_id}]")
+      |> element("table tbody tr[id='#{page_1.resource_id}'] a")
       |> render_click()
 
-      assert element(
-               view,
-               "table tbody tr:nth-of-type(2)[class=\"table-active bg-delivery-primary-100\"]"
-             )
+      # select single response activity
+      view
+      |> element(
+        "table tbody tr td div button[id='button_#{single_response_activity.resource_id}_1']"
+      )
+      |> render_click()
 
       # check that the single response details render correctly
       selected_activity_model =
@@ -1334,7 +1690,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       assert has_element?(
                view,
                ~s(div[role="activity_title"]),
-               "#{single_response_activity.title} - Question details"
+               "Question details"
              )
 
       assert selected_activity_model =~
@@ -1365,7 +1721,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       {:ok, view, _html} = live(conn, live_view_practice_activities_route(section.slug))
 
       view
-      |> element("table tbody tr[id=#{page_1.resource_id}]")
+      |> element("table tbody tr[id='#{page_1.resource_id}'] a")
       |> render_click()
 
       # check that the multi input details render correctly
@@ -1380,7 +1736,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       assert has_element?(
                view,
                ~s(div[role="activity_title"]),
-               "#{multi_input_activity.title} - Question details"
+               "Question details"
              )
     end
 
@@ -1408,15 +1764,19 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       {:ok, view, _html} = live(conn, live_view_practice_activities_route(section.slug))
 
       view
-      |> element("table tbody tr[id=#{page_1.resource_id}]")
+      |> element("table tbody tr[id='#{page_1.resource_id}'] a")
       |> render_click()
 
       # check that the likert VegaLite visualization renders correctly
-      selected_activity_data =
+      vega_divs =
         view
-        |> element("div[data-live-react-class=\"Components.VegaLiteRenderer\"]")
         |> render()
         |> Floki.parse_fragment!()
+        |> Floki.find("div[data-live-react-class=\"Components.VegaLiteRenderer\"]")
+
+      selected_activity_data =
+        vega_divs
+        |> hd()
         |> Floki.attribute("data-live-react-props")
         |> hd()
         |> Jason.decode!()
@@ -1424,7 +1784,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       assert has_element?(
                view,
                ~s(div[role="activity_title"]),
-               "#{likert_activity.title} - Question details"
+               "Question details"
              )
 
       assert selected_activity_data["spec"]["title"]["text"] == likert_activity.title
@@ -1438,10 +1798,10 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       {:ok, view, _html} = live(conn, live_view_practice_activities_route(section.slug))
 
       view
-      |> element("table tbody tr[id=#{page_1.resource_id}]")
+      |> element("table tbody tr[id='#{page_1.resource_id}'] a")
       |> render_click()
 
-      assert has_element?(view, "p", "No attempt registered for this question")
+      assert has_element?(view, "p", "There are no activities to show")
     end
 
     test "student attempts summary gets rendered correctly when one student has attempted", %{
@@ -1467,16 +1827,12 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       {:ok, view, _html} = live(conn, live_view_practice_activities_route(section.slug))
 
       view
-      |> element("table tbody tr[id=#{page_1.resource_id}]")
+      |> element("table tbody tr[id='#{page_1.resource_id}'] a")
       |> render_click()
 
       assert view
-             |> element(~s{#student_attempts_summary})
-             |> render() =~ "1 student has completed 1 attempt."
-
-      assert view
-             |> element(~s{#student_attempts_summary})
-             |> render() =~ "3 students have not completed any attempt"
+             |> element(~s{span[role="student attempts summary"]})
+             |> render() =~ "1 student has responded"
     end
 
     test "student attempts summary gets rendered correctly when more than one student has attempted",
@@ -1527,16 +1883,12 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       {:ok, view, _html} = live(conn, live_view_practice_activities_route(section.slug))
 
       view
-      |> element("table tbody tr[id=#{page_1.resource_id}]")
+      |> element("table tbody tr[id='#{page_1.resource_id}'] a")
       |> render_click()
 
       assert view
-             |> element(~s{#student_attempts_summary})
-             |> render() =~ "3 students have completed 3 attempts."
-
-      assert view
-             |> element(~s{#student_attempts_summary})
-             |> render() =~ "1 student has not completed any attempt"
+             |> element(~s{span[role="student attempts summary"]})
+             |> render() =~ "3 students have responded"
     end
 
     test "student attempts summary gets rendered correctly when all students have attempted (even more than once)",
@@ -1621,62 +1973,19 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       {:ok, view, _html} = live(conn, live_view_practice_activities_route(section.slug))
 
       view
-      |> element("table tbody tr[id=#{page_1.resource_id}]")
+      |> element("table tbody tr[id='#{page_1.resource_id}'] a")
       |> render_click()
 
       assert view
-             |> element(~s{#student_attempts_summary})
-             |> render() =~ "4 students have completed 6 attempts."
+             |> element(~s{span[role="student attempts summary"]})
+             |> render() =~ "4 students have responded"
 
       refute view
-             |> element(~s{#student_attempts_summary})
+             |> element(~s{span[role="student attempts summary"]})
              |> render() =~ "not completed"
 
       refute view
              |> has_element?("#copy_emails_button", "Copy their email addresses")
-    end
-
-    test "instructor can copy email of students that have not yet attempted",
-         %{
-           conn: conn,
-           section: section,
-           page_1: page_1,
-           student_1: student_1,
-           student_2: student_2,
-           mcq_activity_1: mcq_activity_1,
-           project: project,
-           publication: publication
-         } do
-      set_activity_attempt(
-        page_1,
-        mcq_activity_1,
-        student_1,
-        section,
-        project.id,
-        publication.id,
-        "id_for_option_a",
-        true
-      )
-
-      set_activity_attempt(
-        page_1,
-        mcq_activity_1,
-        student_2,
-        section,
-        project.id,
-        publication.id,
-        "id_for_option_a",
-        true
-      )
-
-      {:ok, view, _html} = live(conn, live_view_practice_activities_route(section.slug))
-
-      view
-      |> element("table tbody tr[id=#{page_1.resource_id}]")
-      |> render_click()
-
-      assert view
-             |> has_element?("#copy_emails_button", "Copy email addresses")
     end
   end
 

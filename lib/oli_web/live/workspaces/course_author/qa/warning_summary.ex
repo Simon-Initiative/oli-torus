@@ -15,10 +15,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.Qa.WarningSummary do
       phx-keydown="keydown"
     >
       <span class="review-link-header">
-        <%= warning_icon(@warning.review.type) %> <%= String.capitalize(@warning.subtype) %>
+        {warning_icon(@warning.review.type)} {String.capitalize(@warning.subtype)}
       </span>
       <span class="d-flex justify-content-between review-link-subheader">
-        <%= @warning.revision.title %>
+        {@warning.revision.title}
       </span>
     </li>
     """

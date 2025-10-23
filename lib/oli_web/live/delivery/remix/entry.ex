@@ -15,6 +15,7 @@ defmodule OliWeb.Delivery.Remix.Entry do
   attr :index, :integer, required: true
   attr :selected, :boolean, required: true
   attr :is_product, :boolean, default: false
+  attr :source_page_resource_ids, :map, required: true
 
   def entry(%{node: %HierarchyNode{}} = assigns) do
     ~H"""
@@ -33,17 +34,17 @@ defmodule OliWeb.Delivery.Remix.Entry do
     >
       <div class="flex-grow-1 d-flex flex-column self-center">
         <div class="flex-1">
-          <%= icon(assigns) %>
+          {icon(assigns)}
           <%= if is_container?(@node.revision) do %>
             <button
               class="btn btn-link ml-1 mr-1 entry-title"
               phx-click="set_active"
               phx-value-uuid={@node.uuid}
             >
-              <%= @node.revision.title %>
+              {@node.revision.title}
             </button>
           <% else %>
-            <span class="ml-1 mr-1 entry-title"><%= @node.revision.title %></span>
+            <span class="ml-1 mr-1 entry-title">{@node.revision.title}</span>
             <%= if @is_product and !is_nil(@node.project_slug) do %>
               <a
                 id={"product-page-#{@node.revision.slug}"}
@@ -70,6 +71,9 @@ defmodule OliWeb.Delivery.Remix.Entry do
           uuid={@node.uuid}
           hidden={(@node.section_resource && @node.section_resource.hidden) || false}
           resource_type={@node.revision.resource_type_id}
+          is_used_as_source_page={
+            is_used_as_source_page?(@node.revision.resource_id, @source_page_resource_ids)
+          }
           id={"remix_actions_#{@node.uuid}"}
         />
       </div>
@@ -93,5 +97,10 @@ defmodule OliWeb.Delivery.Remix.Entry do
         """
       end
     end
+  end
+
+  def is_used_as_source_page?(resource_id, source_page_resource_ids) do
+    # Whether the resource is used as a source page in any gating conditions for the section
+    MapSet.member?(source_page_resource_ids, resource_id)
   end
 end

@@ -139,7 +139,7 @@ defmodule OliWeb.Admin.RestoreUserProgress do
         <% end %>
       </button>
 
-      <div><%= @result %></div>
+      <div>{@result}</div>
 
       <h3>User Records</h3>
 
@@ -158,11 +158,11 @@ defmodule OliWeb.Admin.RestoreUserProgress do
           <%= for user <- @all_users do %>
             <tr>
               <td>
-                <%= if @true_user && user.id == @true_user.id do
-                  "TARGET"
+                {if user.id == @true_user.id do
+                  "TRUE"
                 else
                   ""
-                end %>
+                end}
               </td>
               <td><%= Map.get(@user_enrollments, user.id, "") %></td>
               <td><%= user.id %></td>
@@ -177,7 +177,7 @@ defmodule OliWeb.Admin.RestoreUserProgress do
       <h3>Changes</h3>
 
       <%= for change <- @changes do %>
-        <div><%= inspect(change) %></div>
+        <div>{inspect(change)}</div>
       <% end %>
     </div>
     """

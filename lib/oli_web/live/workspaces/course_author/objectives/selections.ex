@@ -33,7 +33,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.SelectionsModal do
                     href={Routes.resource_path(OliWeb.Endpoint, :edit, @project_slug, slug)}
                     target="_blank"
                   >
-                    <%= title %>
+                    {title}
                   </a>
                 </li>
               <% end %>

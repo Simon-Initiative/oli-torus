@@ -12,20 +12,20 @@
 
       <%= case assigns[:recaptcha_error] do %>
         <% recaptcha_error -> %>
-          <span class="help-block text-danger"><%= recaptcha_error %></span>
+          <span class="help-block text-danger">{recaptcha_error}</span>
       <% end %>
     </div>
 
     <div class="form-group" style="width: 100%;">
       <label>Enter your payment code</label>
-      <%= text_input(f, :value, class: "form-control", maxlength: 8) %>
+      {text_input(f, :value, class: "form-control", maxlength: 8)}
 
       <%= case assigns[:error] do %>
         <% error -> %>
-          <div class="help-block text-danger"><%= error %></div>
+          <div class="help-block text-danger">{error}</div>
       <% end %>
 
-      <%= submit("Submit", class: "btn btn-primary mt-3") %>
+      {submit("Submit", class: "btn btn-primary mt-3")}
     </div>
   <% end %>
 </div>

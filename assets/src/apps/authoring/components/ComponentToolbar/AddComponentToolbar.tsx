@@ -19,6 +19,7 @@ import {
   selectCurrentSequenceId,
   selectSequence,
 } from 'apps/delivery/store/features/groups/selectors/deck';
+import { selectResponsiveLayout } from 'apps/delivery/store/features/page/slice';
 import { useKeyDown } from 'hooks/useKeyDown';
 import guid from 'utils/guid';
 import { RightPanelTabs } from '../RightMenu/RightMenu';
@@ -58,6 +59,7 @@ const AddComponentToolbar: React.FC<{
   const currentSequenceId = useSelector(selectCurrentSequenceId);
   const copiedPart = useSelector(selectCopiedPart);
   const [newPartAddOffset, setNewPartAddOffset] = useState<number>(0);
+  const responsiveLayout = useSelector(selectResponsiveLayout);
   const addPartToCurrentScreen = (newPartData: any) => {
     if (currentActivityTree) {
       const [currentActivity] = currentActivityTree.slice(-1);
@@ -84,7 +86,7 @@ const AddComponentToolbar: React.FC<{
       }
       const PartClass = customElements.get(partComponent.authoring_element);
       if (PartClass) {
-        const defaultNewPartWidth = 100;
+        const defaultNewPartWidth = responsiveLayout ? 960 : 100;
         const defaultNewPartHeight = 100;
         // only ever add to the current  activity, not a layer
         setNewPartAddOffset(newPartAddOffset + 1);
@@ -98,6 +100,7 @@ const AddComponentToolbar: React.FC<{
             z: 0,
             width: defaultNewPartWidth,
             height: defaultNewPartHeight,
+            ...(responsiveLayout && { responsiveLayoutWidth: 960 }), // Set default responsive layout width
           },
         };
         const creationContext = { transform: { ...newPartData.custom } };

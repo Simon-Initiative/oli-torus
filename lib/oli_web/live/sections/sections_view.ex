@@ -6,12 +6,23 @@ defmodule OliWeb.Sections.SectionsView do
 
   alias Oli.Repo.{Paging, Sorting}
   alias Oli.Delivery.Sections.{Browse, BrowseOptions, Section}
-  alias OliWeb.Common.{Breadcrumb, Check, FilterBox, PagedTable, TextSearch}
+
+  alias OliWeb.Common.{
+    Breadcrumb,
+    Check,
+    SearchInput,
+    StripedPagedTable,
+    Params,
+    PagingParams
+  }
+
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Sections.SectionsTableModel
   alias OliWeb.Router.Helpers, as: Routes
+  alias OliWeb.Icons
 
-  @limit 25
+  @limit 20
+  @min_search_length 3
   @default_options %BrowseOptions{
     institution_id: nil,
     blueprint_id: nil,
@@ -43,16 +54,26 @@ defmodule OliWeb.Sections.SectionsView do
 
   def mount(_, _session, socket) do
     ctx = socket.assigns.ctx
+    author = socket.assigns.current_author
+    is_admin = Oli.Accounts.has_admin_role?(author, :content_admin)
 
     sections =
       Browse.browse_sections(
         %Paging{offset: 0, limit: @limit},
-        %Sorting{direction: :asc, field: :title},
+        %Sorting{direction: :desc, field: :start_date},
         @default_options
       )
 
     total_count = determine_total(sections)
-    {:ok, table_model} = SectionsTableModel.new(ctx, sections)
+
+    {:ok, table_model} =
+      SectionsTableModel.new(ctx, sections,
+        render_date: :full,
+        sort_by_spec: :start_date,
+        sort_order: :desc,
+        search_term: "",
+        is_admin: is_admin
+      )
 
     {:ok,
      assign(socket,
@@ -61,16 +82,23 @@ defmodule OliWeb.Sections.SectionsView do
        sections: sections,
        total_count: total_count,
        table_model: table_model,
-       options: @default_options
+       options: @default_options,
+       text_search_input: "",
+       offset: 0,
+       limit: @limit
      )}
   end
 
   def handle_params(params, _, socket) do
     table_model = SortableTableModel.update_from_params(socket.assigns.table_model, params)
     offset = get_int_param(params, "offset", 0)
+    limit = get_int_param(params, "limit", @limit)
+
+    raw_search = params |> get_param("text_search", "") |> String.trim()
+    applied_search = sanitize_search_term(raw_search)
 
     options = %BrowseOptions{
-      text_search: get_param(params, "text_search", ""),
+      text_search: applied_search,
       active_today: get_boolean_param(params, "active_today", false),
       filter_status:
         get_atom_param(params, "filter_status", Ecto.Enum.values(Section, :status), nil),
@@ -83,12 +111,16 @@ defmodule OliWeb.Sections.SectionsView do
 
     sections =
       Browse.browse_sections(
-        %Paging{offset: offset, limit: @limit},
+        %Paging{offset: offset, limit: limit},
         %Sorting{direction: table_model.sort_order, field: table_model.sort_by_spec.name},
         options
       )
 
-    table_model = Map.put(table_model, :rows, sections)
+    table_model =
+      table_model
+      |> Map.put(:rows, sections)
+      |> Map.update!(:data, &Map.put(&1, :search_term, applied_search))
+
     total_count = determine_total(sections)
 
     {:noreply,
@@ -97,82 +129,91 @@ defmodule OliWeb.Sections.SectionsView do
        sections: sections,
        table_model: table_model,
        total_count: total_count,
-       options: options
+       limit: limit,
+       options: options,
+       text_search_input: raw_search
      )}
   end
-
-  attr(:author, :any)
-  attr(:breadcrumbs, :any)
-  attr(:title, :string, default: "All Course Sections")
-  attr(:sections, :list, default: [])
-  attr(:tabel_model, :map)
-  attr(:total_count, :integer, default: 0)
-  attr(:offset, :integer, default: 0)
-  attr(:limit, :integer, default: @limit)
-  attr(:options, :any)
 
   def render(assigns) do
     assigns = assign(assigns, type_opts: @type_opts)
 
     ~H"""
-    <div class="container mx-auto">
-      <FilterBox.render
-        card_header_text="Browse Course Sections"
-        card_body_text=""
-        table_model={@table_model}
-        show_sort={false}
-        show_more_opts={true}
-      >
-        <div class="flex flex-row justify-between">
-          <TextSearch.render id="text-search" text={@options.text_search} />
-
-          <.button variant={:primary} href={~p"/admin/sections/create"}>
-            New Section
-          </.button>
+    <div>
+      <div class="flex flex-row justify-between items-center px-4">
+        <div class="flex flex-col">
+          <span class="text-2xl font-bold text-[#353740] dark:text-[#EEEBF5] leading-loose">
+            Browse Course Sections
+          </span>
+          <div class="flex flex-row gap-4 mt-2 items-center">
+            <Check.render checked={@options.active_today} click="active_today">
+              <span class="justify-start text-[#353740] dark:text-[#EEEBF5] text-base font-normal leading-normal">
+                Active (start/end dates include today)
+              </span>
+            </Check.render>
+            <form phx-change="change_type" class="flex flex-row">
+              <select name="type" id="select_type" class="custom-select" style="width: 120px;">
+                <option value="" selected>Type</option>
+                <option
+                  :for={type_opt <- @type_opts}
+                  value={type_opt}
+                  selected={@options.filter_type == type_opt}
+                >
+                  {humanize_type_opt(type_opt)}
+                </option>
+              </select>
+            </form>
+            <form phx-change="change_status" class="flex flex-row">
+              <select name="status" id="select_status" class="custom-select" style="width: 120px;">
+                <option value="" selected>Status</option>
+                <option
+                  :for={status_opt <- Ecto.Enum.values(Section, :status)}
+                  value={status_opt}
+                  selected={@options.filter_status == status_opt}
+                >
+                  {Phoenix.Naming.humanize(status_opt)}
+                </option>
+              </select>
+            </form>
+          </div>
         </div>
+        <a
+          id="button-new-section"
+          class="btn btn-sm rounded-md bg-[#0080FF] text-[#FFFFFF] shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] px-4 py-2"
+          href={~p"/admin/sections/create"}
+        >
+          <i class="fa fa-plus pr-2"></i> New Section
+        </a>
+      </div>
+      <div class="flex w-fit gap-4 p-2 pr-8 mx-4 mt-3 mb-2 shadow-[0px_2px_6.099999904632568px_0px_rgba(0,0,0,0.10)] border border-[#ced1d9] dark:border-[#3B3740] dark:bg-[#000000]">
+        <.form for={%{}} phx-change="text_search_change" class="w-56">
+          <SearchInput.render id="text-search" name="section_name" text={@text_search_input} />
+        </.form>
 
-        <:extra_opts>
-          <Check.render checked={@options.active_today} click="active_today">
-            <span class="ml-2">Active (start/end dates include today)</span>
-          </Check.render>
+        <button class="ml-2 text-center text-[#353740] dark:text-[#EEEBF5] text-sm font-normal leading-none flex items-center gap-x-1 opacity-50 hover:cursor-not-allowed">
+          <Icons.filter class="stroke-[#353740] dark:stroke-[#EEEBF5]" /> Filter
+        </button>
 
-          <form phx-change="change_type" class="d-flex">
-            <select name="type" id="select_type" class="custom-select mx-3" style="width: 120px;">
-              <option value="" selected>Type</option>
-              <option
-                :for={type_opt <- @type_opts}
-                value={type_opt}
-                selected={@options.filter_type == type_opt}
-              >
-                <%= humanize_type_opt(type_opt) %>
-              </option>
-            </select>
-          </form>
-
-          <form phx-change="change_status" class="d-flex">
-            <select name="status" id="select_status" class="custom-select" style="width: 120px;">
-              <option value="" selected>Status</option>
-              <option
-                :for={status_opt <- Ecto.Enum.values(Section, :status)}
-                value={status_opt}
-                selected={@options.filter_status == status_opt}
-              >
-                <%= Phoenix.Naming.humanize(status_opt) %>
-              </option>
-            </select>
-          </form>
-        </:extra_opts>
-      </FilterBox.render>
-
-      <div class="mb-5" />
+        <button
+          class="ml-2 mr-4 text-center text-[#353740] dark:text-[#EEEBF5] text-sm font-normal leading-none flex items-center gap-x-1 hover:text-[#006CD9] dark:hover:text-[#4CA6FF]"
+          phx-click="clear_all_filters"
+        >
+          <Icons.trash /> Clear All Filters
+        </button>
+      </div>
 
       <div class="sections-table">
-        <PagedTable.render
-          filter={@options.text_search}
+        <StripedPagedTable.render
           table_model={@table_model}
           total_count={@total_count}
           offset={@offset}
           limit={@limit}
+          render_top_info={false}
+          additional_table_class="instructor_dashboard_table"
+          sort="paged_table_sort"
+          page_change="paged_table_page_change"
+          limit_change="paged_table_limit_change"
+          show_limit_change={true}
         />
       </div>
     </div>
@@ -188,15 +229,53 @@ defmodule OliWeb.Sections.SectionsView do
   def handle_event("change_type", %{"type" => type}, socket),
     do: patch_with(socket, %{filter_type: type})
 
-  def handle_event(event, params, socket),
-    do:
-      delegate_to(
-        {event, params, socket, &__MODULE__.patch_with/2},
-        [&TextSearch.handle_delegated/4, &PagedTable.handle_delegated/4]
+  def handle_event("text_search_change", %{"section_name" => section_name}, socket) do
+    patch_with(socket, %{text_search: String.trim(section_name)})
+  end
+
+  def handle_event("paged_table_sort", %{"sort_by" => sort_by_str}, socket) do
+    current_sort_by = socket.assigns.table_model.sort_by_spec.name
+    current_sort_order = socket.assigns.table_model.sort_order
+    new_sort_by = String.to_existing_atom(sort_by_str)
+
+    sort_order =
+      if new_sort_by == current_sort_by, do: toggle_sort_order(current_sort_order), else: :asc
+
+    patch_with(socket, %{sort_by: new_sort_by, sort_order: sort_order})
+  end
+
+  def handle_event("paged_table_page_change", %{"limit" => limit, "offset" => offset}, socket) do
+    patch_with(socket, %{limit: limit, offset: offset})
+  end
+
+  def handle_event(
+        "paged_table_limit_change",
+        params,
+        socket
+      ) do
+    new_limit = Params.get_int_param(params, "limit", 20)
+
+    new_offset =
+      PagingParams.calculate_new_offset(
+        socket.assigns.offset,
+        new_limit,
+        socket.assigns.total_count
       )
 
-  defp determine_total(projects) do
-    case projects do
+    patch_with(socket, %{limit: new_limit, offset: new_offset})
+  end
+
+  def handle_event("clear_all_filters", _params, socket) do
+    {:noreply, push_patch(socket, to: ~p"/admin/sections")}
+  end
+
+  def handle_event(event, params, socket) do
+    {event, params, socket, &__MODULE__.patch_with/2}
+    |> delegate_to([&StripedPagedTable.handle_delegated/4])
+  end
+
+  defp determine_total(sections) do
+    case sections do
       [] -> 0
       [hd | _] -> hd.total_count
     end
@@ -205,27 +284,39 @@ defmodule OliWeb.Sections.SectionsView do
   def patch_with(socket, changes) do
     {:noreply,
      push_patch(socket,
-       to:
-         Routes.live_path(
-           socket,
-           __MODULE__,
-           Map.merge(
-             %{
-               sort_by: socket.assigns.table_model.sort_by_spec.name,
-               sort_order: socket.assigns.table_model.sort_order,
-               offset: socket.assigns.offset,
-               text_search: socket.assigns.options.text_search,
-               active_today: socket.assigns.options.active_today,
-               filter_status: socket.assigns.options.filter_status,
-               filter_type: socket.assigns.options.filter_type
-             },
-             changes
-           )
-         ),
+       to: Routes.live_path(socket, __MODULE__, Map.merge(current_params(socket), changes)),
        replace: true
      )}
   end
 
-  defp humanize_type_opt(:open), do: "Open"
-  defp humanize_type_opt(:lms), do: "LMS"
+  defp current_params(socket) do
+    %{
+      sort_by: socket.assigns.table_model.sort_by_spec.name,
+      sort_order: socket.assigns.table_model.sort_order,
+      offset: socket.assigns.offset,
+      limit: socket.assigns.limit,
+      active_today: socket.assigns.options.active_today,
+      filter_status: socket.assigns.options.filter_status,
+      filter_type: socket.assigns.options.filter_type,
+      text_search: socket.assigns.text_search_input
+    }
+  end
+
+  defp toggle_sort_order(:asc), do: :desc
+  defp toggle_sort_order(_), do: :asc
+
+  defp humanize_type_opt(:open), do: "DD"
+  defp humanize_type_opt(:lms), do: "LTI"
+
+  defp sanitize_search_term(nil), do: ""
+
+  defp sanitize_search_term(search) when is_binary(search) do
+    trimmed = String.trim(search)
+
+    cond do
+      trimmed == "" -> ""
+      String.length(trimmed) < @min_search_length -> ""
+      true -> trimmed
+    end
+  end
 end

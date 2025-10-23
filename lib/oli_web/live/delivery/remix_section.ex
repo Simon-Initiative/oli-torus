@@ -2,6 +2,8 @@ defmodule OliWeb.Delivery.RemixSection do
   use OliWeb, :live_view
   use OliWeb.Common.Modal
 
+  require Logger
+
   import OliWeb.Curriculum.Utils,
     only: [
       is_container?: 1
@@ -22,7 +24,7 @@ defmodule OliWeb.Delivery.RemixSection do
     Entry
   }
 
-  alias Oli.Publishing.DeliveryResolver
+  alias Oli.Publishing.AuthoringResolver
   alias Oli.Delivery.Hierarchy
   alias Oli.Delivery.Hierarchy.HierarchyNode
   alias OliWeb.Common.Hierarchy.HierarchyPicker.TableModel, as: PagesTableModel
@@ -35,7 +37,9 @@ defmodule OliWeb.Delivery.RemixSection do
   alias Oli.Publishing.PublishedResource
   alias OliWeb.Sections.Mount
   alias Oli.Delivery.Sections.Section
+  alias Oli.Delivery.Remix
   alias OliWeb.Common.Cancel
+  alias Oli.Delivery.Gating
 
   alias Phoenix.LiveView.JS
 
@@ -99,38 +103,20 @@ defmodule OliWeb.Delivery.RemixSection do
   end
 
   def mount_as_instructor(socket, section, %User{} = current_user) do
-    section =
-      section
-      |> Repo.preload(:institution)
+    {:ok, state} = Remix.init(section, current_user)
 
-    available_publications =
-      Publishing.retrieve_visible_publications(current_user, section.institution)
-
-    # only permit instructor or admin level access
-
-    init_state(socket,
-      breadcrumbs: set_breadcrumbs(:user, section),
-      section: section,
-      redirect_after_save: redirect_after_save(:instructor, section),
-      available_publications: available_publications
+    init_state_from_remix(socket, state,
+      breadcrumbs: set_breadcrumbs(:user, state.section),
+      redirect_after_save: redirect_after_save(:instructor, state.section)
     )
   end
 
   def mount_as_instructor(socket, section, %Author{} = current_author) do
-    section =
-      section
-      |> Repo.preload(:institution)
+    {:ok, state} = Remix.init(section, current_author)
 
-    available_publications =
-      Publishing.available_publications(current_author, section.institution)
-
-    # only permit instructor or admin level access
-
-    init_state(socket,
-      breadcrumbs: set_breadcrumbs(:user, section),
-      section: section,
-      redirect_after_save: redirect_after_save(:instructor, section, socket),
-      available_publications: available_publications
+    init_state_from_remix(socket, state,
+      breadcrumbs: set_breadcrumbs(:user, state.section),
+      redirect_after_save: redirect_after_save(:instructor, state.section, socket)
     )
   end
 
@@ -139,11 +125,11 @@ defmodule OliWeb.Delivery.RemixSection do
         section
       ) do
     # only permit authoring admin level access
-    init_state(socket,
-      breadcrumbs: set_breadcrumbs(:admin, section),
-      section: section,
-      redirect_after_save: redirect_after_save(:instructor, section),
-      available_publications: Publishing.all_available_publications()
+    {:ok, state} = Remix.init_open_and_free(section)
+
+    init_state_from_remix(socket, state,
+      breadcrumbs: set_breadcrumbs(:admin, state.section),
+      redirect_after_save: redirect_after_save(:instructor, state.section)
     )
   end
 
@@ -154,46 +140,32 @@ defmodule OliWeb.Delivery.RemixSection do
       ) do
     if Oli.Delivery.Sections.Blueprint.is_author_of_blueprint?(section.slug, current_author.id) or
          Accounts.at_least_content_admin?(current_author) do
-      init_state(socket,
-        breadcrumbs: set_breadcrumbs(:user, section),
-        section: section,
-        redirect_after_save: redirect_after_save(:product_creator, section, socket),
-        available_publications: Publishing.all_available_publications()
+      {:ok, state} = Remix.init_open_and_free(section)
+
+      init_state_from_remix(socket, state,
+        breadcrumbs: set_breadcrumbs(:user, state.section),
+        redirect_after_save: redirect_after_save(:product_creator, state.section, socket)
       )
     else
       {:ok, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :unauthorized))}
     end
   end
 
-  def init_state(socket, opts) do
-    section = Keyword.get(opts, :section)
-    hierarchy = DeliveryResolver.full_hierarchy(section.slug)
-
+  defp init_state_from_remix(socket, state, opts) do
     params = %{
       text_filter: "",
       limit: 5,
-      offset: 0
+      offset: 0,
+      sort_by: :title,
+      sort_order: :asc
     }
 
     {:ok, pages_table_model} = PagesTableModel.new([])
 
-    redirect_after_save = Keyword.get(opts, :redirect_after_save)
-    breadcrumbs = Keyword.get(opts, :breadcrumbs)
-    available_publications = Keyword.get(opts, :available_publications)
-    pinned_project_publications = Sections.get_pinned_project_publications(section.id)
-
-    # replace any of the latest available publications that are already pinned with the
-    # pinned publication
-    available_publications =
-      Enum.map(available_publications, fn pub ->
-        case pinned_project_publications[pub.project_id] do
-          nil ->
-            pub
-
-          pinned ->
-            pinned
-        end
-      end)
+    redirect_after_save = Keyword.fetch!(opts, :redirect_after_save)
+    breadcrumbs = Keyword.fetch!(opts, :breadcrumbs)
+    available_publications = state.available_publications
+    pinned_project_publications = state.pinned_project_publications
 
     {:ok, publications_table_model} =
       PublicationsTableModel.new(available_publications |> Enum.take(5))
@@ -201,17 +173,20 @@ defmodule OliWeb.Delivery.RemixSection do
     publications_table_model_total_count = length(available_publications)
     publications_table_model_params = params
 
+    # Get source page resource IDs for gating conditions
+    source_page_resource_ids = Gating.source_page_resource_map(state.section.id)
+
     {:ok,
      assign(socket,
        title: "Customize Content",
-       section: section,
+       section: state.section,
        pinned_project_publications: pinned_project_publications,
-       previous_hierarchy: hierarchy,
-       hierarchy: hierarchy,
+       previous_hierarchy: state.hierarchy,
+       hierarchy: state.hierarchy,
        pages_table_model_total_count: 0,
        pages_table_model_params: params,
        pages_table_model: pages_table_model,
-       active: hierarchy,
+       active: state.hierarchy,
        dragging: nil,
        selected: nil,
        has_unsaved_changes: false,
@@ -221,7 +196,9 @@ defmodule OliWeb.Delivery.RemixSection do
        publications_table_model: publications_table_model,
        publications_table_model_total_count: publications_table_model_total_count,
        publications_table_model_params: publications_table_model_params,
-       is_product: is_product?(socket)
+       is_product: is_product?(socket),
+       remix_state: state,
+       source_page_resource_ids: source_page_resource_ids
      )}
   end
 
@@ -238,14 +215,14 @@ defmodule OliWeb.Delivery.RemixSection do
   end
 
   def handle_event("set_active", %{"uuid" => uuid}, socket) do
-    %{hierarchy: hierarchy} = socket.assigns
+    %{remix_state: state} = socket.assigns
 
-    active = Hierarchy.find_in_hierarchy(hierarchy, uuid)
+    node = Hierarchy.find_in_hierarchy(state.hierarchy, uuid)
 
-    if is_container?(active.revision) do
-      {:noreply, assign(socket, :active, active)}
+    if is_container?(node.revision) do
+      {:ok, state} = Remix.select_active(state, uuid)
+      {:noreply, assign(socket, active: state.active, remix_state: state)}
     else
-      # do nothing
       {:noreply, socket}
     end
   end
@@ -306,26 +283,20 @@ defmodule OliWeb.Delivery.RemixSection do
 
   # handle reordering event
   def handle_event("reorder", %{"sourceIndex" => source_index, "dropIndex" => drop_index}, socket) do
-    %{active: active, hierarchy: hierarchy} = socket.assigns
+    %{remix_state: state} = socket.assigns
 
     source_index = String.to_integer(source_index)
     destination_index = String.to_integer(drop_index)
 
-    node = Enum.at(active.children, source_index)
+    {:ok, state} = Remix.reorder(state, source_index, destination_index)
 
-    updated =
-      Hierarchy.reorder_children(
-        active,
-        node,
-        source_index,
-        destination_index
-      )
-
-    hierarchy =
-      Hierarchy.find_and_update_node(hierarchy, updated)
-      |> Hierarchy.finalize()
-
-    {:noreply, assign(socket, hierarchy: hierarchy, active: updated, has_unsaved_changes: true)}
+    {:noreply,
+     assign(socket,
+       remix_state: state,
+       hierarchy: state.hierarchy,
+       active: state.active,
+       has_unsaved_changes: true
+     )}
   end
 
   # handle drag events
@@ -373,16 +344,12 @@ defmodule OliWeb.Delivery.RemixSection do
   end
 
   def handle_event("save", _, socket) do
-    %{
-      section: section,
-      hierarchy: hierarchy,
-      pinned_project_publications: pinned_project_publications,
-      redirect_after_save: redirect_after_save
-    } = socket.assigns
+    %{remix_state: state, redirect_after_save: redirect_after_save} = socket.assigns
 
-    Sections.rebuild_section_curriculum(section, hierarchy, pinned_project_publications)
-
-    {:noreply, redirect(socket, to: redirect_after_save)}
+    case Oli.Delivery.Remix.save(state) do
+      {:ok, _section} -> {:noreply, redirect(socket, to: redirect_after_save)}
+      {:error, _} -> {:noreply, redirect(socket, to: redirect_after_save)}
+    end
   end
 
   def handle_event("show_move_modal", %{"uuid" => uuid}, socket) do
@@ -463,51 +430,18 @@ defmodule OliWeb.Delivery.RemixSection do
   end
 
   def handle_event("AddMaterialsModal.add", _, socket) do
-    %{
-      hierarchy: hierarchy,
-      active: active,
-      pinned_project_publications: pinned_project_publications,
-      available_publications: available_publications,
-      modal_assigns: %{selection: selection}
-    } = socket.assigns
+    %{remix_state: state, modal_assigns: %{selection: selection}} = socket.assigns
 
-    publication_ids =
-      selection
-      |> Enum.reduce(%{}, fn {pub_id, _resource_id}, acc ->
-        Map.put(acc, pub_id, true)
-      end)
-      |> Map.keys()
-
-    published_resources_by_resource_id_by_pub =
-      Publishing.get_published_resources_for_publications(publication_ids)
-
-    hierarchy =
-      Hierarchy.add_materials_to_hierarchy(
-        hierarchy,
-        active,
-        selection,
-        published_resources_by_resource_id_by_pub
-      )
-      |> Hierarchy.finalize()
-
-    # update pinned project publications
-    pinned_project_publications =
-      selection
-      |> Enum.reduce(pinned_project_publications, fn {pub_id, _resource_id}, acc ->
-        pub = Enum.find(available_publications, fn p -> p.id == pub_id end)
-        Map.put_new(acc, pub.project_id, pub)
-      end)
-
-    # reload the updated active node
-    updated = Hierarchy.find_in_hierarchy(hierarchy, active.uuid)
+    {:ok, state} = Remix.add_materials(state, selection)
 
     {:noreply,
      socket
      |> assign(
-       hierarchy: hierarchy,
-       active: updated,
-       pinned_project_publications: pinned_project_publications,
-       has_unsaved_changes: true
+       hierarchy: state.hierarchy,
+       active: state.active,
+       pinned_project_publications: state.pinned_project_publications,
+       has_unsaved_changes: true,
+       remix_state: state
      )
      |> hide_modal(modal_assigns: nil)}
   end
@@ -519,7 +453,7 @@ defmodule OliWeb.Delivery.RemixSection do
       Publishing.get_publication!(publication_id)
       |> Repo.preload([:project])
 
-    hierarchy = publication_hierarchy(publication)
+    hierarchy = published_publication_hierarchy(publication)
 
     {total_count, section_pages} =
       Publishing.get_published_pages_by_publication(
@@ -785,20 +719,18 @@ defmodule OliWeb.Delivery.RemixSection do
         %{"uuid" => uuid, "to_uuid" => to_uuid},
         socket
       ) do
-    %{hierarchy: hierarchy, active: active} = socket.assigns
+    %{remix_state: state} = socket.assigns
 
-    node = Hierarchy.find_in_hierarchy(hierarchy, uuid)
-
-    hierarchy =
-      Hierarchy.move_node(hierarchy, node, to_uuid)
-      |> Hierarchy.finalize()
-
-    # refresh active node
-    active = Hierarchy.find_in_hierarchy(hierarchy, active.uuid)
+    {:ok, state} = Remix.move(state, uuid, to_uuid)
 
     {:noreply,
      socket
-     |> assign(hierarchy: hierarchy, active: active, has_unsaved_changes: true)
+     |> assign(
+       hierarchy: state.hierarchy,
+       active: state.active,
+       has_unsaved_changes: true,
+       remix_state: state
+     )
      |> hide_modal(modal_assigns: nil)}
   end
 
@@ -831,18 +763,18 @@ defmodule OliWeb.Delivery.RemixSection do
   end
 
   def handle_event("RemoveModal.remove", %{"uuid" => uuid}, socket) do
-    %{hierarchy: hierarchy, active: active} = socket.assigns
+    %{remix_state: state} = socket.assigns
 
-    hierarchy =
-      Hierarchy.find_and_remove_node(hierarchy, uuid)
-      |> Hierarchy.finalize()
-
-    # refresh active node
-    active = Hierarchy.find_in_hierarchy(hierarchy, active.uuid)
+    {:ok, state} = Remix.remove(state, uuid)
 
     {:noreply,
      socket
-     |> assign(hierarchy: hierarchy, active: active, has_unsaved_changes: true)
+     |> assign(
+       hierarchy: state.hierarchy,
+       active: state.active,
+       has_unsaved_changes: true,
+       remix_state: state
+     )
      |> hide_modal(modal_assigns: nil)}
   end
 
@@ -875,23 +807,31 @@ defmodule OliWeb.Delivery.RemixSection do
   end
 
   def handle_event("HideResourceModal.toggle", %{"uuid" => uuid}, socket) do
-    %{hierarchy: hierarchy, active: active} = socket.assigns
+    %{remix_state: state} = socket.assigns
 
-    hierarchy =
-      Hierarchy.find_and_toggle_hidden(hierarchy, uuid)
-      |> Hierarchy.finalize()
-
-    # refresh active node
-    active = Hierarchy.find_in_hierarchy(hierarchy, active.uuid)
+    {:ok, state} = Remix.toggle_hidden(state, uuid)
 
     {:noreply,
      socket
-     |> assign(hierarchy: hierarchy, active: active, has_unsaved_changes: true)
+     |> assign(
+       hierarchy: state.hierarchy,
+       active: state.active,
+       has_unsaved_changes: true,
+       remix_state: state
+     )
      |> hide_modal(modal_assigns: nil)}
   end
 
   def handle_event("HideResourceModal.cancel", _, socket) do
     {:noreply, hide_modal(socket, modal_assigns: nil)}
+  end
+
+  @impl Phoenix.LiveView
+  def handle_event(event, params, socket) do
+    # Catch-all for UI-only events from functional components
+    # that don't need handling (like dropdown toggles)
+    Logger.warning("Unhandled event in RemixSectionLive: #{inspect(event)}, #{inspect(params)}")
+    {:noreply, socket}
   end
 
   defp maybe_filter_publications(publications, params) do
@@ -923,13 +863,31 @@ defmodule OliWeb.Delivery.RemixSection do
     end
   end
 
-  defp publication_hierarchy(publication) do
+  # publication_hierarchy now encapsulated in Oli.Delivery.Remix; no longer used here
+
+  defp published_publication_hierarchy(publication) do
     published_resources_by_resource_id = Sections.published_resources_map(publication.id)
+
+    published_revisions_by_resource_id =
+      published_resources_by_resource_id
+      |> Enum.map(fn {resource_id, published_resource} ->
+        {resource_id, published_resource.revision}
+      end)
+      |> Enum.into(%{})
 
     %PublishedResource{revision: root_revision} =
       published_resources_by_resource_id[publication.root_resource_id]
 
-    Hierarchy.create_hierarchy(root_revision, published_resources_by_resource_id)
+    {root_node, _numbering_tracker} =
+      AuthoringResolver.hierarchy_node_with_children(
+        root_revision,
+        publication.project,
+        published_revisions_by_resource_id,
+        Oli.Resources.Numbering.init_numbering_tracker(),
+        0
+      )
+
+    root_node
   end
 
   ## used by add container button, disabled for now
@@ -954,7 +912,7 @@ defmodule OliWeb.Delivery.RemixSection do
       </button>
 
       <%= for {breadcrumb, index} <- Enum.with_index(@breadcrumbs) do %>
-        <%= render_breadcrumb_item(
+        {render_breadcrumb_item(
           Enum.into(
             %{
               breadcrumb: breadcrumb,
@@ -963,7 +921,7 @@ defmodule OliWeb.Delivery.RemixSection do
             },
             assigns
           )
-        ) %>
+        )}
       <% end %>
     </div>
     """
@@ -988,7 +946,7 @@ defmodule OliWeb.Delivery.RemixSection do
       phx-click="set_active"
       phx-value-uuid={@breadcrumb.slug}
     >
-      <%= get_title(@breadcrumb, @show_short) %>
+      {get_title(@breadcrumb, @show_short)}
     </button>
     """
   end
@@ -1016,4 +974,6 @@ defmodule OliWeb.Delivery.RemixSection do
 
   defp is_product?(%{assigns: %{live_action: :product_remix}} = _socket), do: true
   defp is_product?(_), do: false
+
+  # build_resource_index moved to Oli.Delivery.Remix; not used here
 end

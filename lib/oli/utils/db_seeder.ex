@@ -1,4 +1,30 @@
 defmodule Oli.Seeder do
+  @moduledoc """
+    Provides helper functions for seeding test and development data, including sections,
+    projects, users, and other core entities used throughout the platform.
+
+    ### DEPRECATION NOTICE
+
+    This module is deprecated.
+    Please use `Oli.Factory` (based on `ExMachina`) as the only mechanism for generating test data.
+
+    ### What to do instead
+
+    Use the `Oli.Factory` module, located at `test/support/factory.ex`.
+    This module provides a clean, composable, and consistent way to build test data.
+
+    Examples:
+
+        insert(:user)
+        insert(:project, %{title: "My project"})
+        insert(:section_with_associations)
+
+    As part of the deprecation process, all new tests should avoid calling `Oli.Seeder` directly.
+    Legacy tests using it may be refactored over time in follow-up tickets.
+  """
+
+  @deprecated "Use Oli.Factory instead"
+
   import Ecto.Query, warn: false
   import Oli.Delivery.Attempts.Core
 

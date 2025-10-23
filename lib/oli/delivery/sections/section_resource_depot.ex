@@ -136,6 +136,21 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
   end
 
   @doc """
+  Return the SectionResource records for a given section and a list of resource ids.
+  """
+  def get_resources_by_ids(section_id, resource_ids) do
+    depot_coordinator().init_if_necessary(@depot_desc, section_id, __MODULE__)
+
+    query_conditions = {:resource_id, {:in, resource_ids}}
+
+    Depot.query(
+      @depot_desc,
+      section_id,
+      query_conditions
+    )
+  end
+
+  @doc """
   Returns a list of SectionResource records for all practice pages for a given section.
   """
   def practice_pages(section_id, additional_query_conditions \\ []) do
@@ -152,6 +167,24 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
       query_conditions
     )
     |> Enum.sort_by(& &1.numbering_index)
+  end
+
+  @doc """
+  Returns a list of SectionResource records for all objectives for a given section.
+  An optional keyword list can be passed to extend the filtering conditions.
+
+  Example:
+    SectionResourceDepot.objectives(some_section_id, [hidden: false])
+  """
+  def objectives(section_id, additional_query_conditions \\ []) do
+    depot_coordinator().init_if_necessary(@depot_desc, section_id, __MODULE__)
+
+    objective_type_id = Oli.Resources.ResourceType.id_for_objective()
+
+    query_conditions =
+      Keyword.merge([resource_type_id: objective_type_id], additional_query_conditions)
+
+    Depot.query(@depot_desc, section_id, query_conditions)
   end
 
   @doc """
