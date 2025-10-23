@@ -1137,8 +1137,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
       #adaptive_content_iframe {
         display: block;
-        width: 80%;
-        height: 90vh;
+        width: 85%;
+        height: calc(100vh - 180px);
         min-height: 600px;
         border: none;
         overflow-y: auto;
@@ -1169,7 +1169,6 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         z-index: 10000 !important;
       }
     </style>
-    <div id="fire_page_trigger" phx-hook="FirePageTrigger"></div>
     <div id="sticky_panel" class="absolute top-4 right-0 z-50 h-full">
       <div class="sticky ml-auto top-20 right-0">
         <div class={[
@@ -1216,7 +1215,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           if(@active_sidebar_panel == :notes, do: "xl:mr-[80px]")
         ]}>
           <div
-            class="flex justify-center items-start self-start w-full min-h-screen"
+            class="flex justify-center items-start self-start w-full"
             id="adaptive_with_chrome_container"
           >
             <iframe
@@ -1256,7 +1255,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       #adaptive_content_iframe {
         display: block;
         width: 80%;
-        height: 90vh;
+        height: calc(100vh - 180px);
         min-height: 600px;
         border: none;
         overflow-y: auto;
@@ -1289,7 +1288,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     </style>
 
     <div
-      class="flex justify-center items-start self-start w-full min-h-screen"
+      class="flex justify-center items-start self-start w-full"
       id="adaptive_with_chrome_container"
     >
       <iframe
