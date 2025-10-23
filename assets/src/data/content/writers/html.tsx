@@ -86,6 +86,18 @@ import { ContentWriter, Next, WriterImpl } from './writer';
 export class HtmlParser implements WriterImpl {
   private escapeXml = (text: string) => decodeURI(encodeURI(text));
 
+  private getWidthWithUnit = (width: string) => {
+    // Only allow safe width values: numeric (with optional decimal) or specific units
+    if (/^\d+(\.\d+)?(px|%|em|rem|vw|vh)?$/.test(width)) {
+      if (/^\d+(\.\d+)?$/.test(width)) {
+        return `${this.escapeXml(width)}px`;
+      }
+      return this.escapeXml(width);
+    }
+    // Invalid width value - return empty string for security
+    return '';
+  };
+
   private wrapWithMarks(text: string, textEntity: Text): React.ReactElement {
     const supportedMarkTags: { [key: string]: (e: React.ReactElement) => React.ReactElement } = {
       em: (e) => <em>{e}</em>,
@@ -319,15 +331,33 @@ export class HtmlParser implements WriterImpl {
     return this.captioned_content(
       context,
       attrs,
-      <img
-        className="figure-img img-fluid"
-        alt={attrs.alt ? this.escapeXml(attrs.alt) : ''}
-        width={attrs.width ? this.escapeXml(String(attrs.width)) : undefined}
-        src={this.escapeXml(attrs.src)}
-        {...maybePointMarkerAttr(attrs, pointMarkerContextFrom(context, attrs))}
-      />,
+      <>
+        <div className="text-sm md:hidden flex justify-center">
+          <div
+            className="inline-block w-full text-right"
+            style={
+              attrs.width
+                ? {
+                    width: '100%',
+                    maxWidth: this.getWidthWithUnit(String(attrs.width)),
+                  }
+                : {}
+            }
+          >
+            Pinch to Zoom
+          </div>
+        </div>
+        <img
+          className="figure-img img-fluid"
+          alt={attrs.alt ? this.escapeXml(attrs.alt) : ''}
+          width={attrs.width ? this.escapeXml(String(attrs.width)) : undefined}
+          src={this.escapeXml(attrs.src)}
+          {...maybePointMarkerAttr(attrs, pointMarkerContextFrom(context, attrs))}
+        />
+      </>,
     );
   }
+
   img_inline(context: WriterContext, next: Next, attrs: ImageInline) {
     if (!attrs.src) return <></>;
 

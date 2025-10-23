@@ -237,6 +237,13 @@ $element-margin-bottom: 1.5em;
     margin: 1.5em auto;
   }
 
+  // Override for images on mobile (where pinch-to-zoom hint shows)
+  @media (max-width: 767px) {
+    .figure-img.img-fluid {
+      margin-top: 0;
+    }
+  }
+
   figure > img.d-block {
     margin-bottom: initial;
   }
