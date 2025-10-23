@@ -59,7 +59,7 @@ defmodule Oli.Rendering.Elements.Html do
             pageAttemptGuid: page_attempt_guid(context.resource_attempt),
             initiallyVisible: extract_for(context.resource_attempt, for_id(context))
           },
-          id: "pagination-controls-#{UUID.uuid4()}"
+          id: "pagination-controls-#{for_id(context)}"
         )
 
       [

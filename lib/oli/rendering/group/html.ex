@@ -26,7 +26,7 @@ defmodule Oli.Rendering.Group.Html do
                 "resourceId" => context.page_id,
                 "sectionSlug" => context.section_slug
               },
-              id: "trigger-group-#{UUID.uuid4()}"
+              id: "trigger-group-#{context.page_id}-#{trigger["id"]}"
             )
 
           trigger

@@ -31,8 +31,8 @@ defmodule Oli.Rendering.Content.Html do
           "resourceId" => context.page_id,
           "sectionSlug" => context.section_slug
         },
-        # Generate a unique ID for the LiveReact hook
-        id: "trigger-#{UUID.uuid4()}"
+        # Generate a stable ID for the LiveReact hook
+        id: "trigger-#{context.page_id}-#{attrs["target"]}"
       )
 
     trigger
@@ -101,6 +101,12 @@ defmodule Oli.Rendering.Content.Html do
 
   def img_inline(%Context{} = _context, _, _e), do: ""
 
+  # Helper function to extract URL from src attribute which can be a string or list of maps
+  defp extract_src_url(src) when is_binary(src), do: src
+  defp extract_src_url([%{"url" => url} | _]) when is_binary(url), do: url
+  defp extract_src_url([%{"url" => url} | _]) when is_list(url), do: Enum.join(url, "")
+  defp extract_src_url(_), do: "unknown"
+
   def video(%Context{} = context, _, attrs) do
     attempt_guid =
       case context.resource_attempt do
@@ -120,8 +126,8 @@ defmodule Oli.Rendering.Content.Html do
             isAnnotationLevel: context.is_annotation_level
           }
         },
-        # Generate a unique ID for the LiveReact hook
-        id: "video-#{UUID.uuid4()}"
+        # Generate a stable ID for the LiveReact hook
+        id: "video-#{attempt_guid}-#{extract_src_url(attrs["src"])}"
       )
 
     video_player
@@ -172,8 +178,8 @@ defmodule Oli.Rendering.Content.Html do
             isAnnotationLevel: context.is_annotation_level
           }
         },
-        # Generate a unique ID for the LiveReact hook
-        id: "youtube-#{UUID.uuid4()}"
+        # Generate a stable ID for the LiveReact hook
+        id: "youtube-#{attempt_guid}-#{extract_src_url(attrs["src"])}"
       )
 
     video_player

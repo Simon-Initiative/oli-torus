@@ -73,7 +73,7 @@ defmodule Oli.Rendering.Alternatives.Html do
               extrinsic_read_section_fn
             )
         },
-        id: "alternatives-selector-#{UUID.uuid4()}"
+        id: "alternatives-selector-#{alternatives_id}"
       )
 
     preference_selector

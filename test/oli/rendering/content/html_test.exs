@@ -165,31 +165,48 @@ defmodule Oli.Content.Content.HtmlTest do
         "children" => [%{"text" => ""}]
       }
 
-      context = %Context{user: author, section_slug: "test_section", is_liveview: true}
+      context = %Context{
+        user: author,
+        section_slug: "test_section",
+        is_liveview: true,
+        resource_attempt: %{attempt_guid: "test-attempt-123"}
+      }
 
       rendered_html = Content.render(context, youtube_content, Content.Html)
       rendered_html_string = Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
 
-      # Should generate a unique ID
+      # Should generate a stable ID based on attempt_guid and src
       assert rendered_html_string =~ ~r/data-live-react-class="Components\.YoutubePlayer"/
-      assert rendered_html_string =~ ~r/id="youtube-[a-f0-9-]{36}"/
+      assert rendered_html_string =~ ~r/id="youtube-test-attempt-123-fhdCslFcKFU"/
     end
 
-    test "renders uploaded video with unique ID", %{author: author} do
+    test "renders uploaded video with list src format", %{author: author} do
       video_content = %{
         "type" => "video",
-        "src" => "https://example.com/video.mp4",
+        "src" => [
+          %{
+            "contenttype" => "video/quicktime",
+            "url" => "some_url"
+          }
+        ],
         "children" => [%{"text" => ""}]
       }
 
-      context = %Context{user: author, section_slug: "test_section", is_liveview: true}
+      context = %Context{
+        user: author,
+        section_slug: "test_section",
+        is_liveview: true,
+        resource_attempt: %{attempt_guid: "test-attempt-456"}
+      }
 
       rendered_html = Content.render(context, video_content, Content.Html)
       rendered_html_string = Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
 
-      # Should generate a unique ID
+      # Should generate a stable ID based on attempt_guid and extracted URL
       assert rendered_html_string =~ ~r/data-live-react-class="Components\.VideoPlayer"/
-      assert rendered_html_string =~ ~r/id="video-[a-f0-9-]{36}"/
+
+      assert rendered_html_string =~
+               ~r/id="video-test-attempt-456-some_url"/
     end
   end
 end

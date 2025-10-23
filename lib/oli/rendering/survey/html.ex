@@ -18,7 +18,7 @@ defmodule Oli.Rendering.Survey.Html do
           id: id,
           isSubmitted: submitted_surveys[id]
         },
-        id: "survey-controls-#{UUID.uuid4()}"
+        id: "survey-controls-#{id}"
       )
 
     [

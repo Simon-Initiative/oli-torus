@@ -19,7 +19,7 @@ defmodule Oli.Activities.Reports.Providers.OliLikert do
           activityId: activity_id,
           sectionSlug: section_slug
         },
-        id: "likert-report-#{UUID.uuid4()}"
+        id: "likert-report-#{activity_id}"
       )
 
     {:ok, [likert_report]}

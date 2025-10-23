@@ -82,7 +82,7 @@ defmodule Oli.Rendering.Report.Html do
 
     {:safe, attempt_selector} =
       OliWeb.Common.React.component(context, "Components.VegaLiteRenderer", %{spec: spec},
-        id: "vega-#{UUID.uuid4()}"
+        id: "vega-author-preview"
       )
 
     [attempt_selector]

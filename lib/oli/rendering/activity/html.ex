@@ -160,7 +160,7 @@ defmodule Oli.Rendering.Activity.Html do
                     end),
                   sectionSlug: section_slug
                 },
-                id: "attempt-selector-#{UUID.uuid4()}"
+                id: "attempt-selector-#{activity_id}"
               )
 
             [attempt_selector]
