@@ -224,6 +224,10 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             )
         except Exception as exc:  # pylint: disable=broad-except
             logger.exception("Failed to prepare SQS message %s: %s", message_id, exc)
+            # Simple debug using repr to produce a safe string representation
+            logger.debug("SQS record for message %s: %r", message_id, record)
+            logger.debug("Full Lambda event: %r", event)
+
             failures.append(message_id)
 
     if tables_to_insert:
