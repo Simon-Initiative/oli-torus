@@ -75,7 +75,7 @@ defmodule Oli.Content.Survey.HtmlTest do
                ~s|</oli-multiple-choice-delivery>|
 
       assert rendered_html_string =~
-               ~s|<div data-react-class="Components.SurveyControls" data-react-props="{&quot;id&quot;:&quot;1855946510&quot;,&quot;isSubmitted&quot;:null}"></div>|
+               ~s|<div data-react-class="Components.SurveyControls" data-react-props="{&quot;id&quot;:&quot;1855946510&quot;,&quot;isSubmitted&quot;:null}" data-react-target-id="" id="survey-controls-1855946510"></div>|
     end
   end
 end

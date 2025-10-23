@@ -81,7 +81,9 @@ defmodule Oli.Rendering.Report.Html do
       |> VegaLite.to_spec()
 
     {:safe, attempt_selector} =
-      OliWeb.Common.React.component(context, "Components.VegaLiteRenderer", %{spec: spec})
+      OliWeb.Common.React.component(context, "Components.VegaLiteRenderer", %{spec: spec},
+        id: "vega-author-preview"
+      )
 
     [attempt_selector]
   end

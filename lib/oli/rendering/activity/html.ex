@@ -140,23 +140,28 @@ defmodule Oli.Rendering.Activity.Html do
 
           attempts ->
             {:safe, attempt_selector} =
-              OliWeb.Common.React.component(context, "Components.AttemptSelector", %{
-                activityId: activity_id,
-                attempts:
-                  Enum.map(attempts, fn a ->
-                    %{
-                      state: a.lifecycle_state,
-                      attemptNumber: a.attempt_number,
-                      attemptGuid: a.attempt_guid,
-                      date:
-                        Timex.format!(
-                          a.updated_at,
-                          "{Mfull} {D}, {YYYY} at {h12}:{m} {AM} {Zabbr}"
-                        )
-                    }
-                  end),
-                sectionSlug: section_slug
-              })
+              OliWeb.Common.React.component(
+                context,
+                "Components.AttemptSelector",
+                %{
+                  activityId: activity_id,
+                  attempts:
+                    Enum.map(attempts, fn a ->
+                      %{
+                        state: a.lifecycle_state,
+                        attemptNumber: a.attempt_number,
+                        attemptGuid: a.attempt_guid,
+                        date:
+                          Timex.format!(
+                            a.updated_at,
+                            "{Mfull} {D}, {YYYY} at {h12}:{m} {AM} {Zabbr}"
+                          )
+                      }
+                    end),
+                  sectionSlug: section_slug
+                },
+                id: "attempt-selector-#{activity_id}"
+              )
 
             [attempt_selector]
         end

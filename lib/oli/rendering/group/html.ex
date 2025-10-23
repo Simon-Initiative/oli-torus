@@ -18,11 +18,16 @@ defmodule Oli.Rendering.Group.Html do
 
         trigger ->
           {:safe, trigger} =
-            OliWeb.Common.React.component(context, "Components.TriggerGroupButton", %{
-              "trigger" => trigger,
-              "resourceId" => context.page_id,
-              "sectionSlug" => context.section_slug
-            })
+            OliWeb.Common.React.component(
+              context,
+              "Components.TriggerGroupButton",
+              %{
+                "trigger" => trigger,
+                "resourceId" => context.page_id,
+                "sectionSlug" => context.section_slug
+              },
+              id: "trigger-group-#{context.page_id}-#{trigger["id"]}"
+            )
 
           trigger
       end

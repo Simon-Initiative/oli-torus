@@ -11,10 +11,15 @@ defmodule Oli.Rendering.Survey.Html do
 
   def survey(%Context{submitted_surveys: submitted_surveys} = context, next, %{"id" => id}) do
     {:safe, survey_controls} =
-      OliWeb.Common.React.component(context, "Components.SurveyControls", %{
-        id: id,
-        isSubmitted: submitted_surveys[id]
-      })
+      OliWeb.Common.React.component(
+        context,
+        "Components.SurveyControls",
+        %{
+          id: id,
+          isSubmitted: submitted_surveys[id]
+        },
+        id: "survey-controls-#{id}"
+      )
 
     [
       ~s|<div id="#{id}" class="survey"><div class="survey-label">Survey</div><div class="survey-content">|,
