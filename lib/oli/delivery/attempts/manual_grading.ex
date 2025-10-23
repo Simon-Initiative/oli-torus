@@ -271,6 +271,9 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
              part_attempts_input: mocked_part_attempts
            ) do
         {:ok, _} ->
+          # After successful evaluation, restore the original response structure
+          restore_original_responses(part_attempts)
+
           maybe_finalize_resource_attempt(section, graded, resource_attempt_guid)
 
           Enum.map(mocked_part_attempts, & &1.attempt_guid)
@@ -312,6 +315,25 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
       end
     end)
     |> Enum.filter(fn client_eval -> client_eval != nil end)
+  end
+
+  # Restores the original response structure for part attempts after manual scoring
+  defp restore_original_responses(original_part_attempts) do
+    part_inputs =
+      Enum.map(original_part_attempts, fn part_attempt ->
+        %{
+          attempt_guid: part_attempt.attempt_guid,
+          response: part_attempt.response
+        }
+      end)
+
+    # Use the existing save_student_input function to update the response attribute
+    case Oli.Delivery.Attempts.ActivityLifecycle.save_student_input(part_inputs) do
+      {:ok, _} -> :ok
+      {:error, error} ->
+        Oli.Utils.log_error("Failed to restore original responses", error)
+        :error
+    end
   end
 
   defp maybe_finalize_resource_attempt(_, false, resource_attempt_guid),
