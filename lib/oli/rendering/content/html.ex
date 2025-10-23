@@ -114,6 +114,9 @@ defmodule Oli.Rendering.Content.Html do
         attempt -> attempt.attempt_guid
       end
 
+    # Generate a stable ID for the LiveReact hook using element ID when available
+    element_id = attrs["id"] || extract_src_url(attrs["src"])
+
     {:safe, video_player} =
       OliWeb.Common.React.component(
         context,
@@ -126,8 +129,7 @@ defmodule Oli.Rendering.Content.Html do
             isAnnotationLevel: context.is_annotation_level
           }
         },
-        # Generate a stable ID for the LiveReact hook
-        id: "video-#{attempt_guid}-#{extract_src_url(attrs["src"])}"
+        id: "video-#{attempt_guid}-#{element_id}"
       )
 
     video_player
@@ -166,6 +168,9 @@ defmodule Oli.Rendering.Content.Html do
         attempt -> attempt.attempt_guid
       end
 
+    # Generate a stable ID for the LiveReact hook using element ID when available
+    element_id = attrs["id"] || extract_src_url(attrs["src"])
+
     {:safe, video_player} =
       OliWeb.Common.React.component(
         context,
@@ -178,8 +183,7 @@ defmodule Oli.Rendering.Content.Html do
             isAnnotationLevel: context.is_annotation_level
           }
         },
-        # Generate a stable ID for the LiveReact hook
-        id: "youtube-#{attempt_guid}-#{extract_src_url(attrs["src"])}"
+        id: "youtube-#{attempt_guid}-#{element_id}"
       )
 
     video_player

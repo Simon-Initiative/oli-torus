@@ -175,9 +175,32 @@ defmodule Oli.Content.Content.HtmlTest do
       rendered_html = Content.render(context, youtube_content, Content.Html)
       rendered_html_string = Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
 
-      # Should generate a stable ID based on attempt_guid and src
+      # Should generate a stable ID based on attempt_guid and src (no element ID provided)
       assert rendered_html_string =~ ~r/data-live-react-class="Components\.YoutubePlayer"/
       assert rendered_html_string =~ ~r/id="youtube-test-attempt-123-fhdCslFcKFU"/
+    end
+
+    test "renders YouTube video with element ID takes precedence", %{author: author} do
+      youtube_content = %{
+        "type" => "youtube",
+        "src" => "fhdCslFcKFU",
+        "id" => "youtube-element-456",
+        "children" => [%{"text" => ""}]
+      }
+
+      context = %Context{
+        user: author,
+        section_slug: "test_section",
+        is_liveview: true,
+        resource_attempt: %{attempt_guid: "test-attempt-123"}
+      }
+
+      rendered_html = Content.render(context, youtube_content, Content.Html)
+      rendered_html_string = Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
+
+      # Should use element ID instead of src when available
+      assert rendered_html_string =~ ~r/data-live-react-class="Components\.YoutubePlayer"/
+      assert rendered_html_string =~ ~r/id="youtube-test-attempt-123-youtube-element-456"/
     end
 
     test "renders uploaded video with list src format", %{author: author} do
@@ -207,6 +230,29 @@ defmodule Oli.Content.Content.HtmlTest do
 
       assert rendered_html_string =~
                ~r/id="video-test-attempt-456-some_url"/
+    end
+
+    test "renders video with element ID takes precedence", %{author: author} do
+      video_content = %{
+        "type" => "video",
+        "src" => "https://example.com/video.mp4",
+        "id" => "video-element-789",
+        "children" => [%{"text" => ""}]
+      }
+
+      context = %Context{
+        user: author,
+        section_slug: "test_section",
+        is_liveview: true,
+        resource_attempt: %{attempt_guid: "test-attempt-456"}
+      }
+
+      rendered_html = Content.render(context, video_content, Content.Html)
+      rendered_html_string = Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
+
+      # Should use element ID instead of src when available
+      assert rendered_html_string =~ ~r/data-live-react-class="Components\.VideoPlayer"/
+      assert rendered_html_string =~ ~r/id="video-test-attempt-456-video-element-789"/
     end
   end
 end
