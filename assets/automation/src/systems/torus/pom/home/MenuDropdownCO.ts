@@ -1,3 +1,4 @@
+import { Waiter } from '@core/wait/Waiter';
 import { Locator, Page } from '@playwright/test';
 
 export class MenuDropdownCO {
@@ -24,7 +25,7 @@ export class MenuDropdownCO {
     this.timezoneSelect = this.workspaceMenu.locator('select[name="timezone[timezone]"]');
     this.researchConsentLink = this.workspaceMenu.getByRole('link', { name: 'Research Consent' });
     this.emailLink = this.workspaceMenu.locator('a>div[role="linked authoring account email"]');
-    this.signOutLink = this.workspaceMenu.getByRole('link', { name: 'Sign out' });
+    this.signOutLink = page.getByRole('link', { name: 'Sign out' });
   }
 
   async open(isAdminScreen = false) {
@@ -63,12 +64,20 @@ export class MenuDropdownCO {
     return this.emailLink.click();
   }
 
-  async signOut() {
-    await this.signOutLink.click();
-  }
-
   async selectTheme(type: string) {
     const themeLocator = this.workspaceMenu.locator(`label[for="${type}"]`);
     await themeLocator.click();
+  }
+
+  async signOut() {
+    try {
+      await Waiter.waitFor(this.workspaceMenu, 'attached');
+      await this.workspaceMenu.locator(this.signOutLink).click();
+    } catch {
+      await this.signOutLink.click();
+      console.log(
+        `'${this.signOutLink}' menu not found. Try with ${this.workspaceMenu.locator(this.signOutLink)}`,
+      );
+    }
   }
 }
