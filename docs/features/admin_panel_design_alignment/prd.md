@@ -4,7 +4,7 @@
 
 Feature Name: Admin Panel Design Alignment
 Summary: Align the Torus admin workspace visuals and navigation with the modern authoring interface so admins experience consistent navigation patterns, theming, and component behavior. The refresh ensures the admin workspace nav highlights the active context and centralizes breadcrumbs back to the dashboard.
-Links: None yet; pending linking to product/tracking ticket (see Section 14).
+Links: Product ticket MER-4687.
 
 ## 2. Background & Problem Statement
 
@@ -126,17 +126,14 @@ Assumptions:
 - Existing design mocks (images provided) represent final approved visual direction for both light and dark themes.
 - All admin experiences are built with Phoenix LiveView using the workspace layout inheritance, enabling component reuse.
 - Admin dashboard route remains `/admin` and is accessible for all admin-role users.
+- LiveDashboard and any other admin-support tools outside `/admin/**` display the Admin workspace nav and highlight it as active so admins can return to `/admin`.
 
-Open Questions:
-
-- Confirm tracking ticket ID or epic link for documentation purposes (needed for Section 1 links).
-- Are there any admin routes outside `/admin/**` that must also show the active nav state (e.g., background job dashboards)?
-- Do we require copy updates for breadcrumb labels, or can we reuse existing translation strings?
+Open Questions: _(none; all clarifications resolved)_
 
 ## 15. Timeline & Milestones
 
 - Phase 0 (0.5 week): Audit existing admin views, catalog legacy styling, confirm design tokens; Owner: Admin UI squad.
-- Phase 1 (1.5 weeks): Implement workspace nav updates, feature flag, and shared layout adoption on dashboard + high-traffic views; Owner: Admin UI squad.
+- Phase 1 (1.5 weeks): Implement workspace nav updates and shared layout adoption on dashboard + high-traffic views; Owner: Admin UI squad.
 - Phase 2 (1 week): Extend styling and breadcrumbs to remaining admin views, remove legacy CSS, dark-mode validation; Owner: Admin UI squad.
 - Phase 3 (0.5 week): QA, accessibility verification, telemetry validation, staging review; Owner: QA + Product.
   Dependencies: Final design token handoff; coordination with DevOps for asset deploy.
