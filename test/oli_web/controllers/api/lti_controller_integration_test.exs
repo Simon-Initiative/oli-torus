@@ -16,8 +16,8 @@ defmodule OliWeb.Api.LtiControllerIntegrationTest do
 
   setup [:accept_json]
 
-  describe "LTI API Response Structure Integration Tests" do
-    setup [:setup_project, :setup_section]
+  describe "LTI API Response Structure Integration Tests - Authoring" do
+    setup [:setup_project]
 
     test "API response structure matches frontend component expectations for authoring", %{
       conn: conn,
@@ -47,6 +47,10 @@ defmodule OliWeb.Api.LtiControllerIntegrationTest do
       assert Map.has_key?(launch_params, "target_link_uri")
       assert Map.has_key?(launch_params, "login_url")
     end
+  end
+
+  describe "LTI API Response Structure Integration Tests - Delivery" do
+    setup [:setup_project, :setup_section]
 
     test "API response structure matches frontend component expectations for delivery", %{
       conn: conn,
