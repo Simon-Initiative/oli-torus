@@ -6,6 +6,8 @@ import { removeEmpty, valueOr } from 'utils/common';
 
 type Continuation = (success: any, error: any) => void;
 
+type BridgeElement = HTMLElement & { __oliActivityBridgeInitialized?: boolean };
+
 function makeRequest(
   url: string,
   method: string,
@@ -31,7 +33,17 @@ const submissionTransform = (key: string, result: any) => {
 };
 
 export const initActivityBridge = (elementId: string) => {
-  const div = document.getElementById(elementId) as any;
+  const div = document.getElementById(elementId) as BridgeElement | null;
+
+  if (!div) {
+    return;
+  }
+
+  if (div.__oliActivityBridgeInitialized) {
+    return;
+  }
+
+  div.__oliActivityBridgeInitialized = true;
 
   div.addEventListener(
     'saveActivity',

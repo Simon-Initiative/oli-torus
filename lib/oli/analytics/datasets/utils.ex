@@ -68,11 +68,12 @@ defmodule Oli.Analytics.Datasets.Utils do
     |> MapSet.to_list()
   end
 
-  def context_sql(section_ids) do
+  def context_sql(section_ids, include_users? \\ true) do
     section_ids = Enum.join(section_ids, ", ")
 
-    """
-    SELECT jsonb_build_object(
+    users_fragment =
+      if include_users? do
+        """
            'users', (
                 SELECT jsonb_object_agg(subquery.id::text, jsonb_build_object(
                           'email', subquery.email
@@ -84,6 +85,14 @@ defmodule Oli.Analytics.Datasets.Utils do
                       WHERE e.section_id in (#{section_ids})
                 ) AS subquery
            ),
+        """
+      else
+        ""
+      end
+
+    """
+    SELECT jsonb_build_object(
+           #{users_fragment}
            'dataset_name', (SELECT slug FROM projects WHERE id = $1) || '-' || substring(md5(random()::text) from 1 for 10),
            'skill_titles', (
                SELECT jsonb_object_agg(r.resource_id::text, r.title)
