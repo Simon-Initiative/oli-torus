@@ -86,6 +86,7 @@ const LTIExternalTool: React.FC = () => {
               mode="delivery"
               name={ltiToolDetails.name}
               launchParams={ltiToolDetails.launch_params}
+              status={ltiToolDetails.status}
               resourceId={`${context.resourceId}`}
               openInNewTab={model.openInNewTab}
               height={model.height}
@@ -186,6 +187,7 @@ export const ConfigureDeepLinkingModal = ({
               mode="delivery"
               name={ltiToolDetails.name}
               launchParams={ltiToolDetails.launch_params}
+              status={ltiToolDetails.status}
               resourceId={`${resourceId}`}
               onDeepLinkingComplete={() => {
                 // Automatically close the modal and refresh when deep linking completes
