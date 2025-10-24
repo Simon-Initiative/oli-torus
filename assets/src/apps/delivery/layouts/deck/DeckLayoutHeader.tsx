@@ -104,23 +104,31 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
     }
   }, [isPreviewMode]);
 
-  const toggleFullscreen = () => {
+  // Cleanup fullscreen state when component unmounts or fullscreen state changes
+  useEffect(() => {
     const iframe = window.parent.document.getElementById('adaptive_content_iframe');
     const container = window.parent.document.getElementById('adaptive_with_chrome_container');
 
     if (!iframe || !container) return;
 
-    setIsFullscreen(!isFullscreen);
-
-    if (!isFullscreen) {
-      // Enter fullscreen mode - apply CSS class to iframe
+    // Apply or remove fullscreen classes based on current state
+    if (isFullscreen) {
       iframe.classList.add('fullscreen-iframe');
       container.classList.add('fullscreen-container');
     } else {
-      // Exit fullscreen mode - remove CSS class
       iframe.classList.remove('fullscreen-iframe');
       container.classList.remove('fullscreen-container');
     }
+
+    // Cleanup function: ensure fullscreen classes are removed on unmount
+    return () => {
+      iframe.classList.remove('fullscreen-iframe');
+      container.classList.remove('fullscreen-container');
+    };
+  }, [isFullscreen]);
+
+  const toggleFullscreen = () => {
+    setIsFullscreen(!isFullscreen);
   };
 
   return (

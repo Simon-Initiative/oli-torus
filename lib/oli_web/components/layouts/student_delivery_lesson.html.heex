@@ -184,31 +184,32 @@
             />
           </div>
         </div>
-        <% adaptive_view? =
-          assigns[:view] == :adaptive_chromeless or assigns[:view] == :adaptive_with_chrome %>
-        <div
-          :if={@section && (!@page_context.page.graded or adaptive_view?)}
-          class={
-            [
-              "z-[1000]",
-              # Desktop: always visible, Mobile: only visible when "Notes" or "Course Content" are not open
-              if(assigns[:active_sidebar_panel] in [:notes, :outline],
-                do: "hidden sm:block",
-                else: "block sm:block"
-              )
-            ]
-          }
-        >
-          {live_render(@socket, OliWeb.Dialogue.WindowLive,
-            session: %{
-              "section_slug" => @section.slug,
-              "resource_id" => @page_context.page.resource_id,
-              "revision_id" => @page_context.page.id,
-              "is_page" => true
-            },
-            id: "dialogue-window"
-          )}
-        </div>
+        <%= if @section && assigns[:page_context] do %>
+          <% adaptive_view? =
+            assigns[:view] == :adaptive_chromeless or assigns[:view] == :adaptive_with_chrome %>
+          <%= if !@page_context.page.graded or adaptive_view? do %>
+            <div class={
+              [
+                "z-[1001]",
+                # Desktop: always visible, Mobile: only visible when "Notes" or "Course Content" are not open
+                if(assigns[:active_sidebar_panel] in [:notes, :outline],
+                  do: "hidden sm:block",
+                  else: "block sm:block"
+                )
+              ]
+            }>
+              {live_render(@socket, OliWeb.Dialogue.WindowLive,
+                session: %{
+                  "section_slug" => @section.slug,
+                  "resource_id" => @page_context.page.resource_id,
+                  "revision_id" => @page_context.page.id,
+                  "is_page" => true
+                },
+                id: "dialogue-window"
+              )}
+            </div>
+          <% end %>
+        <% end %>
       </div>
     </div>
   </div>
