@@ -1124,8 +1124,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         OliWeb.Endpoint,
         :page_fullscreen,
         assigns.section.slug,
-        assigns.page_context.page.slug,
-        iframe: "true"
+        assigns.page_context.page.slug
       )
 
     assigns = assign(assigns, iframe_url: iframe_url)
@@ -1242,8 +1241,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         OliWeb.Endpoint,
         :page_fullscreen,
         assigns.section.slug,
-        assigns.page_context.page.slug,
-        iframe: "true"
+        assigns.page_context.page.slug
       )
 
     assigns = assign(assigns, iframe_url: iframe_url)
