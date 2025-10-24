@@ -107,6 +107,42 @@ defmodule Oli.Tags do
   end
 
   @doc """
+  Retrieves tags that match the given list of identifiers.
+
+  The returned list preserves the order of the identifiers that were provided.
+  """
+  @spec list_tags_by_ids([integer()]) :: [Tag.t()]
+  def list_tags_by_ids(ids) when is_list(ids) do
+    cleaned_ids =
+      ids
+      |> Enum.flat_map(fn
+        id when is_integer(id) ->
+          [id]
+
+        id when is_binary(id) ->
+          case Integer.parse(id) do
+            {int, ""} -> [int]
+            _ -> []
+          end
+
+        _ ->
+          []
+      end)
+      |> Enum.uniq()
+
+    if cleaned_ids == [] do
+      []
+    else
+      positions = cleaned_ids |> Enum.with_index() |> Map.new()
+
+      Tag
+      |> where([t], t.id in ^cleaned_ids)
+      |> Repo.all()
+      |> Enum.sort_by(&Map.get(positions, &1.id, 0))
+    end
+  end
+
+  @doc """
   Associates a tag with a project.
 
   ## Examples

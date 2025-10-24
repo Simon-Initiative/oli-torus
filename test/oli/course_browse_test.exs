@@ -105,6 +105,21 @@ defmodule Oli.CourseBrowseTest do
       assert "Search Meta Project" in result_titles
     end
 
+    test "filters by status", %{admin: admin} do
+      projects =
+        Course.browse_projects(
+          admin,
+          %Paging{offset: 0, limit: 50},
+          %Sorting{field: :title, direction: :asc},
+          include_deleted: true,
+          filters: %{status: :deleted},
+          text_search: ""
+        )
+
+      assert projects != []
+      assert Enum.all?(projects, &(&1.status == :deleted))
+    end
+
     test "browse_projects_for_export returns all projects without pagination", %{
       author: author,
       admin: admin
