@@ -4,6 +4,7 @@ defmodule OliWeb.CommunityLive.IndexView do
 
   alias Oli.Accounts
   alias Oli.Groups
+  alias OliWeb.Admin.AdminView
   alias OliWeb.Common.{Breadcrumb, Filter, Listing}
   alias OliWeb.CommunityLive.{NewView, TableModel}
   alias OliWeb.Router.Helpers, as: Routes
@@ -31,12 +32,13 @@ defmodule OliWeb.CommunityLive.IndexView do
   end
 
   def breadcrumb() do
-    [
-      Breadcrumb.new(%{
-        full_title: "Communities",
-        link: Routes.live_path(OliWeb.Endpoint, __MODULE__)
-      })
-    ]
+    AdminView.breadcrumb() ++
+      [
+        Breadcrumb.new(%{
+          full_title: "Communities",
+          link: Routes.live_path(OliWeb.Endpoint, __MODULE__)
+        })
+      ]
   end
 
   def mount(

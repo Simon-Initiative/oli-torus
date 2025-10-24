@@ -22,7 +22,7 @@ defmodule OliWeb.Admin.UploadPipelineView do
     {:ok,
      assign(socket,
        title: "XAPI Upload Pipeline",
-       breadcrumb: breadcrumb(),
+       breadcrumbs: set_breadcrumbs(),
        raw_stats: [],
        throughput_per_second: nil,
        batch_size_stats: nil,
@@ -207,8 +207,13 @@ defmodule OliWeb.Admin.UploadPipelineView do
     %{mean: mean, std_dev: std_dev, min: min, max: max}
   end
 
-  defp breadcrumb(),
-    do:
-      OliWeb.Admin.AdminView.breadcrumb() ++
-        [Breadcrumb.new(%{full_title: "XAPI Upload Pipeline", link: ~p"/admin"})]
+  defp set_breadcrumbs() do
+    OliWeb.Admin.AdminView.breadcrumb() ++
+      [
+        Breadcrumb.new(%{
+          full_title: "XAPI Upload Pipeline",
+          link: ~p"/admin/xapi"
+        })
+      ]
+  end
 end
