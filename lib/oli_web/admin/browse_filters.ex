@@ -39,6 +39,9 @@ defmodule OliWeb.Admin.BrowseFilters do
 
   @date_field_default :inserted_at
   @param_prefix "filter_"
+  @allowed_date_fields [:inserted_at]
+  @allowed_visibility [:authors, :selected, :global]
+  @allowed_status [:active, :deleted]
 
   @spec default(Keyword.t()) :: t()
   def default(_opts \\ []), do: %State{}
@@ -81,7 +84,7 @@ defmodule OliWeb.Admin.BrowseFilters do
     date_field =
       params
       |> Map.get(@param_prefix <> "date_field")
-      |> parse_atom(@date_field_default)
+      |> parse_enum(@allowed_date_fields, @date_field_default)
 
     date_from =
       params
@@ -96,7 +99,7 @@ defmodule OliWeb.Admin.BrowseFilters do
     visibility =
       params
       |> Map.get(@param_prefix <> "visibility")
-      |> parse_atom(nil)
+      |> parse_enum(@allowed_visibility, nil)
 
     published =
       params
@@ -106,7 +109,7 @@ defmodule OliWeb.Admin.BrowseFilters do
     status =
       params
       |> Map.get(@param_prefix <> "status")
-      |> parse_atom(nil)
+      |> parse_enum(@allowed_status, nil)
 
     institution_id =
       params
@@ -131,21 +134,25 @@ defmodule OliWeb.Admin.BrowseFilters do
     }
   end
 
-  defp parse_atom(nil, default), do: default
-  defp parse_atom("", default), do: default
+  defp parse_enum(value, allowed, default)
+       when value in [nil, ""] and is_list(allowed),
+       do: default
 
-  defp parse_atom(value, default) when is_binary(value) do
-    value
-    |> String.trim()
-    |> case do
-      "" -> default
-      string -> String.to_existing_atom(string)
-    end
-  rescue
-    ArgumentError -> default
+  defp parse_enum(value, allowed, default) when is_atom(value) and is_list(allowed) do
+    if value in allowed, do: value, else: default
   end
 
-  defp parse_atom(value, _default) when is_atom(value), do: value
+  defp parse_enum(value, allowed, default) when is_binary(value) and is_list(allowed) do
+    trimmed = String.trim(value)
+
+    if trimmed == "" do
+      default
+    else
+      Enum.find(allowed, fn atom -> Atom.to_string(atom) == trimmed end) || default
+    end
+  end
+
+  defp parse_enum(_value, _allowed, default), do: default
 
   defp parse_date(nil), do: nil
   defp parse_date(""), do: nil
