@@ -92,11 +92,11 @@ Parallel: Phase 2 can run concurrently with Phase 3 once Phase 1 completes, prov
 
 **Goal** Wrap controller-rendered pages and `/authoring/communities/**` flows in the shared workspace shell while preserving community sub-navigation.
 
-- [ ] Adapt ingest/report controllers (invite, brands, manage activities, course ingestion, etc.) to supply required assigns for the shared layout (breadcrumbs, ctx, active_workspace) and restore the legacy course ingestion endpoints referenced by `Routes.ingest_path/3`.
-- [ ] Ensure community LiveViews retain their sub-navigation while inheriting the `Admin` active nav state; adjust templates as needed.
-- [ ] Add controller and integration tests covering the shared layout assigns and navigation highlighting (e.g., `test/oli_web/controllers/admin_layout_controller_test.exs`).
-- [ ] Validate LiveDashboard or other embedded tools within the workspace shell, ensuring the `Admin` menu renders and remains active; implement documented fallback only if the shell cannot wrap them while preserving the menu.
-- [ ] Run `mix test test/oli_web/controllers/admin_layout_controller_test.exs`.
+- [x] Adapt ingest/report controllers (invite, brands, manage activities, course ingestion, etc.) to supply required assigns for the shared layout (breadcrumbs, ctx, active_workspace) and restore the legacy course ingestion endpoints referenced by `Routes.ingest_path/3`.
+- [x] Ensure community LiveViews retain their sub-navigation while inheriting the `Admin` active nav state; adjust templates as needed.
+- [x] Add controller and integration tests covering the shared layout assigns and navigation highlighting (e.g., `test/oli_web/controllers/admin_layout_controller_test.exs`).
+- [x] Validate LiveDashboard or other embedded tools within the workspace shell, ensuring the `Admin` menu renders and remains active; implement documented fallback only if the shell cannot wrap them while preserving the menu.
+- [x] Run `mix test test/oli_web/controllers/admin_layout_controller_test.exs`.
 
 **Definition of Done**
 
