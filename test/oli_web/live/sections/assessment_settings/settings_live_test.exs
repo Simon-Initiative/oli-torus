@@ -10,6 +10,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
   alias Lti_1p3.Roles.ContextRoles
   alias Oli.Resources.ResourceType
   alias Oli.Publishing.DeliveryResolver
+  alias OliWeb.Common.Utils
 
   defp set_student_exception(section, resource, student, params \\ %{}) do
     insert(
@@ -1784,8 +1785,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       |> render_change(%{"assessment_id" => page_1.resource.id})
 
       assert [se_1, se_2] = table_as_list_of_maps(view, :student_exceptions)
-      assert se_1.student =~ student_1.name
-      assert se_2.student =~ student_2.name
+      assert se_1.student =~ Utils.name(student_1)
+      assert se_2.student =~ Utils.name(student_2)
       refute render(view) =~ "None exist"
 
       # select assessment 2
@@ -1794,7 +1795,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       |> render_change(%{"assessment_id" => page_2.resource.id})
 
       assert [se_1] = table_as_list_of_maps(view, :student_exceptions)
-      assert se_1.student =~ student_1.name
+      assert se_1.student =~ Utils.name(student_1)
       refute render(view) =~ "None exist"
 
       # select assessment 3
@@ -1843,7 +1844,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       [student_exception] = table_as_list_of_maps(view, :student_exceptions)
 
-      assert student_exception.student =~ student_1.name
+      assert student_exception.student =~ Utils.name(student_1)
 
       # check the student exception
       view
@@ -1976,7 +1977,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       |> render_submit(%{"student_exception" => %{"student_id" => student_1.id}})
 
       assert [se_1] = table_as_list_of_maps(view, :student_exceptions)
-      assert se_1.student =~ student_1.name
+      assert se_1.student =~ Utils.name(student_1)
       refute render(view) =~ "None exist"
     end
 
@@ -2165,7 +2166,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       |> with_target("#student_available_date_modal")
       |> render_click("open", %{})
 
-      assert has_element?(view, "h5", "Available date for #{student_1.name}")
+      assert has_element?(view, "h5", "Available date for #{Utils.name(student_1)}")
 
       assert has_element?(
                view,
@@ -2220,7 +2221,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       |> with_target("#student_available_date_modal")
       |> render_click("open", %{})
 
-      assert has_element?(view, "h5", "Available date for #{student_1.name}")
+      assert has_element?(view, "h5", "Available date for #{Utils.name(student_1)}")
 
       assert has_element?(
                view,
@@ -2273,7 +2274,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       |> with_target("#student_available_date_modal")
       |> render_click("open", %{})
 
-      assert has_element?(view, "h5", "Available date for #{student_1.name}")
+      assert has_element?(view, "h5", "Available date for #{Utils.name(student_1)}")
 
       assert has_element?(
                view,
@@ -2352,7 +2353,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       |> with_target("#student_due_date_modal")
       |> render_click("open", %{})
 
-      assert has_element?(view, "h5", "Due date for #{student_1.name}")
+      assert has_element?(view, "h5", "Due date for #{Utils.name(student_1)}")
 
       assert has_element?(
                view,
@@ -2407,7 +2408,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       |> with_target("#student_due_date_modal")
       |> render_click("open", %{})
 
-      assert has_element?(view, "h5", "Due date for #{student_1.name}")
+      assert has_element?(view, "h5", "Due date for #{Utils.name(student_1)}")
 
       assert has_element?(
                view,
@@ -2460,7 +2461,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       |> with_target("#student_due_date_modal")
       |> render_click("open", %{})
 
-      assert has_element?(view, "h5", "Due date for #{student_1.name}")
+      assert has_element?(view, "h5", "Due date for #{Utils.name(student_1)}")
 
       assert has_element?(
                view,
@@ -2504,25 +2505,25 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assert has_element?(
                view,
                "table.instructor_dashboard_table > tbody > tr:nth-child(1) > td > div",
-               "#{student_1.name}"
+               "#{Utils.name(student_1)}"
              )
 
       assert has_element?(
                view,
                "table.instructor_dashboard_table > tbody > tr:nth-child(2) > td > div",
-               "#{student_2.name}"
+               "#{Utils.name(student_2)}"
              )
 
       refute has_element?(
                view,
                "table.instructor_dashboard_table > tbody > tr > td > div",
-               "#{student_3.name}"
+               "#{Utils.name(student_3)}"
              )
 
       refute has_element?(
                view,
                "table.instructor_dashboard_table > tbody > tr > td > div",
-               "#{student_4.name}"
+               "#{Utils.name(student_4)}"
              )
 
       # click on the next page button
@@ -2534,25 +2535,25 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assert has_element?(
                view,
                "table.instructor_dashboard_table > tbody > tr:nth-child(1) > td > div",
-               "#{student_3.name}"
+               "#{Utils.name(student_3)}"
              )
 
       assert has_element?(
                view,
                "table.instructor_dashboard_table > tbody > tr:nth-child(2) > td > div",
-               "#{student_4.name}"
+               "#{Utils.name(student_4)}"
              )
 
       refute has_element?(
                view,
                "table.instructor_dashboard_table > tbody > tr > td > div",
-               "#{student_1.name}"
+               "#{Utils.name(student_1)}"
              )
 
       refute has_element?(
                view,
                "table.instructor_dashboard_table > tbody > tr > td > div",
-               "#{student_2.name}"
+               "#{Utils.name(student_2)}"
              )
     end
 
@@ -2580,25 +2581,25 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assert has_element?(
                view,
                "table.instructor_dashboard_table > tbody > tr:nth-child(1) > td > div",
-               "#{student_1.name}"
+               "#{Utils.name(student_1)}"
              )
 
       assert has_element?(
                view,
                "table.instructor_dashboard_table > tbody > tr:nth-child(2) > td > div",
-               "#{student_2.name}"
+               "#{Utils.name(student_2)}"
              )
 
       assert has_element?(
                view,
                "table.instructor_dashboard_table > tbody > tr:nth-child(3) > td > div",
-               "#{student_3.name}"
+               "#{Utils.name(student_3)}"
              )
 
       assert has_element?(
                view,
                "table.instructor_dashboard_table > tbody > tr:nth-child(4) > td > div",
-               "#{student_4.name}"
+               "#{Utils.name(student_4)}"
              )
 
       # sort by student column in descending order
@@ -2610,25 +2611,25 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assert has_element?(
                view,
                "table.instructor_dashboard_table > tbody > tr:nth-child(1) > td > div",
-               "#{student_4.name}"
+               "#{Utils.name(student_4)}"
              )
 
       assert has_element?(
                view,
                "table.instructor_dashboard_table > tbody > tr:nth-child(2) > td > div",
-               "#{student_3.name}"
+               "#{Utils.name(student_3)}"
              )
 
       assert has_element?(
                view,
                "table.instructor_dashboard_table > tbody > tr:nth-child(3) > td > div",
-               "#{student_2.name}"
+               "#{Utils.name(student_2)}"
              )
 
       assert has_element?(
                view,
                "table.instructor_dashboard_table > tbody > tr:nth-child(4) > td > div",
-               "#{student_1.name}"
+               "#{Utils.name(student_1)}"
              )
     end
 
@@ -2727,7 +2728,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       # and only exceptions for that first assessment are shown
       [se] = table_as_list_of_maps(view, :student_exceptions)
-      assert se.student =~ student_1.name
+      assert se.student =~ Utils.name(student_1)
     end
   end
 end
