@@ -181,6 +181,112 @@ class LambdaFunctionTests(TestCase):
         ])
         insert_mock.assert_not_called()
 
+    def test_lambda_handler_sends_failed_prepare_to_dlq(self):
+        body = json.dumps({"bucket": "bucket", "key": "events/file.jsonl"})
+        event = {
+            "Records": [
+                {
+                    "messageId": "msg-1",
+                    "body": body,
+                }
+            ]
+        }
+
+        with mock.patch.object(lambda_function, "_FAILURE_DLQ_URL", "https://example.com/dlq"):
+            with mock.patch.object(lambda_function, "_sqs_client") as sqs_mock:
+                with mock.patch.object(
+                    lambda_function,
+                    "extract_s3_references",
+                    side_effect=ValueError("bad payload"),
+                ):
+                    with mock.patch.dict(
+                        os.environ,
+                        {
+                            "CLICKHOUSE_DATABASE": "db",
+                            "CLICKHOUSE_TABLE": "tbl",
+                        },
+                        clear=False,
+                    ):
+                        result = lambda_function.lambda_handler(event, SimpleNamespace())
+
+        self.assertEqual(result["batchItemFailures"], [{"itemIdentifier": "msg-1"}])
+        sqs_mock.send_message.assert_called_once()
+        call = sqs_mock.send_message.call_args.kwargs
+        self.assertEqual(call["QueueUrl"], "https://example.com/dlq")
+        self.assertEqual(json.loads(call["MessageBody"]), json.loads(body))
+        self.assertIn("FailureReason", call["MessageAttributes"])
+
+    def test_lambda_handler_sends_clickhouse_failures_to_dlq(self):
+        body = json.dumps({"bucket": "bucket", "key": "events/file.jsonl"})
+        event = {
+            "Records": [
+                {"messageId": "msg-1", "body": body},
+                {"messageId": "msg-2", "body": body},
+            ]
+        }
+
+        mock_table = SimpleNamespace(num_rows=3)
+        combined_table = SimpleNamespace(num_rows=6)
+
+        with mock.patch.object(lambda_function, "_FAILURE_DLQ_URL", "https://example.com/dlq"):
+            with mock.patch.object(lambda_function, "_sqs_client") as sqs_mock:
+                with mock.patch.object(lambda_function, "build_arrow_table_from_s3_objects", return_value=mock_table):
+                    with mock.patch.object(lambda_function, "concatenate_tables", return_value=combined_table):
+                        with mock.patch.object(lambda_function, "table_to_parquet", return_value=b"data"):
+                            with mock.patch.object(
+                                lambda_function,
+                                "insert_into_clickhouse",
+                                side_effect=RuntimeError("ClickHouse down"),
+                            ):
+                                with mock.patch.dict(
+                                    os.environ,
+                                    {
+                                        "CLICKHOUSE_DATABASE": "db",
+                                        "CLICKHOUSE_TABLE": "tbl",
+                                    },
+                                    clear=False,
+                                ):
+                                    result = lambda_function.lambda_handler(event, SimpleNamespace())
+
+        self.assertEqual(
+            result["batchItemFailures"],
+            [
+                {"itemIdentifier": "msg-1"},
+                {"itemIdentifier": "msg-2"},
+            ],
+        )
+        self.assertEqual(sqs_mock.send_message.call_count, 2)
+        sent_ids = {
+            call.kwargs["MessageAttributes"]["OriginalMessageId"]["StringValue"]
+            for call in sqs_mock.send_message.mock_calls
+        }
+        self.assertEqual(sent_ids, {"msg-1", "msg-2"})
+
+    def test_lambda_handler_skips_s3_test_event(self):
+        body = json.dumps(
+            {
+                "Service": "Amazon S3",
+                "Event": "s3:TestEvent",
+                "Time": "2025-10-24T18:15:57.331Z",
+                "Bucket": "torus-xapi-prod",
+            }
+        )
+        event = {
+            "Records": [
+                {
+                    "messageId": "msg-test",
+                    "body": body,
+                }
+            ]
+        }
+
+        with mock.patch.object(lambda_function, "extract_s3_references") as extract_mock:
+            result = lambda_function.lambda_handler(event, SimpleNamespace())
+
+        self.assertEqual(result["batchItemFailures"], [])
+        extract_mock.assert_not_called()
+        self.mock_s3.get_object.assert_not_called()
+
     def test_diagnostics_request(self):
         event = {"diagnostics": True}
 

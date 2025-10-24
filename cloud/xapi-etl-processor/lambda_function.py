@@ -23,6 +23,7 @@ CLICKHOUSE_SETTINGS        Comma separated ClickHouse setting overrides
 PARQUET_COMPRESSION        Compression codec (defaults to snappy)
 CLICKHOUSE_TIMEOUT_SECONDS Request timeout for HTTP insert (default 30)
 MAX_S3_OBJECT_BYTES        Soft cap per S3 object (bytes); raises if exceeded
+FAILURE_DLQ_URL            Optional SQS queue URL for permanently failed messages
 
 The handler returns the partial batch response structure required for SQS event
 source mappings with the "ReportBatchItemFailures" feature.
@@ -110,6 +111,10 @@ s3_client = boto3.client(
 )
 
 
+_FAILURE_DLQ_URL = os.getenv("FAILURE_DLQ_URL")
+_sqs_client = boto3.client("sqs") if _FAILURE_DLQ_URL else None
+
+
 # Column order for the unified raw_events table as defined in
 # priv/clickhouse/migrations/20250909000001_create_raw_events.sql. Columns with
 # ClickHouse defaults (e.g., inserted_at, event_version) are intentionally
@@ -183,14 +188,23 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     tables_to_insert: List[pa.Table] = []
     message_ids_for_insert: List[str] = []
     empty_message_ids: List[str] = []
-    failures: List[str] = []
+    failed_message_ids: List[str] = []
     total_rows = 0
     total_objects = 0
     dry_run_enabled = env_flag("DRY_RUN", default=False)
 
     for record in records:
         message_id = record.get("messageId", "<unknown>")
+        logger.info("Processing message %s", message_id)
         try:
+            if is_s3_test_event(record):
+                logger.info(
+                    "Message %s is an S3 test event; acknowledging without processing",
+                    message_id,
+                )
+                empty_message_ids.append(message_id)
+                continue
+
             s3_refs = list(extract_s3_references(record))
             if not s3_refs:
                 raise ValueError("SQS record did not contain any S3 references")
@@ -224,11 +238,19 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             )
         except Exception as exc:  # pylint: disable=broad-except
             logger.exception("Failed to prepare SQS message %s: %s", message_id, exc)
+            logger.error(
+                "Message %s moved to DLQ (if configured); inspect the DLQ for full payload and reason details",
+                message_id,
+            )
+            forward_failure_to_dlq(record, reason=str(exc))
             # Simple debug using repr to produce a safe string representation
             logger.debug("SQS record for message %s: %r", message_id, record)
             logger.debug("Full Lambda event: %r", event)
 
-            failures.append(message_id)
+            failed_message_ids.append(message_id)
+            continue
+
+        logger.info("Message %s prepared successfully", message_id)
 
     if tables_to_insert:
         logger.info("Attempting ClickHouse insert for %d prepared messages", len(message_ids_for_insert))
@@ -255,9 +277,11 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 )
         except Exception as exc:  # pylint: disable=broad-except
             logger.exception("ClickHouse insert failed: %s", exc)
-            failures.extend(message_ids_for_insert)
+            for message_id in message_ids_for_insert:
+                forward_failure_to_dlq(find_record_by_id(records, message_id), reason=str(exc))
+            failed_message_ids.extend(message_ids_for_insert)
 
-    unique_failures = sorted(set(failures))
+    unique_failures = sorted(set(failed_message_ids))
     summary = {
         "processed_messages": len(message_ids_for_insert),
         "empty_messages": len(empty_message_ids),
@@ -272,6 +296,22 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         logger.info("Batch completed successfully: %s", json.dumps(summary))
 
     return {"batchItemFailures": [{"itemIdentifier": item_id} for item_id in unique_failures]}
+
+
+def is_s3_test_event(record: Dict[str, Any]) -> bool:
+    """Return True when the record is an S3 TestEvent notification."""
+    body = record.get("body")
+    if not body:
+        return False
+    try:
+        payload = json.loads(body)
+    except json.JSONDecodeError:
+        return False
+    return (
+        isinstance(payload, dict)
+        and payload.get("Service") == "Amazon S3"
+        and payload.get("Event") == "s3:TestEvent"
+    )
 
 
 def extract_s3_references(record: Dict[str, Any]) -> Iterable[S3ObjectRef]:
@@ -327,6 +367,42 @@ def build_arrow_table_from_s3_objects(objects: Iterable[S3ObjectRef]) -> Optiona
     if not tables:
         return None
     return concatenate_tables(tables)
+
+
+def forward_failure_to_dlq(record: Optional[Dict[str, Any]], *, reason: str) -> None:
+    """Send irrecoverable messages to an optional DLQ for later triage."""
+    if not _sqs_client or not _FAILURE_DLQ_URL or not record:
+        return
+
+    message_body = record.get("body") if isinstance(record, dict) else None
+    message_id = record.get("messageId") if isinstance(record, dict) else None
+    attributes = {
+        "OriginalMessageId": {
+            "DataType": "String",
+            "StringValue": message_id or "",
+        },
+        "FailureReason": {
+            "DataType": "String",
+            "StringValue": reason[:256],
+        },
+    }
+    try:
+        _sqs_client.send_message(
+            QueueUrl=_FAILURE_DLQ_URL,
+            MessageBody=message_body or "",
+            MessageAttributes=attributes,
+        )
+        logger.info("Forwarded message %s to DLQ", message_id or "<unknown>")
+    except Exception as exc:  # pylint: disable=broad-except
+        logger.error("Failed to send message %s to DLQ: %s", message_id or "<unknown>", exc)
+
+
+def find_record_by_id(records: Iterable[Dict[str, Any]], message_id: str) -> Optional[Dict[str, Any]]:
+    """Locate a record by messageId for DLQ forwarding on batch insert failures."""
+    for record in records:
+        if record.get("messageId") == message_id:
+            return record
+    return None
 
 
 def load_json_lines_as_table(ref: S3ObjectRef) -> Optional[pa.Table]:
