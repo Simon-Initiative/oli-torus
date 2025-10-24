@@ -5,6 +5,7 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
 
   alias Oli.GenAI
   alias Oli.GenAI.Completions.{ServiceConfig}
+  alias OliWeb.Admin.AdminView
   alias OliWeb.Common.Breadcrumb
 
   @form_control_classes "block w-full p-2.5
@@ -303,12 +304,14 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
   end
 
   def breadcrumb(),
-    do: [
-      Breadcrumb.new(%{
-        link: ~p"/admin/gen_ai/service_configs",
-        full_title: "Completions Service Configurations"
-      })
-    ]
+    do:
+      AdminView.breadcrumb() ++
+        [
+          Breadcrumb.new(%{
+            link: ~p"/admin/gen_ai/service_configs",
+            full_title: "Completions Service Configurations"
+          })
+        ]
 
   # Returns all registered models sorted by ID, which provides a stable sorting order
   def all do

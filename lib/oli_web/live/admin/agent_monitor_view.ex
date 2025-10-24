@@ -3,8 +3,9 @@ defmodule OliWeb.Admin.AgentMonitorView do
 
   alias Oli.GenAI.Agent
   alias Oli.GenAI.Agent.{PubSub, DemoPolicy}
-  alias OliWeb.Common.Properties.Groups
+  alias OliWeb.Admin.AdminView
   alias OliWeb.Common.Breadcrumb
+  alias OliWeb.Common.Properties.Groups
 
   on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
   on_mount OliWeb.LiveSessionPlugs.SetCtx
@@ -288,10 +289,10 @@ defmodule OliWeb.Admin.AgentMonitorView do
   defp format_status(status), do: inspect(status)
 
   defp breadcrumb do
-    [
-      Breadcrumb.new(%{link: ~p"/admin", full_title: "Admin"}),
-      Breadcrumb.new(%{full_title: "Agent Monitor"})
-    ]
+    AdminView.breadcrumb() ++
+      [
+        Breadcrumb.new(%{full_title: "Agent Monitor", link: ~p"/admin/agent_monitor"})
+      ]
   end
 
   defp format_step_message(step) do

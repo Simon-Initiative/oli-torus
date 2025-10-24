@@ -203,5 +203,5 @@ defmodule OliWeb.Admin.VrUserAgentsView do
   defp breadcrumb(),
     do:
       OliWeb.Admin.AdminView.breadcrumb() ++
-        [Breadcrumb.new(%{full_title: "VR User Agents", link: ~p"/admin"})]
+        [Breadcrumb.new(%{full_title: "VR User Agents", link: ~p"/admin/vr_user_agents"})]
 end

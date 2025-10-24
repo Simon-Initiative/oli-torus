@@ -1354,6 +1354,40 @@ defmodule OliWeb.Icons do
   attr :class, :string, default: "w-[24px] h-[24px]"
   attr :stroke_class, :string, default: "stroke-[#757682] dark:stroke-[#BAB8BF]"
 
+  def admin_wrench(%{is_active: false} = assigns) do
+    ~H"""
+    <svg class={@class} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M7.0001 9.99985H10.0001V6.99985L6.5001 3.49985C7.61973 2.96513 8.8776 2.79066 10.1005 3.00048C11.3234 3.21029 12.4512 3.79407 13.3285 4.67143C14.2059 5.54878 14.7897 6.67656 14.9995 7.89946C15.2093 9.12235 15.0348 10.3802 14.5001 11.4999L20.5001 17.4999C20.8979 17.8977 21.1214 18.4372 21.1214 18.9999C21.1214 19.5625 20.8979 20.102 20.5001 20.4999C20.1023 20.8977 19.5627 21.1212 19.0001 21.1212C18.4375 21.1212 17.8979 20.8977 17.5001 20.4999L11.5001 14.4999C10.3805 15.0346 9.1226 15.209 7.8997 14.9992C6.6768 14.7894 5.54903 14.2056 4.67167 13.3283C3.79432 12.4509 3.21054 11.3232 3.00072 10.1003C2.7909 8.87735 2.96537 7.61948 3.5001 6.49985L7.0001 9.99985Z"
+        stroke="currentColor"
+        class={@stroke_class}
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </svg>
+    """
+  end
+
+  def admin_wrench(%{is_active: true} = assigns) do
+    ~H"""
+    <svg class={@class} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M7.0001 9.99985H10.0001V6.99985L6.5001 3.49985C7.61973 2.96513 8.8776 2.79066 10.1005 3.00048C11.3234 3.21029 12.4512 3.79407 13.3285 4.67143C14.2059 5.54878 14.7897 6.67656 14.9995 7.89946C15.2093 9.12235 15.0348 10.3802 14.5001 11.4999L20.5001 17.4999C20.8979 17.8977 21.1214 18.4372 21.1214 18.9999C21.1214 19.5625 20.8979 20.102 20.5001 20.4999C20.1023 20.8977 19.5627 21.1212 19.0001 21.1212C18.4375 21.1212 17.8979 20.8977 17.5001 20.4999L11.5001 14.4999C10.3805 15.0346 9.1226 15.209 7.8997 14.9992C6.6768 14.7894 5.54903 14.2056 4.67167 13.3283C3.79432 12.4509 3.21054 11.3232 3.00072 10.1003C2.7909 8.87735 2.96537 7.61948 3.5001 6.49985L7.0001 9.99985Z"
+        stroke="currentColor"
+        class="stroke-[#353740] dark:stroke-white"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </svg>
+    """
+  end
+
+  attr :is_active, :boolean, default: false
+  attr :class, :string, default: "w-[24px] h-[24px]"
+  attr :stroke_class, :string, default: "stroke-[#757682] dark:stroke-[#BAB8BF]"
+
   def writing_pencil(%{is_active: false} = assigns) do
     ~H"""
     <svg class={@class} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">

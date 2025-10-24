@@ -14,7 +14,7 @@ defmodule OliWeb.Admin.AdminView do
     {:ok,
      assign(socket,
        author: author,
-       breadcrumbs: breadcrumb()
+       breadcrumbs: nil
      )}
   end
 

@@ -204,11 +204,11 @@ defmodule OliWeb.Workspaces.Utils do
 
   @urls_without_padding ~w[/workspaces/instructor /workspaces/course_author /workspaces/student]
 
-  def maybe_add_padding(nil), do: ""
+  def maybe_add_padding(nil), do: "container mx-auto p-8"
 
   def maybe_add_padding(uri) do
     case URI.parse(uri).path do
-      url when url in @urls_without_padding -> ""
+      path when path in @urls_without_padding -> ""
       _ -> "container mx-auto p-8"
     end
   end
@@ -247,6 +247,10 @@ defmodule OliWeb.Workspaces.Utils do
       end
 
     route
+  end
+
+  def hierarchy(:admin) do
+    []
   end
 
   def hierarchy(:course_author) do

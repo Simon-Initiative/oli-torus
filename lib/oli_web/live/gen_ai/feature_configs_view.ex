@@ -4,8 +4,9 @@ defmodule OliWeb.GenAI.FeatureConfigsView do
   require Logger
 
   alias Oli.GenAI
-  alias OliWeb.Common.Breadcrumb
   alias Oli.GenAI.FeatureConfig
+  alias OliWeb.Admin.AdminView
+  alias OliWeb.Common.Breadcrumb
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections
 
@@ -469,12 +470,14 @@ defmodule OliWeb.GenAI.FeatureConfigsView do
   end
 
   def breadcrumb(),
-    do: [
-      Breadcrumb.new(%{
-        link: ~p"/admin/gen_ai/feature_configs",
-        full_title: "GenAI Feature Configurations"
-      })
-    ]
+    do:
+      AdminView.breadcrumb() ++
+        [
+          Breadcrumb.new(%{
+            link: ~p"/admin/gen_ai/feature_configs",
+            full_title: "GenAI Feature Configurations"
+          })
+        ]
 
   def all(show_defaults_only?) do
     GenAI.feature_configs()

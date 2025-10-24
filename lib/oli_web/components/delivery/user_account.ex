@@ -117,6 +117,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     """
   end
 
+  defp target_signout_path(:admin), do: ~p"/admin"
   defp target_signout_path(:course_author), do: ~p"/workspaces/course_author"
   defp target_signout_path(:instructor), do: ~p"/workspaces/instructor"
   defp target_signout_path(:student), do: ~p"/workspaces/student"

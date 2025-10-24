@@ -78,7 +78,7 @@
       <%= if assigns[:is_advanced_authoring] && assigns[:breadcrumbs] do %>
         <Components.Delivery.Layouts.breadcrumb_trail
           breadcrumbs={assigns[:breadcrumbs]}
-          socket={@socket}
+          socket={assigns[:socket]}
         />
       <% end %>
     </div>
@@ -87,7 +87,7 @@
         <Components.Delivery.Layouts.breadcrumb_trail
           :if={assigns[:breadcrumbs] && !assigns[:is_advanced_authoring]}
           breadcrumbs={assigns[:breadcrumbs]}
-          socket={@socket}
+          socket={assigns[:socket]}
         />
       </div>
 

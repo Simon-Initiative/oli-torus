@@ -3,6 +3,7 @@ defmodule OliWeb.PublisherLive.IndexView do
   use OliWeb.Common.SortableTable.TableHandlers
 
   alias Oli.Inventories
+  alias OliWeb.Admin.AdminView
   alias OliWeb.Common.{Breadcrumb, Filter, Listing}
   alias OliWeb.PublisherLive.{NewView, TableModel}
   alias OliWeb.Router.Helpers, as: Routes
@@ -26,12 +27,13 @@ defmodule OliWeb.PublisherLive.IndexView do
   end
 
   def breadcrumb() do
-    [
-      Breadcrumb.new(%{
-        full_title: "Publishers",
-        link: Routes.live_path(OliWeb.Endpoint, __MODULE__)
-      })
-    ]
+    AdminView.breadcrumb() ++
+      [
+        Breadcrumb.new(%{
+          full_title: "Publishers",
+          link: Routes.live_path(OliWeb.Endpoint, __MODULE__)
+        })
+      ]
   end
 
   def mount(_, _session, socket) do

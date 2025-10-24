@@ -7,7 +7,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.DatasetsLive do
   alias Oli.Analytics.Datasets.{BrowseJobOptions, DatasetJob}
   alias Oli.Analytics.Datasets
   alias Oli.Repo.{Paging, Sorting}
-  alias OliWeb.Common.{PagedTable, TextSearch}
+  alias OliWeb.Admin.AdminView
+  alias OliWeb.Common.{Breadcrumb, PagedTable, TextSearch}
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Workspaces.CourseAuthor.Datasets.Common
@@ -71,7 +72,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.DatasetsLive do
        active_rows: jobs,
        query: "",
        title: "Datasets",
-       limit: @limit
+       limit: @limit,
+       breadcrumbs: admin_breadcrumbs()
      )}
   end
 
@@ -100,6 +102,16 @@ defmodule OliWeb.Workspaces.CourseAuthor.DatasetsLive do
        total_count: total_count,
        options: options
      )}
+  end
+
+  defp admin_breadcrumbs() do
+    AdminView.breadcrumb() ++
+      [
+        Breadcrumb.new(%{
+          full_title: "Datasets",
+          link: ~p"/admin/datasets"
+        })
+      ]
   end
 
   @impl Phoenix.LiveView

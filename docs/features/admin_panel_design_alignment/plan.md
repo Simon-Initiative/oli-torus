@@ -79,15 +79,14 @@ Parallel: Phase 2 can run concurrently with Phase 3 once Phase 1 completes, prov
 ## Phase 3: Legacy Controller & Community Route Integration
 **Goal** Wrap controller-rendered pages and `/authoring/communities/**` flows in the shared workspace shell while preserving community sub-navigation.
 
-**Tasks**
-- [ ] Adapt ingest/report controllers to supply required assigns for the shared layout (breadcrumbs, ctx, active_workspace).
+- [ ] Adapt ingest/report controllers (invite, brands, manage activities, course ingestion, etc.) to supply required assigns for the shared layout (breadcrumbs, ctx, active_workspace) and restore the legacy course ingestion endpoints referenced by `Routes.ingest_path/3`.
 - [ ] Ensure community LiveViews retain their sub-navigation while inheriting the `Admin` active nav state; adjust templates as needed.
 - [ ] Add controller and integration tests covering the shared layout assigns and navigation highlighting (e.g., `test/oli_web/controllers/admin_layout_controller_test.exs`).
 - [ ] Validate LiveDashboard or other embedded tools within the workspace shell, ensuring the `Admin` menu renders and remains active; implement documented fallback only if the shell cannot wrap them while preserving the menu.
 - [ ] Run `mix test test/oli_web/controllers/admin_layout_controller_test.exs`.
 
 **Definition of Done**
-- Controllers and community routes render within the shared workspace layout without missing assigns or crashes.
+- Admin controllers and community routes render within the shared workspace layout without missing assigns or crashes, and admin views no longer rely on `{OliWeb.LayoutView, :workspace}`; legacy layout templates are removed once unused.
 - Admin nav remains active across community routes and LiveDashboard with automated tests proving coverage.
 - Any non-conforming routes have approved remediation or documented rationale.
 

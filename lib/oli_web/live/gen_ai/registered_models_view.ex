@@ -6,6 +6,7 @@ defmodule OliWeb.GenAI.RegisteredModelsView do
   alias Oli.GenAI.Completions
   alias Oli.GenAI
   alias Oli.GenAI.Completions.{RegisteredModel, Message}
+  alias OliWeb.Admin.AdminView
   alias OliWeb.Common.Breadcrumb
 
   @form_control_classes "block w-full p-2.5
@@ -355,12 +356,14 @@ defmodule OliWeb.GenAI.RegisteredModelsView do
   end
 
   def breadcrumb(),
-    do: [
-      Breadcrumb.new(%{
-        link: ~p"/admin/gen_ai/registered_models",
-        full_title: "Registered LLM Models"
-      })
-    ]
+    do:
+      AdminView.breadcrumb() ++
+        [
+          Breadcrumb.new(%{
+            link: ~p"/admin/gen_ai/registered_models",
+            full_title: "Registered LLM Models"
+          })
+        ]
 
   # Returns all registered models sorted by ID, which provides a stable sorting order
   def all do

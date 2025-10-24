@@ -32,7 +32,7 @@ Modern workspace experiences rely on `lib/oli_web/components/layouts/workspace.h
 
 ### 4.1 Component Roles & Interactions
 
-Create an `:admin_workspace` live_session that wraps all admin LiveViews and ensures `root_layout: {OliWeb.LayoutView, :delivery}` and `layout: {OliWeb.Layouts, :workspace}`. Apply the same live_session (or companion plug) to `/authoring/communities/**` routes so they inherit the workspace shell while retaining their existing sub-navigation modules. Extend `OliWeb.Components.Delivery.Layouts.workspace_sidebar_nav/1` to render an `Admin` nav entry for admin-role users, mark it active when URIs match admin or community prefixes, and handle clicks via LiveView events (`push_navigate(~p"/admin")`). Update `OliWeb.LiveSessionPlugs.AssignActiveMenu` to detect modules under `OliWeb.Admin` and community namespaces, deriving `active_workspace: :admin` and stable `active_view` atoms without altering community-specific nav. Adjust `OliWeb.LiveSessionPlugs.SetSidebar` so workspace extraction recognizes `/admin/**` and `/authoring/communities/**`, preventing redundant LiveView reconnects after sidebar toggles. Maintain existing breadcrumb lists where they exist; when absent, inject a single crumb for `/admin`.
+Create an `:admin_workspace` live_session that wraps all admin LiveViews and ensures `root_layout: {OliWeb.LayoutView, :delivery}` and `layout: {OliWeb.Layouts, :workspace}`. Apply the same live_session (or companion plug) to `/authoring/communities/**` routes so they inherit the workspace shell while retaining their existing sub-navigation modules. Extend `OliWeb.Components.Delivery.Layouts.workspace_sidebar_nav/1` to render an `Admin` nav entry for admin-role users, mark it active when URIs match admin or community prefixes, and handle clicks via LiveView events (`push_navigate(~p"/admin")`). Update `OliWeb.LiveSessionPlugs.AssignActiveMenu` to detect modules under `OliWeb.Admin` and community namespaces, deriving `active_workspace: :admin` and stable `active_view` atoms without altering community-specific nav. Adjust `OliWeb.LiveSessionPlugs.SetSidebar` so workspace extraction recognizes `/admin/**` and `/authoring/communities/**`, preventing redundant LiveView reconnects after sidebar toggles. Maintain existing breadcrumb lists where they exist; when absent, inject a single crumb for `/admin`. A companion router pipeline applies the same root/layout combination plus default workspace assigns (`ctx`, `sidebar_expanded`, `uri`, `footer_enabled?`, etc.) to controller-rendered admin endpoints so they can render inside the shared shell without bespoke boilerplate.
 
 ### 4.2 State & Message Flow
 
@@ -52,7 +52,7 @@ No new OTP processes are introduced. Admin and community LiveViews still operate
 
 ### 5.1 HTTP/JSON APIs
 
-No new external APIs are introduced. Controller actions under ingest/report routes use helpers to set `@breadcrumbs`, `@ctx`, `@active_workspace`, and other expected assigns before calling `render_layout "workspace.html"` so templates render inside the shared shell.
+No new external APIs are introduced. Controller actions under ingest/report routes use helpers to set `@breadcrumbs`, `@ctx`, `@active_workspace`, and other expected assigns before rendering with `{OliWeb.LayoutView, :delivery}` + `{OliWeb.Layouts, :workspace}` so templates render inside the shared shell without relying on the deprecated legacy workspace layout.
 
 ### 5.2 LiveView
 

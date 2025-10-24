@@ -8,12 +8,13 @@ defmodule OliWeb.Components.Delivery.Layouts do
   import OliWeb.Components.Utils
 
   alias Phoenix.LiveView.JS
-  alias OliWeb.Common.SessionContext
+  alias OliWeb.Common.{Breadcrumb, SessionContext}
   alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections.SectionResourceDepot
   alias Oli.Accounts.{User, Author}
   alias Oli.Branding
+  alias OliWeb.Breadcrumb.BreadcrumbTrailWorkspaceLive
   alias OliWeb.Components.Delivery.UserAccount
   alias OliWeb.Icons
   alias Oli.Resources.Collaboration.CollabSpaceConfig
@@ -21,18 +22,89 @@ defmodule OliWeb.Components.Delivery.Layouts do
   alias OliWeb.Workspaces.Utils, as: WorkspaceUtils
 
   attr(:breadcrumbs, :list, default: [])
-  attr(:socket, :map, required: true)
+  attr(:socket, :map, default: nil)
 
-  def breadcrumb_trail(%{breadcrumbs: breadcrumbs} = assigns) when not is_nil(breadcrumbs) do
+  def breadcrumb_trail(%{breadcrumbs: breadcrumbs, socket: %{}} = assigns)
+      when not is_nil(breadcrumbs) do
     ~H"""
     <nav class="breadcrumb-bar flex flex-row align-items-center border-gray-300 dark:border-neutral-800">
-      {live_render(@socket, OliWeb.Breadcrumb.BreadcrumbTrailWorkspaceLive,
+      {live_render(@socket, BreadcrumbTrailWorkspaceLive,
         id: "breadcrumb-trail",
         session: %{"breadcrumbs" => @breadcrumbs}
       )}
     </nav>
     """
   end
+
+  def breadcrumb_trail(%{breadcrumbs: breadcrumbs} = assigns) when not is_nil(breadcrumbs) do
+    breadcrumbs_count = length(breadcrumbs)
+
+    back_link =
+      if breadcrumbs_count > 1 do
+        Enum.at(breadcrumbs, breadcrumbs_count - 2).link
+      else
+        nil
+      end
+
+    show_short? = breadcrumbs_count > 3
+
+    assigns =
+      assigns
+      |> assign(:breadcrumbs, breadcrumbs)
+      |> assign(:breadcrumbs_count, breadcrumbs_count)
+      |> assign(:back_link, back_link)
+      |> assign(:show_short?, show_short?)
+
+    ~H"""
+    <nav class="breadcrumb-bar flex flex-row align-items-center border-gray-300 dark:border-neutral-800">
+      <ol class="breadcrumb custom-breadcrumb">
+        <.link
+          :if={@breadcrumbs_count > 1 && @back_link}
+          id="curriculum-back"
+          class="btn btn-sm btn-link pr-5 flex items-center justify-center "
+          navigate={@back_link}
+        >
+          <i class="fas fa-arrow-left"></i>
+        </.link>
+        <%= for {breadcrumb, index} <- Enum.with_index(@breadcrumbs) do %>
+          <%= if index == 0 do %>
+            <span></span>
+          <% else %>
+            <%= if index == @breadcrumbs_count - 1 do %>
+              <li
+                class="breadcrumb-item-workspace flex justify-center items-center text-sm active truncate text-[#A3A3A3]"
+                aria-current="page"
+              >
+                {breadcrumb_title(breadcrumb, @show_short?)}
+              </li>
+            <% else %>
+              <%= if is_nil(breadcrumb.link) do %>
+                <li class="breadcrumb-item-workspace flex justify-center items-center text-sm">
+                  {breadcrumb_title(breadcrumb, @show_short?)}
+                  <span><i class="fas fa-angle-right ml-1"></i></span>
+                </li>
+              <% else %>
+                <li class="breadcrumb-item-workspace flex justify-center items-center text-sm">
+                  <.link navigate={breadcrumb.link}>
+                    {breadcrumb_title(breadcrumb, @show_short?)}
+                  </.link>
+                  <span class="px-5"></span>
+                </li>
+              <% end %>
+            <% end %>
+          <% end %>
+        <% end %>
+      </ol>
+    </nav>
+    """
+  end
+
+  defp breadcrumb_title(%Breadcrumb{short_title: short_title, full_title: _full_title}, true)
+       when is_binary(short_title) and short_title != "" do
+    short_title
+  end
+
+  defp breadcrumb_title(%Breadcrumb{full_title: full_title}, _), do: full_title
 
   attr(:ctx, SessionContext)
   attr(:is_admin, :boolean, required: true)
@@ -377,6 +449,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
               preview_mode={@preview_mode}
               sidebar_expanded={@sidebar_expanded}
               active_workspace={@active_workspace}
+              is_admin={@is_admin}
             />
             <div :if={!@sidebar_expanded && @resource_slug} class="flex justify-center">
               <OliWeb.Icons.line_32 />
@@ -437,6 +510,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
           preview_mode={@preview_mode}
           sidebar_expanded={@sidebar_expanded}
           active_workspace={@active_workspace}
+          is_admin={@is_admin}
           platform="mobile"
         />
       </nav>
@@ -448,10 +522,25 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr(:sidebar_expanded, :boolean)
   attr(:active_workspace, :atom)
   attr(:platform, :string, default: "desktop")
+  attr(:is_admin, :boolean, default: false)
 
   def workspace_sidebar_links(assigns) do
     ~H"""
     <div class="w-full p-2 flex-col justify-center gap-2 items-center inline-flex">
+      <.nav_link
+        :if={@is_admin}
+        id={"#{@platform}_admin_workspace_nav_link"}
+        href={path_for_workspace(:admin, @sidebar_expanded)}
+        is_active={@active_workspace == :admin}
+        sidebar_expanded={@sidebar_expanded}
+        on_active_bg="bg-[#FFE5C2] hover:!bg-[#FFE5C2] dark:bg-[#7A3B00] dark:hover:!bg-[#7A3B00]"
+      >
+        <:icon>
+          <Icons.admin_wrench is_active={@active_workspace == :admin} />
+        </:icon>
+        <:text>Admin</:text>
+      </.nav_link>
+
       <.nav_link
         id={"#{@platform}_course_author_workspace_nav_link"}
         href={path_for_workspace(:course_author, @sidebar_expanded)}
@@ -613,6 +702,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
     }
 
     case target_workspace do
+      :admin -> ~p"/admin?#{url_params}"
       :course_author -> ~p"/workspaces/course_author?#{url_params}"
       :instructor -> ~p"/workspaces/instructor?#{url_params}"
       :student -> ~p"/workspaces/student?#{url_params}"

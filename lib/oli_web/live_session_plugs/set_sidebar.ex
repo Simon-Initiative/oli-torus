@@ -79,15 +79,29 @@ defmodule OliWeb.LiveSessionPlugs.SetSidebar do
   end
 
   defp extract_workspace(url) do
-    URI.parse(url)
+    url
+    |> URI.parse()
     |> Map.get(:path)
-    |> String.split("/", trim: true)
     |> case do
-      ["workspaces", workspace | _rest] ->
-        workspace
-
-      _ ->
+      nil ->
         nil
+
+      path ->
+        cond do
+          String.starts_with?(path, "/admin") ->
+            "admin"
+
+          String.starts_with?(path, "/authoring/communities") ->
+            "admin"
+
+          true ->
+            path
+            |> String.split("/", trim: true)
+            |> case do
+              ["workspaces", workspace | _rest] -> workspace
+              _ -> nil
+            end
+        end
     end
   end
 

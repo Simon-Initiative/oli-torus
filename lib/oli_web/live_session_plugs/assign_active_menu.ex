@@ -13,6 +13,7 @@ defmodule OliWeb.LiveSessionPlugs.AssignActiveMenu do
 
   - Modules containing the sub-workspace (AKA the active view), such as 'OliWeb.Workspaces.CourseAuthor.Activities.ActivityReviewLive',
   where the active_workspace will be :course_author and the active_view will be :activities."
+  - Admin and community LiveViews should invoke the :admin variant to ensure the Admin workspace entry stays active.
   """
 
   @valid_views_for_instructor [
@@ -28,6 +29,18 @@ defmodule OliWeb.LiveSessionPlugs.AssignActiveMenu do
     "manage",
     "activity"
   ]
+
+  def on_mount(:admin, _params, _session, socket) do
+    active_view = Map.get(socket.assigns, :active_view, :admin)
+
+    socket =
+      assign(socket,
+        active_workspace: :admin,
+        active_view: active_view
+      )
+
+    {:cont, socket}
+  end
 
   def on_mount(:default, params, _session, socket) do
     socket =

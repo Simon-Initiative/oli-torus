@@ -3,6 +3,24 @@ defmodule OliWeb.IngestController do
 
   require Logger
 
+  alias OliWeb.Admin.IngestV2
+  alias OliWeb.Common.Breadcrumb
+
+  defp base_breadcrumbs do
+    OliWeb.Admin.AdminView.breadcrumb()
+    |> IngestV2.breadcrumb()
+  end
+
+  defp csv_breadcrumbs(project_slug) do
+    base_breadcrumbs() ++
+      [
+        Breadcrumb.new(%{
+          full_title: "CSV Import",
+          link: Routes.ingest_path(OliWeb.Endpoint, :index_csv, project_slug)
+        })
+      ]
+  end
+
   @spec index(Plug.Conn.t(), any) :: Plug.Conn.t()
   def index(conn, _params) do
     render_ingest_page(conn, :index, title: "Ingest")
@@ -30,7 +48,13 @@ defmodule OliWeb.IngestController do
   end
 
   defp render_ingest_page(conn, page, keywords) do
-    render(conn, page, Keyword.put_new(keywords, :active, :ingest))
+    render(
+      conn,
+      page,
+      keywords
+      |> Keyword.put_new(:active, :ingest)
+      |> Keyword.put_new(:breadcrumbs, base_breadcrumbs())
+    )
   end
 
   def index_csv(conn, %{"project_slug" => project_slug}) do
@@ -163,6 +187,14 @@ defmodule OliWeb.IngestController do
   end
 
   defp render_ingest_page_csv(conn, page, keywords) do
-    render(conn, page, Keyword.put_new(keywords, :active, :ingest))
+    project_slug = Keyword.fetch!(keywords, :project_slug)
+
+    render(
+      conn,
+      page,
+      keywords
+      |> Keyword.put_new(:active, :ingest)
+      |> Keyword.put_new(:breadcrumbs, csv_breadcrumbs(project_slug))
+    )
   end
 end

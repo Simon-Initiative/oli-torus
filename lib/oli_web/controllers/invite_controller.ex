@@ -10,6 +10,17 @@ defmodule OliWeb.InviteController do
   alias Oli.{Email, Mailer}
   alias OliWeb.UserSessionController
   alias OliWeb.AuthorSessionController
+  alias OliWeb.Common.Breadcrumb
+
+  defp breadcrumbs do
+    OliWeb.Admin.AdminView.breadcrumb() ++
+      [
+        Breadcrumb.new(%{
+          full_title: "Invite New Authors",
+          link: Routes.invite_path(OliWeb.Endpoint, :index)
+        })
+      ]
+  end
 
   def index(conn, _params) do
     render_invite_page(conn, "index.html", title: "Invite")
@@ -243,7 +254,13 @@ defmodule OliWeb.InviteController do
   defp contextualize_role(_role), do: :context_learner
 
   defp render_invite_page(conn, page, keywords) do
-    render(conn, page, Keyword.put_new(keywords, :active, :invite))
+    render(
+      conn,
+      page,
+      keywords
+      |> Keyword.put_new(:active, :invite)
+      |> Keyword.put_new(:breadcrumbs, breadcrumbs())
+    )
   end
 
   defp invite_author(conn, email) do
