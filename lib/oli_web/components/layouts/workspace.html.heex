@@ -79,6 +79,7 @@
         <Components.Delivery.Layouts.breadcrumb_trail
           breadcrumbs={assigns[:breadcrumbs]}
           socket={assigns[:socket]}
+          active_workspace={assigns[:active_workspace]}
         />
       <% end %>
     </div>
@@ -88,6 +89,7 @@
           :if={assigns[:breadcrumbs] && !assigns[:is_advanced_authoring]}
           breadcrumbs={assigns[:breadcrumbs]}
           socket={assigns[:socket]}
+          active_workspace={assigns[:active_workspace]}
         />
       </div>
 

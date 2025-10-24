@@ -202,7 +202,7 @@ defmodule OliWeb.Sections.SectionsView do
         </button>
       </div>
 
-      <div class="sections-table">
+      <div class="overflow-x-auto">
         <StripedPagedTable.render
           table_model={@table_model}
           total_count={@total_count}

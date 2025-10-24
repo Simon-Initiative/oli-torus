@@ -93,7 +93,11 @@ defmodule OliWeb.Common.SortableTable.Table do
     >
       <%= for column_spec <- @model.column_specs do %>
         <td class={"#{column_spec.td_class} border-r p-2"}>
-          <div class={if Map.get(@model.data, :fade_data, false), do: "fade-text", else: ""}>
+          <div class={
+            if Map.get(@model.data, :fade_data, false),
+              do: "max-h-12 overflow-y-auto break-words",
+              else: ""
+          }>
             <%= if is_nil(column_spec.render_fn) do %>
               {ColumnSpec.default_render_fn(column_spec, @row)}
             <% else %>

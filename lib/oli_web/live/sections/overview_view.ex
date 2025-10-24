@@ -181,7 +181,7 @@ defmodule OliWeb.Sections.OverviewView do
         <Instructors.render users={@instructors} />
       </Group.render>
       <Group.render label="Curriculum" description="Manage content delivered to students">
-        <ul class="link-list">
+        <ul class="list-none space-y-2 p-0 m-0">
           <li>
             <a
               target="_blank"
@@ -254,7 +254,7 @@ defmodule OliWeb.Sections.OverviewView do
         </div>
       </Group.render>
       <Group.render label="Manage" description="Manage all aspects of course delivery">
-        <ul class="link-list">
+        <ul class="list-none space-y-2 p-0 m-0">
           <%= if @section.open_and_free do %>
             <li>
               <a
@@ -327,7 +327,7 @@ defmodule OliWeb.Sections.OverviewView do
       )}
 
       <Group.render label="Scoring" description="View and manage student scores and progress">
-        <ul class="link-list">
+        <ul class="list-none space-y-2 p-0 m-0">
           <li>
             <a
               href={
@@ -455,7 +455,7 @@ defmodule OliWeb.Sections.OverviewView do
           </div>
           <div :if={Sections.assistant_enabled?(@section)}>
             <section class="flex flex-col space-y-4">
-              <ul class="link-list">
+              <ul class="list-none space-y-2 p-0 m-0">
                 <li>
                   <a
                     href={~p"/sections/#{@section.slug}/assistant/conversations"}

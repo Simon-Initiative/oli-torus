@@ -31,7 +31,7 @@ defmodule OliWeb.Admin.AdminView do
       </div>
       <%= if Accounts.has_admin_role?(@author, :account_admin) do %>
         <Group.render label="Account Management" description="Access and manage all users and authors">
-          <ul class="link-list">
+          <ul class="list-none space-y-2 p-0 m-0">
             <li>
               <a href={~p"/admin/users"}>
                 Manage Students and Instructor Accounts
@@ -71,7 +71,7 @@ defmodule OliWeb.Admin.AdminView do
       <% end %>
       <%= if Accounts.is_admin?(@author) do %>
         <Group.render label="Content Management" description="Access and manage created content">
-          <ul class="link-list">
+          <ul class="list-none space-y-2 p-0 m-0">
             <li>
               <a href={~p"/authoring/projects"}>
                 Browse all Projects
@@ -104,7 +104,7 @@ defmodule OliWeb.Admin.AdminView do
       <% end %>
       <%= if Accounts.has_admin_role?(@author, :system_admin) do %>
         <Group.render label="GenAI Features" description="Manage and support GenAI based features">
-          <ul class="link-list">
+          <ul class="list-none space-y-2 p-0 m-0">
             <li>
               <a href={~p"/admin/gen_ai/registered_models"}>Manage registered LLM models</a>
             </li>
@@ -120,7 +120,7 @@ defmodule OliWeb.Admin.AdminView do
           label="System Management"
           description="Manage and support system level functionality"
         >
-          <ul class="link-list">
+          <ul class="list-none space-y-2 p-0 m-0">
             <li>
               <a href={~p"/admin/manage_activities"}>Manage Activities</a>
             </li>

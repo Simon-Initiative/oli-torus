@@ -114,9 +114,9 @@ Parallel: Coordinate with Phase 2 to avoid conflicting template changes; otherwi
 
 **Tasks**
 
-- [ ] Delete or refactor legacy admin CSS files; replace usage with shared design system classes.
-- [ ] Capture before/after asset bundle sizes via `mix assets.deploy` (dry run) to prove payload growth ≤ 50 KB gzipped.
-- [ ] Run `mix test test/oli_web/live/admin` and `mix test test/oli_web/controllers/admin_layout_controller_test.exs` to confirm regressions absent post-cleanup.
+- [x] Delete or refactor legacy admin CSS files; replace usage with shared design system classes.
+- [x] Capture before/after asset bundle sizes via `mix assets.deploy` (dry run) to prove payload growth ≤ 50 KB gzipped.
+- [x] Run `mix test test/oli_web/live/admin` and `mix test test/oli_web/controllers/admin_layout_controller_test.exs` to confirm regressions absent post-cleanup.
 
 **Definition of Done**
 

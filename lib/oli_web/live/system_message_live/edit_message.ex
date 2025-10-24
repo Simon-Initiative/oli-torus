@@ -45,7 +45,7 @@ defmodule OliWeb.SystemMessageLive.EditMessage do
       </div>
       <div class="flex-grow-1 py-2 px-3">
         <div class="form-group d-flex align-items-center">
-          <label class="control-label pr-4 flex-basis-20">Start</label>
+          <label class="control-label pr-4 basis-[20%] min-w-[120px]">Start</label>
           <.input
             id="system_message_start"
             field={@changeset[:start]}
@@ -58,7 +58,7 @@ defmodule OliWeb.SystemMessageLive.EditMessage do
           </.error>
         </div>
         <div class="form-group d-flex align-items-center">
-          <label class="control-label pr-4 flex-basis-20">End</label>
+          <label class="control-label pr-4 basis-[20%] min-w-[120px]">End</label>
           <.input
             id="system_message_end"
             field={@changeset[:end]}

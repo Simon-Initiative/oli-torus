@@ -23,6 +23,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
 
   attr(:breadcrumbs, :list, default: [])
   attr(:socket, :map, default: nil)
+  attr(:active_workspace, :atom, default: nil)
 
   def breadcrumb_trail(%{breadcrumbs: breadcrumbs, socket: %{}} = assigns)
       when not is_nil(breadcrumbs) do
@@ -62,7 +63,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
           :if={@breadcrumbs_count > 1 && @back_link}
           id="curriculum-back"
           class="btn btn-sm btn-link pr-5 flex items-center justify-center "
-          navigate={@back_link}
+          {breadcrumb_attrs(assigns, @back_link)}
         >
           <i class="fas fa-arrow-left"></i>
         </.link>
@@ -85,7 +86,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
                 </li>
               <% else %>
                 <li class="breadcrumb-item-workspace flex justify-center items-center text-sm">
-                  <.link navigate={breadcrumb.link}>
+                  <.link {breadcrumb_attrs(assigns, breadcrumb.link)}>
                     {breadcrumb_title(breadcrumb, @show_short?)}
                   </.link>
                   <span class="px-5"></span>
@@ -105,6 +106,25 @@ defmodule OliWeb.Components.Delivery.Layouts do
   end
 
   defp breadcrumb_title(%Breadcrumb{full_title: full_title}, _), do: full_title
+
+  defp breadcrumb_attrs(_assigns, nil), do: []
+
+  defp breadcrumb_attrs(assigns, link) do
+    base_attrs = [href: link]
+
+    if admin_workspace?(assigns) do
+      base_attrs ++ [phx_click: breadcrumb_click_js(link)]
+    else
+      base_attrs ++ [navigate: link]
+    end
+  end
+
+  defp breadcrumb_click_js(link) do
+    JS.push("admin_workspace_breadcrumb_clicked", value: %{"target" => link})
+    |> JS.navigate(link)
+  end
+
+  defp admin_workspace?(assigns), do: Map.get(assigns, :active_workspace) == :admin
 
   attr(:ctx, SessionContext)
   attr(:is_admin, :boolean, required: true)

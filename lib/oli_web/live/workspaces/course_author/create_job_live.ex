@@ -193,7 +193,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
 
       <div class="mb-5" />
 
-      <div class="sections-table">
+      <div class="overflow-x-auto">
         <PagedTable.render
           allow_selection={true}
           selection_change="section_selected"
