@@ -236,7 +236,6 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     if connected?(socket) do
       send(self(), :gc)
       is_graded = socket.assigns.page_context.page.graded
-      thin_hierarchy = get_thin_hierarchy(socket.assigns.section)
 
       socket =
         socket
@@ -252,6 +251,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       if is_graded do
         {:ok, push_event(socket, "load_survey_scripts", %{script_sources: script_sources})}
       else
+        thin_hierarchy = get_thin_hierarchy(socket.assigns.section)
+
         {:ok, push_event(socket, "load_survey_scripts", %{script_sources: script_sources}),
          temporary_assigns: [hierarchy: thin_hierarchy]}
       end
@@ -1154,7 +1155,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         height: 100vh !important;
         margin: 0 !important;
         padding: 0 !important;
-        z-index: 999 !important;
+        z-index: 1000 !important;
       }
 
       .fullscreen-iframe {
