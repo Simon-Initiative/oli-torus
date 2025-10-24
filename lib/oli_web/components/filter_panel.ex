@@ -36,23 +36,23 @@ defmodule OliWeb.Components.FilterPanel do
     ~H"""
     <div id={@id} class="relative flex items-center gap-4">
       <button
-        class="ml-2 text-center text-[#353740] dark:text-[#EEEBF5] text-sm font-normal leading-none flex items-center gap-x-1 hover:text-[#006CD9] dark:hover:text-[#4CA6FF]"
+        class="ml-2 text-center text-Text-text-high text-sm font-normal leading-none flex items-center gap-x-1 hover:text-Text-text-button"
         phx-click={@toggle_event}
         phx-target={@target}
         type="button"
       >
-        <Icons.filter class="stroke-[#353740] dark:stroke-[#EEEBF5]" />
+        <Icons.filter class="stroke-Text-text-high" />
         <span>Filter</span>
         <span
           :if={@active_count > 0}
-          class="ml-1 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-[#006CD9] px-1 text-xs font-semibold text-white dark:bg-[#4CA6FF]"
+          class="ml-1 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-Text-text-button px-1 text-xs font-semibold text-Text-text-white"
         >
           {@active_count}
         </span>
       </button>
 
       <button
-        class="ml-2 mr-4 text-center text-[#353740] dark:text-[#EEEBF5] text-sm font-normal leading-none flex items-center gap-x-1 hover:text-[#006CD9] dark:hover:text-[#4CA6FF]"
+        class="ml-2 mr-4 text-center text-Text-text-high text-sm font-normal leading-none flex items-center gap-x-1 hover:text-Text-text-button"
         phx-click={@clear_event}
         phx-target={@target}
         type="button"
@@ -63,7 +63,7 @@ defmodule OliWeb.Components.FilterPanel do
       <div
         id={"#{@id}-panel"}
         class={[
-          "absolute left-0 top-10 z-50 w-[430px] rounded-lg border border-[#ced1d9] bg-white shadow-[0px_12px_24px_0px_rgba(53,55,64,0.12)] dark:border-[#3B3740] dark:bg-[#17161A]",
+          "absolute left-0 top-10 z-50 w-[430px] rounded-lg border border-Border-border-default bg-Surface-surface-primary shadow-[0px_12px_24px_0px_rgba(53,55,64,0.12)]",
           if(@open, do: "", else: "hidden")
         ]}
         phx-click-away={push_with_target(@close_event, @target)}
@@ -79,15 +79,15 @@ defmodule OliWeb.Components.FilterPanel do
           <%= if :date in @fields do %>
             <div class="flex flex-col gap-2">
               <div class="flex flex-col gap-1">
-                <span class="text-sm font-semibold text-[#353740] dark:text-[#EEEBF5]">Date</span>
-                <span class="text-xs text-[#6F7280] dark:text-[#A6A9B6]">
+                <span class="text-sm font-semibold text-Text-text-high">Date</span>
+                <span class="text-xs text-Text-text-low-alpha">
                   If both dates are specified, they will be interpreted as a range.
                 </span>
               </div>
               <div class="flex flex-col gap-2">
                 <select
                   name="filters[date_field]"
-                  class="h-9 rounded border border-[#ced1d9] px-3 text-sm text-[#353740] dark:border-[#3B3740] dark:bg-transparent dark:text-[#EEEBF5]"
+                  class="h-9 rounded border border-Border-border-default px-3 text-sm text-Text-text-high dark:bg-transparent"
                   value={encode_atom(@filters[:date_field])}
                 >
                   <option
@@ -100,26 +100,26 @@ defmodule OliWeb.Components.FilterPanel do
                 </select>
                 <div class="flex items-center gap-2">
                   <div class="flex flex-1 flex-col gap-1">
-                    <label class="text-xs font-medium text-[#6F7280] dark:text-[#A6A9B6]">
+                    <label class="text-xs font-medium text-Text-text-low-alpha">
                       is after
                     </label>
                     <input
                       type="date"
                       name="filters[date_from]"
                       value={format_date(@filters[:date_from])}
-                      class="h-9 rounded border border-[#ced1d9] px-3 text-sm text-[#353740] dark:border-[#3B3740] dark:bg-transparent dark:text-[#EEEBF5]"
+                      class="h-9 rounded border border-Border-border-default px-3 text-sm text-Text-text-high dark:bg-transparent"
                     />
                   </div>
-                  <div class="mt-6 text-xs text-[#6F7280] dark:text-[#A6A9B6]">and/or before</div>
+                  <div class="mt-6 text-xs text-Text-text-low-alpha">and/or before</div>
                   <div class="flex flex-1 flex-col gap-1">
-                    <label class="text-xs font-medium text-[#6F7280] dark:text-[#A6A9B6] invisible">
+                    <label class="text-xs font-medium text-Text-text-low-alpha invisible">
                       and/or before
                     </label>
                     <input
                       type="date"
                       name="filters[date_to]"
                       value={format_date(@filters[:date_to])}
-                      class="h-9 rounded border border-[#ced1d9] px-3 text-sm text-[#353740] dark:border-[#3B3740] dark:bg-transparent dark:text-[#EEEBF5]"
+                      class="h-9 rounded border border-Border-border-default px-3 text-sm text-Text-text-high dark:bg-transparent"
                     />
                   </div>
                 </div>
@@ -129,14 +129,14 @@ defmodule OliWeb.Components.FilterPanel do
 
           <%= if :tags in @fields do %>
             <div class="flex flex-col gap-2">
-              <span class="text-sm font-semibold text-[#353740] dark:text-[#EEEBF5]">Tags</span>
+              <span class="text-sm font-semibold text-Text-text-high">Tags</span>
               <div class="flex flex-wrap gap-2">
                 <%= for tag <- @filters[:tags] || [] do %>
-                  <span class="inline-flex items-center gap-2 rounded-full bg-[#EEF5FF] px-3 py-1 text-xs font-medium text-[#006CD9] dark:bg-[#1D2633] dark:text-[#4CA6FF]">
+                  <span class="inline-flex items-center gap-2 rounded-full bg-Specially-Tokens-Fill-fill-dot-message-default px-3 py-1 text-xs font-medium text-Text-text-button">
                     {tag.name}
                     <button
                       type="button"
-                      class="text-[#006CD9] hover:text-[#004A99] dark:text-[#4CA6FF] dark:hover:text-[#81C3FF]"
+                      class="text-Text-text-button hover:text-Text-text-button-hover"
                       phx-click={@tag_remove_event}
                       phx-target={@target}
                       phx-value-id={tag.id}
@@ -159,17 +159,17 @@ defmodule OliWeb.Components.FilterPanel do
                 placeholder="Enter tags"
                 phx-hook="FilterTagSearch"
                 data-event={@tag_search_event}
-                class="h-9 rounded border border-[#ced1d9] px-3 text-sm text-[#353740] focus:border-[#006CD9] focus:outline-none dark:border-[#3B3740] dark:bg-transparent dark:text-[#EEEBF5]"
+                class="h-9 rounded border border-Border-border-default px-3 text-sm text-Text-text-high focus:border-Text-text-button focus:outline-none dark:bg-transparent"
               />
 
               <div
                 :if={Enum.any?(@tag_suggestions)}
-                class="flex flex-col gap-1 rounded border border-[#ced1d9] bg-[#F6F8FB] p-2 dark:border-[#3B3740] dark:bg-[#1D1C20]"
+                class="flex flex-col gap-1 rounded border border-Border-border-default bg-Specially-Tokens-Fill-fill-nav-hover p-2"
               >
                 <button
                   :for={suggestion <- @tag_suggestions}
                   type="button"
-                  class="rounded px-2 py-1 text-left text-sm text-[#353740] hover:bg-[#E1ECFF] dark:text-[#EEEBF5] dark:hover:bg-[#2A2930]"
+                  class="rounded px-2 py-1 text-left text-sm text-Text-text-high hover:bg-Specially-Tokens-Fill-fill-dot-message-default"
                   phx-click={@tag_add_event}
                   phx-target={@target}
                   phx-value-id={suggestion.id}
@@ -183,12 +183,12 @@ defmodule OliWeb.Components.FilterPanel do
 
           <%= if :visibility in @fields do %>
             <div class="flex flex-col gap-2">
-              <label class="text-sm font-semibold text-[#353740] dark:text-[#EEEBF5]">
+              <label class="text-sm font-semibold text-Text-text-high">
                 Visibility
               </label>
               <select
                 name="filters[visibility]"
-                class="h-9 rounded border border-[#ced1d9] px-3 text-sm text-[#353740] dark:border-[#3B3740] dark:bg-transparent dark:text-[#EEEBF5]"
+                class="h-9 rounded border border-Border-border-default px-3 text-sm text-Text-text-high dark:bg-transparent"
                 value={encode_atom(@filters[:visibility])}
               >
                 <option value="">Select option</option>
@@ -205,12 +205,12 @@ defmodule OliWeb.Components.FilterPanel do
 
           <%= if :published in @fields do %>
             <div class="flex flex-col gap-2">
-              <label class="text-sm font-semibold text-[#353740] dark:text-[#EEEBF5]">
+              <label class="text-sm font-semibold text-Text-text-high">
                 Published
               </label>
               <select
                 name="filters[published]"
-                class="h-9 rounded border border-[#ced1d9] px-3 text-sm text-[#353740] dark:border-[#3B3740] dark:bg-transparent dark:text-[#EEEBF5]"
+                class="h-9 rounded border border-Border-border-default px-3 text-sm text-Text-text-high dark:bg-transparent"
                 value={encode_boolean(@filters[:published])}
               >
                 <option value="">Select option</option>
@@ -227,10 +227,10 @@ defmodule OliWeb.Components.FilterPanel do
 
           <%= if :status in @fields do %>
             <div class="flex flex-col gap-2">
-              <label class="text-sm font-semibold text-[#353740] dark:text-[#EEEBF5]">Status</label>
+              <label class="text-sm font-semibold text-Text-text-high">Status</label>
               <select
                 name="filters[status]"
-                class="h-9 rounded border border-[#ced1d9] px-3 text-sm text-[#353740] dark:border-[#3B3740] dark:bg-transparent dark:text-[#EEEBF5]"
+                class="h-9 rounded border border-Border-border-default px-3 text-sm text-Text-text-high dark:bg-transparent"
                 value={encode_atom(@filters[:status])}
               >
                 <option value="">Select option</option>
@@ -247,12 +247,12 @@ defmodule OliWeb.Components.FilterPanel do
 
           <%= if :institution in @fields do %>
             <div class="flex flex-col gap-2">
-              <label class="text-sm font-semibold text-[#353740] dark:text-[#EEEBF5]">
+              <label class="text-sm font-semibold text-Text-text-high">
                 Institution
               </label>
               <select
                 name="filters[institution]"
-                class="h-9 rounded border border-[#ced1d9] px-3 text-sm text-[#353740] dark:border-[#3B3740] dark:bg-transparent dark:text-[#EEEBF5]"
+                class="h-9 rounded border border-Border-border-default px-3 text-sm text-Text-text-high dark:bg-transparent"
                 value={encode_integer(@filters[:institution_id])}
               >
                 <option value="">Select option</option>
@@ -270,7 +270,7 @@ defmodule OliWeb.Components.FilterPanel do
           <div class="flex justify-end gap-3 pt-2">
             <button
               type="button"
-              class="text-sm font-semibold text-[#006CD9] hover:text-[#004A99] dark:text-[#4CA6FF] dark:hover:text-[#81C3FF]"
+              class="text-sm font-semibold text-Text-text-button hover:text-Text-text-button-hover"
               phx-click={@cancel_event}
               phx-target={@target}
             >
@@ -278,7 +278,7 @@ defmodule OliWeb.Components.FilterPanel do
             </button>
             <button
               type="submit"
-              class="rounded bg-[#0080FF] px-4 py-2 text-sm font-semibold text-white hover:bg-[#006CD9] dark:bg-[#4CA6FF] dark:hover:bg-[#81C3FF]"
+              class="rounded bg-Fill-Buttons-fill-primary px-4 py-2 text-sm font-semibold text-Text-text-white hover:bg-Fill-Buttons-fill-primary-hover"
             >
               Apply
             </button>
