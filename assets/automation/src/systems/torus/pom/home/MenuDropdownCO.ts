@@ -76,7 +76,9 @@ export class MenuDropdownCO {
     } catch {
       await this.signOutLink.click();
       console.log(
-        `'${this.signOutLink}' menu not found. Try with ${this.workspaceMenu.locator(this.signOutLink)}`,
+        '%o menu not found. Try with %o',
+        this.signOutLink,
+        this.workspaceMenu.locator(this.signOutLink),
       );
     }
   }

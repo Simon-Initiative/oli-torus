@@ -27,6 +27,7 @@ test.describe('User Accounts', () => {
     const name = loginData.student.name;
 
     await homeTask.login('administrator');
+    await homeTask.enterToCourseAuthor();
     await administrationTask.canCreateSections(email, `${lastName}, ${name}`);
     await homeTask.logout(true);
     await homeTask.login('student');
