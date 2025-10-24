@@ -1155,7 +1155,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         height: 100vh !important;
         margin: 0 !important;
         padding: 0 !important;
-        z-index: 9999 !important;
+        z-index: 999 !important;
       }
 
       .fullscreen-iframe {
@@ -1167,7 +1167,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         margin: 0 !important;
         padding: 0 !important;
         border: none !important;
-        z-index: 10000 !important;
+        z-index: 1000 !important;
       }
     </style>
     <div id="sticky_panel" class="absolute top-4 right-0 z-50 h-full">
@@ -1273,7 +1273,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         height: 100vh !important;
         margin: 0 !important;
         padding: 0 !important;
-        z-index: 9999 !important;
+        z-index: 999 !important;
       }
 
       .fullscreen-iframe {
@@ -1285,7 +1285,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         margin: 0 !important;
         padding: 0 !important;
         border: none !important;
-        z-index: 10000 !important;
+        z-index: 1000 !important;
       }
     </style>
 
