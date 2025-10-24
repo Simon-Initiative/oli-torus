@@ -19,7 +19,6 @@ import { EmailList } from './email_list';
 import { EndDateTimer } from './end_date_timer';
 import { EvaluateMathJaxExpressions } from './evaluate_mathjax_expressions';
 import { ExpandContainers } from './expand_containers';
-import { FilterTagSearch } from './filter_tag_search';
 import { FixedNavigationBar } from './fixed_navigation_bar';
 import { GlobalTooltip } from './global_tooltip';
 import { GraphNavigation } from './graph';
@@ -124,5 +123,4 @@ export const Hooks = {
   ConditionalToggle,
   CopyToClipboard,
   TagsComponent,
-  FilterTagSearch,
 };

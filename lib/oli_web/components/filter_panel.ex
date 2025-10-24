@@ -157,9 +157,9 @@ defmodule OliWeb.Components.FilterPanel do
                 name="filters[tag_search_input]"
                 value={@tag_search}
                 placeholder="Enter tags"
-                phx-hook="FilterTagSearch"
+                phx-keyup={@tag_search_event}
+                phx-target={@target}
                 phx-debounce="300"
-                data-event={@tag_search_event}
                 class="h-9 rounded border border-Border-border-default px-3 text-sm text-Text-text-high focus:border-Text-text-button focus:outline-none dark:bg-transparent"
               />
 
