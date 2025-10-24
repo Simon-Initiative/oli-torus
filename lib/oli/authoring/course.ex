@@ -13,6 +13,8 @@ defmodule Oli.Authoring.Course do
     ProjectVisibility
   }
 
+  alias Oli.Tags.ProjectTag
+
   alias Oli.Groups.CommunityVisibility
   alias Oli.Inventories
   alias Oli.Publishing
@@ -100,34 +102,87 @@ defmodule Oli.Authoring.Course do
     include_deleted = Keyword.get(opts, :include_deleted, false)
     admin_show_all = Keyword.get(opts, :admin_show_all, true)
     text_search = Keyword.get(opts, :text_search, "")
+    filters = Keyword.get(opts, :filters, %{})
 
     if Accounts.has_admin_role?(author, :content_admin) and admin_show_all,
-      do: browse_projects_as_admin(paging, sorting, include_deleted, text_search),
-      else: browse_projects_as_author(author, paging, sorting, include_deleted, text_search)
+      do: browse_projects_as_admin(paging, sorting, include_deleted, text_search, filters),
+      else:
+        browse_projects_as_author(author, paging, sorting, include_deleted, text_search, filters)
   end
 
   defp browse_projects_as_admin(
          %Paging{limit: limit, offset: offset},
          %Sorting{direction: direction, field: field},
          include_deleted,
-         text_search
+         text_search,
+         filters
        ) do
+    tag_ids = Map.get(filters, :tag_ids, [])
+    visibility_filter = Map.get(filters, :visibility)
+    published_filter = Map.get(filters, :published)
+    status_filter_value = Map.get(filters, :status)
+    institution_id = Map.get(filters, :institution_id)
+    date_field = Map.get(filters, :date_field, :inserted_at)
+    date_from = Map.get(filters, :date_from)
+    date_to = Map.get(filters, :date_to)
+
     filter_by_status =
-      if include_deleted, do: dynamic([p], true), else: dynamic([p], p.status == :active)
+      case status_filter_value do
+        status when status in [:active, :deleted] ->
+          dynamic([p], p.status == ^status)
+
+        _ ->
+          if include_deleted, do: dynamic([p], true), else: dynamic([p], p.status == :active)
+      end
 
     filter_by_text =
       text_search
       |> project_search_patterns()
       |> Enum.reduce(dynamic([p], true), fn pattern, acc ->
         dynamic(
-          [p, ap, a, _, _, _, owner],
+          [p, ap, a, _, _, _, owner, _],
           ^acc and
             (ilike(p.title, ^pattern) or ilike(p.slug, ^pattern) or ilike(owner.name, ^pattern) or
                ilike(owner.email, ^pattern) or ilike(a.name, ^pattern))
         )
       end)
 
-    where_clause = dynamic([p], ^filter_by_status and ^filter_by_text)
+    filter_by_date =
+      case {date_from, date_to} do
+        {nil, nil} ->
+          dynamic([p], true)
+
+        {from, nil} ->
+          dynamic([p], field(p, ^date_field) >= ^from)
+
+        {nil, to} ->
+          dynamic([p], field(p, ^date_field) <= ^to)
+
+        {from, to} ->
+          dynamic([p], field(p, ^date_field) >= ^from and field(p, ^date_field) <= ^to)
+      end
+
+    filter_by_visibility =
+      case visibility_filter do
+        nil -> dynamic([p], true)
+        visibility -> dynamic([p], p.visibility == ^visibility)
+      end
+
+    filter_by_institution =
+      case institution_id do
+        nil ->
+          dynamic([p, _ap, _a, _pv], true)
+
+        id ->
+          dynamic([p, _ap, _a, pv], p.visibility == :global or pv.institution_id == ^id)
+      end
+
+    where_clause =
+      dynamic(
+        [p, ap, a, pv, pub, op, owner, pt],
+        ^filter_by_status and ^filter_by_text and ^filter_by_date and ^filter_by_visibility and
+          ^filter_by_institution
+      )
 
     owner_id = Oli.Authoring.Authors.ProjectRole.role_id().owner
 
@@ -145,6 +200,8 @@ defmodule Oli.Authoring.Course do
         on: op.project_id == p.id and op.project_role_id == ^owner_id,
         left_join: owner in Author,
         on: owner.id == op.author_id,
+        left_join: pt in ProjectTag,
+        on: pt.project_id == p.id,
         where: ^where_clause,
         group_by: [
           p.id,
@@ -181,26 +238,31 @@ defmodule Oli.Authoring.Course do
         }
 
     query =
+      query
+      |> maybe_apply_tag_filter(tag_ids)
+      |> maybe_apply_published_filter(published_filter)
+
+    query =
       case field do
         :name ->
-          order_by(query, [_, _, _, _, _, _, owner], {^direction, owner.name})
+          order_by(query, [_, _, _, _, _, _, owner, _], {^direction, owner.name})
 
         :collaborators ->
           order_by(
             query,
-            [_, _, a],
+            [_, _, a, _, _, _, _, _],
             {^direction, fragment("string_agg(DISTINCT ?, ', ')", a.name)}
           )
 
         :published ->
           order_by(
             query,
-            [_, _, _, _, pub],
+            [_, _, _, _, pub, _, _, _],
             {^direction, fragment("bool_or(?)", not is_nil(pub.id))}
           )
 
         :visibility ->
-          order_by(query, [p], {
+          order_by(query, [p, _, _, _, _, _, _, _], {
             ^direction,
             fragment(
               "CASE ? WHEN 'global' THEN 0 WHEN 'selected' THEN 1 WHEN 'authors' THEN 2 ELSE 3 END",
@@ -215,34 +277,124 @@ defmodule Oli.Authoring.Course do
     Repo.all(query)
   end
 
+  defp maybe_apply_tag_filter(query, []), do: query
+
+  defp maybe_apply_tag_filter(query, tag_ids) do
+    having(
+      query,
+      [_, _, _, _, _, _, _, pt],
+      fragment(
+        "COUNT(DISTINCT CASE WHEN ? = ANY(?) THEN ? END) = ?",
+        pt.tag_id,
+        ^tag_ids,
+        pt.tag_id,
+        ^length(tag_ids)
+      )
+    )
+  end
+
+  defp maybe_apply_published_filter(query, nil), do: query
+
+  defp maybe_apply_published_filter(query, value) when is_boolean(value) do
+    having(
+      query,
+      [_, _, _, _, pub, _, _, _],
+      fragment("COALESCE(bool_or(?), false) = ?", not is_nil(pub.id), ^value)
+    )
+  end
+
   defp browse_projects_as_author(
          %Author{id: id},
          %Paging{limit: limit, offset: offset},
          %Sorting{direction: direction, field: field},
          include_deleted,
-         text_search
+         text_search,
+         filters
        ) do
     owner_id = Oli.Authoring.Authors.ProjectRole.role_id().owner
 
+    tag_ids = Map.get(filters, :tag_ids, [])
+    visibility_filter = Map.get(filters, :visibility)
+    published_filter = Map.get(filters, :published)
+    status_filter_value = Map.get(filters, :status)
+    institution_id = Map.get(filters, :institution_id)
+    date_field = Map.get(filters, :date_field, :inserted_at)
+    date_from = Map.get(filters, :date_from)
+    date_to = Map.get(filters, :date_to)
+
+    filter_by_collaborator =
+      dynamic(
+        [ap, _p, _a, _pv, _pub, _op, _owner, _pt],
+        ap.author_id == ^id and ap.status == :accepted
+      )
+
     filter_by_status =
-      if include_deleted, do: dynamic([_, p], true), else: dynamic([_, p], p.status == :active)
+      case status_filter_value do
+        status when status in [:active, :deleted] ->
+          dynamic([_ap, p, _a, _pv, _pub, _op, _owner, _pt], p.status == ^status)
+
+        _ ->
+          if include_deleted,
+            do: dynamic([_ap, _p, _a, _pv, _pub, _op, _owner, _pt], true),
+            else: dynamic([_ap, p, _a, _pv, _pub, _op, _owner, _pt], p.status == :active)
+      end
 
     filter_by_text =
       text_search
       |> project_search_patterns()
-      |> Enum.reduce(dynamic([_, p], true), fn pattern, acc ->
+      |> Enum.reduce(dynamic([_ap, p, _a, _pv, _pub, _op, _owner, _pt], true), fn pattern, acc ->
         dynamic(
-          [_, p, a, _, _, _, owner],
+          [_ap, p, a, _pv, _pub, _op, owner, _pt],
           ^acc and
             (ilike(p.title, ^pattern) or ilike(p.slug, ^pattern) or ilike(owner.name, ^pattern) or
                ilike(owner.email, ^pattern) or ilike(a.name, ^pattern))
         )
       end)
 
+    filter_by_date =
+      case {date_from, date_to} do
+        {nil, nil} ->
+          dynamic([_ap, _p, _a, _pv, _pub, _op, _owner, _pt], true)
+
+        {from, nil} ->
+          dynamic([_ap, p, _a, _pv, _pub, _op, _owner, _pt], field(p, ^date_field) >= ^from)
+
+        {nil, to} ->
+          dynamic([_ap, p, _a, _pv, _pub, _op, _owner, _pt], field(p, ^date_field) <= ^to)
+
+        {from, to} ->
+          dynamic(
+            [_ap, p, _a, _pv, _pub, _op, _owner, _pt],
+            field(p, ^date_field) >= ^from and field(p, ^date_field) <= ^to
+          )
+      end
+
+    filter_by_visibility =
+      case visibility_filter do
+        nil ->
+          dynamic([_ap, _p, _a, _pv, _pub, _op, _owner, _pt], true)
+
+        visibility ->
+          dynamic([_ap, p, _a, _pv, _pub, _op, _owner, _pt], p.visibility == ^visibility)
+      end
+
+    filter_by_institution =
+      case institution_id do
+        nil ->
+          dynamic([_ap, _p, _a, _pv, _pub, _op, _owner, _pt], true)
+
+        institution ->
+          dynamic(
+            [_ap, p, _a, pv, _pub, _op, _owner, _pt],
+            p.visibility == :global or pv.institution_id == ^institution
+          )
+      end
+
     where_clause =
       dynamic(
-        [ap, p],
-        ap.author_id == ^id and ap.status == :accepted and ^filter_by_status and ^filter_by_text
+        [ap, p, a, pv, pub, op, owner, pt],
+        ^filter_by_collaborator and ^filter_by_status and ^filter_by_text and
+          ^filter_by_date and ^filter_by_visibility and ^filter_by_institution
       )
 
     query =
@@ -259,6 +411,8 @@ defmodule Oli.Authoring.Course do
         on: op.project_id == p.id and op.project_role_id == ^owner_id,
         left_join: owner in Author,
         on: owner.id == op.author_id,
+        left_join: pt in ProjectTag,
+        on: pt.project_id == p.id,
         where: ^where_clause,
         group_by: [
           p.id,
@@ -295,6 +449,11 @@ defmodule Oli.Authoring.Course do
         }
 
     query =
+      query
+      |> maybe_apply_tag_filter(tag_ids)
+      |> maybe_apply_published_filter(published_filter)
+
+    query =
       case field do
         :name ->
           order_by(query, [_, _, _, _, _, _, _, owner], {^direction, owner.name})
@@ -302,19 +461,19 @@ defmodule Oli.Authoring.Course do
         :collaborators ->
           order_by(
             query,
-            [_, _, a],
+            [_, _, a, _, _, _, _, _],
             {^direction, fragment("string_agg(DISTINCT ?, ', ')", a.name)}
           )
 
         :published ->
           order_by(
             query,
-            [_, _, _, _, _, pub],
+            [_, _, _, _, _, pub, _, _],
             {^direction, fragment("bool_or(?)", not is_nil(pub.id))}
           )
 
         :visibility ->
-          order_by(query, [_, p], {
+          order_by(query, [_, p, _, _, _, _, _, _], {
             ^direction,
             fragment(
               "CASE ? WHEN 'global' THEN 0 WHEN 'selected' THEN 1 WHEN 'authors' THEN 2 ELSE 3 END",
@@ -356,93 +515,169 @@ defmodule Oli.Authoring.Course do
     include_deleted = Keyword.get(opts, :include_deleted, false)
     admin_show_all = Keyword.get(opts, :admin_show_all, true)
     text_search = Keyword.get(opts, :text_search, "")
+    filters = Keyword.get(opts, :filters, %{})
 
     if Accounts.has_admin_role?(author, :content_admin) and admin_show_all,
-      do: browse_projects_as_admin_for_export(sorting, include_deleted, text_search),
-      else: browse_projects_as_author_for_export(author, sorting, include_deleted, text_search)
+      do: browse_projects_as_admin_for_export(sorting, include_deleted, text_search, filters),
+      else:
+        browse_projects_as_author_for_export(
+          author,
+          sorting,
+          include_deleted,
+          text_search,
+          filters
+        )
   end
 
   defp browse_projects_as_admin_for_export(
          %Sorting{direction: direction, field: field},
          include_deleted,
-         text_search
+         text_search,
+         filters
        ) do
-    filter_by_status = if include_deleted, do: true, else: dynamic([p], p.status == :active)
+    tag_ids = Map.get(filters, :tag_ids, [])
+    visibility_filter = Map.get(filters, :visibility)
+    published_filter = Map.get(filters, :published)
+    status_filter_value = Map.get(filters, :status)
+    institution_id = Map.get(filters, :institution_id)
+    date_field = Map.get(filters, :date_field, :inserted_at)
+    date_from = Map.get(filters, :date_from)
+    date_to = Map.get(filters, :date_to)
+
+    filter_by_status =
+      case status_filter_value do
+        status when status in [:active, :deleted] ->
+          dynamic([p], p.status == ^status)
+
+        _ ->
+          if include_deleted, do: dynamic([p], true), else: dynamic([p], p.status == :active)
+      end
 
     filter_by_text =
-      if text_search == "", do: true, else: dynamic([p], ilike(p.title, ^"%#{text_search}%"))
+      text_search
+      |> project_search_patterns()
+      |> Enum.reduce(dynamic([p], true), fn pattern, acc ->
+        dynamic(
+          [p, ap, a, _, _, _, owner, _],
+          ^acc and
+            (ilike(p.title, ^pattern) or ilike(p.slug, ^pattern) or ilike(owner.name, ^pattern) or
+               ilike(owner.email, ^pattern) or ilike(a.name, ^pattern))
+        )
+      end)
+
+    filter_by_date =
+      case {date_from, date_to} do
+        {nil, nil} ->
+          dynamic([p], true)
+
+        {from, nil} ->
+          dynamic([p], field(p, ^date_field) >= ^from)
+
+        {nil, to} ->
+          dynamic([p], field(p, ^date_field) <= ^to)
+
+        {from, to} ->
+          dynamic([p], field(p, ^date_field) >= ^from and field(p, ^date_field) <= ^to)
+      end
+
+    filter_by_visibility =
+      case visibility_filter do
+        nil -> dynamic([p], true)
+        visibility -> dynamic([p], p.visibility == ^visibility)
+      end
+
+    filter_by_institution =
+      case institution_id do
+        nil ->
+          dynamic([p, _ap, _a, _pv], true)
+
+        id ->
+          dynamic([p, _ap, _a, pv], p.visibility == :global or pv.institution_id == ^id)
+      end
+
+    where_clause =
+      dynamic(
+        [p, ap, a, pv, pub, op, owner, pt],
+        ^filter_by_status and ^filter_by_text and ^filter_by_date and ^filter_by_visibility and
+          ^filter_by_institution
+      )
 
     owner_id = ProjectRole.role_id().owner
 
     query =
-      Project
-      |> join(:left, [p], ap in AuthorProject,
-        on: ap.project_id == p.id and ap.status == ^:accepted
-      )
-      |> join(:left, [p, ap], a in Author, on: ap.author_id == a.id)
-      |> join(:left, [p, ap, a], op in AuthorProject,
-        on: op.project_id == p.id and op.project_role_id == ^owner_id
-      )
-      |> join(:left, [p, ap, a, op], owner in Author, on: owner.id == op.author_id)
-      |> where(^filter_by_status)
-      |> where(^filter_by_text)
-      |> group_by([p, ap, a, op, owner], [
-        p.id,
-        p.slug,
-        p.title,
-        p.inserted_at,
-        p.status,
-        p.visibility,
-        owner.id,
-        owner.name,
-        owner.email
-      ])
-      |> select([p, ap, a, op, owner], %{
-        id: p.id,
-        slug: p.slug,
-        title: p.title,
-        inserted_at: p.inserted_at,
-        status: p.status,
-        visibility: p.visibility,
-        published:
-          fragment(
-            "EXISTS (SELECT 1 FROM publications pub WHERE pub.project_id = ? AND pub.published IS NOT NULL)",
-            p.id
-          ),
-        owner_id: owner.id,
-        name: owner.name,
-        email: owner.email,
-        collaborators:
-          fragment(
-            "json_agg(DISTINCT jsonb_build_object('id', ?, 'name', ?)) FILTER (WHERE ? IS NOT NULL)",
-            a.id,
-            a.name,
-            a.id
-          )
-      })
+      from p in Project,
+        join: ap in AuthorProject,
+        on: ap.project_id == p.id,
+        join: a in Author,
+        on: ap.author_id == a.id,
+        left_join: pv in ProjectVisibility,
+        on: pv.project_id == p.id,
+        left_join: pub in Publication,
+        on: pub.project_id == p.id and not is_nil(pub.published),
+        left_join: op in AuthorProject,
+        on: op.project_id == p.id and op.project_role_id == ^owner_id,
+        left_join: owner in Author,
+        on: owner.id == op.author_id,
+        left_join: pt in ProjectTag,
+        on: pt.project_id == p.id,
+        where: ^where_clause,
+        group_by: [
+          p.id,
+          p.slug,
+          p.title,
+          p.inserted_at,
+          p.status,
+          p.visibility,
+          owner.id,
+          owner.name,
+          owner.email
+        ],
+        select: %{
+          id: p.id,
+          slug: p.slug,
+          title: p.title,
+          inserted_at: p.inserted_at,
+          status: p.status,
+          visibility: p.visibility,
+          published: fragment("bool_or(?)", not is_nil(pub.id)),
+          owner_id: owner.id,
+          name: owner.name,
+          email: owner.email,
+          collaborators:
+            fragment(
+              "json_agg(DISTINCT jsonb_build_object('id', ?, 'name', ?)) FILTER (WHERE ? IS NOT NULL)",
+              a.id,
+              a.name,
+              a.id
+            )
+        }
+
+    query =
+      query
+      |> maybe_apply_tag_filter(tag_ids)
+      |> maybe_apply_published_filter(published_filter)
 
     query =
       case field do
         :name ->
-          order_by(query, [_, _, _, _, owner], {^direction, owner.name})
+          order_by(query, [_, _, _, _, _, _, owner, _], {^direction, owner.name})
 
         :collaborators ->
-          order_by(query, [_, _, a, _, _], {
-            ^direction,
-            fragment("string_agg(DISTINCT ?, ', ')", a.name)
-          })
+          order_by(
+            query,
+            [_, _, a, _, _, _, _, _],
+            {^direction, fragment("string_agg(DISTINCT ?, ', ')", a.name)}
+          )
 
         :published ->
-          order_by(query, [p, _, _, _, _], {
-            ^direction,
-            fragment(
-              "EXISTS (SELECT 1 FROM publications pub WHERE pub.project_id = ? AND pub.published IS NOT NULL)",
-              p.id
-            )
-          })
+          order_by(
+            query,
+            [_, _, _, _, pub, _, _, _],
+            {^direction, fragment("bool_or(?)", not is_nil(pub.id))}
+          )
 
         :visibility ->
-          order_by(query, [p, _, _, _, _], {
+          order_by(query, [p, _, _, _, _, _, _, _], {
             ^direction,
             fragment(
               "CASE ? WHEN 'global' THEN 0 WHEN 'selected' THEN 1 WHEN 'authors' THEN 2 ELSE 3 END",
@@ -451,7 +686,7 @@ defmodule Oli.Authoring.Course do
           })
 
         _ ->
-          order_by(query, [p, _, _, _, _], {^direction, field(p, ^field)})
+          order_by(query, [p, _, _, _, _, _, _, _], {^direction, field(p, ^field)})
       end
 
     Repo.all(query)
@@ -461,91 +696,169 @@ defmodule Oli.Authoring.Course do
          %Author{id: id},
          %Sorting{direction: direction, field: field},
          include_deleted,
-         text_search
+         text_search,
+         filters
        ) do
     owner_id = ProjectRole.role_id().owner
 
+    tag_ids = Map.get(filters, :tag_ids, [])
+    visibility_filter = Map.get(filters, :visibility)
+    published_filter = Map.get(filters, :published)
+    status_filter_value = Map.get(filters, :status)
+    institution_id = Map.get(filters, :institution_id)
+    date_field = Map.get(filters, :date_field, :inserted_at)
+    date_from = Map.get(filters, :date_from)
+    date_to = Map.get(filters, :date_to)
+
     filter_by_collaborator =
-      dynamic([_, ap, _, _, _, _], ap.author_id == ^id and ap.status == ^:accepted)
+      dynamic(
+        [ap, _p, _a, _pv, _pub, _op, _owner, _pt],
+        ap.author_id == ^id and ap.status == :accepted
+      )
 
     filter_by_status =
-      if include_deleted, do: true, else: dynamic([p, _, _, _, _, _], p.status == ^:active)
+      case status_filter_value do
+        status when status in [:active, :deleted] ->
+          dynamic([_ap, p, _a, _pv, _pub, _op, _owner, _pt], p.status == ^status)
+
+        _ ->
+          if include_deleted,
+            do: dynamic([_ap, _p, _a, _pv, _pub, _op, _owner, _pt], true),
+            else: dynamic([_ap, p, _a, _pv, _pub, _op, _owner, _pt], p.status == :active)
+      end
 
     filter_by_text =
-      if text_search == "",
-        do: true,
-        else: dynamic([p, _, _, _, _, _], ilike(p.title, ^"%#{text_search}%"))
+      text_search
+      |> project_search_patterns()
+      |> Enum.reduce(dynamic([_ap, p, _a, _pv, _pub, _op, _owner, _pt], true), fn pattern, acc ->
+        dynamic(
+          [_ap, p, a, _pv, _pub, _op, owner, _pt],
+          ^acc and
+            (ilike(p.title, ^pattern) or ilike(p.slug, ^pattern) or ilike(owner.name, ^pattern) or
+               ilike(owner.email, ^pattern) or ilike(a.name, ^pattern))
+        )
+      end)
+
+    filter_by_date =
+      case {date_from, date_to} do
+        {nil, nil} ->
+          dynamic([_ap, _p, _a, _pv, _pub, _op, _owner, _pt], true)
+
+        {from, nil} ->
+          dynamic([_ap, p, _a, _pv, _pub, _op, _owner, _pt], field(p, ^date_field) >= ^from)
+
+        {nil, to} ->
+          dynamic([_ap, p, _a, _pv, _pub, _op, _owner, _pt], field(p, ^date_field) <= ^to)
+
+        {from, to} ->
+          dynamic(
+            [_ap, p, _a, _pv, _pub, _op, _owner, _pt],
+            field(p, ^date_field) >= ^from and field(p, ^date_field) <= ^to
+          )
+      end
+
+    filter_by_visibility =
+      case visibility_filter do
+        nil ->
+          dynamic([_ap, _p, _a, _pv, _pub, _op, _owner, _pt], true)
+
+        visibility ->
+          dynamic([_ap, p, _a, _pv, _pub, _op, _owner, _pt], p.visibility == ^visibility)
+      end
+
+    filter_by_institution =
+      case institution_id do
+        nil ->
+          dynamic([_ap, _p, _a, _pv, _pub, _op, _owner, _pt], true)
+
+        institution ->
+          dynamic(
+            [_ap, p, _a, pv, _pub, _op, _owner, _pt],
+            p.visibility == :global or pv.institution_id == ^institution
+          )
+      end
+
+    where_clause =
+      dynamic(
+        [ap, p, a, pv, pub, op, owner, pt],
+        ^filter_by_collaborator and ^filter_by_status and ^filter_by_text and
+          ^filter_by_date and ^filter_by_visibility and ^filter_by_institution
+      )
 
     query =
-      Project
-      |> join(:left, [p], ap in AuthorProject,
-        on: ap.project_id == p.id and ap.status == ^:accepted
-      )
-      |> join(:left, [p, ap], a in Author, on: ap.author_id == a.id)
-      |> join(:left, [p, ap, a], op in AuthorProject,
-        on: op.project_id == p.id and op.project_role_id == ^owner_id
-      )
-      |> join(:left, [p, ap, a, op], owner in Author, on: owner.id == op.author_id)
-      |> where(^filter_by_collaborator)
-      |> where(^filter_by_status)
-      |> where(^filter_by_text)
-      |> group_by([p, ap, a, op, owner], [
-        p.id,
-        p.slug,
-        p.title,
-        p.inserted_at,
-        p.status,
-        p.visibility,
-        owner.id,
-        owner.name,
-        owner.email
-      ])
-      |> select([p, ap, a, op, owner], %{
-        id: p.id,
-        slug: p.slug,
-        title: p.title,
-        inserted_at: p.inserted_at,
-        status: p.status,
-        visibility: p.visibility,
-        published:
-          fragment(
-            "EXISTS (SELECT 1 FROM publications pub WHERE pub.project_id = ? AND pub.published IS NOT NULL)",
-            p.id
-          ),
-        owner_id: owner.id,
-        name: owner.name,
-        email: owner.email,
-        collaborators:
-          fragment(
-            "json_agg(DISTINCT jsonb_build_object('id', ?, 'name', ?)) FILTER (WHERE ? IS NOT NULL)",
-            a.id,
-            a.name,
-            a.id
-          )
-      })
+      from ap in AuthorProject,
+        join: p in Project,
+        on: ap.project_id == p.id,
+        join: a in Author,
+        on: ap.author_id == a.id,
+        left_join: pv in ProjectVisibility,
+        on: pv.project_id == p.id,
+        left_join: pub in Publication,
+        on: pub.project_id == p.id and not is_nil(pub.published),
+        left_join: op in AuthorProject,
+        on: op.project_id == p.id and op.project_role_id == ^owner_id,
+        left_join: owner in Author,
+        on: owner.id == op.author_id,
+        left_join: pt in ProjectTag,
+        on: pt.project_id == p.id,
+        where: ^where_clause,
+        group_by: [
+          p.id,
+          p.slug,
+          p.title,
+          p.inserted_at,
+          p.status,
+          p.visibility,
+          owner.id,
+          owner.name,
+          owner.email
+        ],
+        select: %{
+          id: p.id,
+          slug: p.slug,
+          title: p.title,
+          inserted_at: p.inserted_at,
+          status: p.status,
+          visibility: p.visibility,
+          published: fragment("bool_or(?)", not is_nil(pub.id)),
+          owner_id: owner.id,
+          name: owner.name,
+          email: owner.email,
+          collaborators:
+            fragment(
+              "json_agg(DISTINCT jsonb_build_object('id', ?, 'name', ?)) FILTER (WHERE ? IS NOT NULL)",
+              a.id,
+              a.name,
+              a.id
+            )
+        }
+
+    query =
+      query
+      |> maybe_apply_tag_filter(tag_ids)
+      |> maybe_apply_published_filter(published_filter)
 
     query =
       case field do
         :name ->
-          order_by(query, [_, _, _, _, owner], {^direction, owner.name})
+          order_by(query, [_, _, _, _, _, _, owner, _], {^direction, owner.name})
 
         :collaborators ->
-          order_by(query, [_, _, a, _, _], {
-            ^direction,
-            fragment("string_agg(DISTINCT ?, ', ')", a.name)
-          })
+          order_by(
+            query,
+            [_, _, a, _, _, _, _, _],
+            {^direction, fragment("string_agg(DISTINCT ?, ', ')", a.name)}
+          )
 
         :published ->
-          order_by(query, [p, _, _, _, _], {
-            ^direction,
-            fragment(
-              "EXISTS (SELECT 1 FROM publications pub WHERE pub.project_id = ? AND pub.published IS NOT NULL)",
-              p.id
-            )
-          })
+          order_by(
+            query,
+            [_, _, _, _, pub, _, _, _],
+            {^direction, fragment("bool_or(?)", not is_nil(pub.id))}
+          )
 
         :visibility ->
-          order_by(query, [p, _, _, _, _], {
+          order_by(query, [_, p, _, _, _, _, _, _], {
             ^direction,
             fragment(
               "CASE ? WHEN 'global' THEN 0 WHEN 'selected' THEN 1 WHEN 'authors' THEN 2 ELSE 3 END",
@@ -554,7 +867,7 @@ defmodule Oli.Authoring.Course do
           })
 
         _ ->
-          order_by(query, [p, _, _, _, _], {^direction, field(p, ^field)})
+          order_by(query, [_, p, _, _, _, _, _, _], {^direction, field(p, ^field)})
       end
 
     Repo.all(query)

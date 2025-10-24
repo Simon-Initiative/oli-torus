@@ -24,6 +24,7 @@ import { GlobalTooltip } from './global_tooltip';
 import { GraphNavigation } from './graph';
 import { HierarchySelector } from './hierarchy_selector';
 import { HighlightCode } from './highlight_code';
+import { FilterTagSearch } from './filter_tag_search';
 import { InputAutoSelect } from './input_auto_select';
 import { KeepScrollAtBottom } from './keep_scroll_at_bottom';
 import { LiveModal } from './live_modal';
@@ -123,4 +124,5 @@ export const Hooks = {
   ConditionalToggle,
   CopyToClipboard,
   TagsComponent,
+  FilterTagSearch,
 };
