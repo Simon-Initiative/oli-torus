@@ -331,14 +331,18 @@ defmodule OliWeb.PageDeliveryController do
 
   # Route to render adaptive pages in a full screen mode with no torus navigation.
   # Used within an iframe when the adaptive page is embedded in a torus page.
-  def page_fullscreen(conn, %{"section_slug" => section_slug, "revision_slug" => revision_slug}) do
+  def page_fullscreen(
+        conn,
+        %{"section_slug" => section_slug, "revision_slug" => revision_slug} = params
+      ) do
     user = conn.assigns.current_user
     section = conn.assigns.section
     datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
+    iframe? = Oli.Utils.string_to_boolean(params["iframe"])
 
     if Sections.is_enrolled?(user.id, section_slug) do
       PageContext.create_for_visit(section, revision_slug, user, datashop_session_id)
-      |> render_adaptive_chromeless_page(conn, section_slug, false)
+      |> render_adaptive_chromeless_page(conn, section_slug, false, iframe?)
     else
       render(conn, "not_authorized.html")
     end
@@ -704,7 +708,8 @@ defmodule OliWeb.PageDeliveryController do
          context,
          conn,
          section_slug,
-         preview_mode
+         preview_mode,
+         iframe? \\ false
        ) do
     section = conn.assigns.section
 
@@ -751,7 +756,7 @@ defmodule OliWeb.PageDeliveryController do
           |> to_epoch,
         lateSubmit: context.effective_settings.late_submit,
         activityGuidMapping: context.activities,
-        signoutUrl: ~p"/users/log_out",
+        signoutUrl: unless(iframe?, do: ~p"/users/log_out"),
         previousPageURL: previous_url,
         nextPageURL: next_url,
         previewMode: preview_mode,
@@ -769,7 +774,9 @@ defmodule OliWeb.PageDeliveryController do
             "deprecated"
           end,
         screenIdleTimeOutInSeconds:
-          String.to_integer(System.get_env("SCREEN_IDLE_TIMEOUT_IN_SECONDS", "1800")),
+          unless(iframe?,
+            do: String.to_integer(System.get_env("SCREEN_IDLE_TIMEOUT_IN_SECONDS", "1800"))
+          ),
         isAuthor: !is_nil(author),
         isAdmin: Accounts.is_admin?(author),
         isInstructor: context.is_instructor

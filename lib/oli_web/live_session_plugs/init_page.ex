@@ -161,6 +161,8 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
         :adaptive_chromeless
       end
 
+    screen_idle_timeout_enabled? = view != :adaptive_with_chrome
+
     section = socket.assigns.section
     activity_types = Oli.Activities.activities_for_section()
     resource_attempt = Enum.at(page_context.resource_attempts, 0)
@@ -186,7 +188,7 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
         |> to_epoch,
       lateSubmit: page_context.effective_settings.late_submit,
       activityGuidMapping: page_context.activities,
-      signoutUrl: ~p"/users/log_out",
+      signoutUrl: if(screen_idle_timeout_enabled?, do: ~p"/users/log_out"),
       previewMode: false,
       isInstructor: true,
       reviewMode: page_context.review_mode,
@@ -197,7 +199,10 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
           :transition
         ),
       screenIdleTimeOutInSeconds:
-        String.to_integer(System.get_env("SCREEN_IDLE_TIMEOUT_IN_SECONDS", "1800")),
+        if(screen_idle_timeout_enabled?,
+          do: String.to_integer(System.get_env("SCREEN_IDLE_TIMEOUT_IN_SECONDS", "1800")),
+          else: 0
+        ),
       blobStorageProvider:
         if Application.get_env(:oli, :blob_storage)[:use_deprecated_api] == false do
           "new"
